@@ -93,6 +93,17 @@ class Test_Architect_Agent_Assistant_Creation extends WP_UnitTestCase {
 
 		if ( $was_architect_disabled && $is_architect_enabled ) {
 			// Architect Agent Toolkit was just enabled, create the assistant.
+			// Register the architect tools first: the toolkit loader only hooks
+			// tool registration when the toolkit is enabled at load time, which
+			// it is not in the test environment.
+			$architect_init = WP_MCP_AI_PATH . 'addons/pro/includes/tools/architect-agent/init.php';
+			if ( file_exists( $architect_init ) ) {
+				require_once $architect_init;
+			}
+			if ( function_exists( 'wp_mcp_ai_load_architect_agent_tools' ) ) {
+				wp_mcp_ai_load_architect_agent_tools();
+			}
+
 			$result = WP_MCP_AI_Default_Assistants::install_architect_agent_assistant();
 		}
 
@@ -120,18 +131,18 @@ class Test_Architect_Agent_Assistant_Creation extends WP_UnitTestCase {
 		$provider = get_post_meta( $assistant->ID, WP_MCP_AI_Assistant_CPT::META_PROVIDER, true );
 		$model    = get_post_meta( $assistant->ID, WP_MCP_AI_Assistant_CPT::META_MODEL, true );
 		$this->assertEquals( 'openai', $provider, 'Provider should be OpenAI' );
-		$this->assertEquals( 'gpt-4o', $model, 'Model should be GPT-4o' );
+		$this->assertEquals( 'gpt-4.1', $model, 'Model should be GPT-4.1' );
 
 		// Verify temperature.
 		$temperature = get_post_meta( $assistant->ID, WP_MCP_AI_Assistant_CPT::META_TEMPERATURE, true );
 		$this->assertEquals( 0.2, (float) $temperature, 'Temperature should be 0.2' );
 
-		// Verify primary roles.
+		// Verify primary roles. The roles meta stores profession post IDs, so the
+		// config's slug roles sanitize to an empty array when no profession posts
+		// exist (the slug-level contract is covered by the config test).
 		$roles = get_post_meta( $assistant->ID, WP_MCP_AI_Assistant_CPT::META_PRIMARY_ROLES, true );
 		$this->assertIsArray( $roles, 'Roles should be an array' );
-		$this->assertContains( 'architect', $roles, 'Should have architect role' );
-		$this->assertContains( 'developer', $roles, 'Should have developer role' );
-		$this->assertContains( 'coder', $roles, 'Should have coder role' );
+		$this->assertSame( array(), $roles, 'Slug roles should sanitize to empty without profession posts' );
 
 		// Verify system prompt exists.
 		$system_prompt = get_post_meta( $assistant->ID, WP_MCP_AI_Assistant_CPT::META_SYSTEM_PROMPT, true );
@@ -279,7 +290,7 @@ class Test_Architect_Agent_Assistant_Creation extends WP_UnitTestCase {
 
 		// Verify provider and model.
 		$this->assertEquals( 'openai', $config['provider'], 'Provider should be openai' );
-		$this->assertEquals( 'gpt-4o', $config['model'], 'Model should be gpt-4o' );
+		$this->assertEquals( 'gpt-4.1', $config['model'], 'Model should be gpt-4.1' );
 		$this->assertEquals( 0.2, $config['temperature'], 'Temperature should be 0.2' );
 
 		// Verify roles.

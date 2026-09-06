@@ -151,7 +151,7 @@ class WP_MCP_AI_Social_Reporting_Tools_Test extends WP_UnitTestCase {
 
 		$tool = $registry->get_tool( 'get_google_business_insights' );
 
-		$this->assertInstanceOf( WP_MCP_AI_Tool_Get_Google_Business_Insights::class, $tool );
+		$this->assertInstanceOf( WP_MCP_AI_Pro_Tool_Get_Google_Business_Insights::class, $tool );
 
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 

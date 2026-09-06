@@ -27,10 +27,15 @@ class Test_Flowhub_Connection_Test extends WP_UnitTestCase {
 		);
 		wp_set_current_user( $this->admin_user );
 
-		// Ensure admin classes are loaded.
-		if ( ! did_action( 'admin_init' ) ) {
-			do_action( 'admin_init' );
-		}
+		// Construct the admin settings service so its constructor registers the
+		// connection-test AJAX handlers. In production this happens inside the
+		// is_admin() loader block; the CLI test context is never admin, so the
+		// tests construct it explicitly instead of firing admin_init (which
+		// would re-register WooCommerce/admin-only hooks and trip
+		// _doing_it_wrong notices). A fresh instance is used per test because
+		// WP_UnitTestCase restores the hook snapshot in tearDown, wiping
+		// registrations made during setUp.
+		new WP_MCP_AI_Admin_Settings();
 	}
 
 	/**
@@ -44,54 +49,33 @@ class Test_Flowhub_Connection_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that the test button is rendered.
+	 * Test that FlowHub connections are managed by the Remote Sites admin.
+	 *
+	 * FlowHub moved out of the integrations section to the Remote Sites
+	 * page. The manager still validates flowhub credentials: a connection
+	 * missing the API key and client ID must be rejected with the
+	 * flowhub-specific error code.
 	 */
-	public function test_flowhub_test_button_renders() {
-		// Set credentials.
-		$settings                          = WP_MCP_AI_Admin_Settings::get_settings();
-		$settings['flowhub_api_key']       = '';
-		$settings['flowhub_client_id']     = '';
-		$settings['flowhub_client_secret'] = '';
-		$settings['flowhub_location_id']   = '';
-		update_option( 'wp_mcp_ai_settings', $settings );
+	public function test_flowhub_managed_by_remote_sites() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro Remote Site Manager not available' );
+		}
 
-		// Get the section instance.
-		$section = new WP_MCP_AI_Section_Integrations();
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Remote_Site_Manager' );
+		$method     = $reflection->getMethod( 'validate_connection_data' );
+		$method->setAccessible( true );
 
-		// Start output buffering.
-		ob_start();
-
-		// Simulate being on the flowhub connection page.
-		$_GET['connection'] = 'flowhub';
-
-		// Render the section.
-		$section->render_wrapper();
-
-		$output = ob_get_clean();
-
-		// Check that the test button is present.
-		$this->assertStringContainsString(
-			'wp-mcp-ai-test-flowhub-connection',
-			$output,
-			'Test button should be rendered'
+		$result = $method->invoke(
+			null,
+			array(
+				'name'            => 'FlowHub Test',
+				'url'             => 'https://api.flowhub.co',
+				'connection_type' => 'flowhub',
+			)
 		);
 
-		// Check that the test button has correct attributes.
-		$this->assertStringContainsString(
-			'id="wp-mcp-ai-test-flowhub-connection"',
-			$output,
-			'Test button should have correct ID'
-		);
-
-		// Check that the result span is present.
-		$this->assertStringContainsString(
-			'wp-mcp-ai-flowhub-test-result',
-			$output,
-			'Result span should be rendered'
-		);
-
-		// Cleanup.
-		unset( $_GET['connection'] );
+		$this->assertWPError( $result, 'FlowHub connections without credentials must be rejected' );
+		$this->assertSame( 'wp_mcp_ai_pro_missing_flowhub_credentials', $result->get_error_code() );
 	}
 
 	/**
@@ -105,12 +89,18 @@ class Test_Flowhub_Connection_Test extends WP_UnitTestCase {
 		$_POST['client_secret'] = '';
 		$_POST['location_id']   = '';
 
-		// Create instance and call handler.
+		// Create instance and call handler. The handler terminates via
+		// wp_send_json, which the test framework converts into a
+		// WPAjaxDieContinueException.
 		$ajax_handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
 
 		// Capture output.
 		ob_start();
-		$ajax_handlers->handle_test_flowhub_connection();
+		try {
+			$ajax_handlers->handle_test_flowhub_connection();
+		} catch ( WPAjaxDieContinueException $e ) {
+			unset( $e ); // Expected: wp_send_json ends the request through the test die handler.
+		}
 		$response = ob_get_clean();
 
 		// Parse JSON response.
@@ -123,19 +113,19 @@ class Test_Flowhub_Connection_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that Flowhub is in the connections subtab groups.
+	 * Test that Flowhub is no longer a base integrations subtab.
+	 *
+	 * FlowHub moved to the Remote Sites page; the base integrations section
+	 * must not expose the connection group.
 	 */
-	public function test_flowhub_in_subtab_groups() {
+	public function test_flowhub_excluded_from_base_integrations() {
 		$section    = new WP_MCP_AI_Section_Integrations();
 		$reflection = new ReflectionClass( $section );
 		$method     = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
 		$subtab_groups = $method->invoke( $section );
 
-		$this->assertArrayHasKey( 'flowhub', $subtab_groups, 'Flowhub should be in subtab groups' );
-
-		$flowhub_group = $subtab_groups['flowhub'];
-		$this->assertEquals( 'flowhub', $flowhub_group['id'] );
+		$this->assertArrayNotHasKey( 'flowhub', $subtab_groups, 'Flowhub must not be a base integrations subtab' );
 	}
 
 	/**

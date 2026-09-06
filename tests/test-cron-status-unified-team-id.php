@@ -148,11 +148,11 @@ class Test_Cron_Status_Unified_Team_ID extends WP_UnitTestCase {
 	public function test_sanitize_assistant_id_blocks_malicious_input() {
 		// Test path traversal attempt.
 		$result = WP_MCP_AI_REST_Tools_Controller::sanitize_assistant_id( '../../../etc/passwd' );
-		$this->assertNotContains( '/', $result );
+		$this->assertStringNotContainsString( '/', $result );
 
 		// Test script tag.
 		$result = WP_MCP_AI_REST_Tools_Controller::sanitize_assistant_id( '<script>alert("xss")</script>' );
-		$this->assertNotContains( '<', $result );
-		$this->assertNotContains( '>', $result );
+		$this->assertStringNotContainsString( '<', $result );
+		$this->assertStringNotContainsString( '>', $result );
 	}
 }

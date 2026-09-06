@@ -265,6 +265,11 @@ if [ "$BUILD_BASE" = true ]; then
     
     # Copy full plugin files EXCEPT pro addons
     # This creates a fully functional standalone plugin
+    #
+    # plugins/ (nvoos-content-graph, -ai, -ai-platform) is excluded: those are
+    # standalone add-on plugins shipped as their own zips (see
+    # build-nvoos-content-graph*.yml workflows) and would be dead weight
+    # nested inside this package (WordPress cannot activate them from here).
     rsync -av --quiet . "build/${BASE_SLUG}/" \
         --include 'bin/' \
         --include 'bin/vectorize-image.js' \
@@ -311,6 +316,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '/core' \
         --exclude '/shared' \
         --exclude '/lib' \
+        --exclude '/plugins' \
         --exclude 'archive' \
         --exclude 'packages' \
         --exclude '/src' \
@@ -755,6 +761,8 @@ if [ "$BUILD_COMBINED" = true ]; then
     
     # Copy all plugin files (includes both base and pro)
     # Exclude mcp-ai-wpoos-base.php to prevent duplicate plugin detection in WordPress
+    # Exclude plugins/ (nvoos-content-graph, -ai, -ai-platform): standalone
+    # add-ons distributed as their own zips, not part of the complete package.
     rsync -av --quiet . "build/${COMBINED_SLUG}/" \
         --include 'bin/' \
         --include 'bin/vectorize-image.js' \
@@ -800,6 +808,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'docs' \
         --exclude '/core' \
         --exclude '/shared' \
+        --exclude '/plugins' \
         --exclude 'archive' \
         --exclude 'packages' \
         --exclude '/src' \

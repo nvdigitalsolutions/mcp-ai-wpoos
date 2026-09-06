@@ -1360,7 +1360,9 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 		$skill_md_entry = null;
 		$root_dir       = null;
 
-		for ( $i = 0; $i < $zip->num_files; $i++ ) {
+		// `num_files` is not a ZipArchive property on PHP 8.x; count the archive.
+		$entry_count = count( $zip );
+		for ( $i = 0; $i < $entry_count; $i++ ) {
 			$entry = $zip->getNameIndex( $i );
 
 			// Skip macOS metadata files.
@@ -1417,7 +1419,7 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 		$extra_files = array();
 		$prefix      = '' !== $root_dir ? $root_dir . '/' : '';
 
-		for ( $i = 0; $i < $zip->num_files; $i++ ) {
+		for ( $i = 0; $i < $entry_count; $i++ ) {
 			$entry = $zip->getNameIndex( $i );
 
 			if ( false !== strpos( $entry, '__MACOSX' ) || false !== strpos( $entry, '.DS_Store' ) ) {

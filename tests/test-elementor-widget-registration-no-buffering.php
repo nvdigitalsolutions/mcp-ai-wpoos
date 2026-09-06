@@ -26,7 +26,7 @@ class WP_MCP_AI_Elementor_Widget_Registration_No_Buffering_Test extends WP_UnitT
 
 		// Create a mock widgets manager.
 		$widgets_manager = $this->getMockBuilder( 'stdClass' )
-			->setMethods( array( 'register' ) )
+			->addMethods( array( 'register' ) )
 			->getMock();
 
 		// Expect register to be called (widgets should be registered successfully).

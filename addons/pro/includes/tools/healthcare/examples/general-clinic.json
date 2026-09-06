@@ -1,9 +1,17 @@
 {
+	"$schema": "https://schemas.nvdigitalsolutions.com/mcp-ai/assistant-blueprint.schema.json",
+	"blueprint_id": "healthcare-general-clinic",
 	"name": "General Clinic Front Desk",
 	"description": "Outpatient/general-practice clinic assistant. Handles patient registration, appointment booking, chart lookup, and CCDA/FHIR exchange with the configured EHR.",
-	"meta": {
-		"instructions": "Healthcare assistant for general/family-practice clinics. Treat every input as PHI: never echo raw identifiers in summaries, prefer MRNs over names in tool calls, and always log clinical changes through the audit ledger.",
-		"available_tools": [
+	"post_title": "General Clinic Front Desk",
+	"post_status": "publish",
+	"post_content": "Healthcare assistant for general/family-practice clinics. Treat every input as PHI: never echo raw identifiers in summaries, prefer MRNs over names in tool calls, and always log clinical changes through the audit ledger.",
+	"profession": "health_services_manager",
+	"meta_input": {
+		"_wp_mcp_ai_model": "gpt-4o",
+		"_wp_mcp_ai_temperature": 0.2,
+		"_wp_mcp_ai_system_prompt": "Healthcare assistant for general/family-practice clinics. Treat every input as PHI: never echo raw identifiers in summaries, prefer MRNs over names in tool calls, and always log clinical changes through the audit ledger.",
+		"_wp_mcp_ai_tools": [
 			"create_member",
 			"create_medical_record",
 			"create_checkup",
@@ -21,10 +29,7 @@
 			"import_hl7v2_message",
 			"connect_to_ehr"
 		],
-		"model": "gpt-4o",
-		"temperature": 0.2,
-		"required_capability": "edit_others_posts",
-		"profession": "health_services_manager",
-		"audit_phi": true
+		"mcp_ai_required_capability": "edit_others_posts",
+		"_wp_mcp_ai_audit_phi": true
 	}
 }

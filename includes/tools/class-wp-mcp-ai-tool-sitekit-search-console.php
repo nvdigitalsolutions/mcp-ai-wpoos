@@ -309,10 +309,10 @@ class WP_MCP_AI_Tool_SiteKit_Search_Console implements WP_MCP_AI_Tool_Interface,
 	 * Get capability flags.
 	 *
 	 * @since 1.2.0
-	 * @return int Capability flags.
+	 * @return array<string> Capability flag strings.
 	 */
 	public function get_capability_flags() {
-		return WP_MCP_AI_Tool_Capability_Flags_Interface::CAPABILITY_CAN_USE_IF_ADMIN;
+		return array( 'read-only', 'requires-capability', 'requires-credentials', 'external-api', 'network-dependent' );
 	}
 
 	/**

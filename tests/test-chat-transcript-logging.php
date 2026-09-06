@@ -55,6 +55,10 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 
 		// WP 6.9 may re-register breadcrumbs block during rest_api_init.
 		$this->setExpectedIncorrectUsage( 'WP_Block_Type_Registry::register' );
+		// WooCommerce Blocks hooks non-idempotent init callbacks (payment
+		// method integrations) — re-firing init in the harness re-registers
+		// them and raises a _doing_it_wrong notice from Woo's own code.
+		$this->setExpectedIncorrectUsage( 'Automattic\WooCommerce\Blocks\Integrations\IntegrationRegistry::register' );
 
 		if ( function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 			wp_mcp_ai_bootstrap();
@@ -84,8 +88,12 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 		rest_get_server();
 		do_action( 'init' );
 
-		// Enable logging for tests.
-		update_option( 'wp_mcp_ai_enable_logging', '1' );
+		// Enable logging for tests. Logging state lives inside the grouped
+		// wp_mcp_ai_settings option (enable_logging key); the legacy standalone
+		// wp_mcp_ai_enable_logging option is no longer read by the logger.
+		$settings                    = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings['enable_logging'] = true;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 		// Hook into log events to capture them.
 		add_filter( 'wp_mcp_ai_log_entry', array( $this, 'capture_log_event' ), 10, 4 );
@@ -100,8 +108,35 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 	public function tearDown(): void {
 		remove_filter( 'wp_mcp_ai_log_entry', array( $this, 'capture_log_event' ), 10 );
 		wp_set_current_user( 0 );
-		delete_option( 'wp_mcp_ai_enable_logging' );
+
+		// Disable logging again and reset any injected repository mock.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		unset( $settings['enable_logging'] );
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$this->set_transcript_repository_mock( null );
+
 		parent::tearDown();
+	}
+
+	/**
+	 * Inject a mock transcript repository into the main controller.
+	 *
+	 * WP_MCP_AI_REST caches its repository in a protected property with no
+	 * public setter, so reflection is used. Pass null to reset to the real
+	 * repository resolution on the next access.
+	 *
+	 * @param object|null $mock_repository Mock repository or null to reset.
+	 */
+	private function set_transcript_repository_mock( $mock_repository ) {
+		if ( ! $this->main_controller ) {
+			return;
+		}
+
+		$reflection = new ReflectionClass( $this->main_controller );
+		$property   = $reflection->getProperty( 'transcript_repository' );
+		$property->setAccessible( true );
+		$property->setValue( $this->main_controller, $mock_repository );
 	}
 
 	/**
@@ -227,12 +262,7 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 		};
 
 		// Mock the repository getter.
-		add_filter(
-			'wp_mcp_ai_transcript_repository',
-			function () use ( $mock_repository ) {
-				return $mock_repository;
-			}
-		);
+		$this->set_transcript_repository_mock( $mock_repository );
 
 		// Prepare request.
 		$session_key = 'test-session-' . wp_generate_uuid4();
@@ -301,12 +331,7 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 		};
 
 		// Mock the repository getter.
-		add_filter(
-			'wp_mcp_ai_transcript_repository',
-			function () use ( $mock_repository ) {
-				return $mock_repository;
-			}
-		);
+		$this->set_transcript_repository_mock( $mock_repository );
 
 		// Prepare request.
 		$session_key = 'test-session-' . wp_generate_uuid4();
@@ -341,8 +366,10 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 	 * Test that logging respects the logging enabled setting.
 	 */
 	public function test_logging_respects_enabled_setting() {
-		// Disable logging.
-		update_option( 'wp_mcp_ai_enable_logging', '0' );
+		// Disable logging via the grouped settings option.
+		$settings                    = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings['enable_logging'] = false;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 		// Create a mock transcript handler.
 		add_filter(
@@ -383,9 +410,6 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 
 		// Verify no logs were captured when logging is disabled.
 		$this->assertEmpty( $this->log_events, 'No logs should be captured when logging is disabled' );
-
-		// Re-enable logging for other tests.
-		update_option( 'wp_mcp_ai_enable_logging', '1' );
 	}
 
 	/**

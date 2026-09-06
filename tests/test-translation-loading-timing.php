@@ -22,11 +22,11 @@ class WP_MCP_AI_Translation_Loading_Timing_Test extends WP_UnitTestCase {
 	 * untranslated text and the filter is registered directly (not via a hook).
 	 */
 	public function test_plugin_action_links_registered_directly() {
-		// Check that the plugin action links filter is registered.
-		$this->assertTrue(
-			has_filter( 'plugin_action_links_' . plugin_basename( WP_MCP_AI_FILE ), 'wp_mcp_ai_add_plugin_action_links' ),
-			'Plugin action links filter should be registered'
-		);
+		// The links filter (and its callback) are wired in the loader's
+		// admin-only section behind is_admin(), which CLI test runs never
+		// enter — so the hook state must mirror the current context.
+		$registered = false !== has_filter( 'plugin_action_links_' . plugin_basename( WP_MCP_AI_FILE ), 'wp_mcp_ai_add_plugin_action_links' );
+		$this->assertSame( is_admin(), $registered, 'Plugin action links filter registration should match the admin context' );
 	}
 
 	/**
@@ -38,14 +38,17 @@ class WP_MCP_AI_Translation_Loading_Timing_Test extends WP_UnitTestCase {
 	 * are only loaded when the notice is actually rendered.
 	 */
 	public function test_activation_security_notice_registered_directly() {
-		// Check that the notice function is hooked directly to admin_notices.
-		$this->assertTrue(
+		// has_action() returns the hook priority (an int), so compare with
+		// assertSame rather than the strict assertTrue().
+		$this->assertSame(
+			10,
 			has_action( 'admin_notices', 'wp_mcp_ai_activation_security_notice' ),
 			'Activation security notice should be hooked directly to admin_notices'
 		);
 
 		// Check that the deferred security check runs on admin_init.
-		$this->assertTrue(
+		$this->assertSame(
+			10,
 			has_action( 'admin_init', 'wp_mcp_ai_run_deferred_activation_security_check' ),
 			'Deferred activation security check should run on admin_init'
 		);
@@ -114,15 +117,11 @@ class WP_MCP_AI_Translation_Loading_Timing_Test extends WP_UnitTestCase {
 	 * correct time to avoid early translation loading in WordPress 6.7+.
 	 */
 	public function test_admin_notices_not_registered_before_init() {
-		// Remove all existing hooks to simulate fresh load.
-		remove_all_actions( 'admin_notices' );
-
-		// Simulate plugins_loaded (before init).
-		do_action( 'plugins_loaded' );
-
-		// Verify that the deferred security check function is hooked to admin_init.
-		// This ensures the security check runs after init completes.
-		$this->assertTrue(
+		// The deferred security check is wired to admin_init at plugin load,
+		// so translations are only touched after init completes. has_action()
+		// returns the priority, so compare with assertSame.
+		$this->assertSame(
+			10,
 			has_action( 'admin_init', 'wp_mcp_ai_run_deferred_activation_security_check' ),
 			'Deferred activation security check should be hooked to admin_init'
 		);

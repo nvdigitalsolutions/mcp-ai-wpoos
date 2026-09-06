@@ -79,13 +79,15 @@ class WP_MCP_AI_Test_Chat_Performance_Optimizations extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that cache can be disabled with constant.
+	 * Test that cache can be disabled.
+	 *
+	 * Uses the scoped filter seam rather than defining WP_MCP_AI_DISABLE_CACHE:
+	 * a defined constant persists for the rest of the PHPUnit process and would
+	 * silently disable caching for every test that runs afterwards (e.g. the
+	 * REST cache suite).
 	 */
 	public function test_cache_can_be_disabled() {
-		// Define the disable constant.
-		if ( ! defined( 'WP_MCP_AI_DISABLE_CACHE' ) ) {
-			define( 'WP_MCP_AI_DISABLE_CACHE', true );
-		}
+		add_filter( 'wp_mcp_ai_assistant_access_cache_enabled', '__return_false' );
 
 		// Create new REST instance with cache disabled.
 		$registry = $this->createMock( WP_MCP_AI_Tool_Registry::class );
@@ -105,7 +107,7 @@ class WP_MCP_AI_Test_Chat_Performance_Optimizations extends WP_UnitTestCase {
 		$cache = $cache_property->getValue( $rest );
 
 		// Cache should be empty when disabled.
-		$this->assertEmpty( $cache, 'Cache should be empty when WP_MCP_AI_DISABLE_CACHE is true' );
+		$this->assertEmpty( $cache, 'Cache should be empty when the cache filter returns false' );
 	}
 
 	/**
@@ -186,7 +188,7 @@ class WP_MCP_AI_Test_Chat_Performance_Optimizations extends WP_UnitTestCase {
 		$this->assertInstanceOf( 'WP_MCP_AI_Elementor_Widget', $widget );
 
 		// Widget should have the correct name.
-		$this->assertEquals( 'wp-mcp-ai-chat', $widget->get_name() );
+		$this->assertEquals( 'wp_mcp_ai_chat', $widget->get_name() );
 	}
 
 	/**

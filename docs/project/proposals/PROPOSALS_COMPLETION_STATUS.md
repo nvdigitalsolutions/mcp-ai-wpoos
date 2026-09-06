@@ -1,9 +1,9 @@
 # Proposals Completion Status
 
-**Last Updated:** June 30, 2026
+**Last Updated:** August 26, 2026
 **Total Proposals:** 100+ files
 **Completed:** 30+ proposals
-**In Progress:** 4 proposals
+**In Progress:** 3 proposals
 **Pending:** ~30 proposals remaining (many stale/abandoned)
 
 > **Note (v1.1.35):** Per-file ground truth available in individual proposal status headers. This tracker reflects the consolidated view as of June 29, 2026.
@@ -96,6 +96,12 @@
 - **Status:** ✅ Delivered (PR #5290)
 - **Implementation:** June 2026
 
+### Ralph Wiggum CCT Orchestration
+- **Status:** ✅ Implemented — native enhancement of the Project Management toolkit (decision recorded 2026-08-26 in `proposals-retirement-log.md` entry #6)
+- **Files:** `RALPH-WIGGUM-CCT-ORCHESTRATION.md`, `RALPH-WIGGUM-TASK-ORCHESTRATION-IMPLEMENTATION.md`, `RALPH-WIGGUM-QUICK-REFERENCE.md`, `RALPH-REQUIREMENTS-CLARIFICATION.md`
+- **Implementation:** Shipped v1.1.29 — 13 orchestration PHP tools (`addons/pro/includes/tools/orchestration/`), four JetEngine CCT schemas (`autonomous-sessions`, `task-plans`, `execution-history`, `task-templates` via the `ralph_cct_schemas` module), browser-side autonomous orchestrator with circuit breaker, LangChain ReAct loop support. Advertised as shipped in the PM toolkit settings pages and CHANGELOG ("Ralph Loop CCT Migration & Orchestration Tools").
+- **Follow-up:** `RALPH-WIGGUM-GAP-REMEDIATION-PLAN.md` (Draft) — six production-hardening gaps (evaluator model, persistent circuit breaker, infra-enforced bounded execution, etc.).
+
 ---
 
 ### v1.1.25 Completions (May 31, 2026)
@@ -159,7 +165,7 @@
 
 ---
 
-## 🚧 In Progress Proposals (4)
+## 🚧 In Progress Proposals (3)
 
 ### JetBooking & JetAppointment — Calendar & Places Integration
 - **Status:** 📋 Proposed (June 30, 2026) — Awaiting Approval
@@ -175,10 +181,6 @@
 - **Status:** 🟡 ~22% Complete (43/195 base tools migrated)
 - **File:** [`cross-platform-extraction-gap-analysis.md`](./cross-platform-extraction-gap-analysis.md)
 - **Next:** Pro tool migration, lib/core test suite, Laravel adapter
-
-### Ralph Wiggum CCT Orchestration
-- **Status:** ⏳ Active Proposal — Awaiting Implementation Resources
-- **Next Steps:** Allocate implementation resources or merge into workflow automation roadmap
 
 ---
 
@@ -232,8 +234,7 @@
 1. Accelerate Cross-Platform Extraction Phase 3 — tool migration + test suite
 2. Laravel adapter spike for v1.4.0
 3. Pro tool OOS migration kickoff
-4. Resolve Ralph Wiggum CCT Orchestration (implement or defer)
-5. Clean up stale pending proposals per retirement log
+4. Clean up stale pending proposals per retirement log
 
 ---
 

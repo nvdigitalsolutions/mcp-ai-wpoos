@@ -163,6 +163,11 @@ class Test_Timeout_Loop_Safety extends WP_UnitTestCase {
 
 	/**
 	 * Test SSE stream parameters are validated.
+	 *
+	 * The clamping floor is 10s of real sleep per invocation (max_duration is
+	 * clamped to at least 10 and the stream sleeps between polls), so invoke
+	 * with values that complete quickly and verify the clamping through the
+	 * `connected` event payload instead of running a 10-minute stream.
 	 */
 	public function test_sse_stream_parameter_validation() {
 		// Test that parameters are bounded.
@@ -170,8 +175,8 @@ class Test_Timeout_Loop_Safety extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'stream_job_status' );
 		$method->setAccessible( true );
 
-		// Test with extreme values.
-		$response = $method->invokeArgs( null, array( 'test_job', 9999, 100 ) );
+		// 0 poll interval clamps up to 1; max_duration 1 clamps up to 10.
+		$response = $method->invokeArgs( null, array( 'test_job', 1, 0 ) );
 
 		// Response should be created without errors.
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
@@ -179,6 +184,11 @@ class Test_Timeout_Loop_Safety extends WP_UnitTestCase {
 		// Headers should be set correctly.
 		$headers = $response->get_headers();
 		$this->assertEquals( 'text/event-stream; charset=UTF-8', $headers['Content-Type'] );
+
+		// The connected event reports the clamped values.
+		$body = $response->get_data();
+		$this->assertStringContainsString( '"poll_interval":1', $body );
+		$this->assertStringContainsString( '"max_duration":10', $body );
 	}
 
 	/**
@@ -224,6 +234,10 @@ class Test_Timeout_Loop_Safety extends WP_UnitTestCase {
 		$reflection = new ReflectionClass( 'WP_MCP_AI_SSE_Stream' );
 		$method     = $reflection->getMethod( 'build_sse_stream' );
 		$method->setAccessible( true );
+
+		// The default heartbeat interval is 15s; shorten it so the stream
+		// emits heartbeats within the short test duration.
+		add_filter( 'wp_mcp_ai_sse_heartbeat_interval', function () { return 1; } );
 
 		// Run for long enough to generate heartbeat.
 		$stream = $method->invokeArgs( null, array( 'test_job', 5, 1 ) );

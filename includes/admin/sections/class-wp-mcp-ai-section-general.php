@@ -122,8 +122,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 				'enable_extended_logging'               => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Extended Logging', 'mcp-ai-wpoos' ),
-					'checkbox_label' => __( 'Enable verbose debug logging with full request/response data', 'mcp-ai-wpoos' ),
-					'description'    => __( 'Logs complete API request/response payloads, context data, and detailed execution traces. Warning: This can generate very large log files and may impact site performance. Only enable for short-term debugging.', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Retain more context per log entry', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Raises the amount of context kept with each stored log entry, so larger request/response payloads and execution traces survive into the log views. Entries are still size-capped to protect the database, and assistant system prompts are always replaced with a length and hash fingerprint. Warning: this increases log size and may impact site performance. Only enable for short-term debugging.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'enable_agentic_loop_logging'           => array(

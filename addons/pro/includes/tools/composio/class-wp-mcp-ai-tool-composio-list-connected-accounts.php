@@ -1,6 +1,6 @@
 <?php
 /**
- * Tool: composio_list_connected_accounts — list authenticated user accounts.
+ * Tool: composio_list_connected_accounts — list and verify app connections.
  *
  * Pro tool (PHP 8.1+). Requires manage_options capability.
  *
@@ -22,6 +22,15 @@ class WP_MCP_AI_Tool_Composio_List_Connected_Accounts implements WP_MCP_AI_Tool_
 	use WP_MCP_AI_Tool_Envelope;
 
 	/**
+	 * Maximum accounts probed in a single listing call.
+	 *
+	 * A probe costs one tool execution per account, so a project with dozens of
+	 * connections would otherwise turn a listing into an expensive fan-out.
+	 * Accounts beyond the cap are reported with their last stored verdict.
+	 */
+	const MAX_VERIFY = 10;
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug(): string {
@@ -39,7 +48,7 @@ class WP_MCP_AI_Tool_Composio_List_Connected_Accounts implements WP_MCP_AI_Tool_
 	 * {@inheritdoc}
 	 */
 	public function get_description(): string {
-		return __( 'List the Composio connected accounts (authenticated app connections such as a user\'s Gmail or Slack) with their status. Filter by toolkit or status.', 'mcp-ai-wpoos-pro' );
+		return __( 'List the Composio connected accounts (Gmail, Slack, GitHub, ...) with *verified* health, not just Composio\'s stored status. By default each account is probed with a harmless read-only call so a revoked token is reported as broken instead of "active"; every entry carries last_validated_at, last_error, credential expiry and a needs_reconnect flag. Set verify to false for a cheap stored-status-only listing.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -55,12 +64,22 @@ class WP_MCP_AI_Tool_Composio_List_Connected_Accounts implements WP_MCP_AI_Tool_
 				),
 				'status'        => array(
 					'type'        => 'string',
-					'description' => __( 'Optional status filter: active, inactive, failed, expired.', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'active', 'inactive', 'failed', 'expired' ),
+					'description' => __( 'Optional Composio status filter.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'ACTIVE', 'INACTIVE', 'INITIALIZING', 'INITIATED', 'FAILED', 'EXPIRED', 'REVOKED' ),
+				),
+				'verify'        => array(
+					'type'        => 'boolean',
+					'description' => __( 'Probe each account against the live provider to confirm the credential still works. Default true. Verdicts newer than 15 minutes are reused instead of re-probed.', 'mcp-ai-wpoos-pro' ),
+					'default'     => true,
+				),
+				'force'         => array(
+					'type'        => 'boolean',
+					'description' => __( 'Re-probe even when a recent verdict exists. Default false.', 'mcp-ai-wpoos-pro' ),
+					'default'     => false,
 				),
 				'connection_id' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional Composio connection ID.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Optional NV oOS Composio connection ID ("conn_..."), identifying this site\'s Composio project integration. NOT a connected-account ID — do not pass a "ca_..." value here. Omit it to use the first enabled Composio connection.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 		);
@@ -83,7 +102,9 @@ class WP_MCP_AI_Tool_Composio_List_Connected_Accounts implements WP_MCP_AI_Tool_
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Gate 1 — Sanitize at entry.
 		$toolkit = isset( $arguments['toolkit'] ) ? sanitize_key( $arguments['toolkit'] ) : '';
-		$status  = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : '';
+		$status  = isset( $arguments['status'] ) ? strtoupper( sanitize_key( $arguments['status'] ) ) : '';
+		$verify  = ! isset( $arguments['verify'] ) || ! empty( $arguments['verify'] );
+		$force   = ! empty( $arguments['force'] );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) );
@@ -111,39 +132,163 @@ class WP_MCP_AI_Tool_Composio_List_Connected_Accounts implements WP_MCP_AI_Tool_
 			return $accounts;
 		}
 
-		$connection_id = isset( $connection['id'] ) ? $connection['id'] : '';
+		$connection_id    = isset( $connection['id'] ) ? (string) $connection['id'] : '';
+		$health_available = class_exists( 'WP_MCP_AI_Composio_Account_Health' );
 
-		$items = array();
+		$items   = array();
+		$probed  = 0;
+		$skipped = 0;
+		$summary = array(
+			'total'           => 0,
+			'verified'        => 0,
+			'needs_reconnect' => 0,
+			'unverified'      => 0,
+		);
+
 		foreach ( $accounts as $account ) {
 			if ( ! is_array( $account ) ) {
 				continue;
 			}
 
-			$account_id = isset( $account['id'] ) ? (string) $account['id'] : '';
+			$account_id      = isset( $account['id'] ) ? (string) $account['id'] : '';
+			$account_toolkit = isset( $account['toolkit'] ) ? (string) $account['toolkit'] : '';
+			$record          = array();
 
+			if ( $health_available && '' !== $account_id ) {
+				$record = WP_MCP_AI_Composio_Account_Health::get( $connection_id, $account_id );
+
+				$needs_probe = $verify
+					&& ( $force || empty( $record ) || WP_MCP_AI_Composio_Account_Health::is_stale( $record ) );
+
+				if ( $needs_probe && $probed >= self::MAX_VERIFY ) {
+					$needs_probe = false;
+					++$skipped;
+				}
+
+				if ( $needs_probe ) {
+					$fresh = WP_MCP_AI_Composio_Account_Health::probe(
+						$client,
+						$connection_id,
+						$account_id,
+						array(
+							// The listing already carries the authoritative
+							// fields for a filtered read, but an unfiltered
+							// listing is cached for 5 minutes — force a fresh
+							// authoritative read when the caller asked for it.
+							'account' => $force ? array() : $account,
+							'toolkit' => $account_toolkit,
+						)
+					);
+
+					if ( ! is_wp_error( $fresh ) ) {
+						$record = $fresh;
+						++$probed;
+					}
+				}
+			}
+
+			$health = $health_available
+				? WP_MCP_AI_Composio_Account_Health::present( $record )
+				: array(
+					'verified'            => false,
+					'verification_method' => 'unavailable',
+				);
+
+			++$summary['total'];
+			if ( ! empty( $health['verified'] ) ) {
+				++$summary['verified'];
+			} elseif ( ! empty( $health['needs_reconnect'] ) ) {
+				++$summary['needs_reconnect'];
+			} else {
+				++$summary['unverified'];
+			}
+
+			// Gate 2 — Escape at exit.
 			$items[] = array(
-				'id'      => esc_html( $account_id ),
-				'alias'   => isset( $account['alias'] ) ? esc_html( (string) $account['alias'] ) : '',
-				'toolkit' => isset( $account['toolkit'] ) ? esc_html( (string) $account['toolkit'] ) : '',
-				'status'  => isset( $account['status'] ) ? esc_html( (string) $account['status'] ) : '',
-				'expired' => '' !== $account_id && class_exists( 'WP_MCP_AI_Composio_Auth_Handler' )
-					? WP_MCP_AI_Composio_Auth_Handler::is_account_expired( $connection_id, $account_id )
-					: false,
+				'id'               => esc_html( $account_id ),
+				'alias'            => esc_html( isset( $account['alias'] ) ? (string) $account['alias'] : '' ),
+				'toolkit'          => esc_html( $account_toolkit ),
+				'status'           => esc_html( isset( $account['status'] ) ? (string) $account['status'] : '' ),
+				'status_reason'    => esc_html( isset( $account['status_reason'] ) ? (string) $account['status_reason'] : '' ),
+				'auth_scheme'      => esc_html( isset( $account['auth_scheme'] ) ? (string) $account['auth_scheme'] : '' ),
+				'disabled'         => ! empty( $account['disabled'] ),
+				// The Composio identity the account belongs to. Tool execution
+				// must send this value alongside the account ID.
+				'user_id'          => esc_html( isset( $account['user_id'] ) ? (string) $account['user_id'] : '' ),
+				'token_expires_at' => esc_html( isset( $account['expires_at'] ) ? (string) $account['expires_at'] : '' ),
+				'created_at'       => esc_html( isset( $account['created_at'] ) ? (string) $account['created_at'] : '' ),
+				'updated_at'       => esc_html( isset( $account['updated_at'] ) ? (string) $account['updated_at'] : '' ),
+				'health'           => $health,
+				'reconnect_url'    => ! empty( $health['needs_reconnect'] ) && $health_available
+					? esc_url( WP_MCP_AI_Composio_Account_Health::build_reconnect_url( $connection_id, $account_toolkit ) )
+					: '',
+				// Retained for backwards compatibility with callers that read
+				// the old boolean; health.needs_reconnect is authoritative.
+				'expired'          => ! empty( $health['needs_reconnect'] ),
 			);
 		}
 
-		// Gate 2 — Escape at exit.
 		return $this->format_success_response(
-			sprintf(
-				/* translators: %d: number of accounts */
-				__( 'Found %d connected accounts.', 'mcp-ai-wpoos-pro' ),
-				count( $items )
-			),
+			$this->build_message( $summary, $verify, $skipped ),
 			array(
-				'accounts' => $items,
-				'count'    => count( $items ),
+				'accounts'             => $items,
+				'count'                => count( $items ),
+				'summary'              => $summary,
+				'verification_enabled' => $verify,
+				'verifications_run'    => $probed,
+				'verifications_capped' => $skipped,
 			)
 		);
+	}
+
+	/**
+	 * Compose the human-readable summary line.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param array $summary Counters.
+	 * @param bool  $verify  Whether verification was requested.
+	 * @param int   $skipped Accounts left unprobed by the fan-out cap.
+	 * @return string
+	 */
+	private function build_message( array $summary, $verify, $skipped ) {
+		if ( 0 === $summary['total'] ) {
+			return __( 'No Composio connected accounts found. Use composio_create_connect_link to connect an app.', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( ! $verify ) {
+			return sprintf(
+				/* translators: %d: number of accounts */
+				_n( 'Found %d connected account (stored status only — verification was skipped, so an "ACTIVE" status may not reflect a revoked token).', 'Found %d connected accounts (stored status only — verification was skipped, so an "ACTIVE" status may not reflect a revoked token).', $summary['total'], 'mcp-ai-wpoos-pro' ),
+				$summary['total']
+			);
+		}
+
+		$message = sprintf(
+			/* translators: 1: total accounts, 2: verified count, 3: broken count */
+			__( 'Found %1$d connected account(s): %2$d verified working, %3$d need reconnecting.', 'mcp-ai-wpoos-pro' ),
+			$summary['total'],
+			$summary['verified'],
+			$summary['needs_reconnect']
+		);
+
+		if ( $summary['unverified'] > 0 ) {
+			$message .= ' ' . sprintf(
+				/* translators: %d: number of accounts that could not be probed */
+				_n( '%d could not be probed (no safe read-only tool for its toolkit) — treat its status as unconfirmed.', '%d could not be probed (no safe read-only tool for their toolkits) — treat their status as unconfirmed.', $summary['unverified'], 'mcp-ai-wpoos-pro' ),
+				$summary['unverified']
+			);
+		}
+
+		if ( $skipped > 0 ) {
+			$message .= ' ' . sprintf(
+				/* translators: %d: number of accounts skipped by the verification cap */
+				__( '%d account(s) exceeded the per-call verification cap and show their previous verdict.', 'mcp-ai-wpoos-pro' ),
+				$skipped
+			);
+		}
+
+		return $message;
 	}
 
 	/**

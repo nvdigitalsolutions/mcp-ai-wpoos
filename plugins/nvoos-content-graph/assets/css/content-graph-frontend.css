@@ -7,12 +7,104 @@
 
 /* ---- Embed container ---- */
 .nvoos-content-graph-embed {
+	/* Theme engine overrides these per active theme. */
+	--nvoos-cg-canvas: #f7f8fa;
+	--nvoos-cg-surface: #ffffff;
+	--nvoos-cg-border: #d7dbe4;
+	--nvoos-cg-label: #1e293b;
+	--nvoos-cg-muted: #6b7280;
+	--nvoos-cg-accent: #2271b1;
+	--nvoos-cg-edge: #9aa1b2;
+
 	width: 100%;
-	background: #f8f8fc;
-	border: 1px solid #dde;
+	background: var( --nvoos-cg-canvas );
+	border: 1px solid var( --nvoos-cg-border );
 	border-radius: 8px;
 	overflow: hidden;
 	position: relative;
+}
+
+/* ---- Legend (frontend) ---- */
+.nvoos-cg-legend-frontend {
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	z-index: 10;
+	max-width: 220px;
+	max-height: 60%;
+	overflow-y: auto;
+	background: var( --nvoos-cg-surface );
+	border: 1px solid var( --nvoos-cg-border );
+	border-radius: 6px;
+	padding: 8px 10px;
+	font-size: 11px;
+	color: var( --nvoos-cg-label );
+	box-shadow: 0 2px 10px rgba( 0, 0, 0, 0.15 );
+}
+
+.nvoos-cg-legend-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.nvoos-cg-legend-row {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	padding: 3px 4px;
+	border-radius: 4px;
+}
+
+.nvoos-cg-legend-swatch {
+	flex: 0 0 auto;
+	width: 16px;
+	height: 16px;
+	border-radius: 4px;
+	border: 1px solid var( --nvoos-cg-border );
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+}
+
+.nvoos-cg-legend-swatch img {
+	width: 11px;
+	height: 11px;
+}
+
+.nvoos-cg-legend-label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* ---- Zoom cluster (frontend) ---- */
+.nvoos-cg-zoom-cluster-frontend {
+	position: absolute;
+	right: 10px;
+	top: 10px;
+	z-index: 10;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.nvoos-cg-zoom-btn {
+	width: 28px;
+	height: 28px;
+	line-height: 1;
+	font-size: 15px;
+	background: var( --nvoos-cg-surface );
+	color: var( --nvoos-cg-label );
+	border: 1px solid var( --nvoos-cg-border );
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.nvoos-cg-zoom-btn:hover {
+	border-color: var( --nvoos-cg-accent );
+	color: var( --nvoos-cg-accent );
 }
 
 .nvoos-content-graph-loading,

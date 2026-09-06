@@ -131,9 +131,11 @@ class WP_MCP_AI_Model_Manager_Ajax {
 		}
 
 		// Validate inputs.
-		$model_id = isset( $_POST['model_id'] ) ? sanitize_text_field( wp_unslash( $_POST['model_id'] ) ) : '';
-		$config   = isset( $_POST['config'] ) ? json_decode( wp_unslash( $_POST['config'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON string decoded from raw POST; all values are sanitized recursively by wp_mcp_ai_sanitize_recursive() on the next line.
-		$config   = is_array( $config ) ? wp_mcp_ai_sanitize_recursive( $config ) : array();
+		$model_id       = isset( $_POST['model_id'] ) ? sanitize_text_field( wp_unslash( $_POST['model_id'] ) ) : '';
+		$config         = isset( $_POST['config'] ) ? json_decode( wp_unslash( $_POST['config'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON string decoded from raw POST; all values are sanitized recursively by wp_mcp_ai_sanitize_recursive() on the next line.
+		$config         = is_array( $config ) ? wp_mcp_ai_sanitize_recursive( $config ) : array();
+		$raw_overwrite  = isset( $_POST['overwrite'] ) ? sanitize_text_field( wp_unslash( $_POST['overwrite'] ) ) : '';
+		$overwrite_flag = in_array( $raw_overwrite, array( '1', 'true', 'yes', 'on' ), true );
 
 		if ( empty( $model_id ) || empty( $config ) ) {
 			wp_send_json_error( __( 'Model ID and configuration are required.', 'mcp-ai-wpoos' ) );
@@ -152,7 +154,7 @@ class WP_MCP_AI_Model_Manager_Ajax {
 			array(
 				'model_id'  => $model_id,
 				'config'    => $config,
-				'overwrite' => false, // Don't overwrite existing configs from UI.
+				'overwrite' => $overwrite_flag, // Allow the UI to update an existing model config.
 			),
 			array(
 				'user_id' => get_current_user_id(),

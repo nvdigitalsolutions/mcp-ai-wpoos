@@ -31,7 +31,11 @@ class Test_Healthcare_Interop extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		foreach ( array( 'mcp_ai_member', 'mcp_ai_med_record', 'mcp_ai_allergy', 'mcp_ai_prescription', 'mcp_ai_vaccination_record' ) as $cpt ) {
+		// mcp_ai_vaccination_record is intentionally not registered here: its
+		// 25-character name exceeds the 20-character post-type limit, and the
+		// interop tools only insert/query it (wp_insert_post and get_posts work
+		// against unregistered post types, so no test needs the registration).
+		foreach ( array( 'mcp_ai_member', 'mcp_ai_med_record', 'mcp_ai_allergy', 'mcp_ai_prescription' ) as $cpt ) {
 			if ( ! post_type_exists( $cpt ) ) {
 				register_post_type(
 					$cpt,

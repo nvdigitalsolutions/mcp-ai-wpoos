@@ -99,8 +99,11 @@ class Test_Media_Template_CPT_Admin_Notice extends WP_UnitTestCase {
 		// Initialize CPT.
 		WP_MCP_AI_Media_Template_CPT::init();
 
-		// Trigger init action to register post type.
-		do_action( 'init' );
+		// Register the post type and taxonomy directly: re-firing
+		// `do_action( 'init' )` re-registers WooCommerce integrations and fails
+		// the test with "already registered" incorrect-usage notices.
+		WP_MCP_AI_Media_Template_CPT::register_post_type();
+		WP_MCP_AI_Media_Template_CPT::register_taxonomy();
 
 		// Check if post type is registered.
 		$this->assertTrue( post_type_exists( 'mcp_ai_media_tpl' ) );
@@ -133,8 +136,10 @@ class Test_Media_Template_CPT_Admin_Notice extends WP_UnitTestCase {
 		// Initialize CPT - should succeed because Pro is active.
 		WP_MCP_AI_Media_Template_CPT::init();
 
-		// Trigger init action to register post type.
-		do_action( 'init' );
+		// Register directly (see test_cpt_registered_when_enabled for why the
+		// global `init` action is not re-fired).
+		WP_MCP_AI_Media_Template_CPT::register_post_type();
+		WP_MCP_AI_Media_Template_CPT::register_taxonomy();
 
 		// Check if post type is registered even in base mode when Pro is active.
 		$this->assertTrue( post_type_exists( 'mcp_ai_media_tpl' ) );
@@ -161,7 +166,8 @@ class Test_Media_Template_CPT_Admin_Notice extends WP_UnitTestCase {
 
 		// Initialize CPT.
 		WP_MCP_AI_Media_Template_CPT::init();
-		do_action( 'init' );
+		WP_MCP_AI_Media_Template_CPT::register_post_type();
+		WP_MCP_AI_Media_Template_CPT::register_taxonomy();
 
 		// Create a template post.
 		$post_id = self::factory()->post->create(

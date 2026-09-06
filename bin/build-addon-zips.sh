@@ -22,6 +22,10 @@
 #   build/nvoos-crocoblock-ds-v<crocoblock-ds-version>.zip
 #   build/nvoos-page-agent-v<page-agent-version>.zip
 #   build/nvoos-fleet-operator-v<fleet-operator-version>.zip
+#   build/nvoos-checkout-api-v<checkout-api-version>.zip (vendor-side,
+#     proprietary — built here so it ships with every addon release batch,
+#     but gitignored: never committed to the repository)
+#   build/nvoos-fleet-operator-v<fleet-operator-version>.zip
 #   build/nvoos-schedule-anything-platform-v<schedule-anything-platform-version>.zip
 #
 # Usage:
@@ -157,6 +161,9 @@ PAGE_AGENT_VERSION=${PAGE_AGENT_VERSION:-dev}
 FLEET_OPERATOR_VERSION=$(_read_addon_version "addons/fleet-operator/fleet-operator.php")
 FLEET_OPERATOR_VERSION=${FLEET_OPERATOR_VERSION:-dev}
 
+CHECKOUT_API_VERSION=$(_read_addon_version "addons/checkout-api/nvoos-checkout-api.php")
+CHECKOUT_API_VERSION=${CHECKOUT_API_VERSION:-dev}
+
 if ! command -v zip >/dev/null 2>&1; then
 echo "❌ Error: zip is required but not installed."
 exit 1
@@ -185,8 +192,8 @@ echo "   Pass --strict-canvas to make missing Docker a hard failure."
 SKIP_CANVAS=true
 fi
 
-if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ] || [ ! -d "addons/docs-hub" ] || [ ! -d "addons/saas-controller" ] || [ ! -d "addons/comic-reader" ] || [ ! -d "addons/chat-spa" ] || [ ! -d "addons/librechat" ] || [ ! -d "addons/cloudways-dashboard" ] || [ ! -d "addons/funiq-bridge" ] || [ ! -d "addons/schedule-anything-platform" ] || [ ! -d "addons/crocoblock-ds" ] || [ ! -d "addons/page-agent" ] || [ ! -d "addons/fleet-operator" ]; then
-echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, addons/graphify, addons/docs-hub, addons/saas-controller, addons/comic-reader, addons/chat-spa, addons/librechat, addons/cloudways-dashboard, addons/funiq-bridge, addons/schedule-anything-platform, addons/crocoblock-ds, addons/page-agent, and addons/fleet-operator must exist."
+if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ] || [ ! -d "addons/docs-hub" ] || [ ! -d "addons/saas-controller" ] || [ ! -d "addons/comic-reader" ] || [ ! -d "addons/chat-spa" ] || [ ! -d "addons/librechat" ] || [ ! -d "addons/cloudways-dashboard" ] || [ ! -d "addons/funiq-bridge" ] || [ ! -d "addons/schedule-anything-platform" ] || [ ! -d "addons/crocoblock-ds" ] || [ ! -d "addons/page-agent" ] || [ ! -d "addons/fleet-operator" ] || [ ! -d "addons/checkout-api" ]; then
+echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, addons/graphify, addons/docs-hub, addons/saas-controller, addons/comic-reader, addons/chat-spa, addons/librechat, addons/cloudways-dashboard, addons/funiq-bridge, addons/schedule-anything-platform, addons/crocoblock-ds, addons/page-agent, addons/fleet-operator, and addons/checkout-api must exist."
 exit 1
 fi
 
@@ -218,6 +225,7 @@ SAP_ZIP="${OUTPUT_DIR}/nvoos-schedule-anything-platform-v${SAP_VERSION}.zip"
 CDS_ZIP="${OUTPUT_DIR}/nvoos-crocoblock-ds-v${CDS_VERSION}.zip"
 PAGE_AGENT_ZIP="${OUTPUT_DIR}/nvoos-page-agent-v${PAGE_AGENT_VERSION}.zip"
 FLEET_OPERATOR_ZIP="${OUTPUT_DIR}/nvoos-fleet-operator-v${FLEET_OPERATOR_VERSION}.zip"
+CHECKOUT_API_ZIP="${OUTPUT_DIR}/nvoos-checkout-api-v${CHECKOUT_API_VERSION}.zip"
 
 # Remove any previously built ZIPs for these slugs (they may carry a stale version stamp).
 rm -f "$OUTPUT_DIR"/nvoos-algorave-linux-x64-v*.zip
@@ -236,14 +244,15 @@ rm -f "$OUTPUT_DIR"/nvoos-schedule-anything-platform-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-crocoblock-ds-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-page-agent-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-fleet-operator-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-checkout-api-v*.zip
 if [ "$SKIP_CANVAS" = false ]; then
 rm -f "$OUTPUT_DIR"/nvoos-canvas-linux-x64-v*.zip
 fi
 
 if [ "$SKIP_CANVAS" = true ]; then
-TOTAL_STEPS=16
-else
 TOTAL_STEPS=17
+else
+TOTAL_STEPS=18
 fi
 
 echo "=========================================="
@@ -723,6 +732,30 @@ FLEET_OPERATOR_SIZE=$(du -h "$FLEET_OPERATOR_ZIP" | cut -f1)
 echo "✅ ${FLEET_OPERATOR_ZIP} (${FLEET_OPERATOR_SIZE})"
 echo ""
 
+echo "[17/${TOTAL_STEPS}] Building nvoos-checkout-api-v${CHECKOUT_API_VERSION}.zip"
+# Vendor-side proprietary addon — pure PHP, no JS/npm build step. Built
+# alongside the distributed addons so every release batch produces a
+# deployable vendor ZIP, but the ZIP is gitignored (never committed).
+# The dedicated 'Build NV oOS Checkout API Plugin' workflow mirrors these
+# excludes and additionally runs the addon's PHPUnit suite.
+mkdir -p "${TMP_DIR}/checkout-api-stage/nvoos-checkout-api"
+rsync -a "addons/checkout-api/" "${TMP_DIR}/checkout-api-stage/nvoos-checkout-api/" \
+	--exclude '.git/' \
+	--exclude '.gitignore' \
+	--exclude '.github/' \
+	--exclude '.distignore' \
+	--exclude '.DS_Store' \
+	--exclude 'node_modules/' \
+	--exclude 'tests/' \
+	--exclude 'phpcs.xml.dist'
+(
+	cd "${TMP_DIR}/checkout-api-stage"
+	zip -r -q "${ROOT_DIR}/${CHECKOUT_API_ZIP}" nvoos-checkout-api/
+)
+CHECKOUT_API_SIZE=$(du -h "$CHECKOUT_API_ZIP" | cut -f1)
+echo "✅ ${CHECKOUT_API_ZIP} (${CHECKOUT_API_SIZE}) — vendor-side, gitignored"
+echo ""
+
 # Canvas builds a native Linux binary (canvas.node) inside a Docker
 # container. This step is best-effort:
 #   - Canvas is platform-specific and is NOT part of the WordPress.org
@@ -745,7 +778,7 @@ echo "[skipped] Canvas addon build skipped (--skip-canvas flag or Docker unavail
 echo "  ℹ️  Use the dedicated 'Build Canvas Addon' workflow to build canvas ZIPs."
 echo ""
 else
-echo "[17/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${CANVAS_VERSION}.zip"
+echo "[18/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${CANVAS_VERSION}.zip"
 
 # Defensive re-check: in long-running pipelines the docker daemon may have
 # disappeared between the start-of-script check and now. Bail out softly
@@ -842,6 +875,7 @@ echo "  - ${SAP_ZIP}"
 echo "  - ${CDS_ZIP}"
 echo "  - ${PAGE_AGENT_ZIP}"
 echo "  - ${FLEET_OPERATOR_ZIP}"
+echo "  - ${CHECKOUT_API_ZIP} (vendor-side, gitignored)"
 if [ "$SKIP_CANVAS" = false ] && [ "$canvas_build_failed" = 0 ]; then
 echo "  - ${CANVAS_ZIP}"
 elif [ "$SKIP_CANVAS" = false ] && [ "$canvas_build_failed" = 1 ]; then

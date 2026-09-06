@@ -9,7 +9,7 @@
  */
 
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-music.php';
-require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-music-service.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-mubert-music-service.php';
 
 /**
  * Tests for the music generation tool.
@@ -67,10 +67,14 @@ class WP_MCP_AI_Music_Generation_Tool_Test extends WP_UnitTestCase {
 
 	/**
 	 * Successful execution generates music and returns metadata.
+	 *
+	 * The tool now delegates to the Mubert service: a generation request to
+	 * the Mubert API returns an audio URL, which the service then downloads.
+	 * The mock must answer both requests.
 	 */
 	public function test_execute_generates_music_and_returns_metadata() {
 		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$settings['gemini_api_key'] = 'test-key';
+		$settings['mubert_api_key'] = 'test-mubert-key';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 		$user_id = self::factory()->user->create( array( 'role' => 'author' ) );
@@ -79,31 +83,27 @@ class WP_MCP_AI_Music_Generation_Tool_Test extends WP_UnitTestCase {
 		$tool             = new WP_MCP_AI_Tool_Generate_Music();
 		$captured_request = null;
 
-		// Mock the HTTP request.
+		// Mock the Mubert generation request, then the audio download request.
 		$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request ) {
-			$captured_request = array(
-				'args' => $args,
-				'url'  => $url,
-			);
+			if ( false !== strpos( $url, 'music-api.mubert.com' ) ) {
+				$captured_request = array(
+					'args' => $args,
+					'url'  => $url,
+				);
 
-			// Simulate a successful music generation response.
-			$payload = array(
-				'predictions' => array(
-					array(
-						'audio_content' => base64_encode( 'FAKE_AUDIO_DATA' ),
-						'audio_format'  => 'wav',
-						'mime_type'     => 'audio/wav',
-						'duration'      => 30.5,
-						'sample_rate'   => 48000,
-						'prompt'        => 'jazz piano trio',
-					),
-				),
-			);
+				// Simulate a successful Mubert generation response.
+				return array(
+					'body'     => wp_json_encode( array( 'url' => 'https://audio.example.com/track-123.mp3' ) ),
+					'response' => array( 'code' => 200 ),
+					'headers'  => array( 'content-type' => 'application/json' ),
+				);
+			}
 
+			// Simulate the audio download response.
 			return array(
-				'body'     => wp_json_encode( $payload ),
+				'body'     => 'FAKE_AUDIO_DATA',
 				'response' => array( 'code' => 200 ),
-				'headers'  => array( 'content-type' => 'application/json' ),
+				'headers'  => array( 'content-type' => 'audio/mpeg' ),
 			);
 		};
 
@@ -115,7 +115,6 @@ class WP_MCP_AI_Music_Generation_Tool_Test extends WP_UnitTestCase {
 				'duration'  => 30,
 				'genre'     => 'jazz',
 				'mood'      => 'relaxed',
-				'bpm'       => 100,
 				'file_name' => 'jazz-piece',
 			),
 			array( 'user_id' => $user_id )
@@ -124,7 +123,7 @@ class WP_MCP_AI_Music_Generation_Tool_Test extends WP_UnitTestCase {
 		remove_filter( 'pre_http_request', $http_stub, 10 );
 
 		$this->assertNotNull( $captured_request );
-		$this->assertStringContainsString( 'generateMusic', $captured_request['url'] );
+		$this->assertStringContainsString( 'music-api.mubert.com', $captured_request['url'] );
 
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'attachment_id', $result );
@@ -133,20 +132,20 @@ class WP_MCP_AI_Music_Generation_Tool_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'duration', $result );
 		$this->assertArrayHasKey( 'prompt', $result );
 
-		$this->assertSame( 'wav', $result['format'] );
-		$this->assertSame( 30.5, $result['duration'] );
+		$this->assertSame( 'mp3', $result['format'] );
+		$this->assertSame( 30, $result['duration'] );
 		$this->assertSame( 'jazz piano trio', $result['prompt'] );
 		$this->assertSame( 'jazz', $result['genre'] );
 		$this->assertSame( 'relaxed', $result['mood'] );
-		$this->assertSame( 100, $result['bpm'] );
 
 		$attachment_id = $result['attachment_id'];
 		$this->assertNotEmpty( $attachment_id );
 		$this->assertSame( 'attachment', get_post_type( $attachment_id ) );
-		$this->assertSame( 'audio/wav', get_post_mime_type( $attachment_id ) );
+		$this->assertSame( 'audio/mpeg', get_post_mime_type( $attachment_id ) );
 
 		$file_path = get_attached_file( $attachment_id );
 		$this->assertFileExists( $file_path );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local attachment file for assertion.
 		$this->assertSame( 'FAKE_AUDIO_DATA', file_get_contents( $file_path ) );
 
 		// Clean up.
@@ -158,7 +157,7 @@ class WP_MCP_AI_Music_Generation_Tool_Test extends WP_UnitTestCase {
 	 */
 	public function test_execute_handles_api_errors() {
 		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$settings['gemini_api_key'] = 'test-key';
+		$settings['mubert_api_key'] = 'test-mubert-key';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 		$user_id = self::factory()->user->create( array( 'role' => 'author' ) );
@@ -167,6 +166,7 @@ class WP_MCP_AI_Music_Generation_Tool_Test extends WP_UnitTestCase {
 		$tool = new WP_MCP_AI_Tool_Generate_Music();
 
 		// Mock an API error.
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- pre_http_request filter signature requires all three parameters.
 		$http_stub = function ( $preempt, $args, $url ) {
 			return array(
 				'body'     => wp_json_encode( array( 'error' => 'API quota exceeded' ) ),
@@ -185,7 +185,7 @@ class WP_MCP_AI_Music_Generation_Tool_Test extends WP_UnitTestCase {
 		remove_filter( 'pre_http_request', $http_stub, 10 );
 
 		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_api_error', $result->get_error_code() );
+		$this->assertSame( 'wp_mcp_ai_mubert_api_error', $result->get_error_code() );
 	}
 
 	/**
@@ -193,7 +193,7 @@ class WP_MCP_AI_Music_Generation_Tool_Test extends WP_UnitTestCase {
 	 */
 	public function test_execute_sanitizes_parameters() {
 		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$settings['gemini_api_key'] = 'test-key';
+		$settings['mubert_api_key'] = 'test-mubert-key';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 		$user_id = self::factory()->user->create( array( 'role' => 'author' ) );
@@ -203,24 +203,21 @@ class WP_MCP_AI_Music_Generation_Tool_Test extends WP_UnitTestCase {
 		$captured_payload = null;
 
 		$http_stub = function ( $preempt, $args, $url ) use ( &$captured_payload ) {
-			$captured_payload = json_decode( $args['body'], true );
+			if ( false !== strpos( $url, 'music-api.mubert.com' ) ) {
+				$captured_payload = json_decode( $args['body'], true );
 
-			$payload = array(
-				'predictions' => array(
-					array(
-						'audio_content' => base64_encode( 'TEST' ),
-						'audio_format'  => 'wav',
-						'mime_type'     => 'audio/wav',
-						'duration'      => 15,
-						'sample_rate'   => 48000,
-					),
-				),
-			);
+				return array(
+					'body'     => wp_json_encode( array( 'url' => 'https://audio.example.com/track-sanitized.mp3' ) ),
+					'response' => array( 'code' => 200 ),
+					'headers'  => array( 'content-type' => 'application/json' ),
+				);
+			}
 
+			// Simulate the audio download response.
 			return array(
-				'body'     => wp_json_encode( $payload ),
+				'body'     => 'TEST',
 				'response' => array( 'code' => 200 ),
-				'headers'  => array( 'content-type' => 'application/json' ),
+				'headers'  => array( 'content-type' => 'audio/mpeg' ),
 			);
 		};
 
@@ -228,10 +225,9 @@ class WP_MCP_AI_Music_Generation_Tool_Test extends WP_UnitTestCase {
 
 		$result = $tool->execute(
 			array(
-				'prompt'      => '  <script>alert("test")</script>  jazz  ',
-				'duration'    => 500, // Over max, should be capped.
-				'bpm'         => 10,  // Under min, should be capped.
-				'temperature' => 5.0, // Over max, should be capped.
+				'prompt'   => '  <script>alert("test")</script>  jazz  ',
+				'duration' => 99999, // Over max, should be capped.
+				'genre'    => '<b>jazz</b>', // Tags should be stripped.
 			),
 			array( 'user_id' => $user_id )
 		);
@@ -244,14 +240,18 @@ class WP_MCP_AI_Music_Generation_Tool_Test extends WP_UnitTestCase {
 		$this->assertNotNull( $captured_payload );
 		$this->assertIsArray( $captured_payload );
 
-		// Duration should be capped at MAX_DURATION (300).
-		$this->assertSame( 300, $captured_payload['instances'][0]['duration'] );
+		// Script tags must be stripped from the prompt.
+		$this->assertStringNotContainsString( '<script', $captured_payload['prompt'] );
+		$this->assertStringContainsString( 'jazz', $captured_payload['prompt'] );
 
-		// BPM should be capped at minimum (20).
-		$this->assertSame( 20, $captured_payload['parameters']['bpm'] );
+		// Duration should be capped at MAX_DURATION (1500).
+		$this->assertSame( 1500, $captured_payload['duration'] );
 
-		// Temperature should be capped at maximum (2.0).
-		$this->assertSame( 2.0, $captured_payload['instances'][0]['temperature'] );
+		// Genre tags should be stripped.
+		$this->assertSame( 'jazz', $captured_payload['genre'] );
+
+		// Default format should be mp3.
+		$this->assertSame( 'mp3', $captured_payload['format'] );
 
 		// Clean up.
 		if ( isset( $result['attachment_id'] ) ) {

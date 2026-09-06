@@ -16,6 +16,7 @@ final class Schema {
 	// ─── Option keys ───────────────────────────────────────────
 	public const OPTION_SETTINGS   = 'nvoos_content_graph_settings';
 	public const OPTION_DB_VERSION = 'nvoos_content_graph_db_version';
+	public const OPTION_LICENSE    = 'nvoos_content_graph_license';
 
 	// ─── Custom tables ─────────────────────────────────────────
 	public const TABLE_NODES          = 'nvoos_content_graph_nodes';
@@ -32,11 +33,24 @@ final class Schema {
 	public const ACTION_SETTINGS_SAVED          = 'nvoos_content_graph/after_settings_saved';
 	public const ACTION_MEMORY_STORED           = 'nvoos_content_graph/memory_stored';
 
-	// ─── Filter hooks ──────────────────────────────────────────
+	// ─── Filter hooks ───────────────────────────────────────────
 	public const FILTER_DEFAULT_SETTINGS   = 'nvoos_content_graph/default_settings';
 	public const FILTER_ALLOW_PRIVATE_URLS = 'nvoos_content_graph/allow_private_urls';
 	public const FILTER_ENRICH_BUDGET      = 'nvoos_content_graph/enrich_budget';
 	public const FILTER_RAG_CANDIDATES     = 'nvoos_content_graph/rag_candidates';
+	public const FILTER_PRICE_CENTS        = 'nvoos_content_graph/payments/price_cents';
+	public const FILTER_ADDON_VERSION      = 'nvoos_content_graph/payments/addon_version';
+	public const FILTER_ADDON_ZIP_URL      = 'nvoos_content_graph/payments/addon_zip_url';
+	public const FILTER_VENDOR_API_URL     = 'nvoos_content_graph/payments/vendor_api_url';
+	public const FILTER_FALLBACK_URL       = 'nvoos_content_graph/payments/fallback_url';
+
+	// ─── Visual filters (see NvoosContentGraph\Visual\Tokens) ──
+	public const FILTER_TYPE_PALETTE  = 'nvoos_content_graph/type_palette';
+	public const FILTER_TYPE_ICONS    = 'nvoos_content_graph/type_icons';
+	public const FILTER_VISUAL_CONFIG = 'nvoos_content_graph/visual_config';
+
+	// ─── Commerce ─────────────────────────────────────────────
+	public const PRODUCT_AI_ADDON = 'nvoos-content-graph-ai';
 
 	// ─── Cron hooks ────────────────────────────────────────────
 	public const CRON_BUILD  = 'nvoos_content_graph/cron_build';
@@ -92,6 +106,9 @@ final class Schema {
 			'external_tables'          => array(),
 			'disabled_external_tables' => array(),
 		);
+
+		// Visual experience settings (see NvoosContentGraph\Visual\Tokens).
+		$defaults = array_merge( $defaults, \NvoosContentGraph\Visual\Tokens::visual_defaults() );
 
 		return apply_filters( self::FILTER_DEFAULT_SETTINGS, $defaults );
 	}

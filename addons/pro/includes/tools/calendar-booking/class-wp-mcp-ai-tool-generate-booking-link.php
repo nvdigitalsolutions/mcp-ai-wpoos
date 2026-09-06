@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Generate_Booking_Link tool.
  */
-class WP_MCP_AI_Tool_Generate_Booking_Link implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Booking_Link implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface {
 	/**
 	 * Check if tool is available.
 	 *
@@ -92,6 +92,16 @@ class WP_MCP_AI_Tool_Generate_Booking_Link implements WP_MCP_AI_Tool_Interface, 
 		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write', 'phase-2.6' ); }
+
+	/**
+	 * The booking link is self-authorising: its path segment is the secret
+	 * token, so logging it would leak access to the booking flow.
+	 *
+	 * {@inheritdoc}
+	 */
+	public function get_sensitive_result_fields() {
+		return array( 'booking_url' );
+	}
 	/**
 	 * {@inheritdoc}
 	 */

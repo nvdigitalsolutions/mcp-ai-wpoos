@@ -29,6 +29,10 @@ export interface UseChatSpokeOptions {
 	allowSensitiveTools?: boolean;
 	/** Transcripts REST endpoint for manual save (v2.1.0). */
 	transcriptsEndpoint?: string;
+	/** Guest mode — anonymous visitors send the guest token header. */
+	guest?: boolean;
+	/** Server-minted guest access token (required when guest is true). */
+	guestToken?: string;
 }
 
 export interface UseChatSpokeReturn {
@@ -62,6 +66,8 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		provider,
 		allowSensitiveTools,
 		transcriptsEndpoint,
+		guest = false,
+		guestToken = '',
 	} = options;
 
 	const addToast = useUIStore( ( s ) => s.addToast );
@@ -72,13 +78,14 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 					endpoint: chatClientEndpoint,
 					nonce,
 					assistantId,
-					guest: false,
+					guest,
+					guestToken,
 					model,
 					provider,
 					sessionKey,
 					allowSensitiveTools,
 				} ),
-				[ chatClientEndpoint, nonce, assistantId, model, provider, sessionKey, allowSensitiveTools ]
+				[ chatClientEndpoint, nonce, assistantId, guest, guestToken, model, provider, sessionKey, allowSensitiveTools ]
 	);
 
 	const {

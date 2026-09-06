@@ -205,6 +205,22 @@ class WP_MCP_AI_Skill_Registry {
 			$this->skills[ $parsed['name'] ] = $parsed;
 		}
 
+		/**
+		 * Filters whether agent-evolved skills (produced by the Continual
+		 * Harness evolver) are merged into the registry index.
+		 *
+		 * Default false — evolved skills are never exposed automatically.
+		 *
+		 * @since 1.9.0
+		 *
+		 * @param bool $include_evolved Whether to include evolved skills. Default false.
+		 */
+		if ( apply_filters( 'wp_mcp_ai_skill_registry_include_evolved', false )
+			&& class_exists( 'WP_MCP_AI_Agent_Harness_Evolver' )
+			&& is_callable( array( 'WP_MCP_AI_Agent_Harness_Evolver', 'get_evolved_skills' ) ) ) {
+			$this->skills = array_merge( $this->skills, WP_MCP_AI_Agent_Harness_Evolver::get_evolved_skills() );
+		}
+
 		$this->loaded = true;
 
 		// Update the cached index for quick lookups.

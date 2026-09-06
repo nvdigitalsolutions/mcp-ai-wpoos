@@ -21,6 +21,12 @@ class WP_MCP_AI_Crawl4AI_Local_API_Test extends WP_Test_REST_TestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// The settings layer caches per request; clear it so a stale
+		// crawl4ai_base_url left by another suite never flips these
+		// endpoints from the local crawl path to the remote one.
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+
 		$this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 
 		rest_get_server();
@@ -33,6 +39,7 @@ class WP_MCP_AI_Crawl4AI_Local_API_Test extends WP_Test_REST_TestCase {
 	public function tearDown(): void {
 		remove_all_filters( 'pre_http_request' );
 		wp_set_current_user( 0 );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 
 		parent::tearDown();
 	}
@@ -56,7 +63,7 @@ class WP_MCP_AI_Crawl4AI_Local_API_Test extends WP_Test_REST_TestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/crawl4ai/crawl' );
 		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_body( wp_json_encode( array( 'url' => 'https://example.com' ) ) );
+		$request->set_body( wp_json_encode( array( 'urls' => array( 'https://example.com' ) ) ) );
 
 		$response = rest_get_server()->dispatch( $request );
 

@@ -279,6 +279,10 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/integrati
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-oauth-manager.php';
 }
 
+// Google Calendar: shared OAuth/API services, sync engine, and push receiver.
+// Self-gating - nothing is scheduled until a connection is authorised.
+require_once WP_MCP_AI_PATH . 'includes/google/google-calendar-init.php';
+
 // ---------------------------------------------------------------------------
 // Infrastructure utilities (must load early)
 // ---------------------------------------------------------------------------
@@ -1262,6 +1266,14 @@ unset(
 // ---------------------------------------------------------------------------
 require_once WP_MCP_AI_PATH . 'includes/admin/settings-dashboard-init.php';
 
+// Base orchestration dashboard — initialized unconditionally so its
+// admin_menu registration also exists in CLI/test contexts (mirrors
+// settings-dashboard-init above; the constructor only hooks admin actions).
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php';
+}
+new WP_MCP_AI_Admin_Orchestration_Dashboard();
+
 // ---------------------------------------------------------------------------
 // Admin-only includes
 // ---------------------------------------------------------------------------
@@ -1298,9 +1310,6 @@ if ( is_admin() ) {
 	}
 	WP_MCP_AI_Security_Monitor_Admin::init();
 
-	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php' ) ) {
-		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php';
-	}
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-multi-agent-dashboard.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-multi-agent-dashboard.php';
 	}
@@ -1451,6 +1460,15 @@ if ( is_admin() ) {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-key-rotation.php';
 	}
 	WP_MCP_AI_Admin_Key_Rotation::init();
+
+	// MCP Server Diagnostics page (Tools → NV oOS MCP Test). Originally wired in
+	// wp-mcp-ai.php when the class was introduced, the call was lost when the
+	// entry file was renamed during the restructure — the page, its assets and
+	// its AJAX handlers were left orphaned. Re-wire next to its siblings.
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-mcp-server-diagnostic.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-mcp-server-diagnostic.php';
+	}
+	WP_MCP_AI_MCP_Server_Diagnostic::init();
 
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-model-manager-ajax.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-model-manager-ajax.php';

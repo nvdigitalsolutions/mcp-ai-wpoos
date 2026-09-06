@@ -94,7 +94,7 @@ class Test_WP_MCP_AI_Tool_Run_Crawl4AI_Job_Validated extends WP_UnitTestCase {
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -109,7 +109,7 @@ class Test_WP_MCP_AI_Tool_Run_Crawl4AI_Job_Validated extends WP_UnitTestCase {
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -124,7 +124,7 @@ class Test_WP_MCP_AI_Tool_Run_Crawl4AI_Job_Validated extends WP_UnitTestCase {
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -140,7 +140,7 @@ class Test_WP_MCP_AI_Tool_Run_Crawl4AI_Job_Validated extends WP_UnitTestCase {
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -156,7 +156,7 @@ class Test_WP_MCP_AI_Tool_Run_Crawl4AI_Job_Validated extends WP_UnitTestCase {
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -172,7 +172,7 @@ class Test_WP_MCP_AI_Tool_Run_Crawl4AI_Job_Validated extends WP_UnitTestCase {
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -188,7 +188,7 @@ class Test_WP_MCP_AI_Tool_Run_Crawl4AI_Job_Validated extends WP_UnitTestCase {
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -204,7 +204,7 @@ class Test_WP_MCP_AI_Tool_Run_Crawl4AI_Job_Validated extends WP_UnitTestCase {
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -220,7 +220,7 @@ class Test_WP_MCP_AI_Tool_Run_Crawl4AI_Job_Validated extends WP_UnitTestCase {
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**

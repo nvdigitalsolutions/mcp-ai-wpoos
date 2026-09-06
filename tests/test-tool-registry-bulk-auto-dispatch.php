@@ -108,9 +108,13 @@ class Test_Tool_Registry_Bulk_Auto_Dispatch extends WP_UnitTestCase {
 	}
 
 	/**
-	 * When auto-async is disabled (default), no dispatch happens even for huge estimates.
+	 * When auto-async is disabled, no dispatch happens even for huge estimates.
 	 */
 	public function test_auto_async_disabled_skips_dispatch() {
+		// Phase 4 defaults auto-async ON when the Action Scheduler bridge is
+		// available; force it off to exercise the inline fallback contract.
+		add_filter( 'wp_mcp_ai_bulk_auto_async_enabled', '__return_false' );
+
 		$tool     = new Phase2_Test_Bulk_Tool( 99999 );
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->register_tool( $tool );

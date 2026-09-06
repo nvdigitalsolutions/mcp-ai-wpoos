@@ -20,7 +20,7 @@ class WP_MCP_AI_Dashboard_Diagnostic_Globals_Test extends WP_UnitTestCase {
 
 		// Capture the output.
 		ob_start();
-		$diagnostic->render_diagnostic_page();
+		$diagnostic->render_page();
 		$output = ob_get_clean();
 
 		// Verify the output mentions new settings dashboard.
@@ -40,12 +40,12 @@ class WP_MCP_AI_Dashboard_Diagnostic_Globals_Test extends WP_UnitTestCase {
 
 		$diagnostic = new WP_MCP_AI_Dashboard_Diagnostic();
 		ob_start();
-		$diagnostic->render_diagnostic_page();
+		$diagnostic->render_page();
 		$output = ob_get_clean();
 
 		// Should show as set with green checkmark.
 		$this->assertStringContainsString( '✓ Set', $output );
-		$this->assertStringContainsString( 'New settings dashboard instance', $output );
+		$this->assertStringContainsString( 'Settings dashboard instance', $output );
 
 		// Clean up.
 		unset( $GLOBALS['wp_mcp_ai_settings_dashboard'] );
@@ -60,12 +60,12 @@ class WP_MCP_AI_Dashboard_Diagnostic_Globals_Test extends WP_UnitTestCase {
 
 		$diagnostic = new WP_MCP_AI_Dashboard_Diagnostic();
 		ob_start();
-		$diagnostic->render_diagnostic_page();
+		$diagnostic->render_page();
 		$output = ob_get_clean();
 
 		// Should show as not set but with gray color and note that it's not needed.
 		$this->assertStringContainsString( 'wp_mcp_ai_admin_settings', $output );
-		$this->assertStringContainsString( 'Not needed (new dashboard mode)', $output );
+		$this->assertStringContainsString( 'Not set (correct - using new dashboard)', $output );
 	}
 
 	/**
@@ -74,7 +74,7 @@ class WP_MCP_AI_Dashboard_Diagnostic_Globals_Test extends WP_UnitTestCase {
 	public function test_diagnostic_has_notes_column() {
 		$diagnostic = new WP_MCP_AI_Dashboard_Diagnostic();
 		ob_start();
-		$diagnostic->render_diagnostic_page();
+		$diagnostic->render_page();
 		$output = ob_get_clean();
 
 		// Verify table has three columns including Notes.

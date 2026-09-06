@@ -46,15 +46,49 @@ class WP_MCP_AI_Moderate_Content_Tool_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that the tool requires authentication.
+	 * Test that the tool does not require a logged-in user.
 	 */
 	public function test_execute_requires_authentication() {
+		// Moderation is intentionally public (no user required), but the API
+		// client still needs a configured key; provide one and stub the HTTP
+		// call so the anonymous path can be exercised end to end.
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array( 'openai_api_key' => 'sk-test-not-real' )
+		);
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
+		add_filter(
+			'pre_http_request',
+			static function () {
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'modr-test',
+							'model'   => 'omni-moderation-latest',
+							'results' => array(
+								array(
+									'flagged'         => false,
+									'categories'      => array( 'harassment' => false ),
+									'category_scores' => array( 'harassment' => 0.0 ),
+								),
+							),
+						)
+					),
+				);
+			},
+			1
+		);
+
 		$tool   = new WP_MCP_AI_Tool_Moderate_Content();
 		$result = $tool->execute( array( 'input' => 'Test content' ), array() );
 
+		remove_all_filters( 'pre_http_request' );
+
 		// Without user_id, tool should be accessible (moderation can be public).
-		// But let's check with a user for now per existing pattern.
 		$this->assertNotWPError( $result, 'Tool should work without authentication for moderation checks' );
+		$this->assertSame( 'modr-test', $result['moderation_id'] );
 	}
 
 	/**

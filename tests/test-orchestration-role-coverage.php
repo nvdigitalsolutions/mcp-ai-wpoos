@@ -118,12 +118,13 @@ class Test_Orchestration_Role_Coverage extends WP_UnitTestCase {
 				'expertise' => array( 'crop cultivation', 'livestock husbandry' ),
 				'expected'  => 'executor',
 			),
-			// Other category - police officer → critic.
+			// Other category - police officer → specialist (multi-role priority:
+			// specialist outranks critic when both heuristics match).
 			array(
 				'title'     => 'Police Officer',
 				'category'  => 'other',
 				'expertise' => array( 'law enforcement', 'criminal law' ),
-				'expected'  => 'critic',
+				'expected'  => 'specialist',
 			),
 			// Other category - dispatcher → planner.
 			array(
@@ -146,12 +147,13 @@ class Test_Orchestration_Role_Coverage extends WP_UnitTestCase {
 				'expertise' => array( 'language translation', 'interpretation' ),
 				'expected'  => 'specialist',
 			),
-			// Inspector → critic.
+			// Inspector → specialist (multi-role priority: the 'interpretation'
+			// expertise keyword maps to specialist, which outranks critic).
 			array(
 				'title'     => 'Building Inspector',
 				'category'  => 'other',
 				'expertise' => array( 'building code interpretation', 'inspection' ),
-				'expected'  => 'critic',
+				'expected'  => 'specialist',
 			),
 			// Project Manager → planner.
 			array(

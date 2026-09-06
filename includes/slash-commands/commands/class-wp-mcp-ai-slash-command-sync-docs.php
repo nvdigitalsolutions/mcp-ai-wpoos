@@ -140,16 +140,26 @@ class WP_MCP_AI_Slash_Command_Sync_Docs {
 				)
 			);
 
-			// Also find posts/pages with "documentation", "guide", "tutorial" in title.
+			// Also find posts/pages with "documentation", "guide", or "tutorial"
+			// in the title/content. WP_Query treats a space-separated search string
+			// as an AND across terms, so search each keyword separately and merge
+			// the results to match any of them.
 			if ( empty( $posts ) ) {
-				$posts = get_posts(
-					array(
-						'post_type'   => $post_types,
-						'post_status' => 'publish',
-						'numberposts' => 50,
-						's'           => 'documentation guide tutorial',
-					)
-				);
+				$keyword_posts = array();
+				foreach ( array( 'documentation', 'guide', 'tutorial' ) as $keyword ) {
+					$found = get_posts(
+						array(
+							'post_type'   => $post_types,
+							'post_status' => 'publish',
+							'numberposts' => 50,
+							's'           => $keyword,
+						)
+					);
+					foreach ( $found as $found_post ) {
+						$keyword_posts[ $found_post->ID ] = $found_post;
+					}
+				}
+				$posts = array_values( $keyword_posts );
 			}
 
 			foreach ( $posts as $post ) {

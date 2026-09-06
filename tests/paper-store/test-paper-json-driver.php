@@ -82,7 +82,7 @@ class Test_WP_MCP_AI_Paper_Json_Driver extends WP_UnitTestCase {
 	 */
 	public function test_read_missing_required_fields_returns_wp_error() {
 		$file = $this->test_dir . 'incomplete.json';
-		wp_json_file_put_contents( $file, array( 'title' => 'No ID' ) );
+		file_put_contents( $file, wp_json_encode( array( 'title' => 'No ID' ) ) );
 
 		$result = $this->driver->read( $file );
 		$this->assertWPError( $result );

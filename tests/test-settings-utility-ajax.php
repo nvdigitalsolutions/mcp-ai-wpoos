@@ -191,17 +191,22 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
 		// Two possible code-paths:
 		// 1) Handler exited early after check_ajax_referer failure → assertAjaxForbidden
-		// 2) Handler streamed JSON export → $raw is a JSON object with 'version' key
+		// 2) Handler streamed JSON export → $raw is a JSON envelope
 		// 3) Handler returned wp_send_json_error → success:false response.
 		if ( is_array( $response ) && array_key_exists( 'success', $response ) ) {
 			// Got a standard wp_send_json_* response.
 			$this->assertIsArray( $response );
 		} else {
-			// Got raw file-download output — decode it.
+			// Got raw file-download output — decode it. The Export Manager
+			// envelope carries `providers`; the legacy fallback carries
+			// `settings`. Assert the shared envelope contract.
 			$decoded = json_decode( $raw, true );
 			$this->assertIsArray( $decoded, 'Export output is not valid JSON.' );
 			$this->assertArrayHasKey( 'version', $decoded );
-			$this->assertArrayHasKey( 'settings', $decoded );
+			$this->assertTrue(
+				array_key_exists( 'settings', $decoded ) || array_key_exists( 'providers', $decoded ),
+				'Export envelope should carry settings or providers.'
+			);
 		}
 	}
 
@@ -290,7 +295,9 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 			array( 'nonce' => wp_create_nonce( self::NONCE ) )
 		);
 
-		$this->assertAjaxError( $response, 'File content too large' );
+		// A file over the 5 MB upload limit trips the size gate before any
+		// content is read, so the handler reports the upload-size message.
+		$this->assertAjaxError( $response, 'File too large. Maximum size' );
 		$_FILES = array();
 		unlink( $tmp );
 	}
@@ -537,6 +544,10 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		// --- Second import (identical file — no actual change) ---
 		$tmp2 = tempnam( sys_get_temp_dir(), 'ajax_double_2_' );
 		file_put_contents( $tmp2, $json );
+
+		// Clear the harness response state between dispatches; the die handler
+		// concatenates captured output onto _last_response.
+		$this->reset_post();
 
 		$_FILES = array(
 			'settings_file' => array(

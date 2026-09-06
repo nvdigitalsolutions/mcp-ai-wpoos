@@ -166,6 +166,16 @@ class WP_MCP_AI_Job_Notifier {
 			);
 		}
 
+		// A job emitting progress is definitively running. Promote
+		// transitional statuses (e.g. 'started' set by handle_job_started)
+		// so consumers — including the Little's Law enhancement in
+		// get_job_status() — observe an accurate lifecycle state.
+		// Terminal statuses are never resurrected by late progress events.
+		$transitional_statuses = array( 'started', 'pending', 'queued' );
+		if ( isset( $status['status'] ) && in_array( $status['status'], $transitional_statuses, true ) ) {
+			$status['status'] = 'running';
+		}
+
 		// Extract context if embedded in metadata for ID tracking.
 		$context = isset( $metadata['context'] ) ? $metadata['context'] : array();
 
@@ -537,8 +547,27 @@ class WP_MCP_AI_Job_Notifier {
 	 * @return bool True on success.
 	 */
 	protected static function cache_job_status( $job_id, array $status ) {
-		$cache_key = self::CACHE_PREFIX . sanitize_key( $job_id );
+		$cache_key = self::CACHE_PREFIX . self::sanitize_cache_job_id( $job_id );
 		return set_transient( $cache_key, $status, self::CACHE_DURATION );
+	}
+
+	/**
+	 * Sanitize a job ID for use in transient cache keys.
+	 *
+	 * Job IDs produced with uniqid( '', true ) legitimately contain dots
+	 * (e.g. veo_69203b5b2388f5.11575461). sanitize_key() strips those dots,
+	 * which breaks lookup parity with the REST layer's dot-preserving
+	 * sanitize_job_id(). Mirror that sanitisation here while still blocking
+	 * path traversal and other unsafe characters.
+	 *
+	 * @param string $job_id Job identifier.
+	 * @return string Sanitized job ID suitable for a cache key.
+	 */
+	protected static function sanitize_cache_job_id( $job_id ) {
+		$job_id = preg_replace( '/[^a-zA-Z0-9_.\-]/', '', (string) $job_id );
+		$job_id = preg_replace( '/\.{2,}/', '', $job_id );
+
+		return $job_id;
 	}
 
 	/**
@@ -551,7 +580,7 @@ class WP_MCP_AI_Job_Notifier {
 	 * @return array|null Status data or null if not found.
 	 */
 	public static function get_job_status( $job_id ) {
-		$cache_key = self::CACHE_PREFIX . sanitize_key( $job_id );
+		$cache_key = self::CACHE_PREFIX . self::sanitize_cache_job_id( $job_id );
 		$status    = get_transient( $cache_key );
 
 		// If not in cache, check persistent store.
@@ -575,6 +604,52 @@ class WP_MCP_AI_Job_Notifier {
 		}
 
 		return is_array( $status ) ? $status : null;
+	}
+
+	/**
+	 * Update the cached status for a job to an explicit value.
+	 *
+	 * Used by callers that transition a job outside the standard lifecycle
+	 * handlers — for example the async executor's cancel_job() and
+	 * retry_job() paths. The cached record is what get_job_status() returns
+	 * and what the cron-status service merges into job details.
+	 *
+	 * @since 1.1.65
+	 *
+	 * @param string $job_id Job identifier.
+	 * @param string $status New status (pending, running, cancelled, completed, failed).
+	 * @return bool True on success, false when input is invalid.
+	 */
+	public static function update_status( $job_id, $status = 'running' ) {
+		$job_id = is_string( $job_id ) ? trim( $job_id ) : '';
+		$status = is_string( $status ) ? sanitize_key( $status ) : '';
+
+		$valid_statuses = array( 'pending', 'running', 'cancelled', 'completed', 'failed' );
+		if ( '' === $job_id || ! in_array( $status, $valid_statuses, true ) ) {
+			return false;
+		}
+
+		$cached = self::get_job_status( $job_id );
+		if ( ! is_array( $cached ) ) {
+			$cached = array(
+				'job_id' => $job_id,
+				'status' => $status,
+			);
+		}
+
+		$cached['status']     = $status;
+		$cached['updated_at'] = current_time( 'mysql', true );
+
+		if ( 'cancelled' === $status ) {
+			$cached['cancelled_at'] = current_time( 'mysql', true );
+		} elseif ( 'pending' === $status ) {
+			// A retry resets prior terminal-state timestamps.
+			unset( $cached['completed_at'], $cached['failed_at'], $cached['cancelled_at'] );
+		}
+
+		self::cache_job_status( $job_id, $cached );
+
+		return true;
 	}
 
 	/**

@@ -11,7 +11,7 @@
 /**
  * Test class for Remote Site Manager iCloud field persistence.
  */
-class Test_Remote_Connection_iCloud_Fields extends WP_UnitTestCase {
+class Test_Remote_Connection_ICloud_Fields extends WP_UnitTestCase {
 
 	/**
 	 * Clean up connections before each test.
@@ -85,7 +85,7 @@ class Test_Remote_Connection_iCloud_Fields extends WP_UnitTestCase {
 		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $result );
 
 		$this->assertNotNull( $saved, 'Saved connection should be retrievable' );
-		$this->assertSame( $gateway_url, $saved['url'], 'Gateway URL should persist' );
+		$this->assertSame( $gateway_url, untrailingslashit( $saved['url'] ), 'Gateway URL should persist (the manager normalises the trailing slash)' );
 	}
 
 	/**
@@ -113,7 +113,13 @@ class Test_Remote_Connection_iCloud_Fields extends WP_UnitTestCase {
 		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $result );
 
 		$this->assertNotNull( $saved, 'Saved connection should be retrievable' );
-		$this->assertSame( 'test-icloud-api-key', $saved['api_key'], 'API key should persist' );
+		// Credentials are stored encrypted; the round-trip decrypt must return
+		// the original value.
+		$this->assertSame(
+			'test-icloud-api-key',
+			WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $saved['api_key'] ),
+			'API key should persist (encrypted at rest)'
+		);
 	}
 
 	/**

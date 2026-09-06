@@ -118,6 +118,8 @@ class Test_Chat_Transcripts_User_ID_Param extends WP_UnitTestCase {
 		$request->set_param( 'user_id', 0 ); // Guest users should pass 0.
 		$request->set_param( 'per_page', 20 );
 		$request->set_header( 'X-WP-MCP-AI-Guest', $guest_token );
+		// Guest tokens are origin-bound — send the matching Origin header.
+		$request->set_header( 'Origin', home_url() );
 
 		$response = rest_get_server()->dispatch( $request );
 

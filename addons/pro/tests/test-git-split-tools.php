@@ -509,12 +509,21 @@ class Test_Git_Split_Tools extends WP_UnitTestCase {
 		// Use reflection to call the protected method.
 		$ref = new ReflectionMethod( $tool, 'format_success_response' );
 		$ref->setAccessible( true );
+
+		// Associative-array payloads are merged at the top level.
 		$result = $ref->invoke( $tool, 'All good.', array( 'foo' => 'bar' ) );
 
 		$this->assertIsArray( $result );
 		$this->assertTrue( $result['success'] );
 		$this->assertSame( 'All good.', $result['message'] );
-		$this->assertArrayHasKey( 'data', $result );
+		$this->assertSame( 'bar', $result['foo'] );
+
+		// Non-array payloads are placed under the data key.
+		$scalar_result = $ref->invoke( $tool, 'Scalar payload.', 'value' );
+
+		$this->assertIsArray( $scalar_result );
+		$this->assertTrue( $scalar_result['success'] );
+		$this->assertSame( 'value', $scalar_result['data'] );
 	}
 
 	// --------------------------------------------------------------- //

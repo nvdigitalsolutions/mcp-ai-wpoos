@@ -284,8 +284,9 @@ class WP_MCP_AI_Cache_Helper_Test extends WP_UnitTestCase {
 		// Should be cached immediately.
 		$this->assertSame( $value, WP_MCP_AI_Cache_Helper::get( $key ) );
 
-		// Wait for expiration.
-		sleep( 2 );
+		// Force the transient timeout into the past instead of sleeping, so the
+		// expiration check is deterministic under any system load.
+		update_option( '_transient_timeout_wp_mcp_ai_' . $key, time() - 5 );
 
 		// Should be expired.
 		$cached = WP_MCP_AI_Cache_Helper::get( $key );

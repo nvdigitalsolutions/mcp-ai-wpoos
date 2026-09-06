@@ -1,0 +1,124 @@
+/**
+ * Build Assistant page styles for the Content Graph AI addon.
+ *
+ * @since 1.1.0
+ */
+
+.nvoos-cg-build-assistant-page .tab-content {
+	margin-top: 1em;
+}
+
+.nvoos-cg-build-assistant-page .nvoos-cg-section {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	margin-bottom: 1.5em;
+	padding: 1.25em 1.5em;
+}
+
+.nvoos-cg-section .required {
+	color: #d63638;
+}
+
+.nvoos-cg-config-grid,
+.nvoos-cg-stats-grid {
+	display: grid;
+	gap: 1em;
+	grid-template-columns: repeat( auto-fill, minmax( 260px, 1fr ) );
+	margin-top: 1em;
+}
+
+.nvoos-cg-config-card,
+.nvoos-cg-stat-card {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 1.25em;
+}
+
+.nvoos-cg-config-card h3 {
+	margin-top: 0.5em;
+}
+
+.nvoos-cg-config-card .dashicons {
+	color: #2271b1;
+	font-size: 2rem;
+	height: 2rem;
+	width: 2rem;
+}
+
+.nvoos-cg-stat-card {
+	text-align: center;
+}
+
+.nvoos-cg-stat-number {
+	display: block;
+	font-size: 2.25rem;
+	font-weight: 600;
+}
+
+.nvoos-cg-stat-label {
+	color: #646970;
+}
+
+.nvoos-cg-prompt-intro {
+	margin-bottom: 1.5em;
+}
+
+.nvoos-cg-no-builder {
+	border-left: 4px solid #dba617;
+	background: #fcf9e8;
+	padding: 0.75em 1em;
+}
+
+/* Build with AI chat modal (mirrors the base test-modal shell). */
+.nvoos-cg-test-modal {
+	bottom: 0;
+	left: 0;
+	position: fixed;
+	right: 0;
+	top: 0;
+	z-index: 100000;
+}
+
+.nvoos-cg-test-modal__backdrop {
+	background: rgba( 0, 0, 0, 0.6 );
+	bottom: 0;
+	left: 0;
+	position: absolute;
+	right: 0;
+	top: 0;
+}
+
+.nvoos-cg-test-modal__panel {
+	background: #fff;
+	border-radius: 4px;
+	bottom: 5vh;
+	box-shadow: 0 8px 32px rgba( 0, 0, 0, 0.25 );
+	left: 50%;
+	max-width: 720px;
+	position: absolute;
+	top: 5vh;
+	transform: translateX( -50% );
+	width: 90%;
+}
+
+.nvoos-cg-test-modal__header {
+	align-items: center;
+	border-bottom: 1px solid #dcdcde;
+	display: flex;
+	justify-content: space-between;
+	padding: 0.75em 1em;
+}
+
+.nvoos-cg-test-modal__header h2 {
+	margin: 0;
+}
+
+.nvoos-cg-test-modal__body {
+	bottom: 0;
+	left: 0;
+	position: absolute;
+	right: 0;
+	top: 3.5em;
+}

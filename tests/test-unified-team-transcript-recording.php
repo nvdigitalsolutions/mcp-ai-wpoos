@@ -43,8 +43,11 @@ class Test_Unified_Team_Transcript_Recording extends WP_UnitTestCase {
 		$this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $this->admin_id );
 
+		// Warm the REST server. NOTE: do NOT re-fire init here — the bootstrap
+		// already registered the assistant CPT, and re-firing re-runs WooCommerce
+		// block/payment registrations, which fail the test with
+		// "already registered" incorrect-usage notices.
 		rest_get_server();
-		do_action( 'init' );
 	}
 
 	/**
@@ -65,8 +68,19 @@ class Test_Unified_Team_Transcript_Recording extends WP_UnitTestCase {
 	public function provide_transcript_handler() {
 		if ( ! $this->transcript_handler ) {
 			$this->transcript_handler = new class() {
+				/**
+				 * Records captured by the mock handler.
+				 *
+				 * @var array
+				 */
 				public $records = array();
 
+				/**
+				 * Capture a transcript record.
+				 *
+				 * @param array $record Transcript record payload.
+				 * @return bool Always true.
+				 */
 				public function update_item( $record ) {
 					$this->records[] = $record;
 					return true;
@@ -380,7 +394,8 @@ class Test_Unified_Team_Transcript_Recording extends WP_UnitTestCase {
 		);
 		$this->assertNull( $result, 'Recorder should return null for invalid format string assistant_id' );
 
-		// Verify no records were saved.
-		$this->assertCount( 0, $this->transcript_handler->records, 'Handler should not receive any records for invalid assistant IDs' );
+		// Verify no records were saved. The recorder rejects invalid IDs before
+		// resolving a handler, so materialize the mock before asserting on it.
+		$this->assertCount( 0, $this->provide_transcript_handler()->records, 'Handler should not receive any records for invalid assistant IDs' );
 	}
 }

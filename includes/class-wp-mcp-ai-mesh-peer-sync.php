@@ -124,9 +124,16 @@ class WP_MCP_AI_Mesh_Peer_Sync {
 			return false;
 		}
 
-		// Validate URL format.
-		$url = esc_url_raw( $peer['url'] );
-		if ( empty( $url ) || ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
+		// Require an absolute URL: validate the raw input BEFORE sanitisation
+		// so scheme-less strings (which esc_url_raw() would silently prefix
+		// with http://) are rejected instead of accepted.
+		$raw_url = trim( (string) $peer['url'] );
+		if ( false === filter_var( $raw_url, FILTER_VALIDATE_URL ) ) {
+			return false;
+		}
+
+		$url = esc_url_raw( $raw_url );
+		if ( empty( $url ) ) {
 			return false;
 		}
 

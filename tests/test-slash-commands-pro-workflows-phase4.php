@@ -15,7 +15,10 @@ class Test_Slash_Commands_Pro_Workflows_Phase4 extends WP_UnitTestCase {
 
 	public function setUp(): void {
 		parent::setUp();
-		$this->orchestrator = WP_MCP_AI_Slash_Command_Workflow_Orchestrator::get_instance();
+		// The orchestrator is constructed with a command handler; there is no
+		// singleton accessor. The handler only matters for execution paths, so
+		// a fresh instance is sufficient for the workflow-definition tests.
+		$this->orchestrator = new WP_MCP_AI_Slash_Command_Workflow_Orchestrator( new WP_MCP_AI_Slash_Command_Handler() );
 	}
 
 	public function test_orchestrator_instance() {
@@ -181,14 +184,20 @@ class Test_Slash_Commands_Pro_Workflows_Phase4 extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Helper method to get workflows.
+	 * Helper method to get the phase-4 workflow definitions.
 	 *
-	 * @return array
+	 * @return array Workflow definitions keyed by slug.
 	 */
 	protected function get_workflows() {
-		$reflection = new ReflectionClass( $this->orchestrator );
-		$method     = $reflection->getMethod( 'get_workflow_definitions' );
-		$method->setAccessible( true );
-		return $method->invoke( $this->orchestrator );
+		$workflows = array();
+
+		foreach ( array( 'comprehensive_ecommerce_suite', 'video_production_complete' ) as $slug ) {
+			$definition = $this->orchestrator->get_workflow( $slug );
+			if ( null !== $definition ) {
+				$workflows[ $slug ] = $definition;
+			}
+		}
+
+		return $workflows;
 	}
 }

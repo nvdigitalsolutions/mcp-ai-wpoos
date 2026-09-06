@@ -112,10 +112,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'handle_mini_app' ),
-				// Telegram Mini Apps require public access: this endpoint is opened
-				// by Telegram's built-in browser on behalf of end users who may not
-				// be authenticated WordPress users.
-				'permission_callback' => '__return_true',
+				'permission_callback' => '__return_true', // Public: opened by Telegram's in-app browser for users who may not be authenticated WordPress users.
 				'args'                => array(
 					'assistant' => array(
 						'required'          => false,
@@ -134,7 +131,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'handle_validate_init_data' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => '__return_true', // Public: the callback itself verifies the Telegram initData HMAC signature.
 				'args'                => array(
 					'init_data' => array(
 						'required'          => true,
@@ -505,7 +502,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'handle_mini_app' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => '__return_true', // Public: opened by Telegram's in-app browser for users who may not be authenticated WordPress users.
 				'args'                => array_merge(
 					$conn_arg,
 					array(
@@ -527,7 +524,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'handle_validate_init_data' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => '__return_true', // Public: the callback itself verifies the Telegram initData HMAC signature.
 				'args'                => array_merge(
 					$conn_arg,
 					array(

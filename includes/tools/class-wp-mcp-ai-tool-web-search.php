@@ -84,6 +84,23 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
+	 * Build a search API URL with RFC 1738-encoded query parameters.
+	 *
+	 * add_query_arg() does not URL-encode values (build_query() passes
+	 * $urlencode=false), which would leave raw spaces in the search query
+	 * sent to DuckDuckGo or Brave.
+	 *
+	 * @param string $base       Search API endpoint URL.
+	 * @param array  $query_args Query parameters.
+	 * @return string Encoded URL.
+	 */
+	protected function build_search_url( $base, array $query_args ) {
+		$query_string = http_build_query( $query_args, '', '&', PHP_QUERY_RFC1738 );
+
+		return $base . ( false === strpos( $base, '?' ) ? '?' : '&' ) . $query_string;
+	}
+
+	/**
 	 * Maximum number of results to include in LLM payload.
 	 *
 	 * Chat client receives all results, but LLM only gets this many to reduce token usage.
@@ -516,7 +533,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			$query_args['kl'] = strtolower( $options['language'] );
 		}
 
-		$request_url = add_query_arg( $query_args, 'https://api.duckduckgo.com/' );
+		$request_url = $this->build_search_url( 'https://api.duckduckgo.com/', $query_args );
 
 		$response = $this->perform_search_with_retry(
 			$request_url,
@@ -710,7 +727,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			$query_args['freshness'] = $options['freshness'];
 		}
 
-		$request_url = add_query_arg( $query_args, 'https://api.search.brave.com/res/v1/web/search' );
+		$request_url = $this->build_search_url( 'https://api.search.brave.com/res/v1/web/search', $query_args );
 
 		$response = $this->perform_search_with_retry(
 			$request_url,
@@ -1250,6 +1267,22 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				count( $results )
 			)
 		);
+	}
+
+	/**
+	 * Build a canonical tool result envelope for a provider response.
+	 *
+	 * Ensures the payload always carries a user-facing 'message' field
+	 * alongside the provider data, matching the shape returned by the
+	 * other search providers (Brave, DuckDuckGo, Tavily) via
+	 * ensure_response_message().
+	 *
+	 * @param array  $result_data      Provider response data.
+	 * @param string $fallback_message Optional fallback message.
+	 * @return array Canonical result envelope.
+	 */
+	protected function build_tool_result( $result_data, $fallback_message = '' ) {
+		return $this->ensure_response_message( $result_data, $fallback_message );
 	}
 
 	/**
@@ -1903,6 +1936,24 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			$normalized['note'] = $this->sanitize_utf8( $result['note'] );
 		}
 
+		// Preserve Perplexity's synthesized answer and citations when present.
+		// These are the primary value of the Sonar API and must survive
+		// normalization for chat clients to render them.
+		if ( isset( $result['answer'] ) ) {
+			$normalized['answer'] = $this->sanitize_utf8( $result['answer'] );
+		}
+
+		if ( isset( $result['citations'] ) && is_array( $result['citations'] ) ) {
+			$citations = array();
+			foreach ( $result['citations'] as $citation ) {
+				$citation = is_string( $citation ) ? esc_url_raw( $citation ) : '';
+				if ( '' !== $citation ) {
+					$citations[] = $citation;
+				}
+			}
+			$normalized['citations'] = $citations;
+		}
+
 		if ( isset( $result['system_message'] ) ) {
 			$normalized['system_message'] = $this->sanitize_utf8( $result['system_message'] );
 		}
@@ -1926,6 +1977,12 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'source'  => isset( $item['source'] ) ? sanitize_key( $item['source'] ) : $provider,
 				'type'    => isset( $item['type'] ) ? sanitize_key( $item['type'] ) : 'result',
 			);
+
+			// Preserve the publication date when the provider supplies it
+			// (Tavily and Brave include published_date in their responses).
+			if ( isset( $item['published_date'] ) ) {
+				$validated_item['published_date'] = sanitize_text_field( $item['published_date'] );
+			}
 
 			// Skip items with no title and no URL (invalid results).
 			if ( '' === $validated_item['title'] && '' === $validated_item['url'] ) {

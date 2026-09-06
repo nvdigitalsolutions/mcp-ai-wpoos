@@ -133,7 +133,11 @@ class WP_MCP_AI_CPT_CCT_Sync_Test extends WP_UnitTestCase {
 		);
 
 		// Set advanced features that should NOT sync to CCT.
-		update_post_meta( $post_id, '_wp_mcp_ai_memory_files', array( 123, 456 ) );
+		$file_ids = array(
+			self::factory()->attachment->create(),
+			self::factory()->attachment->create(),
+		);
+		update_post_meta( $post_id, '_wp_mcp_ai_memory_files', $file_ids );
 		update_post_meta( $post_id, '_wp_mcp_ai_vector_store_id', 'vs_abc123' );
 		update_post_meta(
 			$post_id,
@@ -155,7 +159,7 @@ class WP_MCP_AI_CPT_CCT_Sync_Test extends WP_UnitTestCase {
 
 		// But they won't be in the CCT sync (CCT only has 7 basic fields).
 		// This is just documenting the behavior.
-		$this->assertNotEmpty( $config['memory_files'] );
+		$this->assertSame( $file_ids, $config['memory_files'] );
 	}
 
 	/**

@@ -65,31 +65,59 @@ class Test_Design_Professional_Preset extends WP_UnitTestCase {
 		$presets = $method->invoke( $assistant_cpt );
 		$tools   = $presets['design_professional']['tools'];
 
-		// Image generation tools.
-		$this->assertContains( 'generate_openai_image', $tools, 'Should include OpenAI image generation' );
-		$this->assertContains( 'generate_gemini_image', $tools, 'Should include Gemini image generation' );
+		// Image generation.
+		$this->assertContains( 'cloudflareai_text_to_image', $tools, 'Should include Cloudflare AI image generation' );
+
+		// Image editing.
 		$this->assertContains( 'edit_gemini_image', $tools, 'Should include Gemini image editing' );
+		$this->assertContains( 'edit_openai_image', $tools, 'Should include OpenAI image editing' );
 
 		// Image manipulation tools.
 		$this->assertContains( 'resize_image', $tools, 'Should include image resizing' );
 		$this->assertContains( 'crop_image', $tools, 'Should include image cropping' );
 		$this->assertContains( 'rotate_image', $tools, 'Should include image rotation' );
 		$this->assertContains( 'convert_image_format', $tools, 'Should include format conversion' );
+		$this->assertContains( 'remove_background', $tools, 'Should include background removal' );
 
 		// Video tools.
 		$this->assertContains( 'generate_veo_video', $tools, 'Should include video generation' );
+		$this->assertContains( 'generate_sora_video', $tools, 'Should include Sora video generation' );
 		$this->assertContains( 'check_video_status', $tools, 'Should include video status checking' );
 		$this->assertContains( 'analyze_video', $tools, 'Should include video analysis' );
+		$this->assertContains( 'extract_video_frames', $tools, 'Should include frame extraction' );
 
 		// Vision tools.
 		$this->assertContains( 'vision_object_localization', $tools, 'Should include object localization' );
 		$this->assertContains( 'vision_product_search', $tools, 'Should include product search' );
 
-		// Data visualization.
-		$this->assertContains( 'create_chart', $tools, 'Should include chart creation' );
-
 		// Audio.
 		$this->assertContains( 'generate_music', $tools, 'Should include music generation' );
+
+		// Elementor.
+		$this->assertContains( 'get_elementor_templates', $tools, 'Should include Elementor templates' );
+		$this->assertContains( 'import_elementor_template_kit', $tools, 'Should include template kit import' );
+
+		// Architectural Design (Pro) — Phase A.
+		$this->assertContains( 'generate_floor_plan', $tools, 'Should include floor plan generation' );
+		$this->assertContains( 'generate_3d_model', $tools, 'Should include 3D model generation' );
+
+		// Architectural Design (Pro) — Phase B.
+		$this->assertContains( 'calculate_wind_loads', $tools, 'Should include wind load calculation' );
+		$this->assertContains( 'check_us_ibc_irc_compliance', $tools, 'Should include IBC/IRC compliance' );
+
+		// Architectural Design (Pro) — Phase C.
+		$this->assertContains( 'score_leed_v4_certification', $tools, 'Should include LEED scoring' );
+
+		// Architectural Design (Pro) — Phase D.
+		$this->assertContains( 'export_to_ifc', $tools, 'Should include IFC export' );
+
+		// Architectural Design (Pro) — Phase E.
+		$this->assertContains( 'search_architectural_precedents', $tools, 'Should include precedent search' );
+
+		// Harmonization Sub-Toolkit (Pro).
+		$this->assertContains( 'generate_scene_background', $tools, 'Should include scene background generation' );
+		$this->assertContains( 'harmonize_color', $tools, 'Should include color harmonization' );
+		$this->assertContains( 'harmonize_batch', $tools, 'Should include batch harmonization' );
 	}
 
 	/**
@@ -108,8 +136,76 @@ class Test_Design_Professional_Preset extends WP_UnitTestCase {
 		$presets = $method->invoke( $assistant_cpt );
 		$tools   = $presets['design_professional']['tools'];
 
+		// The preset deliberately mixes base tools with Pro-toolkit tools that
+		// are only registered when their toolkits are enabled (architectural
+		// design, image production) or when Elementor is active. Exempt those
+		// so the check still catches base-tool drift.
+		$pro_conditional_tools = array(
+			'elementor',
+			'get_elementor_templates',
+			'import_elementor_template_kit',
+			// Architectural Design (Pro) — Phases A–E.
+			'generate_floor_plan',
+			'optimize_space_layout',
+			'create_floor_plan_variations',
+			'convert_sketch_to_floor_plan',
+			'generate_3d_model',
+			'render_architectural_view',
+			'create_walkthrough_animation',
+			'generate_construction_drawings',
+			'generate_detail_drawings',
+			'export_architectural_documents',
+			'check_building_code_compliance',
+			'analyze_structural_feasibility',
+			'calculate_sustainability_metrics',
+			'generate_material_schedule',
+			'estimate_construction_cost',
+			'generate_construction_timeline',
+			'calculate_wind_loads',
+			'calculate_seismic_loads',
+			'validate_setbacks_and_far',
+			'check_uda_planning_compliance',
+			'check_jnbc_hurricane_compliance',
+			'check_us_ibc_irc_compliance',
+			'generate_compliance_dossier',
+			'analyze_natural_ventilation',
+			'analyze_daylight_and_solar_gain',
+			'simulate_thermal_comfort',
+			'score_edge_certification',
+			'score_leed_v4_certification',
+			'generate_bill_of_quantities',
+			'propose_value_engineering_options',
+			'import_dwg_floor_plan',
+			'import_ifc_model',
+			'export_to_ifc',
+			'export_to_gbxml',
+			'generate_bim_execution_plan',
+			'manage_rfi_log',
+			'manage_submittal_log',
+			'manage_architectural_precedents',
+			'search_architectural_precedents',
+			// Harmonization Sub-Toolkit (Pro - Image Production).
+			'generate_scene_background',
+			'adapt_background_for_subject',
+			'outpaint_background',
+			'refine_subject_matte',
+			'auto_clean_white_background',
+			'harmonize_color',
+			'relight_subject',
+			'generate_shadow',
+			'generate_reflection',
+			'refine_composite_boundary',
+			'analyze_scene_lighting',
+			'suggest_placement',
+			'harmonize_image_into_background',
+			'harmonize_batch',
+		);
+
 		$missing_tools = array();
 		foreach ( $tools as $tool_slug ) {
+			if ( in_array( $tool_slug, $pro_conditional_tools, true ) ) {
+				continue;
+			}
 			if ( ! $registry->is_tool_registered( $tool_slug ) ) {
 				$missing_tools[] = $tool_slug;
 			}
@@ -175,7 +271,7 @@ class Test_Design_Professional_Preset extends WP_UnitTestCase {
 		$video_multiplier = $multipliers['generate_veo_video'];
 
 		foreach ( $multipliers as $tool_slug => $multiplier ) {
-			if ( $tool_slug !== 'generate_veo_video' ) {
+			if ( 'generate_veo_video' !== $tool_slug ) {
 				$this->assertGreaterThanOrEqual(
 					$multiplier,
 					$video_multiplier,

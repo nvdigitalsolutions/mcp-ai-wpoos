@@ -31,9 +31,11 @@ class WP_MCP_AI_Site_Health_Class_Test extends WP_UnitTestCase {
 	 * Test that Site Health checks properly detect configured OpenAI provider.
 	 */
 	public function test_api_connectivity_detects_openai_provider() {
-		// Set up OpenAI API key in settings.
-		$settings                   = get_option( 'wp_mcp_ai_settings', array() );
-		$settings['openai_api_key'] = 'sk-test-key-1234567890123456789012345678901234567890';
+		// Isolate this test from provider keys left behind by earlier suites:
+		// the status must reflect only the OpenAI key configured below.
+		$settings                        = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['openai_api_key']      = 'sk-test-key-1234567890123456789012345678901234567890';
+		unset( $settings['gemini_api_key'], $settings['ollama_endpoint_url'] );
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		// Clear settings cache.
@@ -50,9 +52,10 @@ class WP_MCP_AI_Site_Health_Class_Test extends WP_UnitTestCase {
 	 * Test that Site Health checks properly detect configured Gemini provider.
 	 */
 	public function test_api_connectivity_detects_gemini_provider() {
-		// Set up Gemini API key in settings.
+		// Isolate this test from provider keys left behind by earlier suites.
 		$settings                   = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['gemini_api_key'] = 'AIzaSyTest1234567890123456789012345678';
+		unset( $settings['openai_api_key'], $settings['ollama_endpoint_url'] );
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		// Clear settings cache.
@@ -69,9 +72,10 @@ class WP_MCP_AI_Site_Health_Class_Test extends WP_UnitTestCase {
 	 * Test that Site Health checks properly detect configured Ollama provider.
 	 */
 	public function test_api_connectivity_detects_ollama_provider() {
-		// Set up Ollama URL in settings.
+		// Isolate this test from provider keys left behind by earlier suites.
 		$settings                        = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['ollama_endpoint_url'] = 'http://localhost:11434';
+		unset( $settings['openai_api_key'], $settings['gemini_api_key'] );
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		// Clear settings cache.

@@ -172,8 +172,10 @@ class Test_WP_MCP_AI_Tool_Create_Cron_Job_Validated extends WP_UnitTestCase {
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'args', $result );
 
-		// Verify event was scheduled with correct arguments.
-		$next_scheduled = wp_next_scheduled( 'test_hook_with_args', $custom_args );
+		// Verify event was scheduled with correct arguments. normalise_args()
+		// wraps associative argument sets in an outer array before scheduling
+		// (WP cron hashes positional args), so query with the wrapped form.
+		$next_scheduled = wp_next_scheduled( 'test_hook_with_args', array( $custom_args ) );
 		$this->assertNotFalse( $next_scheduled );
 	}
 

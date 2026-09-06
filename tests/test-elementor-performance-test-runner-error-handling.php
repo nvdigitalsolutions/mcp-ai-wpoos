@@ -50,11 +50,29 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 	}
 
 	/**
+	 * Build a widget instance whose Elementor data stack is populated via
+	 * the constructor (Elementor 4.x reads $data['settings'] during render;
+	 * a bare `new Widget()` leaves that null and sanitize_settings() fatals).
+	 *
+	 * @param array $settings Widget settings.
+	 * @return WP_MCP_AI_Elementor_Performance_Test_Runner_Widget
+	 */
+	private function make_widget( array $settings ) {
+		return new WP_MCP_AI_Elementor_Performance_Test_Runner_Widget(
+			array(
+				'id'       => 'wp_mcp_ai_performance_test_runner',
+				'settings' => $settings,
+			),
+			array( 'post_id' => 0 )
+		);
+	}
+
+	/**
 	 * Test that widget JavaScript contains proper error handling for object responses
 	 */
 	public function test_widget_contains_error_object_handling() {
 		// Set widget settings.
-		$this->widget->set_settings(
+		$this->widget = $this->make_widget(
 			array(
 				'title'         => 'Test Runner',
 				'description'   => 'Test Description',
@@ -65,7 +83,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 
 		// Capture the output.
 		ob_start();
-		$this->widget->render();
+		$this->widget->print_element();
 		$output = ob_get_clean();
 
 		// Verify the output contains error handling for object responses.
@@ -142,7 +160,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 	 */
 	public function test_widget_handles_string_errors() {
 		// Set widget settings.
-		$this->widget->set_settings(
+		$this->widget = $this->make_widget(
 			array(
 				'title'         => 'Test Runner',
 				'enabled_tests' => array( 'security' ),
@@ -152,7 +170,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 
 		// Capture the output.
 		ob_start();
-		$this->widget->render();
+		$this->widget->print_element();
 		$output = ob_get_clean();
 
 		// Verify the output contains handling for string errors (else case).
@@ -179,7 +197,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 		wp_set_current_user( $user_id );
 
 		// Set widget settings.
-		$this->widget->set_settings(
+		$this->widget = $this->make_widget(
 			array(
 				'title'         => 'Test Runner',
 				'enabled_tests' => array( 'security' ),
@@ -188,7 +206,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 
 		// Capture the output.
 		ob_start();
-		$this->widget->render();
+		$this->widget->print_element();
 		$output = ob_get_clean();
 
 		// Verify the output shows permission denied message.
@@ -211,7 +229,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 	 */
 	public function test_widget_renders_enabled_test_types() {
 		// Set widget settings with all test types.
-		$this->widget->set_settings(
+		$this->widget = $this->make_widget(
 			array(
 				'title'         => 'Test Runner',
 				'enabled_tests' => array( 'stress', 'security', 'speed', 'optimization' ),
@@ -221,7 +239,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 
 		// Capture the output.
 		ob_start();
-		$this->widget->render();
+		$this->widget->print_element();
 		$output = ob_get_clean();
 
 		// Verify all test types are rendered.
@@ -262,7 +280,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 	 */
 	public function test_widget_handles_output_field_in_errors() {
 		// Set widget settings.
-		$this->widget->set_settings(
+		$this->widget = $this->make_widget(
 			array(
 				'title'         => 'Test Runner',
 				'enabled_tests' => array( 'security' ),
@@ -272,7 +290,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 
 		// Capture the output.
 		ob_start();
-		$this->widget->render();
+		$this->widget->print_element();
 		$output = ob_get_clean();
 
 		// Verify the output field is checked in error responses.
@@ -310,17 +328,23 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 			'Widget should escape test output to prevent XSS'
 		);
 
-		// Verify CSS styling for test output.
+		// Verify CSS styling for test output. The widget enqueues its CSS via
+		// wp_add_inline_style() rather than echoing a <style> tag, so assert
+		// against the registered inline style.
+		$styles = wp_styles();
+		$inline = isset( $styles->registered['wp-mcp-ai-el-test-runner']->extra['after'] )
+			? implode( "\n", $styles->registered['wp-mcp-ai-el-test-runner']->extra['after'] )
+			: '';
 		$this->assertStringContainsString(
 			'.wp-mcp-ai-test-output',
-			$output,
+			$inline,
 			'Widget should have CSS styling for test output'
 		);
 
 		// Verify test output has styling for pre tag.
 		$this->assertStringContainsString(
 			'.wp-mcp-ai-test-output pre',
-			$output,
+			$inline,
 			'Widget should have CSS styling for test output pre tag'
 		);
 	}
@@ -330,7 +354,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 	 */
 	public function test_output_field_works_for_all_test_types() {
 		// Set widget settings with all 4 test types enabled.
-		$this->widget->set_settings(
+		$this->widget = $this->make_widget(
 			array(
 				'title'         => 'Test Runner',
 				'enabled_tests' => array( 'stress', 'security', 'speed', 'optimization' ),
@@ -340,7 +364,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 
 		// Capture the output.
 		ob_start();
-		$this->widget->render();
+		$this->widget->print_element();
 		$output = ob_get_clean();
 
 		// Verify all 4 test type buttons are rendered.
@@ -378,7 +402,9 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 		);
 
 		// Verify the output handling is inside the AJAX success callback (not duplicated per test type).
-		$output_handling_count = substr_count( $output, 'response.data.output' );
+		// The field is referenced twice in the shared handler (the existence check and the escaping),
+		// so count the check itself rather than every reference.
+		$output_handling_count = substr_count( $output, 'if (response.data.output)' );
 		$this->assertEquals(
 			1,
 			$output_handling_count,

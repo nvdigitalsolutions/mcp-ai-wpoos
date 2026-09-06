@@ -184,10 +184,15 @@ class Test_Shopify_Smart_Search extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that query with only stop words plus 2 real words does not qualify.
+	 * Test that a query with no meaningful tokens does not qualify.
+	 *
+	 * Decomposition eligibility counts *meaningful* tokens (stop words are
+	 * stripped in extract_search_tokens()), so a mostly-stop-word query only
+	 * qualifies when three non-stop tokens remain. Use an all-stop-word query
+	 * to exercise the "does not decompose" branch.
 	 */
 	public function test_should_not_decompose_mostly_stop_words() {
-		$this->assertFalse( $this->helper->test_should_decompose( 'the best ring and the diamond' ) );
+		$this->assertFalse( $this->helper->test_should_decompose( 'the and for with' ) );
 	}
 
 	/**

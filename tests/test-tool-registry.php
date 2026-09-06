@@ -110,12 +110,10 @@ class WP_MCP_AI_Tool_Registry_Tests extends WP_UnitTestCase {
 	 * Tear down test environment.
 	 */
 	public function tearDown(): void {
-		// Clear tools from the original instance to prevent leakage to other test files.
-		if ( $this->original_instance instanceof WP_MCP_AI_Tool_Registry ) {
-			$this->original_instance->clear_tools();
-		}
-
-		// Restore original instance.
+		// Restore the shared singleton untouched. Do NOT clear_tools() it:
+		// the registry is shared process-wide and every later suite relies on
+		// the full tool list — an empty registry silently breaks downstream
+		// tool lookups (toolkit registry, transcript mining, save_post, etc.).
 		$reflection = new ReflectionClass( 'WP_MCP_AI_Tool_Registry' );
 		$property   = $reflection->getProperty( 'instance' );
 		$property->setAccessible( true );

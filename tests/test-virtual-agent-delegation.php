@@ -25,6 +25,16 @@ class Test_Virtual_Agent_Delegation extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_Tool_Create_Agent_Team class not available.' );
 		}
 
+		// The delegation service validates the source agent as a real
+		// mcp_ai_assistant post, so create one instead of using a bogus ID.
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+				'post_title'  => 'Delegation Test Assistant',
+			)
+		);
+
 		$team_tool = new WP_MCP_AI_Tool_Create_Agent_Team();
 
 		$arguments = array(
@@ -36,7 +46,7 @@ class Test_Virtual_Agent_Delegation extends WP_UnitTestCase {
 		);
 
 		$context = array(
-			'assistant_id' => 1,
+			'assistant_id' => $assistant_id,
 			'user_id'      => 1,
 		);
 
@@ -90,6 +100,16 @@ class Test_Virtual_Agent_Delegation extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_Tool_Create_Agent_Team class not available.' );
 		}
 
+		// The delegation service validates the source agent as a real
+		// mcp_ai_assistant post, so create one instead of using a bogus ID.
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+				'post_title'  => 'Delegation Test Assistant',
+			)
+		);
+
 		$team_tool = new WP_MCP_AI_Tool_Create_Agent_Team();
 
 		$arguments = array(
@@ -101,7 +121,7 @@ class Test_Virtual_Agent_Delegation extends WP_UnitTestCase {
 		);
 
 		$context = array(
-			'assistant_id' => 1,
+			'assistant_id' => $assistant_id,
 			'user_id'      => 1,
 		);
 

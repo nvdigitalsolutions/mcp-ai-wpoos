@@ -53,14 +53,40 @@ class WP_MCP_AI_MCP_Prompts_Get_Test extends WP_UnitTestCase {
 
 		update_post_meta( $this->assistant_id, WP_MCP_AI_Assistant_CPT::META_SYSTEM_PROMPT, 'You are a helpful test assistant.' );
 
+		// WordPress appends a numeric suffix when the slug already exists, so read
+		// back the stored value rather than assuming the requested one.
+		$this->assistant_slug = get_post_field( 'post_name', $this->assistant_id );
+
 		// Set as default assistant.
 		$settings                      = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['default_assistant'] = $this->assistant_id;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
+		// Issue a credential — permissions_check_mcp() refuses bare nonce auth.
+		if ( class_exists( 'WP_MCP_AI_Credentials' ) ) {
+			$credential = WP_MCP_AI_Credentials::issue_credential( $this->assistant_id, $this->admin_id );
+			if ( is_array( $credential ) && isset( $credential['token'] ) ) {
+				$this->bearer_token = $credential['token'];
+			}
+		}
+
 		// Bootstrap REST controller.
 		$this->bootstrap_rest_controller();
 	}
+
+	/**
+	 * Bearer token for the suite assistant.
+	 *
+	 * @var string
+	 */
+	protected $bearer_token = '';
+
+	/**
+	 * Actual stored slug of the suite assistant.
+	 *
+	 * @var string
+	 */
+	protected $assistant_slug = '';
 
 	/**
 	 * Tear down test environment.
@@ -101,6 +127,9 @@ class WP_MCP_AI_MCP_Prompts_Get_Test extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		if ( ! empty( $this->bearer_token ) ) {
+			$request->set_header( 'Authorization', 'Bearer ' . $this->bearer_token );
+		}
 		$request->set_body( wp_json_encode( $message ) );
 
 		return rest_get_server()->dispatch( $request );
@@ -136,7 +165,7 @@ class WP_MCP_AI_MCP_Prompts_Get_Test extends WP_UnitTestCase {
 				'id'      => 2,
 				'method'  => 'prompts/get',
 				'params'  => array(
-					'name' => 'test-prompts-assistant',
+					'name' => $this->assistant_slug,
 				),
 			)
 		);
@@ -223,7 +252,7 @@ class WP_MCP_AI_MCP_Prompts_Get_Test extends WP_UnitTestCase {
 				'id'      => 5,
 				'method'  => 'prompts/get',
 				'params'  => array(
-					'name'      => 'test-prompts-assistant',
+					'name'      => $this->assistant_slug,
 					'arguments' => array(
 						'context' => 'Focus on WordPress development.',
 					),
@@ -256,7 +285,7 @@ class WP_MCP_AI_MCP_Prompts_Get_Test extends WP_UnitTestCase {
 					'id'      => 6,
 					'method'  => 'prompts/get',
 					'params'  => array(
-						'name' => 'test-prompts-assistant',
+						'name' => $this->assistant_slug,
 					),
 				)
 			)
@@ -350,7 +379,7 @@ class WP_MCP_AI_MCP_Prompts_Get_Test extends WP_UnitTestCase {
 				'id'      => 9,
 				'method'  => 'prompts/get',
 				'params'  => array(
-					'name' => 'test-prompts-assistant',
+					'name' => $this->assistant_slug,
 				),
 			)
 		);

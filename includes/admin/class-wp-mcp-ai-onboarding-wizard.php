@@ -1186,14 +1186,20 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				// Do not overwrite a real key if the user saw the masked placeholder.
 				if ( ! $this->is_masked_key( $api_key ) ) {
 					$settings['openai_api_key'] = $api_key;
+					// Enable OpenAI (disabled by default) when a key is provided.
+					$settings['enable_openai'] = true;
 				}
 			} elseif ( 'anthropic' === $provider ) {
 				if ( ! $this->is_masked_key( $api_key ) ) {
 					$settings['anthropic_api_key'] = $api_key;
+					// Enable Anthropic (disabled by default) when a key is provided.
+					$settings['enable_anthropic'] = true;
 				}
 			} elseif ( 'gemini' === $provider ) {
 				if ( ! $this->is_masked_key( $api_key ) ) {
 					$settings['gemini_api_key'] = $api_key;
+					// Enable Gemini (disabled by default) when a key is provided.
+					$settings['enable_gemini'] = true;
 				}
 			} elseif ( 'huggingface' === $provider ) {
 				if ( ! $this->is_masked_key( $api_key ) ) {
@@ -1625,11 +1631,11 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				return $settings['default_model'];
 			}
 
-			// Provider-specific fallbacks (April 2026).
+			// Provider-specific fallbacks (September 2026).
 			$fallbacks = array(
 				'openai'      => 'gpt-4.1',
-				'anthropic'   => 'claude-sonnet-4-6',
-				'gemini'      => 'gemini-3.5-flash',
+				'anthropic'   => 'claude-sonnet-5',
+				'gemini'      => 'gemini-3.6-flash',
 				'ollama'      => 'llama4',
 				'lm_studio'   => 'local',
 				'cloudflare'  => '@cf/meta/llama-4-scout-17b-16e-instruct',

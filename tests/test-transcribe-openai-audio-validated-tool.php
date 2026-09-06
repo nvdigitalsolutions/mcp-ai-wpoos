@@ -94,7 +94,7 @@ class Test_WP_MCP_AI_Tool_Transcribe_OpenAI_Audio_Validated extends WP_UnitTestC
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -109,7 +109,7 @@ class Test_WP_MCP_AI_Tool_Transcribe_OpenAI_Audio_Validated extends WP_UnitTestC
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -125,7 +125,7 @@ class Test_WP_MCP_AI_Tool_Transcribe_OpenAI_Audio_Validated extends WP_UnitTestC
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -141,8 +141,14 @@ class Test_WP_MCP_AI_Tool_Transcribe_OpenAI_Audio_Validated extends WP_UnitTestC
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
-		$this->assertStringContainsString( 'json', $result->get_error_message() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
+
+		// The generic message is 'Validation failed'; the per-field violation
+		// text (which names the allowed choices) travels in error_data.
+		$error_data = $result->get_error_data();
+		$this->assertIsArray( $error_data );
+		$violation = isset( $error_data['errors'][0]['message'] ) ? $error_data['errors'][0]['message'] : '';
+		$this->assertStringContainsString( 'json', $violation );
 	}
 
 	/**
@@ -158,7 +164,7 @@ class Test_WP_MCP_AI_Tool_Transcribe_OpenAI_Audio_Validated extends WP_UnitTestC
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -174,7 +180,7 @@ class Test_WP_MCP_AI_Tool_Transcribe_OpenAI_Audio_Validated extends WP_UnitTestC
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -190,7 +196,7 @@ class Test_WP_MCP_AI_Tool_Transcribe_OpenAI_Audio_Validated extends WP_UnitTestC
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -208,7 +214,7 @@ class Test_WP_MCP_AI_Tool_Transcribe_OpenAI_Audio_Validated extends WP_UnitTestC
 		// Validation should pass; result will be an error from the original tool
 		// because attachment doesn't exist, but not a validation error.
 		if ( is_wp_error( $result ) ) {
-			$this->assertNotEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+			$this->assertNotEquals( 'validation_failed', $result->get_error_code() );
 		}
 	}
 

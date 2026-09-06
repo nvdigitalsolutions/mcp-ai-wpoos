@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 namespace NvoosContentGraphAi\Admin\Sections;
 
-use NvoosContentGraph\Admin\Section;
+use NvoosContentGraphAi\Admin\Settings\AiSection;
+use NvoosContentGraphAi\Admin\Settings\SettingsValidator;
 
 /**
  * Provider Selection section for the AI Providers tab.
@@ -13,7 +14,7 @@ use NvoosContentGraph\Admin\Section;
  *
  * @since 1.0.0
  */
-class ProviderSelection extends Section {
+class ProviderSelection extends AiSection {
 
 	public function get_id(): string {
 		return 'ai_provider_selection';
@@ -66,5 +67,34 @@ class ProviderSelection extends Section {
 				'default'     => 'gpt-4o',
 			),
 		);
+	}
+
+	/**
+	 * Validate the provider-selection fields.
+	 *
+	 * A default model is required when chat is enabled; the provider
+	 * value is constrained by the select field's sanitization (parent
+	 * contract), but an enum check is kept for completeness.
+	 *
+	 * @param array<string,mixed> $input Raw submitted values.
+	 * @return array<string,mixed>|\WP_Error
+	 */
+	public function validate( array $input ) {
+		if ( ! empty( $input['ai_chat_enabled'] ) && empty( $input['ai_default_model'] ) ) {
+			return new \WP_Error(
+				'required_default_model',
+				__( 'A default model is required when AI chat is enabled.', 'nvoos-content-graph-ai' )
+			);
+		}
+
+		if ( ! empty( $input['ai_default_provider'] ) ) {
+			$allowed = array_keys( $this->get_fields()['ai_default_provider']['options'] );
+			$checked = SettingsValidator::validate_enum( $input['ai_default_provider'], $allowed );
+			if ( is_wp_error( $checked ) ) {
+				return new \WP_Error( 'invalid_provider', __( 'The selected AI provider is not available.', 'nvoos-content-graph-ai' ) );
+			}
+		}
+
+		return $input;
 	}
 }

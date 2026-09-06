@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-3.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: NV oOS Content Graph 1.0.3\n"
+"Project-Id-Version: NV oOS Content Graph 1.0.4\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/nvoos-content-graph\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-19T20:36:01+00:00\n"
+"POT-Creation-Date: 2026-09-05T13:44:12+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: nvoos-content-graph\n"
@@ -109,12 +109,12 @@ msgid "No remote sources configured yet."
 msgstr ""
 
 #: src/Admin/RemoteAdmin.php:129
-#: src/Admin/RemoteAdmin.php:562
+#: src/Admin/RemoteAdmin.php:618
 msgid "Label"
 msgstr ""
 
 #: src/Admin/RemoteAdmin.php:130
-#: src/Admin/RemoteAdmin.php:566
+#: src/Admin/RemoteAdmin.php:622
 msgid "Slug"
 msgstr ""
 
@@ -123,7 +123,7 @@ msgid "Driver"
 msgstr ""
 
 #: src/Admin/RemoteAdmin.php:132
-#: src/Admin/RemoteAdmin.php:571
+#: src/Admin/RemoteAdmin.php:627
 msgid "Enabled"
 msgstr ""
 
@@ -148,12 +148,12 @@ msgid "No"
 msgstr ""
 
 #: src/Admin/RemoteAdmin.php:150
-#: src/Admin/SettingsPage.php:218
+#: src/Admin/SettingsPage.php:222
 msgid "Never"
 msgstr ""
 
 #: src/Admin/RemoteAdmin.php:155
-#: src/Admin/RemoteAdmin.php:621
+#: src/Admin/RemoteAdmin.php:677
 msgid "Sync"
 msgstr ""
 
@@ -188,8 +188,8 @@ msgstr ""
 #: src/Admin/RemoteAdmin.php:327
 #: src/Admin/RemoteAdmin.php:374
 #: src/Admin/RemoteAdmin.php:405
-#: src/Admin/RemoteAdmin.php:527
-#: src/Admin/SettingsPage.php:449
+#: src/Admin/RemoteAdmin.php:583
+#: src/Admin/SettingsPage.php:584
 #: src/Tools/SyncRemoteSource.php:79
 msgid "Permission denied."
 msgstr ""
@@ -210,7 +210,7 @@ msgid "slug is required."
 msgstr ""
 
 #: src/Admin/RemoteAdmin.php:337
-#: src/Rest/Controller.php:739
+#: src/Rest/Controller.php:799
 msgid "Source not found or not enabled."
 msgstr ""
 
@@ -224,69 +224,302 @@ msgstr ""
 msgid "Remote enrichment is not available."
 msgstr ""
 
-#: src/Admin/RemoteAdmin.php:428
+#: src/Admin/RemoteAdmin.php:432
 msgid "The AI addon is not installed. Install the NV oOS Content Graph — AI addon to enable embeddings."
 msgstr ""
 
-#: src/Admin/RemoteAdmin.php:534
+#: src/Admin/RemoteAdmin.php:590
 msgid "Field map must be a string."
 msgstr ""
 
-#: src/Admin/RemoteAdmin.php:558
-#: src/Admin/RemoteAdmin.php:620
+#: src/Admin/RemoteAdmin.php:614
+#: src/Admin/RemoteAdmin.php:676
 msgid "Add Remote Source"
 msgstr ""
 
-#: src/Admin/RemoteAdmin.php:568
+#: src/Admin/RemoteAdmin.php:624
 msgid "Lowercase letters, numbers, hyphens and underscores only."
 msgstr ""
 
-#: src/Admin/RemoteAdmin.php:572
+#: src/Admin/RemoteAdmin.php:628
 msgid "Active"
 msgstr ""
 
-#: src/Admin/RemoteAdmin.php:578
+#: src/Admin/RemoteAdmin.php:634
 msgid "Save Source"
 msgstr ""
 
-#: src/Admin/RemoteAdmin.php:579
+#: src/Admin/RemoteAdmin.php:635
+#: src/Admin/SettingsPage.php:547
 msgid "Cancel"
 msgstr ""
 
-#: src/Admin/RemoteAdmin.php:622
+#: src/Admin/RemoteAdmin.php:678
 msgid "Connection OK"
 msgstr ""
 
-#: src/Admin/RemoteAdmin.php:623
+#: src/Admin/RemoteAdmin.php:679
 msgid "Delete this source?"
 msgstr ""
 
-#: src/Admin/RemoteAdmin.php:624
+#: src/Admin/RemoteAdmin.php:680
 msgid "Reindexing…"
 msgstr ""
 
-#: src/Admin/RemoteAdmin.php:625
+#: src/Admin/RemoteAdmin.php:681
+msgid "Reindexing failed"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:682
 msgid "Done. Stored:"
 msgstr ""
 
-#: src/Admin/RemoteAdmin.php:626
+#: src/Admin/RemoteAdmin.php:683
 msgid "Failed:"
 msgstr ""
 
-#: src/Admin/RemoteAdmin.php:627
+#: src/Admin/RemoteAdmin.php:684
 msgid "check OpenAI API key in NV oOS settings"
 msgstr ""
 
-#: src/Admin/RemoteAdmin.php:628
+#: src/Admin/RemoteAdmin.php:685
 msgid "Valid map"
 msgstr ""
 
-#: src/Admin/RemoteAdmin.php:629
+#: src/Admin/RemoteAdmin.php:686
 msgid "Invalid map"
 msgstr ""
 
-#: src/Admin/RemoteAdmin.php:630
+#: src/Admin/RemoteAdmin.php:687
 msgid "paths"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:47
+msgid "Graph Appearance"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:68
+msgid "Style the graph explorer — themes, colors, icons, shapes, legend, edge styles, and label density. Changes apply to the admin explorer and (unless overridden per embed) the front-end graph."
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:75
+msgid "— Select a preset —"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:83
+msgid "Preset"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:84
+msgid "One-click style presets. Choosing one fills the fields below — review, then Save Changes."
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:90
+msgid "Theme"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:91
+msgid "Dark, light, follow the OS setting, or follow the WordPress admin color scheme."
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:93
+msgid "Dark"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:94
+msgid "Light"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:95
+msgid "Auto (OS setting)"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:96
+msgid "WordPress Admin"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:102
+msgid "Color nodes by"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:103
+msgid "Type (default), detected community, connection degree, or a single accent color."
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:105
+#: src/Admin/Sections/AppearanceSection.php:243
+#: src/Admin/Sections/AppearanceSection.php:301
+msgid "Type"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:106
+#: src/Admin/SettingsPage.php:526
+msgid "Community"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:107
+msgid "Degree"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:108
+msgid "Monochrome"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:114
+msgid "Show icons"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:115
+msgid "Render a glyph inside each node (a redundant, colorblind-friendly encoding). Unknown types fall back to a monogram."
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:120
+msgid "Icon style"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:122
+msgid "Filled node"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:123
+msgid "Outline node"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:124
+msgid "High contrast"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:130
+msgid "Shape mode"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:131
+msgid "Encode top-level categories as node shapes (posts as rounded squares, entities as diamonds, …). Alternative to icons."
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:136
+msgid "Show legend"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:137
+msgid "Auto-generated legend panel with swatches, icons, and node counts. Click a row to filter."
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:142
+msgid "Edge style"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:143
+msgid "Plain lines, arrowheads, tapered by strength, or the fast haystack mode for dense graphs. Auto switches to density above 500 edges."
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:145
+msgid "Plain"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:146
+msgid "Arrows"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:147
+msgid "Tapered"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:148
+msgid "Density (fast)"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:149
+msgid "Auto"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:155
+msgid "Edge labels"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:157
+msgid "Off"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:158
+msgid "On hover / selection"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:159
+msgid "Always"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:165
+msgid "Node size — minimum (px)"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:172
+msgid "Node size — maximum (px)"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:179
+msgid "Label font size (px)"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:186
+msgid "Label zoom threshold"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:187
+msgid "Hide labels below this zoom level (0–1). Lower values show labels sooner; 0 always shows them."
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:194
+msgid "Animate layouts"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:195
+msgid "Animate node positions during layout. Always disabled when the OS requests reduced motion."
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:236
+msgid "Type colors & icons"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:238
+msgid "Override the color or icon for any node type. Leave a color empty to use the curated default. Colors are automatically lightness-corrected per theme to keep WCAG 2.2 contrast (≥ 3:1). Unknown types (custom post types, remote sources) get a stable algorithmic color until overridden here."
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:244
+#: src/Admin/Sections/AppearanceSection.php:302
+msgid "Color"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:245
+msgid "Icon"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:270
+msgid "default"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:294
+msgid "Contrast report"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:296
+msgid "WCAG 2.2 SC 1.4.11 requires ≥ 3:1 contrast for graphical elements against their background. Rows below the threshold are automatically corrected at render time; the suggested values show what each theme will actually display."
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:303
+msgid "Dark ratio"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:304
+msgid "Dark render"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:305
+msgid "Light ratio"
+msgstr ""
+
+#: src/Admin/Sections/AppearanceSection.php:306
+msgid "Light render"
 msgstr ""
 
 #: src/Admin/Sections/BuildSection.php:33
@@ -350,7 +583,7 @@ msgid "OpenAI API Key (optional)"
 msgstr ""
 
 #: src/Admin/Sections/BuildSection.php:99
-msgid "Used as fallback when the oOS AI provider is not available. Leave blank to use the global oOS key."
+msgid "Legacy fallback when the oOS AI provider is not available. Prefer the AI Providers tab — keys stored there are encrypted at rest. Leave blank to use the global oOS key."
 msgstr ""
 
 #: src/Admin/Sections/BuildSection.php:129
@@ -362,42 +595,49 @@ msgid "Install the NV oOS Content Graph — AI addon to enable semantic extracti
 msgstr ""
 
 #: src/Admin/Sections/BuildSection.php:136
-msgid "Learn more about NV oOS Content Graph — AI"
+#: src/Admin/Sections/EmbeddingsSection.php:128
+#: src/Admin/SettingsPage.php:545
+msgid "Get NV oOS Content Graph — AI"
 msgstr ""
 
-#: src/Admin/Sections/DisplaySection.php:29
+#: src/Admin/Sections/BuildSection.php:139
+#: src/Admin/Sections/EmbeddingsSection.php:131
+msgid "Learn more"
+msgstr ""
+
+#: src/Admin/Sections/DisplaySection.php:31
 msgid "Display"
 msgstr ""
 
-#: src/Admin/Sections/DisplaySection.php:53
+#: src/Admin/Sections/DisplaySection.php:74
 msgid "Schema.org Injection"
 msgstr ""
 
-#: src/Admin/Sections/DisplaySection.php:54
+#: src/Admin/Sections/DisplaySection.php:75
 msgid "Inject Schema.org JSON-LD (about, relatedLink) on singular views."
 msgstr ""
 
-#: src/Admin/Sections/DisplaySection.php:58
+#: src/Admin/Sections/DisplaySection.php:79
 msgid "Related Content Widget"
 msgstr ""
 
-#: src/Admin/Sections/DisplaySection.php:59
+#: src/Admin/Sections/DisplaySection.php:80
 msgid "Append a Related Content list from graph neighbors below singular post content."
 msgstr ""
 
-#: src/Admin/Sections/DisplaySection.php:63
+#: src/Admin/Sections/DisplaySection.php:84
 msgid "Graph Explorer Height"
 msgstr ""
 
-#: src/Admin/Sections/DisplaySection.php:64
+#: src/Admin/Sections/DisplaySection.php:85
 msgid "CSS height for the graph explorer (e.g. 600px, 80vh)."
 msgstr ""
 
-#: src/Admin/Sections/DisplaySection.php:69
+#: src/Admin/Sections/DisplaySection.php:90
 msgid "Max Display Nodes"
 msgstr ""
 
-#: src/Admin/Sections/DisplaySection.php:70
+#: src/Admin/Sections/DisplaySection.php:91
 msgid "Maximum nodes to render in the graph explorer. Lower values improve browser performance."
 msgstr ""
 
@@ -440,10 +680,6 @@ msgstr ""
 
 #: src/Admin/Sections/EmbeddingsSection.php:124
 msgid "NV oOS Content Graph — AI adds vector embeddings, semantic search, RAG retrieval, and agent memory to your knowledge graph. Once installed, you can generate embeddings for every node using OpenAI, Google Gemini, or any of the 13 supported providers."
-msgstr ""
-
-#: src/Admin/Sections/EmbeddingsSection.php:128
-msgid "Get NV oOS Content Graph — AI"
 msgstr ""
 
 #: src/Admin/Sections/GeneralSection.php:28
@@ -513,7 +749,7 @@ msgstr ""
 
 #: src/Admin/SettingsPage.php:101
 #: src/Admin/SettingsPage.php:102
-#: src/Admin/SettingsPage.php:227
+#: src/Admin/SettingsPage.php:231
 msgid "NV Content Graph"
 msgstr ""
 
@@ -521,100 +757,379 @@ msgstr ""
 msgid "Sources (CPT / CCT)"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:214
+#: src/Admin/SettingsPage.php:130
+msgid "Appearance"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:218
 msgid "You do not have permission to access this page."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:240
+#: src/Admin/SettingsPage.php:244
 msgid "Unknown"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:246
+#: src/Admin/SettingsPage.php:250
 msgid "Build Error"
 msgstr ""
 
 #. translators: 1: file path, 2: line number
-#: src/Admin/SettingsPage.php:258
+#: src/Admin/SettingsPage.php:262
 #, php-format
 msgid "File: %1$s, line %2$d"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:271
+#: src/Admin/SettingsPage.php:275
 msgid "Graph Overview"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:275
+#: src/Admin/SettingsPage.php:279
 msgid "Nodes"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:279
+#: src/Admin/SettingsPage.php:283
 msgid "Edges"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:283
+#: src/Admin/SettingsPage.php:287
 msgid "Communities"
 msgstr ""
 
 #. translators: 1: build status, 2: last build time
-#: src/Admin/SettingsPage.php:291
+#: src/Admin/SettingsPage.php:295
 #, php-format
 msgid "Status: %1$s — Last build: %2$s"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:299
+#: src/Admin/SettingsPage.php:303
 msgid "Rebuild Graph"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:307
+#: src/Admin/SettingsPage.php:311
 msgid "Graph Explorer"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:309
+#: src/Admin/SettingsPage.php:313
 msgid "Search nodes…"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:311
+#: src/Admin/SettingsPage.php:315
+#: src/Admin/SettingsPage.php:508
 msgid "All types"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:313
-msgid "Agent ID…"
+#: src/Admin/SettingsPage.php:317
+msgid "Color nodes by — live preview, saved in Appearance settings"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:314
-msgid "Wing…"
-msgstr ""
-
-#: src/Admin/SettingsPage.php:315
-msgid "Show only the agent / wing combination above"
-msgstr ""
-
-#: src/Admin/SettingsPage.php:316
-msgid "Apply"
+#: src/Admin/SettingsPage.php:318
+msgid "Color: Type"
 msgstr ""
 
 #: src/Admin/SettingsPage.php:319
-msgid "Clear"
+msgid "Color: Community"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:320
+msgid "Color: Degree"
 msgstr ""
 
 #: src/Admin/SettingsPage.php:321
-msgid "Fit"
-msgstr ""
-
-#: src/Admin/SettingsPage.php:322
-msgid "Relayout"
+msgid "Color: Monochrome"
 msgstr ""
 
 #: src/Admin/SettingsPage.php:323
+msgid "Layout algorithm"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:324
+msgid "Edge style — live preview, saved in Appearance settings"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:325
+msgid "Edges: Plain"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:326
+msgid "Edges: Arrows"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:327
+msgid "Edges: Tapered"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:328
+msgid "Edges: Density"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:329
+msgid "Edges: Auto"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:331
+msgid "Agent ID…"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:332
+msgid "Wing…"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:333
+msgid "Show only the agent / wing combination above"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:334
+msgid "Apply"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:337
+msgid "Clear"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:340
+#: src/Admin/SettingsPage.php:514
+#: src/Frontend/Shortcode.php:194
+msgid "Zoom out"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:342
+#: src/Admin/SettingsPage.php:513
+#: src/Frontend/Shortcode.php:195
+msgid "Zoom in"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:343
+#: src/Admin/SettingsPage.php:515
+#: src/Frontend/Shortcode.php:196
+msgid "Fit"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:345
+msgid "Export background"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:346
+msgid "BG: Theme"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:347
+msgid "BG: Transparent"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:348
+msgid "BG: White"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:350
+msgid "Export scale"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:355
+#: src/Admin/SettingsPage.php:517
 msgid "Export PNG"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:501
+#: src/Admin/SettingsPage.php:356
+msgid "Toggle fullscreen"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:363
+msgid "Knowledge graph explorer"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:509
+#: src/Frontend/Shortcode.php:191
+msgid "Loading graph…"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:510
+msgid "Failed to load graph data. Ensure the graph has been built."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:511
+msgid "Cytoscape.js did not load. Check your network connection."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:512
+msgid "Legend"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:516
+msgid "Fullscreen"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:518
+msgid "Background: theme"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:519
+msgid "Background: transparent"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:520
+msgid "Background: white"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:521
+msgid "Scale"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:522
+msgid "Color by"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:523
+msgid "Layout"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:524
+msgid "Node"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:525
+msgid "connections"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:527
+msgid "View post ↗"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:528
+msgid "Neighbors"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:529
+msgid "Graph explorer. Use arrow keys to move between nodes, Enter to open details, Escape to clear, + and - to zoom."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:546
+msgid "Pay"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:548
+msgid "Close"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:549
+msgid "Payments are processed securely by Stripe. Your card never touches this server."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:550
+msgid "Something went wrong. Please try again."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:551
+msgid "Stripe failed to load. Check your network connection and try again."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:552
+msgid "Recording your license and installing the addon…"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:553
+msgid "You’re all set!"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:554
+msgid "Reload page"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:555
+msgid "License key"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:556
+msgid "Test mode — no real payment will be taken."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:557
+msgid "Check again"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:558
+msgid "Start a new purchase"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:559
+msgid "The checkout service is unavailable right now. Redirecting you to the product page to complete your purchase…"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:560
+msgid "Verify"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:561
+msgid "Payment is still processing. Click Verify once it completes."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:562
+msgid "Payment did not complete. Status: "
+msgstr ""
+
+#: src/Admin/SettingsPage.php:563
+msgid "Download ZIP manually"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:636
 msgid "Build failed due to an unexpected error. See the error notice on the settings page for details."
+msgstr ""
+
+#: src/Commerce/Installer.php:67
+msgid "NV oOS Content Graph — AI is already installed and active."
+msgstr ""
+
+#. translators: %s: error message.
+#: src/Commerce/Installer.php:84
+#, php-format
+msgid "Could not download the addon package: %s"
+msgstr ""
+
+#. translators: %s: error message.
+#: src/Commerce/Installer.php:107
+#, php-format
+msgid "Could not install the addon package: %s"
+msgstr ""
+
+#: src/Commerce/Installer.php:121
+msgid "The WordPress upgrader could not install the addon package."
+msgstr ""
+
+#: src/Commerce/Installer.php:133
+msgid "The addon package was installed but its main plugin file is missing. The package may be incomplete."
+msgstr ""
+
+#. translators: %s: error message.
+#: src/Commerce/Installer.php:152
+#, php-format
+msgid "The addon was installed but could not be activated automatically: %s Activate it on the Plugins screen."
+msgstr ""
+
+#: src/Commerce/Installer.php:161
+msgid "NV oOS Content Graph — AI installed and activated."
+msgstr ""
+
+#. translators: %s: error message.
+#: src/Commerce/Vendor.php:94
+#, php-format
+msgid "Could not reach the checkout service: %s"
+msgstr ""
+
+#. translators: %d: HTTP status code.
+#: src/Commerce/Vendor.php:109
+#, php-format
+msgid "The checkout service returned an error (HTTP %d)."
 msgstr ""
 
 #: src/Frontend/RelatedContent.php:93
 msgid "Related Content"
+msgstr ""
+
+#: src/Frontend/Shortcode.php:192
+msgid "Cytoscape.js not loaded."
+msgstr ""
+
+#: src/Frontend/Shortcode.php:193
+msgid "Graph data unavailable."
 msgstr ""
 
 #. translators: 1: source node label, 2: target node label
@@ -623,7 +1138,7 @@ msgstr ""
 msgid "Consider linking \"%1$s\" to \"%2$s\" — they share a knowledge community."
 msgstr ""
 
-#: src/Graph/Db.php:670
+#: src/Graph/Db.php:713
 msgid "slug and driver are required."
 msgstr ""
 
@@ -667,15 +1182,15 @@ msgstr ""
 msgid "%1$s #%2$d"
 msgstr ""
 
-#: src/Plugin.php:381
+#: src/Plugin.php:384
 msgid "NV oOS Content Graph: Knowledge graph built successfully! View it in the Graph Explorer."
 msgstr ""
 
-#: src/Plugin.php:394
+#: src/Plugin.php:397
 msgid "NV oOS Content Graph: The OpenSSL PHP extension is not available. Remote-source credentials (API keys, tokens) will be stored with weak encryption. Please enable the OpenSSL extension for secure credential storage."
 msgstr ""
 
-#: src/Plugin.php:402
+#: src/Plugin.php:405
 msgid "NV oOS Content Graph is installed but the graph is not enabled. Go to Settings → NV oOS Content Graph to enable it."
 msgstr ""
 
@@ -981,7 +1496,7 @@ msgid "WooCommerce is active. Ready to ingest products."
 msgstr ""
 
 #: src/Remote/Enricher.php:168
-#: src/Rest/Controller.php:788
+#: src/Rest/Controller.php:848
 msgid "Invalid source slug."
 msgstr ""
 
@@ -1063,73 +1578,103 @@ msgstr ""
 msgid "HTTP %1$d from %2$s"
 msgstr ""
 
-#: src/Remote/HttpClient.php:258
+#: src/Remote/HttpClient.php:283
 msgid "Request failed after retries."
 msgstr ""
 
-#: src/Remote/HttpClient.php:312
+#: src/Remote/HttpClient.php:337
 msgid "Could not parse host from URL."
 msgstr ""
 
-#: src/Remote/HttpClient.php:318
+#: src/Remote/HttpClient.php:343
 msgid "SSRF guard: loopback address blocked."
 msgstr ""
 
-#: src/Remote/HttpClient.php:326
+#: src/Remote/HttpClient.php:351
 msgid "SSRF guard: could not resolve host."
 msgstr ""
 
-#: src/Remote/HttpClient.php:330
+#: src/Remote/HttpClient.php:355
 msgid "SSRF guard: private IP address blocked."
 msgstr ""
 
 #. translators: %s hostname
-#: src/Remote/HttpClient.php:387
+#: src/Remote/HttpClient.php:412
 #, php-format
 msgid "Circuit breaker open for host: %s"
 msgstr ""
 
-#: src/Rest/Controller.php:480
+#: src/Rest/CommerceController.php:102
+#: src/Rest/Controller.php:974
+msgid "Administrator access required."
+msgstr ""
+
+#: src/Rest/CommerceController.php:123
+msgid "Too many checkout attempts. Please wait a few minutes and try again."
+msgstr ""
+
+#: src/Rest/CommerceController.php:131
+#: src/Rest/CommerceController.php:201
+msgid "Checkout is not available on this build. Please contact the plugin vendor."
+msgstr ""
+
+#: src/Rest/CommerceController.php:146
+msgid "The checkout service did not return a payment session. Please try again."
+msgstr ""
+
+#: src/Rest/CommerceController.php:179
+msgid "Too many attempts. Please wait a few minutes and try again."
+msgstr ""
+
+#: src/Rest/CommerceController.php:193
+msgid "NV oOS Content Graph — AI is already licensed and active on this site."
+msgstr ""
+
+#: src/Rest/CommerceController.php:216
+msgid "The checkout service did not issue a license. Please contact support."
+msgstr ""
+
+#: src/Rest/CommerceController.php:266
+msgid "Your license is recorded — you can also download the addon ZIP manually and upload it on the Plugins screen."
+msgstr ""
+
+#: src/Rest/Controller.php:510
 #: src/Tools/GetNeighbors.php:99
 msgid "Node not found."
 msgstr ""
 
-#: src/Rest/Controller.php:611
+#: src/Rest/Controller.php:671
 #: src/Tools/ResolveExternal.php:99
 msgid "Auto-ingesting external entities requires administrator access. Use auto_ingest=false for read-only resolution."
 msgstr ""
 
-#: src/Rest/Controller.php:656
+#: src/Rest/Controller.php:716
 msgid "Unknown remote source driver."
 msgstr ""
 
-#: src/Rest/Controller.php:745
-#: src/Rest/Controller.php:756
+#: src/Rest/Controller.php:805
+#: src/Rest/Controller.php:816
 msgid "Driver not found."
 msgstr ""
 
-#: src/Rest/Controller.php:793
+#: src/Rest/Controller.php:853
 msgid "Unknown or disabled source."
 msgstr ""
 
-#: src/Rest/Controller.php:796
+#: src/Rest/Controller.php:856
 msgid "Source is not configured as a webhook receiver."
 msgstr ""
 
-#: src/Rest/Controller.php:804
+#: src/Rest/Controller.php:864
 msgid "The webhook driver is not available in this build."
 msgstr ""
 
-#: src/Rest/Controller.php:813
+#: src/Rest/Controller.php:873
 msgid "Invalid or missing signature."
 msgstr ""
 
-#: src/Rest/Controller.php:900
+#: src/Rest/Controller.php:960
 msgid "You must be logged in to access the knowledge graph."
-msgstr ""
-
-#: src/Rest/Controller.php:914
-msgid "Administrator access required."
 msgstr ""
 
 #: src/Tools/BuildGraph.php:38
@@ -1169,7 +1714,7 @@ msgid "Identify knowledge gaps in the site content: orphan nodes (no connections
 msgstr ""
 
 #. translators: %d: orphan count
-#: src/Tools/ContentGaps.php:64
+#: src/Tools/ContentGaps.php:66
 #, php-format
 msgid "%d isolated node"
 msgid_plural "%d isolated nodes"
@@ -1177,7 +1722,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: thin community count
-#: src/Tools/ContentGaps.php:71
+#: src/Tools/ContentGaps.php:73
 #, php-format
 msgid "%d under-developed community"
 msgid_plural "%d under-developed communities"
@@ -1185,12 +1730,12 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: ambiguity percentage
-#: src/Tools/ContentGaps.php:78
+#: src/Tools/ContentGaps.php:80
 #, php-format
 msgid "%s ambiguous relationships"
 msgstr ""
 
-#: src/Tools/ContentGaps.php:84
+#: src/Tools/ContentGaps.php:86
 msgid "No significant knowledge gaps found. Graph is well-connected."
 msgstr ""
 
@@ -1506,4 +2051,116 @@ msgstr ""
 #: src/Tools/SyncRemoteSource.php:100
 #, php-format
 msgid "Remote source not found: %s"
+msgstr ""
+
+#: src/Visual/Tokens.php:203
+msgid "Document"
+msgstr ""
+
+#: src/Visual/Tokens.php:204
+msgid "Page"
+msgstr ""
+
+#: src/Visual/Tokens.php:205
+msgid "Tag"
+msgstr ""
+
+#: src/Visual/Tokens.php:206
+msgid "Idea"
+msgstr ""
+
+#: src/Visual/Tokens.php:207
+msgid "Entity"
+msgstr ""
+
+#: src/Visual/Tokens.php:208
+msgid "Person"
+msgstr ""
+
+#: src/Visual/Tokens.php:209
+msgid "User"
+msgstr ""
+
+#: src/Visual/Tokens.php:210
+msgid "Place"
+msgstr ""
+
+#: src/Visual/Tokens.php:211
+msgid "Organization"
+msgstr ""
+
+#: src/Visual/Tokens.php:212
+msgid "Media"
+msgstr ""
+
+#: src/Visual/Tokens.php:213
+msgid "Memory"
+msgstr ""
+
+#: src/Visual/Tokens.php:214
+msgid "Agent"
+msgstr ""
+
+#: src/Visual/Tokens.php:215
+msgid "Grid"
+msgstr ""
+
+#: src/Visual/Tokens.php:216
+msgid "Room"
+msgstr ""
+
+#: src/Visual/Tokens.php:217
+msgid "Product"
+msgstr ""
+
+#: src/Visual/Tokens.php:218
+msgid "Event"
+msgstr ""
+
+#: src/Visual/Tokens.php:219
+msgid "Link"
+msgstr ""
+
+#: src/Visual/Tokens.php:220
+msgid "Code"
+msgstr ""
+
+#: src/Visual/Tokens.php:221
+msgid "Video"
+msgstr ""
+
+#: src/Visual/Tokens.php:222
+msgid "Audio"
+msgstr ""
+
+#: src/Visual/Tokens.php:223
+msgid "File"
+msgstr ""
+
+#: src/Visual/Tokens.php:224
+msgid "Star"
+msgstr ""
+
+#: src/Visual/Tokens.php:225
+msgid "Dot"
+msgstr ""
+
+#: src/Visual/Tokens.php:226
+msgid "External"
+msgstr ""
+
+#: src/Visual/Tokens.php:307
+msgid "Default (dark, icons)"
+msgstr ""
+
+#: src/Visual/Tokens.php:318
+msgid "High Contrast"
+msgstr ""
+
+#: src/Visual/Tokens.php:329
+msgid "Editorial (light)"
+msgstr ""
+
+#: src/Visual/Tokens.php:340
+msgid "Minimal"
 msgstr ""

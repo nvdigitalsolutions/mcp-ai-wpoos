@@ -33,6 +33,11 @@
 - **Reason:** Session-level notes. Superseded by formal documentation.
 - **Replacement:** N/A — purely historical.
 
+### 6. RALPH-WIGGUM-CCT-ORCHESTRATION.md (and the 3 related Ralph docs)
+- **Retired:** August 26, 2026 (decision recorded; implementation shipped v1.1.29, January–April 2026)
+- **Reason:** **Implemented** — not deferred. The Ralph Wiggum pattern was built as a native enhancement of the Project Management toolkit, not a standalone integration (see `RALPH-REQUIREMENTS-CLARIFICATION.md`): 13 orchestration PHP tools (`addons/pro/includes/tools/orchestration/`), four JetEngine CCT schemas (`autonomous-sessions`, `task-plans`, `execution-history`, `task-templates` via `ralph_cct_schemas` in the module registry), a browser-side autonomous orchestrator with circuit breaker, and LangChain ReAct loop support. Advertised as shipped in the PM toolkit settings pages and CHANGELOG ("Ralph Loop CCT Migration & Orchestration Tools").
+- **Replacement:** [`RALPH-WIGGUM-GAP-REMEDIATION-PLAN.md`](./RALPH-WIGGUM-GAP-REMEDIATION-PLAN.md) — production-hardening follow-up (six gaps; Draft for Review), tracked in `PROPOSALS_COMPLETION_STATUS.md`.
+
 ---
 
 ## Recommendations for Remaining Stale Proposals
@@ -47,7 +52,6 @@ The following proposals have been pending since early 2026 with no active develo
 | WebLLM Phases 4-8 | **Park as Future Research** | Phases 1-3 complete; no urgency for remaining phases |
 | Toolkit Enhancement (Extended Features) | **Park** | Core toolkit system is feature-complete |
 | Future Service Worker Support | **Defer** | No active demand |
-| Ralph Wiggum CCT Orchestration | **Decide (implement or defer)** | Active proposal but awaiting resources since early 2026 |
 
 ---
 

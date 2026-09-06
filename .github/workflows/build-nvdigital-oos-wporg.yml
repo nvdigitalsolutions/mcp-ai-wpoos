@@ -118,6 +118,28 @@ jobs:
             fi
           done
 
+      - name: Verify Pro vendor autoloader completeness
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.version.outputs.version }}"
+
+          echo "🔎 Verifying vendor autoload references in the committed Pro tree..."
+          php bin/check-vendor-autoload.php addons/pro
+
+          echo "🔎 Verifying vendor autoload references in the built Pro ZIP..."
+          PRO_ZIP="build/nvdigital-open-operator-system-oos-pro-${VERSION}.zip"
+          rm -rf /tmp/oos-vendor-verify
+          mkdir -p /tmp/oos-vendor-verify
+          unzip -q "${PRO_ZIP}" -d /tmp/oos-vendor-verify
+          php bin/check-vendor-autoload.php "/tmp/oos-vendor-verify/nvdigital-open-operator-system-oos-pro"
+
+          echo "🔎 Verifying vendor autoload references in the built Complete ZIP..."
+          COMPLETE_ZIP="build/nvdigital-open-operator-system-oos-complete-${VERSION}.zip"
+          unzip -q "${COMPLETE_ZIP}" -d /tmp/oos-vendor-verify
+          php bin/check-vendor-autoload.php "/tmp/oos-vendor-verify/nvdigital-open-operator-system-oos-complete/addons/pro"
+
+          echo "✅ Pro vendor autoloader verified complete"
+
       - name: Upload base package artifact
         uses: actions/upload-artifact@v4
         with:
@@ -236,14 +258,14 @@ jobs:
 
             git config core.autocrlf false
             git pull --rebase --autostash origin ${{ github.ref_name }} || {
-              echo "⚠️ Rebase conflict detected. Resolving with ours strategy..."
+              echo "⚠️ Rebase conflict detected. Resolving with freshly built ZIPs (theirs strategy)..."
               for variant in "" "-pro" "-complete"; do
                 ZIP="build/nvdigital-open-operator-system-oos${variant}-${VERSION}.zip"
                 SHA="build/nvdigital-open-operator-system-oos${variant}-${VERSION}.zip.sha256"
-                [ -f "$ZIP" ] && git checkout --ours "$ZIP" && git add -f "$ZIP" || true
-                [ -f "$SHA" ] && git checkout --ours "$SHA" && git add -f "$SHA" || true
+                [ -f "$ZIP" ] && git checkout --theirs "$ZIP" && git add -f "$ZIP" || true
+                [ -f "$SHA" ] && git checkout --theirs "$SHA" && git add -f "$SHA" || true
               done
-              git rebase --continue || {
+              GIT_EDITOR=true git rebase --continue || {
                 echo "❌ Failed to resolve rebase conflicts"
                 git rebase --abort
                 exit 1

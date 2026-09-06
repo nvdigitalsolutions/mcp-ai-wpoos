@@ -40,8 +40,8 @@ class Test_Shopify_Sync_Webhook_Handler extends WP_UnitTestCase {
 	 * secret = 'hush', body = '...', expected HMAC.
 	 */
 	public function test_hmac_verification_valid() {
-		$secret       = 'hush';
-		$body         = 'test body';
+		$secret        = 'hush';
+		$body          = 'test body';
 		$expected_hmac = base64_encode( hash_hmac( 'sha256', $body, $secret, true ) );
 
 		// Verify the HMAC computation matches.
@@ -144,10 +144,15 @@ class Test_Shopify_Sync_Webhook_Handler extends WP_UnitTestCase {
 		$reflection = new ReflectionMethod( 'WP_MCP_AI_Shopify_Sync_Webhook_Handler', 'route_topic' );
 		$reflection->setAccessible( true );
 
-		$result = $reflection->invoke( null, 'inventory_levels/update', array(
-			'inventory_item_id' => 'gid://shopify/InventoryItem/123',
-			'location_id'       => 'gid://shopify/Location/1',
-		), $this->connection_id );
+		$result = $reflection->invoke(
+			null,
+			'inventory_levels/update',
+			array(
+				'inventory_item_id' => 'gid://shopify/InventoryItem/123',
+				'location_id'       => 'gid://shopify/Location/1',
+			),
+			$this->connection_id
+		);
 
 		$this->assertWPError( $result );
 		$this->assertEquals( 'wp_mcp_ai_shopify_webhook_missing_available', $result->get_error_code() );
@@ -180,22 +185,30 @@ class Test_Shopify_Sync_Webhook_Handler extends WP_UnitTestCase {
 	// ------------------------------------------------------------------ //
 
 	/**
-	 * Test that register_webhooks returns WP_Error when client is missing.
+	 * Test that register_webhooks degrades gracefully when the connection is
+	 * not configured (client class loads but the graphQL call fails with
+	 * missing_url). Per-topic errors are collected in the result array.
 	 */
 	public function test_register_webhooks_no_client() {
 		$result = WP_MCP_AI_Shopify_Sync_Webhook_Handler::register_webhooks( $this->connection_id );
 
-		$this->assertWPError( $result );
-		$this->assertEquals( 'wp_mcp_ai_shopify_webhook_no_client', $result->get_error_code() );
+		$this->assertIsArray( $result );
+		$this->assertFalse( $result['all_success'] );
+		$this->assertNotEmpty( $result['results'] );
+		foreach ( $result['results'] as $topic => $entry ) {
+			$this->assertSame( 'error', $entry['status'], "Topic {$topic} should report an error status." );
+			$this->assertNotEmpty( $entry['error'], "Topic {$topic} should carry an error message." );
+		}
 	}
 
 	/**
-	 * Test that unregister_webhooks returns WP_Error when client is missing.
+	 * Test that unregister_webhooks propagates the client error when the
+	 * connection is not configured.
 	 */
 	public function test_unregister_webhooks_no_client() {
 		$result = WP_MCP_AI_Shopify_Sync_Webhook_Handler::unregister_webhooks( $this->connection_id );
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'wp_mcp_ai_shopify_webhook_no_client', $result->get_error_code() );
+		$this->assertEquals( 'wp_mcp_ai_shopify_missing_url', $result->get_error_code() );
 	}
 }

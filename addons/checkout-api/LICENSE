@@ -1,0 +1,69 @@
+NV oOS Checkout API — Proprietary License
+=========================================
+
+Copyright (c) 2026 NV Digital Solutions (https://nvdigitalsolutions.com).
+All rights reserved.
+
+1. SCOPE
+
+The Software — meaning everything in this `addons/checkout-api/` directory,
+including but not limited to the PHP source files in `includes/`, the plugin
+entry file `nvoos-checkout-api.php`, the `README.md`, this `LICENSE` file,
+and the `.distignore` file — is the **proprietary and confidential**
+intellectual property of NV Digital Solutions.
+
+Notwithstanding any license terms ("GNU General Public License v3 or
+later" or otherwise) that apply to the rest of the
+`nvdigitalsolutions/mcp-ai-wpoos` repository, the Software in this
+directory is **NOT** licensed under the GPL and is **NOT** distributed
+under the terms of the repository-root `LICENSE` file. Where this file and
+the repository-root `LICENSE` conflict for files inside
+`addons/checkout-api/`, this file controls.
+
+2. OWNERSHIP
+
+The Software, including all rights, title, and interest therein —
+copyrights, trademarks, trade secrets, patents, and other intellectual
+property rights — are and shall remain the exclusive property of
+NV Digital Solutions. No license or right is granted by implication,
+estoppel, or otherwise except as expressly stated below.
+
+3. GRANT
+
+NV Digital Solutions grants you a non-exclusive, non-transferable,
+non-sublicensable, revocable license to install and operate the Software
+solely on servers owned or controlled by NV Digital Solutions or by parties
+expressly authorized in writing by NV Digital Solutions (an "Authorized
+Operator"), and solely for the purpose of operating the NV Digital
+Solutions checkout service that sells NV oOS addons.
+
+You may NOT: copy, modify, merge, publish, distribute, sublicense, sell,
+or create derivative works of the Software; reverse engineer, decompile,
+or disassemble it; remove or alter any proprietary notices; or use it on
+behalf of or for the benefit of any third party.
+
+4. THIRD-PARTY COMPONENTS
+
+The Software relies on services and libraries provided by third parties
+(e.g. Stripe, WordPress). Those components remain governed by their own
+upstream licenses and terms. Nothing in this LICENSE relicenses or
+modifies the terms of those upstream components, and nothing in those
+upstream licenses relicenses the proprietary code of NV Digital Solutions.
+
+5. NO WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL NV DIGITAL SOLUTIONS BE LIABLE FOR ANY CLAIM, DAMAGES
+OR OTHER LIABILITY ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+6. TERMINATION
+
+The license granted herein terminates automatically if you fail to
+comply with any term of this LICENSE. Upon termination you must
+immediately cease all use of the Software and delete all copies.
+
+For licensing enquiries: licensing@nvdigitalsolutions.com
+https://nvdigitalsolutions.com/wpoos/license/checkout-api

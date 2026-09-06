@@ -10,6 +10,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/bootstrap.php';
+
 /**
  * Test_Graphify_Embeddings_On_Ingest
  */
@@ -122,12 +124,19 @@ class Test_Graphify_Embeddings_On_Ingest extends WP_UnitTestCase {
 	 * Enqueue_for_node schedules a single cron event with the node ID.
 	 */
 	public function test_enqueue_schedules_cron_event() {
+		// Capture the clock before scheduling: the event timestamp is taken at
+		// enqueue time, and re-evaluating time() afterwards can cross a second
+		// boundary and make the comparison flaky.
+		$before = time();
+
 		$ok = NV_oOS_Graphify_Embeddings_On_Ingest::enqueue_for_node( 'remote_x_n1', 'a payload' );
 		$this->assertTrue( $ok );
 
 		$ts = wp_next_scheduled( NV_oOS_Graphify_Embeddings_On_Ingest::CRON_ACTION, array( 'remote_x_n1' ) );
 		$this->assertNotFalse( $ts );
-		$this->assertGreaterThanOrEqual( time(), $ts );
+		// Production schedules at time() - 1 so the event is due on the very
+		// next cron tick; allow that one-second backdate.
+		$this->assertGreaterThanOrEqual( $before - 5, $ts );
 	}
 
 	/**

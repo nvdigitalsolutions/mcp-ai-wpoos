@@ -464,10 +464,28 @@ class WP_MCP_AI_Usage_Tracker {
 	protected static function get_fallback_pricing( $model ) {
 		$model = strtolower( sanitize_text_field( $model ) );
 
-		// Common model pricing (as of June 2026).
+		// Common model pricing (as of September 2026).
 		// See: https://openai.com/api/pricing/.
 		$pricing_map = array(
-						// OpenAI GPT-5.6 series (July 2026).
+			// OpenAI GPT-6 Astra (September 2026, limited preview).
+			'gpt-6-astra'                                  => array(
+				'input_cost_per_1k'  => 0.01,  // $10.00/1M.
+				'output_cost_per_1k' => 0.05,  // $50.00/1M.
+			),
+			// OpenAI GPT-5.6 series (July 2026). Sol/Terra/Luna tiers.
+			'gpt-5.6-sol'                                  => array(
+				'input_cost_per_1k'  => 0.004, // $4.00/1M (promo through Nov 21, 2026; standard $5).
+				'output_cost_per_1k' => 0.02,  // $20.00/1M (promo; standard $30).
+			),
+			'gpt-5.6-terra'                                => array(
+				'input_cost_per_1k'  => 0.002, // $2.00/1M.
+				'output_cost_per_1k' => 0.012, // $12.00/1M.
+			),
+			'gpt-5.6-luna'                                 => array(
+				'input_cost_per_1k'  => 0.0002, // $0.20/1M.
+				'output_cost_per_1k' => 0.0012, // $1.20/1M.
+			),
+			// OpenAI GPT-5.6 series (July 2026).
 			'gpt-5.6'                                      => array(
 				'input_cost_per_1k'  => 0.005,
 				'output_cost_per_1k' => 0.03,
@@ -604,14 +622,48 @@ class WP_MCP_AI_Usage_Tracker {
 				'output_cost_per_1k' => 0.0004,
 			),
 			'gemini-2.5-flash'                             => array(
-				'input_cost_per_1k'  => 0.000075,
-				'output_cost_per_1k' => 0.0003,
+				'input_cost_per_1k'  => 0.0003,
+				'output_cost_per_1k' => 0.0025,
 			),
 			'gemini-2.5-pro'                               => array(
 				'input_cost_per_1k'  => 0.00125,
 				'output_cost_per_1k' => 0.01,
 			),
-						// Anthropic Claude Fable 5 / Sonnet 5 (June 2026).
+			// Gemini 3.5/3.6/3.7/3.8 Flash (May-September 2026).
+			'gemini-3.5-flash'                             => array(
+				'input_cost_per_1k'  => 0.0015,  // $1.50/1M.
+				'output_cost_per_1k' => 0.009,   // $9.00/1M.
+			),
+			'gemini-3.5-flash-lite'                        => array(
+				'input_cost_per_1k'  => 0.0003,  // $0.30/1M.
+				'output_cost_per_1k' => 0.0025,  // $2.50/1M.
+			),
+			'gemini-3.6-flash'                             => array(
+				'input_cost_per_1k'  => 0.00075, // $0.75/1M intro through Dec 31, 2026.
+				'output_cost_per_1k' => 0.00375, // $3.75/1M intro through Dec 31, 2026.
+			),
+			'gemini-3.7-flash'                             => array(
+				'input_cost_per_1k'  => 0.00075, // $0.75/1M intro through Dec 31, 2026.
+				'output_cost_per_1k' => 0.00375, // $3.75/1M intro through Dec 31, 2026.
+			),
+			'gemini-3.8-flash'                             => array(
+				'input_cost_per_1k'  => 0.00075, // $0.75/1M intro through Dec 31, 2026.
+				'output_cost_per_1k' => 0.00375, // $3.75/1M intro through Dec 31, 2026.
+			),
+			// Anthropic Claude Fable 5.1 / Mythos 5 / Opus 5 (July-September 2026).
+			'claude-fable-5.1'                             => array(
+				'input_cost_per_1k'  => 0.01,
+				'output_cost_per_1k' => 0.05,
+			),
+			'claude-mythos-5'                              => array(
+				'input_cost_per_1k'  => 0.01,
+				'output_cost_per_1k' => 0.05,
+			),
+			'claude-opus-5'                                => array(
+				'input_cost_per_1k'  => 0.005,
+				'output_cost_per_1k' => 0.025,
+			),
+			// Anthropic Claude Fable 5 / Sonnet 5 (June 2026).
 			'claude-fable-5'                               => array(
 				'input_cost_per_1k'  => 0.01,
 				'output_cost_per_1k' => 0.05,
@@ -810,27 +862,19 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.0008, // $0.80 per 1M tokens = $0.0008 per 1K.
 				'output_cost_per_1k' => 0.003,   // $3.00 per 1M tokens = $0.003 per 1K.
 			),
-			// DeepSeek direct API models (as of June 2026).
+			// DeepSeek direct API models (as of September 2026).
 			// See: https://api-docs.deepseek.com/quick_start/pricing.
 			'deepseek-v4-flash'                            => array(
 				'input_cost_per_1k'  => 0.00014, // $0.14 per 1M tokens = $0.00014 per 1K (cache miss).
 				'output_cost_per_1k' => 0.00028, // $0.28 per 1M tokens = $0.00028 per 1K.
 			),
+			'deepseek-v4-flash-vision-exp'                 => array(
+				'input_cost_per_1k'  => 0.00014, // Images billed as input tokens.
+				'output_cost_per_1k' => 0.00028,
+			),
 			'deepseek-v4-pro'                              => array(
-				'input_cost_per_1k'  => 0.00174, // Promotional: $0.435/1M (regular: $1.74/1M).
-				'output_cost_per_1k' => 0.00348, // Regular: $0.87/1M (regular: $3.48/1M).
-			),
-			'deepseek-chat'                                => array(
-				'input_cost_per_1k'  => 0.00027, // $0.27 per 1M tokens (deprecated, use v4-flash).
-				'output_cost_per_1k' => 0.0011,  // $1.10 per 1M tokens.
-			),
-			'deepseek-reasoner'                            => array(
-				'input_cost_per_1k'  => 0.00055, // $0.55 per 1M tokens (deprecated, use v4-flash thinking).
-				'output_cost_per_1k' => 0.00219, // $2.19 per 1M tokens.
-			),
-			'deepseek-coder'                               => array(
-				'input_cost_per_1k'  => 0.00027, // $0.27 per 1M tokens (deprecated, use v4-flash/v4-pro).
-				'output_cost_per_1k' => 0.0011,  // $1.10 per 1M tokens.
+				'input_cost_per_1k'  => 0.000435, // $0.435/1M (cache miss; official pricing).
+				'output_cost_per_1k' => 0.00087,  // $0.87/1M (official pricing).
 			),
 			'zai-org/glm-4'                                => array(
 				'input_cost_per_1k'  => 0.0006, // $0.60 per 1M tokens = $0.0006 per 1K.
@@ -857,8 +901,16 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.0006, // $0.60 per 1M tokens = $0.0006 per 1K.
 				'output_cost_per_1k' => 0.0025, // $2.50 per 1M tokens = $0.0025 per 1K.
 			),
-			// Kimi (Moonshot AI) direct models (as of June 2026).
+			// Kimi (Moonshot AI) direct models (as of September 2026).
 			// See: https://platform.moonshot.ai/docs/pricing/chat.
+			'kimi-k3'                                      => array(
+				'input_cost_per_1k'  => 0.003,  // $3.00/1M (cache hit $0.30).
+				'output_cost_per_1k' => 0.015,  // $15.00/1M.
+			),
+			'kimi-k2.7-code'                               => array(
+				'input_cost_per_1k'  => 0.00095, // $0.95 per 1M tokens = $0.00095 per 1K.
+				'output_cost_per_1k' => 0.004,   // $4.00 per 1M tokens = $0.004 per 1K.
+			),
 			'kimi-k2.6'                                    => array(
 				'input_cost_per_1k'  => 0.00095, // $0.95 per 1M tokens = $0.00095 per 1K.
 				'output_cost_per_1k' => 0.004,   // $4.00 per 1M tokens = $0.004 per 1K.

@@ -9,7 +9,12 @@
 class WP_MCP_AI_Agentic_Loop_TPM_Validation_Test extends WP_UnitTestCase {
 
 	/**
-	 * Test that the agentic loop validates TPM limits before making subsequent API calls.
+	 * Test that the agentic loop re-validates token budget before the next LLM
+	 * call and drops oversized tool results when they exceed the model TPM.
+	 *
+	 * The huge tool result must never reach the second LLM call: the loop
+	 * truncates the accumulated messages (newest-first) after TPM validation
+	 * fails, so the second call proceeds with a bounded context.
 	 */
 	public function test_agentic_loop_validates_tpm_before_iteration() {
 		$assistant_id = $this->create_assistant_post();
@@ -17,7 +22,7 @@ class WP_MCP_AI_Agentic_Loop_TPM_Validation_Test extends WP_UnitTestCase {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		$call_count = 0;
+		$call_sequence = array();
 
 		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
 			->disableOriginalConstructor()
@@ -25,36 +30,52 @@ class WP_MCP_AI_Agentic_Loop_TPM_Validation_Test extends WP_UnitTestCase {
 			->getMock();
 
 		// First call: LLM returns a response with tool_calls.
-		// Second call should never happen because TPM validation should fail.
+		// Second call happens with a truncated (bounded) context.
 		$mock_client
-			->expects( $this->once() )
+			->expects( $this->exactly( 2 ) )
 			->method( 'create_chat_completion' )
 			->willReturnCallback(
-				function ( $messages ) use ( &$call_count ) {
-					++$call_count;
+				function ( $messages ) use ( &$call_sequence ) {
+					$call_sequence[] = $messages;
 
-					// First call: return assistant message with tool_calls that produces huge result.
-					return array(
-						'id'      => 'chatcmpl-test-tpm',
-						'choices' => array(
-							array(
-								'message' => array(
-									'role'       => 'assistant',
-									'content'    => 'Let me crawl that for you.',
-									'tool_calls' => array(
-										array(
-											'id'       => 'call_crawl_123',
-											'type'     => 'function',
-											'function' => array(
-												'name' => 'run_crawl4ai_job',
-												'arguments' => wp_json_encode(
-													array(
-														'url' => 'https://example.com',
-													)
+					if ( 1 === count( $call_sequence ) ) {
+						// First call: return assistant message with tool_calls that produces a huge result.
+						return array(
+							'id'      => 'chatcmpl-test-tpm',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'       => 'assistant',
+										'content'    => 'Let me check the forecast.',
+										'tool_calls' => array(
+											array(
+												'id'       => 'call_weather_123',
+												'type'     => 'function',
+												'function' => array(
+													'name' => 'get_open_meteo_forecast',
+													'arguments' => wp_json_encode(
+														array(
+															'latitude'  => 48.8566,
+															'longitude' => 2.3522,
+															'hourly'    => 'temperature_2m',
+														)
+													),
 												),
 											),
 										),
 									),
+								),
+							),
+						);
+					}
+
+					return array(
+						'id'      => 'chatcmpl-test-final',
+						'choices' => array(
+							array(
+								'message' => array(
+									'role'    => 'assistant',
+									'content' => 'Forecast delivered.',
 								),
 							),
 						),
@@ -64,31 +85,39 @@ class WP_MCP_AI_Agentic_Loop_TPM_Validation_Test extends WP_UnitTestCase {
 
 		$this->bootstrap_rest_controller( $mock_client );
 
-		// Mock the crawl4ai tool to return very large result that exceeds TPM.
+		// Inject a tool result far larger than the model TPM via the sanitizer
+		// seam so the loop's TPM validation and truncation are actually exercised.
+		$sanitizer_fired = false;
 		add_filter(
-			'wp_mcp_ai_tool_execute_run_crawl4ai_job',
-			function ( $result, $arguments, $context ) {
-				// Simulate a very large crawl result (300k tokens worth of content).
-				$huge_content = str_repeat( 'This is test content. ', 60000 );
-				return array(
-					'status'  => 'completed',
-					'task_id' => 'test-task-123',
-					'results' => array(
-						array(
-							'url'      => 'https://example.com',
-							'markdown' => $huge_content,
-							'text'     => $huge_content,
-							'html'     => $huge_content,
-						),
-					),
-				);
+			'wp_mcp_ai_sanitize_tool_result_llm_get_open_meteo_forecast',
+			function () use ( &$sanitizer_fired ) {
+				$sanitizer_fired = true;
+				return str_repeat( 'This is test content. ', 60000 );
 			},
 			10,
-			3
+			2
 		);
 
-		// Set up TPM limit for gpt-4o-mini (200k).
-		update_option( 'wp_mcp_ai_model_rate_limits', array() );
+		// Disable the high-token model switch so truncation is the recovery path,
+		// and pin a low TPM for gpt-4o-mini so the huge result exceeds it.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_high_token_model_switch' => false,
+				'high_token_fallback_model'      => 'gemini-2.5-flash',
+			)
+		);
+		add_filter(
+			'wp_mcp_ai_model_tpm_limit',
+			function ( $limit, $model ) {
+				if ( 'gpt-4o-mini' === $model ) {
+					return 5000; // Low limit to force truncation of the huge tool result.
+				}
+				return $limit;
+			},
+			10,
+			2
+		);
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $assistant_id );
@@ -97,7 +126,7 @@ class WP_MCP_AI_Agentic_Loop_TPM_Validation_Test extends WP_UnitTestCase {
 			array(
 				array(
 					'role'    => 'user',
-					'content' => 'Crawl https://example.com',
+					'content' => 'Check the forecast for Paris',
 				),
 			)
 		);
@@ -106,16 +135,16 @@ class WP_MCP_AI_Agentic_Loop_TPM_Validation_Test extends WP_UnitTestCase {
 
 		$response = rest_get_server()->dispatch( $request );
 
-		// Should return an error about TPM limits.
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
-		$data = $response->get_data();
+		$this->assertSame( 200, $response->get_status() );
 
-		// The response should be an error.
-		$this->assertArrayHasKey( 'code', $data, 'Response should have error code' );
-		$this->assertStringContainsString( 'tpm', strtolower( $data['code'] ), 'Error code should mention TPM' );
-
-		// Verify only one LLM call was made (the initial one).
-		$this->assertSame( 1, $call_count, 'Should only make one LLM call before TPM validation fails' );
+		// The loop re-validated the token budget and truncated the oversized
+		// tool result before the second LLM call: exactly two calls, and the
+		// huge payload never reached the model.
+		$this->assertTrue( $sanitizer_fired, 'The injected oversized tool result should reach the LLM sanitizer' );
+		$this->assertCount( 2, $call_sequence, 'Should make two LLM calls with truncation in between' );
+		$second_call_payload = wp_json_encode( $call_sequence[1] );
+		$this->assertStringNotContainsString( 'This is test content.', $second_call_payload, 'Huge tool result should be dropped before the second call' );
 	}
 
 	/**
@@ -303,6 +332,20 @@ class WP_MCP_AI_Agentic_Loop_TPM_Validation_Test extends WP_UnitTestCase {
 
 		$this->bootstrap_rest_controller( $mock_client );
 
+		// Inject a tool result large enough to exceed the gpt-4o-mini TPM (but
+		// under the 64KB per-message sanitizer cap, which truncates larger
+		// results deterministically).
+		$sanitizer_fired = false;
+		add_filter(
+			'wp_mcp_ai_sanitize_tool_result_llm_get_open_meteo_forecast',
+			function () use ( &$sanitizer_fired ) {
+				$sanitizer_fired = true;
+				return str_repeat( 'Weather data point. ', 20000 );
+			},
+			10,
+			2
+		);
+
 		// Configure fallback model to gemini-2.5-flash (provider: gemini).
 		update_option(
 			'wp_mcp_ai_settings',
@@ -312,13 +355,15 @@ class WP_MCP_AI_Agentic_Loop_TPM_Validation_Test extends WP_UnitTestCase {
 			)
 		);
 
-		// Set TPM limit for gpt-4o-mini very low to trigger model switch after tool execution.
-		// gemini-2.5-flash has 1M TPM so it can handle the request.
+		// Set TPM limit for gpt-4o-mini low enough that the tool result trips
+		// the loop-phase validation (but not the pre-flight check), forcing the
+		// model switch after tool execution. gemini-2.5-flash has a high TPM so
+		// it can handle the request.
 		add_filter(
 			'wp_mcp_ai_model_tpm_limit',
 			function ( $limit, $model ) {
 				if ( 'gpt-4o-mini' === $model ) {
-					return 1000; // Force TPM failure so fallback model is triggered.
+					return 2000; // Tool result exceeds this; initial request does not.
 				}
 				if ( 'gemini-2.5-flash' === $model ) {
 					return 1000000; // Plenty of tokens for the fallback model.
@@ -347,6 +392,7 @@ class WP_MCP_AI_Agentic_Loop_TPM_Validation_Test extends WP_UnitTestCase {
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 
 		// We should have captured options from two calls.
+		$this->assertTrue( $sanitizer_fired, 'The injected oversized tool result should reach the LLM sanitizer' );
 		$this->assertCount( 2, $captured_options, 'Should make exactly two LLM calls' );
 
 		// First call should use the original openai provider.

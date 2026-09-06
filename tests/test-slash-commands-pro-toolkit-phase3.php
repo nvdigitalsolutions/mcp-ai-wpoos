@@ -39,6 +39,11 @@ class Test_Slash_Commands_Pro_Toolkit_Phase3 extends WP_UnitTestCase {
 
 		// Get toolkit manager instance.
 		$this->toolkit_manager = WP_MCP_AI_Slash_Command_Toolkit_Manager::get_instance();
+
+		// The manager registers toolkit commands on the init hook (priority 25),
+		// which the test harness does not re-fire; register them manually
+		// against the freshly created handler.
+		$this->toolkit_manager->register_toolkit_commands();
 	}
 
 	/**
@@ -46,7 +51,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase3 extends WP_UnitTestCase {
 	 */
 	public function test_phase3_ecommerce_commands_registered() {
 		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_registered_commands();
+		$commands = $handler->get_commands();
 
 		$this->assertArrayHasKey( 'bundle-create', $commands );
 		$this->assertArrayHasKey( 'shipping-optimize', $commands );
@@ -58,7 +63,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase3 extends WP_UnitTestCase {
 	 */
 	public function test_phase3_social_media_commands_registered() {
 		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_registered_commands();
+		$commands = $handler->get_commands();
 
 		$this->assertArrayHasKey( 'post-optimize', $commands );
 		$this->assertArrayHasKey( 'influencer-find', $commands );
@@ -70,7 +75,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase3 extends WP_UnitTestCase {
 	 */
 	public function test_phase3_video_commands_registered() {
 		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_registered_commands();
+		$commands = $handler->get_commands();
 
 		$this->assertArrayHasKey( 'video-trim', $commands );
 		$this->assertArrayHasKey( 'video-voiceover', $commands );
@@ -327,7 +332,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase3 extends WP_UnitTestCase {
 	 */
 	public function test_phase3_commands_have_documentation() {
 		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_registered_commands();
+		$commands = $handler->get_commands();
 
 		$phase3_commands = array(
 			'bundle-create',

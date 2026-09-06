@@ -410,6 +410,11 @@ class WP_MCP_AI_Assistant_Tool_Presets_Test extends WP_UnitTestCase {
 			$registered_tools[] = $tool->get_slug();
 		}
 
+		// Test-only doubles registered by other suites into the shared registry
+		// are not production tools and never belong in a preset.
+		$test_only_tools  = array( 'failing_test_tool', 'generate_test_image' );
+		$registered_tools = array_diff( $registered_tools, $test_only_tools );
+
 		// Get all tools from all presets.
 		$assistant_cpt = new WP_MCP_AI_Assistant_CPT( $registry );
 		$reflection    = new ReflectionClass( $assistant_cpt );

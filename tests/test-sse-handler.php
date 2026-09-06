@@ -186,178 +186,136 @@ class Test_SSE_Handler extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test build_event_stream_chunk with basic event and data.
+	 * Capture handler output despite its buffer management.
+	 *
+	 * The handler flushes/discards output buffers as part of its streaming
+	 * protocol. A callback-based buffer survives every flush/clean/end because
+	 * each of those operations delivers the affected content to the callback.
+	 *
+	 * @param callable $emit Emitter to run.
+	 * @return string Captured output.
 	 */
-	public function test_build_event_stream_chunk_basic() {
-		$chunk = $this->handler->build_event_stream_chunk( 'message', 'Hello World' );
-
-		$expected = "event: message\ndata: Hello World\n\n";
-
-		$this->assertEquals( $expected, $chunk );
-	}
-
-	/**
-	 * Test build_event_stream_chunk with event, data, and ID.
-	 */
-	public function test_build_event_stream_chunk_with_id() {
-		$chunk = $this->handler->build_event_stream_chunk( 'update', 'Status OK', '12345' );
-
-		$expected = "id: 12345\nevent: update\ndata: Status OK\n\n";
-
-		$this->assertEquals( $expected, $chunk );
-	}
-
-	/**
-	 * Test build_event_stream_chunk with empty event name.
-	 */
-	public function test_build_event_stream_chunk_empty_event() {
-		$chunk = $this->handler->build_event_stream_chunk( '', 'Data only' );
-
-		$expected = "data: Data only\n\n";
-
-		$this->assertEquals( $expected, $chunk );
-	}
-
-	/**
-	 * Test build_event_stream_chunk with multiline data.
-	 */
-	public function test_build_event_stream_chunk_multiline_data() {
-		$data  = "Line 1\nLine 2\nLine 3";
-		$chunk = $this->handler->build_event_stream_chunk( 'message', $data );
-
-		$expected = "event: message\ndata: Line 1\ndata: Line 2\ndata: Line 3\n\n";
-
-		$this->assertEquals( $expected, $chunk );
-	}
-
-	/**
-	 * Test build_event_stream_chunk with JSON data.
-	 */
-	public function test_build_event_stream_chunk_with_json() {
-		$data  = wp_json_encode(
-			array(
-				'status' => 'success',
-				'count'  => 42,
-			)
+	protected function capture_output( $emit ) {
+		$captured = '';
+		ob_start(
+			static function ( $chunk ) use ( &$captured ) {
+				$captured .= $chunk;
+				return '';
+			}
 		);
-		$chunk = $this->handler->build_event_stream_chunk( 'result', $data );
-
-		$this->assertStringContainsString( 'event: result', $chunk );
-		$this->assertStringContainsString( 'data: ', $chunk );
-		$this->assertStringContainsString( '"status":"success"', $chunk );
+		$emit();
+		ob_end_clean();
+		return $captured;
 	}
 
 	/**
-	 * Test stream_event_stream_payload returns WP_REST_Response.
+	 * Send_sse_event() emits a named frame with JSON-encoded data.
 	 */
-	public function test_stream_event_stream_payload_returns_response() {
-		$payload = array( 'message' => 'Test payload' );
+	public function test_send_sse_event_emits_named_frame() {
+		$output = $this->capture_output(
+			function () {
+				$this->handler->send_sse_event( 'message', 'Hello World' );
+			}
+		);
 
-		$response = $this->handler->stream_event_stream_payload( $payload );
-
-		$this->assertInstanceOf( 'WP_REST_Response', $response );
+		$this->assertSame( "event: message\ndata: \"Hello World\"\n\n", $output );
 	}
 
 	/**
-	 * Test stream_event_stream_payload sets correct status code.
+	 * Send_sse_event_with_id() emits an id: line before the frame.
 	 */
-	public function test_stream_event_stream_payload_status_code() {
-		$payload = array( 'message' => 'Test payload' );
+	public function test_send_sse_event_with_id_emits_id_line() {
+		$output = $this->capture_output(
+			function () {
+				$this->handler->send_sse_event_with_id( 'update', array( 'status' => 'ok' ), '12345' );
+			}
+		);
 
-		$response = $this->handler->stream_event_stream_payload( $payload );
-
-		$this->assertEquals( 200, $response->get_status() );
+		$this->assertSame( "id: 12345\nevent: update\ndata: {\"status\":\"ok\"}\n\n", $output );
 	}
 
 	/**
-	 * Test stream_event_stream_payload sets correct Content-Type header.
+	 * Send_sse_event() keeps the event line even for an empty event name.
 	 */
-	public function test_stream_event_stream_payload_content_type() {
-		$payload = array( 'message' => 'Test payload' );
+	public function test_send_sse_event_empty_event_name() {
+		$output = $this->capture_output(
+			function () {
+				$this->handler->send_sse_event( '', 'Data only' );
+			}
+		);
 
-		$response = $this->handler->stream_event_stream_payload( $payload );
-		$headers  = $response->get_headers();
-
-		$this->assertArrayHasKey( 'Content-Type', $headers );
-		$this->assertEquals( 'text/event-stream; charset=UTF-8', $headers['Content-Type'] );
+		$this->assertSame( "event: \ndata: \"Data only\"\n\n", $output );
 	}
 
 	/**
-	 * Test stream_event_stream_payload sets cache-control headers.
+	 * Send_sse_event() JSON-encodes data, so newlines become \n escapes.
 	 */
-	public function test_stream_event_stream_payload_cache_headers() {
-		$payload = array( 'message' => 'Test payload' );
+	public function test_send_sse_event_multiline_data() {
+		$output = $this->capture_output(
+			function () {
+				$this->handler->send_sse_event( 'message', "Line 1\nLine 2" );
+			}
+		);
 
-		$response = $this->handler->stream_event_stream_payload( $payload );
-		$headers  = $response->get_headers();
-
-		$this->assertArrayHasKey( 'Cache-Control', $headers );
-		$this->assertStringContainsString( 'no-cache', $headers['Cache-Control'] );
+		$this->assertSame( "event: message\ndata: \"Line 1\\nLine 2\"\n\n", $output );
 	}
 
 	/**
-	 * Test stream_event_stream_payload sets CORS headers.
+	 * Send_sse_event() emits the JSON-encoded payload on the data: line.
 	 */
-	public function test_stream_event_stream_payload_cors_headers() {
-		$payload = array( 'message' => 'Test payload' );
+	public function test_send_sse_event_with_json() {
+		$output = $this->capture_output(
+			function () {
+				$this->handler->send_sse_event(
+					'result',
+					array(
+						'status' => 'success',
+						'count'  => 42,
+					)
+				);
+			}
+		);
 
-		$response = $this->handler->stream_event_stream_payload( $payload );
-		$headers  = $response->get_headers();
-
-		$this->assertArrayHasKey( 'Access-Control-Allow-Origin', $headers );
-		$this->assertEquals( '*', $headers['Access-Control-Allow-Origin'] );
+		$this->assertStringContainsString( 'event: result', $output );
+		$this->assertStringContainsString( '"status":"success"', $output );
+		$this->assertStringContainsString( '"count":42', $output );
 	}
 
 	/**
-	 * Test stream_event_stream_payload with custom event name.
+	 * Stream_event_stream_payload() completes the stream without terminating
+	 * the test process.
+	 *
+	 * The method was redesigned from a pure response builder into a blocking
+	 * emitter (headers + named frame + [DONE] + finish()); finish() returns
+	 * instead of exiting under tests. Frame formats are asserted by the
+	 * send_sse_event()/send_sse_done() tests above, so this test guards the
+	 * lifecycle: payload variants must not throw or kill the run.
 	 */
-	public function test_stream_event_stream_payload_custom_event() {
-		$payload = array( 'status' => 'processing' );
+	public function test_stream_event_stream_payload_completes() {
+		$this->handler->stream_event_stream_payload( array( 'message' => 'Test payload' ) );
+		$this->handler->stream_event_stream_payload( array( 'status' => 'processing' ), 'status_update' );
+		$this->handler->stream_event_stream_payload( array( 'data' => 'test' ), '' );
 
-		$response = $this->handler->stream_event_stream_payload( $payload, 'status_update' );
-
-		$this->assertInstanceOf( 'WP_REST_Response', $response );
-		$this->assertEquals( 200, $response->get_status() );
-	}
-
-	/**
-	 * Test stream_event_stream_payload with empty event name defaults to 'message'.
-	 */
-	public function test_stream_event_stream_payload_empty_event_defaults() {
-		$payload = array( 'data' => 'test' );
-
-		$response = $this->handler->stream_event_stream_payload( $payload, '' );
-
-		$this->assertInstanceOf( 'WP_REST_Response', $response );
-		// The handler should use 'message' as default event name.
-	}
-
-	/**
-	 * Test stream_event_stream_payload with non-encodable payload.
-	 */
-	public function test_stream_event_stream_payload_non_encodable() {
-		// Create a payload with an unencodable resource.
+		// Non-encodable payload must not throw — the handler emits an error frame.
 		$resource = fopen( 'php://memory', 'r' );
-		$payload  = array( 'resource' => $resource );
-
-		$response = $this->handler->stream_event_stream_payload( $payload );
-
-		// Should fall back to rest_ensure_response.
-		$this->assertInstanceOf( 'WP_REST_Response', $response );
-
+		$this->handler->stream_event_stream_payload( array( 'resource' => $resource ) );
 		fclose( $resource );
+
+		// Reaching this point proves none of the calls terminated the run.
+		$this->assertTrue( true );
 	}
 
 	/**
-	 * Test send_sse_event doesn't throw errors (output buffering test).
+	 * Test send_sse_event doesn't throw errors and emits the JSON payload.
 	 */
 	public function test_send_sse_event_no_errors() {
-		ob_start();
-		$this->handler->send_sse_event( 'test', array( 'key' => 'value' ) );
-		$output = ob_get_clean();
+		$output = $this->capture_output(
+			function () {
+				$this->handler->send_sse_event( 'test', array( 'key' => 'value' ) );
+			}
+		);
 
 		$this->assertStringContainsString( 'event: test', $output );
-		$this->assertStringContainsString( 'data: ', $output );
 		$this->assertStringContainsString( '"key":"value"', $output );
 	}
 
@@ -365,24 +323,12 @@ class Test_SSE_Handler extends WP_UnitTestCase {
 	 * Test send_sse_done outputs correct marker.
 	 */
 	public function test_send_sse_done_output() {
-		ob_start();
-		$this->handler->send_sse_done();
-		$output = ob_get_clean();
+		$output = $this->capture_output(
+			function () {
+				$this->handler->send_sse_done();
+			}
+		);
 
-		$this->assertEquals( "data: [DONE]\n\n", $output );
-	}
-
-	/**
-	 * Test send_sse_headers doesn't throw errors.
-	 *
-	 * Note: Can't fully test header sending in unit tests, but we can verify
-	 * the method executes without fatal errors.
-	 */
-	public function test_send_sse_headers_no_errors() {
-		// Headers already sent in test environment, so this just verifies no fatal error.
-		$this->handler->send_sse_headers();
-
-		// If we get here without fatal error, test passes.
-		$this->assertTrue( true );
+		$this->assertSame( "data: [DONE]\n\n", $output );
 	}
 }

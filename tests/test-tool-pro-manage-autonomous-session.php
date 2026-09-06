@@ -2,10 +2,11 @@
 /**
  * Tests for WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session.
  *
- * This tool does NOT implement WP_MCP_AI_Tool_Interface.  On an unrecognised
- * action it returns an array with 'success' => false.  IMPORTANT: the tool
- * accesses $arguments['action'] directly without a null-check, so the 'action'
- * key MUST be present in arguments; tests always include it.
+ * This tool does NOT implement WP_MCP_AI_Tool_Interface. On an unrecognised
+ * action or invalid arguments it returns a WP_Error, and success paths return
+ * an array. IMPORTANT: the tool accesses $arguments['action'] directly without
+ * a null-check, so the 'action' key MUST be present in arguments; tests always
+ * include it.
  *
  * @package WP_MCP_AI
  */
@@ -38,7 +39,7 @@ class Test_Tool_Pro_Manage_Autonomous_Session extends WP_UnitTestCase {
 		$this->admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $this->admin_id );
 
-		$tool_file = dirname( __DIR__ ) . '/addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-manage-autonomous-session.php';
+		$tool_file = dirname( __DIR__ ) . '/addons/pro/includes/tools/orchestration/class-wp-mcp-ai-pro-tool-manage-autonomous-session.php';
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session' ) && file_exists( $tool_file ) ) {
 			require_once $tool_file;
 		}
@@ -78,17 +79,16 @@ class Test_Tool_Pro_Manage_Autonomous_Session extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Test that an unrecognised action returns a failure array.
+	 * Test that an unrecognised action returns a WP_Error.
 	 */
-	public function test_invalid_action_returns_failure_array() {
+	public function test_invalid_action_returns_wp_error() {
 		$result = $this->tool->execute(
 			array( 'action' => 'fly_to_mars' ),
 			array()
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'Unknown action', $result['error'] );
+		$this->assertWPError( $result );
+		$this->assertStringContainsString( 'Unknown action', $result->get_error_message() );
 	}
 
 	// -----------------------------------------------------------------------
@@ -96,17 +96,16 @@ class Test_Tool_Pro_Manage_Autonomous_Session extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Test that starting a session without plan_id returns a failure array.
+	 * Test that starting a session without plan_id returns a WP_Error.
 	 */
-	public function test_start_missing_plan_id_returns_failure_array() {
+	public function test_start_missing_plan_id_returns_wp_error() {
 		$result = $this->tool->execute(
 			array( 'action' => 'start' ),
 			array()
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'plan_id', $result['error'] );
+		$this->assertWPError( $result );
+		$this->assertStringContainsString( 'plan_id', $result->get_error_message() );
 	}
 
 	// -----------------------------------------------------------------------
@@ -114,16 +113,16 @@ class Test_Tool_Pro_Manage_Autonomous_Session extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Test that pausing without a session_id returns a failure array.
+	 * Test that pausing without a session_id returns a WP_Error.
 	 */
-	public function test_pause_missing_session_id_returns_failure_array() {
+	public function test_pause_missing_session_id_returns_wp_error() {
 		$result = $this->tool->execute(
 			array( 'action' => 'pause' ),
 			array()
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
+		$this->assertWPError( $result );
+		$this->assertStringContainsString( 'session_id', $result->get_error_message() );
 	}
 
 	// -----------------------------------------------------------------------
@@ -131,16 +130,16 @@ class Test_Tool_Pro_Manage_Autonomous_Session extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Test that stopping without a session_id returns a failure array.
+	 * Test that stopping without a session_id returns a WP_Error.
 	 */
-	public function test_stop_missing_session_id_returns_failure_array() {
+	public function test_stop_missing_session_id_returns_wp_error() {
 		$result = $this->tool->execute(
 			array( 'action' => 'stop' ),
 			array()
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
+		$this->assertWPError( $result );
+		$this->assertStringContainsString( 'session_id', $result->get_error_message() );
 	}
 
 	// -----------------------------------------------------------------------

@@ -278,6 +278,17 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	 * @return WP_MCP_AI_Telegram_Webhook_Controller|null
 	 */
 	private function load_telegram_controller() {
+		// The controller consumes the shared webhook context manager, which is
+		// loaded lazily in production but must be required here. Require it
+		// unconditionally: the controller class may already be loaded by an
+		// earlier test, in which case the guarded require below is skipped.
+		if ( ! class_exists( 'WP_MCP_AI_Webhook_Context_Manager' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$context_manager = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-webhook-context-manager.php';
+			if ( file_exists( $context_manager ) ) {
+				require_once $context_manager;
+			}
+		}
+
 		if ( ! class_exists( 'WP_MCP_AI_Telegram_Webhook_Controller' ) ) {
 			if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				$this->markTestSkipped( 'Pro addon not available' );
@@ -373,8 +384,9 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 			return;
 		}
 
-		// Trigger route registration.
-		$controller->register_routes();
+		// Trigger route registration via the action the controller hooks.
+		rest_get_server();
+		do_action( 'rest_api_init' );
 
 		$routes = rest_get_server()->get_routes( 'mcp-ai/v1' );
 
@@ -1220,8 +1232,9 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 			return;
 		}
 
-		// Trigger route registration.
-		$controller->register_routes();
+		// Trigger route registration via the action the controller hooks.
+		rest_get_server();
+		do_action( 'rest_api_init' );
 
 		$routes = rest_get_server()->get_routes();
 
@@ -1264,7 +1277,9 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 			return;
 		}
 
-		$controller->register_routes();
+		// Trigger route registration via the action the controller hooks.
+		rest_get_server();
+		do_action( 'rest_api_init' );
 
 		$routes = rest_get_server()->get_routes();
 
@@ -1288,7 +1303,9 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 			return;
 		}
 
-		$controller->register_routes();
+		// Trigger route registration via the action the controller hooks.
+		rest_get_server();
+		do_action( 'rest_api_init' );
 
 		$routes = rest_get_server()->get_routes();
 
@@ -1298,11 +1315,13 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 			'The /mcp-ai/v1/telegram-mini-app/chat REST route should be registered'
 		);
 
-		// Verify the registered route accepts POST.
-		$route_config = $routes['/mcp-ai/v1/telegram-mini-app/chat'];
-		$methods      = array_column( $route_config, 'methods' );
-		$this->assertTrue(
-			in_array( WP_REST_Server::CREATABLE, $methods, true ),
+		// Verify the registered route accepts POST. The server stores methods
+		// as an array keyed by the uppercase method name.
+		$route_config = reset( $routes['/mcp-ai/v1/telegram-mini-app/chat'] );
+		$this->assertIsArray( $route_config['methods'], 'Route methods should be stored as an array' );
+		$this->assertArrayHasKey(
+			WP_REST_Server::CREATABLE,
+			$route_config['methods'],
 			'The /mcp-ai/v1/telegram-mini-app/chat route should accept POST requests'
 		);
 	}
@@ -1818,7 +1837,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 
 		wp_set_current_user( 0 );
 		$this->assertFalse(
-			$controller->check_permission(),
+			$controller->check_permission( new WP_REST_Request() ),
 			'check_permission() should return false for unauthenticated users'
 		);
 	}
@@ -1836,7 +1855,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		wp_set_current_user( $user_id );
 
 		$this->assertTrue(
-			$controller->check_permission(),
+			$controller->check_permission( new WP_REST_Request() ),
 			'check_permission() should return true for users with edit_posts capability'
 		);
 
@@ -2167,7 +2186,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	 * Test that sanitize_init_data() preserves percent-encoded characters
 	 * required for HMAC-SHA256 verification of Telegram initData.
 	 *
-	 * sanitize_text_field() strips %XX sequences, corrupting the URL-encoded
+	 * The sanitize_text_field() function strips %XX sequences, corrupting the URL-encoded
 	 * query string and causing hash verification to always fail. The custom
 	 * sanitize_init_data() callback must preserve these sequences.
 	 */
@@ -2491,7 +2510,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that init falls back to Chat tab when validation fails.
+	 * Test that init falls back to the Settings tab when validation fails.
 	 */
 	public function test_init_falls_back_to_chat_tab_on_auth_failure() {
 		$source = $this->get_mini_app_inline_js_source();
@@ -2499,12 +2518,12 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 			return;
 		}
 
-		// The init function should switch to the Chat tab on auth failure
-		// instead of trying to load Content (which requires auth).
+		// The init function should switch to the Settings tab on auth failure
+		// instead of trying to load authenticated tab content.
 		$this->assertStringContainsString(
-			"tmaSwitchTab(\\'chat\\')",
+			"tmaSwitchTab(\\'settings\\')",
 			$source,
-			'init() should fall back to Chat tab when validateInitData() fails'
+			'init() should fall back to the Settings tab when validateInitData() fails'
 		);
 
 		// Ensure the old pattern (catch → loadContent) is NOT present in init.
@@ -3551,7 +3570,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	}
 
 	/**
-	 * resolve_content_to_string: plain string input (OpenAI/Anthropic format).
+	 * Method resolve_content_to_string(): plain string input (OpenAI/Anthropic format).
 	 */
 	public function test_resolve_content_to_string_with_plain_string() {
 		$pair = $this->get_telegram_resolve_content_method();
@@ -3568,7 +3587,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	}
 
 	/**
-	 * resolve_content_to_string: Gemini/Ollama array segment format.
+	 * Method resolve_content_to_string(): Gemini/Ollama array segment format.
 	 */
 	public function test_resolve_content_to_string_with_array_segments() {
 		$pair = $this->get_telegram_resolve_content_method();
@@ -3616,7 +3635,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	}
 
 	/**
-	 * resolve_content_to_string: invalid / non-text inputs return empty string.
+	 * Method resolve_content_to_string(): invalid / non-text inputs return empty string.
 	 */
 	public function test_resolve_content_to_string_with_invalid_inputs() {
 		$pair = $this->get_telegram_resolve_content_method();
@@ -3646,7 +3665,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	}
 
 	/**
-	 * extract_content_from_chat_response: Gemini-style array content in choices.
+	 * Method extract_content_from_chat_response(): Gemini-style array content in choices.
 	 */
 	public function test_telegram_extract_content_gemini_array_format() {
 		$pair = $this->get_telegram_extract_method();
@@ -3687,7 +3706,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	}
 
 	/**
-	 * extract_content_from_chat_response: Ollama-style array content in choices.
+	 * Method extract_content_from_chat_response(): Ollama-style array content in choices.
 	 */
 	public function test_telegram_extract_content_ollama_array_format() {
 		$pair = $this->get_telegram_extract_method();
@@ -3729,7 +3748,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	}
 
 	/**
-	 * extract_content_from_chat_response: array-format content in agentic_tool_messages fallback.
+	 * Method extract_content_from_chat_response(): array-format content in agentic_tool_messages fallback.
 	 */
 	public function test_telegram_extract_content_agentic_fallback_array_format() {
 		$pair = $this->get_telegram_extract_method();
@@ -3804,7 +3823,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	}
 
 	/**
-	 * extract_agentic_tool_messages_from_chat_response: string content (OpenAI format).
+	 * Method extract_agentic_tool_messages_from_chat_response(): string content (OpenAI format).
 	 */
 	public function test_extract_agentic_tool_messages_string_content() {
 		$pair = $this->get_telegram_extract_agentic_method();
@@ -3844,7 +3863,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	}
 
 	/**
-	 * extract_agentic_tool_messages_from_chat_response: Gemini/Ollama array content.
+	 * Method extract_agentic_tool_messages_from_chat_response(): Gemini/Ollama array content.
 	 */
 	public function test_extract_agentic_tool_messages_array_content() {
 		$pair = $this->get_telegram_extract_agentic_method();
@@ -3886,7 +3905,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	}
 
 	/**
-	 * extract_agentic_tool_messages_from_chat_response: messages with null/empty content are skipped.
+	 * Method extract_agentic_tool_messages_from_chat_response(): messages with null/empty content are skipped.
 	 */
 	public function test_extract_agentic_tool_messages_skips_empty_content() {
 		$pair = $this->get_telegram_extract_agentic_method();
@@ -3952,7 +3971,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	}
 
 	/**
-	 * normalize_conversation_history_for_chat: plain string content (OpenAI format).
+	 * Method normalize_conversation_history_for_chat(): plain string content (OpenAI format).
 	 */
 	public function test_normalize_history_string_content() {
 		$pair = $this->get_telegram_normalize_history_method();
@@ -3982,7 +4001,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	}
 
 	/**
-	 * normalize_conversation_history_for_chat: Gemini/Ollama array content in history.
+	 * Method normalize_conversation_history_for_chat(): Gemini/Ollama array content in history.
 	 */
 	public function test_normalize_history_array_content() {
 		$pair = $this->get_telegram_normalize_history_method();
@@ -4018,7 +4037,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	}
 
 	/**
-	 * normalize_conversation_history_for_chat: entries with empty content are dropped.
+	 * Method normalize_conversation_history_for_chat(): entries with empty content are dropped.
 	 */
 	public function test_normalize_history_drops_empty_content() {
 		$pair = $this->get_telegram_normalize_history_method();
@@ -4687,6 +4706,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$jwt_error = new WP_Error( 'jwt_auth_bad_config', 'JWT auth error' );
 
 		// Simulate the REQUEST_URI for our webhook route (generic).
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Test simulation of server state; no real input processing.
 		$original_uri           = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : null;
 		$_SERVER['REQUEST_URI'] = '/wp-json/mcp-ai/v1/webhooks/telegram';
 
@@ -4715,6 +4735,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$jwt_error = new WP_Error( 'jwt_auth_bad_config', 'JWT auth error' );
 
 		// Simulate the REQUEST_URI for a per-connection webhook route.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Test simulation of server state; no real input processing.
 		$original_uri           = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : null;
 		$_SERVER['REQUEST_URI'] = '/wp-json/mcp-ai/v1/webhooks/telegram/conn_sdfqpauwohng';
 
@@ -4742,6 +4763,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$jwt_error = new WP_Error( 'jwt_auth_bad_config', 'JWT auth error' );
 
 		// Simulate the REQUEST_URI for an unrelated route.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Test simulation of server state; no real input processing.
 		$original_uri           = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : null;
 		$_SERVER['REQUEST_URI'] = '/wp-json/wp/v2/posts';
 

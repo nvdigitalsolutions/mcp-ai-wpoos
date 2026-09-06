@@ -78,6 +78,9 @@ final class Plugin {
 				if ( class_exists( 'NvoosContentGraph\Rest\Controller' ) ) {
 					( new \NvoosContentGraph\Rest\Controller() )->registerRoutes();
 				}
+				if ( class_exists( 'NvoosContentGraph\Rest\CommerceController' ) ) {
+					( new \NvoosContentGraph\Rest\CommerceController() )->registerRoutes();
+				}
 			}
 		);
 

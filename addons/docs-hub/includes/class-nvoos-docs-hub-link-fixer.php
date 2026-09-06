@@ -81,12 +81,26 @@ class NV_oOS_Docs_Hub_Link_Fixer {
 			);
 		}
 
-		// Guard: path traversal check — neither old nor new target may contain
-		// directory traversal sequences.
-		if ( $this->contains_path_traversal( $old_target ) || $this->contains_path_traversal( $new_target ) ) {
+		// Guard: link targets must be plain relative paths — no URL schemes,
+		// absolute paths, backslash separators, or null bytes. Relative `../`
+		// segments are legitimate in Markdown links and are NOT rejected here;
+		// the resolved destination of the NEW target is containment-checked
+		// against the allowed roots below.
+		if ( ! $this->is_safe_link_target( $old_target ) || ! $this->is_safe_link_target( $new_target ) ) {
 			return new WP_Error(
 				'nvoos_dh_fix_path_traversal',
-				__( 'Link target contains invalid path traversal sequences.', 'nvoos-docs-hub' )
+				__( 'Link target contains invalid characters or an absolute path.', 'nvoos-docs-hub' )
+			);
+		}
+
+		// Guard: the resolved destination of the new target must stay inside
+		// the allowed plugin/content roots. This is what actually prevents
+		// `../../wp-config.php` style escapes while allowing correct fixes
+		// that legitimately navigate upward.
+		if ( ! $this->resolved_target_is_allowed( $source_path, $new_target ) ) {
+			return new WP_Error(
+				'nvoos_dh_fix_path_traversal',
+				__( 'Corrected link target resolves outside the allowed directories.', 'nvoos-docs-hub' )
 			);
 		}
 
@@ -197,6 +211,7 @@ class NV_oOS_Docs_Hub_Link_Fixer {
 
 		foreach ( $fixes as $fix ) {
 			$source_rel = isset( $fix['source'] ) ? (string) $fix['source'] : '';
+			$source_slug = isset( $fix['slug'] ) ? (string) $fix['slug'] : '';
 			$old_target = isset( $fix['old_target'] ) ? (string) $fix['old_target'] : '';
 			$new_target = isset( $fix['new_target'] ) ? (string) $fix['new_target'] : '';
 
@@ -210,10 +225,13 @@ class NV_oOS_Docs_Hub_Link_Fixer {
 				continue;
 			}
 
-			// Resolve source relative path to absolute path via slug_map.
-			// Find the slug whose relative_path matches.
-			$source_abs = $this->resolve_absolute_path( $source_rel, $slug_map );
-			if ( null === $source_abs ) {
+			// Resolve the source file to an absolute path. Prefer the slug —
+			// relative paths like `README.md` exist in many addons, so matching
+			// on relative_path alone can pick the wrong file.
+			$source_abs = '' !== $source_slug && isset( $slug_map[ $source_slug ]['path'] )
+				? (string) $slug_map[ $source_slug ]['path']
+				: $this->resolve_absolute_path( $source_rel, $slug_map );
+			if ( null === $source_abs || '' === $source_abs ) {
 				++$results['skipped'];
 				$results['results'][] = array(
 					'source' => $source_rel,
@@ -225,7 +243,10 @@ class NV_oOS_Docs_Hub_Link_Fixer {
 
 			// Check that this is not a remote-sourced entry (remote repos are
 			// read-only — we cannot edit GitHub files from here).
-			if ( $this->is_remote_source( $source_rel, $slug_map ) ) {
+			$is_remote = ( '' !== $source_slug && isset( $slug_map[ $source_slug ]['source'] ) )
+				? 'remote' === (string) $slug_map[ $source_slug ]['source']
+				: $this->is_remote_source( $source_rel, $slug_map );
+			if ( $is_remote ) {
 				++$results['skipped'];
 				$results['results'][] = array(
 					'source' => $source_rel,
@@ -298,15 +319,105 @@ class NV_oOS_Docs_Hub_Link_Fixer {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Check if a path string contains directory traversal sequences.
+	 * Check whether a link target is a safe relative path.
 	 *
-	 * @since 1.3.0
+	 * Rejects URL schemes, absolute paths, backslash separators, and null
+	 * bytes. Relative `./` and `../` segments are allowed — the resolved
+	 * destination is separately containment-checked via
+	 * {@see resolved_target_is_allowed()}.
 	 *
-	 * @param string $path The path to check.
-	 * @return bool True if traversal sequences are found.
+	 * @since 0.4.2
+	 *
+	 * @param string $target The link target to check.
+	 * @return bool True when the target is a safe relative path.
 	 */
-	private function contains_path_traversal( $path ) {
-		return ( false !== strpos( $path, '..' ) );
+	private function is_safe_link_target( $target ) {
+		$target = (string) $target;
+
+		if ( '' === $target || false !== strpos( $target, "\0" ) ) {
+			return false;
+		}
+
+		// URL scheme (http://, mailto:, data:, javascript:, …).
+		if ( preg_match( '#^[a-z][a-z0-9+.\-]*:#i', $target ) ) {
+			return false;
+		}
+
+		// Absolute paths (POSIX, Windows drive letter, UNC).
+		if ( preg_match( '#^(/|\\\\|[a-zA-Z]:)#', $target ) ) {
+			return false;
+		}
+
+		// Backslash path separators (Windows-style traversal).
+		if ( false !== strpos( $target, '\\' ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Resolve a corrected link target against the source file and verify it
+	 * stays inside the allowed roots.
+	 *
+	 * @since 0.4.2
+	 *
+	 * @param string $source_path Absolute path of the file being edited.
+	 * @param string $new_target  Corrected link target (relative).
+	 * @return bool True when the resolved destination is inside an allowed root.
+	 */
+	private function resolved_target_is_allowed( $source_path, $new_target ) {
+		$base     = dirname( $source_path );
+		// Strip any anchor fragment / query string before resolving.
+		$relative = str_replace( '/', DIRECTORY_SEPARATOR, (string) preg_replace( '/[#?].*$/', '', $new_target ) );
+		$resolved = realpath( $base . DIRECTORY_SEPARATOR . $relative );
+
+		if ( false === $resolved ) {
+			return false;
+		}
+
+		foreach ( $this->allowed_roots() as $root ) {
+			$real_root = realpath( $root );
+			if ( false === $real_root ) {
+				continue;
+			}
+			if ( $resolved === $real_root || 0 === strpos( $resolved, $real_root . DIRECTORY_SEPARATOR ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * List the absolute roots that corrected links may resolve into.
+	 *
+	 * @since 0.4.2
+	 *
+	 * @return string[] Absolute root paths.
+	 */
+	private function allowed_roots() {
+		$roots = array();
+
+		if ( defined( 'WP_PLUGIN_DIR' ) ) {
+			$roots[] = WP_PLUGIN_DIR;
+		}
+		if ( defined( 'WP_CONTENT_DIR' ) ) {
+			$roots[] = WP_CONTENT_DIR;
+		}
+		$roots[] = dirname( dirname( NVOOS_DOCS_HUB_PATH ) );
+
+		/**
+		 * Filter the roots that corrected link targets may resolve into.
+		 *
+		 * Sites that host their documentation outside the plugin/content
+		 * directories (e.g. a monorepo checkout) can extend this list.
+		 *
+		 * @since 0.4.2
+		 *
+		 * @param string[] $roots Absolute root paths.
+		 */
+		return apply_filters( 'nvoos_docs_hub_fixer_allowed_roots', array_unique( $roots ) );
 	}
 
 	/**

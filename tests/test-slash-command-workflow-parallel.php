@@ -31,6 +31,13 @@ class Test_Slash_Command_Workflow_Parallel extends WP_UnitTestCase {
 	private $user_id;
 
 	/**
+	 * Admin user ID
+	 *
+	 * @var int
+	 */
+	private $admin_id;
+
+	/**
 	 * Setup test environment
 	 */
 	public function setUp(): void {
@@ -45,6 +52,15 @@ class Test_Slash_Command_Workflow_Parallel extends WP_UnitTestCase {
 		$this->user_id = $this->factory->user->create(
 			array(
 				'role' => 'editor',
+			)
+		);
+
+		// Create admin user for workflows containing privileged tasks
+		// (e.g. parallel-checks includes optimize-perf, which requires
+		// manage_options).
+		$this->admin_id = $this->factory->user->create(
+			array(
+				'role' => 'administrator',
 			)
 		);
 		wp_set_current_user( $this->user_id );
@@ -87,7 +103,7 @@ class Test_Slash_Command_Workflow_Parallel extends WP_UnitTestCase {
 		$result = $this->command->execute(
 			array( 'parallel-checks' ),
 			array( 'dry-run' => true ),
-			array( 'user_id' => $this->user_id )
+			array( 'user_id' => $this->admin_id )
 		);
 
 		$this->assertNotWPError( $result );
@@ -100,18 +116,12 @@ class Test_Slash_Command_Workflow_Parallel extends WP_UnitTestCase {
 	 * Test parallel workflow executes with admin capability
 	 */
 	public function test_parallel_workflow_executes_for_admin() {
-		// Create admin user.
-		$admin_id = $this->factory->user->create(
-			array(
-				'role' => 'administrator',
-			)
-		);
-		wp_set_current_user( $admin_id );
+		wp_set_current_user( $this->admin_id );
 
 		$result = $this->command->execute(
 			array( 'parallel-checks' ),
 			array( 'dry-run' => true ),
-			array( 'user_id' => $admin_id )
+			array( 'user_id' => $this->admin_id )
 		);
 
 		$this->assertNotWPError( $result );
@@ -125,7 +135,7 @@ class Test_Slash_Command_Workflow_Parallel extends WP_UnitTestCase {
 		$result = $this->command->execute(
 			array( 'parallel-checks' ),
 			array( 'dry-run' => true ),
-			array( 'user_id' => $this->user_id )
+			array( 'user_id' => $this->admin_id )
 		);
 
 		$this->assertNotWPError( $result );
@@ -142,7 +152,7 @@ class Test_Slash_Command_Workflow_Parallel extends WP_UnitTestCase {
 		$result = $this->command->execute(
 			array( 'parallel-checks' ),
 			array( 'dry-run' => true ),
-			array( 'user_id' => $this->user_id )
+			array( 'user_id' => $this->admin_id )
 		);
 
 		$this->assertNotWPError( $result );
@@ -156,7 +166,7 @@ class Test_Slash_Command_Workflow_Parallel extends WP_UnitTestCase {
 		$result = $this->command->execute(
 			array( 'parallel-checks' ),
 			array( 'dry-run' => true ),
-			array( 'user_id' => $this->user_id )
+			array( 'user_id' => $this->admin_id )
 		);
 
 		$this->assertNotWPError( $result );

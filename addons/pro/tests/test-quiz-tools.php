@@ -10,6 +10,41 @@
  */
 class Test_Quiz_Tools extends WP_UnitTestCase {
 	/**
+	 * Enable the quiz system before each test.
+	 *
+	 * The quiz tool classes are only require_once'd (and registered) by
+	 * wp_mcp_ai_pro_register_tools() when the enable_quiz_system setting is
+	 * truthy. The bootstrap fires wp_mcp_ai_register_tools before this test
+	 * can enable the option, so re-fire the action after setting it — this
+	 * loads the tool class files the tests instantiate directly.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_quiz_system'] = true;
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		do_action( 'wp_mcp_ai_register_tools', WP_MCP_AI_Tool_Registry::get_instance() );
+
+		// WP_MCP_AI_Quiz_CPT::init() bails when enable_quiz_system is off, and
+		// it ran at bootstrap time with the option off, so the quiz post types
+		// were never hooked. Register them now (mirrors what
+		// tests/test-quiz-admin-pages.php does in the full-suite run).
+		if ( ! class_exists( 'WP_MCP_AI_Quiz_CPT' ) ) {
+			$quiz_cpt_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-quiz-cpt.php';
+			if ( file_exists( $quiz_cpt_file ) ) {
+				require_once $quiz_cpt_file;
+			}
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Quiz_CPT' ) ) {
+			WP_MCP_AI_Quiz_CPT::init();
+			WP_MCP_AI_Quiz_CPT::register_post_types();
+		}
+	}
+
+	/**
 	 * Test create_quiz tool.
 	 */
 	public function test_create_quiz() {
@@ -339,6 +374,17 @@ class Test_Quiz_Tools extends WP_UnitTestCase {
 
 		update_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', 10 );
 		update_post_meta( $quiz_id, '_mcp_ai_quiz_passing_score', 70 );
+		update_post_meta(
+			$quiz_id,
+			'_mcp_ai_quiz_questions',
+			array(
+				array(
+					'question' => 'What is 2+2?',
+					'type'     => 'multiple_choice',
+					'points'   => 10,
+				),
+			)
+		);
 
 		// Create a submission.
 		$submission_id = wp_insert_post(
@@ -1123,8 +1169,9 @@ class Test_Quiz_Tools extends WP_UnitTestCase {
 		$submit_tool       = new WP_MCP_AI_Tool_Submit_Quiz_Answer();
 		$submission_result = $submit_tool->execute(
 			array(
-				'quiz_id' => $quiz_id,
-				'answers' => array(
+				'quiz_id'    => $quiz_id,
+				'started_at' => gmdate( 'c', current_time( 'timestamp' ) ),
+				'answers'    => array(
 					array(
 						'question_index' => 0,
 						'answer'         => '10',

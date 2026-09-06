@@ -365,6 +365,8 @@ class WP_MCP_AI_Design_Extractor_Service {
 	 * @param bool   $overwrite  When false, only fill missing keys (used for defaults).
 	 */
 	private function merge_tokens( array &$tokens, array &$provenance, array $parsed, $source, $overwrite = true ) {
+		$new_weight = $this->source_weight( $source );
+
 		foreach ( $parsed as $section => $values ) {
 			if ( ! is_array( $values ) ) {
 				continue;
@@ -378,19 +380,60 @@ class WP_MCP_AI_Design_Extractor_Service {
 						$tokens[ $section ][ $key ] = array();
 					}
 					foreach ( $value as $sk => $sv ) {
-						if ( $overwrite || ! isset( $tokens[ $section ][ $key ][ $sk ] ) ) {
-							$tokens[ $section ][ $key ][ $sk ]               = $sv;
-							$provenance[ $section . '.' . $key . '.' . $sk ] = $source;
+						$provenance_key = $section . '.' . $key . '.' . $sk;
+						if ( $this->weight_allows_overwrite( $provenance, $provenance_key, $new_weight, $overwrite ) ) {
+							$tokens[ $section ][ $key ][ $sk ] = $sv;
+							$provenance[ $provenance_key ]      = $source;
 						}
 					}
 					continue;
 				}
-				if ( $overwrite || ! isset( $tokens[ $section ][ $key ] ) ) {
-					$tokens[ $section ][ $key ]          = $value;
-					$provenance[ $section . '.' . $key ] = $source;
+				$provenance_key = $section . '.' . $key;
+				if ( $this->weight_allows_overwrite( $provenance, $provenance_key, $new_weight, $overwrite ) ) {
+					$tokens[ $section ][ $key ]   = $value;
+					$provenance[ $provenance_key ] = $source;
 				}
 			}
 		}
+	}
+
+	/**
+	 * Determine whether an incoming source may replace the current value.
+	 *
+	 * Fill-only merges (built-in defaults) never overwrite. Weighted merges
+	 * overwrite when the incoming source weight is greater than or equal to
+	 * the weight of the source that produced the current value, preserving
+	 * the documented precedence (explicit > vision > URL > default).
+	 *
+	 * @param array  $provenance  Provenance map (token key => source label).
+	 * @param string $key         Provenance key (e.g. "palette.accent").
+	 * @param float  $new_weight  Weight of the incoming source.
+	 * @param bool   $overwrite   Whether this merge may overwrite at all.
+	 * @return bool True when the incoming value should be stored.
+	 */
+	private function weight_allows_overwrite( $provenance, $key, $new_weight, $overwrite ) {
+		if ( ! $overwrite ) {
+			return ! isset( $provenance[ $key ] );
+		}
+		if ( ! isset( $provenance[ $key ] ) ) {
+			return true;
+		}
+		return $new_weight >= $this->source_weight( $provenance[ $key ] );
+	}
+
+	/**
+	 * Map a source label to its merge weight.
+	 *
+	 * @param string $source Source label (e.g. "vision:images[0]").
+	 * @return float Weight from SOURCE_WEIGHTS; unknown labels get the
+	 *               built-in default weight.
+	 */
+	private function source_weight( $source ) {
+		$category = strstr( (string) $source, ':', true );
+		if ( false === $category || ! isset( self::SOURCE_WEIGHTS[ $category ] ) ) {
+			return self::SOURCE_WEIGHTS['default'];
+		}
+		return self::SOURCE_WEIGHTS[ $category ];
 	}
 
 	/**

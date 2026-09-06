@@ -1,0 +1,122 @@
+name: PHPUnit Platform Addon
+
+# Runs the nvoos-content-graph-ai-platform test suite in both matrices:
+#   - monolith:   content-graph core + AI + platform alongside the base plugin
+#   - standalone: content-graph core + AI + platform WITHOUT the base plugin
+#                 (the extraction end state the plan restores)
+#
+# See docs/project/plans/content-graph-platform-extraction-plan.md §7.
+
+on:
+  push:
+    branches: [ main, alpha-working ]
+    paths:
+      - 'plugins/nvoos-content-graph-ai-platform/**'
+      - 'plugins/nvoos-content-graph/**'
+      - 'plugins/nvoos-content-graph-ai/**'
+      - 'tests/bootstrap.php'
+      - '.github/workflows/phpunit-platform.yml'
+  pull_request:
+    paths:
+      - 'plugins/nvoos-content-graph-ai-platform/**'
+      - 'plugins/nvoos-content-graph/**'
+      - 'plugins/nvoos-content-graph-ai/**'
+      - 'tests/bootstrap.php'
+      - '.github/workflows/phpunit-platform.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # Each matrix job gets its own database. Without this, the parallel
+    # monolith and standalone jobs share wordpress_test and their
+    # per-test table/option resets interfere (flaky failures in the
+    # DB-stateful measurement tests).
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [ monolith, standalone ]
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_test
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      WP_DB_NAME: wordpress_test_${{ matrix.mode }}
+      WP_DB_USER: wordpress
+      WP_DB_PASSWORD: wordpress
+      WP_DB_HOST: 127.0.0.1
+      WP_CORE_DIR: /tmp/wordpress
+      WP_TESTS_DIR: /tmp/wordpress-tests-lib
+
+    steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune -af || true
+          df -h
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, mysqli
+          tools: composer
+
+      - name: Create test database (per matrix)
+        # The mysql image only grants the wordpress user privileges on its
+        # MYSQL_DATABASE (wordpress_test) — grant them explicitly for the
+        # per-mode database.
+        run: docker exec ${{ job.services.mysql.id }} mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS wordpress_test_${{ matrix.mode }}; GRANT ALL PRIVILEGES ON wordpress_test_${{ matrix.mode }}.* TO 'wordpress'@'%'; FLUSH PRIVILEGES;"
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-platform-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-platform-
+            ${{ runner.os }}-composer-
+
+      - name: Configure Composer GitHub token
+        run: composer config --global github-oauth.github.com ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies (root)
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Configure WordPress test suite
+        run: |
+          bin/install-wp-tests.sh "$WP_DB_NAME" "$WP_DB_USER" "$WP_DB_PASSWORD" "$WP_DB_HOST" latest
+
+      - name: Run PHPUnit (monolith matrix)
+        if: matrix.mode == 'monolith'
+        run: vendor/bin/phpunit -c plugins/nvoos-content-graph-ai-platform/phpunit.xml.dist
+
+      - name: Run PHPUnit (standalone matrix)
+        if: matrix.mode == 'standalone'
+        env:
+          WP_MCP_AI_PLATFORM_STANDALONE: '1'
+        run: vendor/bin/phpunit -c plugins/nvoos-content-graph-ai-platform/phpunit.xml.dist

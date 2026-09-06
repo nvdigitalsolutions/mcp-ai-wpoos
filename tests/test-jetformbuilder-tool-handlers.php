@@ -77,8 +77,8 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers_Test extends WP_UnitTestCase {
 	 */
 	public function register_mock_rest_routes( ?WP_REST_Server $server = null ) {
 		register_rest_route(
-			'wp/v2',
-			'/jet-form-builder',
+			'jet-form-builder/v1',
+			'/forms/',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'permission_callback' => '__return_true',
@@ -96,7 +96,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers_Test extends WP_UnitTestCase {
 
 		register_rest_route(
 			'jet-form-builder/v1',
-			'/(?P<id>[\d]+)/fields',
+			'/forms/(?P<id>[^/]+)/fields/',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'permission_callback' => '__return_true',
@@ -115,7 +115,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers_Test extends WP_UnitTestCase {
 
 		register_rest_route(
 			'jet-form-builder/v1',
-			'/records/fetch-page',
+			'/forms/(?P<id>[^/]+)/records/',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'permission_callback' => '__return_true',

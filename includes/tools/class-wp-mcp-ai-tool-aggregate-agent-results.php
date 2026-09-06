@@ -200,7 +200,7 @@ class WP_MCP_AI_Tool_Aggregate_Agent_Results implements WP_MCP_AI_Tool_Interface
 				'strategy'            => $strategy,
 				'agent_count'         => count( $prepared_results ),
 				'result'              => $aggregated['result'],
-				'confidence'          => $aggregated['confidence'],
+				'confidence'          => isset( $aggregated['confidence'] ) ? $aggregated['confidence'] : null,
 				'contributing_agents' => array_map(
 					function ( $result ) {
 						return array(

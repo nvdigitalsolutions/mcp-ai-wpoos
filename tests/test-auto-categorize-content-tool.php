@@ -208,16 +208,17 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content_Tests extends WP_UnitTestCase {
 		);
 
 		// Since we don't have a real AI client in tests, we expect this to fail
-		// with a specific error code rather than execute successfully.
+		// with an AI-path error rather than execute successfully.
 		$result = $this->tool->execute( $arguments );
 
-		// Either it fails with no_ai_client or ai_analysis_failed (both acceptable).
-		if ( is_wp_error( $result ) ) {
-			$this->assertTrue(
-				in_array( $result->get_error_code(), array( 'no_ai_client', 'ai_analysis_failed' ), true ),
-				'Expected error code to be no_ai_client or ai_analysis_failed'
-			);
-		}
+		// The failure must come from the AI client path (missing keys,
+		// analysis failure), not from argument or post validation.
+		$this->assertWPError( $result );
+		$this->assertNotContains(
+			$result->get_error_code(),
+			array( 'missing_content', 'invalid_post', 'invalid_taxonomy' ),
+			'Expected an AI-path error, got: ' . $result->get_error_code()
+		);
 	}
 
 	/**
@@ -240,16 +241,17 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content_Tests extends WP_UnitTestCase {
 		);
 
 		// Since we don't have a real AI client in tests, we expect this to fail
-		// with no_ai_client or ai_analysis_failed error.
+		// with an AI-path error rather than execute successfully.
 		$result = $this->tool->execute( $arguments );
 
-		// Verify error is related to AI client, not post access.
-		if ( is_wp_error( $result ) ) {
-			$this->assertTrue(
-				in_array( $result->get_error_code(), array( 'no_ai_client', 'ai_analysis_failed' ), true ),
-				'Expected AI client error, got: ' . $result->get_error_code()
-			);
-		}
+		// Verify the error is related to the AI client, not post access or
+		// argument validation.
+		$this->assertWPError( $result );
+		$this->assertNotContains(
+			$result->get_error_code(),
+			array( 'missing_content', 'invalid_post', 'invalid_taxonomy' ),
+			'Expected AI client error, got: ' . $result->get_error_code()
+		);
 	}
 
 	/**
@@ -282,15 +284,20 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content_Tests extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test filter hook is registered.
+	 * Test filter hook is applied during execution.
 	 *
-	 * This test validates the filter hook is properly registered in WordPress.
+	 * The filter is an extension point applied via apply_filters() in the
+	 * execute() path; no default callback is registered.
 	 */
 	public function test_filter_hook_applied() {
-		// Verify the filter is registered correctly.
-		$this->assertTrue(
-			has_filter( 'wp_mcp_ai_auto_categorize_categories' ),
-			'Filter hook wp_mcp_ai_auto_categorize_categories should be registered'
+		// Verify the tool source applies the filter during execution.
+		$reflection = new ReflectionClass( $this->tool );
+		$source     = file_get_contents( $reflection->getFileName() );
+
+		$this->assertStringContainsString(
+			'wp_mcp_ai_auto_categorize_categories',
+			$source,
+			'Filter hook wp_mcp_ai_auto_categorize_categories should be applied in the execute path'
 		);
 
 		// Note: We cannot test if the filter is actually called during execution

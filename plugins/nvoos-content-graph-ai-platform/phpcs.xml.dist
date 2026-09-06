@@ -21,6 +21,15 @@
                 <element value="NvoosContentGraphAiPlatform"/>
                 <element value="nvoos_content_graph_ai_platform"/>
                 <element value="NVOOS_CONTENT_GRAPH_AI_PLATFORM"/>
+                <!--
+                    Extraction transition: ported subsystems intentionally
+                    keep firing the base plugin's public hook names
+                    (wp_mcp_ai_*) so existing consumers keep working.
+                    See docs/project/plans/content-graph-platform-extraction-plan.md
+                    §3 principle 2. Remove once the base copies are deleted at
+                    cutover (plan Phase 5).
+                -->
+                <element value="wp_mcp_ai"/>
             </property>
         </properties>
     </rule>

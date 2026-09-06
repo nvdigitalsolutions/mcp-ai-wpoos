@@ -25,9 +25,12 @@ class WP_MCP_AI_Gemini_Image_Tool_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The tool should return inline content and a download URL when an image is generated successfully.
+	 * The tool should store the generated image as an attachment and NOT
+	 * include the inline base64 payload in the default response (mirrors the
+	 * OpenAI image tool contract — inline content is intentionally omitted to
+	 * avoid bloating chat/LLM results).
 	 */
-	public function test_execute_returns_inline_content_payload() {
+	public function test_execute_stores_attachment_without_inline_content() {
 		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['gemini_api_key'] = 'gsk-test';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
@@ -88,20 +91,20 @@ class WP_MCP_AI_Gemini_Image_Tool_Test extends WP_UnitTestCase {
 		$this->assertNotNull( $captured_request );
 		$this->assertIsArray( $result );
 
-		$this->assertArrayHasKey( 'content', $result );
-		$this->assertIsArray( $result['content'] );
-		$this->assertSame( 'base64', $result['content']['encoding'] );
-		$this->assertSame( $png_base64, $result['content']['data'] );
-		$this->assertSame( 'image/png', $result['content']['mime_type'] );
-		$this->assertSame( 'data:image/png;base64,' . $result['content']['data'], $result['content']['data_url'] );
+		// Inline base64 content is intentionally omitted by default.
+		$this->assertArrayNotHasKey( 'content', $result );
 
+		// The attachment and its metadata are the deliverable.
+		$this->assertArrayHasKey( 'attachment_id', $result );
+		$this->assertNotEmpty( $result['attachment_id'] );
+		$this->assertSame( 'attachment', get_post_type( $result['attachment_id'] ) );
+		$this->assertSame( 'image/png', get_post_mime_type( $result['attachment_id'] ) );
 		$this->assertArrayHasKey( 'download_url', $result );
 		$this->assertNotEmpty( $result['download_url'] );
 		$this->assertSame( 'Try bright morning light and a shallow depth of field for extra charm.', $result['revised_prompt'] );
 
-		if ( ! empty( $result['attachment_id'] ) ) {
-			$this->assertSame( wp_get_attachment_url( $result['attachment_id'] ), $result['download_url'] );
-		}
+		$file_path = get_attached_file( $result['attachment_id'] );
+		$this->assertFileExists( $file_path );
 
 		if ( ! empty( $result['attachment_id'] ) ) {
 			wp_delete_attachment( $result['attachment_id'], true );
@@ -165,7 +168,8 @@ class WP_MCP_AI_Gemini_Image_Tool_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The tool should handle base64url encoded inline data from Gemini.
+	 * The tool should decode base64url-encoded inline data from Gemini and
+	 * persist the decoded bytes as the stored attachment.
 	 */
 	public function test_execute_decodes_base64url_inline_payload() {
 		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
@@ -178,8 +182,8 @@ class WP_MCP_AI_Gemini_Image_Tool_Test extends WP_UnitTestCase {
 		$tool             = new WP_MCP_AI_Tool_Generate_Gemini_Image();
 		$captured_request = null;
 		$png_base64       = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
-		$png_binary       = base64_decode( $png_base64 );
-		$png_base64url    = rtrim( strtr( base64_encode( $png_binary ), '+/', '-_' ), '=' );
+		$png_binary       = base64_decode( $png_base64 ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decodes a fixed PNG fixture to build the base64url payload bytes.
+		$png_base64url    = rtrim( strtr( base64_encode( $png_binary ), '+/', '-_' ), '=' ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Re-encodes fixture bytes as base64url inline data.
 
 		$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, $png_base64url ) {
 			$captured_request = array(
@@ -225,10 +229,16 @@ class WP_MCP_AI_Gemini_Image_Tool_Test extends WP_UnitTestCase {
 
 		$this->assertNotNull( $captured_request );
 		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'content', $result );
-		$this->assertSame( 'base64', $result['content']['encoding'] );
-		$this->assertSame( base64_encode( $png_binary ), $result['content']['data'] );
-		$this->assertSame( 'image/png', $result['content']['mime_type'] );
+
+		// Inline content is intentionally omitted from the default response;
+		// the base64url payload must instead land in the stored attachment.
+		$this->assertArrayNotHasKey( 'content', $result );
+		$this->assertNotEmpty( $result['attachment_id'] );
+		$this->assertSame( 'image/png', get_post_mime_type( $result['attachment_id'] ) );
+
+		$file_path = get_attached_file( $result['attachment_id'] );
+		$this->assertFileExists( $file_path );
+		$this->assertSame( $png_binary, file_get_contents( $file_path ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local attachment file for assertion.
 
 		if ( ! empty( $result['attachment_id'] ) ) {
 			wp_delete_attachment( $result['attachment_id'], true );

@@ -17,6 +17,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/bootstrap.php';
+
 /**
  * Test_Graphify_Connectors
  */
@@ -33,9 +35,12 @@ class Test_Graphify_Connectors extends WP_UnitTestCase {
 		$instance->setAccessible( true );
 		$instance->setValue( null, null );
 
+		// `initialized` is an instance property, so it must be reset on a
+		// concrete object rather than the null static context.
+		$fresh       = NV_oOS_Graphify_Remote_Registry::get_instance();
 		$initialized = $reflection->getProperty( 'initialized' );
 		$initialized->setAccessible( true );
-		$initialized->setValue( null, false );
+		$initialized->setValue( $fresh, false );
 	}
 
 	// -------------------------------------------------------------------------
@@ -377,6 +382,16 @@ class Test_Graphify_Connectors extends WP_UnitTestCase {
 	 * CSV driver ingests a real CSV file from the uploads dir.
 	 */
 	public function test_csv_driver_fetch_nodes_from_uploads() {
+		// The driver reads a local uploads file, which only works through the
+		// `direct` filesystem method. Earlier suites can leave the global
+		// `$wp_filesystem` initialised with `ftpsockets`, so force direct here
+		// and let the driver re-initialise.
+		$filesystem_filter = static function () {
+			return 'direct';
+		};
+		add_filter( 'filesystem_method', $filesystem_filter );
+		$GLOBALS['wp_filesystem'] = null;
+
 		$uploads = wp_get_upload_dir();
 		$this->assertNotEmpty( $uploads['basedir'] );
 		if ( ! is_dir( $uploads['basedir'] ) ) {
@@ -413,6 +428,7 @@ class Test_Graphify_Connectors extends WP_UnitTestCase {
 			$this->assertSame( 'csv_unit', $nodes[0]['source_slug'] );
 		} finally {
 			@unlink( $path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.unlink_unlink
+			remove_filter( 'filesystem_method', $filesystem_filter );
 		}
 	}
 

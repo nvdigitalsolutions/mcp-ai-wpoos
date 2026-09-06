@@ -35,7 +35,7 @@ Healthcare blueprints use the direct WordPress-style format (maps 1:1 to
     "_wp_mcp_ai_temperature": 0.2,
     "_wp_mcp_ai_system_prompt": "Full system prompt with clinical guardrails.",
     "_wp_mcp_ai_tools": ["tool_slug", "..."],
-    "_wp_mcp_ai_required_capability": "edit_others_posts",
+    "mcp_ai_required_capability": "edit_others_posts",
     "_wp_mcp_ai_audit_phi": true
   }
 }

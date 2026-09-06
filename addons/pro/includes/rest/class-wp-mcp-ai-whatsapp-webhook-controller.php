@@ -153,7 +153,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'verify_webhook' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => '__return_true', // Public endpoint for webhook verification.
 				'args'                => array_merge(
 					$hub_args,
 					array(
@@ -289,15 +289,16 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	 * Implements Meta's signature validation best practice.
 	 * Signature is sent in X-Hub-Signature-256 header.
 	 *
-	 * When the App Secret is not configured, the webhook is allowed through
-	 * with a security warning so that incoming messages can still be processed.
-	 * Configure the App Secret from the Meta Developer Dashboard to enable
-	 * full HMAC-SHA256 signature validation.
+	 * When the App Secret is not configured, the request is rejected with a
+	 * 403 error: without a secret there is no way to authenticate the sender,
+	 * and accepting unsigned webhooks would leave an open relay. Configure the
+	 * App Secret from the Meta Developer Dashboard to enable full HMAC-SHA256
+	 * signature validation.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param WP_REST_Request $request Request object.
-	 * @return bool True if signature is valid or App Secret is not configured, false otherwise.
+	 * @return bool|WP_Error True if signature is valid, false if the signature is missing or invalid, WP_Error if no App Secret is configured.
 	 */
 	public function validate_webhook_signature( $request ) {
 		// Get app secret from connection settings.

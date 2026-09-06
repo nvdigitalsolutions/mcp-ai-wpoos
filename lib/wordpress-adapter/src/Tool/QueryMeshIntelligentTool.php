@@ -60,14 +60,23 @@ class QueryMeshIntelligentTool extends AbstractTool {
 			: \get_current_user_id();
 
 		if ( ! $user_id || ! \user_can( $user_id, 'manage_options' ) ) {
-			return $this->errors->accessDenied(
+			return $this->errors->forbidden(
 				'You do not have permission to query the mesh network.'
 			);
 		}
 
 		if ( \is_multisite() && ! \is_user_member_of_blog( $user_id, \get_current_blog_id() ) ) {
-			return $this->errors->accessDenied(
+			return $this->errors->forbidden(
 				'You do not have access to this site.'
+			);
+		}
+
+		// Standalone gate: mesh routing lives in the base plugin (the
+		// platform's Mesh port bridges it in monolith installs).
+		if ( ! \defined( 'WP_MCP_AI_PATH' ) || ! \class_exists( 'WP_MCP_AI_Admin_Settings' ) || ! \class_exists( 'WP_MCP_AI_Mesh_Router' ) ) {
+			return $this->errors->create(
+				'wp_mcp_ai_mesh_unavailable',
+				'Mesh routing is unavailable in this install.',
 			);
 		}
 

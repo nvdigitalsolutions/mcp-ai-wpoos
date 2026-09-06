@@ -331,6 +331,84 @@ function wp_mcp_ai_has_local_nodejs() {
 }
 
 /**
+ * Check whether Node.js is available as a LOCAL command on this server,
+ * safe on hosts where exec() or proc_open are disabled.
+ *
+ * Canonical runtime probe used by the Pro admin pages (Pro Packages, Media,
+ * Document Generation, Image Production, Media Command Center). Tries
+ * exec() first — preserving legacy behaviour on hosts that allow it — and
+ * falls back to the Process Service (proc_open) so pages never fatal on
+ * hosts that disable exec() via disable_functions: on PHP 8+ calling a
+ * disabled function throws a fatal Error that @ cannot suppress.
+ *
+ * Unlike wp_mcp_ai_is_nodejs_available(), this never reports the Media
+ * Worker sidecar, matching the semantics of the legacy per-page checks.
+ *
+ * @since 1.1.69
+ * @return bool True when the local `node` command is available.
+ */
+function wp_mcp_ai_check_nodejs_available() {
+	// exec() first, gated on function_exists() because exec() is commonly
+	// disabled via disable_functions on shared hosts.
+	if ( function_exists( 'exec' ) ) {
+		$output = array();
+		$return = null;
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec,WordPress.PHP.NoSilencedErrors.Discouraged
+		@exec( 'node --version 2>&1', $output, $return );
+
+		if ( 0 === $return && ! empty( $output ) ) {
+			return true;
+		}
+	}
+
+	// Fallback: Process Service (proc_open). Reports unavailable instead of
+	// throwing when process functions are disabled.
+	if ( function_exists( 'wp_mcp_ai_has_local_nodejs' ) ) {
+		return wp_mcp_ai_has_local_nodejs();
+	}
+
+	return false;
+}
+
+/**
+ * Get the installed Node.js version string.
+ *
+ * Returns the raw `node --version` output (e.g. "v20.11.0") or the
+ * translated "Not Available" string when Node.js cannot be detected.
+ * Safe on hosts where exec() or proc_open are disabled.
+ *
+ * @since 1.1.69
+ * @return string Node.js version or translated "Not Available".
+ */
+function wp_mcp_ai_get_nodejs_version() {
+	// exec() first, gated on function_exists() because exec() is commonly
+	// disabled via disable_functions on shared hosts.
+	if ( function_exists( 'exec' ) ) {
+		$output = array();
+		$return = null;
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec,WordPress.PHP.NoSilencedErrors.Discouraged
+		@exec( 'node --version 2>&1', $output, $return );
+
+		if ( 0 === $return && ! empty( $output ) ) {
+			return trim( $output[0] );
+		}
+	}
+
+	// Fallback: Process Service (proc_open), which handles disabled
+	// process functions gracefully.
+	if ( class_exists( '\WP_MCP_AI\Services\WP_MCP_AI_Process_Service' ) ) {
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+		$result          = $process_service->run_silent( array( 'node', '--version' ), array( 'timeout' => 5 ) );
+
+		if ( ! empty( $result['success'] ) && ! empty( $result['output'] ) ) {
+			return trim( $result['output'] );
+		}
+	}
+
+	return __( 'Not Available', 'mcp-ai-wpoos-pro' );
+}
+
+/**
  * Execute Node.js service script
  *
  * @param string $service_file Service file path.
@@ -1070,6 +1148,15 @@ function wp_mcp_ai_check_vendor_packages() {
 		'turf'          => 'assets/vendor/turf/dist/cjs/index.cjs',
 		'qrcode'        => 'assets/vendor/qrcode/lib/index.js',
 	);
+
+	/**
+	 * Filter the vendor package path map before availability checks.
+	 *
+	 * Allows tests and integrations to remap or inject package locations.
+	 *
+	 * @param array $packages Package name => relative path pairs.
+	 */
+	$packages = apply_filters( 'wp_mcp_ai_vendor_package_paths', $packages );
 
 	$missing = array();
 	foreach ( $packages as $name => $path ) {

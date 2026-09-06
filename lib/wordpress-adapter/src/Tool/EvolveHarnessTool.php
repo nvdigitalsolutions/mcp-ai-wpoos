@@ -219,7 +219,7 @@ class EvolveHarnessTool extends AbstractTool {
 		if ( ! \class_exists( 'WP_MCP_AI_Agent_Harness_Evolver' ) ) {
 			return new \WP_Error( 'wp_mcp_ai_evolver_unavailable', 'Harness evolver module is not currently loaded.' );
 		}
-		return new \WP_MCP_AI_Agent_Harness_Evolver( $assistant_id, $session_id );
+		return new \WP_MCP_AI_Agent_Harness_Evolver( $session_id, $assistant_id );
 	}
 
 	private function logEvolution( int $assistant_id, string $session_id, string $component, bool $dry_run, array $result ): void {

@@ -81,9 +81,12 @@ class Test_Image_Template_Admin_Pages extends WP_UnitTestCase {
 	 * Test that Image Template CPT is registered.
 	 */
 	public function test_image_template_cpt_registered() {
-		// Initialize the CPT.
+		// Initialize the CPT hooks and register the post type directly.
+		// NOTE: do NOT re-fire init here — it re-runs WooCommerce block
+		// registrations, which fail the test with "already registered"
+		// incorrect-usage notices.
 		WP_MCP_AI_Image_Template_CPT::init();
-		do_action( 'init' );
+		WP_MCP_AI_Image_Template_CPT::register_post_type();
 
 		// Check if the post type is registered.
 		$post_type = get_post_type_object( 'mcp_ai_image_tpl' );
@@ -102,9 +105,13 @@ class Test_Image_Template_Admin_Pages extends WP_UnitTestCase {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/image-production/init.php';
 		}
 
-		// Initialize CPT to ensure it's registered.
+		// Register the CPT and admin pages. The production init file loads
+		// the pages inside an is_admin() gate that never runs under PHPUnit,
+		// so load them directly; the CPT registration avoids re-firing init
+		// (which re-runs WooCommerce block registrations).
 		WP_MCP_AI_Image_Template_CPT::init();
-		do_action( 'init' );
+		WP_MCP_AI_Image_Template_CPT::register_post_type();
+		$this->load_image_production_admin_pages();
 
 		// Trigger admin_menu action.
 		do_action( 'admin_menu' );
@@ -139,9 +146,10 @@ class Test_Image_Template_Admin_Pages extends WP_UnitTestCase {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/image-production/init.php';
 		}
 
-		// Initialize CPT to ensure it's registered.
+		// Register the CPT and admin pages directly (see research page test).
 		WP_MCP_AI_Image_Template_CPT::init();
-		do_action( 'init' );
+		WP_MCP_AI_Image_Template_CPT::register_post_type();
+		$this->load_image_production_admin_pages();
 
 		// Trigger admin_menu action.
 		do_action( 'admin_menu' );
@@ -181,9 +189,12 @@ class Test_Image_Template_Admin_Pages extends WP_UnitTestCase {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/image-production/init.php';
 		}
 
-		// Initialize CPT to ensure it's registered.
+		// Register the CPT and admin pages directly (see research page test).
+		// The admin pages load regardless of the feature flag, mirroring the
+		// production init file's is_admin() block ordering.
 		WP_MCP_AI_Image_Template_CPT::init();
-		do_action( 'init' );
+		WP_MCP_AI_Image_Template_CPT::register_post_type();
+		$this->load_image_production_admin_pages();
 
 		// Trigger admin_menu action.
 		do_action( 'admin_menu' );
@@ -245,6 +256,28 @@ class Test_Image_Template_Admin_Pages extends WP_UnitTestCase {
 
 		$this->assertIsArray( $tools, 'Tools list should be an array' );
 		$this->assertNotEmpty( $tools, 'Tools list should not be empty' );
+	}
+
+	/**
+	 * Load the image production admin pages directly.
+	 *
+	 * The production init file wraps these loads in an is_admin() gate that
+	 * never runs under PHPUnit, so the tests load them explicitly.
+	 *
+	 * @return void
+	 */
+	protected function load_image_production_admin_pages() {
+		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-cpt-settings-page-base.php' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-cpt-settings-page-base.php';
+		}
+		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-image-production-cpt-settings-page.php' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-image-production-cpt-settings-page.php';
+			new WP_MCP_AI_Image_Production_Settings_Page();
+		}
+		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-image-template-research-page.php' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-image-template-research-page.php';
+			WP_MCP_AI_Image_Template_Research_Page::init();
+		}
 	}
 
 	/**

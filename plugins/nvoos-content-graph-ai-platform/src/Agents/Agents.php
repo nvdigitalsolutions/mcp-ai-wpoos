@@ -67,6 +67,22 @@ final class Agents {
 			$this->registerAdmin();
 		}
 
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			// Monolith mode: the base plugin's includes/agents-init.php owns
+			// the runtime wiring for the agent role system (audit-trail CPT +
+			// cron, capability-boundary gate, evolved-prompt resolver).
+			// Registering the ported copies here would double-wire hooks.
+			return;
+		}
+
+		// Standalone mode: mirror the base plugin's agents-init.php wiring
+		// for the ported role-system classes. The role classes themselves
+		// (planner/executor/critic) and the harness classes are passive
+		// libraries with no runtime hooks.
+		AgentAuditTrail::init();
+		AgentCapabilityBoundaryHooks::register();
+		EvolvedPromptResolver::register();
+
 		// Future hooks to wire as extraction progresses:
 		// - Agent creation/update/deletion lifecycle
 		// - Agent capability registration

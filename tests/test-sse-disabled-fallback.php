@@ -89,12 +89,14 @@ class WP_MCP_AI_SSE_Disabled_Fallback_Test extends WP_Test_REST_TestCase {
 	}
 
 	/**
-	 * Test that chat request returns JSON when SSE is requested but Accept header is JSON.
+	 * Ensure the explicit stream param wins over a JSON Accept header.
 	 *
-	 * This simulates the fallback scenario: when enableStreaming is true
-	 * but the server determines it should return JSON instead of SSE.
+	 * MCP clients like LM Studio send "Accept: text/event-stream" by default
+	 * but expect JSON unless they explicitly request streaming via the stream
+	 * param (Streamable HTTP transport, MCP 2024-11-05 spec). Symmetrically,
+	 * an explicit stream param must not be overridden by a JSON Accept header.
 	 */
-	public function test_chat_returns_json_with_json_accept_header() {
+	public function test_chat_streams_when_stream_param_set_even_with_json_accept_header() {
 		$assistant_id = $this->create_test_assistant();
 		$user_id      = self::factory()->user->create( array( 'role' => 'editor' ) );
 		wp_set_current_user( $user_id );
@@ -110,19 +112,16 @@ class WP_MCP_AI_SSE_Disabled_Fallback_Test extends WP_Test_REST_TestCase {
 				),
 			)
 		);
-		$request->set_param( 'stream', true ); // Request streaming.
+		$request->set_param( 'stream', true ); // Explicitly request streaming.
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
-		$request->set_header( 'Accept', 'application/json' ); // But accept JSON.
+		$request->set_header( 'Accept', 'application/json' ); // Accept header must not override.
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $output ) = $this->dispatch_chat_and_capture( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 200, $response->get_status() );
-
-		$data = $response->get_data();
-		$this->assertIsArray( $data, 'Response should be JSON when Accept header is application/json' );
-		$this->assertArrayHasKey( 'assistant_id', $data );
-		$this->assertArrayHasKey( 'data', $data );
+		$this->assertStringContainsString( 'event: message', $output );
+		$this->assertStringContainsString( 'data: [DONE]', $output );
 	}
 
 	/**
@@ -188,16 +187,22 @@ class WP_MCP_AI_SSE_Disabled_Fallback_Test extends WP_Test_REST_TestCase {
 	public function test_shortcode_config_sets_enable_streaming_flag() {
 		$assistant_id = $this->create_test_assistant();
 
-		// Test with streaming disabled (default).
+		// The chat shortcode returns a permission notice unless a user with the
+		// assistant's required capability is logged in.
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
 		$shortcode = new WP_MCP_AI_Shortcode();
-		$output    = $shortcode->render_shortcode(
+
+		// Test with streaming disabled (default).
+		$output = $shortcode->render_shortcode(
 			array(
 				'assistant'        => $assistant_id,
 				'enable_streaming' => 'false',
 			)
 		);
 
-		$this->assertStringContainsString( '"enableStreaming":false', $output, 'Shortcode should set enableStreaming to false' );
+		$this->assertNotEmpty( $output, 'Shortcode should render the chat interface' );
 
 		// Test with streaming enabled.
 		$output = $shortcode->render_shortcode(
@@ -207,7 +212,60 @@ class WP_MCP_AI_SSE_Disabled_Fallback_Test extends WP_Test_REST_TestCase {
 			)
 		);
 
-		$this->assertStringContainsString( '"enableStreaming":true', $output, 'Shortcode should set enableStreaming to true' );
+		$this->assertNotEmpty( $output, 'Shortcode should render the chat interface when streaming is enabled' );
+
+		// The per-instance config is emitted as an inline script registered on
+		// the chat script handle rather than inside the shortcode HTML.
+		$inline = wp_scripts()->get_inline_script_data( WP_MCP_AI_Shortcode::SCRIPT_HANDLE, 'before' );
+
+		$this->assertStringContainsString( '"enableStreaming":false', $inline, 'Shortcode should set enableStreaming to false' );
+		$this->assertStringContainsString( '"enableStreaming":true', $inline, 'Shortcode should set enableStreaming to true' );
+	}
+
+	/**
+	 * Dispatch a chat request and capture any echoed SSE frames.
+	 *
+	 * The streaming path echoes frames directly and cleans output buffers
+	 * inside send_sse_headers(), so capture requires a callback buffer that
+	 * survives the handler's buffer cleanup. Existing buffers are flattened
+	 * first and the original level restored afterwards so PHPUnit's
+	 * output-buffer tracking stays balanced.
+	 *
+	 * @param WP_REST_Request $request Request to dispatch.
+	 * @return array{0: WP_REST_Response, 1: string} Response and captured output.
+	 */
+	protected function dispatch_chat_and_capture( WP_REST_Request $request ) {
+		$initial_level = ob_get_level();
+
+		// Flatten all buffers so the handler's buffer cleanup (which keeps only
+		// the outermost buffer alive) cannot destroy our capture buffer.
+		while ( ob_get_level() > 0 ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Deliberate: end_clean may fail on restricted hosts; level is re-checked next iteration.
+			@ob_end_clean();
+		}
+
+		$captured = '';
+		ob_start(
+			static function ( $chunk ) use ( &$captured ) {
+				$captured .= $chunk;
+				return '';
+			}
+		);
+
+		$response = rest_get_server()->dispatch( $request );
+
+		while ( ob_get_level() > 0 ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Deliberate: see above.
+			@ob_end_clean();
+		}
+
+		// Restore the original buffer count so PHPUnit does not flag the test
+		// as risky for leaving output buffers open.
+		for ( $i = 0; $i < $initial_level; $i++ ) {
+			ob_start();
+		}
+
+		return array( $response, $captured );
 	}
 
 	/**

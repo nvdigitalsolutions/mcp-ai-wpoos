@@ -93,7 +93,7 @@ class Test_WP_MCP_AI_Tool_Generate_Image_Alt_Text_Validated extends WP_UnitTestC
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -108,7 +108,7 @@ class Test_WP_MCP_AI_Tool_Generate_Image_Alt_Text_Validated extends WP_UnitTestC
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -123,7 +123,7 @@ class Test_WP_MCP_AI_Tool_Generate_Image_Alt_Text_Validated extends WP_UnitTestC
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -139,7 +139,7 @@ class Test_WP_MCP_AI_Tool_Generate_Image_Alt_Text_Validated extends WP_UnitTestC
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -156,7 +156,7 @@ class Test_WP_MCP_AI_Tool_Generate_Image_Alt_Text_Validated extends WP_UnitTestC
 		// Validation should pass; result will be an error from the original tool
 		// (because API is not configured), but not a validation error.
 		if ( is_wp_error( $result ) ) {
-			$this->assertNotEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+			$this->assertNotEquals( 'validation_failed', $result->get_error_code() );
 		}
 	}
 
@@ -174,7 +174,7 @@ class Test_WP_MCP_AI_Tool_Generate_Image_Alt_Text_Validated extends WP_UnitTestC
 		// Validation should pass; result will be an error from the original tool
 		// (because attachment doesn't exist), but not a validation error.
 		if ( is_wp_error( $result ) ) {
-			$this->assertNotEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+			$this->assertNotEquals( 'validation_failed', $result->get_error_code() );
 		}
 	}
 
@@ -193,7 +193,7 @@ class Test_WP_MCP_AI_Tool_Generate_Image_Alt_Text_Validated extends WP_UnitTestC
 		// Validation should pass; result will be an error from the original tool
 		// (because API is not configured), but not a validation error.
 		if ( is_wp_error( $result ) ) {
-			$this->assertNotEquals( 'wp_mcp_ai_validation_failed', $result->get_error_code() );
+			$this->assertNotEquals( 'validation_failed', $result->get_error_code() );
 		}
 	}
 

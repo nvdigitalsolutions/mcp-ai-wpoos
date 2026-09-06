@@ -195,10 +195,9 @@ class Test_API_Caching extends WP_UnitTestCase {
 		$cached = WP_MCP_AI_Cache_Helper::get( $cache_key );
 		$this->assertEquals( 'test_value', $cached, 'Cache should exist immediately' );
 
-		// Wait 2 seconds and check again (transients should expire).
-		// Note: This test may be flaky depending on system load.
-		// In production, WordPress handles transient expiration.
-		sleep( 2 );
+		// Force the transient timeout into the past instead of sleeping, so the
+		// expiration check is deterministic under any system load.
+		update_option( '_transient_timeout_wp_mcp_ai_' . $cache_key, time() - 5 );
 
 		// After expiration, get_transient returns false.
 		$expired = get_transient( 'wp_mcp_ai_' . $cache_key );
@@ -244,13 +243,18 @@ class Test_API_Caching extends WP_UnitTestCase {
 	 * Test OpenAI embeddings caching settings exist.
 	 */
 	public function test_openai_embeddings_cache_setting_exists() {
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		// The settings UI (Providers section) is the canonical source for
+		// these fields; they only enter the merged settings array after save.
+		$section = new WP_MCP_AI_Section_Providers();
+		$fields  = $section->get_fields();
 
 		// Should use same enable flag as models.
-		$this->assertTrue( ! empty( $settings['enable_openai_api_caching'] ), 'OpenAI caching should be enabled' );
+		$this->assertArrayHasKey( 'enable_openai_api_caching', $fields, 'OpenAI caching setting should exist' );
+		$this->assertTrue( ! empty( $fields['enable_openai_api_caching']['default'] ), 'OpenAI caching should be enabled by default' );
 
 		// Should have separate TTL for embeddings.
-		$this->assertArrayHasKey( 'openai_embedding_cache_ttl', $settings, 'Embeddings cache TTL setting should exist' );
+		$this->assertArrayHasKey( 'openai_embedding_cache_ttl', $fields, 'Embeddings cache TTL setting should exist' );
+		$this->assertGreaterThan( 0, (int) $fields['openai_embedding_cache_ttl']['default'], 'Embeddings cache TTL should have a positive default' );
 	}
 
 	/**

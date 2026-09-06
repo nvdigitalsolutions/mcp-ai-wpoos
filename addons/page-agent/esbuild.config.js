@@ -31,7 +31,9 @@ async function buildPageAgent() {
 		entryPoints: [ 'page-agent' ],
 		bundle:      true,
 		minify:      isProd,
-		sourcemap:   ! isProd,
+		// Always emit external source maps (F-CMP-04): production bundles must
+		// ship a sibling .map file so minified output remains reviewable.
+		sourcemap:   'external',
 		target:      [ 'es2020' ],
 		format:      'iife',
 		globalName:  'PageAgent',
@@ -68,7 +70,9 @@ async function buildBridge() {
 		entryPoints: [ path.resolve( __dirname, 'src/page-agent-bridge.js' ) ],
 		bundle:      true,
 		minify:      isProd,
-		sourcemap:   ! isProd,
+		// Always emit external source maps (F-CMP-04): production bundles must
+		// ship a sibling .map file so minified output remains reviewable.
+		sourcemap:   'external',
 		target:      [ 'es2020' ],
 		format:      'iife',
 		outfile:     path.resolve(

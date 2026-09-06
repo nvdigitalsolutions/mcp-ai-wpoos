@@ -26,6 +26,13 @@ class Test_Vault_CPT_Registration extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Vault_Folder_CPT' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/vault/class-wp-mcp-ai-vault-folder-cpt.php';
 		}
+
+		// Both classes hook register_meta() onto 'init' (priority 20), but
+		// 'init' has already fired by the time tests load the files, so the
+		// callback never runs. Invoke the registration directly; it is
+		// idempotent.
+		WP_MCP_AI_Vault_Item_CPT::get_instance()->register_meta();
+		WP_MCP_AI_Vault_Folder_CPT::get_instance()->register_meta();
 	}
 
 	/**

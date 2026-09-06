@@ -114,24 +114,29 @@ class Test_Google_Chat_Space_Tools extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * Test send_google_chat_message schema includes thread_key and thread_name parameters.
+	 * Test send_google_chat_message schema is webhook-only: legacy OAuth and
+	 * thread parameters are no longer exposed.
 	 */
-	public function test_send_google_chat_message_schema_has_thread_params() {
+	public function test_send_google_chat_message_schema_has_no_legacy_params() {
 		$this->load_tool( 'WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message', 'class-wp-mcp-ai-pro-tool-send-google-chat-message.php' );
 
 		$tool   = new WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message();
 		$schema = $tool->get_parameters_schema();
 
-		$this->assertArrayHasKey( 'thread_key', $schema['properties'], 'Schema must include thread_key' );
-		$this->assertArrayHasKey( 'thread_name', $schema['properties'], 'Schema must include thread_name' );
-		$this->assertSame( 'string', $schema['properties']['thread_key']['type'] );
-		$this->assertSame( 'string', $schema['properties']['thread_name']['type'] );
+		$this->assertArrayHasKey( 'webhook_url', $schema['properties'], 'Schema must include webhook_url' );
+		$this->assertArrayHasKey( 'text', $schema['properties'], 'Schema must include text' );
+		$this->assertArrayNotHasKey( 'thread_key', $schema['properties'], 'Legacy thread_key parameter was removed' );
+		$this->assertArrayNotHasKey( 'thread_name', $schema['properties'], 'Legacy thread_name parameter was removed' );
+		$this->assertArrayNotHasKey( 'space', $schema['properties'], 'Legacy space parameter was removed' );
+		$this->assertArrayNotHasKey( 'access_token', $schema['properties'], 'Legacy access_token parameter was removed' );
 	}
 
 	/**
-	 * Test send_google_chat_message returns error when space format is invalid.
+	 * Test send_google_chat_message requires webhook_url: the legacy
+	 * space/access_token parameters are ignored and the missing webhook URL
+	 * is rejected.
 	 */
-	public function test_send_google_chat_message_rejects_invalid_space_format() {
+	public function test_send_google_chat_message_rejects_missing_webhook_url() {
 		$this->load_tool( 'WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message', 'class-wp-mcp-ai-pro-tool-send-google-chat-message.php' );
 
 		$admin = self::factory()->user->create( array( 'role' => 'administrator' ) );
@@ -148,7 +153,7 @@ class Test_Google_Chat_Space_Tools extends WP_UnitTestCase {
 		);
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'wp_mcp_ai_invalid_space', $result->get_error_code() );
+		$this->assertSame( 'wp_mcp_ai_invalid_url', $result->get_error_code() );
 	}
 
 	/**
@@ -205,14 +210,16 @@ class Test_Google_Chat_Space_Tools extends WP_UnitTestCase {
 		$tool   = new WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message();
 		$result = $tool->execute(
 			array(
-				'webhook_url' => 'https://example.com/not-a-google-chat-webhook',
-				'text'        => 'Hello',
+				// A disallowed protocol is stripped by esc_url_raw(), leaving an
+				// empty webhook URL that the tool rejects before any request.
+					'webhook_url' => 'javascript:alert(1)',
+				'text'            => 'Hello',
 			),
 			array( 'user_id' => $admin )
 		);
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'wp_mcp_ai_invalid_webhook_url', $result->get_error_code() );
+		$this->assertSame( 'wp_mcp_ai_invalid_url', $result->get_error_code() );
 	}
 
 	/**
@@ -261,7 +268,7 @@ class Test_Google_Chat_Space_Tools extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'Authorization', $captured_args['headers'], 'Webhook requests must not include an Authorization header' );
 		// Content-Type should be set.
 		$this->assertArrayHasKey( 'Content-Type', $captured_args['headers'] );
-		$this->assertSame( 'application/json', $captured_args['headers']['Content-Type'] );
+		$this->assertSame( 'application/json; charset=UTF-8', $captured_args['headers']['Content-Type'] );
 	}
 
 	/**
@@ -283,7 +290,7 @@ class Test_Google_Chat_Space_Tools extends WP_UnitTestCase {
 		);
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'wp_mcp_ai_missing_message_text', $result->get_error_code() );
+		$this->assertSame( 'wp_mcp_ai_missing_text', $result->get_error_code() );
 	}
 
 	/**
@@ -333,7 +340,7 @@ class Test_Google_Chat_Space_Tools extends WP_UnitTestCase {
 		remove_all_filters( 'pre_http_request' );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'wp_mcp_ai_google_chat_api_error', $result->get_error_code() );
+		$this->assertSame( 'google_chat_api_error', $result->get_error_code() );
 	}
 
 	// =========================================================================

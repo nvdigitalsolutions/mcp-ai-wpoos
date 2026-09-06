@@ -338,7 +338,21 @@ class WP_MCP_AI_Veo_Duration_Validation_Test extends WP_UnitTestCase {
 						);
 					}
 
-					return $preempt;
+					// Stub the subsequent operation polling request too —
+					// otherwise poll_for_completion() performs a real
+					// outbound request and the test hangs.
+					return array(
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+						'body'     => wp_json_encode(
+							array(
+								'name' => 'operations/test-op',
+								'done' => true,
+							)
+						),
+					);
 				},
 				10,
 				3

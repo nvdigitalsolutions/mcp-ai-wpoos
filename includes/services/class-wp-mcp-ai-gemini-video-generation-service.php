@@ -784,9 +784,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 						$model,
 						$api_error_message
 					);
-				}
-				// Provide more helpful error messages for common issues.
-				elseif ( $this->is_content_policy_error( $api_error_message ) ) {
+				} elseif ( $this->is_content_policy_error( $api_error_message ) ) {
+					// Provide more helpful error messages for common issues.
 					$error_code    = 'wp_mcp_ai_content_policy_violation';
 					$error_message = sprintf(
 						/* translators: %s: API error message */
@@ -863,6 +862,23 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// If so, we should NOT fall back to async again (prevents dual async).
 		$in_async_executor = isset( $args['in_async_executor'] ) && $args['in_async_executor'];
 
+		/**
+		 * Filter the maximum number of completion polls.
+		 *
+		 * @since 1.3.1
+		 *
+		 * @param int $max_attempts Maximum polling attempts. Default 60.
+		 */
+		$max_attempts = (int) apply_filters( 'wp_mcp_ai_veo_poll_max_attempts', self::MAX_POLLING_ATTEMPTS );
+		/**
+		 * Filter the polling interval (seconds) between completion polls.
+		 *
+		 * @since 1.3.1
+		 *
+		 * @param int $poll_interval_s Seconds between polls. Default 5.
+		 */
+		$poll_interval_s = (int) apply_filters( 'wp_mcp_ai_veo_poll_interval', self::POLLING_INTERVAL );
+
 		// Initialize timeout detector for async fallback.
 		// Note: Service is already loaded in services-init.php, but we require here
 		// to ensure it's available even if called directly without full initialization.
@@ -871,12 +887,12 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		}
 		$timeout_detector = new WP_MCP_AI_Timeout_Detection_Service( 10 );
 
-		while ( $attempts < self::MAX_POLLING_ATTEMPTS ) {
+		while ( $attempts < $max_attempts ) {
 			++$attempts;
 
 			// Wait before polling.
 			if ( $attempts > 1 ) {
-				sleep( self::POLLING_INTERVAL );
+				sleep( $poll_interval_s );
 			}
 
 			// Check if we're approaching PHP timeout (10 seconds before).
@@ -2597,7 +2613,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			WP_MCP_AI_Tool_Lifecycle_Descriptor::build( $result, null, $tool_slug, $context )
 		);
 
-		// Complete parent async job if present.
+		// CRITICAL ORDER: Complete the parent async job only AFTER the veo job
+		// completion hook above has fired, preventing race conditions where
+		// both jobs complete simultaneously and the notification cache misses.
 		if ( isset( $metadata['parent_job_id'] ) && ! empty( $metadata['parent_job_id'] ) ) {
 			// Add 1-second delay before completing parent job.
 			sleep( 1 );

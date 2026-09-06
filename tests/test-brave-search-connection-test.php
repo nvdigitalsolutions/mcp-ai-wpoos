@@ -31,6 +31,12 @@ class Test_Brave_Search_Connection_Test extends WP_UnitTestCase {
 		if ( ! did_action( 'admin_init' ) ) {
 			do_action( 'admin_init' );
 		}
+
+		// WooCommerce registers privacy-policy content on admin_init without
+		// an is_admin() guard; WP 6.9 flags that as incorrect usage in the
+		// non-admin test context. The notice is environmental, not from the
+		// code under test.
+		$this->setExpectedIncorrectUsage( 'wp_add_privacy_policy_content' );
 	}
 
 	/**
@@ -58,7 +64,10 @@ class Test_Brave_Search_Connection_Test extends WP_UnitTestCase {
 		// Start output buffering.
 		ob_start();
 
-		// Simulate being on the brave_search connection page.
+		// Simulate being on the brave_search connection page within the
+		// Tools > Connections subtab; render_wrapper() only renders when
+		// the 'connections' subtab is active.
+		$_GET['subtab']     = 'connections';
 		$_GET['connection'] = 'brave_search';
 
 		// Render the section.
@@ -111,7 +120,10 @@ class Test_Brave_Search_Connection_Test extends WP_UnitTestCase {
 		// Start output buffering.
 		ob_start();
 
-		// Simulate being on the brave_search connection page.
+		// Simulate being on the brave_search connection page within the
+		// Tools > Connections subtab; render_wrapper() only renders when
+		// the 'connections' subtab is active.
+		$_GET['subtab']     = 'connections';
 		$_GET['connection'] = 'brave_search';
 
 		// Render the section.
@@ -157,7 +169,13 @@ class Test_Brave_Search_Connection_Test extends WP_UnitTestCase {
 
 		// Capture output.
 		ob_start();
-		$ajax_handlers->handle_test_brave_search_connection();
+		try {
+			$ajax_handlers->handle_test_brave_search_connection();
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected: the handler terminates via wp_send_json_error(), which the test bootstrap converts into a throwable WPDieException.
+		} catch ( WPDieException $e ) {
+			// Expected: the handler terminates via wp_send_json_error(), which
+			// the test bootstrap converts into a throwable WPDieException.
+		}
 		$response = ob_get_clean();
 
 		// Parse JSON response.
@@ -179,6 +197,7 @@ class Test_Brave_Search_Connection_Test extends WP_UnitTestCase {
 	 */
 	public function tearDown(): void {
 		// Clean up.
+		unset( $_GET['subtab'] );
 		unset( $_GET['connection'] );
 		unset( $_POST['nonce'] );
 		unset( $_POST['api_key'] );

@@ -91,9 +91,15 @@ class Test_Slash_Command_Sync_Docs extends WP_UnitTestCase {
 	 * Test no documentation scenario
 	 */
 	public function test_no_documentation_found() {
+		// Scope to posts only: the default 'all' type also scans plugin and
+		// theme directories for README files, which exist in the test
+		// environment and would make this assertion non-deterministic.
 		$result = $this->command->execute(
 			array(),
-			array( 'dry-run' => true ),
+			array(
+				'type'    => 'posts',
+				'dry-run' => true,
+			),
 			array( 'user_id' => $this->user_id )
 		);
 

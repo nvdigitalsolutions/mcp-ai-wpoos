@@ -152,6 +152,11 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		provider: model.provider,
 		transcriptsEndpoint: endpoints?.transcripts ?? '',
 		allowSensitiveTools: !!runtime?.config?.allowSensitiveTools,
+		guest: !!runtime?.config?.guest,
+		guestToken:
+			typeof runtime?.config?.guestToken === 'string'
+				? runtime.config.guestToken
+				: '',
 	} );
 
 	const {
@@ -170,6 +175,23 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		saveConversation,
 		setMessages,
 	} = chatSpoke;
+
+	// The restored conversation's history is fetched after this component has
+	// mounted, so `useChat` has already bound its (then empty) initialMessages.
+	// Push the history in once it arrives — once per conversation, and never
+	// over messages already on screen (an in-flight stream, or a history the
+	// user has since pruned).
+	const hydratedSessionRef = useRef< string >( '' );
+	useEffect( () => {
+		if ( initialMessages.length === 0 || messages.length > 0 ) {
+			return;
+		}
+		if ( hydratedSessionRef.current === transcripts.sessionKey ) {
+			return;
+		}
+		hydratedSessionRef.current = transcripts.sessionKey;
+		setMessages( initialMessages );
+	}, [ initialMessages, messages.length, setMessages, transcripts.sessionKey ] );
 
 	// ── Slash command execution (v2.1.0, composer intercept v2.2.x) ─────
 	// Appends the user echo + server result/error to the transcript.

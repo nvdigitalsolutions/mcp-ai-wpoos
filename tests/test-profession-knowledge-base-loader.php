@@ -59,9 +59,11 @@ class Test_Profession_Knowledge_Base_Loader extends WP_UnitTestCase {
 
 		$this->assertIsArray( $categories, 'Categories should be an array' );
 		$this->assertNotEmpty( $categories, 'Categories should not be empty' );
-		$this->assertCount( 12, $categories, 'Should have 12 categories' );
+		$this->assertCount( 18, $categories, 'Should have 18 categories' );
 		$this->assertContains( 'healthcare-medicine', $categories );
 		$this->assertContains( 'technology', $categories );
+		$this->assertContains( 'pro-cre-debt', $categories );
+		$this->assertContains( 'pro-law-firm', $categories );
 	}
 
 	/**

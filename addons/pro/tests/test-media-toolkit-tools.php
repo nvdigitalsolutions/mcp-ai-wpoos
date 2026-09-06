@@ -39,11 +39,11 @@ class Test_Media_Toolkit_Tools extends WP_UnitTestCase {
 		WP_MCP_AI_Media_Collection_CPT::register_taxonomy();
 
 		// Load tool classes.
-		require_once dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-list-media-templates.php';
-		require_once dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-create-media-template.php';
-		require_once dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-apply-media-template.php';
-		require_once dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-process-collection.php';
-		require_once dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-apply-collection-template.php';
+		require_once dirname( __DIR__ ) . '/includes/tools/media/class-wp-mcp-ai-tool-list-media-templates.php';
+		require_once dirname( __DIR__ ) . '/includes/tools/media/class-wp-mcp-ai-tool-create-media-template.php';
+		require_once dirname( __DIR__ ) . '/includes/tools/media/class-wp-mcp-ai-tool-apply-media-template.php';
+		require_once dirname( __DIR__ ) . '/includes/tools/media/class-wp-mcp-ai-tool-process-collection.php';
+		require_once dirname( __DIR__ ) . '/includes/tools/media/class-wp-mcp-ai-tool-apply-collection-template.php';
 
 		// Set up user with required capabilities.
 		$user_id = self::factory()->user->create( array( 'role' => 'editor' ) );
@@ -181,8 +181,8 @@ class Test_Media_Toolkit_Tools extends WP_UnitTestCase {
 			),
 			array()
 		);
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'title', strtolower( $result['error'] ) );
+		$this->assertWPError( $result );
+		$this->assertStringContainsString( 'title', strtolower( $result->get_error_message() ) );
 
 		// Test missing operation.
 		$result = $tool->execute(
@@ -192,8 +192,8 @@ class Test_Media_Toolkit_Tools extends WP_UnitTestCase {
 			),
 			array()
 		);
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'operation', strtolower( $result['error'] ) );
+		$this->assertWPError( $result );
+		$this->assertStringContainsString( 'operation', strtolower( $result->get_error_message() ) );
 	}
 
 	/**
@@ -210,8 +210,8 @@ class Test_Media_Toolkit_Tools extends WP_UnitTestCase {
 			array()
 		);
 
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'invalid operation', strtolower( $result['error'] ) );
+		$this->assertWPError( $result );
+		$this->assertStringContainsString( 'invalid operation', strtolower( $result->get_error_message() ) );
 	}
 
 	/**
@@ -231,8 +231,8 @@ class Test_Media_Toolkit_Tools extends WP_UnitTestCase {
 
 		foreach ( $tools as $tool ) {
 			$result = $tool->execute( array(), array() );
-			$this->assertFalse( $result['success'], 'Tool ' . $tool->get_slug() . ' should fail when toolkit disabled' );
-			$this->assertStringContainsString( 'not enabled', strtolower( $result['error'] ) );
+			$this->assertWPError( $result, 'Tool ' . $tool->get_slug() . ' should fail when toolkit disabled' );
+			$this->assertStringContainsString( 'not enabled', strtolower( $result->get_error_message() ) );
 		}
 	}
 

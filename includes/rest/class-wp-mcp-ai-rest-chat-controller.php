@@ -130,6 +130,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * - GET /chat: SSE handshake for streaming chat responses
 	 * - POST /chat-client: Browser client chat with 15 iteration limit
 	 * - GET /chat-client: SSE handshake for browser chat streaming
+	 * - GET /session/nonce: Fresh session-bound wp_rest nonce for chat surfaces
 	 * - GET /chat-transcripts: List chat transcripts for authenticated user
 	 * - POST /chat-transcripts: Save a chat transcript to persistent storage
 	 * - GET /chat-transcripts/{session_key}: Retrieve specific transcript by session key
@@ -235,7 +236,9 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'default'           => 20,
 							'minimum'           => 1,
 							'maximum'           => 100,
-							'sanitize_callback' => 'absint',
+							// Sign-preserving cast: absint() would flip negatives to
+							// positives and defeat the handler's clamp-to-default.
+							'sanitize_callback' => array( __CLASS__, 'sanitize_signed_page_number' ),
 						),
 						'page'         => array(
 							'description'       => __( 'Page number for pagination.', 'mcp-ai-wpoos' ),
@@ -243,7 +246,9 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'required'          => false,
 							'default'           => 1,
 							'minimum'           => 1,
-							'sanitize_callback' => 'absint',
+							// Sign-preserving cast: absint() would flip negatives to
+							// positives and defeat the handler's clamp-to-default.
+							'sanitize_callback' => array( __CLASS__, 'sanitize_signed_page_number' ),
 						),
 					),
 				),
@@ -420,6 +425,26 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				),
 			)
 		);
+
+		// /session/nonce - Return a fresh wp_rest nonce for the current session.
+		//
+		// The chat surfaces embed a REST nonce in the page HTML.  That nonce is
+		// bound to the current user's session token, so it goes stale when the
+		// page is served from a full-page cache (minted for user 0) or when the
+		// session token rotates while a long-lived SPA page (e.g. the Docs Hub)
+		// stays open.  The chat client calls this endpoint — deliberately without
+		// sending a nonce — to mint a fresh nonce from the request's own auth
+		// cookie and retry the failed request instead of surfacing WordPress's
+		// opaque "Cookie check failed" (403 rest_cookie_invalid_nonce) error.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/session/nonce',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'permission_callback' => '__return_true',
+				'callback'            => array( $this, 'handle_session_nonce' ),
+			)
+		);
 	}
 
 	/**
@@ -441,12 +466,11 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'required'          => true,
 				'validate_callback' => array( $this, 'validate_messages_array_wrapper' ),
 			),
-			'attachments'         => array(
-				'description'       => __( 'Optional array of file attachments to include with the request.', 'mcp-ai-wpoos' ),
-				'type'              => 'array',
-				'required'          => false,
-				'validate_callback' => array( $this, 'validate_attachments_array_wrapper' ),
-			),
+			// NOTE: no 'attachments' arg is declared here. Attachments are
+			// embedded in the message content segments (input_image / input_file)
+			// and extracted during sanitization. Declaring a top-level attachments
+			// arg would validate-and-reject legacy clients that still send it as a
+			// separate parameter; undeclared params are ignored by the REST layer.
 			'options'             => array(
 				'description' => __( 'Optional request options to override assistant defaults.', 'mcp-ai-wpoos' ),
 				'type'        => 'object',
@@ -458,10 +482,13 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'model'           => array(
 						'type' => 'string',
 					),
+					// Out-of-range temperatures are intentionally NOT rejected at the
+					// schema layer: the sanitize layer clamps values into [0, 2] and
+					// falls back to the assistant default (clamp-chat-temperatures
+					// contract). Schema bounds would reject such requests before the
+					// clamp logic can run.
 					'temperature'     => array(
-						'type'    => 'number',
-						'minimum' => 0,
-						'maximum' => 2,
+						'type' => 'number',
 					),
 					'stream'          => array(
 						'type' => 'boolean',
@@ -488,6 +515,21 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'sanitize_callback' => 'sanitize_textarea_field',
 			),
 		);
+	}
+
+	/**
+	 * Cast a pagination parameter to an integer while preserving its sign.
+	 *
+	 * The transcripts handler clamps non-positive values to their defaults
+	 * (per_page -> 20, page -> 1). absint() would silently flip negative
+	 * input to positive, defeating that clamp, so this sanitizer keeps the
+	 * sign for the handler to decide.
+	 *
+	 * @param mixed $value Raw parameter value.
+	 * @return int Integer value with the original sign preserved.
+	 */
+	public static function sanitize_signed_page_number( $value ) {
+		return (int) $value;
 	}
 
 	/**
@@ -787,6 +829,37 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	}
 
 	/**
+	 * Determine whether the request carries a valid guest token.
+	 *
+	 * Mirrors the guest-token extraction used by the REST permission layer
+	 * (X-WP-MCP-AI-Guest header or guest_token parameter) so guest transcript
+	 * queries can be identified in the handler without duplicating the full
+	 * permission check.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return bool True when the request presents a valid, origin-bound guest token.
+	 */
+	private function request_is_authenticated_guest( WP_REST_Request $request ) {
+		$token = $request->get_header( 'X-WP-MCP-AI-Guest' );
+
+		if ( ! $token ) {
+			$token = $request->get_param( 'guest_token' );
+		}
+
+		if ( ! is_string( $token ) || '' === trim( $token ) ) {
+			return false;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Shortcode' ) ) {
+			return false;
+		}
+
+		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
+
+		return (bool) WP_MCP_AI_Shortcode::validate_guest_token( trim( $token ), $assistant_id, $request );
+	}
+
+	/**
 	 * Handle list transcripts request.
 	 *
 	 * Retrieves all chat transcripts for the current user.
@@ -822,7 +895,17 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			$user_id = get_current_user_id();
 		}
 
-		if ( ! $user_id ) {
+		// Guests authenticated with a valid guest token query their own
+		// transcripts under user_id = 0. The permission callback accepts
+		// user_id = 0 for valid guest tokens, so the handler must not reject
+		// it as a missing user.
+		$is_guest_query = false;
+		if ( ! $user_id && $this->request_is_authenticated_guest( $request ) ) {
+			$is_guest_query = true;
+			$request->set_param( 'user_id', 0 );
+		}
+
+		if ( ! $user_id && ! $is_guest_query ) {
 			WP_MCP_AI_Logger::log_event(
 				'debug',
 				'handle_chat_transcripts: No user ID available',
@@ -1714,6 +1797,40 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'message' => __( 'Usage tracked successfully.', 'mcp-ai-wpoos' ),
 			)
 		);
+	}
+
+	/**
+	 * Handle GET /session/nonce.
+	 *
+	 * Returns a fresh wp_rest nonce for the requesting session.  The nonce is
+	 * derived from the auth cookie carried by the request (wp_get_session_token),
+	 * so a logged-in user always receives a nonce that passes WordPress's
+	 * rest_cookie_check_errors — even when the page HTML that embedded the
+	 * original nonce was served from a full-page cache or the session token has
+	 * rotated while a long-lived SPA tab stayed open.
+	 *
+	 * The endpoint intentionally requires no nonce and no capability: the value
+	 * it returns is already embedded in every page of the site, so it exposes no
+	 * information that an unauthenticated visitor could not obtain elsewhere.
+	 *
+	 * @since 1.1.67
+	 *
+	 * @return WP_REST_Response Response containing the fresh nonce.
+	 */
+	public function handle_session_nonce() {
+		$response = rest_ensure_response(
+			array(
+				'nonce' => wp_create_nonce( 'wp_rest' ),
+			)
+		);
+
+		// Never cache the payload: it is session-bound and invalidates on
+		// session-token rotation.  Edge caches (Cloudflare, Varnish) would
+		// otherwise hand one user's nonce to another.
+		$response->header( 'Cache-Control', 'no-cache, no-store, must-revalidate' );
+		$response->header( 'Pragma', 'no-cache' );
+
+		return $response;
 	}
 
 	/**

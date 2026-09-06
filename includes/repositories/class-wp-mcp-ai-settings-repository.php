@@ -37,6 +37,17 @@ class WP_MCP_AI_Settings_Repository {
 	private $prefix = 'wp_mcp_ai_';
 
 	/**
+	 * Canonical settings array option.
+	 *
+	 * The Settings Dashboard saves all settings into this single option;
+	 * it is the fallback source for keys that have no dedicated per-key
+	 * option yet.
+	 *
+	 * @var string
+	 */
+	private $blob_option = 'wp_mcp_ai_settings';
+
+	/**
 	 * Settings cache
 	 *
 	 * @var array
@@ -44,7 +55,13 @@ class WP_MCP_AI_Settings_Repository {
 	private $cache = array();
 
 	/**
-	 * Get setting value
+	 * Get setting value.
+	 *
+	 * Reads the dedicated per-key option first. When it is absent, falls
+	 * back to the canonical `wp_mcp_ai_settings` array so runtime gates
+	 * honour settings saved through the Settings Dashboard. Fallback reads
+	 * are not cached: the blob can be updated mid-request and must stay
+	 * visible.
 	 *
 	 * @param string $key     Setting key (without prefix).
 	 * @param mixed  $default Default value if setting doesn't exist.
@@ -58,12 +75,23 @@ class WP_MCP_AI_Settings_Repository {
 			return $this->cache[ $option_name ];
 		}
 
-		$value = get_option( $option_name, $default );
+		$value = get_option( $option_name, null );
 
-		// Cache the value.
-		$this->cache[ $option_name ] = $value;
+		if ( null !== $value ) {
+			// Cache dedicated per-key values only.
+			$this->cache[ $option_name ] = $value;
 
-		return $value;
+			return $value;
+		}
+
+		// Fall back to the settings array saved by the Settings Dashboard.
+		$blob = get_option( $this->blob_option, array() );
+
+		if ( is_array( $blob ) && array_key_exists( $key, $blob ) ) {
+			return $blob[ $key ];
+		}
+
+		return $default;
 	}
 
 	/**

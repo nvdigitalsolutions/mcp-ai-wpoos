@@ -314,6 +314,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 		 * @return array Sanitized input.
 		 */
 		protected function sanitize_fields( $input, $fields, $is_form_submit = true ) {
+			// Sections without field definitions (e.g. subtab shells) pass null.
+			$fields    = is_array( $fields ) ? $fields : array();
+			$input     = is_array( $input ) ? $input : array();
 			$sanitized = array();
 
 			// DEFENSIVE: Filter input to only include fields that are defined in $fields.

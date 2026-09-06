@@ -227,12 +227,16 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	 * @return bool
 	 */
 	protected function check_nodejs_available() {
-		// Simple check - try to run node --version.
-		$output = array();
-		$return = null;
-		@exec( 'node --version 2>&1', $output, $return ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		// Canonical safe probe (exec() first, Process Service fallback) lives
+		// in npm-integration-filters.php. It never fatals on hosts where
+		// exec()/proc_open are disabled via disable_functions.
+		if ( function_exists( 'wp_mcp_ai_check_nodejs_available' ) ) {
+			return wp_mcp_ai_check_nodejs_available();
+		}
 
-		return 0 === $return && ! empty( $output );
+		// Defensive fallback when the Pro helper is unavailable: avoid any
+		// unguarded shell call, which throws a fatal Error on PHP 8+.
+		return false;
 	}
 
 	/**
@@ -577,7 +581,9 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 		}
 
 		if ( isset( $input['ocr_max_pages_default'] ) ) {
-			$value = absint( $input['ocr_max_pages_default'] );
+			// Cast to int (not absint) so negative values clamp to 0 below
+			// instead of being coerced to their positive magnitude.
+			$value = (int) $input['ocr_max_pages_default'];
 			// Enforce min/max bounds.
 			$sanitized['ocr_max_pages_default'] = min( 100, max( 0, $value ) );
 		}
@@ -838,12 +844,9 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	 * @return string
 	 */
 	protected function get_nodejs_version() {
-		$output = array();
-		$return = null;
-		@exec( 'node --version 2>&1', $output, $return ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-
-		if ( 0 === $return && ! empty( $output ) ) {
-			return trim( $output[0] );
+		// Canonical safe probe lives in npm-integration-filters.php.
+		if ( function_exists( 'wp_mcp_ai_get_nodejs_version' ) ) {
+			return wp_mcp_ai_get_nodejs_version();
 		}
 
 		return __( 'Not Available', 'mcp-ai-wpoos-pro' );

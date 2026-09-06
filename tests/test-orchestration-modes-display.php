@@ -34,16 +34,14 @@ class Test_Orchestration_Modes_Display extends WP_UnitTestCase {
 		);
 		update_post_meta( $team2_id, '_wp_mcp_ai_team_orchestration_mode', 'parallel' );
 
-		// Act - get orchestration section output.
-		$section = new WP_MCP_AI_Section_Orchestration();
-		$fields  = $section->get_fields();
-
-		// Get the teams view content.
+		// Act - render the teams view (the field-array API was replaced by
+		// the view-based renderer; get_fields() no longer carries teams_view).
+		$_GET['view'] = 'teams';
+		$section      = new WP_MCP_AI_Section_Orchestration();
 		ob_start();
-		if ( isset( $fields['teams_view']['content'] ) ) {
-			echo $fields['teams_view']['content'];
-		}
+		$section->render();
 		$output = ob_get_clean();
+		unset( $_GET['view'] );
 
 		// Assert - check for X/4 format where X is number of unique modes used.
 		$this->assertStringContainsString( '/4', $output, 'Should show total of 4 available modes' );
@@ -83,15 +81,13 @@ class Test_Orchestration_Modes_Display extends WP_UnitTestCase {
 		update_post_meta( $team_id, '_wp_mcp_ai_team_orchestration_mode', 'parallel' );
 		$team_ids[] = $team_id;
 
-		// Act - get orchestration section output.
-		$section = new WP_MCP_AI_Section_Orchestration();
-		$fields  = $section->get_fields();
-
+		// Act - render the teams view (see test_orchestration_modes_shows_correct_format).
+		$_GET['view'] = 'teams';
+		$section      = new WP_MCP_AI_Section_Orchestration();
 		ob_start();
-		if ( isset( $fields['teams_view']['content'] ) ) {
-			echo $fields['teams_view']['content'];
-		}
+		$section->render();
 		$output = ob_get_clean();
+		unset( $_GET['view'] );
 
 		// Assert - check for mode breakdown.
 		$this->assertStringContainsString( 'Sequential (2)', $output, 'Should show Sequential with count of 2' );
@@ -107,15 +103,13 @@ class Test_Orchestration_Modes_Display extends WP_UnitTestCase {
 	 * Test that orchestration modes shows info icon with tooltip.
 	 */
 	public function test_orchestration_modes_has_info_icon() {
-		// Act - get orchestration section output.
-		$section = new WP_MCP_AI_Section_Orchestration();
-		$fields  = $section->get_fields();
-
+		// Act - render the teams view (see test_orchestration_modes_shows_correct_format).
+		$_GET['view'] = 'teams';
+		$section      = new WP_MCP_AI_Section_Orchestration();
 		ob_start();
-		if ( isset( $fields['teams_view']['content'] ) ) {
-			echo $fields['teams_view']['content'];
-		}
+		$section->render();
 		$output = ob_get_clean();
+		unset( $_GET['view'] );
 
 		// Assert - check for info icon with tooltip.
 		$this->assertStringContainsString( 'dashicons-info-outline', $output, 'Should have info icon' );
@@ -130,15 +124,14 @@ class Test_Orchestration_Modes_Display extends WP_UnitTestCase {
 	 * Test that orchestration modes handles empty/no teams gracefully.
 	 */
 	public function test_orchestration_modes_handles_no_teams() {
-		// Act - get orchestration section output with no teams.
-		$section = new WP_MCP_AI_Section_Orchestration();
-		$fields  = $section->get_fields();
-
+		// Act - render the teams view with no teams (see
+		// test_orchestration_modes_shows_correct_format).
+		$_GET['view'] = 'teams';
+		$section      = new WP_MCP_AI_Section_Orchestration();
 		ob_start();
-		if ( isset( $fields['teams_view']['content'] ) ) {
-			echo $fields['teams_view']['content'];
-		}
+		$section->render();
 		$output = ob_get_clean();
+		unset( $_GET['view'] );
 
 		// Assert - should show 0/4 and appropriate message.
 		$this->assertStringContainsString( '0/4', $output, 'Should show 0 modes in use out of 4 available' );
@@ -164,15 +157,13 @@ class Test_Orchestration_Modes_Display extends WP_UnitTestCase {
 			$team_ids[] = $team_id;
 		}
 
-		// Act - get orchestration section output.
-		$section = new WP_MCP_AI_Section_Orchestration();
-		$fields  = $section->get_fields();
-
+		// Act - render the teams view (see test_orchestration_modes_shows_correct_format).
+		$_GET['view'] = 'teams';
+		$section      = new WP_MCP_AI_Section_Orchestration();
 		ob_start();
-		if ( isset( $fields['teams_view']['content'] ) ) {
-			echo $fields['teams_view']['content'];
-		}
+		$section->render();
 		$output = ob_get_clean();
+		unset( $_GET['view'] );
 
 		// Assert - should show 4/4 modes in use.
 		$this->assertStringContainsString( '4/4', $output, 'Should show all 4 modes in use' );

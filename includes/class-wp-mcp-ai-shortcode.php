@@ -419,6 +419,12 @@ class WP_MCP_AI_Shortcode {
 		if ( '' !== $memory_endpoints ) {
 			wp_add_inline_script( self::SCRIPT_HANDLE, $memory_endpoints, 'after' );
 		}
+
+		// Inject the storage-worker config (no user gate; benefits guests too).
+		$storage_worker = self::get_storage_worker_inline_script();
+		if ( '' !== $storage_worker ) {
+			wp_add_inline_script( self::SCRIPT_HANDLE, $storage_worker, 'after' );
+		}
 	}
 
 	/**
@@ -990,7 +996,9 @@ class WP_MCP_AI_Shortcode {
 			// The WP_DEBUG fix in the main plugin class ensures debug output.
 
 			// won't break the editor when WP_DEBUG is enabled.
-			$is_elementor_editor = $this->is_elementor_editor();
+			// Use the init variant so the editor detection also honours the
+			// `action=elementor` request flag, matching register_assets().
+			$is_elementor_editor = $this->is_elementor_editor_init();
 
 			// Get assistant provider and model for client-side execution (embedded provider).
 			// This must be done BEFORE enqueuing chat scripts to ensure correct dependency order.
@@ -2555,6 +2563,43 @@ class WP_MCP_AI_Shortcode {
 		}
 
 		return 'window.wpMcpAiChat = window.wpMcpAiChat || {}; window.wpMcpAiChat.memoryEndpoints = ' . $json . ';';
+	}
+
+	/**
+	 * Build an inline JS snippet that augments the localized `wpMcpAiChat`
+	 * object with the storage-worker URL and offload threshold.
+	 *
+	 * Mirrors get_chat_memory_endpoints_inline_script(): appended after every
+	 * wp_localize_script( SCRIPT_HANDLE, 'wpMcpAiChat', ... ) call so the
+	 * storage-util.js service can spawn the worker on every chat surface
+	 * (shortcode, block, Elementor, embedded client, admin pages).
+	 *
+	 * No user gate — guest chat surfaces benefit too. A non-positive
+	 * threshold disables the offload entirely (kill switch).
+	 *
+	 * @since 1.1.62
+	 *
+	 * @return string Inline JS snippet ready for wp_add_inline_script.
+	 */
+	public static function get_storage_worker_inline_script() {
+		$threshold = (int) apply_filters( 'wp_mcp_ai_storage_worker_threshold', 10000 );
+		$threshold = max( 0, $threshold );
+
+		$worker_url = plugins_url( 'assets/js/storage-worker.js', WP_MCP_AI_FILE );
+
+		$json = wp_json_encode(
+			array(
+				'storageWorkerUrl'       => esc_url_raw( $worker_url ),
+				'storageWorkerThreshold' => $threshold,
+			)
+		);
+		if ( false === $json ) {
+			return '';
+		}
+
+		return 'window.wpMcpAiChat = window.wpMcpAiChat || {};'
+			. 'if ( window.wpMcpAiChat.storageWorkerUrl === undefined ) {'
+			. 'Object.assign( window.wpMcpAiChat, ' . $json . ' ); }';
 	}
 
 	/**

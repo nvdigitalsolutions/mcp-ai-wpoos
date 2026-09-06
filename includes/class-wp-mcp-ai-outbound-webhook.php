@@ -73,14 +73,16 @@ class WP_MCP_AI_Outbound_Webhook {
 	public function subscribe( $url, array $events, $secret = '' ) {
 		$url    = esc_url_raw( $url );
 		$secret = sanitize_text_field( $secret );
-		$id     = 'whk_' . wp_generate_password( 16, false );
+		$id     = 'whk_' . strtolower( wp_generate_password( 16, false ) ); // Lowercase so sanitize_key() lookups in unsubscribe() match the stored key.
 
 		$subscriptions = $this->load_subscriptions();
 
 		$subscriptions[ $id ] = array(
 			'id'         => $id,
 			'url'        => $url,
-			'events'     => array_map( 'sanitize_key', $events ),
+			// Event names are dotted (e.g. workflow.completed); match the
+			// sanitizer used by dispatch() and the REST boundary.
+			'events'     => array_map( 'sanitize_text_field', $events ),
 			'secret'     => $secret,
 			'enabled'    => true,
 			'created_at' => time(),

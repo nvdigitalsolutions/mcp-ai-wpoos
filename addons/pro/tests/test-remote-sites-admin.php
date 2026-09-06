@@ -1,5 +1,5 @@
-// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 <?php
+// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Test file manipulates $_POST; nonce/slashing/sanitization checks do not apply.
 /**
  * Tests for Remote Sites Admin UI
  *
@@ -146,11 +146,16 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		// Handle the action (this should redirect, but we can't test that directly).
 		// Instead, we'll just verify the connection is deleted.
+		// Block the redirect: the handler's redirect_and_exit() then throws
+		// WPDieException under tests instead of exit-ing the process.
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect' ), 10, 2 );
 		try {
 			$admin->handle_actions();
 		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Redirect will throw an exception in test environment.
 		}
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect' ) );
+		$this->redirect_url = null;
 
 		// Verify connection was deleted.
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
@@ -192,7 +197,8 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		// Check that redirect URL contains error parameter.
 		$this->assertNotEmpty( $this->redirect_url );
 		$this->assertStringContainsString( 'error=', $this->redirect_url );
-		$this->assertStringContainsString( 'Connection+not+found', urlencode( $this->redirect_url ) );
+		// The handler rawurlencode()s the message.
+		$this->assertStringContainsString( 'Connection%20not%20found', $this->redirect_url );
 
 		// Clean up.
 		unset( $_GET['page'] );
@@ -857,10 +863,11 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		// Verify redirect to success page.
 		$this->assertStringContainsString( 'oauth_success=', $redirect_url, 'Should redirect to success page' );
 
-		// Verify connection was updated with refresh token.
+		// Verify connection was updated with refresh token (stored encrypted at
+		// rest; decrypt to compare with the value the mock exchange returned).
 		$updated_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 		$this->assertNotNull( $updated_connection, 'Connection should still exist' );
-		$this->assertEquals( 'test_refresh_token_123', $updated_connection['refresh_token'], 'Refresh token should be saved' );
+		$this->assertEquals( 'test_refresh_token_123', WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $updated_connection['refresh_token'] ), 'Refresh token should be saved' );
 		$this->assertEquals( 'test@gmail.com', $updated_connection['user_email'], 'User email should be saved' );
 
 		// Verify transient was deleted (CSRF protection cleanup).
@@ -906,7 +913,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		// Verify redirect to error page.
 		$this->assertStringContainsString( 'error=', $redirect_url, 'Should redirect to error page' );
-		$this->assertStringContainsString( 'state+verification+failed', $redirect_url, 'Error message should mention state verification' );
+		$this->assertStringContainsString( 'state%20verification%20failed', $redirect_url, 'Error message should mention state verification' );
 
 		// Clean up.
 		unset( $_GET['page'] );
@@ -961,7 +968,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		// Verify redirect to error page.
 		$this->assertStringContainsString( 'error=', $redirect_url, 'Should redirect to error page' );
-		$this->assertStringContainsString( 'authorization+code', $redirect_url, 'Error message should mention authorization code' );
+		$this->assertStringContainsString( 'authorization%20code', $redirect_url, 'Error message should mention authorization code' );
 
 		// Clean up.
 		delete_transient( $transient_key );
@@ -1102,10 +1109,11 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		// Verify redirect to success page.
 		$this->assertStringContainsString( 'oauth_success=', $redirect_url, 'Should redirect to success page' );
 
-		// Verify connection was updated with refresh token.
+		// Verify connection was updated with refresh token (stored encrypted at
+		// rest; decrypt to compare with the value the mock exchange returned).
 		$updated_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 		$this->assertNotNull( $updated_connection, 'Connection should still exist' );
-		$this->assertEquals( 'test_drive_refresh_token_456', $updated_connection['refresh_token'], 'Refresh token should be saved' );
+		$this->assertEquals( 'test_drive_refresh_token_456', WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $updated_connection['refresh_token'] ), 'Refresh token should be saved' );
 		$this->assertEquals( 'driveuser@gmail.com', $updated_connection['user_email'], 'User email should be saved' );
 
 		// Verify transient was deleted (CSRF protection cleanup).
@@ -1285,6 +1293,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		$_POST['action']          = 'wp_mcp_ai_test_whatsapp_live';
 		$_POST['nonce']           = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['access_token']    = 'test_access_token';
 		$_POST['phone_number_id'] = '111222333444555';
 
@@ -1322,7 +1331,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'quality_rating', $phone_url, 'Primary request must not include quality_rating' );
 
 		// quality_rating should be unknown since the optional request returned 403.
-		$this->assertEquals( 'unknown', $data['data']['quality_rating'], 'quality_rating should be unknown when optional request fails with 403' );
+		$this->assertEquals( 'UNKNOWN', $data['data']['quality_rating'], 'quality_rating should be unknown when optional request fails with 403' );
 	}
 
 	/**
@@ -1378,6 +1387,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		$_POST['action']          = 'wp_mcp_ai_test_whatsapp_live';
 		$_POST['nonce']           = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['access_token']    = 'test_limited_access_token';
 		$_POST['phone_number_id'] = '111222333444555';
 
@@ -1459,6 +1469,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		$_POST['action']            = 'wp_mcp_ai_test_whatsapp_live';
 		$_POST['nonce']             = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['access_token']      = 'test_token_400_code_100';
 		$_POST['phone_number_id']   = '333444555666777';
 		$_POST['graph_api_version'] = 'v22.0';
@@ -1537,6 +1548,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		// Submit with blank access_token but valid connection_id.
 		$_POST['action']          = 'wp_mcp_ai_test_whatsapp_live';
 		$_POST['nonce']           = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['access_token']    = '';
 		$_POST['phone_number_id'] = '111222333444555';
 		$_POST['connection_id']   = $connection_id;
@@ -1566,6 +1578,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	public function test_ajax_test_whatsapp_live_errors_when_no_token_and_no_connection_id() {
 		$_POST['action']          = 'wp_mcp_ai_test_whatsapp_live';
 		$_POST['nonce']           = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['access_token']    = '';
 		$_POST['phone_number_id'] = '111222333444555';
 
@@ -1641,6 +1654,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		$_POST['action']     = 'wp_mcp_ai_generate_messenger_token';
 		$_POST['nonce']      = wp_create_nonce( 'wp_mcp_ai_generate_messenger_token' );
+		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['app_id']     = '123456789';
 		$_POST['app_secret'] = 'test_app_secret';
 
@@ -1669,6 +1683,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	public function test_ajax_generate_messenger_token_fails_without_app_id() {
 		$_POST['action']     = 'wp_mcp_ai_generate_messenger_token';
 		$_POST['nonce']      = wp_create_nonce( 'wp_mcp_ai_generate_messenger_token' );
+		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['app_id']     = '';
 		$_POST['app_secret'] = 'test_app_secret';
 
@@ -1721,6 +1736,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		$_POST['action']     = 'wp_mcp_ai_generate_messenger_token';
 		$_POST['nonce']      = wp_create_nonce( 'wp_mcp_ai_generate_messenger_token' );
+		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['app_id']     = 'bad_app_id';
 		$_POST['app_secret'] = 'bad_app_secret';
 
@@ -1773,6 +1789,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		$_POST['action']       = 'wp_mcp_ai_test_messenger_live';
 		$_POST['nonce']        = wp_create_nonce( 'wp_mcp_ai_test_messenger_live' );
+		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['access_token'] = 'EAAtest_page_access_token';
 		$_POST['page_id']      = '987654321';
 		$_POST['api_version']  = 'v21.0';
@@ -1795,7 +1812,11 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		$this->assertTrue( $data['success'], 'Should succeed with valid page access token' );
 		$this->assertSame( 'Test Business Page', $data['data']['page_name'], 'Should return the page name' );
 		$this->assertSame( '987654321', $data['data']['page_id'], 'Should return the page ID' );
-		$this->assertSame( 'Software', $data['data']['category'], 'Should return the page category' );
+		// The handler queries /me with fields=id,name only (kept within
+		// standard token permissions), so page category is intentionally not
+		// part of the success payload.
+		$this->assertArrayNotHasKey( 'category', $data['data'], 'Handler no longer returns page category' );
+		$this->assertSame( 'Page Access Token', $data['data']['token_type'], 'Should label the token type' );
 	}
 
 	/**
@@ -1827,6 +1848,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		$_POST['action']       = 'wp_mcp_ai_test_messenger_live';
 		$_POST['nonce']        = wp_create_nonce( 'wp_mcp_ai_test_messenger_live' );
+		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['access_token'] = '123456789|app_access_token_hash';
 		$_POST['page_id']      = '';
 		$_POST['api_version']  = 'v21.0';
@@ -1856,6 +1878,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	public function test_ajax_test_messenger_live_fails_without_access_token() {
 		$_POST['action']       = 'wp_mcp_ai_test_messenger_live';
 		$_POST['nonce']        = wp_create_nonce( 'wp_mcp_ai_test_messenger_live' );
+		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['access_token'] = '';
 		$_POST['page_id']      = '';
 		$_POST['api_version']  = 'v21.0';
@@ -1908,6 +1931,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		$_POST['action']       = 'wp_mcp_ai_test_messenger_live';
 		$_POST['nonce']        = wp_create_nonce( 'wp_mcp_ai_test_messenger_live' );
+		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['access_token'] = 'EAAtest_token';
 		$_POST['page_id']      = '';
 		$_POST['api_version']  = 'not-a-valid-version';

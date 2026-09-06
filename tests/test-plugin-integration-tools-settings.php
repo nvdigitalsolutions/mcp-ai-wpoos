@@ -182,9 +182,9 @@ class Test_Plugin_Integration_Tools_Settings extends WP_UnitTestCase {
 						"WooCommerce tool should have 'pro' capability flag"
 					);
 					$this->assertContains(
-						'requires-woocommerce',
+						'requires-plugin',
 						$flags,
-						"WooCommerce tool should have 'requires-woocommerce' capability flag"
+						"WooCommerce tool should have 'requires-plugin' capability flag"
 					);
 				}
 			}
@@ -266,18 +266,12 @@ class Test_Plugin_Integration_Tools_Settings extends WP_UnitTestCase {
 		$settings['enable_woocommerce_tools'] = false;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
-		// Force re-registration of tools by clearing the instance.
-		$registry          = WP_MCP_AI_Tool_Registry::get_instance();
-		$reflection        = new ReflectionClass( $registry );
-		$instance_property = $reflection->getProperty( 'instance' );
-		$instance_property->setAccessible( true );
-		$instance_property->setValue( null, null );
-		$tools_property = $reflection->getProperty( 'tools' );
-		$tools_property->setAccessible( true );
-		$tools_property->setValue( $registry, null );
-
-		// Get new registry instance.
+		// Force re-registration of tools by clearing and re-initializing the
+		// shared singleton (do not null the singleton — other suites hold
+		// references to it).
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->clear_tools();
+		$registry->init();
 
 		// Get all registered tools.
 		$all_tools        = $registry->get_tools();
@@ -303,9 +297,8 @@ class Test_Plugin_Integration_Tools_Settings extends WP_UnitTestCase {
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		// Force re-registration again.
-		$instance_property->setValue( null, null );
-		$registry = WP_MCP_AI_Tool_Registry::get_instance();
-		$tools_property->setValue( $registry, null );
+		$registry->clear_tools();
+		$registry->init();
 
 		// Get all registered tools again.
 		$all_tools        = $registry->get_tools();
@@ -325,8 +318,11 @@ class Test_Plugin_Integration_Tools_Settings extends WP_UnitTestCase {
 			);
 		}
 
-		// Clean up - restore original settings.
+		// Clean up - restore original settings and leave the shared registry
+		// in a freshly re-registered state for subsequent suites.
 		delete_option( 'wp_mcp_ai_settings' );
+		WP_MCP_AI_Tool_Registry::get_instance()->clear_tools();
+		WP_MCP_AI_Tool_Registry::get_instance()->init();
 	}
 
 	/**

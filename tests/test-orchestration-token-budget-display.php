@@ -107,13 +107,25 @@ class Test_Orchestration_Token_Budget_Display extends WP_UnitTestCase {
 		// Arrange.
 		$max_tokens = 16000;
 
+		// The renderer attaches its CSS via wp_add_inline_style() on this
+		// handle; production enqueues the style, so register it here so the
+		// inline style data is observable.
+		wp_register_style( 'wp-mcp-ai-orchestration-renderer', false, array(), WP_MCP_AI_VERSION );
+
 		// Act.
 		$output = WP_MCP_AI_Orchestration_Renderer::render_token_budget_explanation( $max_tokens );
 
-		// Assert.
-		$this->assertStringContainsString( '<style>', $output );
-		$this->assertStringContainsString( '.wp-mcp-ai-token-budget-explanation', $output );
-		$this->assertStringContainsString( '.wp-mcp-ai-budget-components', $output );
+		// Assert - the panel markup is present, and the styling is registered
+		// as an inline style on the orchestration renderer handle rather than
+		// embedded as a <style> tag in the returned HTML.
+		$this->assertStringContainsString( 'wp-mcp-ai-token-budget-explanation', $output );
+
+		$styles = wp_styles();
+		$inline = isset( $styles->registered['wp-mcp-ai-orchestration-renderer']->extra['after'] )
+			? implode( "\n", (array) $styles->registered['wp-mcp-ai-orchestration-renderer']->extra['after'] )
+			: '';
+		$this->assertStringContainsString( '.wp-mcp-ai-token-budget-explanation', $inline );
+		$this->assertStringContainsString( '.wp-mcp-ai-budget-components', $inline );
 	}
 
 	/**
@@ -149,9 +161,11 @@ class Test_Orchestration_Token_Budget_Display extends WP_UnitTestCase {
 		// Act.
 		$output = WP_MCP_AI_Orchestration_Renderer::render_token_budget_explanation( $max_tokens );
 
-		// Assert.
+		// Assert - esc_url() encodes the ampersand in the query string, so
+		// assert the ampersand-free parts of the link instead of the raw URL.
 		$this->assertStringContainsString( 'Token Manager', $output );
-		$this->assertStringContainsString( 'admin.php?page=wp-mcp-ai-dashboard&tab=token_manager', $output );
+		$this->assertStringContainsString( 'admin.php?page=wp-mcp-ai-dashboard', $output );
+		$this->assertStringContainsString( 'tab=token_manager', $output );
 	}
 
 	/**

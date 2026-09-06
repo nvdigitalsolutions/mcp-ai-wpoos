@@ -29,6 +29,7 @@ use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
 use Nvoos\Core\Infrastructure\Provider\AbstractProviderClient;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
+use Nvoos\WordPress\Adapter\AuthProvider;
 use Nvoos\WordPress\Adapter\ErrorFactory;
 use Nvoos\WordPress\Adapter\EventDispatcher;
 use Nvoos\WordPress\Adapter\HttpClient as WordPressHttpClient;
@@ -77,13 +78,15 @@ final class CoreBridge {
 		$costs = new CostCalculator();
 		$sse   = class_exists( 'WP_MCP_AI_WordPress_Flush' )
 			? new SseHandler( new \WP_MCP_AI_WordPress_Flush() )
-			: new SseHandler( new class implements \Nvoos\Core\Infrastructure\Streaming\PlatformFlushInterface {
-				public function flushPlatformBuffers(): void {
-					if ( \function_exists( 'wp_ob_end_flush_all' ) ) {
-						\wp_ob_end_flush_all();
+			: new SseHandler(
+				new class() implements \Nvoos\Core\Infrastructure\Streaming\PlatformFlushInterface {
+					public function flushPlatformBuffers(): void {
+						if ( \function_exists( 'wp_ob_end_flush_all' ) ) {
+							\wp_ob_end_flush_all();
+						}
 					}
 				}
-			} );
+			);
 
 		$this->chat = new ChatOrchestrator(
 			$this->tools,
@@ -94,13 +97,22 @@ final class CoreBridge {
 			$sse,
 		);
 
+		// Wire per-tool capability checks. ToolRegistry::execute() fails
+		// closed when no auth provider is set, so every tool declaring a
+		// required capability (all graph tools and AI tools) would deny
+		// even administrators in the chat tester.
+		$this->chat->setAuthProvider( new AuthProvider() );
+
 		// 3. Register built-in providers.
 		$this->registerBuiltinProviders();
 
 		// 4. Register AI tools.
 		$this->registerAiTools();
 
-		// 5. Wire embeddings + RAG + memory.
+		// 5. Register the portable core tool inventory (standalone-only).
+		\NvoosContentGraphAi\Tools\CoreToolFactory::register( $this );
+
+		// 6. Wire embeddings + RAG + memory.
 		$this->embeddings = new Embeddings\EmbeddingService(
 			$this->settings,
 			$this->psrHttp,
@@ -141,6 +153,7 @@ final class CoreBridge {
 			'digitalocean' => \Nvoos\Core\Infrastructure\Provider\DigitalOceanClient::class,
 			'kimi'         => \Nvoos\Core\Infrastructure\Provider\KimiClient::class,
 			'baseten'      => \Nvoos\Core\Infrastructure\Provider\BasetenClient::class,
+			'zai'          => \NvoosContentGraphAi\Provider\ZaiClient::class,
 		);
 
 		foreach ( $providerClasses as $slug => $class ) {
@@ -192,6 +205,47 @@ final class CoreBridge {
 		}
 
 		$this->tools->notifyRegistered();
+	}
+
+	// ─── Graph tool bridging ────────────────────────────────────────
+
+	/**
+	 * Bridge the parent plugin's graph tools into the core tool registry.
+	 *
+	 * The parent plugin registers its built-in tools during the
+	 * `nvoos_content_graph/register_tools` action (fired at
+	 * plugins_loaded priority 10 — after this addon boots at priority 5).
+	 * Hooking at priority 20 guarantees every graph tool is present when
+	 * we wrap it, making them resolvable and executable by the agentic
+	 * chat loop.
+	 *
+	 * @return void
+	 */
+	public function registerGraphToolBridge(): void {
+		\add_action(
+			'nvoos_content_graph/register_tools',
+			function ( \NvoosContentGraph\ToolRegistry $parentRegistry ): void {
+				foreach ( $parentRegistry->all() as $slug => $tool ) {
+					// AI tools are registered directly into the core registry
+					// by registerAiTools(); never wrap them twice.
+					if ( $this->tools->has( $slug ) ) {
+						continue;
+					}
+
+					// The has() guard above makes a duplicate registration
+					// impossible; should one still slip through, the
+					// exception is non-fatal for the chat loop.
+					try {
+						$this->tools->register( new Adapter\GraphToolAdapter( $tool ) );
+					} catch ( \RuntimeException $e ) {
+						\do_action( 'nvoos_content_graph_ai_graph_tool_bridge_skipped', $slug, $e->getMessage() );
+					}
+				}
+
+				$this->tools->notifyRegistered();
+			},
+			20
+		);
 	}
 
 	// ─── Provider listing helper (backward compat) ─────────────────

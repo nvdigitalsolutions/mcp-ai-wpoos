@@ -1,0 +1,301 @@
+<?php
+/**
+ * Profession Knowledge Base Loader Service.
+ *
+ * Service layer for loading and validating profession knowledge base from JSON files.
+ * Follows separation of concerns - handles business logic for loading JSON data.
+ *
+ * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
+ */
+
+declare(strict_types=1);
+
+namespace NvoosContentGraphAiPlatform\Professions;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Loads and validates profession knowledge base data from JSON files.
+ */
+class ProfessionKnowledgeBaseLoader {
+	/**
+	 * Log an event through the base plugin's logger when present
+	 * (monolith mode), falling back to error_log in standalone mode.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $level   Log level.
+	 * @param string $message Log message.
+	 */
+	private static function log_event( $level, $message ) {
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			\WP_MCP_AI_Logger::log_event( $level, $message );
+			return;
+		}
+		error_log( sprintf( '[nvoos-content-graph-ai-platform] %s: %s', $level, $message ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Standalone fallback when the base logger is absent.
+	}
+	/**
+	 * Path to knowledge base directory.
+	 *
+	 * @var string
+	 */
+	protected $knowledge_base_path;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param string $knowledge_base_path Optional path to knowledge base directory.
+	 */
+	public function __construct( $knowledge_base_path = null ) {
+		if ( null === $knowledge_base_path ) {
+			$this->knowledge_base_path = ( defined( 'WP_MCP_AI_PATH' ) ? WP_MCP_AI_PATH . 'includes/knowledge-base/professions/' : NVOOS_CONTENT_GRAPH_AI_PLATFORM_PATH . 'data/knowledge-base/professions/' );
+		} else {
+			$this->knowledge_base_path = trailingslashit( $knowledge_base_path );
+		}
+	}
+
+	/**
+	 * Load all profession data from JSON files.
+	 *
+	 * @return array Array of profession data, or WP_Error on failure.
+	 */
+	public function load_all() {
+		$json_files = $this->get_json_files();
+
+		if ( empty( $json_files ) ) {
+			return new \WP_Error(
+				'no_json_files',
+				__( 'No profession knowledge base JSON files found.', 'nvoos-content-graph-ai-platform' )
+			);
+		}
+
+		$all_professions = array();
+
+		foreach ( $json_files as $file ) {
+			$professions = $this->load_from_file( $file );
+
+			if ( is_wp_error( $professions ) ) {
+				// Log error but continue with other files.
+				self::log_event(
+					'error',
+					sprintf( 'Error loading %s: %s', basename( $file ), $professions->get_error_message() )
+				);
+				continue;
+			}
+
+			$all_professions = array_merge( $all_professions, $professions );
+		}
+
+		return $all_professions;
+	}
+
+	/**
+	 * Load professions from a specific JSON file.
+	 *
+	 * @param string $file_path Path to JSON file.
+	 * @return array|WP_Error Array of profession data, or WP_Error on failure.
+	 */
+	public function load_from_file( $file_path ) {
+		if ( ! file_exists( $file_path ) ) {
+			return new \WP_Error(
+				'file_not_found',
+				/* translators: %s: File path */
+				sprintf( __( 'File not found: %s', 'nvoos-content-graph-ai-platform' ), $file_path )
+			);
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local plugin or temp file; WP_Filesystem is not available in this REST/cron/tool execution context.
+		$json_content = file_get_contents( $file_path );
+
+		if ( false === $json_content ) {
+			return new \WP_Error(
+				'file_read_error',
+				/* translators: %s: File path */
+				sprintf( __( 'Could not read file: %s', 'nvoos-content-graph-ai-platform' ), $file_path )
+			);
+		}
+
+		$data = json_decode( $json_content, true );
+
+		if ( null === $data ) {
+			return new \WP_Error(
+				'json_decode_error',
+				/* translators: %s: File path */
+				sprintf( __( 'Invalid JSON in file: %s', 'nvoos-content-graph-ai-platform' ), $file_path )
+			);
+		}
+
+		// Validate structure.
+		if ( ! isset( $data['professions'] ) || ! is_array( $data['professions'] ) ) {
+			return new \WP_Error(
+				'invalid_structure',
+				/* translators: %s: File path */
+				sprintf( __( 'Invalid JSON structure in file: %s. Missing "professions" array.', 'nvoos-content-graph-ai-platform' ), $file_path )
+			);
+		}
+
+		// Validate and sanitize each profession.
+		$professions = array();
+		foreach ( $data['professions'] as $profession ) {
+			$validated = $this->validate_profession( $profession );
+			if ( ! is_wp_error( $validated ) ) {
+				$professions[] = $validated;
+			}
+		}
+
+		return $professions;
+	}
+
+	/**
+	 * Validate and sanitize a profession data array.
+	 *
+	 * @param array $profession Profession data.
+	 * @return array|WP_Error Validated profession data, or WP_Error if invalid.
+	 */
+	protected function validate_profession( $profession ) {
+		// Required fields.
+		$required_fields = array( 'title', 'slug', 'category' );
+		foreach ( $required_fields as $field ) {
+			if ( ! isset( $profession[ $field ] ) || empty( $profession[ $field ] ) ) {
+				return new \WP_Error(
+					'missing_required_field',
+					/* translators: %s: Field name */
+					sprintf( __( 'Missing required field: %s', 'nvoos-content-graph-ai-platform' ), $field )
+				);
+			}
+		}
+
+		// Extract category first since we need it for MIME types.
+		$category = isset( $profession['category'] ) ? sanitize_key( $profession['category'] ) : 'other';
+
+		// Sanitize and structure the data.
+		$validated = array(
+			'title'                => sanitize_text_field( $profession['title'] ),
+			'slug'                 => sanitize_title( $profession['slug'] ),
+			'description'          => isset( $profession['description'] ) ? wp_kses_post( $profession['description'] ) : '',
+			'category'             => $category,
+			'role_description'     => isset( $profession['role_description'] ) ? wp_kses_post( $profession['role_description'] ) : '',
+			'expertise'            => isset( $profession['expertise'] ) && is_array( $profession['expertise'] )
+				? array_map( 'sanitize_text_field', $profession['expertise'] )
+				: array(),
+			'warnings'             => isset( $profession['warnings'] ) && is_array( $profession['warnings'] )
+				? array_map( 'sanitize_text_field', $profession['warnings'] )
+				: array(),
+			'knowledge_base'       => isset( $profession['knowledge_base'] ) ? wp_kses_post( $profession['knowledge_base'] ) : '',
+			'default_tools'        => isset( $profession['default_tools'] ) && is_array( $profession['default_tools'] )
+				? array_map( 'sanitize_key', $profession['default_tools'] )
+				: array(),
+			'supported_mime_types' => $this->get_supported_mimes_for_category( $category ),
+		);
+
+		return $validated;
+	}
+
+	/**
+	 * Get list of JSON files in knowledge base directory.
+	 *
+	 * @return array Array of file paths.
+	 */
+	protected function get_json_files() {
+		if ( ! is_dir( $this->knowledge_base_path ) ) {
+			return array();
+		}
+
+		$files = glob( $this->knowledge_base_path . '*.json' );
+
+		return is_array( $files ) ? $files : array();
+	}
+
+	/**
+	 * Load professions from a specific category.
+	 *
+	 * @param string $category Category slug (e.g., 'healthcare-medicine').
+	 * @return array|WP_Error Array of profession data, or WP_Error on failure.
+	 */
+	public function load_category( $category ) {
+		$file_path = $this->knowledge_base_path . sanitize_file_name( $category ) . '.json';
+
+		return $this->load_from_file( $file_path );
+	}
+
+	/**
+	 * Get list of available categories.
+	 *
+	 * @return array Array of category slugs.
+	 */
+	public function get_categories() {
+		$files      = $this->get_json_files();
+		$categories = array();
+
+		foreach ( $files as $file ) {
+			$basename     = basename( $file, '.json' );
+			$categories[] = $basename;
+		}
+
+		return $categories;
+	}
+
+	/**
+	 * Get supported MIME types for a profession category.
+	 *
+	 * @param string $category Profession category.
+	 * @return array Array of MIME type strings.
+	 */
+	protected function get_supported_mimes_for_category( $category ) {
+		$base_mimes = array( 'text/plain' );
+
+		switch ( $category ) {
+			case 'advisory':
+			case 'financial':
+			case 'legal':
+				return array_merge(
+					$base_mimes,
+					array(
+						'application/pdf',
+						'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+					)
+				);
+
+			case 'creative':
+				return array_merge(
+					$base_mimes,
+					array(
+						'image/jpeg',
+						'image/png',
+						'image/webp',
+						'application/pdf',
+					)
+				);
+
+			case 'technical':
+				return array_merge(
+					$base_mimes,
+					array(
+						'application/pdf',
+						'text/csv',
+					)
+				);
+
+			case 'healthcare':
+				return array_merge(
+					$base_mimes,
+					array(
+						'application/pdf',
+						'image/jpeg',
+						'image/png',
+					)
+				);
+
+			default:
+				return array_merge(
+					$base_mimes,
+					array( 'application/pdf' )
+				);
+		}
+	}
+}

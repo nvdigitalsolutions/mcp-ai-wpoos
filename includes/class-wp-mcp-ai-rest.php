@@ -1305,8 +1305,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// subsequent polls only emit frames for real transitions.
 			$prev_jobs = $this->index_jobs_by_id( isset( $initial['jobs'] ) ? $initial['jobs'] : array() );
 
-			$max_polls     = self::SSE_JOB_MAX_POLLS;
-			$poll_interval = self::SSE_JOB_POLL_INTERVAL;
+			/**
+			 * Filter the maximum number of polls for the status-summary SSE stream.
+			 *
+			 * @since 1.3.1
+			 *
+			 * @param int $max_polls Maximum number of polls. Default 120.
+			 */
+			$max_polls = (int) apply_filters( 'wp_mcp_ai_sse_job_max_polls', self::SSE_JOB_MAX_POLLS );
+			/**
+			 * Filter the polling interval (seconds) for the status-summary SSE stream.
+			 *
+			 * @since 1.3.1
+			 *
+			 * @param int $poll_interval Seconds between polls. Default 3.
+			 */
+			$poll_interval = (int) apply_filters( 'wp_mcp_ai_sse_job_poll_interval', self::SSE_JOB_POLL_INTERVAL );
 			$poll_count    = 0;
 
 			if ( ! $headers_sent ) {
@@ -1440,8 +1454,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Poll for updates until job completes or times out.
-			$max_polls     = self::SSE_JOB_MAX_POLLS;
-			$poll_interval = self::SSE_JOB_POLL_INTERVAL;
+			/**
+			 * Filter the maximum number of polls for the job-status SSE stream.
+			 *
+			 * @since 1.3.1
+			 *
+			 * @param int $max_polls Maximum number of polls. Default 120.
+			 */
+			$max_polls = (int) apply_filters( 'wp_mcp_ai_sse_job_max_polls', self::SSE_JOB_MAX_POLLS );
+			/**
+			 * Filter the polling interval (seconds) for the job-status SSE stream.
+			 *
+			 * @since 1.3.1
+			 *
+			 * @param int $poll_interval Seconds between polls. Default 3.
+			 */
+			$poll_interval = (int) apply_filters( 'wp_mcp_ai_sse_job_poll_interval', self::SSE_JOB_POLL_INTERVAL );
 			$poll_count    = 0;
 			$last_status   = $status;
 
@@ -2010,7 +2038,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( true === $mesh_validated ) {
 					$this->mark_token_authenticated( 'mesh', array( 'mesh_authenticated' => true ) );
 					// Check rate limiting for mesh authenticated requests.
-					$rate_limit_check = $this->check_rate_limit( 0 ); // Use 0 for mesh requests.
+					$rate_limit_check = $this->check_rate_limit( 0, $request->get_method() ); // Use 0 for mesh requests.
 					if ( is_wp_error( $rate_limit_check ) ) {
 						return $rate_limit_check;
 					}
@@ -2028,7 +2056,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( true === $local ) {
 					// Check rate limiting for local token authenticated requests.
 					$user_id          = get_current_user_id();
-					$rate_limit_check = $this->check_rate_limit( $user_id );
+					$rate_limit_check = $this->check_rate_limit( $user_id, $request->get_method() );
 					if ( is_wp_error( $rate_limit_check ) ) {
 						return $rate_limit_check;
 					}
@@ -2043,31 +2071,32 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					return $validated;
 				}
 
-				// If the bearer token was validated but did not map to a WordPress user,
-				// reject the request if the assistant requires an authenticated user.
-				// This prevents privilege escalation where an unmapped bearer token
-				// could piggyback on an existing WordPress session cookie.
-				$auth_user_id = isset( $this->auth_context['authenticated_user_id'] )
-					? (int) $this->auth_context['authenticated_user_id']
+				// The authenticator maintains its own copy of the auth context and
+				// mutates it during validation (e.g. the WordPress user mapped from
+				// a pre-validated bearer token). Re-sync the cached copy so the
+				// gates below observe the post-validation state.
+				$this->auth_context = $this->authenticator->get_auth_context();
+
+				// If the bearer token was validated but did not map to a WordPress
+				// user, drop any WordPress session identity for the remainder of
+				// this request. This prevents privilege escalation where an
+				// unmapped bearer token could piggyback on an existing session
+				// cookie: the downstream assistant access checks then evaluate the
+				// request as anonymous and surface wp_mcp_ai_assistant_forbidden.
+				$token_mapped_user = isset( $this->auth_context['token_context']['user_id'] )
+					? (int) $this->auth_context['token_context']['user_id']
 					: 0;
-				if ( $requires_authenticated_user && $auth_user_id <= 0 ) {
-					// Check if the mapped user ID is available from the authenticator context.
-					$mapped_id = isset( $this->auth_context['user_id'] )
-						? (int) $this->auth_context['user_id']
-						: 0;
-					if ( $mapped_id <= 0 ) {
-						return $this->insufficient_permissions_error( $capability );
-					}
-					// Use the mapped user for capability checks.
-					$mapped_user = get_userdata( $mapped_id );
-					if ( ! $mapped_user || ! user_can( $mapped_id, $capability ) ) {
-						return $this->insufficient_permissions_error( $capability );
-					}
+				if ( $requires_authenticated_user && $token_mapped_user <= 0 ) {
+					// Neutralize both the authenticator's cached context and the
+					// global session user so no check can inherit the session
+					// identity.
+					$this->set_authenticated_user_id( 0 );
+					wp_set_current_user( 0 );
 				}
 
 				// Check rate limiting for bearer token authenticated requests.
 				$user_id          = get_current_user_id();
-				$rate_limit_check = $this->check_rate_limit( $user_id );
+				$rate_limit_check = $this->check_rate_limit( $user_id, $request->get_method() );
 				if ( is_wp_error( $rate_limit_check ) ) {
 					return $rate_limit_check;
 				}
@@ -2092,7 +2121,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( true === $local ) {
 					// Check rate limiting for local token authenticated requests.
 					$user_id          = get_current_user_id();
-					$rate_limit_check = $this->check_rate_limit( $user_id );
+					$rate_limit_check = $this->check_rate_limit( $user_id, $request->get_method() );
 					if ( is_wp_error( $rate_limit_check ) ) {
 						return $rate_limit_check;
 					}
@@ -2110,7 +2139,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				// Check rate limiting for public/guest requests.
 				$user_id          = get_current_user_id(); // Will be 0 for guests.
-				$rate_limit_check = $this->check_rate_limit( $user_id );
+				$rate_limit_check = $this->check_rate_limit( $user_id, $request->get_method() );
 				if ( is_wp_error( $rate_limit_check ) ) {
 					return $rate_limit_check;
 				}
@@ -2158,7 +2187,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Check rate limiting if enabled.
 			$user_id          = get_current_user_id();
-			$rate_limit_check = $this->check_rate_limit( $user_id );
+			$rate_limit_check = $this->check_rate_limit( $user_id, $request->get_method() );
 			if ( is_wp_error( $rate_limit_check ) ) {
 				return $rate_limit_check;
 			}
@@ -2220,6 +2249,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			if ( is_wp_error( $base_check ) || ! $base_check ) {
 				return $base_check;
+			}
+
+			// Requests without a title are connectivity checks that return the
+			// directory listing instead of creating an assistant. Let them
+			// through the standard authentication gate; handle_assistant_create()
+			// re-checks the creation setting before performing any real work.
+			$title = $request->get_param( 'title' );
+			if ( empty( $title ) ) {
+				return true;
 			}
 
 			// Then check if REST assistant creation is enabled.
@@ -2765,7 +2803,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return true|WP_Error
 		 */
 		protected function validate_bearer_token( $token, WP_REST_Request $request ) {
-				return $this->authenticator->validate_bearer_token( $token, $request );
+				$result = $this->authenticator->validate_bearer_token( $token, $request );
+
+				// Keep the cached auth context in sync with the authenticator. The
+				// authenticator updates its own context (e.g. the mapped WordPress
+				// user for a pre-validated bearer token) inside the validation
+				// call; permissions_check() reads the cached copy immediately
+				// after, so it must reflect the post-validation state.
+				$this->auth_context = $this->authenticator->get_auth_context();
+
+				return $result;
 		}
 
 			/**
@@ -2798,10 +2845,24 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			/**
 			 * Check if rate limiting is enabled and enforce limits.
 			 *
-			 * @param int $user_id User ID making the request (0 for guests).
+			 * The window is fixed, not sliding: the transient payload records
+			 * the window start (`first_seen`) and the TTL is never extended past
+			 * `first_seen + time_window`, so a steady stream of requests cannot
+			 * keep the window alive indefinitely. `retry_after` reports the time
+			 * actually remaining in the window.
+			 *
+			 * When the limit trips for an authenticated user, the
+			 * `wp_mcp_ai_rest_request_rate_limit_exceeded` action fires so the
+			 * restriction registry can surface the block in the Command Center.
+			 *
+			 * @since 1.1.71 Fixed-window accounting and restriction-registry flagging.
+			 *
+			 * @param int         $user_id        User ID making the request (0 for guests).
+			 * @param string|null $request_method Optional HTTP method of the dispatching request.
+			 *                                    When null, falls back to $_SERVER['REQUEST_METHOD'].
 			 * @return true|WP_Error True if allowed, WP_Error if rate limit exceeded.
 			 */
-		protected function check_rate_limit( $user_id ) {
+		protected function check_rate_limit( $user_id, $request_method = null ) {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			// Check if rate limiting is enabled.
@@ -2813,7 +2874,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// SSE stream checks). MCP client retry loops can legitimately issue
 			// many of them per hour, so they must not consume the budget aimed
 			// at expensive or state-changing traffic.
-			$request_method = isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : '';
+			// Prefer the method of the dispatching request when provided so that
+			// internal dispatches (rest_do_request, WP-CLI) are classified by
+			// their real verb instead of the ambient HTTP request's method.
+			if ( null === $request_method ) {
+				$request_method = isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : '';
+			} else {
+				$request_method = sanitize_text_field( $request_method );
+			}
 			if ( in_array( strtoupper( $request_method ), array( 'GET', 'HEAD' ), true ) ) {
 				return true;
 			}
@@ -2830,13 +2898,52 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$client_ip     = isset( $_SERVER['REMOTE_ADDR'] )
 					? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
 					: 'unknown';
-				$transient_key = 'wp_mcp_ai_rate_limit_ip_' . md5( $client_ip . NONCE_SALT );
+				$transient_key = 'wp_mcp_ai_rate_limit_ip_' . md5( $client_ip . wp_salt( 'nonce' ) );
 			}
-			$current_count = get_transient( $transient_key );
+			$now          = time();
+			$window_state = get_transient( $transient_key );
 
-			if ( false === $current_count ) {
+			if ( false === $window_state ) {
 				// First request in this time window, start counting.
-				set_transient( $transient_key, 1, $time_window );
+				set_transient(
+					$transient_key,
+					array(
+						'count'      => 1,
+						'first_seen' => $now,
+					),
+					$time_window
+				);
+				return true;
+			}
+
+			// Normalize legacy integer-only payloads written before 1.1.71.
+			if ( is_numeric( $window_state ) ) {
+				$window_state = array(
+					'count'      => max( 0, (int) $window_state ),
+					'first_seen' => $now,
+				);
+			} elseif ( ! is_array( $window_state ) ) {
+				$window_state = array(
+					'count'      => 0,
+					'first_seen' => $now,
+				);
+			}
+
+			$current_count = isset( $window_state['count'] ) ? max( 0, absint( $window_state['count'] ) ) : 0;
+			$first_seen    = isset( $window_state['first_seen'] ) ? absint( $window_state['first_seen'] ) : $now;
+			$window_end    = $first_seen + $time_window;
+			$remaining     = max( 0, $window_end - $now );
+
+			// The fixed window elapsed: start a fresh one.
+			if ( $remaining <= 0 ) {
+				set_transient(
+					$transient_key,
+					array(
+						'count'      => 1,
+						'first_seen' => $now,
+					),
+					$time_window
+				);
 				return true;
 			}
 
@@ -2871,6 +2978,24 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					);
 				}
 
+				/**
+				 * Fires when the general REST request rate limiter blocks a user.
+				 *
+				 * The restriction registry subscribes to this action and flags a
+				 * `rate_limit` restriction so admins can see and lift the block
+				 * from the Command Center. Guest (user_id=0) blocks are ignored
+				 * by the handler because there is no user record to flag.
+				 *
+				 * @since 1.1.71
+				 *
+				 * @param int $user_id       Affected user ID (0 for guest/IP-keyed limits).
+				 * @param int $max_requests  Requests allowed per window.
+				 * @param int $time_window   Window length in seconds.
+				 * @param int $current_count Requests consumed in the current window.
+				 * @param int $window_end    Unix timestamp at which the fixed window ends.
+				 */
+				do_action( 'wp_mcp_ai_rest_request_rate_limit_exceeded', $user_id, $max_requests, $time_window, $current_count, $window_end );
+
 				return new WP_Error(
 					'wp_mcp_ai_rate_limit_exceeded',
 					sprintf(
@@ -2881,7 +3006,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					),
 					array(
 						'status'        => 429,
-						'retry_after'   => $time_window,
+						'retry_after'   => max( 1, $remaining ),
 						'max_requests'  => $max_requests,
 						'time_window'   => $time_window,
 						'current_count' => $current_count,
@@ -2889,8 +3014,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
-			// Increment the counter.
-			set_transient( $transient_key, $current_count + 1, $time_window );
+			// Increment without extending the window past its fixed end. The
+			// payload's first_seen governs expiry; the TTL is clamped to >= 1
+			// because an expiration of 0 means "never expire" in WordPress.
+			set_transient(
+				$transient_key,
+				array(
+					'count'      => $current_count + 1,
+					'first_seen' => $first_seen,
+				),
+				max( 1, $remaining )
+			);
 			return true;
 		}
 
@@ -2969,7 +3103,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$client_ip     = isset( $_SERVER['REMOTE_ADDR'] )
 					? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
 					: 'unknown';
-				$transient_key = 'wp_mcp_ai_tool_rl_ip_' . md5( $client_ip . NONCE_SALT );
+				$transient_key = 'wp_mcp_ai_tool_rl_ip_' . md5( $client_ip . wp_salt( 'nonce' ) );
 			}
 
 			$current_count = get_transient( $transient_key );
@@ -3136,6 +3270,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$messages    = $sanitized_messages['messages'];
 			$attachments = $sanitized_messages['attachments'];
 
+			// Discard orphaned tool messages (missing or mismatched tool_call_id)
+			// before dispatch — the provider rejects payloads with unpaired tool
+			// messages, and silently dropping them preserves conversation flow
+			// for clients that resubmit legacy transcripts.
+			$messages = $this->filter_tool_messages_without_matching_calls( $messages );
+
 			if ( empty( $messages ) ) {
 				return new WP_Error( 'wp_mcp_ai_invalid_messages', __( 'Messages must be provided as an array of role/content pairs.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
@@ -3144,7 +3284,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$last_user_message = '';
 			for ( $i = count( $messages ) - 1; $i >= 0; $i-- ) {
 				if ( isset( $messages[ $i ]['role'] ) && 'user' === $messages[ $i ]['role'] ) {
-					$last_user_message = isset( $messages[ $i ]['content'] ) ? (string) $messages[ $i ]['content'] : '';
+					// Guardrail pre-screening only inspects plain-text content;
+					// array content (multi-part segments with attachments) is
+					// skipped rather than coerced with a lossy string cast.
+					$content = isset( $messages[ $i ]['content'] ) ? $messages[ $i ]['content'] : '';
+					$last_user_message = is_string( $content ) ? $content : '';
 					break;
 				}
 			}
@@ -7376,8 +7520,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		public function validate_assistant_access( $assistant_id ) {
 			$assistant_id = absint( $assistant_id );
 
-			// Check cache for repeated validations within the same request (optimization can be disabled with WP_MCP_AI_DISABLE_CACHE).
-			if ( ! defined( 'WP_MCP_AI_DISABLE_CACHE' ) || ! WP_MCP_AI_DISABLE_CACHE ) {
+			// Check cache for repeated validations within the same request. Caching
+			// can be disabled globally with WP_MCP_AI_DISABLE_CACHE or scoped via
+			// the filter (used by tests to disable without leaking a process-wide
+			// constant into later tests).
+			$cache_enabled = apply_filters(
+				'wp_mcp_ai_assistant_access_cache_enabled',
+				! defined( 'WP_MCP_AI_DISABLE_CACHE' ) || ! WP_MCP_AI_DISABLE_CACHE
+			);
+
+			if ( $cache_enabled ) {
 				$cache_key = 'assistant_' . $assistant_id;
 				if ( isset( $this->assistant_cache[ $cache_key ] ) ) {
 					return $this->assistant_cache[ $cache_key ];
@@ -7386,11 +7538,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$assistant_post = $assistant_id ? get_post( $assistant_id ) : null;
 
 			if ( ! $assistant_post || WP_MCP_AI_Assistant_CPT::POST_TYPE !== $assistant_post->post_type ) {
-				return new WP_Error(
+				$denied = new WP_Error(
 					'wp_mcp_ai_assistant_forbidden',
 					__( 'You do not have access to this assistant.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
+				if ( $cache_enabled ) {
+					$this->assistant_cache[ $cache_key ] = $denied;
+				}
+				return $denied;
 			}
 
 			$token_bypasses_visibility = false;
@@ -7409,15 +7565,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			if ( 'publish' !== $assistant_post->post_status && ! $this->user_can_access_post( $assistant_id ) && ! $token_bypasses_visibility ) {
-				return new WP_Error(
+				$denied = new WP_Error(
 					'wp_mcp_ai_assistant_forbidden',
 					__( 'You do not have access to this assistant.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
+				if ( $cache_enabled ) {
+					$this->assistant_cache[ $cache_key ] = $denied;
+				}
+				return $denied;
 			}
 
 			// Cache the successful result.
-			if ( ! defined( 'WP_MCP_AI_DISABLE_CACHE' ) || ! WP_MCP_AI_DISABLE_CACHE ) {
+			if ( $cache_enabled ) {
 				$this->assistant_cache[ $cache_key ] = $assistant_post;
 			}
 			return $assistant_post;
@@ -9237,12 +9397,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					if ( array() === $schema || ! isset( $schema['type'] ) ) {
 						$schema = array(
 							'type'       => 'object',
-							'properties' => array() === $schema ? array() : $schema,
+							'properties' => array() === $schema ? new stdClass() : $schema,
 						);
 					}
 
-					if ( ! isset( $schema['properties'] ) || ! is_array( $schema['properties'] ) ) {
-						$schema['properties'] = array();
+					// `properties` must encode as a JSON object (`{}`), never as an
+					// empty JSON array (`[]`). PHP empty arrays encode as `[]` and
+					// strict providers (DeepSeek) reject that with
+					// "[] is not of type 'object'". An empty stdClass encodes as
+					// `{}`, so preserve object-valued property maps and convert
+					// empty arrays to stdClass.
+					if ( ! isset( $schema['properties'] ) ) {
+						$schema['properties'] = new stdClass();
+					} elseif ( ! is_array( $schema['properties'] ) && ! is_object( $schema['properties'] ) ) {
+						$schema['properties'] = new stdClass();
+					} elseif ( is_array( $schema['properties'] ) && empty( $schema['properties'] ) ) {
+						$schema['properties'] = new stdClass();
 					}
 
 					$description = $tool->get_description();
@@ -11769,7 +11939,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Auto-enable essential read-only tools for chat-client endpoint.
 			// These tools are needed to maintain agentic workflows in chat context.
 			// Only read-only, safe tools are auto-enabled; write operations require explicit config.
-			$endpoint = $request->get_route();
+			$endpoint = $request ? $request->get_route() : '';
 			if ( false !== strpos( $endpoint, '/chat-client' ) ) {
 				// Define read-only tools essential for agentic workflow.
 				$auto_enable_tools = array(
@@ -11827,8 +11997,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'agentic_loop'          => true,
 				'iteration'             => $iteration,
 				'max_iterations'        => $max_iterations,
-				'endpoint'              => $request->get_route(),
-				'allow_sensitive_tools' => $request->get_param( 'allow_sensitive_tools' ) === true,
+				'endpoint'              => $endpoint,
+				'allow_sensitive_tools' => $request && $request->get_param( 'allow_sensitive_tools' ) === true,
 			);
 
 			// Add tool_call_id to context if available.
@@ -12232,7 +12402,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Strip verbose metadata.
 			if ( isset( $sanitized['metadata'] ) && is_array( $sanitized['metadata'] ) ) {
-				$sanitized['metadata'] = $this->sanitize_metadata_for_llm( $sanitized['metadata'] );
+				$sanitized['metadata'] = $this->validator->sanitize_metadata_for_llm( $sanitized['metadata'] );
 				if ( empty( $sanitized['metadata'] ) ) {
 					unset( $sanitized['metadata'] );
 				}
@@ -12240,7 +12410,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Strip base64 content from image generation tools.
 			if ( isset( $sanitized['content'] ) && is_array( $sanitized['content'] ) ) {
-				$sanitized['content'] = $this->sanitize_content_for_llm( $sanitized['content'] );
+				$sanitized['content'] = $this->validator->sanitize_content_for_llm( $sanitized['content'] );
 				if ( empty( $sanitized['content'] ) ) {
 					unset( $sanitized['content'] );
 				}

@@ -1325,7 +1325,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		 *                       - bypass_cache (bool): Skip cache for this request.
 		 * @return array|WP_Error Batch embedding results with 'embeddings' array or error.
 		 */
-		public function batch_embed_content( array $texts, array $options = array() ) {
+		public function batch_embed_content( $texts, array $options = array() ) {
 			$api_key = $this->get_api_key();
 
 			if ( empty( $api_key ) ) {

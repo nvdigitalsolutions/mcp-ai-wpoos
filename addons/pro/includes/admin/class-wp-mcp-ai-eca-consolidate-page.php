@@ -319,7 +319,7 @@ class WP_MCP_AI_ECA_Consolidate_Page {
 						<h3><?php esc_html_e( '📄 Document Generation Not Enabled', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<p><?php esc_html_e( 'Enable the Document Generation toolkit in Settings to unlock PDF, Word, and Excel document tools for ECA reports, schedules, and data extraction.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<p>
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-document-generation-toolkit-settings' ) ); ?>" class="button button-small">
+							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_doc_tpl&page=document-generation-settings' ) ); ?>" class="button button-small">
 								<?php esc_html_e( 'Enable Document Generation', 'mcp-ai-wpoos-pro' ); ?>
 							</a>
 						</p>

@@ -222,8 +222,9 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 			)
 		);
 		$res = $v->verify( array() );
-		$this->assertFalse( $res['passed'] );
-		$this->assertArrayHasKey( 'error', $res['evidence']['criteria']['sub'] );
+		$this->assertWPError( $res );
+		$this->assertSame( 'wp_mcp_ai_rubric_no_weight', $res->get_error_code() );
+		$this->assertNull( $res->get_error_data() );
 	}
 
 	/**

@@ -1,7 +1,9 @@
 # NV oOS Tool Registry Context
 
 > **GSD Context File** — Load this when working on tool implementations, toolkits, MCP servers, or OKF tools.
-> Last reviewed: August 22, 2026 (v1.1.62).
+> Last reviewed: September 5, 2026 (v1.1.71).
+> **New in v1.1.71 (counts unchanged — ~303 base + ~1,263 Pro, ~1,566 total):** `wake_up_context`'s `matches_wake_filters()` now enforces `wing`/`room` exclusions — the Graphify graph anchors only *boost* scores for wing/room membership and never excluded out-of-scope memories, so wing-scoped blocks leaked cross-wing memories once the Graphify addon loaded (#6327). The September 2026 model-catalog refresh (#6328) changed model lists, defaults (`default_gemini_model` → `gemini-3.6-flash`, `openai_image_model` → `gpt-image-2`, Kimi default → `kimi-k3`), and migration-map successors — tool slugs are unchanged. The REST rate-limiter flags the restriction registry via `wp_mcp_ai_rest_request_rate_limit_exceeded` (#6322) — registry/limiter-side, no tool changes. No tools added or removed — every count surface stays ~1,566.
+> **New in v1.1.70 (counts unchanged):** a fifth PHPUnit repair wave (PRs #6280–#6312, CI triage runs 91006542428 + 91771001271) carried grouped tool-contract fixes: the validated `web_search` variant's `profession_tags` now matches the base tool (`writer`/`librarian` added — the registry resolves `web_search` to the validated variant, so stale tags hid the tool from profession lookups, #6282); JetFormBuilder `get_jetformbuilder_submissions` restores the `id` + flat `per_page`/`status` dispatch params (a refactor dropped them and the HTTP path always failed `missing_id`, #6300); `wp_mcp_ai_pro_get_tool_map()` caches the computed Pro tool map and `WP_MCP_AI_Token_Usage_Service::get_unregistered_tools()` reads it — the old filter source was never registered, so settings-gated Pro tools vanished from the token-manager listing (#6300); `web_search` `validate_and_normalize_result()` preserves `published_date` (Tavily/Brave, #6306); `resolve_image_input()` rejects with `wp_mcp_ai_missing_image` when the resolver returns nothing instead of a misleading `wp_mcp_ai_missing_api_key` (#6306); the four `conversation_import_*` tools join the Data & Analytics preset (#6296); `create_chart` HTML attachments gate on the acting user's `unfiltered_html` (#6311); skill-pack `normalise_packs()` keeps only slug-keyed entries and `install_pack()` fires `wp_mcp_ai_skill_pack_installed` for empty packs (#6302); schedule presets drop the phantom `validate_contact_data` step and the `auto_import_scheduled_sources` hook moved into `schedule_data.hook` (#6283). No tools added or removed — every count surface stays ~1,566.
 
 ---
 
@@ -14,7 +16,21 @@ Tools are the core extensibility unit of NV oOS. Each tool:
 - Implements `execute( $arguments, $context )`
 - Is registered in `includes/tools-init.php` (base) or `addons/pro/mcp-ai-wpoos-pro.php` (pro)
 
-**Total tools:** ~1,552 (~303 base + ~1,249 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,566 (~303 base + ~1,263 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+
+**New in v1.1.69:** +1 Pro tool — `analyze_image_objects` (Vision Analysis toolkit, `addons/pro/includes/tools/vision-analysis/`, PR #6267): detects and counts objects per category via HuggingFace OWLv2 / Ollama (`detection`), chat-VLM counting (`vlm`), or hybrid label normalization; `annotate=true` returns a GD box-annotated attachment. Gated by `enable_vision_analysis_toolkit` in the Pro module registry's conditional-toolkit map (off by default; the tool is only registered when enabled). Schema-contract sweep: every argument-less tool now emits `properties: {}` (never `[]`) — DeepSeek rejects empty-array properties with a 400 — across 29 files (`list_gmail_connections`, `list_drive_connections`, Cloudways ×4, DietPi ×7, `wait_for_user`, `okf_list_bundles`, WebChat `get_webchat_status`, graphify `content_gaps`/`graph_stats`, embedded ability `input_schema`s, `ProfessionStatsTool`, content-graph tools); `LegacyToolAdapter` preserves object maps and upgrades empty arrays to `stdClass` instead of normalizing objects back to arrays; the AI Tool Builder scaffold emits `new stdClass()` for parameterless tools (#6272). Model-catalog fixes: `gpt-4o` context limit 128000 in `WP_MCP_AI_Token_Budget_Manager::$model_limits` (prefix match no longer returns 8192), `gemini-2.0-flash` restored to the video-capable list (duplicate `gemini-2.5-flash` typo), `claude-sonnet-4-6`/`gpt-4o` restored to `active`, and two Qwen Hugging Face entries added to `includes/data/model-catalog.json` (#6274). SiteKit tools return string capability-flag arrays instead of the non-existent `CAPABILITY_CAN_USE_IF_ADMIN` constant (metabox crash, #6278).
+
+**New in v1.1.68:** No tools added or removed. Preset and contract changes only: `WP_MCP_AI_Tool_Presets_Helper` gained the missing tools across presets — OKF `okf_enrich_site_content`/`route_knowledge_query`, the Google Calendar family (`list_google_calendars`, `list_google_calendar_events`, `update_google_calendar_event`, `delete_google_calendar_event`, `check_google_calendar_availability`, `quick_add_google_calendar_event`), Gmail/Drive (`get_gmail_message`, `get_gmail_thread`, `list_gmail_connections`, `modify_gmail_message`, `get_drive_file`, `list_drive_connections`), `composio_manage_accounts`, and `git_inspect`/`git_change` (#6242). `WP_MCP_AI_Token_Budget_Manager` dropped drifted duplicate catalog entries (`gpt-4.1`, `gemini-2.5-flash` now single entries with corrected limits) and `get_model_tpm_limit()` restored the `wp_mcp_ai_model_tpm_limit` filter seam across the CCT → bundled-catalog fallback path (#6233). The agent-identity resolver casts canonical IDs read from the alias table to int (`absint`, #6232). Assistant untrash restores the pre-trash status via `wp_untrash_post_status` so published assistants keep CCT sync (#6239). `wp_mcp_ai_seed_task_templates` AJAX action registered on the settings dashboard (#6243).
+
+**New in v1.1.67:** +6 Pro tools. (1) Four Gmail tools in `addons/pro/includes/tools/google-workspace/` — `get_gmail_message`, `get_gmail_thread`, `list_gmail_connections`, `modify_gmail_message` (the modify tool is destructive-ops gated) — backed by the new `WP_MCP_AI_Pro_Gmail_Client` (PR #6151). (2) Two Drive tools — `get_drive_file`, `list_drive_connections` — backed by the new `WP_MCP_AI_Pro_Google_Drive_Client` (PR #6152). Both clients resolve credentials through the shared `includes/google/` foundation + Pro Remote Sites; `search_gmail`/`search_drive` were updated to match. Campaign-carried tool-contract fixes: `create_post` applies categories/tags only when explicitly passed as arrays (#6115); `generate_veo_video` duration floor raised to 5 seconds (#6180); `WP_MCP_AI_Tool_Token_Limits::get_tool_multiplier()` is now public (#6189); token-tier caching guards numeric user IDs (#6178); CRM workflow presets normalized to the canonical node schema (`toolSlug`/`arguments`, edge IDs, #6208); content-format helper exposes `wp_mcp_ai_detected_seo_plugin` + Elementor filter seams (#6203); Pro invoice-PDF tool class renamed to `generate_woocommerce_order_invoice_pdf` (Composer ambiguity, #6198); toolkit registry resolves the live tool-registry singleton per call (#6117).
+
+**New in v1.1.66:** No tools added or removed — the Aug 28–31 test-suite repair campaign carried several tool-contract fixes. (1) Media Toolkit tools (`apply_collection_template`, `apply_media_template`, `list_media_templates`) now return the canonical `WP_Error` envelope for failures instead of `array( 'success' => false, ... )`. (2) The Pro `remove_background` tool gained a path guard + source resolution fix (shared `WP_MCP_AI_Tool_Image_Base`). (3) `auto_categorize_content` router + client API fixed. (4) `web_search` result building restored for the Exa and Perplexity providers. (5) The ecommerce toolkit enablement check was extracted into a shared helper (`class-wp-mcp-ai-ecommerce-helpers.php`) reused by the opt-in paths. (6) Validated-tool suites were swept onto the canonical error codes (test-only). (7) A2A webhook logging + delegate tool errors fixed; `manage_autonomous_session` tool error logging fixed.
+
+**New in v1.1.65:** No tools added or removed — four tool-adjacent fixes. (1) Graphify `sync_remote_source` returns the canonical `WP_Error` envelope (never `array( 'success' => false, ... )`) and the remote-source crypto treats provider-prefixed `*_key` fields as sensitive. (2) `paper_store_import`/`paper_store_export` guard a missing `collection` argument (`isset()` before `sanitize_key()`). (3) `remote_wp_connection` error messages instruct callers to run `list_connections` first when a connection ID is missing/invalid. (4) `WP_MCP_AI_Token_Budget_Manager` falls back to the bundled model catalog (longest-prefix match for date-versioned IDs) when the rate-limits CCT has no entry — TPM limits work without JetEngine. Also: `research_model` checks the provider `WP_Error` before reading the model.
+
+**New in v1.1.64:** +7 Pro tools. (1) Six Google Calendar tools in `addons/pro/includes/tools/google-workspace/` (`list_google_calendars`, `list_google_calendar_events`, `update_google_calendar_event`, `delete_google_calendar_event`, `check_google_calendar_availability`, `quick_add_google_calendar_event`) plus a reworked `create_google_calendar_event` (moved from `includes/src/Tools/`) — all resolve credentials via the shared `includes/google/` foundation (optional `connection_id` → Pro Remote Sites, else site-level Google Calendar settings) with scope enforcement from `WP_MCP_AI_Google_Calendar_Scopes`. (2) `composio_manage_accounts` (7th Composio tool, `manage_options`, `risk_level: high`, `destructive`): validate/reconnect/delete/prune for connected-account lifecycle. Also: the **Non-Loggable Result Fields** interface (see below) landed in-commit and the logger's redactor now masks credential-bearing URL query params. No base tools added or removed.
+
+**New in v1.1.63:** No new tools — two registry-adjacent fixes. (1) DeepSeek rejects tool schemas whose `properties` encode as a JSON array: schema normalization must keep object-valued property maps as objects and convert empty maps to `stdClass` so every payload boundary (REST `/tools` output in `WP_MCP_AI_REST`, `WP_MCP_AI_Tool_Service`, `ChatOrchestrator`) encodes `"properties": {}` — never `"properties": []`. (2) Legacy-format tool classes are wrapped **before** the first `register_tool()` attempt (both base and Pro registration paths), so the registry's fail-loud "missing interface" log only fires for classes that genuinely fail to register. Tool counts unchanged: ~303 base + ~1,249 Pro (~1,552 total).
 
 **New in v1.1.62:** OKF tool surface grows to 10 tools — three new base tools (`okf_list_bundles`, `okf_validate_bundle`, `okf_import_bundle`, all in `includes/tools/okf/`) back the new `WP_MCP_AI_OKF_Bundle_Manager` lifecycle (list/create/rename/archive/delete, ZipSlip-safe import/export, health stats) plus the provenance schema extension on `okf_write_concept` (`resource`/`sources`/`usage_window`/`verified`). Two new Pro tools — `okf_enrich_site_content` (`manage_options`) and `route_knowledge_query` (`read`), registered on `wp_mcp_ai_bootstrapped` priority 36 via the `pro_okf_skill_bridge` + `pro_okf_enrichment` modules. Presets updated: `essentials_internal` gains `okf_list_bundles` + `okf_validate_bundle`; `files_documents` gains all three new base tools. Vector store tools (`create_vector_store`, `list_vector_stores`, `get_vector_store`, `manage_vector_store_files` in both the WP client and `lib/core`) migrated to the Responses API — no more `OpenAI-Beta: assistants=v2` header; `file_batches` ingestion with bounded polling + single-file fallback.
 
@@ -238,6 +254,56 @@ tool customise the suffix per-request.
 
 The contract is purely advisory metadata for the model and for downstream
 hint planners; it does **not** validate inputs at runtime.
+
+---
+
+## Non-Loggable Result Fields (capability credentials)
+
+Most secrets are caught automatically before a log entry is persisted: the
+logger's key deny-list masks `api_key` / `*_token` / `*_secret`-style keys, and
+its URL redactor masks credential-bearing **query parameters**. Neither can
+help when the credential *is* an opaque URL path segment, or when it sits under
+an innocuous key like `url`, `link`, or `data` — `/link/lk_9XgCEUuh9JIN` is
+indistinguishable from `/uploads/2026/08/image.png` to any heuristic. **Only
+the tool knows its own result field is secret.**
+
+Tools that return such values implement
+`WP_MCP_AI_Tool_Sensitive_Result_Interface`
+(`includes/interfaces/interface-wp-mcp-ai-tool.php`):
+
+```php
+class WP_MCP_AI_Tool_Example
+    implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface {
+
+    public function get_sensitive_result_fields() {
+        return array(
+            'url',                                // top-level key
+            'data.url',                           // nested key
+            'components.plugins.*.download_url',  // any list element
+        );
+    }
+}
+```
+
+`WP_MCP_AI_Logger::log_tool_execution()` masks every declared path with
+`[redacted]` **before** `limit_result_payload()` JSON-truncates the preview
+(otherwise the paths would no longer be addressable). The same paths are masked
+in `arguments` and on the `tool_error` path. Declaring a container key masks its
+whole subtree, which is how tools returning an unbounded third-party payload
+(`composio_execute_tool` → `result`) opt out wholesale.
+
+This affects **logging only** — the value returned to the caller and to the
+model is never altered. Tools that declare nothing are completely unaffected.
+Legacy-format tools reach the mechanism by exposing the same method; the
+`WP_MCP_AI_Legacy_Tool_Wrapper` forwards it.
+
+Filter `wp_mcp_ai_tool_sensitive_result_fields` ( `$declared`, `$tool_slug` ) is
+additive-only, so it can shield a third-party tool that does not declare its
+own fields but can never weaken a tool's own declaration.
+
+Current declarers: `composio_create_connect_link`, `composio_manage_accounts`,
+`composio_execute_tool`, `composio_manage_triggers`, `generate_booking_link`,
+`vault_access`, `yahoo_ff_auth`, `get_update_status`.
 
 ---
 

@@ -49,6 +49,14 @@ class WP_MCP_AI_Admin_Key_Rotation_Tests extends WP_UnitTestCase {
 
 		// Clear any existing master key.
 		delete_option( WP_MCP_AI_Encryption::MASTER_KEY_OPTION );
+
+		// The rotation interface registers its hooks when the class file first
+		// loads. When this suite runs later in the process, that load happens
+		// after the process-wide hook-table backup, so the per-test restore
+		// drops the hooks. Re-register when missing.
+		if ( false === has_action( 'admin_post_wp_mcp_ai_rotate_master_key' ) ) {
+			WP_MCP_AI_Admin_Key_Rotation::init();
+		}
 	}
 
 	/**
@@ -116,6 +124,7 @@ class WP_MCP_AI_Admin_Key_Rotation_Tests extends WP_UnitTestCase {
 			WP_MCP_AI_Admin_Key_Rotation::handle_rotation_request();
 		} catch ( Exception $e ) {
 			// Redirect will throw exception in tests.
+			unset( $e );
 		}
 
 		// Verify success transient was set.
@@ -148,6 +157,7 @@ class WP_MCP_AI_Admin_Key_Rotation_Tests extends WP_UnitTestCase {
 			WP_MCP_AI_Admin_Key_Rotation::handle_rotation_request();
 		} catch ( Exception $e ) {
 			// Redirect will throw exception in tests.
+			unset( $e );
 		}
 
 		// Verify error transient was set.

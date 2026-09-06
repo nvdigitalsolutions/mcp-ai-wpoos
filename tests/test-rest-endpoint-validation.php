@@ -90,7 +90,8 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		parent::setUp();
 
 		global $wp_rest_server;
-		$this->server = $wp_rest_server = new WP_REST_Server();
+		$this->server   = new WP_REST_Server();
+		$wp_rest_server = $this->server;
 		do_action( 'rest_api_init' );
 
 		wp_set_current_user( self::$admin_id );
@@ -107,6 +108,61 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Extract the detailed validation message for a field from a WP REST error.
+	 *
+	 * Production nests per-field messages under data.params and actionable
+	 * guidance under details.<field>.data.actions (the standard
+	 * rest_invalid_param shape); the top-level message is only a summary.
+	 *
+	 * @param array  $data  Response data.
+	 * @param string $field Field name.
+	 * @return string
+	 */
+	protected function field_error_message( $data, $field ) {
+		if ( isset( $data['data']['params'][ $field ] ) ) {
+			return (string) $data['data']['params'][ $field ];
+		}
+		if ( isset( $data['details'][ $field ]['message'] ) ) {
+			return (string) $data['details'][ $field ]['message'];
+		}
+		return '';
+	}
+
+	/**
+	 * Extract actionable guidance for a field from a WP REST error.
+	 *
+	 * @param array  $data  Response data.
+	 * @param string $field Field name.
+	 * @return array
+	 */
+	protected function field_actions( $data, $field ) {
+		if ( isset( $data['data']['details'][ $field ]['data']['actions'] ) && is_array( $data['data']['details'][ $field ]['data']['actions'] ) ) {
+			return $data['data']['details'][ $field ]['data']['actions'];
+		}
+		return array();
+	}
+
+	/**
+	 * Build an authenticated POST request to /mcp-ai/v1/chat with a JSON body.
+	 *
+	 * The permission gate requires either a bearer token or a valid wp_rest
+	 * nonce; without one the endpoint short-circuits with 401 before the
+	 * callback runs. Tests that assert callback-level validation (role values,
+	 * embedded attachment segments) must authenticate so sanitize_messages()
+	 * and the attachment pipeline actually execute.
+	 *
+	 * @param array $body Request body.
+	 * @return WP_REST_Request
+	 */
+	private function authenticated_chat_request( array $body ) {
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_body( wp_json_encode( $body ) );
+		return $request;
+	}
+
+	/**
 	 * Test /chat endpoint rejects empty messages array.
 	 */
 	public function test_chat_endpoint_rejects_empty_messages() {
@@ -120,8 +176,8 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$this->assertSame( 400, $response->get_status(), 'Empty messages array should return 400' );
 		$this->assertArrayHasKey( 'code', $data, 'Error response should include code' );
 		$this->assertArrayHasKey( 'message', $data, 'Error response should include message' );
-		$this->assertStringContainsString( 'cannot be empty', $data['message'], 'Error message should mention empty array' );
-		$this->assertArrayHasKey( 'actions', $data, 'Error response should include actionable guidance' );
+		$this->assertStringContainsString( 'cannot be empty', $this->field_error_message( $data, 'messages' ), 'Error message should mention empty array' );
+		$this->assertNotEmpty( $this->field_actions( $data, 'messages' ), 'Error response should include actionable guidance' );
 	}
 
 	/**
@@ -144,35 +200,37 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status(), 'Message without role should return 400' );
-		$this->assertStringContainsString( 'missing required "role"', $data['message'], 'Error should mention missing role' );
-		$this->assertArrayHasKey( 'actions', $data, 'Error should provide actionable guidance' );
+		$this->assertStringContainsString( 'missing required "role"', $this->field_error_message( $data, 'messages' ), 'Error should mention missing role' );
+		$this->assertNotEmpty( $this->field_actions( $data, 'messages' ), 'Error should provide actionable guidance' );
 	}
 
 	/**
 	 * Test /chat endpoint rejects invalid role values.
 	 */
 	public function test_chat_endpoint_rejects_invalid_role() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
-		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_body(
-			wp_json_encode(
-				array(
-					'messages' => array(
-						array(
-							'role'    => 'invalid_role',
-							'content' => 'Hello',
-						),
+		$request = $this->authenticated_chat_request(
+			array(
+				'assistant_id' => self::$assistant_id,
+				'messages'     => array(
+					array(
+						'role'    => 'invalid_role',
+						'content' => 'Hello',
 					),
-				)
+				),
 			)
 		);
 
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
 
+		// Role values are enforced in sanitize_messages() (after the args gate)
+		// so custom roles registered via the wp_mcp_ai_allowed_message_roles
+		// filter are not rejected at the REST schema layer.
 		$this->assertSame( 400, $response->get_status(), 'Invalid role should return 400' );
-		$this->assertStringContainsString( 'invalid role', $data['message'], 'Error should mention invalid role' );
-		$this->assertStringContainsString( 'system, user, assistant', $data['message'], 'Error should list valid roles' );
+		$this->assertSame( 'wp_mcp_ai_invalid_message_role', $data['code'] );
+		$this->assertStringContainsString( 'invalid_role', $data['message'], 'Error should echo the offending role' );
+		$this->assertStringContainsString( 'not supported', $data['message'], 'Error should explain the rejection' );
+		$this->assertStringContainsString( 'user, assistant, system', $data['message'], 'Error should list valid roles' );
 	}
 
 	/**
@@ -195,34 +253,36 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status(), 'Message without content should return 400' );
-		$this->assertStringContainsString( 'missing required "content"', $data['message'], 'Error should mention missing content' );
+		$this->assertStringContainsString( 'missing required "content"', $this->field_error_message( $data, 'messages' ), 'Error should mention missing content' );
 	}
 
 	/**
 	 * Test /chat endpoint rejects tool messages without tool_call_id.
+	 *
+	 * Orphaned tool messages are discarded before dispatch (preserving
+	 * conversation flow for legacy transcript resubmissions); a request whose
+	 * only message is orphaned is left with no messages and is rejected.
 	 */
-	public function test_chat_endpoint_rejects_tool_message_without_tool_call_id() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
-		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_body(
-			wp_json_encode(
-				array(
-					'messages' => array(
-						array(
-							'role'    => 'tool',
-							'content' => 'Tool result',
-							// Missing 'tool_call_id'.
-						),
+	public function test_chat_endpoint_rejects_orphaned_tool_message() {
+		$request = $this->authenticated_chat_request(
+			array(
+				'assistant_id' => self::$assistant_id,
+				'messages'     => array(
+					array(
+						'role'    => 'tool',
+						'content' => 'Tool result',
+						// Missing 'tool_call_id'.
 					),
-				)
+				),
 			)
 		);
 
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
 
-		$this->assertSame( 400, $response->get_status(), 'Tool message without tool_call_id should return 400' );
-		$this->assertStringContainsString( 'missing required "tool_call_id"', $data['message'], 'Error should mention missing tool_call_id' );
+		$this->assertSame( 400, $response->get_status(), 'Lone orphaned tool message should return 400' );
+		$this->assertSame( 'wp_mcp_ai_invalid_messages', $data['code'] );
+		$this->assertStringContainsString( 'Messages must be provided', $data['message'], 'Error should explain there are no usable messages' );
 	}
 
 	/**
@@ -237,7 +297,7 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status(), 'Non-array messages should return 400' );
-		$this->assertStringContainsString( 'must be an array', $data['message'], 'Error should mention type mismatch' );
+		$this->assertStringContainsString( 'must be an array', $this->field_error_message( $data, 'messages' ), 'Error should mention type mismatch' );
 	}
 
 	/**
@@ -267,91 +327,95 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test /chat endpoint rejects attachments without file_id or url.
+	 * Test /chat endpoint rejects image segments without a file reference.
+	 *
+	 * Attachments are embedded in message content segments (input_image /
+	 * input_file); a segment without any URL, file_id, or attachment_id is
+	 * rejected during sanitization.
 	 */
-	public function test_chat_endpoint_rejects_attachment_without_file_reference() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
-		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_body(
-			wp_json_encode(
-				array(
-					'messages'    => array(
-						array(
-							'role'    => 'user',
-							'content' => 'Hello',
+	public function test_chat_endpoint_rejects_image_segment_without_reference() {
+		$request = $this->authenticated_chat_request(
+			array(
+				'assistant_id' => self::$assistant_id,
+				'messages'     => array(
+					array(
+						'role'    => 'user',
+						'content' => array(
+							array( 'type' => 'input_image' ), // No URL, file_id, or attachment_id.
 						),
 					),
-					'attachments' => array(
-						array( 'name' => 'file.txt' ), // Missing both file_id and url.
-					),
-				)
+				),
 			)
 		);
 
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
 
-		$this->assertSame( 400, $response->get_status(), 'Attachment without file reference should return 400' );
-		$this->assertStringContainsString( 'must include either "file_id"', $data['message'], 'Error should mention missing file reference' );
-		$this->assertArrayHasKey( 'actions', $data, 'Error should provide actionable guidance' );
+		$this->assertSame( 400, $response->get_status(), 'Image segment without reference should return 400' );
+		$this->assertSame( 'wp_mcp_ai_missing_image_attachment', $data['code'] );
+		$this->assertStringContainsString( 'attachment ID or URL', $data['message'], 'Error should mention the missing reference' );
 	}
 
 	/**
-	 * Test /chat endpoint rejects attachment with invalid file_id.
+	 * Test /chat endpoint rejects file segments with an unknown file_id.
 	 */
 	public function test_chat_endpoint_rejects_invalid_file_id() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
-		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_body(
-			wp_json_encode(
-				array(
-					'messages'    => array(
-						array(
-							'role'    => 'user',
-							'content' => 'Hello',
+		$request = $this->authenticated_chat_request(
+			array(
+				'assistant_id' => self::$assistant_id,
+				'messages'     => array(
+					array(
+						'role'    => 'user',
+						'content' => array(
+							array(
+								'type'    => 'input_file',
+								'file_id' => 'not-a-real-file', // Unknown reference.
+							),
 						),
 					),
-					'attachments' => array(
-						array( 'file_id' => 0 ), // Invalid file_id.
-					),
-				)
+				),
 			)
 		);
 
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
 
-		$this->assertSame( 400, $response->get_status(), 'Invalid file_id should return 400' );
-		$this->assertStringContainsString( 'invalid "file_id"', $data['message'], 'Error should mention invalid file_id' );
+		$this->assertSame( 400, $response->get_status(), 'Unknown file_id should return 400' );
+		$this->assertSame( 'wp_mcp_ai_unknown_file_reference', $data['code'] );
+		$this->assertStringContainsString( 'could not be found', $data['message'], 'Error should mention the unknown file' );
 	}
 
 	/**
-	 * Test /chat endpoint rejects attachment with invalid URL.
+	 * Test /chat endpoint rejects file segments with a disallowed URL scheme.
+	 *
+	 * Esc_url_raw() accepts any wp_allowed_protocols scheme (including ftp),
+	 * but the attachment pipeline restricts remote file URLs to http/https,
+	 * so an ftp:// URL must be rejected during sanitization.
 	 */
 	public function test_chat_endpoint_rejects_invalid_url() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
-		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_body(
-			wp_json_encode(
-				array(
-					'messages'    => array(
-						array(
-							'role'    => 'user',
-							'content' => 'Hello',
+		$request = $this->authenticated_chat_request(
+			array(
+				'assistant_id' => self::$assistant_id,
+				'messages'     => array(
+					array(
+						'role'    => 'user',
+						'content' => array(
+							array(
+								'type' => 'input_file',
+								'url'  => 'ftp://example.com/file.pdf', // Scheme not in the allowlist.
+							),
 						),
 					),
-					'attachments' => array(
-						array( 'url' => 'not-a-valid-url' ), // Invalid URL.
-					),
-				)
+				),
 			)
 		);
 
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
 
-		$this->assertSame( 400, $response->get_status(), 'Invalid URL should return 400' );
-		$this->assertStringContainsString( 'invalid "url"', $data['message'], 'Error should mention invalid URL' );
+		$this->assertSame( 400, $response->get_status(), 'Disallowed URL scheme should return 400' );
+		$this->assertSame( 'wp_mcp_ai_unsupported_file_url_scheme', $data['code'] );
+		$this->assertStringContainsString( 'allowed scheme', $data['message'], 'Error should mention the URL scheme restriction' );
 	}
 
 	/**
@@ -378,9 +442,10 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 
 		$this->assertSame( 400, $response->get_status(), 'tools/call without name should return 400' );
 
-		// MCP returns JSON-RPC error format.
-		$this->assertArrayHasKey( 'error', $data, 'Response should include error object' );
-		$this->assertStringContainsString( 'name', $data['error']['message'], 'Error should mention missing name parameter' );
+		// tools/call parameter validation is handled by the REST schema, so the
+		// response carries the WP REST param-error shape.
+		$this->assertSame( 'rest_invalid_param', $data['code'] );
+		$this->assertStringContainsString( 'name', $this->field_error_message( $data, 'params' ), 'Error should mention missing name parameter' );
 	}
 
 	/**
@@ -404,7 +469,7 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status(), 'Non-object params should return 400' );
-		$this->assertArrayHasKey( 'error', $data, 'Response should include error object' );
+		$this->assertSame( 'rest_invalid_param', $data['code'] );
 	}
 
 	/**
@@ -452,35 +517,32 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status() );
-		$this->assertArrayHasKey( 'actions', $data, 'Validation errors should include actionable guidance' );
-		$this->assertIsArray( $data['actions'], 'Actions should be an array' );
-		$this->assertNotEmpty( $data['actions'], 'Actions array should not be empty' );
+		$actions = $this->field_actions( $data, 'messages' );
+		$this->assertIsArray( $actions, 'Actions should be an array' );
+		$this->assertNotEmpty( $actions, 'Actions array should not be empty' );
 	}
 
 	/**
 	 * Test complex nested message validation.
 	 */
 	public function test_complex_message_array_validation() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
-		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_body(
-			wp_json_encode(
-				array(
-					'messages' => array(
-						array(
-							'role'    => 'user',
-							'content' => 'First message',
-						),
-						array(
-							'role'    => 'assistant',
-							'content' => 'Response',
-						),
-						array(
-							'role'    => 'invalid', // Invalid role in middle of array.
-							'content' => 'Should fail',
-						),
+		$request = $this->authenticated_chat_request(
+			array(
+				'assistant_id' => self::$assistant_id,
+				'messages'     => array(
+					array(
+						'role'    => 'user',
+						'content' => 'First message',
 					),
-				)
+					array(
+						'role'    => 'assistant',
+						'content' => 'Response',
+					),
+					array(
+						'role'    => 'invalid', // Invalid role in middle of array.
+						'content' => 'Should fail',
+					),
+				),
 			)
 		);
 
@@ -488,37 +550,38 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status(), 'Invalid role in message array should fail' );
-		$this->assertStringContainsString( 'index 2', $data['message'], 'Error should identify problematic message index' );
-		$this->assertStringContainsString( 'invalid role', $data['message'], 'Error should identify the issue' );
+		$this->assertSame( 'wp_mcp_ai_invalid_message_role', $data['code'] );
+		$this->assertStringContainsString( 'invalid', $data['message'], 'Error should identify the offending role' );
+		$this->assertStringContainsString( 'not supported', $data['message'], 'Error should explain the rejection' );
 	}
 
 	/**
 	 * Test validation with mixed valid and invalid parameters.
 	 */
 	public function test_validation_with_mixed_parameters() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
-		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_body(
-			wp_json_encode(
-				array(
-					'messages'    => array(
-						array(
-							'role'    => 'user',
-							'content' => 'Hello',
+		$request = $this->authenticated_chat_request(
+			array(
+				'assistant_id' => self::$assistant_id,
+				'messages'     => array(
+					array(
+						'role'    => 'user',
+						'content' => array(
+							array(
+								'type' => 'text',
+								'text' => 'Hello', // Valid segment.
+							),
+							array( 'type' => 'input_image' ), // Invalid - no file reference.
 						),
 					),
-					'attachments' => array(
-						array( 'url' => 'https://example.com/valid.pdf' ), // Valid.
-						array( 'name' => 'invalid' ), // Invalid - no file_id or url.
-					),
-				)
+				),
 			)
 		);
 
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
 
-		$this->assertSame( 400, $response->get_status(), 'Mixed valid/invalid attachments should fail' );
-		$this->assertStringContainsString( 'index 1', $data['message'], 'Error should identify problematic attachment' );
+		$this->assertSame( 400, $response->get_status(), 'Mixed valid/invalid segments should fail' );
+		$this->assertSame( 'wp_mcp_ai_missing_image_attachment', $data['code'] );
+		$this->assertStringContainsString( 'attachment ID or URL', $data['message'], 'Error should identify the problematic segment' );
 	}
 }

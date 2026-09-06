@@ -235,15 +235,12 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 	 */
 
 	/**
-	 * Without `NV_oOS_Graphify_Memory_Bridge` loaded, the graph stream is a
-	 * silent empty list — BM25 + vector can still produce a fused result.
+	 * When Graphify is absent — or present but without an installed schema —
+	 * the graph stream is a silent empty list. The bridge's retrieve_graph()
+	 * short-circuits while its tables are missing, so the stream stays empty
+	 * in either state and BM25 + vector can still produce a fused result.
 	 */
 	public function test_missing_graphify_yields_silent_empty_graph_stream() {
-		$this->assertFalse(
-			class_exists( 'NV_oOS_Graphify_Memory_Bridge', false ),
-			'Test precondition: Graphify must NOT be loaded in the base test environment.'
-		);
-
 		$graph = WP_MCP_AI_Memory_RRF_Fusion_Service::get_graph_candidates( 'query text', 'agent-1', array(), 20 );
 		$this->assertSame( array(), $graph, 'Graph stream must return empty silently.' );
 	}

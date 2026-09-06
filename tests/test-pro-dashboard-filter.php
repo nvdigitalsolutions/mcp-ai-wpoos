@@ -19,7 +19,7 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 	public function test_pro_dashboard_filter_enables_features() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
 
-		$dashboard = new WP_MCP_AI_Pro_Dashboard();
+		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
 
 		// Initially, Pro should be disabled.
 		$this->assertFalse( $dashboard->is_pro_active(), 'Pro should be disabled by default' );
@@ -51,7 +51,7 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 
 		// Test that constant is checked by temporarily overriding defined().
 		// Since we can't actually define constants in tests, we verify the logic.
-		$dashboard = new WP_MCP_AI_Pro_Dashboard();
+		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
 
 		// Initially disabled.
 		$this->assertFalse( $dashboard->is_pro_active(), 'Pro should be disabled without constant or filter' );
@@ -65,7 +65,7 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 		// Actual priority testing requires defining the constant which we can't do in tests.
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
 
-		$dashboard = new WP_MCP_AI_Pro_Dashboard();
+		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
 
 		// With filter false, should be disabled.
 		add_filter( 'wp_mcp_ai_pro_dashboard_available', '__return_false' );
@@ -81,7 +81,7 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 	public function test_pro_dashboard_filter_with_priority() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
 
-		$dashboard = new WP_MCP_AI_Pro_Dashboard();
+		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
 
 		// Add filter with priority 0 (simulating WPCode snippet with priority 0).
 		add_filter( 'wp_mcp_ai_pro_dashboard_available', '__return_true', 0 );
@@ -99,7 +99,7 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 	public function test_pro_dashboard_filter_is_dynamic() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
 
-		$dashboard = new WP_MCP_AI_Pro_Dashboard();
+		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
 
 		// Check multiple times with different filter states.
 		$this->assertFalse( $dashboard->is_pro_active(), 'Pro should be disabled initially' );
@@ -123,7 +123,7 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 	public function test_pro_dashboard_custom_filter_callback() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
 
-		$dashboard = new WP_MCP_AI_Pro_Dashboard();
+		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
 
 		// Add custom callback that checks a condition.
 		$callback = function () {
@@ -154,7 +154,7 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 	public function test_is_pro_active_method_is_public() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
 
-		$dashboard = new WP_MCP_AI_Pro_Dashboard();
+		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
 
 		$reflection = new ReflectionMethod( $dashboard, 'is_pro_active' );
 		$this->assertTrue( $reflection->isPublic(), 'is_pro_active method should be public' );
@@ -194,7 +194,7 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 
 		// Capture output and ensure no PHP warnings are generated.
 		ob_start();
-		$dashboard = new WP_MCP_AI_Pro_Dashboard();
+		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
 		$dashboard->render_overview();
 		$output = ob_get_clean();
 
@@ -210,9 +210,9 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that recent activity with empty array doesn't cause errors.
+	 * Test that recent activity with empty array falls back to sample data.
 	 */
-	public function test_recent_activity_handles_empty_array() {
+	public function test_recent_activity_empty_array_falls_back_to_samples() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
 
 		// Enable Pro dashboard.
@@ -223,13 +223,14 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 
 		// Capture output.
 		ob_start();
-		$dashboard = new WP_MCP_AI_Pro_Dashboard();
+		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
 		$dashboard->render_overview();
 		$output = ob_get_clean();
 
-		// Should show empty state, not the activity list.
-		$this->assertStringContainsString( 'wp-mcp-ai-empty-state', $output, 'Empty state should be shown' );
-		$this->assertStringNotContainsString( 'wp-mcp-ai-activity-list', $output, 'Activity list should not be rendered' );
+		// An empty activity option falls back to the built-in sample events,
+		// so the activity list renders without warnings instead of an empty
+		// state.
+		$this->assertStringContainsString( 'wp-mcp-ai-activity-list', $output, 'Activity list should fall back to sample events' );
 
 		// Clean up.
 		delete_option( 'wp_mcp_ai_recent_activity' );
@@ -237,9 +238,9 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that recent activity handles non-pro mode correctly.
+	 * Test that non-pro mode renders the upgrade notice.
 	 */
-	public function test_recent_activity_non_pro_mode() {
+	public function test_non_pro_mode_shows_upgrade_notice() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
 
 		// Set some events.
@@ -253,15 +254,17 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 			)
 		);
 
-		// Capture output with Pro disabled.
+		// Capture output with Pro disabled (no opt-in filter).
 		ob_start();
-		$dashboard = new WP_MCP_AI_Pro_Dashboard();
+		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
 		$dashboard->render_overview();
 		$output = ob_get_clean();
 
-		// Should show empty state, not the activity list (Pro is disabled).
-		$this->assertStringContainsString( 'wp-mcp-ai-empty-state', $output, 'Empty state should be shown when Pro is disabled' );
-		$this->assertStringNotContainsString( 'Test event', $output, 'Events should not be displayed when Pro is disabled' );
+		// With Pro disabled the overview renders the Pro upgrade notice. The
+		// recent-activity widget itself is not Pro-gated, so its events still
+		// render.
+		$this->assertStringContainsString( 'wp-mcp-ai-pro-notice', $output, 'Pro upgrade notice should be shown when Pro is disabled' );
+		$this->assertStringContainsString( 'Test event', $output, 'Recent activity events should still render' );
 
 		// Clean up.
 		delete_option( 'wp_mcp_ai_recent_activity' );

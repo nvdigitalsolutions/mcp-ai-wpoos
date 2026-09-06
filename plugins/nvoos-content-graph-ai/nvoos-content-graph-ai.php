@@ -3,7 +3,7 @@
  * Plugin Name:  NV oOS Content Graph — AI
  * Plugin URI:   https://github.com/nvdigitalsolutions/nvoos-content-graph-ai
  * Description:  AI chat assistant addon for NV oOS Content Graph. Adds chat, 13 AI providers, AI tools, embeddings, and agent memory to your knowledge graph. One install, one API key.
- * Version:      1.0.2
+ * Version:      1.0.4
  * Requires at least: 6.5
  * Requires PHP: 8.1
  * Requires Plugins: nvoos-content-graph
@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NVOOS_CONTENT_GRAPH_AI_VERSION', '1.0.2' );
+define( 'NVOOS_CONTENT_GRAPH_AI_VERSION', '1.0.4' );
 define( 'NVOOS_CONTENT_GRAPH_AI_FILE', __FILE__ );
 define( 'NVOOS_CONTENT_GRAPH_AI_PATH', plugin_dir_path( __FILE__ ) );
 define( 'NVOOS_CONTENT_GRAPH_AI_URL', plugin_dir_url( __FILE__ ) );
@@ -68,6 +68,31 @@ spl_autoload_register(
 				}
 				return;
 			}
+		}
+	}
+);
+
+// ─── Activation — migrate legacy plaintext keys to encrypted storage ──
+// Runs before plugins_loaded; the parent plugin is guaranteed active by
+// the Requires Plugins header, so its Remote\Crypto primitive is present.
+register_activation_hook(
+	__FILE__,
+	static function (): void {
+		if ( class_exists( 'NvoosContentGraphAi\Security\CredentialStore' ) ) {
+			\NvoosContentGraphAi\Security\CredentialStore::migrateAll();
+			update_option( \NvoosContentGraphAi\Security\CredentialStore::MIGRATION_FLAG, true, false );
+		}
+
+		// Thread storage schema (idempotent dbDelta) — Wave D1d.
+		if ( class_exists( 'NvoosContentGraphAi\Chat\ThreadManager' ) ) {
+			\NvoosContentGraphAi\Chat\ThreadManager::create_tables();
+		}
+
+		// Security audit table + purge cron — Wave D4c. The base plugin
+		// owns the same table/cron in monolith installs (activation there
+		// runs the base lifecycle).
+		if ( ! defined( 'WP_MCP_AI_PATH' ) && class_exists( 'NvoosContentGraphAi\Security\SecurityAuditLogger' ) ) {
+			\NvoosContentGraphAi\Security\SecurityAuditLogger::on_activation();
 		}
 	}
 );

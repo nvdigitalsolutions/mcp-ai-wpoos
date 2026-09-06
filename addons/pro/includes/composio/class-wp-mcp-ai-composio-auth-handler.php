@@ -250,8 +250,9 @@ class WP_MCP_AI_Composio_Auth_Handler {
 			}
 		}
 
-		// Flush the cached connected-account listing for this connection.
-		delete_transient( WP_MCP_AI_Composio_Client::CACHE_PREFIX . md5( $connection_id . '|' . WP_MCP_AI_Composio_Client::DEFAULT_BASE_URL . '/api/' . WP_MCP_AI_Composio_Client::API_VERSION . '/connected_accounts' ) );
+		// Flush the cached connected-account listing for this connection so the
+		// edit form shows the freshly connected account on the next render.
+		WP_MCP_AI_Composio_Client::clear_accounts_cache( $connection_id );
 
 		wp_safe_redirect( add_query_arg( 'composio_linked', '1', $redirect ) );
 		exit;
@@ -260,13 +261,20 @@ class WP_MCP_AI_Composio_Auth_Handler {
 	/**
 	 * Mark a connected account as expired (used by the webhook receiver).
 	 *
+	 * Writes to the health ledger as well as the legacy transient, so a
+	 * `composio.connected_account.expired` webhook immediately stops the
+	 * account from being auto-selected for tool execution instead of waiting
+	 * for the next probe.
+	 *
 	 * @since 1.4.0
+	 * @since 1.4.1 Also records a `needs_reconnect` verdict in the health ledger.
 	 *
 	 * @param string $connection_id Composio connection ID.
 	 * @param string $account_id    Connected account nanoid.
+	 * @param string $toolkit       Optional. Toolkit slug from the webhook payload.
 	 * @return void
 	 */
-	public static function mark_account_expired( $connection_id, $account_id ) {
+	public static function mark_account_expired( $connection_id, $account_id, $toolkit = '' ) {
 		$connection_id = sanitize_key( (string) $connection_id );
 		$account_id    = sanitize_text_field( (string) $account_id );
 
@@ -280,14 +288,34 @@ class WP_MCP_AI_Composio_Auth_Handler {
 			DAY_IN_SECONDS
 		);
 
+		if ( class_exists( 'WP_MCP_AI_Composio_Account_Health' ) ) {
+			$existing = WP_MCP_AI_Composio_Account_Health::get( $connection_id, $account_id );
+
+			WP_MCP_AI_Composio_Account_Health::record(
+				$connection_id,
+				$account_id,
+				array(
+					'account_id'          => $account_id,
+					'toolkit'             => '' !== (string) $toolkit ? sanitize_key( (string) $toolkit ) : ( isset( $existing['toolkit'] ) ? (string) $existing['toolkit'] : '' ),
+					'status'              => 'EXPIRED',
+					'verified'            => false,
+					'verification_method' => 'webhook',
+					'needs_reconnect'     => true,
+					'last_error'          => __( 'Composio reported this connection as expired via webhook. The user must re-authenticate.', 'mcp-ai-wpoos-pro' ),
+					'last_error_code'     => 'wp_mcp_ai_composio_account_expired',
+				)
+			);
+		}
+
 		// Flush the cached listing so the admin panel reflects the new state.
-		delete_transient( WP_MCP_AI_Composio_Client::CACHE_PREFIX . md5( $connection_id . '|' . WP_MCP_AI_Composio_Client::DEFAULT_BASE_URL . '/api/' . WP_MCP_AI_Composio_Client::API_VERSION . '/connected_accounts' ) );
+		WP_MCP_AI_Composio_Client::clear_accounts_cache( $connection_id );
 	}
 
 	/**
 	 * Check whether a connected account is marked expired.
 	 *
 	 * @since 1.4.0
+	 * @since 1.4.1 Also consults the health ledger.
 	 *
 	 * @param string $connection_id Composio connection ID.
 	 * @param string $account_id    Connected account nanoid.
@@ -301,6 +329,16 @@ class WP_MCP_AI_Composio_Auth_Handler {
 			return false;
 		}
 
-		return false !== get_transient( 'wp_mcp_ai_composio_expired_' . md5( $connection_id . '|' . $account_id ) );
+		if ( false !== get_transient( 'wp_mcp_ai_composio_expired_' . md5( $connection_id . '|' . $account_id ) ) ) {
+			return true;
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Composio_Account_Health' ) ) {
+			$record = WP_MCP_AI_Composio_Account_Health::get( $connection_id, $account_id );
+
+			return ! empty( $record['needs_reconnect'] );
+		}
+
+		return false;
 	}
 }

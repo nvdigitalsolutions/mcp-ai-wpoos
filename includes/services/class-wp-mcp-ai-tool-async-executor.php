@@ -1021,7 +1021,11 @@ class WP_MCP_AI_Tool_Async_Executor {
 	 * @return array|WP_Error Result data or error.
 	 */
 	public function get_result( $job_id ) {
-		$job_id = sanitize_key( $job_id );
+		// Mirror the REST controller's job ID sanitisation: preserve dots and
+		// underscores (legitimate in IDs produced via uniqid( '', true )),
+		// while blocking path traversal and other unsafe characters.
+		$job_id = preg_replace( '/[^a-zA-Z0-9_.\-]/', '', (string) $job_id );
+		$job_id = preg_replace( '/\.{2,}/', '', $job_id );
 
 		if ( empty( $job_id ) ) {
 			return new WP_Error( 'wp_mcp_ai_invalid_job', __( 'Job ID is required.', 'mcp-ai-wpoos' ) );
@@ -1230,6 +1234,13 @@ class WP_MCP_AI_Tool_Async_Executor {
 	 * @return mixed Original result data.
 	 */
 	protected function decompress_result( $compressed_result ) {
+		// Legacy tolerance: results stored before the {compressed, data}
+		// envelope format was introduced were plain arrays. Return them
+		// as-is rather than misreporting a completed job as corrupted.
+		if ( ! isset( $compressed_result['compressed'] ) && ! isset( $compressed_result['data'] ) ) {
+			return $compressed_result;
+		}
+
 		if ( ! isset( $compressed_result['compressed'] ) || ! $compressed_result['compressed'] ) {
 			return isset( $compressed_result['data'] ) ? $compressed_result['data'] : null;
 		}

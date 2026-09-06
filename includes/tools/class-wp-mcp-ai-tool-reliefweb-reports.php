@@ -182,7 +182,11 @@ class WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface, WP_M
 			'profile' => 'full',
 		);
 
-		$request_url = add_query_arg( $query_args, self::ENDPOINT );
+		// add_query_arg() does not URL-encode values (build_query() passes
+		// $urlencode=false); the appname is filterable, so encode explicitly
+		// with RFC 1738.
+		$query_string = http_build_query( $query_args, '', '&', PHP_QUERY_RFC1738 );
+		$request_url  = self::ENDPOINT . ( false === strpos( self::ENDPOINT, '?' ) ? '?' : '&' ) . $query_string;
 
 		$timeout = (int) apply_filters( 'wp_mcp_ai_reliefweb_timeout', 15, $arguments, $context );
 		if ( $timeout < 5 ) {

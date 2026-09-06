@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.62"
-  plugin-version-tested: "1.1.62"
-  last-updated: "2026-08-22"
+  plugin-version: "1.1.71"
+  plugin-version-tested: "1.1.71"
+  last-updated: "2026-09-05"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -43,7 +43,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~303 base / ~1,552 full tools
+     │  Tool Registry     │  ~303 base / ~1,566 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -361,6 +361,154 @@ bundle not found: skill-knowledge").
   removal.
 - Guide: `docs/features/okf-integration.md`; roadmap:
   `docs/project/plans/OKF-BUNDLE-MANAGEMENT-IMPLEMENTATION-PLAN.md`.
+
+---
+
+## Artifact Evolution, Addons Page & Storage Worker (v1.1.63+)
+
+- **Artifact evolution Phases A–G (Base + Pro)** — the Continual Harness
+  Evolver + Meta-Harness are now a gated Darwinian self-improvement loop for
+  skills, prompts, and roles (`includes/harness/class-wp-mcp-ai-artifact-*.php`):
+  populations + parent sampling, failure replay + post-mutation verification,
+  pre-commit admission gate, holdout-gated deployment with shadow A/B + drift
+  rollback, governor + human approval queue + lineage. **Every layer defaults
+  off**; the opt-in switches live in Settings → Orchestration Layer
+  (`WP_MCP_AI_Evolution_Settings_Bridge`). The `evolve_harness` tool now calls
+  the repaired Evolver contract (`analyze_failures()`, component-scoped
+  `evolve()`, enforced `dry_run`). Proposal:
+  `docs/project/proposals/007-artifact-evolution.md`.
+- **Pro Addons page (v1.1.63+)** — NV oOS Pro Dashboard → Addons
+  (`/wp-admin/admin.php?page=wp-mcp-ai-addons`) installs/activates standalone
+  addons whose ZIPs ship in `build/`; nonce + `install_plugins` + allowlist;
+  non-WordPress components listed read-only.
+- **Chat storage worker offload** — saves ≥ `wp_mcp_ai_storage_worker_threshold`
+  (default 10,000 chars) offload `JSON.stringify` to the browser
+  `storage-worker.js`; sync fallback for small saves/unload/worker failure;
+  kill switch: `add_filter( 'wp_mcp_ai_storage_worker_threshold',
+  '__return_zero' );`. Plan:
+  `docs/project/proposals/032-chat-web-workers-wiring-implementation-plan.md`.
+- **DeepSeek empty-schema fix** — tool schema `properties` must encode as `{}`
+  never `[]`; legacy tools are wrapped before the first register attempt.
+
+## Reasoning Models, Full-Crawl Proxy & Security-Posture Closure (v1.1.65+)
+
+- **OpenAI reasoning-model parameters** — o-series and gpt-5 models reject
+  `max_tokens` (o-series also `temperature`); `lib/core`
+  `OpenAiCompatibleClient` strips unsupported parameters per model
+  (`applyModelConstraints()`) and retries 400 rejections with corrected
+  payloads (`sendWithParameterCorrection()`) on sync and streaming paths.
+  Do not blanket-add `max_tokens` for reasoning models.
+- **Media Worker full-Crawl4AI proxy (031 Phase 3)** — env-gated
+  `POST /api/crawl/full` + `GET /api/crawl/full/task/:id` forward to
+  `CRAWL4AI_FULL_URL` with SSRF-validated targets, token gating, and
+  503/502/400 envelopes; `TEMP_ROOT` is the strict-path sandbox root
+  (028 Q5). Worker version stays **v3.2.0** — `package.json` is
+  authoritative.
+- **Security-posture closure (issue #5972)** — Algorave Tone.js raw eval
+  requires per-session confirmation + warning banner; TMA source map
+  removed; webhook `__return_true` callbacks carry justification comments.
+- **Chat/REST hardening** — legacy top-level `attachments` parameters
+  tolerated; custom message roles work via
+  `wp_mcp_ai_allowed_message_roles`; orphaned tool messages silently
+  discarded; sign-preserving transcript pagination; legacy `input_text`
+  segments normalized to `text`.
+- **TPM fallback** — token-budget service falls back to the bundled model
+  catalog when the rate-limits CCT has no entry (TPM limits work without
+  JetEngine).
+- **Slash commands & blocks** — toolkit manager re-resolves the handler on
+  registration; CSV list args accept `"1,2"` and `"1, 2"`;
+  assistant-builder and Pro toolkit blocks register idempotently
+  (WP 7.1 notices).
+
+## Platform Extraction v2.0.0, Ecosystem Port Wave D + D-UI & Google Workspace Read Tools (v1.1.67+)
+
+- **Content Graph platform extraction (v2.0.0)** — the
+  `nvoos-content-graph-ai-platform` addon now carries its own business
+  logic (Waves A–C + Blueprints: namespace-bridged admin UI, skill/slash-
+  command/agent bridges, harness router, 74-skill bundled-skills pack,
+  knowledge base, `.github/workflows/phpunit-platform.yml`). Plan:
+  `docs/project/plans/content-graph-platform-extraction-plan.md`.
+- **Base+Pro → Content Graph ecosystem port (Wave D + D-UI)** — the AI
+  runtime lands in `nvoos-content-graph-ai` (chat core, providers beyond
+  the 13, model management + analytics/token tracking, security guards,
+  assistant admin pages, blocks/widgets/guest tokens/memory/CLI/MCP
+  JSON-RPC); **Content Graph AI bumps 1.0.3 → 1.0.4**. Tracker:
+  `docs/project/ecosystem-port-tracker.md`.
+- **Google Workspace Gmail + Drive read tools (Pro)** — six new Pro tools
+  (`get_gmail_message`, `get_gmail_thread`, `list_gmail_connections`,
+  `modify_gmail_message` — destructive-ops gated — and `get_drive_file`,
+  `list_drive_connections`) with new `WP_MCP_AI_Pro_Gmail_Client` /
+  `WP_MCP_AI_Pro_Google_Drive_Client` clients on the shared
+  `includes/google/` foundation.
+- **PHPUnit repair campaign continuation (~95 PRs, Aug 31 – Sep 2)** — a
+  second cluster wave kept the suite green through the extraction/port
+  work; the `mcp-ai-wpoos-test-suite` skill now distills 26 root-cause
+  patterns. Production seams to know about: `unregister_section()` on the
+  settings registry; public `get_tool_multiplier()`; null-safe REST
+  tool-error reporting; WhatsApp webhook signature rejection without an
+  app secret; destructive-ops gate reads the canonical combined-settings
+  array; crawler `base_url` validation + `wp_mcp_ai_crawl4ai_auto_spawn_cron`
+  filter. Tool count: ~303 base + ~1,262 Pro (~1,565 total).
+
+## Test-Suite Campaign, REST Hardening & Content Graph AI (v1.1.66+)
+
+- **PHPUnit repair campaign (Aug 28–31, ~100 PRs)** — the single-process
+  suite was repaired cluster-by-cluster; the recurring root causes and the
+  cluster-PR workflow are catalogued in the sibling
+  `.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md` skill, with the
+  standing tracker `docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md`.
+  Coding-time agent skills: 53.
+- **Assistant-access caching** — `validate_assistant_access()` caches
+  `WP_Error` results like successes; the cache-disable path is the
+  `wp_mcp_ai_assistant_access_cache_enabled` filter (never a persisted
+  `WP_MCP_AI_DISABLE_CACHE` define from a test).
+- **REST/auth hardening** — attachment-segment validation errors return
+  explicit HTTP 400s; token-tier endpoint + tier-change audit logging
+  fixed; REST permission-callback allowlist refreshed; bearer-auth context
+  synced across Simple JWT + assistant-access paths; guest tokens are
+  origin-bound.
+- **Job queue & notifier** — closure serialization fixed in legacy option
+  storage; custom-table queries guard against missing schema (Graphify DB,
+  job store, tenant DB); `update_status()` restored with dot-preserving
+  job IDs and owner-scoped REST routes; progress events promote cached
+  status to running.
+- **Tool contract fixes** — Media Toolkit tools return canonical `WP_Error`
+  envelopes; Remove Background gained a path guard; memory-capture failure
+  envelope restored; web-search result building fixed for Exa/Perplexity;
+  auto-categorize router/client fixed.
+- **Content Graph AI 1.0.3** — `nvoos-content-graph-ai` standalone plugin
+  bumped to 1.0.3 with a tool permission-check fix; `nvoos-content-graph`
+  stays 1.0.3, Media Worker stays v3.2.0.
+
+## Google Calendar Connection & Composio Hardening (v1.1.64+)
+
+- **Google Calendar connection (Base + Pro)** — new shared foundation in
+  `includes/google/` (OAuth service, Calendar v3 client, scope registry,
+  credential resolver, sync + push) replaces four drifted Google OAuth
+  start/callback copies; a `google_calendar` connection type exists on both
+  surfaces (base Settings → Integrations, Pro Remote Sites). Six new Pro
+  tools in `addons/pro/includes/tools/google-workspace/`:
+  `list_google_calendars`, `list_google_calendar_events`,
+  `update_google_calendar_event`, `delete_google_calendar_event`,
+  `check_google_calendar_availability`, `quick_add_google_calendar_event` —
+  credentials resolve from an optional `connection_id` or site-level settings,
+  and every write passes scope enforcement. Docs:
+  `docs/developer/architecture/integrations/google-calendar-connection.md`.
+- **Composio account health + hardening (Pro)** — verified account-health
+  engine (`WP_MCP_AI_Composio_Account_Health`) with live catalog-discovered
+  probes; new seventh tool `composio_manage_accounts`
+  (validate/reconnect/delete/prune); proxied provider 401/403 → reconnect
+  guidance; zero-argument calls send `arguments: {}`; Health column +
+  Verify/Reconnect in Remote Sites.
+- **Log hygiene** — tools declare non-loggable result fields via
+  `WP_MCP_AI_Tool_Sensitive_Result_Interface` (`get_sensitive_result_fields()`,
+  logging-only masking); credential-bearing URL query params are redacted
+  from every logged string; rolling log buffers get per-entry byte budgets
+  plus Data Management Compact/Delete.
+- **Vision tools timeout** — `analyze_image`, `extract_image_text`,
+  `generate_image_alt_text`, `generate_image_caption` accept a 5–300s
+  `timeout` and inherit the global `request_timeout` (fixes cURL error 28 on
+  large images).
 
 ---
 

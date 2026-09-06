@@ -41,6 +41,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		const GOOGLE_DRIVE_OAUTH_AUTHORIZE_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
 		const GOOGLE_DRIVE_OAUTH_TOKEN_ENDPOINT     = 'https://oauth2.googleapis.com/token';
 
+		/*
+		 * Google Calendar OAuth.
+		 *
+		 * Scopes are NOT declared here: they are profile-driven and owned by
+		 * WP_MCP_AI_Google_Calendar_Scopes, which is the single source of truth for
+		 * both the base and Pro connection surfaces. Declaring a scope constant here
+		 * is what allowed the base and Pro Google Drive flows to drift apart.
+		 */
+		const GOOGLE_CALENDAR_OAUTH_AUTHORIZE_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
+		const GOOGLE_CALENDAR_OAUTH_TOKEN_ENDPOINT     = 'https://oauth2.googleapis.com/token';
+		const GOOGLE_CALENDAR_OAUTH_REVOKE_ENDPOINT    = 'https://oauth2.googleapis.com/revoke';
+		const GOOGLE_CALENDAR_API_BASE                 = 'https://www.googleapis.com/calendar/v3';
+		const GOOGLE_CALENDAR_OAUTH_CALLBACK_HANDLER   = 'google_calendar_callback';
+
 		// Embedded LLM provider defaults (Pro addon).
 		const DEFAULT_EMBEDDED_MODEL = 'gemma-2-2b-it-q4f16_1-MLC';
 
@@ -109,6 +123,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			add_action( 'admin_post_wp_mcp_ai_gmail_disconnect', array( $this->oauth_manager, 'handle_gmail_disconnect' ) );
 			add_action( 'admin_post_wp_mcp_ai_google_drive_oauth_start', array( $this->oauth_manager, 'handle_google_drive_oauth_start' ) );
 			add_action( 'admin_post_wp_mcp_ai_google_drive_disconnect', array( $this->oauth_manager, 'handle_google_drive_disconnect' ) );
+			add_action( 'admin_post_wp_mcp_ai_google_calendar_oauth_start', array( $this->oauth_manager, 'handle_google_calendar_oauth_start' ) );
+			add_action( 'admin_post_wp_mcp_ai_google_calendar_disconnect', array( $this->oauth_manager, 'handle_google_calendar_disconnect' ) );
 			// Yahoo OAuth start hook removed - button now links directly to Yahoo OAuth.
 			// OAuth state is generated when button is rendered in class-wp-mcp-ai-section-integrations.php.
 			add_filter( 'wp_mcp_ai_memory_max_file_bytes', array( $this->settings_base, 'filter_memory_max_file_bytes' ), 10, 2 );
@@ -1286,6 +1302,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// Delegate to the settings base class.
 			WP_MCP_AI_Admin_Settings_Base::reset_settings_cache();
 			self::$settings_cache = null;
+
+			// The credential resolver caches provider keys derived from these
+			// settings. Clear it so consumers (and tests that share one process)
+			// never observe a stale key after the settings change.
+			if ( class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+				WP_MCP_AI_Credential_Resolver::clear_cache();
+			}
 		}
 
 		/**
@@ -1512,6 +1535,33 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			// When the granular key is absent (not yet configured), default to enabled.
 			return ! isset( $settings['enable_chat_interaction_logging'] ) || ! empty( $settings['enable_chat_interaction_logging'] );
+		}
+
+		/**
+		 * Check if extended (verbose) logging is enabled.
+		 *
+		 * Extended logging raises the per-entry context budget used when persisting
+		 * entries to the rolling `wp_mcp_ai_recent_errors` and
+		 * `wp_mcp_ai_recent_activity` buffers, so more diagnostic detail survives
+		 * into the admin log views. Entries remain size-capped either way — see
+		 * {@see WP_MCP_AI_Logger::slim_context_for_storage()}.
+		 *
+		 * Unlike the other granular logging helpers, this one defaults to disabled
+		 * when the key is absent, matching the field default and the performance
+		 * warning shown in the settings UI.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @return bool True if both base logging and extended logging are enabled.
+		 */
+		public static function is_extended_logging_enabled() {
+			if ( ! self::is_logging_enabled() ) {
+				return false;
+			}
+
+			$settings = self::get_settings();
+
+			return ! empty( $settings['enable_extended_logging'] );
 		}
 
 		/**
@@ -1891,35 +1941,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'wp_mcp_ai_assistant_section'
 			);
 
+			// High-token switching settings moved to the modern settings
+			// dashboard (Section_Providers); the legacy render callbacks were
+			// removed, so this legacy section keeps no fields and is skipped
+			// by render_collapsible_sections().
 			add_settings_section(
 				'wp_mcp_ai_high_token_section',
 				__( 'High Token Tool Handling', 'mcp-ai-wpoos' ),
-				array( $this, 'render_high_token_section_description' ),
+				'',
 				self::PAGE_SLUG
-			);
-
-			add_settings_field(
-				'enable_high_token_model_switch',
-				__( 'Auto-Switch to High-Capacity Model', 'mcp-ai-wpoos' ),
-				array( $this, 'render_enable_high_token_model_switch_field' ),
-				self::PAGE_SLUG,
-				'wp_mcp_ai_high_token_section'
-			);
-
-			add_settings_field(
-				'high_token_fallback_model',
-				__( 'High-Capacity Fallback Model (Global)', 'mcp-ai-wpoos' ),
-				array( $this, 'render_high_token_fallback_model_field' ),
-				self::PAGE_SLUG,
-				'wp_mcp_ai_high_token_section'
-			);
-
-			add_settings_field(
-				'per_model_fallbacks',
-				__( 'Per-Model Fallback Configuration', 'mcp-ai-wpoos' ),
-				array( $this, 'render_per_model_fallbacks_field' ),
-				self::PAGE_SLUG,
-				'wp_mcp_ai_high_token_section'
 			);
 
 			add_settings_section(
@@ -2396,36 +2426,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'wp_mcp_ai_mesh_section'
 			);
 
-			add_settings_section(
-				'wp_mcp_ai_security_monitor_section',
-				__( 'Security Monitoring', 'mcp-ai-wpoos' ),
-				array( $this, 'render_security_monitor_section_description' ),
-				self::PAGE_SLUG
-			);
-
-			add_settings_field(
-				'security_monitor_enabled',
-				__( 'Enable Security Monitoring', 'mcp-ai-wpoos' ),
-				array( $this, 'render_security_monitor_enabled_field' ),
-				self::PAGE_SLUG,
-				'wp_mcp_ai_security_monitor_section'
-			);
-
-			add_settings_field(
-				'security_monitor_auto_shutdown',
-				__( 'Auto-Shutdown Tools', 'mcp-ai-wpoos' ),
-				array( $this, 'render_security_monitor_auto_shutdown_field' ),
-				self::PAGE_SLUG,
-				'wp_mcp_ai_security_monitor_section'
-			);
-
-			add_settings_field(
-				'security_monitor_violations',
-				__( 'Security Violations', 'mcp-ai-wpoos' ),
-				array( $this, 'render_security_monitor_violations_field' ),
-				self::PAGE_SLUG,
-				'wp_mcp_ai_security_monitor_section'
-			);
+			// The security-monitor section renderers were removed with the legacy
+			// settings UI; the monitor options are managed through
+			// WP_MCP_AI_Security_Monitor_Admin. Drop the dangling registrations
+			// so render_collapsible_sections() never invokes missing callbacks.
 		}
 
 		/**
@@ -3253,8 +3257,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			<?php $this->render_token_usage_section(); ?>
 
-			<?php $this->render_tool_token_limits_section(); ?>
-
 			<?php if ( ! empty( $connector_statuses ) ) : ?>
 				<div class="wp-mcp-ai-connector-checklist" aria-live="polite">
 					<h2 class="wp-mcp-ai-connector-checklist__title"><?php esc_html_e( 'Connector Checklist', 'mcp-ai-wpoos' ); ?></h2>
@@ -3933,7 +3935,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					esc_html__( 'You can also configure this key in %1$s, or via the %2$s environment variable.', 'mcp-ai-wpoos' ),
 					sprintf(
 						'<a href="%s">%s</a>',
-						esc_url( admin_url( 'admin.php?page=connectors' ) ),
+						esc_url( admin_url( 'options-connectors.php' ) ),
 						esc_html__( 'Settings → Connectors', 'mcp-ai-wpoos' )
 					),
 					'<code>' . esc_html( strtoupper( $provider ) . '_API_KEY' ) . '</code>'
@@ -5043,13 +5045,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		<select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[default_provider]" id="wp-mcp-ai-default-provider" class="regular-text">
 			<?php
-			foreach ( $choices as $choice ) {
+			// The choices array is slug => label; iterate the slugs and use the
+			// mapped label so multi-word slugs don't get sanitized into mush.
+			foreach ( array_keys( $choices ) as $choice ) {
 				$choice = sanitize_key( $choice );
 				if ( '' === $choice ) {
 					continue;
 				}
 
-				if ( 'openai' === $choice ) {
+				if ( isset( $choices[ $choice ] ) && is_string( $choices[ $choice ] ) && '' !== $choices[ $choice ] ) {
+					$label = $choices[ $choice ];
+				} elseif ( 'openai' === $choice ) {
 					$label = __( 'OpenAI', 'mcp-ai-wpoos' );
 				} elseif ( 'gemini' === $choice ) {
 					$label = __( 'Gemini', 'mcp-ai-wpoos' );
@@ -5535,6 +5541,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		protected function format_model_label( $model_name ) {
 			// Handle special cases first.
 			$special_cases = array(
+				// GPT-6 Astra (September 2026).
+				'gpt-6-astra'                             => __( 'GPT-6 Astra (Limited Preview)', 'mcp-ai-wpoos' ),
+				// GPT-5.6 series (July 2026 - Sol/Terra/Luna tiers).
+				'gpt-5.6-sol'                             => __( 'GPT-5.6 Sol (Flagship)', 'mcp-ai-wpoos' ),
+				'gpt-5.6-terra'                           => __( 'GPT-5.6 Terra (Balanced)', 'mcp-ai-wpoos' ),
+				'gpt-5.6-luna'                            => __( 'GPT-5.6 Luna (Lowest Cost)', 'mcp-ai-wpoos' ),
+				'gpt-5.6'                                 => __( 'GPT-5.6 (Sol Tier)', 'mcp-ai-wpoos' ),
 				// GPT-5.5 series (flagship - Apr 2026).
 				'gpt-5.5'                                 => __( 'GPT-5.5 (Flagship - Apr 2026)', 'mcp-ai-wpoos' ),
 				// GPT-5.4 series (flagship - Mar/Apr 2026).
@@ -5674,6 +5687,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public static function format_model_label_static( $model_name ) {
 			// Handle special cases first.
 			$special_cases = array(
+				'gpt-6-astra'                             => __( 'GPT-6 Astra (Limited Preview)', 'mcp-ai-wpoos' ),
+				'gpt-5.6-sol'                             => __( 'GPT-5.6 Sol (Flagship)', 'mcp-ai-wpoos' ),
+				'gpt-5.6-terra'                           => __( 'GPT-5.6 Terra (Balanced)', 'mcp-ai-wpoos' ),
+				'gpt-5.6-luna'                            => __( 'GPT-5.6 Luna (Lowest Cost)', 'mcp-ai-wpoos' ),
+				'gpt-5.6'                                 => __( 'GPT-5.6 (Sol Tier)', 'mcp-ai-wpoos' ),
 				'gpt-5.5'                                 => __( 'GPT-5.5 (Flagship - Apr 2026)', 'mcp-ai-wpoos' ),
 				'gpt-5.4'                                 => __( 'GPT-5.4 (1M Context)', 'mcp-ai-wpoos' ),
 				'gpt-5.4-pro'                             => __( 'GPT-5.4 Pro (Enterprise)', 'mcp-ai-wpoos' ),
@@ -5741,6 +5759,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// Fallback to hardcoded choices if CCT is not available or empty.
 			if ( empty( $cct_models ) ) {
 				$choices = array(
+					// GPT-6 Astra (September 2026 - limited preview).
+					'gpt-6-astra'                        => __( 'GPT-6 Astra (Limited Preview)', 'mcp-ai-wpoos' ),
+					// GPT-5.6 series (July 2026) - Sol/Terra/Luna tiers.
+					'gpt-5.6-sol'                        => __( 'GPT-5.6 Sol (Flagship)', 'mcp-ai-wpoos' ),
+					'gpt-5.6-terra'                      => __( 'GPT-5.6 Terra (Balanced)', 'mcp-ai-wpoos' ),
+					'gpt-5.6-luna'                       => __( 'GPT-5.6 Luna (Lowest Cost)', 'mcp-ai-wpoos' ),
 					// GPT-5.5 series (flagship - Apr 2026) - 1M+ context window.
 					'gpt-5.5'                            => __( 'GPT-5.5 (Flagship - Apr 2026)', 'mcp-ai-wpoos' ),
 					// GPT-5.4 series (Mar/Apr 2026) - 1M+ context window.
@@ -6465,6 +6489,19 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			global $wpdb;
 			if ( class_exists( 'WP_MCP_AI_Usage_Tracker' ) ) {
 				$meta_key = WP_MCP_AI_Usage_Tracker::USER_META_KEY;
+				// Clear the per-user object-cache entries BEFORE deleting the rows:
+				// get_user_meta() caches values under the `{user_id}` key (group
+				// `user_meta`), so clearing `$meta_key` alone leaves stale values
+				// behind until the cache is flushed.
+				$user_ids = $wpdb->get_col(
+					$wpdb->prepare(
+						"SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
+						$meta_key
+					)
+				);
+				foreach ( $user_ids as $uid ) {
+					wp_cache_delete( (int) $uid, 'user_meta' );
+				}
 				// Delete from database.
 				$wpdb->delete( $wpdb->usermeta, array( 'meta_key' => $meta_key ) );
 				// Clear the WP object cache for the meta key.

@@ -22,18 +22,10 @@ if ( ! class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
 }
 WP_MCP_AI_Sync_Log_Manager::init();
 
-/**
- * Check if e-commerce toolkit is enabled.
- *
- * The toolkit must be explicitly enabled in settings (Pro features).
- *
- * @since 2.1.0
- *
- * @return bool True if enabled, false otherwise.
- */
-function wp_mcp_ai_is_ecommerce_toolkit_enabled() {
-	$settings = get_option( 'wp_mcp_ai_settings', array() );
-	return ! empty( $settings['enable_ecommerce_toolkit'] );
+// Shared enablement helper, kept in its own side-effect-free file so callers
+// can check the opt-in setting without booting the full toolkit.
+if ( ! function_exists( 'wp_mcp_ai_is_ecommerce_toolkit_enabled' ) ) {
+	require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-ecommerce-helpers.php';
 }
 
 // Load E-commerce admin pages when in admin area.

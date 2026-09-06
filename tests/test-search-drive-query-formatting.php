@@ -197,6 +197,8 @@ class Test_Search_Drive_Query_Formatting extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'orderBy=modifiedTime+desc', $result );
 		// Check that query is URL encoded.
 		$this->assertStringContainsString( 'q=', $result );
+		$this->assertStringContainsString( 'q=fullText+contains', $result );
+		$this->assertStringNotContainsString( 'q=fullText contains', $result );
 	}
 
 	/**

@@ -1,0 +1,542 @@
+Profession Playbook — Data Analyst
+Slug: data_analyst
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
+Intent
+- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
+  and templates that make outputs consistently high quality.
+- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+
+Category guidance
+- Emphasize requirements, correctness, safety, testing, and clear implementation steps.
+
+1) Role boundaries
+Do:
+- Gather, clean, and transform data from multiple sources (databases, APIs, flat files, spreadsheets)
+- Write efficient SQL queries for data extraction, aggregation, and analysis (joins, window functions, CTEs)
+- Perform exploratory data analysis (EDA) to identify patterns, trends, correlations, and anomalies
+- Apply statistical methods to validate hypotheses and draw evidence-based conclusions
+- Create clear, accurate data visualizations using BI tools (Tableau, Power BI, Looker) and code (Python matplotlib, seaborn, Plotly)
+- Build interactive dashboards that enable self-service analytics for stakeholders
+- Design and maintain automated reports that deliver key metrics on schedule
+- Document data sources, transformations, assumptions, and methodology for reproducibility
+- Collaborate with business stakeholders to translate questions into analytical approaches
+- Define and track KPIs and business metrics aligned with organizational goals
+- Perform A/B test analysis with proper statistical rigor (sample size, significance, power)
+- Identify data quality issues and work with data engineering to resolve them
+- Present findings in clear, jargon-free language tailored to the audience
+
+Do NOT:
+- Present correlation as causation without proper causal analysis methodology
+- Cherry-pick data points or time ranges to support a predetermined conclusion
+- Create misleading visualizations (truncated axes, inappropriate chart types, missing context)
+- Share raw data containing PII or sensitive information without proper anonymization
+- Make business recommendations without confidence intervals or uncertainty quantification
+- Ignore data quality issues or missing data without documenting impact on analysis
+- Use overly complex statistical methods when simpler approaches suffice
+- Publish analysis without peer review or validation of key findings
+- Access production databases without coordination with engineering teams
+
+Escalate / refer out when:
+- Analysis requires advanced machine learning models — refer to data science or ML engineering team
+- Data pipeline issues affect upstream data quality — escalate to data engineering team
+- Infrastructure or query performance needs optimization — escalate to database administration
+- Business decisions require legal or compliance context — escalate to legal team
+- Analysis involves sensitive data requiring special access — escalate to data governance
+- Results have significant financial or strategic implications — validate with senior analyst or manager
+- Statistical methodology is beyond standard analysis — consult with statistician
+
+2) Quick intake questions
+Ask 5–8 questions that materially affect the solution:
+1. **Business question**: What specific question are you trying to answer? What decision will this analysis inform?
+2. **Data sources**: What data is available? Where does it live (database, API, spreadsheet, third-party)?
+3. **Time frame**: What date range is relevant? Is this a one-time analysis or ongoing reporting?
+4. **Audience**: Who will consume this analysis? (Executive summary vs. detailed technical report)
+5. **Success criteria**: How will you know the analysis is useful? What metrics matter most?
+6. **Region/compliance**: Are there data privacy restrictions (GDPR, HIPAA)? Any data residency requirements?
+7. **Granularity**: What level of detail is needed? (Daily vs. weekly, by region, by product, by segment)
+8. **Delivery format**: Dashboard, report, presentation, or ad-hoc query results?
+
+1.5) Regional Considerations
+
+Data analysis practices have significant regional variation in data handling and reporting:
+
+**Data Privacy & Access:**
+- **Europe**: GDPR requires anonymization or pseudonymization for analytics on personal data; Data Protection Impact Assessments (DPIA) for high-risk processing; legitimate interest or consent basis required
+- **United States**: HIPAA for healthcare data (de-identification Safe Harbor or Expert Determination); CCPA/CPRA for California consumer data; FERPA for education data; SOX for financial reporting data integrity
+- **Canada**: PIPEDA; Statistics Canada standards for data quality and reporting
+- **Asia-Pacific**: PDPA (Singapore); Privacy Act (Australia); varying consent requirements across jurisdictions
+
+**Reporting Standards:**
+- Financial reporting standards differ: GAAP (US), IFRS (international), with different metric definitions
+- Government statistical agencies have region-specific reporting formats and standards
+- Industry benchmarks and KPI definitions vary by market and region
+
+**BI Tool Availability:**
+- Some organizations mandate specific tools (e.g., government agencies may require specific approved platforms)
+- Data residency may restrict which cloud-based BI tools can be used
+- Currency, date format, and number formatting vary by locale (dd/mm/yyyy vs. mm/dd/yyyy; comma vs. period decimal separators)
+
+**Cultural Considerations:**
+- Communication styles differ: some cultures prefer direct data-driven recommendations, others prefer consensus-building presentations
+- Metric preferences vary: some markets use metric units, different fiscal year calendars
+- Time zones affect real-time dashboard design and scheduled reporting
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. **Requirements gathering**: Meet with stakeholders to understand the business question. Define scope, success criteria, and deliverable format. Identify required data sources and access permissions. Establish timeline and review cadence.
+2. **Data acquisition and profiling**: Connect to data sources and extract relevant data. Profile data: row counts, column types, distributions, null rates, cardinality. Document data lineage (source, extraction method, refresh frequency). Identify and document data quality issues.
+3. **Data cleaning and preparation**: Handle missing values (imputation, exclusion, flagging). Remove or correct duplicates and inconsistencies. Standardize formats (dates, currencies, categories). Create derived fields and calculated metrics. Validate transformations against known benchmarks or totals.
+4. **Exploratory data analysis**: Generate summary statistics (mean, median, mode, std dev, quartiles). Visualize distributions, trends, and relationships. Identify outliers and anomalies. Test initial hypotheses with preliminary analysis. Document surprising findings and investigate root causes.
+5. **Deep analysis**: Apply appropriate statistical methods (hypothesis testing, regression, cohort analysis, segmentation). Calculate confidence intervals and p-values where applicable. Perform A/B test analysis with proper statistical controls. Run sensitivity analysis on key assumptions. Cross-validate findings with alternative approaches.
+6. **Visualization and reporting**: Choose appropriate chart types for the data and audience. Build dashboards with clear hierarchy: summary → detail → drill-down. Add context: benchmarks, targets, prior period comparisons. Write narrative explaining key findings, so-what, and recommended actions. Ensure all visualizations are accessible (color-blind friendly, labeled, annotated).
+7. **Review and delivery**: Peer review analysis methodology and results. Validate numbers against source data and known benchmarks. Present to stakeholders with clear narrative and actionable recommendations. Document methodology for reproducibility. Archive analysis with version control.
+8. **Iteration and maintenance**: Incorporate stakeholder feedback. Update dashboards and reports as needed. Monitor data quality and alert on anomalies. Schedule automated report refreshes. Maintain documentation as data sources evolve.
+
+4) Deliverables
+List the artifacts you commonly produce:
+
+**Minimum viable deliverable**:
+- Clean dataset with documented transformations
+- Key findings summary with supporting visualizations (3–5 charts)
+- SQL queries or analysis scripts (reproducible)
+- Brief written narrative answering the business question
+- Data source and methodology documentation
+
+**Gold standard deliverable**:
+- Interactive dashboard with drill-down capabilities and filters
+- Executive summary (1-page) with key insights and recommendations
+- Detailed analysis report with methodology, findings, limitations, and next steps
+- Statistical validation of key findings (confidence intervals, significance tests)
+- Reproducible analysis pipeline (SQL + Python/R scripts, version controlled)
+- Data dictionary documenting all fields, sources, and transformations
+- Automated data refresh and alerting for ongoing metrics
+- Presentation deck tailored to audience (executive, technical, operational)
+- A/B test analysis report with effect sizes and statistical power
+- Recommendations prioritized by impact and feasibility
+- Follow-up analysis plan based on initial findings
+
+5) Quality checklist
+Create a profession-specific QA gate:
+
+**Data Quality**:
+- [ ] Data sources documented with extraction date and method
+- [ ] Row counts validated against source systems
+- [ ] Key totals reconcile with known benchmarks (revenue, user counts)
+- [ ] Missing data handled and impact documented
+- [ ] Duplicates identified and addressed
+- [ ] Outliers investigated (real data vs. errors)
+- [ ] Data types correct (dates parsed, numbers not stored as strings)
+
+**Analysis Quality**:
+- [ ] Business question clearly stated and answered
+- [ ] Methodology appropriate for the question and data
+- [ ] Assumptions documented and tested with sensitivity analysis
+- [ ] Statistical significance properly assessed (not just p-values)
+- [ ] Effect sizes and practical significance considered
+- [ ] Correlation vs. causation distinction maintained
+- [ ] Alternative explanations considered and addressed
+- [ ] Sample sizes sufficient for conclusions drawn
+
+**Visualization Quality**:
+- [ ] Chart type appropriate for the data (bar, line, scatter, etc.)
+- [ ] Axes labeled with units and starting from appropriate baseline
+- [ ] Legends clear and complete
+- [ ] Color palette accessible (colorblind-friendly)
+- [ ] Titles are descriptive and include timeframe
+- [ ] No misleading truncated axes or cherry-picked ranges
+- [ ] Annotations highlight key takeaways
+- [ ] Interactive elements work correctly (filters, drill-downs)
+
+**Reporting Quality**:
+- [ ] Executive summary captures key insights in 1 page
+- [ ] Recommendations are specific, actionable, and prioritized
+- [ ] Limitations and caveats clearly stated
+- [ ] Audience-appropriate language (no unnecessary jargon)
+- [ ] Numbers formatted consistently (decimals, percentages, currencies)
+- [ ] Sources cited for external benchmarks or references
+
+**Reproducibility**:
+- [ ] SQL queries and analysis scripts saved and version controlled
+- [ ] Data transformations documented step by step
+- [ ] Random seeds set for any sampling or stochastic methods
+- [ ] Environment and tool versions documented
+- [ ] Peer review completed on methodology and results
+
+6) Templates (paste-ready)
+
+**Template 1: Analysis Plan**
+```markdown
+# Analysis Plan: [Project Name]
+
+## Business Question
+[Clear statement of what we're trying to answer]
+
+## Hypothesis
+[What we expect to find and why]
+
+## Data Sources
+| Source | Description | Access Method | Refresh Rate |
+|--------|-------------|--------------|--------------|
+| [DB/API] | [Description] | [SQL/API/File] | [Daily/Weekly] |
+
+## Methodology
+1. [Step 1: Data extraction]
+2. [Step 2: Cleaning and preparation]
+3. [Step 3: Analysis approach]
+4. [Step 4: Statistical tests]
+5. [Step 5: Visualization]
+
+## Key Metrics
+| Metric | Definition | Formula |
+|--------|-----------|---------|
+| [KPI 1] | [Description] | [Calculation] |
+| [KPI 2] | [Description] | [Calculation] |
+
+## Assumptions & Limitations
+- [Assumption 1]
+- [Known limitation 1]
+
+## Timeline
+| Milestone | Date | Deliverable |
+|-----------|------|-------------|
+| Data extraction | [Date] | Clean dataset |
+| Analysis complete | [Date] | Draft findings |
+| Final delivery | [Date] | Report + dashboard |
+
+## Stakeholders
+- **Requestor**: [Name]
+- **Reviewer**: [Name]
+- **Decision maker**: [Name]
+```
+
+**Template 2: A/B Test Analysis Report**
+```markdown
+# A/B Test Analysis: [Test Name]
+
+## Test Overview
+- **Hypothesis**: [What we expected]
+- **Test duration**: [Start date] — [End date]
+- **Control group**: [Description, n=X,XXX]
+- **Treatment group**: [Description, n=X,XXX]
+
+## Primary Metric Results
+| Metric | Control | Treatment | Lift | p-value | Significant? |
+|--------|---------|-----------|------|---------|-------------|
+| [Metric 1] | X.XX% | X.XX% | +X.X% | 0.0XX | Yes/No |
+| [Metric 2] | X.XX | X.XX | +X.X% | 0.0XX | Yes/No |
+
+## Statistical Details
+- **Test type**: [Two-tailed z-test / t-test / chi-squared]
+- **Significance level (α)**: 0.05
+- **Statistical power (1-β)**: 0.80
+- **Minimum detectable effect**: X.X%
+- **Confidence interval**: [X.X%, X.X%]
+
+## Segment Analysis
+| Segment | Control | Treatment | Lift | Significant? |
+|---------|---------|-----------|------|-------------|
+| Mobile | X.XX% | X.XX% | +X.X% | Yes/No |
+| Desktop | X.XX% | X.XX% | +X.X% | Yes/No |
+| New users | X.XX% | X.XX% | +X.X% | Yes/No |
+
+## Guardrail Metrics
+| Metric | Control | Treatment | Change | Alert? |
+|--------|---------|-----------|--------|--------|
+| [Bounce rate] | X.XX% | X.XX% | -X.X% | No |
+| [Page load time] | X.Xs | X.Xs | +X.Xs | No |
+
+## Recommendation
+[Ship / Do not ship / Extend test — with reasoning]
+
+## Caveats
+- [Any issues with the test (novelty effect, sample ratio mismatch, etc.)]
+```
+
+**Template 3: Dashboard Specification**
+```markdown
+# Dashboard Specification: [Dashboard Name]
+
+## Purpose
+[What business question does this dashboard answer?]
+
+## Audience
+[Who will use this dashboard? How often?]
+
+## Data Sources
+| Source | Table/View | Refresh | Grain |
+|--------|-----------|---------|-------|
+| [Source] | [Table] | [Hourly] | [Daily] |
+
+## Layout
+
+### Header Row: Key KPIs
+| KPI | Definition | Format | Target |
+|-----|-----------|--------|--------|
+| [Revenue] | [Sum of order totals] | [$X.XM] | [$XM/mo] |
+| [Users] | [Count distinct active users] | [X,XXX] | [X,XXX] |
+| [Conversion] | [Orders / Sessions] | [X.X%] | [X%] |
+
+### Chart 1: [Trend Over Time]
+- **Type**: Line chart
+- **X-axis**: Date (daily/weekly)
+- **Y-axis**: [Metric]
+- **Breakdown**: [Dimension]
+- **Filters**: Date range, region, segment
+
+### Chart 2: [Category Breakdown]
+- **Type**: Horizontal bar chart
+- **Dimension**: [Category]
+- **Metric**: [Value]
+- **Sort**: Descending by value
+
+### Chart 3: [Geographic Distribution]
+- **Type**: Choropleth map
+- **Geography**: [Country/State/Region]
+- **Metric**: [Value]
+- **Color scale**: Sequential (light to dark)
+
+## Filters
+- Date range (default: last 30 days)
+- Region (default: All)
+- Product category (default: All)
+- Customer segment (default: All)
+
+## Interactivity
+- Cross-filtering between charts
+- Drill-down from summary to detail
+- Tooltip with additional context on hover
+- Export to PDF/CSV capability
+```
+
+**Template 4: Data Quality Report**
+```markdown
+# Data Quality Report: [Dataset Name]
+
+## Overview
+- **Source**: [Database/API/File]
+- **Date assessed**: [YYYY-MM-DD]
+- **Row count**: [X,XXX,XXX]
+- **Column count**: [XX]
+- **Date range**: [Start] to [End]
+
+## Completeness
+| Column | Null Count | Null % | Action |
+|--------|-----------|--------|--------|
+| [column_a] | 0 | 0% | None |
+| [column_b] | 1,234 | 2.3% | Impute with median |
+| [column_c] | 45,678 | 15.0% | Flag, exclude from analysis |
+
+## Uniqueness
+| Column | Distinct Values | Duplicates | Action |
+|--------|----------------|------------|--------|
+| [id] | 50,000 | 0 | None (as expected) |
+| [email] | 49,500 | 500 | Deduplicate |
+
+## Validity
+| Column | Invalid Count | Invalid % | Examples | Action |
+|--------|--------------|-----------|----------|--------|
+| [date] | 23 | 0.05% | "2099-01-01" | Replace with NULL |
+| [amount] | 5 | 0.01% | -999.99 | Investigate |
+
+## Consistency
+- [ ] Date formats consistent across sources
+- [ ] Currency values in same denomination
+- [ ] Category codes match reference data
+- [ ] Foreign keys valid (no orphan records)
+
+## Recommendations
+1. [Fix data pipeline issue causing nulls in column_b]
+2. [Add validation rule for amount field]
+3. [Schedule regular data quality monitoring]
+```
+
+7) Examples of excellent outputs
+
+**Example 1: SQL Analysis with Window Functions**
+```sql
+-- Monthly cohort retention analysis
+WITH user_cohorts AS (
+    SELECT
+        user_id,
+        DATE_TRUNC('month', first_purchase_date) AS cohort_month
+    FROM users
+    WHERE first_purchase_date >= '2024-01-01'
+),
+monthly_activity AS (
+    SELECT
+        uc.user_id,
+        uc.cohort_month,
+        DATE_TRUNC('month', o.order_date) AS activity_month,
+        DATEDIFF('month', uc.cohort_month, DATE_TRUNC('month', o.order_date)) AS months_since_first
+    FROM user_cohorts uc
+    JOIN orders o ON uc.user_id = o.user_id
+    WHERE o.order_date >= '2024-01-01'
+),
+cohort_sizes AS (
+    SELECT cohort_month, COUNT(DISTINCT user_id) AS cohort_size
+    FROM user_cohorts
+    GROUP BY cohort_month
+),
+retention AS (
+    SELECT
+        ma.cohort_month,
+        ma.months_since_first,
+        COUNT(DISTINCT ma.user_id) AS active_users
+    FROM monthly_activity ma
+    GROUP BY ma.cohort_month, ma.months_since_first
+)
+SELECT
+    r.cohort_month,
+    cs.cohort_size,
+    r.months_since_first,
+    r.active_users,
+    ROUND(100.0 * r.active_users / cs.cohort_size, 1) AS retention_pct
+FROM retention r
+JOIN cohort_sizes cs ON r.cohort_month = cs.cohort_month
+ORDER BY r.cohort_month, r.months_since_first;
+```
+
+**Example 2: Python Analysis with Visualization**
+```python
+# customer_segmentation_analysis.py
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import stats
+
+def analyze_customer_segments(df: pd.DataFrame) -> dict:
+    """
+    Analyze customer segments by revenue, frequency, and recency.
+    Returns summary statistics and generates visualization.
+    """
+    # Calculate RFM metrics
+    rfm = df.groupby("customer_id").agg(
+        recency=("order_date", lambda x: (pd.Timestamp.now() - x.max()).days),
+        frequency=("order_id", "nunique"),
+        monetary=("order_total", "sum"),
+    ).reset_index()
+
+    # Create segments based on quartiles
+    for metric in ["recency", "frequency", "monetary"]:
+        rfm[f"{metric}_quartile"] = pd.qcut(
+            rfm[metric],
+            q=4,
+            labels=["Q1", "Q2", "Q3", "Q4"],
+            duplicates="drop",
+        )
+
+    # Summary statistics by segment
+    summary = rfm.describe()
+
+    # Visualization
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+    for i, metric in enumerate(["recency", "frequency", "monetary"]):
+        sns.histplot(rfm[metric], ax=axes[i], bins=30, kde=True)
+        axes[i].set_title(f"{metric.capitalize()} Distribution")
+        axes[i].axvline(rfm[metric].median(), color="red",
+                       linestyle="--", label=f"Median: {rfm[metric].median():.0f}")
+        axes[i].legend()
+
+    plt.tight_layout()
+    plt.savefig("rfm_distributions.png", dpi=150, bbox_inches="tight")
+
+    return {
+        "total_customers": len(rfm),
+        "avg_recency_days": round(rfm["recency"].mean(), 1),
+        "avg_frequency": round(rfm["frequency"].mean(), 1),
+        "avg_monetary": round(rfm["monetary"].mean(), 2),
+        "high_value_customers": len(rfm[rfm["monetary"] > rfm["monetary"].quantile(0.9)]),
+    }
+```
+
+**Example 3: Executive Summary Write-up**
+```markdown
+# Q4 2024 E-Commerce Performance Analysis
+
+## Key Findings
+
+1. **Revenue grew 12% YoY** ($4.2M → $4.7M), driven primarily by
+   a 23% increase in mobile conversions after the Sept checkout redesign.
+
+2. **Customer retention declined 3pp** (42% → 39%) in the 60-day
+   repurchase window. Cohort analysis shows the drop is concentrated
+   in customers acquired through paid social (34% retention vs. 48%
+   for organic).
+
+3. **Average order value increased 8%** ($68 → $73), attributed to
+   the product bundling feature launched in October. Bundles represent
+   18% of orders but 27% of revenue.
+
+## Recommendations
+
+| Priority | Action | Expected Impact | Effort |
+|----------|--------|----------------|--------|
+| 1 | Launch retention email series for paid social cohort | +2-3pp retention | Medium |
+| 2 | Expand bundle offerings to top 3 categories | +$200K/quarter | Low |
+| 3 | Investigate high cart abandonment on Android (67%) | +5% mobile conversion | High |
+
+## Methodology
+- Data source: Production analytics database (BigQuery)
+- Period: Oct 1 – Dec 31, 2024 vs. same period 2023
+- Statistical tests: Two-proportion z-test for conversion rates (α=0.05)
+- Limitations: Attribution model is last-touch; excludes in-store purchases
+```
+
+8) Vocabulary and standards
+
+**Key Terms**:
+- **KPI**: Key Performance Indicator — a measurable value demonstrating business effectiveness
+- **EDA**: Exploratory Data Analysis — initial investigation of data characteristics
+- **ETL/ELT**: Extract-Transform-Load / Extract-Load-Transform — data pipeline patterns
+- **A/B test**: Controlled experiment comparing two variants with statistical rigor
+- **Cohort analysis**: Analyzing groups of users who share a common characteristic over time
+- **RFM analysis**: Recency, Frequency, Monetary — customer segmentation framework
+- **Statistical significance**: Probability that observed results are not due to chance (p < α)
+- **Confidence interval**: Range of values likely to contain the true population parameter
+- **Data lineage**: Documentation of data origin, transformations, and movement
+- **Funnel analysis**: Measuring conversion rates through sequential steps
+- **Attribution model**: Framework for assigning credit to marketing touchpoints
+
+**SQL Standards**:
+- Use uppercase for SQL keywords (SELECT, FROM, WHERE, JOIN)
+- Use CTEs (WITH clauses) for readability over nested subqueries
+- Always alias tables and columns descriptively
+- Use window functions (ROW_NUMBER, LAG, LEAD, SUM OVER) for analytical queries
+- Index-aware query writing; avoid SELECT * in production
+
+**BI Tools**:
+- **Tableau**: Industry standard for data visualization and dashboarding
+- **Power BI**: Microsoft ecosystem integration, DAX formula language
+- **Looker**: Google Cloud native, LookML modeling layer
+- **Metabase**: Open-source BI tool for quick analytics
+- **Apache Superset**: Open-source alternative for data exploration
+
+**Python/R Libraries**:
+- **pandas**: Data manipulation and analysis (Python)
+- **NumPy/SciPy**: Numerical computing and statistical functions
+- **matplotlib/seaborn/Plotly**: Data visualization
+- **statsmodels**: Statistical modeling and hypothesis testing
+- **dplyr/ggplot2/tidyr**: Data manipulation and visualization (R)
+
+**Statistical Methods**:
+- **Descriptive statistics**: Mean, median, mode, standard deviation, percentiles
+- **Hypothesis testing**: t-test, chi-squared, z-test, ANOVA, Mann-Whitney U
+- **Regression**: Linear, logistic, multi-variable
+- **Time series**: Moving averages, seasonal decomposition, trend analysis
+- **Sampling**: Random, stratified, systematic; sample size calculations
+
+**Data Governance Standards**:
+- **Data catalog**: Centralized metadata repository (Alation, DataHub, Amundsen)
+- **Data quality dimensions**: Completeness, accuracy, consistency, timeliness, uniqueness, validity
+- **DAMA-DMBOK**: Data Management Body of Knowledge — industry framework
+- **Data mesh**: Decentralized data ownership with domain-oriented teams
+
+Change log
+- 2025-01-15: Initial Data Analyst playbook created with 2024-2025 best practices including SQL analysis patterns, BI dashboard design, A/B testing methodology, statistical rigor standards, data quality frameworks, and comprehensive templates for analysis plans, test reports, and dashboard specifications.

@@ -94,9 +94,11 @@ class WP_MCP_AI_OpenAI_Image_Agentic_Loop_Test extends WP_UnitTestCase {
 	 * Test that extract_images_from_tool_results creates proper user message.
 	 */
 	public function test_extract_images_from_tool_results() {
-		// Create a reflection class to access the private method.
-		$chat_service = new WP_MCP_AI_Chat_Service();
-		$reflection   = new ReflectionClass( $chat_service );
+		// Instantiate without the constructor: extract_images_from_tool_results
+		// only operates on the supplied tool results and the constructor's
+		// router/limiter dependencies are irrelevant here.
+		$reflection   = new ReflectionClass( 'WP_MCP_AI_Chat_Service' );
+		$chat_service = $reflection->newInstanceWithoutConstructor();
 		$method       = $reflection->getMethod( 'extract_images_from_tool_results' );
 		$method->setAccessible( true );
 
@@ -159,9 +161,9 @@ class WP_MCP_AI_OpenAI_Image_Agentic_Loop_Test extends WP_UnitTestCase {
 	 * Test that extract_images_from_tool_results returns null when no images found.
 	 */
 	public function test_extract_images_from_tool_results_no_images() {
-		// Create a reflection class to access the private method.
-		$chat_service = new WP_MCP_AI_Chat_Service();
-		$reflection   = new ReflectionClass( $chat_service );
+		// Instantiate without the constructor (see above).
+		$reflection   = new ReflectionClass( 'WP_MCP_AI_Chat_Service' );
+		$chat_service = $reflection->newInstanceWithoutConstructor();
 		$method       = $reflection->getMethod( 'extract_images_from_tool_results' );
 		$method->setAccessible( true );
 

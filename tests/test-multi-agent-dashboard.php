@@ -14,6 +14,22 @@
 class Test_Multi_Agent_Dashboard extends WP_UnitTestCase {
 
 	/**
+	 * Set up before each test.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// Re-register the dashboard hooks for this test run. The hook table
+		// is restored between tests, which can drop the admin_menu
+		// registration made when the class file first loaded.
+		new WP_MCP_AI_Admin_Multi_Agent_Dashboard();
+
+		// Menu registration requires the manage_options capability.
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+	}
+
+	/**
 	 * Test that dashboard class exists.
 	 */
 	public function test_dashboard_class_exists() {
@@ -100,6 +116,7 @@ class Test_Multi_Agent_Dashboard extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$dashboard->ajax_get_stats();
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected exception.
 		}
@@ -131,8 +148,10 @@ class Test_Multi_Agent_Dashboard extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$dashboard->ajax_reinstall_agents();
-		} catch ( WPAjaxDieStopException $e ) {
-			// Expected exception.
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected: wp_send_json_error() terminates via a throwable WPDieException under the test bootstrap (subclasses included).
+		} catch ( WPDieException $e ) {
+			// Expected: wp_send_json_error() terminates via a throwable
+			// WPDieException under the test bootstrap (subclasses included).
 		}
 		$response = ob_get_clean();
 

@@ -43,8 +43,6 @@ class WP_MCP_AI_Guest_Token_Origin_Binding_Test extends WP_UnitTestCase {
 				'post_title'  => 'Origin Binding Test Assistant',
 			)
 		);
-
-		do_action( 'init' );
 	}
 
 	/**

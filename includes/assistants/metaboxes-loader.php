@@ -26,3 +26,4 @@ require_once WP_MCP_AI_PATH . 'includes/assistants/metaboxes/class-wp-mcp-ai-met
 require_once WP_MCP_AI_PATH . 'includes/assistants/metaboxes/class-wp-mcp-ai-metabox-skills.php';
 require_once WP_MCP_AI_PATH . 'includes/assistants/metaboxes/class-wp-mcp-ai-metabox-mcp-apps.php';
 require_once WP_MCP_AI_PATH . 'includes/assistants/metaboxes/class-wp-mcp-ai-metabox-harness-profile.php';
+require_once WP_MCP_AI_PATH . 'includes/assistants/metaboxes/class-wp-mcp-ai-metabox-artifact-governance.php';

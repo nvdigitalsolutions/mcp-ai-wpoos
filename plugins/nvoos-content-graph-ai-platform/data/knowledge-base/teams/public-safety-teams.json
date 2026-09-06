@@ -1,0 +1,32 @@
+{
+  "teams": [
+    {
+      "title": "Public Safety & Law Enforcement Team",
+      "slug": "public_safety_law_enforcement_team",
+      "description": "Law enforcement and public safety professionals.",
+      "members": [
+        "police_officer",
+        "firefighter",
+        "emt",
+        "private_investigator"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.2
+    },
+    {
+      "title": "Corrections & Justice Services Team",
+      "slug": "corrections_justice_services_team",
+      "description": "Corrections and justice system professionals.",
+      "members": [
+        "correctional_officer",
+        "probation_officer",
+        "judge",
+        "lawyer"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.2
+    }
+  ]
+}

@@ -36,18 +36,20 @@ class Test_Rest_Permission_Callbacks extends WP_UnitTestCase {
 	 * @var array<string, string>
 	 */
 	private const ALLOWLIST = array(
-		// MCP OPTIONS — CORS preflight. The browser sends this before the
-		// authenticated GET/POST; the handler only emits CORS headers and
-		// never returns sensitive data.
-		// File: includes/rest/class-wp-mcp-ai-rest-mcp-controller.php
-		'mcp-ai/v1/mcp/options'      => 'CORS preflight — OPTIONS must be unauthenticated; handler returns only CORS headers.',
+		// Health check — designed for load balancers, Cloudways monitoring and
+		// Kubernetes liveness probes. Returns only the aggregate status of
+		// critical subsystems; no sensitive data is exposed.
+		// File: includes/rest/class-wp-mcp-ai-rest-health.php.
+		'/health' => 'Public liveness probe for load balancers and uptime monitors; returns aggregate health only.',
 
-		// Webhook receiver — publicly accessible by design (external services
-		// POST here). The handler validates the HMAC-256 signature on every
-		// request and returns 401 on failure; no sensitive data is returned
-		// without a valid signature.
-		// File: includes/rest/class-wp-mcp-ai-rest-triggers-controller.php
-		'mcp-ai/v1/triggers/webhook' => 'Public webhook endpoint; all requests validated via HMAC-256 signature check in receive_webhook().',
+		// Public service status endpoints (monitoring dashboards / uptime
+		// widgets). Private component details are gated inside the handlers:
+		// the include_private flag only takes effect for users with
+		// manage_options, otherwise only get_public_status() data is returned.
+		// File: includes/rest/class-wp-mcp-ai-status-rest-controller.php.
+		'/status'            => 'Public service status overview; private details gated behind include_private + manage_options in the handler.',
+		'/status/components' => 'Public service component status; private details gated behind include_private + manage_options in the handler.',
+		'/status/history'    => 'Public uptime history; no sensitive data is returned.',
 	);
 
 	/**

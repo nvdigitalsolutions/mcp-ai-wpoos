@@ -10,7 +10,7 @@
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
  */
-class WP_MCP_AI_Google_Maps_Provider_Diagnostic_Test extends WP_UnitTestCase {
+class WP_MCP_AI_Google_Maps_Provider_Diagnostic_Test extends WP_Ajax_UnitTestCase {
 
 	/**
 	 * Administrator user ID.
@@ -33,6 +33,17 @@ class WP_MCP_AI_Google_Maps_Provider_Diagnostic_Test extends WP_UnitTestCase {
 		// Ensure the Google Maps client is loaded.
 		if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-google-maps-client.php';
+		}
+
+		// The diagnostic AJAX action is registered inside ::init(), which only
+		// production admin loaders call; register it here so _handleAjax() can
+		// exercise the handler.
+		WP_MCP_AI_Provider_Diagnostics::init();
+
+		// The credential resolver caches resolved keys per provider for the
+		// whole process; clear it so each test's seeded settings are visible.
+		if ( class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+			WP_MCP_AI_Credential_Resolver::clear_cache();
 		}
 
 		$this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
@@ -64,7 +75,7 @@ class WP_MCP_AI_Google_Maps_Provider_Diagnostic_Test extends WP_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected exception.
 		}
 
@@ -89,7 +100,7 @@ class WP_MCP_AI_Google_Maps_Provider_Diagnostic_Test extends WP_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected exception.
 		}
 
@@ -150,7 +161,7 @@ class WP_MCP_AI_Google_Maps_Provider_Diagnostic_Test extends WP_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected exception.
 		}
 

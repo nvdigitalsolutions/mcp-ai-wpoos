@@ -113,6 +113,10 @@ class WP_MCP_AI_Tool_Generate_Image_Caption_Validated extends WP_MCP_AI_Validate
 			$arguments['context'] = $validated_args->context;
 		}
 
+		if ( null !== $validated_args->timeout ) {
+			$arguments['timeout'] = $validated_args->timeout;
+		}
+
 		// Delegate to the original tool's execute method.
 		return $this->original_tool->execute( $arguments, $context );
 	}

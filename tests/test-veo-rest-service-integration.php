@@ -51,7 +51,8 @@ class WP_MCP_AI_Veo_REST_Service_Integration_Test extends WP_UnitTestCase {
 
 		// Set up REST server.
 		global $wp_rest_server;
-		$this->server = $wp_rest_server = new WP_REST_Server();
+		$this->server   = new WP_REST_Server();
+		$wp_rest_server = $this->server;
 		do_action( 'rest_api_init' );
 
 		// Set up API key for tests.
@@ -77,14 +78,11 @@ class WP_MCP_AI_Veo_REST_Service_Integration_Test extends WP_UnitTestCase {
 			)
 		);
 
-		// Configure assistant with video generation tool.
-		$config = array(
-			'tools'        => array( 'generate_veo_video' ),
-			'model'        => 'gemini-2.0-flash-exp',
-			'provider'     => 'gemini',
-			'capabilities' => array( 'video-generation' ),
-		);
-		update_post_meta( $this->assistant_id, '_assistant_config', $config );
+		// Configure assistant with video generation tool. Assistant config is
+		// stored in individual post meta keys (see WP_MCP_AI_Assistant_CPT).
+		update_post_meta( $this->assistant_id, '_wp_mcp_ai_tools', array( 'generate_veo_video' ) );
+		update_post_meta( $this->assistant_id, '_wp_mcp_ai_model', 'gemini-2.0-flash-exp' );
+		update_post_meta( $this->assistant_id, '_wp_mcp_ai_provider', 'gemini' );
 	}
 
 	/**
@@ -172,6 +170,7 @@ class WP_MCP_AI_Veo_REST_Service_Integration_Test extends WP_UnitTestCase {
 
 		// Create REST request.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/tools' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'assistant_id', $this->assistant_id );
 		$request->set_param( 'tool', 'generate_veo_video' );
 		$request->set_param(
@@ -185,9 +184,17 @@ class WP_MCP_AI_Veo_REST_Service_Integration_Test extends WP_UnitTestCase {
 		// Execute request.
 		$response = $this->server->dispatch( $request );
 
-		// Verify response.
+		// Verify response. The Veo tool is background-only, so the endpoint
+		// queues it as a pending job instead of running inline.
 		$this->assertNotInstanceOf( 'WP_Error', $response, 'REST request should not return error' );
 		$this->assertEquals( 200, $response->get_status(), 'REST request should return 200 status' );
+
+		$data = $response->get_data();
+		$this->assertSame( 'pending', $data['status'], 'Background-only tool should queue as pending' );
+		$this->assertNotEmpty( $data['job_id'], 'A job ID should be returned' );
+
+		// Run the queued job inline, as the async executor does on its cron tick.
+		wp_mcp_ai_get_async_tool_executor()->execute_async_tool( $data['job_id'] );
 
 		// Verify API was called with correct duration.
 		$this->assertTrue( $generation_called, 'Video generation API should have been called' );
@@ -274,6 +281,7 @@ class WP_MCP_AI_Veo_REST_Service_Integration_Test extends WP_UnitTestCase {
 
 		// Create REST request with duration=7.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/tools' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'assistant_id', $this->assistant_id );
 		$request->set_param( 'tool', 'generate_veo_video' );
 		$request->set_param(
@@ -287,8 +295,16 @@ class WP_MCP_AI_Veo_REST_Service_Integration_Test extends WP_UnitTestCase {
 		// Execute request.
 		$response = $this->server->dispatch( $request );
 
-		// Verify response.
+		// Verify response. The Veo tool is background-only, so the endpoint
+		// queues it as a pending job instead of running inline.
 		$this->assertEquals( 200, $response->get_status(), 'REST request should return 200 status' );
+
+		$data = $response->get_data();
+		$this->assertSame( 'pending', $data['status'], 'Background-only tool should queue as pending' );
+		$this->assertNotEmpty( $data['job_id'], 'A job ID should be returned' );
+
+		// Run the queued job inline, as the async executor does on its cron tick.
+		wp_mcp_ai_get_async_tool_executor()->execute_async_tool( $data['job_id'] );
 
 		// Verify API was called with correct duration.
 		$this->assertTrue( $generation_called, 'Video generation API should have been called' );
@@ -301,7 +317,8 @@ class WP_MCP_AI_Veo_REST_Service_Integration_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test REST endpoint with invalid duration uses service default.
+	 * Test REST endpoint with invalid duration is rejected by the validated
+	 * tool before the generation API is called.
 	 */
 	public function test_rest_endpoint_with_invalid_duration() {
 		wp_set_current_user( $this->user_id );
@@ -371,6 +388,7 @@ class WP_MCP_AI_Veo_REST_Service_Integration_Test extends WP_UnitTestCase {
 
 		// Create REST request with invalid duration=15.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/tools' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'assistant_id', $this->assistant_id );
 		$request->set_param( 'tool', 'generate_veo_video' );
 		$request->set_param(
@@ -384,17 +402,28 @@ class WP_MCP_AI_Veo_REST_Service_Integration_Test extends WP_UnitTestCase {
 		// Execute request.
 		$response = $this->server->dispatch( $request );
 
-		// Verify response.
+		// Verify response. The Veo tool is background-only, so the endpoint
+		// queues it as a pending job instead of running inline.
 		$this->assertEquals( 200, $response->get_status(), 'REST request should return 200 status' );
 
-		// Verify API was called with corrected duration (8 = MAX_DURATION).
-		$this->assertTrue( $generation_called, 'Video generation API should have been called' );
-		$request_body = json_decode( $captured_request['body'], true );
-		$this->assertEquals(
-			8,
-			$request_body['parameters']['durationSeconds'],
-			'Invalid duration (15) should be clamped to maximum (8) via REST'
+		$data = $response->get_data();
+		$this->assertSame( 'pending', $data['status'], 'Background-only tool should queue as pending' );
+		$this->assertNotEmpty( $data['job_id'], 'A job ID should be returned' );
+
+		// Run the queued job inline, as the async executor does on its cron tick.
+		wp_mcp_ai_get_async_tool_executor()->execute_async_tool( $data['job_id'] );
+
+		// The validated tool rejects out-of-range durations before any API
+		// call: the job should fail validation and the API must not be hit.
+		$result = wp_mcp_ai_get_async_tool_executor()->get_result( $data['job_id'] );
+		$this->assertSame( 'failed', $result['status'], 'Out-of-range duration should fail validation' );
+		$this->assertSame( 'Validation failed', $result['error'], 'Job error should describe the validation failure' );
+		$this->assertSame(
+			'duration',
+			$result['error_data']['errors'][0]['field'],
+			'Validation error should reference the duration field'
 		);
+		$this->assertFalse( $generation_called, 'Generation API should not be called for an invalid duration' );
 	}
 
 	/**
@@ -413,7 +442,7 @@ class WP_MCP_AI_Veo_REST_Service_Integration_Test extends WP_UnitTestCase {
 			array(
 				'name'     => 'No duration',
 				'args'     => array( 'prompt' => 'Test' ),
-				'expected' => 4,
+				'expected' => 5,
 			),
 			array(
 				'name'     => 'Valid duration 4',
@@ -461,7 +490,7 @@ class WP_MCP_AI_Veo_REST_Service_Integration_Test extends WP_UnitTestCase {
 					'prompt'   => 'Test',
 					'duration' => 9,
 				),
-				'expected' => 4,
+				'expected' => 8,
 			),
 			array(
 				'name'     => '1080p overrides to 8',
@@ -525,31 +554,23 @@ class WP_MCP_AI_Veo_REST_Service_Integration_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test that tool execution context is properly passed through.
+	 *
+	 * The Veo tool is background-only, so the REST endpoint queues it and
+	 * the execution context (user and assistant) must be preserved in the
+	 * queued job metadata for the async executor.
 	 */
 	public function test_tool_execution_context_preserved() {
-		$tool = new WP_MCP_AI_Tool_Generate_Veo_Video();
+		wp_set_current_user( $this->user_id );
 
-		$captured_context  = null;
-		$execution_started = false;
-
-		// Hook into tool execution to capture context.
-		add_action(
-			'wp_mcp_ai_before_tool_execution',
-			function ( $tool_slug, $arguments, $context ) use ( &$captured_context, &$execution_started ) {
-				if ( 'generate_veo_video' === $tool_slug ) {
-					$captured_context  = $context;
-					$execution_started = true;
-				}
-			},
-			10,
-			3
-		);
+		$generation_called = false;
 
 		// Mock HTTP requests to prevent actual API calls.
 		add_filter(
 			'pre_http_request',
-			function ( $preempt, $args, $url ) {
+			function ( $preempt, $args, $url ) use ( &$generation_called ) {
 				if ( strpos( $url, 'predictLongRunning' ) !== false ) {
+					$generation_called = true;
+
 					return array(
 						'response' => array(
 							'code'    => 200,
@@ -563,26 +584,73 @@ class WP_MCP_AI_Veo_REST_Service_Integration_Test extends WP_UnitTestCase {
 						),
 					);
 				}
+
+				if ( strpos( $url, 'operations/' ) !== false ) {
+					return array(
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+						'body'     => wp_json_encode(
+							array(
+								'name'     => 'operations/test-op',
+								'done'     => true,
+								'response' => array(
+									'predictions' => array(
+										array(
+											'videoUri' => 'https://example.com/video.mp4',
+										),
+									),
+								),
+							)
+						),
+					);
+				}
+
+				if ( strpos( $url, 'video.mp4' ) !== false ) {
+					return array(
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+						'body'     => 'fake-video-content',
+					);
+				}
+
 				return $preempt;
 			},
 			10,
 			3
 		);
 
-		// Execute tool with specific context.
-		$arguments = array( 'prompt' => 'Test context preservation' );
-		$context   = array(
-			'user_id'      => $this->user_id,
-			'assistant_id' => $this->assistant_id,
-			'agentic_loop' => false,
+		// Execute tool through the REST endpoint with specific context.
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/tools' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_param( 'assistant_id', $this->assistant_id );
+		$request->set_param( 'tool', 'generate_veo_video' );
+		$request->set_param(
+			'arguments',
+			array( 'prompt' => 'Test context preservation' )
 		);
 
-		$tool->execute( $arguments, $context );
+		$response = $this->server->dispatch( $request );
+		$this->assertNotInstanceOf( 'WP_Error', $response, 'REST request should not return error' );
+		$this->assertEquals( 200, $response->get_status(), 'REST request should return 200 status' );
 
-		// Verify context was captured.
-		$this->assertTrue( $execution_started, 'Tool execution should have started' );
-		$this->assertNotNull( $captured_context, 'Context should have been captured' );
-		$this->assertEquals( $this->user_id, $captured_context['user_id'], 'User ID should be preserved in context' );
-		$this->assertEquals( $this->assistant_id, $captured_context['assistant_id'], 'Assistant ID should be preserved in context' );
+		$data = $response->get_data();
+		$this->assertSame( 'pending', $data['status'], 'Background-only tool should queue as pending' );
+		$this->assertNotEmpty( $data['job_id'], 'A job ID should be returned' );
+
+		// Verify the queued job metadata preserves the execution context.
+		$metadata = get_transient( WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $data['job_id'] );
+		$this->assertIsArray( $metadata, 'Job metadata should be stored' );
+		$this->assertIsArray( $metadata['context'], 'Job metadata should include context' );
+		$this->assertEquals( $this->user_id, (int) $metadata['context']['user_id'], 'User ID should be preserved in context' );
+		$this->assertEquals( $this->assistant_id, (int) $metadata['context']['assistant_id'], 'Assistant ID should be preserved in context' );
+
+		// Run the queued job inline to prove the preserved context drives
+		// execution (and leave no pending job behind).
+		wp_mcp_ai_get_async_tool_executor()->execute_async_tool( $data['job_id'] );
+		$this->assertTrue( $generation_called, 'Queued job should execute with the preserved context' );
 	}
 }

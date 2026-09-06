@@ -21,7 +21,8 @@
  *
  * Inputs and expecteds that aren't already strings are JSON-encoded,
  * which keeps the row well-formed without losing structure for verifiers
- * that operate on arrays/objects.
+ * that operate on arrays/objects. Empty input/expected structures carry no
+ * learnable content and are skipped (skipped_no_input / skipped_no_expect).
  *
  * @package WP_MCP_AI_Pro
  * @since   1.5.0
@@ -155,6 +156,7 @@ class WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum implements WP_MCP_AI_Tool_Inter
 	 * @return array|WP_Error Canonical envelope or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+		// phpcs:ignore WordPress.WP.Capabilities.Undetermined -- Capability resolved via get_required_capability(), a stable 'manage_options'.
 		if ( ! current_user_can( $this->get_required_capability() ) ) {
 			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) );
 		}
@@ -357,6 +359,11 @@ class WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum implements WP_MCP_AI_Tool_Inter
 			return '';
 		}
 		if ( is_array( $value ) || is_object( $value ) ) {
+			if ( is_array( $value ) && empty( $value ) ) {
+				// An empty input structure carries no learnable content — skip
+				// it instead of emitting a "[]" row into the fine-tune corpus.
+				return '';
+			}
 			$encoded = wp_json_encode( $value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 			return is_string( $encoded ) ? $encoded : '';
 		}
@@ -394,6 +401,7 @@ class WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum implements WP_MCP_AI_Tool_Inter
 		if ( ! is_dir( $dir ) ) {
 			wp_mkdir_p( $dir );
 		}
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Upload dir writability check; WP_Filesystem is not loaded in this tool execution context.
 		if ( ! is_dir( $dir ) || ! is_writable( $dir ) ) {
 			return new WP_Error( 'wp_mcp_ai_export_dir_unwritable', __( 'Curriculum export directory is not writable.', 'mcp-ai-wpoos-pro' ) );
 		}

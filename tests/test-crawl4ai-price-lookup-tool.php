@@ -13,6 +13,7 @@ class WP_MCP_AI_Crawl4AI_Price_Lookup_Tool_Test extends WP_UnitTestCase {
 	 */
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 		parent::tearDown();
 	}
 
@@ -238,5 +239,8 @@ class WP_MCP_AI_Crawl4AI_Price_Lookup_Tool_Test extends WP_UnitTestCase {
 		$settings['request_timeout']   = 5;
 
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		// Clear the per-request settings cache so the new values are read.
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 	}
 }

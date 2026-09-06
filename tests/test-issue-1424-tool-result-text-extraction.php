@@ -29,9 +29,9 @@ class WP_MCP_AI_Issue_1424_Tool_Result_Text_Extraction_Test extends WP_UnitTestC
 				'post_status' => 'publish',
 				'post_title'  => 'Test Assistant',
 				'meta_input'  => array(
-					'wp_mcp_ai_assistant_provider' => 'openai',
-					'wp_mcp_ai_assistant_model'    => 'gpt-4o-mini',
-					'wp_mcp_ai_assistant_tools'    => array( 'generate_gemini_image' ),
+					'_wp_mcp_ai_provider' => 'openai',
+					'_wp_mcp_ai_model'    => 'gpt-4o-mini',
+					'_wp_mcp_ai_tools'    => array( 'generate_gemini_image' ),
 				),
 			)
 		);
@@ -43,10 +43,20 @@ class WP_MCP_AI_Issue_1424_Tool_Result_Text_Extraction_Test extends WP_UnitTestC
 	 * @param object $mock_client Mock language model client.
 	 */
 	private function bootstrap_rest_controller( $mock_client ) {
-		$registry   = WP_MCP_AI_Tool_Registry::get_instance();
-		$validator  = new WP_MCP_AI_REST_Validator();
-		$controller = new WP_MCP_AI_REST( $mock_client, $registry, $validator );
-		$controller->register_routes();
+		$registry  = WP_MCP_AI_Tool_Registry::get_instance();
+		$validator = new WP_MCP_AI_REST_Validator();
+
+		// The constructor hooks register_routes() onto rest_api_init, so
+		// instantiating the server registers the routes without triggering
+		// a register_rest_route doing-it-wrong notice.
+		new WP_MCP_AI_REST( $registry, $mock_client, null, $validator );
+		rest_get_server();
+
+		// rest_api_init fires once per process, so a controller instantiated
+		// by an earlier test still owns the /chat route (and its mock client —
+		// now a zombie whose stubs PHPUnit cleared). Re-fire so this test's
+		// controller re-registers the route with its own client.
+		do_action( 'rest_api_init' );
 	}
 
 	/**
@@ -121,29 +131,34 @@ class WP_MCP_AI_Issue_1424_Tool_Result_Text_Extraction_Test extends WP_UnitTestC
 
 		$this->bootstrap_rest_controller( $mock_client );
 
-		// Mock the generate_gemini_image tool to return a realistic result.
+		// Mock the generate_gemini_image tool via the pre-execution seam.
+		// The registry tool is real (and would fail without an API key); the
+		// seam short-circuits execute() inside the agentic loop.
 		add_filter(
-			'wp_mcp_ai_tool_generate_gemini_image_execute',
-			function ( $result, $arguments ) {
-				return array(
-					'attachment_id' => 789,
-					'url'           => 'https://example.com/generated-sunset.png',
-					'download_url'  => 'https://example.com/download/generated-sunset.png',
-					'file_name'     => 'generated-sunset.png',
-					'mime_type'     => 'image/png',
-					'bytes'         => 125000,
-					'title'         => 'AI Generated Sunset',
-					'model'         => 'gemini-2.5-flash-image',
-					'aspect_ratio'  => '16:9',
-					'prompt'        => 'A beautiful sunset over the ocean',
-					'provider'      => 'gemini',
-					// This is the descriptive text that should be extracted!
-					'text'          => 'Gemini image saved to the Media Library.',
-					'message'       => 'Image generated successfully',
-				);
+			'wp_mcp_ai_pre_execute_tool',
+			function ( $short_circuit, $tool, $arguments, $context ) {
+				if ( $tool instanceof WP_MCP_AI_Tool_Interface && in_array( $tool->get_slug(), array( 'generate_gemini_image', 'generate_gemini_image_validated' ), true ) ) {
+					return array(
+						'attachment_id' => 789,
+						'url'           => 'https://example.com/generated-sunset.png',
+						'download_url'  => 'https://example.com/download/generated-sunset.png',
+						'file_name'     => 'generated-sunset.png',
+						'mime_type'     => 'image/png',
+						'bytes'         => 125000,
+						'title'         => 'AI Generated Sunset',
+						'model'         => 'gemini-2.5-flash-image',
+						'aspect_ratio'  => '16:9',
+						'prompt'        => 'A beautiful sunset over the ocean',
+						'provider'      => 'gemini',
+						// This is the descriptive text that should be extracted!
+						'text'          => 'Gemini image saved to the Media Library.',
+						'message'       => 'Image generated successfully',
+					);
+				}
+				return $short_circuit;
 			},
 			10,
-			2
+			4
 		);
 
 		// Send chat request.
@@ -325,7 +340,7 @@ class WP_MCP_AI_Issue_1424_Tool_Result_Text_Extraction_Test extends WP_UnitTestC
 		$assistant_id = $this->create_assistant_post();
 
 		// Add another tool to the assistant.
-		update_post_meta( $assistant_id, 'wp_mcp_ai_assistant_tools', array( 'generate_gemini_image', 'generate_openai_image' ) );
+		update_post_meta( $assistant_id, '_wp_mcp_ai_tools', array( 'generate_gemini_image', 'generate_openai_image' ) );
 
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
@@ -387,31 +402,38 @@ class WP_MCP_AI_Issue_1424_Tool_Result_Text_Extraction_Test extends WP_UnitTestC
 
 		$this->bootstrap_rest_controller( $mock_client );
 
-		// Mock both tools.
+		// Mock both tools via the pre-execution seam (the registry tools are
+		// real and would fail without API keys).
 		add_filter(
-			'wp_mcp_ai_tool_generate_gemini_image_execute',
-			function ( $result, $arguments ) {
-				return array(
-					'url'   => 'https://example.com/gemini-sunset.png',
-					'title' => 'Gemini Sunset',
-					'text'  => 'Gemini image saved to the Media Library.',
-				);
+			'wp_mcp_ai_pre_execute_tool',
+			function ( $short_circuit, $tool, $arguments, $context ) {
+				if ( $tool instanceof WP_MCP_AI_Tool_Interface && in_array( $tool->get_slug(), array( 'generate_gemini_image', 'generate_gemini_image_validated' ), true ) ) {
+					return array(
+						'url'   => 'https://example.com/gemini-sunset.png',
+						'title' => 'Gemini Sunset',
+						'text'  => 'Gemini image saved to the Media Library.',
+					);
+				}
+				return $short_circuit;
 			},
 			10,
-			2
+			4
 		);
 
 		add_filter(
-			'wp_mcp_ai_tool_generate_openai_image_execute',
-			function ( $result, $arguments ) {
-				return array(
-					'url'   => 'https://example.com/openai-mountain.png',
-					'title' => 'OpenAI Mountain',
-					'text'  => 'Image saved to the Media Library.',
-				);
+			'wp_mcp_ai_pre_execute_tool',
+			function ( $short_circuit, $tool, $arguments, $context ) {
+				if ( $tool instanceof WP_MCP_AI_Tool_Interface && in_array( $tool->get_slug(), array( 'generate_openai_image', 'generate_openai_image_validated' ), true ) ) {
+					return array(
+						'url'   => 'https://example.com/openai-mountain.png',
+						'title' => 'OpenAI Mountain',
+						'text'  => 'Image saved to the Media Library.',
+					);
+				}
+				return $short_circuit;
 			},
 			10,
-			2
+			4
 		);
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
@@ -438,8 +460,14 @@ class WP_MCP_AI_Issue_1424_Tool_Result_Text_Extraction_Test extends WP_UnitTestC
 			$this->assertArrayHasKey( 'content', $result );
 			$content = $result['content'];
 			$this->assertArrayHasKey( 'url', $content, 'Each result should have a URL' );
-			$this->assertArrayHasKey( 'title', $content, 'Each result should have a title' );
 			$this->assertArrayHasKey( 'text', $content, 'Each result should have descriptive text' );
+
+			// Title is provider-dependent: the OpenAI image tool's LLM sanitizer
+			// keeps only its essential metadata fields, so title only surfaces
+			// for the Gemini tool result.
+			if ( isset( $result['name'] ) && 'generate_gemini_image' === $result['name'] ) {
+				$this->assertArrayHasKey( 'title', $content, 'Gemini result should have a title' );
+			}
 		}
 	}
 }

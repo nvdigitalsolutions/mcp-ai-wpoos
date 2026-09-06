@@ -73,6 +73,7 @@ class TranscribeOpenAIAudioArguments {
 	 * @var string
 	 */
 	#[Assert\NotBlank( message: 'Model cannot be blank.' )]
+	#[Assert\Type( type: 'string', message: 'Model must be a string.' )]
 	#[Assert\Length(
 		min: 1,
 		max: 100,

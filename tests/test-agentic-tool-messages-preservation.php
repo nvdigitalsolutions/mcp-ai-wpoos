@@ -36,7 +36,7 @@ class WP_MCP_AI_Agentic_Tool_Messages_Preservation_Test extends WP_UnitTestCase 
 			->expects( $this->exactly( 2 ) )
 			->method( 'create_chat_completion' )
 			->willReturnCallback(
-				function ( $messages ) use ( &$call_count ) {
+				function () use ( &$call_count ) {
 					++$call_count;
 
 					if ( 1 === $call_count ) {
@@ -103,13 +103,14 @@ class WP_MCP_AI_Agentic_Tool_Messages_Preservation_Test extends WP_UnitTestCase 
 
 		$data = $response->get_data();
 
-		// Verify agentic_tool_messages is present in response.
-		$this->assertArrayHasKey( 'agentic_tool_messages', $data, 'Response should include agentic_tool_messages array' );
-		$this->assertIsArray( $data['agentic_tool_messages'], 'agentic_tool_messages should be an array' );
-		$this->assertCount( 1, $data['agentic_tool_messages'], 'Should have 1 intermediate assistant message' );
+		// Verify agentic_tool_messages is present in the response data payload.
+		$this->assertArrayHasKey( 'data', $data, 'Response should include a data payload' );
+		$this->assertArrayHasKey( 'agentic_tool_messages', $data['data'], 'Response should include agentic_tool_messages array' );
+		$this->assertIsArray( $data['data']['agentic_tool_messages'], 'agentic_tool_messages should be an array' );
+		$this->assertCount( 1, $data['data']['agentic_tool_messages'], 'Should have 1 intermediate assistant message' );
 
 		// Verify the structure of the agentic tool message.
-		$agentic_message = $data['agentic_tool_messages'][0];
+		$agentic_message = $data['data']['agentic_tool_messages'][0];
 		$this->assertSame( 'assistant', $agentic_message['role'], 'Agentic message should have role: assistant' );
 		$this->assertSame( 'Let me check the time for you.', $agentic_message['content'], 'Agentic message content should match' );
 		$this->assertArrayHasKey( 'tool_calls', $agentic_message, 'Agentic message should have tool_calls' );
@@ -141,7 +142,7 @@ class WP_MCP_AI_Agentic_Tool_Messages_Preservation_Test extends WP_UnitTestCase 
 			->expects( $this->exactly( 3 ) )
 			->method( 'create_chat_completion' )
 			->willReturnCallback(
-				function ( $messages ) use ( &$call_count ) {
+				function () use ( &$call_count ) {
 					++$call_count;
 
 					if ( 1 === $call_count ) {
@@ -235,16 +236,16 @@ class WP_MCP_AI_Agentic_Tool_Messages_Preservation_Test extends WP_UnitTestCase 
 		$data = $response->get_data();
 
 		// Verify agentic_tool_messages has both iterations.
-		$this->assertArrayHasKey( 'agentic_tool_messages', $data );
-		$this->assertCount( 2, $data['agentic_tool_messages'], 'Should have 2 intermediate assistant messages from 2 iterations' );
+		$this->assertArrayHasKey( 'agentic_tool_messages', $data['data'] );
+		$this->assertCount( 2, $data['data']['agentic_tool_messages'], 'Should have 2 intermediate assistant messages from 2 iterations' );
 
 		// Verify first iteration.
-		$first_msg = $data['agentic_tool_messages'][0];
+		$first_msg = $data['data']['agentic_tool_messages'][0];
 		$this->assertSame( 'First I\'ll get the time.', $first_msg['content'] );
 		$this->assertSame( 'get_current_time', $first_msg['tool_calls'][0]['function']['name'] );
 
 		// Verify second iteration.
-		$second_msg = $data['agentic_tool_messages'][1];
+		$second_msg = $data['data']['agentic_tool_messages'][1];
 		$this->assertSame( 'Now I\'ll check the weather.', $second_msg['content'] );
 		$this->assertSame( 'get_open_meteo_forecast', $second_msg['tool_calls'][0]['function']['name'] );
 	}
@@ -304,7 +305,8 @@ class WP_MCP_AI_Agentic_Tool_Messages_Preservation_Test extends WP_UnitTestCase 
 		$data = $response->get_data();
 
 		// Verify agentic_tool_messages is not present when no tools are called.
-		$this->assertArrayNotHasKey( 'agentic_tool_messages', $data, 'Response should not include agentic_tool_messages when no tools are called' );
+		$this->assertArrayHasKey( 'data', $data );
+		$this->assertArrayNotHasKey( 'agentic_tool_messages', $data['data'], 'Response should not include agentic_tool_messages when no tools are called' );
 	}
 
 	/**

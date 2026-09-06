@@ -33,7 +33,9 @@ class ContentGaps extends AbstractTool {
 	public function getParametersSchema(): array {
 		return array(
 			'type'                 => 'object',
-			'properties'           => array(),
+			// Empty stdClass encodes as `{}`; an empty PHP array would encode
+			// as `[]`, which strict providers (DeepSeek) reject.
+			'properties'           => new \stdClass(),
 			'additionalProperties' => false,
 		);
 	}

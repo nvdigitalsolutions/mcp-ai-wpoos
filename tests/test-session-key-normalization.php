@@ -43,8 +43,12 @@ class WP_MCP_AI_Session_Key_Normalization_Test extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 		$this->validator = new WP_MCP_AI_REST_Validator();
 
-		rest_get_server();
-		do_action( 'init' );
+		// Deliberately do NOT fire do_action( 'init' ) here: the action has
+		// already fired during bootstrap, and re-firing it re-runs every
+		// plugin's init callbacks (WooCommerce block registrations in
+		// particular), tripping duplicate-registration _doing_it_wrong
+		// notices that wp-phpunit converts into test failures. These tests
+		// only exercise the validator directly, so no re-init is needed.
 	}
 
 	/**

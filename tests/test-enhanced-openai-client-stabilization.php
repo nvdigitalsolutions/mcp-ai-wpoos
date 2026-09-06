@@ -170,8 +170,8 @@ class Test_WP_MCP_AI_Enhanced_OpenAI_Client_Stabilization extends WP_UnitTestCas
 		$this->enhanced_client->create_chat_completion( $simple_message, array() );
 		$this->enhanced_client->create_chat_completion( $complex_message, array() );
 
-		$this->assertEquals( 'gpt-4o-mini', $captured_options_simple['model'], 'Simple message should route to gpt-4o-mini' );
-		$this->assertEquals( 'gpt-4o', $captured_options_complex['model'], 'Complex message should route to gpt-4o' );
+		$this->assertEquals( 'gpt-4.1-mini', $captured_options_simple['model'], 'Simple message should route to gpt-4.1-mini' );
+		$this->assertEquals( 'gpt-4.1', $captured_options_complex['model'], 'Complex message should route to gpt-4.1' );
 	}
 
 	/**

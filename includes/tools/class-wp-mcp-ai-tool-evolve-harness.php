@@ -439,7 +439,7 @@ class WP_MCP_AI_Tool_Evolve_Harness implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			);
 		}
 
-		return new WP_MCP_AI_Agent_Harness_Evolver( $assistant_id, $session_id );
+		return new WP_MCP_AI_Agent_Harness_Evolver( $session_id, $assistant_id );
 	}
 
 	/**

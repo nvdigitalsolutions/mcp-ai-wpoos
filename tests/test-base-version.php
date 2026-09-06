@@ -134,34 +134,34 @@ class WP_MCP_AI_Base_Version_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that extended tools are excluded in base version mode.
+	 * Extended tools are registered based on their third-party dependency,
+	 * not the base-version flag: each class self-reports availability via a
+	 * static is_available() gate.
 	 */
-	public function test_extended_tools_excluded_in_base_version() {
+	public function test_extended_tools_self_report_availability() {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 
-		// Get all registered tools.
-		$tools = $registry->get_tools();
-
-		// Extended tools that should NOT be available in base version.
-		// These require third-party plugins or external APIs.
-		$extended_tools = array(
-			'create_woo_product',
-			'get_woo_products',
-			'get_jetengine_items',
-			'search_gmail',
-		);
-
-		$tool_slugs = array();
-		foreach ( $tools as $tool ) {
-			$tool_slugs[] = $tool->get_slug();
+		// WooCommerce tools are gated on WooCommerce being active.
+		$woo_active = class_exists( 'WooCommerce' ) && class_exists( 'WC_Product' );
+		foreach ( array( 'create_woo_product', 'get_woo_products' ) as $woo_slug ) {
+			$tool = $registry->get_tool( $woo_slug );
+			if ( $woo_active ) {
+				$this->assertNotNull( $tool, "WooCommerce tool '{$woo_slug}' should be registered when WooCommerce is active." );
+			} else {
+				$this->assertNull( $tool, "WooCommerce tool '{$woo_slug}' should be omitted when WooCommerce is inactive." );
+			}
 		}
 
-		foreach ( $extended_tools as $extended_slug ) {
-			$this->assertNotContains(
-				$extended_slug,
-				$tool_slugs,
-				"Extended tool '{$extended_slug}' should NOT be loaded in base version mode"
-			);
+		// JetEngine tools are gated on JetEngine being active. Use the version
+		// constant as the marker: other suites define file-scope jet_engine()
+		// / Jet_Engine stubs that leak process-wide and would otherwise make
+		// this branch run without the real plugin (and its tools) present.
+		$jetengine_active = defined( 'JET_ENGINE_VERSION' );
+		$jetengine_tool   = $registry->get_tool( 'get_jetengine_items' );
+		if ( $jetengine_active ) {
+			$this->assertNotNull( $jetengine_tool, 'JetEngine tool should be registered when JetEngine is active.' );
+		} else {
+			$this->assertNull( $jetengine_tool, 'JetEngine tool should be omitted when JetEngine is inactive.' );
 		}
 	}
 }

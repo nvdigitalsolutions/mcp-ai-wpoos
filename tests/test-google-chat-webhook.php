@@ -44,6 +44,14 @@ class WP_MCP_AI_Google_Chat_Webhook_Handler_Test extends WP_UnitTestCase {
 	 * Test that webhook handler registers the REST route.
 	 */
 	public function test_register_routes() {
+		// Routes must be registered on the rest_api_init action; calling
+		// register_routes() before that action fires triggers a doing_it_wrong
+		// notice that the test harness converts into a failure. Fire the action
+		// first when it has not fired yet in this process.
+		if ( ! did_action( 'rest_api_init' ) ) {
+			do_action( 'rest_api_init' );
+		}
+
 		$this->handler->register_routes();
 
 		$routes = rest_get_server()->get_routes();

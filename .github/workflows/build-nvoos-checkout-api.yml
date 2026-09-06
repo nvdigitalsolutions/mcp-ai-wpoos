@@ -1,0 +1,266 @@
+# Build NV oOS Checkout API Addon
+#
+# Produces a deployable ZIP of the vendor-side checkout service
+# (addons/checkout-api/). This addon is PROPRIETARY — it runs on the
+# vendor's own server only and is never distributed to customers or
+# WordPress.org. The ZIP is made available as a workflow artifact and,
+# optionally, as a GitHub Release; it is deliberately NOT committed into
+# the repository build/ directory.
+#
+# Outputs:
+#   nvoos-checkout-api-v{version}.zip
+#   nvoos-checkout-api-v{version}.zip.sha256
+#
+# Triggered by:
+#   - Manual workflow_dispatch with optional version input
+#   - Push to a tag matching "checkout-api-v*.*.*"
+#   - Push to addons/checkout-api/** on main/alpha-working
+#   - Pull requests touching addons/checkout-api/** (build check only)
+
+name: Build NV oOS Checkout API Plugin
+
+on:
+  push:
+    tags:
+      - 'checkout-api-v*.*.*'
+    branches:
+      - main
+      - alpha-working
+    paths:
+      - 'addons/checkout-api/**'
+  pull_request:
+    paths:
+      - 'addons/checkout-api/**'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Checkout API plugin version (e.g. 0.1.0)'
+        required: false
+        type: string
+      create_release:
+        description: 'Create a GitHub Release with the artifact'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  # ===========================================================================
+  # Build the checkout-api plugin ZIP
+  # ===========================================================================
+  build:
+    name: Build Checkout API Plugin
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            # Extract version from tag (checkout-api-v0.1.0 → 0.1.0)
+            VERSION="${GITHUB_REF_NAME#checkout-api-v}"
+          elif [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            # Read version from plugin header (for branch/PR pushes)
+            VERSION=$(grep -E "^\s*\*\s*Version:" addons/checkout-api/nvoos-checkout-api.php | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+            VERSION="${VERSION:-dev}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "artifact=nvoos-checkout-api-v${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Lint all PHP files
+        run: |
+          set -e
+          echo "=== PHP lint ==="
+          FAILED=0
+          while IFS= read -r FILE; do
+            if ! php -l "$FILE" > /dev/null; then
+              echo "❌ $FILE"
+              FAILED=1
+            fi
+          done < <(find addons/checkout-api -name '*.php' -type f | sort)
+          if [ "$FAILED" -ne 0 ]; then
+            echo "❌ PHP lint failed"
+            exit 1
+          fi
+          echo "✅ All PHP files lint clean"
+
+      - name: Assemble plugin directory for ZIP
+        run: |
+          ARTIFACT="${{ steps.version.outputs.artifact }}"
+          mkdir -p "dist/${ARTIFACT}/nvoos-checkout-api"
+
+          # Copy plugin source (exclude dev/test/build files).
+          # README.md, CHANGELOG.md and LICENSE are intentionally KEPT in the
+          # deployable ZIP — the operator deploying this addon needs the setup
+          # guide and the proprietary license alongside the code.
+          rsync -aL \
+            --exclude='.git/' \
+            --exclude='.gitignore' \
+            --exclude='.github/' \
+            --exclude='.distignore' \
+            --exclude='tests/' \
+            --exclude='phpcs.xml.dist' \
+            --exclude='node_modules/' \
+            --exclude='.DS_Store' \
+            addons/checkout-api/ "dist/${ARTIFACT}/nvoos-checkout-api/"
+
+          echo "📁 Plugin directory contents:"
+          find "dist/${ARTIFACT}/nvoos-checkout-api" -type f | sort
+
+      - name: Create ZIP
+        run: |
+          ARTIFACT="${{ steps.version.outputs.artifact }}"
+          cd "dist/${ARTIFACT}"
+          zip -r "../../${ARTIFACT}.zip" nvoos-checkout-api/
+          cd ../..
+          SIZE=$(du -sh "${ARTIFACT}.zip" | cut -f1)
+          echo "📦 ${ARTIFACT}.zip — ${SIZE}"
+
+      - name: Generate SHA-256 checksum
+        run: |
+          ARTIFACT="${{ steps.version.outputs.artifact }}"
+          sha256sum "${ARTIFACT}.zip" > "${ARTIFACT}.zip.sha256"
+          cat "${ARTIFACT}.zip.sha256"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.version.outputs.artifact }}
+          path: |
+            ${{ steps.version.outputs.artifact }}.zip
+            ${{ steps.version.outputs.artifact }}.zip.sha256
+          if-no-files-found: error
+
+  # ===========================================================================
+  # Run the addon's PHPUnit suite (WP test env, MySQL) so every checkout
+  # build ships with its tests green. Mirrors the main phpunit.yml gate but
+  # scoped to addons/checkout-api/tests (no coverage baseline).
+  # ===========================================================================
+  tests:
+    name: Checkout API PHPUnit Tests
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_test
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      WP_DB_NAME: wordpress_test
+      WP_DB_USER: wordpress
+      WP_DB_PASSWORD: wordpress
+      WP_DB_HOST: 127.0.0.1
+      WP_CORE_DIR: /tmp/wordpress
+      WP_TESTS_DIR: /tmp/wordpress-tests-lib
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, mysqli
+          tools: composer
+
+      - name: Configure Composer GitHub token
+        run: composer config --global github-oauth.github.com ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Configure WordPress test suite
+        run: |
+          bin/install-wp-tests.sh "$WP_DB_NAME" "$WP_DB_USER" "$WP_DB_PASSWORD" "$WP_DB_HOST" latest
+
+      - name: Run checkout-api PHPUnit suite
+        # Glob (not the bare directory): PHPUnit applies its default
+        # *Test.php suffix to CLI paths; the config's suffix=".php" only
+        # applies to config-declared test directories.
+        run: vendor/bin/phpunit addons/checkout-api/tests/test-*.php --no-coverage
+
+  # ===========================================================================
+  # Create a GitHub Release (optional, triggered by tag or workflow_dispatch)
+  # ===========================================================================
+  release:
+    name: Create GitHub Release
+    needs: [build, tests]
+    runs-on: ubuntu-latest
+    if: |
+      inputs.create_release == true || startsWith(github.ref, 'refs/tags/checkout-api-v')
+
+    steps:
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF_NAME#checkout-api-v}"
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nvoos-checkout-api-v${{ steps.version.outputs.version }}
+          path: artifacts/
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: checkout-api-v${{ steps.version.outputs.version }}
+          name: "NV oOS Checkout API v${{ steps.version.outputs.version }}"
+          body: |
+            ## NV oOS Checkout API v${{ steps.version.outputs.version }}
+
+            Vendor-side checkout service for NV oOS premium addons — Stripe payment sessions and verification, license issuance, signed ZIP downloads, and refund/dispute webhooks.
+
+            ⚠️ **PROPRIETARY — vendor use only.** Install this on the vendor's own WordPress server (e.g. nvdigitalsolutions.com). Never distribute it to customers and never submit it to WordPress.org.
+
+            ### Requirements
+
+            - WordPress 6.0+
+            - PHP 8.1+
+            - A Stripe account (test keys to start)
+
+            ### Installation
+
+            1. Download the ZIP below and upload it via Plugins → Add New → Upload Plugin
+            2. Configure Stripe keys, price, addon version, and ZIP source under **NV oOS Checkout** in WP-Admin
+            3. Point a Stripe webhook at the endpoint shown on the settings page (`payment_intent.succeeded`, `charge.refunded`, `charge.dispute.created`)
+
+            See `addons/checkout-api/README.md` in the repository for the full setup guide.
+
+            ### Checksum
+
+            See the `.sha256` file attached to this release.
+          files: |
+            artifacts/*.zip
+            artifacts/*.sha256
+          draft: false
+          prerelease: false

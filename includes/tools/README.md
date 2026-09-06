@@ -57,6 +57,7 @@ Folder-specific deltas (canonical rules in [`.context/tool-registry.md`](../../.
 - Sanitise every `$arguments[…]` value at entry; escape on every output path. PHPCS sniff `WPMCPAI.Tools.SanitizeAtEntry` enforces this.
 - Subdirectories carve out their own scope and have their own registration files: `orchestration/` (autonomous loops), `harness/` (reasoning harness).
 - The `*_validated` variant of a tool MUST register the same slug as its non-validated sibling so the registry can swap them transparently.
+- `evolve_harness` (`class-wp-mcp-ai-tool-evolve-harness.php`) delegates to `WP_MCP_AI_Agent_Harness_Evolver` (since 1.9.0: constructor order `( $session_id, $assistant_id )`, `analyze_failures()`, component-scoped `evolve()` with enforced `dry_run`). Keep the tool a thin wrapper — all evolution logic lives in [`includes/agents/`](../agents/). The evolution opt-in switches (master enable, evolved-prompt/skill consumption, budget, rate limit, warmup, verification) can be managed from Settings → Orchestration Layer since 1.9.0; saved values are applied to the underlying filters by `WP_MCP_AI_Evolution_Settings_Bridge` at priority 5.
 
 ## Tests
 

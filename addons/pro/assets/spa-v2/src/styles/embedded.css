@@ -1,0 +1,246 @@
+/**
+ * NV oOS Pro SPA v2 — Embedded Mode Styles
+ *
+ * Front-end scoping for the [nvoos_pro_spa] shortcode. The admin stylesheet
+ * relies on `body.toplevel_page_wp-mcp-ai-spa` selectors that never match on
+ * the front end, so embedded instances carry their own layout rules here.
+ *
+ * Theme custom properties are inherited from `.nvoos-pro-spa-layout`
+ * (main.css) — the embedded layout uses both classes.
+ */
+
+/* ── Embedded root ────────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-embedded__layout,
+.nvoos-pro-spa-embedded--loading,
+.nvoos-pro-spa-embedded--error {
+	box-sizing: border-box;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 14px;
+	color: var(--nvoos-text, #1e1e1e);
+	background: var(--nvoos-bg-secondary, #fff);
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	overflow: hidden;
+	width: 100%;
+}
+
+.nvoos-pro-spa-embedded__layout {
+	display: flex;
+	min-height: 480px;
+	height: 640px;
+}
+
+/* Fallback theme vars for loading/error states (no layout ancestor). */
+.nvoos-pro-spa-embedded--loading,
+.nvoos-pro-spa-embedded--error {
+	--nvoos-bg: #f0f0f1;
+	--nvoos-bg-secondary: #fff;
+	--nvoos-text: #1e1e1e;
+	--nvoos-text-secondary: #787c82;
+	--nvoos-border: #dcdcde;
+	--nvoos-primary: #2271b1;
+	--nvoos-danger: #d63638;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 240px;
+	padding: 24px;
+	text-align: center;
+}
+
+.nvoos-pro-spa-embedded--error {
+	color: var(--nvoos-danger, #d63638);
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-embedded__sidebar {
+	flex: 0 0 240px;
+	width: 240px;
+	min-width: 240px;
+	display: flex;
+	flex-direction: column;
+	background: var(--nvoos-bg, #f0f0f1);
+	border-right: 1px solid var(--nvoos-border, #dcdcde);
+	overflow: hidden;
+}
+
+.nvoos-pro-spa-embedded__layout--sidebar-hidden .nvoos-pro-spa-embedded__sidebar {
+	display: none;
+}
+
+.nvoos-pro-spa-embedded__sidebar-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+}
+
+.nvoos-pro-spa-embedded__sidebar-title {
+	margin: 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-embedded__new-btn {
+	padding: 4px 10px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
+	font-size: 12px;
+	font-family: inherit;
+	cursor: pointer;
+}
+
+.nvoos-pro-spa-embedded__new-btn:hover {
+	border-color: var(--nvoos-primary, #2271b1);
+	color: var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-pro-spa-embedded__sidebar-list {
+	list-style: none;
+	margin: 0;
+	padding: 8px;
+	overflow-y: auto;
+	flex: 1;
+}
+
+.nvoos-pro-spa-embedded__session {
+	display: flex;
+	align-items: stretch;
+	border-radius: 6px;
+	margin-bottom: 2px;
+}
+
+.nvoos-pro-spa-embedded__session:hover {
+	background: var(--nvoos-bg-secondary, #fff);
+}
+
+.nvoos-pro-spa-embedded__session--active {
+	background: var(--nvoos-selected-bg, #e5e5ff);
+}
+
+.nvoos-pro-spa-embedded__session-select {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 8px;
+	border: none;
+	background: transparent;
+	font-family: inherit;
+	font-size: 12px;
+	text-align: left;
+	cursor: pointer;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-embedded__session-title {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.nvoos-pro-spa-embedded__session-meta {
+	font-size: 11px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-embedded__session-delete {
+	background: none;
+	border: none;
+	color: var(--nvoos-text-secondary, #787c82);
+	cursor: pointer;
+	font-size: 16px;
+	padding: 0 8px;
+	opacity: 0;
+}
+
+.nvoos-pro-spa-embedded__session:hover .nvoos-pro-spa-embedded__session-delete,
+.nvoos-pro-spa-embedded__session:focus-within .nvoos-pro-spa-embedded__session-delete {
+	opacity: 1;
+}
+
+.nvoos-pro-spa-embedded__session-delete:hover {
+	color: var(--nvoos-danger, #d63638);
+}
+
+.nvoos-pro-spa-embedded__sidebar-empty,
+.nvoos-pro-spa-embedded__sidebar-error {
+	margin: 0;
+	padding: 12px;
+	font-size: 12px;
+	text-align: center;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-embedded__sidebar-error {
+	color: var(--nvoos-danger, #d63638);
+}
+
+.nvoos-pro-spa-embedded__sidebar-toggle {
+	background: none;
+	border: none;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+	color: var(--nvoos-text-secondary, #787c82);
+	cursor: pointer;
+	font-size: 16px;
+	padding: 8px;
+}
+
+.nvoos-pro-spa-embedded__sidebar-toggle:hover {
+	color: var(--nvoos-text, #1e1e1e);
+	background: var(--nvoos-bg-secondary, #fff);
+}
+
+/* ── Main chat area ───────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-embedded__main {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+/* The chat page normally sits in a padded admin column — flush it inside the
+   embedded frame. */
+.nvoos-pro-spa-embedded__main .nvoos-pro-spa-chat-page {
+	margin: 0;
+	border: none;
+	border-radius: 0;
+}
+
+.nvoos-pro-spa-embedded__main .nvoos-pro-spa-chat-page--active {
+	height: 100%;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+
+@media screen and (max-width: 782px) {
+	.nvoos-pro-spa-embedded__layout {
+		flex-direction: column;
+		height: auto;
+		min-height: 480px;
+	}
+
+	.nvoos-pro-spa-embedded__sidebar {
+		flex: none;
+		width: 100%;
+		min-width: 0;
+		max-height: 40%;
+		border-right: none;
+		border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+	}
+
+	.nvoos-pro-spa-embedded__main {
+		min-height: 320px;
+	}
+}

@@ -24,8 +24,19 @@ class Test_Federation_REST_Rate_Limiting extends WP_UnitTestCase {
 		$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_wp_mcp_ai_fed_rate_limit_%'" );
 		$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_timeout_wp_mcp_ai_fed_rate_limit_%'" );
 
-		// Register REST routes.
-		rest_get_server()->register_routes();
+		// The directory REST handler only loads when the federation directory
+		// setting is enabled, which is off by default and therefore false under
+		// CLI phpunit. Instantiate it (its constructor hooks rest_api_init) and
+		// fire the action so the ai-dir/v1 routes register in the correct action
+		// context - register_rest_route() outside rest_api_init raises an
+		// incorrect-usage notice.
+		new WP_MCP_AI_Federation_Directory_REST();
+		do_action( 'rest_api_init' );
+
+		// Rate limiting bypasses users who can manage the fleet; the bootstrap
+		// may leave an admin as the current user for the first test, which would
+		// silently skip the limit. Pin the test to an anonymous user.
+		wp_set_current_user( 0 );
 	}
 
 	/**

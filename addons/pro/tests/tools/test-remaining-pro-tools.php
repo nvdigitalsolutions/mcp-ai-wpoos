@@ -159,20 +159,26 @@ class Test_WP_MCP_AI_Remaining_Pro_Tools extends WP_UnitTestCase {
 		}
 
 		try {
-						$reflection = new ReflectionClass( $class_name );
+			$reflection = new ReflectionClass( $class_name );
 			if ( $reflection->isAbstract() || $reflection->isInterface() ) {
-				return; // Skip abstract classes and interfaces.
+				$this->markTestSkipped( $class_name . ' is abstract or an interface — not a concrete tool.' );
+				return;
 			}
-						$constructor = $reflection->getConstructor();
+			$constructor = $reflection->getConstructor();
 			if ( $constructor && $constructor->getNumberOfRequiredParameters() > 0 ) {
-				return; // Skip classes that require constructor args.
+				$this->markTestSkipped( $class_name . ' requires constructor arguments — not an instantiable tool.' );
+				return;
 			}
-						$instance = $reflection->newInstance();
+			$instance = $reflection->newInstance();
 		} catch ( \ReflectionException $e ) {
-			return; // Can't reflect — skip.
+			$this->markTestSkipped( $class_name . ' could not be reflected: ' . $e->getMessage() );
+			return;
 		}
 
-					// If it implements the tool interface, validate metadata.
+		// If it implements the tool interface, validate metadata. Infrastructure
+		// and support classes (CRM listeners, PM engines, blueprint installer,
+		// orchestration helpers, etc.) intentionally do not implement the tool
+		// contract and are skipped.
 		if ( $instance instanceof WP_MCP_AI_Tool_Interface ) {
 			$this->assertNotEmpty( $instance->get_slug() );
 			$this->assertNotEmpty( $instance->get_name() );
@@ -184,10 +190,13 @@ class Test_WP_MCP_AI_Remaining_Pro_Tools extends WP_UnitTestCase {
 
 			// Execute should not crash.
 			if ( method_exists( $instance, 'is_available' ) && ! $instance->is_available() ) {
-				return; // Skip execute test if unavailable.
+				$this->markTestSkipped( $class_name . ' is not available in this environment — execute() not exercised.' );
+				return;
 			}
 			$result = $instance->execute( array(), array( 'user_id' => $this->user_id ) );
 			$this->assertTrue( is_array( $result ) || is_wp_error( $result ) );
+		} else {
+			$this->markTestSkipped( $class_name . ' does not implement WP_MCP_AI_Tool_Interface — not a tool.' );
 		}
 	}
 

@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** August 22, 2026
-**Plugin Version:** 1.1.62
+**Last Updated:** September 5, 2026
+**Plugin Version:** 1.1.71
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -9,7 +9,21 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
-> **AUGUST 22, 2026 UPDATE (v1.1.62):** OKF BUNDLE MANAGEMENT (BASE) — NEW `WP_MCP_AI_OKF_Bundle_Manager` BUNDLE LIFECYCLE (CREATE/LIST/RENAME/ARCHIVE/DELETE, ZIPSLIP-SAFE ZIP IMPORT/EXPORT, HEALTH STATS) WITH `skill-knowledge` PROTECTED; THREE NEW TOOLS (`okf_list_bundles`, `okf_validate_bundle`, `okf_import_bundle`) + `okf_write_concept` PROVENANCE SCHEMA (OKF TOOL SURFACE NOW 10); NEW BUNDLE MANAGER ADMIN SCREEN. PRO: OKF→SKILL BRIDGE, AUTO-ENRICHMENT AGENT (`okf_enrich_site_content`), HYBRID KNOWLEDGE ROUTER (`route_knowledge_query`), AND AN OKF SKILLS DRAWER IN THE PRO SPA v2 (READ-ONLY `mcp-ai-pro/v1/okf` REST SURFACE). VECTOR STORE TOOLS MIGRATED TO THE RESPONSES API (`file_batches` + BOUNDED POLLING) AHEAD OF OPENAI'S 2026-08-26 ASSISTANTS API REMOVAL. FIXED: 404 ON PERCENT-ENCODED OKF CONCEPT ROUTES (`%2F`). UPDATED DOCS: `docs/features/okf-integration.md`, `docs/reference/tools/tool-reference.md`, `docs/project/plans/OKF-BUNDLE-MANAGEMENT-IMPLEMENTATION-PLAN.md`.
+> **SEPTEMBER 5, 2026 UPDATE (v1.1.71):** RATE-LIMIT, MODEL-CATALOG & ECOSYSTEM. **REST RATE-LIMIT UNLOCK** (PR #6322) — `check_rate_limit()` NOW USES FIXED-WINDOW ACCOUNTING (HONEST REMAINING-TIME `retry_after`, NO INFINITE SLIDE; LEGACY TRANSIENTS NORMALIZED) AND FIRES `wp_mcp_ai_rest_request_rate_limit_exceeded` SO THE RESTRICTION REGISTRY FLAGS BLOCKED USERS INTO THE RESTRICTIONS TAB + TOKEN MANAGER WITH THE LIFT BUTTON (LIFT CLEARS THE REQUEST WINDOW; GUEST IP-KEYED BLOCKS EXPIRE ON THEIR OWN). **MEMPALACE WING-SCOPE ENFORCEMENT** (PR #6327) — `matches_wake_filters()` APPLIES `wing`/`room` EXCLUSIONS (GRAPHIFY ANCHORS ONLY BOOST, NEVER EXCLUDE). **CHECKOUT API INTO THE PIPELINE** (PR #6315) — ADDON BUILD ZIP + MAIN-SUITE TESTS; TOKEN/CRYPTO CLASSES USE `wp_salt()` (NO RAW SALT CONSTANTS). **CONNECTORS LINKS** → `options-connectors.php` (PR #6314). **SEPTEMBER 2026 MODEL CATALOG** (PR #6328) — 228 MODELS (GPT-5.6 FAMILY, GPT-6-ASTRA, GPT-IMAGE-2, CLAUDE-OPUS-5, GEMINI-3.6/3.7/3.8-FLASH, KIMI-K3), RETIRED DEEPSEEK/GEMINI-3.1-FLASH/IMAGEN-4 IDs WITH MIGRATION-MAP SUCCESSORS, PRICING DRIFT FIXES, NEW DEFAULTS (`gemini-3.6-flash`, `gpt-image-2`, `kimi-k3`). **CONTENT GRAPH ECOSYSTEM** — STANDALONE PLUGIN 1.0.4 VISUAL EXPERIENCE (THEME ENGINE, APPEARANCE TAB, SVG GLYPHS, EXPLORER CHROME, EDGES ROUTE, EXPORT, CHECKOUT FALLBACK, PR #6318); CONTENT GRAPH AI ASSISTANT-BUILDER BLOCKS + SETTINGS SHELL (PRs #6316/#6317); PLATFORM WAVE E2 QUEUE LAYER (ASYNCJOBQUEUE → QUEUEMANAGER → JOBQUEUEMANAGER → DEADLETTERQUEUE, PRs #6319–#6321/#6325). **NEW `mcp-ai-wpoos-updates` SKILL** — CODING-TIME SKILLS 53 → 54 (PRs #6323/#6324). TEST-SUITE SKILL → 40 PATTERNS. STALE 1.1.68 + 1.1.69 BUILD ZIPS REMOVED. TOOL COUNT UNCHANGED: ~303 BASE + ~1,263 PRO (~1,566 TOTAL). UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
+>
+> **SEPTEMBER 5, 2026 UPDATE (v1.1.70):** HOST-HARDENING & TEST-SUITE STABILITY. **EXEC-DISABLED HOST HARDENING** (PR #6295) — CANONICAL `wp_mcp_ai_check_nodejs_available()` / `wp_mcp_ai_get_nodejs_version()` HELPERS (EXEC-FIRST, PROCESS-SERVICE FALLBACK) IN SIX PRO ADMIN PAGES + OCR CLI HELPERS WITH GUARDED `proc_*` CALLS + `max(0, …)` CLAMPS REPLACING `absint()` IN SEVEN CPT/SETTINGS SANITIZERS. **FIFTH PHPUNIT REPAIR WAVE** (~29 TEST PRs, CI RUNS 91006542428 + 91771001271) CLOSED EVERY REMAINING CLUSTER AND CARRIED GROUPED PRODUCTION FIXES: TRANSCRIPT `attachments` METADATA PRESERVED + MODEL-WINDOW-CAPPED TOKENS (#6280), DASHBOARD EVENT-SLUG TOLERANCE (#6281), VALIDATED `web_search` PROFESSION TAGS (#6282), PRESET FIXES (#6283), MESH URL PRE-VALIDATION (#6285), GUEST MEMORY BUCKET (#6286), JETENGINE `JET_ENGINE_VERSION` GATES + PHYSICAL CCT-TABLE PROBE + JFB PARAMS + CACHED PRO TOOL MAP (#6296/#6300), COMPLEXITY ROUTING RESTORED + PROVIDER-PREFIXED SLUG LIMITS (#6298/#6306), STRUCTURAL AUTH0 AUDIENCE VALIDATION + ACTING-USER PERMISSION CHECKS (#6301/#6305), MARKUP REST 400s + `wp_mcp_ai_legacy_sse_enabled` FILTER + SKILL-PACK SLUG ENFORCEMENT (#6302), CLAMP SANITIZERS + TERMINATE SEAM (#6303), ELEMENTOR EDITOR DETECTION (#6304), AGENTIC LOG EVENTS + MS TRACE DURATIONS (#6308), WEBHOOK IDS + SETTINGS-BLOB FALLBACK + ACTING-USER CHART GATING + SOCIAL-PUBLISH DATE RESET + PSO INFLECTIONS + H1–H6 ALLOWLIST + SCHEMA `required` (#6311), CURRICULUM EXPORTER EMPTY-STRUCTURE SKIPS (#6293). TOOL COUNT UNCHANGED: ~303 BASE + ~1,263 PRO (~1,566 TOTAL). UPDATED DOCS: THIS PLAN, CI-TRIAGE-91006542428 + CI-TRIAGE-91771001271 (NEW), TEST-SUITE SKILL BOARD (COMPACTED), README/CHANGELOG/readme.txt/QUICK_REFERENCE.
+>
+> **SEPTEMBER 4, 2026 UPDATE (v1.1.69):** AI-VISION & ADMIN-COMPAT. **PRO VISION ANALYSIS TOOLKIT** (PR #6267) — NEW `analyze_image_objects` TOOL DETECTS AND COUNTS OBJECTS PER CATEGORY (HF OWLv2 / OLLAMA `detection`, JSON-ENFORCED VLM `vlm`, HYBRID LABEL NORMALIZATION, `annotate=true` GD BOUNDING-BOX ATTACHMENT) BEHIND A NEW NV OOS → VISION ANALYSIS SETTINGS PAGE (OFF BY DEFAULT, SSRF-GUARDED). **TAGDIV ADMIN COMPAT** (PRs #6266/#6278) — SITEKIT TOOLS RETURN STRING CAPABILITY-FLAG ARRAYS (THE UNDEFINED `CAPABILITY_CAN_USE_IF_ADMIN` CONSTANT CRASHED THE TOOLS METABOX), SORTABLE FALLBACK PRINTS WHENEVER `td_wp_admin` IS ENQUEUED, MEDIA CHAIN AS DIRECT HEAD TAGS, METABOX CSS HOISTED. **DEEPSEEK EMPTY-SCHEMA 400 FIX** (PR #6272) — `properties: {}` NEVER `[]` ACROSS 29 FILES + LEGACYADAPTER OBJECT-MAP PRESERVATION. **ZIPSLIP GUARD REVIVED** (PR #6270) — `count( $zip )` REPLACES PHP 8.X-NONEXISTENT `ZipArchive::$num_files` IN ALL FIVE ENTRY LOOPS. FIXES: RATE-LIMITER REAL-VERB CLASSIFICATION + SEPARATE NEFARIOUS COUNTER + DUAL-SHAPE CHAT HOOKS (#6265), SHORTCUT FATAL CONTAINMENT (#6271), MODEL CATALOG (GPT-4O 128K, GEMINI VIDEO-CAPABLE TYPO, ACTIVE STATUS, QWEN ENTRIES, #6274), SETTINGS-SAVE CACHE-SUSPENSION RESTORE (#6277). FOURTH PHPUNIT REPAIR WAVE (~9 TEST PRs). TEST-SUITE SKILL → 37 PATTERNS. TOOL COUNT: ~303 BASE + ~1,263 PRO (~1,566 TOTAL). UPDATED DOCS: THIS PLAN, VISION-ANALYSIS PROPOSAL + TOOLKIT DOC, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
+>
+> **SEPTEMBER 3, 2026 UPDATE (v1.1.68):** FRONT-END SURFACES & STABILITY. **PRO SPA v2 SHORTCODE** (PR #6256) — `[nvoos_pro_spa]` EMBEDS THE PRO CHAT SURFACE ON THE FRONT END IN CHAT-FIRST EMBEDDED MODE (THREADS, DRAWERS, TOOL SHORTCUTS, OKF DRAWER; ROUTER-FREE; OPTIONAL GUEST MODE). **HERMES DASHBOARD FLEET EXTENSIONS** (PR #6249) — NEW TOP-LEVEL `extensions/` TREE (FLEET MONITORING + CONTROL PLANE, BACKUP-DOWNLOAD, EXTERNAL-APP-TAB, MCP-TOOL-SHORTCUTS). **STALE NONCE SELF-HEAL** (PR #6225) — `GET /mcp-ai/v1/session/nonce` MINTS A FRESH SESSION-BOUND NONCE (NO-CACHE), ENDING "COOKIE CHECK FAILED" 403s. **DOCS HUB 0.4.2** (PRs #6246/#6253) — IN-APP LINK RESOLUTION, GITHUB-SLUGGER-EXACT ANCHORS, DIR-RELATIVE "ACCEPT FIX", `../` VALIDATION + SKIP REASONS, SYNC FAILURE SURFACING, EMOJI-LOADER CRASH FIX. **PROVIDERS DISABLED BY DEFAULT ON FRESH INSTALLS** (PR #6255). FIXES: CALENDAR GRANTED-SCOPES `%20` CORRUPTION (#6226), TIPTAP 3.30.4 PINS (#6250), `fast-uri` >=4.1.4 (#6244), ASSISTANT UNTRASH STATUS RESTORE (#6239), PRESET ADDITIONS (#6242), TASK-TEMPLATE AJAX (#6243), JQUERY UI SORTABLE SHIM (#6258), TPM FILTER SEAM RESTORE (#6233). THIRD PHPUNIT REPAIR WAVE (~21 PRs). STALE 1.1.67 BUILD ZIPS REMOVED. TOOL COUNT UNCHANGED: ~303 BASE + ~1,262 PRO (~1,565 TOTAL). UPDATED DOCS: THIS PLAN, PROPOSAL 033, HERMES EXTENSION PLANS, REST-API REFERENCE, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
+>
+> **SEPTEMBER 2, 2026 UPDATE (v1.1.67):** ECOSYSTEM-EXTRACTION RELEASE. **CONTENT GRAPH AI PLATFORM v2.0.0 STANDALONE** (PR #6123) — THE EXTRACTED `nvoos-content-graph-ai-platform` ADDON NOW CARRIES ITS OWN BUSINESS LOGIC (EXTRACTION WAVES A–C + BLUEPRINTS: NAMESPACE-BRIDGED ADMIN UI, SKILL/SLASH-COMMAND/AGENT BRIDGES, PLATFORM DASHBOARD + SETTINGS REGISTRY, HARNESS ROUTER, 74-SKILL BUNDLED-SKILLS PACK, KNOWLEDGE BASE, DEDICATED PHPUNIT MATRIX). **BASE+PRO → CONTENT GRAPH ECOSYSTEM PORT, WAVE D + D-UI** (PR #6142) — THE AI RUNTIME LANDS IN `nvoos-content-graph-ai`: CHAT CORE (OPTIMIZER, CACHES, RATE LIMITER, SUMMARIZER, THREADS, ATTACHMENTS, TRANSCRIPTS, CHATKIT), PROVIDERS BEYOND THE 13 (ZAI, GOOGLE MAPS, REALTIME ×3, RABBITMQ, STDIO, FILE SERVICES), MODEL MANAGEMENT + ANALYTICS/TOKEN TRACKING, SECURITY GUARDS, AND THE ASSISTANT ADMIN PAGES (ADD/BUILD/TEST) PLUS BLOCKS/WIDGETS/GUEST TOKENS/MEMORY/CLI/MCP JSON-RPC — CONTENT GRAPH AI BUMPS **1.0.3 → 1.0.4**. **PRO GOOGLE WORKSPACE READ TOOLS** (PRs #6151/#6152): SIX NEW PRO TOOLS — GMAIL `get_gmail_message`/`get_gmail_thread`/`list_gmail_connections`/`modify_gmail_message` (DESTRUCTIVE-OPS GATED) + DRIVE `get_drive_file`/`list_drive_connections` — WITH TWO NEW CLIENTS ON THE SHARED `includes/google/` FOUNDATION. SECOND PHPUNIT REPAIR CAMPAIGN WAVE (~95 PRs, #6114–#6208) WITH GROUPED PRODUCTION FIXES (CRAWLER CONTRACT HARDENING, REST GUARDS, LLM SANITIZATION DELEGATION, VEO 5S FLOOR, DESTRUCTIVE-OPS GATE CANONICAL SETTINGS READ, WHATSAPP WEBHOOK SIGNATURE REJECTION WITHOUT AN APP SECRET, HTTP 304 CACHED-BODY RE-SERVE); TEST-SUITE SKILL REFRESHED TO 26 PATTERNS. STALE 1.1.66 BUILD ZIPS REMOVED. TOOL COUNT: ~303 BASE + ~1,262 PRO (~1,565 TOTAL). UPDATED DOCS: THIS PLAN, PLATFORM-EXTRACTION PLAN, ECOSYSTEM-PORT TRACKER/PLAN/GAP ANALYSIS, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
+>
+> **AUGUST 31, 2026 UPDATE (v1.1.66):** TEST-SUITE & STABILITY. A ~100-PR CAMPAIGN (AUG 28–31) REPAIRED THE SINGLE-PROCESS PHPUNIT SUITE CLUSTER-BY-CLUSTER — REST ENDPOINTS, AJAX HANDLERS, PROVIDER/CLIENT SUITES, ADMIN PAGES, CHAT/CHANNEL INTEGRATIONS, CRM, PROFESSIONS/TEAMS, MULTI-AGENT ORCHESTRATION, CRON/NOTIFIER, FEDERATION, HEALTHCARE INTEROP, SECURITY, LOGGER, TRANSCRIPTS. NEW CODING-TIME SKILL `mcp-ai-wpoos-test-suite` (53 SKILLS NOW) PLUS THE `TEST-SUITE-REMAINING-FIXES-PLAN.md` TRACKER. PRODUCTION FIXES CARRIED BY THE CAMPAIGN: ASSISTANT-ACCESS CACHING (`wp_mcp_ai_assistant_access_cache_enabled` FILTER + WP_ERROR CACHING), EXPLICIT 400S FOR ATTACHMENT-SEGMENT VALIDATION ERRORS, TOKEN-TIER AUDIT LOGGING, REST PERMISSION-ALLOWLIST REFRESH, BEARER-AUTH CONTEXT SYNC, JOB-QUEUE CLOSURE SERIALIZATION, CUSTOM-TABLE QUERY GUARDS AGAINST MISSING SCHEMA, RESTORED JOB-NOTIFIER `update_status()` WITH DOT-PRESERVING JOB IDS, JOB STATUS PROMOTED TO RUNNING ON PROGRESS, WEB-SEARCH RESULT BUILDING RESTORED FOR EXA/PERPLEXITY, MEDIA TOOLKIT WP_ERROR NORMALIZATION, REMOVE BACKGROUND PATH GUARD, MEMORY-CAPTURE ENVELOPE RESTORATION, OUTPUT-BUFFER LEAK FIXES, GRAPHIC EDITOR PLUS ON WP 6.9+, PROFESSION META CLAMPING + TEAM CPT SANITIZATION, FEDERATION MESH-SYNC INIT, DEFENSIVE GRAPHIFY ADMIN LOADING. CONTENT GRAPH AI BUMPED TO 1.0.3 WITH A PERMISSION-CHECK FIX; NEW CHECKOUT API ADDON (V0.1.0, VENDOR-SERVER ONLY — STRIPE SESSION/VERIFY, LICENSE STORE, SIGNED DOWNLOADS, WEBHOOKS) PLUS THE PAID-CHECKOUT CLIENT IN THE FREE `nvoos-content-graph` PLUGIN; STALE 1.1.65 BUILD ZIPS REMOVED. TOOL COUNT UNCHANGED: ~303 BASE + ~1,256 PRO (~1,559 TOTAL). UPDATED DOCS: THIS PLAN, TEST-SUITE TRACKER, NEW SKILL, CHECKOUT API README/CHANGELOG + COMMERCE VENDOR API, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
+>
+> **AUGUST 28, 2026 UPDATE (v1.1.65):** HARDENING & STABILITY. OPENAI REASONING MODELS (O-SERIES/GPT-5) NO LONGER RECEIVE `max_tokens`/`temperature` — `OpenAiCompatibleClient` STRIPS UNSUPPORTED PARAMETERS AND RETRIES 400 REJECTIONS WITH CORRECTED PAYLOADS; CONTENT GRAPH AI EMBEDDINGS STOP 500ING (PROVIDER/MODEL RESOLUTION, EXCEPTION GUARDS) AND GRAPH CONTEXT FALLS BACK TO KEYWORD SEARCH WITHOUT AN INDEX. MEDIA WORKER SHIPS THE OPTIONAL FULL-CRAWL4AI PROXY (`/api/crawl/full`, ENV-GATED `CRAWL4AI_FULL_URL`, SSRF-VALIDATED) + STRICT-PATH `TEMP_ROOT` ALLOWLIST. SECURITY-POSTURE FINDINGS CLOSED (ISSUE #5972): ALGORAVE TONE.JS EVAL CONFIRMATION GATE, TMA SOURCE-MAP REMOVAL, WEBHOOK `__return_true` JUSTIFICATIONS. CHAT/REST HARDENING: LEGACY ATTACHMENT PARAMETERS TOLERATED, CUSTOM MESSAGE ROLES WORK AGAIN, ORPHANED TOOL MESSAGES SILENTLY DISCARDED, SIGN-PRESERVING TRANSCRIPT PAGINATION, GOOGLE CHAT `verification_token` WEBHOOK AUTH. TOOL COUNT UNCHANGED: ~303 BASE + ~1,256 PRO (~1,559 TOTAL). UPDATED DOCS: SECURITY POSTURE, PROPOSALS 028/031, TOOL REFERENCE, THIS PLAN.
+>
+> **AUGUST 26, 2026 UPDATE (v1.1.64):** GOOGLE CALENDAR CONNECTION & SHARED GOOGLE SERVICES — A NEW SHARED FOUNDATION IN `includes/google/` (OAUTH SERVICE, CALENDAR API V3 CLIENT, SCOPE REGISTRY, CREDENTIAL RESOLVER, SYNC + PUSH) REPLACES FOUR DRIFTED GOOGLE OAUTH COPIES, WITH A `google_calendar` CONNECTION TYPE ON BOTH CONNECTION SURFACES AND SIX NEW PRO GOOGLE-WORKSPACE TOOLS. COMPOSIO CONNECT GAINS A VERIFIED ACCOUNT-HEALTH ENGINE + `composio_manage_accounts` LIFECYCLE TOOL PLUS HARDENING ACROSS AUTH CONFIG, LISTINGS, APP REMOVAL, AND PROXIED PROVIDER FAILURES. LOG HYGIENE: TOOL-DECLARED NON-LOGGABLE RESULT FIELDS, SECRET URL QUERY-PARAM REDACTION, AND ROLLING LOG-BUFFER COMPACTION. FIXED: VALIDATED-TOOL VALIDATION RESTORED ON SYMFONY 5.4, MCP JSON-RPC ERROR ENVELOPES + DIAGNOSTICS PAGE, PRO SPA v2 CONVERSATION SYNC, VISION-TIME TOUTS. TOOL COUNT: ~303 BASE + ~1,256 PRO (~1,559 TOTAL). UPDATED DOCS: GOOGLE CALENDAR ARCHITECTURE + API REFERENCE + IMPLEMENTATION PLAN, TOOL REFERENCE.
 >
 > **AUGUST 21, 2026 UPDATE (v1.1.61):** AGENT IDENTITY BRIDGING IN MEMORY STORE & RECALL — NEW `WP_MCP_AI_Agent_Identity_Resolver` CANONICALISES VIRTUAL AGENT KEYS TO THE ASSISTANT POST ID; CHAT-MEMORY RECALL MERGES ALIAS BUCKETS (`stored_under` STAMPS, `merged_sources`); MEMORY DRAWERS GAIN SCOPE CHIPS, AGENT-ID DIAGNOSTIC, SHOW-ALL-SCOPES TOGGLE, AND STORE-TRIGGERED REFRESH. OKF SKILL-KNOWLEDGE BUNDLE NOW AUTO-GENERATED FROM BUNDLED SKILLS (BOOTSTRAP + REINSTALL) — OKF TOOLS WORK OUT OF THE BOX. FIXES: `undici` PINNED TO ^7.29.0 (JSDOM COMPAT, CVE FIXES RETAINED) + CONTENT-GRAPH CI CHECKSUM DRIFT. NVOOS-CONTENT-GRAPH SHIPS A WP.ORG REVIEW REPLY + DETAILED REPORT. UPDATED DOCS: `docs/features/memory/chat-client-integration.md`, `docs/features/okf-integration.md`.
 >
@@ -623,7 +637,121 @@ n#### New Audit & Compliance Docs
 
 ---
 
-## 🆕 August 2026 — v1.1.55–v1.1.62: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.2.0, Connection Pooling, Updater Rework, OOS Consolidation, Composio, Worker Crawling, Research Tools, Restricted Users, Conversation Import, Agent Identity Bridging, OKF Bundle Generator, OKF Bundle Management, Vector Store Responses API
+## 🆕 September 2026 — v1.1.71: Rate-Limit Unlock, September Model Catalog, Content Graph 1.0.4, Wave E2 Queue Layer
+
+### New and updated documents (September 5, 2026, v1.1.71)
+
+- **[docs/project/plans/v1.1.71-docs-catch-up.md](project/plans/v1.1.71-docs-catch-up.md)** ⭐ **NEW** — v1.1.71 docs & release catch-up plan (PRs #6314–#6328, full PR-description review + housekeeping). (September 5, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.71 highlights + latest updates (rate-limit unlock, model catalog, Content Graph ecosystem, 54 skills). (September 5, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.71] section with PR-level detail. (September 5, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.71 + changelog entry. (September 5, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.71 entry. (September 5, 2026)
+
+## 🆕 September 2026 — v1.1.70: exec-Disabled Host Hardening + Fifth PHPUnit Repair Wave
+
+### New and updated documents (September 5, 2026, v1.1.70)
+
+- **[docs/project/plans/v1.1.70-docs-catch-up.md](project/plans/v1.1.70-docs-catch-up.md)** ⭐ **NEW** — v1.1.70 docs & release catch-up plan (PRs #6280–#6312, wave-5 review + PR-description audit). (September 5, 2026)
+- **[docs/developer/testing-docs/CI-TRIAGE-91006542428.md](../developer/testing-docs/CI-TRIAGE-91006542428.md)** ⭐ **NEW** — full triage of the 2026-09-04 CI run (memory, CPT management, PayHere, Mubert, OpenAI image, composer clusters). (September 4, 2026)
+- **[docs/developer/testing-docs/CI-TRIAGE-91771001271.md](../developer/testing-docs/CI-TRIAGE-91771001271.md)** ⭐ **NEW** — full triage of the 2026-09-04 CI run (clusters K1–K16 + fix order). (September 4, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.70 highlights + latest updates (exec hardening, wave-5 fixes, fifth repair wave). (September 5, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.70] section with PR-level detail. (September 5, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.70 + changelog entry. (September 5, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.70 entry. (September 5, 2026)
+
+## 🆕 September 2026 — v1.1.69: Vision Analysis Toolkit, tagDiv Admin Compat, DeepSeek Schema Fix, ZipSlip Guard Revival
+
+### New and updated documents (September 4, 2026, v1.1.69)
+
+- **[docs/project/plans/v1.1.69-docs-catch-up.md](project/plans/v1.1.69-docs-catch-up.md)** ⭐ **NEW** — v1.1.69 docs & release catch-up plan (PRs #6260–#6278). (September 4, 2026)
+- **[docs/proposals/vision-analysis-object-counting-tool.md](../proposals/vision-analysis-object-counting-tool.md)** ⭐ **NEW** — Vision Analysis object-counting toolkit research & design (PR #6267; LocateAnything licensing analysis deferred to Phase 3 as BYO endpoint). (September 4, 2026)
+- **[docs/toolkits/vision-analysis-toolkit.md](toolkits/vision-analysis-toolkit.md)** ⭐ **NEW** — Vision Analysis toolkit user docs (enable flow, `analyze_image_objects` inputs/modes, annotation, settings). (September 4, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.69 highlights + latest updates (vision toolkit, tagDiv compat, DeepSeek schema fix, ZipSlip revival, fourth repair wave). (September 4, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.69] section with PR-level detail. (September 4, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.69 + changelog entry. (September 4, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.69 entry. (September 4, 2026)
+
+## 🆕 September 2026 — v1.1.68: Pro SPA v2 Shortcode, Hermes Dashboard Fleet Extensions, Stale-Nonce Self-Heal, Docs Hub 0.4.2, Provider Enable Defaults
+
+### New and updated documents (September 3, 2026, v1.1.68)
+
+- **[docs/project/plans/v1.1.68-docs-catch-up.md](project/plans/v1.1.68-docs-catch-up.md)** ⭐ **NEW** — v1.1.68 docs & release catch-up plan (PRs #6223–#6258). (September 3, 2026)
+- **[docs/project/proposals/033-pro-spa-v2-shortcode-proposal.md](project/proposals/033-pro-spa-v2-shortcode-proposal.md)** ⭐ **NEW** — Pro SPA v2 front-end shortcode + embedded mode proposal/implementation plan (PR #6256). (September 3, 2026)
+- **[docs/developer/integration/hermes-dashboard-extensions-plan.md](developer/integration/hermes-dashboard-extensions-plan.md)** + **[docs/developer/integration/hermes-dashboard-extensions-implementation-plan.md](developer/integration/hermes-dashboard-extensions-implementation-plan.md)** ⭐ **NEW** — Hermes WebUI dashboard extensions plan + implementation plan (PR #6249). (September 3, 2026)
+- **[extensions/README.md](../extensions/README.md)** ⭐ **NEW** — Hermes WebUI extension tree overview (fleet control plane, backup-download, external-app-tab, mcp-tool-shortcuts). (September 3, 2026)
+- **[docs/reference/api/rest-api.md](reference/api/rest-api.md)** ⭐ **UPDATED** — `/mcp-ai/v1/session/nonce` endpoint (PR #6225). (September 3, 2026)
+- **[addons/docs-hub/CHANGELOG.md](../addons/docs-hub/CHANGELOG.md)** ⭐ **UPDATED** — 0.4.2 link/anchor/fixer fixes (PRs #6246/#6253). (September 3, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.68 highlights + latest updates (SPA shortcode, fleet extensions, nonce self-heal, Docs Hub 0.4.2, provider defaults). (September 3, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.68] section with PR-level detail. (September 3, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.68 + changelog entry. (September 3, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.68 entry. (September 3, 2026)
+
+## 🆕 September 2026 — v1.1.67: Content Graph AI Platform v2.0.0 Standalone, Ecosystem Port Wave D + D-UI, Google Workspace Gmail & Drive Read Tools, PHPUnit Repair Campaign Continuation
+
+### New and updated documents (September 2, 2026, v1.1.67)
+
+- **[docs/project/plans/v1.1.67-docs-catch-up.md](project/plans/v1.1.67-docs-catch-up.md)** ⭐ **NEW** — v1.1.67 docs & release catch-up plan (PRs #6114–#6208, incl. #6123, #6142). (September 2, 2026)
+- **[docs/project/plans/content-graph-platform-extraction-plan.md](project/plans/content-graph-platform-extraction-plan.md)** ⭐ **NEW** — Content Graph platform extraction completion plan (Waves A–C + Blueprints; supersedes MIGRATION-GAPS). (September 1, 2026)
+- **[docs/project/ecosystem-port-tracker.md](project/ecosystem-port-tracker.md)** ⭐ **NEW** — living tracker for the additive Base+Pro → Content Graph ecosystem port (Wave D + D-UI). (September 2, 2026)
+- **[docs/project/plans/base-pro-ecosystem-port-plan.md](project/plans/base-pro-ecosystem-port-plan.md)** + **[docs/project/proposals/base-pro-ecosystem-port-gap-analysis.md](project/proposals/base-pro-ecosystem-port-gap-analysis.md)** ⭐ **NEW** — ecosystem port plan + gap analysis. (September 2, 2026)
+- **[plugins/nvoos-content-graph-ai-platform/README.md](../plugins/nvoos-content-graph-ai-platform/README.md)** + **[plugins/nvoos-content-graph-ai-platform/MIGRATION-GAPS.md](../plugins/nvoos-content-graph-ai-platform/MIGRATION-GAPS.md)** ⭐ **UPDATED** — platform addon v2.0.0 surface + extraction gaps. (September 1, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.67 entry. (September 2, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.67 highlights + latest updates (platform extraction, ecosystem port, Gmail/Drive tools). (September 2, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.67] section with PR-level detail. (September 2, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.67 + changelog entry. (September 2, 2026)
+
+## 🆕 August 2026 — v1.1.55–v1.1.66: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.2.0, Connection Pooling, Updater Rework, OOS Consolidation, Composio, Worker Crawling, Research Tools, Restricted Users, Conversation Import, Agent Identity Bridging, OKF Bundle Generator, OKF Bundle Management, Vector Store Responses API, Artifact Evolution, Chat Web Workers, Addons Installer, Google Calendar Connection, Composio Account Health, Log Hygiene & Non-Loggable Fields, Vision Timeouts, Full-Crawl4AI Proxy, Reasoning-Model Fixes, Security-Posture Closure, Chat/REST Hardening, PHPUnit Suite Repair Campaign, Test-Suite Repair Skill, Checkout API & Content Graph Paid Checkout
+
+### New and updated documents (August 31, 2026, v1.1.66)
+
+- **[docs/project/plans/v1.1.66-docs-catch-up.md](project/plans/v1.1.66-docs-catch-up.md)** ⭐ **NEW** — v1.1.66 docs & release catch-up plan (PRs #6008, #6009, #6011–#6108, incl. #6063). (August 31, 2026)
+- **[.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md](../.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md)** ⭐ **NEW** — PHPUnit test-suite repair & triage skill: Docker commands, CI-log triage, 16 recurring root-cause patterns, cluster-by-cluster PR workflow. (August 31, 2026)
+- **[docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md](developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md)** ⭐ **NEW** — standing tracker for the remaining PHPUnit suite fixes. (August 31, 2026)
+- **[addons/checkout-api/README.md](../addons/checkout-api/README.md)** + **[addons/checkout-api/CHANGELOG.md](../addons/checkout-api/CHANGELOG.md)** ⭐ **NEW** — Checkout API addon v0.1.0 (vendor-side Stripe checkout/licensing service). (August 31, 2026)
+- **[plugins/nvoos-content-graph/docs/commerce-vendor-api.md](../plugins/nvoos-content-graph/docs/commerce-vendor-api.md)** ⭐ **NEW** — vendor-API contract for the Content Graph paid-checkout client. (August 31, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.66 entry. (August 31, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.66 highlights + latest updates (suite repair campaign, new skill, Content Graph AI 1.0.3, Checkout API). (August 31, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.66] section with PR-level detail. (August 31, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.66 + changelog entry. (August 31, 2026)
+- **[docs/project/ADDON_INVENTORY.md](project/ADDON_INVENTORY.md)** ⭐ **UPDATED** — Checkout API addon row (addon count 27). (August 31, 2026)
+
+### New and updated documents (August 28, 2026, v1.1.65)
+
+- **[docs/project/plans/v1.1.65-docs-catch-up.md](project/plans/v1.1.65-docs-catch-up.md)** ⭐ **NEW** — v1.1.65 docs & release catch-up plan (PRs #5979–#6006). (August 28, 2026)
+- **[docs/operations/security/SECURITY_POSTURE.md](operations/security/SECURITY_POSTURE.md)** ⭐ **UPDATED** — F-AUTHZ-01 / F-AI-01 / F-CMP-04 closed or accepted-with-rationale (in-commit, PR #5981). (August 26, 2026)
+- **[docs/project/proposals/031-media-worker-crawl4ai-integration-plan.md](project/proposals/031-media-worker-crawl4ai-integration-plan.md)** ⭐ **UPDATED** — Phase 3 (full-Crawl4AI proxy) implemented; worker-version note reconciled to v3.2.0. (August 28, 2026)
+- **[docs/project/proposals/028-media-worker-phase3-proposal.md](project/proposals/028-media-worker-phase3-proposal.md)** ⭐ **UPDATED** — Q5 TEMP_ROOT allowlist shipped; default flip deferred to worker 4.0.0. (August 26, 2026)
+- **[docs/reference/tools/tool-reference.md](reference/tools/tool-reference.md)** ⭐ **UPDATED** — header reconciled for v1.1.65 (counts unchanged). (August 28, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.65 highlights + latest updates (reasoning-model fixes, full-crawl proxy, security-posture closure, chat/REST hardening). (August 28, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.65] section with PR-level detail. (August 28, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.65 + changelog entry. (August 28, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.65 entry. (August 28, 2026)
+
+### New and updated documents (August 26, 2026, v1.1.64)
+
+- **[docs/developer/architecture/integrations/google-calendar-connection.md](developer/architecture/integrations/google-calendar-connection.md)** ⭐ **NEW** — Google Calendar connection architecture: the shared `includes/google/` foundation (OAuth service, Calendar v3 client, scope registry, credential resolver, sync + push), both connection surfaces, and the six new Pro google-workspace tools. (August 26, 2026)
+- **[docs/reference/google-calendar-api-v3.md](reference/google-calendar-api-v3.md)** ⭐ **NEW** — Google Calendar API v3 reference for the reworked calendar tool surface. (August 26, 2026)
+- **[docs/developer/implementation-plan-google-calendar-connection.md](developer/implementation-plan-google-calendar-connection.md)** ⭐ **NEW** — task-level implementation plan for the Google Calendar connection. (August 26, 2026)
+- **[docs/reference/tools/tool-reference.md](reference/tools/tool-reference.md)** ⭐ **UPDATED** — Google Calendar tool entries + reference header reconciled for v1.1.64. (August 26, 2026)
+- **[docs/project/plans/v1.1.64-docs-catch-up.md](project/plans/v1.1.64-docs-catch-up.md)** ⭐ **NEW** — v1.1.64 docs & release catch-up plan. (August 26, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.64 highlights + latest updates (Google Calendar connection, Composio account health, log hygiene, non-loggable fields, vision timeouts). (August 26, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.64] section with PR-level detail. (August 26, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.64 + changelog entry. (August 26, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.64 entry. (August 26, 2026)
+
+### New and updated documents (August 23, 2026, v1.1.63)
+
+- **[docs/project/proposals/007-artifact-evolution.md](project/proposals/007-artifact-evolution.md)** ⭐ **NEW** — Darwinian artifact evolution proposal (Phases A–G) for skills, prompts & roles: populations, admission gating, shadow A/B deployment, governance. (August 23, 2026)
+- **[docs/project/proposals/007-artifact-evolution-implementation-plan.md](project/proposals/007-artifact-evolution-implementation-plan.md)** ⭐ **NEW** — task-level implementation plan for the artifact evolution phases. (August 23, 2026)
+- **[docs/project/proposals/032-chat-web-workers-wiring-implementation-plan.md](project/proposals/032-chat-web-workers-wiring-implementation-plan.md)** ⭐ **NEW** — chat storage worker offload plan (with addons/embedded impact assessment). (August 23, 2026)
+- **[docs/operations/compliance/EU_AI_ACT_2026.md](operations/compliance/EU_AI_ACT_2026.md)** ⭐ **UPDATED** — new self-evolution governance section mapping the artifact evolution loop to Articles 14/15/72. (August 23, 2026)
+- **[docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md](developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md)** ⭐ **NEW** — post-sweep remediation plan for the single-process PHPUnit suite. (August 23, 2026)
+- **[docs/reference/tools/tool-reference.md](reference/tools/tool-reference.md)** ⭐ **UPDATED** — reference header reconciled for v1.1.63. (August 23, 2026)
+- **[docs/project/plans/v1.1.63-docs-catch-up.md](project/plans/v1.1.63-docs-catch-up.md)** ⭐ **NEW** — v1.1.63 docs & release catch-up plan. (August 23, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.63 highlights + latest updates (artifact evolution, Pro addons page, storage worker, DeepSeek fix, test-suite exit traps). (August 23, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.63] section with PR-level detail. (August 23, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.63 + changelog entry. (August 23, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.63 entry. (August 23, 2026)
 
 ### New and updated documents (August 22, 2026, v1.1.62)
 

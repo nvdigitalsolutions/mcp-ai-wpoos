@@ -173,16 +173,40 @@ class Test_Security_Center extends WP_UnitTestCase {
 	 * invalidate_cache() causes a recompute on the next call.
 	 */
 	public function test_invalidate_cache_forces_recompute() {
+		// Seed a hardened configuration so the baseline score is meaningfully
+		// higher than the wiped state, independent of options left behind by
+		// other suites.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'require_authentication_all'       => true,
+				'root_security_key'                => str_repeat( 'x', 32 ),
+				'enable_rate_limiting'             => true,
+				'enable_security_audit_log'        => true,
+				'enable_security_headers'          => true,
+				'csp_frame_ancestors'              => 'none',
+				'enable_prompt_injection_detector' => true,
+				'enable_pii_filter'                => true,
+				'require_https'                    => true,
+				'minimum_capability'               => 'manage_options',
+				'api_error_verbosity'              => 'safe',
+				'enable_auth_rate_limiting'        => true,
+				'allow_guest_access'               => false,
+			)
+		);
+
 		$posture     = new WP_MCP_AI_Security_Posture();
 		$first_score = $posture->get_report( true )['score'];
 
+		// Wipe the controls. The posture caches its settings per instance,
+		// so recompute through a fresh instance after invalidating.
 		update_option( 'wp_mcp_ai_settings', array() );
 
 		$posture->invalidate_cache();
 
-		$fresh_score = $posture->get_report( false )['score'];
+		$fresh_score = ( new WP_MCP_AI_Security_Posture() )->get_report( false )['score'];
 
-		// Fewer controls active → score should be lower than with base_settings.
+		// Fewer controls active → score should be lower than the hardened baseline.
 		$this->assertLessThan( $first_score, $fresh_score );
 	}
 

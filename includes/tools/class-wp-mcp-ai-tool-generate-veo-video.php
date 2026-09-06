@@ -53,7 +53,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models. Automatically uses Veo 3.1 (preferred) with fallback to Veo 2.0 if quota limits are reached or the model is unavailable. Supports text-to-video and image-to-video generation with cinematic quality output. Duration: 4-8 seconds (Veo 3.1 supports 4-8 seconds, Veo 2.0 supports 5-8 seconds). Note: Veo 3.1 supports up to 1080p resolution; Veo 2.0 supports up to 720p. When 1080p is requested, duration is automatically set to 8 seconds (API requirement). Default is 720p which works with any duration. Audio generation is not currently supported. All generated videos include Google\'s SynthID watermark for AI provenance.', 'mcp-ai-wpoos' );
+		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models. Automatically uses Veo 3.1 (preferred) with fallback to Veo 2.0 if quota limits are reached or the model is unavailable. Supports text-to-video and image-to-video generation with cinematic quality output. Duration: 5-8 second videos (the 5-second minimum works with both Veo 3.1 and Veo 2.0). Note: Veo 3.1 supports up to 1080p resolution; Veo 2.0 supports up to 720p. When 1080p is requested, duration is automatically set to 8 seconds (API requirement). Default is 720p which works with any duration. Audio generation is not currently supported. All generated videos include Google\'s SynthID watermark for AI provenance.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -69,8 +69,8 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'duration'                => array(
 					'type'        => 'integer',
-					'description' => __( 'Video duration in seconds (4-8). Default is 5 seconds. Veo 3.1 supports 4-8 seconds, Veo 2.0 supports 5-8 seconds. Note: If 1080p resolution is requested, duration will be automatically set to 8 seconds (API requirement).', 'mcp-ai-wpoos' ),
-					'minimum'     => 4,
+					'description' => __( 'Video duration in seconds (5-8). Default is 5 seconds. The 5-second minimum works with both Veo 3.1 and Veo 2.0. Note: If 1080p resolution is requested, duration will be automatically set to 8 seconds (API requirement).', 'mcp-ai-wpoos' ),
+					'minimum'     => 5,
 					'maximum'     => 8,
 					'default'     => 5,
 				),

@@ -379,7 +379,7 @@ class WP_MCP_AI_Profession_CPT {
 				'type'              => 'integer',
 				'description'       => __( 'Associated assistant ID for testing this profession', 'mcp-ai-wpoos' ),
 				'single'            => true,
-				'sanitize_callback' => 'absint',
+				'sanitize_callback' => array( __CLASS__, 'sanitize_associated_assistant_meta' ),
 				'auth_callback'     => '__return_true',
 				'show_in_rest'      => false,
 			)
@@ -604,8 +604,14 @@ class WP_MCP_AI_Profession_CPT {
 			return array();
 		}
 
-		// Ensure all values are positive integers (attachment IDs).
-		$sanitized = array_map( 'absint', $value );
+		// Clamp negatives to zero rather than absint(): absint( -999 ) would
+		// coerce a negative value into an unrelated positive attachment ID.
+		$sanitized = array_map(
+			static function ( $id ) {
+				return max( 0, (int) $id );
+			},
+			$value
+		);
 
 		// Remove any zero values (invalid IDs).
 		$sanitized = array_filter( $sanitized );
@@ -626,6 +632,23 @@ class WP_MCP_AI_Profession_CPT {
 		}
 
 		return sanitize_text_field( $value );
+	}
+
+	/**
+	 * Sanitize the associated assistant meta value.
+	 *
+	 * Assistant IDs are positive integers; invalid strings and negative
+	 * numbers are meaningless and are clamped to 0 ("no associated
+	 * assistant") rather than being coerced by absint() into a possibly
+	 * unrelated positive ID.
+	 *
+	 * @param mixed $value Raw associated assistant value.
+	 * @return int Sanitized assistant ID (0 or positive integer).
+	 */
+	public static function sanitize_associated_assistant_meta( $value ) {
+		// Cast rather than absint(): absint( -5 ) would coerce a negative
+		// value into an unrelated positive ID (5); negatives must clamp to 0.
+		return max( 0, (int) $value );
 	}
 
 	/**

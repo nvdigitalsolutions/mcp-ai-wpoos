@@ -27,11 +27,23 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 	private $registry;
 
 	/**
+	 * Administrator user ID used by execution tests.
+	 *
+	 * @var int
+	 */
+	private $admin_id = 0;
+
+	/**
 	 * Set up test environment.
 	 */
 	public function setUp(): void {
 		parent::setUp();
 		$this->registry = WP_MCP_AI_Tool_Registry::get_instance();
+
+		// Both tools gate on a logged-in user with the 'read' capability, and
+		// user_can( 0, ... ) is always false, so give the suite a real user.
+		$this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $this->admin_id );
 	}
 
 	/**
@@ -48,6 +60,7 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 			)
 		);
 
+		wp_set_current_user( 0 );
 		parent::tearDown();
 	}
 
@@ -133,12 +146,19 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 		$this->assertSame( 'nvoos-pro-spa-memory-drawer', $result['original_agent_id'], 'The caller key should be echoed back' );
 
 		// The alias must be persisted so future stores resolve without context.
-		$this->assertSame( 953, WP_MCP_AI_Agent_Identity_Resolver::get_canonical( 'nvoos-pro-spa-memory-drawer' ) );
+		// The resolver stores canonical IDs as strings; the store response uses int.
+		$this->assertSame( '953', WP_MCP_AI_Agent_Identity_Resolver::get_canonical( 'nvoos-pro-spa-memory-drawer' ) );
 
 		// And the record must be retrievable under the canonical ID — the
 		// exact bucket the chat-memory drawer recalls from.
 		$retrieve = $this->registry->get_tool( 'retrieve_agent_memory' );
-		$recall   = $retrieve->execute( array( 'agent_id' => 953, 'limit' => 10 ), array() );
+		$recall   = $retrieve->execute(
+			array(
+				'agent_id' => 953,
+				'limit'    => 10,
+			),
+			array()
+		);
 
 		$this->assertTrue( $recall['success'] );
 		$this->assertNotEmpty( $recall['contexts'], 'The stored record should appear in the canonical bucket' );
@@ -162,7 +182,8 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 			),
 			array()
 		);
-		$this->assertFalse( $result['success'], 'Should fail without agent_id' );
+		$this->assertWPError( $result );
+		$this->assertSame( 'store_agent_context_missing_agent_id', $result->get_error_code(), 'Should fail without agent_id' );
 
 		// Missing context_type.
 		$result = $tool->execute(
@@ -175,7 +196,8 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 			),
 			array()
 		);
-		$this->assertFalse( $result['success'], 'Should fail without context_type' );
+		$this->assertWPError( $result );
+		$this->assertSame( 'store_agent_context_missing_context_type', $result->get_error_code(), 'Should fail without context_type' );
 
 		// Missing context_data title.
 		$result = $tool->execute(
@@ -188,7 +210,8 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 			),
 			array()
 		);
-		$this->assertFalse( $result['success'], 'Should fail without context title' );
+		$this->assertWPError( $result );
+		$this->assertSame( 'store_agent_context_missing_title_content', $result->get_error_code(), 'Should fail without context title' );
 	}
 
 	/**
@@ -359,8 +382,15 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 		$this->assertTrue( $store_result['success'], 'Store should succeed' );
 		$context_id = $store_result['context_id'];
 
-		// Wait for expiration.
-		sleep( 2 );
+		// The store tool clamps TTL to a 1-hour minimum, so a short TTL cannot
+		// be used to force expiry. Backdate the stored record instead so the
+		// expiry check is deterministic and does not depend on real time.
+		$agent_id       = 111;
+		$transient_key  = 'mcp_ai_ctx_' . md5( $agent_id . '_' . $context_id );
+		$context_record = get_transient( $transient_key );
+		$this->assertIsArray( $context_record, 'Stored record should exist before backdating' );
+		$context_record['expires_at'] = gmdate( 'Y-m-d H:i:s', time() - 10 );
+		set_transient( $transient_key, $context_record, HOUR_IN_SECONDS );
 
 		// Try to retrieve - should fail.
 		$retrieve_tool = $this->registry->get_tool( 'retrieve_agent_memory' );
@@ -372,7 +402,8 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 			array()
 		);
 
-		$this->assertFalse( $result['success'], 'Should not retrieve expired context' );
+		$this->assertWPError( $result, 'Should not retrieve expired context' );
+		$this->assertSame( 'wp_mcp_ai_error', $result->get_error_code() );
 	}
 
 	/**
@@ -389,7 +420,9 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 		$flags = $tool->get_capability_flags();
 
 		$this->assertIsArray( $flags, 'Capability flags should be an array' );
-		$this->assertContains( 'local-only', $flags, 'Tool should be local-only' );
+		$this->assertContains( 'write', $flags, 'Tool should be flagged as write' );
+		$this->assertContains( 'state-changing', $flags, 'Tool should be flagged as state-changing' );
+		$this->assertContains( 'external-api', $flags, 'Tool may fetch external URLs' );
 		$this->assertNotContains( 'read-only', $flags, 'Tool should not be read-only (writes data)' );
 		$this->assertContains( 'requires-capability', $flags, 'Tool should require capability' );
 	}
@@ -420,12 +453,14 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 	public function test_agent_memory_tools_in_presets() {
 		$presets = WP_MCP_AI_Tool_Presets_Helper::get_all_presets();
 
-		// Check agentic_workflow preset includes new tools.
+		// Check agentic_workflow preset includes the memory-management tools.
 		$this->assertArrayHasKey( 'agentic_workflow', $presets, 'Agentic workflow preset should exist' );
 		$agentic_tools = $presets['agentic_workflow']['tools'];
 
-		$this->assertContains( 'store_agent_context', $agentic_tools, 'Preset should include store_agent_context' );
-		$this->assertContains( 'retrieve_agent_memory', $agentic_tools, 'Preset should include retrieve_agent_memory' );
+		$this->assertContains( 'mine_agent_memory', $agentic_tools, 'Preset should include mine_agent_memory' );
+		$this->assertContains( 'manage_context_lifecycle', $agentic_tools, 'Preset should include manage_context_lifecycle' );
+		$this->assertContains( 'prioritize_context', $agentic_tools, 'Preset should include prioritize_context' );
+		$this->assertContains( 'memory_audit_trail', $agentic_tools, 'Preset should include memory_audit_trail' );
 	}
 
 	/**
@@ -702,16 +737,18 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 		$manager = wp_mcp_ai_get_agent_context_manager();
 
 		// Store context.
-		$result           = $manager->store_context(
-			$agent_id     = 888,
-			$context_type = 'learning',
-			$context_data = array(
-				'title'      => 'Test Learning via Service',
-				'content'    => 'This is stored via the context manager service',
-				'importance' => 'high',
-				'tags'       => array( 'test', 'service' ),
-			),
-			$ttl          = 3600
+		$agent_id     = 888;
+		$context_type = 'learning';
+		$context_data = array(
+			'title'      => 'Test Learning via Service',
+			'content'    => 'This is stored via the context manager service',
+			'importance' => 'high',
+		);
+		$result = $manager->store_context(
+			$agent_id,
+			$context_type,
+			$context_data,
+			3600
 		);
 
 		$this->assertTrue( $result['success'], 'Store via service should succeed' );

@@ -178,7 +178,7 @@ class Test_Profession_Dataset_Mappings extends WP_UnitTestCase {
 		$this->assertCount( 2, $sanitized );
 
 		// Check XSS was sanitized.
-		$this->assertNotContains( '<script>', $sanitized[1]['dataset'] );
+		$this->assertStringNotContainsString( '<script>', $sanitized[1]['dataset'] );
 	}
 
 	/**

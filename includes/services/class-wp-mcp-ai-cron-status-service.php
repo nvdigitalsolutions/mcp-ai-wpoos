@@ -441,12 +441,16 @@ class WP_MCP_AI_Cron_Status_Service {
 		$status     = isset( $job['status'] ) ? $job['status'] : 'unknown';
 		$created_by = isset( $job['created_by'] ) ? absint( $job['created_by'] ) : 0;
 
+		// Collectors may tag a record with an explicit job type (e.g.
+		// 'video_generation'); default to 'async_tool' when absent.
+		$type = isset( $job['type'] ) ? sanitize_key( (string) $job['type'] ) : 'async_tool';
+
 		$job_data = array(
 			'job_id'     => $job_id,
 			'hook'       => 'wp_mcp_ai_async_tool_execution',
 			'tool_slug'  => $tool_slug,
 			'status'     => $status,
-			'type'       => 'async_tool',
+			'type'       => $type,
 			'created_by' => $created_by,
 			'admin_url'  => $this->get_admin_url( $job_id ),
 		);
@@ -462,13 +466,18 @@ class WP_MCP_AI_Cron_Status_Service {
 				'timestamp' => $job['started_at'],
 				'relative'  => $this->format_relative_time( $job['started_at'], true ),
 			);
-		} elseif ( 'completed' === $status && isset( $job['completed_at'] ) ) {
-			$job_data['completed_at'] = array(
-				'timestamp' => $job['completed_at'],
-				'relative'  => $this->format_relative_time( $job['completed_at'], true ),
-			);
+		} elseif ( 'completed' === $status ) {
+			if ( isset( $job['completed_at'] ) ) {
+				$job_data['completed_at'] = array(
+					'timestamp' => $job['completed_at'],
+					'relative'  => $this->format_relative_time( $job['completed_at'], true ),
+				);
+			}
 
-			// Include full result data for agentic workflow.
+			// Include full result data for agentic workflow. Some collectors
+			// (e.g. video generation) store completed jobs without a
+			// completed_at timestamp, so result inclusion must not depend
+			// on that field being present.
 			if ( isset( $job['result'] ) ) {
 				$job_data['has_result'] = true;
 				$job_data['result']     = $job['result'];
@@ -744,6 +753,14 @@ class WP_MCP_AI_Cron_Status_Service {
 				$record = $this->normalize_source_record( $raw, $slug );
 				if ( null === $record ) {
 					continue;
+				}
+
+				// Sources are contractually scoped to the requesting user.
+				// When a record omits created_by, attribute it to the
+				// requesting user so the summary's user filter doesn't
+				// drop it for non-admin requests.
+				if ( 0 === (int) $record['created_by'] && $user_id > 0 ) {
+					$record['created_by'] = (int) $user_id;
 				}
 
 				// Assistant-scope filtering: drop records that don't match when scope is set.

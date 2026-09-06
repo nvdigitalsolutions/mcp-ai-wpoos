@@ -87,6 +87,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_toggle_tool', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reseed_professions', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reseed_teams', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_seed_task_templates', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_seed_orchestration', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_migrate_gemini_costs', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_regenerate_playbook', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -96,6 +97,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_get_models_for_provider', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_clear_test_files', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_clear_dev_files', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_maintain_log_buffers', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_save_model_config', array( $this->ajax_handlers, 'handle_save_model_config' ) );
 		}
 
@@ -353,8 +355,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				} elseif ( is_float( $value ) ) {
 					$sanitized[ $key ] = (float) $value;
 				} elseif ( is_string( $value ) ) {
-					// Use esc_url_raw for values that look like URLs.
-					if ( preg_match( '/^https?:\/\//i', $value ) ) {
+					// Use esc_url_raw only for single-URL values. Multi-token strings
+					// that merely start with a URL (e.g. space-delimited OAuth scope
+					// lists) must keep their separators intact — esc_url_raw() would
+					// encode every space as %20 and corrupt the value.
+					if ( preg_match( '/^https?:\/\/[^\s]+$/i', trim( $value ) ) ) {
 						$sanitized[ $key ] = esc_url_raw( $value );
 					} elseif ( $this->is_secret_field( $key ) ) {
 						// Secret fields: trim whitespace only; do not strip
@@ -608,9 +613,16 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// back to the persistent object cache (Redis/Memcached) while we're
 				// performing the read-merge-write cycle. This eliminates the most
 				// common source of intermittent key wipes in production.
-				$was_cache_suspended = function_exists( 'wp_suspend_cache_addition' )
-					? wp_suspend_cache_addition( true )
-					: false;
+				// Capture the previous suspension state first: wp_suspend_cache_addition()
+				// returns the *new* state, so passing true directly would make the
+				// restore step below re-suspend instead of resuming (WP 7.1's
+				// WP_Object_Cache::add() returns false while suspended, which would
+				// silently jam cooperative tick locks for the rest of the request).
+				$was_cache_suspended = false;
+				if ( function_exists( 'wp_suspend_cache_addition' ) ) {
+					$was_cache_suspended = wp_suspend_cache_addition();
+					wp_suspend_cache_addition( true );
+				}
 
 				// Step 2: Clear ALL caches before reading existing settings.
 				// This prevents race conditions and ensures we have the latest database values.
@@ -749,14 +761,19 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// account bindings via its fallback that reuses old refresh tokens.
 				$oauth_credential_token_map = array(
 					// Gmail.
-					'gmail_client_id'            => array( 'gmail_refresh_token', 'gmail_user_email' ),
-					'gmail_client_secret'        => array( 'gmail_refresh_token', 'gmail_user_email' ),
+					'gmail_client_id'               => array( 'gmail_refresh_token', 'gmail_user_email' ),
+					'gmail_client_secret'           => array( 'gmail_refresh_token', 'gmail_user_email' ),
 					// Google Drive.
-					'google_drive_client_id'     => array( 'google_drive_refresh_token', 'google_drive_user_email' ),
-					'google_drive_client_secret' => array( 'google_drive_refresh_token', 'google_drive_user_email' ),
+					'google_drive_client_id'        => array( 'google_drive_refresh_token', 'google_drive_user_email' ),
+					'google_drive_client_secret'    => array( 'google_drive_refresh_token', 'google_drive_user_email' ),
+					// Google Calendar. The scope profile is included because changing it
+					// changes the requested scope set, which invalidates the existing grant.
+					'google_calendar_client_id'     => array( 'google_calendar_refresh_token', 'google_calendar_user_email', 'google_calendar_granted_scopes' ),
+					'google_calendar_client_secret' => array( 'google_calendar_refresh_token', 'google_calendar_user_email', 'google_calendar_granted_scopes' ),
+					'google_calendar_scope_profile' => array( 'google_calendar_refresh_token', 'google_calendar_user_email', 'google_calendar_granted_scopes' ),
 					// Meta.
-					'meta_app_id'                => array( 'meta_access_token', 'meta_connected_user_name', 'meta_connected_user_id' ),
-					'meta_app_secret'            => array( 'meta_access_token', 'meta_connected_user_name', 'meta_connected_user_id' ),
+					'meta_app_id'                   => array( 'meta_access_token', 'meta_connected_user_name', 'meta_connected_user_id' ),
+					'meta_app_secret'               => array( 'meta_access_token', 'meta_connected_user_name', 'meta_connected_user_id' ),
 				);
 
 				foreach ( $oauth_credential_token_map as $credential_key => $token_keys ) {
@@ -996,7 +1013,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					// STEP 7: Restore Cache and Final Invalidation
 					// ========================================================================
 					// Restore the previous cache addition state.
-					if ( function_exists( 'wp_suspend_cache_addition' ) && false !== $was_cache_suspended ) {
+					if ( function_exists( 'wp_suspend_cache_addition' ) ) {
 						wp_suspend_cache_addition( $was_cache_suspended );
 					}
 
@@ -1117,13 +1134,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				$redirect_url = admin_url( 'options-general.php' );
 			}
 
-			wp_safe_redirect(
+			if ( wp_safe_redirect(
 				add_query_arg(
 					$redirect_args,
 					$redirect_url
 				)
-			);
-			exit;
+			) ) {
+				exit;
+			}
 		}
 
 		/**
@@ -1685,6 +1703,13 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Output JSON for file download. JSON is already safely encoded via wp_json_encode().
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON output for file download, already encoded with wp_json_encode().
 			echo $json;
+
+			// Under PHPUnit the AJAX harness captures the buffered output when
+			// the handler returns; a bare exit would kill the process.
+			if ( defined( 'WP_MCP_AI_TESTS_RUNNING' ) && WP_MCP_AI_TESTS_RUNNING ) {
+				return;
+			}
+
 			exit;
 		}
 

@@ -11,14 +11,14 @@
 /**
  * Test case for Performance Section AJAX configuration
  */
-class Test_Performance_Section_AJAX extends WP_UnitTestCase {
+class Test_Performance_Section_AJAX extends WP_Ajax_UnitTestCase {
 
 	/**
 	 * Test that AJAX handler for running performance tests is registered
 	 */
 	public function test_ajax_run_performance_test_registered() {
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Create an instance of the section.
 		$section = new WP_MCP_AI_Section_Performance();
@@ -35,7 +35,7 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 	 */
 	public function test_ajax_get_metrics_registered() {
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Create an instance of the section.
 		$section = new WP_MCP_AI_Section_Performance();
@@ -52,7 +52,7 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 	 */
 	public function test_ajax_export_results_registered() {
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Create an instance of the section.
 		$section = new WP_MCP_AI_Section_Performance();
@@ -71,16 +71,24 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 		global $wp_scripts;
 
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+
+		// Set up an admin context BEFORE construction: the section only
+		// registers its enqueue hook when is_admin() is true.
+		set_current_screen( 'toplevel_page_wp-mcp-ai-dashboard' );
+
+		// The enqueue gate requires the advanced tab.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
+		$_GET['tab'] = 'advanced';
 
 		// Create an instance and enqueue assets.
 		$section = new WP_MCP_AI_Section_Performance();
 
-		// Set up an admin context.
-		set_current_screen( 'toplevel_page_wp-mcp-ai' );
-
 		// Trigger the enqueue.
-		do_action( 'admin_enqueue_scripts', 'toplevel_page_wp-mcp-ai' );
+		do_action( 'admin_enqueue_scripts', 'toplevel_page_wp-mcp-ai-dashboard' );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Cleanup of test-only query parameter.
+		unset( $_GET['tab'] );
 
 		// Check if script is enqueued.
 		$this->assertTrue(
@@ -131,7 +139,7 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 	 */
 	public function test_ajax_run_test_requires_nonce() {
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Create an instance.
 		$section = new WP_MCP_AI_Section_Performance();
@@ -146,7 +154,11 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['test_type'] = 'stress';
 
-		// Expect this to die with nonce error.
+		// Expect this to terminate with a wp_die after the handler emitted
+		// its JSON error payload (WPAjaxDieContinueException under wp-phpunit).
+		// A sacrificial output buffer absorbs the handler's double-wp_die so
+		// PHPUnit's own buffer is never consumed.
+		ob_start();
 		$this->expectException( 'WPAjaxDieContinueException' );
 
 		$this->_handleAjax( 'wp_mcp_ai_run_performance_test' );
@@ -157,7 +169,7 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 	 */
 	public function test_ajax_run_test_requires_capability() {
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Create an instance.
 		$section = new WP_MCP_AI_Section_Performance();
@@ -174,11 +186,13 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_performance' );
 
-		// Capture the AJAX response.
+		// Capture the AJAX response. A sacrificial output buffer absorbs the
+		// handler's double-wp_die so PHPUnit's own buffer is never consumed.
+		ob_start();
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_run_performance_test' );
-		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-			// Intentionally empty - error handled elsewhere.
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Output captured in _last_response.
+			// Intentionally empty - response read from _last_response.
 		}
 
 		// Get the JSON response.
@@ -200,7 +214,7 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 	 */
 	public function test_command_exists_handles_disabled_exec() {
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Create an instance.
 		$section = new WP_MCP_AI_Section_Performance();
@@ -231,7 +245,7 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 	 */
 	public function test_run_test_programmatically_handles_disabled_exec() {
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Create an instance.
 		$section = new WP_MCP_AI_Section_Performance();
@@ -257,14 +271,14 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 		// Verify the error structure that would be returned when exec() is disabled.
 		// We can't actually test this without disabling exec(), but we can verify.
 		// the code structure is correct by checking the method has the check.
-		$source = file_get_contents( WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php' );
+		$source = file_get_contents( WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php' );
 		$this->assertStringContainsString(
 			'function_exists( \'exec\' )',
 			$source,
 			'Performance section should check for exec() availability'
 		);
 		$this->assertStringContainsString(
-			'Shell execution is disabled',
+			'shell access which is disabled',
 			$source,
 			'Performance section should have error message for disabled exec()'
 		);

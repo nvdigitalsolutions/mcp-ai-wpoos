@@ -25,16 +25,17 @@ class Test_Platform_Integration extends \WP_UnitTestCase {
 
 	public function test_all_subsystem_services_exist(): void {
 		$services = array(
-			'Agents'           => 'NvoosContentGraphAiPlatform\Agents\Agents',
-			'Skills'           => 'NvoosContentGraphAiPlatform\Skills\SkillService',
-			'SlashCommands'    => 'NvoosContentGraphAiPlatform\SlashCommands\SlashCommandService',
-			'Harness'          => 'NvoosContentGraphAiPlatform\Harness\HarnessService',
-			'Measurement'      => 'NvoosContentGraphAiPlatform\Measurement\MeasurementService',
-			'Professions'      => 'NvoosContentGraphAiPlatform\Professions\ProfessionService',
-			'A2A'              => 'NvoosContentGraphAiPlatform\A2A\A2AService',
-			'ACP'              => 'NvoosContentGraphAiPlatform\ACP\ACPService',
-			'Federation'       => 'NvoosContentGraphAiPlatform\Federation\FederationService',
-			'Blueprints'       => 'NvoosContentGraphAiPlatform\Blueprints\BlueprintService',
+			'Agents'        => 'NvoosContentGraphAiPlatform\Agents\Agents',
+			'Skills'        => 'NvoosContentGraphAiPlatform\Skills\SkillService',
+			'SlashCommands' => 'NvoosContentGraphAiPlatform\SlashCommands\SlashCommandService',
+			'Harness'       => 'NvoosContentGraphAiPlatform\Harness\HarnessService',
+			'Measurement'   => 'NvoosContentGraphAiPlatform\Measurement\MeasurementService',
+			'Professions'   => 'NvoosContentGraphAiPlatform\Professions\ProfessionService',
+			'Teams'         => 'NvoosContentGraphAiPlatform\Teams\TeamsService',
+			'A2A'           => 'NvoosContentGraphAiPlatform\A2A\A2AService',
+			'ACP'           => 'NvoosContentGraphAiPlatform\ACP\ACPService',
+			'Federation'    => 'NvoosContentGraphAiPlatform\Federation\FederationService',
+			'Blueprints'    => 'NvoosContentGraphAiPlatform\Blueprints\BlueprintService',
 		);
 
 		foreach ( $services as $name => $class ) {

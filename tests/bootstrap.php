@@ -162,6 +162,23 @@ if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
 	define( 'WP_MCP_AI_BASE_VERSION', false );
 }
 
+// Marker consumed by production code at sites that must terminate a request
+// (SSE stream ends, admin redirects). Under PHPUnit those sites return or
+// throw instead of calling exit()/die(), which would silently kill the whole
+// phpunit process with exit code 0.
+if ( ! defined( 'WP_MCP_AI_TESTS_RUNNING' ) ) {
+	define( 'WP_MCP_AI_TESTS_RUNNING', true );
+}
+
+// Pro Dashboard is enabled by default in production (constants.php defaults
+// WP_MCP_AI_PRO_DASHBOARD_ENABLED to true). Defining it false here mirrors a
+// site that opted out, which keeps the filter-based opt-in path
+// (wp_mcp_ai_pro_dashboard_available) testable: with the constant true the
+// filter fallback in is_pro_active() is unreachable.
+if ( ! defined( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED' ) ) {
+	define( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED', false );
+}
+
 // ============================================================
 // PHPUnit 11 Compatibility: parseTestMethodAnnotations() was
 // removed in PHPUnit 10+. The wp-phpunit abstract-testcase.php
@@ -199,27 +216,347 @@ if ( ! class_exists( 'WP_MCP_AI_PHPUnit11_Compat' ) ) {
 
 $abstract_testcase = $plugin_root . '/vendor/wp-phpunit/wp-phpunit/includes/abstract-testcase.php';
 if ( file_exists( $abstract_testcase ) ) {
-	$atc = file_get_contents( $abstract_testcase );
-	$atc = str_replace(
+	$original = file_get_contents( $abstract_testcase );
+	$patched  = str_replace(
 		'\PHPUnit\Util\Test::parseTestMethodAnnotations',
 		'\WP_MCP_AI_PHPUnit11_Compat::parseTestMethodAnnotations',
-		$atc
+		$original
 	);
 	// PHPUnit 11 removed TestCase::getName(); use name() instead.
-	$atc = str_replace(
+	$patched = str_replace(
 		'$this->getName( false )',
 		'$this->name()',
-		$atc
+		$patched
 	);
-	file_put_contents( $abstract_testcase, $atc );
+
+	// Write only when the patch actually changes the file, and atomically
+	// (temp file + rename). Parallel sweep workers each run this bootstrap;
+	// an unconditional rewrite makes concurrent readers observe truncated
+	// content mid-write ("Class WP_UnitTestCase_Base not found").
+	if ( $patched !== $original ) {
+		$tmp = $abstract_testcase . '.tmp-' . getmypid();
+		file_put_contents( $tmp, $patched );
+		rename( $tmp, $abstract_testcase );
+	}
 }
 // ============================================================
 
+/*
+ * Provide a REQUEST_URI, which the CLI SAPI never populates.
+ *
+ * WordPress core reads `$_SERVER['REQUEST_URI']` unguarded in a few places —
+ * most visibly `wp_cron()`, which does
+ * `str_contains( $_SERVER['REQUEST_URI'], '/wp-cron.php' )` — so any test that
+ * reaches a cron spawn emits a PHP warning that has nothing to do with the
+ * code under test. The web SAPI always sets this key; mirror that.
+ *
+ * Tests that need a specific URI should save and restore the previous value
+ * rather than `unset()`-ing it, so later tests keep this default.
+ */
+if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+	$_SERVER['REQUEST_URI'] = '/';
+}
+
 require_once $_tests_dir . '/includes/functions.php';
+
+/**
+ * Throwing die handler used across every wp_die() branch under tests.
+ *
+ * WordPress 6.9 routes wp_die() through request-specific handlers
+ * (`_ajax_wp_die_handler`, `_json_wp_die_handler`, …) that end in bare
+ * `die()`/`exit()` calls. A test that triggers `wp_die()` — directly or via
+ * `wp_send_json_*()` — outside of `WP_Ajax_UnitTestCase::_handleAjax()`
+ * therefore killed the entire phpunit process with exit code 0 and no
+ * summary. Replacing those handlers with a throwing one turns every such
+ * termination into a catchable `WPDieException`.
+ *
+ * @param string|WP_Error $message Optional error message.
+ * @param string          $title   Optional error title.
+ * @param array           $args    Optional die arguments.
+ * @throws WPDieException Always.
+ */
+function wp_mcp_ai_tests_throwing_die_handler( $message = '', $title = '', $args = array() ) {
+	unset( $title, $args );
+
+	$text = '';
+	if ( is_object( $message ) && is_callable( array( $message, 'get_error_message' ) ) ) {
+		$text = (string) $message->get_error_message();
+	} elseif ( is_scalar( $message ) ) {
+		$text = (string) $message;
+	}
+
+	// wp-phpunit declares WPDieException in exceptions.php, which is only
+	// required after wp-settings.php loads. Define it lazily so the throwing
+	// handler also works during the early bootstrap window.
+	if ( ! class_exists( 'WPDieException' ) ) {
+
+		/**
+		 * Exception thrown when wp_die() terminates a request under PHPUnit.
+		 */
+		class WPDieException extends Exception { // phpcs:ignore Generic.Classes.DuplicateClassName
+		}
+	}
+
+	// Direct AJAX handler calls (tests that invoke wp_ajax_* handlers without
+	// the WP_Ajax_UnitTestCase::_handleAjax() harness) are written against the
+	// wp-phpunit WPAjaxDieContinueException contract. It extends
+	// WPDieException, so every assertion against the base class keeps
+	// working while legacy catches keep matching.
+	if ( wp_doing_ajax() && class_exists( 'WPAjaxDieContinueException' ) ) {
+		throw new WPAjaxDieContinueException( $text );
+	}
+
+	throw new WPDieException( $text );
+}
+
+/**
+ * Swap stock WordPress die handlers for the throwing test handler.
+ *
+ * Passes through any handler that a test (or the Ajax test case) deliberately
+ * installed — e.g. `WP_Ajax_UnitTestCase` replaces the ajax die handler with
+ * one that throws `WPAjaxDieContinueException` / `WPAjaxDieStopException`, and
+ * that behaviour must be preserved.
+ *
+ * @param callable $handler Current die handler.
+ * @return callable
+ */
+function wp_mcp_ai_tests_die_handler_filter( $handler ) {
+	$stock_handlers = array(
+		'_wp_die_handler',
+		'_default_wp_die_handler',
+		'_ajax_wp_die_handler',
+		'_json_wp_die_handler',
+		'_jsonp_wp_die_handler',
+	);
+
+	if ( ! is_string( $handler ) || ! in_array( $handler, $stock_handlers, true ) ) {
+		return $handler;
+	}
+
+	return 'wp_mcp_ai_tests_throwing_die_handler';
+}
+
+// Priority 11 on wp_die_handler so this runs after wp-phpunit's own
+// `_wp_die_handler_filter` (priority 10) and wins. Priority 10 on the ajax
+// handler so `WP_Ajax_UnitTestCase`'s priority-1 handler still wins inside
+// `_handleAjax()`.
+tests_add_filter( 'wp_die_handler', 'wp_mcp_ai_tests_die_handler_filter', 11 );
+tests_add_filter( 'wp_die_ajax_handler', 'wp_mcp_ai_tests_die_handler_filter', 10 );
+tests_add_filter( 'wp_die_json_handler', 'wp_mcp_ai_tests_die_handler_filter', 10 );
+tests_add_filter( 'wp_die_jsonp_handler', 'wp_mcp_ai_tests_die_handler_filter', 10 );
+
+/**
+ * Report "doing AJAX" whenever a test simulates an AJAX request.
+ *
+ * WP 6.9 routes request termination through bare die()/exit() calls when
+ * `wp_doing_ajax()` is false: `wp_send_json()` ends with `die;` and
+ * `check_ajax_referer()` calls `die( '-1' )` on a missing nonce. Neither can
+ * be intercepted through a filter. Flagging the AJAX context routes both
+ * paths through `wp_die()`, which the throwing handlers above convert into a
+ * catchable `WPDieException`. Tests that do not post an AJAX-shaped payload
+ * are unaffected.
+ *
+ * Two signals count as a simulated AJAX request: an `action` parameter
+ * (used by the dispatch harness) or a `nonce` parameter (the plugin's AJAX
+ * handlers read their nonce from `$_POST['nonce']` / `$_REQUEST['nonce']`).
+ *
+ * @param bool $wp_doing_ajax Current value.
+ * @return bool
+ */
+	function wp_mcp_ai_tests_wp_doing_ajax_filter( $wp_doing_ajax ) {
+		return (bool) $wp_doing_ajax
+			|| ( isset( $_POST['action'] ) && '' !== $_POST['action'] )
+			|| isset( $_POST['nonce'] )
+			|| isset( $_REQUEST['nonce'] );
+	}
+
+tests_add_filter( 'wp_doing_ajax', 'wp_mcp_ai_tests_wp_doing_ajax_filter', 10 );
+
+/**
+ * Test-safe override of the pluggable check_ajax_referer().
+ *
+ * Bridges two test-environment gaps:
+ *
+ * 1. CLI superglobals: in the CLI SAPI, writes to $_POST / $_GET never
+ *    appear in $_REQUEST (the web SAPI builds $_REQUEST once at request
+ *    start). wp-phpunit's own WP_Ajax_UnitTestCase::_handleAjax() therefore
+ *    sets $_REQUEST['action'] by hand. Handler tests that post a valid
+ *    nonce to $_POST would otherwise fail verification for the wrong
+ *    reason, so the request superglobals are synced first.
+ *
+ * 2. The failure branch: core dies with a bare die( '-1' ) when
+ *    wp_doing_ajax() is false, which kills the phpunit process. Under tests
+ *    the failure always routes through wp_die(), which the throwing die
+ *    handlers convert into a catchable exception.
+ *
+ * Mirrors WP 6.9 core logic; review on core upgrades.
+ *
+ * @param int|string   $action    The nonce action.
+ * @param false|string $query_arg Optional key under which the nonce is stored in $_REQUEST.
+ * @param bool         $stop      Whether to stop the request on failure.
+ * @return false|int
+ */
+if ( ! function_exists( 'check_ajax_referer' ) ) {
+	function check_ajax_referer( $action = -1, $query_arg = false, $stop = true ) {
+		if ( -1 === $action ) {
+			_doing_it_wrong( __FUNCTION__, __( 'You should specify an action to be verified by using the first parameter.' ), '4.7.0' );
+		}
+
+		// Emulate the web SAPI: $_REQUEST merges $_GET, $_POST and $_COOKIE.
+		foreach ( array( '_GET', '_POST', '_COOKIE' ) as $src ) {
+			foreach ( (array) $GLOBALS[ $src ] as $key => $value ) {
+				if ( ! isset( $_REQUEST[ $key ] ) ) {
+					$_REQUEST[ $key ] = $value;
+				}
+			}
+		}
+
+		$nonce = '';
+
+		if ( $query_arg && isset( $_REQUEST[ $query_arg ] ) ) {
+			$nonce = $_REQUEST[ $query_arg ];
+		} elseif ( isset( $_REQUEST['_ajax_nonce'] ) ) {
+			$nonce = $_REQUEST['_ajax_nonce'];
+		} elseif ( isset( $_REQUEST['_wpnonce'] ) ) {
+			$nonce = $_REQUEST['_wpnonce'];
+		}
+
+		$result = wp_verify_nonce( $nonce, $action );
+
+		/**
+		 * Fires once the Ajax request has been validated or not.
+		 *
+		 * @param string    $action The Ajax nonce action.
+		 * @param false|int $result False if the nonce is invalid, 1 if the nonce is valid and generated between
+		 *                          0-12 hours ago, 2 if the nonce is valid and generated between 12-24 hours ago.
+		 */
+		do_action( 'check_ajax_referer', $action, $result );
+
+		if ( $stop && false === $result ) {
+			// Core dies with a bare die( '-1' ) outside AJAX context; route
+			// through wp_die() instead so the throwing test handlers convert
+			// the termination into a catchable exception.
+			wp_die( -1, 403 );
+		}
+
+		return $result;
+	}
+}
+
+/**
+ * Neutralise Elementor's init replay when tests re-fire `init`.
+ *
+ * Several tests call do_action( 'init' ) in setUp to bootstrap plugin
+ * subsystems or register REST routes. Elementor hooks Plugin::init() to
+ * `init` at priority 0, and every run calls init_components(), which
+ * constructs a fresh Elements_Manager whose constructor plain-requires
+ * includes/elements/column.php (already declared) — a fatal error that
+ * kills the process. After the first real `init`, detach the callback so
+ * later `init` firings skip Elementor's re-initialisation.
+ */
+function wp_mcp_ai_tests_neutralise_elementor_init_replay() {
+	if ( class_exists( 'Elementor\\Plugin' ) ) {
+		remove_action( 'init', array( \Elementor\Plugin::instance(), 'init' ), 0 );
+	}
+}
+
+tests_add_filter( 'init', 'wp_mcp_ai_tests_neutralise_elementor_init_replay', PHP_INT_MAX );
+
+/**
+ * Neutralise WordPress 7.1+ icon registration when tests re-fire `init`.
+ *
+ * Several tests call do_action( 'init' ) in setUp to bootstrap plugin
+ * subsystems or register REST routes. WordPress 7.1+ hooks
+ * _wp_register_default_icon_collections() and _wp_register_default_icons()
+ * to `init`; re-firing the action re-registers the same collections and
+ * icons, which raises _doing_it_wrong notices ("Icon collection is already
+ * registered." / "Icon is already registered.") that fail unrelated tests.
+ * After the first real `init`, detach both callbacks so later `init`
+ * firings skip the re-registration; the registry stays populated from the
+ * initial registration.
+ */
+function wp_mcp_ai_tests_neutralise_icon_init_replay() {
+	// remove_action() defaults to priority 10 and only removes that one
+	// priority, so both known core priorities are removed explicitly:
+	// collections are hooked at priority 0, icons at the default 10.
+	if ( function_exists( '_wp_register_default_icon_collections' ) ) {
+		remove_action( 'init', '_wp_register_default_icon_collections', 0 );
+		remove_action( 'init', '_wp_register_default_icon_collections', 10 );
+	}
+	if ( function_exists( '_wp_register_default_icons' ) ) {
+		remove_action( 'init', '_wp_register_default_icons', 0 );
+		remove_action( 'init', '_wp_register_default_icons', 10 );
+	}
+}
+
+tests_add_filter( 'init', 'wp_mcp_ai_tests_neutralise_icon_init_replay', PHP_INT_MAX );
+
+/**
+ * Provide wc_get_page_screen_id() for tests that fire the `current_screen`
+ * hook — WooCommerce's OrderAttributionController calls it from there.
+ *
+ * WooCommerce declares the function without a function_exists guard and only
+ * includes wc-admin-functions.php from WC_Install::create_pages() during a
+ * fresh install. Declaring a stub unconditionally at bootstrap parse time
+ * fatals with "Cannot redeclare wc_get_page_screen_id()" the first time
+ * WooCommerce installs its pages (every fresh MySQL / CI run). Therefore:
+ *
+ *   1. Prefer WooCommerce's real file when it is installed, loading it here
+ *      before WooCommerce itself boots (priority 1; WooCommerce is loaded at
+ *      priority 5 by wp_mcp_ai_load_optional_test_plugins()).
+ *   2. Fall back to a stub only when WooCommerce is absent (Base builds), so
+ *      set_current_screen() does not fatal inside WooCommerce's own hook.
+ *
+ * Deferred to muplugins_loaded because the WooCommerce file exits when
+ * ABSPATH is undefined, and ABSPATH only exists once the WP test bootstrap
+ * runs.
+ */
+tests_add_filter(
+	'muplugins_loaded',
+	static function () {
+		if ( function_exists( 'wc_get_page_screen_id' ) ) {
+			return;
+		}
+
+		$wp_core_dir    = getenv( 'WP_CORE_DIR' );
+		$wordpress_path = $wp_core_dir ? $wp_core_dir : dirname( __DIR__ ) . '/.codex-wordpress/wordpress';
+		$wc_admin_functions = $wordpress_path . '/wp-content/plugins/woocommerce/includes/admin/wc-admin-functions.php';
+
+		if ( file_exists( $wc_admin_functions ) ) {
+			require_once $wc_admin_functions;
+		}
+
+		if ( ! function_exists( 'wc_get_page_screen_id' ) ) {
+			/**
+			 * Stub for WooCommerce's admin-only helper.
+			 *
+			 * Mirrors the production result (WC orders screen under HPOS)
+			 * so tests that call set_current_screen() keep working on Base
+			 * builds where WooCommerce is not installed.
+			 *
+			 * @param string $for Page slug, e.g. "shop-order".
+			 * @return string Admin screen id.
+			 */
+			function wc_get_page_screen_id( $for ) {
+				$for = str_replace( '-', '_', (string) $for );
+
+				if ( 'shop_order' === $for ) {
+					return 'woocommerce_page_wc-orders';
+				}
+
+				return 'admin_page_wc-orders--' . $for;
+			}
+		}
+	},
+	1
+);
+
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-docx-test-helper.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-rest-test-helper.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-http-test-helper.php';
+require_once __DIR__ . '/helpers/trait-wp-mcp-ai-request-context-test-helper.php';
 require_once __DIR__ . '/helpers/class-wp-mcp-ai-test-helper.php';
+require_once __DIR__ . '/helpers/class-wp-mcp-ai-job-queue-manager-test-worker.php';
 
 // NOTE: paper-store trait loaded after WP bootstrap below
 // (it has an ABSPATH guard that requires WordPress to be loaded first).
@@ -258,9 +595,98 @@ function wp_mcp_ai_manually_load_plugin() {
 			require_once $path;
 		}
 	}
+
+	wp_mcp_ai_register_pro_classmap_fallback_autoloader();
 }
 
-tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_manually_load_plugin' );
+/**
+ * Register a fallback autoloader for Pro addon classes.
+ *
+ * CI generates a full classmap for addons/pro via `composer install` in
+ * that directory, so every WP_MCP_AI_* Pro class autoloads there. The
+ * classmap committed to addons/pro/vendor does not map includes/, which
+ * made local runs silently skip Pro-dependent suites that CI executes.
+ * This loader resolves those classes from the repository's
+ * addons/pro/includes tree using the class-wp-mcp-ai-<slug>.php
+ * convention, so local runs exercise the same code as CI.
+ *
+ * @return void
+ */
+function wp_mcp_ai_register_pro_classmap_fallback_autoloader() {
+	$pro_includes = dirname( __DIR__ ) . '/addons/pro/includes';
+	if ( ! is_dir( $pro_includes ) ) {
+		return;
+	}
+
+	static $resolved = array();
+	static $missing  = array();
+
+	spl_autoload_register(
+		static function ( $class ) use ( $pro_includes, &$resolved, &$missing ) {
+			if ( 0 !== strpos( $class, 'WP_MCP_AI_' ) ) {
+				return;
+			}
+
+			if ( isset( $resolved[ $class ] ) ) {
+				require_once $resolved[ $class ];
+				return;
+			}
+
+			if ( isset( $missing[ $class ] ) ) {
+				return;
+			}
+
+			$slug    = strtolower( str_replace( '_', '-', substr( $class, 10 ) ) ); // strlen( 'WP_MCP_AI_' ) = 10.
+			$matches = glob( $pro_includes . '/class-wp-mcp-ai-' . $slug . '.php' );
+			if ( empty( $matches ) ) {
+				$matches = glob( $pro_includes . '/*/class-wp-mcp-ai-' . $slug . '.php' );
+			}
+			if ( empty( $matches ) ) {
+				$matches = glob( $pro_includes . '/*/*/class-wp-mcp-ai-' . $slug . '.php' );
+			}
+			if ( empty( $matches ) ) {
+				$matches = glob( $pro_includes . '/*/*/*/class-wp-mcp-ai-' . $slug . '.php' );
+			}
+
+			if ( empty( $matches ) ) {
+				$missing[ $class ] = true;
+				return;
+			}
+
+			$resolved[ $class ] = $matches[0];
+			require_once $matches[0];
+		}
+	);
+}
+
+// Allow the Platform addon's standalone test matrix (content-graph ecosystem
+// without the base plugin) to skip loading the monolith. Default behaviour is
+// unchanged: the base plugin loads unless WP_MCP_AI_SKIP_BASE_PLUGIN=1.
+if ( '1' !== getenv( 'WP_MCP_AI_SKIP_BASE_PLUGIN' ) ) {
+	tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_manually_load_plugin' );
+}
+
+/**
+ * Report whether a prefixed database table exists.
+ *
+ * Used to gate optional plugins whose bootstrap assumes activation already
+ * created their schema. Activation never runs under PHPUnit.
+ *
+ * @param string $suffix Table name without the `$wpdb->prefix`.
+ * @return bool
+ */
+function wp_mcp_ai_tests_table_exists( $suffix ) {
+	global $wpdb;
+
+	if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
+		return false;
+	}
+
+	$table = $wpdb->prefix . $suffix;
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Schema probe in the test bootstrap; no cache exists yet.
+	return (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+}
 
 /**
  * Load optional test plugins if available.
@@ -295,11 +721,16 @@ function wp_mcp_ai_load_optional_test_plugins() {
 		define( 'WP_MCP_AI_TEST_RANKMATH_ACTIVE', true );
 	}
 
-	// Load WPCode if available.
-	if ( file_exists( $plugins_dir . '/insert-headers-and-footers/insert-headers-and-footers.php' ) ) {
-		require_once $plugins_dir . '/insert-headers-and-footers/insert-headers-and-footers.php';
-		$loaded_plugins[] = 'wpcode';
-		define( 'WP_MCP_AI_TEST_WPCODE_ACTIVE', true );
+	// Load WPCode if available. The wp.org slug is `insert-headers-and-footers`
+	// but the bootstrap file is `ihaf.php`; accept the slug-shaped name too in
+	// case a future release renames it.
+	foreach ( array( 'ihaf.php', 'wpcode.php', 'insert-headers-and-footers.php' ) as $wpcode_file ) {
+		if ( file_exists( $plugins_dir . '/insert-headers-and-footers/' . $wpcode_file ) ) {
+			require_once $plugins_dir . '/insert-headers-and-footers/' . $wpcode_file;
+			$loaded_plugins[] = 'wpcode';
+			define( 'WP_MCP_AI_TEST_WPCODE_ACTIVE', true );
+			break;
+		}
 	}
 
 	// Load Simple JWT Login if available.
@@ -324,7 +755,19 @@ function wp_mcp_ai_load_optional_test_plugins() {
 	}
 
 	// Load WP All Import (lite) if available.
-	if ( file_exists( $plugins_dir . '/wp-all-import/plugin.php' ) ) {
+	//
+	// Gated on its tables existing. WP All Import creates them on activation,
+	// which never runs under PHPUnit, and its models *throw* on a missing table
+	// rather than warning. WooCommerce's installer calls wp_insert_attachment()
+	// during `init` on a fresh database, which fires `add_attachment` →
+	// pmxi_add_attachment() → PMXI_Model_Record::insert() → uncaught exception
+	// that kills the whole run before a single test executes.
+	//
+	// Note that the WP All Import tool tests assert the *missing-plugin* guard
+	// (`wp_mcp_ai_all_import_missing`) and skip when PMXI_Plugin is loaded, so
+	// leaving it unloaded is also the higher-coverage default.
+	if ( file_exists( $plugins_dir . '/wp-all-import/plugin.php' )
+		&& wp_mcp_ai_tests_table_exists( 'pmxi_images' ) ) {
 		require_once $plugins_dir . '/wp-all-import/plugin.php';
 		$loaded_plugins[] = 'wp-all-import';
 		define( 'WP_MCP_AI_TEST_WPALLIMPORT_ACTIVE', true );
@@ -381,6 +824,31 @@ function wp_mcp_ai_setup_test_environment() {
 tests_add_filter( 'wp_loaded', 'wp_mcp_ai_setup_test_environment' );
 
 /**
+ * Rebuild in-memory role objects from the database.
+ *
+ * On WordPress 7.1+, WP_Roles::add_cap() mutates the internal roles array
+ * and persists to the `user_roles` option but does not update the cached
+ * WP_Role objects that WP_User::get_role_caps() reads. WooCommerce's
+ * WC_Install::create_roles() adds its capabilities via add_cap() during
+ * `init`, so on a fresh test database the first bootstrap leaves stale role
+ * objects (e.g. shop_manager without `edit_products`) and capability-gated
+ * tools fail. Re-instantiating wp_roles() rebuilds the objects from the
+ * authoritative option.
+ */
+function wp_mcp_ai_resync_test_roles() {
+	global $wp_version;
+
+	if ( version_compare( $wp_version, '7.1', '<' ) ) {
+		return;
+	}
+
+	unset( $GLOBALS['wp_roles'] );
+	wp_roles();
+}
+
+tests_add_filter( 'wp_loaded', 'wp_mcp_ai_resync_test_roles', 5 );
+
+/**
  * Initialize database tables for testing.
  */
 function wp_mcp_ai_init_test_database_tables() {
@@ -424,3 +892,11 @@ ob_end_clean();
 require_once __DIR__ . '/helpers/class-wp-mcp-ai-ajax-testcase.php';
 require_once __DIR__ . '/helpers/class-wp-mcp-ai-mock-http-client.php';
 require_once __DIR__ . '/paper-store/trait-paper-store-test-helpers.php';
+
+// Checkout API addon tests (addons/checkout-api). The addon's own bootstrap
+// self-guards on ABSPATH (defined by the WP test bootstrap above) and only
+// defines constants + requires the addon's classes — no file-scope hooks, so
+// it is safe to load into the shared suite.
+if ( file_exists( __DIR__ . '/../addons/checkout-api/tests/bootstrap.php' ) ) {
+	require_once __DIR__ . '/../addons/checkout-api/tests/bootstrap.php';
+}

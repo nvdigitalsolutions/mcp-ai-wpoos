@@ -28,7 +28,7 @@ class WP_MCP_AI_SSRF_Protection_Test extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Job_Notifier' ) ) {
 			$notifier_file = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-notifier.php';
 			if ( file_exists( $notifier_file ) ) {
-		require_once $notifier_file;
+				require_once $notifier_file;
 			} else {
 				$this->markTestSkipped( 'WP_MCP_AI_Job_Notifier class not available.' );
 				return;
@@ -197,7 +197,7 @@ class WP_MCP_AI_SSRF_Protection_Test extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Proxy_Utils' ) ) {
 			$proxy_file = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-proxy-utils.php';
 			if ( file_exists( $proxy_file ) ) {
-		require_once $proxy_file;
+				require_once $proxy_file;
 			} else {
 				$this->markTestSkipped( 'WP_MCP_AI_Proxy_Utils class not available.' );
 				return;
@@ -235,9 +235,11 @@ class WP_MCP_AI_SSRF_Protection_Test extends WP_UnitTestCase {
 			return;
 		}
 
-		// Use wp_http_validate_url to confirm this URL passes basic validation
-		// without triggering a real network request.
-		$url    = 'https://hooks.example.com/webhook/abc123';
+		// Use a publicly routable IP literal so the assertion does not depend on
+		// DNS resolution. The validator is fail-closed on unresolvable hostnames
+		// (matching WP_MCP_AI_Url_Guard), and test/CI sandboxes often have no
+		// outbound DNS — a hostname-based fixture would be falsely blocked.
+		$url    = 'https://93.184.216.34/webhook/abc123';
 		$result = WP_MCP_AI_Job_Notifier::register_webhook( 'sanity-job-999', $url );
 
 		// The result may be true (option updated) or false (option unchanged),

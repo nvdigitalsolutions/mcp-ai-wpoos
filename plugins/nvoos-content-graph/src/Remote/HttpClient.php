@@ -229,6 +229,31 @@ class HttpClient {
 				}
 			}
 
+			// Not-Modified (304): the cached copy is still valid. Serve it
+			// instead of the empty 304 body — drivers would otherwise ingest
+			// nothing, and the empty body would overwrite the cache entry.
+			if ( 304 === $status && 'GET' === $method && null !== $cacheKey ) {
+				$cachedBody = get_transient( $cacheKey );
+				if ( false !== $cachedBody && '' !== $cachedBody ) {
+					$this->recordSuccess( $host );
+
+					$responseHeaders = wp_remote_retrieve_headers( $raw );
+					$headersArray    = array();
+					if ( is_object( $responseHeaders ) && method_exists( $responseHeaders, 'getAll' ) ) {
+						$headersArray = $responseHeaders->getAll();
+					} elseif ( is_array( $responseHeaders ) ) {
+						$headersArray = $responseHeaders;
+					}
+
+					return array(
+						'body'    => $cachedBody,
+						'headers' => $headersArray,
+						'status'  => 200,
+						'cached'  => true,
+					);
+				}
+			}
+
 			// Success — reset failure count.
 			$this->recordSuccess( $host );
 
@@ -491,6 +516,12 @@ class HttpClient {
 	 * @return void
 	 */
 	private function storeCache( string $cacheKey, array $result, array $responseHeaders ): void {
+		// Never cache an empty body — a 304 (or a zero-length 200) must not
+		// overwrite a previously cached response body.
+		if ( '' === $result['body'] ) {
+			return;
+		}
+
 		$ttl = self::DEFAULT_CACHE_TTL;
 
 		$cacheControl = $responseHeaders['cache-control'] ?? '';

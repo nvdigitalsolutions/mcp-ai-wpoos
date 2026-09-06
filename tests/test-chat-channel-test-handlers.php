@@ -22,6 +22,17 @@ class Test_Chat_Channel_Test_Handlers extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		// Production only instantiates the admin class under is_admin(), so
+		// its channel test AJAX handlers are never hooked under PHPUnit.
+		// Load and instantiate it here to make the registrations observable.
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Sites_Admin' ) && file_exists( WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php';
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Sites_Admin' ) && ! has_action( 'wp_ajax_wp_mcp_ai_test_slack_live' ) ) {
+			new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		}
 	}
 
 	/**

@@ -113,22 +113,13 @@ class WP_MCP_AI_REST_Validator {
 				);
 			}
 
-			$role        = $message['role'];
-			$valid_roles = array( 'system', 'user', 'assistant', 'tool' );
-
-			if ( ! in_array( $role, $valid_roles, true ) ) {
-				return new WP_Error(
-					'rest_invalid_param',
-					sprintf(
-						/* translators: 1: message index, 2: invalid role, 3: valid roles list */
-						__( 'Message at index %1$d has invalid role "%2$s". Must be one of: %3$s', 'mcp-ai-wpoos' ),
-						$index,
-						$role,
-						implode( ', ', $valid_roles )
-					),
-					array( 'status' => 400 )
-				);
-			}
+			// Role VALUES are intentionally not enforced here: semantic role
+			// validation (including the wp_mcp_ai_allowed_message_roles filter
+			// that lets integrations register custom roles) lives in
+			// sanitize_messages(), which runs immediately after validation.
+			// Enforcing the enum here would reject custom roles before the
+			// filter can see them and duplicate the sanitize-layer error codes.
+			$role = $message['role'];
 
 			// Validate content field (required for most roles).
 			if ( ! isset( $message['content'] ) && 'assistant' !== $role ) {
@@ -148,23 +139,12 @@ class WP_MCP_AI_REST_Validator {
 				);
 			}
 
-			// Validate tool_call_id for tool messages.
-			if ( 'tool' === $role && empty( $message['tool_call_id'] ) ) {
-				return new WP_Error(
-					'rest_invalid_param',
-					sprintf(
-						/* translators: %d: message index */
-						__( 'Tool message at index %d is missing required "tool_call_id" property.', 'mcp-ai-wpoos' ),
-						$index
-					),
-					array(
-						'status'  => 400,
-						'actions' => array(
-							'add_tool_call_id' => __( 'Messages with role "tool" must include a "tool_call_id" matching the assistant\'s tool call.', 'mcp-ai-wpoos' ),
-						),
-					)
-				);
-			}
+			// Pairing semantics for tool messages (tool_call_id matching the
+			// preceding assistant tool call) are intentionally NOT enforced here:
+			// orphaned tool messages are silently discarded by
+			// WP_MCP_AI_REST::filter_tool_messages_without_matching_calls() before
+			// the payload reaches the provider. Rejecting them at the REST args
+			// gate would turn a tolerated legacy payload into a hard 400.
 		}
 
 		return true;
@@ -363,8 +343,19 @@ class WP_MCP_AI_REST_Validator {
 			);
 		}
 
-		$attachments_helper = new WP_MCP_AI_Message_Attachments();
-		$sanitized          = array();
+		/**
+		 * Filter the provider used to register attachment segments during
+		 * message sanitization. Defaults to openai; providers without a
+		 * remote file API (e.g. ollama) resolve attachments to local
+		 * references instead of uploading them.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $provider Provider key.
+		 */
+		$attachment_provider = apply_filters( 'wp_mcp_ai_attachment_segment_provider', 'openai' );
+		$attachments_helper  = new WP_MCP_AI_Message_Attachments( sanitize_key( $attachment_provider ) );
+		$sanitized           = array();
 
 		$default_roles = array( 'user', 'assistant', 'system', 'tool' );
 		$allowed_roles = apply_filters( 'wp_mcp_ai_allowed_message_roles', $default_roles );
@@ -508,7 +499,164 @@ class WP_MCP_AI_REST_Validator {
 			$metadata['name'] = sanitize_text_field( $message['name'] );
 		}
 
+		if ( isset( $message['display'] ) && is_array( $message['display'] ) ) {
+			$display = $this->sanitize_display_metadata( $message['display'] );
+			if ( ! empty( $display ) ) {
+				$metadata['display'] = $display;
+			}
+		}
+
 		return $metadata;
+	}
+
+	/**
+	 * Sanitize client display metadata attached to a message.
+	 *
+	 * Display metadata drives client-side rendering (bubble type, chart
+	 * output, badge data) and is persisted with transcripts so conversations
+	 * render identically when reloaded. Only known keys are retained and each
+	 * value is sanitized for its type; scripts and event-handler attributes
+	 * are stripped from chart HTML.
+	 *
+	 * @param array $display Raw display metadata.
+	 * @return array Sanitized display metadata.
+	 */
+	public function sanitize_display_metadata( array $display ) {
+		$clean = array();
+
+		if ( isset( $display['bubbleType'] ) ) {
+			$clean['bubbleType'] = sanitize_key( $display['bubbleType'] );
+		}
+
+		if ( isset( $display['text'] ) ) {
+			$clean['text'] = wp_kses_post( (string) $display['text'] );
+		}
+
+		if ( isset( $display['message'] ) ) {
+			$clean['message'] = wp_kses_post( (string) $display['message'] );
+		}
+
+		if ( isset( $display['chartHtml'] ) ) {
+			$chart_html = wp_check_invalid_utf8( (string) $display['chartHtml'], true );
+			$chart_html = preg_replace( '/<script\b[^>]*>.*?<\/script>/is', '', $chart_html );
+			$chart_html = preg_replace( '/\son[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $chart_html );
+			if ( '' !== $chart_html ) {
+				$clean['chartHtml'] = $chart_html;
+			}
+		}
+
+		if ( isset( $display['chartWidth'] ) ) {
+			$clean['chartWidth'] = absint( $display['chartWidth'] );
+		}
+
+		if ( isset( $display['chartHeight'] ) ) {
+			$clean['chartHeight'] = absint( $display['chartHeight'] );
+		}
+
+		if ( isset( $display['tool_calls'] ) && is_array( $display['tool_calls'] ) ) {
+			$tool_calls = array();
+			foreach ( $display['tool_calls'] as $tool_call ) {
+				if ( ! is_array( $tool_call ) ) {
+					continue;
+				}
+
+				$call = array();
+				if ( isset( $tool_call['id'] ) ) {
+					$call['id'] = sanitize_text_field( $tool_call['id'] );
+				}
+				if ( isset( $tool_call['type'] ) ) {
+					$call['type'] = sanitize_text_field( $tool_call['type'] );
+				}
+				if ( isset( $tool_call['function'] ) && is_array( $tool_call['function'] ) ) {
+					$function = array();
+					if ( isset( $tool_call['function']['name'] ) ) {
+						$function['name'] = sanitize_text_field( $tool_call['function']['name'] );
+					}
+					if ( isset( $tool_call['function']['arguments'] ) ) {
+						$function['arguments'] = wp_check_invalid_utf8( (string) $tool_call['function']['arguments'], true );
+					}
+					if ( ! empty( $function ) ) {
+						$call['function'] = $function;
+					}
+				}
+				if ( ! empty( $call ) ) {
+					$tool_calls[] = $call;
+				}
+			}
+			if ( ! empty( $tool_calls ) ) {
+				$clean['tool_calls'] = $tool_calls;
+			}
+		}
+
+		if ( isset( $display['usage'] ) && is_array( $display['usage'] ) ) {
+			$usage = array();
+			foreach ( $display['usage'] as $key => $value ) {
+				$usage[ sanitize_key( $key ) ] = absint( $value );
+			}
+			if ( ! empty( $usage ) ) {
+				$clean['usage'] = $usage;
+			}
+		}
+
+		if ( isset( $display['cost'] ) && is_array( $display['cost'] ) ) {
+			$cost = array();
+			foreach ( $display['cost'] as $key => $value ) {
+				$cost[ sanitize_key( $key ) ] = (float) $value;
+			}
+			if ( ! empty( $cost ) ) {
+				$clean['cost'] = $cost;
+			}
+		}
+
+		if ( isset( $display['capabilityFlags'] ) && is_array( $display['capabilityFlags'] ) ) {
+			$flags = array_values(
+				array_filter(
+					array_unique(
+						array_map( 'sanitize_key', array_map( 'strval', $display['capabilityFlags'] ) )
+					)
+				)
+			);
+			if ( ! empty( $flags ) ) {
+				$clean['capabilityFlags'] = $flags;
+			}
+		}
+
+		if ( isset( $display['attachments'] ) && is_array( $display['attachments'] ) ) {
+			$attachments = array();
+			foreach ( $display['attachments'] as $attachment ) {
+				if ( ! is_array( $attachment ) ) {
+					continue;
+				}
+
+				$entry = array();
+
+				if ( isset( $attachment['url'] ) && '' !== $attachment['url'] ) {
+					$entry['url'] = esc_url_raw( (string) $attachment['url'] );
+				}
+
+				if ( isset( $attachment['label'] ) ) {
+					$entry['label'] = sanitize_text_field( wp_unslash( (string) $attachment['label'] ) );
+				}
+
+				if ( isset( $attachment['downloadName'] ) ) {
+					$entry['downloadName'] = sanitize_text_field( wp_unslash( (string) $attachment['downloadName'] ) );
+				}
+
+				if ( isset( $attachment['meta'] ) ) {
+					$entry['meta'] = sanitize_text_field( wp_unslash( (string) $attachment['meta'] ) );
+				}
+
+				if ( ! empty( $entry ) ) {
+					$attachments[] = $entry;
+				}
+			}
+
+			if ( ! empty( $attachments ) ) {
+				$clean['attachments'] = $attachments;
+			}
+		}
+
+		return $clean;
 	}
 
 	/**
@@ -559,7 +707,9 @@ class WP_MCP_AI_REST_Validator {
 
 			$segment_type = isset( $item['type'] ) ? $item['type'] : '';
 
-			if ( 'text' === $segment_type ) {
+			if ( in_array( $segment_type, array( 'text', 'input_text' ), true ) ) {
+				// `input_text` is the legacy segment type; it is normalised to the
+				// current `text` schema (documented compatibility behaviour).
 				$text_content = isset( $item['text'] ) ? $item['text'] : '';
 				$segment      = $attachments_helper->prepare_input_text_segment( $text_content );
 
@@ -569,9 +719,16 @@ class WP_MCP_AI_REST_Validator {
 			} elseif ( in_array( $segment_type, array( 'image_url', 'image_file', 'input_image', 'audio', 'file', 'input_file' ), true ) ) {
 				$segment = $attachments_helper->prepare_input_attachment_segment( $item );
 
-				if ( ! is_wp_error( $segment ) ) {
-					$segments[] = $segment;
+				// Propagate preparation errors (e.g. unknown file references,
+				// forbidden attachments, unsupported MIME types) instead of
+				// silently dropping the segment. Silently dropping produces a
+				// misleading "invalid messages" error downstream and hides the
+				// real failure from the client.
+				if ( is_wp_error( $segment ) ) {
+					return $segment;
 				}
+
+				$segments[] = $segment;
 			}
 		}
 
@@ -1024,13 +1181,24 @@ class WP_MCP_AI_REST_Validator {
 	 * @return array Sanitized metadata.
 	 */
 	public function sanitize_metadata_for_llm( array $metadata ) {
+		// Remove verbose fields that add token cost without LLM value.
+		$fields_to_remove = array( 'headers', 'raw', 'response', 'request', 'retrieved_at', 'fetched_at', 'user_agent' );
+
+		foreach ( $fields_to_remove as $key ) {
+			unset( $metadata[ $key ] );
+		}
+
 		$sanitized = array();
 
 		foreach ( $metadata as $key => $value ) {
 			$sanitized_key = sanitize_key( $key );
 
 			if ( is_array( $value ) || is_object( $value ) ) {
-				$sanitized[ $sanitized_key ] = $this->sanitize_complex_data_for_llm( $value );
+				// Recursively clean nested metadata.
+				$nested = $this->sanitize_metadata_for_llm( is_object( $value ) ? (array) $value : $value );
+				if ( ! empty( $nested ) ) {
+					$sanitized[ $sanitized_key ] = $nested;
+				}
 			} else {
 				$sanitized[ $sanitized_key ] = $this->sanitize_scalar_for_llm( $value );
 			}

@@ -29,6 +29,10 @@ class WP_MCP_AI_Chat_Transcript_Guest_Tokens_Test extends WP_UnitTestCase {
 
 		// WP 6.9 may re-register breadcrumbs block during rest_api_init.
 		$this->setExpectedIncorrectUsage( 'WP_Block_Type_Registry::register' );
+		// WooCommerce Blocks hooks non-idempotent init callbacks (payment
+		// method integrations) — re-firing init in the harness re-registers
+		// them and raises a _doing_it_wrong notice from Woo's own code.
+		$this->setExpectedIncorrectUsage( 'Automattic\WooCommerce\Blocks\Integrations\IntegrationRegistry::register' );
 
 		if ( function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 			wp_mcp_ai_bootstrap();
@@ -111,6 +115,8 @@ class WP_MCP_AI_Chat_Transcript_Guest_Tokens_Test extends WP_UnitTestCase {
 		$request->set_param( 'session_key', $session_key );
 		$request->set_param( 'messages', $messages );
 		$request->set_header( 'X-WP-MCP-AI-Guest', $guest_token );
+		// Guest tokens are origin-bound — send the matching Origin header.
+		$request->set_header( 'Origin', home_url() );
 
 		$response = rest_get_server()->dispatch( $request );
 
@@ -158,6 +164,8 @@ class WP_MCP_AI_Chat_Transcript_Guest_Tokens_Test extends WP_UnitTestCase {
 		$request->set_param( 'per_page', 20 );
 		$request->set_param( 'user_id', 0 ); // Guest users have user_id = 0.
 		$request->set_header( 'X-WP-MCP-AI-Guest', $guest_token );
+		// Guest tokens are origin-bound — send the matching Origin header.
+		$request->set_header( 'Origin', home_url() );
 
 		$response = rest_get_server()->dispatch( $request );
 
@@ -183,6 +191,8 @@ class WP_MCP_AI_Chat_Transcript_Guest_Tokens_Test extends WP_UnitTestCase {
 		$request->set_param( 'session_key', $session_key );
 		$request->set_param( 'user_id', 0 ); // Guest users have user_id = 0.
 		$request->set_header( 'X-WP-MCP-AI-Guest', $guest_token );
+		// Guest tokens are origin-bound — send the matching Origin header.
+		$request->set_header( 'Origin', home_url() );
 
 		$response = rest_get_server()->dispatch( $request );
 

@@ -100,6 +100,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'okf_validate_attestation',
 					'okf_list_bundles',
 					'okf_validate_bundle',
+					'okf_enrich_site_content',
+					'route_knowledge_query',
 					// Users & system.
 					'get_user_info',
 					// Communication.
@@ -157,6 +159,19 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'pro_excel',
 					// Calendar (Google API).
 					'create_google_calendar_event',
+					'list_google_calendars',
+					'list_google_calendar_events',
+					'update_google_calendar_event',
+					'delete_google_calendar_event',
+					'check_google_calendar_availability',
+					'quick_add_google_calendar_event',
+					// Gmail & Drive (Google API).
+					'get_gmail_message',
+					'get_gmail_thread',
+					'list_gmail_connections',
+					'modify_gmail_message',
+					'get_drive_file',
+					'list_drive_connections',
 					// Location services.
 					'geocode_address',
 					'search_places',
@@ -677,6 +692,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'composio_create_connect_link',
 					'composio_execute_tool',
 					'composio_manage_triggers',
+					'composio_manage_accounts',
 					// Code snippets.
 					'create_wpcode_snippet',
 					// Tool scaffolding & generation (Pro).
@@ -700,6 +716,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'execute_shell_command',
 					// Version control (Pro).
 					'git_operations',
+					'git_inspect',
+					'git_change',
 					// Logs & debugging.
 					'get_system_logs',
 					// Tokens.
@@ -776,6 +794,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'erlang_c_concurrency_advisor',
 					'erlang_c_queue_health',
 					'erlang_c_staffing_advisor',
+					// Conversation import (ChatGPT / Google Takeout → transcript CCT).
+					'conversation_import_detect',
+					'conversation_import_run',
+					'conversation_import_status',
+					'conversation_import_delete',
 				),
 			),
 

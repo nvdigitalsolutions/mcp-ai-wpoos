@@ -29,6 +29,17 @@
 /**
  * AJAX cluster: Schedule Manager (Pro).
  */
+// Load the Pro admin class under test; the pro addon loads it only in admin
+// context, so require it here to keep the suite runnable standalone (mirrors
+// CI, where earlier admin-context tests load it).
+if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+	$wp_mcp_ai_schedule_manager = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php';
+	if ( file_exists( $wp_mcp_ai_schedule_manager ) ) {
+		require_once $wp_mcp_ai_schedule_manager;
+	}
+	unset( $wp_mcp_ai_schedule_manager );
+}
+
 class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
 	/**
@@ -313,7 +324,10 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
 		$response = $this->dispatch(
 			'wp_mcp_ai_sm_clear_history',
-			array( 'nonce' => wp_create_nonce( self::NONCE ) )
+			array(
+				'nonce'       => wp_create_nonce( self::NONCE ),
+				'schedule_id' => 99999,
+			)
 		);
 
 		$this->assertAjaxSuccess( $response );

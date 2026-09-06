@@ -75,11 +75,27 @@ class WP_MCP_AI_Toolkit_MCP_Audit_Log {
 	}
 
 	/**
+	 * Whether the cross-mount read hook has been registered.
+	 *
+	 * Static so the hook is registered once per process even when the
+	 * singleton is reset (test fixtures) — a second instance hooking the
+	 * same action would otherwise double-record every read.
+	 *
+	 * @var bool
+	 */
+	private static $init_hooked = false;
+
+	/**
 	 * Register hooks.
 	 *
 	 * @return void
 	 */
 	public function init() {
+		if ( self::$init_hooked ) {
+			return;
+		}
+		self::$init_hooked = true;
+
 		add_action( 'wp_mcp_ai_toolkit_mcp_cross_mount_read', array( $this, 'on_cross_mount_read' ), 10, 6 );
 	}
 
@@ -122,7 +138,7 @@ class WP_MCP_AI_Toolkit_MCP_Audit_Log {
 			'source'   => sanitize_key( isset( $entry['source'] ) ? (string) $entry['source'] : '' ),
 			'entity'   => sanitize_text_field( isset( $entry['entity'] ) ? (string) $entry['entity'] : '' ),
 			'uri'      => isset( $entry['uri'] ) ? sanitize_text_field( (string) $entry['uri'] ) : '',
-			'method'   => sanitize_key( isset( $entry['method'] ) ? (string) $entry['method'] : '' ),
+			'method'   => sanitize_text_field( isset( $entry['method'] ) ? (string) $entry['method'] : '' ),
 			'user_id'  => (int) ( isset( $entry['user_id'] ) ? $entry['user_id'] : 0 ),
 		);
 

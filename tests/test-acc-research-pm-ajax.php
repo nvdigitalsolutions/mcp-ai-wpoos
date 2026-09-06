@@ -82,6 +82,33 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		self::$has_pm       = class_exists( self::PM_CLASS );
 	}
 
+	/**
+	 * Re-register the ACC AJAX hooks before each test.
+	 *
+	 * WP_MCP_AI_Pro_Agent_Command_Center self-instantiates when its class file
+	 * is loaded, registering its wp_ajax_* handlers. When this suite is not the
+	 * first in the process, that load happens after the process-wide hook-table
+	 * backup, so the per-test hook restore removes the handlers again.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		if ( self::$has_acc && false === has_action( 'wp_ajax_wp_mcp_ai_acc_get_dashboard_data' ) ) {
+			new WP_MCP_AI_Pro_Agent_Command_Center();
+		}
+
+		// The profession seeders seed the full catalog on admin_init whenever
+		// their "seeded" options are absent. wp-phpunit rolls options back per
+		// test, so each AJAX dispatch below would otherwise re-create every
+		// profession, base-knowledge entry, and playbook (with slug and
+		// taxonomy work) all over again, dominating suite runtime without
+		// adding coverage. This suite does not use professions — detach the
+		// hooks so dispatches stay fast and quiet.
+		remove_action( 'admin_init', array( 'WP_MCP_AI_Profession_Seeder', 'seed_professions' ), 20 );
+		remove_action( 'admin_init', array( 'WP_MCP_AI_Profession_Base_Knowledge_Seeder', 'seed_base_knowledge' ), 30 );
+		remove_action( 'admin_init', array( 'WP_MCP_AI_Profession_Playbook_Seeder', 'seed_playbooks_incremental' ), 30 );
+	}
+
 	// ---
 	// ACC — wp_mcp_ai_acc_get_dashboard_data
 	// ---

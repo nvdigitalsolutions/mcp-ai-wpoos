@@ -14,6 +14,45 @@
 class Test_Auth0_Bridge_Toggle extends WP_UnitTestCase {
 
 	/**
+	 * Invoke the toggle handler the way an admin-ajax request would, without
+	 * killing the phpunit process.
+	 *
+	 * The handler ends via wp_send_json_*(). WP 6.9's wp_send_json() contains
+	 * a bare die() when wp_doing_ajax() is false, which would terminate the
+	 * whole suite. The wp_doing_ajax filter routes termination through
+	 * wp_die(), which the test bootstrap converts into a catchable
+	 * WPDieException. The echoed JSON is captured for assertions.
+	 *
+	 * @param string $nonce   Nonce to submit.
+	 * @param string $enabled '1' or '0' toggle value.
+	 * @return array Decoded JSON response body.
+	 */
+	protected function invoke_toggle_handler( $nonce, $enabled ) {
+		$_POST['nonce']        = $nonce;
+		$_POST['enabled']      = $enabled;
+		// check_ajax_referer() reads $_REQUEST, not $_POST.
+		$_REQUEST['nonce']     = $nonce;
+		$_REQUEST['enabled']   = $enabled;
+
+		add_filter( 'wp_doing_ajax', '__return_true' );
+
+		$auth0_setup = new WP_MCP_AI_Auth0_Setup();
+
+		ob_start();
+		try {
+			$auth0_setup->handle_toggle_bridge();
+		} catch ( WPDieException $e ) {
+			// Expected — wp_send_json_*() terminates via wp_die().
+			unset( $e );
+		}
+		$response = ob_get_clean();
+
+		remove_filter( 'wp_doing_ajax', '__return_true' );
+
+		return json_decode( $response, true );
+	}
+
+	/**
 	 * Test that toggle handler requires manage_options capability.
 	 */
 	public function test_toggle_requires_manage_options() {
@@ -21,20 +60,7 @@ class Test_Auth0_Bridge_Toggle extends WP_UnitTestCase {
 		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $user_id );
 
-		// Set up the AJAX request.
-		$_POST['nonce']   = wp_create_nonce( 'wp-mcp-ai-auth0-setup' );
-		$_POST['enabled'] = '1';
-
-		// Create instance and call handler.
-		$auth0_setup = new WP_MCP_AI_Auth0_Setup();
-
-		// Capture output.
-		ob_start();
-		$auth0_setup->handle_toggle_bridge();
-		$response = ob_get_clean();
-
-		// Parse JSON response.
-		$data = json_decode( $response, true );
+		$data = $this->invoke_toggle_handler( wp_create_nonce( 'wp-mcp-ai-auth0-setup' ), '1' );
 
 		// Verify permission error.
 		$this->assertFalse( $data['success'] );
@@ -49,20 +75,7 @@ class Test_Auth0_Bridge_Toggle extends WP_UnitTestCase {
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		// Set up the AJAX request with invalid nonce.
-		$_POST['nonce']   = 'invalid_nonce';
-		$_POST['enabled'] = '1';
-
-		// Create instance and call handler.
-		$auth0_setup = new WP_MCP_AI_Auth0_Setup();
-
-		// Capture output.
-		ob_start();
-		$auth0_setup->handle_toggle_bridge();
-		$response = ob_get_clean();
-
-		// Parse JSON response.
-		$data = json_decode( $response, true );
+		$data = $this->invoke_toggle_handler( 'invalid_nonce', '1' );
 
 		// Verify nonce error.
 		$this->assertFalse( $data['success'] );
@@ -77,20 +90,7 @@ class Test_Auth0_Bridge_Toggle extends WP_UnitTestCase {
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		// Set up the AJAX request with valid nonce.
-		$_POST['nonce']   = wp_create_nonce( 'wp-mcp-ai-auth0-setup' );
-		$_POST['enabled'] = '1';
-
-		// Create instance and call handler.
-		$auth0_setup = new WP_MCP_AI_Auth0_Setup();
-
-		// Capture output.
-		ob_start();
-		$auth0_setup->handle_toggle_bridge();
-		$response = ob_get_clean();
-
-		// Parse JSON response.
-		$data = json_decode( $response, true );
+		$data = $this->invoke_toggle_handler( wp_create_nonce( 'wp-mcp-ai-auth0-setup' ), '1' );
 
 		// Verify success.
 		$this->assertTrue( $data['success'] );
@@ -115,20 +115,7 @@ class Test_Auth0_Bridge_Toggle extends WP_UnitTestCase {
 		$settings['enable_auth0_github_bridge'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
-		// Set up the AJAX request to disable.
-		$_POST['nonce']   = wp_create_nonce( 'wp-mcp-ai-auth0-setup' );
-		$_POST['enabled'] = '0';
-
-		// Create instance and call handler.
-		$auth0_setup = new WP_MCP_AI_Auth0_Setup();
-
-		// Capture output.
-		ob_start();
-		$auth0_setup->handle_toggle_bridge();
-		$response = ob_get_clean();
-
-		// Parse JSON response.
-		$data = json_decode( $response, true );
+		$data = $this->invoke_toggle_handler( wp_create_nonce( 'wp-mcp-ai-auth0-setup' ), '0' );
 
 		// Verify success.
 		$this->assertTrue( $data['success'] );
@@ -146,6 +133,11 @@ class Test_Auth0_Bridge_Toggle extends WP_UnitTestCase {
 	public function test_ajax_action_registered() {
 		global $wp_filter;
 
+		// The AJAX hook is registered in the constructor; instantiate the class
+		// so the registration is present in this test's hook table (the hook
+		// table is restored between tests).
+		new WP_MCP_AI_Auth0_Setup();
+
 		$this->assertTrue(
 			isset( $wp_filter['wp_ajax_wp_mcp_ai_toggle_auth0_bridge'] ),
 			'wp_ajax_wp_mcp_ai_toggle_auth0_bridge action should be registered'
@@ -156,10 +148,10 @@ class Test_Auth0_Bridge_Toggle extends WP_UnitTestCase {
 	 * Clean up after each test.
 	 */
 	public function tearDown(): void {
-		parent::tearDown();
-
 		// Clean up $_POST.
 		unset( $_POST['nonce'] );
 		unset( $_POST['enabled'] );
+
+		parent::tearDown();
 	}
 }

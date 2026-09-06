@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides a structured snapshot of available WordPress updates.
  */
-class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -248,6 +248,19 @@ class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface, WP_M
 			'read-only',            // Only reads data, does not modify state.
 			'local-only',           // No external API calls.
 			'requires-capability',  // Requires user capabilities.
+		);
+	}
+
+	/**
+	 * Vendor-supplied update packages can embed licence or download tokens in
+	 * their URL, which no heuristic can tell apart from a public download link.
+	 *
+	 * {@inheritdoc}
+	 */
+	public function get_sensitive_result_fields() {
+		return array(
+			'components.plugins.*.download_url',
+			'components.themes.*.download_url',
 		);
 	}
 }

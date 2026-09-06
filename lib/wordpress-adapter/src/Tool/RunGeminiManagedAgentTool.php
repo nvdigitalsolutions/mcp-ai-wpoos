@@ -103,6 +103,14 @@ class RunGeminiManagedAgentTool extends AbstractTool {
 		$timeout       = \absint( $arguments['timeout'] ?? 300 );
 		$model         = \sanitize_text_field( $arguments['model'] ?? 'gemini-3.5-flash' );
 
+		// Standalone gate: the managed-agent service lives in the base plugin.
+		if ( ! \defined( 'WP_MCP_AI_PATH' ) || ! \class_exists( 'WP_MCP_AI_Gemini_Managed_Agent_Service' ) ) {
+			return $this->errors->create(
+				'wp_mcp_ai_gemini_agent_unavailable',
+				'Gemini managed agent service is unavailable in this install.',
+			);
+		}
+
 		$service = new WP_MCP_AI_Gemini_Managed_Agent_Service();
 
 		switch ( $operation ) {

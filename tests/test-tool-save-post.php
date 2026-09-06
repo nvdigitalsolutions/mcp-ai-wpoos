@@ -69,7 +69,10 @@ class WP_MCP_AI_Tool_Save_Post_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Ensure non-standard post types do not force block conversion.
+	 * Ensure the classic-editor format keeps content unmodified.
+	 *
+	 * New posts default to the block-editor format, which wraps plain text
+	 * in paragraph blocks; requesting classic-editor must skip that step.
 	 */
 	public function test_execute_leaves_non_post_content_unchanged() {
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
@@ -82,6 +85,7 @@ class WP_MCP_AI_Tool_Save_Post_Test extends WP_UnitTestCase {
 				'title'     => 'Page Content',
 				'content'   => 'Simple page content.',
 				'status'    => 'draft',
+				'format'    => 'classic-editor',
 			),
 			array( 'user_id' => $user_id )
 		);

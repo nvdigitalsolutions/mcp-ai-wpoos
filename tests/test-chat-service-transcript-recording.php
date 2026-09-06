@@ -63,7 +63,6 @@ class Test_Chat_Service_Transcript_Recording extends WP_UnitTestCase {
 		update_post_meta( $this->assistant_id, '_wp_mcp_ai_provider', 'openai' );
 
 		rest_get_server();
-		do_action( 'init' );
 	}
 
 	/**
@@ -210,10 +209,15 @@ class Test_Chat_Service_Transcript_Recording extends WP_UnitTestCase {
 		$this->assertIsArray( $request_payload, 'Request payload should be valid JSON' );
 		$this->assertArrayHasKey( 'messages', $request_payload, 'Request payload should contain messages' );
 
-		// Verify messages in payload.
-		$this->assertCount( 1, $request_payload['messages'], 'Should have 1 user message in payload' );
+		// Verify messages in payload. The chat service appends the final
+		// assistant response to the conversation before persisting the
+		// transcript, so the payload carries the user message plus the
+		// assistant reply.
+		$this->assertCount( 2, $request_payload['messages'], 'Should have user + assistant message in payload' );
 		$this->assertSame( 'user', $request_payload['messages'][0]['role'], 'First message should be user' );
 		$this->assertSame( 'Hello, test message', $request_payload['messages'][0]['content'], 'Message content should match' );
+		$this->assertSame( 'assistant', $request_payload['messages'][1]['role'], 'Second message should be assistant' );
+		$this->assertSame( 'Hello! How can I help you today?', $request_payload['messages'][1]['content'], 'Assistant reply should be included in payload' );
 
 		// Verify response payload is saved.
 		$this->assertArrayHasKey( 'response_payload', $record, 'Record should have response_payload' );

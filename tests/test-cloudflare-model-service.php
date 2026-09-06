@@ -69,7 +69,7 @@ class Test_Cloudflare_Model_Service extends WP_UnitTestCase {
 	public function test_cloudflare_models_empty_when_not_enabled() {
 		// Set up Cloudflare settings without enable flag.
 		$settings = array(
-			'enable_cloudflare'     => false, // Disabled
+			'enable_cloudflare'     => false, // Disabled.
 			'cloudflare_api_token'  => 'test_token_12345',
 			'cloudflare_account_id' => 'test_account_id',
 		);
@@ -94,7 +94,7 @@ class Test_Cloudflare_Model_Service extends WP_UnitTestCase {
 		// Set up Cloudflare settings without API token.
 		$settings = array(
 			'enable_cloudflare'     => true,
-			'cloudflare_api_token'  => '', // Missing
+			'cloudflare_api_token'  => '', // Missing.
 			'cloudflare_account_id' => 'test_account_id',
 		);
 		update_option( 'wp_mcp_ai_settings', $settings );
@@ -119,7 +119,7 @@ class Test_Cloudflare_Model_Service extends WP_UnitTestCase {
 		$settings = array(
 			'enable_cloudflare'     => true,
 			'cloudflare_api_token'  => 'test_token_12345',
-			'cloudflare_account_id' => '', // Missing
+			'cloudflare_account_id' => '', // Missing.
 		);
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -155,9 +155,9 @@ class Test_Cloudflare_Model_Service extends WP_UnitTestCase {
 		$model_service = new WP_MCP_AI_Model_Service();
 		$models        = $model_service->get_models_for_provider( 'cloudflare' );
 
-		// Verify model labels.
-		$this->assertEquals( 'Llama 3.1 8B Instruct', $models['@cf/meta/llama-3.1-8b-instruct'] );
-		$this->assertEquals( 'Llama 3.1 70B Instruct', $models['@cf/meta/llama-3.1-70b-instruct'] );
-		$this->assertEquals( 'Mistral 7B Instruct v0.1', $models['@cf/mistralai/mistral-7b-instruct-v0.1'] );
+		// Verify model labels against the current static Cloudflare catalog.
+		$this->assertEquals( 'Llama 4 Scout 17B 16E Instruct (Multimodal)', $models['@cf/meta/llama-4-scout-17b-16e-instruct'] );
+		$this->assertEquals( 'Llama 4 Maverick 17B 128E Instruct', $models['@cf/meta/llama-4-maverick-17b-128e-instruct'] );
+		$this->assertEquals( 'Qwen 3 30B A3B FP8', $models['@cf/qwen/qwen3-30b-a3b-fp8'] );
 	}
 }

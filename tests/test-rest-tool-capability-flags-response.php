@@ -65,7 +65,10 @@ class WP_MCP_AI_REST_Tool_Capability_Flags_Response_Test extends WP_UnitTestCase
 				'get_site_health',  // Has: read-only, local-only, requires-capability.
 			),
 		);
-		update_post_meta( $this->assistant_id, 'wp_mcp_ai_assistant_config', $config );
+
+		// Tools live in their own meta key; the legacy aggregate key is no
+		// longer read by get_assistant_configuration().
+		update_post_meta( $this->assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, $config['tools'] );
 	}
 
 	/**
@@ -165,7 +168,7 @@ class WP_MCP_AI_REST_Tool_Capability_Flags_Response_Test extends WP_UnitTestCase
 
 		// Verify expected flags are present.
 		$this->assertContains( 'read-only', $data['capability_flags'], 'Should include read-only flag' );
-		$this->assertContains( 'local-only', $data['capability_flags'], 'Should include local-only flag' );
+		$this->assertContains( 'external-api', $data['capability_flags'], 'Should include external-api flag' );
 		$this->assertContains( 'requires-capability', $data['capability_flags'], 'Should include requires-capability flag' );
 	}
 
@@ -176,6 +179,7 @@ class WP_MCP_AI_REST_Tool_Capability_Flags_Response_Test extends WP_UnitTestCase
 		// Register a test tool without capability flags.
 		$test_tool = new class() implements WP_MCP_AI_Tool_Interface {
 			use WP_MCP_AI_Tool_Default_Capability;
+
 			/**
 			 * Get the tool slug.
 			 *
@@ -229,14 +233,13 @@ class WP_MCP_AI_REST_Tool_Capability_Flags_Response_Test extends WP_UnitTestCase
 
 		$this->registry->register_tool( $test_tool );
 
-		// Update assistant config to include this tool.
-		$config = get_post_meta( $this->assistant_id, 'wp_mcp_ai_assistant_config', true );
-		if ( ! is_array( $config ) ) {
-			$config = array();
+		// Update assistant tools to include this tool.
+		$tools = get_post_meta( $this->assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, true );
+		if ( ! is_array( $tools ) ) {
+			$tools = array();
 		}
-		$config['tools']   = isset( $config['tools'] ) ? $config['tools'] : array();
-		$config['tools'][] = 'test_tool_no_flags';
-		update_post_meta( $this->assistant_id, 'wp_mcp_ai_assistant_config', $config );
+		$tools[] = 'test_tool_no_flags';
+		update_post_meta( $this->assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, $tools );
 
 		$this->bootstrap_rest_controller();
 

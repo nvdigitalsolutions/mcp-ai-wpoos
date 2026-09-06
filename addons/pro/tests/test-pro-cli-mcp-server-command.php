@@ -163,7 +163,9 @@ namespace { // phpcs:ignore Universal.Namespaces.DisallowCurlyBraceSyntax,Univer
 		/** Test required methods exist.
 		 */
 		public function test_required_methods_exist(): void {
-			foreach ( array( 'list_', 'get', 'enable', 'disable', 'tools' ) as $method ) {
+			// The command declares `list()` (legal as a method name since PHP 7.0)
+			// and pins the CLI-facing name with an `@subcommand list` annotation.
+			foreach ( array( 'list', 'get', 'enable', 'disable', 'tools' ) as $method ) {
 				$this->assertTrue(
 					method_exists( $this->cmd, $method ),
 					"Method {$method}() must exist."
@@ -174,7 +176,7 @@ namespace { // phpcs:ignore Universal.Namespaces.DisallowCurlyBraceSyntax,Univer
 		/** Test list ids contains crm.
 		 */
 		public function test_list_ids_contains_crm(): void {
-			$this->cmd->list_(
+			$this->cmd->list(
 				array(),
 				array(
 					'status' => 'all',
@@ -192,7 +194,7 @@ namespace { // phpcs:ignore Universal.Namespaces.DisallowCurlyBraceSyntax,Univer
 			$cfg['enabled'] = false;
 			$server->update_configuration( $cfg );
 
-			$this->cmd->list_(
+			$this->cmd->list(
 				array(),
 				array(
 					'status' => 'enabled',
@@ -210,7 +212,7 @@ namespace { // phpcs:ignore Universal.Namespaces.DisallowCurlyBraceSyntax,Univer
 			$cfg['enabled'] = false;
 			$server->update_configuration( $cfg );
 
-			$this->cmd->list_(
+			$this->cmd->list(
 				array(),
 				array(
 					'status' => 'disabled',

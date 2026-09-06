@@ -420,9 +420,9 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 		 * Return the static list of supported Claude models.
 		 *
 		 * Anthropic does not expose a public REST endpoint to enumerate models, so a
-		 * curated static list is returned instead. The list mirrors the models named
-		 * in the Anthropic proposal (Claude 3 Haiku / Sonnet / Opus; Claude 4 Sonnet
-		 * / Opus) plus the latest Sonnet snapshot used as the default.
+		 * curated static list is returned instead. The list mirrors the current
+		 * Claude lineup (Opus 5 / Fable 5.1 / Mythos 5 / Sonnet 5 / Haiku 4.5)
+		 * plus retained legacy snapshots.
 		 *
 		 * @param array $options Unused; reserved for future API-based enumeration.
 		 * @return array Array of model objects with 'id', 'name', and 'context_window' keys.
@@ -430,24 +430,44 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 		public function list_models( array $options = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- $options reserved for future API-based enumeration.
 			return array(
 				array(
-					'id'             => 'claude-mythos-preview',
-					'name'           => __( 'Claude Mythos Preview (most capable)', 'mcp-ai-wpoos' ),
+					'id'             => 'claude-opus-5',
+					'name'           => __( 'Claude Opus 5 (July 2026 - default flagship)', 'mcp-ai-wpoos' ),
 					'context_window' => 1000000,
 				),
 				array(
-					'id'             => 'claude-haiku-4-5',
-					'name'           => __( 'Claude 3 Haiku (fastest)', 'mcp-ai-wpoos' ),
+					'id'             => 'claude-fable-5.1',
+					'name'           => __( 'Claude Fable 5.1 (September 2026 - top tier)', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,
 				),
 				array(
+					'id'             => 'claude-mythos-5',
+					'name'           => __( 'Claude Mythos 5 (invitation-only top tier)', 'mcp-ai-wpoos' ),
+					'context_window' => 1000000,
+				),
+				array(
 					'id'             => 'claude-sonnet-5',
-					'name'           => __( 'Claude 3.5 Sonnet', 'mcp-ai-wpoos' ),
+					'name'           => __( 'Claude Sonnet 5 (June 2026 - default)', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,
 				),
 				array(
 					'id'             => 'claude-opus-4-8',
-					'name'           => __( 'Claude 3 Opus', 'mcp-ai-wpoos' ),
-					'context_window' => 200000,
+					'name'           => __( 'Claude Opus 4.8', 'mcp-ai-wpoos' ),
+					'context_window' => 1000000,
+				),
+				array(
+					'id'             => 'claude-opus-4-7',
+					'name'           => __( 'Claude Opus 4.7', 'mcp-ai-wpoos' ),
+					'context_window' => 1000000,
+				),
+				array(
+					'id'             => 'claude-opus-4-6',
+					'name'           => __( 'Claude Opus 4.6', 'mcp-ai-wpoos' ),
+					'context_window' => 1000000,
+				),
+				array(
+					'id'             => 'claude-sonnet-4-6',
+					'name'           => __( 'Claude Sonnet 4.6', 'mcp-ai-wpoos' ),
+					'context_window' => 1000000,
 				),
 				array(
 					'id'             => 'claude-haiku-4-5',
@@ -456,27 +476,17 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				),
 				array(
 					'id'             => 'claude-sonnet-4-5',
-					'name'           => __( 'Claude Sonnet 4.5', 'mcp-ai-wpoos' ),
+					'name'           => __( 'Claude Sonnet 4.5 (legacy)', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,
 				),
 				array(
-					'id'             => 'claude-sonnet-4-6',
-					'name'           => __( 'Claude Sonnet 4.6 (recommended)', 'mcp-ai-wpoos' ),
+					'id'             => 'claude-3-5-sonnet-20241022',
+					'name'           => __( 'Claude 3.5 Sonnet (legacy, sunset 2026-09-30)', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,
 				),
 				array(
-					'id'             => 'claude-opus-4-5',
-					'name'           => __( 'Claude Opus 4.5', 'mcp-ai-wpoos' ),
-					'context_window' => 200000,
-				),
-				array(
-					'id'             => 'claude-opus-4-7',
-					'name'           => __( 'Claude Opus 4.7 (flagship)', 'mcp-ai-wpoos' ),
-					'context_window' => 200000,
-				),
-				array(
-					'id'             => 'claude-opus-4-6',
-					'name'           => __( 'Claude Opus 4.6 (most capable)', 'mcp-ai-wpoos' ),
+					'id'             => 'claude-3-5-haiku-20241022',
+					'name'           => __( 'Claude 3.5 Haiku (legacy, sunset 2026-09-30)', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,
 				),
 			);

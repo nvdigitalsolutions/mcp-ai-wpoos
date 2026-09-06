@@ -194,16 +194,8 @@ class WP_MCP_AI_Skill_Pack_Registry {
 		}
 
 		$members = isset( $pack['skills'] ) && is_array( $pack['skills'] ) ? $pack['skills'] : array();
-		if ( empty( $members ) ) {
-			return array(
-				'installed' => 0,
-				'skipped'   => 0,
-				'errors'    => array(),
-			);
-		}
 
-		$registry = WP_MCP_AI_Skill_Registry::instance();
-
+		$registry  = WP_MCP_AI_Skill_Registry::instance();
 		$installed = 0;
 		$skipped   = 0;
 		$errors    = array();
@@ -274,7 +266,12 @@ class WP_MCP_AI_Skill_Pack_Registry {
 				continue;
 			}
 
-			$slug = isset( $pack['slug'] ) ? sanitize_key( (string) $pack['slug'] ) : sanitize_key( (string) $key );
+			// A pack must carry a slug; fall back to the array key only when it
+			// is a string (associative registration). Numeric-keyed entries
+			// without a slug are invalid and silently dropped.
+			$slug = isset( $pack['slug'] )
+				? sanitize_key( (string) $pack['slug'] )
+				: ( is_string( $key ) ? sanitize_key( $key ) : '' );
 			if ( '' === $slug ) {
 				continue;
 			}

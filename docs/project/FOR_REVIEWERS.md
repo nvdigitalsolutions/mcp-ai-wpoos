@@ -14,15 +14,15 @@ Architecturally, the project has undergone a major framework extraction: the AI 
 The repo is a **monorepo** containing:
 - The **base plugin** (GPLv3, ships to WordPress.org) — `mcp-ai-wpoos.php` + `includes/`
 - A **Pro addon** (commercial/proprietary) — `addons/pro/`
-- **25 additional addons** (various licenses) — `addons/*/` (including Fleet Operator, Media Worker v3.2.0)
+- **26 additional addons** (various licenses) — `addons/*/` (including Fleet Operator, Media Worker v3.2.0, Checkout API v0.1.0)
 - The **extracted AI engine** (framework-agnostic, Hexagonal Architecture) — `lib/core/`
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 
-**Current version:** 1.1.62 (August 2026)
+**Current version:** 1.1.71 (September 2026)
 **Tested up to:** WordPress 6.10
 **Total PHP files:** ~5,000 (base + pro + addons + lib/core; excl. vendor/node_modules)
-**Total tools:** ~1,552 (~303 base + ~1,249 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,566 (~303 base + ~1,263 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 ---
 
@@ -35,7 +35,7 @@ The repo is a **monorepo** containing:
 | Is it safe to run on production? | The base plugin passes all WP.org guidelines. The April 2026 security audit found 0 Critical, 5 High (3 Fixed, 2 Partially Fixed — both in addons). May–June 2026 hardening resolved 1 Critical + 5 Warnings. July–August 2026 Phase 3 hardening added 10 security classes, CORS posture, error-verbosity control, auth brute-force detection, and asset-fingerprinting prevention. See [Security Posture](../operations/security/SECURITY_POSTURE.md). |
 | What PHP version is required? | **Base: 7.4+** · **Pro addon: 8.1+** (due to npm packages like sharp/fluent-ffmpeg) · **lib/core: 8.1+** |
 | What WP version? | 6.0+, tested up to 6.10 |
-| Is there a Pro/freemium model? | Yes. Base is fully functional GPLv3. Pro addon adds ~1,249 advanced tools (commercial license). Base never gates features behind a license check. |
+| Is there a Pro/freemium model? | Yes. Base is fully functional GPLv3. Pro addon adds ~1,263 advanced tools (commercial license). Base never gates features behind a license check. |
 | Was it rejected from WordPress.org? | Yes — the 90-day window expired before all fixes were completed. All rejection reasons are now resolved. See [Compliance Traceability](../operations/compliance/TRACEABILITY.md). |
 | Can it be resubmitted to .org? | Possibly, but the window has closed. The author is seeking professional review before deciding next steps. |
 
@@ -50,7 +50,7 @@ includes/                     ← 1,060 PHP files
 ├── class-wp-mcp-ai-plugin.php ← Kernel / DI container / singleton
 ├── class-wp-mcp-ai-rest.php   ← REST route registration (151 calls, 36 files)
 ├── class-wp-mcp-ai-tool-registry.php ← Central tool registry
-├── tools/                     ← ~303 base tool classes (~1,552 total registered through the singleton registry)
+├── tools/                     ← ~303 base tool classes (~1,566 total registered through the singleton registry)
 ├── admin/                     ← Admin UI, settings, dashboards
 ├── rest/                      ← REST controllers (chat, MCP, webhooks)
 ├── assistants/                ← Assistant CPT & CCT management
@@ -106,7 +106,7 @@ The monorepo contains **26 addon directories** under `addons/` (27 entries in th
 | **Graphify** | 0.6.0 | Proprietary | Knowledge graph builder. Entities, relationships, WooCommerce/Wikidata/RSS/SPARQL/CSV drivers. |
 | **Chat SPA** | 0.6.0 | GPLv3 | React chat surface (Vercel AI SDK). Shortcode + Gutenberg block. |
 | **Docs Hub** | 0.3.9 | GPLv3 | React SPA documentation browser (GitBook-style Markdown rendering). |
-| **Algorave** | 1.0.7 | AGPL-3.0 | Live-coding music. Tone.js/Strudel, MIDI export, audio visualization. ⚠️ Has 1 partially-fixed High finding (F-AI-01). |
+| **Algorave** | 1.0.7 | AGPL-3.0 | Live-coding music. Tone.js/Strudel, MIDI export, audio visualization. F-AI-01 accepted with rationale (raw-eval gated behind `WP_MCP_AI_ALLOW_TONEJS_EVAL` + `edit_posts`; warning UI added). |
 | **Fantasy Football** | 0.1.0 | Proprietary | ESPN/Yahoo Fantasy Sports API. Team management, player research, trade analysis, AI logo generation. |
 | **Embedded** | 0.2.0 | Proprietary | Server-side llama.cpp GGUF inference + client-side WebLLM/WebGPU + P2P WebChat (WebRTC). Voice tool calling, OpenMed healthcare tools, MCP abilities. |
 | **Canvas** | 0.1.0 | Proprietary | Platform-specific Tesseract PDF OCR binaries. |
@@ -150,13 +150,13 @@ The monorepo contains **26 addon directories** under `addons/` (27 entries in th
 
 The April 2026 security audit ([SECURITY_AUDIT_2026_04.md](../operations/compliance/SECURITY_AUDIT_2026_04.md)) found **50 findings: 0 Critical, 5 High (3 Fixed + 2 Partially Fixed), 14 Medium (all Fixed), 21 Low (19 Fixed), 10 Informational.** Additional hardening in May–June 2026 (v1.1.15–v1.1.27) resolved 1 Critical + 5 Warnings from code review. **Phase 3 operational security hardening** (July–August 2026, v1.1.38–v1.1.50) added 3 new security classes (audit logger, CSP headers, request guard enhancements), CORS posture signals, error-verbosity control, auth brute-force detection, body-size enforcement, asset-fingerprinting prevention, and OAuth hardening.
 
-### Still open / partially fixed (as of v1.1.52):
+### Closed since the v1.1.52 snapshot (F-AUTHZ-01, F-AI-01, F-CMP-04 — closed in v1.1.65, 2026-08-28):
 | ID | Severity | Status | What |
 |---|---|---|---|
-| F-AUTHZ-01 | High | 🟡 Partial | Webhook routes with `__return_true` permission callbacks — 4 fixed (Telegram, agent-card ×2, Google Chat), remaining 5 are legitimately public GET-only verification endpoints (Twitter CRC, WhatsApp verify, Messenger verify, OPTIONS preflight). Documented with justification comments. |
-| F-AI-01 | High | 🟡 Partial | Algorave live-coding `new Function()` sandboxing. Gated behind `WP_MCP_AI_ALLOW_TONEJS_EVAL` (default `false`). Strudel engine is the safe default. |
+| F-AUTHZ-01 | High | ✅ Fixed | Webhook routes with `__return_true` permission callbacks — 4 fixed via signature verification (Telegram, agent-card ×2, Google Chat); final sweep added inline justification comments to every remaining legitimately-public route (Twitter CRC GET ×2, WhatsApp verify GET ×2, Messenger verify GET, Telegram Mini App page/validate ×4). |
+| F-AI-01 | High | ⏭️ Accepted | Algorave live-coding `new Function()` sandboxing — accepted with rationale: gated behind `WP_MCP_AI_ALLOW_TONEJS_EVAL` (default `false`) + `edit_posts`; Strudel engine is the safe default; added raw-eval warning banner + one-time per-session confirm-on-execute. Sandboxed iframe mandatory only if the addon ships on WP.org or Guest Access becomes public. |
 | F-LINT-02 | Low | ✅ Resolved | Pro tree PHPCS blanket exclusion removed. 93% error reduction (1,143 → 82). Remaining errors are parse-error files (8 files) and naming conventions (addons use `NVOOS_*` naming). |
-| F-CMP-04 | Low | 🟡 Partial | Minified JS without source maps — most bundles now have source maps; a few legacy bundles remain. |
+| F-CMP-04 | Low | ✅ Fixed | Minified JS without source maps — final sweep confirmed every plugin-authored bundle has a sibling map (page-agent esbuild emits external maps; tma-markdown regenerated). Third-party vendor bundles exempt per the R-Q-06 Chart.js precedent. |
 | R-T-01 | — | ✅ Resolved | PHPCS re-enabled on `addons/pro/` via PRs #5070, #5078. |
 
 ### Recently fixed (Phase 3 hardening, July–August 2026):
@@ -213,7 +213,7 @@ If you have limited budget for a review, focus on this order:
 ### Phase 2: Architecture review (~3-4 hours)
 4. **Plugin architecture** — DI container usage, class loading, lifecycle hooks (60+), singleton patterns
 5. **Base/Pro separation** — Verify no pro feature gating in base plugin
-6. **Tool registry** — How ~1,552 tools are registered and discovered
+6. **Tool registry** — How ~1,566 tools are registered and discovered
 7. **lib/core extraction** — Hexagonal Architecture (32 domain contracts, 21 WordPress adapters), agentic loop, provider routing, 109+ migrated tools. `includes/bridge/` adapters.
 
 ### Phase 3: Deep dives (~4-6 hours, if budget allows)

@@ -87,7 +87,10 @@ class Test_Profession_Integration extends WP_UnitTestCase {
 		update_option( 'wp_mcp_ai_default_assistant', $this->assistant_id );
 
 		// Get REST controller instance using reflection to access protected methods.
-		$this->rest_controller = new WP_MCP_AI_REST();
+		$this->rest_controller = new WP_MCP_AI_REST(
+			WP_MCP_AI_Tool_Registry::get_instance(),
+			$this->createMock( WP_MCP_AI_Language_Model_Router::class )
+		);
 	}
 
 	/**
@@ -174,7 +177,7 @@ class Test_Profession_Integration extends WP_UnitTestCase {
 
 		// Verify system prompt was built from profession data.
 		$this->assertStringContainsString( 'professional tax advisor', $result['system_prompt'], 'System prompt should contain role description' );
-		$this->assertStringContainsString( 'Knowledge Base:', $result['system_prompt'], 'System prompt should contain knowledge base label' );
+		$this->assertStringContainsString( '### Knowledge Base for Test Tax Advisor', $result['system_prompt'], 'System prompt should contain knowledge base section' );
 		$this->assertStringContainsString( 'Tax laws vary by jurisdiction', $result['system_prompt'], 'System prompt should contain knowledge base content' );
 
 		// Verify tools were set from profession.
@@ -279,8 +282,10 @@ class Test_Profession_Integration extends WP_UnitTestCase {
 		);
 
 		// Set assistant's base configuration.
-		update_post_meta( $associated_assistant_id, '_wp_mcp_ai_assistant_system_prompt', 'You are a helpful AI assistant with general knowledge.' );
-		update_post_meta( $associated_assistant_id, '_wp_mcp_ai_assistant_tools', array( 'general_tool' ) );
+		update_post_meta( $associated_assistant_id, WP_MCP_AI_Assistant_CPT::META_SYSTEM_PROMPT, 'You are a helpful AI assistant with general knowledge.' );
+		// Note: assistant tool slugs are validated against the live tool
+		// registry at storage time, so this must be a real registered tool.
+		update_post_meta( $associated_assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'search_content' ) );
 
 		// Associate the assistant with the profession.
 		update_post_meta( $this->profession_id, '_wp_mcp_ai_profession_associated_assistant', $associated_assistant_id );
@@ -305,7 +310,7 @@ class Test_Profession_Integration extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'professional tax advisor', $merged_config['system_prompt'], 'Should append profession knowledge' );
 
 		// Verify tools are merged.
-		$this->assertContains( 'general_tool', $merged_config['tools'], 'Should keep assistant tools' );
+		$this->assertContains( 'search_content', $merged_config['tools'], 'Should keep assistant tools' );
 		$this->assertContains( 'search', $merged_config['tools'], 'Should add profession tools' );
 
 		// Clean up.
@@ -313,7 +318,12 @@ class Test_Profession_Integration extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test profession without associated assistant uses default assistant when available.
+	 * Test profession without associated assistant uses profession-only mode.
+	 *
+	 * The profession test flow reuses the assistant primary-role logic: with
+	 * no associated assistant, resolve_assistant_id() returns 0 and the
+	 * profession prompt becomes the primary system prompt instead of falling
+	 * back to the site default assistant.
 	 */
 	public function test_profession_without_assistant_uses_default() {
 		// Ensure default assistant is set.
@@ -323,21 +333,21 @@ class Test_Profession_Integration extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'resolve_assistant_id' );
 		$method->setAccessible( true );
 
-		// Test that resolve_assistant_id returns default assistant.
+		// Test that resolve_assistant_id returns 0 (profession-only mode).
 		$result = $method->invoke( $this->rest_controller, 'profession_' . $this->profession_id );
-		$this->assertEquals( $this->assistant_id, $result, 'Should return default assistant when no associated assistant' );
+		$this->assertEquals( 0, $result, 'Should return 0 when no associated assistant (profession-only mode)' );
 
-		// Test that profession configuration is merged with default assistant config.
+		// Test that profession configuration is used as the primary prompt
+		// when no assistant base is available.
 		$load_method = $reflection->getMethod( 'load_profession_configuration' );
 		$load_method->setAccessible( true );
 
-		// Get default assistant config.
-		$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $this->assistant_id );
-		$merged_config    = $load_method->invoke( $this->rest_controller, $this->profession_id, $assistant_config );
+		$empty_config  = array(); // No assistant base.
+		$merged_config = $load_method->invoke( $this->rest_controller, $this->profession_id, $empty_config );
 
-		// Verify profession knowledge is appended to assistant knowledge.
-		$this->assertStringContainsString( 'Professional Role & Expertise:', $merged_config['system_prompt'], 'Should have append header when using default assistant' );
-		$this->assertStringContainsString( 'professional tax advisor', $merged_config['system_prompt'], 'Should append profession knowledge' );
+		// Verify profession knowledge is the primary system prompt.
+		$this->assertStringContainsString( 'professional tax advisor', $merged_config['system_prompt'], 'Should use profession knowledge as primary prompt' );
+		$this->assertStringNotContainsString( 'Professional Role & Expertise:', $merged_config['system_prompt'], 'Should NOT append a section header when there is no base assistant' );
 	}
 
 	/**
@@ -364,7 +374,7 @@ class Test_Profession_Integration extends WP_UnitTestCase {
 
 		// Verify profession knowledge is used as primary system prompt.
 		$this->assertStringContainsString( 'professional tax advisor', $merged_config['system_prompt'], 'Should use profession knowledge as primary' );
-		$this->assertNotStringContainsString( 'Professional Role & Expertise:', $merged_config['system_prompt'], 'Should NOT have append header when no base assistant' );
+		$this->assertStringNotContainsString( 'Professional Role & Expertise:', $merged_config['system_prompt'], 'Should NOT have append header when no base assistant' );
 
 		// Verify profession tools are used.
 		$this->assertContains( 'search', $merged_config['tools'], 'Should use profession tools' );

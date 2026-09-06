@@ -73,11 +73,12 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		/**
 		 * Default chat model when none is configured.
 		 *
-		 * The kimi-k2.6 model is the latest agentic model with 256K context and tool calling.
+		 * The kimi-k3 model (July 2026) is the Moonshot AI flagship: 2.8T-parameter
+		 * MoE with open weights, 1M context, native vision, and tool calling.
 		 *
 		 * @var string
 		 */
-		const DEFAULT_MODEL = 'kimi-k2.6';
+		const DEFAULT_MODEL = 'kimi-k3';
 
 		/**
 		 * Models that explicitly support tool/function calling.
@@ -88,6 +89,7 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		 * @var array
 		 */
 		const MODELS_WITH_TOOL_CALLING = array(
+			'kimi-k3',
 			'kimi-k2.7-code',
 			'kimi-k2.6',
 			'kimi-k2.5',
@@ -115,6 +117,7 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		 * @var array
 		 */
 		const MODEL_CONTEXT_WINDOWS = array(
+			'kimi-k3'          => 1048576,
 			'kimi-k2.7-code'   => 256000,
 			'kimi-k2.6'        => 256000,
 			'kimi-k2.5'        => 256000,

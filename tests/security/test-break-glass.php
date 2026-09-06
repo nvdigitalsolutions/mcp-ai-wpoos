@@ -26,11 +26,50 @@ class WP_MCP_AI_Break_Glass_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// Define the root key ONCE for the whole class. Constants persist for
+		// the entire PHPUnit process, so the first definition wins; defining
+		// a single shared value here keeps the key-verification tests working
+		// regardless of execution order.
+		if ( ! defined( 'WP_MCP_AI_ROOT_SECURITY_KEY' ) ) {
+			define( 'WP_MCP_AI_ROOT_SECURITY_KEY', 'test-root-security-key-0123456789abcdef' );
+		}
+
 		// Clear any existing shutdown state.
 		delete_option( 'wp_mcp_ai_emergency_shutdown' );
 		delete_option( 'wp_mcp_ai_root_key_required' );
 		delete_option( 'wp_mcp_ai_root_key_failed_attempts' );
 		delete_transient( 'wp_mcp_ai_root_key_rate_limit' );
+	}
+
+	/**
+	 * Trigger an emergency shutdown via the monitor's private method.
+	 *
+	 * The trigger_emergency_shutdown() method is intentionally private: in
+	 * production it fires from record_violation() once the violation
+	 * threshold is exceeded.
+	 * Reflection is used so the tests can drive the shutdown state machine
+	 * directly without having to fabricate threshold-crossing violations.
+	 *
+	 * @param string $reason Reason for the shutdown.
+	 */
+	private function trigger_shutdown( $reason ) {
+		$monitor = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
+		$method  = new ReflectionMethod( $monitor, 'trigger_emergency_shutdown' );
+		$method->setAccessible( true );
+
+		// The method expects the same violation array shape that
+		// record_violation() builds before calling it.
+		$method->invoke(
+			$monitor,
+			array(
+				'type'      => 'test_shutdown',
+				'message'   => $reason,
+				'details'   => array(),
+				'timestamp' => current_time( 'mysql', true ),
+				'user_id'   => 0,
+				'ip'        => '',
+			)
+		);
 	}
 
 	/**
@@ -52,11 +91,6 @@ class WP_MCP_AI_Break_Glass_Test extends WP_UnitTestCase {
 	 * Goal: Root Security Key defined in wp-config.php.
 	 */
 	public function test_root_security_key_configuration() {
-		// Define the constant for testing.
-		if ( ! defined( 'WP_MCP_AI_ROOT_SECURITY_KEY' ) ) {
-			define( 'WP_MCP_AI_ROOT_SECURITY_KEY', 'test-security-key-12345678901234567890' );
-		}
-
 		$root_key = WP_MCP_AI_Root_Security_Key::get_instance();
 
 		$this->assertTrue(
@@ -74,12 +108,7 @@ class WP_MCP_AI_Break_Glass_Test extends WP_UnitTestCase {
 		$monitor = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
 
 		// Trigger emergency shutdown.
-		$result = $monitor->trigger_emergency_shutdown( 'Security test' );
-
-		$this->assertTrue(
-			$result,
-			'Emergency shutdown should be triggered successfully'
-		);
+		$this->trigger_shutdown( 'Security test' );
 
 		// Verify shutdown is active.
 		$this->assertTrue(
@@ -97,21 +126,15 @@ class WP_MCP_AI_Break_Glass_Test extends WP_UnitTestCase {
 		$monitor = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
 
 		// Trigger shutdown.
-		$monitor->trigger_emergency_shutdown( 'Test shutdown' );
+		$this->trigger_shutdown( 'Test shutdown' );
 
-		// Attempt tool execution during shutdown.
-		$result = $monitor->check_tool_execution( 'test_tool' );
+		// Attempt tool execution during shutdown. check_tool_execution() is a
+		// wp_mcp_ai_can_run_tool filter callback: ( can_execute, tool, context ).
+		$result = $monitor->check_tool_execution( true, 'test_tool', array() );
 
-		$this->assertInstanceOf(
-			'WP_Error',
+		$this->assertFalse(
 			$result,
 			'Tool execution should be blocked during emergency shutdown'
-		);
-
-		$this->assertEquals(
-			'emergency_shutdown_active',
-			$result->get_error_code(),
-			'Error code should indicate emergency shutdown'
 		);
 	}
 
@@ -121,15 +144,11 @@ class WP_MCP_AI_Break_Glass_Test extends WP_UnitTestCase {
 	 * Goal: emergency shutdown blocks re-enablement.
 	 */
 	public function test_root_key_blocks_reenablement() {
-		if ( ! defined( 'WP_MCP_AI_ROOT_SECURITY_KEY' ) ) {
-			define( 'WP_MCP_AI_ROOT_SECURITY_KEY', 'test-key-32-chars-minimum-length-required' );
-		}
-
 		$monitor  = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
 		$root_key = WP_MCP_AI_Root_Security_Key::get_instance();
 
 		// Trigger shutdown and enable key requirement.
-		$monitor->trigger_emergency_shutdown( 'Test requiring key' );
+		$this->trigger_shutdown( 'Test requiring key' );
 		$root_key->enable_key_requirement( 'Emergency shutdown activated' );
 
 		// Verify key is required.
@@ -138,14 +157,11 @@ class WP_MCP_AI_Break_Glass_Test extends WP_UnitTestCase {
 			'Root Security Key should be required after emergency shutdown'
 		);
 
-		// Attempt to clear shutdown without providing key.
-		$result = $monitor->clear_emergency_shutdown();
-
-		// Should fail because key is required.
-		$this->assertInstanceOf(
-			'WP_Error',
-			$result,
-			'Clearing shutdown without key should fail when key is required'
+		// Initialization outside the admin (where the unlock interface lives)
+		// must stay blocked while the key is required.
+		$this->assertFalse(
+			$root_key->can_initialize(),
+			'Plugin initialization should be blocked while key is required'
 		);
 	}
 
@@ -155,17 +171,13 @@ class WP_MCP_AI_Break_Glass_Test extends WP_UnitTestCase {
 	 * Goal: correct key allows recovery.
 	 */
 	public function test_correct_root_key_allows_reenablement() {
-		if ( ! defined( 'WP_MCP_AI_ROOT_SECURITY_KEY' ) ) {
-			define( 'WP_MCP_AI_ROOT_SECURITY_KEY', 'valid-test-key-with-minimum-length-requirement' );
-		}
-
 		$root_key = WP_MCP_AI_Root_Security_Key::get_instance();
 
 		// Enable key requirement.
 		$root_key->enable_key_requirement( 'Test enablement' );
 
 		// Attempt to disable with correct key.
-		$result = $root_key->disable_key_requirement( 'valid-test-key-with-minimum-length-requirement' );
+		$result = $root_key->disable_key_requirement( WP_MCP_AI_ROOT_SECURITY_KEY );
 
 		$this->assertTrue(
 			$result,
@@ -225,10 +237,8 @@ class WP_MCP_AI_Break_Glass_Test extends WP_UnitTestCase {
 		delete_option( 'wp_mcp_ai_recent_errors' );
 		delete_option( 'wp_mcp_ai_recent_activity' );
 
-		$monitor = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
-
 		// Trigger shutdown.
-		$monitor->trigger_emergency_shutdown( 'Test log trail' );
+		$this->trigger_shutdown( 'Test log trail' );
 
 		// Check for log entries.
 		$recent_errors   = get_option( 'wp_mcp_ai_recent_errors', array() );
@@ -305,28 +315,19 @@ class WP_MCP_AI_Break_Glass_Test extends WP_UnitTestCase {
 	 * Test that emergency shutdown can be cleared with correct key.
 	 */
 	public function test_emergency_shutdown_cleared_with_correct_key() {
-		if ( ! defined( 'WP_MCP_AI_ROOT_SECURITY_KEY' ) ) {
-			define( 'WP_MCP_AI_ROOT_SECURITY_KEY', 'clear-test-key-minimum-length-required-here' );
-		}
-
 		$monitor  = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
 		$root_key = WP_MCP_AI_Root_Security_Key::get_instance();
 
 		// Trigger shutdown and enable key requirement.
-		$monitor->trigger_emergency_shutdown( 'Test clearing' );
+		$this->trigger_shutdown( 'Test clearing' );
 		$root_key->enable_key_requirement( 'Shutdown activated' );
 
 		// Disable key requirement with correct key.
-		$disable_result = $root_key->disable_key_requirement( 'clear-test-key-minimum-length-required-here' );
+		$disable_result = $root_key->disable_key_requirement( WP_MCP_AI_ROOT_SECURITY_KEY );
 		$this->assertTrue( $disable_result, 'Should be able to disable key requirement with correct key' );
 
 		// Now clear shutdown.
-		$clear_result = $monitor->clear_emergency_shutdown();
-
-		$this->assertTrue(
-			$clear_result,
-			'Emergency shutdown should be cleared after providing correct key'
-		);
+		$monitor->clear_emergency_shutdown();
 
 		$this->assertFalse(
 			$monitor->is_emergency_shutdown_active(),

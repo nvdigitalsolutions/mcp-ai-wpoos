@@ -101,7 +101,7 @@ class WP_MCP_AI_Agent_Identity_Resolver {
 		if ( ! $canonical ) {
 			$recorded = self::get_canonical( $agent_id );
 			if ( $recorded ) {
-				$canonical = $recorded;
+				$canonical = absint( $recorded );
 			}
 		}
 

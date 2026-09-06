@@ -35,8 +35,10 @@ class WP_MCP_AI_Attachment_Image_URL_Structure_Test extends WP_UnitTestCase {
 		$expected_url = wp_get_attachment_url( $attachment_id );
 		$this->assertNotEmpty( $expected_url );
 
-		// Create attachment helper.
-		$helper = new WP_MCP_AI_Message_Attachments();
+		// Create attachment helper. Use a provider without a remote File API
+		// (ollama) so the segment is built from a local reference without
+		// requiring an OpenAI API key in the test environment.
+		$helper = new WP_MCP_AI_Message_Attachments( 'ollama' );
 
 		// Prepare image segment with attachment_id (simulates attach file button).
 		$segment = $helper->prepare_input_image_segment(
@@ -176,8 +178,10 @@ class WP_MCP_AI_Attachment_Image_URL_Structure_Test extends WP_UnitTestCase {
 
 		$expected_url = wp_get_attachment_url( $attachment_id );
 
-		// Create attachment helper.
-		$helper = new WP_MCP_AI_Message_Attachments();
+		// Create attachment helper. Use a provider without a remote File API
+		// (ollama) so the segment is built from a local reference without
+		// requiring an OpenAI API key in the test environment.
+		$helper = new WP_MCP_AI_Message_Attachments( 'ollama' );
 
 		// Prepare image segment.
 		$segment = $helper->prepare_input_image_segment(
@@ -188,7 +192,7 @@ class WP_MCP_AI_Attachment_Image_URL_Structure_Test extends WP_UnitTestCase {
 		);
 
 		// The image_url structure should match the OpenAI image tool pattern:
-		// array( 'url' => 'https://...' )
+		// array( 'url' => 'https://...' ).
 		$this->assertIsArray( $segment['image_url'] );
 		$this->assertArrayHasKey( 'url', $segment['image_url'] );
 		$this->assertIsString( $segment['image_url']['url'] );

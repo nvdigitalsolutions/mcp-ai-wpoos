@@ -23,6 +23,17 @@
 /**
  * AJAX cluster: Skill Manager (Pro).
  */
+// Load the Pro admin class under test; the pro addon loads it only in admin
+// context, so require it here to keep the suite runnable standalone (mirrors
+// CI, where earlier admin-context tests load it).
+if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+	$wp_mcp_ai_skill_manager_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-skill-manager-admin-page.php';
+	if ( file_exists( $wp_mcp_ai_skill_manager_page ) ) {
+		require_once $wp_mcp_ai_skill_manager_page;
+	}
+	unset( $wp_mcp_ai_skill_manager_page );
+}
+
 class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
 	/**

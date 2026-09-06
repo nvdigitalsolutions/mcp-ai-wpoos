@@ -34,7 +34,7 @@ class Test_Ingestion_Surface_Parity extends WP_UnitTestCase {
 
 		$page_slugs = wp_list_pluck( $surfaces, 'page_slug' );
 		$this->assertEqualSets(
-			array( 'company-research', 'post-research', 'page-research', 'place-research' ),
+			array( 'research-company', 'research-customer', 'research-deal', 'research-lead' ),
 			$page_slugs
 		);
 	}

@@ -213,6 +213,11 @@ class Test_Toolkit_Server_Credentials extends WP_UnitTestCase {
 	/** Create rest server.
 	 */
 	private function make_rest_server() {
+		// The token handlers resolve the server slug against the registry;
+		// prime it with the CRM server the way the execution/limits tests do.
+		WP_MCP_AI_Toolkit_Server_Registry::reset_instance();
+		WP_MCP_AI_Toolkit_Server_Registry::get_instance()->register( new WP_MCP_AI_CRM_MCP_Server() );
+
 		/**
 		 * REST server instance.
 		 *

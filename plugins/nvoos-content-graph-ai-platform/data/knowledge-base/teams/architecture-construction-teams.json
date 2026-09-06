@@ -1,0 +1,64 @@
+{
+  "teams": [
+    {
+      "title": "Architectural Design Team",
+      "slug": "architectural_design_team",
+      "description": "Comprehensive architectural design team covering architecture, interior design, landscape architecture, and technical drafting.",
+      "members": [
+        "architect",
+        "interior_designer",
+        "landscape_architect",
+        "architectural_drafter",
+        "bim_coordinator"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.5
+    },
+    {
+      "title": "Construction Management Team",
+      "slug": "construction_management_team",
+      "description": "Complete construction project management team including estimators, managers, and technical specialists.",
+      "members": [
+        "construction_manager",
+        "construction_estimator",
+        "civil_engineer",
+        "structural_drafter",
+        "mep_engineer"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    },
+    {
+      "title": "Trades & Skilled Labor Team",
+      "slug": "trades_skilled_labor_team",
+      "description": "Team of skilled tradespeople for construction, maintenance, and repair projects.",
+      "members": [
+        "electrician",
+        "plumber",
+        "hvac_technician",
+        "carpenter",
+        "welder",
+        "mason"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    },
+    {
+      "title": "Urban Planning & Development Team",
+      "slug": "urban_planning_development_team",
+      "description": "Urban planning and development professionals for city planning and infrastructure projects.",
+      "members": [
+        "urban_planner",
+        "civil_engineer",
+        "environmental_engineer",
+        "landscape_architect"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.4
+    }
+  ]
+}

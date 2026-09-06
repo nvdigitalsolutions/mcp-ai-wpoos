@@ -67,6 +67,15 @@ class WP_MCP_AI_Tool_Slug_Integrity_Tests extends WP_UnitTestCase {
 		'WP_MCP_AI_Tool_Generate_Auth0_Token'              => 'generate_auth0_token',
 		// Legacy tool whose slug is an acronym: "2FA" → "2fa".
 		'WP_MCP_AI_Tool_2FA_Setup_Assistant'               => '2fa_setup_assistant',
+		// Renamed slugs that no longer mirror the class name.
+		'WP_MCP_AI_Tool_Get_Woo_Orders'                    => 'get_woo_recent_orders',
+		'WP_MCP_AI_Tool_Get_JetEngine_Items'               => 'get_jetengine_items',
+		'WP_MCP_AI_Tool_List_JetEngine_Routes'             => 'list_jetengine_rest_routes',
+		'WP_MCP_AI_Tool_Invoke_JetEngine_Route'            => 'invoke_jetengine_route',
+		'WP_MCP_AI_Tool_Get_JetFormBuilder_Forms'          => 'get_jetformbuilder_forms',
+		'WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions'    => 'get_jetformbuilder_submissions',
+		'WP_MCP_AI_Tool_Get_RankMath_SEO'                  => 'get_rankmath_seo',
+		'WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet'         => 'create_wpcode_snippet',
 	);
 
 	/**
@@ -93,6 +102,12 @@ class WP_MCP_AI_Tool_Slug_Integrity_Tests extends WP_UnitTestCase {
 				? $tool->get_inner_class_name()
 				: get_class( $tool );
 			$slug       = $tool->get_slug();
+
+			// Anonymous tool doubles registered by other suites leak into the
+			// shared registry; they have no derivable slug contract.
+			if ( false !== strpos( $class_name, '@anonymous' ) ) {
+				continue;
+			}
 
 			$expected_slug = $this->class_name_to_slug( $class_name );
 

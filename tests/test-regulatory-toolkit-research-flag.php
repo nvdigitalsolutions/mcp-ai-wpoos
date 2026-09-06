@@ -89,6 +89,10 @@ class Test_Regulatory_Toolkit_Research_Flag extends WP_UnitTestCase {
 		$option_name_property->setAccessible( true );
 		$option_name = $option_name_property->getValue( $settings_page );
 
+		// Firing admin_init runs the plugin's privacy-policy registration in a
+		// non-admin test context; that environmental notice is expected.
+		$this->setExpectedIncorrectUsage( 'wp_add_privacy_policy_content' );
+
 		// Trigger the admin_init action to register settings.
 		do_action( 'admin_init' );
 

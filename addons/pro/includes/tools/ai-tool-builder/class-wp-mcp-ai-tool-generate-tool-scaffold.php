@@ -404,7 +404,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 	 */
 	private function build_parameters_schema( array $parameters ) {
 		if ( empty( $parameters ) ) {
-			return "array(\n\t\t\t'type'       => 'object',\n\t\t\t'properties' => array(),\n\t\t\t'required'   => array(),\n\t\t)";
+			return "array(\n\t\t\t'type'       => 'object',\n\t\t\t'properties' => new stdClass(),\n\t\t\t'required'   => array(),\n\t\t)";
 		}
 
 		$schema   = "array(\n\t\t\t'type'       => 'object',\n\t\t\t'properties' => array(\n";

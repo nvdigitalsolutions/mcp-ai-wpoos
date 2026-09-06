@@ -56,17 +56,19 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 			WP_MCP_AI_Imaging_Study_CPT::init();
 		}
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Manage_Imaging_Studies' ) ) {
-			require_once $base . 'tools/class-wp-mcp-ai-tool-manage-imaging-studies.php';
+			require_once $base . 'tools/healthcare/imaging/class-wp-mcp-ai-tool-manage-imaging-studies.php';
 		}
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Interpret_Imaging_Study' ) ) {
-			require_once $base . 'tools/class-wp-mcp-ai-tool-interpret-imaging-study.php';
+			require_once $base . 'tools/healthcare/imaging/class-wp-mcp-ai-tool-interpret-imaging-study.php';
 		}
 		if ( ! class_exists( 'WP_MCP_AI_Imaging_REST_Controller' ) ) {
 			require_once $base . 'class-wp-mcp-ai-imaging-rest-controller.php';
 		}
 
-		// Register CPT.
-		do_action( 'init' );
+		// The study CPT is registered by the class_exists guard above; re-firing
+		// the full `init` hook here would re-register every block/integration
+		// (e.g. WooCommerce checkout blocks) and trip `_doing_it_wrong` notices
+		// for duplicate registrations.
 
 		// Add capabilities to admin.
 		WP_MCP_AI_Imaging_Capabilities::add_caps();
@@ -780,8 +782,9 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 		$reflect->setAccessible( true );
 
 		// Characters that a rogue sanitize_file_name filter might try to strip.
-		$raw      = '1.2.3/bad\\uid?foo';
-		$expected = '1.2.3_bad_uid_foo';
+		// Every character outside [0-9.] — including letters — becomes '_'.
+		$raw      = '1.2.3/bad\uid?foo';
+		$expected = '1.2.3____________';
 
 		$this->assertSame( $expected, $reflect->invoke( $controller, $raw ) );
 	}

@@ -1,0 +1,44 @@
+{
+  "teams": [
+    {
+      "title": "Transportation Operations Team",
+      "slug": "transportation_operations_team",
+      "description": "Transportation and fleet management professionals.",
+      "members": [
+        "logistics_coordinator",
+        "dispatcher",
+        "truck_driver",
+        "bus_driver"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    },
+    {
+      "title": "Aviation Services Team",
+      "slug": "aviation_services_team",
+      "description": "Aviation professionals for flight operations and management.",
+      "members": [
+        "commercial_pilot",
+        "flight_attendant",
+        "air_traffic_controller"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.2
+    },
+    {
+      "title": "Maritime Operations Team",
+      "slug": "maritime_operations_team",
+      "description": "Maritime and shipping professionals.",
+      "members": [
+        "ship_captain",
+        "marine_biologist",
+        "customs_broker"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    }
+  ]
+}

@@ -290,17 +290,37 @@ class WP_MCP_AI_Error_Tracking_Service {
 			);
 		}
 
-		// Sort by timestamp descending.
+		// Sort by timestamp descending. Timestamps only have second
+		// resolution, so tie-break by insertion order (newest first) —
+		// bursts of errors within one second must still surface the most
+		// recent error first.
+		foreach ( $errors as $insert_index => $error ) {
+			$error['_insert_index']       = $insert_index;
+			$errors[ $insert_index ]      = $error;
+		}
+
 		usort(
 			$errors,
 			function ( $a, $b ) {
 				$a_time = isset( $a['timestamp'] ) ? $a['timestamp'] : 0;
 				$b_time = isset( $b['timestamp'] ) ? $b['timestamp'] : 0;
-				return $b_time - $a_time;
+				if ( $b_time !== $a_time ) {
+					return $b_time - $a_time;
+				}
+				return ( $b['_insert_index'] ?? 0 ) - ( $a['_insert_index'] ?? 0 );
 			}
 		);
 
-		return array_slice( $errors, 0, $limit );
+		$recent = array_slice( $errors, 0, $limit );
+
+		// Drop the transient tie-break index before returning.
+		return array_map(
+			function ( $error ) {
+				unset( $error['_insert_index'] );
+				return $error;
+			},
+			$recent
+		);
 	}
 
 	/**

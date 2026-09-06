@@ -27,7 +27,7 @@ The classes below are referenced from outside `addons/pro/includes/admin/` (Pro 
 | `WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers` | `class-wp-mcp-ai-pro-metabox-toolkit-mcp-servers.php` | Pro bootstrap (assistant edit screen), `test-phase5-toolkit-mcp-servers.php` |
 | `WP_MCP_AI_Pro_Schedule_Manager_Page` / `_Research_Page` / `_Toolkit_Settings_Page` | `class-wp-mcp-ai-pro-schedule-*.php` | Schedule toolkit init, schedule REST tests |
 | `WP_MCP_AI_Chat_Channels_Menu` | `class-wp-mcp-ai-chat-channels-menu.php` | `chat-channels-toolkit-init.php`, `test-chat-channels-admin-pages.php` |
-| `WP_MCP_AI_Pro_Packages_Settings_Page`, `WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page`, `WP_MCP_AI_Pro_Webhook_Status_Page`, `WP_MCP_AI_Pro_Workflow_Builder_Page`, `WP_MCP_AI_Pro_Agent_Command_Center`, `WP_MCP_AI_Orchestration_Dashboard` | matching `class-*.php` | Pro bootstrap (`admin_menu`) |
+| `WP_MCP_AI_Pro_Packages_Settings_Page`, `WP_MCP_AI_Addons_Page`, `WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page`, `WP_MCP_AI_Pro_Webhook_Status_Page`, `WP_MCP_AI_Pro_Workflow_Builder_Page`, `WP_MCP_AI_Pro_Agent_Command_Center`, `WP_MCP_AI_Orchestration_Dashboard` | matching `class-*.php` | Pro bootstrap (`admin_menu`) |
 | `WP_MCP_AI_Pro_CPT_AI_Integration` | `class-wp-mcp-ai-pro-cpt-ai-integration.php` | Generic AI-Assistant metabox injection across Pro CPTs |
 | `WP_MCP_AI_Skill_Manager_Admin_Page` / `_Research_Admin_Page` / `_Settings_Admin_Page` | `class-wp-mcp-ai-skill-*-page.php` | Skill toolkit init |
 | Pro Settings sections — `WP_MCP_AI_Section_Performance`, `…_Pro_Integrations`, `…_Pro_Providers`, `…_Schedule_Manager` | `sections/class-wp-mcp-ai-section-*.php` | Base `WP_MCP_AI_Settings_Registry` (Pro injects through `wp_mcp_ai_register_settings_section`) |

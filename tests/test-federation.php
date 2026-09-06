@@ -110,11 +110,12 @@ class WP_MCP_AI_Federation_Test extends WP_UnitTestCase {
 		// Initially disabled.
 		$this->assertFalse( WP_MCP_AI_Federation_Settings::is_directory_enabled() );
 
-		// Enable directory.
+		// Enable federation and the directory service.
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_federation' => true,
+				'enable_federation'           => true,
+				'enable_federation_directory' => true,
 			)
 		);
 
@@ -125,8 +126,23 @@ class WP_MCP_AI_Federation_Test extends WP_UnitTestCase {
 	 * Test AI Peer CPT registration.
 	 */
 	public function test_ai_peer_cpt_is_registered() {
-		// Trigger init to register the CPT.
-		do_action( 'init' );
+		// Enable the directory service and load federation features. `init`
+		// has already fired in the test context, so trigger the feature
+		// loader directly (mirrors the other federation suites).
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'enable_federation'           => true,
+				'enable_federation_directory' => true,
+			)
+		);
+
+		$federation = new WP_MCP_AI_Federation( WP_MCP_AI_Tool_Registry::get_instance() );
+		$federation->maybe_load_federation_features();
+
+		// `init` has already fired in the test context, so register the CPT
+		// explicitly (idempotent) to mirror what the init hook would do.
+		WP_MCP_AI_AI_Peer_CPT::register_post_type();
 
 		$post_type = get_post_type_object( WP_MCP_AI_AI_Peer_CPT::POST_TYPE );
 
@@ -140,6 +156,24 @@ class WP_MCP_AI_Federation_Test extends WP_UnitTestCase {
 	 * Test creating an AI Peer post.
 	 */
 	public function test_create_ai_peer() {
+		// The CPT and its registered meta only exist once federation loads,
+		// so enable the directory service and trigger the feature loader.
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'enable_federation'           => true,
+				'enable_federation_directory' => true,
+			)
+		);
+
+		$federation = new WP_MCP_AI_Federation( WP_MCP_AI_Tool_Registry::get_instance() );
+		$federation->maybe_load_federation_features();
+
+		// `init` has already fired in the test context, so register the CPT
+		// and its meta explicitly (idempotent) to mirror the init hooks.
+		WP_MCP_AI_AI_Peer_CPT::register_post_type();
+		WP_MCP_AI_AI_Peer_CPT::register_meta();
+
 		$peer_id = wp_insert_post(
 			array(
 				'post_type'   => WP_MCP_AI_AI_Peer_CPT::POST_TYPE,
@@ -163,7 +197,8 @@ class WP_MCP_AI_Federation_Test extends WP_UnitTestCase {
 		// Verify meta was saved.
 		$this->assertSame( 'https://example.com', get_post_meta( $peer_id, WP_MCP_AI_AI_Peer_CPT::META_SITE_URL, true ) );
 		$this->assertSame( 'healthy', get_post_meta( $peer_id, WP_MCP_AI_AI_Peer_CPT::META_HEALTH_STATUS, true ) );
-		$this->assertSame( 250, get_post_meta( $peer_id, WP_MCP_AI_AI_Peer_CPT::META_LATENCY_P50, true ) );
+		// Post meta values are stored as strings; production code absint()s it.
+		$this->assertSame( 250, absint( get_post_meta( $peer_id, WP_MCP_AI_AI_Peer_CPT::META_LATENCY_P50, true ) ) );
 
 		$capabilities = json_decode( get_post_meta( $peer_id, WP_MCP_AI_AI_Peer_CPT::META_CAPABILITIES, true ), true );
 		$this->assertIsArray( $capabilities );
@@ -305,17 +340,23 @@ class WP_MCP_AI_Federation_Test extends WP_UnitTestCase {
 		$timestamp = wp_next_scheduled( 'wp_mcp_ai_verify_peers' );
 		$this->assertFalse( $timestamp );
 
-		// Enable directory service and trigger init.
+		// Enable the directory service and trigger init.
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_federation' => true,
+				'enable_federation'           => true,
+				'enable_federation_directory' => true,
 			)
 		);
 
 		$registry   = WP_MCP_AI_Tool_Registry::get_instance();
 		$federation = new WP_MCP_AI_Federation( $registry );
-		do_action( 'init' );
+
+		// `init` has already fired in the test context, so trigger the feature
+		// loader directly; it schedules the verification cron when the
+		// directory service is enabled. Re-firing init would trip
+		// doing-it-wrong notices from WooCommerce block registrations.
+		$federation->maybe_load_federation_features();
 
 		// Cron should now be scheduled.
 		$timestamp = wp_next_scheduled( 'wp_mcp_ai_verify_peers' );

@@ -50,22 +50,30 @@ class WP_MCP_AI_Mailjet_Webhook_Handler_Test extends WP_UnitTestCase {
 	 * Test that webhook handler registers REST routes.
 	 */
 	public function test_register_routes() {
-		$this->handler->register_routes();
+		// WP 6.9+ requires routes to be registered on rest_api_init. Fire it
+		// before any fixture writes: third-party plugins hook temp-table DDL
+		// onto this action, which implicitly commits the per-test transaction.
+		add_action( 'rest_api_init', array( $this->handler, 'register_routes' ) );
+		do_action( 'rest_api_init' );
 
 		$routes = rest_get_server()->get_routes();
 		$this->assertArrayHasKey( '/mcp-ai/v1/webhooks/mailjet', $routes );
 	}
 
 	/**
-	 * Test webhook verification when no secret is configured.
+	 * Test webhook verification rejects requests when no secret is configured.
 	 */
-	public function test_verify_webhook_without_secret() {
+	public function test_verify_webhook_rejects_without_secret() {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/mailjet' );
 		$request->set_body( wp_json_encode( array( array( 'event' => 'open' ) ) ) );
 
 		$result = $this->handler->verify_webhook_request( $request );
 
-		$this->assertTrue( $result, 'Webhook should be verified when no secret is configured' );
+		$this->assertWPError( $result, 'Webhook should be rejected when no secret is configured' );
+		$this->assertEquals( 'rest_mailjet_not_configured', $result->get_error_code() );
+
+		$data = $result->get_error_data( $result->get_error_code() );
+		$this->assertEquals( 403, $data['status'] );
 	}
 
 	/**
@@ -159,6 +167,7 @@ class WP_MCP_AI_Mailjet_Webhook_Handler_Test extends WP_UnitTestCase {
 		}
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/mailjet' );
+		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_body( wp_json_encode( $events ) );
 
 		$this->handler->handle_webhook( $request );
@@ -233,6 +242,7 @@ class WP_MCP_AI_Mailjet_Webhook_Handler_Test extends WP_UnitTestCase {
 		);
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/mailjet' );
+		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_body( wp_json_encode( $events ) );
 
 		$this->handler->handle_webhook( $request );

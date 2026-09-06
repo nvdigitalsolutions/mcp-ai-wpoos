@@ -26,6 +26,23 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 		const PLACES_AUTOCOMPLETE_ENDPOINT = 'https://maps.googleapis.com/maps/api/place/autocomplete/json';
 
 		/**
+		 * Build an API URL with RFC 1738-encoded query parameters.
+		 *
+		 * add_query_arg() does not URL-encode values (build_query() passes
+		 * $urlencode=false), which would leave raw spaces in addresses, search
+		 * queries, and keywords sent to the Google Maps API.
+		 *
+		 * @param string $endpoint   API endpoint URL.
+		 * @param array  $query_args Query parameters.
+		 * @return string Encoded URL.
+		 */
+		private function build_api_url( $endpoint, array $query_args ) {
+			$query_string = http_build_query( $query_args, '', '&', PHP_QUERY_RFC1738 );
+
+			return $endpoint . ( false === strpos( $endpoint, '?' ) ? '?' : '&' ) . $query_string;
+		}
+
+		/**
 		 * Retrieve the configured API key.
 		 *
 		 * @return string
@@ -87,7 +104,7 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 				$query_args['region'] = sanitize_text_field( $options['region'] );
 			}
 
-			$url = add_query_arg( $query_args, self::GEOCODING_API_ENDPOINT );
+			$url = $this->build_api_url( self::GEOCODING_API_ENDPOINT, $query_args );
 
 			$request_args = array(
 				'timeout' => isset( $options['timeout'] ) ? absint( $options['timeout'] ) : 30,
@@ -205,7 +222,7 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 				$query_args['result_type'] = sanitize_text_field( $options['result_type'] );
 			}
 
-			$url = add_query_arg( $query_args, self::GEOCODING_API_ENDPOINT );
+			$url = $this->build_api_url( self::GEOCODING_API_ENDPOINT, $query_args );
 
 			$request_args = array(
 				'timeout' => isset( $options['timeout'] ) ? absint( $options['timeout'] ) : 30,
@@ -305,7 +322,7 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 				$query_args['keyword'] = sanitize_text_field( $options['keyword'] );
 			}
 
-			$url = add_query_arg( $query_args, self::PLACES_API_ENDPOINT );
+			$url = $this->build_api_url( self::PLACES_API_ENDPOINT, $query_args );
 
 			$request_args = array(
 				'timeout' => isset( $options['timeout'] ) ? absint( $options['timeout'] ) : 30,
@@ -411,7 +428,7 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 				$query_args['type'] = sanitize_text_field( $options['type'] );
 			}
 
-			$url = add_query_arg( $query_args, self::PLACES_TEXT_SEARCH_ENDPOINT );
+			$url = $this->build_api_url( self::PLACES_TEXT_SEARCH_ENDPOINT, $query_args );
 
 			$request_args = array(
 				'timeout' => isset( $options['timeout'] ) ? absint( $options['timeout'] ) : 30,

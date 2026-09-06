@@ -140,6 +140,66 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'description'    => __( 'When enabled, the system monitors CPU, memory, and tool execution load in real-time. Tools are automatically routed to the background queue when capacity drops below safe thresholds, preventing PHP timeouts and resource exhaustion during peak usage.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
+				// ── Self-Evolution (Artifact Evolution, proposal 007) ──
+				// Every switch defaults to off: evolution never runs or applies
+				// without an explicit human opt-in (CoSAI Principle 1). The
+				// runtime hooks live in WP_MCP_AI_Evolution_Settings_Bridge.
+				'section_self_evolution'           => array(
+					'type'    => 'html',
+					'content' => '<h3>' . esc_html__( 'Self-Evolution (Artifact Evolution)', 'mcp-ai-wpoos' ) . '</h3><p class="description">' . esc_html__( 'Darwinian self-improvement of skills, prompts, and roles. All switches default to off — evolution never runs or takes effect without explicit opt-in (CoSAI Principle 1).', 'mcp-ai-wpoos' ) . '</p>',
+				),
+				'enable_harness_evolution'         => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Harness Evolution', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Allow the evolve_harness tool to mutate prompts, roles, skills, and memory', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Master switch for the Continual Harness evolver. When off, the evolve_harness tool reports that evolution is disabled and no Refiner provider calls are made.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'use_evolved_system_prompt'        => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Apply Evolved System Prompts', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Use the harness-evolved system prompt at chat time', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, the prompt produced by the evolver replaces the assistant system prompt during chat resolution. Without this switch, evolved prompts are stored but never used.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'include_evolved_skills'           => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Expose Evolved Skills', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Merge agent-evolved skills into the Skill Registry index', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, skills produced by the evolver become available to assistants alongside file-based skills. Evolved skill code remains inert instructional text and is never executed.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'harness_evolution_budget_usd'     => array(
+					'type'        => 'number',
+					'label'       => __( 'Hourly Evolution Budget (USD)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum provider spend per assistant per hour across all mutation paths (evolver, search, proposer, population). Set to 0 to block all evolution spend.', 'mcp-ai-wpoos' ),
+					'default'     => 5,
+					'min'         => 0,
+					'step'        => 1,
+				),
+				'evolution_governor_rate_limit'    => array(
+					'type'        => 'number',
+					'label'       => __( 'Evolution Mutations Per Hour', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum mutations per assistant per path per hour. Set to 0 to block all mutation attempts.', 'mcp-ai-wpoos' ),
+					'default'     => 60,
+					'min'         => 0,
+					'step'        => 1,
+				),
+				'harness_evolution_warmup'         => array(
+					'type'        => 'number',
+					'label'       => __( 'Evolution Warmup Iterations', 'mcp-ai-wpoos' ),
+					'description' => __( 'Minimum iterations before the first evolution may be triggered.', 'mcp-ai-wpoos' ),
+					'default'     => 5,
+					'min'         => 1,
+					'step'        => 1,
+				),
+				'harness_verification_enabled'     => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Post-Mutation Verification', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Verify evolved prompts against failure cases before applying', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Runs a mini-evaluation of each evolved prompt on the parent failure cases and rejects non-improvers. Recommended whenever evolution is enabled.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 				'section_multi_agent'              => array(
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Multi-Agent Orchestration', 'mcp-ai-wpoos' ) . '</h3><p class="description">' . esc_html__( 'Control multi-agent coordination features inspired by DeepSeek V4 patterns. These features enable sophisticated agent role management, profession-based AI workforce, and team-based workflows.', 'mcp-ai-wpoos' ) . '</p>',
@@ -1978,6 +2038,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'sse_max_duration_seconds',
 				'cron_job_retention_period',
 				'use_ts_build',
+				'section_self_evolution', // Section header.
+				'enable_harness_evolution',
+				'use_evolved_system_prompt',
+				'include_evolved_skills',
+				'harness_evolution_budget_usd',
+				'evolution_governor_rate_limit',
+				'harness_evolution_warmup',
+				'harness_verification_enabled',
 				'section_multi_agent', // Section header.
 				'enable_agent_roles',
 				'enable_professions',
@@ -2221,6 +2289,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'sse_max_duration_seconds',
 						'cron_job_retention_period',
 						'use_ts_build',
+						// Self-evolution (Artifact Evolution) toggles.
+						'section_self_evolution',
+						'enable_harness_evolution',
+						'use_evolved_system_prompt',
+						'include_evolved_skills',
+						'harness_evolution_budget_usd',
+						'evolution_governor_rate_limit',
+						'harness_evolution_warmup',
+						'harness_verification_enabled',
 						// Multi-agent orchestration toggles.
 						'enable_agent_roles',
 						'enable_professions',

@@ -959,6 +959,36 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 	}
 
 	/**
+	 * Get the underlying image resource from a WordPress image editor.
+	 *
+	 * WP_Image_Editor_Imagick::get_image() and WP_Image_Editor_GD::get_image()
+	 * are unavailable on WordPress 6.9+/7.x, so fall back to reflecting the
+	 * protected image property when the public accessor does not exist.
+	 *
+	 * @param WP_Image_Editor $editor Image editor instance.
+	 * @return mixed|WP_Error Image resource (Imagick or GdImage) or error.
+	 */
+	protected function get_editor_image_resource( $editor ) {
+		if ( ! is_object( $editor ) ) {
+			return new WP_Error( 'wp_mcp_ai_resource_error', __( 'Invalid image editor instance.', 'mcp-ai-wpoos' ) );
+		}
+
+		if ( method_exists( $editor, 'get_image' ) ) {
+			return $editor->get_image();
+		}
+
+		try {
+			$reflection = new ReflectionClass( $editor );
+			$property   = $reflection->getProperty( 'image' );
+			$property->setAccessible( true );
+
+			return $property->getValue( $editor );
+		} catch ( ReflectionException $e ) {
+			return new WP_Error( 'wp_mcp_ai_resource_error', __( 'Failed to access image resource.', 'mcp-ai-wpoos' ) );
+		}
+	}
+
+	/**
 	 * Expand canvas of an image.
 	 *
 	 * @param WP_Image_Editor $image_editor Image editor instance.
@@ -967,7 +997,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 	 * @return true|WP_Error True on success, error on failure.
 	 */
 	protected function expand_canvas( $image_editor, $expansion, $color ) {
-		$image_resource = $image_editor->get_image();
+		$image_resource = $this->get_editor_image_resource( $image_editor );
 
 		if ( is_wp_error( $image_resource ) ) {
 			return new WP_Error( 'wp_mcp_ai_resource_error', __( 'Failed to get image resource.', 'mcp-ai-wpoos' ) );
@@ -1070,8 +1100,8 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 	 * @return true|WP_Error True on success, error on failure.
 	 */
 	protected function overlay_images( $base_editor, $overlay_editor, $x, $y ) {
-		$base_resource    = $base_editor->get_image();
-		$overlay_resource = $overlay_editor->get_image();
+		$base_resource    = $this->get_editor_image_resource( $base_editor );
+		$overlay_resource = $this->get_editor_image_resource( $overlay_editor );
 
 		if ( is_wp_error( $base_resource ) || is_wp_error( $overlay_resource ) ) {
 			return new WP_Error( 'wp_mcp_ai_resource_error', __( 'Failed to get image resources.', 'mcp-ai-wpoos' ) );

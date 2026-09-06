@@ -10,7 +10,7 @@
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
  */
-class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
+class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_Ajax_UnitTestCase {
 
 	/**
 	 * Administrator user ID.
@@ -29,6 +29,12 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-provider-diagnostics.php';
 		}
+
+		// The test harness restores the global hook registry after every test,
+		// which drops the wp_ajax_ action registered when the file first
+		// loaded. init() is idempotent, so re-running it guarantees the action
+		// (and the admin_menu page) exist for each test.
+		WP_MCP_AI_Provider_Diagnostics::init();
 
 		$this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $this->admin_id );
@@ -85,6 +91,7 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected exception.
 		}
@@ -105,6 +112,7 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected exception.
 		}
@@ -130,6 +138,7 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected exception.
 		}
@@ -148,6 +157,15 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 		unset( $settings['gemini_api_key'] );
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
+		// Neutralize environment-provided credentials so the
+		// not-configured path is exercised deterministically regardless of
+		// the CI environment (the resolver falls back to {PROVIDER}_API_KEY).
+		$original_gemini_env = getenv( 'GEMINI_API_KEY' );
+		putenv( 'GEMINI_API_KEY' );
+		if ( class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+			WP_MCP_AI_Credential_Resolver::clear_cache();
+		}
+
 		// Simulate AJAX request.
 		$_POST['action']   = 'wp_mcp_ai_test_provider';
 		$_POST['nonce']    = wp_create_nonce( 'wp-mcp-ai-provider-diagnostic' );
@@ -155,8 +173,17 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected exception.
+		}
+
+		// Restore the environment variable.
+		if ( false !== $original_gemini_env ) {
+			putenv( 'GEMINI_API_KEY=' . $original_gemini_env );
+		}
+		if ( class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+			WP_MCP_AI_Credential_Resolver::clear_cache();
 		}
 
 		$response = json_decode( $this->_last_response, true );
@@ -180,6 +207,7 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected exception.
 		}
@@ -205,6 +233,7 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected exception.
 		}
@@ -231,7 +260,7 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
 		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-			// Expected exception.
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		}
 
 		$response = json_decode( $this->_last_response, true );
@@ -257,7 +286,7 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
 		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-			// Expected exception.
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		}
 
 		$response = json_decode( $this->_last_response, true );
@@ -279,6 +308,7 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected exception.
 		}
@@ -293,6 +323,12 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 	 * Test that the embedded_server provider returns a Pro-required error when Pro is not active.
 	 */
 	public function test_embedded_server_test_requires_pro() {
+		// The Pro-required error path only exists when the Pro addon is absent;
+		// the test environment loads Pro, so the premise cannot be exercised.
+		if ( defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+			$this->markTestSkipped( 'Pro is active in this environment; the Pro-required error path cannot be exercised.' );
+		}
+
 		$_POST['action']   = 'wp_mcp_ai_test_provider';
 		$_POST['nonce']    = wp_create_nonce( 'wp-mcp-ai-provider-diagnostic' );
 		$_POST['provider'] = 'embedded_server';
@@ -300,7 +336,7 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
 		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-			// Expected exception.
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		}
 
 		$response = json_decode( $this->_last_response, true );
@@ -324,6 +360,7 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected exception.
 		}

@@ -542,6 +542,49 @@ class Db {
 		return array_values( array_unique( $ids ) );
 	}
 
+	/**
+	 * List edges, highest confidence first.
+	 *
+	 * Used by the REST /edges route to render the full edge set in the
+	 * graph explorer. Bounded by the caller; see the route's per_page cap.
+	 *
+	 * @since 1.0.4
+	 *
+	 * @param array<string,mixed> $args Query args: limit, offset, relation.
+	 * @return array<int,object>
+	 */
+	public static function listEdges( array $args = array() ): array {
+		global $wpdb;
+		$table  = self::edgesTable();
+		$limit  = isset( $args['limit'] ) ? max( 1, min( 2000, absint( $args['limit'] ) ) ) : 100;
+		$offset = isset( $args['offset'] ) ? max( 0, absint( $args['offset'] ) ) : 0;
+
+		if ( ! empty( $args['relation'] ) ) {
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$results = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM {$table} WHERE relation = %s ORDER BY confidence DESC, id ASC LIMIT %d OFFSET %d",
+					sanitize_text_field( $args['relation'] ),
+					$limit,
+					$offset
+				)
+			);
+			// phpcs:enable
+			return is_array( $results ) ? $results : array();
+		}
+
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$results = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$table} ORDER BY confidence DESC, id ASC LIMIT %d OFFSET %d",
+				$limit,
+				$offset
+			)
+		);
+		// phpcs:enable
+		return is_array( $results ) ? $results : array();
+	}
+
 	/** @return void */
 	public static function truncateEdges(): void {
 		global $wpdb;

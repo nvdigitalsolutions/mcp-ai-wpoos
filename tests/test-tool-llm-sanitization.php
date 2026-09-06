@@ -124,6 +124,7 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 			'metadata' => array(
 				'headers'      => array( 'X-Custom' => 'value' ),
 				'retrieved_at' => '2024-01-01',
+				'source'       => 'https://example.com/source',
 			),
 		);
 
@@ -141,6 +142,9 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 		// Verbose metadata should be stripped.
 		$this->assertArrayNotHasKey( 'headers', $sanitized['metadata'] );
 		$this->assertArrayNotHasKey( 'retrieved_at', $sanitized['metadata'] );
+
+		// Non-verbose metadata should be kept.
+		$this->assertEquals( 'https://example.com/source', $sanitized['metadata']['source'] );
 
 		// Essential fields should be kept.
 		$this->assertEquals( 456, $sanitized['id'] );

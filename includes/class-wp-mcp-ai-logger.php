@@ -42,6 +42,81 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		const RECENT_ACTIVITY_OPTION = 'wp_mcp_ai_recent_activity';
 
 		/**
+		 * Maximum number of JSON-encoded bytes of context that may be persisted
+		 * alongside a single entry in the rolling recent-errors / recent-activity
+		 * buffers.
+		 *
+		 * Those buffers live in `wp_options`, are read and rewritten on every log
+		 * write, and are polled by admin dashboards. Raw contexts routinely carry an
+		 * entire assistant `system_prompt` plus unbounded tool arguments, which grows
+		 * the option row into the megabytes and makes every subsequent write more
+		 * expensive. Contexts above this budget are reduced by
+		 * {@see self::slim_context_for_storage()}.
+		 *
+		 * This cap applies only to the persisted buffers. The `wp_mcp_ai_log_entry`
+		 * filter and the PHP error-log line still receive the full sanitized context.
+		 *
+		 * @since 1.8.0
+		 */
+		const MAX_STORED_CONTEXT_BYTES = 2048;
+
+		/**
+		 * Per-entry context budget when Extended Logging is enabled.
+		 *
+		 * Kept modest deliberately: the recent-activity buffer retains 100 entries,
+		 * so doubling this constant doubles the worst-case size of that option row.
+		 *
+		 * @since 1.8.0
+		 */
+		const MAX_STORED_CONTEXT_BYTES_EXTENDED = 8192;
+
+		/**
+		 * Maximum length of an individual string value inside a persisted context.
+		 *
+		 * @since 1.8.0
+		 */
+		const MAX_STORED_CONTEXT_STRING_LENGTH = 512;
+
+		/**
+		 * Maximum nesting depth retained in a persisted context.
+		 *
+		 * @since 1.8.0
+		 */
+		const MAX_STORED_CONTEXT_DEPTH = 6;
+
+		/**
+		 * Number of entries retained in the recent-errors buffer.
+		 *
+		 * @since 1.8.0
+		 */
+		const MAX_RECENT_ERRORS = 50;
+
+		/**
+		 * Number of entries retained in the recent-activity buffer.
+		 *
+		 * @since 1.8.0
+		 */
+		const MAX_RECENT_ACTIVITY = 100;
+
+		/**
+		 * Marker prefix used when a value is replaced by a size descriptor.
+		 *
+		 * Recognising the marker keeps slimming idempotent, so repeated passes (for
+		 * example from {@see self::compact_recent_buffers()}) do not describe an
+		 * existing descriptor.
+		 *
+		 * @since 1.8.0
+		 */
+		const OMITTED_VALUE_PREFIX = '[omitted:';
+
+		/**
+		 * Marker prefix used when a prompt is replaced by its fingerprint.
+		 *
+		 * @since 1.8.0
+		 */
+		const OMITTED_PROMPT_PREFIX = '[prompt omitted:';
+
+		/**
 		 * Maximum number of characters that should be written to the PHP error log
 		 * for a single entry. PHP-FPM buffers log lines at 1024 bytes so we keep a
 		 * safety margin below that threshold to avoid truncation warnings.
@@ -56,10 +131,59 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		protected static $log_file_path = null;
 
 		/**
+		 * Compiled query-parameter redaction pattern.
+		 *
+		 * Built once per request because `redact_sensitive_string_patterns()` runs
+		 * on every string leaf of every log context.
+		 *
+		 * @since 1.1.64
+		 *
+		 * @var string|null
+		 */
+		protected static $sensitive_query_pattern = null;
+
+		/**
+		 * Resolved sensitive-result-field declarations, keyed by tool slug.
+		 *
+		 * Populated lazily by {@see self::resolve_sensitive_result_fields()} so the
+		 * registry lookup (and any filter callbacks) run at most once per slug per
+		 * request.
+		 *
+		 * @since 1.1.64
+		 *
+		 * @var array<string, string[]>
+		 */
+		protected static $declared_sensitive_fields = array();
+
+		/**
 		 * Reset the cached log file path. Primarily used in automated tests.
 		 */
 		public static function reset_log_file_cache() {
 			self::$log_file_path = null;
+		}
+
+		/**
+		 * Reset the cached query-parameter redaction pattern.
+		 *
+		 * Required after `wp_mcp_ai_sensitive_query_parameters` callbacks are added
+		 * or removed at runtime. Primarily used in automated tests.
+		 *
+		 * @since 1.1.64
+		 */
+		public static function reset_sensitive_query_pattern_cache() {
+			self::$sensitive_query_pattern = null;
+		}
+
+		/**
+		 * Reset the resolved sensitive-result-field declarations cache.
+		 *
+		 * Primarily used in automated tests that swap tool instances inside the
+		 * registry mid-request.
+		 *
+		 * @since 1.1.64
+		 */
+		public static function reset_sensitive_result_fields_cache() {
+			self::$declared_sensitive_fields = array();
 		}
 
 		/**
@@ -533,6 +657,16 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		public static function log_tool_execution( $tool_slug, $arguments, $result, $context = array() ) {
 			$context              = self::sanitize_context( $context );
 			$context['tool_slug'] = sanitize_key( $tool_slug );
+
+			// A tool may declare that some of its own result fields carry capability
+			// credentials (connect links, bearer path tokens, decrypted payloads).
+			// Those paths are masked before anything else touches the payload so the
+			// declaration also covers `arguments` and the `tool_error` path, where
+			// the same field names can appear.
+			$declared = self::resolve_sensitive_result_fields( $tool_slug );
+			if ( ! empty( $declared ) ) {
+				$arguments = self::mask_declared_sensitive_fields( $arguments, $declared );
+			}
 			$context['arguments'] = $arguments;
 
 			if ( is_wp_error( $result ) ) {
@@ -540,6 +674,10 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 				$context['error_message'] = $result->get_error_message();
 				self::log_event( 'tool_error', 'Tool execution failed.', $context );
 				return;
+			}
+
+			if ( ! empty( $declared ) ) {
+				$result = self::mask_declared_sensitive_fields( $result, $declared );
 			}
 
 			$context['result_preview'] = self::limit_result_payload( $result );
@@ -647,6 +785,219 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			}
 
 			return $filtered;
+		}
+
+		/**
+		 * Describe the rolling buffers and their retention limits.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @return array Keyed by short buffer name.
+		 */
+		protected static function get_recent_buffer_map() {
+			return array(
+				'errors'   => array(
+					'option' => self::RECENT_ERRORS_OPTION,
+					'label'  => __( 'Recent errors', 'mcp-ai-wpoos' ),
+					'limit'  => self::MAX_RECENT_ERRORS,
+				),
+				'activity' => array(
+					'option' => self::RECENT_ACTIVITY_OPTION,
+					'label'  => __( 'Recent activity', 'mcp-ai-wpoos' ),
+					'limit'  => self::MAX_RECENT_ACTIVITY,
+				),
+			);
+		}
+
+		/**
+		 * Measure the stored size of a value as WordPress would persist it.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param mixed $value Option value.
+		 * @return int Byte length of the serialized value.
+		 */
+		protected static function measure_option_bytes( $value ) {
+			if ( empty( $value ) ) {
+				return 0;
+			}
+
+			$serialized = maybe_serialize( $value );
+
+			return is_string( $serialized ) ? strlen( $serialized ) : 0;
+		}
+
+		/**
+		 * Report the stored size of the rolling log buffers.
+		 *
+		 * Used by the Data Management screen to surface how much space the
+		 * `wp_mcp_ai_recent_errors` and `wp_mcp_ai_recent_activity` option rows are
+		 * consuming.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @return array {
+		 *     @type array $buffers       Per-buffer option name, label, limit, entries, bytes.
+		 *     @type int   $total_bytes   Combined serialized byte length.
+		 *     @type int   $total_entries Combined entry count.
+		 * }
+		 */
+		public static function get_recent_buffer_stats() {
+			$stats = array(
+				'buffers'       => array(),
+				'total_bytes'   => 0,
+				'total_entries' => 0,
+			);
+
+			foreach ( self::get_recent_buffer_map() as $key => $buffer ) {
+				$entries = get_option( $buffer['option'], array() );
+				$entries = is_array( $entries ) ? $entries : array();
+				$bytes   = self::measure_option_bytes( $entries );
+
+				$stats['buffers'][ $key ] = array(
+					'option'  => $buffer['option'],
+					'label'   => $buffer['label'],
+					'limit'   => $buffer['limit'],
+					'entries' => count( $entries ),
+					'bytes'   => $bytes,
+				);
+
+				$stats['total_bytes']   += $bytes;
+				$stats['total_entries'] += count( $entries );
+			}
+
+			return $stats;
+		}
+
+		/**
+		 * Re-slim every entry already stored in the rolling buffers.
+		 *
+		 * The per-entry budget is applied at write time, so rows written before it
+		 * existed still carry their full context — including complete assistant
+		 * system prompts. This rewrites those rows through
+		 * {@see self::slim_context_for_storage()} so the space is reclaimed
+		 * immediately, without discarding the entries themselves.
+		 *
+		 * Safe to run repeatedly; it is a no-op once every entry already fits.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @return array {
+		 *     @type array $buffers           Per-buffer before/after byte counts.
+		 *     @type int   $bytes_before      Combined size before compaction.
+		 *     @type int   $bytes_after       Combined size after compaction.
+		 *     @type int   $bytes_saved       Bytes reclaimed.
+		 *     @type int   $entries_rewritten Number of entries whose context changed.
+		 * }
+		 */
+		public static function compact_recent_buffers() {
+			$result = array(
+				'buffers'           => array(),
+				'bytes_before'      => 0,
+				'bytes_after'       => 0,
+				'bytes_saved'       => 0,
+				'entries_rewritten' => 0,
+			);
+
+			foreach ( self::get_recent_buffer_map() as $key => $buffer ) {
+				$entries = get_option( $buffer['option'], array() );
+				$entries = is_array( $entries ) ? $entries : array();
+
+				$before    = self::measure_option_bytes( $entries );
+				$compacted = array();
+				$rewritten = 0;
+
+				foreach ( $entries as $entry ) {
+					if ( ! is_array( $entry ) ) {
+						continue;
+					}
+
+					if ( ! empty( $entry['context'] ) ) {
+						$context = self::slim_context_for_storage( $entry['context'] );
+
+						if ( $context !== $entry['context'] ) {
+							++$rewritten;
+						}
+
+						if ( empty( $context ) ) {
+							unset( $entry['context'] );
+						} else {
+							$entry['context'] = $context;
+						}
+					}
+
+					$compacted[] = $entry;
+				}
+
+				// Apply the current retention limit in case it was lowered.
+				$compacted = array_slice( $compacted, - $buffer['limit'] );
+				$after     = self::measure_option_bytes( $compacted );
+
+				if ( $after !== $before || count( $compacted ) !== count( $entries ) ) {
+					update_option( $buffer['option'], $compacted, false );
+				}
+
+				$result['buffers'][ $key ] = array(
+					'option'       => $buffer['option'],
+					'label'        => $buffer['label'],
+					'entries'      => count( $compacted ),
+					'bytes_before' => $before,
+					'bytes_after'  => $after,
+					'rewritten'    => $rewritten,
+				);
+
+				$result['bytes_before']      += $before;
+				$result['bytes_after']       += $after;
+				$result['entries_rewritten'] += $rewritten;
+			}
+
+			$result['bytes_saved'] = max( 0, $result['bytes_before'] - $result['bytes_after'] );
+
+			return $result;
+		}
+
+		/**
+		 * Delete both rolling log buffers outright.
+		 *
+		 * Prefer {@see self::compact_recent_buffers()} when the recent history is
+		 * still wanted; this discards it.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @return array {
+		 *     @type array $buffers         Per-buffer entry counts and byte sizes removed.
+		 *     @type int   $bytes_freed     Combined bytes removed.
+		 *     @type int   $entries_removed Combined entries removed.
+		 * }
+		 */
+		public static function clear_recent_buffers() {
+			$result = array(
+				'buffers'         => array(),
+				'bytes_freed'     => 0,
+				'entries_removed' => 0,
+			);
+
+			foreach ( self::get_recent_buffer_map() as $key => $buffer ) {
+				$entries = get_option( $buffer['option'], array() );
+				$entries = is_array( $entries ) ? $entries : array();
+
+				$bytes = self::measure_option_bytes( $entries );
+				$count = count( $entries );
+
+				delete_option( $buffer['option'] );
+
+				$result['buffers'][ $key ] = array(
+					'option'  => $buffer['option'],
+					'label'   => $buffer['label'],
+					'entries' => $count,
+					'bytes'   => $bytes,
+				);
+
+				$result['bytes_freed']     += $bytes;
+				$result['entries_removed'] += $count;
+			}
+
+			return $result;
 		}
 
 		/**
@@ -819,8 +1170,10 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		 *   - Bearer <token>   — OAuth 2.0 / Auth0 JWTs / plugin credentials.
 		 *   - sk-<...>         — OpenAI API keys (classic, project, service-account).
 		 *   - AIza<...>        — Google / Gemini API keys.
+		 *   - ?<param>=<...>   — credential-bearing URL query parameters.
 		 *
 		 * @since 1.8.0
+		 * @since 1.1.64 Added URL query-parameter redaction.
 		 *
 		 * @param string $value Raw string value from a log context.
 		 * @return string String with matching secret patterns replaced.
@@ -848,7 +1201,169 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 				$value
 			);
 
+			// Credential-bearing URL query parameters (?state=, &code=, #access_token=).
+			$value = self::redact_sensitive_query_parameters( (string) $value );
+
 			return (string) $value;
+		}
+
+		/**
+		 * Redact credential-bearing query parameters inside a string value.
+		 *
+		 * Key-based redaction cannot help here: the credential is not the value of
+		 * a sensitive *key*, it is embedded in the query string of an otherwise
+		 * diagnostic value such as `url`, `redirect_url`, or `callback_url`. Those
+		 * key names are far too useful to add to the deny-list — they appear across
+		 * crawler results, media items, permalinks, and remote-site payloads — so
+		 * instead only the secret-bearing parameters are masked and the scheme,
+		 * host, and path are preserved:
+		 *
+		 *     https://example.test/link/lk_abc123?state=SECRET
+		 *  →  https://example.test/link/lk_abc123?state=[redacted]
+		 *
+		 * A parameter is only matched when preceded by `?`, `&`, or `#` (so
+		 * `redirect_state=` and `error_code=` are left alone) and followed
+		 * immediately by `=` (so `token_secret=` does not match `token`). Values
+		 * terminate on the query/fragment separators plus quote, backslash, and
+		 * angle-bracket characters, so URLs embedded in JSON or HTML are masked
+		 * without consuming the surrounding delimiters.
+		 *
+		 * No URL scheme is required, so relative URLs and bare query fragments are
+		 * covered too.
+		 *
+		 * @since 1.1.64
+		 *
+		 * @param string $value Raw string value from a log context.
+		 * @return string String with credential-bearing parameters masked.
+		 */
+		protected static function redact_sensitive_query_parameters( $value ) {
+			if ( '' === $value || false === strpos( $value, '=' ) ) {
+				return (string) $value;
+			}
+
+			$pattern = self::get_sensitive_query_pattern();
+
+			if ( '' === $pattern ) {
+				return (string) $value;
+			}
+
+			$redacted = preg_replace( $pattern, '${1}${2}=[redacted]', $value );
+
+			return null === $redacted ? (string) $value : (string) $redacted;
+		}
+
+		/**
+		 * Build (and memoise) the query-parameter redaction pattern.
+		 *
+		 * @since 1.1.64
+		 *
+		 * @return string Compiled pattern, or an empty string when there is nothing to match.
+		 */
+		protected static function get_sensitive_query_pattern() {
+			if ( null !== self::$sensitive_query_pattern ) {
+				return self::$sensitive_query_pattern;
+			}
+
+			$parameters = self::get_sensitive_query_parameters();
+
+			// Parameter names are validated to /^[a-z0-9_-]+$/ so they are safe to
+			// interpolate directly into the alternation group.
+			self::$sensitive_query_pattern = empty( $parameters )
+				? ''
+				: '/([?&#])(' . implode( '|', $parameters ) . ')=[^&#\s"\'\\\\<>]+/i';
+
+			return self::$sensitive_query_pattern;
+		}
+
+		/**
+		 * Query parameter names whose values must never be persisted to a log.
+		 *
+		 * Scoped deliberately to the query-string context. Several of these words
+		 * are too generic to deny-list as context *keys* (`state` also names a
+		 * postal region, `code` also names a coupon), but as query parameters they
+		 * are overwhelmingly credentials or single-use grants.
+		 *
+		 * `code` is included despite the false-positive cost because a leaked OAuth
+		 * authorization code is directly exchangeable for a long-lived refresh
+		 * token — the highest-impact leak in the list.
+		 *
+		 * @since 1.1.64
+		 *
+		 * @return string[] Lower-cased parameter names.
+		 */
+		protected static function get_sensitive_query_parameters() {
+			$defaults = array(
+				// OAuth 2.0 / OIDC grants and tokens.
+				'access_token',
+				'code',
+				'code_challenge',
+				'code_verifier',
+				'id_token',
+				'refresh_token',
+				'state',
+				'token',
+				// OAuth 1.0a.
+				'oauth_token',
+				'oauth_verifier',
+				// API keys and shared secrets.
+				'api_key',
+				'apikey',
+				'auth',
+				'authorization',
+				'client_secret',
+				'key',
+				'secret',
+				// Request signing.
+				'hmac',
+				'sig',
+				'signature',
+				// Single-use sessions and tickets.
+				'session_uri',
+				'ticket',
+				'_wpnonce',
+				// Credentials.
+				'passwd',
+				'password',
+				'pwd',
+			);
+
+			/**
+			 * Filter the query parameters masked in persisted log context.
+			 *
+			 * Additive only: the returned list is unioned with the built-in
+			 * defaults, so this filter can widen redaction but never weaken it.
+			 * Names that are not `/^[a-z0-9_-]+$/` are discarded.
+			 *
+			 * @since 1.1.64
+			 *
+			 * @param string[] $defaults Built-in parameter names.
+			 */
+			$filtered = apply_filters( 'wp_mcp_ai_sensitive_query_parameters', $defaults );
+
+			if ( ! is_array( $filtered ) ) {
+				$filtered = array();
+			}
+
+			$parameters = array();
+
+			foreach ( array_merge( $defaults, $filtered ) as $parameter ) {
+				if ( ! is_string( $parameter ) ) {
+					continue;
+				}
+
+				$parameter = strtolower( trim( $parameter ) );
+
+				if ( '' === $parameter || ! preg_match( '/^[a-z0-9_-]+$/', $parameter ) ) {
+					continue;
+				}
+
+				$parameters[ $parameter ] = true;
+			}
+
+			$parameters = array_keys( $parameters );
+			sort( $parameters );
+
+			return $parameters;
 		}
 
 		/**
@@ -925,7 +1440,14 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 					'lm_studio_completion_response',
 					'openai_external_action_request',
 					'openai_external_action_response',
+					'agentic_tool_execution',
+					'agentic_model_switched',
+					'agentic_messages_truncated',
+					'agentic_loop_limit',
 					'schedule_run',
+					'token_tier_changed',
+					'token_db_optimized',
+					'transcript_mining',
 					'cloudflare_invalid_tool_call',
 					'cloudflare_tool_calls_detected',
 					'cloudflare_tool_calls_filtered',
@@ -942,6 +1464,281 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			$allowed_types = array_map( 'sanitize_key', $allowed_types );
 
 			return in_array( $type, $allowed_types, true );
+		}
+
+		/**
+		 * Reduce a sanitized log context to a size that is safe to persist in
+		 * `wp_options`.
+		 *
+		 * Applied only on the persistence path, so the `wp_mcp_ai_log_entry` filter
+		 * and the PHP error-log line continue to see the full sanitized context.
+		 *
+		 * Three passes:
+		 * 1. Structural — drop keys that carry no diagnostic value, replace assistant
+		 *    configurations and system prompts with fingerprints, truncate long
+		 *    strings, and clamp nesting depth.
+		 * 2. Budget — while the encoded context exceeds the budget, replace the
+		 *    largest remaining top-level values with a size descriptor, biggest
+		 *    first, never touching the preserved diagnostic keys.
+		 * 3. Fallback — if the preserved keys alone still exceed the budget, hard
+		 *    truncate every remaining string.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param mixed $context Sanitized context from {@see self::sanitize_context()}.
+		 * @return array Context safe for option storage.
+		 */
+		protected static function slim_context_for_storage( $context ) {
+			if ( ! is_array( $context ) || empty( $context ) ) {
+				return array();
+			}
+
+			$budget = WP_MCP_AI_Admin_Settings::is_extended_logging_enabled()
+				? self::MAX_STORED_CONTEXT_BYTES_EXTENDED
+				: self::MAX_STORED_CONTEXT_BYTES;
+
+			/**
+			 * Filter the per-entry context byte budget for persisted log buffers.
+			 *
+			 * Raising this grows the `wp_mcp_ai_recent_errors` and
+			 * `wp_mcp_ai_recent_activity` option rows, which are re-read and
+			 * rewritten on every log write. Raise it deliberately.
+			 *
+			 * @since 1.8.0
+			 *
+			 * @param int   $budget  Maximum JSON-encoded bytes of context per entry.
+			 * @param array $context Sanitized context prior to slimming.
+			 */
+			$budget = (int) apply_filters( 'wp_mcp_ai_stored_context_budget', $budget, $context );
+			$budget = max( 256, $budget );
+
+			return self::enforce_context_budget( self::slim_context_branch( $context, 0 ), $budget );
+		}
+
+		/**
+		 * Recursively slim a context branch.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param mixed $value Value to slim.
+		 * @param int   $depth Current nesting depth.
+		 * @return mixed
+		 */
+		protected static function slim_context_branch( $value, $depth ) {
+			if ( is_string( $value ) ) {
+				return self::truncate_string( $value, self::MAX_STORED_CONTEXT_STRING_LENGTH );
+			}
+
+			if ( ! is_array( $value ) ) {
+				return $value;
+			}
+
+			if ( $depth >= self::MAX_STORED_CONTEXT_DEPTH ) {
+				return self::describe_omitted_value( $value );
+			}
+
+			$dropped = self::get_dropped_context_keys();
+			$slim    = array();
+
+			foreach ( $value as $key => $child ) {
+				if ( is_string( $key ) ) {
+					$normalized = strtolower( $key );
+
+					if ( in_array( $normalized, $dropped, true ) ) {
+						continue;
+					}
+
+					if ( 'assistant_config' === $normalized && is_array( $child ) ) {
+						$slim[ $key ] = self::fingerprint_assistant_config( $child );
+						continue;
+					}
+
+					if ( 'system_prompt' === $normalized && is_string( $child ) ) {
+						$slim[ $key ] = self::fingerprint_prompt( $child );
+						continue;
+					}
+				}
+
+				$slim[ $key ] = self::slim_context_branch( $child, $depth + 1 );
+			}
+
+			return $slim;
+		}
+
+		/**
+		 * Drop oversized top-level values until the context fits its budget.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param array $context Structurally slimmed context.
+		 * @param int   $budget  Maximum JSON-encoded bytes.
+		 * @return array
+		 */
+		protected static function enforce_context_budget( array $context, $budget ) {
+			$encoded = wp_json_encode( $context );
+
+			if ( false === $encoded ) {
+				return array( 'context' => '[unserializable context]' );
+			}
+
+			if ( strlen( $encoded ) <= $budget ) {
+				return $context;
+			}
+
+			$preserved = self::get_preserved_context_keys();
+			$sizes     = array();
+
+			foreach ( $context as $key => $child ) {
+				if ( in_array( strtolower( (string) $key ), $preserved, true ) ) {
+					continue;
+				}
+
+				$child_encoded = wp_json_encode( $child );
+				$sizes[ $key ] = ( false === $child_encoded ) ? 0 : strlen( $child_encoded );
+			}
+
+			// Largest first, so the fewest keys are sacrificed.
+			arsort( $sizes );
+
+			foreach ( array_keys( $sizes ) as $key ) {
+				$context[ $key ] = self::describe_omitted_value( $context[ $key ] );
+
+				$encoded = wp_json_encode( $context );
+
+				if ( false === $encoded || strlen( $encoded ) <= $budget ) {
+					return $context;
+				}
+			}
+
+			// Preserved keys alone exceed the budget; hard truncate what is left.
+			return self::truncate_strings_in_structure( $context, 128 );
+		}
+
+		/**
+		 * Replace an assistant configuration with a compact diagnostic fingerprint.
+		 *
+		 * The full configuration carries the resolved `system_prompt`, which includes
+		 * any primary-role and Agent Skills prompt text and can run to tens of
+		 * kilobytes. Keep only what is actionable when reading a log entry.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param array $config Assistant configuration.
+		 * @return array Fingerprint.
+		 */
+		protected static function fingerprint_assistant_config( array $config ) {
+			if ( isset( $config['tools'] ) && is_array( $config['tools'] ) ) {
+				$tool_count = count( $config['tools'] );
+			} else {
+				// Carry the count forward when re-slimming an existing fingerprint.
+				$tool_count = isset( $config['tool_count'] ) ? (int) $config['tool_count'] : 0;
+			}
+
+			return array(
+				'provider'            => isset( $config['provider'] ) ? (string) $config['provider'] : '',
+				'model'               => isset( $config['model'] ) ? (string) $config['model'] : '',
+				'temperature'         => isset( $config['temperature'] ) ? $config['temperature'] : null,
+				'tool_count'          => $tool_count,
+				'required_capability' => isset( $config['required_capability'] ) ? (string) $config['required_capability'] : '',
+				'system_prompt'       => isset( $config['system_prompt'] ) && is_string( $config['system_prompt'] )
+					? self::fingerprint_prompt( $config['system_prompt'] )
+					: '',
+			);
+		}
+
+		/**
+		 * Describe a prompt by length and hash instead of storing its text.
+		 *
+		 * Returns a string so that readers which cast the value stay valid.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param string $prompt Prompt text.
+		 * @return string Fingerprint, or an empty string for an empty prompt.
+		 */
+		protected static function fingerprint_prompt( $prompt ) {
+			$prompt = (string) $prompt;
+
+			if ( '' === $prompt ) {
+				return '';
+			}
+
+			// Never re-fingerprint a fingerprint: that would replace the original
+			// length and hash with those of the marker itself.
+			if ( 0 === strpos( $prompt, self::OMITTED_PROMPT_PREFIX ) ) {
+				return $prompt;
+			}
+
+			return sprintf(
+				'%1$s %2$d chars, md5:%3$s]',
+				self::OMITTED_PROMPT_PREFIX,
+				self::string_length( $prompt ),
+				substr( md5( $prompt ), 0, 12 )
+			);
+		}
+
+		/**
+		 * Describe an omitted value by type and encoded size.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param mixed $value Omitted value.
+		 * @return string
+		 */
+		protected static function describe_omitted_value( $value ) {
+			// An existing descriptor is already minimal; describing it again would
+			// discard the size it reports.
+			if ( is_string( $value ) && 0 === strpos( $value, self::OMITTED_VALUE_PREFIX ) ) {
+				return $value;
+			}
+
+			$encoded = wp_json_encode( $value );
+			$bytes   = ( false === $encoded ) ? 0 : strlen( $encoded );
+			$type    = is_array( $value ) ? sprintf( 'array(%d)', count( $value ) ) : gettype( $value );
+
+			return sprintf( '%1$s %2$s, %3$d bytes]', self::OMITTED_VALUE_PREFIX, $type, $bytes );
+		}
+
+		/**
+		 * Context keys that are never persisted.
+		 *
+		 * `request` holds a WP_REST_Request whose properties are all protected, so it
+		 * already collapses to an empty array during redaction. Dropping it keeps the
+		 * stored shape honest.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @return array Lowercase key names.
+		 */
+		protected static function get_dropped_context_keys() {
+			return array( 'request' );
+		}
+
+		/**
+		 * Context keys that survive budget enforcement.
+		 *
+		 * These identify what failed and where, so an entry stays actionable even
+		 * after everything else has been dropped.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @return array Lowercase key names.
+		 */
+		protected static function get_preserved_context_keys() {
+			return array(
+				'assistant_id',
+				'endpoint',
+				'error_code',
+				'error_message',
+				'event',
+				'guest_request',
+				'iteration',
+				'max_iterations',
+				'reason',
+				'schedule_id',
+				'tool_slug',
+				'user_id',
+			);
 		}
 
 		/**
@@ -963,12 +1760,16 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			);
 
 			if ( ! empty( $entry['context'] ) ) {
-				$stored_entry['context'] = $entry['context'];
+				$context = self::slim_context_for_storage( $entry['context'] );
+
+				if ( ! empty( $context ) ) {
+					$stored_entry['context'] = $context;
+				}
 			}
 
 			$recent[] = $stored_entry;
 
-			$recent = array_slice( $recent, -50 );
+			$recent = array_slice( $recent, - self::MAX_RECENT_ERRORS );
 
 			update_option( self::RECENT_ERRORS_OPTION, $recent, false );
 		}
@@ -992,12 +1793,16 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			);
 
 			if ( ! empty( $entry['context'] ) ) {
-				$stored_entry['context'] = $entry['context'];
+				$context = self::slim_context_for_storage( $entry['context'] );
+
+				if ( ! empty( $context ) ) {
+					$stored_entry['context'] = $context;
+				}
 			}
 
 			$recent[] = $stored_entry;
 
-			$recent = array_slice( $recent, -100 );
+			$recent = array_slice( $recent, - self::MAX_RECENT_ACTIVITY );
 
 			update_option( self::RECENT_ACTIVITY_OPTION, $recent, false );
 		}
@@ -1366,6 +2171,156 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		}
 
 		/**
+		 * Resolve the sensitive-result-field paths declared for a tool.
+		 *
+		 * Consulted on every `log_tool_execution()` call. The registry lookup is
+		 * skipped when the registry has not bootstrapped yet (the logger must never
+		 * force the full tool-suite init as a side effect of logging). Tools opt in
+		 * via {@see WP_MCP_AI_Tool_Sensitive_Result_Interface}, and legacy-format
+		 * tools reach the mechanism through {@see WP_MCP_AI_Legacy_Tool_Wrapper}.
+		 *
+		 * @since 1.1.64
+		 *
+		 * @param string $tool_slug Tool slug.
+		 * @return string[] Dot-notation paths of result fields that must never be logged.
+		 */
+		protected static function resolve_sensitive_result_fields( $tool_slug ) {
+			$tool_slug = sanitize_key( $tool_slug );
+
+			if ( isset( self::$declared_sensitive_fields[ $tool_slug ] ) ) {
+				return self::$declared_sensitive_fields[ $tool_slug ];
+			}
+
+			$declared = array();
+
+			if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+				$registry = WP_MCP_AI_Tool_Registry::get_instance();
+				if ( $registry->is_bootstrapped() ) {
+					$tool = $registry->get_tool( $tool_slug );
+
+					if ( $tool && method_exists( $tool, 'get_sensitive_result_fields' ) ) {
+						$fields = $tool->get_sensitive_result_fields();
+						if ( is_array( $fields ) ) {
+							$declared = array_values( array_filter( array_map( 'strval', $fields ) ) );
+						}
+					}
+				}
+			}
+
+			/**
+			 * Filter the sensitive result fields masked before a tool execution log
+			 * entry is persisted.
+			 *
+			 * Additive only: the returned list is unioned with the tool's own
+			 * declaration, so this filter can widen redaction but never weaken it.
+			 * Use it to shield a third-party tool that does not implement
+			 * {@see WP_MCP_AI_Tool_Sensitive_Result_Interface} itself.
+			 *
+			 * @since 1.1.64
+			 *
+			 * @param string[] $declared  Dot-notation paths declared by the tool.
+			 * @param string   $tool_slug Slug of the tool being logged.
+			 */
+			$declared = apply_filters( 'wp_mcp_ai_tool_sensitive_result_fields', $declared, $tool_slug );
+
+			if ( ! is_array( $declared ) ) {
+				$declared = array();
+			}
+
+			// Normalise, de-duplicate, and drop empty paths.
+			$normalized = array();
+			foreach ( $declared as $path ) {
+				if ( ! is_scalar( $path ) ) {
+					continue;
+				}
+
+				$path = trim( (string) $path, " \t\n\r\0\x0B." );
+				if ( '' === $path || isset( $normalized[ $path ] ) ) {
+					continue;
+				}
+
+				$normalized[ $path ] = true;
+			}
+
+			self::$declared_sensitive_fields[ $tool_slug ] = array_keys( $normalized );
+
+			return self::$declared_sensitive_fields[ $tool_slug ];
+		}
+
+		/**
+		 * Mask every declared path in a tool payload.
+		 *
+		 * Copies the payload and replaces each declared path's value with the
+		 * standard `[redacted]` placeholder. `*` matches a single array segment and
+		 * exists to reach values inside numerically-indexed lists. When a declared
+		 * path names a container, the entire subtree is masked — that is how tools
+		 * with an unbounded third-party payload (e.g. `result`) opt out of logging
+		 * it wholesale. The input value is never modified.
+		 *
+		 * Fail-safe by design: when a declared path expects to descend but the
+		 * matched value is a scalar, that scalar is masked rather than skipped.
+		 * Over-masking a log line is harmless; under-masking is a leak.
+		 *
+		 * @since 1.1.64
+		 *
+		 * @param mixed    $value   Raw tool arguments or result.
+		 * @param string[] $declared Dot-notation paths from {@see self::resolve_sensitive_result_fields()}.
+		 * @return mixed Copy of the value with declared paths replaced by `[redacted]`.
+		 */
+		protected static function mask_declared_sensitive_fields( $value, $declared ) {
+			if ( $value instanceof \Traversable ) {
+				$value = iterator_to_array( $value );
+			}
+
+			if ( is_object( $value ) ) {
+				$value = get_object_vars( $value );
+			}
+
+			if ( ! is_array( $value ) || empty( $declared ) ) {
+				return $value;
+			}
+
+			$groups = array();
+			foreach ( $declared as $path ) {
+				$segments = explode( '.', (string) $path );
+				if ( empty( $segments ) ) {
+					continue;
+				}
+
+				$groups[ $segments[0] ][] = array_slice( $segments, 1 );
+			}
+
+			foreach ( $value as $key => $child ) {
+				foreach ( $groups as $segment => $paths ) {
+					$matches = ( '*' === $segment ) || ( (string) $key === (string) $segment );
+					if ( ! $matches || ! ( is_array( $child ) || $child instanceof \Traversable ) ) {
+						if ( $matches ) {
+							$value[ $key ] = self::redact_sensitive_value( $child );
+						}
+						continue;
+					}
+
+					$remaining = array();
+					foreach ( $paths as $rest ) {
+						if ( empty( $rest ) ) {
+							// Declared path ends here — mask the whole subtree.
+							$value[ $key ] = self::redact_sensitive_value( $child );
+							$remaining     = array();
+							break;
+						}
+						$remaining[] = implode( '.', $rest );
+					}
+
+					if ( ! empty( $remaining ) ) {
+						$value[ $key ] = self::mask_declared_sensitive_fields( $child, $remaining );
+					}
+				}
+			}
+
+			return $value;
+		}
+
+		/**
 		 * Generate a user-friendly error message with recovery suggestions.
 		 *
 		 * This method translates technical error codes into actionable messages
@@ -1572,6 +2527,47 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			}
 
 			return substr( $value, $start, $length );
+		}
+
+		/**
+		 * Resolve the client IP address from the request headers.
+		 *
+		 * Checks the standard proxy headers first (Cloudflare, X-Forwarded-For,
+		 * X-Real-IP) and falls back to REMOTE_ADDR. Values are sanitized and
+		 * validated; comma-separated lists (X-Forwarded-For) return the first
+		 * entry.
+		 *
+		 * @since 1.8.1
+		 *
+		 * @return string Client IP address, or '0.0.0.0' when undeterminable.
+		 */
+		public static function get_client_ip() {
+			$ip_keys = array(
+				'HTTP_CF_CONNECTING_IP', // Cloudflare.
+				'HTTP_X_FORWARDED_FOR',  // Proxy/load balancer.
+				'HTTP_X_REAL_IP',        // Nginx proxy.
+				'REMOTE_ADDR',           // Direct connection.
+			);
+
+			foreach ( $ip_keys as $key ) {
+				if ( ! isset( $_SERVER[ $key ] ) ) {
+					continue;
+				}
+
+				$ip = sanitize_text_field( wp_unslash( $_SERVER[ $key ] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized on the same line and validated via filter_var() below.
+
+				// X-Forwarded-For can carry multiple comma-separated IPs; the
+				// first entry is the originating client.
+				if ( strpos( $ip, ',' ) !== false ) {
+					$ip = trim( explode( ',', $ip )[0] );
+				}
+
+				if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+					return $ip;
+				}
+			}
+
+			return '0.0.0.0';
 		}
 	}
 }

@@ -42,6 +42,18 @@ class WP_MCP_AI_Chat_Transcript_Multiple_Widgets_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// WooCommerce Blocks hooks non-idempotent init callbacks (payment method
+		// integrations and block types) — re-firing init in the harness
+		// re-registers them and raises _doing_it_wrong notices from Woo's own
+		// code. WP 6.9 also re-registers the breadcrumbs block during
+		// rest_do_request, which the block-registry whitelist covers.
+		if ( class_exists( 'Automattic\WooCommerce\Blocks\Package' ) ) {
+			$this->setExpectedIncorrectUsage( 'Automattic\WooCommerce\Blocks\Integrations\IntegrationRegistry::register' );
+			$this->setExpectedIncorrectUsage( 'WP_Block_Type_Registry::register' );
+		} elseif ( version_compare( $GLOBALS['wp_version'], '7.1', '<' ) ) {
+			$this->setExpectedIncorrectUsage( 'WP_Block_Type_Registry::register' );
+		}
+
 		if ( function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 			wp_mcp_ai_bootstrap();
 		}
@@ -93,10 +105,6 @@ class WP_MCP_AI_Chat_Transcript_Multiple_Widgets_Test extends WP_UnitTestCase {
 	 * to Assistant A (the target widget's assistant).
 	 */
 	public function test_transcript_save_uses_provided_assistant_id() {
-		// WP 6.9 may emit a breadcrumbs block re-registration notice during
-		// rest_do_request. Suppress it so the test framework doesn't fail.
-		$this->setExpectedIncorrectUsage( 'WP_Block_Type_Registry::register' );
-
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Content-Type', 'application/json' );
@@ -131,9 +139,18 @@ class WP_MCP_AI_Chat_Transcript_Multiple_Widgets_Test extends WP_UnitTestCase {
 	 * Test that retrieving a session returns the correct assistant_id.
 	 */
 	public function test_session_retrieval_includes_assistant_id() {
-		// Session retrieval depends on JetEngine CCT for persistence.
+		// Session retrieval depends on JetEngine CCT persistence. Besides the
+		// plugin being active, the CCT table must actually exist — when it does
+		// not (e.g. CI), saves fall back to browser-only storage and retrieval
+		// responds with session: null, so the roundtrip cannot be exercised.
 		if ( ! function_exists( 'jet_engine' ) ) {
 			$this->markTestSkipped( 'Requires JetEngine to be active for transcript storage' );
+		}
+		if ( function_exists( 'wp_mcp_ai_get_transcript_repository' ) ) {
+			$repository = wp_mcp_ai_get_transcript_repository();
+			if ( $repository && ! $repository->table_exists() ) {
+				$this->markTestSkipped( 'Requires the JetEngine CCT transcript table to exist' );
+			}
 		}
 		// First, save a transcript for assistant 1.
 		$session_key = 'test-session-' . time();

@@ -126,7 +126,7 @@ class WP_MCP_AI_HTTP_Tests extends WP_UnitTestCase {
 	 * Test prepare_transport_error with non-timeout error.
 	 */
 	public function test_prepare_transport_error_with_non_timeout() {
-		$error    = new WP_Error( 'http_request_failed', 'Connection refused' );
+		$error    = new WP_Error( 'http_request_failed', 'SSL certificate problem: unable to get local issuer certificate' );
 		$prepared = WP_MCP_AI_HTTP::prepare_transport_error(
 			$error,
 			'custom_code',
@@ -139,6 +139,27 @@ class WP_MCP_AI_HTTP_Tests extends WP_UnitTestCase {
 
 		$data = $prepared->get_error_data();
 		$this->assertArrayHasKey( 'error', $data );
+	}
+
+	/**
+	 * Test prepare_transport_error enriches connection-refused errors.
+	 */
+	public function test_prepare_transport_error_with_connection_refused() {
+		$error    = new WP_Error( 'http_request_failed', 'Connection refused' );
+		$prepared = WP_MCP_AI_HTTP::prepare_transport_error(
+			$error,
+			'custom_code',
+			'Custom message',
+			'Ollama'
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $prepared );
+		$this->assertEquals( 'wp_mcp_ai_connection_refused', $prepared->get_error_code() );
+		$this->assertStringContainsString( 'Ollama', $prepared->get_error_message() );
+
+		$data = $prepared->get_error_data();
+		$this->assertArrayHasKey( 'actions', $data );
+		$this->assertEquals( 502, $data['status'] );
 	}
 
 	/**

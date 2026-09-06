@@ -41,6 +41,13 @@ class WP_MCP_AI_Tenant_Database {
 	const VERSION_OPTION = 'wp_mcp_ai_tenant_db_version';
 
 	/**
+	 * Cached result of the table-existence check.
+	 *
+	 * @var bool|null
+	 */
+	private static $tables_installed = null;
+
+	/**
 	 * Register hooks.
 	 *
 	 * @return void
@@ -119,6 +126,36 @@ class WP_MCP_AI_Tenant_Database {
 
 		dbDelta( $user_map_sql );
 		// phpcs:enable
+
+		self::$tables_installed = true;
+	}
+
+	/**
+	 * Whether the tenant tables exist in the database.
+	 *
+	 * CRUD methods call this before querying: on sites where the plugin is
+	 * loaded but the schema has not been created yet (for example CI test
+	 * installs), querying would spam database errors.
+	 *
+	 * The result is cached for the lifetime of the request; create_tables()
+	 * and drop_tables() refresh it.
+	 *
+	 * @return bool True when the tenants table exists.
+	 */
+	public static function tables_installed(): bool {
+		if ( null !== self::$tables_installed ) {
+			return self::$tables_installed;
+		}
+
+		global $wpdb;
+		$tenants_table = $wpdb->prefix . 'mcp_ai_tenants';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-off schema check; cached in a static.
+		$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $tenants_table ) );
+
+		self::$tables_installed = ( $tenants_table === $found );
+
+		return self::$tables_installed;
 	}
 
 	/**
@@ -134,6 +171,8 @@ class WP_MCP_AI_Tenant_Database {
 		$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}mcp_ai_tenant_user_map" );
 		// phpcs:enable
 		delete_option( self::VERSION_OPTION );
+
+		self::$tables_installed = false;
 	}
 
 	/**
@@ -146,6 +185,10 @@ class WP_MCP_AI_Tenant_Database {
 	 * @return bool|int False on failure, row ID on success.
 	 */
 	public static function assign_user( int $user_id, string $type, int $tenant_id, bool $is_primary = false ) {
+		if ( ! self::tables_installed() ) {
+			return false;
+		}
+
 		global $wpdb;
 
 		$table = $wpdb->prefix . 'mcp_ai_tenant_user_map';
@@ -207,6 +250,10 @@ class WP_MCP_AI_Tenant_Database {
 	 * @return array<int, array{type: string, id: int, is_primary: bool}>
 	 */
 	public static function get_user_tenants( int $user_id ): array {
+		if ( ! self::tables_installed() ) {
+			return array();
+		}
+
 		global $wpdb;
 		$table = $wpdb->prefix . 'mcp_ai_tenant_user_map';
 

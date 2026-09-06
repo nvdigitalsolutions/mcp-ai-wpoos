@@ -98,7 +98,7 @@ class Test_Model_Catalog extends WP_UnitTestCase {
 	 */
 	public function test_flush_catalog_cache_reloads_filtered_data() {
 		WP_MCP_AI_Model_Rate_Limits_CCT::flush_catalog_cache();
-		$initial = WP_MCP_AI_Model_Rate_Limits_CCT::get_default_model_data();
+		$initial       = WP_MCP_AI_Model_Rate_Limits_CCT::get_default_model_data();
 		$initial_count = count( $initial );
 
 		add_filter(
@@ -201,7 +201,10 @@ class Test_Model_Catalog extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_model_configs',
 			array(
-				'gpt-3.5-turbo' => array( 'enabled' => true, 'fallback_model' => 'gpt-4' ),
+				'gpt-3.5-turbo' => array(
+					'enabled'        => true,
+					'fallback_model' => 'gpt-4',
+				),
 			)
 		);
 
@@ -237,15 +240,48 @@ class Test_Model_Catalog extends WP_UnitTestCase {
 		// These keys mirror the fallback dropdowns in the admin Providers section.
 		$dropdown_keys = array(
 			// OpenAI fallback list.
-			'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano', 'gpt-5.5',
-			'gpt-5', 'gpt-5-mini', 'gpt-5-nano',
-			'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano',
-			'gpt-4o', 'gpt-4o-mini',
+			'gpt-6-astra',
+			'gpt-5.6-sol',
+			'gpt-5.6-terra',
+			'gpt-5.6-luna',
+			'gpt-5.4',
+			'gpt-5.4-mini',
+			'gpt-5.4-nano',
+			'gpt-5.5',
+			'gpt-5',
+			'gpt-5-mini',
+			'gpt-5-nano',
+			'gpt-4.1',
+			'gpt-4.1-mini',
+			'gpt-4.1-nano',
+			'gpt-4o',
+			'gpt-4o-mini',
 			// Anthropic fallback list.
-			'claude-opus-4-7', 'claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5',
+			'claude-opus-5',
+			'claude-fable-5.1',
+			'claude-sonnet-5',
+			'claude-opus-4-7',
+			'claude-opus-4-6',
+			'claude-sonnet-4-6',
+			'claude-haiku-4-5',
 			// Gemini fallback list.
-				'gemini-3.5-flash', 'gemini-3.1-pro', 'gemini-3.1-flash-lite',
-				'gemini-2.5-pro', 'gemini-2.5-flash',
+				'gemini-3.8-flash',
+			'gemini-3.7-flash',
+			'gemini-3.6-flash',
+			'gemini-3.5-flash',
+			'gemini-3.5-flash-lite',
+			'gemini-3.1-pro',
+			'gemini-3.1-flash-lite',
+			'gemini-2.5-pro',
+			'gemini-2.5-flash',
+			// DeepSeek fallback list.
+			'deepseek-v4-flash',
+			'deepseek-v4-pro',
+			'deepseek-v4-flash-vision-exp',
+			// Kimi fallback list.
+			'kimi-k3',
+			'kimi-k2.7-code',
+			'kimi-k2.6',
 		);
 
 		foreach ( $dropdown_keys as $id ) {

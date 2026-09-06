@@ -63,9 +63,9 @@ These changes make the rest of the audit reproducible and prevent regression whi
 
 ## Wave 2 — High-severity remediation (one PR each)
 
-### R-S-01 — Move webhook signature verification into `permission_callback`  🟡 Partial
+### R-S-01 — Move webhook signature verification into `permission_callback`  ✅ Done
 - **Closes:** F-AUTHZ-01
-- **Status:** Wave 11 landed permission-callback verification for the 4 routes where it was correct (Telegram login, agent-card ×2, Google Chat legacy fallback). Twitter CRC GET, WhatsApp verify GET ×2, Messenger verify GET, and OPTIONS preflight are legitimately public per their respective webhook protocols and remain `__return_true` with documented justification. 8 new PHPUnit cases in `tests/test-webhook-permission-callbacks.php`.
+- **Status:** Wave 11 landed permission-callback verification for the 4 routes where it was correct (Telegram login, agent-card ×2, Google Chat legacy fallback). Closed 2026-08-26 (v1.1.64): final sweep added inline justification comments to every remaining legitimately-public `__return_true` — Twitter CRC GET ×2, WhatsApp verify GET ×2, Messenger verify GET, Telegram Mini App page/validate ×4. The MCP OPTIONS preflight route already carried one. 8 PHPUnit cases in `tests/test-webhook-permission-callbacks.php`.
 
 ### R-S-02 — Migrate pro shell tools to `proc_open` + opt-in constant + capability gate  ✅ Done
 - **Closes:** F-EXEC-01
@@ -79,9 +79,9 @@ These changes make the rest of the audit reproducible and prevent regression whi
 - **Closes:** F-PRIV-03, F-UPLOAD-01
 - **Status:** Wave 23. All 5 recommendation items shipped: PHI never forwarded to AI providers; multisite guard requires `wp_mcp_ai_phi_acknowledged`; `WP_MCP_AI_Pro_Privacy` exporter + eraser cover all 6 health-wellness CPTs and `mcp_ai_imaging_study`; `docs/HIPAA_POSTURE.md` documents the data flow; `wp_mcp_ai_health_cpt_read_audit()` logs every health CPT read.
 
-### R-S-05 — Algorave live-coding sandbox  🟡 Partial
+### R-S-05 — Algorave live-coding sandbox  ⏭️ Accepted
 - **Closes:** F-AI-01
-- **Status:** Wave 13. Two layered defences landed: shortcode now refuses to render below `edit_posts`; `new Function('Tone', code)` gated behind `WP_MCP_AI_ALLOW_TONEJS_EVAL` (default `false`). Strudel engine remains the safe default. Sandboxed iframe + strict CSP is the remaining follow-up.
+- **Status:** Wave 13. Two layered defences landed: shortcode now refuses to render below `edit_posts`; `new Function('Tone', code)` gated behind `WP_MCP_AI_ALLOW_TONEJS_EVAL` (default `false`). Strudel engine remains the safe default. Closed 2026-08-26 (v1.1.64) as **accepted with rationale**: added a visible raw-eval warning banner and a one-time per-session confirm-on-execute; the sandboxed-iframe + strict-CSP recommendation is deferred because residual exposure requires operator opt-in + `edit_posts` + a pasting victim on a non-WP.org addon, and an opaque-origin iframe would need a CORS-enabled sample endpoint and conflict with the Strudel CDN option. **Re-open trigger:** the addon ships on WordPress.org or Guest Access becomes a public paste-and-share surface.
 
 ---
 
@@ -176,8 +176,8 @@ These changes make the rest of the audit reproducible and prevent regression whi
 - **Status:** Wave 15 standardised base-plugin action strings; pro-addon legacy strings remain on a follow-up sweep.
 
 ### R-Q-06 — Ship sources for all `.min.js` files (or source maps)  ✅ Done
-- **Closes:** F-CMP-05
-- **Status:** Wave 21. Every plugin-authored `.min.js` has a sibling `.min.js.map`; the only exception is third-party `vendor/chart.min.js` (Chart.js v4.5.1 MIT, source documented in `assets/js/vendor/README.md`).
+- **Closes:** F-CMP-05, F-CMP-04 (addons sweep)
+- **Status:** Wave 21. Every plugin-authored `.min.js` has a sibling `.min.js.map`; the only exception is third-party `vendor/chart.min.js` (Chart.js v4.5.1 MIT, source documented in `assets/js/vendor/README.md`). Addons sweep closed 2026-08-26 (v1.1.64): every plugin-authored minified bundle committed under `addons/` has a sibling map — the last tracked one was `addons/pro/assets/js/tma-markdown.min.js`, regenerated from `tma-markdown.js` with a map (API surface verified identical). The page-agent `esbuild.config.js` now always emits external maps for its bundles, which are gitignored local build artifacts. Third-party vendor bundles under `*/vendor/` are explicitly exempt per the Chart.js precedent.
 
 ### R-A-01 — Per-shortcode XSS verification pass (rolling)  ✅ Done
 - **Closes:** F-XSS-01 (PHP portion)
@@ -194,15 +194,15 @@ These changes make the rest of the audit reproducible and prevent regression whi
 
 Total: **~30 focused PRs** to clear the audit backlog. None individually large; each can be handled by a single GSD × BMAD Developer sprint cycle.
 
-## Status summary (2026-04-27)
+## Status summary (2026-04-27, updated 2026-08-26)
 
 | Wave | Items | Done | Partial | Open / Accepted |
 |---|---:|---:|---:|---:|
 | Wave 1 — Tooling foundation | 7 | 2 | 1 | 4 (R-T-01, R-T-02, R-T-03, R-T-05) |
-| Wave 2 — High-severity | 5 | 3 | 2 | 0 |
+| Wave 2 — High-severity | 5 | 4 | 0 | 1 (R-S-05 accepted) |
 | Wave 3 — Architecture | 5 | 4 | 0 | 1 (R-A-03) |
 | Wave 4 — Medium / Low | 9 | 9 | 0 | 0 |
 | Wave 5 — Hygiene / docs | 8 | 6 | 1 | 1 (R-Q-04) |
-| **Total** | **34** | **24** | **4** | **6** |
+| **Total** | **34** | **25** | **2** | **7** |
 
 The 6 Open items are concentrated in non-distribution surfaces (R-T-01 / Pro PHPCS) or are tooling/process improvements that do not block the WP.org submission.

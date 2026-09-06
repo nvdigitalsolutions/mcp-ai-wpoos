@@ -22,6 +22,12 @@ class WP_MCP_AI_Get_Elementor_Form_Submissions_Test extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-elementor-form-submissions.php';
 		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 
+		// `is_available()` gates on Elementor Pro as well as the submissions
+		// tables, and Pro is commercial so it is never present in CI. The local
+		// query path uses no Pro API — only the two tables seeded below — so the
+		// shared stub is a faithful double for the presence check.
+		require_once __DIR__ . '/helpers/elementor-stubs.php';
+
 		// Create the e_submissions table mock.
 		$this->create_submissions_tables();
 	}
@@ -36,12 +42,19 @@ class WP_MCP_AI_Get_Elementor_Form_Submissions_Test extends WP_UnitTestCase {
 
 	/**
 	 * Create mock Elementor submissions tables.
+	 *
+	 * The WordPress test harness rewrites `CREATE TABLE` into `CREATE TEMPORARY
+	 * TABLE`, and MySQL hides temporary tables from `SHOW TABLES`. The tool
+	 * probes for its tables with `SHOW TABLES LIKE`, so the fixture has to opt
+	 * out of that rewrite and create real tables (dropped again in tearDown).
 	 */
 	private function create_submissions_tables() {
 		global $wpdb;
 
 		$submissions_table = $wpdb->prefix . 'e_submissions';
 		$values_table      = $wpdb->prefix . 'e_submissions_values';
+
+		remove_filter( 'query', array( $this, '_create_temporary_tables' ) );
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
 		$wpdb->query(
@@ -83,6 +96,8 @@ class WP_MCP_AI_Get_Elementor_Form_Submissions_Test extends WP_UnitTestCase {
 			) {$wpdb->get_charset_collate()}"
 		);
 		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
+
+		add_filter( 'query', array( $this, '_create_temporary_tables' ) );
 	}
 
 		/**
@@ -92,10 +107,17 @@ class WP_MCP_AI_Get_Elementor_Form_Submissions_Test extends WP_UnitTestCase {
 		global $wpdb;
 		$submissions_table = $wpdb->prefix . 'e_submissions';
 			$values_table  = $wpdb->prefix . 'e_submissions_values';
+
+			// The tables are real rather than temporary, so the harness rewrite of
+			// `DROP TABLE` has to be lifted for the cleanup to actually run.
+			remove_filter( 'query', array( $this, '_drop_temporary_tables' ) );
+
 			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
 			$wpdb->query( "DROP TABLE IF EXISTS {$values_table}" );
 			$wpdb->query( "DROP TABLE IF EXISTS {$submissions_table}" );
 			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
+
+			add_filter( 'query', array( $this, '_drop_temporary_tables' ) );
 	}
 
 	/**
@@ -339,14 +361,15 @@ class WP_MCP_AI_Get_Elementor_Form_Submissions_Test extends WP_UnitTestCase {
 	public function test_execute_filters_by_status() {
 		global $wpdb;
 		$post_id = 77;
-		$this->seed_submissions( $post_id, 'Signup', 'elem_signup', 3 );
+		$ids     = $this->seed_submissions( $post_id, 'Signup', 'elem_signup', 3 );
 
-		// Mark one submission as failed.
+		// Mark one submission as failed. Keying the update on post_id would flip
+		// all three rows, so it has to target a single submission ID.
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wpdb->update(
 			$wpdb->prefix . 'e_submissions',
 			array( 'status' => 'failed' ),
-			array( 'post_id' => $post_id ),
+			array( 'id' => $ids[0] ),
 			array( '%s' ),
 			array( '%d' )
 		);

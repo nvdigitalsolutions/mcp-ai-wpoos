@@ -346,7 +346,6 @@ class Test_New_Workflow_Preset_Tools extends WP_UnitTestCase {
 			'apply_watermark_batch',
 			'optimise_images_batch',
 			'cleanup_orphaned_media',
-			'generate_social_captions',
 			'schedule_social_posts',
 			'publish_to_social',
 			'upload_video_batch',

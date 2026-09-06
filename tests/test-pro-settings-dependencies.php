@@ -41,8 +41,12 @@ class WP_MCP_AI_Pro_Settings_Dependencies_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $packages['require'], 'Should have require array' );
 
 		// Should include base packages (from base composer.json).
-		$this->assertArrayHasKey( 'rahul900day/tiktoken-php', $packages['require'], 'Should include base package tiktoken-php' );
+		$this->assertArrayHasKey( 'psr/event-dispatcher', $packages['require'], 'Should include base package psr/event-dispatcher' );
 		$this->assertArrayHasKey( 'symfony/http-client', $packages['require'], 'Should include base package symfony/http-client' );
+
+		// rahul900day/tiktoken-php moved to the optional "suggest" section, so
+		// it must no longer be advertised as a hard requirement.
+		$this->assertArrayNotHasKey( 'rahul900day/tiktoken-php', $packages['require'], 'tiktoken-php should no longer be a hard requirement' );
 
 		// If Pro addon exists, should include Pro packages.
 		if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {

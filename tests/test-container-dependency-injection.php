@@ -120,6 +120,37 @@ class Test_Container_Dependency_Injection extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The tool_registry binding must resolve the LIVE registry singleton on
+	 * every get() call. Other suites swap
+	 * `WP_MCP_AI_Tool_Registry::$instance` per test (reflection) for
+	 * isolation; a cached binding resolved during such a window would keep
+	 * returning the discarded instance for the rest of the process and
+	 * silently bypass tools registered on the restored shared instance
+	 * (transcript-mining job logging regression).
+	 */
+	public function test_tool_registry_binding_tracks_live_singleton() {
+		$shared = WP_MCP_AI_Tool_Registry::get_instance();
+
+		// Swap the singleton the same way the isolation suites do.
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Tool_Registry' );
+		$property   = $reflection->getProperty( 'instance' );
+		$property->setAccessible( true );
+		$property->setValue( null, null );
+
+		try {
+			$fresh = WP_MCP_AI_Tool_Registry::get_instance();
+
+			// Mid-window the binding resolves the live (fresh) instance.
+			$this->assertSame( $fresh, $this->container->get( 'tool_registry' ), 'Binding must resolve the live singleton' );
+		} finally {
+			$property->setValue( null, $shared );
+		}
+
+		// After restore the binding must track the restored instance.
+		$this->assertSame( $shared, $this->container->get( 'tool_registry' ), 'Binding must track the restored singleton' );
+	}
+
+	/**
 	 * Test that container can be cleared for testing.
 	 */
 	public function test_container_clear() {

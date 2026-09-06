@@ -58,7 +58,7 @@ class WP_MCP_AI_Model_Catalog_Migration {
 			'claude-opus-4-20250514'               => 'claude-opus-4-6',
 			'claude-sonnet-4-20250514'             => 'claude-sonnet-4-6',
 			'claude-opus-4-1-20250805'             => 'claude-opus-4-6',
-			'claude-mythos-preview'                => 'claude-opus-4-8',
+			'claude-mythos-preview'                => 'claude-mythos-5',
 			'claude-3.5-sonnet'                    => 'claude-sonnet-4-6',
 			'claude-3.5-sonnet-v2'                 => 'claude-sonnet-4-6',
 			'claude-sonnet-4.5'                    => 'claude-sonnet-4-6',
@@ -75,11 +75,13 @@ class WP_MCP_AI_Model_Catalog_Migration {
 			'gemini-2.0-flash'                     => 'gemini-2.5-flash',
 			'gemini-2.0-flash-lite'                => 'gemini-2.5-flash-lite',
 			'gemini-2.0-flash-image'               => 'gemini-2.5-flash-image',
-			'gemini-2.5-flash-image'               => 'gemini-3.1-flash-image',
+			'gemini-2.5-flash-image'               => 'gemini-3.1-flash-image-preview',
 			'gemini-3-pro-preview'                 => 'gemini-3.1-pro',
 			'gemini-3-flash-preview'               => 'gemini-3.5-flash',
 			'gemini-3.1-pro-preview'               => 'gemini-3.1-pro',
+			'gemini-3.1-flash'                     => 'gemini-3.5-flash',
 			'imagen-3'                             => 'gemini-3.1-flash-image',
+			'imagen-4'                             => 'gemini-3.1-flash-image',
 			// NIM deprecated.
 			'meta/llama-3.1-405b-instruct'         => 'meta/llama-3.3-70b-instruct',
 			'meta/llama-3.1-70b-instruct'          => 'meta/llama-3.3-70b-instruct',
@@ -92,10 +94,10 @@ class WP_MCP_AI_Model_Catalog_Migration {
 			'microsoft/phi-3-small-8k-instruct'    => 'microsoft/phi-4',
 			// Vertex / GCP stale.
 
-			// DeepSeek legacy aliases → V4 Flash (May 2026).
+			// DeepSeek legacy aliases (retired from the API on 2026-07-24) → V4.
 			'deepseek-chat'                        => 'deepseek-v4-flash',
-			'deepseek-reasoner'                    => 'deepseek-v4-flash',
-			'deepseek-coder'                       => 'deepseek-v4-flash',
+			'deepseek-reasoner'                    => 'deepseek-v4-pro',
+			'deepseek-coder'                       => 'deepseek-v4-pro',
 		);
 	}
 

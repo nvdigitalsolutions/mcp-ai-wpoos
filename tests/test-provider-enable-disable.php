@@ -41,19 +41,18 @@ class WP_MCP_AI_Provider_Enable_Disable_Test extends WP_UnitTestCase {
 	/**
 	 * Test that enable field defaults match provider type.
 	 *
-	 * Cloud providers (OpenAI, Anthropic, Gemini) default to enabled because
-	 * they only require an API key. Local-server providers (Ollama, LM Studio)
-	 * default to disabled because they require the user to install and run a
-	 * separate local server first.
+	 * All providers default to disabled so that on fresh installations
+	 * users must explicitly enable each provider before it becomes
+	 * available in dropdowns or for API requests.
 	 */
 	public function test_provider_enable_field_defaults() {
 		$section = new WP_MCP_AI_Section_Providers();
 		$fields  = $section->get_fields();
 
-		// Cloud providers: enabled by default.
-		$this->assertTrue( $fields['enable_openai']['default'] );
-		$this->assertTrue( $fields['enable_anthropic']['default'] );
-		$this->assertTrue( $fields['enable_gemini']['default'] );
+		// Cloud providers: disabled by default (require explicit opt-in).
+		$this->assertFalse( $fields['enable_openai']['default'] );
+		$this->assertFalse( $fields['enable_anthropic']['default'] );
+		$this->assertFalse( $fields['enable_gemini']['default'] );
 
 		// Local-server providers: disabled by default (require separate server install).
 		$this->assertFalse( $fields['enable_ollama']['default'] );

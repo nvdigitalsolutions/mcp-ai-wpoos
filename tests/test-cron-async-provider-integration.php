@@ -189,16 +189,9 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 		// Create mock tool.
 		$mock_tool = $this->create_mock_executable_tool();
 
-		// Register tool.
-		$registry = new WP_MCP_AI_Tool_Registry();
-		add_filter(
-			'wp_mcp_ai_register_tools',
-			function ( $tools ) use ( $mock_tool ) {
-				$tools[] = $mock_tool;
-				return $tools;
-			}
-		);
-		$registry->init();
+		// Register the mock tool on the shared registry singleton.
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->register_tool( $mock_tool );
 
 		// Queue job.
 		$job_id = $this->executor->queue_tool(
@@ -219,6 +212,8 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 		$this->assertEquals( 'completed', $result['status'], 'Job should complete successfully' );
 		$this->assertArrayHasKey( 'result', $result );
 		$this->assertArrayHasKey( 'duration', $result );
+
+		$registry->unregister_tool( 'test_executable_tool' );
 	}
 
 	/**

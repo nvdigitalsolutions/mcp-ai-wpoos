@@ -11,7 +11,7 @@
 /**
  * Test class for Hugging Face provider integration.
  */
-class WP_MCP_AI_Huggingface_Provider_Test extends WP_UnitTestCase {
+class WP_MCP_AI_Huggingface_Provider_Test extends WP_Ajax_UnitTestCase {
 
 	/**
 	 * Administrator user ID.
@@ -34,6 +34,17 @@ class WP_MCP_AI_Huggingface_Provider_Test extends WP_UnitTestCase {
 		// Ensure the diagnostic class is loaded.
 		if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-provider-diagnostics.php';
+		}
+
+		// The diagnostic AJAX action is registered inside ::init(), which only
+		// production admin loaders call; register it here so _handleAjax() can
+		// exercise the handler.
+		WP_MCP_AI_Provider_Diagnostics::init();
+
+		// The credential resolver caches resolved keys per provider for the
+		// whole process; clear it so each test's seeded settings are visible.
+		if ( class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+			WP_MCP_AI_Credential_Resolver::clear_cache();
 		}
 
 		$this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
@@ -426,7 +437,7 @@ class WP_MCP_AI_Huggingface_Provider_Test extends WP_UnitTestCase {
 		$settings                             = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['huggingface_api_key']      = 'hf_test_key_12345';
 		$settings['huggingface_endpoint_url'] = 'https://router.huggingface.co/v1';
-		$settings['huggingface_model']        = 'test-model';
+		$settings['huggingface_model']        = 'meta-llama/Llama-3.3-70B-Instruct';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 		$client           = new WP_MCP_AI_Huggingface_Client();

@@ -341,6 +341,7 @@ class NV_oOS_Docs_Hub_CLI extends WP_CLI_Command {
 				$best             = $entry['suggestions'][0];
 				$fixes_to_apply[] = array(
 					'source'     => $source,
+					'slug'       => isset( $entry['slug'] ) ? (string) $entry['slug'] : '',
 					'old_target' => $target,
 					'new_target' => $best['target'],
 				);
@@ -369,6 +370,7 @@ class NV_oOS_Docs_Hub_CLI extends WP_CLI_Command {
 					$best             = $entry['suggestions'][0];
 					$fixes_to_apply[] = array(
 						'source'     => $source,
+						'slug'       => isset( $entry['slug'] ) ? (string) $entry['slug'] : '',
 						'old_target' => $target,
 						'new_target' => $best['target'],
 					);
@@ -377,6 +379,7 @@ class NV_oOS_Docs_Hub_CLI extends WP_CLI_Command {
 					$best             = $entry['suggestions'][0];
 					$fixes_to_apply[] = array(
 						'source'     => $source,
+						'slug'       => isset( $entry['slug'] ) ? (string) $entry['slug'] : '',
 						'old_target' => $target,
 						'new_target' => $best['target'],
 					);

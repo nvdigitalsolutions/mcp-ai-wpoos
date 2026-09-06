@@ -70,9 +70,12 @@ if ( ! class_exists( 'WP_MCP_AI_User_Context_Helper' ) ) {
 		 *              state is unchanged.
 		 */
 		public static function safe_set_current_user( $user_id, array $args = array() ) {
-			$user_id = absint( $user_id );
+			// Validate the identifier as a positive integer first — absint()
+			// would flip negative values (e.g. -1 → 1) and silently switch to
+			// the wrong account.
+			$user_id = filter_var( $user_id, FILTER_VALIDATE_INT );
 
-			if ( $user_id <= 0 ) {
+			if ( false === $user_id || $user_id <= 0 ) {
 				return false;
 			}
 

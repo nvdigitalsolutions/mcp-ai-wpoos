@@ -1,0 +1,279 @@
+/**
+ * NV oOS Content Graph AI — Assistant builder block set (frontend).
+ *
+ * Styles for the assistant-selector, tools-grid, knowledge-base, and
+ * assistant-builder blocks. Class names are ecosystem-prefixed
+ * (nvoos-cg-*) so the base plugin's mcp-ai-wpoos blocks are unaffected.
+ *
+ * @since 1.1.0
+ */
+
+/* ─── Assistant selector ─────────────────────────────────────────── */
+
+.nvoos-cg-selector {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 1rem;
+}
+
+.nvoos-cg-selector > label {
+	font-weight: 600;
+}
+
+.nvoos-cg-selector__select {
+	min-width: 240px;
+	max-width: 100%;
+}
+
+/* ─── Tools grid ─────────────────────────────────────────────────── */
+
+.nvoos-cg-tools-grid {
+	margin-bottom: 1rem;
+}
+
+.nvoos-cg-tools-grid__title {
+	margin: 0 0 0.25rem;
+}
+
+.nvoos-cg-tools-grid__description {
+	color: #555;
+	margin: 0 0 0.75rem;
+}
+
+.nvoos-cg-tools-grid__filter-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 0.75rem;
+}
+
+.nvoos-cg-tools-grid__filter-label {
+	font-weight: 600;
+}
+
+.nvoos-cg-tools-grid__search-input {
+	min-width: 180px;
+}
+
+.nvoos-cg-tools-grid__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 0.75rem;
+}
+
+.nvoos-cg-tools-grid__count {
+	color: #555;
+}
+
+.nvoos-cg-tools-grid__groups {
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	background: #fff;
+}
+
+.nvoos-cg-tools-grid__group {
+	border-bottom: 1px solid #dcdcde;
+}
+
+.nvoos-cg-tools-grid__group:last-child {
+	border-bottom: 0;
+}
+
+.nvoos-cg-tools-grid__group > summary {
+	cursor: pointer;
+	padding: 10px 14px;
+	font-weight: 600;
+	display: flex;
+	justify-content: space-between;
+}
+
+.nvoos-cg-tools-grid__group-count {
+	color: #555;
+	font-weight: 400;
+}
+
+.nvoos-cg-tools-grid__list {
+	list-style: none;
+	margin: 0;
+	padding: 0 14px 10px;
+}
+
+.nvoos-cg-tools-grid__item {
+	padding: 6px 0;
+}
+
+.nvoos-cg-tools-grid__item-header {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.nvoos-cg-tools-grid__item-name {
+	font-weight: 500;
+}
+
+.nvoos-cg-tools-grid__item-description {
+	color: #666;
+	font-size: 0.9em;
+	margin: 2px 0 0 22px;
+}
+
+.nvoos-cg-tools-grid__notice {
+	background: #f0f6fc;
+	border-left: 4px solid #72aee6;
+	padding: 8px 12px;
+}
+
+/* ─── Knowledge base ─────────────────────────────────────────────── */
+
+.nvoos-cg-kb {
+	margin-bottom: 1rem;
+}
+
+.nvoos-cg-kb__title {
+	margin: 0 0 0.25rem;
+}
+
+.nvoos-cg-kb__description {
+	color: #555;
+	margin: 0 0 0.75rem;
+}
+
+.nvoos-cg-kb__dropzone {
+	border: 2px dashed #c3c4c7;
+	border-radius: 6px;
+	background: #f6f7f7;
+	padding: 1.25rem;
+	text-align: center;
+	cursor: pointer;
+}
+
+.nvoos-cg-kb__dropzone:hover,
+.nvoos-cg-kb__dropzone:focus {
+	border-color: #2271b1;
+}
+
+.nvoos-cg-kb__dropzone-text {
+	font-weight: 600;
+	margin: 0 0 0.25rem;
+}
+
+.nvoos-cg-kb__dropzone-hint {
+	color: #646970;
+	font-size: 0.9em;
+	margin: 0;
+}
+
+.nvoos-cg-kb__files {
+	margin-top: 0.75rem;
+}
+
+.nvoos-cg-kb__files-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 0.25rem;
+}
+
+.nvoos-cg-kb__file-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.nvoos-cg-kb__file-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px;
+	padding: 4px 8px;
+	background: #f0f0f1;
+	border-radius: 4px;
+	margin-bottom: 4px;
+}
+
+.nvoos-cg-kb__progress {
+	margin-top: 0.5rem;
+}
+
+.nvoos-cg-kb__progress-bar {
+	height: 6px;
+	background: #dcdcde;
+	border-radius: 3px;
+	overflow: hidden;
+}
+
+.nvoos-cg-kb__progress-fill {
+	height: 100%;
+	width: 100%;
+	background: #2271b1;
+	animation: nvoos-cg-kb-indeterminate 1.2s infinite ease-in-out;
+}
+
+@keyframes nvoos-cg-kb-indeterminate {
+	0% {
+		transform: translateX(-100%);
+	}
+	100% {
+		transform: translateX(100%);
+	}
+}
+
+.nvoos-cg-kb__progress-text {
+	display: block;
+	color: #555;
+	font-size: 0.9em;
+	margin-top: 2px;
+}
+
+.nvoos-cg-kb__notice {
+	background: #f0f6fc;
+	border-left: 4px solid #72aee6;
+	padding: 8px 12px;
+}
+
+/* ─── Assistant builder ──────────────────────────────────────────── */
+
+.nvoos-cg-builder {
+	margin-bottom: 1rem;
+}
+
+.nvoos-cg-builder--side-by-side {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1rem;
+}
+
+.nvoos-cg-builder__selector,
+.nvoos-cg-builder__tools,
+.nvoos-cg-builder__knowledge-base,
+.nvoos-cg-builder__build,
+.nvoos-cg-builder__chat {
+	margin-bottom: 1rem;
+}
+
+.nvoos-cg-builder__build {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+.nvoos-cg-builder__title {
+	min-width: 240px;
+}
+
+.nvoos-cg-builder__error {
+	color: #b32d2e;
+}
+
+.nvoos-cg-builder__notice {
+	background: #f0f6fc;
+	border-left: 4px solid #72aee6;
+	padding: 8px 12px;
+}

@@ -118,7 +118,7 @@ class WP_MCP_AI_Profession_Seeder {
 		}
 
 		$professions_needing_datasets = 0;
-		$professions_synced           = 0;
+		$professions_with_datasets    = 0;
 
 		// Check each profession and assign datasets if needed.
 		foreach ( $professions as $profession ) {
@@ -144,14 +144,17 @@ class WP_MCP_AI_Profession_Seeder {
 				// Assign the mapped datasets.
 				$sanitized_datasets = WP_MCP_AI_Profession_CPT::sanitize_preferred_datasets( $expected_datasets );
 				update_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_PREFERRED_DATASETS, $sanitized_datasets );
-				++$professions_synced;
+				$current_datasets = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_PREFERRED_DATASETS, true );
+			}
+
+			if ( is_array( $current_datasets ) && ! empty( $current_datasets ) ) {
+				++$professions_with_datasets;
 			}
 		}
 
 		// Mark as synced if all professions that need datasets now have them.
 		// This means the function won't run again unless the option is manually deleted.
-		if ( $professions_needing_datasets > 0 && 0 === $professions_synced ) {
-			// All professions that need datasets already have them.
+		if ( $professions_needing_datasets > 0 && $professions_needing_datasets === $professions_with_datasets ) {
 			update_option( 'wp_mcp_ai_professions_datasets_synced', true, false );
 		}
 	}

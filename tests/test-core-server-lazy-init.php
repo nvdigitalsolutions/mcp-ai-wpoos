@@ -12,6 +12,8 @@
  * @license   GPL-3.0-or-later
  */
 
+// phpcs:disable Generic.Files.OneObjectStructurePerFile -- The mock tool class and its test case intentionally share this file.
+
 // Load Core interfaces early so mock class can implement them.
 if ( ! interface_exists( 'WP_MCP_AI_Core_Tool_Interface' ) ) {
 	require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool.php';
@@ -21,6 +23,15 @@ if ( ! interface_exists( 'WP_MCP_AI_Core_Tool_Capability_Flags_Interface' ) ) {
 }
 if ( ! interface_exists( 'WP_MCP_AI_Core_Tool_Rules_Interface' ) ) {
 	require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-rules.php';
+}
+
+// Load the Core plugin bootstrap so WP_MCP_AI_CORE_PATH (used by
+// WP_MCP_AI_Core_Server::load_baseline_tools()) and the public API
+// functions are available. Guarded because other suites may have loaded
+// it earlier in the same process. plugins_loaded has already fired under
+// phpunit, so the bootstrap's init hook is a no-op here.
+if ( ! defined( 'WP_MCP_AI_CORE_PATH' ) ) {
+	require_once WP_MCP_AI_PATH . 'core/mcp-ai-wpoos-core.php';
 }
 
 /**
@@ -79,6 +90,8 @@ class WP_MCP_AI_Mock_Core_Pro_Tool implements WP_MCP_AI_Core_Tool_Interface {
 }
 
 /**
+ * Tests that getters on the Core server trigger lazy initialization.
+ *
  * @group core-server
  * @group lazy-init
  */
@@ -118,10 +131,8 @@ class WP_MCP_AI_Core_Server_Lazy_Init_Tests extends WP_UnitTestCase {
 		$this->original_instance = $property->getValue();
 		$property->setValue( null, null );
 
-		// Reset the initialized flag.
-		$initialized_property = $reflection->getProperty( 'initialized' );
-		$initialized_property->setAccessible( true );
-		$initialized_property->setValue( null, false );
+		// The next get_instance() call constructs a fresh server whose
+		// $initialized flag defaults to false, so no explicit reset is needed.
 
 		$this->pro_tools_registered = false;
 	}

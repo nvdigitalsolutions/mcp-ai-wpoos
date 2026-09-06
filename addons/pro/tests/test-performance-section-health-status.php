@@ -18,7 +18,7 @@ class Test_Performance_Section_Health_Status extends WP_UnitTestCase {
 	 */
 	public function test_performance_section_uses_orchestration_health() {
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Create an instance of the section.
 		$section = new WP_MCP_AI_Section_Performance();
@@ -50,7 +50,7 @@ class Test_Performance_Section_Health_Status extends WP_UnitTestCase {
 	 */
 	public function test_health_status_valid_values() {
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		$section    = new WP_MCP_AI_Section_Performance();
 		$reflection = new ReflectionClass( $section );
@@ -74,7 +74,7 @@ class Test_Performance_Section_Health_Status extends WP_UnitTestCase {
 	 */
 	public function test_health_status_fallback_on_error() {
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		$section    = new WP_MCP_AI_Section_Performance();
 		$reflection = new ReflectionClass( $section );
@@ -95,7 +95,7 @@ class Test_Performance_Section_Health_Status extends WP_UnitTestCase {
 	 */
 	public function test_render_includes_health_status() {
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Set up admin user for capability check.
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
@@ -131,7 +131,7 @@ class Test_Performance_Section_Health_Status extends WP_UnitTestCase {
 	 */
 	public function test_health_metrics_display() {
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Set up admin user for capability check.
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
@@ -167,7 +167,7 @@ class Test_Performance_Section_Health_Status extends WP_UnitTestCase {
 	 */
 	public function test_consistency_with_orchestration_section() {
 		// Load both sections.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-orchestration.php';
 
 		$performance_section = new WP_MCP_AI_Section_Performance();

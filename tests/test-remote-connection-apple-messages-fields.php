@@ -85,7 +85,7 @@ class Test_Remote_Connection_Apple_Messages_Fields extends WP_UnitTestCase {
 		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $result );
 
 		$this->assertNotNull( $saved, 'Saved connection should be retrievable' );
-		$this->assertSame( $msp_url, $saved['url'], 'MSP API URL should persist' );
+		$this->assertSame( $msp_url, untrailingslashit( $saved['url'] ), 'MSP API URL should persist (the manager normalises the trailing slash)' );
 	}
 
 	/**
@@ -98,13 +98,13 @@ class Test_Remote_Connection_Apple_Messages_Fields extends WP_UnitTestCase {
 		}
 
 		$connection_data = array(
-			'name'            => 'Test Apple Messages Business ID',
-			'url'             => 'https://api.example-msp.com/v1/apple/messages',
-			'connection_type' => 'apple_messages',
-			'auth_type'       => 'none',
-			'enabled'         => true,
-			'api_key'         => 'test_api_key',
-			'business_id'     => 'test-apple-business-id-12345',
+			'name'                 => 'Test Apple Messages Business ID',
+			'url'                  => 'https://api.example-msp.com/v1/apple/messages',
+			'connection_type'      => 'apple_messages',
+			'auth_type'            => 'none',
+			'enabled'              => true,
+			'api_key'              => 'test_api_key',
+			'business_account_id'  => 'test-apple-business-id-12345',
 		);
 
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
@@ -114,7 +114,7 @@ class Test_Remote_Connection_Apple_Messages_Fields extends WP_UnitTestCase {
 		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $result );
 
 		$this->assertNotNull( $saved, 'Saved connection should be retrievable' );
-		$this->assertSame( 'test-apple-business-id-12345', $saved['business_id'], 'Apple Business ID should persist' );
+		$this->assertSame( 'test-apple-business-id-12345', $saved['business_account_id'], 'Apple Business Account ID should persist' );
 	}
 
 	/**

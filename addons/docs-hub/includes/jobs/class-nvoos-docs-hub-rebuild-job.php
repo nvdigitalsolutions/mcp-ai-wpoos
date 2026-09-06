@@ -64,6 +64,7 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 	 * @since 1.0.0
 	 *
 	 * @return array { success: bool, pages: int, broken_links: int, duration_ms: int }
+	 * @throws \Exception When the staging cache cannot be promoted to the live cache.
 	 */
 	public static function run() {
 		$start = microtime( true );
@@ -71,6 +72,18 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 		try {
 			$scanner = new NV_oOS_Docs_Hub_Scanner();
 			$entries = $scanner->scan();
+
+			// Honour the same aggregate file cap as the chunked pipeline so
+			// the sync path cannot OOM on very large repos — and so suites
+			// and hosts can bound the workload deterministically via the
+			// nvoos_docs_hub_max_files_total filter.
+			$max_files = (int) apply_filters(
+				'nvoos_docs_hub_max_files_total',
+				NV_oOS_Docs_Hub_Rebuild_State::DEFAULT_MAX_FILES_TOTAL
+			);
+			if ( count( $entries ) > $max_files ) {
+				$entries = array_slice( $entries, 0, $max_files );
+			}
 
 			$indexer  = new NV_oOS_Docs_Hub_Indexer();
 			$manifest = $indexer->build_manifest( $entries );
@@ -94,8 +107,16 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 			$cache->set_search_index( $search_index );
 			$cache->use_staging( false );
 
-			// Atomic swap into the live cache.
-			$cache->promote_staging();
+			// Atomic swap into the live cache. Fail loudly when the swap
+			// cannot be performed (e.g. uploads directory is unwritable) —
+			// previously the in-memory counts were reported as success even
+			// though nothing was persisted, leaving the site with an empty
+			// index and a misleading "Rebuilt N pages" message.
+			if ( ! $cache->promote_staging() ) {
+				throw new \Exception(
+					__( 'Atomic swap failed: staging cache empty or unwritable.', 'nvoos-docs-hub' )
+				);
+			}
 
 			$duration_ms  = (int) round( ( microtime( true ) - $start ) * 1000 );
 			$broken_count = count( $indexer->get_broken_links() );

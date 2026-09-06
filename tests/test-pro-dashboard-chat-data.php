@@ -214,7 +214,15 @@ class Test_Pro_Dashboard_Chat_Data extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'Today', $output, 'Output should contain Today label' );
 		$this->assertStringContainsString( 'This Week', $output, 'Output should contain This Week label' );
 
-		// Assert styling is included.
-		$this->assertStringContainsString( '<style>', $output, 'Output should include CSS styling' );
+		// Assert styling is included: render_chat_statistics() registers a
+		// dummy style handle and attaches the stylesheet via wp_add_inline_style().
+		$this->assertTrue( wp_style_is( 'wp-mcp-ai-chat-statistics', 'enqueued' ), 'Output should enqueue the chat statistics style' );
+
+		$styles = wp_styles();
+		$extra  = isset( $styles->registered['wp-mcp-ai-chat-statistics']->extra['after'] )
+			? $styles->registered['wp-mcp-ai-chat-statistics']->extra['after']
+			: array();
+		$css    = is_array( $extra ) ? implode( "\n", $extra ) : '';
+		$this->assertStringContainsString( 'wp-mcp-ai-chat-stats-grid', $css, 'Inline CSS should style the chat stats grid' );
 	}
 }

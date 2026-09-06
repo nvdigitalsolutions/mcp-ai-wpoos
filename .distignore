@@ -21,6 +21,7 @@
 .context
 .devcontainer
 .zed
+extensions
 .eslintrc.json
 .eslintignore
 .editorconfig

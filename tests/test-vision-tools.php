@@ -16,10 +16,30 @@
 class WP_MCP_AI_Vision_Tools_Test extends WP_UnitTestCase {
 
 	/**
+	 * Seed a Gemini API key so the vision tools make their HTTP request.
+	 *
+	 * The tools reuse the configured Gemini key as the Google Cloud Vision key,
+	 * and short-circuit with wp_mcp_ai_vision_missing_api_key when it is absent
+	 * (added for wp.org compliance — user image data must never be sent to an
+	 * external API without credentials). Tests exercising the HTTP layer therefore
+	 * need a key present.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'gemini_api_key' => 'test-vision-key',
+			)
+		);
+	}
+
+	/**
 	 * Reset state between tests.
 	 */
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
+		delete_option( 'wp_mcp_ai_settings' );
 		parent::tearDown();
 	}
 
@@ -117,7 +137,7 @@ class WP_MCP_AI_Vision_Tools_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Product Search should fail with API error when no authentication is provided.
+	 * Product Search should fail with API error when the API rejects the request.
 	 */
 	public function test_product_search_fails_without_auth() {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
@@ -125,9 +145,11 @@ class WP_MCP_AI_Vision_Tools_Test extends WP_UnitTestCase {
 
 		$tool = new WP_MCP_AI_Tool_Vision_Product_Search();
 
+		// phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter -- Filter stub signature.
 		$http_stub = function ( $preempt, $args, $url ) {
 			return $this->get_auth_error_response();
 		};
+		// phpcs:enable
 
 		add_filter( 'pre_http_request', $http_stub, 10, 3 );
 
@@ -151,7 +173,7 @@ class WP_MCP_AI_Vision_Tools_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Object Localization should fail with API error when no authentication is provided.
+	 * Object Localization should fail with API error when the API rejects the request.
 	 */
 	public function test_object_localization_fails_without_auth() {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
@@ -159,6 +181,7 @@ class WP_MCP_AI_Vision_Tools_Test extends WP_UnitTestCase {
 
 		$tool = new WP_MCP_AI_Tool_Vision_Object_Localization();
 
+		// phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter -- Filter stub signature.
 		$http_stub = function ( $preempt, $args, $url ) {
 			// Simulate Google API authentication error.
 			return array(
@@ -175,6 +198,7 @@ class WP_MCP_AI_Vision_Tools_Test extends WP_UnitTestCase {
 				'headers'  => array(),
 			);
 		};
+		// phpcs:enable
 
 		add_filter( 'pre_http_request', $http_stub, 10, 3 );
 
@@ -195,6 +219,82 @@ class WP_MCP_AI_Vision_Tools_Test extends WP_UnitTestCase {
 		$data = $result->get_error_data();
 		$this->assertIsArray( $data );
 		$this->assertSame( 401, $data['status'] );
+	}
+
+	/**
+	 * Product Search should short-circuit with a clear error when no API key is configured.
+	 *
+	 * Guarded before any HTTP request is made so user image data never leaves
+	 * the server without credentials.
+	 */
+	public function test_product_search_missing_api_key_does_not_request() {
+		delete_option( 'wp_mcp_ai_settings' );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$tool = new WP_MCP_AI_Tool_Vision_Product_Search();
+
+		$request_made = false;
+		// phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter -- Filter stub signature.
+		$http_stub = function ( $preempt, $args, $url ) use ( &$request_made ) {
+			$request_made = true;
+			return $preempt;
+		};
+		// phpcs:enable
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $tool->execute(
+			array(
+				'image_url' => 'https://example.com/product.jpg',
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'wp_mcp_ai_vision_missing_api_key', $result->get_error_code() );
+		$this->assertFalse( $request_made );
+	}
+
+	/**
+	 * Object Localization should short-circuit with a clear error when no API key is configured.
+	 *
+	 * Guarded before any HTTP request is made so user image data never leaves
+	 * the server without credentials.
+	 */
+	public function test_object_localization_missing_api_key_does_not_request() {
+		delete_option( 'wp_mcp_ai_settings' );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$tool = new WP_MCP_AI_Tool_Vision_Object_Localization();
+
+		$request_made = false;
+		// phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter -- Filter stub signature.
+		$http_stub = function ( $preempt, $args, $url ) use ( &$request_made ) {
+			$request_made = true;
+			return $preempt;
+		};
+		// phpcs:enable
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $tool->execute(
+			array(
+				'image_url' => 'https://example.com/scene.jpg',
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'wp_mcp_ai_vision_missing_api_key', $result->get_error_code() );
+		$this->assertFalse( $request_made );
 	}
 
 	/**

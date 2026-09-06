@@ -22,6 +22,13 @@ class WP_MCP_AI_MCP_Protocol_Fixes_Test extends WP_UnitTestCase {
 	protected $admin_id;
 
 	/**
+	 * Bearer token for the suite assistant.
+	 *
+	 * @var string
+	 */
+	protected $bearer_token = '';
+
+	/**
 	 * Test assistant ID.
 	 *
 	 * @var int
@@ -64,6 +71,14 @@ class WP_MCP_AI_MCP_Protocol_Fixes_Test extends WP_UnitTestCase {
 		$settings                      = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['default_assistant'] = $this->assistant_id;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		// Issue a credential — permissions_check_mcp() refuses bare nonce auth.
+		if ( class_exists( 'WP_MCP_AI_Credentials' ) ) {
+			$credential = WP_MCP_AI_Credentials::issue_credential( $this->assistant_id, $this->admin_id );
+			if ( is_array( $credential ) && isset( $credential['token'] ) ) {
+				$this->bearer_token = $credential['token'];
+			}
+		}
 
 		// Bootstrap REST controller.
 		$this->bootstrap_rest_controller();
@@ -316,6 +331,9 @@ class WP_MCP_AI_MCP_Protocol_Fixes_Test extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		if ( ! empty( $this->bearer_token ) ) {
+			$request->set_header( 'Authorization', 'Bearer ' . $this->bearer_token );
+		}
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -361,6 +379,9 @@ class WP_MCP_AI_MCP_Protocol_Fixes_Test extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		if ( ! empty( $this->bearer_token ) ) {
+			$request->set_header( 'Authorization', 'Bearer ' . $this->bearer_token );
+		}
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -424,6 +445,9 @@ class WP_MCP_AI_MCP_Protocol_Fixes_Test extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		if ( ! empty( $this->bearer_token ) ) {
+			$request->set_header( 'Authorization', 'Bearer ' . $this->bearer_token );
+		}
 		$request->set_body(
 			wp_json_encode(
 				array(

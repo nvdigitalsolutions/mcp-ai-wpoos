@@ -149,11 +149,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$deleted = WP_MCP_AI_Pro_Remote_Site_Manager::delete_connection( $connection_id );
 
 			if ( $deleted ) {
-				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&deleted=1' ) );
+				$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&deleted=1' ) );
 			} else {
-				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found or could not be deleted.', 'mcp-ai-wpoos-pro' ) ) ) );
+				$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found or could not be deleted.', 'mcp-ai-wpoos-pro' ) ) ) );
 			}
-			exit;
 		}
 
 		// Handle test action.
@@ -180,8 +179,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				$redirect_url = add_query_arg( 'test_success', '1', $redirect_url );
 			}
 
-			wp_safe_redirect( $redirect_url );
-			exit;
+			$this->redirect_and_exit( $redirect_url );
 		}
 
 		// Gmail OAuth connect handler removed - button now links directly to Google.
@@ -207,6 +205,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		// Handle Google Drive OAuth callback action.
 		if ( 'google_drive_oauth_callback' === $oauth_handler ) {
 			$this->handle_google_drive_oauth_callback();
+		}
+
+		// Handle Google Calendar OAuth connect action.
+		if ( 'google_calendar_oauth_connect' === $oauth_handler && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
+			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+
+			if ( ! wp_verify_nonce( $nonce, 'google_calendar_oauth_connect_' . $connection_id ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$this->handle_google_calendar_oauth_start( $connection_id );
+		}
+
+		// Handle Google Calendar OAuth callback action.
+		if ( 'google_calendar_oauth_callback' === $oauth_handler ) {
+			$this->handle_google_calendar_oauth_callback();
 		}
 
 		// Handle Upwork OAuth connect action.
@@ -294,7 +309,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				$link = WP_MCP_AI_Composio_Auth_Handler::create_link( $connection_id, $toolkit, get_current_user_id() );
 
 				if ( is_wp_error( $link ) ) {
-					wp_safe_redirect(
+					$this->redirect_and_exit(
 						add_query_arg(
 							array(
 								'edit'            => $connection_id,
@@ -308,7 +323,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					wp_redirect( $link['url'] ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- URL originates from Composio's link endpoint.
 				}
 			} else {
-				wp_safe_redirect(
+				$this->redirect_and_exit(
 					add_query_arg(
 						array(
 							'edit'            => $connection_id,
@@ -319,7 +334,6 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					)
 				);
 			}
-			exit;
 		}
 
 		// Handle the return from a Composio Connect Link.
@@ -335,8 +349,72 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				WP_MCP_AI_Composio_Auth_Handler::handle_callback();
 			}
 
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&composio_linked=0' ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&composio_linked=0' ) );
+		}
+
+		// Refresh the cached Composio connected-account listing so apps connected
+		// outside this page (another tab, the Composio dashboard) appear at once.
+		if ( isset( $_GET['composio_refresh'] ) && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
+			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+
+			if ( ! wp_verify_nonce( $nonce, 'composio_refresh_' . $connection_id ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Composio_Client' ) ) {
+				$composio_client_file = WP_MCP_AI_PRO_PATH . 'includes/composio/class-wp-mcp-ai-composio-client.php';
+				if ( file_exists( $composio_client_file ) ) {
+					require_once $composio_client_file;
+				}
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Composio_Client' ) ) {
+				WP_MCP_AI_Composio_Client::clear_accounts_cache( $connection_id );
+			}
+
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . rawurlencode( $connection_id ) ) );
+		}
+
+		// Remove (disconnect) a single Composio connected account.
+		if ( isset( $_GET['composio_disconnect'] ) && isset( $_GET['connection_id'] ) && isset( $_GET['account_id'] ) && isset( $_GET['_wpnonce'] ) ) {
+			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+			$account_id    = isset( $_GET['account_id'] ) ? sanitize_text_field( wp_unslash( $_GET['account_id'] ) ) : '';
+
+			if ( ! wp_verify_nonce( $nonce, 'composio_disconnect_' . $connection_id . '_' . $account_id ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$this->handle_composio_disconnect( $connection_id, $account_id );
+		}
+
+		// Verify one Composio connected account, or every account on the
+		// connection. Verification performs a live provider call, so it is only
+		// ever triggered by an explicit click — never while rendering the page.
+		if ( isset( $_GET['composio_verify'] ) && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
+			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+			$account_id    = isset( $_GET['account_id'] ) ? sanitize_text_field( wp_unslash( $_GET['account_id'] ) ) : '';
+
+			if ( ! wp_verify_nonce( $nonce, 'composio_verify_' . $connection_id ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$this->handle_composio_verify( $connection_id, $account_id );
+		}
+
+		// Re-authorise an existing Composio connected account in place.
+		if ( isset( $_GET['composio_reconnect'] ) && isset( $_GET['connection_id'] ) && isset( $_GET['account_id'] ) && isset( $_GET['_wpnonce'] ) ) {
+			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+			$account_id    = isset( $_GET['account_id'] ) ? sanitize_text_field( wp_unslash( $_GET['account_id'] ) ) : '';
+
+			if ( ! wp_verify_nonce( $nonce, 'composio_reconnect_' . $connection_id . '_' . $account_id ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$this->handle_composio_reconnect( $connection_id, $account_id );
 		}
 
 		// Handle save action.
@@ -414,6 +492,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$client_secret = isset( $_POST['google_drive_client_secret'] ) ? wp_unslash( $_POST['google_drive_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					$refresh_token = isset( $_POST['google_drive_refresh_token'] ) ? wp_unslash( $_POST['google_drive_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					$user_email    = isset( $_POST['google_drive_user_email'] ) ? sanitize_email( wp_unslash( $_POST['google_drive_user_email'] ) ) : '';
+					break;
+				case 'google_calendar':
+					$client_id     = isset( $_POST['google_calendar_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_calendar_client_id'] ) ) : '';
+					$client_secret = isset( $_POST['google_calendar_client_secret'] ) ? wp_unslash( $_POST['google_calendar_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$refresh_token = isset( $_POST['google_calendar_refresh_token'] ) ? wp_unslash( $_POST['google_calendar_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$user_email    = isset( $_POST['google_calendar_user_email'] ) ? sanitize_email( wp_unslash( $_POST['google_calendar_user_email'] ) ) : '';
 					break;
 				case 'upwork':
 					$client_id     = isset( $_POST['upwork_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['upwork_client_id'] ) ) : '';
@@ -505,7 +589,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$api_secret = isset( $_POST['shipstation_api_secret'] ) ? wp_unslash( $_POST['shipstation_api_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- API secret must not be sanitized.
 					break;
 				case 'composio':
-					$api_key = isset( $_POST['composio_api_key'] ) ? wp_unslash( $_POST['composio_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- API key must not be sanitized.
+					$api_key = isset( $_POST['composio_api_key'] ) ? trim( (string) wp_unslash( $_POST['composio_api_key'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- API key must not be sanitized; trimmed to drop copy/paste whitespace.
 					break;
 			}
 
@@ -539,6 +623,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			if ( 'google_drive' === $connection_type ) {
 				$url       = 'https://www.googleapis.com/drive/v3';
 				$auth_type = 'none'; // Google Drive uses OAuth, not standard auth types.
+			}
+
+			// For Google Calendar connections, always use the Calendar API URL.
+			if ( 'google_calendar' === $connection_type ) {
+				$url       = 'https://www.googleapis.com/calendar/v3';
+				$auth_type = 'none'; // Google Calendar uses OAuth, not standard auth types.
 			}
 
 			// For Upwork connections, always use the Upwork GraphQL API URL.
@@ -744,6 +834,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'user_email'                     => $user_email,
 				// Google Drive-specific fields.
 				'folder_id'                      => isset( $_POST['google_drive_folder_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_drive_folder_id'] ) ) : '',
+				// Google Calendar-specific fields. `calendar_id` is deliberately NOT
+				// folded into `folder_id`: that key is read unconditionally for every
+				// connection type, so reusing it would let a Calendar save clobber a
+				// Drive connection's folder scope.
+				'calendar_id'                    => isset( $_POST['google_calendar_calendar_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_calendar_calendar_id'] ) ) : '',
+				'scope_profile'                  => isset( $_POST['google_calendar_scope_profile'] ) ? sanitize_key( wp_unslash( $_POST['google_calendar_scope_profile'] ) ) : '',
 				// Upwork-specific fields.
 				'upwork_username'                => isset( $_POST['upwork_user_email'] ) ? sanitize_text_field( wp_unslash( $_POST['upwork_user_email'] ) ) : '',
 				'upwork_mode'                    => isset( $_POST['upwork_mode'] ) && in_array( $_POST['upwork_mode'], array( 'api', 'web_search' ), true )
@@ -838,6 +934,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'google_chat_space'              => isset( $_POST['google_chat_space'] ) ? sanitize_text_field( wp_unslash( $_POST['google_chat_space'] ) ) : '',
 				'reply_webhook_url'              => isset( $_POST['google_chat_reply_webhook_url'] ) ? esc_url_raw( wp_unslash( $_POST['google_chat_reply_webhook_url'] ) ) : '',
 				'disable_oidc_verification'      => ! empty( $_POST['google_chat_disable_oidc_verification'] ),
+				'verification_token'             => isset( $_POST['google_chat_verification_token'] ) ? sanitize_text_field( wp_unslash( $_POST['google_chat_verification_token'] ) ) : '',
 				'connection_method'              => $gc_method,
 				// Twitter/X-specific fields.
 				'twitter_user_id'                => isset( $_POST['twitter_user_id'] ) ? sanitize_text_field( wp_unslash( $_POST['twitter_user_id'] ) ) : '',
@@ -915,18 +1012,445 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 
 			if ( is_wp_error( $result ) ) {
-				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( $result->get_error_message() ) ) );
+				$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( $result->get_error_message() ) ) );
 			} else {
 				// Redirect back to the edit page so the user can verify the saved data.
 				$saved_connection_id = is_string( $result ) ? $result : ( isset( $connection_data['id'] ) ? $connection_data['id'] : '' );
 				if ( $saved_connection_id ) {
-					wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . rawurlencode( $saved_connection_id ) . '&saved=1' ) );
+					$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . rawurlencode( $saved_connection_id ) . '&saved=1' ) );
 				} else {
-					wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&saved=1' ) );
+					$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&saved=1' ) );
 				}
 			}
-			exit;
 		}
+	}
+
+	/**
+	 * Remove a Composio connected account from this project.
+	 *
+	 * Soft-deletes the account at Composio and asks Composio to revoke the
+	 * upstream provider credentials, then flushes the cached listing so the
+	 * Connected Apps table reflects reality on the next render. Always exits
+	 * via a redirect.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param string $connection_id Composio connection ID.
+	 * @param string $account_id    Connected account nanoid.
+	 * @return void
+	 */
+	protected function handle_composio_disconnect( $connection_id, $account_id ) {
+		$redirect = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . rawurlencode( $connection_id ) );
+
+		if ( ! class_exists( 'WP_MCP_AI_Composio_Client' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$composio_client_file = WP_MCP_AI_PRO_PATH . 'includes/composio/class-wp-mcp-ai-composio-client.php';
+			if ( file_exists( $composio_client_file ) ) {
+				require_once $composio_client_file;
+			}
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! class_exists( 'WP_MCP_AI_Composio_Client' ) || null === $connection || 'composio' !== ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+			$this->redirect_and_exit(
+				add_query_arg(
+					array(
+						'composio_removed' => '0',
+						'composio_error'   => rawurlencode( __( 'Composio connection not found or the integration is not loaded.', 'mcp-ai-wpoos-pro' ) ),
+					),
+					$redirect
+				)
+			);
+		}
+
+		if ( '' === $account_id ) {
+			$this->redirect_and_exit(
+				add_query_arg(
+					array(
+						'composio_removed' => '0',
+						'composio_error'   => rawurlencode( __( 'A connected account ID is required.', 'mcp-ai-wpoos-pro' ) ),
+					),
+					$redirect
+				)
+			);
+		}
+
+		$result = WP_MCP_AI_Composio_Client::from_connection( $connection )->delete_connected_account( $account_id, true );
+
+		// Flush regardless of outcome: a partial failure must not leave a stale
+		// listing behind.
+		WP_MCP_AI_Composio_Client::clear_accounts_cache( $connection_id );
+
+		// Drop the health verdict too, so a future account that reuses the ID
+		// cannot inherit a stale verdict.
+		if ( class_exists( 'WP_MCP_AI_Composio_Account_Health' ) ) {
+			WP_MCP_AI_Composio_Account_Health::forget( $connection_id, $account_id );
+		}
+
+		if ( is_wp_error( $result ) ) {
+			$this->redirect_and_exit(
+				add_query_arg(
+					array(
+						'composio_removed' => '0',
+						'composio_error'   => rawurlencode( $result->get_error_message() ),
+					),
+					$redirect
+				)
+			);
+		}
+
+		$this->redirect_and_exit( add_query_arg( 'composio_removed', '1', $redirect ) );
+	}
+
+	/**
+	 * Lazy-load the Composio integration classes needed for account actions.
+	 *
+	 * The Remote Sites page can be reached before the composio module has
+	 * booted, so every Composio surface loads what it needs on demand rather
+	 * than assuming the bootstrap already ran.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @return bool Whether the client and health engine are both available.
+	 */
+	protected function maybe_load_composio_classes() {
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			return false;
+		}
+
+		$files = array(
+			'WP_MCP_AI_Composio_Client'         => 'includes/composio/class-wp-mcp-ai-composio-client.php',
+			'WP_MCP_AI_Composio_Account_Health' => 'includes/composio/class-wp-mcp-ai-composio-account-health.php',
+			'WP_MCP_AI_Composio_Auth_Handler'   => 'includes/composio/class-wp-mcp-ai-composio-auth-handler.php',
+		);
+
+		foreach ( $files as $class_name => $relative_path ) {
+			if ( class_exists( $class_name ) ) {
+				continue;
+			}
+
+			$path = WP_MCP_AI_PRO_PATH . $relative_path;
+			if ( file_exists( $path ) ) {
+				require_once $path;
+			}
+		}
+
+		return class_exists( 'WP_MCP_AI_Composio_Client' ) && class_exists( 'WP_MCP_AI_Composio_Account_Health' );
+	}
+
+	/**
+	 * Resolve a Composio connection for an account action.
+	 *
+	 * Redirects with an error notice and exits when the connection is missing,
+	 * the wrong type, or the integration is unavailable.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param string $connection_id Composio connection ID.
+	 * @param string $flag          Query flag to set on failure (e.g. composio_verified).
+	 * @return array Connection record.
+	 */
+	protected function require_composio_connection( $connection_id, $flag ) {
+		$redirect = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . rawurlencode( $connection_id ) );
+
+		if ( ! $this->maybe_load_composio_classes() ) {
+			$this->redirect_and_exit(
+				add_query_arg(
+					array(
+						$flag            => '0',
+						'composio_error' => rawurlencode( __( 'The Composio integration is not loaded on this site.', 'mcp-ai-wpoos-pro' ) ),
+					),
+					$redirect
+				)
+			);
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( null === $connection || 'composio' !== ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+			$this->redirect_and_exit(
+				add_query_arg(
+					array(
+						$flag            => '0',
+						'composio_error' => rawurlencode( __( 'Composio connection not found.', 'mcp-ai-wpoos-pro' ) ),
+					),
+					$redirect
+				)
+			);
+		}
+
+		return $connection;
+	}
+
+	/**
+	 * Verify one Composio connected account, or every account on a connection.
+	 *
+	 * Each verification is a live provider call, so this runs only from an
+	 * explicit click. Results are written to the health ledger and surfaced by
+	 * the Health column on the next render. Always exits via a redirect.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param string $connection_id Composio connection ID.
+	 * @param string $account_id    Connected account nanoid, or empty for all accounts.
+	 * @return void
+	 */
+	protected function handle_composio_verify( $connection_id, $account_id ) {
+		$redirect   = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . rawurlencode( $connection_id ) );
+		$connection = $this->require_composio_connection( $connection_id, 'composio_verified' );
+		$client     = WP_MCP_AI_Composio_Client::from_connection( $connection );
+
+		$targets = array();
+
+		if ( '' !== $account_id ) {
+			// Single account: let the probe perform its own authoritative,
+			// cache-bypassing read.
+			$targets[] = array(
+				'id'      => $account_id,
+				'toolkit' => '',
+				'account' => array(),
+			);
+		} else {
+			// Whole connection: flush the 5-minute listing cache first so the
+			// listing itself is authoritative, then hand each record to the probe.
+			// That keeps a verification pass at one read plus one probe per
+			// account, instead of two reads per account.
+			WP_MCP_AI_Composio_Client::clear_accounts_cache( $connection_id );
+
+			$accounts = $client->list_connected_accounts();
+
+			if ( is_wp_error( $accounts ) ) {
+				$this->redirect_and_exit(
+					add_query_arg(
+						array(
+							'composio_verified' => '0',
+							'composio_error'    => rawurlencode( $accounts->get_error_message() ),
+						),
+						$redirect
+					)
+				);
+			}
+
+			foreach ( $accounts as $account ) {
+				if ( is_array( $account ) && ! empty( $account['id'] ) ) {
+					$targets[] = array(
+						'id'      => (string) $account['id'],
+						'toolkit' => isset( $account['toolkit'] ) ? (string) $account['toolkit'] : '',
+						'account' => $account,
+					);
+				}
+			}
+		}
+
+		$verified = 0;
+		$broken   = 0;
+		$unknown  = 0;
+
+		foreach ( $targets as $target ) {
+			$record = WP_MCP_AI_Composio_Account_Health::probe(
+				$client,
+				$connection_id,
+				$target['id'],
+				array(
+					'toolkit' => $target['toolkit'],
+					'account' => $target['account'],
+				)
+			);
+
+			if ( is_wp_error( $record ) ) {
+				++$unknown;
+				continue;
+			}
+
+			if ( ! empty( $record['verified'] ) ) {
+				++$verified;
+			} elseif ( ! empty( $record['needs_reconnect'] ) ) {
+				++$broken;
+			} else {
+				++$unknown;
+			}
+		}
+
+		// The Health column reads the ledger, but Status and expiry come from the
+		// cached listing — flush it so both agree after a verification pass.
+		WP_MCP_AI_Composio_Client::clear_accounts_cache( $connection_id );
+
+		$this->redirect_and_exit(
+			add_query_arg(
+				array(
+					'composio_verified' => '1',
+					'composio_ok'       => (string) $verified,
+					'composio_bad'      => (string) $broken,
+					'composio_unknown'  => (string) $unknown,
+				),
+				$redirect
+			)
+		);
+	}
+
+	/**
+	 * Re-authorise an existing Composio connected account in place.
+	 *
+	 * Prefers Composio's per-account re-authorisation route so the account keeps
+	 * its ID, alias and any pinned triggers. That route is marked Legacy
+	 * upstream, so a fresh Connect Link is the documented fallback. Always exits
+	 * via a redirect.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param string $connection_id Composio connection ID.
+	 * @param string $account_id    Connected account nanoid.
+	 * @return void
+	 */
+	protected function handle_composio_reconnect( $connection_id, $account_id ) {
+		$redirect   = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . rawurlencode( $connection_id ) );
+		$connection = $this->require_composio_connection( $connection_id, 'composio_reconnected' );
+
+		if ( '' === $account_id ) {
+			$this->redirect_and_exit(
+				add_query_arg(
+					array(
+						'composio_reconnected' => '0',
+						'composio_error'       => rawurlencode( __( 'A connected account ID is required.', 'mcp-ai-wpoos-pro' ) ),
+					),
+					$redirect
+				)
+			);
+		}
+
+		$client  = WP_MCP_AI_Composio_Client::from_connection( $connection );
+		$account = $client->get_connected_account( $account_id, 0 );
+		$toolkit = ! is_wp_error( $account ) && isset( $account['toolkit'] ) ? (string) $account['toolkit'] : '';
+
+		$result = $client->reconnect_connected_account( $account_id );
+
+		$redirect_url = ! is_wp_error( $result ) && isset( $result['redirect_url'] )
+			? esc_url_raw( (string) $result['redirect_url'] )
+			: '';
+
+		// The stored verdict describes a credential that is about to change.
+		WP_MCP_AI_Composio_Account_Health::forget( $connection_id, $account_id );
+		WP_MCP_AI_Composio_Client::clear_accounts_cache( $connection_id );
+
+		if ( '' !== $redirect_url ) {
+			// Send the operator straight to Composio's hosted page.
+			$this->external_redirect_and_exit( $redirect_url );
+		}
+
+		// Fallback: a fresh Connect Link, which mints a NEW account.
+		if ( '' !== $toolkit && class_exists( 'WP_MCP_AI_Composio_Auth_Handler' ) ) {
+			$link = WP_MCP_AI_Composio_Auth_Handler::create_link( $connection_id, $toolkit, get_current_user_id() );
+
+			if ( ! is_wp_error( $link ) && ! empty( $link['url'] ) ) {
+				$this->external_redirect_and_exit( $link['url'] );
+			}
+
+			if ( is_wp_error( $link ) ) {
+				$this->redirect_and_exit(
+					add_query_arg(
+						array(
+							'composio_reconnected' => '0',
+							'composio_error'       => rawurlencode( $link->get_error_message() ),
+						),
+						$redirect
+					)
+				);
+			}
+		}
+
+		$message = is_wp_error( $result )
+			? $result->get_error_message()
+			: __( 'Composio did not return a re-authorisation URL for this account. Remove it and connect the app again.', 'mcp-ai-wpoos-pro' );
+
+		$this->redirect_and_exit(
+			add_query_arg(
+				array(
+					'composio_reconnected' => '0',
+					'composio_error'       => rawurlencode( $message ),
+				),
+				$redirect
+			)
+		);
+	}
+
+	/**
+	 * Build the Health-column presentation for a connected account.
+	 *
+	 * Reads the stored verdict only — rendering the page must never trigger a
+	 * live provider call. "Not checked" is reported honestly rather than being
+	 * dressed up as healthy.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param string $connection_id Composio connection ID.
+	 * @param string $account_id    Connected account nanoid.
+	 * @return array Keys: label, color, detail, needs_reconnect.
+	 */
+	protected function get_composio_health_display( $connection_id, $account_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_Composio_Account_Health' ) || '' === $account_id ) {
+			return array(
+				'label'           => __( 'Unavailable', 'mcp-ai-wpoos-pro' ),
+				'color'           => '#646970',
+				'detail'          => __( 'The Composio account-health engine is not loaded.', 'mcp-ai-wpoos-pro' ),
+				'needs_reconnect' => false,
+			);
+		}
+
+		$record = WP_MCP_AI_Composio_Account_Health::get( $connection_id, $account_id );
+
+		if ( empty( $record ) ) {
+			return array(
+				'label'           => __( 'Not checked', 'mcp-ai-wpoos-pro' ),
+				'color'           => '#646970',
+				'detail'          => __( 'This credential has never been tested. A stored status of ACTIVE cannot tell you whether the token still works — use Verify.', 'mcp-ai-wpoos-pro' ),
+				'needs_reconnect' => false,
+			);
+		}
+
+		$checked_at = isset( $record['checked_at'] ) ? absint( $record['checked_at'] ) : 0;
+		$ago        = $checked_at > 0
+			? sprintf(
+				/* translators: %s: human-readable time difference, e.g. "5 mins" */
+				__( 'Checked %s ago.', 'mcp-ai-wpoos-pro' ),
+				human_time_diff( $checked_at, time() )
+			)
+			: '';
+
+		if ( ! empty( $record['verified'] ) ) {
+			$probe_tool = isset( $record['probe_tool'] ) ? (string) $record['probe_tool'] : '';
+			$how        = '' !== $probe_tool
+				? sprintf(
+					/* translators: %s: Composio tool slug used as the probe */
+					__( 'A live %s call succeeded.', 'mcp-ai-wpoos-pro' ),
+					$probe_tool
+				)
+				: __( 'A live provider call succeeded.', 'mcp-ai-wpoos-pro' );
+
+			return array(
+				'label'           => __( 'Verified', 'mcp-ai-wpoos-pro' ),
+				'color'           => '#00a32a',
+				'detail'          => trim( $ago . ' ' . $how ),
+				'needs_reconnect' => false,
+			);
+		}
+
+		$last_error = isset( $record['last_error'] ) ? (string) $record['last_error'] : '';
+
+		if ( ! empty( $record['needs_reconnect'] ) ) {
+			return array(
+				'label'           => __( 'Needs reconnect', 'mcp-ai-wpoos-pro' ),
+				'color'           => '#d63638',
+				'detail'          => trim( $ago . ' ' . ( '' !== $last_error ? $last_error : __( 'The provider rejected this credential.', 'mcp-ai-wpoos-pro' ) ) ),
+				'needs_reconnect' => true,
+			);
+		}
+
+		return array(
+			'label'           => __( 'Unconfirmed', 'mcp-ai-wpoos-pro' ),
+			'color'           => '#dba617',
+			'detail'          => trim( $ago . ' ' . ( '' !== $last_error ? $last_error : __( 'The credential could not be probed, so its status is unconfirmed.', 'mcp-ai-wpoos-pro' ) ) ),
+			'needs_reconnect' => false,
+		);
 	}
 
 	/**
@@ -1107,6 +1631,78 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				?>
 			<?php endif; ?>
 
+			<?php if ( isset( $_GET['composio_removed'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only redirect flag. ?>
+				<?php
+				// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Display-only redirect flags.
+				$composio_removed      = isset( $_GET['composio_removed'] ) ? sanitize_key( wp_unslash( $_GET['composio_removed'] ) ) : '';
+				$composio_remove_error = isset( $_GET['composio_error'] ) ? sanitize_text_field( wp_unslash( $_GET['composio_error'] ) ) : '';
+				// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+				if ( '1' === $composio_removed ) :
+					?>
+					<div class="notice notice-success is-dismissible">
+						<p><?php esc_html_e( 'App disconnected. The account was removed from Composio and its provider access revoked.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+					<?php
+				else :
+					?>
+					<div class="notice notice-error is-dismissible">
+						<p><?php echo '' !== $composio_remove_error ? esc_html( urldecode( $composio_remove_error ) ) : esc_html__( 'The app could not be disconnected. Please try again.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+					<?php
+				endif;
+				?>
+			<?php endif; ?>
+
+			<?php if ( isset( $_GET['composio_verified'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only redirect flag. ?>
+				<?php
+				// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Display-only redirect flags.
+				$composio_verified      = isset( $_GET['composio_verified'] ) ? sanitize_key( wp_unslash( $_GET['composio_verified'] ) ) : '';
+				$composio_verify_error  = isset( $_GET['composio_error'] ) ? sanitize_text_field( wp_unslash( $_GET['composio_error'] ) ) : '';
+				$composio_verify_ok     = isset( $_GET['composio_ok'] ) ? absint( wp_unslash( $_GET['composio_ok'] ) ) : 0;
+				$composio_verify_bad    = isset( $_GET['composio_bad'] ) ? absint( wp_unslash( $_GET['composio_bad'] ) ) : 0;
+				$composio_verify_unsure = isset( $_GET['composio_unknown'] ) ? absint( wp_unslash( $_GET['composio_unknown'] ) ) : 0;
+				// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+				if ( '1' === $composio_verified ) :
+					?>
+					<div class="notice <?php echo $composio_verify_bad > 0 ? 'notice-warning' : 'notice-success'; ?> is-dismissible">
+						<p>
+							<?php
+							printf(
+								/* translators: 1: number verified, 2: number needing reconnection, 3: number that could not be probed */
+								esc_html__( 'Verification complete: %1$d working, %2$d need reconnecting, %3$d unconfirmed.', 'mcp-ai-wpoos-pro' ),
+								(int) $composio_verify_ok,
+								(int) $composio_verify_bad,
+								(int) $composio_verify_unsure
+							);
+							?>
+							<?php if ( $composio_verify_unsure > 0 ) : ?>
+								<?php esc_html_e( 'Unconfirmed means the credential could not be probed (no zero-argument read-only tool exists for that app), so its status is not proof that it works.', 'mcp-ai-wpoos-pro' ); ?>
+							<?php endif; ?>
+						</p>
+					</div>
+					<?php
+				else :
+					?>
+					<div class="notice notice-error is-dismissible">
+						<p><?php echo '' !== $composio_verify_error ? esc_html( urldecode( $composio_verify_error ) ) : esc_html__( 'The connected accounts could not be verified. Please try again.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+					<?php
+				endif;
+				?>
+			<?php endif; ?>
+
+			<?php if ( isset( $_GET['composio_reconnected'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only redirect flag. ?>
+				<?php
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only redirect flag.
+				$composio_reconnect_error = isset( $_GET['composio_error'] ) ? sanitize_text_field( wp_unslash( $_GET['composio_error'] ) ) : '';
+				?>
+				<div class="notice notice-error is-dismissible">
+					<p><?php echo '' !== $composio_reconnect_error ? esc_html( urldecode( $composio_reconnect_error ) ) : esc_html__( 'The connected account could not be re-authorised. Please try again.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</div>
+			<?php endif; ?>
+
 			<?php if ( $editing || isset( $_GET['add'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only query flag. ?>
 				<?php $this->render_edit_form( $connection_to_edit ); ?>
 			<?php else : ?>
@@ -1185,6 +1781,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'ezuite_erp'         => __( 'EZuite ERP', 'mcp-ai-wpoos-pro' ),
 									'gmail'              => __( 'Gmail', 'mcp-ai-wpoos-pro' ),
 									'google_drive'       => __( 'Google Drive', 'mcp-ai-wpoos-pro' ),
+									'google_calendar'    => __( 'Google Calendar', 'mcp-ai-wpoos-pro' ),
 									'upwork'             => __( 'Upwork', 'mcp-ai-wpoos-pro' ),
 									'telegram'           => __( 'Telegram', 'mcp-ai-wpoos-pro' ),
 									'whatsapp'           => __( 'WhatsApp', 'mcp-ai-wpoos-pro' ),
@@ -1216,6 +1813,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'ezuite_erp'         => '#8c50a7',
 									'gmail'              => '#ea4335', // Google red color.
 									'google_drive'       => '#4285f4', // Google blue color.
+									'google_calendar'    => '#0b8043', // Google Calendar green.
 									'upwork'             => '#14a800', // Upwork green.
 									'telegram'           => '#0088cc', // Telegram blue.
 									'whatsapp'           => '#25d366', // WhatsApp green.
@@ -1544,6 +2142,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<option value="google_drive" <?php selected( $connection_type, 'google_drive' ); ?>>
 								<?php esc_html_e( 'Google Drive (Cloud Storage)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
+							<option value="google_calendar" <?php selected( $connection_type, 'google_calendar' ); ?>>
+								<?php esc_html_e( 'Google Calendar (Scheduling)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
 							<option value="upwork" <?php selected( $connection_type, 'upwork' ); ?>>
 								<?php esc_html_e( 'Upwork (Freelance Marketplace)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
@@ -1714,6 +2315,32 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<option value="admin_shared" <?php selected( $is_edit && isset( $connection['default_user_mode'] ) ? $connection['default_user_mode'] : 'admin_shared', 'admin_shared' ); ?>><?php esc_html_e( 'Shared (site-wide) — one identity for all assistants', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="per_wp_user" <?php selected( $is_edit && isset( $connection['default_user_mode'] ) ? $connection['default_user_mode'] : '', 'per_wp_user' ); ?>><?php esc_html_e( 'Per user — each WordPress user connects their own accounts', 'mcp-ai-wpoos-pro' ); ?></option>
 						</select>
+						<?php
+						// Show the Composio identity (user_id) this connection resolves
+						// to. Every Connect Link and tool call carries this value, so
+						// seeing it here is the quickest way to confirm the mode took
+						// effect and that connected accounts are bound to it.
+						if ( $is_edit && 'composio' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) :
+							if ( ! class_exists( 'WP_MCP_AI_Composio_Auth_Handler' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+								$composio_auth_file = WP_MCP_AI_PRO_PATH . 'includes/composio/class-wp-mcp-ai-composio-auth-handler.php';
+								if ( file_exists( $composio_auth_file ) ) {
+									require_once $composio_auth_file;
+								}
+							}
+
+							if ( class_exists( 'WP_MCP_AI_Composio_Auth_Handler' ) ) :
+								$composio_identity = WP_MCP_AI_Composio_Auth_Handler::resolve_user_id( $connection, get_current_user_id() );
+								?>
+								<p class="description">
+									<?php esc_html_e( 'Composio identity for this connection:', 'mcp-ai-wpoos-pro' ); ?>
+									<code style="background: #f0f0f0; padding: 2px 6px;"><?php echo esc_html( $composio_identity ); ?></code>
+									<br>
+									<?php esc_html_e( 'Connect Links and tool calls are made as this identity. Accounts listed below under a different identity still work — their own identity is used at execution time.', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+								<?php
+							endif;
+						endif;
+						?>
 					</td>
 				</tr>
 
@@ -1771,6 +2398,221 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php endif; ?>
 						<?php else : ?>
 							<p class="description"><?php esc_html_e( 'Save the connection first to connect apps.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<!-- Connected apps listing for Composio Connect -->
+				<tr class="composio-only-field" style="display: none;">
+					<th scope="row">
+						<?php esc_html_e( 'Connected Apps', 'mcp-ai-wpoos-pro' ); ?>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['id'] ) && 'composio' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<?php
+							// Lazy-load the client, health engine and auth handler exactly
+							// like the assistant metabox does, so the edit form still
+							// renders when the composio module has not booted yet.
+							$this->maybe_load_composio_classes();
+
+							if ( ! class_exists( 'WP_MCP_AI_Composio_Client' ) ) {
+								$composio_accounts_raw = new WP_Error( 'wp_mcp_ai_composio_not_loaded', __( 'The Composio integration is not loaded on this site.', 'mcp-ai-wpoos-pro' ) );
+							} elseif ( empty( $connection['api_key'] ) ) {
+								$composio_accounts_raw = new WP_Error( 'wp_mcp_ai_composio_missing_api_key', __( 'Add your Composio API key and save the connection to view connected apps.', 'mcp-ai-wpoos-pro' ) );
+							} else {
+								$composio_accounts_raw = WP_MCP_AI_Composio_Client::from_connection( $connection )->list_connected_accounts();
+							}
+
+							// Normalise the upstream response: accept a flat account array
+							// or the { items: [...] } pagination wrapper.
+							$composio_accounts = array();
+							if ( ! is_wp_error( $composio_accounts_raw ) && is_array( $composio_accounts_raw ) ) {
+								if ( isset( $composio_accounts_raw['items'] ) && is_array( $composio_accounts_raw['items'] ) ) {
+									$composio_accounts_raw = $composio_accounts_raw['items'];
+								}
+								foreach ( $composio_accounts_raw as $composio_account ) {
+									if ( is_array( $composio_account ) ) {
+										$composio_accounts[] = $composio_account;
+									}
+								}
+							}
+
+							// Precompute the connection-wide verify URL so the markup below
+							// stays a single clean attribute.
+							$composio_verify_all_url = empty( $connection['id'] ) ? '' : wp_nonce_url(
+								add_query_arg(
+									array(
+										'page'            => 'wp-mcp-ai-remote-sites',
+										'composio_verify' => '1',
+										'connection_id'   => $connection['id'],
+									),
+									admin_url( 'admin.php' )
+								),
+								'composio_verify_' . $connection['id']
+							);
+							?>
+							<?php if ( is_wp_error( $composio_accounts_raw ) ) : ?>
+								<div class="notice notice-error inline">
+									<p><?php echo esc_html( $composio_accounts_raw->get_error_message() ); ?></p>
+								</div>
+							<?php elseif ( empty( $composio_accounts ) ) : ?>
+								<p class="description"><?php esc_html_e( 'No apps connected yet. Use the field above to connect your first app, then return here to see it listed.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<?php else : ?>
+								<table class="widefat striped" style="max-width: 1040px;">
+									<thead>
+										<tr>
+											<th><?php esc_html_e( 'App', 'mcp-ai-wpoos-pro' ); ?></th>
+											<th><?php esc_html_e( 'Account', 'mcp-ai-wpoos-pro' ); ?></th>
+											<th><?php esc_html_e( 'Identity', 'mcp-ai-wpoos-pro' ); ?></th>
+											<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+											<th><?php esc_html_e( 'Health', 'mcp-ai-wpoos-pro' ); ?></th>
+											<th><?php esc_html_e( 'Account ID', 'mcp-ai-wpoos-pro' ); ?></th>
+											<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos-pro' ); ?></th>
+										</tr>
+									</thead>
+									<tbody>
+										<?php foreach ( $composio_accounts as $composio_account ) : ?>
+											<?php
+											$composio_account_id = isset( $composio_account['id'] ) ? (string) $composio_account['id'] : '';
+											$composio_app_name   = '';
+											foreach ( array( 'appName', 'appUniqueId' ) as $composio_app_field ) {
+												if ( isset( $composio_account[ $composio_app_field ] ) && is_scalar( $composio_account[ $composio_app_field ] ) && '' !== (string) $composio_account[ $composio_app_field ] ) {
+													$composio_app_name = (string) $composio_account[ $composio_app_field ];
+													break;
+												}
+											}
+											// v3.1 nests the toolkit under { slug: "..." }.
+											if ( '' === $composio_app_name && isset( $composio_account['toolkit'] ) ) {
+												$composio_app_name = is_array( $composio_account['toolkit'] )
+													? ( isset( $composio_account['toolkit']['slug'] ) ? (string) $composio_account['toolkit']['slug'] : '' )
+													: (string) $composio_account['toolkit'];
+											}
+											$composio_alias = isset( $composio_account['alias'] ) ? (string) $composio_account['alias'] : '';
+											// The Composio identity (user_id) the account is bound
+											// to. Tool execution must send this value with the
+											// account ID, so surfacing it makes identity-mode
+											// mismatches obvious.
+											$composio_owner = '';
+											foreach ( array( 'user_id', 'entity_id' ) as $composio_owner_field ) {
+												if ( isset( $composio_account[ $composio_owner_field ] ) && is_scalar( $composio_account[ $composio_owner_field ] ) && '' !== (string) $composio_account[ $composio_owner_field ] ) {
+													$composio_owner = (string) $composio_account[ $composio_owner_field ];
+													break;
+												}
+											}
+											$composio_status     = isset( $composio_account['status'] ) ? (string) $composio_account['status'] : '';
+											$composio_is_expired = '' !== $composio_account_id && class_exists( 'WP_MCP_AI_Composio_Auth_Handler' )
+												? WP_MCP_AI_Composio_Auth_Handler::is_account_expired( $connection['id'], $composio_account_id )
+												: false;
+											// Stored verdict only — rendering never probes the provider.
+											$composio_health        = $this->get_composio_health_display( $connection['id'], $composio_account_id );
+											$composio_expires_at    = isset( $composio_account['expires_at'] ) ? (string) $composio_account['expires_at'] : '';
+											$composio_verify_url    = '' === $composio_account_id ? '' : wp_nonce_url(
+												add_query_arg(
+													array(
+														'page'            => 'wp-mcp-ai-remote-sites',
+														'composio_verify' => '1',
+														'connection_id'   => $connection['id'],
+														'account_id'      => $composio_account_id,
+													),
+													admin_url( 'admin.php' )
+												),
+												'composio_verify_' . $connection['id']
+											);
+											$composio_reconnect_url = '' === $composio_account_id ? '' : wp_nonce_url(
+												add_query_arg(
+													array(
+														'page'               => 'wp-mcp-ai-remote-sites',
+														'composio_reconnect' => '1',
+														'connection_id'      => $connection['id'],
+														'account_id'         => $composio_account_id,
+													),
+													admin_url( 'admin.php' )
+												),
+												'composio_reconnect_' . $connection['id'] . '_' . $composio_account_id
+											);
+											$composio_remove_url    = '' === $composio_account_id ? '' : wp_nonce_url(
+												add_query_arg(
+													array(
+														'page'                => 'wp-mcp-ai-remote-sites',
+														'composio_disconnect' => '1',
+														'connection_id'       => $connection['id'],
+														'account_id'          => $composio_account_id,
+													),
+													admin_url( 'admin.php' )
+												),
+												'composio_disconnect_' . $connection['id'] . '_' . $composio_account_id
+											);
+											?>
+											<tr>
+												<td><?php echo esc_html( $composio_app_name ); ?></td>
+												<td><?php echo esc_html( $composio_alias ); ?></td>
+												<td>
+													<?php if ( '' !== $composio_owner ) : ?>
+														<code style="background: #f0f0f0; padding: 2px 6px;"><?php echo esc_html( $composio_owner ); ?></code>
+													<?php else : ?>
+														<span style="color: #646970;">&mdash;</span>
+													<?php endif; ?>
+												</td>
+												<td>
+													<?php echo esc_html( $composio_status ); ?>
+													<?php if ( $composio_is_expired ) : ?>
+														<span style="color: #d63638; font-weight: 600;"> &mdash; <?php esc_html_e( 'expired', 'mcp-ai-wpoos-pro' ); ?></span>
+													<?php endif; ?>
+													<?php if ( '' !== $composio_expires_at ) : ?>
+														<br><span style="font-size: 11px; color: #646970;"><?php echo esc_html( sprintf( /* translators: %s: ISO-8601 timestamp */ __( 'token expiry: %s', 'mcp-ai-wpoos-pro' ), $composio_expires_at ) ); ?></span>
+													<?php endif; ?>
+												</td>
+												<td>
+													<span style="color: <?php echo esc_attr( $composio_health['color'] ); ?>; font-weight: 600;" title="<?php echo esc_attr( $composio_health['detail'] ); ?>">
+														<?php echo esc_html( $composio_health['label'] ); ?>
+													</span>
+													<?php if ( '' !== $composio_health['detail'] ) : ?>
+														<br><span style="font-size: 11px; color: #646970;"><?php echo esc_html( $composio_health['detail'] ); ?></span>
+													<?php endif; ?>
+												</td>
+												<td><code><?php echo esc_html( $composio_account_id ); ?></code></td>
+												<td>
+													<?php if ( '' !== $composio_verify_url ) : ?>
+														<a href="<?php echo esc_url( $composio_verify_url ); ?>" title="<?php echo esc_attr__( 'Make one harmless read-only call to the provider to confirm this credential still works.', 'mcp-ai-wpoos-pro' ); ?>"><?php esc_html_e( 'Verify', 'mcp-ai-wpoos-pro' ); ?></a>
+													<?php endif; ?>
+													<?php if ( '' !== $composio_reconnect_url ) : ?>
+														<?php echo '' !== $composio_verify_url ? ' <span style="color: #c3c4c7;">|</span> ' : ''; ?>
+														<a href="<?php echo esc_url( $composio_reconnect_url ); ?>" <?php echo $composio_health['needs_reconnect'] ? 'style="font-weight: 600;"' : ''; ?> title="<?php echo esc_attr__( 'Re-authorise this same account without creating a duplicate. You will be sent to the provider to sign in again.', 'mcp-ai-wpoos-pro' ); ?>"><?php esc_html_e( 'Reconnect', 'mcp-ai-wpoos-pro' ); ?></a>
+													<?php endif; ?>
+													<?php if ( '' !== $composio_remove_url ) : ?>
+														<span style="color: #c3c4c7;">|</span>
+														<a href="<?php echo esc_url( $composio_remove_url ); ?>" style="color: #b32d2e;" onclick="return confirm('<?php echo esc_js( __( 'Remove this connected app? The account is deleted at Composio and its provider access is revoked. Assistants will lose access to it immediately.', 'mcp-ai-wpoos-pro' ) ); ?>');">
+															<?php esc_html_e( 'Remove', 'mcp-ai-wpoos-pro' ); ?>
+														</a>
+													<?php endif; ?>
+													<?php if ( '' === $composio_verify_url && '' === $composio_remove_url ) : ?>
+														<span style="color: #646970;">&mdash;</span>
+													<?php endif; ?>
+												</td>
+											</tr>
+										<?php endforeach; ?>
+									</tbody>
+								</table>
+								<p class="description" style="margin-top: 8px;">
+									<?php
+									printf(
+										/* translators: %d: number of connected accounts */
+										esc_html( _n( '%d connected account. The list refreshes automatically after connecting a new app and is otherwise cached for 5 minutes.', '%d connected accounts. The list refreshes automatically after connecting a new app and is otherwise cached for 5 minutes.', count( $composio_accounts ), 'mcp-ai-wpoos-pro' ) ),
+										(int) count( $composio_accounts )
+									);
+									?>
+									<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&connection_id=' . rawurlencode( $connection['id'] ) . '&composio_refresh=1' ), 'composio_refresh_' . $connection['id'] ) ); ?>"><?php esc_html_e( 'Refresh list', 'mcp-ai-wpoos-pro' ); ?></a>
+									<?php if ( '' !== $composio_verify_all_url ) : ?>
+										<span style="color: #c3c4c7;">|</span>
+										<a href="<?php echo esc_url( $composio_verify_all_url ); ?>"><?php esc_html_e( 'Verify all', 'mcp-ai-wpoos-pro' ); ?></a>
+									<?php endif; ?>
+								</p>
+								<p class="description" style="margin-top: 4px;">
+									<?php esc_html_e( '“Status” is what Composio has stored, and it lags a revoked token — an app can read ACTIVE here and still fail with a 401. “Health” is the result of an actual read-only call to the provider, so use Verify before trusting a connection. Reconnect re-authorises the same account instead of creating a duplicate.', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+							<?php endif; ?>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Save the connection first to view connected apps.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
@@ -2615,6 +3457,146 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<p class="description"><?php esc_html_e( 'The Google account email associated with this connection for reference.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
+
+				<!-- Type-specific fields for Google Calendar -->
+				<tr class="google_calendar-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_calendar_client_id"><?php esc_html_e( 'OAuth Client ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="google_calendar_client_id" id="google_calendar_client_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['client_id'] ) ? esc_attr( $connection['client_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'OAuth 2.0 Client ID from Google Cloud Console. The Google Calendar API must be enabled for the project.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="google_calendar-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_calendar_client_secret"><?php esc_html_e( 'OAuth Client Secret', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="google_calendar_client_secret" id="google_calendar_client_secret" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit ) : ?>
+							<?php if ( ! empty( $connection['client_secret'] ) ) : ?>
+								<p class="description">
+									<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+									<?php esc_html_e( 'Client secret is set. Leave blank to keep the existing secret, or enter a new one to replace it.', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+							<?php else : ?>
+								<p class="description"><?php esc_html_e( 'Client secret is not set. Enter the OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<?php endif; ?>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="google_calendar-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Authorized Redirect URI', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						// Built via the shared service so the authorize request and the
+						// token exchange cannot drift apart.
+						require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-oauth-service.php';
+						$google_calendar_redirect_uri = WP_MCP_AI_Google_OAuth_Service::build_remote_redirect_uri( 'google_calendar_oauth_callback' );
+						?>
+						<input type="text" readonly="readonly" value="<?php echo esc_url( $google_calendar_redirect_uri ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+						<p class="description">
+							<strong><?php esc_html_e( 'Important:', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<?php esc_html_e( 'Copy this exact URL and add it to the "Authorized redirect URIs" in your Google Cloud Console OAuth 2.0 credentials. The URL must match exactly (including https://).', 'mcp-ai-wpoos-pro' ); ?>
+							<br>
+							<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">
+								<?php esc_html_e( 'Open Google Cloud Console', 'mcp-ai-wpoos-pro' ); ?> <span class="dashicons dashicons-external" style="font-size: 14px; vertical-align: text-top;"></span>
+							</a>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="google_calendar-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_calendar_scope_profile"><?php esc_html_e( 'Permission Level', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-scopes.php';
+						$gcal_profile  = WP_MCP_AI_Google_Calendar_Scopes::normalise_profile(
+							$is_edit && isset( $connection['scope_profile'] ) ? $connection['scope_profile'] : ''
+						);
+						$gcal_profiles = WP_MCP_AI_Google_Calendar_Scopes::get_profiles();
+						?>
+						<select name="google_calendar_scope_profile" id="google_calendar_scope_profile" class="regular-text">
+							<?php foreach ( $gcal_profiles as $gcal_slug => $gcal_definition ) : ?>
+								<option value="<?php echo esc_attr( $gcal_slug ); ?>" <?php selected( $gcal_profile, $gcal_slug ); ?>>
+									<?php echo esc_html( isset( $gcal_definition['label'] ) ? $gcal_definition['label'] : $gcal_slug ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description">
+							<?php echo esc_html( WP_MCP_AI_Google_Calendar_Scopes::get_profile_description( $gcal_profile ) ); ?>
+						</p>
+						<p class="description">
+							<?php esc_html_e( 'Changing this after connecting invalidates the existing authorisation — reconnect afterwards.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="google_calendar-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_calendar_refresh_token"><?php esc_html_e( 'Refresh Token (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<textarea name="google_calendar_refresh_token" id="google_calendar_refresh_token" class="large-text" rows="3" autocomplete="off"></textarea>
+						<?php if ( $is_edit && ! empty( $connection['refresh_token'] ) ) : ?>
+							<p class="description">
+								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<?php esc_html_e( 'Refresh token is set. Leave blank to keep the existing token, or paste a new token to replace it.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Optional. Normally obtained automatically by the Connect button below.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="google_calendar-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_calendar_calendar_id"><?php esc_html_e( 'Default Calendar ID (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="google_calendar_calendar_id" id="google_calendar_calendar_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['calendar_id'] ) ? esc_attr( $connection['calendar_id'] ) : ''; ?>" autocomplete="off" placeholder="primary">
+						<p class="description"><?php esc_html_e( 'Calendar used when a tool does not specify one. Use "primary" for the account\'s main calendar, or paste a calendar ID from Google Calendar settings. Defaults to "primary" when blank.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="google_calendar-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_calendar_user_email"><?php esc_html_e( 'Google User Email (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="email" name="google_calendar_user_email" id="google_calendar_user_email" class="regular-text" value="<?php echo $is_edit && isset( $connection['user_email'] ) ? esc_attr( $connection['user_email'] ) : ''; ?>" autocomplete="off" placeholder="user@example.com">
+						<p class="description"><?php esc_html_e( 'The Google account email associated with this connection. Also used to attribute per-user API quota.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<?php if ( $is_edit && ! empty( $connection['granted_scopes'] ) ) : ?>
+					<tr class="google_calendar-only-field" style="display: none;">
+						<th scope="row"><?php esc_html_e( 'Granted Permissions', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<?php
+							require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-scopes.php';
+							$gcal_granted = WP_MCP_AI_Google_Calendar_Scopes::parse_granted( $connection['granted_scopes'] );
+							?>
+							<ul style="list-style: disc; margin-left: 20px; margin-top: 0;">
+								<?php foreach ( $gcal_granted as $gcal_scope ) : ?>
+									<li><code><?php echo esc_html( $gcal_scope ); ?></code></li>
+								<?php endforeach; ?>
+							</ul>
+							<p class="description">
+								<?php esc_html_e( 'Google allows approving a subset of the requested permissions. If a feature reports a missing scope, reconnect and approve every Calendar permission.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						</td>
+					</tr>
+				<?php endif; ?>
 				<?php if ( $is_edit && 'gmail' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
 					<tr class="gmail-only-field" style="display: none;">
 						<th scope="row">
@@ -2728,6 +3710,47 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									<?php esc_html_e( 'This connection is already authorized. Click the button above to re-authorize if needed.', 'mcp-ai-wpoos-pro' ); ?>
 								</p>
 							<?php endif; ?>
+						</td>
+					</tr>
+				<?php endif; ?>
+
+				<!-- Google Calendar OAuth Connection Button -->
+				<?php if ( $is_edit && 'google_calendar' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+					<tr class="google_calendar-only-field" style="display: none;">
+						<th scope="row">
+							<label><?php esc_html_e( 'OAuth Connection', 'mcp-ai-wpoos-pro' ); ?></label>
+						</th>
+						<td>
+							<?php
+							$gcal_oauth_url = wp_nonce_url(
+								add_query_arg(
+									array(
+										'page'          => 'wp-mcp-ai-remote-sites',
+										'oauth_handler' => 'google_calendar_oauth_connect',
+										'connection_id' => $connection['id'],
+									),
+									admin_url( 'admin.php' )
+								),
+								'google_calendar_oauth_connect_' . $connection['id']
+							);
+							?>
+							<a href="<?php echo esc_url( $gcal_oauth_url ); ?>" class="button button-secondary">
+								<span class="dashicons dashicons-google" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Connect to Google Calendar', 'mcp-ai-wpoos-pro' ); ?>
+							</a>
+							<p class="description">
+								<?php esc_html_e( 'Click to authorize this connection with your Google account and obtain a refresh token. Save the Client ID and Client Secret first.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<?php if ( ! empty( $connection['refresh_token'] ) ) : ?>
+								<p class="description" style="color: #46b450;">
+									<span class="dashicons dashicons-yes-alt"></span>
+									<?php esc_html_e( 'This connection is already authorized. Click the button above to re-authorize if needed.', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+							<?php endif; ?>
+							<p class="description">
+								<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<?php esc_html_e( 'While the Google Cloud OAuth consent screen is in "Testing" status, Google issues refresh tokens that expire after 7 days. Set the publishing status to "In production" for a durable connection.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
 						</td>
 					</tr>
 				<?php endif; ?>
@@ -2846,7 +3869,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<label for="upwork_user_email"><?php esc_html_e( 'Upwork Username (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
-						<input type="text" name="upwork_user_email" id="upwork_user_email" class="regular-text" value="<?php echo $is_edit && isset( $connection['user_email'] ) ? esc_attr( $connection['user_email'] ) : ''; ?>" autocomplete="off" placeholder="your-upwork-username">
+						<input type="text" name="upwork_user_email" id="upwork_user_email" class="regular-text" value="<?php echo $is_edit && isset( $connection['upwork_username'] ) ? esc_attr( $connection['upwork_username'] ) : ''; ?>" autocomplete="off" placeholder="your-upwork-username">
 						<p class="description"><?php esc_html_e( 'Your Upwork username (auto-populated after OAuth connect).', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
@@ -5349,8 +6372,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php esc_html_e( 'Accept incoming webhook events without validating the Google OIDC Bearer token.', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 						<p class="description">
-							<?php esc_html_e( 'Enable this only if Google Chat messages are not being received and you suspect the Authorization header is being stripped by your server, a proxy, or a WAF (e.g., Cloudflare). This mirrors the behavior of the Telegram integration when no secret token is configured. Not recommended for production — enable the Audience URL above instead for secure verification.', 'mcp-ai-wpoos-pro' ); ?>
+							<?php esc_html_e( 'Enable this only if Google Chat messages are not being received and you suspect the Authorization header is being stripped by your server, a proxy, or a WAF (e.g., Cloudflare). When enabled you MUST set a Verification Token below — incoming requests are then authenticated against that token instead of the OIDC Bearer token. Not recommended for production — enable the Audience URL above instead for secure verification.', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
+					</td>
+				</tr>
+
+				<tr class="google_chat-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_chat_verification_token"><?php esc_html_e( 'Verification Token', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="google_chat_verification_token" id="google_chat_verification_token" class="regular-text" value="<?php echo $is_edit && isset( $connection['verification_token'] ) && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr( $connection['verification_token'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Shared-secret token used to authenticate webhook requests when OIDC Verification is disabled above. Requests must include it via the ?token= URL parameter or the X-Google-Chat-Token header.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -6367,6 +7400,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var ezuiteFields = document.querySelectorAll('.ezuite_erp-only-field');
 			var gmailFields = document.querySelectorAll('.gmail-only-field');
 			var googleDriveFields = document.querySelectorAll('.google_drive-only-field');
+			var googleCalendarFields = document.querySelectorAll('.google_calendar-only-field');
 			var telegramFields = document.querySelectorAll('.telegram-only-field');
 			var whatsappFields = document.querySelectorAll('.whatsapp-only-field');
 			var slackFields = document.querySelectorAll('.slack-only-field');
@@ -6422,6 +7456,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			googleDriveFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			googleCalendarFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 			telegramFields.forEach(function(field) {
@@ -6580,6 +7617,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				urlField.style.backgroundColor = '#f0f0f0';
 				urlDescription.style.display = 'none';
 				// Google Drive doesn't use the standard auth_type, it has its own OAuth flow
+				authTypeSelect.value = 'none';
+			} else if (connectionType === 'google_calendar') {
+				googleCalendarFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// Google Calendar uses OAuth, set URL to Google's Calendar API
+				urlField.value = 'https://www.googleapis.com/calendar/v3';
+				urlField.readOnly = true;
+				urlField.style.backgroundColor = '#f0f0f0';
+				urlDescription.style.display = 'none';
+				// Google Calendar doesn't use the standard auth_type, it has its own OAuth flow
 				authTypeSelect.value = 'none';
 			} else if (connectionType === 'upwork') {
 				upworkFields.forEach(function(field) {
@@ -7149,7 +8197,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								html += '</div>';
 								tgAutoReplyResult.innerHTML = html;
 							} else {
-								tgAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Auto-reply test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+								var errMsg = (typeof result.data === 'string' && result.data) ? result.data : <?php echo wp_json_encode( __( 'Auto-reply test failed.', 'mcp-ai-wpoos-pro' ) ); ?>;
+								tgAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + errMsg.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p></div>';
 							}
 						})
 						.catch(function() {
@@ -9510,18 +10559,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		if ( ! $connection ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		if ( 'gmail' !== $connection['connection_type'] ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a Gmail connection.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a Gmail connection.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the Client ID and Client Secret before connecting.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the Client ID and Client Secret before connecting.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		// Generate OAuth state and store connection ID.
@@ -9564,8 +10610,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		$authorize_url = add_query_arg( $params, 'https://accounts.google.com/o/oauth2/v2/auth' );
 
-		wp_safe_redirect( $authorize_url );
-		exit;
+		$this->redirect_and_exit( $authorize_url );
 	}
 
 	/**
@@ -9583,8 +10628,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
 
 		if ( $error ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( /* translators: %s: OAuth error from Google */ __( 'Google OAuth error: %s', 'mcp-ai-wpoos-pro' ), $error ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( /* translators: %s: OAuth error from Google */ __( 'Google OAuth error: %s', 'mcp-ai-wpoos-pro' ), $error ) ) ) );
 		}
 
 		$transient_key = 'wp_mcp_ai_gmail_oauth_state_' . md5( $state );
@@ -9593,21 +10637,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		delete_transient( $transient_key );
 
 		if ( empty( $state ) || ! $state_data || get_current_user_id() !== (int) $state_data['user_id'] ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		if ( empty( $code ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$connection_id = $state_data['connection_id'];
 		$connection    = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		if ( ! $connection ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		// Decrypt client_secret for token exchange.
@@ -9638,23 +10679,20 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$status_code = wp_remote_retrieve_response_code( $response );
 		$body        = wp_remote_retrieve_body( $response );
 
 		if ( 200 !== (int) $status_code ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Google rejected the authorization. Please check your OAuth configuration.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Google rejected the authorization. Please check your OAuth configuration.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$decoded = json_decode( $body, true );
 
 		if ( ! is_array( $decoded ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Invalid response from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Invalid response from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$refresh_token = isset( $decoded['refresh_token'] ) ? trim( (string) $decoded['refresh_token'] ) : '';
@@ -9666,8 +10704,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		if ( '' === $refresh_token ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please revoke existing access and try again.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please revoke existing access and try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		// Get email address from profile if access token is available.
@@ -9712,8 +10749,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
 
 		if ( is_wp_error( $result ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $result->get_error_message() ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $result->get_error_message() ) ) );
 		}
 
 		$success_message = __( 'Gmail connected successfully!', 'mcp-ai-wpoos-pro' );
@@ -9725,8 +10761,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			);
 		}
 
-		wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
-		exit;
+		$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
 	}
 
 	/**
@@ -9740,18 +10775,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		if ( ! $connection ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		if ( 'google_drive' !== $connection['connection_type'] ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a Google Drive connection.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a Google Drive connection.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the Client ID and Client Secret before connecting.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the Client ID and Client Secret before connecting.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		// Generate OAuth state and store connection ID.
@@ -9794,8 +10826,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		$authorize_url = add_query_arg( $params, 'https://accounts.google.com/o/oauth2/v2/auth' );
 
-		wp_safe_redirect( $authorize_url );
-		exit;
+		$this->redirect_and_exit( $authorize_url );
 	}
 
 	/**
@@ -9813,8 +10844,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
 
 		if ( $error ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( /* translators: %s: OAuth error from Google */ __( 'Google OAuth error: %s', 'mcp-ai-wpoos-pro' ), $error ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( /* translators: %s: OAuth error from Google */ __( 'Google OAuth error: %s', 'mcp-ai-wpoos-pro' ), $error ) ) ) );
 		}
 
 		$transient_key = 'wp_mcp_ai_google_drive_oauth_state_' . md5( $state );
@@ -9823,21 +10853,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		delete_transient( $transient_key );
 
 		if ( empty( $state ) || ! $state_data || get_current_user_id() !== (int) $state_data['user_id'] ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		if ( empty( $code ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$connection_id = $state_data['connection_id'];
 		$connection    = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		if ( ! $connection ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		// Decrypt client_secret for token exchange.
@@ -9868,23 +10895,20 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$status_code = wp_remote_retrieve_response_code( $response );
 		$body        = wp_remote_retrieve_body( $response );
 
 		if ( 200 !== (int) $status_code ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Google rejected the authorization. Please check your OAuth configuration.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Google rejected the authorization. Please check your OAuth configuration.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$decoded = json_decode( $body, true );
 
 		if ( ! is_array( $decoded ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Invalid response from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Invalid response from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$refresh_token = isset( $decoded['refresh_token'] ) ? trim( (string) $decoded['refresh_token'] ) : '';
@@ -9896,8 +10920,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		if ( '' === $refresh_token ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please revoke existing access and try again.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please revoke existing access and try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		// Get email address from userinfo if access token is available.
@@ -9943,8 +10966,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
 
 		if ( is_wp_error( $result ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $result->get_error_message() ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $result->get_error_message() ) ) );
 		}
 
 		$success_message = __( 'Google Drive connected successfully!', 'mcp-ai-wpoos-pro' );
@@ -9956,8 +10978,200 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			);
 		}
 
-		wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
-		exit;
+		$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
+	}
+
+	/**
+	 * Load the shared Google OAuth and Calendar service classes.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
+	protected function require_google_calendar_services() {
+		require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-oauth-service.php';
+		require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-scopes.php';
+	}
+
+	/**
+	 * Handle Google Calendar OAuth start for a remote connection.
+	 *
+	 * Delegates state handling, redirect-URI construction, and authorization-URL
+	 * building to WP_MCP_AI_Google_OAuth_Service so this flow cannot drift from
+	 * the base-plugin Calendar flow.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @return void
+	 */
+	protected function handle_google_calendar_oauth_start( $connection_id ) {
+		$this->require_google_calendar_services();
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
+		}
+
+		if ( 'google_calendar' !== $connection['connection_type'] ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a Google Calendar connection.', 'mcp-ai-wpoos-pro' ) ) ) );
+		}
+
+		if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the Client ID and Client Secret before connecting.', 'mcp-ai-wpoos-pro' ) ) ) );
+		}
+
+		$profile = WP_MCP_AI_Google_Calendar_Scopes::normalise_profile(
+			isset( $connection['scope_profile'] ) ? $connection['scope_profile'] : ''
+		);
+
+		$state = WP_MCP_AI_Google_OAuth_Service::store_state(
+			'google_calendar_remote',
+			array( 'connection_id' => $connection_id )
+		);
+
+		$authorize_url = WP_MCP_AI_Google_OAuth_Service::build_authorize_url(
+			array(
+				'client_id'    => $connection['client_id'],
+				'redirect_uri' => WP_MCP_AI_Google_OAuth_Service::build_remote_redirect_uri( 'google_calendar_oauth_callback' ),
+				'scope'        => WP_MCP_AI_Google_Calendar_Scopes::get_profile_scope_string( $profile ),
+				'state'        => $state,
+				'login_hint'   => isset( $connection['user_email'] ) ? (string) $connection['user_email'] : '',
+			)
+		);
+
+		if ( is_wp_error( $authorize_url ) ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $authorize_url->get_error_message() ) ) );
+		}
+
+		$this->redirect_and_exit( $authorize_url );
+	}
+
+	/**
+	 * Handle Google Calendar OAuth callback for a remote connection.
+	 *
+	 * CSRF protection comes from the single-use `state` transient rather than a
+	 * nonce, because Google controls the inbound request.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
+	protected function handle_google_calendar_oauth_callback() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$this->require_google_calendar_services();
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$code = isset( $_GET['code'] ) ? sanitize_text_field( wp_unslash( $_GET['code'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
+
+		if ( $error ) {
+			$this->redirect_and_exit(
+				admin_url(
+					'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode(
+						sprintf(
+							/* translators: %s: OAuth error from Google */
+							__( 'Google OAuth error: %s', 'mcp-ai-wpoos-pro' ),
+							$error
+						)
+					)
+				)
+			);
+		}
+
+		$state_data = WP_MCP_AI_Google_OAuth_Service::consume_state( 'google_calendar_remote', $state );
+
+		if ( is_wp_error( $state_data ) ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( $state_data->get_error_message() ) ) );
+		}
+
+		if ( empty( $code ) ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
+		}
+
+		$connection_id = isset( $state_data['connection_id'] ) ? sanitize_key( $state_data['connection_id'] ) : '';
+		$connection    = '' !== $connection_id ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
+
+		if ( ! $connection ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
+		}
+
+		$client_secret = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] );
+
+		$tokens = WP_MCP_AI_Google_OAuth_Service::exchange_code(
+			array(
+				'code'          => $code,
+				'client_id'     => $connection['client_id'],
+				'client_secret' => $client_secret,
+				// Must byte-match the authorize request.
+				'redirect_uri'  => WP_MCP_AI_Google_OAuth_Service::build_remote_redirect_uri( 'google_calendar_oauth_callback' ),
+			)
+		);
+
+		if ( is_wp_error( $tokens ) ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $tokens->get_error_message() ) ) );
+		}
+
+		$refresh_token = isset( $tokens['refresh_token'] ) ? trim( (string) $tokens['refresh_token'] ) : '';
+		$access_token  = isset( $tokens['access_token'] ) ? trim( (string) $tokens['access_token'] ) : '';
+		$granted       = isset( $tokens['scope'] ) ? trim( (string) $tokens['scope'] ) : '';
+
+		// Google omits the refresh token on re-consent when one already exists.
+		if ( '' === $refresh_token && ! empty( $connection['refresh_token'] ) ) {
+			$refresh_token = $connection['refresh_token'];
+		}
+
+		if ( '' === $refresh_token ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please revoke existing access and try again.', 'mcp-ai-wpoos-pro' ) ) ) );
+		}
+
+		$email_address = WP_MCP_AI_Google_OAuth_Service::fetch_userinfo_email( $access_token );
+
+		$update_data = array(
+			'id'              => $connection_id,
+			'name'            => $connection['name'],
+			'url'             => $connection['url'],
+			'connection_type' => 'google_calendar',
+			'auth_type'       => 'none',
+			'client_id'       => $connection['client_id'],
+			'client_secret'   => '', // Preserve the stored encrypted value.
+			'refresh_token'   => $refresh_token,
+			'user_email'      => $email_address ? $email_address : $connection['user_email'],
+			'calendar_id'     => isset( $connection['calendar_id'] ) ? $connection['calendar_id'] : '',
+			'scope_profile'   => isset( $connection['scope_profile'] ) ? $connection['scope_profile'] : '',
+			'granted_scopes'  => $granted,
+			'enabled'         => $connection['enabled'],
+		);
+
+		// Tell the manager the omitted client_secret is already encrypted so it is
+		// preserved rather than blanked or double-encrypted.
+		$update_data['_client_secret_encrypted'] = true;
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+
+		if ( is_wp_error( $result ) ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $result->get_error_message() ) ) );
+		}
+
+		// A rotated refresh token invalidates any cached access token.
+		WP_MCP_AI_Google_OAuth_Service::forget_access_token( 'connection:' . $connection_id );
+
+		$success_message = $email_address
+			? sprintf(
+				/* translators: %s: email address */
+				__( 'Google Calendar connected successfully for %s!', 'mcp-ai-wpoos-pro' ),
+				$email_address
+			)
+			: __( 'Google Calendar connected successfully!', 'mcp-ai-wpoos-pro' );
+
+		$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
 	}
 
 	/**
@@ -9971,18 +11185,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		if ( ! $connection ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		if ( 'google_chat' !== $connection['connection_type'] ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a Google Chat connection.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a Google Chat connection.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the OAuth Client ID and Client Secret before connecting.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the OAuth Client ID and Client Secret before connecting.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		// Generate OAuth state and store connection ID.
@@ -10018,8 +11229,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		$authorize_url = add_query_arg( $params, 'https://accounts.google.com/o/oauth2/v2/auth' );
 
-		wp_safe_redirect( $authorize_url );
-		exit;
+		$this->redirect_and_exit( $authorize_url );
 	}
 
 	/**
@@ -10037,8 +11247,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
 
 		if ( $error ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( /* translators: %s: OAuth error from Google */ __( 'Google OAuth error: %s', 'mcp-ai-wpoos-pro' ), $error ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( /* translators: %s: OAuth error from Google */ __( 'Google OAuth error: %s', 'mcp-ai-wpoos-pro' ), $error ) ) ) );
 		}
 
 		$transient_key = 'wp_mcp_ai_google_chat_oauth_state_' . md5( $state );
@@ -10047,21 +11256,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		delete_transient( $transient_key );
 
 		if ( empty( $state ) || ! $state_data || get_current_user_id() !== (int) $state_data['user_id'] ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		if ( empty( $code ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$connection_id = $state_data['connection_id'];
 		$connection    = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		if ( ! $connection ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		// Decrypt client_secret for token exchange.
@@ -10092,23 +11298,20 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$status_code = wp_remote_retrieve_response_code( $response );
 		$body        = wp_remote_retrieve_body( $response );
 
 		if ( 200 !== (int) $status_code ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Google rejected the authorization. Please check your OAuth configuration.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Google rejected the authorization. Please check your OAuth configuration.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$decoded = json_decode( $body, true );
 
 		if ( ! is_array( $decoded ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Invalid response from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Invalid response from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$refresh_token = isset( $decoded['refresh_token'] ) ? trim( (string) $decoded['refresh_token'] ) : '';
@@ -10120,8 +11323,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		if ( '' === $refresh_token ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please revoke existing access and try again.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please revoke existing access and try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		// Get email address from userinfo if access token is available.
@@ -10168,8 +11370,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
 
 		if ( is_wp_error( $result ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $result->get_error_message() ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $result->get_error_message() ) ) );
 		}
 
 		$success_message = __( 'Google Chat connected successfully!', 'mcp-ai-wpoos-pro' );
@@ -10181,8 +11382,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			);
 		}
 
-		wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
-		exit;
+		$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
 	}
 	/**
 	 * Handle Microsoft Teams OAuth 2.0 start for a remote connection.
@@ -10199,18 +11399,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		if ( ! $connection ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		if ( 'microsoft_teams' !== $connection['connection_type'] ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a Microsoft Teams connection.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a Microsoft Teams connection.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the Azure AD Client ID and Client Secret before connecting.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the Azure AD Client ID and Client Secret before connecting.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		// Generate OAuth state and store connection ID in a short-lived transient (CSRF protection).
@@ -10266,8 +11463,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			'https://login.microsoftonline.com/' . rawurlencode( $tenant ) . '/oauth2/v2.0/authorize'
 		);
 
-		wp_safe_redirect( $authorize_url );
-		exit;
+		$this->redirect_and_exit( $authorize_url );
 	}
 
 	/**
@@ -10293,8 +11489,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		if ( $error ) {
 			$message = $error_description ? $error_description : $error;
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( /* translators: %s: OAuth error from Microsoft */ __( 'Microsoft OAuth error: %s', 'mcp-ai-wpoos-pro' ), $message ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( /* translators: %s: OAuth error from Microsoft */ __( 'Microsoft OAuth error: %s', 'mcp-ai-wpoos-pro' ), $message ) ) ) );
 		}
 
 		$transient_key = 'wp_mcp_ai_teams_oauth_state_' . md5( $state );
@@ -10303,21 +11498,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		delete_transient( $transient_key );
 
 		if ( empty( $state ) || ! $state_data || get_current_user_id() !== (int) $state_data['user_id'] ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		if ( empty( $code ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Microsoft.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Microsoft.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$connection_id = $state_data['connection_id'];
 		$connection    = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		if ( ! $connection ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		// Decrypt client_secret for token exchange.
@@ -10353,23 +11545,20 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$status_code = wp_remote_retrieve_response_code( $response );
 		$body        = wp_remote_retrieve_body( $response );
 
 		if ( 200 !== (int) $status_code ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Microsoft rejected the authorization. Please check your Azure AD app configuration.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Microsoft rejected the authorization. Please check your Azure AD app configuration.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$decoded = json_decode( $body, true );
 
 		if ( ! is_array( $decoded ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Invalid response from Microsoft.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Invalid response from Microsoft.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$access_token  = isset( $decoded['access_token'] ) ? trim( (string) $decoded['access_token'] ) : '';
@@ -10377,8 +11566,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$expires_in    = isset( $decoded['expires_in'] ) ? absint( $decoded['expires_in'] ) : 3600;
 
 		if ( '' === $access_token ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No access token received from Microsoft.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No access token received from Microsoft.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		// If no refresh token returned, reuse the existing one (Microsoft may not return it on every auth).
@@ -10442,8 +11630,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
 
 		if ( is_wp_error( $result ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $result->get_error_message() ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $result->get_error_message() ) ) );
 		}
 
 		$success_message = __( 'Microsoft Teams connected successfully via OAuth!', 'mcp-ai-wpoos-pro' );
@@ -10456,8 +11643,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			);
 		}
 
-		wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
-		exit;
+		$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
 	}
 
 	/**
@@ -12823,13 +14009,26 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		if ( $response->is_error() ) {
 			$error_data = $response->get_data();
 			$code       = is_array( $error_data ) && isset( $error_data['code'] ) ? $error_data['code'] : 'unknown_error';
-			wp_send_json_error(
-				sprintf(
-					/* translators: %s: error code */
-					__( 'The AI assistant returned an error (%s). Check that the assistant is configured correctly and that your AI provider credentials are valid.', 'mcp-ai-wpoos-pro' ),
-					$code
-				)
-			);
+			$message    = is_array( $error_data ) && isset( $error_data['message'] ) && is_string( $error_data['message'] ) ? trim( $error_data['message'] ) : '';
+
+			if ( '' !== $message ) {
+				wp_send_json_error(
+					sprintf(
+						/* translators: 1: error code, 2: provider error message */
+						__( 'The AI assistant returned an error (%1$s): %2$s Check that the assistant is configured correctly and that your AI provider credentials are valid.', 'mcp-ai-wpoos-pro' ),
+						$code,
+						$message
+					)
+				);
+			} else {
+				wp_send_json_error(
+					sprintf(
+						/* translators: %s: error code */
+						__( 'The AI assistant returned an error (%s). Check that the assistant is configured correctly and that your AI provider credentials are valid.', 'mcp-ai-wpoos-pro' ),
+						$code
+					)
+				);
+			}
 			return;
 		}
 
@@ -15085,18 +16284,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		if ( ! $connection ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		if ( 'upwork' !== $connection['connection_type'] ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not an Upwork connection.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not an Upwork connection.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the Client ID and Client Secret before connecting.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the Client ID and Client Secret before connecting.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$state     = wp_generate_uuid4();
@@ -15127,8 +16323,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		$authorize_url = add_query_arg( $params, 'https://www.upwork.com/ab/account-security/oauth2/authorize' );
 
-		wp_safe_redirect( $authorize_url );
-		exit;
+		$this->redirect_and_exit( $authorize_url );
 	}
 
 	/**
@@ -15149,7 +16344,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
 
 		if ( $error ) {
-			wp_safe_redirect(
+			$this->redirect_and_exit(
 				admin_url(
 					'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode(
 						sprintf(
@@ -15160,7 +16355,6 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					)
 				)
 			);
-			exit;
 		}
 
 		$transient_key = 'wp_mcp_ai_upwork_oauth_state_' . md5( $state );
@@ -15168,21 +16362,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		delete_transient( $transient_key );
 
 		if ( empty( $state ) || ! $state_data || get_current_user_id() !== (int) $state_data['user_id'] ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		if ( empty( $code ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Upwork.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Upwork.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$connection_id = $state_data['connection_id'];
 		$connection    = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		if ( ! $connection ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$client_secret = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] );
@@ -15215,23 +16406,20 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$status_code = wp_remote_retrieve_response_code( $response );
 		$body        = wp_remote_retrieve_body( $response );
 
 		if ( 200 !== (int) $status_code ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Upwork rejected the authorization. Please check your OAuth configuration.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Upwork rejected the authorization. Please check your OAuth configuration.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$decoded = json_decode( $body, true );
 
 		if ( ! is_array( $decoded ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Invalid response from Upwork.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Invalid response from Upwork.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		$refresh_token = isset( $decoded['refresh_token'] ) ? trim( (string) $decoded['refresh_token'] ) : '';
@@ -15243,8 +16431,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		if ( '' === $refresh_token ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		// Fetch the connected user's display name.
@@ -15271,7 +16458,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			}
 		}
 
-		// Save the updated connection data.
+		// Save the updated connection data. The Upwork username is stored in
+		// the dedicated upwork_username field; user_email is reserved for
+		// email connections and is sanitized as an email address.
 		$update_data = array(
 			'id'              => $connection_id,
 			'name'            => $connection['name'],
@@ -15281,7 +16470,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			'client_id'       => $connection['client_id'],
 			'client_secret'   => '',
 			'refresh_token'   => $refresh_token,
-			'user_email'      => $upwork_username ? $upwork_username : ( isset( $connection['user_email'] ) ? $connection['user_email'] : '' ),
+			'upwork_username' => $upwork_username,
 			'enabled'         => $connection['enabled'],
 		);
 		// Flag already-encrypted client_secret to prevent double-encryption.
@@ -15290,8 +16479,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
 
 		if ( is_wp_error( $result ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $result->get_error_message() ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $result->get_error_message() ) ) );
 		}
 
 		$success_message = __( 'Upwork account connected successfully!', 'mcp-ai-wpoos-pro' );
@@ -15303,8 +16491,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			);
 		}
 
-		wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
-		exit;
+		$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
 	}
 
 	/**
@@ -15317,13 +16504,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		if ( ! $connection ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		if ( 'linkedin' !== $connection['connection_type'] ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a LinkedIn connection.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a LinkedIn connection.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		// Build the LinkedIn authorization URL.
@@ -15349,8 +16534,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		$authorize_url = add_query_arg( $params, 'https://www.linkedin.com/oauth/v2/authorization' );
 
-		wp_safe_redirect( $authorize_url );
-		exit;
+		$this->redirect_and_exit( $authorize_url );
 	}
 
 	/**
@@ -15368,7 +16552,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
 
 		if ( $error ) {
-			wp_safe_redirect(
+			$this->redirect_and_exit(
 				admin_url(
 					'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode(
 						sprintf(
@@ -15379,15 +16563,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					)
 				)
 			);
-			exit;
 		}
 
 		$transient_key = 'wp_mcp_ai_linkedin_oauth_state_' . md5( $state );
 		$connection_id = get_transient( $transient_key );
 
 		if ( ! $connection_id ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Invalid or expired OAuth state. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Invalid or expired OAuth state. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		delete_transient( $transient_key );
@@ -15395,8 +16577,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		if ( ! $connection ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		// Exchange authorization code for tokens.
@@ -15426,8 +16607,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		);
 
 		if ( is_wp_error( $token_response ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $token_response->get_error_message() ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $token_response->get_error_message() ) ) );
 		}
 
 		$status  = wp_remote_retrieve_response_code( $token_response );
@@ -15436,8 +16616,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		if ( 200 !== $status || ! is_array( $decoded ) || empty( $decoded['access_token'] ) ) {
 			$err_msg = isset( $decoded['error_description'] ) ? $decoded['error_description'] : __( 'Unknown token exchange error.', 'mcp-ai-wpoos-pro' );
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $err_msg ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $err_msg ) ) );
 		}
 
 		$refresh_token = isset( $decoded['refresh_token'] ) ? trim( (string) $decoded['refresh_token'] ) : '';
@@ -15449,8 +16628,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		if ( '' === $refresh_token ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
-			exit;
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 		}
 
 		// Save the updated connection data.
@@ -15472,12 +16650,66 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
 
 		if ( is_wp_error( $result ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $result->get_error_message() ) ) );
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $result->get_error_message() ) ) );
+		}
+
+		$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( __( 'LinkedIn account connected successfully!', 'mcp-ai-wpoos-pro' ) ) ) );
+	}
+
+	/**
+	 * Perform a safe redirect and terminate the request.
+	 *
+	 * Centralises the `wp_safe_redirect( ... ); exit;` pattern so that the
+	 * termination behaves correctly under PHPUnit: a bare `exit` there would
+	 * kill the whole phpunit process (exit code 0, no summary). When the
+	 * redirect is issued the request ends with `exit`, exactly as before.
+	 * When it is blocked — headers already sent, or the `wp_redirect` filter
+	 * short-circuits it (which is how the test suite captures redirects) —
+	 * production keeps running, and under tests the flow aborts via the
+	 * suite-wide `WPDieException` contract so handlers do not cascade past a
+	 * blocked redirect.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $location Redirect target URL.
+	 * @param int    $status   Optional HTTP status code. Default 302.
+	 * @throws WPDieException When running under PHPUnit and the redirect is blocked.
+	 */
+	protected function redirect_and_exit( $location, $status = 302 ) {
+		if ( wp_safe_redirect( $location, $status ) ) {
 			exit;
 		}
 
-		wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( __( 'LinkedIn account connected successfully!', 'mcp-ai-wpoos-pro' ) ) ) );
-		exit;
+		if ( defined( 'WP_MCP_AI_TESTS_RUNNING' ) && WP_MCP_AI_TESTS_RUNNING && class_exists( 'WPDieException' ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.Security.EscapeOutput.ExceptionNotEscaped -- the exception message is not rendered anywhere; it only aborts the request flow under tests.
+			throw new WPDieException( is_string( $location ) ? $location : '' );
+		}
+	}
+
+	/**
+	 * Redirect to a vetted external URL and terminate the request.
+	 *
+	 * Sibling of redirect_and_exit() for URLs that legitimately point off-site
+	 * (a provider's hosted OAuth page returned by an API we just called), where
+	 * wp_safe_redirect() would rewrite the target to wp-admin. The same
+	 * PHPUnit-safe termination contract applies, so a blocked redirect aborts
+	 * the flow instead of killing the test process with a bare `exit`.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param string $location Absolute external URL.
+	 * @param int    $status   Optional HTTP status code. Default 302.
+	 * @throws WPDieException When running under PHPUnit and the redirect is blocked.
+	 */
+	protected function external_redirect_and_exit( $location, $status = 302 ) {
+		if ( wp_redirect( $location, $status ) ) { // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- Off-site provider URL returned by the Composio API; wp_safe_redirect() would rewrite it.
+			exit;
+		}
+
+		if ( defined( 'WP_MCP_AI_TESTS_RUNNING' ) && WP_MCP_AI_TESTS_RUNNING && class_exists( 'WPDieException' ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.Security.EscapeOutput.ExceptionNotEscaped -- the exception message is not rendered anywhere; it only aborts the request flow under tests.
+			throw new WPDieException( is_string( $location ) ? $location : '' );
+		}
 	}
 }
 
@@ -15489,3 +16721,4 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-mesh-peer-bidirectional-sync.php';
 	new WP_MCP_AI_Pro_Mesh_Peer_Bidirectional_Sync();
 }
+

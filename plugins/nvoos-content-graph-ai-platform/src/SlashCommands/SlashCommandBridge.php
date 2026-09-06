@@ -4,11 +4,12 @@ declare(strict_types=1);
 namespace NvoosContentGraphAiPlatform\SlashCommands;
 
 /**
- * Static bridge to the base plugin's slash commands procedural API.
+ * Static bridge to the slash commands procedural API.
  *
- * The slash command system (14.5K lines) lives in the base plugin's
- * `includes/slash-commands/`. This bridge provides namespace-friendly
- * static accessors for Platform code.
+ * Monolith mode: the base plugin's slash-commands-init.php provides the
+ * wp_mcp_ai_* functions. Standalone mode: the ported shim-functions.php
+ * (loaded by SlashCommandService) provides the same surface. This bridge
+ * offers namespace-friendly static accessors for Platform code.
  */
 final class SlashCommandBridge {
 

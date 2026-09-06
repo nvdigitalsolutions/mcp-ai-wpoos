@@ -74,6 +74,53 @@ test( 'single-tenant mode falls back to os.tmpdir()', () => {
 	resetEnv();
 } );
 
+test( 'single-tenant strict mode honours TEMP_ROOT as the allowlisted root (Q5)', () => {
+	delete process.env.SITE_TOKENS;
+	process.env.STRICT_PATHS = '1';
+	process.env.TEMP_ROOT = path.join( os.tmpdir(), 'mw-q5' );
+	assert.equal( siteBaseDir( 'default' ), path.resolve( process.env.TEMP_ROOT ) );
+	assert.equal( siteDirFor( 'default', 'scratch' ), path.resolve( process.env.TEMP_ROOT ) );
+	resetEnv();
+} );
+
+test( 'single-tenant strict mode without TEMP_ROOT stays on os.tmpdir()', () => {
+	delete process.env.SITE_TOKENS;
+	process.env.STRICT_PATHS = '1';
+	delete process.env.TEMP_ROOT;
+	assert.equal( siteBaseDir( 'default' ), os.tmpdir() );
+	resetEnv();
+} );
+
+test( 'single-tenant permissive mode ignores TEMP_ROOT (legacy behaviour unchanged)', () => {
+	delete process.env.SITE_TOKENS;
+	delete process.env.STRICT_PATHS;
+	delete process.env.STRICT_PDF_PATHS;
+	process.env.TEMP_ROOT = path.join( os.tmpdir(), 'mw-ignored' );
+	assert.equal( siteBaseDir( 'default' ), os.tmpdir() );
+	resetEnv();
+} );
+
+test( 'STRICT_PDF_PATHS also activates the TEMP_ROOT allowlist in single-tenant mode', () => {
+	delete process.env.SITE_TOKENS;
+	delete process.env.STRICT_PATHS;
+	process.env.STRICT_PDF_PATHS = '1';
+	process.env.TEMP_ROOT = path.join( os.tmpdir(), 'mw-pdf' );
+	assert.equal( isStrictPaths(), true );
+	assert.equal( siteBaseDir( 'default' ), path.resolve( process.env.TEMP_ROOT ) );
+	resetEnv();
+} );
+
+test( 'resolveSitePath enforces the TEMP_ROOT allowlist in single-tenant strict mode', () => {
+	delete process.env.SITE_TOKENS;
+	process.env.STRICT_PATHS = '1';
+	process.env.TEMP_ROOT = path.join( os.tmpdir(), 'mw-q5' );
+	const inside = path.join( process.env.TEMP_ROOT, 'file.pdf' );
+	assert.equal( resolveSitePath( 'default', inside ), path.resolve( inside ) );
+	assert.equal( resolveSitePath( 'default', '/etc/passwd' ), null );
+	assert.equal( resolveSitePath( 'default', path.join( os.tmpdir(), 'other.pdf' ) ), null );
+	resetEnv();
+} );
+
 test( 'multi-tenant mode namespaces per site under TEMP_ROOT', () => {
 	process.env.SITE_TOKENS = '{"site-a":"t1","site-b":"t2"}';
 	process.env.TEMP_ROOT = '/srv/worker-tmp';

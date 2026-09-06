@@ -3,7 +3,10 @@
  *
  * Single-tenant mode (SITE_TOKENS unset): every path falls back to
  * os.tmpdir() so existing Docker/volume deployments behave byte-for-byte
- * as before.
+ * as before. In strict mode (STRICT_PATHS=1 / STRICT_PDF_PATHS=1) an
+ * explicit TEMP_ROOT becomes the allowlisted sandbox root, so deployments
+ * whose shared volumes live outside os.tmpdir() can opt into path
+ * enforcement without moving mounts (proposal 028, Q5).
  *
  * Multi-tenant mode (SITE_TOKENS set): each site gets its own directory
  * under TEMP_ROOT/sites/<slug>/ so files from one site can never be read or
@@ -70,6 +73,13 @@ export function isValidSlug( slug ) {
  */
 export function siteBaseDir( slug ) {
 	if ( ! isMultiTenant() ) {
+		// Legacy single-tenant deployments use os.tmpdir(). In strict mode an
+		// explicit TEMP_ROOT is the allowlisted sandbox root (proposal 028,
+		// Q5) — the safe default for shared-volume paths the W6 flip was
+		// waiting for.
+		if ( isStrictPaths() && process.env.TEMP_ROOT ) {
+			return path.resolve( process.env.TEMP_ROOT );
+		}
 		return os.tmpdir();
 	}
 	const root = process.env.TEMP_ROOT || path.join( os.tmpdir(), 'mw' );
@@ -103,7 +113,9 @@ export function groupTtl( group ) {
  */
 export function siteDirFor( slug, group ) {
 	if ( ! isMultiTenant() ) {
-		return os.tmpdir();
+		// os.tmpdir() normally; TEMP_ROOT when strict single-tenant mode is
+		// active so outputs stay inside the allowlisted root (Q5).
+		return siteBaseDir( slug );
 	}
 	const dir = path.join( siteBaseDir( slug ), TTL_GROUPS[ group ] ? group : 'scratch' );
 	fs.mkdirSync( dir, { recursive: true } );

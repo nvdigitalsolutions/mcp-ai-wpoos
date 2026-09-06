@@ -14,6 +14,17 @@
 class Test_Gauge_Chart extends WP_UnitTestCase {
 
 	/**
+	 * Set up test environment.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// Clear the dashboard user-ID cache: earlier suites may have primed a
+		// stale list that does not include the users created here.
+		WP_MCP_AI_Cache_Helper::delete( 'dashboard_user_ids' );
+	}
+
+	/**
 	 * Test gauge chart data structure.
 	 */
 	public function test_get_usage_gauge_data_structure() {
@@ -95,7 +106,10 @@ class Test_Gauge_Chart extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test gauge chart data with zero limit.
+	 * Test gauge chart data with a non-existent user.
+	 *
+	 * Invalid users fall back to the free tier's daily limit, with zero usage
+	 * and a zero percentage.
 	 */
 	public function test_gauge_chart_with_zero_limit() {
 		// Test with no users or zero limits.
@@ -105,11 +119,14 @@ class Test_Gauge_Chart extends WP_UnitTestCase {
 			)
 		);
 
-		// Should still return valid structure with 0 percentage.
+		$free_limit = WP_MCP_AI_Tool_Token_Limits::get_tier_info( WP_MCP_AI_Tool_Token_Limits::TIER_FREE )['daily_limit'];
+
+		// Should still return valid structure with 0 percentage and 0 usage,
+		// while the limit reflects the free-tier fallback.
 		$this->assertIsArray( $gauge_data );
 		$this->assertEquals( 0, $gauge_data['percentage'] );
 		$this->assertEquals( 0, $gauge_data['usage'] );
-		$this->assertEquals( 0, $gauge_data['limit'] );
+		$this->assertEquals( $free_limit, $gauge_data['limit'] );
 	}
 
 	/**

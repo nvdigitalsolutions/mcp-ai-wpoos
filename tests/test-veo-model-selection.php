@@ -234,8 +234,8 @@ class WP_MCP_AI_Veo_Model_Selection_Test extends WP_UnitTestCase {
 
 		$defaults = $method->invoke( $tool );
 
-		// Verify default model is honored (Omni Flash since Veo 2.0 deprecated mid-2026).
-		$this->assertEquals( 'gemini-omni-flash', $defaults['model'], 'Default model should be Omni Flash when no settings override' );
+		// The configured setting is honored directly.
+		$this->assertEquals( 'veo-2.0-generate-001', $defaults['model'], 'Default model should honor the configured setting' );
 	}
 
 	/**

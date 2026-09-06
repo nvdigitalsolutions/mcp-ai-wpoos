@@ -1569,7 +1569,7 @@ class WP_MCP_AI_Semantic_Compressor {
 		// Split on " and " between independent clauses (no comma).
 		// More conservative — only when there's a clear subject after "and".
 		$text = preg_replace(
-			'/\s+and\s+(?=[IiTtWwHhTtSsOoUu]\w{2,}\s+(?:is|are|was|were|has|have|had|will|can|could|should|would|must|may|might)\b)/',
+			'/\s+and\s+(?=[A-Za-z]\w{2,}\s+(?:is|are|was|were|has|have|had|will|can|could|should|would|must|may|might|does|do|did|need|needs|use|uses|find|finds|create|creates|make|makes|get|gets|take|takes|run|runs|call|calls)\b)/',
 			'. ',
 			$text
 		);
@@ -1964,7 +1964,11 @@ class WP_MCP_AI_Semantic_Compressor {
 		$text = preg_replace( '/\s+([.,;:!?])/', '$1', $text );
 
 		// Ensure single space after punctuation (except when followed by another punctuation).
-		$text = preg_replace( '/([.,;:!?])(?=[^\s])/', '$1 ', $text );
+		$text = preg_replace( '/([,;:!?])(?=[^\s])/', '$1 ', $text );
+
+		// Same for periods, but keep decimal and version numbers intact
+		// ("99.9", "2.3.1" must not become "99. 9" / "2. 3. 1").
+		$text = preg_replace( '/(?<![\d.])\.(?=[^\s])(?![\d])/', '. ', $text );
 
 		// Fix: ". ." → ". " (two periods with space between).
 		$text = preg_replace( '/\.\s+\./', '.', $text );
@@ -1975,13 +1979,10 @@ class WP_MCP_AI_Semantic_Compressor {
 		// Normalize newlines to spaces (single-line output).
 		$text = preg_replace( '/\s*\n\s*/', ' ', $text );
 
-		// Final trim.
+		// Final trim. Trailing sentence punctuation is not re-added here: compressed
+		// output should be terser than its input, and earlier rules (active voice)
+		// may legitimately strip it.
 		$text = trim( $text );
-
-		// Ensure text ends with a period if it doesn't have ending punctuation.
-		if ( strlen( $text ) > 0 && ! in_array( substr( $text, -1 ), array( '.', '!', '?', '"', "'" ), true ) ) {
-			$text .= '.';
-		}
 
 		return $text;
 	}

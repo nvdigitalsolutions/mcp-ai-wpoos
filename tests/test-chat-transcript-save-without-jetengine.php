@@ -32,8 +32,17 @@ class Test_Chat_Transcript_Save_Without_JetEngine extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		// WP 6.9 may re-register breadcrumbs block during rest_api_init.
-		$this->setExpectedIncorrectUsage( 'WP_Block_Type_Registry::register' );
+		// WooCommerce Blocks hooks non-idempotent init callbacks (payment method
+		// integrations and block types) — re-firing init in the harness
+		// re-registers them and raises _doing_it_wrong notices from Woo's own
+		// code. WP 6.9 also re-registers the breadcrumbs block during
+		// rest_api_init, which the block-registry whitelist covers.
+		if ( class_exists( 'Automattic\WooCommerce\Blocks\Package' ) ) {
+			$this->setExpectedIncorrectUsage( 'Automattic\WooCommerce\Blocks\Integrations\IntegrationRegistry::register' );
+			$this->setExpectedIncorrectUsage( 'WP_Block_Type_Registry::register' );
+		} elseif ( version_compare( $GLOBALS['wp_version'], '7.1', '<' ) ) {
+			$this->setExpectedIncorrectUsage( 'WP_Block_Type_Registry::register' );
+		}
 
 		if ( function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 			wp_mcp_ai_bootstrap();
@@ -164,10 +173,19 @@ class Test_Chat_Transcript_Save_Without_JetEngine extends WP_UnitTestCase {
 		$save_response = rest_get_server()->dispatch( $save_request );
 		$save_data     = $save_response->get_data();
 
-		// Verify warning message provides actionable information.
+		// Verify warning message provides actionable information. The exact
+		// wording depends on which persistence prerequisite is missing in this
+		// environment (JetEngine absent vs. a JetEngine module disabled), so
+		// assert the branch that matches the current environment.
 		$warning = $save_data['warning'];
-		$this->assertStringContainsString( 'Permanent transcript storage', $warning, 'Warning should indicate permanent storage issue' );
-		$this->assertStringContainsString( 'JetEngine', $warning, 'Warning should mention JetEngine' );
+		$this->assertNotEmpty( $warning, 'Warning should be provided' );
+		if ( function_exists( 'jet_engine' ) ) {
+			$this->assertStringContainsString( 'JetEngine', $warning, 'Warning should mention JetEngine' );
+			$this->assertStringContainsString( 'module', $warning, 'Warning should point at the missing JetEngine module' );
+		} else {
+			$this->assertStringContainsString( 'Permanent transcript storage', $warning, 'Warning should indicate permanent storage issue' );
+			$this->assertStringContainsString( 'JetEngine', $warning, 'Warning should mention JetEngine' );
+		}
 
 		// Verify main message indicates browser-only storage.
 		$message = $save_data['message'];
@@ -223,6 +241,12 @@ class Test_Chat_Transcript_Save_Without_JetEngine extends WP_UnitTestCase {
 			'wp_mcp_ai_chat_transcript_handler',
 			function () {
 				return new class() {
+					/**
+					 * Update a transcript item.
+					 *
+					 * @param array $record Transcript record.
+					 * @return bool Always true for the mock handler.
+					 */
 					public function update_item( $record ) {
 						return true;
 					}

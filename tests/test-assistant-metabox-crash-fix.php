@@ -23,11 +23,12 @@ class WP_MCP_AI_Assistant_Metabox_Crash_Fix_Test extends WP_UnitTestCase {
 		// Create assistant CPT instance.
 		$assistant_cpt = new WP_MCP_AI_Assistant_CPT( $registry );
 
-		// Simulate editing a regular post (not assistant).
-		global $current_screen;
-		$current_screen = (object) array(
-			'post_type' => 'post',
-		);
+		// Simulate editing a regular post (not assistant). Use a real
+		// WP_Screen: WP 7.1's get_current_screen() only returns WP_Screen
+		// instances.
+		$screen = WP_Screen::get( 'post' );
+		$screen->post_type = 'post';
+		set_current_screen( $screen );
 
 		// Count metaboxes before calling register_meta_boxes.
 		global $wp_meta_boxes;
@@ -43,7 +44,7 @@ class WP_MCP_AI_Assistant_Metabox_Crash_Fix_Test extends WP_UnitTestCase {
 		$this->assertEquals( $before_count, $after_count, 'Metaboxes should not be added for regular posts' );
 
 		// Now test with assistant post type.
-		$current_screen->post_type = 'mcp_ai_assistant';
+		get_current_screen()->post_type = 'mcp_ai_assistant';
 
 		// Count metaboxes before calling register_meta_boxes.
 		$before_count = isset( $wp_meta_boxes['mcp_ai_assistant'] ) ? count( $wp_meta_boxes['mcp_ai_assistant'], COUNT_RECURSIVE ) : 0;
@@ -58,7 +59,7 @@ class WP_MCP_AI_Assistant_Metabox_Crash_Fix_Test extends WP_UnitTestCase {
 		$this->assertGreaterThan( $before_count, $after_count, 'Metaboxes should be added for assistant posts' );
 
 		// Clean up.
-		$current_screen = null;
+		$GLOBALS['current_screen'] = null;
 	}
 
 	/**
@@ -82,5 +83,51 @@ class WP_MCP_AI_Assistant_Metabox_Crash_Fix_Test extends WP_UnitTestCase {
 		// Verify the new dashboard classes exist.
 		$this->assertTrue( class_exists( 'WP_MCP_AI_Settings_Dashboard' ), 'Settings dashboard class should exist' );
 		$this->assertTrue( class_exists( 'WP_MCP_AI_Settings_Registry' ), 'Settings registry class should exist' );
+	}
+
+	/**
+	 * The SiteKit tools must return string-flag arrays from
+	 * get_capability_flags(). They previously referenced a nonexistent
+	 * interface constant (CAPABILITY_CAN_USE_IF_ADMIN), which threw an
+	 * uncaught Error while the assistant tools metabox rendered the grid and
+	 * killed the whole page on nugl.com (the render died exactly at
+	 * sitekit_get_adsense).
+	 */
+	public function test_sitekit_tools_capability_flags_return_arrays() {
+		$tools = array(
+			'WP_MCP_AI_Tool_SiteKit_AdSense',
+			'WP_MCP_AI_Tool_SiteKit_Analytics',
+			'WP_MCP_AI_Tool_SiteKit_PageSpeed',
+			'WP_MCP_AI_Tool_SiteKit_Search_Console',
+		);
+
+		foreach ( $tools as $class_name ) {
+			$this->assertTrue(
+				class_exists( $class_name ),
+				$class_name . ' should exist.'
+			);
+
+			$tool = new $class_name();
+
+			$this->assertInstanceOf(
+				'WP_MCP_AI_Tool_Capability_Flags_Interface',
+				$tool,
+				$class_name . ' should implement the capability flags interface.'
+			);
+
+			$flags = $tool->get_capability_flags();
+
+			$this->assertIsArray(
+				$flags,
+				$class_name . '::get_capability_flags() should return an array.'
+			);
+
+			foreach ( $flags as $flag ) {
+				$this->assertIsString(
+					$flag,
+					$class_name . ' capability flags should be strings.'
+				);
+			}
+		}
 	}
 }

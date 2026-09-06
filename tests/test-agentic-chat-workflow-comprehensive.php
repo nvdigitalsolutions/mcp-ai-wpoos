@@ -269,8 +269,9 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 			$max_iterations
 		);
 
-		// Should stop at max_iterations even though tool keeps being called.
-		$this->assertEquals( $max_iterations, $iteration_count, 'Should stop at max iterations' );
+		// The loop makes one initial LLM call plus one follow-up call per tool
+		// execution iteration, so max_iterations=3 produces 4 calls total.
+		$this->assertEquals( $max_iterations + 1, $iteration_count, 'Should stop after initial call plus max_iterations tool rounds' );
 	}
 
 	/**
@@ -372,9 +373,11 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 		$this->assertArrayHasKey( 'tool_results', $response );
 		$tool_result = $response['tool_results'][0];
 
-		// Verify error is captured in tool result.
+		// Verify error is captured in tool result (regular errors keep
+		// error_code / error_message; only pending 202s are converted).
 		$content = json_decode( $tool_result['content'], true );
-		$this->assertArrayHasKey( 'error', $content );
+		$this->assertArrayHasKey( 'error_code', $content );
+		$this->assertArrayHasKey( 'error_message', $content );
 	}
 
 	/**

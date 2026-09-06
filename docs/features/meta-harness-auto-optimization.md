@@ -1,8 +1,10 @@
 # Meta-Harness Auto-Optimization System
 
 **Status:** Stable — v1.1.40
-**Category:** Pro Feature — Agent Infrastructure  
-**Introduced:** July 2026 (PR #5649)  
+**Category:** Pro Feature — Agent Infrastructure
+**Introduced:** July 2026 (PR #5649)
+
+> **Evolution (v1.1.63):** The Continual Harness Evolver + this 7-phase pipeline are now upgraded into a complete gated Darwinian evolution loop for skills, prompts, and roles — see [`docs/project/proposals/007-artifact-evolution.md`](../../project/proposals/007-artifact-evolution.md) (Phases A–G: artifact populations, failure replay + post-mutation verification, pre-commit admission gate, shadow A/B deployment with drift rollback, evolution governor + approval queue). Every layer is opt-in and defaults off.  
 
 ## Overview
 

@@ -17,6 +17,21 @@
 class WP_MCP_AI_Ecommerce_Toolkit_Opt_In_Test extends WP_UnitTestCase {
 
 	/**
+	 * Set up test.
+	 *
+	 * The enablement helper lives in a side-effect-free helpers file that the
+	 * module registry only loads once the toolkit is enabled, so require it
+	 * here directly (same pattern as the Cloudways gating suite).
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		if ( defined( 'WP_MCP_AI_PRO_PATH' ) && ! function_exists( 'wp_mcp_ai_is_ecommerce_toolkit_enabled' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-ecommerce-helpers.php';
+		}
+	}
+
+	/**
 	 * Test that helper function exists.
 	 */
 	public function test_helper_function_exists() {
@@ -177,6 +192,23 @@ class WP_MCP_AI_Ecommerce_Toolkit_Opt_In_Test extends WP_UnitTestCase {
 				'enable_ecommerce_toolkit' => true,
 			)
 		);
+
+		// Load the admin page class files the way production does when the
+		// toolkit is enabled. This keeps the test deterministic instead of
+		// relying on another suite having fired admin_init earlier in the
+		// process (the module registry only loads them in admin context).
+		$page_files = array(
+			'includes/admin/class-wp-mcp-ai-ecommerce-settings-page.php',
+			'includes/admin/class-wp-mcp-ai-product-research-page.php',
+			'includes/admin/class-wp-mcp-ai-product-consolidate-page.php',
+			'includes/admin/class-wp-mcp-ai-product-settings-page.php',
+		);
+		foreach ( $page_files as $page_file ) {
+			$path = WP_MCP_AI_PRO_PATH . $page_file;
+			if ( file_exists( $path ) ) {
+				require_once $path;
+			}
+		}
 
 		// E-commerce settings page class should exist.
 		$this->assertTrue(

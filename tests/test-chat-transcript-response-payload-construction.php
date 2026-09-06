@@ -58,18 +58,17 @@ class Test_Chat_Transcript_Response_Payload_Construction extends WP_UnitTestCase
 			)
 		);
 
-		// Set up assistant configuration.
-		update_post_meta( $this->assistant_id, 'wp_mcp_ai_model', 'gpt-4' );
-		update_post_meta( $this->assistant_id, 'wp_mcp_ai_provider', 'openai' );
+		// Set up assistant configuration (production reads the underscore-
+		// prefixed meta keys via get_assistant_configuration).
+		update_post_meta( $this->assistant_id, '_wp_mcp_ai_model', 'gpt-4' );
+		update_post_meta( $this->assistant_id, '_wp_mcp_ai_provider', 'openai' );
 
 		WP_MCP_AI_REST::get_instance();
 		rest_get_server();
-		do_action( 'init' );
 
-		// Tests that save and retrieve transcripts need JetEngine CCT.
-		if ( ! function_exists( 'jet_engine' ) ) {
-			$this->markTestSkipped( 'Requires JetEngine for transcript storage' );
-		}
+		// NOTE: do NOT re-fire init here — it re-runs WooCommerce block
+		// registrations, which fail the test with "already registered"
+		// incorrect-usage notices.
 	}
 
 	/**
@@ -90,8 +89,19 @@ class Test_Chat_Transcript_Response_Payload_Construction extends WP_UnitTestCase
 	public function provide_transcript_handler() {
 		if ( ! $this->transcript_handler ) {
 			$this->transcript_handler = new class() {
+				/**
+				 * Records captured by the mock handler.
+				 *
+				 * @var array
+				 */
 				public $records = array();
 
+				/**
+				 * Capture a transcript record.
+				 *
+				 * @param array $record Transcript record payload.
+				 * @return bool Always true.
+				 */
 				public function update_item( $record ) {
 					$this->records[] = $record;
 					return true;
@@ -179,7 +189,7 @@ class Test_Chat_Transcript_Response_Payload_Construction extends WP_UnitTestCase
 		$this->assertEquals( 0, $choice_0['index'], 'First choice should have index 0' );
 		$this->assertArrayHasKey( 'message', $choice_0, 'Choice should have message' );
 		$this->assertEquals( 'assistant', $choice_0['message']['role'], 'Message role should be assistant' );
-		$this->assertEquals( 'Hello! How can I help you today?', $choice_0['message']['content'], 'Content should match first assistant message' );
+		$this->assertEquals( 'Hello! How can I help you today?', $this->extract_choice_text( $choice_0 ), 'Content should match first assistant message' );
 		$this->assertArrayHasKey( 'finish_reason', $choice_0, 'Choice should have finish_reason' );
 		$this->assertEquals( 'stop', $choice_0['finish_reason'], 'finish_reason should be stop' );
 
@@ -187,7 +197,7 @@ class Test_Chat_Transcript_Response_Payload_Construction extends WP_UnitTestCase
 		$choice_1 = $response_payload['choices'][1];
 		$this->assertEquals( 1, $choice_1['index'], 'Second choice should have index 1' );
 		$this->assertEquals( 'assistant', $choice_1['message']['role'], 'Message role should be assistant' );
-		$this->assertEquals( 'The answer is 4.', $choice_1['message']['content'], 'Content should match second assistant message' );
+		$this->assertEquals( 'The answer is 4.', $this->extract_choice_text( $choice_1 ), 'Content should match second assistant message' );
 		$this->assertEquals( 'stop', $choice_1['finish_reason'], 'finish_reason should be stop' );
 	}
 
@@ -318,7 +328,24 @@ class Test_Chat_Transcript_Response_Payload_Construction extends WP_UnitTestCase
 		// Only the 1 assistant message should be in choices.
 		$this->assertCount( 1, $response_payload['choices'], 'Should have only 1 assistant message in choices' );
 		$this->assertEquals( 'assistant', $response_payload['choices'][0]['message']['role'], 'Choice should contain assistant message' );
-		$this->assertEquals( 'Hi there!', $response_payload['choices'][0]['message']['content'], 'Content should match' );
+		$this->assertEquals( 'Hi there!', $this->extract_choice_text( $response_payload['choices'][0] ), 'Content should match' );
+	}
+
+	/**
+	 * Extract plain text from a response choice message.
+	 *
+	 * The validator stores content as text segments, so plain text is
+	 * nested at content[0].text.
+	 *
+	 * @param array $choice Response payload choice.
+	 * @return string Extracted text.
+	 */
+	private function extract_choice_text( $choice ) {
+		$content = isset( $choice['message']['content'] ) ? $choice['message']['content'] : '';
+		if ( is_array( $content ) && isset( $content[0]['text'] ) ) {
+			return $content[0]['text'];
+		}
+		return (string) $content;
 	}
 
 	/**

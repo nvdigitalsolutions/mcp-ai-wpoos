@@ -17,7 +17,7 @@ class WP_MCP_AI_Attachment_Metadata_Preservation_Test extends WP_UnitTestCase {
 	 */
 	public function test_image_segment_includes_complete_metadata() {
 		// Create a test image attachment.
-		$filename      = WP_MCP_AI_PATH . 'tests/fixtures/test-image.jpg';
+		$filename      = WP_MCP_AI_PATH . 'tests/fixtures/sample-image.png';
 		$attachment_id = $this->factory->attachment->create_upload_object( $filename );
 		$this->assertGreaterThan( 0, $attachment_id );
 
@@ -27,8 +27,9 @@ class WP_MCP_AI_Attachment_Metadata_Preservation_Test extends WP_UnitTestCase {
 		$file_path          = get_attached_file( $attachment_id );
 		$expected_bytes     = filesize( $file_path );
 
-		// Create attachment helper.
-		$helper = new WP_MCP_AI_Message_Attachments();
+		// Create attachment helper. Use a provider without a remote file API so
+		// registration resolves to a local reference (no API key required).
+		$helper = new WP_MCP_AI_Message_Attachments( 'ollama' );
 
 		// Prepare image segment with attachment_id.
 		$segment = $helper->prepare_input_image_segment(
@@ -84,8 +85,9 @@ class WP_MCP_AI_Attachment_Metadata_Preservation_Test extends WP_UnitTestCase {
 		$file_path          = get_attached_file( $attachment_id );
 		$expected_bytes     = filesize( $file_path );
 
-		// Create attachment helper.
-		$helper = new WP_MCP_AI_Message_Attachments();
+		// Create attachment helper. Use a provider without a remote file API so
+		// registration resolves to a local reference (no API key required).
+		$helper = new WP_MCP_AI_Message_Attachments( 'ollama' );
 
 		// Prepare file segment with attachment_id.
 		$segment = $helper->prepare_input_file_segment(

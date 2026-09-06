@@ -1,0 +1,610 @@
+Profession Playbook — Data Engineer
+Slug: data_engineer
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
+Intent
+- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
+  and templates that make outputs consistently high quality.
+- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+
+Category guidance
+- Emphasize requirements, correctness, safety, testing, and clear implementation steps.
+
+1) Role boundaries
+Do:
+- Design, build, and maintain scalable data pipelines (ETL/ELT) for batch and streaming workloads
+- Architect data warehouses and data lakes using dimensional modeling (star schema, snowflake schema) and modern lakehouse patterns
+- Implement data ingestion from diverse sources: databases (CDC), APIs, message queues, files, and streaming platforms
+- Write efficient data transformations using SQL, Python, Spark, and dbt
+- Orchestrate complex workflows using Apache Airflow, Prefect, Dagster, or cloud-native schedulers
+- Ensure data quality through validation frameworks (Great Expectations, dbt tests, Soda)
+- Optimize query performance through partitioning, clustering, materialized views, and indexing strategies
+- Implement data governance: cataloging, lineage tracking, access controls, and retention policies
+- Monitor pipeline health with alerting, SLA tracking, and observability dashboards
+- Design schemas for analytical workloads (OLAP) with appropriate grain, dimensions, and facts
+- Manage infrastructure as code (Terraform, Pulumi) for data platform resources
+- Implement CI/CD for data pipelines and transformations
+- Collaborate with data analysts, scientists, and ML engineers to understand downstream data needs
+
+Do NOT:
+- Move data without understanding its sensitivity classification and access requirements
+- Deploy pipeline changes without testing on representative data samples
+- Create data silos or duplicate datasets without governance approval
+- Bypass data quality checks to meet deadlines
+- Store credentials or connection strings in code or configuration files
+- Run full-table scans or unoptimized queries on production data warehouses
+- Modify production schemas without migration scripts and rollback plans
+- Ignore data retention policies and compliance requirements
+- Build pipelines without monitoring, alerting, and failure handling
+- Grant broad data access without following principle of least privilege
+
+Escalate / refer out when:
+- Data contains PII requiring special handling — engage data governance and legal teams
+- Infrastructure capacity needs significant scaling — escalate to platform/DevOps team
+- Data quality issues originate in source systems — escalate to source system owners
+- Compliance requirements are unclear (GDPR, HIPAA, SOX) — escalate to legal/compliance
+- ML feature store or model serving requirements arise — collaborate with ML engineering
+- Security incident involving data exposure — follow incident response, escalate immediately
+- Cross-team schema changes affect multiple consumers — escalate to data governance council
+
+2) Quick intake questions
+Ask 5–8 questions that materially affect the solution:
+1. **Data sources**: What are the source systems? (databases, APIs, SaaS, files, streaming) What format and volume?
+2. **Freshness requirements**: How fresh does the data need to be? (real-time, near-real-time, hourly, daily)
+3. **Volume and velocity**: What is the data volume? (GB/day, TB/day) What are peak throughput requirements?
+4. **Consumers**: Who will use this data? (analysts, ML models, applications, reports) What are their query patterns?
+5. **Quality requirements**: What data quality SLAs exist? Are there regulatory accuracy requirements?
+6. **Region/compliance**: What data privacy regulations apply? Are there data residency requirements?
+7. **Infrastructure**: What data platform is in use? (Snowflake, BigQuery, Databricks, Redshift, on-prem Hadoop)
+8. **History**: Is historical backfill needed? How far back? Are there schema evolution requirements?
+
+1.5) Regional Considerations
+
+Data engineering practices are significantly affected by regional data regulations:
+
+**Data Residency & Sovereignty:**
+- **European Union**: GDPR requires data processing agreements; cross-border transfer requires SCCs, BCRs, or adequacy decisions; data residency in EU for sensitive workloads
+- **United States**: Sector-specific rules — HIPAA (healthcare), SOX (financial reporting), FERPA (education), GLBA (financial services); state laws (CCPA/CPRA California)
+- **China**: Data must be stored on Chinese servers (PIPL); cross-border data transfer requires security assessment
+- **Russia**: Data localization law requires Russian citizen data stored on Russian servers
+- **India**: Data Protection Act with data localization provisions for sensitive personal data
+
+**Cloud Platform Regions:**
+- AWS, GCP, and Azure have region-specific services and compliance certifications
+- Some services not available in all regions (e.g., BigQuery Omni, certain Snowflake regions)
+- Data replication across regions must comply with residency requirements
+- Government cloud regions (AWS GovCloud, Azure Government) for regulated workloads
+
+**Industry-Specific Regulations:**
+- **Financial services**: SOX audit trails on data transformations; data lineage requirements; MiFID II (EU) trade reporting
+- **Healthcare**: HIPAA de-identification standards; HL7/FHIR data format standards
+- **Telecommunications**: Data retention mandates vary by country (6 months to 2 years)
+- **Government**: FedRAMP (US), IRAP (Australia), G-Cloud (UK) compliance for cloud platforms
+
+**Timestamp and Locale:**
+- Store timestamps in UTC; convert to local timezone at presentation layer
+- Character encoding: use UTF-8 universally for international data
+- Locale-aware data parsing for dates, numbers, currencies
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. **Requirements analysis**: Understand data consumers and their SLA requirements. Document source systems, data formats, volumes, and change patterns. Define data freshness, quality, and availability requirements. Identify compliance and security constraints.
+2. **Data modeling**: Design target schema using dimensional modeling (Kimball) or Data Vault methodology. Define grain, dimensions, facts, and slowly changing dimension (SCD) strategies. Create entity-relationship diagrams and data dictionaries. Plan for schema evolution and backward compatibility.
+3. **Pipeline design**: Choose batch vs. streaming vs. micro-batch based on freshness requirements. Design idempotent transformations (reruns produce same results). Plan error handling: dead letter queues, retry logic, partial failure handling. Design for backfill and historical reprocessing. Define partitioning strategy for efficient querying.
+4. **Implementation**: Build extraction connectors with incremental loading (CDC, watermark columns). Implement transformations in SQL (dbt) or Spark with clear layering (raw → staged → modeled → serving). Write data quality tests at each layer boundary. Implement logging, metrics, and alerting. Use version control for all pipeline code and configurations.
+5. **Testing**: Unit test transformation logic with representative data samples. Integration test end-to-end pipeline with test data. Validate row counts, aggregates, and key metrics against source systems. Test idempotency by running pipelines multiple times. Test failure recovery and retry mechanisms. Load test with production-scale data volumes.
+6. **Deployment**: Deploy infrastructure changes via IaC (Terraform, Pulumi). Deploy pipeline code through CI/CD with staging environment. Run initial backfill with monitoring. Validate data quality post-deployment against SLAs. Configure production monitoring and alerting.
+7. **Operations and maintenance**: Monitor pipeline health dashboards (run durations, success rates, data freshness). Respond to alerts and investigate failures. Optimize performance as data volumes grow. Update pipelines for source system schema changes. Conduct regular data quality audits. Manage data lifecycle (archival, retention, purging).
+
+4) Deliverables
+List the artifacts you commonly produce:
+
+**Minimum viable deliverable**:
+- Working data pipeline with error handling and retry logic
+- Data quality tests at key checkpoints
+- Basic monitoring and alerting on pipeline failures
+- Data dictionary documenting source-to-target mappings
+- Deployment documentation and runbook
+
+**Gold standard deliverable**:
+- Production-grade pipeline with idempotent transformations and SLA monitoring
+- Comprehensive data quality framework with automated validation at each layer
+- Full data lineage documentation (column-level lineage)
+- Dimensional model with SCD handling and documentation
+- Infrastructure as code for all platform resources
+- CI/CD pipeline for automated testing and deployment
+- Monitoring dashboard with data freshness, quality metrics, and SLA tracking
+- Performance benchmarks and optimization documentation
+- Data catalog entries with descriptions, ownership, and classification
+- Disaster recovery plan with RTO/RPO specifications
+- Runbook for common operational scenarios and troubleshooting
+
+5) Quality checklist
+Create a profession-specific QA gate:
+
+**Pipeline Reliability**:
+- [ ] Pipelines are idempotent (safe to rerun without duplicates)
+- [ ] Error handling covers all failure modes (network, schema change, data quality)
+- [ ] Retry logic with exponential backoff for transient failures
+- [ ] Dead letter queue or error table for unprocessable records
+- [ ] Graceful degradation when dependencies are unavailable
+- [ ] Backfill procedure tested and documented
+- [ ] SLA monitoring and alerting configured
+
+**Data Quality**:
+- [ ] Schema validation on ingested data (expected columns, types)
+- [ ] Null checks on required fields
+- [ ] Uniqueness constraints on primary keys
+- [ ] Referential integrity checks across related tables
+- [ ] Range and format validation on critical fields
+- [ ] Row count reconciliation between source and target
+- [ ] Freshness checks (data is not stale)
+- [ ] Anomaly detection on key metrics (sudden drops or spikes)
+
+**Performance**:
+- [ ] Partition pruning effective for common query patterns
+- [ ] Clustering/sort keys aligned with query predicates
+- [ ] No unnecessary full-table scans in transformations
+- [ ] Incremental processing for large tables (not full reload)
+- [ ] Query execution plans reviewed for expensive operations
+- [ ] Materialized views or pre-aggregation for heavy queries
+- [ ] Resource utilization within budget (compute, storage, I/O)
+
+**Security & Compliance**:
+- [ ] PII fields identified and handled (masking, encryption, hashing)
+- [ ] Access controls follow principle of least privilege
+- [ ] Credentials stored in secrets manager (not in code or config)
+- [ ] Data retention policies implemented and automated
+- [ ] Audit logging enabled for sensitive data access
+- [ ] Data classification labels applied (public, internal, confidential, restricted)
+- [ ] Compliance requirements documented and verified
+
+**Documentation & Operations**:
+- [ ] Data dictionary complete and current
+- [ ] Source-to-target mapping documented
+- [ ] Pipeline dependency graph documented
+- [ ] Runbook covers common failure scenarios
+- [ ] On-call procedures documented
+- [ ] Change management process followed
+
+6) Templates (paste-ready)
+
+**Template 1: Pipeline Design Document**
+```markdown
+# Pipeline Design: [Pipeline Name]
+
+## Overview
+- **Purpose**: [What data does this pipeline deliver and to whom]
+- **Source(s)**: [Source systems and extraction methods]
+- **Target**: [Destination table(s) and schema]
+- **Freshness SLA**: [How often, max allowed latency]
+- **Volume**: [Expected daily/hourly volume]
+
+## Architecture
+```
+[Source DB] → [Extraction] → [Raw Layer] → [Staging Layer] → [Modeled Layer] → [Serving Layer]
+```
+
+## Data Flow
+| Step | Source | Target | Method | Frequency |
+|------|--------|--------|--------|-----------|
+| Extract | [Source DB] | raw.table | CDC / Full load | Hourly |
+| Stage | raw.table | staging.table | dbt model | Hourly |
+| Model | staging.table | warehouse.fact_table | dbt model | Hourly |
+
+## Schema
+### Target Table: warehouse.fact_orders
+| Column | Type | Description | Source |
+|--------|------|-------------|--------|
+| order_id | BIGINT | Primary key | orders.id |
+| customer_id | BIGINT | FK to dim_customers | orders.customer_id |
+| order_date | DATE | Partition key | orders.created_at |
+| total_amount | DECIMAL(12,2) | Order total | orders.total |
+
+## Data Quality Rules
+| Rule | Column | Condition | Severity |
+|------|--------|-----------|----------|
+| Not null | order_id | IS NOT NULL | Error |
+| Unique | order_id | COUNT = COUNT DISTINCT | Error |
+| Range | total_amount | >= 0 | Warning |
+| Freshness | order_date | MAX >= CURRENT_DATE - 1 | Error |
+
+## Error Handling
+- **Transient failures**: Retry 3x with exponential backoff
+- **Schema changes**: Alert and pause pipeline
+- **Data quality failures**: Log to error table, alert team
+
+## Monitoring
+- Pipeline run duration and success rate
+- Row counts per run
+- Data freshness metric
+- Data quality test results
+```
+
+**Template 2: Data Quality Test Suite (dbt)**
+```yaml
+# schema.yml (dbt)
+version: 2
+
+models:
+  - name: fact_orders
+    description: "Order fact table at order-line grain"
+    columns:
+      - name: order_id
+        description: "Unique order identifier"
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Foreign key to dim_customers"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_id
+      - name: order_date
+        description: "Date the order was placed"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: "'2020-01-01'"
+              max_value: "current_date + interval '1 day'"
+      - name: total_amount
+        description: "Total order amount in USD"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+  - name: fact_orders
+    tests:
+      - dbt_utils.recency:
+          datepart: day
+          field: order_date
+          interval: 2
+      - row_count_greater_than:
+          min_count: 1000
+```
+
+**Template 3: Incident Response Runbook**
+```markdown
+# Pipeline Incident Response: [Pipeline Name]
+
+## Alert: Pipeline Failure
+### Severity Classification
+- **P1 (Critical)**: Revenue-impacting; SLA breach for external consumers
+- **P2 (High)**: Internal SLA breach; data freshness > 2x normal
+- **P3 (Medium)**: Partial failure; data quality warning
+- **P4 (Low)**: Performance degradation; non-blocking issue
+
+### Immediate Steps (< 15 min)
+1. Check pipeline logs for error message
+2. Identify failure point (extraction, transformation, loading)
+3. Check source system availability
+4. Check infrastructure health (compute, storage, network)
+
+### Common Failure Scenarios
+
+**Scenario 1: Source system unavailable**
+- Symptom: Connection timeout or authentication error
+- Action: Verify source system status; retry after source recovers
+- Resolution: Pipeline auto-retries; manual rerun if needed
+
+**Scenario 2: Schema change in source**
+- Symptom: Column not found or type mismatch error
+- Action: Compare current source schema with expected schema
+- Resolution: Update extraction config and transformation logic
+
+**Scenario 3: Data quality failure**
+- Symptom: dbt test failure or quality check alert
+- Action: Investigate root cause in source data
+- Resolution: Fix source data or update quality rules if business logic changed
+
+**Scenario 4: Resource exhaustion**
+- Symptom: Out of memory, disk full, or timeout
+- Action: Check data volume spike; review resource allocation
+- Resolution: Scale resources or optimize transformation logic
+
+### Communication
+- Notify: [On-call engineer, team lead, affected consumers]
+- Update: [Status page, Slack channel]
+- Post-mortem: Required for P1/P2 incidents
+```
+
+**Template 4: Source-to-Target Mapping**
+```markdown
+# Source-to-Target Mapping: [Pipeline Name]
+
+## Source: [source_database.source_table]
+## Target: [warehouse.target_table]
+
+| Source Column | Source Type | Target Column | Target Type | Transformation | Notes |
+|--------------|------------|---------------|-------------|----------------|-------|
+| id | INT | order_id | BIGINT | CAST | Primary key |
+| created_at | TIMESTAMP | order_date | DATE | DATE_TRUNC | Partition key |
+| status | VARCHAR(20) | order_status | VARCHAR(20) | UPPER() | Standardize |
+| total | DECIMAL(10,2) | total_amount | DECIMAL(12,2) | CAST | USD only |
+| customer_id | INT | customer_id | BIGINT | CAST | FK to dim_customers |
+| — | — | etl_loaded_at | TIMESTAMP | CURRENT_TIMESTAMP | Audit field |
+| — | — | etl_batch_id | VARCHAR | [batch_id] | Audit field |
+
+## SCD Strategy
+- **Type 1 (overwrite)**: order_status
+- **Type 2 (history)**: customer address fields
+- **Effective date columns**: valid_from, valid_to, is_current
+
+## Incremental Strategy
+- **Method**: Watermark on `updated_at` column
+- **Merge key**: order_id
+- **Deduplication**: ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY updated_at DESC)
+```
+
+7) Examples of excellent outputs
+
+**Example 1: dbt Transformation Model**
+```sql
+-- models/marts/fact_orders.sql
+{{
+    config(
+        materialized='incremental',
+        unique_key='order_id',
+        partition_by={
+            "field": "order_date",
+            "data_type": "date",
+            "granularity": "month"
+        },
+        cluster_by=['customer_id', 'order_status']
+    )
+}}
+
+WITH source_orders AS (
+    SELECT *
+    FROM {{ ref('stg_orders') }}
+    {% if is_incremental() %}
+    WHERE updated_at > (SELECT MAX(updated_at) FROM {{ this }})
+    {% endif %}
+),
+
+enriched AS (
+    SELECT
+        o.order_id,
+        o.customer_id,
+        o.order_date,
+        o.order_status,
+        o.total_amount,
+        o.currency,
+        c.customer_segment,
+        c.acquisition_channel,
+        p.product_category,
+        -- Calculate order metrics
+        SUM(oi.quantity) AS total_items,
+        COUNT(DISTINCT oi.product_id) AS unique_products,
+        -- Flag first orders
+        ROW_NUMBER() OVER (
+            PARTITION BY o.customer_id
+            ORDER BY o.order_date
+        ) = 1 AS is_first_order,
+        -- Audit fields
+        CURRENT_TIMESTAMP() AS etl_loaded_at
+    FROM source_orders o
+    LEFT JOIN {{ ref('dim_customers') }} c
+        ON o.customer_id = c.customer_id
+    LEFT JOIN {{ ref('stg_order_items') }} oi
+        ON o.order_id = oi.order_id
+    LEFT JOIN {{ ref('dim_products') }} p
+        ON oi.product_id = p.product_id
+    GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9
+)
+
+SELECT * FROM enriched
+```
+
+**Example 2: Airflow DAG with Error Handling**
+```python
+# dags/data_pipeline.py
+from datetime import datetime, timedelta
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
+from airflow.operators.bash import BashOperator
+from airflow.utils.task_group import TaskGroup
+
+default_args = {
+    "owner": "data-engineering",
+    "depends_on_past": False,
+    "email_on_failure": True,
+    "email": ["data-team@company.com"],
+    "retries": 3,
+    "retry_delay": timedelta(minutes=5),
+    "retry_exponential_backoff": True,
+    "max_retry_delay": timedelta(minutes=30),
+    "execution_timeout": timedelta(hours=2),
+}
+
+with DAG(
+    dag_id="orders_pipeline",
+    default_args=default_args,
+    description="Daily orders ETL pipeline",
+    schedule_interval="0 6 * * *",  # 6 AM UTC daily
+    start_date=datetime(2024, 1, 1),
+    catchup=False,
+    tags=["orders", "production"],
+    max_active_runs=1,
+) as dag:
+
+    with TaskGroup("extract") as extract:
+        extract_orders = PythonOperator(
+            task_id="extract_orders",
+            python_callable=extract_from_source,
+            op_kwargs={"table": "orders", "method": "incremental"},
+        )
+        extract_customers = PythonOperator(
+            task_id="extract_customers",
+            python_callable=extract_from_source,
+            op_kwargs={"table": "customers", "method": "full"},
+        )
+
+    transform = BashOperator(
+        task_id="run_dbt_models",
+        bash_command="cd /opt/dbt && dbt run --select tag:orders --target prod",
+    )
+
+    test_quality = BashOperator(
+        task_id="run_dbt_tests",
+        bash_command="cd /opt/dbt && dbt test --select tag:orders --target prod",
+    )
+
+    notify_success = PythonOperator(
+        task_id="notify_success",
+        python_callable=send_slack_notification,
+        op_kwargs={"status": "success", "channel": "#data-pipeline-alerts"},
+    )
+
+    extract >> transform >> test_quality >> notify_success
+```
+
+**Example 3: Data Quality Validation Framework**
+```python
+# data_quality/validators.py
+from dataclasses import dataclass
+from typing import List, Optional
+import logging
+
+logger = logging.getLogger(__name__)
+
+@dataclass
+class QualityCheckResult:
+    check_name: str
+    table: str
+    passed: bool
+    expected: str
+    actual: str
+    severity: str  # "error", "warning"
+
+def validate_table(engine, table: str, checks: dict) -> List[QualityCheckResult]:
+    """Run a suite of data quality checks on a table."""
+    results = []
+
+    # Row count check
+    if "min_row_count" in checks:
+        count = engine.execute(f"SELECT COUNT(*) FROM {table}").scalar()
+        results.append(QualityCheckResult(
+            check_name="row_count",
+            table=table,
+            passed=count >= checks["min_row_count"],
+            expected=f">= {checks['min_row_count']}",
+            actual=str(count),
+            severity="error",
+        ))
+
+    # Null checks
+    for col in checks.get("not_null_columns", []):
+        null_count = engine.execute(
+            f"SELECT COUNT(*) FROM {table} WHERE {col} IS NULL"
+        ).scalar()
+        results.append(QualityCheckResult(
+            check_name=f"not_null_{col}",
+            table=table,
+            passed=null_count == 0,
+            expected="0 nulls",
+            actual=f"{null_count} nulls",
+            severity="error",
+        ))
+
+    # Uniqueness checks
+    for col in checks.get("unique_columns", []):
+        dup_count = engine.execute(
+            f"SELECT COUNT(*) - COUNT(DISTINCT {col}) FROM {table}"
+        ).scalar()
+        results.append(QualityCheckResult(
+            check_name=f"unique_{col}",
+            table=table,
+            passed=dup_count == 0,
+            expected="0 duplicates",
+            actual=f"{dup_count} duplicates",
+            severity="error",
+        ))
+
+    # Freshness check
+    if "freshness" in checks:
+        max_date = engine.execute(
+            f"SELECT MAX({checks['freshness']['column']}) FROM {table}"
+        ).scalar()
+        is_fresh = (datetime.now() - max_date).total_seconds() < checks["freshness"]["max_age_seconds"]
+        results.append(QualityCheckResult(
+            check_name="freshness",
+            table=table,
+            passed=is_fresh,
+            expected=f"< {checks['freshness']['max_age_seconds']}s old",
+            actual=f"latest: {max_date}",
+            severity="error",
+        ))
+
+    failed = [r for r in results if not r.passed]
+    if failed:
+        logger.warning(f"Data quality failures for {table}: {len(failed)} checks failed")
+    else:
+        logger.info(f"All data quality checks passed for {table}")
+
+    return results
+```
+
+8) Vocabulary and standards
+
+**Key Terms**:
+- **ETL/ELT**: Extract-Transform-Load / Extract-Load-Transform — data movement patterns
+- **CDC**: Change Data Capture — capturing incremental changes from source databases
+- **Data warehouse**: Centralized repository optimized for analytical queries (OLAP)
+- **Data lake**: Storage for raw, unstructured, and structured data at scale
+- **Data lakehouse**: Combines data lake flexibility with warehouse reliability (Delta Lake, Iceberg)
+- **Dimensional modeling**: Schema design for analytics (facts, dimensions, star schema)
+- **Data Vault**: Agile data modeling methodology (hubs, links, satellites)
+- **SCD**: Slowly Changing Dimension — strategies for tracking historical changes (Type 1, 2, 3)
+- **Idempotency**: Pipeline reruns produce same results without side effects
+- **Data lineage**: Tracking data flow from source to consumption, column-level
+- **Backfill**: Reprocessing historical data through a pipeline
+- **Partition pruning**: Query optimization by skipping irrelevant data partitions
+
+**Data Platforms**:
+- **Snowflake**: Cloud data warehouse with separation of compute and storage
+- **Google BigQuery**: Serverless data warehouse with columnar storage
+- **Databricks**: Unified analytics platform (Spark-based, Delta Lake)
+- **Amazon Redshift**: AWS managed data warehouse
+- **Apache Spark**: Distributed data processing engine for batch and streaming
+- **Apache Flink**: Stream processing framework with exactly-once semantics
+
+**Orchestration Tools**:
+- **Apache Airflow**: Most widely used workflow orchestrator; DAG-based scheduling
+- **Prefect**: Modern orchestrator with dynamic workflows and observability
+- **Dagster**: Software-defined assets approach; strong typing and testing
+- **dbt**: SQL-based transformation tool with testing and documentation built in
+- **Mage**: Modern data pipeline tool with notebook-style interface
+
+**Data Quality Tools**:
+- **Great Expectations**: Python-based data quality validation framework
+- **dbt tests**: Built-in and custom data tests in dbt transformation layer
+- **Soda**: Data quality monitoring with checks-as-code
+- **Monte Carlo**: Data observability platform with anomaly detection
+- **Elementary**: dbt-native data observability
+
+**File Formats**:
+- **Parquet**: Columnar format; efficient compression and query performance
+- **Delta Lake**: Parquet + ACID transactions + time travel
+- **Apache Iceberg**: Open table format with schema evolution and partition evolution
+- **Avro**: Row-based format; schema evolution friendly; good for streaming
+- **ORC**: Optimized Row Columnar; common in Hive ecosystems
+
+**Data Governance**:
+- **Data catalog**: Alation, DataHub, Amundsen, Unity Catalog, OpenMetadata
+- **Access control**: RBAC, column-level security, row-level security, dynamic masking
+- **Data classification**: PII, PHI, financial, confidential, public, internal
+- **Retention policies**: Automated deletion based on regulatory and business requirements
+
+Change log
+- 2025-01-15: Initial Data Engineer playbook created with 2024-2025 best practices including modern data stack tooling (dbt, Airflow, Snowflake/BigQuery), data quality frameworks, dimensional modeling patterns, pipeline reliability standards, and comprehensive templates for pipeline design, data quality tests, and incident response.

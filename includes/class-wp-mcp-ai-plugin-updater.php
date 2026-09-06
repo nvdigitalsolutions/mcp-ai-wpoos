@@ -90,6 +90,29 @@ class WP_MCP_AI_Plugin_Updater {
 	);
 
 	/**
+	 * Critical files that MUST exist after a Pro addon update.
+	 *
+	 * The Pro bootstrap requires vendor/autoload.php on PHP 8.1+, and
+	 * Composer's generated autoloader eagerly requires every file listed in
+	 * vendor/composer/autoload_files.php. If one of those files is missing
+	 * after an update, the next request fatals with "Failed opening required".
+	 * We verify the whole files map post-install and roll back to the backup
+	 * when the installed tree is incomplete (partial extraction/copy is common
+	 * on Cloudways and other distributed filesystems).
+	 *
+	 * Paths are relative to the Pro addon root (WP_MCP_AI_PRO_PATH).
+	 */
+	const VERIFY_PRO_FILES = array(
+		'vendor/autoload.php',
+		'vendor/composer/autoload_real.php',
+		'vendor/composer/autoload_files.php',
+		'vendor/composer/autoload_static.php',
+		'vendor/composer/ClassLoader.php',
+		'vendor/composer/InstalledVersions.php',
+		'includes/class-wp-mcp-ai-pro-module-registry.php',
+	);
+
+	/**
 	 * Initialize the updater.
 	 *
 	 * Always hooks AJAX handlers — base-only installs see an upgrade path,
@@ -649,6 +672,31 @@ class WP_MCP_AI_Plugin_Updater {
 			);
 		}
 
+		// The package must contain the same main addon file as the currently
+		// installed Pro addon; otherwise replacing the files would orphan the
+		// active entry point.
+		$pro_main_file = defined( 'WP_MCP_AI_PRO_FILE' ) ? basename( WP_MCP_AI_PRO_FILE ) : '';
+		if ( '' !== $pro_main_file && ! file_exists( $source_dir . '/' . $pro_main_file ) ) {
+			self::rmdir_recursive( $temp_dir );
+			return new WP_Error(
+				'pro_main_file_mismatch',
+				sprintf(
+					/* translators: %s: expected main Pro addon file name */
+					__( 'The Pro update package does not contain the expected main addon file (%s). The update was cancelled and nothing was changed.', 'mcp-ai-wpoos' ),
+					$pro_main_file
+				)
+			);
+		}
+
+		// Pre-flight integrity check on the downloaded package, including the
+		// vendor autoload files map. This catches a truncated download or a
+		// broken release asset BEFORE the live addon is replaced.
+		$package_check = self::verify_pro_installation_integrity( $source_dir );
+		if ( is_wp_error( $package_check ) ) {
+			self::rmdir_recursive( $temp_dir );
+			return $package_check;
+		}
+
 		$pro_dir = untrailingslashit( WP_MCP_AI_PRO_PATH );
 
 		// Create a backup of the current Pro addon.
@@ -672,6 +720,36 @@ class WP_MCP_AI_Plugin_Updater {
 				'install_failed',
 				__( 'Failed to install updated Pro addon files. The previous version has been restored.', 'mcp-ai-wpoos' )
 			);
+		}
+
+		// Clear PHP's stat cache before verifying integrity: files were replaced
+		// within this same PHP process, so file_exists() may return stale results
+		// from the old inodes unless we force a fresh stat of the filesystem.
+		clearstatcache( true );
+
+		// Verify the installed addon is complete BEFORE deleting the backup.
+		// On distributed filesystems (e.g. Cloudways block storage) copies can
+		// silently drop files without reporting an error, which white-screens
+		// the site on the next request when the Composer autoloader can't find
+		// a file referenced by its own files map.
+		$integrity = self::verify_pro_installation_integrity( $pro_dir );
+		if ( is_wp_error( $integrity ) ) {
+			self::rmdir_recursive( $pro_dir );
+			$restored = ( is_dir( $backup_dir ) && rename( $backup_dir, $pro_dir ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- restore from backup.
+			if ( $restored ) {
+				self::rmdir_recursive( $temp_dir );
+			} else {
+				// Keep the backup and temp dirs in place and point the user at them.
+				$integrity->add(
+					'pro_rollback_failed',
+					sprintf(
+						/* translators: %s: path to the preserved backup directory */
+						__( 'Automatic rollback also failed. The previous version was preserved at %s.', 'mcp-ai-wpoos' ),
+						$backup_dir
+					)
+				);
+			}
+			return $integrity;
 		}
 
 		// Clean up.
@@ -1053,6 +1131,111 @@ class WP_MCP_AI_Plugin_Updater {
 				implode( ', ', $missing )
 			)
 		);
+	}
+
+	/**
+	 * Verify that a Pro addon directory is complete enough to boot.
+	 *
+	 * Checks the safelist in VERIFY_PRO_FILES plus, on PHP 8.1+ where the
+	 * Composer autoloader is eagerly required, every file referenced by the
+	 * vendor/composer/autoload_files.php map. Returns a WP_Error listing any
+	 * missing files, or true if all pass.
+	 *
+	 * @param string $pro_root Absolute path to the Pro addon root directory.
+	 * @return true|WP_Error True if all files present, WP_Error with missing list otherwise.
+	 */
+	private static function verify_pro_installation_integrity( $pro_root ) {
+		$pro_root = untrailingslashit( $pro_root );
+		$missing  = array();
+
+		// The main addon file must match the currently installed addon so the
+		// active plugin entry point keeps resolving after the update.
+		if ( defined( 'WP_MCP_AI_PRO_FILE' ) ) {
+			$main_file = basename( WP_MCP_AI_PRO_FILE );
+			if ( '' !== $main_file && ! file_exists( $pro_root . '/' . $main_file ) ) {
+				$missing[] = $main_file;
+			}
+		}
+
+		foreach ( self::VERIFY_PRO_FILES as $relative_path ) {
+			if ( ! file_exists( $pro_root . '/' . $relative_path ) ) {
+				$missing[] = $relative_path;
+			}
+		}
+
+		// On PHP 8.1+ the bootstrap eagerly requires the Composer files map;
+		// every path it references must exist on disk or the site fatals on
+		// the next request.
+		if ( version_compare( PHP_VERSION, '8.1.0', '>=' ) ) {
+			$autoload_files = $pro_root . '/vendor/composer/autoload_files.php';
+			if ( file_exists( $autoload_files ) ) {
+				$referenced = self::get_vendor_autoload_files( $pro_root, $autoload_files );
+				if ( is_wp_error( $referenced ) ) {
+					return $referenced;
+				}
+				foreach ( $referenced as $absolute_path ) {
+					if ( ! file_exists( $absolute_path ) ) {
+						$missing[] = str_replace( $pro_root . '/', '', $absolute_path );
+					}
+				}
+			}
+		}
+
+		$missing = array_values( array_unique( $missing ) );
+
+		if ( empty( $missing ) ) {
+			return true;
+		}
+
+		return new WP_Error(
+			'pro_integrity_check_failed',
+			sprintf(
+				/* translators: %s: comma-separated list of missing file paths */
+				__( 'The Pro addon update appears to be incomplete — the following required files are missing: %s. The previous version has been restored. Please try updating again.', 'mcp-ai-wpoos' ),
+				implode( ', ', $missing )
+			)
+		);
+	}
+
+	/**
+	 * Extract every file path referenced by a Composer-generated
+	 * autoload_files.php map.
+	 *
+	 * Generated entries look like:
+	 *   'hash' => $vendorDir . '/package/file.php',
+	 *
+	 * @param string $pro_root           Absolute path to the Pro addon root directory.
+	 * @param string $autoload_files_php Absolute path to vendor/composer/autoload_files.php.
+	 * @return array|WP_Error Array of absolute file paths, or WP_Error when unreadable.
+	 */
+	private static function get_vendor_autoload_files( $pro_root, $autoload_files_php ) {
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local generated autoload map, not a remote resource.
+		$content = file_get_contents( $autoload_files_php );
+		if ( false === $content ) {
+			return new WP_Error(
+				'pro_autoload_files_unreadable',
+				__( 'Could not read the Pro vendor autoload files map.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$vendor_dir = untrailingslashit( $pro_root ) . '/vendor';
+		$paths      = array();
+
+		if ( preg_match_all( '/\$(vendorDir|baseDir)(\s*\.\s*\'(?:[^\'\\\\]|\\\\.)*\')+/', $content, $matches ) ) {
+			foreach ( $matches[0] as $expr ) {
+				$base = ( 0 === strpos( $expr, '$vendorDir' ) ) ? $vendor_dir : untrailingslashit( $pro_root );
+				preg_match_all( '/\'((?:[^\'\\\\]|\\\\.)*)\'/', $expr, $parts );
+				$relative = '';
+				foreach ( $parts[1] as $part ) {
+					$relative .= stripcslashes( $part );
+				}
+				if ( '' !== $relative ) {
+					$paths[] = $base . $relative;
+				}
+			}
+		}
+
+		return $paths;
 	}
 
 	/**

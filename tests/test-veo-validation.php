@@ -26,17 +26,20 @@ class WP_MCP_AI_Veo_Validation_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
+		// Pin an empty Gemini API key so the missing-key gate is deterministic
+		// regardless of what earlier suites left in the settings option.
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array( 'gemini_api_key' => '' ) );
 		$this->service = new WP_MCP_AI_Gemini_Video_Generation_Service();
 	}
 
 	/**
-	 * Test that 1080p with 2:3 aspect ratio returns validation error.
+	 * Test that 1080p with 9:16 aspect ratio returns validation error.
 	 */
 	public function test_1080p_rejects_2_3_aspect_ratio() {
 		$args = array(
 			'prompt'       => 'Test video',
 			'resolution'   => '1080p',
-			'aspect_ratio' => '2:3',
+			'aspect_ratio' => '9:16',
 		);
 
 		$result = $this->service->generate_video( $args );
@@ -44,26 +47,30 @@ class WP_MCP_AI_Veo_Validation_Test extends WP_UnitTestCase {
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertEquals( 'wp_mcp_ai_invalid_arguments', $result->get_error_code() );
 		$this->assertStringContainsString( '1080p', $result->get_error_message() );
-		$this->assertStringContainsString( '3:2', $result->get_error_message() );
+		$this->assertStringContainsString( '9:16', $result->get_error_message() );
 	}
 
 	/**
-	 * Test that 1080p with non-8-second duration returns validation error.
+	 * Test that 1080p durations are auto-adjusted to 8 seconds.
+	 *
+	 * The service no longer rejects a non-8s duration — it adjusts it to the
+	 * required 8 seconds and proceeds (the API-key check then applies).
 	 */
 	public function test_1080p_requires_8_seconds_duration() {
 		$args = array(
 			'prompt'       => 'Test video',
 			'resolution'   => '1080p',
 			'aspect_ratio' => '3:2',
-			'duration'     => 5, // Should be 8 for 1080p.
+			'duration'     => 5, // Auto-adjusted to 8 for 1080p.
 		);
 
 		$result = $this->service->generate_video( $args );
 
+		// Duration is auto-adjusted, so no validation error is raised; without
+		// an API key the flow stops at the key check.
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertEquals( 'wp_mcp_ai_invalid_arguments', $result->get_error_code() );
-		$this->assertStringContainsString( '8', $result->get_error_message() );
-		$this->assertStringContainsString( 'duration', $result->get_error_message() );
+		$this->assertNotEquals( 'wp_mcp_ai_invalid_arguments', $result->get_error_code() );
+		$this->assertEquals( 'wp_mcp_ai_missing_api_key', $result->get_error_code() );
 	}
 
 	/**

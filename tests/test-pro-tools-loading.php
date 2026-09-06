@@ -13,6 +13,23 @@
  */
 class Test_Pro_Tools_Loading extends WP_UnitTestCase {
 	/**
+	 * Re-bootstrap the tool registry with the current environment state.
+	 *
+	 * The registry is a process-wide singleton bootstrapped before the test
+	 * files (and their JetEngine/Elementor stubs and plugins) load, so its
+	 * snapshot of `is_available()` results can disagree with the live
+	 * environment by the time this suite runs. Re-initialising in setUp makes
+	 * the registration decisions deterministic for the assertions below.
+	 */
+	protected function setUp(): void {
+		parent::setUp();
+
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->clear_tools();
+		$registry->init();
+	}
+
+	/**
 	 * Test that Pro addon is loaded when bundled in combined plugin.
 	 */
 	public function test_pro_addon_loaded_in_combined_plugin() {
@@ -23,7 +40,7 @@ class Test_Pro_Tools_Loading extends WP_UnitTestCase {
 		);
 
 		// Pro addon file should exist.
-		$pro_file = WP_MCP_AI_PATH . 'addons/pro/wp-mcp-ai-pro.php';
+		$pro_file = WP_MCP_AI_PATH . 'addons/pro/mcp-ai-wpoos-pro.php';
 		$this->assertFileExists( $pro_file, 'Pro addon file should exist' );
 	}
 
@@ -96,21 +113,82 @@ class Test_Pro_Tools_Loading extends WP_UnitTestCase {
 				);
 			}
 
-			// JetEngine-dependent Pro tools.
-			if ( class_exists( 'Jet_Engine' ) ) {
+			// JetEngine-dependent Pro tool. The `jetengine` CCT tool registers
+			// only when health & wellness management is enabled AND JetEngine
+			// is active (function_exists gate). Exercise both sides with the
+			// shared JetEngine stub by toggling the setting and re-running
+			// the registration pass.
+			if ( function_exists( 'jet_engine' ) ) {
+				$settings                                      = get_option( 'wp_mcp_ai_settings', array() );
+				$settings['enable_health_wellness_management'] = true;
+				update_option( 'wp_mcp_ai_settings', $settings );
+
+				$registry->clear_tools();
+				$registry->init();
+				$slugs = array_map(
+					function ( $tool ) {
+						return $tool->get_slug();
+					},
+					$registry->get_tools()
+				);
 				$this->assertContains(
 					'jetengine',
-					$registered_slugs,
-					'jetengine should be registered when JetEngine is active'
+					$slugs,
+					'jetengine should be registered when health management is enabled and JetEngine is active'
+				);
+
+				delete_option( 'wp_mcp_ai_settings' );
+				$registry->clear_tools();
+				$registry->init();
+				$slugs = array_map(
+					function ( $tool ) {
+						return $tool->get_slug();
+					},
+					$registry->get_tools()
+				);
+				$this->assertNotContains(
+					'jetengine',
+					$slugs,
+					'jetengine should not register when health management is disabled'
 				);
 			}
 
-			// Elementor-dependent Pro tools.
-			if ( did_action( 'elementor/loaded' ) ) {
+			// Elementor-dependent Pro tool. The `elementor` tool registers
+			// when the elementor-widgets setting is enabled AND Elementor is
+			// active (is_available() checks ELEMENTOR_VERSION). Exercise both
+			// sides of the settings gate deterministically.
+			if ( defined( 'ELEMENTOR_VERSION' ) || class_exists( '\\Elementor\\Plugin', false ) ) {
+				$settings                             = get_option( 'wp_mcp_ai_settings', array() );
+				$settings['enable_elementor_widgets'] = true;
+				update_option( 'wp_mcp_ai_settings', $settings );
+
+				$registry->clear_tools();
+				$registry->init();
+				$slugs = array_map(
+					function ( $tool ) {
+						return $tool->get_slug();
+					},
+					$registry->get_tools()
+				);
 				$this->assertContains(
 					'elementor',
-					$registered_slugs,
-					'elementor should be registered when Elementor is active'
+					$slugs,
+					'elementor should be registered when the widgets setting is enabled and Elementor is active'
+				);
+
+				delete_option( 'wp_mcp_ai_settings' );
+				$registry->clear_tools();
+				$registry->init();
+				$slugs = array_map(
+					function ( $tool ) {
+						return $tool->get_slug();
+					},
+					$registry->get_tools()
+				);
+				$this->assertNotContains(
+					'elementor',
+					$slugs,
+					'elementor should not register when the widgets setting is disabled'
 				);
 			}
 		} else {
@@ -248,17 +326,35 @@ class Test_Pro_Tools_Loading extends WP_UnitTestCase {
 	public function test_extended_tools_loaded() {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 
-		// Extended tools from the base plugin (not pro).
-		$extended_tools = array(
-			'get_woo_recent_orders',
-			'get_elementor_templates',
-			'search_gmail',
+		// Extended tools from the base plugin (not pro). search_gmail registers
+		// unconditionally in full version mode.
+		$this->assertTrue(
+			$registry->is_tool_registered( 'search_gmail' ),
+			"Extended tool 'search_gmail' should be registered in full version mode"
 		);
 
-		foreach ( $extended_tools as $tool_slug ) {
-			$this->assertTrue(
+		// Dependency-gated extended tools only register when their own
+		// is_available() check passes — registration must match it exactly,
+		// regardless of which optional plugins are active in the test env.
+		$gated_tools = array(
+			'get_woo_recent_orders'   => 'WP_MCP_AI_Tool_Get_Woo_Orders',
+			'get_elementor_templates' => 'WP_MCP_AI_Tool_Get_Elementor_Templates',
+		);
+
+		foreach ( $gated_tools as $tool_slug => $tool_class ) {
+			if ( ! class_exists( $tool_class ) ) {
+				$this->assertFalse(
+					$registry->is_tool_registered( $tool_slug ),
+					"Extended tool '{$tool_slug}' should not register when its class is unavailable"
+				);
+				continue;
+			}
+
+			$available = call_user_func( array( $tool_class, 'is_available' ) );
+			$this->assertSame(
+				$available,
 				$registry->is_tool_registered( $tool_slug ),
-				"Extended tool '{$tool_slug}' should be registered in full version mode"
+				"Extended tool '{$tool_slug}' registration should match its is_available() result"
 			);
 		}
 	}

@@ -69,7 +69,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					__( 'Keys configured in Settings → Connectors are automatically shared with NV oOS. Manage your connections on the %s screen.', 'mcp-ai-wpoos' ),
 					sprintf(
 						'<a href="%s">%s</a>',
-						esc_url( admin_url( 'admin.php?page=connectors' ) ),
+						esc_url( admin_url( 'options-connectors.php' ) ),
 						esc_html__( 'Connectors', 'mcp-ai-wpoos' )
 					)
 				);
@@ -103,20 +103,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list if Model Config unavailable.
 			if ( empty( $openai_models ) ) {
 				$openai_models = array(
-					'gpt-5.4'      => 'GPT-5.4 (Recommended)',
-					'gpt-5.4-mini' => 'GPT-5.4 Mini (Budget)',
-					'gpt-5.4-nano' => 'GPT-5.4 Nano',
-					'gpt-5.5'      => 'GPT-5.5 (Flagship)',
-					'gpt-5'        => 'GPT-5',
-					'gpt-5-mini'   => 'GPT-5 Mini',
-					'gpt-5-nano'   => 'GPT-5 Nano',
-					'gpt-4.1'      => 'GPT-4.1',
-					'gpt-4.1-mini' => 'GPT-4.1 Mini',
-					'gpt-4.1-nano' => 'GPT-4.1 Nano',
-					'gpt-4o'       => 'GPT-4o',
-					'gpt-4o-mini'  => 'GPT-4o Mini',
-					'o4-mini'      => 'o4-mini',
-					'o3'           => 'o3',
+					'gpt-6-astra'   => 'GPT-6 Astra (Limited Preview)',
+					'gpt-5.6-sol'   => 'GPT-5.6 Sol (Recommended)',
+					'gpt-5.6-terra' => 'GPT-5.6 Terra (Balanced)',
+					'gpt-5.6-luna'  => 'GPT-5.6 Luna (Lowest Cost)',
+					'gpt-5.4'       => 'GPT-5.4',
+					'gpt-5.4-mini'  => 'GPT-5.4 Mini (Budget)',
+					'gpt-5.4-nano'  => 'GPT-5.4 Nano',
+					'gpt-5.5'       => 'GPT-5.5 (Flagship)',
+					'gpt-5'         => 'GPT-5',
+					'gpt-5-mini'    => 'GPT-5 Mini',
+					'gpt-5-nano'    => 'GPT-5 Nano',
+					'gpt-4.1'       => 'GPT-4.1',
+					'gpt-4.1-mini'  => 'GPT-4.1 Mini',
+					'gpt-4.1-nano'  => 'GPT-4.1 Nano',
+					'gpt-4o'        => 'GPT-4o',
+					'gpt-4o-mini'   => 'GPT-4o Mini',
+					'o4-mini'       => 'o4-mini',
+					'o3'            => 'o3',
 				);
 			}
 
@@ -129,9 +133,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $anthropic_models ) ) {
 				$anthropic_models = array(
-					'claude-opus-4-7'   => 'Claude Opus 4.7 (Flagship)',
+					'claude-opus-5'     => 'Claude Opus 5 (Flagship)',
+					'claude-fable-5.1'  => 'Claude Fable 5.1 (Top Tier)',
+					'claude-sonnet-5'   => 'Claude Sonnet 5 (Recommended)',
+					'claude-opus-4-8'   => 'Claude Opus 4.8',
+					'claude-opus-4-7'   => 'Claude Opus 4.7',
 					'claude-opus-4-6'   => 'Claude Opus 4.6',
-					'claude-sonnet-4-6' => 'Claude Sonnet 4.6 (Recommended)',
+					'claude-sonnet-4-6' => 'Claude Sonnet 4.6',
 					'claude-haiku-4-5'  => 'Claude Haiku 4.5 (Fastest)',
 				);
 			}
@@ -145,9 +153,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $gemini_models ) ) {
 				$gemini_models = array(
-					'gemini-3.5-flash'      => 'Gemini 3.5 Flash (Recommended)',
+					'gemini-3.8-flash'      => 'Gemini 3.8 Flash (Recommended)',
+					'gemini-3.7-flash'      => 'Gemini 3.7 Flash',
+					'gemini-3.6-flash'      => 'Gemini 3.6 Flash',
+					'gemini-3.5-flash'      => 'Gemini 3.5 Flash',
+					'gemini-3.5-flash-lite' => 'Gemini 3.5 Flash Lite (Budget)',
 					'gemini-3.1-pro'        => 'Gemini 3.1 Pro',
-					'gemini-3.1-flash-lite' => 'Gemini 3.1 Flash Lite (Budget)',
+					'gemini-3.1-flash-lite' => 'Gemini 3.1 Flash Lite',
 					'gemini-2.5-pro'        => 'Gemini 2.5 Pro',
 					'gemini-2.5-flash'      => 'Gemini 2.5 Flash',
 				);
@@ -192,11 +204,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $deepseek_models ) ) {
 				$deepseek_models = array(
-					'deepseek-v4-flash' => 'DeepSeek-V4 Flash (Recommended, 1M ctx, tools)',
-					'deepseek-v4-pro'   => 'DeepSeek-V4 Pro (Reasoning, coding, agents)',
-					'deepseek-chat'     => 'DeepSeek-V3 [Deprecated]',
-					'deepseek-reasoner' => 'DeepSeek-R1 [Deprecated]',
-					'deepseek-coder'    => 'DeepSeek Coder [Deprecated]',
+					'deepseek-v4-flash'            => 'DeepSeek-V4 Flash (Recommended, 1M ctx, tools)',
+					'deepseek-v4-pro'              => 'DeepSeek-V4 Pro (Reasoning, coding, agents)',
+					'deepseek-v4-flash-vision-exp' => 'DeepSeek-V4 Flash Vision (Experimental)',
 				);
 			}
 
@@ -325,7 +335,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'          => __( 'Enable OpenAI Provider', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable OpenAI as an available provider', 'mcp-ai-wpoos' ),
 					'description'    => __( 'When disabled, OpenAI will not be available for use by assistants or API requests.', 'mcp-ai-wpoos' ),
-					'default'        => true,
+					'default'        => false,
 				),
 				'openai_api_key_type'                => array(
 					'type'        => 'select',
@@ -398,7 +408,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						'gpt-image-1'      => 'gpt-image-1',
 						'gpt-image-1-mini' => 'gpt-image-1-mini',
 					),
-					'default'     => 'gpt-image-1',
+					'default'     => 'gpt-image-2',
 				),
 				'openai_image_size'                  => array(
 					'type'        => 'select',
@@ -607,7 +617,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'          => __( 'Enable Anthropic Provider', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable Anthropic (Claude) as an available provider', 'mcp-ai-wpoos' ),
 					'description'    => __( 'When disabled, Anthropic will not be available for use by assistants or API requests.', 'mcp-ai-wpoos' ),
-					'default'        => true,
+					'default'        => false,
 				),
 				'anthropic_api_key_type'             => array(
 					'type'        => 'select',
@@ -695,7 +705,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'          => __( 'Enable Gemini Provider', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable Google Gemini as an available provider', 'mcp-ai-wpoos' ),
 					'description'    => __( 'When disabled, Gemini will not be available for use by assistants or API requests.', 'mcp-ai-wpoos' ),
-					'default'        => true,
+					'default'        => false,
 				),
 				'gemini_api_key_type'                => array(
 					'type'        => 'select',
@@ -1278,7 +1288,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'deepseek_model'                     => array(
 					'type'        => 'select',
 					'label'       => __( 'Default DeepSeek Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'The default DeepSeek model to use. deepseek-v4-flash (1M context, 384K output) is the recommended general-purpose model supporting both non-thinking and thinking modes. deepseek-v4-pro offers enhanced reasoning for complex agentic workflows. Legacy models (chat, reasoner, coder) are deprecated.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default DeepSeek model to use. deepseek-v4-flash (1M context, 384K output) is the recommended general-purpose model supporting both non-thinking and thinking modes. deepseek-v4-pro offers enhanced reasoning for complex agentic workflows. deepseek-v4-flash-vision-exp adds vision support (experimental). Legacy models (chat, reasoner, coder) were retired from the API on July 24, 2026.', 'mcp-ai-wpoos' ),
 					'options'     => $deepseek_models,
 					'default'     => 'deepseek-v4-flash',
 				),

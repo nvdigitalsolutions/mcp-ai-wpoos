@@ -99,9 +99,9 @@ class Test_Huggingface_Tools_Recommendations extends WP_UnitTestCase {
 			);
 
 			$this->assertEquals(
-				1.3,
+				1.5,
 				$multiplier,
-				sprintf( 'HuggingFace tool "%s" should have 1.3× multiplier', $slug )
+				sprintf( 'HuggingFace tool "%s" should have 1.5× multiplier', $slug )
 			);
 		}
 	}
@@ -153,7 +153,7 @@ class Test_Huggingface_Tools_Recommendations extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'description', $dataset_ops );
 		$this->assertArrayHasKey( 'tools', $dataset_ops );
 
-		$this->assertEquals( 1.3, $dataset_ops['multiplier'] );
+		$this->assertEquals( 1.5, $dataset_ops['multiplier'] );
 		$this->assertEquals( 'gpt-4o-mini', $dataset_ops['preferred_model'] );
 
 		$this->assertIsArray( $dataset_ops['tools'] );
@@ -186,7 +186,7 @@ class Test_Huggingface_Tools_Recommendations extends WP_UnitTestCase {
 	public function test_huggingface_tools_recommendation_match() {
 		foreach ( $this->huggingface_tool_slugs as $slug ) {
 			// Test with recommended multiplier.
-			$match_status = WP_MCP_AI_Tool_Recommendations::check_recommendation_match( $slug, 1.3, 'gpt-4o-mini' );
+			$match_status = WP_MCP_AI_Tool_Recommendations::check_recommendation_match( $slug, 1.5, 'gpt-4o-mini' );
 
 			$this->assertIsArray( $match_status );
 			$this->assertArrayHasKey( 'matches', $match_status );

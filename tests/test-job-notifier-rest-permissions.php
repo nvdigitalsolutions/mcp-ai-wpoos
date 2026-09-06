@@ -63,6 +63,9 @@ class Test_Job_Notifier_REST_Permissions extends WP_UnitTestCase {
 			'status'     => 'running',
 			'progress'   => 50,
 			'started_at' => current_time( 'mysql', true ),
+			'metadata'   => array(
+				'user_id' => $this->user_id,
+			),
 		);
 		set_transient(
 			WP_MCP_AI_Job_Notifier::CACHE_PREFIX . $this->job_id,
@@ -198,6 +201,20 @@ class Test_Job_Notifier_REST_Permissions extends WP_UnitTestCase {
 	public function test_job_stream_with_valid_nonce() {
 		wp_set_current_user( $this->user_id );
 
+		// Mark the job complete so the SSE stream terminates on its first
+		// poll instead of streaming for the full max duration.
+		set_transient(
+			WP_MCP_AI_Job_Notifier::CACHE_PREFIX . $this->job_id,
+			array(
+				'job_id'   => $this->job_id,
+				'status'   => 'completed',
+				'metadata' => array(
+					'user_id' => $this->user_id,
+				),
+			),
+			WP_MCP_AI_Job_Notifier::CACHE_DURATION
+		);
+
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/jobs/' . $this->job_id . '/stream' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
@@ -214,6 +231,20 @@ class Test_Job_Notifier_REST_Permissions extends WP_UnitTestCase {
 		// Set up user.
 		wp_set_current_user( $this->user_id );
 		$nonce = wp_create_nonce( 'wp_rest' );
+
+		// Mark the job complete so the SSE stream terminates on its first
+		// poll instead of streaming for the full max duration.
+		set_transient(
+			WP_MCP_AI_Job_Notifier::CACHE_PREFIX . $this->job_id,
+			array(
+				'job_id'   => $this->job_id,
+				'status'   => 'completed',
+				'metadata' => array(
+					'user_id' => $this->user_id,
+				),
+			),
+			WP_MCP_AI_Job_Notifier::CACHE_DURATION
+		);
 
 		// Test status endpoint.
 		$request_status = new WP_REST_Request( 'GET', '/mcp-ai/v1/jobs/' . $this->job_id );

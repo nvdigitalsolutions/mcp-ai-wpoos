@@ -635,6 +635,20 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 			);
 
 			$this->add_module(
+				'spa_shortcode',
+				'Pro SPA Shortcode',
+				array(),
+				array(),
+				function () use ( $p ) {
+					$f = $p . 'class-wp-mcp-ai-pro-spa-shortcode.php';
+					if ( file_exists( $f ) ) {
+						require_once $f;
+						WP_MCP_AI_Pro_SPA_Shortcode::register();
+					}
+				}
+			);
+
+			$this->add_module(
 				'inline_assistant',
 				'Inline Assistant',
 				array(),
@@ -868,6 +882,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 				'chat_channels'           => 'Chat Channels',
 				'dietpi'                  => 'DietPi',
 				'extended_cognition'      => 'Extended Cognition',
+				'vision_analysis'         => 'Vision Analysis',
 			);
 
 			foreach ( $conditional_toolkits as $slug => $label ) {
@@ -900,6 +915,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 					'chat_channels'           => 'chat-channels',
 					'dietpi'                  => 'dietpi', // Special: uses dietpi-toolkit-init.php.
 					'extended_cognition'      => 'extended-cognition',
+					'vision_analysis'         => 'vision-analysis',
 				);
 
 				$toolkit_dir = isset( $dir_map[ $slug ] ) ? $dir_map[ $slug ] : $slug;

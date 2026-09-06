@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Composio — Manage triggers.
  */
-class WP_MCP_AI_Tool_Composio_Manage_Triggers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Composio_Manage_Triggers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface {
 	use WP_MCP_AI_Tool_Envelope;
 
 	/**
@@ -69,7 +69,7 @@ class WP_MCP_AI_Tool_Composio_Manage_Triggers implements WP_MCP_AI_Tool_Interfac
 				),
 				'connected_account_id' => array(
 					'type'        => 'string',
-					'description' => __( 'Connected account nanoid to pin the trigger to (upsert).', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Composio connected-account nanoid ("ca_...") to pin the trigger to (upsert). NOT a "conn_..." connection ID — get one from composio_list_connected_accounts.', 'mcp-ai-wpoos-pro' ),
 				),
 				'trigger_config'       => array(
 					'type'        => 'object',
@@ -81,7 +81,7 @@ class WP_MCP_AI_Tool_Composio_Manage_Triggers implements WP_MCP_AI_Tool_Interfac
 				),
 				'connection_id'        => array(
 					'type'        => 'string',
-					'description' => __( 'Optional Composio connection ID.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Optional NV oOS Composio connection ID ("conn_..."), identifying this site\'s Composio project integration. NOT a connected-account ID — do not pass a "ca_..." value here. Omit it to use the first enabled Composio connection.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'   => array( 'action' ),
@@ -113,6 +113,13 @@ class WP_MCP_AI_Tool_Composio_Manage_Triggers implements WP_MCP_AI_Tool_Interfac
 
 		if ( ! in_array( $action, self::ACTIONS, true ) ) {
 			return new WP_Error( 'invalid_action', __( 'Invalid trigger action.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Catch a connection ID passed where an account ID belongs.
+		$account_check = WP_MCP_AI_Composio_Tools::validate_account_id( $account_id );
+
+		if ( is_wp_error( $account_check ) ) {
+			return $account_check;
 		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -205,6 +212,16 @@ class WP_MCP_AI_Tool_Composio_Manage_Triggers implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_capability_flags(): array {
 		return array( 'write', 'state-changing', 'pro', 'requires-capability', 'remote-api' );
+	}
+
+	/**
+	 * `trigger` and `triggers` echo raw upstream trigger objects that can
+	 * embed webhook URLs with opaque ingest paths, so both are masked in logs.
+	 *
+	 * {@inheritdoc}
+	 */
+	public function get_sensitive_result_fields(): array {
+		return array( 'trigger', 'triggers' );
 	}
 
 	/**

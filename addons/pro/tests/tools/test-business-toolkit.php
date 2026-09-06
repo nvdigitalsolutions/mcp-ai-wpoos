@@ -47,9 +47,8 @@ class Test_WP_MCP_AI_Business_Toolkit extends WP_UnitTestCase {
 	 * @param string $file       Tool file.
 	 */
 	public function test_class_exists( $class_name, $file ) {
-		if ( class_exists( $class_name ) ) {
-			return; }
-		require_once $file;
+		if ( ! class_exists( $class_name ) ) {
+			require_once $file; }
 		$this->assertTrue( class_exists( $class_name ) );
 	}
 
@@ -63,6 +62,9 @@ class Test_WP_MCP_AI_Business_Toolkit extends WP_UnitTestCase {
 			require_once $file; }
 		$tool = $this->safe_new( $class_name );
 		if ( ! $tool ) {
+			return; }
+		if ( ! method_exists( $tool, 'get_slug' ) ) {
+			$this->markTestSkipped( $class_name . ' is a helper class, not a tool.' );
 			return; }
 		$this->assertNotEmpty( $tool->get_slug() );
 	}
@@ -78,12 +80,16 @@ class Test_WP_MCP_AI_Business_Toolkit extends WP_UnitTestCase {
 		$tool = $this->safe_new( $class_name );
 		if ( ! $tool ) {
 			return; }
+		if ( ! method_exists( $tool, 'get_slug' ) ) {
+			$this->markTestSkipped( $class_name . ' is a helper class, not a tool.' );
+			return; }
 		$schema = method_exists( $tool, 'get_parameters_schema' ) ? $tool->get_parameters_schema() : null;
 		if ( ! $schema && method_exists( $tool, 'get_definition' ) ) {
 			$def    = $tool->get_definition();
-			$schema = isset( $def['parameters'] ) ? $def['parameters'] : null;
+			$schema = isset( $def['parameters'] ) ? $def['parameters'] : ( isset( $def['input_schema'] ) ? $def['input_schema'] : ( isset( $def['arguments'] ) ? $def['arguments'] : null ) );
 		}
 		if ( ! $schema ) {
+			$this->markTestSkipped( $class_name . ' exposes no parameter schema.' );
 			return; }
 		$this->assertIsArray( $schema );
 	}

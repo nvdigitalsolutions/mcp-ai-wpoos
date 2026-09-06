@@ -1,11 +1,11 @@
 === NV oOS Content Graph ===
 
-Contributors: nvdigitalsolutions, vsamtani
+Contributors: vsamtani
 Tags: knowledge graph, content visualization, cytoscape, content strategy, semantic web
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -27,6 +27,9 @@ Click "Build Graph" and ~10-30 seconds later, your entire site becomes a visual 
 = Interactive Graph Explorer =
 Explore your content visually using Cytoscape.js. Search for nodes by label, click for details, zoom and pan. Color-coded by content type (posts, pages, terms, users).
 
+= Visual Theming & Styling =
+Style the graph to match your brand from the new Appearance tab: dark, light, auto, and WordPress-admin themes; per-type colors and icons (colorblind-safe defaults with automatic WCAG 2.2 contrast correction); color-by-type/community/degree modes; an interactive legend; edge style presets; layout presets; a minimap; keyboard navigation; and theme-aware PNG export. See `docs/visual-theming.md`.
+
 = Content Gap Analysis =
 Discover orphan content (no internal links), thin topic clusters, and missing link opportunities. Generate actionable content strategy recommendations.
 
@@ -40,7 +43,7 @@ Automatic structured data injection for SEO — taxonomy terms as `about` and in
 Appends graph-neighbor posts to your content based on knowledge graph proximity.
 
 = REST API =
-Full programmatic access with 14 endpoints. Read endpoints require the `read` capability (all logged-in users) or a valid guest token (guest tokens are provided by the NV oOS base plugin when installed); write endpoints require `manage_options`.
+Full programmatic access with 17 endpoints. Read endpoints require the `read` capability (all logged-in users) or a valid guest token (guest tokens are provided by the NV oOS base plugin when installed); write endpoints require `manage_options`.
 
 = Extensible Tool System =
 14 built-in tools for graph operations: query, search, traverse, analyze, export. Addon plugins can register their own tools.
@@ -122,24 +125,45 @@ The optional "Resolve External Entity" tool and the Wikidata remote-source drive
 
 When you configure a remote source driver (REST API, RSS/Sitemap feed, SPARQL endpoint, webhook receiver, etc.) in Settings, the plugin sends HTTP requests to the URLs you provide. What is sent depends entirely on the endpoint you configure. These requests happen only when you manually trigger a sync, schedule one, or receive a webhook. Remote source credentials (API keys, tokens, passwords) are stored in the database encrypted with AES-256-GCM via the OpenSSL PHP extension.
 
+**Stripe payments (opt-in only)**
+
+The "Get NV oOS Content Graph — AI" buttons on the plugin's settings page open an optional checkout for the companion addon. Card and payment details are entered directly on Stripe's servers (`js.stripe.com` iframe); the plugin never stores or transmits card data. Stripe.js is loaded only when the purchase modal is opened — merely visiting the settings page contacts no third party. The checkout is created and verified by the vendor's own server (NV Digital Solutions); this plugin only sends the product name, your site URL, and the Stripe payment ID to that service. A local purchase record (license key, payment ID, price paid, and the purchasing administrator's email address) is stored after the vendor confirms the payment. Payment is entirely optional — the core plugin is fully functional without it.
+
+- **Service provider:** Stripe, Inc. — Privacy Policy: https://stripe.com/privacy
+
+**GitHub download (opt-in only)**
+
+After a successful purchase, the plugin downloads the addon ZIP from a URL provided by the vendor's checkout service (which serves the package from the project's GitHub release page, `github.com`). No data is sent to GitHub.
+
 == Third-Party Libraries ==
 
 This plugin bundles the following open-source libraries:
 
 * **Cytoscape.js** v3.28.1 — MIT License — https://github.com/cytoscape/cytoscape.js
 * **cytoscape-fcose** v2.2.0 — MIT License — https://github.com/iVis-at-Bilkent/cytoscape.js-fcose
+* **layout-base** v2.0.1 — MIT License — https://github.com/iVis-at-Bilkent/layout-base
+* **cose-base** v2.2.0 — MIT License — https://github.com/iVis-at-Bilkent/cose-base
 
-Both libraries are served locally from `assets/vendor/` and never loaded from third-party CDNs.
+All libraries are served locally from `assets/vendor/` and never loaded from third-party CDNs.
 
 == Screenshots ==
 
-1. Graph Explorer — interactive Cytoscape.js visualization with search and node details
+1. Knowledge Graph — main explorer view
 2. Settings — build schedule, auto-rebuild, and display options
 3. Remote Sources — connect external data (Wikidata, REST APIs, RSS)
 4. Sources — choose which post types and content types are indexed
 5. Frontend embed — the [nvoos_graph] shortcode on any page
+6. Graph Explorer — interactive Cytoscape.js visualization with search and node details
 
 == Changelog ==
+
+= 1.0.4 — 2026-09-05 =
+* New Appearance tab: themes (dark/light/auto/admin), per-type color and icon overrides, WCAG contrast report, and one-click style presets
+* Icon glyphs and legend panel in the graph explorer; color-by type/community/degree/monochrome modes
+* Relationship-aware edge styling (color families, arrowheads, tapered, haystack density mode) and edge labels
+* Minimap, zoom controls, layout presets, keyboard navigation, reduced-motion support, view persistence, and theme-aware PNG export
+* New `GET /edges` REST endpoint; front-end shortcode/block visual attributes (`theme`, `color_by`, `show_legend`, `show_icons`, `show_edges`, `edge_style`)
+* Stripe checkout for the AI addon (payments via the vendor checkout API; no Stripe keys ship in the plugin; Stripe.js loads only when the purchase modal opens)
 
 = 1.0.3 — 2026-08-20 =
 * Encrypt remote-source credentials (AES-256-GCM) before storing them

@@ -34,6 +34,13 @@ class WP_MCP_AI_MCP_Client_Compatibility_Test extends WP_UnitTestCase {
 	protected $rest_controller;
 
 	/**
+	 * Bearer token for the suite assistant.
+	 *
+	 * @var string
+	 */
+	protected $bearer_token = '';
+
+	/**
 	 * Set up test environment.
 	 */
 	public function setUp(): void {
@@ -51,10 +58,26 @@ class WP_MCP_AI_MCP_Client_Compatibility_Test extends WP_UnitTestCase {
 			)
 		);
 
+		// Give the assistant a system prompt so initialize() advertises
+		// instructions built from it.
+		update_post_meta(
+			$this->assistant_id,
+			WP_MCP_AI_Assistant_CPT::META_SYSTEM_PROMPT,
+			'You are a helpful test assistant.'
+		);
+
 		// Set as default assistant.
 		$settings                      = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['default_assistant'] = $this->assistant_id;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		// Issue a credential — permissions_check_mcp() refuses bare nonce auth.
+		if ( class_exists( 'WP_MCP_AI_Credentials' ) ) {
+			$credential = WP_MCP_AI_Credentials::issue_credential( $this->assistant_id, $this->admin_id );
+			if ( is_array( $credential ) && isset( $credential['token'] ) ) {
+				$this->bearer_token = $credential['token'];
+			}
+		}
 
 		// Bootstrap REST controller.
 		$this->bootstrap_rest_controller();
@@ -99,6 +122,9 @@ class WP_MCP_AI_MCP_Client_Compatibility_Test extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		if ( ! empty( $this->bearer_token ) ) {
+			$request->set_header( 'Authorization', 'Bearer ' . $this->bearer_token );
+		}
 		$request->set_body( wp_json_encode( $message ) );
 
 		return rest_get_server()->dispatch( $request );
@@ -161,8 +187,16 @@ class WP_MCP_AI_MCP_Client_Compatibility_Test extends WP_UnitTestCase {
 	/**
 	 * Test that initialize respects filter to exclude tools.
 	 */
+	/**
+	 * Test that initialize respects the include-tools filter.
+	 *
+	 * `initialize` is routed to `mcp_server_discover()`, so the live filter is
+	 * `wp_mcp_ai_discover_include_tools`. The older
+	 * `wp_mcp_ai_initialize_include_tools` lives on the now-unreachable
+	 * `mcp_initialize()` method.
+	 */
 	public function test_initialize_respects_filter_to_exclude_tools() {
-		add_filter( 'wp_mcp_ai_initialize_include_tools', '__return_false' );
+		add_filter( 'wp_mcp_ai_discover_include_tools', '__return_false' );
 
 		$response = $this->send_mcp_request(
 			array(
@@ -176,7 +210,7 @@ class WP_MCP_AI_MCP_Client_Compatibility_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'result', $data );
 		$this->assertArrayNotHasKey( 'tools', $data['result'], 'Initialize should not include tools when filter returns false' );
 
-		remove_filter( 'wp_mcp_ai_initialize_include_tools', '__return_false' );
+		remove_filter( 'wp_mcp_ai_discover_include_tools', '__return_false' );
 	}
 
 	/**
@@ -201,9 +235,14 @@ class WP_MCP_AI_MCP_Client_Compatibility_Test extends WP_UnitTestCase {
 	/**
 	 * Test that initialize includes site information in instructions.
 	 */
-	public function test_initialize_instructions_include_site_info() {
-		$site_name = get_bloginfo( 'name' );
-
+	/**
+	 * Test that initialize instructions describe the resolved assistant.
+	 *
+	 * A credential-authenticated request is scoped to its assistant, so the
+	 * server advertises that assistant's instructions. The site-level
+	 * (site name + description) branch applies only when no assistant resolves.
+	 */
+	public function test_initialize_instructions_describe_resolved_assistant() {
 		$response = $this->send_mcp_request(
 			array(
 				'jsonrpc' => '2.0',
@@ -213,7 +252,12 @@ class WP_MCP_AI_MCP_Client_Compatibility_Test extends WP_UnitTestCase {
 		);
 
 		$data = $response->get_data();
-		$this->assertStringContainsString( $site_name, $data['result']['instructions'], 'Instructions should include site name' );
+		$this->assertNotEmpty( $data['result']['instructions'], 'Instructions should not be empty' );
+		$this->assertStringContainsString(
+			'You are a helpful test assistant.',
+			$data['result']['instructions'],
+			"Instructions should be built from the assistant's system prompt"
+		);
 	}
 
 	/**
@@ -332,14 +376,19 @@ class WP_MCP_AI_MCP_Client_Compatibility_Test extends WP_UnitTestCase {
 	/**
 	 * Test that notification (no id) returns 202 with no body.
 	 */
+	/**
+	 * Test that a notification (no id) returns 202 with no body.
+	 *
+	 * Uses `logging/setLevel`, a notification-style method the endpoint routes.
+	 * An unrouted method would answer 200 with a -32601 error envelope instead.
+	 */
 	public function test_notification_returns_202_with_no_body() {
 		$response = $this->send_mcp_request(
 			array(
 				'jsonrpc' => '2.0',
-				'method'  => 'logging/message',
+				'method'  => 'logging/setLevel',
 				'params'  => array(
-					'level'   => 'info',
-					'message' => 'test',
+					'level' => 'info',
 				),
 			)
 		);

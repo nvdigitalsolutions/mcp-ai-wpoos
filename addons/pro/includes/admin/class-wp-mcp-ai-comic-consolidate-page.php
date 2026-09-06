@@ -271,7 +271,9 @@ class WP_MCP_AI_Comic_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 		$comic_pages      = array();
 		$image_extensions = array( 'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp' );
 
-		for ( $i = 0; $i < $zip->num_files; $i++ ) {
+		// `num_files` is not a ZipArchive property on PHP 8.x; count the archive.
+		$entry_count = count( $zip );
+		for ( $i = 0; $i < $entry_count; $i++ ) {
 			$filename = $zip->getNameIndex( $i );
 
 			// Skip directories and hidden files.

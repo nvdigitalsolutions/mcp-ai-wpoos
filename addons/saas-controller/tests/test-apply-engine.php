@@ -533,7 +533,7 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 	public function test_apply_worker_metadata_carries_d1_and_kv_bindings() {
 		// Stash the deployment config so the metadata builder picks it up.
 		$cfg = NVOOS_SaaS_Controller_Deployment_Config::instance();
-		$cfg->save(
+		$cfg->set(
 			array(
 				'worker_name'     => 'mcp-oos-worker',
 				'd1_databases'    => array(

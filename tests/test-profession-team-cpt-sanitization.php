@@ -82,7 +82,9 @@ class WP_MCP_AI_Profession_Team_CPT_Sanitization_Test extends WP_UnitTestCase {
 
 		$this->assertIsArray( $result );
 		$this->assertSame( 'Bold Text', $result[0] );
-		$this->assertSame( 'alert("XSS")', $result[1] );
+		// sanitize_text_field() strips script/style elements together with
+		// their content, so the whole XSS payload is removed.
+		$this->assertSame( '', $result[1] );
 		$this->assertSame( 'Paragraph', $result[2] );
 	}
 
@@ -160,7 +162,7 @@ class WP_MCP_AI_Profession_Team_CPT_Sanitization_Test extends WP_UnitTestCase {
 		$result = $this->profession_cpt->sanitize_memory_files( $input );
 
 		$this->assertIsArray( $result );
-		// Negative values get converted to 0 by absint, then filtered out.
+		// Negative values clamp to zero and are filtered out.
 		$this->assertCount( 1, $result );
 		$this->assertContains( 123, $result );
 		$this->assertNotContains( -1, $result );
@@ -193,7 +195,9 @@ class WP_MCP_AI_Profession_Team_CPT_Sanitization_Test extends WP_UnitTestCase {
 		$input  = '<script>alert("XSS")</script>vs_test';
 		$result = $this->profession_cpt->sanitize_vector_store_id( $input );
 
-		$this->assertSame( 'alert("XSS")vs_test', $result );
+		// sanitize_text_field() strips the script element together with its
+		// content, leaving only the legitimate ID suffix.
+		$this->assertSame( 'vs_test', $result );
 	}
 
 	/**
@@ -411,7 +415,9 @@ class WP_MCP_AI_Profession_Team_CPT_Sanitization_Test extends WP_UnitTestCase {
 		// Retrieve and verify sanitization.
 		$expertise = get_post_meta( $prof_id, WP_MCP_AI_Profession_CPT::META_EXPERTISE, true );
 		$this->assertIsArray( $expertise );
-		$this->assertSame( 'alert("XSS")', $expertise[0] );
+		// The registered sanitizer strips the script element together with
+		// its content.
+		$this->assertSame( '', $expertise[0] );
 		$this->assertSame( 'PHP', $expertise[1] );
 	}
 
@@ -437,6 +443,7 @@ class WP_MCP_AI_Profession_Team_CPT_Sanitization_Test extends WP_UnitTestCase {
 		// Try with valid temperature.
 		update_post_meta( $team_id, WP_MCP_AI_Team_CPT::META_DEFAULT_TEMPERATURE, 0.7 );
 		$temp = get_post_meta( $team_id, WP_MCP_AI_Team_CPT::META_DEFAULT_TEMPERATURE, true );
-		$this->assertSame( 0.7, $temp );
+		// get_post_meta() returns the raw stored string; compare loosely.
+		$this->assertEquals( 0.7, $temp );
 	}
 }

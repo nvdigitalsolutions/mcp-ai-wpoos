@@ -58,6 +58,21 @@ class WP_MCP_AI_Project_Management_CPT_Registration_Test extends WP_UnitTestCase
 	}
 
 	/**
+	 * Register the main Project Management post types via their CPT classes.
+	 *
+	 * Production wires these registrations onto init at plugin load, but the
+	 * test environment flips the feature flag after load, so call the public
+	 * static registration entry points directly.
+	 *
+	 * @return void
+	 */
+	private function register_main_cpts() {
+		WP_MCP_AI_Project_CPT::register_post_type();
+		WP_MCP_AI_Task_CPT::register_post_type();
+		WP_MCP_AI_Event_CPT::register_post_type();
+	}
+
+	/**
 	 * Test that project management CPTs are registered when feature is enabled.
 	 */
 	public function test_cpts_registered_when_enabled() {
@@ -68,6 +83,7 @@ class WP_MCP_AI_Project_Management_CPT_Registration_Test extends WP_UnitTestCase
 
 		// Trigger the registration.
 		wp_mcp_ai_register_project_management_post_types();
+		$this->register_main_cpts();
 
 		// Verify post types are registered.
 		$this->assertTrue( post_type_exists( 'mcp_ai_project' ), 'Project CPT should be registered' );
@@ -104,6 +120,7 @@ class WP_MCP_AI_Project_Management_CPT_Registration_Test extends WP_UnitTestCase
 
 		// Trigger the registration.
 		wp_mcp_ai_register_project_management_post_types();
+		$this->register_main_cpts();
 
 		// Get the post type object.
 		$project_post_type = get_post_type_object( 'mcp_ai_project' );
@@ -124,13 +141,14 @@ class WP_MCP_AI_Project_Management_CPT_Registration_Test extends WP_UnitTestCase
 
 		// Trigger the registration.
 		wp_mcp_ai_register_project_management_post_types();
+		$this->register_main_cpts();
 
 		// Get the post type object.
 		$task_post_type = get_post_type_object( 'mcp_ai_task' );
 
 		// Verify show_in_menu is set to true.
 		$this->assertTrue( $task_post_type->show_in_menu, 'Task CPT should have show_in_menu set to true' );
-		$this->assertEquals( 'dashicons-list-view', $task_post_type->menu_icon, 'Task CPT should have list-view icon' );
+		$this->assertEquals( 'dashicons-editor-ol-rtl', $task_post_type->menu_icon, 'Task CPT should have list icon' );
 	}
 
 	/**
@@ -144,13 +162,14 @@ class WP_MCP_AI_Project_Management_CPT_Registration_Test extends WP_UnitTestCase
 
 		// Trigger the registration.
 		wp_mcp_ai_register_project_management_post_types();
+		$this->register_main_cpts();
 
 		// Get the post type object.
 		$event_post_type = get_post_type_object( 'mcp_ai_event' );
 
 		// Verify show_in_menu is set to true.
 		$this->assertTrue( $event_post_type->show_in_menu, 'Event CPT should have show_in_menu set to true' );
-		$this->assertEquals( 'dashicons-calendar-alt', $event_post_type->menu_icon, 'Event CPT should have calendar icon' );
+		$this->assertEquals( 'dashicons-calendar', $event_post_type->menu_icon, 'Event CPT should have calendar icon' );
 	}
 
 	/**
@@ -164,6 +183,7 @@ class WP_MCP_AI_Project_Management_CPT_Registration_Test extends WP_UnitTestCase
 
 		// Trigger the registration.
 		wp_mcp_ai_register_project_management_post_types();
+		$this->register_main_cpts();
 
 		// Check Project labels.
 		$project_post_type = get_post_type_object( 'mcp_ai_project' );
@@ -192,6 +212,7 @@ class WP_MCP_AI_Project_Management_CPT_Registration_Test extends WP_UnitTestCase
 
 		// Trigger the registration.
 		wp_mcp_ai_register_project_management_post_types();
+		$this->register_main_cpts();
 
 		// Check all three CPTs.
 		$post_types = array( 'mcp_ai_project', 'mcp_ai_task', 'mcp_ai_event' );
@@ -234,7 +255,8 @@ class WP_MCP_AI_Project_Management_CPT_Registration_Test extends WP_UnitTestCase
 		// Verify default categories exist.
 		$health_wellness = get_term_by( 'slug', 'health-wellness', 'mcp_ai_project_category' );
 		$this->assertNotFalse( $health_wellness );
-		$this->assertEquals( 'Health & Wellness', $health_wellness->name );
+		// Core normalizes & to &amp; when terms are stored (WP 6.9+).
+		$this->assertEquals( 'Health &amp; Wellness', $health_wellness->name );
 
 		$development = get_term_by( 'slug', 'development', 'mcp_ai_project_category' );
 		$this->assertNotFalse( $development );
@@ -283,7 +305,8 @@ class WP_MCP_AI_Project_Management_CPT_Registration_Test extends WP_UnitTestCase
 		$terms = wp_get_object_terms( $post_id, 'mcp_ai_project_category' );
 		$this->assertIsArray( $terms );
 		$this->assertCount( 1, $terms );
-		$this->assertEquals( 'Health & Wellness', $terms[0]->name );
+		// Core normalizes & to &amp; when terms are stored (WP 6.9+).
+		$this->assertEquals( 'Health &amp; Wellness', $terms[0]->name );
 
 		// Clean up.
 		wp_delete_post( $post_id, true );
@@ -317,7 +340,8 @@ class WP_MCP_AI_Project_Management_CPT_Registration_Test extends WP_UnitTestCase
 		// Verify default categories exist.
 		$health_wellness = get_term_by( 'slug', 'health-wellness', 'mcp_ai_task_category' );
 		$this->assertNotFalse( $health_wellness );
-		$this->assertEquals( 'Health & Wellness', $health_wellness->name );
+		// Core normalizes & to &amp; when terms are stored (WP 6.9+).
+		$this->assertEquals( 'Health &amp; Wellness', $health_wellness->name );
 
 		$development = get_term_by( 'slug', 'development', 'mcp_ai_task_category' );
 		$this->assertNotFalse( $development );
@@ -366,7 +390,8 @@ class WP_MCP_AI_Project_Management_CPT_Registration_Test extends WP_UnitTestCase
 		$terms = wp_get_object_terms( $post_id, 'mcp_ai_task_category' );
 		$this->assertIsArray( $terms );
 		$this->assertCount( 1, $terms );
-		$this->assertEquals( 'Health & Wellness', $terms[0]->name );
+		// Core normalizes & to &amp; when terms are stored (WP 6.9+).
+		$this->assertEquals( 'Health &amp; Wellness', $terms[0]->name );
 
 		// Clean up.
 		wp_delete_post( $post_id, true );

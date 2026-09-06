@@ -78,9 +78,9 @@ class Test_Capability_Flags_Filter extends WP_UnitTestCase {
 
 			// Vision-capable models should be present.
 			$this->assertArrayHasKey( 'gpt-4o', $openai_models );
-			$this->assertArrayHasKey( 'gpt-4-turbo', $openai_models );
+			$this->assertArrayHasKey( 'gpt-4o-mini', $openai_models );
 
-			// Text-only models should NOT be present.
+			// Retired text-only models are no longer in the catalog.
 			$this->assertArrayNotHasKey( 'o1-2024-12-17', $openai_models );
 			$this->assertArrayNotHasKey( 'o1-mini', $openai_models );
 			$this->assertArrayNotHasKey( 'gpt-3.5-turbo', $openai_models );
@@ -116,7 +116,7 @@ class Test_Capability_Flags_Filter extends WP_UnitTestCase {
 
 			// Multimodal models should be present.
 			$this->assertArrayHasKey( 'gemini-2.5-flash', $gemini_models );
-			$this->assertArrayHasKey( 'gemini-1.5-pro', $gemini_models );
+			$this->assertArrayHasKey( 'gemini-2.5-pro', $gemini_models );
 
 			// Text-only Gemma models should NOT be present.
 			$this->assertArrayNotHasKey( 'gemma-2-27b-it', $gemini_models );
@@ -190,7 +190,7 @@ class Test_Capability_Flags_Filter extends WP_UnitTestCase {
 			$openai_models = $models['openai_group']['options'];
 
 			// Both text-only and multimodal models should be present.
-			$this->assertArrayHasKey( 'o1-2024-12-17', $openai_models );
+			$this->assertArrayHasKey( 'gpt-4.1', $openai_models );
 			$this->assertArrayHasKey( 'gpt-4o', $openai_models );
 		}
 	}
@@ -285,9 +285,9 @@ class Test_Capability_Flags_Filter extends WP_UnitTestCase {
 			$openai_models = $models['openai_group']['options'];
 
 			// Both text-only and multimodal models should be available.
-			$this->assertArrayHasKey( 'o1-2024-12-17', $openai_models );
+			$this->assertArrayHasKey( 'gpt-4.1', $openai_models );
 			$this->assertArrayHasKey( 'gpt-4o', $openai_models );
-			$this->assertArrayHasKey( 'gpt-3.5-turbo', $openai_models );
+			$this->assertArrayHasKey( 'gpt-4o-mini', $openai_models );
 		}
 	}
 }

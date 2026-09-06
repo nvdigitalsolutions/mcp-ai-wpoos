@@ -87,15 +87,15 @@ final class DataBudgetTrackerTest extends TestCase
 
     public function test_exhaustion_when_consumed_equals_budget(): void
     {
-        $tracker = new DataBudgetTracker(1000, 500);
-        $tracker->record(1000);
+        $tracker = new DataBudgetTracker(1024, 500);
+        $tracker->record(1024);
         $this->assertTrue($tracker->isExhausted());
         $this->assertSame(0, $tracker->remaining());
     }
 
     public function test_exhaustion_when_consumed_exceeds_budget(): void
     {
-        $tracker = new DataBudgetTracker(1000, 500);
+        $tracker = new DataBudgetTracker(1024, 500);
         $tracker->record(1500);
         $this->assertTrue($tracker->isExhausted());
         $this->assertSame(0, $tracker->remaining());
@@ -172,8 +172,8 @@ final class DataBudgetTrackerTest extends TestCase
 
     public function test_exhausted_budget_always_spills(): void
     {
-        $tracker = new DataBudgetTracker(100, 50);
-        $tracker->record(100);
+        $tracker = new DataBudgetTracker(1024, 512);
+        $tracker->record(1024);
         $this->assertTrue($tracker->shouldSpill(1));
     }
 }

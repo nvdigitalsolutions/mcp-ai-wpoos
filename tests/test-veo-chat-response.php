@@ -104,14 +104,18 @@ class WP_MCP_AI_Veo_Chat_Response_Test extends WP_UnitTestCase {
 		// Create a test user with upload permissions.
 		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
 
-		// Execute tool.
+		// Execute tool. in_async_executor forces the synchronous path (the tool
+		// defaults to async mode).
 		$result = $tool->execute(
 			array(
 				'prompt'        => 'A cat playing piano',
 				'duration'      => 5,
 				'save_to_media' => true,
 			),
-			array( 'user_id' => $user_id )
+			array(
+				'user_id'           => $user_id,
+				'in_async_executor' => true,
+			)
 		);
 
 		// Verify response structure for chat client.
@@ -338,7 +342,7 @@ class WP_MCP_AI_Veo_Chat_Response_Test extends WP_UnitTestCase {
 		// Verify message format includes metadata.
 		$this->assertStringContainsString( '5s', $completed_metadata['result']['message'], 'Message should include duration' );
 		$this->assertStringContainsString( '720p', $completed_metadata['result']['message'], 'Message should include resolution' );
-		$this->assertStringContainsString( '3:2', $completed_metadata['result']['message'], 'Message should include aspect ratio' );
+		$this->assertStringContainsString( '16:9', $completed_metadata['result']['message'], 'Message should include aspect ratio' );
 
 		// Clean up.
 		delete_transient( 'wp_mcp_ai_veo_async_' . $job_id );

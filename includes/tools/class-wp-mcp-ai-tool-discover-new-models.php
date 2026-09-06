@@ -408,9 +408,15 @@ class WP_MCP_AI_Tool_Discover_New_Models implements WP_MCP_AI_Tool_Interface, WP
 	protected function get_known_anthropic_models() {
 		// Anthropic doesn't expose a models list API, so we use known models.
 		return array(
-			'claude-mythos-preview'      => array( 'name' => 'Claude Mythos Preview (Apr 2026)' ),
-			'claude-opus-4-6'            => array( 'name' => 'Claude Opus 4.6 (Flagship)' ),
-			'claude-sonnet-4-6'          => array( 'name' => 'Claude Sonnet 4.6 (Recommended)' ),
+			'claude-opus-5'              => array( 'name' => 'Claude Opus 5 (Jul 2026 - Flagship)' ),
+			'claude-fable-5.1'           => array( 'name' => 'Claude Fable 5.1 (Sep 2026 - Top Tier)' ),
+			'claude-mythos-5'            => array( 'name' => 'Claude Mythos 5 (Invitation-only)' ),
+			'claude-sonnet-5'            => array( 'name' => 'Claude Sonnet 5 (Current)' ),
+			'claude-opus-4-8'            => array( 'name' => 'Claude Opus 4.8 (May 2026)' ),
+			'claude-opus-4-7'            => array( 'name' => 'Claude Opus 4.7' ),
+			'claude-opus-4-6'            => array( 'name' => 'Claude Opus 4.6' ),
+			'claude-sonnet-4-6'          => array( 'name' => 'Claude Sonnet 4.6' ),
+			'claude-haiku-4-5'           => array( 'name' => 'Claude Haiku 4.5 (Fastest)' ),
 			'claude-sonnet-4-5-20250929' => array( 'name' => 'Claude Sonnet 4.5 (Sep 2025)' ),
 			'claude-haiku-4-5-20251001'  => array( 'name' => 'Claude Haiku 4.5 (Oct 2025)' ),
 			'claude-opus-4-5-20251101'   => array( 'name' => 'Claude Opus 4.5 (Nov 2025)' ),
@@ -418,9 +424,6 @@ class WP_MCP_AI_Tool_Discover_New_Models implements WP_MCP_AI_Tool_Interface, WP
 			'claude-sonnet-4-20250514'   => array( 'name' => 'Claude Sonnet 4 (May 2025)' ),
 			'claude-opus-4-20250514'     => array( 'name' => 'Claude Opus 4 (May 2025)' ),
 			'claude-3-7-sonnet-20250219' => array( 'name' => 'Claude 3.7 Sonnet (Feb 2025)' ),
-			'claude-sonnet-5'            => array( 'name' => 'Claude Sonnet 5 (Current)' ),
-			'claude-haiku-4-5'           => array( 'name' => 'Claude Haiku 4.5 (Fastest)' ),
-			'claude-sonnet-4-6'          => array( 'name' => 'Claude Sonnet 4.6 (Legacy)' ),
 			'claude-3-5-sonnet-20241022' => array( 'name' => 'Claude 3.5 Sonnet (Legacy)' ),
 			'claude-3-5-haiku-20241022'  => array( 'name' => 'Claude 3.5 Haiku (Legacy)' ),
 			'claude-3-haiku-20240307'    => array( 'name' => 'Claude 3 Haiku (Legacy)' ),

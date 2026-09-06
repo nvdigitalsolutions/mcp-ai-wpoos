@@ -23,10 +23,20 @@ class Test_Vault_Item_Metaboxes extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Vault_Item_CPT' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/vault/class-wp-mcp-ai-vault-item-cpt.php';
 		}
+		if ( ! class_exists( 'WP_MCP_AI_Vault_Folder_CPT' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/vault/class-wp-mcp-ai-vault-folder-cpt.php';
+		}
 
 		// Load encryption service.
 		if ( ! class_exists( 'WP_MCP_AI_Vault_Encryption_Service' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/vault/class-wp-mcp-ai-vault-encryption-service.php';
+		}
+
+		// The encryption service derives keys from AUTH_KEY, which the test
+		// bootstrap does not define; without it every encrypt() call returns
+		// a WP_Error and nothing is persisted.
+		if ( ! defined( 'AUTH_KEY' ) ) {
+			define( 'AUTH_KEY', 'wp-mcp-ai-vault-test-auth-key-0123456789abcdef' );
 		}
 
 		// Create a test user with vault capabilities.
@@ -98,6 +108,16 @@ class Test_Vault_Item_Metaboxes extends WP_UnitTestCase {
 	 * Test that folder ID can be saved
 	 */
 	public function test_save_folder_id() {
+		// The handler only accepts a folder that exists and belongs to the
+		// current user; create one first.
+		$folder_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_vault_folder',
+				'post_title'  => 'Test Vault Folder',
+				'post_author' => $this->test_user_id,
+			)
+		);
+
 		$post_id = $this->factory->post->create(
 			array(
 				'post_type'   => 'mcp_vault_item',
@@ -110,15 +130,15 @@ class Test_Vault_Item_Metaboxes extends WP_UnitTestCase {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['mcp_vault_item_meta_nonce'] = wp_create_nonce( 'mcp_vault_item_meta' );
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$_POST['vault_folder_id'] = 42;
+		$_POST['vault_folder_id'] = $folder_id;
 
 		// Trigger save.
 		$vault_cpt = WP_MCP_AI_Vault_Item_CPT::get_instance();
 		$vault_cpt->save_vault_item_meta( $post_id, get_post( $post_id ) );
 
 		// Verify folder ID was saved.
-		$folder_id = get_post_meta( $post_id, '_vault_folder_id', true );
-		$this->assertEquals( 42, $folder_id, 'Folder ID should be saved as 42' );
+		$saved_folder_id = get_post_meta( $post_id, '_vault_folder_id', true );
+		$this->assertEquals( $folder_id, $saved_folder_id, 'Folder ID should be saved' );
 	}
 
 	/**

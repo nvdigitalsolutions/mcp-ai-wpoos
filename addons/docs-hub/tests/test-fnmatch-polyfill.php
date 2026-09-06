@@ -3,7 +3,16 @@
  * Quick smoke test for the fnmatch polyfill.
  *
  * Run via: php tests/test-fnmatch-polyfill.php
+ *
+ * This is a standalone script, not a PHPUnit suite. Guard the execution so
+ * that passing the whole tests directory to PHPUnit (which `require`s every
+ * `.php` file to discover test classes) doesn't run the script and exit(0)
+ * mid-run.
  */
+
+if ( class_exists( 'PHPUnit\Framework\TestCase' ) ) {
+	return;
+}
 
 // Replicate the polyfill exactly as in nvoos-docs-hub.php.
 if ( ! function_exists( 'fnmatch' ) ) {

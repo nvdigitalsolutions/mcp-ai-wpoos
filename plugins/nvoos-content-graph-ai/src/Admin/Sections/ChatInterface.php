@@ -3,18 +3,22 @@ declare(strict_types=1);
 
 namespace NvoosContentGraphAi\Admin\Sections;
 
-use NvoosContentGraph\Admin\Section;
+use NvoosContentGraphAi\Admin\Settings\AiSection;
 
 /**
  * Chat Interface — interactive AI chat testing panel.
  *
  * Renders a full chat UI (not a settings form) on its own tab.
  * The actual chat logic lives in JS (content-graph-ai-chat.js) which
- * talks to the REST endpoint at /nvoos-content-graph/v1/ai/chat.
+ * talks to the REST endpoints under /nvoos-content-graph/v1/ai/.
+ *
+ * The tester mirrors the SPA-v2 SSE contract and stays dependency-free:
+ * provider/model/tool controls, system prompt toggle, streaming answers,
+ * markdown rendering, tool cards, cost badge, debug log.
  *
  * @since 1.0.0
  */
-class ChatInterface extends Section {
+class ChatInterface extends AiSection {
 
 	public function get_id(): string {
 		return 'ai_chat_interface';
@@ -53,6 +57,7 @@ class ChatInterface extends Section {
 	private function enqueueAssets(): void {
 		$cssUrl = NVOOS_CONTENT_GRAPH_AI_URL . 'assets/css/content-graph-ai-chat.css';
 		$cssVer = NVOOS_CONTENT_GRAPH_AI_VERSION;
+		$sseUrl = NVOOS_CONTENT_GRAPH_AI_URL . 'assets/js/content-graph-ai-sse.js';
 		$jsUrl  = NVOOS_CONTENT_GRAPH_AI_URL . 'assets/js/content-graph-ai-chat.js';
 		$jsVer  = NVOOS_CONTENT_GRAPH_AI_VERSION;
 
@@ -64,29 +69,64 @@ class ChatInterface extends Section {
 		);
 
 		\wp_enqueue_script(
-			'nvoos-content-graph-ai-chat',
-			$jsUrl,
+			'nvoos-content-graph-ai-sse',
+			$sseUrl,
 			array(),
 			$jsVer,
 			true, // in footer
 		);
+
+		\wp_enqueue_script(
+			'nvoos-content-graph-ai-chat',
+			$jsUrl,
+			array( 'nvoos-content-graph-ai-sse' ),
+			$jsVer,
+			true, // in footer
+		);
+
+		$settings = \NvoosContentGraph\Settings::all();
 
 		// Pass config to JS.
 		\wp_add_inline_script(
 			'nvoos-content-graph-ai-chat',
 			'window.NvoosContentGraphAiChat = ' . \wp_json_encode(
 				array(
-					'restUrl'   => \rest_url( 'nvoos-content-graph/v1' ),
-					'nonce'     => \wp_create_nonce( 'wp_rest' ),
-					'providers' => $this->getAvailableProviders(),
-					'i18n'      => array(
-						'placeholder'    => __( 'Type your message…', 'nvoos-content-graph-ai' ),
-						'send'           => __( 'Send', 'nvoos-content-graph-ai' ),
-						'thinking'       => __( 'Thinking…', 'nvoos-content-graph-ai' ),
-						'error'          => __( 'Something went wrong. Check the console for details.', 'nvoos-content-graph-ai' ),
-						'toolsUsed'      => __( 'Tools used', 'nvoos-content-graph-ai' ),
-						'cost'           => __( 'Cost', 'nvoos-content-graph-ai' ),
-						'selectProvider' => __( 'Provider', 'nvoos-content-graph-ai' ),
+					'restUrl'           => \rest_url( 'nvoos-content-graph/v1' ),
+					'nonce'             => \wp_create_nonce( 'wp_rest' ),
+					'defaultProvider'   => (string) ( $settings['ai_default_provider'] ?? 'openai' ),
+					'defaultModel'      => (string) ( $settings['ai_default_model'] ?? 'gpt-4o' ),
+					'providersFallback' => self::getProviderFallback(),
+					'i18n'              => array(
+						'placeholder'        => __( 'Type your message…', 'nvoos-content-graph-ai' ),
+						'send'               => __( 'Send', 'nvoos-content-graph-ai' ),
+						'stop'               => __( 'Stop', 'nvoos-content-graph-ai' ),
+						'stopped'            => __( 'Stopped.', 'nvoos-content-graph-ai' ),
+						'thinking'           => __( 'Thinking…', 'nvoos-content-graph-ai' ),
+						'error'              => __( 'Something went wrong. Check the debug log for details.', 'nvoos-content-graph-ai' ),
+						'retry'              => __( 'Retry', 'nvoos-content-graph-ai' ),
+						'rejected'           => __( 'Request rejected by policy.', 'nvoos-content-graph-ai' ),
+						'noResponse'         => __( 'No response content was received.', 'nvoos-content-graph-ai' ),
+						'toolsUsed'          => __( 'Tools used', 'nvoos-content-graph-ai' ),
+						'cost'               => __( 'Cost', 'nvoos-content-graph-ai' ),
+						'provider'           => __( 'Provider', 'nvoos-content-graph-ai' ),
+						'model'              => __( 'Model', 'nvoos-content-graph-ai' ),
+						'tools'              => __( 'Tools', 'nvoos-content-graph-ai' ),
+						'none'               => __( 'None', 'nvoos-content-graph-ai' ),
+						'systemPrompt'       => __( 'System prompt', 'nvoos-content-graph-ai' ),
+						'clearChat'          => __( 'Clear Chat', 'nvoos-content-graph-ai' ),
+						'empty'              => __( 'Send a message to test the AI. Your knowledge graph is available as context.', 'nvoos-content-graph-ai' ),
+						'copy'               => __( 'Copy', 'nvoos-content-graph-ai' ),
+						'copied'             => __( 'Copied', 'nvoos-content-graph-ai' ),
+						'raw'                => __( 'Raw', 'nvoos-content-graph-ai' ),
+						'rendered'           => __( 'Rendered', 'nvoos-content-graph-ai' ),
+						'debug'              => __( 'Debug log', 'nvoos-content-graph-ai' ),
+						'configured'         => __( 'configured', 'nvoos-content-graph-ai' ),
+						'missingKey'         => __( 'no key', 'nvoos-content-graph-ai' ),
+						'configError'        => __( 'Could not load tester configuration. Using fallback provider list.', 'nvoos-content-graph-ai' ),
+						'graphTools'         => __( 'Graph tools (read-only)', 'nvoos-content-graph-ai' ),
+						'noTools'            => __( 'No tools', 'nvoos-content-graph-ai' ),
+						'contextUnavailable' => __( 'Graph context is unavailable — build the knowledge graph first.', 'nvoos-content-graph-ai' ),
+						'modelsFailed'       => __( 'Could not load the model list for this provider. You can still type a model id manually.', 'nvoos-content-graph-ai' ),
 					),
 				),
 				\JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE,
@@ -96,25 +136,26 @@ class ChatInterface extends Section {
 	}
 
 	/**
-	 * Get the list of available AI providers with their labels.
+	 * Fallback provider map used when the /ai/chat/config endpoint
+	 * cannot be reached (offline resilience for the dropdown).
 	 *
 	 * @return array<int, array{slug: string, label: string}>
 	 */
-	private function getAvailableProviders(): array {
+	private static function getProviderFallback(): array {
 		$map = array(
-			'openai'       => 'OpenAI',
-			'gemini'       => 'Google Gemini',
-			'anthropic'    => 'Anthropic Claude',
-			'ollama'       => 'Ollama (local)',
-			'deepseek'     => 'DeepSeek',
-			'openrouter'   => 'OpenRouter',
-			'huggingface'  => 'HuggingFace',
-			'cloudflare'   => 'Cloudflare Workers AI',
-			'lm_studio'    => 'LM Studio (local)',
-			'nvidia_nim'   => 'NVIDIA NIM',
-			'digitalocean' => 'DigitalOcean',
-			'kimi'         => 'Kimi (Moonshot)',
-			'baseten'      => 'Baseten',
+			'openai'       => __( 'OpenAI', 'nvoos-content-graph-ai' ),
+			'gemini'       => __( 'Google Gemini', 'nvoos-content-graph-ai' ),
+			'anthropic'    => __( 'Anthropic Claude', 'nvoos-content-graph-ai' ),
+			'ollama'       => __( 'Ollama (local)', 'nvoos-content-graph-ai' ),
+			'deepseek'     => __( 'DeepSeek', 'nvoos-content-graph-ai' ),
+			'openrouter'   => __( 'OpenRouter', 'nvoos-content-graph-ai' ),
+			'huggingface'  => __( 'HuggingFace', 'nvoos-content-graph-ai' ),
+			'cloudflare'   => __( 'Cloudflare Workers AI', 'nvoos-content-graph-ai' ),
+			'lm_studio'    => __( 'LM Studio (local)', 'nvoos-content-graph-ai' ),
+			'nvidia_nim'   => __( 'NVIDIA NIM', 'nvoos-content-graph-ai' ),
+			'digitalocean' => __( 'DigitalOcean', 'nvoos-content-graph-ai' ),
+			'kimi'         => __( 'Kimi (Moonshot)', 'nvoos-content-graph-ai' ),
+			'baseten'      => __( 'Baseten', 'nvoos-content-graph-ai' ),
 		);
 
 		$providers = array();
@@ -144,12 +185,40 @@ class ChatInterface extends Section {
 				<label class="nvoos-chat-toolbar__label" for="nvoos-chat-model">
 					<?php echo \esc_html__( 'Model', 'nvoos-content-graph-ai' ); ?>
 				</label>
-				<select id="nvoos-chat-model" class="nvoos-chat-toolbar__select">
-					<option value=""><?php echo \esc_html__( 'Default', 'nvoos-content-graph-ai' ); ?></option>
+				<input
+					type="text"
+					id="nvoos-chat-model"
+					class="nvoos-chat-toolbar__input"
+					list="nvoos-chat-model-list"
+					placeholder="<?php echo \esc_attr__( 'Default', 'nvoos-content-graph-ai' ); ?>"
+					aria-label="<?php echo \esc_attr__( 'Model', 'nvoos-content-graph-ai' ); ?>"
+				>
+				<datalist id="nvoos-chat-model-list"></datalist>
+
+				<label class="nvoos-chat-toolbar__label" for="nvoos-chat-tools">
+					<?php echo \esc_html__( 'Tools', 'nvoos-content-graph-ai' ); ?>
+				</label>
+				<select id="nvoos-chat-tools" class="nvoos-chat-toolbar__select nvoos-chat-toolbar__select--short">
+					<option value="none"><?php echo \esc_html__( 'None', 'nvoos-content-graph-ai' ); ?></option>
+					<option value="graph"><?php echo \esc_html__( 'Graph', 'nvoos-content-graph-ai' ); ?></option>
 				</select>
+
+					<label class="nvoos-chat-toolbar__check" for="nvoos-chat-system-prompt">
+						<input type="checkbox" id="nvoos-chat-system-prompt" checked>
+						<?php echo \esc_html__( 'System prompt', 'nvoos-content-graph-ai' ); ?>
+					</label>
+
+					<label class="nvoos-chat-toolbar__check" for="nvoos-chat-context" title="<?php echo \esc_attr__( 'Include relevant context from the knowledge graph when available.', 'nvoos-content-graph-ai' ); ?>">
+						<input type="checkbox" id="nvoos-chat-context" checked>
+						<?php echo \esc_html__( 'Graph context', 'nvoos-content-graph-ai' ); ?>
+					</label>
 
 				<button type="button" id="nvoos-chat-clear" class="button">
 					<?php echo \esc_html__( 'Clear Chat', 'nvoos-content-graph-ai' ); ?>
+				</button>
+
+				<button type="button" id="nvoos-chat-stop" class="button" disabled>
+					<?php echo \esc_html__( 'Stop', 'nvoos-content-graph-ai' ); ?>
 				</button>
 
 				<span id="nvoos-chat-cost" class="nvoos-chat-cost" aria-live="polite"></span>
@@ -179,6 +248,12 @@ class ChatInterface extends Section {
 					<?php echo \esc_html__( 'Send', 'nvoos-content-graph-ai' ); ?>
 				</button>
 			</div>
+
+			<!-- Debug -->
+			<details id="nvoos-chat-debug" class="nvoos-chat-debug">
+				<summary><?php echo \esc_html__( 'Debug log', 'nvoos-content-graph-ai' ); ?></summary>
+				<pre id="nvoos-chat-debug-log" class="nvoos-chat-debug__log"></pre>
+			</details>
 		</div>
 		<?php
 	}

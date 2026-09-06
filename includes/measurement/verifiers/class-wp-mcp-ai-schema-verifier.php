@@ -188,7 +188,10 @@ class WP_MCP_AI_Schema_Verifier extends WP_MCP_AI_Verifier_Base {
 			}
 		}
 
-		if ( is_array( $value ) && isset( $schema['properties'] ) && is_array( $schema['properties'] ) ) {
+		if ( is_array( $value ) ) {
+			// Required keys are enforceable independently of `properties` per
+			// JSON Schema — a schema may declare required keys without
+			// declaring their shapes.
 			if ( isset( $schema['required'] ) && is_array( $schema['required'] ) ) {
 				foreach ( $schema['required'] as $required_key ) {
 					if ( ! array_key_exists( $required_key, $value ) ) {
@@ -201,6 +204,9 @@ class WP_MCP_AI_Schema_Verifier extends WP_MCP_AI_Verifier_Base {
 					}
 				}
 			}
+		}
+
+		if ( is_array( $value ) && isset( $schema['properties'] ) && is_array( $schema['properties'] ) ) {
 			foreach ( $schema['properties'] as $prop_name => $prop_schema ) {
 				if ( is_array( $prop_schema ) && array_key_exists( $prop_name, $value ) ) {
 					$this->validate( $value[ $prop_name ], $prop_schema, '' === $path ? $prop_name : $path . '.' . $prop_name, $errors );

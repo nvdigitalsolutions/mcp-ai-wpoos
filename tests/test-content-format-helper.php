@@ -33,7 +33,9 @@ class Test_Content_Format_Helper extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		$this->admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+		$this->reset_seo_plugin_cache();
 
 		// Create test posts for various format scenarios.
 		$this->post_ids['block_post'] = $this->factory->post->create(
@@ -435,12 +437,37 @@ class Test_Content_Format_Helper extends WP_UnitTestCase {
 	// ---------------------------------------------------------------------------
 
 	/**
+	 * Reset the cached SEO plugin detection.
+	 *
+	 * Detect_seo_plugin() caches its answer in a private static, so tests that
+	 * override detection through the wp_mcp_ai_detected_seo_plugin filter must
+	 * clear the cache first (and afterwards so later tests re-detect).
+	 */
+	private function reset_seo_plugin_cache() {
+		$reflection = new ReflectionProperty( 'WP_MCP_AI_Content_Format_Helper', 'seo_plugin' );
+		$reflection->setAccessible( true );
+		$reflection->setValue( null, null );
+	}
+
+	/**
 	 * Test detect_seo_plugin returns none when no SEO plugin is active.
 	 */
 	public function test_detect_seo_plugin_none() {
-		// In a test environment, no SEO plugin is active by default.
-		// We skip the cache by not having called it yet.
+		// The test environment loads Rank Math as an optional plugin, so force
+		// the "no SEO plugin" state through the production filter seam.
+		$this->reset_seo_plugin_cache();
+		add_filter(
+			'wp_mcp_ai_detected_seo_plugin',
+			function () {
+				return WP_MCP_AI_Content_Format_Helper::SEO_NONE;
+			}
+		);
+
 		$result = WP_MCP_AI_Content_Format_Helper::detect_seo_plugin();
+
+		remove_all_filters( 'wp_mcp_ai_detected_seo_plugin' );
+		$this->reset_seo_plugin_cache();
+
 		$this->assertSame( WP_MCP_AI_Content_Format_Helper::SEO_NONE, $result );
 	}
 
@@ -507,7 +534,21 @@ class Test_Content_Format_Helper extends WP_UnitTestCase {
 	 * Test get_seo_plugin_name returns 'None' when no plugin is active.
 	 */
 	public function test_get_seo_plugin_name_none() {
-		$this->assertSame( 'None', WP_MCP_AI_Content_Format_Helper::get_seo_plugin_name() );
+		// Force the "no SEO plugin" state through the production filter seam.
+		$this->reset_seo_plugin_cache();
+		add_filter(
+			'wp_mcp_ai_detected_seo_plugin',
+			function () {
+				return WP_MCP_AI_Content_Format_Helper::SEO_NONE;
+			}
+		);
+
+		$name = WP_MCP_AI_Content_Format_Helper::get_seo_plugin_name();
+
+		remove_all_filters( 'wp_mcp_ai_detected_seo_plugin' );
+		$this->reset_seo_plugin_cache();
+
+		$this->assertSame( 'None', $name );
 	}
 
 	// ---------------------------------------------------------------------------
@@ -576,7 +617,14 @@ class Test_Content_Format_Helper extends WP_UnitTestCase {
 	 * Test is_elementor_active returns false when Elementor is not loaded.
 	 */
 	public function test_is_elementor_active_false() {
-		// In a test environment, Elementor is not active.
-		$this->assertFalse( WP_MCP_AI_Content_Format_Helper::is_elementor_active() );
+		// The test environment loads Elementor as an optional plugin, so force
+		// the inactive state through the production filter seam.
+		add_filter( 'wp_mcp_ai_elementor_active', '__return_false' );
+
+		$result = WP_MCP_AI_Content_Format_Helper::is_elementor_active();
+
+		remove_filter( 'wp_mcp_ai_elementor_active', '__return_false' );
+
+		$this->assertFalse( $result );
 	}
 }

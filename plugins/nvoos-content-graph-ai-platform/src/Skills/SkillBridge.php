@@ -25,10 +25,15 @@ final class SkillBridge {
 	 * @return \WP_MCP_AI_Skill_Registry|null
 	 */
 	public static function registry(): ?object {
-		if ( ! class_exists( 'WP_MCP_AI_Skill_Registry' ) ) {
-			return null;
+		// Prefer the ported registry (same storage: uploads dir + option keys);
+		// fall back to the base copy for packaging BC.
+		if ( class_exists( SkillRegistry::class ) ) {
+			return SkillRegistry::instance();
 		}
-		return \WP_MCP_AI_Skill_Registry::instance();
+		if ( defined( 'WP_MCP_AI_PATH' ) && class_exists( 'WP_MCP_AI_Skill_Registry' ) ) {
+			return \WP_MCP_AI_Skill_Registry::instance();
+		}
+		return null;
 	}
 
 	/**
@@ -37,10 +42,13 @@ final class SkillBridge {
 	 * @return \WP_MCP_AI_Skill_Pack_Registry|null
 	 */
 	public static function packRegistry(): ?object {
-		if ( ! class_exists( 'WP_MCP_AI_Skill_Pack_Registry' ) ) {
-			return null;
+		if ( class_exists( SkillPackRegistry::class ) ) {
+			return SkillPackRegistry::instance();
 		}
-		return \WP_MCP_AI_Skill_Pack_Registry::instance();
+		if ( defined( 'WP_MCP_AI_PATH' ) && class_exists( 'WP_MCP_AI_Skill_Pack_Registry' ) ) {
+			return \WP_MCP_AI_Skill_Pack_Registry::instance();
+		}
+		return null;
 	}
 
 	/**

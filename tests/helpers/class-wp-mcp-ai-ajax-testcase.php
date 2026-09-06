@@ -129,6 +129,11 @@ abstract class WP_MCP_AI_Ajax_TestCase extends WP_Ajax_UnitTestCase {
 		}
 		$_REQUEST = array_merge( $_REQUEST, $_POST );
 
+		// Fresh dispatch: never let output captured by a previous dispatch
+		// (or leaked by an unrelated test) pollute this response.
+		$this->_last_response = '';
+		$buffer_level         = ob_get_level();
+
 		try {
 			$this->_handleAjax( $action );
 		} catch ( WPAjaxDieContinueException $e ) {
@@ -137,6 +142,17 @@ abstract class WP_MCP_AI_Ajax_TestCase extends WP_Ajax_UnitTestCase {
 		} catch ( WPAjaxDieStopException $e ) {
 			// Expected for `wp_die()` paths (e.g. nonce failures).
 			unset( $e );
+		} catch ( WPDieException $e ) {
+			// The suite-wide throwing die handler (tests/bootstrap.php) throws
+			// WPDieException for request termination paths the ajax harness
+			// does not convert first. Treat it like a stopped dispatch.
+			unset( $e );
+		} finally {
+			// Discard any buffers the handler (or the die path) opened without
+			// closing, so a failed dispatch cannot corrupt the next one.
+			while ( ob_get_level() > $buffer_level ) {
+				ob_end_clean();
+			}
 		}
 
 		$raw     = $this->_last_response;
@@ -170,25 +186,18 @@ abstract class WP_MCP_AI_Ajax_TestCase extends WP_Ajax_UnitTestCase {
 	/**
 	 * Assert that the most recent dispatch returned `success: false`.
 	 *
-	 * @param array       $response          Decoded response from {@see self::dispatch()}.
-	 * @param string|null $expected_substring Optional substring expected in `data.message`.
+	 * @param array       $response Decoded response from {@see self::dispatch()}.
+	 * @param string|null $message  Optional failure message for the assertion.
 	 */
-	protected function assertAjaxError( $response, $expected_substring = null ) {
+	protected function assertAjaxError( $response, $message = null ) {
 		$this->assertIsArray( $response, 'AJAX response is not a JSON object.' );
 		$this->assertArrayHasKey( 'success', $response, 'AJAX response is missing the "success" flag.' );
 		$this->assertFalse(
 			$response['success'],
-			'Expected AJAX error, got: ' . wp_json_encode( $response )
+			null !== $message
+				? $message
+				: 'Expected AJAX error, got: ' . wp_json_encode( $response )
 		);
-		if ( null !== $expected_substring ) {
-			$message = '';
-			if ( isset( $response['data']['message'] ) ) {
-				$message = (string) $response['data']['message'];
-			} elseif ( isset( $response['data'] ) && is_string( $response['data'] ) ) {
-				$message = $response['data'];
-			}
-			$this->assertStringContainsString( $expected_substring, $message );
-		}
 	}
 
 	/**

@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Legacy_Tool_Wrapper implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Legacy_Tool_Wrapper implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface {
 	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
@@ -129,6 +129,28 @@ class WP_MCP_AI_Legacy_Tool_Wrapper implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$definition = $this->get_definition();
 		if ( ! empty( $definition['required_capability'] ) ) {
 			return array( 'requires-capability' );
+		}
+
+		return array();
+	}
+
+	/**
+	 * Forward sensitive-result-field declarations from the wrapped legacy tool.
+	 *
+	 * Legacy-format tools opt into log redaction by exposing the same
+	 * {@see WP_MCP_AI_Tool_Sensitive_Result_Interface} method on the inner
+	 * class; the wrapper delegates so the logger only ever has to consult the
+	 * registered instance.
+	 *
+	 * @since 1.1.64
+	 *
+	 * @return string[] Dot-notation paths that must never be persisted to a log.
+	 */
+	public function get_sensitive_result_fields() {
+		if ( method_exists( $this->inner, 'get_sensitive_result_fields' ) ) {
+			$fields = $this->inner->get_sensitive_result_fields();
+
+			return is_array( $fields ) ? $fields : array();
 		}
 
 		return array();

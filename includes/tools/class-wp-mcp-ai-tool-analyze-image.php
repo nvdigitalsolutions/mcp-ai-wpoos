@@ -16,6 +16,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-anthropic-client.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-vision-request-timeout.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
@@ -26,6 +27,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Vision_Request_Timeout;
 
 	/**
 	 * {@inheritdoc}
@@ -85,6 +87,7 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					'description' => __( 'Maximum tokens for the response. Higher values allow more detailed analysis.', 'mcp-ai-wpoos' ),
 					'default'     => 1024,
 				),
+				'timeout'       => $this->get_timeout_parameter_schema( 'vision' ),
 			),
 			'required'             => array(),
 			'additionalProperties' => false,
@@ -167,8 +170,11 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			? absint( $arguments['max_tokens'] )
 			: 1024;
 
+		// Resolve the HTTP timeout once so every provider path shares it.
+		$timeout = $this->resolve_vision_timeout( $arguments );
+
 		// Call the appropriate provider.
-		$response = $this->call_vision_provider( $image_url, $image_content, $prompt, $provider, $max_tokens, $settings );
+		$response = $this->call_vision_provider( $image_url, $image_content, $prompt, $provider, $max_tokens, $settings, $timeout );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -187,17 +193,18 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @param string $provider      AI provider to use.
 	 * @param int    $max_tokens    Maximum tokens for response.
 	 * @param array  $settings      Plugin settings.
+	 * @param int    $timeout       HTTP request timeout in seconds.
 	 * @return array|WP_Error Response with metadata or error.
 	 */
-	private function call_vision_provider( $image_url, $image_content, $prompt, $provider, $max_tokens, $settings ) {
+	private function call_vision_provider( $image_url, $image_content, $prompt, $provider, $max_tokens, $settings, $timeout = 30 ) {
 		switch ( $provider ) {
 			case 'anthropic':
-				return $this->call_anthropic_vision( $image_url, $image_content, $prompt, $max_tokens, $settings );
+				return $this->call_anthropic_vision( $image_url, $image_content, $prompt, $max_tokens, $settings, $timeout );
 			case 'gemini':
-				return $this->call_gemini_vision( $image_url, $image_content, $prompt, $max_tokens, $settings );
+				return $this->call_gemini_vision( $image_url, $image_content, $prompt, $max_tokens, $settings, $timeout );
 			case 'openai':
 			default:
-				return $this->call_openai_vision( $image_url, $image_content, $prompt, $max_tokens, $settings );
+				return $this->call_openai_vision( $image_url, $image_content, $prompt, $max_tokens, $settings, $timeout );
 		}
 	}
 
@@ -209,9 +216,10 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @param string $prompt        Prompt for the model.
 	 * @param int    $max_tokens    Maximum tokens for response.
 	 * @param array  $settings      Plugin settings.
+	 * @param int    $timeout       HTTP request timeout in seconds.
 	 * @return array|WP_Error Response or error.
 	 */
-	private function call_openai_vision( $image_url, $image_content, $prompt, $max_tokens, $settings ) {
+	private function call_openai_vision( $image_url, $image_content, $prompt, $max_tokens, $settings, $timeout = 30 ) {
 		if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_class',
@@ -258,6 +266,7 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			array(
 				'model'                 => $model,
 				'max_completion_tokens' => $max_tokens,
+				'timeout'               => $timeout,
 			)
 		);
 
@@ -296,9 +305,10 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @param string $prompt        Prompt for the model.
 	 * @param int    $max_tokens    Maximum tokens for response.
 	 * @param array  $settings      Plugin settings.
+	 * @param int    $timeout       HTTP request timeout in seconds.
 	 * @return array|WP_Error Response or error.
 	 */
-	private function call_anthropic_vision( $image_url, $image_content, $prompt, $max_tokens, $settings ) {
+	private function call_anthropic_vision( $image_url, $image_content, $prompt, $max_tokens, $settings, $timeout = 30 ) {
 		if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_class',
@@ -347,6 +357,7 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				array(
 					'model'      => $model,
 					'max_tokens' => $max_tokens,
+					'timeout'    => $timeout,
 				)
 			);
 
@@ -412,9 +423,10 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @param string $prompt        Prompt for the model.
 	 * @param int    $max_tokens    Maximum tokens for response.
 	 * @param array  $settings      Plugin settings.
+	 * @param int    $timeout       HTTP request timeout in seconds.
 	 * @return array|WP_Error Response or error.
 	 */
-	private function call_gemini_vision( $image_url, $image_content, $prompt, $max_tokens, $settings ) {
+	private function call_gemini_vision( $image_url, $image_content, $prompt, $max_tokens, $settings, $timeout = 30 ) {
 		$api_key = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
 
 		if ( empty( $api_key ) ) {
@@ -428,7 +440,7 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		// Gemini requires base64 content, not URLs.
 		if ( ! empty( $image_url ) && empty( $image_content ) ) {
 			// Fetch image and convert to base64.
-			$response = wp_safe_remote_get( $image_url, array( 'timeout' => 30 ) );
+			$response = wp_safe_remote_get( $image_url, array( 'timeout' => $timeout ) );
 			if ( is_wp_error( $response ) ) {
 				return $response;
 			}
@@ -473,7 +485,7 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					'Content-Type' => 'application/json',
 				),
 				'body'    => wp_json_encode( $request_body ),
-				'timeout' => 30,
+				'timeout' => $timeout,
 			)
 		);
 

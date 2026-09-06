@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace NvoosContentGraphAi\Adapter;
 
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use NvoosContentGraphAi\Security\CredentialStore;
 
 class ContentGraphSettingsStore implements SettingsStoreInterface {
 
@@ -66,6 +67,9 @@ class ContentGraphSettingsStore implements SettingsStoreInterface {
 		'ai_api_key_digitalocean'  => '',
 		'ai_api_key_kimi'          => '',
 		'ai_api_key_baseten'       => '',
+		'ai_api_key_zai'           => '',
+		'zai_base_url'             => 'https://api.z.ai/api/paas/v4',
+		'ai_system_prompt'         => 'You are a helpful assistant for the NV oOS Content Graph on this WordPress site. Answer questions about the site content and its knowledge graph accurately and concisely. When tools for querying the graph are provided, use them to ground your answers in real data instead of guessing. Cite nodes, posts, or relationships when relevant. If you do not know something or the data is unavailable, say so plainly. Format answers with Markdown.',
 	);
 
 	// ─── SettingsStoreInterface ────────────────────────────────────
@@ -83,16 +87,37 @@ class ContentGraphSettingsStore implements SettingsStoreInterface {
 			$settings = array();
 		}
 
+		// Secrets live in the encrypted CredentialStore — never surface
+		// them through the generic settings map. Consumers must use
+		// getApiKey() / hasCredentials() instead.
+		foreach ( array_keys( $settings ) as $key ) {
+			if ( self::isSecretSettingKey( $key ) ) {
+				unset( $settings[ $key ] );
+			}
+		}
+
 		return \array_merge( self::DEFAULTS, $settings );
 	}
 
 	public function set( string $key, mixed $value ): void {
+		if ( self::isSecretSettingKey( $key ) ) {
+			if ( is_string( $value ) ) {
+				CredentialStore::set( self::suffixForKey( $key ), $value );
+			}
+			return;
+		}
+
 		$settings         = $this->all();
 		$settings[ $key ] = $value;
 		\update_option( self::OPTION_KEY, $settings, false );
 	}
 
 	public function delete( string $key ): void {
+		if ( self::isSecretSettingKey( $key ) ) {
+			CredentialStore::delete( self::suffixForKey( $key ) );
+			return;
+		}
+
 		$settings = $this->all();
 		unset( $settings[ $key ] );
 		\update_option( self::OPTION_KEY, $settings, false );
@@ -154,6 +179,7 @@ class ContentGraphSettingsStore implements SettingsStoreInterface {
 			'ollama'      => 'ollama_base_url',
 			'lm_studio'   => 'lmstudio_base_url',
 			'huggingface' => 'huggingface_endpoint_url',
+			'zai'         => 'zai_base_url',
 		);
 
 		$optionKey = $urlMap[ $provider ] ?? null;
@@ -169,6 +195,27 @@ class ContentGraphSettingsStore implements SettingsStoreInterface {
 	public function getRequestTimeout(): int {
 		// Content Graph doesn't expose a configurable timeout — use a generous default.
 		return 120;
+	}
+
+	/**
+	 * Whether a settings key holds a secret that belongs in the
+	 * encrypted CredentialStore.
+	 *
+	 * @param string $key Settings key.
+	 * @return bool
+	 */
+	private static function isSecretSettingKey( string $key ): bool {
+		return 0 === strpos( $key, 'ai_api_key_' ) || 'openai_api_key' === $key;
+	}
+
+	/**
+	 * Convert a secret settings key to a provider settings suffix.
+	 *
+	 * @param string $key Settings key.
+	 * @return string
+	 */
+	private static function suffixForKey( string $key ): string {
+		return 'openai_api_key' === $key ? 'openai' : substr( $key, strlen( 'ai_api_key_' ) );
 	}
 
 	public function isEnabled( string $feature ): bool {

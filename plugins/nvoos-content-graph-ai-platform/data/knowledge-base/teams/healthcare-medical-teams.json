@@ -1,0 +1,58 @@
+{
+  "teams": [
+    {
+      "title": "Primary Healthcare Team",
+      "slug": "primary_healthcare_team",
+      "description": "Primary care medical professionals for general healthcare services.",
+      "members": [
+        "physician",
+        "nurse_practitioner",
+        "registered_nurse",
+        "pharmacist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.2
+    },
+    {
+      "title": "Allied Health Services Team",
+      "slug": "allied_health_services_team",
+      "description": "Allied health professionals for rehabilitation and therapy services.",
+      "members": [
+        "physical_therapist",
+        "occupational_therapist",
+        "respiratory_therapist",
+        "radiologic_technologist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.2
+    },
+    {
+      "title": "Mental Health & Wellness Team",
+      "slug": "mental_health_wellness_team",
+      "description": "Mental health professionals for counseling and psychological services.",
+      "members": [
+        "psychologist",
+        "social_worker",
+        "school_counselor"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    },
+    {
+      "title": "Veterinary Services Team",
+      "slug": "veterinary_services_team",
+      "description": "Veterinary professionals for animal health and care.",
+      "members": [
+        "veterinarian",
+        "large_animal_veterinarian",
+        "animal_behaviorist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    }
+  ]
+}

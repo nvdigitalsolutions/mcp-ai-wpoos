@@ -30,6 +30,9 @@ class Test_Security_Audit extends WP_UnitTestCase {
 	 * Test audit post type registration
 	 */
 	public function test_post_type_registered() {
+		// The CPT registers on `init`; wp-phpunit restores hooks between
+		// suites, so invoke the registration directly for a deterministic check.
+		WP_MCP_AI_Security_Audit::get_instance()->register_post_type();
 		$this->assertTrue( post_type_exists( 'mcp_ai_audit' ) );
 	}
 

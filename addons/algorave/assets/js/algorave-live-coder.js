@@ -211,6 +211,15 @@
 		engine: 'strudel',
 
 		/**
+		 * Whether the user has acknowledged this session that the Tone.js engine
+		 * evaluates pasted code with the page's own permissions (F-AI-01).
+		 * Session-scoped: reset on reload.
+		 *
+		 * @type {boolean}
+		 */
+		toneJsEvalConfirmed: false,
+
+		/**
 		 * Initialize the live coder.
 		 *
 		 * @param {string} containerId DOM ID of the container.
@@ -228,6 +237,7 @@
 
 			this.bindEvents();
 			this.loadSavedCode();
+			this.updateEvalWarning();
 		},
 
 		/**
@@ -277,6 +287,7 @@
 			if ( engineSelect ) {
 				engineSelect.addEventListener( 'change', ( e ) => {
 					this.engine = e.target.value;
+					this.updateEvalWarning();
 				} );
 			}
 
@@ -365,6 +376,21 @@
 			if ( ! code ) {
 				return;
 			}
+
+			// F-AI-01: when the site operator has opted into the raw-eval Tone.js
+			// engine, require one explicit confirmation per browser session before
+			// compiling pasted code, so an unwitting paste cannot run code silently.
+			if ( 'tonejs' === this.engine && this.isToneJsEvalAllowed() && ! this.toneJsEvalConfirmed ) {
+				// eslint-disable-next-line no-alert
+				const ok = window.confirm(
+					'Tone.js live coding executes your code with this site\'s permissions. Only run code you trust. Continue?'
+				);
+				if ( ! ok ) {
+					return;
+				}
+				this.toneJsEvalConfirmed = true;
+			}
+
 			this.currentCode = code;
 			this.clearError();
 
@@ -373,6 +399,37 @@
 			}
 
 			this.saveCode();
+		},
+
+		/**
+		 * Whether the raw-eval Tone.js engine is permitted on this site.
+		 *
+		 * The flag is forwarded from PHP (WP_MCP_AI_ALLOW_TONEJS_EVAL combined
+		 * with the current user's capability) via nvoosAlgoraveConfig.
+		 *
+		 * @return {boolean} True when Tone.js eval is allowed for this user.
+		 */
+		isToneJsEvalAllowed: function () {
+			return typeof nvoosAlgoraveConfig !== 'undefined' && !! nvoosAlgoraveConfig.tonejsEvalAllowed;
+		},
+
+		/**
+		 * Show or hide the raw-eval warning banner.
+		 *
+		 * The banner is visible only when the Tone.js engine is selected AND the
+		 * site operator has enabled raw eval. Strudel never shows it.
+		 */
+		updateEvalWarning: function () {
+			if ( ! this.container ) {
+				return;
+			}
+
+			const banner = this.container.querySelector( '.algorave-eval-warning' );
+			if ( ! banner ) {
+				return;
+			}
+
+			banner.hidden = ! ( 'tonejs' === this.engine && this.isToneJsEvalAllowed() );
 		},
 
 		/**
@@ -494,6 +551,7 @@
 				if ( engineSelect ) {
 					engineSelect.value = engine;
 				}
+				this.updateEvalWarning();
 			}
 			this.saveCode();
 		},

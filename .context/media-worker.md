@@ -1,7 +1,7 @@
 # NV oOS Media Worker Sidecar
 
 > **GSD Context File** — Load this when working on the media worker (`addons/media-worker/`), the plugin sidecar client, or any Pro service that routes through the worker.
-> Last reviewed: August 19, 2026 (v1.1.59, worker v3.2.0).
+> Last reviewed: September 4, 2026 (v1.1.69, worker v3.2.0).
 
 ---
 
@@ -62,6 +62,14 @@ existing local fallbacks run unchanged.
 - **Every URL passes the shared SSRF guard** (`utils/safe-url.js` `resolvePublicUrl` / `validatePublicUrl`) before any fetch or navigation — do not bypass it in new crawl features.
 - `utils/llm-extract.js` extracts structured data from page content using a configured LLM provider (keys resolved via `utils/provider-keys.js`).
 - Toolkit memory estimate accounts for the worker sidecar — see `docs/features/TOOLKIT_MEMORY_TRACKING.md`.
+
+## Full-Crawl4AI Proxy (031 Phase 3, v1.1.65)
+
+- `POST /api/crawl/full` + `GET /api/crawl/full/task/:task_id` — when `CRAWL4AI_FULL_URL` points at a real Crawl4AI deployment, the worker acts as the SSRF-validated, token-gated forwarder (`submitFullCrawl()` / `getFullTaskStatus()` in `routes/crawl.js`).
+- **SSRF guard runs on every target BEFORE proxying** — private/loopback targets can never reach the Python service through the worker. The upstream itself is deliberately NOT SSRF-checked (reaching a private sibling container is the point).
+- Envelope contract: `503 service_not_configured` when the env var is unset, `502 upstream_unreachable` on upstream failure, `400` for invalid payloads; the body is forwarded contract-preserving so the plugin's Crawl4AI client needs no proxy awareness.
+- **TEMP_ROOT allowlist (proposal 028 Q5):** under `STRICT_PATHS=1` (or `STRICT_PDF_PATHS=1`) an explicit `TEMP_ROOT` is the allowlisted sandbox root in single-tenant mode; the strict-path default flip stays deferred to worker 4.0.0.
+- Worker version stays **v3.2.0** — the feature shipped without a package bump; treat `package.json` as authoritative over the proposal's stale "3.2.1+" note (reconciled in the v1.1.65 pass).
 
 ## Canonical Facts (avoid drift)
 

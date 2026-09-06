@@ -77,8 +77,10 @@ class Test_Agent_Communication_Service extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'delegation_id', $result );
 		$this->assertArrayHasKey( 'status', $result );
 		$this->assertEquals( 'delegated', $result['status'] );
-		$this->assertArrayHasKey( 'to_agent', $result );
-		$this->assertEquals( $executor_id, $result['to_agent']['id'] );
+		$this->assertArrayHasKey( 'agent_id', $result );
+		$this->assertEquals( $executor_id, $result['agent_id'] );
+		$this->assertArrayHasKey( 'agent_name', $result );
+		$this->assertEquals( 'Executor Agent', $result['agent_name'] );
 	}
 
 	/**

@@ -43,8 +43,13 @@ class Test_Manage_Files_Tool extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// The tool ships with the Pro addon.
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$this->markTestSkipped( 'Pro addon not available.' );
+		}
+
 		// Load the tool class.
-		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-files.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/architect-agent/class-wp-mcp-ai-tool-manage-files.php';
 
 		// Instantiate the tool.
 		$this->tool = new WP_MCP_AI_Tool_Manage_Files();
@@ -268,8 +273,10 @@ class Test_Manage_Files_Tool extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		// This should fail either at path validation or path_outside_plugin.
-		$this->assertContains( $result->get_error_code(), array( 'wp_mcp_ai_invalid_path', 'wp_mcp_ai_path_outside_plugin' ) );
+		// An absolute path is normalised to a plugin-relative path and safely
+		// resolved inside the plugin directory — the read then fails with
+		// file_not_found, or earlier with a validation error.
+		$this->assertContains( $result->get_error_code(), array( 'wp_mcp_ai_invalid_path', 'wp_mcp_ai_path_outside_plugin', 'wp_mcp_ai_file_not_found' ) );
 	}
 
 	/**

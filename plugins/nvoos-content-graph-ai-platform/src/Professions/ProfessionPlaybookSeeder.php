@@ -1,0 +1,762 @@
+<?php
+/**
+ * Profession Playbook Seeder.
+ *
+ * Seeds profession playbook attachments from authorable txt files.
+ * Runs incrementally after profession seeding, processing batches to avoid timeouts.
+ *
+ * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
+ */
+
+declare(strict_types=1);
+
+namespace NvoosContentGraphAiPlatform\Professions;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Seeds profession playbook attachments.
+ */
+class ProfessionPlaybookSeeder {
+	/**
+	 * Log an event through the base plugin's logger when present
+	 * (monolith mode), falling back to error_log in standalone mode.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $level   Log level.
+	 * @param string $message Log message.
+	 */
+	private static function log_event( $level, $message ) {
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			\WP_MCP_AI_Logger::log_event( $level, $message );
+			return;
+		}
+		error_log( sprintf( '[nvoos-content-graph-ai-platform] %s: %s', $level, $message ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Standalone fallback when the base logger is absent.
+	}
+	/**
+	 * Option key to track if playbooks have been seeded.
+	 */
+	const SEEDED_OPTION = 'wp_mcp_ai_playbooks_seeded';
+
+	/**
+	 * Option key for tracking batch progress offset.
+	 */
+	const OFFSET_OPTION = 'wp_mcp_ai_playbook_seed_offset';
+
+	/**
+	 * Admin init priority for seeding.
+	 * Must run after profession seeding (priority 20).
+	 */
+	const ADMIN_INIT_PRIORITY = 30;
+
+	/**
+	 * Number of professions to process per admin_init.
+	 */
+	const BATCH_SIZE = 20;
+
+	/**
+	 * Initialize the seeder.
+	 * Runs once after profession seeding completes.
+	 */
+	public static function init() {
+		// Check if already seeded.
+		if ( get_option( self::SEEDED_OPTION, false ) ) {
+			return;
+		}
+
+		// Seed playbooks after professions are seeded.
+		add_action( 'admin_init', array( __CLASS__, 'seed_playbooks_incremental' ), self::ADMIN_INIT_PRIORITY );
+	}
+
+	/**
+	 * Seed playbooks incrementally (batch processing).
+	 *
+	 * Processes BATCH_SIZE professions per admin_init to avoid timeouts.
+	 */
+	public static function seed_playbooks_incremental() {
+		// Bail if already seeded.
+		if ( get_option( self::SEEDED_OPTION, false ) ) {
+			return;
+		}
+
+		// Ensure professions exist before seeding playbooks.
+		if ( ! get_option( ProfessionSeeder::SEEDED_OPTION, false ) ) {
+			// Professions not seeded yet, bail.
+			return;
+		}
+
+		// Companion ported classes — autoloaded, no base-plugin file loads.
+
+		// Get current offset.
+		$offset = absint( get_option( self::OFFSET_OPTION, 0 ) );
+
+		// Get batch of professions.
+		$repository  = new ProfessionRepository();
+		$professions = $repository->find_all(
+			array(
+				'posts_per_page' => self::BATCH_SIZE,
+				'offset'         => $offset,
+			)
+		);
+
+		if ( empty( $professions ) ) {
+			// No more professions to process - mark as complete.
+			update_option( self::SEEDED_OPTION, true, false );
+			delete_option( self::OFFSET_OPTION );
+			return;
+		}
+
+		// Process this batch.
+		$loader = new ProfessionPlaybookLoader();
+
+		foreach ( $professions as $profession ) {
+			try {
+				self::sync_profession_playbook( $profession, $loader, false );
+			} catch ( \Throwable $e ) {
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-gated diagnostic logger.
+					error_log(
+						'WP_MCP_AI: Incremental playbook sync failed for profession ' .
+						( $profession->post_name ?? 'unknown' ) . ': ' . $e->getMessage()
+					);
+				}
+			}
+		}
+
+		// Update offset for next batch.
+		$new_offset = $offset + self::BATCH_SIZE;
+		update_option( self::OFFSET_OPTION, $new_offset, false );
+	}
+
+	/**
+	 * Sync playbook for a single profession.
+	 *
+	 * Creates or updates playbook attachment based on content hash.
+	 * Automatically removes duplicate playbook attachments.
+	 *
+	 * @param WP_Post                              $profession Profession post object.
+	 * @param ProfessionPlaybookLoader $loader     Playbook loader instance.
+	 * @param bool                                 $force      Force recreation even if hash matches.
+	 */
+	protected static function sync_profession_playbook( $profession, $loader, $force = false ) {
+		$slug = $profession->post_name;
+
+		// ProfessionCpt (same namespace) is autoloadable — its meta constants
+		// are always available here; no base-plugin file load.
+
+		// First, remove any duplicate playbook attachments for this profession.
+		self::remove_duplicate_playbooks( $profession->ID );
+
+		// Build playbook content.
+		$content = $loader->build_playbook( $profession->ID );
+
+		if ( empty( $content ) ) {
+			// No content to create attachment for — throw so bulk sync reports the failure.
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message propagated to the bulk-sync caller; the slug is never rendered as output.
+			throw new \RuntimeException( 'Playbook content is empty for profession "' . $slug . '".' );
+		}
+
+		// Calculate content hash.
+		$content_hash = hash( 'sha256', $content );
+
+		// Check if attachment already exists.
+		$existing_attachment = self::find_existing_playbook_attachment( $profession->ID );
+
+		if ( $existing_attachment ) {
+			if ( $force ) {
+				// Force regeneration — remove old attachment record from DB
+				// without deleting the physical file, since the new attachment
+				// will reuse the same deterministic file path.
+				self::remove_attachment_from_memory_files( $profession->ID, $existing_attachment->ID );
+
+				// Delete old attachment post (DB record only, not the file).
+				// Using $force_delete=false prevents the subsequent
+				// delete_orphaned_system_playbooks() cleanup from removing
+				// the file that the new attachment now owns.
+				wp_delete_attachment( $existing_attachment->ID, false );
+
+				// Fall through to create new attachment below.
+			} else {
+				// Check if content has changed.
+				$existing_hash = get_post_meta( $existing_attachment->ID, '_wp_mcp_ai_playbook_hash', true );
+
+				if ( $existing_hash === $content_hash ) {
+					// Content unchanged, ensure it's in memory files and MIME types are set.
+					self::ensure_attachment_in_memory_files( $profession->ID, $existing_attachment->ID );
+					self::ensure_supported_mime_types( $profession->ID );
+					return;
+				}
+
+				// Content changed — same pattern as force above.
+				self::remove_attachment_from_memory_files( $profession->ID, $existing_attachment->ID );
+
+				// Delete old attachment post (DB record only, not the file).
+				wp_delete_attachment( $existing_attachment->ID, false );
+
+				// Fall through to create new attachment below.
+			}
+		}
+
+		// Create new attachment.
+		$attachment_id = self::create_playbook_attachment( $profession, $content, $content_hash );
+
+		if ( is_wp_error( $attachment_id ) ) {
+			// Throw so bulk sync reports the failure and does not count this
+			// profession as successfully synced.
+			throw new \RuntimeException(
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message propagated to the bulk-sync caller; never rendered as output.
+				'Failed to create playbook attachment for profession "' . $slug . '": ' . $attachment_id->get_error_message()
+			);
+		}
+
+		// Update profession META_MEMORY_FILES and MIME types.
+		self::ensure_attachment_in_memory_files( $profession->ID, $attachment_id );
+		self::ensure_supported_mime_types( $profession->ID );
+	}
+
+	/**
+	 * Find existing playbook attachment for a profession.
+	 *
+	 * Returns the most recent attachment if duplicates exist.
+	 *
+	 * @param int $profession_id Profession post ID.
+	 * @return WP_Post|null Attachment post or null if not found.
+	 */
+	protected static function find_existing_playbook_attachment( $profession_id ) {
+		$args = array(
+			'post_type'      => 'attachment',
+			'post_status'    => 'inherit',
+			'posts_per_page' => 1,
+			'orderby'        => 'ID',
+			'order'          => 'DESC',
+			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter profession CPT by configuration meta; no alternative index-based query available.
+				array(
+					'key'     => '_wp_mcp_ai_playbook_profession_id',
+					'value'   => $profession_id,
+					'compare' => '=',
+				),
+			),
+		);
+
+		$query = new \WP_Query( $args );
+
+		if ( $query->have_posts() ) {
+			return $query->posts[0];
+		}
+
+		return null;
+	}
+
+	/**
+	 * Find all existing playbook attachments for a profession.
+	 *
+	 * @param int $profession_id Profession post ID.
+	 * @return array Array of WP_Post objects.
+	 */
+	protected static function find_all_playbook_attachments( $profession_id ) {
+		$args = array(
+			'post_type'      => 'attachment',
+			'post_status'    => 'inherit',
+			'posts_per_page' => -1,
+			'orderby'        => 'ID',
+			'order'          => 'DESC',
+			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter profession CPT by configuration meta; no alternative index-based query available.
+				array(
+					'key'     => '_wp_mcp_ai_playbook_profession_id',
+					'value'   => $profession_id,
+					'compare' => '=',
+				),
+			),
+		);
+
+		$query = new \WP_Query( $args );
+
+		return $query->posts;
+	}
+
+	/**
+	 * Remove duplicate playbook attachments for a profession.
+	 *
+	 * Keeps only the most recent attachment associated with the profession.
+	 * Older duplicate attachments are removed from the profession's memory files.
+	 *
+	 * @param int  $profession_id Profession post ID.
+	 * @param bool $delete        Whether to delete old attachments or just orphan them. Default false.
+	 * @return int Number of duplicates removed from profession.
+	 */
+	protected static function remove_duplicate_playbooks( $profession_id, $delete = false ) {
+		$attachments = self::find_all_playbook_attachments( $profession_id );
+
+		if ( count( $attachments ) <= 1 ) {
+			// No duplicates to remove.
+			return 0;
+		}
+
+		$removed_count = 0;
+
+		// Keep the first (most recent) attachment, remove the rest from profession.
+		$keep_attachment_id = $attachments[0]->ID;
+		$attachment_count   = count( $attachments );
+
+		for ( $i = 1; $i < $attachment_count; $i++ ) {
+			$attachment_id = $attachments[ $i ]->ID;
+
+			// Remove from profession's memory files.
+			self::remove_attachment_from_memory_files( $profession_id, $attachment_id );
+
+			if ( $delete ) {
+				// Verify this is a system-created playbook before deleting.
+				$hash          = get_post_meta( $attachment_id, '_wp_mcp_ai_playbook_hash', true );
+				$attached_file = get_attached_file( $attachment_id );
+
+				// Only delete if it has the hash marker and is in the system directory.
+				if ( ! empty( $hash ) && $attached_file && false !== strpos( $attached_file, 'wp-mcp-ai/profession-playbooks' ) ) {
+					wp_delete_attachment( $attachment_id, true );
+				} else {
+					// Not safe to delete, just orphan it.
+					delete_post_meta( $attachment_id, '_wp_mcp_ai_playbook_profession_id' );
+				}
+			} else {
+				// Remove the profession association meta, but keep the attachment in media library.
+				delete_post_meta( $attachment_id, '_wp_mcp_ai_playbook_profession_id' );
+			}
+
+			++$removed_count;
+		}
+
+		// Ensure the kept attachment is in memory files.
+		self::ensure_attachment_in_memory_files( $profession_id, $keep_attachment_id );
+
+		return $removed_count;
+	}
+
+	/**
+	 * Remove attachment ID from profession's memory files meta.
+	 *
+	 * @param int $profession_id Profession post ID.
+	 * @param int $attachment_id Attachment post ID.
+	 */
+	protected static function remove_attachment_from_memory_files( $profession_id, $attachment_id ) {
+		$memory_files = get_post_meta( $profession_id, ProfessionCpt::META_MEMORY_FILES, true );
+
+		if ( ! is_array( $memory_files ) ) {
+			return;
+		}
+
+		$key = array_search( $attachment_id, $memory_files, true );
+		if ( false !== $key ) {
+			unset( $memory_files[ $key ] );
+			// Re-index array to maintain sequential keys.
+			$memory_files = array_values( $memory_files );
+			update_post_meta( $profession_id, ProfessionCpt::META_MEMORY_FILES, $memory_files );
+		}
+	}
+
+	/**
+	 * Safely delete orphaned system-created playbook attachments.
+	 *
+	 * Only deletes attachments that:
+	 * - Have the _wp_mcp_ai_playbook_hash meta (system-created marker)
+	 * - Do NOT have the _wp_mcp_ai_playbook_profession_id meta (orphaned)
+	 * - Are in the wp-mcp-ai/profession-playbooks directory
+	 *
+	 * This ensures we never delete user-uploaded attachments.
+	 *
+	 * @param int $limit Maximum number of attachments to delete per call. Default 50.
+	 * @return array {
+	 *     Deletion results.
+	 *
+	 *     @type int   $deleted_count   Number of attachments deleted.
+	 *     @type array $deleted_ids     Array of deleted attachment IDs.
+	 *     @type array $skipped_ids     Array of attachment IDs that were skipped (not system-created).
+	 * }
+	 */
+	public static function delete_orphaned_system_playbooks( $limit = 50 ) {
+		global $wpdb;
+
+		// Find attachments with playbook hash but no profession association (orphaned).
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
+		$orphaned_attachments = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT p.ID, pm_hash.meta_value as hash
+				FROM {$wpdb->posts} p
+				INNER JOIN {$wpdb->postmeta} pm_hash ON p.ID = pm_hash.post_id
+				LEFT JOIN {$wpdb->postmeta} pm_prof ON p.ID = pm_prof.post_id
+					AND pm_prof.meta_key = '_wp_mcp_ai_playbook_profession_id'
+				WHERE p.post_type = 'attachment'
+				AND p.post_status = 'inherit'
+				AND pm_hash.meta_key = '_wp_mcp_ai_playbook_hash'
+				AND pm_prof.meta_id IS NULL
+				LIMIT %d",
+				absint( $limit )
+			)
+		);
+
+		$deleted_count = 0;
+		$deleted_ids   = array();
+		$skipped_ids   = array();
+
+		foreach ( $orphaned_attachments as $attachment ) {
+			$attachment_id = absint( $attachment->ID );
+
+			// Double-check: Verify this is a system-created playbook.
+			$hash            = get_post_meta( $attachment_id, '_wp_mcp_ai_playbook_hash', true );
+			$profession_id   = get_post_meta( $attachment_id, '_wp_mcp_ai_playbook_profession_id', true );
+			$attachment_path = get_attached_file( $attachment_id );
+
+			// Safety checks: Only delete if:
+			// 1. Has playbook hash (system-created)
+			// 2. No profession association (orphaned)
+			// 3. File is in the system playbook directory.
+			if ( empty( $hash ) || ! empty( $profession_id ) ) {
+				$skipped_ids[] = $attachment_id;
+				continue;
+			}
+
+			// Verify file path is in the system playbook directory.
+			if ( $attachment_path && false === strpos( $attachment_path, 'wp-mcp-ai/profession-playbooks' ) ) {
+				// Not in system directory, skip for safety.
+				$skipped_ids[] = $attachment_id;
+				continue;
+			}
+
+			// Safe to delete - this is an orphaned system-created playbook.
+			$deleted = wp_delete_attachment( $attachment_id, true );
+
+			if ( $deleted ) {
+				++$deleted_count;
+				$deleted_ids[] = $attachment_id;
+			} else {
+				$skipped_ids[] = $attachment_id;
+			}
+		}
+
+		return array(
+			'deleted_count' => $deleted_count,
+			'deleted_ids'   => $deleted_ids,
+			'skipped_ids'   => $skipped_ids,
+		);
+	}
+
+	/**
+	 * Count orphaned system-created playbook attachments.
+	 *
+	 * Orphaned attachments are those that:
+	 * - Have the _wp_mcp_ai_playbook_hash meta (system-created marker)
+	 * - Do NOT have the _wp_mcp_ai_playbook_profession_id meta (orphaned)
+	 *
+	 * This is a fast count query (no file-path verification) suitable for
+	 * the admin statistics display. The full safety checks are applied at
+	 * deletion time by delete_orphaned_system_playbooks().
+	 *
+	 * @return int Number of orphaned attachments.
+	 */
+	public static function count_orphaned_system_playbooks() {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
+		$count = $wpdb->get_var(
+			"SELECT COUNT(*)
+			FROM {$wpdb->posts} p
+			INNER JOIN {$wpdb->postmeta} pm_hash ON p.ID = pm_hash.post_id
+			LEFT JOIN {$wpdb->postmeta} pm_prof ON p.ID = pm_prof.post_id
+				AND pm_prof.meta_key = '_wp_mcp_ai_playbook_profession_id'
+			WHERE p.post_type = 'attachment'
+			AND p.post_status = 'inherit'
+			AND pm_hash.meta_key = '_wp_mcp_ai_playbook_hash'
+			AND pm_prof.meta_id IS NULL"
+		);
+
+		return absint( $count );
+	}
+
+	/**
+	 * Create playbook attachment file.
+	 *
+	 * @param WP_Post $profession    Profession post object.
+	 * @param string  $content       Playbook content.
+	 * @param string  $content_hash  SHA256 hash of content.
+	 * @return int|WP_Error Attachment ID on success, WP_Error on failure.
+	 */
+	protected static function create_playbook_attachment( $profession, $content, $content_hash ) {
+		$slug     = $profession->post_name;
+		$filename = "profession-{$profession->ID}-{$slug}-playbook.txt";
+
+		// Get upload directory.
+		$upload_dir = wp_upload_dir();
+
+		// Create subdirectory if it doesn't exist.
+		$subdir     = 'wp-mcp-ai/profession-playbooks';
+		$target_dir = trailingslashit( $upload_dir['basedir'] ) . $subdir;
+		$target_url = trailingslashit( $upload_dir['baseurl'] ) . $subdir;
+
+		if ( ! file_exists( $target_dir ) ) {
+			wp_mkdir_p( $target_dir );
+		}
+
+		// Target file path.
+		$target_file = trailingslashit( $target_dir ) . $filename;
+
+		// Write content to file.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to WordPress uploads directory (wp_upload_dir() path); never to plugin directory. WP_Filesystem not available in this REST/cron/tool execution context.
+		$result = file_put_contents( $target_file, $content );
+
+		if ( false === $result ) {
+			return new \WP_Error(
+				'file_write_error',
+				sprintf( 'Failed to write playbook file: %s', $target_file )
+			);
+		}
+
+		// Prepare attachment data.
+		$attachment_data = array(
+			'post_mime_type' => 'text/plain',
+			'post_title'     => $profession->post_title . ' - Playbook',
+			'post_content'   => '',
+			'post_status'    => 'inherit',
+			'post_parent'    => $profession->ID,
+			'guid'           => trailingslashit( $target_url ) . $filename,
+		);
+
+		// Insert attachment.
+		$attachment_id = wp_insert_attachment( $attachment_data, $target_file, $profession->ID );
+
+		if ( is_wp_error( $attachment_id ) ) {
+			return $attachment_id;
+		}
+
+		// Generate attachment metadata.
+		if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+		}
+		$attach_data = wp_generate_attachment_metadata( $attachment_id, $target_file );
+
+		// Add filesize for text files (wp_generate_attachment_metadata
+		// only adds it for image/video/audio mime types).
+		if ( is_array( $attach_data ) ) {
+			$attach_data['filesize'] = $result; // Bytes written by file_put_contents.
+		}
+
+		wp_update_attachment_metadata( $attachment_id, $attach_data );
+
+		// Add playbook metadata.
+		update_post_meta( $attachment_id, '_wp_mcp_ai_playbook_profession_id', $profession->ID );
+		update_post_meta( $attachment_id, '_wp_mcp_ai_playbook_hash', $content_hash );
+
+		return $attachment_id;
+	}
+
+	/**
+	 * Update existing playbook attachment with new content.
+	 *
+	 * @param int    $attachment_id Attachment post ID.
+	 * @param string $content       New playbook content.
+	 * @param string $content_hash  SHA256 hash of new content.
+	 */
+	protected static function update_playbook_attachment( $attachment_id, $content, $content_hash ) {
+		$file_path = get_attached_file( $attachment_id );
+
+		if ( ! $file_path || ! file_exists( $file_path ) ) {
+			return;
+		}
+
+		// Update file content.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to WordPress uploads directory (wp_upload_dir() path); never to plugin directory. WP_Filesystem not available in this REST/cron/tool execution context.
+		file_put_contents( $file_path, $content );
+
+		// Update hash meta.
+		update_post_meta( $attachment_id, '_wp_mcp_ai_playbook_hash', $content_hash );
+	}
+
+	/**
+	 * Ensure attachment ID is in profession's memory files meta.
+	 *
+	 * @param int $profession_id Profession post ID.
+	 * @param int $attachment_id Attachment post ID.
+	 */
+	protected static function ensure_attachment_in_memory_files( $profession_id, $attachment_id ) {
+		$memory_files = get_post_meta( $profession_id, ProfessionCpt::META_MEMORY_FILES, true );
+
+		if ( ! is_array( $memory_files ) ) {
+			$memory_files = array();
+		}
+
+		// Deduplicate existing array to clean up any existing duplicates.
+		$memory_files = array_values( array_unique( array_map( 'absint', $memory_files ) ) );
+
+		// Add attachment if not already present (idempotent).
+		if ( ! in_array( $attachment_id, $memory_files, true ) ) {
+			$memory_files[] = $attachment_id;
+		}
+
+		// Always update to ensure deduplication is saved.
+		update_post_meta( $profession_id, ProfessionCpt::META_MEMORY_FILES, $memory_files );
+	}
+
+	/**
+	 * Ensure profession has text/plain in supported MIME types.
+	 *
+	 * @param int $profession_id Profession post ID.
+	 */
+	protected static function ensure_supported_mime_types( $profession_id ) {
+		$existing_mimes = get_post_meta( $profession_id, ProfessionCpt::META_SUPPORTED_MIME_TYPES, true );
+
+		if ( ! is_array( $existing_mimes ) ) {
+			$existing_mimes = array();
+		}
+
+		// Ensure text/plain is included.
+		if ( ! in_array( 'text/plain', $existing_mimes, true ) ) {
+			$existing_mimes[] = 'text/plain';
+			update_post_meta( $profession_id, ProfessionCpt::META_SUPPORTED_MIME_TYPES, $existing_mimes );
+		}
+	}
+
+	/**
+	 * Sync all profession playbooks.
+	 *
+	 * Can be called manually to regenerate all playbooks from current txt files.
+	 * Processes professions in batches to avoid memory exhaustion and timeouts
+	 * on sites with large profession counts.
+	 *
+	 * After syncing, automatically cleans up orphaned playbook attachments
+	 * created by content changes or force regeneration.
+	 *
+	 * @param bool $force Force regeneration even if content hash matches.
+	 * @return array{synced: int, total: int, errors: string[]} Sync results,
+	 *                                              including per-profession error
+	 *                                              messages and total profession
+	 *                                              count processed.
+	 */
+	public static function sync_all( $force = false ) {
+		// Companion ported classes are autoloadable — no base-plugin file loads.
+
+		$loader = new ProfessionPlaybookLoader();
+
+		$batch_size  = 100;
+		$offset      = 0;
+		$max_batches = 200; // Safety cap: max 20,000 professions per sync.
+		$errors      = array();
+		$synced      = 0;
+		$total       = 0;
+
+		for ( $batch = 0; $batch < $max_batches; $batch++ ) {
+			// Use direct get_posts() to bypass the Repository's cached
+			// find_all() which can return stale empty results when a
+			// persistent object cache (Redis/Memcached) is in use.
+			$professions = get_posts(
+				array(
+					'post_type'              => ProfessionCpt::POST_TYPE,
+					'post_status'            => 'publish',
+					'posts_per_page'         => $batch_size,
+					'offset'                 => $offset,
+					'orderby'                => 'title',
+					'order'                  => 'ASC',
+					'no_found_rows'          => true,
+					'update_post_meta_cache' => false,
+					'suppress_filters'       => false,
+				)
+			);
+
+			if ( empty( $professions ) ) {
+				break;
+			}
+
+			$total += count( $professions );
+
+			// Prime post meta cache for the batch so build_playbook()
+			// and find_existing_playbook_attachment() don't incur
+			// individual DB queries per meta key per profession.
+			$batch_ids = wp_list_pluck( $professions, 'ID' );
+			update_meta_cache( 'post', $batch_ids );
+
+			foreach ( $professions as $profession ) {
+				try {
+					self::sync_profession_playbook( $profession, $loader, $force );
+					++$synced;
+				} catch ( \Throwable $e ) {
+					$slug     = $profession->post_name ?? 'unknown';
+					$errors[] = sprintf(
+						'%s: %s',
+						$slug,
+						$e->getMessage()
+					);
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-gated diagnostic logger.
+						error_log(
+							'WP_MCP_AI: Playbook sync failed for profession ' .
+							$slug . ': ' . $e->getMessage()
+						);
+					}
+				}
+			}
+
+			$offset += $batch_size;
+
+			// Free memory after each batch.
+			unset( $professions, $batch_ids );
+
+			// Prevent PHP timeout on very large profession sets.
+			if ( $batch > 0 && 0 === $batch % 10 ) {
+				if ( function_exists( 'set_time_limit' ) ) {
+					// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Best-effort timeout extension; failure is non-fatal.
+					@set_time_limit( 30 );
+				}
+			}
+		}
+
+		// Clean up orphaned playbook attachments created by content changes or force regeneration.
+		self::delete_orphaned_system_playbooks( 500 );
+
+		return array(
+			'synced' => $synced,
+			'total'  => $total,
+			'errors' => $errors,
+		);
+	}
+
+	/**
+	 * Clean up all duplicate playbook attachments.
+	 *
+	 * Removes duplicate playbook attachments across all professions,
+	 * keeping only the most recent attachment for each profession.
+	 *
+	 * @return array Statistics about the cleanup operation.
+	 */
+	public static function cleanup_all_duplicates() {
+		// Companion ported repository — autoloaded.
+
+		$repository  = new ProfessionRepository();
+		$professions = $repository->find_all();
+
+		if ( empty( $professions ) ) {
+			return array(
+				'professions_processed' => 0,
+				'duplicates_removed'    => 0,
+			);
+		}
+
+		$total_removed         = 0;
+		$professions_processed = 0;
+
+		foreach ( $professions as $profession ) {
+			$removed        = self::remove_duplicate_playbooks( $profession->ID );
+			$total_removed += $removed;
+
+			if ( $removed > 0 ) {
+				++$professions_processed;
+			}
+		}
+
+		return array(
+			'professions_processed' => $professions_processed,
+			'duplicates_removed'    => $total_removed,
+		);
+	}
+}

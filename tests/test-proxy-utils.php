@@ -44,7 +44,9 @@ class WP_MCP_AI_Proxy_Utils_Tests extends WP_UnitTestCase {
 	public function test_build_rest_url_basic() {
 		$url = WP_MCP_AI_Proxy_Utils::build_rest_url( 'wp/v2', 'posts' );
 
-		$this->assertStringContainsString( 'wp-json/wp/v2/posts', $url );
+		// The util delegates to rest_url(), so the expected URL must match the
+		// site's permalink structure (pretty or ?rest_route=).
+		$this->assertEquals( rest_url( 'wp/v2/posts' ), $url );
 	}
 
 	/**
@@ -53,8 +55,7 @@ class WP_MCP_AI_Proxy_Utils_Tests extends WP_UnitTestCase {
 	public function test_build_rest_url_namespace_only() {
 		$url = WP_MCP_AI_Proxy_Utils::build_rest_url( 'wp/v2', '' );
 
-		$this->assertStringContainsString( 'wp-json/wp/v2', $url );
-		$this->assertStringNotContainsString( 'wp-json/wp/v2/', $url );
+		$this->assertEquals( rest_url( 'wp/v2' ), $url );
 	}
 
 	/**
@@ -71,18 +72,20 @@ class WP_MCP_AI_Proxy_Utils_Tests extends WP_UnitTestCase {
 	 * Test building REST URL with external host (should not be modified).
 	 */
 	public function test_build_rest_url_with_external_host() {
-		// Set up WordPress to use an external host.
+		// Set up WordPress to use an external host. Capture the current host
+		// OUTSIDE the filter: calling rest_url() inside the rest_url filter
+		// would recurse infinitely.
+		$original_host = wp_parse_url( rest_url(), PHP_URL_HOST );
 		add_filter(
 			'rest_url',
-			function ( $url ) {
-				return str_replace( '://127.0.0.1', '://example.com', $url );
+			function ( $url ) use ( $original_host ) {
+				return str_replace( $original_host, 'example.com', $url );
 			}
 		);
 
 		$url = WP_MCP_AI_Proxy_Utils::build_rest_url( 'wp/v2', 'posts' );
 
 		$this->assertStringContainsString( 'example.com', $url );
-		$this->assertStringNotContainsString( '127.0.0.1', $url );
 
 		remove_all_filters( 'rest_url' );
 	}
@@ -116,7 +119,7 @@ class WP_MCP_AI_Proxy_Utils_Tests extends WP_UnitTestCase {
 	public function test_build_rest_url_with_empty_namespace() {
 		$url = WP_MCP_AI_Proxy_Utils::build_rest_url( '', 'custom-route' );
 
-		$this->assertStringContainsString( 'wp-json/custom-route', $url );
+		$this->assertEquals( rest_url( 'custom-route' ), $url );
 	}
 
 	/**
@@ -125,7 +128,7 @@ class WP_MCP_AI_Proxy_Utils_Tests extends WP_UnitTestCase {
 	public function test_build_rest_url_with_complex_route() {
 		$url = WP_MCP_AI_Proxy_Utils::build_rest_url( 'wp-mcp-ai/v1', 'assistants/123/chat' );
 
-		$this->assertStringContainsString( 'wp-json/wp-mcp-ai/v1/assistants/123/chat', $url );
+		$this->assertEquals( rest_url( 'wp-mcp-ai/v1/assistants/123/chat' ), $url );
 	}
 
 	/**
@@ -152,7 +155,7 @@ class WP_MCP_AI_Proxy_Utils_Tests extends WP_UnitTestCase {
 	public function test_build_rest_url_with_special_characters() {
 		$url = WP_MCP_AI_Proxy_Utils::build_rest_url( 'custom-plugin/v1', 'items' );
 
-		$this->assertStringContainsString( 'wp-json/custom-plugin/v1/items', $url );
+		$this->assertEquals( rest_url( 'custom-plugin/v1/items' ), $url );
 	}
 
 	/**
@@ -178,7 +181,7 @@ class WP_MCP_AI_Proxy_Utils_Tests extends WP_UnitTestCase {
 	public function test_build_rest_url_with_numeric_namespace() {
 		$url = WP_MCP_AI_Proxy_Utils::build_rest_url( '123', 'route' );
 
-		$this->assertStringContainsString( 'wp-json/123/route', $url );
+		$this->assertEquals( rest_url( '123/route' ), $url );
 	}
 
 	/**
@@ -190,8 +193,8 @@ class WP_MCP_AI_Proxy_Utils_Tests extends WP_UnitTestCase {
 			'assistants/123/tools/456/execute'
 		);
 
-		$this->assertStringContainsString(
-			'wp-json/wp-mcp-ai/v1/assistants/123/tools/456/execute',
+		$this->assertEquals(
+			rest_url( 'wp-mcp-ai/v1/assistants/123/tools/456/execute' ),
 			$url
 		);
 	}
@@ -212,8 +215,8 @@ class WP_MCP_AI_Proxy_Utils_Tests extends WP_UnitTestCase {
 	public function test_build_rest_url_with_empty_both() {
 		$url = WP_MCP_AI_Proxy_Utils::build_rest_url( '', '' );
 
-		// Should still return a valid URL pointing to wp-json root.
-		$this->assertStringContainsString( 'wp-json', $url );
+		// Should still return a valid URL pointing to the REST root.
+		$this->assertEquals( rest_url( '' ), $url );
 	}
 
 	/**

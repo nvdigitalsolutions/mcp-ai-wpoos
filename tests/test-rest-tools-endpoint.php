@@ -40,14 +40,15 @@ class WP_MCP_AI_REST_Tools_Endpoint_Test extends WP_UnitTestCase {
 			)
 		);
 
-		// Configure the assistant with a few tools.
+		// Configure the assistant with a few tools. Tools live in their own
+		// meta key; the legacy aggregate key is no longer read.
 		$config = array(
 			'tools' => array(
-				'get_current_date_time',
-				'read_custom_post_type',
+				'get_update_status',
+				'get_recent_posts_validated',
 			),
 		);
-		update_post_meta( $this->assistant_id, 'wp_mcp_ai_assistant_config', $config );
+		update_post_meta( $this->assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, $config['tools'] );
 	}
 
 	/**
@@ -109,8 +110,8 @@ class WP_MCP_AI_REST_Tools_Endpoint_Test extends WP_UnitTestCase {
 
 		// Verify only configured tools are returned.
 		$tool_names = wp_list_pluck( $data['tools'], 'name' );
-		$this->assertContains( 'get_current_date_time', $tool_names );
-		$this->assertContains( 'read_custom_post_type', $tool_names );
+		$this->assertContains( 'get_update_status', $tool_names );
+		$this->assertContains( 'get_recent_posts_validated', $tool_names );
 	}
 
 	/**
@@ -185,7 +186,7 @@ class WP_MCP_AI_REST_Tools_Endpoint_Test extends WP_UnitTestCase {
 			wp_json_encode(
 				array(
 					'assistant_id' => $this->assistant_id,
-					'tool'         => 'get_current_date_time',
+					'tool'         => 'get_update_status',
 					'arguments'    => array(),
 				)
 			)
@@ -199,6 +200,6 @@ class WP_MCP_AI_REST_Tools_Endpoint_Test extends WP_UnitTestCase {
 		$data = $response->get_data();
 		$this->assertArrayHasKey( 'result', $data, 'Response should include tool result' );
 		$this->assertArrayHasKey( 'tool', $data, 'Response should include tool name' );
-		$this->assertSame( 'get_current_date_time', $data['tool'] );
+		$this->assertSame( 'get_update_status', $data['tool'] );
 	}
 }

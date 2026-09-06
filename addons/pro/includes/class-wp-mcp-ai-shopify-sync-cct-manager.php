@@ -250,7 +250,11 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		 * @return bool|WP_Error True if available, WP_Error otherwise.
 		 */
 		public function is_cct_available() {
-			if ( ! function_exists( 'jet_engine' ) ) {
+			// The version constant is JetEngine's own load marker. Test suites
+			// leak file-scope `jet_engine()` stubs process-wide in the
+			// single-process run, so function existence alone cannot prove the
+			// real plugin is loaded — without the constant, treat it as missing.
+			if ( ! function_exists( 'jet_engine' ) || ! defined( 'JET_ENGINE_VERSION' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_shopify_sync_jetengine_missing',
 					__( 'JetEngine plugin is required for Shopify Sync storage. Please install and activate JetEngine.', 'mcp-ai-wpoos-pro' )
@@ -1234,16 +1238,18 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		 * @return int|WP_Error CCT item ID or WP_Error.
 		 */
 		public function upsert( $shopify_row, &$operation = null ) {
-			$available = $this->is_cct_available();
-			if ( is_wp_error( $available ) ) {
-				return $available;
-			}
-
+			// Validate caller input before environment checks so invalid rows
+			// fail with a deterministic error regardless of JetEngine state.
 			if ( empty( $shopify_row['shopify_variant_id'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_shopify_sync_missing_variant_id',
 					__( 'Shopify row is missing required shopify_variant_id.', 'mcp-ai-wpoos-pro' )
 				);
+			}
+
+			$available = $this->is_cct_available();
+			if ( is_wp_error( $available ) ) {
+				return $available;
 			}
 
 			$location_id = isset( $shopify_row['location_id'] ) ? $shopify_row['location_id'] : '';
@@ -1661,7 +1667,17 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		 * @return array|WP_Error Sync result or WP_Error.
 		 */
 		public function sync_from_bulk_operation( $progress = null, $dry_run = false, $run_id = '' ) {
-			if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
+			/**
+			 * Filter whether the Shopify client is available for bulk sync.
+			 *
+			 * @param bool $available Whether the Shopify client class is loaded.
+			 */
+			$client_available = (bool) apply_filters(
+				'wp_mcp_ai_shopify_sync_client_available',
+				class_exists( 'WP_MCP_AI_Shopify_Client' )
+			);
+
+			if ( ! $client_available ) {
 				return new WP_Error(
 					'wp_mcp_ai_shopify_sync_no_client',
 					__( 'Shopify Client is not available.', 'mcp-ai-wpoos-pro' )
@@ -1915,7 +1931,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		 * @param string                   $run_id  Optional sync run ID for logging.
 		 * @return array|WP_Error Sync result or WP_Error.
 		 */
-		public function sync_from_catalog_api( $client, $dry_run = false, $run_id = '' ) {
+		public function sync_from_catalog_api( $client, $dry_run = false, $run_id = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $run_id is part of the public sync API signature for run-correlated logging.
 			$start_time = microtime( true );
 
 			// Ensure CCT columns exist.
@@ -2114,7 +2130,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		 * @param string $sync_mode 'full' or 'minimal'.
 		 * @return array Array of CCT row arrays.
 		 */
-		protected function map_catalog_product_to_cct_rows( $product, $sync_mode = 'full' ) {
+		protected function map_catalog_product_to_cct_rows( $product, $sync_mode = 'full' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $sync_mode switches mapping depth for future callers; the default path covers both modes today.
 			$rows    = array();
 			$base_id = isset( $product['id'] ) ? sanitize_text_field( $product['id'] ) : '';
 

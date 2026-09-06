@@ -81,7 +81,10 @@ class Test_Mesh_Networking extends WP_UnitTestCase {
 
 		$sanitized = $admin->sanitize_settings( $input );
 
-		$this->assertEquals( $existing_key, $sanitized['mesh_inbound_api_key'] );
+		// Sensitive settings are encrypted at rest; the round-trip decrypt must
+		// return the original key.
+		$decrypted = WP_MCP_AI_Admin_Settings_Base::maybe_decrypt_sensitive_setting_value( $sanitized['mesh_inbound_api_key'] );
+		$this->assertEquals( $existing_key, $decrypted );
 	}
 
 	/**

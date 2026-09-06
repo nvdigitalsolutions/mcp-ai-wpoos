@@ -28,6 +28,15 @@ class Test_Calendar_Tenant_Isolation extends WP_UnitTestCase {
 	private $tenant_b_id;
 
 	/**
+	 * Install tenant tables before per-test transactions begin.
+	 *
+	 * @param WP_UnitTest_Factory $factory Test factory.
+	 */
+	public static function wpSetUpBeforeClass( $factory ) {
+		WP_MCP_AI_Tenant_Database::create_tables();
+	}
+
+	/**
 	 * Set up.
 	 */
 	public function set_up() {

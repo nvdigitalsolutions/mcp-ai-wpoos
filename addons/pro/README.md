@@ -1,6 +1,6 @@
 # Open Operator System (NV oOS) - Pro Add-on
 
-**COMMERCIAL PLUGIN** - Premium WordPress AI automation platform with 30 specialized professional toolkits.
+**COMMERCIAL PLUGIN** - Premium WordPress AI automation platform with 31 specialized professional toolkits.
 
 ---
 
@@ -13,13 +13,42 @@
 
 ## Overview
 
-The **Pro Add-on** is a premium commercial extension that transforms the base Open Operator System into a comprehensive enterprise-grade AI automation platform. It adds **30 specialized professional toolkits** with **289+ advanced tools** powered by best-in-class NPM packages.
+The **Pro Add-on** is a premium commercial extension that transforms the base Open Operator System into a comprehensive enterprise-grade AI automation platform. It adds **31 specialized professional toolkits** with **289+ advanced tools** powered by best-in-class NPM packages.
 
 **This is NOT open-source software.** It is a commercial product available only through authorized channels with proper licensing.
 
+## Pro SPA v2 Shortcode
+
+The Pro SPA v2 (React chat surface) can be embedded on the front end with the
+`[nvoos_pro_spa]` shortcode — chat-first "embedded" mode: conversation view,
+transcripts sidebar, memory, skills (OKF), tool shortcuts, slash commands, and
+HITL approvals. No admin routes are exposed.
+
+```
+[nvoos_pro_spa assistant_id="12" theme="dark" height="720px" show_sidebar="1"]
+```
+
+| Attribute | Default | Description |
+|-----------|---------|-------------|
+| `assistant_id` | server default | Assistant post ID to bind the chat to. |
+| `mode` | `embedded` | `embedded` (chat-first) or `admin` (full SPA — `manage_options` only). |
+| `theme` | `auto` | `auto`, `light`, or `dark`. |
+| `height` | `640px` | Optional CSS height for the instance. |
+| `guest` | `0` | `1` enables guest access (requires the global "Allow Guest Access" security setting and a valid `assistant_id`). |
+| `allow_sensitive_tools` | `0` | `1` forwards `allow_sensitive_tools` to the chat endpoint. |
+| `show_sidebar` | `1` | `0` hides the conversations sidebar. |
+
+Guests are authenticated with the base plugin's guest-token machinery
+(`X-WP-MCP-AI-Guest` header); transcripts/memory/threads endpoints are omitted
+for guests. One embedded instance per page is supported.
+
+A Gutenberg block (**NV oOS Pro SPA v2**, category *NV oOS Toolkits*) wraps the
+same attributes. Override rendering with the `nvoos_pro_spa_can_render` filter
+(`false` short-circuits to an empty string).
+
 ## Professional Toolkits
 
-The Pro Add-on includes **30 specialized professional toolkits** organized into the following categories.
+The Pro Add-on includes **31 specialized professional toolkits** organized into the following categories.
 
 > **Per-toolkit documentation:** every toolkit has a dedicated overview page in
 > [`docs/toolkits/`](docs/toolkits/README.md) that covers its activation setting, custom
@@ -415,6 +444,18 @@ conversion, structured-data extraction, research aggregation.
 
 **Use Cases**: Knowledge-base assistants, RAG pipelines
 **Docs**: [docs/toolkits/vector-storage.md](docs/toolkits/vector-storage.md)
+
+#### 31. Vision Analysis Toolkit ✅
+**Image object counting**
+
+The `analyze_image_objects` tool detects and counts objects in an image
+(attachment, file, URL, or base64) via HuggingFace OWLv2 / Ollama detectors,
+VLM counting, or hybrid label normalization; `annotate=true` returns a
+GD-drawn labeled bounding-box copy as a media attachment.
+
+**Use Cases**: Inventory checks, quality control, visual analytics
+**Activation**: `enable_vision_analysis_toolkit` (off by default; NV oOS → Vision Analysis settings page)
+**Docs**: [docs/toolkits/vision-analysis-toolkit.md](docs/toolkits/vision-analysis-toolkit.md)
 
 ---
 

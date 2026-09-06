@@ -472,10 +472,13 @@ class WP_MCP_AI_Pro_Schedule_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 			}
 		}
 		if ( isset( $sanitized['max_concurrent_runs'] ) ) {
-			$sanitized['max_concurrent_runs'] = max( 1, min( 20, absint( $sanitized['max_concurrent_runs'] ) ) );
+			// Cast, don't absint(): absint( -5 ) is 5, which would slip past the
+			// max() floor below and store a value the form's min="1" rejects.
+			$sanitized['max_concurrent_runs'] = max( 1, min( 20, (int) $sanitized['max_concurrent_runs'] ) );
 		}
 		if ( isset( $sanitized['retry_count'] ) ) {
-			$sanitized['retry_count'] = max( 0, min( 10, absint( $sanitized['retry_count'] ) ) );
+			// Cast, don't absint(): negative input must clamp to the form's min="0".
+			$sanitized['retry_count'] = max( 0, min( 10, (int) $sanitized['retry_count'] ) );
 		}
 		if ( isset( $sanitized['retry_backoff'] ) ) {
 			$allowed                    = array( 'linear', 'exponential', 'constant' );

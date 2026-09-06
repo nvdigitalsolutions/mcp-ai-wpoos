@@ -46,10 +46,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		 * but does not use them. WordPress's do_action() may pass parameters to callbacks.
 		 *
 		 * @param mixed ...$args Variable arguments passed by WordPress hooks (not used).
+		 * @throws \Throwable When running under PHPUnit and the inner handler terminated via wp_die().
 		 */
 		public function safe_ajax_handler( ...$args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter accepts variable WordPress hook arguments.
-			// Clean any previous output.
-			$this->clean_all_buffers();
+			// Clean any previous output. Under PHPUnit this would also close
+			// the buffer the AJAX test harness uses to capture the JSON
+			// response, so skip it when the test seam is active.
+			if ( ! ( defined( 'WP_MCP_AI_TESTS_RUNNING' ) && WP_MCP_AI_TESTS_RUNNING ) ) {
+				$this->clean_all_buffers();
+			}
 
 			// Map action to handler method.
 			$action_map = array(
@@ -109,6 +114,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_sync_media_templates'   => 'handle_sync_media_templates',
 				'wp_ajax_wp_mcp_ai_clear_test_files'       => 'handle_clear_test_files',
 				'wp_ajax_wp_mcp_ai_clear_dev_files'        => 'handle_clear_dev_files',
+				'wp_ajax_wp_mcp_ai_maintain_log_buffers'   => 'handle_maintain_log_buffers',
 				'wp_ajax_wp_mcp_ai_test_unlimited_ocr_connection' => 'handle_test_unlimited_ocr_connection',
 				'wp_ajax_wp_mcp_ai_test_deepseek_ocr_connection' => 'handle_test_deepseek_ocr_connection',
 			);
@@ -127,6 +133,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			try {
 				call_user_func( array( $this, $handler_method ) );
 			} catch ( \Throwable $e ) {
+				// Under PHPUnit, wp_die() throws after wp_send_json_*() has
+				// already sent the response body. Propagate the exception so
+				// the test harness receives the original response instead of
+				// a converted error envelope.
+				if ( defined( 'WP_MCP_AI_TESTS_RUNNING' ) && WP_MCP_AI_TESTS_RUNNING && class_exists( 'WPDieException' ) && $e instanceof WPDieException ) {
+					throw $e;
+				}
+
 				// Clean any output from the exception/error.
 				$this->clean_all_buffers();
 				wp_send_json_error(
@@ -3083,6 +3097,97 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		}
 
 		/**
+		 * Handle log-buffer maintenance AJAX request.
+		 *
+		 * Supports two `action_type` values:
+		 * - `compact` : rewrite stored entries through the per-entry context budget,
+		 *               reclaiming space while keeping the entries.
+		 * - `clear`   : delete both buffers outright.
+		 *
+		 * @since 1.8.0
+		 */
+		private function handle_maintain_log_buffers() {
+			check_ajax_referer( 'wp_mcp_ai_maintain_log_buffers', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ),
+					)
+				);
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'The logger is unavailable on this site.', 'mcp-ai-wpoos' ),
+					)
+				);
+				return;
+			}
+
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below with sanitize_key.
+			$action_type = isset( $_POST['action_type'] ) ? sanitize_key( wp_unslash( $_POST['action_type'] ) ) : '';
+
+			if ( ! in_array( $action_type, array( 'compact', 'clear' ), true ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Invalid action type.', 'mcp-ai-wpoos' ),
+					)
+				);
+				return;
+			}
+
+			if ( 'clear' === $action_type ) {
+				$cleared = WP_MCP_AI_Logger::clear_recent_buffers();
+
+				wp_send_json_success(
+					array(
+						'message' => sprintf(
+							/* translators: 1: number of log entries removed, 2: human-readable size freed. */
+							__( 'Deleted %1$d log entries and freed %2$s.', 'mcp-ai-wpoos' ),
+							(int) $cleared['entries_removed'],
+							size_format( max( 0, (int) $cleared['bytes_freed'] ), 2 )
+						),
+						'stats'   => WP_MCP_AI_Logger::get_recent_buffer_stats(),
+					)
+				);
+				return;
+			}
+
+			$compacted = WP_MCP_AI_Logger::compact_recent_buffers();
+
+			if ( (int) $compacted['bytes_saved'] < 1 ) {
+				wp_send_json_success(
+					array(
+						'message' => sprintf(
+							/* translators: %s: human-readable current size of the log buffers. */
+							__( 'Log buffers are already compact (%s). Nothing to reclaim.', 'mcp-ai-wpoos' ),
+							size_format( max( 0, (int) $compacted['bytes_after'] ), 2 )
+						),
+						'stats'   => WP_MCP_AI_Logger::get_recent_buffer_stats(),
+					)
+				);
+				return;
+			}
+
+			wp_send_json_success(
+				array(
+					'message' => sprintf(
+						/* translators: 1: size reclaimed, 2: number of entries rewritten, 3: size before, 4: size after. */
+						__( 'Reclaimed %1$s by rewriting %2$d log entries (%3$s to %4$s). No entries were deleted.', 'mcp-ai-wpoos' ),
+						size_format( max( 0, (int) $compacted['bytes_saved'] ), 2 ),
+						(int) $compacted['entries_rewritten'],
+						size_format( max( 0, (int) $compacted['bytes_before'] ), 2 ),
+						size_format( max( 0, (int) $compacted['bytes_after'] ), 2 )
+					),
+					'stats'   => WP_MCP_AI_Logger::get_recent_buffer_stats(),
+				)
+			);
+		}
+
+		/**
 		 * Handle profession re-seeding AJAX request.
 		 */
 		private function handle_reseed_professions() {
@@ -3980,6 +4085,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Use reflection to call protected method.
+			// The success response is sent OUTSIDE the try block: under PHPUnit
+			// wp_send_json_success() terminates via a throwable WPDieException,
+			// which the catch below would otherwise convert into a second
+			// wp_send_json_error() — a double wp_die() that also corrupts the
+			// output-buffer bookkeeping of the AJAX test harness.
 			try {
 				$loader = new WP_MCP_AI_Profession_Playbook_Loader();
 				$seeder = new WP_MCP_AI_Profession_Playbook_Seeder();
@@ -3987,16 +4097,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				$method = new ReflectionMethod( 'WP_MCP_AI_Profession_Playbook_Seeder', 'sync_profession_playbook' );
 				$method->setAccessible( true );
 				$method->invoke( null, $profession, $loader, true ); // Force regeneration.
-
-				wp_send_json_success(
-					array(
-						'message' => sprintf(
-							/* translators: %s: Profession title */
-							__( 'Playbook for "%s" regenerated successfully!', 'mcp-ai-wpoos' ),
-							$profession->post_title
-						),
-					)
-				);
 			} catch ( \Throwable $e ) {
 				wp_send_json_error(
 					array(
@@ -4007,7 +4107,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 						),
 					)
 				);
+				return;
 			}
+
+			wp_send_json_success(
+				array(
+					'message' => sprintf(
+						/* translators: %s: Profession title */
+						__( 'Playbook for "%s" regenerated successfully!', 'mcp-ai-wpoos' ),
+						$profession->post_title
+					),
+				)
+			);
 		}
 
 		/**

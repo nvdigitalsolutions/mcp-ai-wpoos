@@ -45,10 +45,11 @@ class WP_MCP_AI_Model_Pricing_Checker_Test extends WP_UnitTestCase {
 		// Get stored pricing.
 		$pricing = get_option( WP_MCP_AI_Model_Pricing_Checker::OPTION_LAST_CHECK );
 
-		// Check for known models.
+		// Check for known models still present in the bundled catalog
+		// (o3-mini and o1-2024-12-17 were removed upstream; these remain).
 		$this->assertArrayHasKey( 'gpt-4o', $pricing );
 		$this->assertArrayHasKey( 'gemini-2.5-flash', $pricing );
-		$this->assertArrayHasKey( 'o3-mini', $pricing );
+		$this->assertArrayHasKey( 'gpt-4.1-mini', $pricing );
 
 		// Verify structure.
 		$this->assertArrayHasKey( 'input', $pricing['gpt-4o'] );
@@ -59,6 +60,18 @@ class WP_MCP_AI_Model_Pricing_Checker_Test extends WP_UnitTestCase {
 	 * Test price change detection.
 	 */
 	public function test_price_change_detection() {
+		// Anchor the "new" price to the bundled catalog instead of a memorized
+		// value, so upstream price updates don't break this test.
+		$catalog_models = WP_MCP_AI_Model_Rate_Limits_CCT::get_default_model_data();
+		$current        = null;
+		foreach ( $catalog_models as $model ) {
+			if ( 'gpt-4o' === ( isset( $model['model_name'] ) ? $model['model_name'] : '' ) ) {
+				$current = $model;
+				break;
+			}
+		}
+		$this->assertNotNull( $current, 'gpt-4o should be in the bundled catalog' );
+
 		// Set initial pricing.
 		$initial_pricing = array(
 			'gpt-4o' => array(
@@ -87,8 +100,8 @@ class WP_MCP_AI_Model_Pricing_Checker_Test extends WP_UnitTestCase {
 		$this->assertNotNull( $gpt4o_change );
 		$this->assertEquals( 0.001, $gpt4o_change['old_input'] );
 		$this->assertEquals( 0.002, $gpt4o_change['old_output'] );
-		$this->assertEquals( 0.005, $gpt4o_change['new_input'] ); // Current price.
-		$this->assertEquals( 0.015, $gpt4o_change['new_output'] ); // Current price.
+		$this->assertEquals( (float) $current['cost_per_1k_input_tokens'], $gpt4o_change['new_input'] );
+		$this->assertEquals( (float) $current['cost_per_1k_output_tokens'], $gpt4o_change['new_output'] );
 	}
 
 	/**
@@ -122,14 +135,24 @@ class WP_MCP_AI_Model_Pricing_Checker_Test extends WP_UnitTestCase {
 		// Get pricing data.
 		$pricing = get_option( WP_MCP_AI_Model_Pricing_Checker::OPTION_LAST_CHECK );
 
-		// Check for new models added in this PR.
+		// Models present in the bundled catalog must be tracked. o3-mini and
+		// o1-2024-12-17 were removed upstream; gpt-4.1-mini and gpt-5 remain.
 		$this->assertArrayHasKey( 'gemini-2.5-flash', $pricing, 'gemini-2.5-flash should be tracked' );
-		$this->assertArrayHasKey( 'o1-2024-12-17', $pricing, 'o1-2024-12-17 should be tracked' );
-		$this->assertArrayHasKey( 'o3-mini', $pricing, 'o3-mini should be tracked' );
+		$this->assertArrayHasKey( 'gpt-4.1-mini', $pricing, 'gpt-4.1-mini should be tracked' );
+		$this->assertArrayHasKey( 'gpt-5', $pricing, 'gpt-5 should be tracked' );
 
-		// Verify correct pricing for o3-mini.
-		$this->assertEquals( 0.00110, $pricing['o3-mini']['input'], 'o3-mini input price should be $0.00110' );
-		$this->assertEquals( 0.00440, $pricing['o3-mini']['output'], 'o3-mini output price should be $0.00440' );
+		// Verify correct pricing anchored to the bundled catalog for gpt-4.1-mini.
+		$catalog_models = WP_MCP_AI_Model_Rate_Limits_CCT::get_default_model_data();
+		$expected       = null;
+		foreach ( $catalog_models as $model ) {
+			if ( 'gpt-4.1-mini' === ( isset( $model['model_name'] ) ? $model['model_name'] : '' ) ) {
+				$expected = $model;
+				break;
+			}
+		}
+		$this->assertNotNull( $expected, 'gpt-4.1-mini should be in the bundled catalog' );
+		$this->assertEquals( (float) $expected['cost_per_1k_input_tokens'], $pricing['gpt-4.1-mini']['input'] );
+		$this->assertEquals( (float) $expected['cost_per_1k_output_tokens'], $pricing['gpt-4.1-mini']['output'] );
 	}
 
 	/**
@@ -210,6 +233,14 @@ class WP_MCP_AI_Model_Pricing_Checker_Test extends WP_UnitTestCase {
 	 * Test update_model_costs validates pricing values.
 	 */
 	public function test_update_model_costs_validates_pricing() {
+		// The validation branch runs after the JetEngine CCT item-handler gate
+		// inside update_model_costs(); without JetEngine the handler responds
+		// with an unavailable-CCT error before reaching validation.
+		if ( class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' )
+			&& ! WP_MCP_AI_Model_Rate_Limits_CCT::get_item_handler() ) {
+			$this->markTestSkipped( 'JetEngine CCT item handler is not available.' );
+		}
+
 		// Create admin user.
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );

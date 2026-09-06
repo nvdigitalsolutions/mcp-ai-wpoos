@@ -118,6 +118,13 @@ class NV_oOS_Graphify_Memory_Bridge {
 			return;
 		}
 
+		// The addon can be loaded while its schema is not installed yet (for
+		// example in CI or before first activation). Skip silently instead of
+		// spamming database errors on every memory write.
+		if ( ! NV_oOS_Graphify_DB::tables_installed() ) {
+			return;
+		}
+
 		$context_id  = sanitize_text_field( (string) $payload['context_id'] );
 		$agent_id    = isset( $payload['agent_id'] ) ? (string) $payload['agent_id'] : '';
 		$wing        = isset( $payload['wing'] ) ? sanitize_text_field( (string) $payload['wing'] ) : '';
@@ -331,6 +338,11 @@ class NV_oOS_Graphify_Memory_Bridge {
 	 */
 	public static function retrieve_graph( array $args ) {
 		if ( ! class_exists( 'NV_oOS_Graphify_DB' ) ) {
+			return array();
+		}
+
+		// See project_memory(): skip queries while the schema is absent.
+		if ( ! NV_oOS_Graphify_DB::tables_installed() ) {
 			return array();
 		}
 

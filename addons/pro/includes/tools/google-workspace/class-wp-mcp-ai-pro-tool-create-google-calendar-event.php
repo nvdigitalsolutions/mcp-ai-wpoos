@@ -51,6 +51,10 @@ class WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
+				'connection_id'    => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Google Calendar connection ID from Remote Sites. When omitted, the connection configured under Tools → Connections → Google Calendar is used.', 'mcp-ai-wpoos-pro' ),
+				),
 				'summary'          => array(
 					'type'        => 'string',
 					'description' => __( 'Event title that will appear on the calendar.', 'mcp-ai-wpoos-pro' ),
@@ -140,6 +144,10 @@ class WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_
 					),
 					'additionalProperties' => false,
 				),
+				'create_meet_link' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether to attach a Google Meet conference to the event. The link is generated asynchronously by Google, so it may not be present in the immediate response.', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'             => array( 'summary', 'start_time' ),
 			'additionalProperties' => false,
@@ -189,13 +197,39 @@ class WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_
 		$timezone    = isset( $arguments['timezone'] ) ? sanitize_text_field( $arguments['timezone'] ) : '';
 
 		$calendar_id = isset( $arguments['calendar_id'] ) ? sanitize_text_field( $arguments['calendar_id'] ) : '';
-		if ( '' === $calendar_id ) {
-			$calendar_id = apply_filters( 'wp_mcp_ai_google_calendar_default_calendar_id', '', $context, $arguments, $this );
-			$calendar_id = sanitize_text_field( $calendar_id );
+
+		// Resolve credentials before falling back to the legacy calendar-ID filter,
+		// so a configured connection can supply the default calendar.
+		require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-credentials.php';
+
+		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : '';
+		$credentials   = WP_MCP_AI_Google_Calendar_Credentials::resolve( $connection_id, $context, $arguments );
+
+		if ( is_wp_error( $credentials ) ) {
+			return $credentials;
 		}
+
+		// Writing events requires the events scope. Google's granular consent lets
+		// users approve a subset, so this must be checked rather than assumed.
+		$scope_check = WP_MCP_AI_Google_Calendar_Credentials::require_scope(
+			$credentials,
+			WP_MCP_AI_Google_Calendar_Scopes::SCOPE_EVENTS
+		);
+
+		if ( is_wp_error( $scope_check ) ) {
+			return $scope_check;
+		}
+
+		$calendar_id = WP_MCP_AI_Google_Calendar_Credentials::resolve_calendar_id( $credentials, $calendar_id );
 
 		if ( '' === $calendar_id ) {
 			return new WP_Error( 'wp_mcp_ai_missing_calendar', __( 'A target Google Calendar identifier is required.', 'mcp-ai-wpoos-pro' ), array( 'status' => 400 ) );
+		}
+
+		// Fall back to the site/connection time zone so recurring expansion and DST
+		// handling are deterministic.
+		if ( '' === $timezone && ! empty( $credentials['timezone'] ) ) {
+			$timezone = (string) $credentials['timezone'];
 		}
 
 		if ( empty( $arguments['start_time'] ) || ! is_string( $arguments['start_time'] ) ) {
@@ -300,73 +334,86 @@ class WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_
 			$payload['reminders'] = $reminders;
 		}
 
-		$token = $this->resolve_access_token( $arguments, $context );
-		if ( is_wp_error( $token ) ) {
-			return $token;
-		}
-
 		$timeout = (int) apply_filters( 'wp_mcp_ai_google_calendar_request_timeout', 15, $context, $arguments, $this );
 		if ( $timeout <= 0 ) {
 			$timeout = 15;
 		}
 
-		$endpoint = sprintf(
-			'https://www.googleapis.com/calendar/v3/calendars/%s/events',
-			rawurlencode( $calendar_id )
-		);
+		$query = array();
 
 		if ( '' !== $send_updates ) {
-			$endpoint = add_query_arg( 'sendUpdates', $send_updates, $endpoint );
+			$query['sendUpdates'] = $send_updates;
 		}
 
-		$response = wp_remote_post(
-			$endpoint,
-			array(
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $token,
-					'Content-Type'  => 'application/json',
+		// Google Meet: conferenceDataVersion=1 is mandatory on every request that
+		// carries conference data, and requestId acts as an idempotency key -
+		// reusing it makes Google ignore the request, so it is derived
+		// deterministically from the event payload rather than randomised.
+		if ( ! empty( $arguments['create_meet_link'] ) ) {
+			$query['conferenceDataVersion'] = 1;
+
+			$payload['conferenceData'] = array(
+				'createRequest' => array(
+					'requestId'             => substr(
+						hash( 'sha256', wp_json_encode( array( $calendar_id, $summary, $payload['start'], $payload['end'] ) ) ),
+						0,
+						32
+					),
+					'conferenceSolutionKey' => array( 'type' => 'hangoutsMeet' ),
 				),
-				'timeout' => $timeout,
-				'body'    => wp_json_encode( $payload ),
-			)
+			);
+		}
+
+		$client = WP_MCP_AI_Google_Calendar_Credentials::make_client(
+			$credentials,
+			array( 'timeout' => $timeout )
 		);
 
-		if ( is_wp_error( $response ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_calendar_request_failed',
-				__( 'Unable to communicate with the Google Calendar API.', 'mcp-ai-wpoos-pro' ),
-				array(
-					'status' => 500,
-					'error'  => $response,
-				)
-			);
+		if ( is_wp_error( $client ) ) {
+			return $client;
 		}
 
-		$status = wp_remote_retrieve_response_code( $response );
-		$body   = wp_remote_retrieve_body( $response );
+		$decoded = $client->insert_event( $calendar_id, $payload, $query );
 
-		$decoded = json_decode( $body, true );
-		if ( null === $decoded ) {
-			$decoded = array();
+		if ( is_wp_error( $decoded ) ) {
+			return $decoded;
 		}
 
-		if ( $status < 200 || $status >= 300 ) {
-			$message = __( 'The Google Calendar API rejected the event request.', 'mcp-ai-wpoos-pro' );
-			if ( isset( $decoded['error']['message'] ) ) {
-				$message = sprintf( '%s %s', $message, $decoded['error']['message'] );
+		$meet_link = '';
+
+		if ( ! empty( $decoded['conferenceData']['entryPoints'] ) && is_array( $decoded['conferenceData']['entryPoints'] ) ) {
+			foreach ( $decoded['conferenceData']['entryPoints'] as $entry_point ) {
+				if ( isset( $entry_point['entryPointType'], $entry_point['uri'] ) && 'video' === $entry_point['entryPointType'] ) {
+					$meet_link = (string) $entry_point['uri'];
+					break;
+				}
 			}
-
-			return new WP_Error(
-				'wp_mcp_ai_calendar_error',
-				$message,
-				array(
-					'status'   => $status,
-					'response' => $decoded,
-				)
-			);
 		}
 
-		return $decoded;
+		if ( '' === $meet_link && ! empty( $decoded['hangoutLink'] ) ) {
+			$meet_link = (string) $decoded['hangoutLink'];
+		}
+
+		// Conference data is generated asynchronously; surface the pending state so
+		// callers know to re-read the event rather than assuming no link exists.
+		$conference_status = isset( $decoded['conferenceData']['createRequest']['status']['statusCode'] )
+			? (string) $decoded['conferenceData']['createRequest']['status']['statusCode']
+			: '';
+
+		return array(
+			'success'           => true,
+			'event_id'          => isset( $decoded['id'] ) ? (string) $decoded['id'] : '',
+			'calendar_id'       => $calendar_id,
+			'html_link'         => isset( $decoded['htmlLink'] ) ? (string) $decoded['htmlLink'] : '',
+			'status'            => isset( $decoded['status'] ) ? (string) $decoded['status'] : '',
+			'summary'           => isset( $decoded['summary'] ) ? (string) $decoded['summary'] : $summary,
+			'start'             => isset( $decoded['start'] ) ? $decoded['start'] : $payload['start'],
+			'end'               => isset( $decoded['end'] ) ? $decoded['end'] : $payload['end'],
+			'attendee_count'    => isset( $decoded['attendees'] ) && is_array( $decoded['attendees'] ) ? count( $decoded['attendees'] ) : 0,
+			'meet_link'         => $meet_link,
+			'conference_status' => $conference_status,
+			'credential_source' => isset( $credentials['source'] ) ? (string) $credentials['source'] : '',
+		);
 	}
 
 	/**
@@ -575,6 +622,14 @@ class WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_
 
 			if ( '' === $email ) {
 				continue;
+			}
+
+			// Google warns that submitting accepted/declined/tentative for a new
+			// event can silently reset the guest's response and hide the event from
+			// their calendar. `needsAction` is Google's recommended value for new
+			// events, so it is set explicitly rather than left to the API default.
+			if ( ! isset( $entry['responseStatus'] ) ) {
+				$entry['responseStatus'] = 'needsAction';
 			}
 
 			$normalised[ $email ] = $entry;

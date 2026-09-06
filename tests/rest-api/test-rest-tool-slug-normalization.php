@@ -17,6 +17,14 @@ class WP_MCP_AI_REST_Tool_Slug_Normalization_Test extends WP_Test_REST_TestCase 
 	/**
 	 * Set up the test environment.
 	 */
+	/**
+	 * The production REST controller captured before this class swaps in
+	 * its own mock, restored in tear_down so later tests keep their routes.
+	 *
+	 * @var WP_MCP_AI_REST|null
+	 */
+	private $original_controller = null;
+
 	public function set_up() {
 		parent::set_up();
 
@@ -25,6 +33,13 @@ class WP_MCP_AI_REST_Tool_Slug_Normalization_Test extends WP_Test_REST_TestCase 
 
 		$this->stub_tool = new WP_MCP_AI_REST_Tool_Slug_Normalization_Test_Stub_Tool();
 		$registry->register_tool( $this->stub_tool );
+
+		// Remember the production controller so tear_down can re-register its
+		// routes; leaving rest_api_init without a register_routes callback
+		// would 404 every later /mcp-ai/v1/* test in the shared process.
+		$this->original_controller = isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) && $GLOBALS['wp_mcp_ai_rest_controller'] instanceof WP_MCP_AI_REST
+			? $GLOBALS['wp_mcp_ai_rest_controller']
+			: null;
 
 		$this->bootstrap_rest_controller();
 	}
@@ -38,6 +53,12 @@ class WP_MCP_AI_REST_Tool_Slug_Normalization_Test extends WP_Test_REST_TestCase 
 
 		if ( isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) ) {
 			remove_action( 'rest_api_init', array( $GLOBALS['wp_mcp_ai_rest_controller'], 'register_routes' ) );
+		}
+
+		if ( $this->original_controller instanceof WP_MCP_AI_REST ) {
+			$GLOBALS['wp_mcp_ai_rest_controller'] = $this->original_controller;
+			add_action( 'rest_api_init', array( $this->original_controller, 'register_routes' ) );
+		} else {
 			unset( $GLOBALS['wp_mcp_ai_rest_controller'] );
 		}
 

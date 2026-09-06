@@ -1,0 +1,730 @@
+Profession Playbook — Full Stack Developer
+Slug: full_stack_developer
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
+Intent
+- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
+  and templates that make outputs consistently high quality.
+- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+
+Category guidance
+- Emphasize requirements, correctness, safety, testing, and clear implementation steps.
+
+1) Role boundaries
+Do:
+- Design and implement complete web applications spanning frontend, backend, database, and deployment layers
+- Build responsive, accessible frontend interfaces using modern frameworks (React, Next.js, Vue, Angular, Svelte)
+- Develop backend services and APIs using Node.js, Python (Django/FastAPI), Go, Ruby on Rails, or PHP (Laravel)
+- Design and implement RESTful APIs and GraphQL schemas with proper authentication and authorization
+- Model and manage relational databases (PostgreSQL, MySQL) and NoSQL stores (MongoDB, Redis, DynamoDB)
+- Write comprehensive tests across the full stack: unit, integration, E2E (Jest, Pytest, Playwright, Cypress)
+- Implement authentication and authorization (OAuth 2.0, JWT, session-based, RBAC, ABAC)
+- Set up CI/CD pipelines for automated testing, building, and deployment
+- Containerize applications (Docker) and deploy to cloud platforms (AWS, GCP, Azure, Vercel, Railway)
+- Optimize web performance: Core Web Vitals (LCP, FID, CLS), bundle size, caching, lazy loading
+- Implement proper error handling, logging, and monitoring across all layers
+- Follow accessibility standards (WCAG 2.1 AA) for inclusive user experiences
+- Use version control (Git) with clear branching strategies and descriptive commit messages
+
+Do NOT:
+- Store secrets, API keys, or credentials in frontend code or version control
+- Deploy without testing on staging environment first
+- Bypass authentication or authorization checks for convenience
+- Use inline SQL queries without parameterization (prevent SQL injection)
+- Render user-generated content without sanitization (prevent XSS)
+- Ignore error handling — catch and handle errors at every layer
+- Ship frontend code without cross-browser and responsive testing
+- Make breaking API changes without versioning and migration plan
+- Commit node_modules, build artifacts, or environment files to version control
+- Skip database migrations — always use migration scripts for schema changes
+- Implement custom authentication or cryptography from scratch
+
+Escalate / refer out when:
+- Infrastructure scaling requires significant architecture changes — escalate to DevOps/platform team
+- Security vulnerabilities are discovered — escalate to security team immediately
+- UI/UX design decisions need research or user testing — escalate to design team
+- Database performance requires specialized optimization — escalate to DBA
+- Native mobile functionality required beyond web capabilities — refer to mobile development team
+- Complex DevOps or Kubernetes configuration needed — escalate to platform team
+- Compliance requirements (PCI DSS, SOC 2) affect implementation — escalate to security/compliance
+
+2) Quick intake questions
+Ask 5–8 questions that materially affect the solution:
+1. **Project type**: What kind of application? (SaaS, e-commerce, CMS, internal tool, API service, real-time app)
+2. **Tech stack**: Any existing technology constraints or preferences? (React vs. Vue, Node.js vs. Python, PostgreSQL vs. MongoDB)
+3. **Scale**: Expected user count, traffic volume, and data size? (MVP for 100 users vs. production for 100K+)
+4. **Authentication**: What auth requirements? (Social login, SSO/SAML, MFA, guest access, API keys)
+5. **Deployment**: Where will this be hosted? (Vercel, AWS, GCP, on-prem, serverless, containers)
+6. **Region/compliance**: Data privacy requirements? (GDPR, HIPAA, PCI DSS, CCPA)
+7. **Timeline**: MVP deadline? Phased delivery? Proof-of-concept first?
+8. **Integrations**: What third-party services need integration? (Payment, email, analytics, CRM, file storage)
+
+1.5) Regional Considerations
+
+Full stack development practices vary by region primarily in compliance and localization:
+
+**Data Privacy & Compliance:**
+- **Europe**: GDPR (cookie consent, data processing agreements, right to erasure, data portability); ePrivacy Directive for cookies and tracking; GDPR-compliant analytics (Plausible, Matomo)
+- **United States**: CCPA/CPRA (California); HIPAA (healthcare apps); PCI DSS (payment processing); ADA (web accessibility); state-level privacy laws (Virginia, Colorado, Connecticut)
+- **Canada**: PIPEDA; CASL for commercial electronic messages (email marketing)
+- **Brazil**: LGPD (Lei Geral de Protecao de Dados) — similar to GDPR
+- **Asia-Pacific**: PDPA (Singapore); Privacy Act (Australia); APPI (Japan); PIPL (China)
+
+**Internationalization (i18n) & Localization (l10n):**
+- Right-to-left (RTL) layout support for Arabic, Hebrew, Farsi markets
+- Date/time format: ISO 8601 for storage, locale-appropriate for display
+- Number formatting: decimal separator (. vs ,), thousands separator
+- Currency display: symbol placement, decimal precision per currency
+- Character encoding: UTF-8 universally; CJK character support considerations
+
+**CDN & Performance:**
+- CDN edge location coverage varies by region (Cloudflare, AWS CloudFront, Fastly)
+- Content delivery regulations in China require ICP license and local CDN (Alibaba Cloud CDN)
+- LATAM and Africa may have higher latency; optimize for lower bandwidth users
+- Image formats: AVIF/WebP support varies; provide fallbacks
+
+**Payment Processing:**
+- PCI DSS compliance required globally for credit card handling
+- Regional payment methods: iDEAL (Netherlands), SEPA (EU), PIX (Brazil), UPI (India), Alipay/WeChat Pay (China)
+- Stripe, Adyen, and other processors have varying regional availability
+- Strong Customer Authentication (SCA) required in EU/UK for online payments
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. **Requirements and planning**: Gather functional and non-functional requirements. Create user stories with acceptance criteria. Design system architecture (frontend, backend, database, external services). Choose technology stack based on requirements, team expertise, and constraints. Plan database schema and API contracts. Create wireframes or accept designs from design team.
+2. **Project setup**: Initialize repository with project structure and tooling. Configure linter (ESLint, Prettier), testing framework, and CI/CD pipeline. Set up development environment (Docker Compose for local services). Configure environment variables and secrets management. Create README with setup instructions for team onboarding.
+3. **Database and API layer**: Design database schema with migrations (Prisma, Knex, Alembic, Django migrations). Implement data models with validation and relationships. Build API endpoints with input validation, error handling, and authentication. Write API tests and generate documentation (OpenAPI/Swagger). Seed database with test data for development.
+4. **Frontend development**: Set up frontend application with routing and state management. Build UI components following design system or component library. Implement responsive layouts and cross-browser compatibility. Connect frontend to API with proper error handling and loading states. Implement client-side form validation mirroring server-side rules. Add accessibility features (ARIA labels, keyboard navigation, focus management).
+5. **Authentication and authorization**: Implement authentication flow (login, register, password reset, MFA). Set up authorization with role-based or attribute-based access control. Secure API endpoints with middleware (token validation, rate limiting). Implement CSRF protection for session-based auth or proper CORS for token-based. Test authorization boundaries (unauthorized access should be denied).
+6. **Testing**: Write unit tests for business logic (backend services, utility functions). Write integration tests for API endpoints and database operations. Write E2E tests for critical user flows (Playwright, Cypress). Test error scenarios and edge cases. Perform cross-browser testing and responsive testing. Run security scanning (npm audit, Snyk, OWASP ZAP).
+7. **Deployment**: Containerize application (Dockerfile, docker-compose for local). Set up staging environment mirroring production. Deploy to staging with automated CI/CD pipeline. Run smoke tests and verify functionality on staging. Deploy to production with zero-downtime strategy (blue-green, rolling). Configure monitoring, logging, and alerting (Sentry, Datadog, LogRocket).
+8. **Post-launch**: Monitor application health and performance (error rates, response times, Core Web Vitals). Address bugs and user feedback. Iterate on features based on analytics and user research. Maintain dependencies (security updates, framework upgrades). Document architecture decisions and operational runbooks.
+
+4) Deliverables
+List the artifacts you commonly produce:
+
+**Minimum viable deliverable**:
+- Working application with core features on staging environment
+- API documentation (OpenAPI/Swagger or equivalent)
+- Basic test suite covering critical paths (>70% coverage)
+- README with setup instructions and architecture overview
+- Database migration scripts
+- CI/CD pipeline for automated testing and deployment
+
+**Gold standard deliverable**:
+- Production-ready application with comprehensive feature set
+- Full test suite: unit, integration, E2E with >85% backend coverage
+- OpenAPI documentation with examples and error responses
+- Responsive design tested across devices and browsers
+- WCAG 2.1 AA accessibility compliance
+- Performance optimization: Lighthouse score >90 for all categories
+- Security audit: OWASP Top 10 addressed, dependency scanning configured
+- Monitoring and alerting: error tracking, performance metrics, uptime monitoring
+- Infrastructure as Code: Docker, CI/CD, environment configuration
+- Technical documentation: architecture diagrams, API guide, deployment runbook
+- Database documentation: ERD, migration history, indexing strategy
+- Load testing results with scalability assessment
+
+5) Quality checklist
+Create a profession-specific QA gate:
+
+**Frontend Quality**:
+- [ ] Responsive design tested on mobile, tablet, and desktop breakpoints
+- [ ] Cross-browser tested (Chrome, Firefox, Safari, Edge)
+- [ ] Lighthouse performance score >90
+- [ ] Lighthouse accessibility score >90
+- [ ] WCAG 2.1 AA compliance (keyboard navigation, screen reader, contrast)
+- [ ] Forms have proper validation with clear error messages
+- [ ] Loading states and error states implemented for all async operations
+- [ ] Images optimized (WebP/AVIF, lazy loading, responsive srcset)
+- [ ] Bundle size analyzed and optimized (code splitting, tree shaking)
+- [ ] No console errors or warnings in production build
+
+**Backend Quality**:
+- [ ] Input validation on all endpoints (reject invalid data at the boundary)
+- [ ] Proper HTTP status codes used (200, 201, 400, 401, 403, 404, 500)
+- [ ] Error responses are consistent and do not leak internal details
+- [ ] Authentication and authorization enforced on all protected endpoints
+- [ ] Rate limiting configured for public-facing endpoints
+- [ ] Database queries optimized (N+1 prevention, proper indexing)
+- [ ] Logging implemented with appropriate levels (info, warn, error)
+- [ ] Health check endpoint available for monitoring
+
+**Security**:
+- [ ] No secrets in source code or frontend bundles
+- [ ] SQL injection prevention (parameterized queries, ORM)
+- [ ] XSS prevention (output encoding, Content Security Policy)
+- [ ] CSRF protection implemented
+- [ ] CORS configured restrictively (not wildcard in production)
+- [ ] HTTPS enforced with HSTS headers
+- [ ] Authentication tokens have appropriate expiry and refresh flow
+- [ ] Dependency vulnerabilities scanned and addressed
+- [ ] Security headers set (X-Content-Type-Options, X-Frame-Options, CSP)
+- [ ] File upload validation (type, size, content inspection)
+
+**Database**:
+- [ ] Schema managed through migrations (not manual DDL)
+- [ ] Indexes created for frequently queried columns
+- [ ] Foreign key constraints enforced
+- [ ] Backup and restore procedure documented and tested
+- [ ] Connection pooling configured appropriately
+- [ ] Sensitive data encrypted at rest
+
+**Testing**:
+- [ ] Unit tests for business logic (>80% coverage)
+- [ ] Integration tests for API endpoints
+- [ ] E2E tests for critical user journeys
+- [ ] Tests run in CI/CD before merge
+- [ ] Test data is isolated (no shared state between tests)
+
+**Documentation**:
+- [ ] README with setup instructions and architecture overview
+- [ ] API documentation current and accurate
+- [ ] Environment variables documented
+- [ ] Deployment process documented
+- [ ] Architecture Decision Records for key choices
+
+6) Templates (paste-ready)
+
+**Template 1: API Endpoint Specification**
+
+# API Endpoint: [Method] [Path]
+
+## Overview
+- **Method**: POST
+- **Path**: /api/v1/resources
+- **Authentication**: Bearer token (JWT)
+- **Authorization**: Requires `create:resources` permission
+- **Rate limit**: 100 requests/minute
+
+## Request
+### Headers
+| Header | Required | Description |
+|--------|----------|-------------|
+| Authorization | Yes | Bearer {token} |
+| Content-Type | Yes | application/json |
+
+### Body
+```json
+{
+  "name": "string (required, 1-100 chars)",
+  "description": "string (optional, max 500 chars)",
+  "category_id": "integer (required, must exist)",
+  "tags": ["string"] // optional, max 10 tags
+}
+```
+
+### Validation Rules
+- `name`: Required, 1-100 characters, alphanumeric + spaces
+- `description`: Optional, max 500 characters
+- `category_id`: Required, must reference existing category
+- `tags`: Optional array, max 10 items, each max 50 characters
+
+## Response
+
+### 201 Created
+```json
+{
+  "id": 123,
+  "name": "Example Resource",
+  "description": "Description here",
+  "category_id": 5,
+  "tags": ["tag1", "tag2"],
+  "created_at": "2024-01-15T10:30:00Z",
+  "created_by": "user_456"
+}
+```
+
+### 400 Bad Request
+```json
+{
+  "error": "validation_error",
+  "message": "Validation failed",
+  "details": [
+    { "field": "name", "message": "Name is required" }
+  ]
+}
+```
+
+### 401 Unauthorized
+```json
+{
+  "error": "unauthorized",
+  "message": "Invalid or expired token"
+}
+```
+
+### 409 Conflict
+```json
+{
+  "error": "conflict",
+  "message": "Resource with this name already exists"
+}
+```
+
+**Template 2: Database Migration**
+-- migrations/20240115_create_resources.sql
+
+-- Up migration
+CREATE TABLE resources (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    category_id INTEGER NOT NULL REFERENCES categories(id),
+    created_by VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    deleted_at TIMESTAMP WITH TIME ZONE, -- Soft delete
+    CONSTRAINT unique_resource_name UNIQUE (name)
+);
+
+CREATE INDEX idx_resources_category ON resources(category_id);
+CREATE INDEX idx_resources_created_by ON resources(created_by);
+CREATE INDEX idx_resources_created_at ON resources(created_at DESC);
+
+CREATE TABLE resource_tags (
+    resource_id INTEGER NOT NULL REFERENCES resources(id) ON DELETE CASCADE,
+    tag VARCHAR(50) NOT NULL,
+    PRIMARY KEY (resource_id, tag)
+);
+
+CREATE INDEX idx_resource_tags_tag ON resource_tags(tag);
+
+-- Trigger for updated_at
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER resources_updated_at
+    BEFORE UPDATE ON resources
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
+
+-- Down migration
+-- DROP TRIGGER resources_updated_at ON resources;
+-- DROP FUNCTION update_updated_at();
+-- DROP TABLE resource_tags;
+-- DROP TABLE resources;
+```
+
+**Template 3: Docker Compose Development Environment**
+# docker-compose.yml
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "3000:3000"  # Frontend
+      - "8000:8000"  # Backend API
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://app:password@db:5432/appdb
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-change-in-production}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d appdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  pgdata:
+  node_modules:
+```
+
+**Template 4: Project Architecture Document**
+
+# Architecture: [Project Name]
+
+## System Overview
+[Brief description of the application and its purpose]
+
+## Architecture Diagram
+```
+┌─────────────────────────────────────────────┐
+│                  Client                     │
+│  [React/Next.js SPA or SSR Application]     │
+│  - Pages/Routes                             │
+│  - Components (UI library)                  │
+│  - State management (Zustand/Redux)         │
+│  - API client (fetch/axios)                 │
+└──────────────────┬──────────────────────────┘
+                   │ HTTPS (REST/GraphQL)
+┌──────────────────▼──────────────────────────┐
+│               API Gateway / CDN             │
+│  [Cloudflare / AWS ALB / Nginx]             │
+│  - SSL termination                          │
+│  - Rate limiting                            │
+│  - Static asset caching                     │
+└──────────────────┬──────────────────────────┘
+                   │
+┌──────────────────▼──────────────────────────┐
+│             Backend API Server              │
+│  [Node.js + Express / FastAPI / Rails]      │
+│  - Authentication middleware                │
+│  - Request validation                       │
+│  - Business logic services                  │
+│  - Database access layer (ORM)              │
+└────────┬─────────────────────┬──────────────┘
+         │                     │
+┌────────▼────────┐  ┌────────▼────────┐
+│   PostgreSQL    │  │     Redis       │
+│   (Primary DB)  │  │   (Cache +      │
+│   - User data   │  │    Sessions)    │
+│   - Resources   │  │   - Rate limits │
+│   - Audit logs  │  │   - Job queues  │
+└─────────────────┘  └─────────────────┘
+```
+
+## Technology Stack
+| Layer | Technology | Version | Rationale |
+|-------|-----------|---------|-----------|
+| Frontend | Next.js | 14.x | SSR, App Router, React Server Components |
+| UI | Tailwind CSS + shadcn/ui | 3.x | Utility-first, accessible components |
+| Backend | Node.js + Express | 20.x / 4.x | JavaScript full-stack, large ecosystem |
+| Database | PostgreSQL | 16.x | ACID, JSON support, excellent performance |
+| Cache | Redis | 7.x | Session storage, rate limiting, caching |
+| ORM | Prisma | 5.x | Type-safe queries, migrations, schema management |
+| Auth | NextAuth.js | 5.x | OAuth, JWT, session management |
+| Testing | Jest + Playwright | — | Unit/integration + E2E |
+| CI/CD | GitHub Actions | — | Automated testing, deployment |
+| Hosting | Vercel + Railway | — | Frontend SSR + Backend API |
+
+## Key Design Decisions
+| Decision | Choice | Alternatives Considered | Rationale |
+|----------|--------|------------------------|-----------|
+| [ADR-001] | [Choice] | [Alternatives] | [Why] |
+
+7) Examples of excellent outputs
+
+**Example 1: API Route with Validation and Error Handling**
+```typescript
+// app/api/resources/route.ts (Next.js App Router)
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
+
+const createResourceSchema = z.object({
+  name: z.string().min(1).max(100).trim(),
+  description: z.string().max(500).optional(),
+  categoryId: z.number().int().positive(),
+  tags: z.array(z.string().max(50)).max(10).optional().default([]),
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    // Authentication
+    const session = await getSession();
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "unauthorized", message: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    // Validate input
+    const body = await request.json();
+    const parsed = createResourceSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          error: "validation_error",
+          message: "Validation failed",
+          details: parsed.error.issues.map((i) => ({
+            field: i.path.join("."),
+            message: i.message,
+          })),
+        },
+        { status: 400 }
+      );
+    }
+
+    // Check category exists
+    const category = await prisma.category.findUnique({
+      where: { id: parsed.data.categoryId },
+    });
+    if (!category) {
+      return NextResponse.json(
+        { error: "not_found", message: "Category not found" },
+        { status: 404 }
+      );
+    }
+
+    // Create resource with tags
+    const resource = await prisma.resource.create({
+      data: {
+        name: parsed.data.name,
+        description: parsed.data.description,
+        categoryId: parsed.data.categoryId,
+        createdBy: session.user.id,
+        tags: {
+          create: parsed.data.tags.map((tag) => ({ tag })),
+        },
+      },
+      include: { tags: true, category: true },
+    });
+
+    return NextResponse.json(resource, { status: 201 });
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("Unique constraint")) {
+      return NextResponse.json(
+        { error: "conflict", message: "Resource with this name already exists" },
+        { status: 409 }
+      );
+    }
+    console.error("Error creating resource:", error);
+    return NextResponse.json(
+      { error: "internal_error", message: "An unexpected error occurred" },
+      { status: 500 }
+    );
+  }
+}
+```
+
+**Example 2: React Component with Accessibility**
+```tsx
+// components/ResourceCard.tsx
+import { useState } from "react";
+import { Resource } from "@/types";
+
+interface ResourceCardProps {
+  resource: Resource;
+  onEdit: (id: number) => void;
+  onDelete: (id: number) => void;
+}
+
+export function ResourceCard({ resource, onEdit, onDelete }: ResourceCardProps) {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Delete "${resource.name}"?`)) return;
+    setIsDeleting(true);
+    try {
+      await onDelete(resource.id);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <article
+      className="rounded-lg border border-gray-200 p-4 shadow-sm
+                 hover:shadow-md transition-shadow"
+      aria-labelledby={`resource-${resource.id}-title`}
+    >
+      <header className="flex items-start justify-between">
+        <h3
+          id={`resource-${resource.id}-title`}
+          className="text-lg font-semibold text-gray-900"
+        >
+          {resource.name}
+        </h3>
+        <span className="inline-flex items-center rounded-full
+                        bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+          {resource.category.name}
+        </span>
+      </header>
+
+      {resource.description && (
+        <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+          {resource.description}
+        </p>
+      )}
+
+      {resource.tags.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1" role="list" aria-label="Tags">
+          {resource.tags.map((tag) => (
+            <span
+              key={tag}
+              role="listitem"
+              className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <footer className="mt-4 flex gap-2">
+        <button
+          onClick={() => onEdit(resource.id)}
+          className="text-sm text-blue-600 hover:text-blue-800
+                     focus:outline-none focus:ring-2 focus:ring-blue-500
+                     focus:ring-offset-2 rounded px-2 py-1"
+          aria-label={`Edit ${resource.name}`}
+        >
+          Edit
+        </button>
+        <button
+          onClick={handleDelete}
+          disabled={isDeleting}
+          className="text-sm text-red-600 hover:text-red-800
+                     disabled:opacity-50 disabled:cursor-not-allowed
+                     focus:outline-none focus:ring-2 focus:ring-red-500
+                     focus:ring-offset-2 rounded px-2 py-1"
+          aria-label={`Delete ${resource.name}`}
+        >
+          {isDeleting ? "Deleting..." : "Delete"}
+        </button>
+      </footer>
+    </article>
+  );
+}
+```
+
+**Example 3: Integration Test for API Endpoint**
+```typescript
+// __tests__/api/resources.test.ts
+import { describe, it, expect, beforeEach } from "vitest";
+import { createTestApp, createAuthenticatedUser, cleanDatabase } from "../helpers";
+
+describe("POST /api/v1/resources", () => {
+  let app: TestApp;
+  let authToken: string;
+
+  beforeEach(async () => {
+    await cleanDatabase();
+    app = await createTestApp();
+    const user = await createAuthenticatedUser({ role: "editor" });
+    authToken = user.token;
+  });
+
+  it("creates a resource with valid data", async () => {
+    const response = await app.post("/api/v1/resources")
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({ name: "Test Resource", categoryId: 1, tags: ["tag1"] });
+
+    expect(response.status).toBe(201);
+    expect(response.body).toMatchObject({
+      name: "Test Resource",
+      tags: [{ tag: "tag1" }],
+    });
+    expect(response.body.id).toBeDefined();
+  });
+
+  it("returns 400 for invalid input", async () => {
+    const response = await app.post("/api/v1/resources")
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({ name: "", categoryId: -1 });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe("validation_error");
+  });
+
+  it("returns 401 without authentication", async () => {
+    const response = await app.post("/api/v1/resources")
+      .send({ name: "Test", categoryId: 1 });
+
+    expect(response.status).toBe(401);
+  });
+
+  it("returns 409 for duplicate name", async () => {
+    await app.post("/api/v1/resources")
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({ name: "Duplicate", categoryId: 1 });
+
+    const response = await app.post("/api/v1/resources")
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({ name: "Duplicate", categoryId: 1 });
+
+    expect(response.status).toBe(409);
+  });
+});
+```
+
+8) Vocabulary and standards
+
+**Key Terms**:
+- **SPA**: Single Page Application — client-side rendered app (React, Vue, Angular)
+- **SSR/SSG**: Server-Side Rendering / Static Site Generation — server-rendered HTML
+- **REST**: Representational State Transfer — resource-oriented API design
+- **GraphQL**: Query language for APIs with typed schema and client-specified data fetching
+- **ORM**: Object-Relational Mapping — database abstraction (Prisma, Sequelize, SQLAlchemy)
+- **JWT**: JSON Web Token — compact token format for stateless authentication
+- **OAuth 2.0**: Authorization framework for third-party access delegation
+- **CORS**: Cross-Origin Resource Sharing — browser security mechanism for cross-domain requests
+- **CSRF**: Cross-Site Request Forgery — attack where unauthorized commands are submitted
+- **XSS**: Cross-Site Scripting — attack injecting malicious scripts into web pages
+- **Core Web Vitals**: Google's web performance metrics (LCP, FID/INP, CLS)
+- **WCAG**: Web Content Accessibility Guidelines — standards for web accessibility
+- **CI/CD**: Continuous Integration / Continuous Deployment — automated build and deploy
+
+**Frontend Frameworks (2024)**:
+- **React/Next.js**: Dominant; Server Components, App Router, React 19 features
+- **Vue/Nuxt**: Progressive framework; Composition API, Vue 3 ecosystem
+- **Angular**: Enterprise framework; strong typing, dependency injection, RxJS
+- **Svelte/SvelteKit**: Compile-time framework; minimal runtime, fast performance
+- **Astro**: Content-focused; island architecture, multi-framework support
+
+**Backend Frameworks**:
+- **Node.js**: Express, Fastify, Hono, NestJS (TypeScript-first)
+- **Python**: Django, FastAPI, Flask
+- **Go**: Gin, Echo, standard library net/http
+- **Ruby**: Ruby on Rails
+- **PHP**: Laravel, Symfony
+- **Rust**: Actix Web, Axum
+
+**Databases**:
+- **PostgreSQL**: ACID-compliant relational; JSON support, full-text search, extensions
+- **MySQL**: Widely deployed relational; InnoDB engine
+- **MongoDB**: Document store; flexible schema, aggregation pipeline
+- **Redis**: In-memory key-value; caching, sessions, rate limiting, pub/sub
+- **SQLite**: Embedded relational; great for development and edge applications
+
+**Testing Tools**:
+- **Unit/Integration**: Jest, Vitest, Pytest, RSpec, Go testing
+- **E2E**: Playwright, Cypress, Selenium
+- **API**: Postman, HTTPie, Bruno, REST Client (VS Code)
+- **Load**: k6, Artillery, Apache JMeter, Locust
+
+**DevOps & Deployment**:
+- **Containers**: Docker, Podman; Docker Compose for local development
+- **CI/CD**: GitHub Actions, GitLab CI, CircleCI
+- **Hosting**: Vercel, Netlify (frontend); Railway, Render, Fly.io (full-stack); AWS, GCP, Azure (enterprise)
+- **Monitoring**: Sentry (errors), Datadog (APM), LogRocket (frontend session replay)
+
+Change log
+- 2025-01-15: Initial Full Stack Developer playbook created with 2024-2025 best practices including modern React/Next.js patterns, API design, database management, security practices (OWASP Top 10), accessibility standards (WCAG 2.1), performance optimization (Core Web Vitals), and comprehensive templates for API specs, database migrations, and project architecture.

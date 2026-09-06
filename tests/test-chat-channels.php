@@ -125,10 +125,14 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Insert() must return false when the CCT table does not exist.
+	 * Insert() must fall back to the CPT store when the CCT table does not
+	 * exist (no JetEngine), so messages are never silently dropped.
 	 */
-	public function test_channel_messages_insert_returns_false_without_table() {
+	public function test_channel_messages_insert_falls_back_to_cpt_store() {
 		$this->load_pro_class( 'WP_MCP_AI_Channel_Messages_CCT', 'includes/class-wp-mcp-ai-channel-messages-cct.php' );
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Messages_CPT', 'includes/class-wp-mcp-ai-channel-messages-cpt.php' );
+		$this->assertFalse( WP_MCP_AI_Channel_Messages_CCT::table_exists() );
+
 		$result = WP_MCP_AI_Channel_Messages_CCT::insert(
 			array(
 				'channel'            => 'whatsapp',
@@ -137,7 +141,15 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 				'direction'          => 'inbound',
 			)
 		);
-		$this->assertFalse( $result );
+
+		$this->assertIsInt( $result );
+		$this->assertGreaterThan( 0, $result );
+
+		$post = get_post( $result );
+		$this->assertNotNull( $post );
+		$this->assertSame( WP_MCP_AI_Channel_Messages_CPT::POST_TYPE, $post->post_type );
+		$this->assertSame( 'whatsapp', get_post_meta( $result, '_channel', true ) );
+		$this->assertSame( 'Hello', $post->post_content );
 	}
 
 	// =========================================================================
@@ -200,12 +212,26 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Find_or_create() returns false when the table does not exist.
+	 * Find_or_create() falls back to the CPT store when the table does not
+	 * exist and is idempotent for the same channel + contact.
 	 */
-	public function test_channel_contacts_find_or_create_returns_false_without_table() {
+	public function test_channel_contacts_find_or_create_falls_back_to_cpt_store() {
 		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CCT', 'includes/class-wp-mcp-ai-channel-contacts-cct.php' );
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CPT', 'includes/class-wp-mcp-ai-channel-contacts-cpt.php' );
+		$this->assertFalse( WP_MCP_AI_Channel_Contacts_CCT::table_exists() );
+
 		$result = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'whatsapp', '15551234567' );
-		$this->assertFalse( $result );
+
+		$this->assertIsInt( $result );
+		$this->assertGreaterThan( 0, $result );
+
+		$post = get_post( $result );
+		$this->assertNotNull( $post );
+		$this->assertSame( WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE, $post->post_type );
+
+		// Second lookup must return the same record.
+		$again = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'whatsapp', '15551234567' );
+		$this->assertSame( $result, $again );
 	}
 
 	/**
@@ -218,16 +244,41 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Find_or_create() returns false without table even when connection_id is provided.
+	 * Find_or_create() falls back to the CPT store with connection_id
+	 * scoping and stores the connection_id on the created record.
 	 */
-	public function test_channel_contacts_find_or_create_with_connection_id_returns_false_without_table() {
+	public function test_channel_contacts_find_or_create_with_connection_id_falls_back_to_cpt_store() {
 		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CCT', 'includes/class-wp-mcp-ai-channel-contacts-cct.php' );
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CPT', 'includes/class-wp-mcp-ai-channel-contacts-cpt.php' );
+		$this->assertFalse( WP_MCP_AI_Channel_Contacts_CCT::table_exists() );
+
 		$result = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
 			'slack',
 			'U12345678',
 			array( 'connection_id' => 'conn_a' )
 		);
-		$this->assertFalse( $result );
+
+		$this->assertIsInt( $result );
+		$this->assertGreaterThan( 0, $result );
+		$this->assertSame( 'conn_a', get_post_meta( $result, '_connection_id', true ) );
+
+		// Same connection must resolve to the same record.
+		$again = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+			'slack',
+			'U12345678',
+			array( 'connection_id' => 'conn_a' )
+		);
+		$this->assertSame( $result, $again );
+
+		// A different connection is a distinct record.
+		$other = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+			'slack',
+			'U12345678',
+			array( 'connection_id' => 'conn_b' )
+		);
+		$this->assertIsInt( $other );
+		$this->assertGreaterThan( 0, $other );
+		$this->assertNotSame( $result, $other );
 	}
 
 	/**
@@ -727,10 +778,21 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 
 	/** WebChat P2P send message tool must be loadable. */
 	public function test_chat_channels_tool_send_webchat_message_loadable() {
-		$this->assert_chat_channels_tool_loadable(
-			'WP_MCP_AI_Pro_Tool_Send_WebChat_Message',
-			'class-wp-mcp-ai-pro-tool-send-webchat-message.php'
-		);
+		// The WebChat P2P tool lives in the embedded addon's webchat tools
+		// directory rather than the pro chat-channels directory.
+		$path = WP_MCP_AI_PATH . 'addons/embedded/includes/webchat/tools/class-wp-mcp-ai-pro-tool-send-webchat-message.php';
+		$this->assertFileExists( $path, 'send-webchat-message tool must exist in the embedded webchat tools directory' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Send_WebChat_Message' ) ) {
+			require_once $path;
+		}
+
+		$this->assertTrue( class_exists( 'WP_MCP_AI_Pro_Tool_Send_WebChat_Message' ), 'WP_MCP_AI_Pro_Tool_Send_WebChat_Message must be loadable' );
+
+		$tool = new WP_MCP_AI_Pro_Tool_Send_WebChat_Message();
+		$this->assertNotEmpty( $tool->get_slug(), 'WP_MCP_AI_Pro_Tool_Send_WebChat_Message::get_slug() must return a non-empty string' );
+		$this->assertNotEmpty( $tool->get_name(), 'WP_MCP_AI_Pro_Tool_Send_WebChat_Message::get_name() must return a non-empty string' );
+		$this->assertNotEmpty( $tool->get_description(), 'WP_MCP_AI_Pro_Tool_Send_WebChat_Message::get_description() must return a non-empty string' );
 	}
 
 	// ----- Telegram ----------------------------------------------------------
@@ -1470,16 +1532,16 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$tool   = new WP_MCP_AI_Pro_Tool_Send_Outlook_Mail();
 		$result = $tool->execute(
 			array(
-				'access_token' => 'test-token',
-				'to_email'     => 'not-an-email',
-				'subject'      => 'Test Subject',
-				'body'         => 'Test body content',
+				'token'    => 'test-token',
+				'to_email' => 'not-an-email',
+				'subject'  => 'Test Subject',
+				'body'     => 'Test body content',
 			),
 			array( 'user_id' => $admin_id )
 		);
 
 		$this->assertInstanceOf( 'WP_Error', $result );
-		$this->assertSame( 'wp_mcp_ai_invalid_to_email', $result->get_error_code() );
+		$this->assertSame( 'wp_mcp_ai_missing_to_email', $result->get_error_code() );
 
 		wp_delete_user( $admin_id );
 	}
@@ -1593,7 +1655,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		);
 
 		$this->assertInstanceOf( 'WP_Error', $result );
-		$this->assertSame( 'wp_mcp_ai_missing_outlook_token', $result->get_error_code() );
+		$this->assertSame( 'wp_mcp_ai_missing_onedrive_token', $result->get_error_code() );
 
 		wp_delete_user( $admin_id );
 	}

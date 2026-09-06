@@ -23,6 +23,7 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 	 * @return string Binary PNG image data.
 	 */
 	protected function get_test_png_data() {
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decodes a fixed 1x1 PNG test fixture.
 		return base64_decode(
 			'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=='
 		);
@@ -61,7 +62,10 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that get_file_path_from_local_url converts URLs to file paths
+	 * Test that get_file_path_from_local_url converts URLs to file paths.
+	 *
+	 * The security containment check requires the target file to exist, so
+	 * the fixture writes a real file into the uploads directory.
 	 */
 	public function test_get_file_path_from_local_url_converts_urls() {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php';
@@ -77,15 +81,29 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 		$base_url   = $upload_dir['baseurl'];
 		$base_dir   = $upload_dir['basedir'];
 
+		// Write a real file so the containment check can resolve it.
+		$relative_path = '/2024/01/test-image.png';
+		$fixture_dir   = wp_normalize_path( $base_dir . '/2024/01' );
+		wp_mkdir_p( $fixture_dir );
+		$fixture_path = $fixture_dir . '/test-image.png';
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing a test fixture file into the temp uploads dir.
+		file_put_contents( $fixture_path, 'test-image-bytes' );
+
 		// Test conversion of upload URL to file path.
-		$url           = $base_url . '/2024/01/test-image.png';
-		$expected_path = wp_normalize_path( $base_dir . '/2024/01/test-image.png' );
+		$url           = $base_url . $relative_path;
+		$expected_path = wp_normalize_path( $fixture_path );
 		$actual_path   = $method->invoke( $tool, $url );
 
 		$this->assertEquals( $expected_path, $actual_path, 'URL should be converted to correct file path' );
 
+		// A URL whose file does not exist must resolve to false (security check).
+		$this->assertFalse( $method->invoke( $tool, $base_url . '/2024/01/missing.png' ), 'Non-existent file URL should return false' );
+
 		// Test empty URL.
 		$this->assertFalse( $method->invoke( $tool, '' ), 'Empty URL should return false' );
+
+		// Clean up the fixture file.
+		wp_delete_file( $fixture_path );
 	}
 
 	/**
@@ -100,6 +118,7 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 		$png_data = $this->get_test_png_data();
 
 		// Write test file.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writes a small fixture PNG into the uploads dir for the local-file read test.
 		file_put_contents( $test_file, $png_data );
 
 		// Ensure file exists.
@@ -145,6 +164,7 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 		} finally {
 			// Clean up test file.
 			if ( file_exists( $test_file ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Removes the test fixture PNG after assertions.
 				unlink( $test_file );
 			}
 		}
@@ -186,6 +206,7 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 		$png_data = $this->get_test_png_data();
 
 		// Write test file.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writes a small fixture PNG used as an attachment.
 		file_put_contents( $test_file, $png_data );
 
 		// Create attachment.
@@ -240,6 +261,7 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 				wp_delete_attachment( $attachment_id, true );
 			}
 			if ( file_exists( $test_file ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Removes the test fixture PNG after assertions.
 				unlink( $test_file );
 			}
 		}
@@ -288,6 +310,7 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 		$png_data = $this->get_test_png_data();
 
 		// Write test file.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writes a small fixture PNG for the local-not-temp test.
 		file_put_contents( $test_file, $png_data );
 		$this->assertTrue( file_exists( $test_file ), 'Test file should exist' );
 
@@ -335,6 +358,13 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 				public function execute( array $arguments = array(), array $context = array() ) {
 					return array(); }
 
+				/**
+				 * Load a source image through the protected base-class method.
+				 *
+				 * @param array $arguments Tool arguments.
+				 * @param int   $user_id   User ID.
+				 * @return WP_Image_Editor|WP_Error Image editor instance or error.
+				 */
 				public function test_load_source_image( array $arguments, $user_id = 0 ) {
 					return $this->load_source_image( $arguments, $user_id );
 				}
@@ -361,6 +391,7 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 		} finally {
 			// Clean up test file.
 			if ( file_exists( $test_file ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Removes the test fixture PNG after assertions.
 				unlink( $test_file );
 			}
 		}
@@ -416,13 +447,21 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 			public function execute( array $arguments = array(), array $context = array() ) {
 				return array(); }
 
+			/**
+			 * Load a source image through the protected base-class method.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param int   $user_id   User ID.
+			 * @return WP_Image_Editor|WP_Error Image editor instance or error.
+			 */
 			public function test_load_source_image( array $arguments, $user_id = 0 ) {
 				return $this->load_source_image( $arguments, $user_id );
 			}
 		};
 
 		// Test with base64 data (which creates a temp file).
-		$png_data     = $this->get_test_png_data();
+		$png_data = $this->get_test_png_data();
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Encodes a fixture PNG into base64 image_data input.
 		$base64_image = base64_encode( $png_data );
 
 		$arguments = array(
@@ -440,6 +479,7 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 
 		// Clean up the temp file.
 		if ( isset( $image_editor->temp_file ) && file_exists( $image_editor->temp_file ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Removes the temp file created from base64 image data.
 			unlink( $image_editor->temp_file );
 		}
 	}
@@ -459,6 +499,7 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 		$png_data = $this->get_test_png_data();
 
 		// Write test file.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writes a small fixture PNG used as an attachment.
 		file_put_contents( $test_file, $png_data );
 
 		// Create attachment.
@@ -517,6 +558,7 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 				wp_delete_attachment( $attachment_id, true );
 			}
 			if ( file_exists( $test_file ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Removes the test fixture PNG after assertions.
 				unlink( $test_file );
 			}
 		}
@@ -534,6 +576,7 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 		$png_data = $this->get_test_png_data();
 
 		// Write test file.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writes a small fixture PNG used as an attachment.
 		file_put_contents( $test_file, $png_data );
 
 		// Create attachment.
@@ -593,6 +636,13 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 				public function execute( array $arguments = array(), array $context = array() ) {
 					return array(); }
 
+				/**
+				 * Load a source image through the protected base-class method.
+				 *
+				 * @param array $arguments Tool arguments.
+				 * @param int   $user_id   User ID.
+				 * @return WP_Image_Editor|WP_Error Image editor instance or error.
+				 */
 				public function test_load_source_image( array $arguments, $user_id = 0 ) {
 					return $this->load_source_image( $arguments, $user_id );
 				}
@@ -624,6 +674,7 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 				wp_delete_attachment( $attachment_id, true );
 			}
 			if ( file_exists( $test_file ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Removes the test fixture PNG after assertions.
 				unlink( $test_file );
 			}
 		}
@@ -644,6 +695,7 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 		$png_data = $this->get_test_png_data();
 
 		// Write test file.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writes a small fixture PNG used as an attachment.
 		file_put_contents( $test_file, $png_data );
 
 		// Create attachment.
@@ -695,6 +747,7 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 				wp_delete_attachment( $attachment_id, true );
 			}
 			if ( file_exists( $test_file ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Removes the test fixture PNG after assertions.
 				unlink( $test_file );
 			}
 		}

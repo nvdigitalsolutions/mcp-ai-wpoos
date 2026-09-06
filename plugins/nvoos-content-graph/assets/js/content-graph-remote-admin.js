@@ -116,20 +116,43 @@
 	$( '#nvoos-reindex-btn' ).on( 'click', function () {
 		const btn = $( this ).prop( 'disabled', true );
 		const status = $( '#nvoos-reindex-status' ).text( cfg.i18n.reindexing );
-		$.post( cfg.ajaxurl, { action: 'nvoos_content_graph_reindex_embeddings', nonce: $( this ).data( 'nonce' ) }, function ( res ) {
-			btn.prop( 'disabled', false );
-			if ( res && res.success ) {
-				const processed = ( res.data && res.data.processed ) || 0;
-				const failed = ( res.data && res.data.failed ) || 0;
-				let msg = cfg.i18n.doneStored + ' ' + processed;
-				if ( failed > 0 ) {
-					msg += ' · ' + cfg.i18n.failed + ' ' + failed + ' (' + cfg.i18n.checkApiKey + ')';
+		$.post( cfg.ajaxurl, { action: 'nvoos_content_graph_reindex_embeddings', nonce: $( this ).data( 'nonce' ) } )
+			.done( function ( res ) {
+				btn.prop( 'disabled', false );
+				if ( res && res.success ) {
+					const processed = ( res.data && res.data.processed ) || 0;
+					const failed = ( res.data && res.data.failed ) || 0;
+					let msg = cfg.i18n.doneStored + ' ' + processed;
+					if ( failed > 0 ) {
+						msg += ' · ' + cfg.i18n.failed + ' ' + failed;
+						if ( res.data && res.data.error ) {
+							msg += ' — ' + res.data.error;
+						} else {
+							msg += ' (' + cfg.i18n.checkApiKey + ')';
+						}
+					}
+					status.text( msg );
+				} else {
+					status.text( 'Error: ' + ( ( res && res.data ) || 'unknown' ) );
 				}
-				status.text( msg );
-			} else {
-				status.text( 'Error: ' + ( ( res && res.data ) || 'unknown' ) );
-			}
-		} );
+			} )
+			.fail( function ( xhr ) {
+				// Server-side 500/timeout — always restore the button so the
+				// panel never hangs in the "Reindexing…" state.
+				btn.prop( 'disabled', false );
+				let msg = cfg.i18n.reindexFailed;
+				try {
+					const parsed = JSON.parse( xhr.responseText );
+					if ( parsed && parsed.data && parsed.data.message ) {
+						msg += ': ' + parsed.data.message;
+					} else if ( parsed && parsed.message ) {
+						msg += ': ' + parsed.message;
+					}
+				} catch ( e ) {
+					// Non-JSON error page — keep the default message.
+				}
+				status.text( 'Error: ' + msg );
+			} );
 	} );
 
 	// ── Dynamic form builder for driver config fields ────────────

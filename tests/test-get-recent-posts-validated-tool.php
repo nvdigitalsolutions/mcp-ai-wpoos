@@ -170,7 +170,7 @@ class Test_WP_MCP_AI_Tool_Get_Recent_Posts_Validated extends WP_UnitTestCase {
 		$flags = $this->tool->get_capability_flags();
 
 		$this->assertIsArray( $flags );
-		$this->assertContains( 'read', $flags );
+		$this->assertContains( 'requires-capability', $flags );
 		$this->assertContains( 'local-only', $flags );
 	}
 }

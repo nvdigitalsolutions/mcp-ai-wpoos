@@ -133,6 +133,17 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 		$defaults['default_model']  = 'gpt-unit-test';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
 
+		// gpt-unit-test is not in the hardcoded model-limit map, so the token
+		// budget manager falls back to an 8,192-token context window. The
+		// resource manager's output budget for the current workload tier
+		// exceeds that, tripping the pre-flight context-window guard before
+		// the request is ever sent. Map the fake model to a large window via
+		// the documented filter so the request reaches the HTTP layer.
+		$limit_filter = function ( $limit, $model ) {
+			return 'gpt-unit-test' === $model ? 1000000 : $limit;
+		};
+		add_filter( 'wp_mcp_ai_token_budget_default_limit', $limit_filter, 10, 2 );
+
 		$client           = new WP_MCP_AI_OpenAI_Client();
 		$captured_request = null;
 		$filter_callback  = function ( $preempt, $args, $url ) use ( &$captured_request ) {
@@ -170,6 +181,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 		$response = $client->create_chat_completion( $messages, array() );
 
 		remove_filter( 'pre_http_request', $filter_callback, 10 );
+		remove_filter( 'wp_mcp_ai_token_budget_default_limit', $limit_filter, 10 );
 
 		$this->assertIsArray( $response );
 		$this->assertArrayHasKey( 'choices', $response );
@@ -620,9 +632,13 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Ensure image segments expose the `file_id` key when building Responses payloads.
+	 * Ensure image attachments route to Chat Completions, not the Responses API.
+	 *
+	 * Image attachments are sent via the Chat Completions image_url format so
+	 * tool calling keeps working with images; the Responses API is reserved
+	 * for non-image file attachments.
 	 */
-	public function test_responses_payload_uses_file_id_key() {
+	public function test_image_attachments_route_to_chat_completions() {
 		$defaults                   = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$defaults['openai_api_key'] = 'sk-test';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
@@ -685,33 +701,13 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 		remove_filter( 'pre_http_request', $filter_callback, 10 );
 
 		$this->assertNotEmpty( $captured_request );
-		$this->assertSame( WP_MCP_AI_OpenAI_Client::RESPONSES_ENDPOINT, $captured_request['url'] );
+		$this->assertSame( WP_MCP_AI_OpenAI_Client::CHAT_COMPLETIONS_ENDPOINT, $captured_request['url'] );
 
 		$payload = json_decode( $captured_request['args']['body'], true );
 
 		$this->assertIsArray( $payload );
-		$this->assertArrayHasKey( 'input', $payload );
-		$this->assertArrayHasKey( 0, $payload['input'] );
-
-		$input_message = $payload['input'][0];
-		$this->assertArrayHasKey( 'content', $input_message );
-		$this->assertIsArray( $input_message['content'] );
-		$this->assertArrayHasKey( 0, $input_message['content'] );
-
-		$caption_segment = $input_message['content'][0];
-		$this->assertSame( 'input_text', $caption_segment['type'] );
-		$this->assertSame( 'Reference still', $caption_segment['text'] );
-
-		$this->assertArrayHasKey( 1, $input_message['content'] );
-
-		$image_segment = $input_message['content'][1];
-		$this->assertSame( 'input_image', $image_segment['type'] );
-		$this->assertArrayHasKey( 'file_id', $image_segment );
-		$this->assertSame( 'file-img-123', $image_segment['file_id'] );
-		$this->assertArrayNotHasKey( 'image', $image_segment );
-		$this->assertArrayNotHasKey( 'image_url', $image_segment );
-		$this->assertArrayNotHasKey( 'caption', $image_segment );
-		$this->assertSame( 'high', $image_segment['detail'] );
+		$this->assertArrayHasKey( 'messages', $payload );
+		$this->assertArrayNotHasKey( 'input', $payload );
 
 		$this->assertIsArray( $response );
 	}
@@ -1717,7 +1713,11 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Ensure tool responses that no longer follow the originating tool call are omitted.
+	 * Ensure an incomplete tool-call group is dropped when a prompt intervenes.
+	 *
+	 * The Chat Completions API rejects assistant messages with tool_calls that
+	 * are not followed by matching tool responses, so the client drops the
+	 * entire assistant + tool group when a user/system prompt interrupts it.
 	 */
 	public function test_chat_completion_skips_tool_messages_after_intervening_prompt() {
 		$defaults                   = WP_MCP_AI_Admin_Settings::get_default_settings();
@@ -1803,10 +1803,9 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 
 		$this->assertIsArray( $payload );
 		$this->assertArrayHasKey( 'messages', $payload );
-		$this->assertCount( 3, $payload['messages'] );
+		$this->assertCount( 2, $payload['messages'] );
 		$this->assertSame( 'user', $payload['messages'][0]['role'] );
-		$this->assertSame( 'assistant', $payload['messages'][1]['role'] );
-		$this->assertSame( 'user', $payload['messages'][2]['role'] );
+		$this->assertSame( 'user', $payload['messages'][1]['role'] );
 	}
 
 	/**
@@ -2092,13 +2091,18 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 		$this->assertSame( '1024x1536', $payload['size'] );
 		$this->assertSame( 'hd', $payload['quality'] );
 		$this->assertArrayNotHasKey( 'format', $payload );
-		$this->assertArrayHasKey( 'response_format', $payload );
-		$this->assertSame( 'b64_json', $payload['response_format'] );
+		// The Images API rejects response_format for all models as of mid-2026,
+		// so the client omits it unless the model explicitly supports it.
+		$this->assertArrayNotHasKey( 'response_format', $payload );
 		$this->assertSame( 1, $payload['n'] );
 	}
 
 	/**
-	 * Ensure generate_image includes the response_format when explicitly supplied.
+	 * Ensure generate_image includes the response_format when the model supports it.
+	 *
+	 * The Images API rejects response_format for all models by default, but
+	 * callers can re-enable it per model via the
+	 * wp_mcp_ai_image_model_supports_response_format filter.
 	 */
 	public function test_generate_image_honors_response_format_option() {
 		$settings                    = WP_MCP_AI_Admin_Settings::get_default_settings();
@@ -2133,6 +2137,13 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 
 		add_filter( 'pre_http_request', $http_stub, 10, 3 );
 
+		// Re-enable response_format for the test model, since the Images API
+		// default is to reject it for every model.
+		$support_override = function ( $supported, $model ) {
+			return 'gpt-image-test' === $model ? true : $supported;
+		};
+		add_filter( 'wp_mcp_ai_image_model_supports_response_format', $support_override, 10, 2 );
+
 		$client->generate_image(
 			'Prompt with explicit response format',
 			array(
@@ -2142,6 +2153,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 		);
 
 		remove_filter( 'pre_http_request', $http_stub, 10 );
+		remove_filter( 'wp_mcp_ai_image_model_supports_response_format', $support_override, 10 );
 
 		$this->assertNotNull( $captured_request );
 		$payload = json_decode( $captured_request['args']['body'], true );
@@ -2320,7 +2332,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 		$this->assertSame( $png_binary, $response['image'] );
 		$this->assertSame( 'png', $response['format'] );
 		$this->assertSame( 'image/png', $response['mime_type'] );
-		$this->assertSame( 'gpt-image-1.5', $response['model'] );
+		$this->assertSame( 'gpt-image-2', $response['model'] );
 		$this->assertSame( 'Binary payload', $response['prompt'] );
 		$this->assertSame( 0, $response['created'] );
 		$this->assertSame( '', $response['revised_prompt'] );
@@ -3244,48 +3256,48 @@ class WP_MCP_AI_Filter_Tool_Messages_Test extends WP_UnitTestCase {
 			);
 		};
 
-			add_filter( 'pre_http_request', $http_stub, 10, 3 );
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
 
-			$response = $client->generate_image(
-				'A mountain at dawn',
-				array(
-					'model'   => 'gpt-image-1',
-							'size'    => '2048x2048',
-							'quality' => 'high',
-						)
-					);
+		$response = $client->generate_image(
+			'A mountain at dawn',
+			array(
+				'model'   => 'gpt-image-1',
+				'size'    => '2048x2048',
+				'quality' => 'high',
+			)
+		);
 
-				remove_filter( 'pre_http_request', $http_stub, 10 );
+		remove_filter( 'pre_http_request', $http_stub, 10 );
 
-				$this->assertNotNull( $captured_request );
-				$this->assertSame(
-					$this->resolve_responses_endpoint(),
-					$captured_request['url']
-				);
+		$this->assertNotNull( $captured_request );
+		$this->assertSame(
+			$this->resolve_responses_endpoint(),
+			$captured_request['url']
+		);
 
-				$payload = json_decode( $captured_request['args']['body'], true );
-				$this->assertIsArray( $payload );
-				$this->assertSame( 'gpt-image-1', $payload['model'] );
-					$this->assertSame( 'A mountain at dawn', $payload['input'] );
-					$this->assertArrayNotHasKey( 'prompt', $payload );
-					$this->assertArrayNotHasKey( 'n', $payload );
-					$this->assertArrayNotHasKey( 'response_format', $payload );
+		$payload = json_decode( $captured_request['args']['body'], true );
+		$this->assertIsArray( $payload );
+		$this->assertSame( 'gpt-image-1', $payload['model'] );
+		$this->assertSame( 'A mountain at dawn', $payload['input'] );
+		$this->assertArrayNotHasKey( 'prompt', $payload );
+		$this->assertArrayNotHasKey( 'n', $payload );
+		$this->assertArrayNotHasKey( 'response_format', $payload );
 
-					$this->assertArrayHasKey( 'tools', $payload );
-					$this->assertCount( 1, $payload['tools'] );
-					$this->assertSame( 'image_generation', $payload['tools'][0]['type'] );
-					$this->assertSame( '2048x2048', $payload['tools'][0]['size'] );
-					$this->assertSame( 'high', $payload['tools'][0]['quality'] );
+		$this->assertArrayHasKey( 'tools', $payload );
+		$this->assertCount( 1, $payload['tools'] );
+		$this->assertSame( 'image_generation', $payload['tools'][0]['type'] );
+		$this->assertSame( '2048x2048', $payload['tools'][0]['size'] );
+		$this->assertSame( 'high', $payload['tools'][0]['quality'] );
 
-					// Verify parsed response.
-					$this->assertIsArray( $response );
-					$this->assertArrayHasKey( 'image', $response );
-					$this->assertSame( 'gpt-image-1', $response['model'] );
+		// Verify parsed response.
+		$this->assertIsArray( $response );
+		$this->assertArrayHasKey( 'image', $response );
+		$this->assertSame( 'gpt-image-1', $response['model'] );
 	}
 
-		/**
-		 * Ensure generate_image with gpt-image model parses Responses API output correctly.
-		 */
+	/**
+	 * Ensure generate_image with gpt-image model parses Responses API output correctly.
+	 */
 	public function test_generate_image_parses_responses_api_output() {
 		$settings                    = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['openai_api_key']  = 'sk-test';

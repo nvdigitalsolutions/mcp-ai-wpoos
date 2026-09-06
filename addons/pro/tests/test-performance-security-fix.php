@@ -44,11 +44,12 @@ class WP_MCP_AI_Performance_Security_Fix_Test extends WP_UnitTestCase {
 	/**
 	 * Data provider for performance test classes.
 	 *
-	 * Separates test data from test logic for better maintainability.
+	 * Separates test data from test logic for better maintainability. Static as
+	 * required by PHPUnit 10+.
 	 *
 	 * @return array Test data with file paths and class names.
 	 */
-	public function performance_test_classes_provider() {
+	public static function performance_test_classes_provider() {
 		return array(
 			'Elementor Performance Test'   => array(
 				'tests/performance/test-elementor-performance.php',
@@ -78,7 +79,7 @@ class WP_MCP_AI_Performance_Security_Fix_Test extends WP_UnitTestCase {
 	public function test_ajax_handler_requires_authentication() {
 		// Load the performance section.
 		if ( ! class_exists( 'WP_MCP_AI_Section_Performance' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 		}
 
 		// Ensure no user is logged in.
@@ -122,7 +123,7 @@ class WP_MCP_AI_Performance_Security_Fix_Test extends WP_UnitTestCase {
 
 		// Load the performance section.
 		if ( ! class_exists( 'WP_MCP_AI_Section_Performance' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 		}
 
 		// Create admin user.

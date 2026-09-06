@@ -26,6 +26,10 @@ class Test_Chart_Data_Formatting extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// Clear the dashboard user-ID cache: earlier suites may have primed a
+		// stale list that does not include the users created here.
+		WP_MCP_AI_Cache_Helper::delete( 'dashboard_user_ids' );
+
 		// Create a test user.
 		$this->test_user_id = $this->factory->user->create(
 			array(
@@ -217,10 +221,11 @@ class Test_Chart_Data_Formatting extends WP_UnitTestCase {
 			)
 		);
 
-		$labels = $data['labels'];
+		$labels      = $data['labels'];
+		$label_count = count( $labels );
 
 		// Verify dates are in chronological order.
-		for ( $i = 0; $i < count( $labels ) - 1; $i++ ) {
+		for ( $i = 0; $i < $label_count - 1; $i++ ) {
 			$current = strtotime( $labels[ $i ] );
 			$next    = strtotime( $labels[ $i + 1 ] );
 
@@ -249,13 +254,13 @@ class Test_Chart_Data_Formatting extends WP_UnitTestCase {
 	public function test_tier_distribution_with_custom_tiers() {
 		// Create users with different tiers.
 		$free_user = $this->factory->user->create();
-		update_user_meta( $free_user, 'wp_mcp_ai_token_tier', 'free' );
+		update_user_meta( $free_user, '_wp_mcp_ai_token_tier', 'free' );
 
 		$pro_user = $this->factory->user->create();
-		update_user_meta( $pro_user, 'wp_mcp_ai_token_tier', 'pro' );
+		update_user_meta( $pro_user, '_wp_mcp_ai_token_tier', 'pro' );
 
 		$enterprise_user = $this->factory->user->create();
-		update_user_meta( $enterprise_user, 'wp_mcp_ai_token_tier', 'enterprise' );
+		update_user_meta( $enterprise_user, '_wp_mcp_ai_token_tier', 'enterprise' );
 
 		// Get distribution.
 		$data = WP_MCP_AI_Chart_JS_Helper::get_tier_distribution_data();

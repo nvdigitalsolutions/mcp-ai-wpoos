@@ -47,6 +47,24 @@ class WP_MCP_AI_Eval_Run_Store {
 	const OPTION_PREFIX = 'wp_mcp_ai_eval_runs__';
 
 	/**
+	 * Option key for the bounded artifact→suite-slug index.
+	 *
+	 * Maps `{artifact_type}:{artifact_id}` keys to arrays of suite slugs
+	 * that recorded runs for that artifact, so per-artifact regression
+	 * lookups do not have to scan the whole options table.
+	 *
+	 * @since 1.9.0
+	 */
+	const OPTION_ARTIFACT_INDEX = 'wp_mcp_ai_eval_runs_artifact_index';
+
+	/**
+	 * Maximum number of artifact-index entries retained (FIFO).
+	 *
+	 * @since 1.9.0
+	 */
+	const MAX_ARTIFACT_INDEX = 500;
+
+	/**
 	 * Singleton instance.
 	 *
 	 * @var self|null
@@ -109,9 +127,11 @@ class WP_MCP_AI_Eval_Run_Store {
 	 * @param array<string,mixed> $summary Summary in the shape produced by
 	 *                                    `WP_MCP_AI_Eval_Runner::run()['summary']`.
 	 * @param int|null            $started_at Optional UTC timestamp. Defaults to `time()`.
+	 * @param array               $artifact Optional artifact scoping: may carry
+	 *                                    `artifact_type` and `artifact_id` keys.
 	 * @return array<string,mixed>                                  The recorded run envelope (slug, started_at, summary).
 	 */
-	public function record( $slug, array $summary, $started_at = null ) {
+	public function record( $slug, array $summary, $started_at = null, array $artifact = array() ) {
 		$slug       = sanitize_key( (string) $slug );
 		$started_at = null === $started_at ? time() : (int) $started_at;
 		$record     = array(
@@ -119,6 +139,14 @@ class WP_MCP_AI_Eval_Run_Store {
 			'started_at' => $started_at,
 			'summary'    => $summary,
 		);
+
+		$artifact_type = isset( $artifact['artifact_type'] ) ? sanitize_key( (string) $artifact['artifact_type'] ) : '';
+		$artifact_id   = isset( $artifact['artifact_id'] ) ? sanitize_key( (string) $artifact['artifact_id'] ) : '';
+		if ( '' !== $artifact_type ) {
+			$record['artifact_type'] = $artifact_type;
+			$record['artifact_id']   = $artifact_id;
+			$this->update_artifact_index( $artifact_type, $artifact_id, $slug );
+		}
 
 		$runs   = $this->get_all( $slug );
 		$runs[] = $record;
@@ -129,6 +157,93 @@ class WP_MCP_AI_Eval_Run_Store {
 
 		update_option( self::option_name( $slug ), wp_json_encode( $runs ), false );
 		return $record;
+	}
+
+	/**
+	 * Maintain the bounded artifact→suite-slug index.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param string $artifact_type Artifact type.
+	 * @param string $artifact_id   Artifact identifier.
+	 * @param string $slug          Suite slug that recorded a run.
+	 * @return void
+	 */
+	private function update_artifact_index( $artifact_type, $artifact_id, $slug ) {
+		$index = get_option( self::OPTION_ARTIFACT_INDEX, array() );
+		if ( ! is_array( $index ) ) {
+			$index = array();
+		}
+
+		$key = $artifact_type . ':' . $artifact_id;
+		if ( ! isset( $index[ $key ] ) || ! is_array( $index[ $key ] ) ) {
+			$index[ $key ] = array();
+		}
+		if ( ! in_array( $slug, $index[ $key ], true ) ) {
+			$index[ $key ][] = $slug;
+		}
+
+		// FIFO cap on distinct artifact keys.
+		if ( count( $index ) > self::MAX_ARTIFACT_INDEX ) {
+			$index = array_slice( $index, -1 * self::MAX_ARTIFACT_INDEX, null, true );
+		}
+
+		update_option( self::OPTION_ARTIFACT_INDEX, $index, false );
+	}
+
+	/**
+	 * Get run histories for every suite that recorded runs for an artifact,
+	 * merged newest-first.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param string $artifact_type Artifact type.
+	 * @param string $artifact_id   Optional artifact identifier (empty = any of the type).
+	 * @return array<int,array<string,mixed>>
+	 */
+	public function get_runs_for_artifact( $artifact_type, $artifact_id = '' ) {
+		$artifact_type = sanitize_key( (string) $artifact_type );
+		$artifact_id   = sanitize_key( (string) $artifact_id );
+		if ( '' === $artifact_type ) {
+			return array();
+		}
+
+		$index = get_option( self::OPTION_ARTIFACT_INDEX, array() );
+		if ( ! is_array( $index ) ) {
+			return array();
+		}
+
+		$all = array();
+		foreach ( $index as $key => $slugs ) {
+			if ( ! is_array( $slugs ) ) {
+				continue;
+			}
+			$parts = explode( ':', (string) $key, 2 );
+			if ( 2 !== count( $parts ) || $parts[0] !== $artifact_type ) {
+				continue;
+			}
+			if ( '' !== $artifact_id && '' !== $parts[1] && $parts[1] !== $artifact_id ) {
+				continue;
+			}
+			foreach ( $slugs as $slug ) {
+				$runs = $this->get_all( (string) $slug );
+				foreach ( $runs as $run ) {
+					$all[] = $run;
+				}
+			}
+		}
+
+		// Newest first.
+		usort(
+			$all,
+			static function ( $a, $b ) {
+				$a_time = isset( $a['started_at'] ) ? (int) $a['started_at'] : 0;
+				$b_time = isset( $b['started_at'] ) ? (int) $b['started_at'] : 0;
+				return $b_time - $a_time;
+			}
+		);
+
+		return $all;
 	}
 
 	/**

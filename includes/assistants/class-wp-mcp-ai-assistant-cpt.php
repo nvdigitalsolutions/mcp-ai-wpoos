@@ -86,11 +86,18 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			$this->metaboxes['skills']          = new WP_MCP_AI_Metabox_Skills( $this );
 			$this->metaboxes['mcp-apps']        = new WP_MCP_AI_Metabox_MCP_Apps( $this );
 			$this->metaboxes['harness-profile'] = new WP_MCP_AI_Metabox_Harness_Profile( $this );
+			if ( class_exists( 'WP_MCP_AI_Metabox_Artifact_Governance' ) ) {
+				$this->metaboxes['artifact-governance'] = new WP_MCP_AI_Metabox_Artifact_Governance( $this );
+			}
 
 			add_action( 'init', array( __CLASS__, 'register_post_type' ) );
 			add_action( 'init', array( __CLASS__, 'register_meta' ) );
 			add_filter( 'use_block_editor_for_post_type', array( __CLASS__, 'disable_block_editor_for_post_type' ), 10, 2 );
 			add_action( 'add_meta_boxes', array( $this, 'register_meta_boxes' ) );
+			// Styles for the tools metabox must enqueue during the admin
+			// enqueue phase (head print) — late-enqueued inline styles do not
+			// print reliably on newer WordPress versions.
+			add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_tools_metabox_styles' ) );
 			add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_post' ), 10, 2 );
 			add_action( 'admin_post_wp_mcp_ai_issue_credential', array( $this, 'handle_issue_credential' ) );
 			add_action( 'admin_post_wp_mcp_ai_revoke_credential', array( $this, 'handle_revoke_credential' ) );
@@ -100,6 +107,28 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			add_action( 'delete_' . self::POST_TYPE, array( $this, 'cleanup_deleted_assistant_credentials' ) );
 			// Clean up CCT items when post status changes from publish to something else.
 			add_action( 'transition_post_status', array( $this, 'handle_post_status_transition' ), 10, 3 );
+			// Restore the pre-trash status when an assistant is untrashed. WordPress
+			// 6.6+ defaults restored posts to draft; a published assistant must come
+			// back as publish so CCT sync resumes.
+			add_filter( 'wp_untrash_post_status', array( $this, 'restore_previous_status_on_untrash' ), 10, 3 );
+		}
+
+		/**
+		 * Restore the pre-trash status for untrashed assistant posts.
+		 *
+		 * @param string $new_status      Default status WordPress would assign.
+		 * @param int    $post_id         Post ID being untrashed.
+		 * @param string $previous_status Status the post had when it was trashed.
+		 * @return string Status to assign on untrash.
+		 */
+		public function restore_previous_status_on_untrash( $new_status, $post_id, $previous_status ) {
+			$post = get_post( $post_id );
+
+			if ( $post && self::POST_TYPE === $post->post_type ) {
+				return $previous_status;
+			}
+
+			return $new_status;
 		}
 
 		/**
@@ -628,10 +657,31 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					continue;
 				}
 
+				$shortcuts[ $tool_slug ] = $this->collect_prebuilt_shortcut_tasks( $tool_slug, $assistant_id );
+			}
+
+			return $shortcuts;
+		}
+
+		/**
+		 * Collect the pre-built shortcut entries for a single tool.
+		 *
+		 * Isolated from the render path so that a Throwable raised by any one
+		 * tool implementation — or by a callback on one of the shortcut
+		 * filters — is contained: the failing tool is logged and skipped
+		 * instead of taking down the whole assistant edit screen.
+		 *
+		 * @param string $tool_slug    Tool slug.
+		 * @param int    $assistant_id Assistant post ID.
+		 * @return array Shortcut entries for the tool. Empty when the tool is
+		 *               missing or its shortcut metadata could not be built.
+		 */
+		protected function collect_prebuilt_shortcut_tasks( $tool_slug, $assistant_id ) {
+			try {
 				$tool = $this->registry->get_tool( $tool_slug );
 
 				if ( ! $tool ) {
-					continue;
+					return array();
 				}
 
 				$tasks         = array();
@@ -651,8 +701,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$tasks = apply_filters( 'wp_mcp_ai_tool_shortcut_tasks_' . $tool_slug, $tasks, $tool, $assistant_id );
 
 				if ( null === $tasks ) {
-					$shortcuts[ $tool_slug ] = array();
-					continue;
+					return array();
 				}
 
 				$entries = array();
@@ -691,9 +740,14 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 							);
 						}
 
-						$shortcuts[ $tool_slug ] = $entries;
-						continue;
+						return $entries;
 					}
+				}
+
+				if ( ! is_array( $tasks ) ) {
+					// A filter replaced the task list with a non-array value.
+					// Treat it as "no tasks" rather than iterating over it.
+					$tasks = array();
 				}
 
 				foreach ( $tasks as $task ) {
@@ -753,10 +807,46 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					}
 				}
 
-				$shortcuts[ $tool_slug ] = $entries;
+				return $entries;
+			} catch ( \Throwable $e ) {
+				self::log_assistant_edit_failure(
+					sprintf(
+						/* translators: 1: Tool slug. 2: Assistant post ID. */
+						__( 'Failed to build pre-built prompt shortcuts for tool "%1$s" on assistant %2$d.', 'mcp-ai-wpoos' ),
+						$tool_slug,
+						(int) $assistant_id
+					),
+					array(
+						'tool'         => $tool_slug,
+						'assistant_id' => (int) $assistant_id,
+						'error'        => $e->getMessage(),
+					)
+				);
+
+				return array();
+			}
+		}
+
+		/**
+		 * Record an assistant-edit-screen rendering failure.
+		 *
+		 * Centralises logging for the shortcut sections so contained failures
+		 * surface in the plugin log (and in PHP's debug log when WP_DEBUG is
+		 * on) without interrupting the admin page.
+		 *
+		 * @param string $message Human-readable failure description.
+		 * @param array  $context Structured context for the log entry.
+		 * @return void
+		 */
+		private static function log_assistant_edit_failure( $message, array $context = array() ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event( 'error', $message, $context );
 			}
 
-			return $shortcuts;
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only diagnostic for a contained failure.
+				error_log( '[WP MCP AI] ' . $message );
+			}
 		}
 
 		/**
@@ -2109,6 +2199,20 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					$metabox->get_priority()
 				);
 			}
+
+			// Register the Artifact Governance metabox (Phase G: governor report,
+			// human approval queue, lineage tree).
+			if ( isset( $this->metaboxes['artifact-governance'] ) && class_exists( 'WP_MCP_AI_Evolution_Governor' ) ) {
+				$metabox = $this->metaboxes['artifact-governance'];
+				add_meta_box(
+					$metabox->get_id(),
+					$metabox->get_title(),
+					array( $metabox, 'render' ),
+					self::POST_TYPE,
+					$metabox->get_context(),
+					$metabox->get_priority()
+				);
+			}
 		}
 
 		/**
@@ -2711,7 +2815,120 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		}
 
 		/**
-		 * Render the tools meta box content.
+		 * Stylesheet source for the tools metabox (accordion grid).
+		 *
+		 * Kept as a string because the styles only apply on the assistant
+		 * edit screen; attaching them to a registered handle during the admin
+		 * enqueue phase means they print with the head styles instead of
+		 * relying on unreliable late printing.
+		 *
+		 * @return string CSS rules.
+		 */
+		private static function get_tools_metabox_css() {
+			return '.wp-mcp-ai-tools{display:flex;flex-direction:column;gap:1rem;margin-top:1rem}'
+				. '.wp-mcp-ai-tools__group{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}'
+				. '.wp-mcp-ai-tools__group summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}'
+				. '.wp-mcp-ai-tools__group summary::-webkit-details-marker{display:none}'
+				. '.wp-mcp-ai-tools__summary-title{flex:1 1 auto}'
+				. '.wp-mcp-ai-tools__summary-count{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}'
+				. '.wp-mcp-ai-tools__group[open]{background:#fff}'
+				. '.wp-mcp-ai-tools__group[open] summary{border-bottom:1px solid #dcdcde}'
+				. '.wp-mcp-ai-tools__list{margin:0;padding:1rem;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}'
+				. '.wp-mcp-ai-tools__item{border:1px solid #dcdcde;border-radius:4px;background:#fff;padding:1rem;display:flex;flex-direction:column;gap:0.5rem;transition:box-shadow 0.2s ease}'
+				. '.wp-mcp-ai-tools__item:focus-within{box-shadow:0 0 0 1px #2271b1}'
+				. '.wp-mcp-ai-tools__header{display:flex;align-items:flex-start;gap:0.75rem}'
+				. '.wp-mcp-ai-tools__checkbox{margin-top:0.2rem}'
+				. '.wp-mcp-ai-tools__name{display:block;font-weight:600;font-size:14px}'
+				. '.wp-mcp-ai-tools__description{margin:0;color:#50575e;font-size:13px}'
+				. '.wp-mcp-ai-tools__controls label{font-weight:600;font-size:13px;margin-bottom:0.25rem;display:block}'
+				. '.wp-mcp-ai-tools__role-select{width:100%}'
+				. '.wp-mcp-ai-tools__helper{margin:0;color:#646970;font-size:12px}'
+				. '.wp-mcp-ai-tools__extra{margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid #dcdcde}'
+				. '.wp-mcp-ai-tools__item[data-tool-selected="false"]{opacity:0.75}'
+				. '.wp-mcp-ai-tools__item[data-tool-selected="false"] .wp-mcp-ai-tools__extra{display:none}'
+				. '.wp-mcp-ai-tools__shortcuts-toggle{margin:1rem 0 0;padding:1rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:0.5rem}'
+				. '.wp-mcp-ai-tools__shortcuts-toggle-label{font-weight:600;display:flex;align-items:center;gap:0.5rem;font-size:14px}'
+				. '.wp-mcp-ai-tools__shortcuts-toggle .description{margin:0;font-size:13px;color:#50575e}'
+				. '.wp-mcp-ai-prebuilt-shortcuts{margin-top:1.5rem;padding:1.5rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:1rem}'
+				. '.wp-mcp-ai-prebuilt-shortcuts h3{margin:0;font-size:16px}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__tool{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary::-webkit-details-marker{display:none}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary-title{flex:1 1 auto}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary-mode{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__tool[open]{background:#fff}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__tool[open] .wp-mcp-ai-prebuilt-shortcuts__summary{border-bottom:1px solid #dcdcde}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__content{padding:1rem;display:flex;flex-direction:column;gap:1rem;border-top:1px solid #dcdcde}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__mode{display:flex;flex-wrap:wrap;gap:1rem;margin:0}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__mode label{display:flex;align-items:center;gap:0.5rem;font-weight:600}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults{margin:0}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults p{margin:0;color:#50575e;font-size:13px}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults-list{margin:0.5rem 0 0;padding-left:1.25rem}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults-list li{margin-bottom:0.5rem;font-size:13px}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults-summary{display:block;color:#50575e;font-size:12px;margin-top:0.25rem}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__rows{display:flex;flex-direction:column;gap:1rem}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__row{border:1px solid #dcdcde;border-radius:4px;padding:1rem;background:#fff}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__row hr{margin:1rem -1rem 0}'
+				. '.wp-mcp-ai-tool-shortcuts{margin-top:1.5rem;padding:1.5rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:1rem}'
+				. '.wp-mcp-ai-tool-shortcuts h3{margin:0;font-size:16px}'
+				. '.wp-mcp-ai-tool-shortcuts__rows{display:flex;flex-direction:column;gap:1rem}'
+				. '.wp-mcp-ai-tool-shortcuts__item{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}'
+				. '.wp-mcp-ai-tool-shortcuts__item[open]{background:#fff}'
+				. '.wp-mcp-ai-tool-shortcuts__summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}'
+				. '.wp-mcp-ai-tool-shortcuts__summary::-webkit-details-marker{display:none}'
+				. '.wp-mcp-ai-tool-shortcuts__summary-title{flex:1 1 auto}'
+				. '.wp-mcp-ai-tool-shortcuts__summary-tool{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}'
+				. '.wp-mcp-ai-tool-shortcuts__item[open] .wp-mcp-ai-tool-shortcuts__summary{border-bottom:1px solid #dcdcde}'
+				. '.wp-mcp-ai-tool-shortcuts__row{margin:0;padding:1rem;display:flex;flex-direction:column;gap:1rem;background:#fff;border-top:1px solid #dcdcde;border-radius:0 0 4px 4px}'
+				. '.wp-mcp-ai-tool-shortcuts__row hr{display:none}'
+				. '@media (max-width:782px){.wp-mcp-ai-tools__list{grid-template-columns:1fr}}';
+		}
+
+		/**
+		 * Register, enqueue, and attach the tools metabox stylesheet exactly
+		 * once per request.
+		 *
+		 * The primary call path is the admin enqueue phase so the inline CSS
+		 * prints with the head styles; the metabox render also calls this as
+		 * a guarded fallback, and the get_data() check prevents the CSS from
+		 * being attached twice.
+		 *
+		 * @return void
+		 */
+		private static function ensure_tools_metabox_styles() {
+			$handle = 'wp-mcp-ai-assistant-tools';
+
+			if ( ! wp_style_is( $handle, 'registered' ) ) {
+				wp_register_style( $handle, false, array(), WP_MCP_AI_VERSION );
+			}
+
+			wp_enqueue_style( $handle );
+
+			if ( ! wp_styles()->get_data( $handle, 'after' ) ) {
+				wp_add_inline_style( $handle, self::get_tools_metabox_css() );
+			}
+		}
+
+		/**
+		 * Enqueue the tools metabox stylesheet during the admin enqueue phase
+		 * so its inline CSS prints with the head styles.
+		 *
+		 * Late-enqueued styles (from metabox render callbacks) do not print
+		 * reliably on newer WordPress versions, which left the tools grid
+		 * unstyled on the assistant edit screen.
+		 *
+		 * @param string $hook Current admin page hook.
+		 */
+		public static function enqueue_tools_metabox_styles( $hook ) {
+			if ( ! in_array( $hook, array( 'post.php', 'post-new.php' ), true ) ) {
+				return;
+			}
+
+			self::ensure_tools_metabox_styles();
+		}
+
+		/**
+		 * Render the tools meta box.
 		 *
 		 * @param WP_Post $post Post object.
 		 */
@@ -2905,75 +3122,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				uasort( $role_options, 'strnatcasecmp' );
 			}
 
-			static $tools_styles_printed = false;
+			static $tools_styles_ensured = false;
 
-			if ( ! $tools_styles_printed ) {
-				$tools_styles_printed = true;
-
-				// Register a dummy style handle so wp_add_inline_style has a target.
-				wp_register_style( 'wp-mcp-ai-assistant-tools', false, array(), WP_MCP_AI_VERSION );
-				wp_enqueue_style( 'wp-mcp-ai-assistant-tools' );
-
-				wp_add_inline_style(
-					'wp-mcp-ai-assistant-tools',
-					'.wp-mcp-ai-tools{display:flex;flex-direction:column;gap:1rem;margin-top:1rem}'
-					. '.wp-mcp-ai-tools__group{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}'
-					. '.wp-mcp-ai-tools__group summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}'
-					. '.wp-mcp-ai-tools__group summary::-webkit-details-marker{display:none}'
-					. '.wp-mcp-ai-tools__summary-title{flex:1 1 auto}'
-					. '.wp-mcp-ai-tools__summary-count{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}'
-					. '.wp-mcp-ai-tools__group[open]{background:#fff}'
-					. '.wp-mcp-ai-tools__group[open] summary{border-bottom:1px solid #dcdcde}'
-					. '.wp-mcp-ai-tools__list{margin:0;padding:1rem;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}'
-					. '.wp-mcp-ai-tools__item{border:1px solid #dcdcde;border-radius:4px;background:#fff;padding:1rem;display:flex;flex-direction:column;gap:0.5rem;transition:box-shadow 0.2s ease}'
-					. '.wp-mcp-ai-tools__item:focus-within{box-shadow:0 0 0 1px #2271b1}'
-					. '.wp-mcp-ai-tools__header{display:flex;align-items:flex-start;gap:0.75rem}'
-					. '.wp-mcp-ai-tools__checkbox{margin-top:0.2rem}'
-					. '.wp-mcp-ai-tools__name{display:block;font-weight:600;font-size:14px}'
-					. '.wp-mcp-ai-tools__description{margin:0;color:#50575e;font-size:13px}'
-					. '.wp-mcp-ai-tools__controls label{font-weight:600;font-size:13px;margin-bottom:0.25rem;display:block}'
-					. '.wp-mcp-ai-tools__role-select{width:100%}'
-					. '.wp-mcp-ai-tools__helper{margin:0;color:#646970;font-size:12px}'
-					. '.wp-mcp-ai-tools__extra{margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid #dcdcde}'
-					. '.wp-mcp-ai-tools__item[data-tool-selected="false"]{opacity:0.75}'
-					. '.wp-mcp-ai-tools__item[data-tool-selected="false"] .wp-mcp-ai-tools__extra{display:none}'
-					. '.wp-mcp-ai-tools__shortcuts-toggle{margin:1rem 0 0;padding:1rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:0.5rem}'
-					. '.wp-mcp-ai-tools__shortcuts-toggle-label{font-weight:600;display:flex;align-items:center;gap:0.5rem;font-size:14px}'
-					. '.wp-mcp-ai-tools__shortcuts-toggle .description{margin:0;font-size:13px;color:#50575e}'
-					. '.wp-mcp-ai-prebuilt-shortcuts{margin-top:1.5rem;padding:1.5rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:1rem}'
-					. '.wp-mcp-ai-prebuilt-shortcuts h3{margin:0;font-size:16px}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__tool{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__summary::-webkit-details-marker{display:none}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__summary-title{flex:1 1 auto}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__summary-mode{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__tool[open]{background:#fff}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__tool[open] .wp-mcp-ai-prebuilt-shortcuts__summary{border-bottom:1px solid #dcdcde}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__content{padding:1rem;display:flex;flex-direction:column;gap:1rem;border-top:1px solid #dcdcde}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__mode{display:flex;flex-wrap:wrap;gap:1rem;margin:0}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__mode label{display:flex;align-items:center;gap:0.5rem;font-weight:600}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__defaults{margin:0}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__defaults p{margin:0;color:#50575e;font-size:13px}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__defaults-list{margin:0.5rem 0 0;padding-left:1.25rem}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__defaults-list li{margin-bottom:0.5rem;font-size:13px}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__defaults-summary{display:block;color:#50575e;font-size:12px;margin-top:0.25rem}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__rows{display:flex;flex-direction:column;gap:1rem}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__row{border:1px solid #dcdcde;border-radius:4px;padding:1rem;background:#fff}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__row hr{margin:1rem -1rem 0}'
-					. '.wp-mcp-ai-tool-shortcuts{margin-top:1.5rem;padding:1.5rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:1rem}'
-					. '.wp-mcp-ai-tool-shortcuts h3{margin:0;font-size:16px}'
-					. '.wp-mcp-ai-tool-shortcuts__rows{display:flex;flex-direction:column;gap:1rem}'
-					. '.wp-mcp-ai-tool-shortcuts__item{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}'
-					. '.wp-mcp-ai-tool-shortcuts__item[open]{background:#fff}'
-					. '.wp-mcp-ai-tool-shortcuts__summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}'
-					. '.wp-mcp-ai-tool-shortcuts__summary::-webkit-details-marker{display:none}'
-					. '.wp-mcp-ai-tool-shortcuts__summary-title{flex:1 1 auto}'
-					. '.wp-mcp-ai-tool-shortcuts__summary-tool{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}'
-					. '.wp-mcp-ai-tool-shortcuts__item[open] .wp-mcp-ai-tool-shortcuts__summary{border-bottom:1px solid #dcdcde}'
-					. '.wp-mcp-ai-tool-shortcuts__row{margin:0;padding:1rem;display:flex;flex-direction:column;gap:1rem;background:#fff;border-top:1px solid #dcdcde;border-radius:0 0 4px 4px}'
-					. '.wp-mcp-ai-tool-shortcuts__row hr{display:none}'
-					. '@media (max-width:782px){.wp-mcp-ai-tools__list{grid-template-columns:1fr}}'
-				);
+			if ( ! $tools_styles_ensured ) {
+				$tools_styles_ensured = true;
+				self::ensure_tools_metabox_styles();
 			}
 
 			static $tools_script_printed = false;
@@ -3438,7 +3591,25 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 			echo '</div>';
 
-			$this->render_prebuilt_shortcuts_editor( $post, $selected_tools, $prebuilt_shortcuts );
+			try {
+				$this->render_prebuilt_shortcuts_editor( $post, $selected_tools, $prebuilt_shortcuts );
+			} catch ( \Throwable $e ) {
+				self::log_assistant_edit_failure(
+					sprintf(
+						/* translators: %d: Assistant post ID. */
+						__( 'Failed to render the pre-built prompt shortcuts editor for assistant %d.', 'mcp-ai-wpoos' ),
+						(int) $post->ID
+					),
+					array(
+						'assistant_id' => (int) $post->ID,
+						'error'        => $e->getMessage(),
+					)
+				);
+
+				echo '<div class="notice notice-warning inline" style="margin-top: 1rem;"><p>';
+				echo esc_html__( 'The pre-built prompt shortcuts section could not be displayed. Tool shortcuts remain unaffected and the error has been logged.', 'mcp-ai-wpoos' );
+				echo '</p></div>';
+			}
 		}
 
 		/**
@@ -3480,13 +3651,31 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			foreach ( $tools as $tool ) {
-				$slug = $tool->get_slug();
-
-				if ( ! empty( $selected_tools ) && ! in_array( $slug, $selected_tools, true ) ) {
+				if ( ! $tool instanceof WP_MCP_AI_Tool_Interface ) {
 					continue;
 				}
 
-				$tool_options[ $slug ] = $tool->get_name();
+				try {
+					$slug = $tool->get_slug();
+
+					if ( ! empty( $selected_tools ) && ! in_array( $slug, $selected_tools, true ) ) {
+						continue;
+					}
+
+					$tool_options[ $slug ] = $tool->get_name();
+				} catch ( \Throwable $e ) {
+					self::log_assistant_edit_failure(
+						sprintf(
+							/* translators: %d: Assistant post ID. */
+							__( 'Failed to read tool metadata while rendering the prompt shortcuts metabox for assistant %d.', 'mcp-ai-wpoos' ),
+							(int) $post->ID
+						),
+						array(
+							'assistant_id' => (int) $post->ID,
+							'error'        => $e->getMessage(),
+						)
+					);
+				}
 			}
 
 			/* translators: %d: shortcut number */

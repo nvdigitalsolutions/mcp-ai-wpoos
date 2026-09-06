@@ -14,6 +14,24 @@
 class Test_Site_Creator_Menu_Registration extends WP_UnitTestCase {
 
 	/**
+	 * Ensure the Site Creator settings page class is loaded and its
+	 * admin_menu hook is registered.
+	 */
+	private function load_site_creator_settings_page() {
+		if ( ! class_exists( 'WP_MCP_AI_Site_Creator_Toolkit_Settings_Page' ) ) {
+			$file = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-site-creator-toolkit-settings-page.php';
+			if ( file_exists( $file ) ) {
+				require_once $file;
+			} else {
+				$this->markTestSkipped( 'Site Creator Toolkit Settings Page class not available' );
+			}
+		}
+
+		// Constructing the class registers its admin_menu hook.
+		new WP_MCP_AI_Site_Creator_Toolkit_Settings_Page();
+	}
+
+	/**
 	 * Test that Site Creator menu is registered as a top-level menu.
 	 *
 	 * This test verifies that the Site Creator page is correctly added as a
@@ -25,15 +43,7 @@ class Test_Site_Creator_Menu_Registration extends WP_UnitTestCase {
 		// Set up admin user.
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 
-		// Load the Site Creator Toolkit Settings Page class.
-		if ( ! class_exists( 'WP_MCP_AI_Site_Creator_Toolkit_Settings_Page' ) ) {
-			$file = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-site-creator-toolkit-settings-page.php';
-			if ( file_exists( $file ) ) {
-				require_once $file;
-			} else {
-				$this->markTestSkipped( 'Site Creator Toolkit Settings Page class not available' );
-			}
-		}
+		$this->load_site_creator_settings_page();
 
 		// Trigger admin_menu action to register menus.
 		do_action( 'admin_menu' );
@@ -69,6 +79,8 @@ class Test_Site_Creator_Menu_Registration extends WP_UnitTestCase {
 
 		// Set up admin user.
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
+
+		$this->load_site_creator_settings_page();
 
 		// Trigger admin_menu action to register menus.
 		do_action( 'admin_menu' );
@@ -111,10 +123,7 @@ class Test_Site_Creator_Menu_Registration extends WP_UnitTestCase {
 	public function test_site_creator_menu_priority() {
 		global $wp_filter;
 
-		// Load the Site Creator Toolkit Settings Page class.
-		if ( ! class_exists( 'WP_MCP_AI_Site_Creator_Toolkit_Settings_Page' ) ) {
-			$this->markTestSkipped( 'Site Creator Toolkit Settings Page class not available' );
-		}
+		$this->load_site_creator_settings_page();
 
 		// Check the admin_menu hook priority.
 		$this->assertTrue(
@@ -126,6 +135,10 @@ class Test_Site_Creator_Menu_Registration extends WP_UnitTestCase {
 		$found_priority = null;
 		foreach ( $wp_filter['admin_menu']->callbacks as $priority => $callbacks ) {
 			foreach ( $callbacks as $callback ) {
+				// Closures registered by other plugins cannot be inspected here.
+				if ( ! is_array( $callback ) || ! isset( $callback['function'] ) || ! is_array( $callback['function'] ) ) {
+					continue;
+				}
 				if ( isset( $callback['function'][0] ) &&
 					$callback['function'][0] instanceof WP_MCP_AI_Site_Creator_Toolkit_Settings_Page &&
 					$callback['function'][1] === 'add_settings_page' ) {

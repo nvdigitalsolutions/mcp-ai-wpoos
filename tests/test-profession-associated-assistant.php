@@ -44,6 +44,15 @@ class Test_Profession_Associated_Assistant extends WP_UnitTestCase {
 			require_once WP_MCP_AI_PATH . 'includes/assistants/class-wp-mcp-ai-assistant-cpt.php';
 		}
 
+		// Register the profession post type and its meta directly. The CPT's
+		// own hooks run on `init`, which has already fired by the time the
+		// test bootstrap reaches this suite, so registration must be
+		// triggered explicitly (same pattern as the profession team CPT
+		// sanitization suite).
+		$profession_cpt = new WP_MCP_AI_Profession_CPT();
+		$profession_cpt->register_post_type();
+		$profession_cpt->register_meta();
+
 		// Create test profession.
 		$this->profession_id = wp_insert_post(
 			array(
@@ -287,7 +296,10 @@ class Test_Profession_Associated_Assistant extends WP_UnitTestCase {
 		update_post_meta( $this->profession_id, WP_MCP_AI_Profession_CPT::META_ASSOCIATED_ASSISTANT, $this->assistant_id );
 
 		// Create REST instance to access protected method.
-		$rest       = new WP_MCP_AI_REST();
+		$rest       = new WP_MCP_AI_REST(
+			WP_MCP_AI_Tool_Registry::get_instance(),
+			$this->createMock( WP_MCP_AI_Language_Model_Router::class )
+		);
 		$reflection = new ReflectionClass( $rest );
 		$method     = $reflection->getMethod( 'resolve_assistant_id' );
 		$method->setAccessible( true );
@@ -303,7 +315,13 @@ class Test_Profession_Associated_Assistant extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that REST API uses default assistant when profession has no associated assistant.
+	 * Test that REST API resolves profession test requests without an
+	 * associated assistant to 0 (profession-only mode).
+	 *
+	 * Since the profession test flow was updated to reuse the assistant
+	 * primary-role logic, a profession with no associated assistant no
+	 * longer falls back to the site default assistant — the profession is
+	 * tested as a temporary primary role instead.
 	 */
 	public function test_rest_uses_default_when_no_associated_assistant() {
 		// Ensure REST class is loaded.
@@ -326,7 +344,10 @@ class Test_Profession_Associated_Assistant extends WP_UnitTestCase {
 		}
 
 		// Create REST instance to access protected method.
-		$rest       = new WP_MCP_AI_REST();
+		$rest       = new WP_MCP_AI_REST(
+			WP_MCP_AI_Tool_Registry::get_instance(),
+			$this->createMock( WP_MCP_AI_Language_Model_Router::class )
+		);
 		$reflection = new ReflectionClass( $rest );
 		$method     = $reflection->getMethod( 'resolve_assistant_id' );
 		$method->setAccessible( true );
@@ -335,9 +356,9 @@ class Test_Profession_Associated_Assistant extends WP_UnitTestCase {
 		$resolved_id = $method->invoke( $rest, 'profession_' . $this->profession_id );
 
 		$this->assertSame(
-			$default_assistant_id,
+			0,
 			$resolved_id,
-			'Should resolve to default assistant when profession has no associated assistant'
+			'Should resolve to 0 (profession-only mode) when profession has no associated assistant'
 		);
 
 		// Clean up.
@@ -359,7 +380,10 @@ class Test_Profession_Associated_Assistant extends WP_UnitTestCase {
 		update_post_meta( $this->profession_id, '_wp_mcp_ai_profession_default_tools', array( 'search_posts', 'create_post' ) );
 
 		// Create REST instance to access protected method.
-		$rest       = new WP_MCP_AI_REST();
+		$rest       = new WP_MCP_AI_REST(
+			WP_MCP_AI_Tool_Registry::get_instance(),
+			$this->createMock( WP_MCP_AI_Language_Model_Router::class )
+		);
 		$reflection = new ReflectionClass( $rest );
 		$method     = $reflection->getMethod( 'load_profession_configuration' );
 		$method->setAccessible( true );

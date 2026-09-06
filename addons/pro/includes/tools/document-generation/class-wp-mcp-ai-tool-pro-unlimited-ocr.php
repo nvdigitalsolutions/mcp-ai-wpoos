@@ -255,10 +255,12 @@ class WP_MCP_AI_Tool_Pro_Unlimited_OCR implements WP_MCP_AI_Tool_Interface, WP_M
 			);
 		}
 
-		// Fetch and encode images.
+		// Fetch and encode images. Use the same timeout as the OCR call below so a
+		// hung download never outlives the model request it feeds.
+		$timeout        = $is_multi ? 300 : 120;
 		$encoded_images = array();
 		foreach ( $image_urls as $url ) {
-			$encoded = $client->fetch_and_encode_image( $url );
+			$encoded = $client->fetch_and_encode_image( $url, $timeout );
 			if ( is_wp_error( $encoded ) ) {
 				return $encoded;
 			}
@@ -268,7 +270,7 @@ class WP_MCP_AI_Tool_Pro_Unlimited_OCR implements WP_MCP_AI_Tool_Interface, WP_M
 		// Perform OCR.
 		$client_options = array(
 			'image_mode' => $image_mode,
-			'timeout'    => $is_multi ? 300 : 120,
+			'timeout'    => $timeout,
 		);
 
 		$defaults = $client->get_model_defaults( $model_type );

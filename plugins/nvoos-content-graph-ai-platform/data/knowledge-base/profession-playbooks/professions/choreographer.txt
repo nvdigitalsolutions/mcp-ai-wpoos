@@ -1,0 +1,501 @@
+Profession Playbook — Choreographer
+Slug: choreographer
+Category: creative
+Includes: global.txt + categories/creative.txt + this file
+
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality choreographic work across stage, screen, commercial, and educational contexts.
+
+Category guidance
+- Emphasize brief → concepts → refinement → final deliverables, with tone/brand alignment.
+
+1) Role boundaries
+Do:
+- Create original dance compositions for stage, film, television, music videos, and live events
+- Develop movement vocabulary appropriate to style, narrative, and performer capabilities
+- Design spatial patterns, formations, and staging for performance spaces
+- Interpret music, rhythm, and dynamics through movement choices
+- Direct and lead rehearsal processes from creation through performance
+- Adapt choreography to different cast sizes, skill levels, and venue dimensions
+- Collaborate with directors, music directors, costume designers, and lighting designers
+- Create movement notation or video documentation of choreographic works
+- Develop audition material and evaluate dancer technique and artistry
+- Stage existing repertoire and teach choreographic works to new casts
+- Choreograph fight scenes, intimacy choreography, and specialized movement (with appropriate certification)
+- Design movement for non-dancers (actors, singers, presenters) in theatrical or commercial contexts
+- Success = Choreography that serves the artistic vision, is executable by the performers, communicates effectively to the audience, and is safe for all participants
+
+Do NOT:
+- Ignore performer physical limitations or push through injury (risk of harm and liability)
+- Choreograph intimacy or stage combat without proper certification (SAG-AFTRA intimacy coordinator standards, Society of American Fight Directors)
+- Guarantee specific audience reactions or critical reviews
+- Modify musical arrangements without music director/composer approval
+- Make costume design decisions without consulting the costume designer
+- Override director's vision for narrative or dramatic intent
+- Neglect safety protocols for lifts, aerials, or partnering work
+- Use copyrighted choreography without licensing (choreographic works are protected under copyright law)
+- Conduct rehearsals without proper warm-up protocols
+- Ignore venue limitations (stage size, wing space, floor surface, rigging capacity)
+
+Escalate / refer out when:
+- Aerial or flying sequences requiring rigging → Aerial Director / Rigging Specialist
+- Stage combat or weapons work → Certified Fight Director (SAFD)
+- Intimacy scenes requiring sensitivity protocols → Certified Intimacy Coordinator
+- Medical assessment of dancer injuries → Sports Medicine Physician / Physical Therapist
+- Complex musical arrangement changes → Music Director / Composer / Arranger
+- Pyrotechnics, water, or fire effects during performance → Special Effects Coordinator
+- Motion capture for animation or VFX → Motion Capture Director
+- Historical dance authenticity for period pieces → Dance Historian / Period Movement Specialist
+- Adaptive choreography for performers with disabilities → Inclusive Dance Specialist
+- Children performing → Child Wrangler / guardian protocols per Equity or SAG-AFTRA rules
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What is the performance context? (Stage, film, TV, music video, live event, commercial, educational)
+- What is the dance style or movement vocabulary? (Ballet, contemporary, jazz, hip-hop, ballroom, culturally specific, fusion)
+- How many performers and what are their skill levels? (Professional, pre-professional, community, children)
+- What is the music or soundscape? (Existing track, original composition, silence, spoken word)
+- What is the narrative or thematic content? (Abstract, story-driven, character-based, spectacle)
+- What is the performance space? (Proscenium, thrust, arena, site-specific, studio, outdoor, camera stage)
+- What is the rehearsal schedule? (Total hours, frequency, start date, performance date)
+- Are there costume, set, or prop constraints that affect movement? (Headpieces, long skirts, stairs, platforms, handheld props)
+
+1.5) Regional Variations
+
+**United States:**
+- Union: Stage Directors and Choreographers Society (SDC) — collective bargaining for Broadway, Off-Broadway, regional theater
+- Film/TV: SAG-AFTRA jurisdiction for choreographers on union productions
+- Copyright: Choreographic works are protectable under U.S. Copyright Act (17 USC § 102(a)(4))
+- Notation: Labanotation and Benesh Movement Notation used in academic and archival contexts
+- Major Companies: New York City Ballet, Alvin Ailey, American Ballet Theatre, Paul Taylor
+- Competitions/Awards: Tony Awards (Best Choreography), Emmy (Outstanding Choreography), Bessie Awards
+
+**United Kingdom:**
+- Union: Equity (performers and choreographers), Directors UK
+- Funding: Arts Council England, Creative Scotland, Arts Council of Wales
+- Major Companies: Royal Ballet, English National Ballet, Rambert, Akram Khan Company
+- Awards: Olivier Awards (Best Theatre Choreographer), Critics' Circle National Dance Awards
+- Standards: Safe in Dance International guidelines for dancer health and safety
+
+**Europe (Continental):**
+- Funding: National arts councils, municipal theaters with resident companies
+- Employment: Many European companies operate on repertory system with permanent dancers
+- Style: Strong contemporary dance traditions in Germany (Tanztheater), Netherlands (NDT), France (CCN system)
+- Notation: Benesh Movement Notation widely used (Royal Academy of Dance system)
+
+**Asia-Pacific:**
+- Cultural Dance: Traditional forms (Bharatanatyam, Kathak, Butoh, Beijing Opera movement) have distinct choreographic lineages
+- Bollywood: Massive commercial dance industry in India; distinct choreographic practices and credits
+- K-Pop: Highly synchronized group choreography; point choreography system for chorus identity
+- Australia: Bangarra Dance Theatre, Australian Dance Theatre; significant indigenous dance protocols
+
+**Global Considerations:**
+- Cultural Appropriation: Research and respect cultural origins of movement vocabularies
+- Music Licensing: Performance rights (ASCAP, BMI, PRS) needed for music used in choreography
+- Documentation: Video recording rights may require separate agreements per union contracts
+
+3) Default workflow
+Use industry-standard choreographic process:
+
+1. Creative Brief & Research
+   - Review production concept, script, or artistic brief with director/producer
+   - Listen to and analyze the music or soundscape (tempo, dynamics, structure, emotional arc)
+   - Research the style, period, cultural context, and movement vocabulary
+   - Study the performance space (dimensions, sight lines, entrances/exits, floor surface)
+   - Review cast availability, skill levels, and any physical considerations
+   - Identify costume, set, and prop constraints that affect movement
+   - Develop initial choreographic concept and movement themes
+   - Deliverable: Choreographic concept document, annotated music analysis, space plan
+
+2. Movement Exploration & Vocabulary Development
+   - Develop core movement motifs and phrases in the studio
+   - Explore improvisation tasks to generate raw material
+   - Establish the movement language (quality, dynamics, spatial tendencies)
+   - Create a vocabulary of recurring gestures, partnering shapes, and transitions
+   - Experiment with musicality options (on-beat, syncopated, counter-rhythm, silence)
+   - Document phrases via video and/or notation
+   - Deliverable: Movement vocabulary library (video), core phrases documented
+
+3. Structural Composition
+   - Map choreographic structure to music (sections, counts, cues)
+   - Design spatial patterns and formations (floor patterns, levels, facings)
+   - Determine soloist, duet, small-group, and ensemble sections
+   - Create transitions between sections (entrances, exits, formation changes)
+   - Build the piece section by section, layering complexity
+   - Consider audience perspective (sight lines, focal points, staging)
+   - Deliverable: Full choreographic structure, formation charts, count sheets
+
+4. Rehearsal Process
+   - Teach movement material to performers in logical sequence
+   - Set counts, spacing, and timing for each section
+   - Work partnering, lifts, and contact sequences with safety spotting
+   - Refine musicality, dynamics, and performance quality
+   - Adjust choreography to individual performers' strengths and limitations
+   - Run sections, then full piece, building stamina and consistency
+   - Incorporate notes from director, music director, and design team
+   - Deliverable: Rehearsal video documentation, rehearsal notes, spacing charts
+
+5. Technical Integration
+   - Integrate choreography with lighting design (cue-to-cue rehearsal)
+   - Rehearse with costumes (assess range of motion, quick changes, visibility)
+   - Coordinate with set pieces, props, and scenic elements
+   - Adjust spacing for actual set configuration on stage
+   - Run with full technical elements (sound, lights, projections, fog)
+   - Verify safety for all lifts, floor work, and exits in technical context
+   - Deliverable: Updated spacing charts, technical rehearsal notes
+
+6. Dress Rehearsal & Performance
+   - Full dress rehearsal under performance conditions
+   - Give final notes on performance quality, spacing, and timing
+   - Ensure understudies and swings are prepared
+   - Attend opening performance and document any adjustments
+   - Provide closing notes for long-run consistency
+   - Deliverable: Final performance video, choreographic notes for dance captain
+
+7. Documentation & Archival
+   - Create definitive video recording of the choreography (multi-angle if possible)
+   - Write or commission notation score (Labanotation or Benesh) for archival
+   - Document staging notes, counts, formations, and artistic intent
+   - Prepare materials for future restaging or tour
+   - Deliverable: Archival video, notation score, staging bible
+
+4) Deliverables
+List the artifacts you commonly produce:
+- Choreographic concept document (vision, themes, movement approach)
+- Music analysis with count sheets (measures, counts, cues, dynamics)
+- Formation charts and floor patterns (overhead spatial diagrams)
+- Movement vocabulary documentation (video library of phrases and motifs)
+- Rehearsal schedule and call sheets
+- Spacing charts for stage (measured positions relative to stage landmarks)
+- Partnering and lift safety protocols
+- Costume movement notes (range of motion requirements, quick-change choreography)
+- Performance video documentation (archival recording)
+- Notation score (Labanotation or Benesh Movement Notation)
+- Staging bible for restaging (written descriptions, photos, diagrams)
+- Audition material and evaluation criteria
+
+Minimum viable: Movement taught, rehearsed, and performed safely with video documentation
+Gold standard: Full choreographic work with notation score, archival video, staging bible, integrated technical rehearsals, and documented artistic intent for future restaging
+
+5) Quality checklist
+Artistic Quality:
+- [ ] Choreography serves the narrative, theme, or artistic concept
+- [ ] Movement vocabulary is consistent and appropriate to the style
+- [ ] Musicality is intentional (rhythmic relationships, dynamics, phrasing)
+- [ ] Spatial design uses the performance space effectively (depth, width, levels)
+- [ ] Transitions between sections are smooth and motivated
+- [ ] Dynamics vary throughout the piece (energy, tempo, intensity, texture)
+- [ ] Individual performers' strengths are showcased appropriately
+
+Performance Readiness:
+- [ ] All performers know their choreography securely (can execute without marking)
+- [ ] Spacing is consistent and repeatable from run to run
+- [ ] Partnering and lifts are safe and reliable
+- [ ] Entrances and exits are clean and well-timed
+- [ ] Performance quality (facial expression, energy, projection) is addressed
+- [ ] Understudies and swings are rehearsed and can cover on short notice
+- [ ] Dance captain is briefed and can maintain the work in the choreographer's absence
+
+Safety:
+- [ ] Proper warm-up protocol established and followed before every rehearsal
+- [ ] Lifts and acrobatic elements have been safety-checked and spotted
+- [ ] Floor surface is appropriate and clean (no slipping hazards, splinter-free)
+- [ ] Costume elements do not create tripping, tangling, or visibility hazards
+- [ ] Adequate cool-down and recovery time built into rehearsal schedule
+- [ ] Injury reporting and modification protocols are in place
+- [ ] Intimacy and stage combat protocols followed where applicable
+
+Technical Integration:
+- [ ] Choreography is compatible with lighting design (not dancing in dark zones)
+- [ ] Costumes allow full range of required movement
+- [ ] Props and set pieces are integrated safely into movement sequences
+- [ ] Sound cues and music are reliable and consistent for timing
+- [ ] Quick changes are rehearsed and achievable in the allotted time
+
+Documentation:
+- [ ] Video documentation captured from audience perspective
+- [ ] Count sheets and formation charts are accurate and up to date
+- [ ] Notes for dance captain cover all sections including variations and fixes
+- [ ] Archival materials sufficient for restaging without choreographer present
+
+6) Templates (paste-ready)
+
+=== Choreographic Concept Document ===
+PROJECT: [Production/Event Name]
+CHOREOGRAPHER: [Name]
+DIRECTOR: [Name]
+MUSIC: [Composer/Track — Duration]
+CAST SIZE: [Number of dancers/performers]
+PERFORMANCE DATES: [Dates]
+VENUE: [Venue Name — Stage Type and Dimensions]
+
+ARTISTIC CONCEPT:
+[Description of the choreographic vision, themes, and emotional journey]
+
+MOVEMENT VOCABULARY:
+[Primary style and influences — e.g., "Contemporary release technique with pedestrian gesture vocabulary, influenced by Pina Bausch Tanztheater"]
+
+MUSICAL STRUCTURE:
+| Section      | Music Cue / Measures | Duration | Tempo    | Choreographic Intent             |
+|--------------|----------------------|----------|----------|----------------------------------|
+| Opening      | mm. 1–16             | 0:00–0:45| Adagio   | [Description]                    |
+| Development  | mm. 17–48            | 0:45–2:10| Allegro  | [Description]                    |
+| Climax       | mm. 49–64            | 2:10–3:00| Presto   | [Description]                    |
+| Resolution   | mm. 65–80            | 3:00–3:45| Largo    | [Description]                    |
+
+SPATIAL DESIGN:
+[Description of formations, pathways, use of levels, relationship to audience/camera]
+
+CASTING NOTES:
+[Solo roles, partnering assignments, ensemble groupings, understudy assignments]
+
+COSTUME REQUIREMENTS:
+[Movement requirements that affect costume design — range of motion, bare feet vs. shoes, quick changes]
+
+TECHNICAL NOTES:
+[Lighting needs, floor surface preferences, prop requirements, special effects]
+
+=== Rehearsal Schedule Template ===
+PRODUCTION: [Name]
+REHEARSAL PERIOD: [Start Date] – [End Date]
+LOCATION: [Studio Name / Address]
+
+| Date       | Time          | Focus                        | Dancers Called  | Notes           |
+|------------|---------------|------------------------------|-----------------|-----------------|
+| [Date]     | [Start–End]   | Warm-up + Phrase teaching S1  | Full cast       | Bring knee pads |
+| [Date]     | [Start–End]   | Partnering Section 2          | Duet pairs      | Spotter present |
+| [Date]     | [Start–End]   | Ensemble formations S1–S3     | Full cast       |                 |
+| [Date]     | [Start–End]   | Run-through + Notes           | Full cast       | Video capture   |
+| [Date]     | [Start–End]   | Spacing on stage              | Full cast       | Stage access    |
+| [Date]     | [Start–End]   | Tech/Dress rehearsal          | Full cast       | Full costume    |
+
+WARM-UP PROTOCOL: [Duration and structure — e.g., "20-minute company warm-up: joint mobilization, pliés, tendus, floor stretches, dynamic movement across the floor"]
+
+INJURY PROTOCOL: [Procedure — e.g., "Report immediately to stage manager; ice/rest/evaluate; if persistent, refer to company PT before resuming full movement"]
+
+=== Formation Chart Template ===
+SECTION: [Section Name / Number]
+COUNTS: [Starting count] – [Ending count]
+MUSIC CUE: [Description or measure number]
+
+STAGE DIAGRAM (viewed from audience):
+```
+          US (Upstage)
+   USR       USC       USL
+    +----+----+----+----+
+    |         |         |
+    |    3    |    4    |
+CSR |         |         | CSL
+    |    1    |    2    |
+    |         |         |
+    +----+----+----+----+
+   DSR       DSC       DSL
+          DS (Downstage)
+       ===== AUDIENCE =====
+```
+
+POSITIONS:
+| Dancer | Starting Position | Facing    | Movement Path        | Ending Position |
+|--------|-------------------|-----------|----------------------|-----------------|
+| 1      | DSC               | Front     | Travel USR diagonal  | USR             |
+| 2      | DSL               | Front     | Pivot → cross to DSR | DSR             |
+| 3      | USR               | SR Wing   | Enter → travel to CS | CS              |
+| 4      | USL               | Front     | Hold position        | USL             |
+
+TRANSITION TO NEXT SECTION:
+[Description of how dancers move from ending positions to the next formation]
+
+7) Examples of excellent outputs
+
+Example 1: Contemporary Dance Piece — Music Analysis and Count Sheet
+```
+PIECE: "Tidal Memory"
+MUSIC: "Nuvole Bianche" by Ludovico Einaudi (5:57)
+TEMPO: ♩= 68 BPM (Andante), rubato passages in bridge sections
+TIME SIGNATURE: 4/4
+
+SECTION A — Awakening (0:00–1:12)
+Measures 1–16 | Counts: 8x8
+- mm. 1–4 (counts 1–32): Solo dancer, floor work. Begin supine CS.
+  Slow unfurling from fetal position, spine-initiated. Breath-driven timing.
+  Movement quality: Suspended, liquid, interior focus.
+- mm. 5–8 (counts 33–64): Rise to standing through spiral pathway.
+  Weight shifts through parallel relevé, arms trace water imagery.
+  Spatial path: CS → slight DSR drift following arm gesture.
+- mm. 9–12 (counts 65–96): Walking phrase, pedestrian quality.
+  Four directions (DS, SR, US, SL), pause at each facing.
+  Quality shift: Grounded, weighted, deliberate.
+- mm. 13–16 (counts 97–128): First melodic statement. Port de bras phrase.
+  Expansive upper body, rooted lower body. Arms lead torso into off-balance.
+  Spatial: Travel SL on diagonal. End DSL facing USR.
+
+SECTION B — Gathering (1:12–2:48)
+Measures 17–40 | Counts: 24x8
+- mm. 17–20: Ensemble enters from SR and SL wings in staggered canon.
+  Walking in unison rhythm, 2 counts apart per dancer.
+  Formation: Diagonal line from USR to DSL.
+- mm. 21–28: Core ensemble phrase (taught in Rehearsal 2).
+  Unison phrase with successive timing on arm gestures.
+  Includes: chassé, contraction-release, spiral fall to floor, recovery.
+  8 counts of unison → 8 counts of canon (2-count offset).
+- mm. 29–36: Partnering section. Three duets formed from ensemble.
+  Counterbalance phrase → shared weight lean → supported hinge.
+  Lifts: Low lift only (hip-level), spotter assigned to Duet C.
+- mm. 37–40: Re-form ensemble. Circular pathway converging to tight cluster CS.
+  Breath unison: All inhale count 1, expand count 2, exhale 3–4.
+
+SECTION C — Storm (2:48–4:20)
+Measures 41–64 | Counts: 24x8
+[Fastest section — dynamic, percussive, full-stage use]
+- mm. 41–48: Rhythmic unison phrase. Stomps, claps, sharp directional changes.
+  Counts are syncopated: accents on "and" of 2 and 4.
+  Formation: V-shape facing DS, soloist at apex.
+- mm. 49–56: Controlled chaos. Semi-improvised section within spatial zones.
+  Each dancer has assigned quadrant and movement task (spin, fall, reach, run).
+  Music peaks at mm. 53 — all freeze on count 1 of m. 54 for 4 counts.
+- mm. 57–64: Soloist breakaway. Extended solo phrase traveling full DS edge.
+  Ensemble slowly sinks to floor in background, timing individual.
+
+SECTION D — Resolution (4:20–5:57)
+Measures 65–84 | Counts: 20x8
+- mm. 65–72: Ensemble slow rise. Canon of original unfurling motif from Section A.
+  Retrograde timing: last to enter is first to rise.
+- mm. 73–80: Final unison phrase. Simplified, breath-paced.
+  Same port de bras from m. 13–16, now performed by full ensemble.
+  Spatial: All travel on SL diagonal, arriving at starting positions reversed.
+- mm. 81–84: Stillness. All facing US. Slow exhale visible in torso.
+  Lights fade over final 8 counts. Blackout on count 8 of m. 84.
+```
+
+Example 2: Musical Theatre Choreography — Staging Notes
+```
+SHOW: "Midnight Revue" — Act I, Scene 4: "Stepping Out"
+STYLE: Jazz/Broadway (Bob Fosse influenced — angular isolations, turned-in positions)
+MUSIC: Up-tempo swing, ♩= 144 BPM, 4/4 time
+CAST: 8 ensemble dancers (4M, 4F) + 1 lead (F)
+STAGE: Proscenium, 40' wide x 30' deep, black box set with 2 rolling chairs as props
+
+CHOREOGRAPHIC NOTES:
+- Movement quality: Sharp, stylized, witty. Fosse vocabulary: turned-in
+  parallel, shoulder isolations, hip shifts, jazz hands, hat work.
+- Costumes: Bowler hats, vests, fitted pants. Hats are key props — must be
+  fitted securely for spins but removable for hat tricks.
+- Shoes: Character shoes with suede soles (no taps in this number).
+
+STAGING BREAKDOWN:
+Intro (8 bars, 64 counts):
+- Blackout. Ensemble preset: 4 seated on rolling chairs DSR and DSL (2 each side),
+  4 standing behind chairs. Lead enters from SL wing on count 1, spotlight follows.
+- Counts 1–16: Lead's solo walk across DS edge, Fosse strut (crossed steps,
+  shoulder roll each 4 counts). Arrive CSR, pose on count 16.
+- Counts 17–32: Chair dancers roll to CS in diamond formation, synchronized push.
+  Standing dancers walk behind in shadow.
+- Counts 33–64: Full cast position reveal. Lighting snaps to full stage wash.
+  8-count unison hit: step-touch-isolate-hold. Repeat 4x with directional changes.
+
+Verse 1 (16 bars, 128 counts):
+- Counts 1–32: Lead sings DSC, subtle weight shifts. Ensemble behind in
+  two diagonal lines, small synchronized gesture phrase (finger snaps,
+  head rolls, wrist circles).
+- Counts 33–64: Ensemble breaks into traveling phrase. Jazz walks SR→SL,
+  pivot, reverse. Lead moves upstage to join formation.
+- Counts 65–96: Partnering section. 4 couples, side-by-side (no contact yet).
+  Mirror phrase: jazz square, hip pop, shoulder shimmy, pose.
+- Counts 97–128: Formation change to single file DS. Sequential arm ripple
+  (wave effect, 1 count delay). Break to two horizontal lines for chorus.
+```
+
+Example 3: Audition Evaluation Rubric
+```
+PRODUCTION: [Show Name]
+AUDITION DATE: [Date]
+CHOREOGRAPHER: [Name]
+
+EVALUATION CRITERIA (Score 1–5 per category):
+
+TECHNICAL PROFICIENCY:
+| Criterion              | 1-Poor | 2-Fair | 3-Good | 4-Strong | 5-Excellent | Score |
+|------------------------|--------|--------|--------|----------|-------------|-------|
+| Alignment & Placement  |        |        |        |          |             |   /5  |
+| Turnout / Parallel Work|        |        |        |          |             |   /5  |
+| Core Strength & Control|        |        |        |          |             |   /5  |
+| Flexibility & Extension|        |        |        |          |             |   /5  |
+| Rhythm & Musicality    |        |        |        |          |             |   /5  |
+| Turns & Balances       |        |        |        |          |             |   /5  |
+| Jump / Elevation       |        |        |        |          |             |   /5  |
+Subtotal: /35
+
+ARTISTRY & PERFORMANCE:
+| Criterion              | 1-Poor | 2-Fair | 3-Good | 4-Strong | 5-Excellent | Score |
+|------------------------|--------|--------|--------|----------|-------------|-------|
+| Performance Quality    |        |        |        |          |             |   /5  |
+| Spatial Awareness      |        |        |        |          |             |   /5  |
+| Dynamic Range          |        |        |        |          |             |   /5  |
+| Style Adaptation       |        |        |        |          |             |   /5  |
+| Stage Presence         |        |        |        |          |             |   /5  |
+Subtotal: /25
+
+LEARNING & ADAPTABILITY:
+| Criterion              | 1-Poor | 2-Fair | 3-Good | 4-Strong | 5-Excellent | Score |
+|------------------------|--------|--------|--------|----------|-------------|-------|
+| Pick-Up Speed          |        |        |        |          |             |   /5  |
+| Retention After Demo   |        |        |        |          |             |   /5  |
+| Responsiveness to Notes|        |        |        |          |             |   /5  |
+Subtotal: /15
+
+TOTAL SCORE: /75
+CALLBACK: [ ] Yes  [ ] No  [ ] Maybe — for role: ___________
+NOTES: [Physical type, partnering compatibility, specific strengths/concerns]
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **Counts**: The rhythmic units used to time movement; typically groups of 8 ("eight-counts") in Western commercial and concert dance
+- **Phrase**: A sequence of movements forming a choreographic sentence, analogous to a musical phrase
+- **Canon**: A choreographic device where the same phrase is performed by different dancers at staggered intervals
+- **Unison**: All dancers performing the same movement at the same time
+- **Spacing**: The precise physical positions of dancers on stage, typically measured from stage landmarks (center line, plaster line)
+- **Formation**: The geometric arrangement of dancers as seen from the audience perspective
+- **Blocking**: The planned movement of performers through the stage space (distinct from choreography's detailed movement vocabulary)
+- **Marking**: Performing choreography at reduced energy and range of motion to conserve the body during rehearsal
+- **Dance Captain**: A designated performer who maintains the choreography in the choreographer's absence during a run
+- **Swing**: A performer who learns multiple ensemble tracks and can substitute for any absent dancer
+- **Labanotation**: A standardized system for recording human movement on paper, developed by Rudolf Laban
+- **Benesh Movement Notation (BMN)**: A visual notation system recording movement using a five-line staff representing the body
+- **Port de Bras**: Carriage of the arms; movement of the arms through various positions (from ballet vocabulary)
+- **Partnering / Pas de Deux**: Choreography involving two dancers in physical contact, including lifts, supports, and counterbalances
+
+Standards & Frameworks:
+- **SDC (Stage Directors and Choreographers Society)**: U.S. union representing professional choreographers
+- **SAG-AFTRA**: Union covering choreographers working in film, television, and recorded media
+- **Actors' Equity Association**: Union for stage performers; choreographers work under SDC agreements
+- **Safe in Dance International**: Global guidelines for dancer health, injury prevention, and safe rehearsal practices
+- **IADMS (International Association for Dance Medicine & Science)**: Evidence-based standards for dancer health and training
+- **SAFD (Society of American Fight Directors)**: Certification body for stage combat choreography
+- **Intimacy Directors and Coordinators (IDC)**: Standards for intimacy choreography in theater and film
+
+Common Tools:
+- **Music Editing**: Audacity, Logic Pro, GarageBand (for rehearsal cuts and loops)
+- **Video Documentation**: iPhone/camera video, DaVinci Resolve, iMovie (editing rehearsal footage)
+- **Notation**: LabanWriter, MacBenesh, MovEngine (digital notation software)
+- **Spatial Planning**: Stage Write, StagePlot Pro, Google Slides (formation diagrams)
+- **Rehearsal Management**: Google Calendar, StageWrite, Production Pro
+- **Communication**: Slack, WhatsApp groups (cast communication), Dropbox (video sharing)
+
+Change log
+[2025-01]: Comprehensive Choreographer playbook created
+- Covers stage, film, TV, music video, and commercial choreography
+- Movement vocabulary development and music analysis workflows
+- Formation charting and spatial design templates
+- Safety protocols for lifts, partnering, and stage combat
+- Regional variations for US, UK, Europe, and Asia-Pacific
+- Audition evaluation rubrics and rehearsal scheduling
+- Documentation and archival standards (video + notation)
+- Collaboration workflows with directors, music directors, and design teams
+- Dance captain briefing and long-run maintenance procedures

@@ -1,5 +1,36 @@
 # NV oOS Content Graph — Changelog
 
+## 1.0.4 — 2026-09-05
+
+### New — Visual Experience System
+
+- **Appearance settings tab** — theme (dark / light / auto / WordPress-admin), color-by mode (type / community / degree / monochrome), icon style (filled / outline / high-contrast), optional shape encoding, edge styles, edge-label modes, node-size and label-font controls, animation toggle, per-type color and icon override grids, a live WCAG 2.2 contrast report, and one-click style presets (Default / High Contrast / Editorial / Minimal)
+- **Theme engine** (`assets/js/content-graph-theme.js` + `src/Visual/Tokens.php`) — single shared token registry drives both the admin explorer and the front-end embed; every curated type color is lightness-corrected per theme so it meets ≥ 3:1 contrast (SC 1.4.11) on both canvases; label and selection colors meet ≥ 4.5:1 / ≥ 3:1
+- **Type design system** — inline-SVG stroke icon glyphs (`assets/js/content-graph-icons.js`, 24 glyphs), monogram fallback for unknown types (CPTs, CCTs, remote sources), and a deterministic algorithmic color for uncurated types
+- **Explorer chrome** — auto-generated interactive legend (click a row to filter), minimap with click/drag panning, zoom cluster with % badge, layout presets (fcose balanced/compact, circle, grid, concentric, breadth-first), fullscreen toggle, view persistence via localStorage
+- **Edge upgrades** — new `GET /edges` REST route; edges render up front with relationship color families (hierarchical / similarity / reference / authorship), arrow / tapered / haystack density presets, hover edge labels, and a 2,000-edge render budget with auto-density above 500
+- **Accessibility & performance** — keyboard navigation (arrows / Enter / Escape / + / − / 0), `prefers-reduced-motion` support, zoom-aware label density, texture-on-viewport rendering, pixelRatio 1
+- **Export** — theme / transparent / white backgrounds and 1×/2×/3× scale options
+- **Frontend parity** — `[nvoos_graph]` and the block gain `theme`, `color_by`, `show_legend`, `show_icons`, `show_edges`, `edge_style`, `min_label_zoom`, `label_font_size` attributes; block attributes left unset (in the block code editor) inherit Appearance settings until changed
+- **Filters** — `nvoos_content_graph/type_palette`, `nvoos_content_graph/type_icons`, `nvoos_content_graph/visual_config` (addons can register icons/colors for their own node types)
+- Docs: `docs/visual-theming.md`; parity/contrast verification script at `scripts/verify-theme-engine.js`; PHPUnit coverage in `tests/Unit/Visual/TokensTest.php` and `tests/Unit/Admin/AppearanceSectionTest.php`
+
+### New — Checkout for the AI addon
+
+- **Checkout for the AI addon** — the "Get NV oOS Content Graph — AI" upsell buttons now open a Stripe Payment Element modal, verify the payment via the vendor checkout API, record a local license key, and install + activate the addon from a signed download URL in one flow
+- **No Stripe keys in the plugin** — PaymentIntent creation, the Stripe secret key, server-side verification, and signed download URLs are delegated to the vendor checkout API (see `docs/commerce-vendor-api.md`); customers simply pay with their card
+- New REST endpoints: `POST /payments/session` and `POST /payments/verify` (admin-only, cookie + nonce auth)
+- Filters: `nvoos_content_graph/payments/vendor_api_url`, `nvoos_content_graph/payments/price_cents`, `nvoos_content_graph/payments/addon_version`, `nvoos_content_graph/payments/addon_zip_url`, `nvoos_content_graph/payments/fallback_url`
+- **Checkout-unavailable fallback** — when the `/payments/session` endpoint is unreachable (network failure, 404, or 5xx), the purchase modal redirects to the vendor product page (`https://nvdigitalsolutions.com/plugins/nvoos-content-graph-ai/` by default, filterable; empty = disabled) instead of dead-ending in an error
+
+### Security
+
+- The browser never sees a secret key; the publishable key is returned per-session by the vendor
+- Stripe.js is not enqueued with the settings page — it is injected on demand when the purchase modal opens, so no third-party script loads without an explicit user action
+- Verification (status, amount, product, site binding) happens on the vendor's server; the plugin re-checks only the HTTPS scheme of the returned download URL
+- Checkout-session creation is throttled per user (max 5 per 10 minutes)
+- Install ZIP downloads go through `download_url()` + `Plugin_Upgrader` with the same filesystem checks as wp-admin installs
+
 ## 1.0.3 — 2026-08-20
 
 ### Security

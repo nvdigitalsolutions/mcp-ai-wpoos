@@ -173,29 +173,32 @@ class WP_MCP_AI_Settings_Checkbox_Clearing_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that saving settings from one tab doesn't clear checkboxes from another tab.
-	 * This is the key test for the issue described in the problem statement.
+	 * Test that saving the logs subtab doesn't clear fields from other subtabs.
+	 *
+	 * This is the key test for the issue described in the problem statement:
+	 * saving one subtab must not clear settings owned by another subtab.
 	 */
-	public function test_saving_advanced_tab_preserves_general_tab_checkboxes() {
-		// First, set up initial settings with enable_logging turned on.
+	public function test_saving_logs_subtab_preserves_core_subtab_fields() {
+		// First, set up initial settings.
 		$initial_settings = array(
-			'enable_logging'          => true,
+			'default_provider'        => 'embedded',
+			'enable_logging'          => false,
 			'enable_extended_logging' => false,
 			'openai_api_key'          => 'test-key',
 		);
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $initial_settings );
 
-		// Now simulate saving the Advanced tab with enable_extended_logging turned on.
-		// The key here is that enable_logging is NOT in the posted settings because.
-		// it's on a different tab (General tab).
-		$dashboard       = new WP_MCP_AI_Settings_Dashboard();
-		$posted_settings = array(
-			'enable_extended_logging' => '1', // From Advanced tab.
-			// Note: enable_logging is NOT here because we're on the Advanced tab.
+		// Simulate saving the General tab's logs subtab with extended logging on.
+		$_POST['subtab_general'] = 'logs';
+		$dashboard               = new WP_MCP_AI_Settings_Dashboard();
+		$posted_settings         = array(
+			'enable_extended_logging' => '1', // From logs subtab.
+			// Note: default_provider is NOT here because it's on the core subtab.
 		);
 
-		// Sanitize only the advanced tab settings.
-		$sanitized = $dashboard->sanitize_settings( $posted_settings, 'advanced' );
+		// Sanitize only the general tab settings.
+		$sanitized = $dashboard->sanitize_settings( $posted_settings, 'general' );
+		unset( $_POST['subtab_general'] );
 
 		// Get the existing settings from the database.
 		$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
@@ -203,41 +206,43 @@ class WP_MCP_AI_Settings_Checkbox_Clearing_Test extends WP_UnitTestCase {
 		// Merge as the dashboard does.
 		$merged = array_merge( $existing_settings, $sanitized );
 
-		// The critical assertion: enable_logging should still be true.
-		// It should NOT have been cleared just because we saved the Advanced tab.
-		$this->assertTrue(
-			$merged['enable_logging'],
-			'enable_logging from General tab should remain true when saving Advanced tab'
-		);
-
-		// And enable_extended_logging should now be true.
+		// The critical assertions: enable_extended_logging should now be true
+		// and default_provider from the core subtab must be preserved.
 		$this->assertTrue(
 			$merged['enable_extended_logging'],
-			'enable_extended_logging should be true after saving Advanced tab'
+			'enable_extended_logging should be true after saving the logs subtab'
+		);
+		$this->assertSame(
+			'embedded',
+			$merged['default_provider'],
+			'default_provider from the core subtab should remain intact when saving the logs subtab'
 		);
 	}
 
 	/**
-	 * Test that saving settings from general tab preserves advanced tab checkboxes.
+	 * Test that saving the core subtab preserves logs subtab checkboxes.
 	 */
-	public function test_saving_general_tab_preserves_advanced_tab_checkboxes() {
-		// First, set up initial settings with enable_extended_logging turned on.
+	public function test_saving_core_subtab_preserves_logs_subtab_checkboxes() {
+		// First, set up initial settings with extended logging turned on.
 		$initial_settings = array(
+			'default_provider'        => 'embedded',
 			'enable_logging'          => false,
 			'enable_extended_logging' => true,
 			'openai_api_key'          => 'test-key',
 		);
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $initial_settings );
 
-		// Now simulate saving the General tab with enable_logging turned on.
-		$dashboard       = new WP_MCP_AI_Settings_Dashboard();
-		$posted_settings = array(
-			'enable_logging' => '1', // From General tab.
-			// Note: enable_extended_logging is NOT here because we're on the General tab.
+		// Simulate saving the General tab's core subtab.
+		$_POST['subtab_general'] = 'core';
+		$dashboard               = new WP_MCP_AI_Settings_Dashboard();
+		$posted_settings         = array(
+			'default_provider' => 'embedded', // From core subtab.
+			// Note: enable_extended_logging is NOT here because it's on the logs subtab.
 		);
 
 		// Sanitize only the general tab settings.
 		$sanitized = $dashboard->sanitize_settings( $posted_settings, 'general' );
+		unset( $_POST['subtab_general'] );
 
 		// Get the existing settings from the database.
 		$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
@@ -248,13 +253,14 @@ class WP_MCP_AI_Settings_Checkbox_Clearing_Test extends WP_UnitTestCase {
 		// The critical assertion: enable_extended_logging should still be true.
 		$this->assertTrue(
 			$merged['enable_extended_logging'],
-			'enable_extended_logging from Advanced tab should remain true when saving General tab'
+			'enable_extended_logging from the logs subtab should remain true when saving the core subtab'
 		);
 
-		// And enable_logging should now be true.
-		$this->assertTrue(
-			$merged['enable_logging'],
-			'enable_logging should be true after saving General tab'
+		// And default_provider should now be embedded.
+		$this->assertSame(
+			'embedded',
+			$merged['default_provider'],
+			'default_provider should be embedded after saving the core subtab'
 		);
 	}
 
@@ -302,9 +308,11 @@ class WP_MCP_AI_Settings_Checkbox_Clearing_Test extends WP_UnitTestCase {
 	public function test_select_field_with_string_keys_saves_correctly() {
 		$section = new WP_MCP_AI_Section_General();
 
-		// Simulate form submission with string-based select.
+		// Simulate form submission with string-based select. Only configured
+		// providers are selectable as default, so use the always-available
+		// embedded provider.
 		$submitted = array(
-			'default_provider'  => 'gemini', // String key.
+			'default_provider'  => 'embedded', // String key.
 			'default_assistant' => '0', // "None" option.
 			'enable_logging'    => '1',
 		);
@@ -315,7 +323,7 @@ class WP_MCP_AI_Settings_Checkbox_Clearing_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'default_provider', $sanitized, 'default_provider should be in sanitized settings' );
 
 		// The default_provider should be a string.
-		$this->assertSame( 'gemini', $sanitized['default_provider'], 'default_provider should be "gemini"' );
+		$this->assertSame( 'embedded', $sanitized['default_provider'], 'default_provider should be "embedded"' );
 
 		// The default_assistant should be 0 (integer, not string "0").
 		$this->assertSame( 0, $sanitized['default_assistant'], 'default_assistant should be 0 when set to "None"' );

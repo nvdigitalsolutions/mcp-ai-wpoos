@@ -38,6 +38,13 @@ class WP_MCP_AI_Transcript_Mining_Job_Logging_Test extends WP_UnitTestCase {
 	private $mock_messages = array();
 
 	/**
+	 * Callable that preempts the wp-cron loopback spawned by enqueue().
+	 *
+	 * @var callable|null
+	 */
+	private $cron_loopback_guard = null;
+
+	/**
 	 * Set up.
 	 */
 	public function setUp(): void {
@@ -49,6 +56,12 @@ class WP_MCP_AI_Transcript_Mining_Job_Logging_Test extends WP_UnitTestCase {
 				'enable_logging' => true,
 			)
 		);
+
+		// Logging is opt-in: drop the static settings cache so the write above
+		// is what is_logging_enabled() observes, independent of options left
+		// behind by earlier suites in the same process.
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
 		delete_option( WP_MCP_AI_Logger::RECENT_ACTIVITY_OPTION );
 		delete_option( WP_MCP_AI_Logger::RECENT_ERRORS_OPTION );
 
@@ -57,6 +70,22 @@ class WP_MCP_AI_Transcript_Mining_Job_Logging_Test extends WP_UnitTestCase {
 
 		add_filter( 'wp_mcp_ai_mine_transcripts_sessions', array( $this, 'inject_sessions' ), 10, 2 );
 		add_filter( 'wp_mcp_ai_mine_transcripts_session_messages', array( $this, 'inject_messages' ), 10, 3 );
+
+		// enqueue() spawns wp-cron via an HTTP loopback; in CI that fires the
+		// first tick in a separate PHP process using the real tool, racing the
+		// explicit handle_tick() calls below. Preempt the loopback so ticks
+		// only ever run in-process.
+		$this->cron_loopback_guard = static function ( $preempt, $parsed_args, $url ) {
+			unset( $parsed_args );
+			if ( false !== strpos( $url, 'wp-cron.php' ) ) {
+				return array(
+					'response' => array( 'code' => 500 ),
+					'body'     => '',
+				);
+			}
+			return $preempt;
+		};
+		add_filter( 'pre_http_request', $this->cron_loopback_guard, 1, 3 );
 	}
 
 	/**
@@ -65,6 +94,8 @@ class WP_MCP_AI_Transcript_Mining_Job_Logging_Test extends WP_UnitTestCase {
 	public function tearDown(): void {
 		remove_filter( 'wp_mcp_ai_mine_transcripts_sessions', array( $this, 'inject_sessions' ), 10 );
 		remove_filter( 'wp_mcp_ai_mine_transcripts_session_messages', array( $this, 'inject_messages' ), 10 );
+		remove_filter( 'pre_http_request', $this->cron_loopback_guard, 1 );
+		$this->cron_loopback_guard = null;
 
 		delete_option( WP_MCP_AI_Logger::RECENT_ACTIVITY_OPTION );
 		delete_option( WP_MCP_AI_Logger::RECENT_ERRORS_OPTION );

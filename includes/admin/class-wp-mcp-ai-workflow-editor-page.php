@@ -308,6 +308,16 @@ class WP_MCP_AI_Workflow_Editor_Page {
 
 		$result = wp_mcp_ai_execute_workflow( $workflow_slug, $params );
 
+		// wp_mcp_ai_execute_workflow() may return WP_Error (e.g. workflow not
+		// found); surface the message instead of indexing into the object.
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error(
+				array(
+					'message' => $result->get_error_message(),
+				)
+			);
+		}
+
 		if ( isset( $result['success'] ) && $result['success'] ) {
 			wp_send_json_success(
 				array(

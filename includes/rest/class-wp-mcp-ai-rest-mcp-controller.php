@@ -86,7 +86,13 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 						'jsonrpc'    => array(
 							'description'       => __( 'JSON-RPC version. Must be "2.0".', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
-							'required'          => true,
+							// Deliberately not `required`: JSON-RPC 2.0 mandates that a
+							// malformed request be answered with a -32600 error inside a
+							// JSON-RPC envelope. Marking this required makes WordPress
+							// answer `rest_missing_callback_param` first, which is not a
+							// valid JSON-RPC response and made the handler's own
+							// validation unreachable. process_single_mcp_message()
+							// enforces presence and the "2.0" value.
 							'enum'              => array( '2.0' ),
 							'sanitize_callback' => 'sanitize_text_field',
 						),
@@ -101,7 +107,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 						'method'     => array(
 							'description'       => __( 'MCP method name to invoke.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
-							'required'          => true,
+							// Not `required` for the same reason as `jsonrpc` above.
 							'validate_callback' => array( $this, 'validate_mcp_method' ),
 							'sanitize_callback' => 'sanitize_text_field',
 						),
@@ -670,8 +676,26 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 *
 	 * @return bool True when enabled.
 	 */
+	/**
+	 * Whether the legacy HTTP+SSE transport handshake is enabled.
+	 *
+	 * Enabled by default for legacy MCP clients that send a pure
+	 * `Accept: text/event-stream` header. Sites (and tests) can disable it
+	 * via the WP_MCP_AI_LEGACY_SSE_ENABLED constant or the
+	 * wp_mcp_ai_legacy_sse_enabled filter — mixed Accept headers that
+	 * include application/json never trigger the legacy handshake.
+	 *
+	 * @return bool True when the legacy SSE handshake is enabled.
+	 */
 	protected function legacy_sse_enabled() {
-		return ! defined( 'WP_MCP_AI_LEGACY_SSE_ENABLED' ) || WP_MCP_AI_LEGACY_SSE_ENABLED;
+		$enabled = defined( 'WP_MCP_AI_LEGACY_SSE_ENABLED' ) ? WP_MCP_AI_LEGACY_SSE_ENABLED : true;
+
+		/**
+		 * Filter whether the legacy MCP HTTP+SSE handshake is enabled.
+		 *
+		 * @param bool $enabled Whether legacy SSE is enabled.
+		 */
+		return (bool) apply_filters( 'wp_mcp_ai_legacy_sse_enabled', $enabled );
 	}
 
 	/**

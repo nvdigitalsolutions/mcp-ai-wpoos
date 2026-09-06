@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Pro plugin constants.
 if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-	define( 'WP_MCP_AI_PRO_VERSION', '1.1.62' );
+	define( 'WP_MCP_AI_PRO_VERSION', '1.1.71' );
 }
 if ( ! defined( 'WP_MCP_AI_PRO_FILE' ) ) {
 	define( 'WP_MCP_AI_PRO_FILE', __FILE__ );
@@ -160,6 +160,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 		$pro_packages_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-packages-settings-page.php';
 		if ( file_exists( $pro_packages_page ) ) {
 			require_once $pro_packages_page;
+		}
+
+		// Load Addons admin page (one-click install for standalone addons).
+		$addons_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-addons-page.php';
+		if ( file_exists( $addons_page ) ) {
+			require_once $addons_page;
+			// Note: Class instantiates itself at the bottom of the file.
 		}
 
 		// Load LangChain.js enqueue manager (pro-only feature for embedded LLM orchestration).
@@ -375,6 +382,97 @@ if ( ! function_exists( 'wp_mcp_ai_pro_is_woocommerce_tools_enabled' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_mcp_ai_pro_vendor_is_intact' ) ) {
+	/**
+	 * Check whether the Composer vendor autoloader shipped with the Pro addon
+	 * is complete enough to load without a fatal error.
+	 *
+	 * Composer's generated autoloader eagerly requires every file listed in
+	 * vendor/composer/autoload_files.php. If one of those files is missing
+	 * (e.g. after a partial update on a distributed filesystem), requiring
+	 * vendor/autoload.php fatals the whole site. Detect that state up front
+	 * so Pro can degrade to an admin notice instead of a white screen.
+	 *
+	 * @since 1.1.72
+	 *
+	 * @return true|array True when the vendor tree is loadable, or an array of missing file paths.
+	 */
+	function wp_mcp_ai_pro_vendor_is_intact() {
+		$pro_root   = untrailingslashit( WP_MCP_AI_PRO_PATH );
+		$vendor_dir = $pro_root . '/vendor';
+
+		$critical = array(
+			$vendor_dir . '/autoload.php',
+			$vendor_dir . '/composer/autoload_real.php',
+			$vendor_dir . '/composer/autoload_files.php',
+			$vendor_dir . '/composer/ClassLoader.php',
+		);
+
+		$missing = array();
+		foreach ( $critical as $file ) {
+			if ( ! file_exists( $file ) ) {
+				$missing[] = str_replace( WP_MCP_AI_PRO_PATH, '', $file );
+			}
+		}
+
+		// Cross-check the Composer "files" map against the filesystem.
+		$autoload_files_php = $vendor_dir . '/composer/autoload_files.php';
+		if ( file_exists( $autoload_files_php ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local generated autoload map, not a remote resource.
+			$content = file_get_contents( $autoload_files_php );
+			if ( false !== $content && preg_match_all( '/\$(vendorDir|baseDir)(\s*\.\s*\'(?:[^\'\\\\]|\\\\.)*\')+/', $content, $matches ) ) {
+				foreach ( $matches[0] as $expr ) {
+					$base = ( 0 === strpos( $expr, '$vendorDir' ) ) ? $vendor_dir : $pro_root;
+					preg_match_all( '/\'((?:[^\'\\\\]|\\\\.)*)\'/', $expr, $parts );
+					$relative = '';
+					foreach ( $parts[1] as $part ) {
+						$relative .= stripcslashes( $part );
+					}
+					if ( '' !== $relative ) {
+						$absolute = $base . $relative;
+						if ( ! file_exists( $absolute ) ) {
+							$missing[] = str_replace( WP_MCP_AI_PRO_PATH, '', $absolute );
+						}
+					}
+				}
+			}
+		}
+
+		$missing = array_values( array_unique( $missing ) );
+
+		return empty( $missing ) ? true : $missing;
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_pro_vendor_incomplete_notice' ) ) {
+	/**
+	 * Display an admin notice when the Pro vendor autoloader is incomplete.
+	 *
+	 * Pro features are disabled until the addon is re-installed or updated so
+	 * the site keeps running on the base plugin alone.
+	 *
+	 * @since 1.1.72
+	 *
+	 * @param array $missing_files List of missing file paths (relative to the Pro root).
+	 */
+	function wp_mcp_ai_pro_vendor_incomplete_notice( $missing_files ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$sample  = implode( ', ', array_slice( (array) $missing_files, 0, 3 ) );
+		$message = sprintf(
+			/* translators: %s: comma-separated sample of missing vendor file paths */
+			'<strong>NV oOS Pro:</strong> ' . esc_html__( 'The Pro addon vendor files are incomplete (missing: %s). Pro features have been disabled to protect the site. Please re-run the Pro update from NV oOS &#8594; Settings &#8594; Advanced &#8594; Data Management, or re-upload the Pro addon ZIP via Plugins &#8594; Add New &#8594; Upload Plugin.', 'mcp-ai-wpoos-pro' ),
+			esc_html( $sample )
+		);
+		printf(
+			'<div class="notice notice-error"><p>%s</p></div>',
+			wp_kses_post( $message )
+		);
+	}
+}
+
 if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 	/**
 	 * Initialize Open Operator System Pro.
@@ -395,6 +493,25 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		if ( version_compare( PHP_VERSION, '8.1.0', '>=' ) ) {
 			$pro_vendor_autoload = WP_MCP_AI_PRO_PATH . 'vendor/autoload.php';
 			if ( file_exists( $pro_vendor_autoload ) ) {
+				// Guard against a partially installed vendor tree. Requiring the
+				// autoloader when a files-map entry is missing fatals the whole
+				// site, so degrade to an admin notice instead.
+				$vendor_check = wp_mcp_ai_pro_vendor_is_intact();
+				if ( true !== $vendor_check ) {
+					if ( is_admin() ) {
+						add_action(
+							'admin_notices',
+							function () use ( $vendor_check ) {
+								wp_mcp_ai_pro_vendor_incomplete_notice( $vendor_check );
+							}
+						);
+					}
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only diagnostics for a broken vendor install.
+						error_log( 'WP MCP AI Pro: vendor autoload incomplete, Pro disabled. Missing: ' . implode( ', ', $vendor_check ) );
+					}
+					return;
+				}
 				require_once $pro_vendor_autoload;
 			}
 		}
@@ -650,7 +767,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast' => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-unified-channel-broadcast.php',
 			// Email and communication tools.
 			'WP_MCP_AI_Pro_Tool_Search_Gmail'              => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-search-gmail.php',
+			'WP_MCP_AI_Pro_Tool_Get_Gmail_Message'         => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-get-gmail-message.php',
+			'WP_MCP_AI_Pro_Tool_Get_Gmail_Thread'          => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-get-gmail-thread.php',
+			'WP_MCP_AI_Pro_Tool_List_Gmail_Connections'    => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-list-gmail-connections.php',
+			'WP_MCP_AI_Pro_Tool_Modify_Gmail_Message'      => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-modify-gmail-message.php',
 			'WP_MCP_AI_Pro_Tool_Search_Drive'              => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-search-drive.php',
+			'WP_MCP_AI_Pro_Tool_Get_Drive_File'            => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-get-drive-file.php',
+			'WP_MCP_AI_Pro_Tool_List_Drive_Connections'    => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-list-drive-connections.php',
 			'WP_MCP_AI_Pro_Tool_Send_Mailjet_Email'        => WP_MCP_AI_PRO_PATH . 'includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-send-mailjet-email.php',
 			'WP_MCP_AI_Pro_Tool_Send_Brevo_Email'          => WP_MCP_AI_PRO_PATH . 'includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-send-brevo-email.php',
 			'WP_MCP_AI_Pro_Tool_Manage_Brevo_Contacts'     => WP_MCP_AI_PRO_PATH . 'includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-manage-brevo-contacts.php',
@@ -658,6 +781,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Send_Mailgun_Email'        => WP_MCP_AI_PRO_PATH . 'includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-send-mailgun-email.php',
 			// Google Workspace tools.
 			'WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event' => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-create-google-calendar-event.php',
+			'WP_MCP_AI_Pro_Tool_List_Google_Calendars'     => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-list-google-calendars.php',
+			'WP_MCP_AI_Pro_Tool_List_Google_Calendar_Events' => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-list-google-calendar-events.php',
+			'WP_MCP_AI_Pro_Tool_Update_Google_Calendar_Event' => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-update-google-calendar-event.php',
+			'WP_MCP_AI_Pro_Tool_Delete_Google_Calendar_Event' => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-delete-google-calendar-event.php',
+			'WP_MCP_AI_Pro_Tool_Check_Google_Calendar_Availability' => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-check-google-calendar-availability.php',
+			'WP_MCP_AI_Pro_Tool_Quick_Add_Google_Calendar_Event' => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-quick-add-google-calendar-event.php',
 			'WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report' => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-get-google-analytics-report.php',
 			// Business and accounting tools.
 			'WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report'     => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-get-quickbooks-report.php',
@@ -781,7 +910,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Get_Sequence_Performance'  => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/sequences/class-wp-mcp-ai-tool-get-sequence-performance.php',
 
 				// â”€â”€ Phase D: Command Center (5) â”€â”€
-				'WP_MCP_AI_Tool_Create_Workflow_Rule'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/command-center/class-wp-mcp-ai-tool-create-workflow-rule.php',
+				'WP_MCP_AI_Tool_Create_Crm_Workflow_Rule'  => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/command-center/class-wp-mcp-ai-tool-create-crm-workflow-rule.php',
 				'WP_MCP_AI_Tool_Manage_Workflow_Rules'     => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/command-center/class-wp-mcp-ai-tool-manage-workflow-rules.php',
 				'WP_MCP_AI_Tool_Simulate_Workflow_Rule'    => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/command-center/class-wp-mcp-ai-tool-simulate-workflow-rule.php',
 				'WP_MCP_AI_Tool_Get_Workflow_Inbox'        => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/command-center/class-wp-mcp-ai-tool-get-workflow-inbox.php',
@@ -1187,7 +1316,6 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Export_Products_Report'   => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-export-products-report.php',
 				'WP_MCP_AI_Tool_Sync_Product_Inventory'   => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-sync-product-inventory.php',
 				// Order Management tools.
-				'WP_MCP_AI_Tool_Generate_Invoice_PDF'     => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-generate-invoice-pdf.php',
 				'WP_MCP_AI_Tool_Bulk_Order_Status_Update' => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-bulk-order-status-update.php',
 				'WP_MCP_AI_Tool_Get_Order_Analytics'      => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-get-order-analytics.php',
 				'WP_MCP_AI_Tool_Process_Order_Workflow'   => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-process-order-workflow.php',
@@ -1211,10 +1339,17 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Shipping_Box_Packer'      => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-shipping-box-packer.php',
 				'WP_MCP_AI_Tool_Shipping_Rate_Estimator'  => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-shipping-rate-estimator.php',
 			);
-			$pro_tools               = array_merge( $pro_tools, $ecommerce_toolkit_tools );
+
+			// Preserve the WooCommerce order-based invoice contract when the
+			// generic document-generation implementation is not enabled.
+			if ( empty( $settings['enable_document_generation_toolkit'] ) ) {
+				$ecommerce_toolkit_tools['WP_MCP_AI_Tool_Generate_WooCommerce_Order_Invoice_PDF'] = WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-generate-woocommerce-order-invoice-pdf.php';
+			}
+
+			$pro_tools = array_merge( $pro_tools, $ecommerce_toolkit_tools );
 		}
 
-		// Add FlowHub Inventory Sync Toolkit tools if enabled (Pro feature â€” FlowHub POS integration).
+		// Add FlowHub Inventory Sync Toolkit tools if enabled (Pro feature — FlowHub POS integration).
 		if ( ! empty( $settings['enable_flowhub_toolkit'] ) && class_exists( 'WooCommerce' ) ) {
 			$flowhub_toolkit_tools = array(
 				'WP_MCP_AI_Pro_Tool_FlowHub_Inventory' => WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-inventory.php',
@@ -1806,6 +1941,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools     = array_merge( $pro_tools, $ext_cog_tools );
 		}
 
+		// Vision Analysis Toolkit (image object counting, 1.1.68).
+		if ( ! empty( $settings['enable_vision_analysis_toolkit'] ) ) {
+			$vision_analysis_tools = array(
+				'WP_MCP_AI_Tool_Analyze_Image_Objects' => WP_MCP_AI_PRO_PATH . 'includes/tools/vision-analysis/class-wp-mcp-ai-tool-analyze-image-objects.php',
+			);
+			$pro_tools             = array_merge( $pro_tools, $vision_analysis_tools );
+		}
+
 		/**
 		 * Filter the list of Pro tools to register.
 		 *
@@ -1814,6 +1957,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		 * @param array $pro_tools Array of tool class names and file paths.
 		 */
 		$pro_tools = apply_filters( 'wp_mcp_ai_pro_tools', $pro_tools );
+
+		// Cache the computed map so consumers (e.g. the token-usage service's
+		// unregistered-tools fallback) can enumerate every Pro tool — including
+		// the ones gated off by settings — without rebuilding it.
+		$GLOBALS['wp_mcp_ai_pro_tools_map'] = $pro_tools;
 
 		/**
 		 * Trigger the action to load toolkit-specific tools.
@@ -1838,14 +1986,19 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 					}
 
 					if ( $should_register ) {
-						$registered = $registry->register_tool( new $class() );
+						$tool = new $class();
 
 						// Legacy-format classes (pre-interface) are transparently
 						// wrapped so they still register with the canonical tool
-						// interface.
-						if ( ! $registered && class_exists( 'WP_MCP_AI_Legacy_Tool_Wrapper' ) ) {
-							$registered = $registry->register_tool( new WP_MCP_AI_Legacy_Tool_Wrapper( new $class() ) );
+						// interface. Wrap BEFORE the first register attempt so the
+						// registry's fail-loud "missing interface" log is not
+						// emitted for a class that is about to register
+						// successfully via the wrapper.
+						if ( ! $tool instanceof WP_MCP_AI_Tool_Interface && class_exists( 'WP_MCP_AI_Legacy_Tool_Wrapper' ) ) {
+							$tool = new WP_MCP_AI_Legacy_Tool_Wrapper( $tool );
 						}
+
+						$registered = $registry->register_tool( $tool );
 
 						if ( ! $registered && method_exists( $registry, 'mark_tool_unavailable' ) ) {
 							$skipped = new $class();
@@ -1864,6 +2017,23 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				}
 			}
 		}
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_pro_get_tool_map' ) ) {
+	/**
+	 * Retrieve the last-computed Pro tool class => file map.
+	 *
+	 * Populated by {@see wp_mcp_ai_pro_register_tools()} whenever the Pro tool
+	 * registry runs. Returns an empty array before the first registration pass.
+	 *
+	 * @since 1.1.69
+	 *
+	 * @return array<string, string> Tool class names keyed to their file paths.
+	 */
+	function wp_mcp_ai_pro_get_tool_map() {
+		$map = isset( $GLOBALS['wp_mcp_ai_pro_tools_map'] ) ? $GLOBALS['wp_mcp_ai_pro_tools_map'] : array();
+		return is_array( $map ) ? $map : array();
 	}
 }
 
@@ -2011,116 +2181,129 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 		// Pro tools and their group assignments.
 		$pro_tools = array(
 			// Remote WordPress/WooCommerce Connection - Requires external API access.
-			'remote_wp_connection'            => 'external-tools',
+			'remote_wp_connection'               => 'external-tools',
 			// Printful Print-on-Demand - Requires external API access.
-			'printful'                        => 'external-tools',
+			'printful'                           => 'external-tools',
 			// Exec service tools (video, audio, CLI) - Pro features.
-			'check_wp_cli'                    => 'wordpress-core',
-			'extract_video_frames'            => 'wordpress-core',
-			'get_video_metadata'              => 'wordpress-core',
-			'remove_background'               => 'wordpress-core',
-			'generate_jukebox_music'          => 'external-tools',
-			'check_jukebox_status'            => 'external-tools',
+			'check_wp_cli'                       => 'wordpress-core',
+			'extract_video_frames'               => 'wordpress-core',
+			'get_video_metadata'                 => 'wordpress-core',
+			'remove_background'                  => 'wordpress-core',
+			'generate_jukebox_music'             => 'external-tools',
+			'check_jukebox_status'               => 'external-tools',
 			// Product Actualization - Requires external APIs (OpenAI, Gemini).
-			'product_actualization'           => 'external-tools',
+			'product_actualization'              => 'external-tools',
 			// Validate Image for Product Placement - Requires OpenAI Vision API.
-			'validate_image_for_product'      => 'external-tools',
+			'validate_image_for_product'         => 'external-tools',
 			// Validate Image for Vehicle Estimate - Requires OpenAI Vision API.
-			'validate_image_for_vehicle'      => 'external-tools',
+			'validate_image_for_vehicle'         => 'external-tools',
 			// Product Price Lookup - Requires external APIs (Crawl4AI, Google Vision).
-			'lookup_product_price'            => 'external-tools',
+			'lookup_product_price'               => 'external-tools',
 			// Listing image download tools - Require external API credentials.
-			'download_google_maps_images'     => 'external-tools',
-			'download_facebook_page_images'   => 'external-tools',
-			'download_instagram_page_images'  => 'external-tools',
+			'download_google_maps_images'        => 'external-tools',
+			'download_facebook_page_images'      => 'external-tools',
+			'download_instagram_page_images'     => 'external-tools',
 			// WooCommerce tools - Require WooCommerce plugin.
-			'woo_products'                    => 'wordpress-plugins',
-			'woo_orders'                      => 'wordpress-plugins',
-			'woo_customers'                   => 'wordpress-plugins',
-			'woo_coupons'                     => 'wordpress-plugins',
+			'woo_products'                       => 'wordpress-plugins',
+			'woo_orders'                         => 'wordpress-plugins',
+			'woo_customers'                      => 'wordpress-plugins',
+			'woo_coupons'                        => 'wordpress-plugins',
 			// JetEngine tools - Require JetEngine plugin.
-			'jetengine'                       => 'wordpress-plugins',
-			'jetengine_mcp'                   => 'wordpress-plugins',
-			'jetengine_create_post_type'      => 'wordpress-plugins',
-			'jetengine_create_taxonomy'       => 'wordpress-plugins',
-			'jetengine_create_meta_field'     => 'wordpress-plugins',
-			'jetengine_manage_relations'      => 'wordpress-plugins',
-			'jetengine_site_context'          => 'wordpress-plugins',
-			'jetengine_prompts'               => 'wordpress-plugins',
+			'jetengine'                          => 'wordpress-plugins',
+			'jetengine_mcp'                      => 'wordpress-plugins',
+			'jetengine_create_post_type'         => 'wordpress-plugins',
+			'jetengine_create_taxonomy'          => 'wordpress-plugins',
+			'jetengine_create_meta_field'        => 'wordpress-plugins',
+			'jetengine_manage_relations'         => 'wordpress-plugins',
+			'jetengine_site_context'             => 'wordpress-plugins',
+			'jetengine_prompts'                  => 'wordpress-plugins',
 			// Toolkit CPT - generic CRUD/search for pro toolkit Custom Post Types.
-			'toolkit_cpt'                     => 'wordpress-core',
+			'toolkit_cpt'                        => 'wordpress-core',
 			// Elementor tools - Require Elementor plugin.
-			'elementor'                       => 'wordpress-plugins',
+			'elementor'                          => 'wordpress-plugins',
 			// Social media publishing tools - Require external API credentials.
-			'post_facebook_instagram'         => 'external-tools',
-			'post_tiktok_video'               => 'external-tools',
-			'post_linkedin_update'            => 'external-tools',
-			'post_google_business_update'     => 'external-tools',
+			'post_facebook_instagram'            => 'external-tools',
+			'post_tiktok_video'                  => 'external-tools',
+			'post_linkedin_update'               => 'external-tools',
+			'post_google_business_update'        => 'external-tools',
 			// Social media insights/reporting tools - Require external API credentials.
-			'get_facebook_instagram_insights' => 'external-tools',
-			'get_tiktok_insights'             => 'external-tools',
-			'get_linkedin_insights'           => 'external-tools',
-			'get_google_business_insights'    => 'external-tools',
+			'get_facebook_instagram_insights'    => 'external-tools',
+			'get_tiktok_insights'                => 'external-tools',
+			'get_linkedin_insights'              => 'external-tools',
+			'get_google_business_insights'       => 'external-tools',
 			// Messaging tools - Require external API credentials.
-			'send_whatsapp_message'           => 'external-tools',
-			'send_telegram_message'           => 'external-tools',
+			'send_whatsapp_message'              => 'external-tools',
+			'send_telegram_message'              => 'external-tools',
 			// Chat channel tools - Require external API credentials.
-			'send_slack_message'              => 'external-tools',
-			'get_slack_channels'              => 'external-tools',
-			'get_slack_messages'              => 'external-tools',
-			'create_slack_channel'            => 'external-tools',
-			'send_discord_message'            => 'external-tools',
-			'get_discord_channels'            => 'external-tools',
-			'get_discord_messages'            => 'external-tools',
-			'create_discord_channel'          => 'external-tools',
-			'send_teams_message'              => 'external-tools',
-			'get_teams_channels'              => 'external-tools',
-			'get_teams_messages'              => 'external-tools',
-			'send_messenger_message'          => 'external-tools',
-			'get_messenger_conversations'     => 'external-tools',
-			'create_messenger_broadcast'      => 'external-tools',
+			'send_slack_message'                 => 'external-tools',
+			'get_slack_channels'                 => 'external-tools',
+			'get_slack_messages'                 => 'external-tools',
+			'create_slack_channel'               => 'external-tools',
+			'send_discord_message'               => 'external-tools',
+			'get_discord_channels'               => 'external-tools',
+			'get_discord_messages'               => 'external-tools',
+			'create_discord_channel'             => 'external-tools',
+			'send_teams_message'                 => 'external-tools',
+			'get_teams_channels'                 => 'external-tools',
+			'get_teams_messages'                 => 'external-tools',
+			'send_messenger_message'             => 'external-tools',
+			'get_messenger_conversations'        => 'external-tools',
+			'create_messenger_broadcast'         => 'external-tools',
 			// Google Chat tools - Require external API credentials.
-			'send_google_chat_message'        => 'external-tools',
-			'get_google_chat_spaces'          => 'external-tools',
-			'get_google_chat_messages'        => 'external-tools',
-			'create_google_chat_space'        => 'external-tools',
+			'send_google_chat_message'           => 'external-tools',
+			'get_google_chat_spaces'             => 'external-tools',
+			'get_google_chat_messages'           => 'external-tools',
+			'create_google_chat_space'           => 'external-tools',
 			// Enhanced Telegram tools - Require external API credentials.
-			'get_telegram_updates'            => 'external-tools',
-			'manage_telegram_webhook'         => 'external-tools',
+			'get_telegram_updates'               => 'external-tools',
+			'manage_telegram_webhook'            => 'external-tools',
 			// Enhanced WhatsApp tools - Require external API credentials.
-			'send_whatsapp_template'          => 'external-tools',
-			'get_whatsapp_messages'           => 'external-tools',
+			'send_whatsapp_template'             => 'external-tools',
+			'get_whatsapp_messages'              => 'external-tools',
 			// Unified broadcast tool - Requires external API credentials.
-			'unified_channel_broadcast'       => 'external-tools',
+			'unified_channel_broadcast'          => 'external-tools',
 			// Email and communication tools - Require external API credentials.
-			'search_gmail'                    => 'external-tools',
-			'send_mailjet_email'              => 'external-tools',
+			'search_gmail'                       => 'external-tools',
+			'get_gmail_message'                  => 'external-tools',
+			'get_gmail_thread'                   => 'external-tools',
+			'list_gmail_connections'             => 'external-tools',
+			'modify_gmail_message'               => 'external-tools',
+			'send_mailjet_email'                 => 'external-tools',
 			// Brevo email marketing and CRM tools - Require Brevo API key.
-			'send_brevo_email'                => 'external-tools',
-			'manage_brevo_contacts'           => 'external-tools',
-			'get_brevo_statistics'            => 'external-tools',
+			'send_brevo_email'                   => 'external-tools',
+			'manage_brevo_contacts'              => 'external-tools',
+			'get_brevo_statistics'               => 'external-tools',
 			// Mailgun email delivery tools - Require Mailgun API key and domain.
-			'send_mailgun_email'              => 'external-tools',
+			'send_mailgun_email'                 => 'external-tools',
 			// Google Workspace tools - Require external API credentials.
-			'create_google_calendar_event'    => 'external-tools',
-			'google_analytics_report'         => 'external-tools',
+			'create_google_calendar_event'       => 'external-tools',
+			'list_google_calendars'              => 'external-tools',
+			'list_google_calendar_events'        => 'external-tools',
+			'update_google_calendar_event'       => 'external-tools',
+			'delete_google_calendar_event'       => 'external-tools',
+			'check_google_calendar_availability' => 'external-tools',
+			'quick_add_google_calendar_event'    => 'external-tools',
+			'search_drive'                       => 'external-tools',
+			'get_drive_file'                     => 'external-tools',
+			'list_drive_connections'             => 'external-tools',
+			'google_analytics_report'            => 'external-tools',
 			// Business and accounting tools - Require external API credentials.
-			'quickbooks_report'               => 'external-tools',
-			'quickbooks_desktop_sync'         => 'external-tools',
+			'quickbooks_report'                  => 'external-tools',
+			'quickbooks_desktop_sync'            => 'external-tools',
 			// iSAMS School Management System - Requires external API credentials.
-			'isams_query'                     => 'external-tools',
+			'isams_query'                        => 'external-tools',
 			// Shopify e-commerce tools - Require a configured Shopify Remote Sites connection.
-			'remote_shopify_connection'       => 'external-tools',
-			'shopify_products'                => 'external-tools',
-			'shopify_orders'                  => 'external-tools',
-			'shopify_customers'               => 'external-tools',
-			'shopify_inventory'               => 'external-tools',
-			'shopify_catalog'                 => 'external-tools',
+			'remote_shopify_connection'          => 'external-tools',
+			'shopify_products'                   => 'external-tools',
+			'shopify_orders'                     => 'external-tools',
+			'shopify_customers'                  => 'external-tools',
+			'shopify_inventory'                  => 'external-tools',
+			'shopify_catalog'                    => 'external-tools',
 			// Site Creator and related tools.
-			'site_creator'                    => 'wordpress-core',
-			'install_and_activate_plugin'     => 'wordpress-core',
-			'install_and_activate_theme'      => 'wordpress-core',
-			'update_option'                   => 'wordpress-core',
+			'site_creator'                       => 'wordpress-core',
+			'install_and_activate_plugin'        => 'wordpress-core',
+			'install_and_activate_theme'         => 'wordpress-core',
+			'update_option'                      => 'wordpress-core',
 		);
 
 		// Add quiz tool mappings if enabled.

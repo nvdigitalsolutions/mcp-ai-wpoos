@@ -33,12 +33,32 @@ class Test_Transcript_Mining_Job extends WP_UnitTestCase {
 	private $mock_messages = array();
 
 	/**
+	 * Admin user ID used as the current user.
+	 *
+	 * @var int
+	 */
+	private $admin_user_id;
+
+	/**
 	 * Set up.
 	 */
 	public function setUp(): void {
 		parent::setUp();
 		$this->mock_sessions = array();
 		$this->mock_messages = array();
+
+		// The tick delegates each record to store_agent_context, which
+		// requires an authenticated user with the `read` capability.
+		// WP_UnitTestCase resets the current user to 0 between tests, so
+		// establish a deterministic admin user here.
+		$this->admin_user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $this->admin_user_id );
+
+		// DISABLE_WP_CRON is defined under WP_UnitTestCase, which enables
+		// the inline tick loop and drains the whole queue in one
+		// handle_tick() call. Disable it so the suite can assert the
+		// per-batch tick contract (each batch waits for the next tick).
+		add_filter( 'wp_mcp_ai_inline_tick_loop_enabled', '__return_false' );
 
 		add_filter(
 			'wp_mcp_ai_mine_transcripts_sessions',
@@ -64,8 +84,14 @@ class Test_Transcript_Mining_Job extends WP_UnitTestCase {
 	 *   suite exercises directly.
 	 */
 	public function tearDown(): void {
+		remove_filter( 'wp_mcp_ai_inline_tick_loop_enabled', '__return_false' );
 		remove_filter( 'wp_mcp_ai_mine_transcripts_sessions', array( $this, 'inject_sessions' ), 10 );
 		remove_filter( 'wp_mcp_ai_mine_transcripts_session_messages', array( $this, 'inject_messages' ), 10 );
+
+		wp_set_current_user( 0 );
+		if ( $this->admin_user_id ) {
+			wp_delete_user( $this->admin_user_id );
+		}
 
 		global $wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -284,7 +310,15 @@ class Test_Transcript_Mining_Job extends WP_UnitTestCase {
 		// Fire WordPress' `shutdown` action manually. This invokes the
 		// closure that enqueue() just registered, which calls
 		// kick_inline() → handle_tick() in-process.
-		do_action( 'shutdown' );
+		// Core hooks wp_ob_end_flush_all() onto `shutdown` at priority 1;
+		// firing the action directly would drain PHPUnit's own output
+		// buffers, so neutralize it for the simulated shutdown.
+		remove_action( 'shutdown', 'wp_ob_end_flush_all', 1 );
+		try {
+			do_action( 'shutdown' );
+		} finally {
+			add_action( 'shutdown', 'wp_ob_end_flush_all', 1 );
+		}
 
 		$progress = WP_MCP_AI_Transcript_Mining_Job::get_progress( $state['id'] );
 		$this->assertSame( 'completed', $progress['status'], 'inline shutdown should drive the job to completion' );

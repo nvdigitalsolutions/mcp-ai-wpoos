@@ -2112,7 +2112,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
-			$default_model                       = isset( $settings['openai_image_model'] ) && '' !== $settings['openai_image_model'] ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-1';
+			$default_model                       = isset( $settings['openai_image_model'] ) && '' !== $settings['openai_image_model'] ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-2';
 						$default_size            = isset( $settings['openai_image_size'] ) && '' !== $settings['openai_image_size'] ? sanitize_text_field( $settings['openai_image_size'] ) : '1024x1024';
 						$default_response_format = isset( $settings['openai_image_response_format'] ) && '' !== $settings['openai_image_response_format'] ? sanitize_key( $settings['openai_image_response_format'] ) : 'url';
 
@@ -3675,6 +3675,24 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$max_tokens = apply_filters( 'wp_mcp_ai_openai_max_tokens', $max_tokens, $options );
 
 				if ( $max_tokens > 0 ) {
+					// Cap the resource-aware default against the model's own limits
+					// so the pre-flight guard does not hard-reject requests to
+					// small-window models (a high-tier default of 32k can exceed
+					// an 8k model window) and the provider API does not reject
+					// max_completion_tokens above the model's max output.
+					if ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+						$model_window     = WP_MCP_AI_Token_Budget_Manager::get_model_limit( $model );
+						$model_max_output = WP_MCP_AI_Token_Budget_Manager::get_model_max_output_tokens( $model );
+
+						if ( $model_max_output > 0 ) {
+							$max_tokens = min( $max_tokens, $model_max_output );
+						}
+						if ( $model_window > 0 && $max_tokens >= $model_window ) {
+							// Leave headroom for the prompt inside the window.
+							$max_tokens = max( 256, $model_window - 1024 );
+						}
+					}
+
 					// Use max_output_tokens for Responses API, max_completion_tokens for Chat Completions.
 					if ( $should_use_responses_api ) {
 						$payload['max_output_tokens'] = $max_tokens;

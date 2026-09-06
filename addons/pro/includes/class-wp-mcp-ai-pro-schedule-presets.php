@@ -1846,7 +1846,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 				),
 				'crm_data_cleanup'                  => array(
 					'name'          => __( 'CRM Data Cleanup', 'mcp-ai-wpoos-pro' ),
-					'description'   => __( 'Identifies and cleans duplicate contacts, invalid emails, and stale records in the CRM database.', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Identifies and cleans duplicate contacts and stale records in the CRM database.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
 					'category'      => 'maintenance',
 					'icon'          => 'dashicons-database',
@@ -1859,11 +1859,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 								'tool_slug' => 'scan_duplicate_contacts',
 								'arguments' => array(),
 								'label'     => __( 'Scan for duplicate contacts', 'mcp-ai-wpoos-pro' ),
-							),
-							array(
-								'tool_slug' => 'validate_contact_data',
-								'arguments' => array(),
-								'label'     => __( 'Validate emails and phone numbers', 'mcp-ai-wpoos-pro' ),
 							),
 							array(
 								'tool_slug' => 'archive_stale_contacts',
@@ -2268,9 +2263,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 					'category'      => 'lead_intake',
 					'icon'          => 'dashicons-download',
 					'schedule_type' => 'task',
-					'schedule'      => 'wp_mcp_ai_crm_auto_import_sources',
+					'schedule'      => 'daily',
 					'tags'          => array( 'crm', 'leads', 'upwork', 'linkedin', 'auto-import', 'pipeline' ),
 					'schedule_data' => array(
+						'hook'        => 'wp_mcp_ai_crm_auto_import_sources',
 						'description' => __( 'Searches Upwork and LinkedIn for new jobs, scores them, and imports qualifying ones into the CRM pipeline.', 'mcp-ai-wpoos-pro' ),
 					),
 				),

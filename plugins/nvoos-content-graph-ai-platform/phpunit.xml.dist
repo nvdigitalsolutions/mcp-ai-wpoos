@@ -10,6 +10,8 @@
     <testsuites>
         <testsuite name="NvoosContentGraphPlatform">
             <directory suffix=".php">./tests/</directory>
+            <exclude>./tests/bootstrap.php</exclude>
+            <exclude>./tests/helpers</exclude>
         </testsuite>
     </testsuites>
 

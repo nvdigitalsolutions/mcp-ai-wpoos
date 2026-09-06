@@ -49,7 +49,7 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 	 *
 	 * @var string
 	 */
-	const DEFAULT_MODEL = 'gemini-3.5-flash';
+	const DEFAULT_MODEL = 'gemini-3.6-flash';
 
 	/**
 	 * API endpoint for managed agent operations.
@@ -145,7 +145,7 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 	 *     @type string $system_prompt    System instructions for the agent.
 	 *     @type array  $tool_slugs       Array of tool slugs to make available.
 	 *     @type string $working_dir      Working directory path inside container.
-	 *     @type string $model            Model to use (default: gemini-3.5-flash).
+	 *     @type string $model            Model to use (default: gemini-3.6-flash).
 	 *     @type int    $max_iterations   Maximum agent loop iterations (default: 10).
 	 *     @type int    $timeout          Timeout in seconds (default: 300).
 	 * }
@@ -530,7 +530,9 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 			if ( ! is_array( $schema ) ) {
 				$schema = array(
 					'type'       => 'object',
-					'properties' => array(),
+					// Empty stdClass encodes as `{}`; an empty PHP array would
+					// encode as `[]`, which strict providers reject.
+					'properties' => new stdClass(),
 				);
 			}
 

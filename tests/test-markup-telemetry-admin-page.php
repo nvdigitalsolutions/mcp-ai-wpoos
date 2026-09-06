@@ -31,31 +31,22 @@ class Test_Markup_Telemetry_Admin_Page extends WP_UnitTestCase {
 	private $page;
 
 	/**
-	 * Telemetry recorder used to populate fixtures.
+	 * Set up the page instance.
 	 *
-	 * @var WP_MCP_AI_Markup_Telemetry
-	 */
-	private $telemetry;
-
-	/**
-	 * Set up the recorder + page instance.
+	 * Recording is handled by the globally registered recorder from
+	 * includes/markup-init.php; a second instance would double-count every
+	 * event fired by these fixtures.
 	 */
 	public function setUp(): void {
 		parent::setUp();
 		WP_MCP_AI_Markup_Telemetry::reset();
-		$this->telemetry = new WP_MCP_AI_Markup_Telemetry();
-		$this->telemetry->register();
 		$this->page = new WP_MCP_AI_Admin_Markup_Telemetry_Page();
 	}
 
 	/**
-	 * Detach hooks.
+	 * Reset counters.
 	 */
 	public function tearDown(): void {
-		remove_action( 'wp_mcp_ai_markup_request_created', array( $this->telemetry, 'on_request_created' ), 10 );
-		remove_action( 'wp_mcp_ai_markup_submitted', array( $this->telemetry, 'on_submitted' ), 10 );
-		remove_action( 'wp_mcp_ai_markup_validated', array( $this->telemetry, 'on_validated' ), 10 );
-		remove_action( 'wp_mcp_ai_markup_resolved', array( $this->telemetry, 'on_resolved' ), 10 );
 		WP_MCP_AI_Markup_Telemetry::reset();
 		parent::tearDown();
 	}

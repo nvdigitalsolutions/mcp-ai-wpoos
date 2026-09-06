@@ -93,6 +93,8 @@ class WP_MCP_AI_Admin_Markup_Telemetry_Page {
 
 	/**
 	 * Handle the `Reset counters` form submission.
+	 *
+	 * @throws WPDieException When running under PHPUnit and the redirect is blocked.
 	 */
 	public function handle_reset() {
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -113,8 +115,17 @@ class WP_MCP_AI_Admin_Markup_Telemetry_Page {
 			admin_url( 'admin.php' )
 		);
 
-		wp_safe_redirect( $redirect );
-		exit;
+		if ( wp_safe_redirect( $redirect ) ) {
+			exit;
+		}
+
+		// Under PHPUnit the redirect is blocked and the suite-wide contract
+		// turns the failed redirect into a catchable exception instead of a
+		// process-killing bare exit.
+		if ( defined( 'WP_MCP_AI_TESTS_RUNNING' ) && WP_MCP_AI_TESTS_RUNNING && class_exists( 'WPDieException' ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- the exception message is not rendered anywhere; it only aborts the request flow under tests.
+			throw new WPDieException( $redirect );
+		}
 	}
 
 	/**

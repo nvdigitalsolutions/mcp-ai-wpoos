@@ -167,7 +167,7 @@ class WP_MCP_AI_Custom_Filters_Applicator_Test extends WP_UnitTestCase {
 		$this->applicator = new WP_MCP_AI_Custom_Filters_Applicator();
 
 		$default = 60;
-		$result  = apply_filters( 'wp_mcp_ai_resource_request_timeout', $default, 'medium', 300 );
+		$result  = apply_filters( 'wp_mcp_ai_resource_request_timeout', $default, 'medium', 300, false );
 		$this->assertEquals( 120, $result );
 	}
 
@@ -338,13 +338,14 @@ class WP_MCP_AI_Custom_Filters_Applicator_Test extends WP_UnitTestCase {
 	 * Test that filters are applied at priority 5.
 	 */
 	public function test_filter_priority() {
-		// Add a higher priority filter (should not be overridden).
+		// A filter registered at a later priority (higher number) runs after
+		// the applicator's priority-5 filter and overrides its custom value.
 		add_filter(
 			'wp_mcp_ai_default_light_model',
 			function ( $model ) {
 				return 'high-priority-model';
 			},
-			1
+			10
 		);
 
 		// Set custom value at priority 5.
@@ -361,7 +362,7 @@ class WP_MCP_AI_Custom_Filters_Applicator_Test extends WP_UnitTestCase {
 		$default = 'gpt-4o-mini';
 		$result  = apply_filters( 'wp_mcp_ai_default_light_model', $default );
 
-		// Should use the priority 1 filter value.
+		// Should use the priority 10 filter value.
 		$this->assertEquals( 'high-priority-model', $result );
 
 		remove_all_filters( 'wp_mcp_ai_default_light_model' );

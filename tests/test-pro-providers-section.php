@@ -134,8 +134,9 @@ class WP_MCP_AI_Pro_Providers_Section_Test extends WP_UnitTestCase {
 
 		$sanitized = $section->sanitize( $input );
 
-		$this->assertArrayHasKey( 'enable_embedded', $sanitized );
-		$this->assertTrue( $sanitized['enable_embedded'] );
+		// enable_embedded is a disabled checkbox ("Auto-enabled with Pro"); the
+		// sanitizer skips disabled checkboxes to preserve their existing value.
+		$this->assertArrayNotHasKey( 'enable_embedded', $sanitized );
 		$this->assertArrayHasKey( 'embedded_model', $sanitized );
 		$this->assertEquals( 'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC', $sanitized['embedded_model'] );
 	}

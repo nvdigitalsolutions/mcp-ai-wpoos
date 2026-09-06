@@ -6,7 +6,20 @@
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
  */
+
+/**
+ * Tests for the job queue manager.
+ */
 class WP_MCP_AI_Job_Queue_Manager_Test extends WP_UnitTestCase {
+
+	/**
+	 * Reset worker state and the queue before each test.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+		WP_MCP_AI_Job_Queue_Manager_Test_Worker::reset();
+		WP_MCP_AI_Job_Queue_Manager::clear_queue();
+	}
 
 	/**
 	 * Clean up after each test.
@@ -20,15 +33,10 @@ class WP_MCP_AI_Job_Queue_Manager_Test extends WP_UnitTestCase {
 	 * Test enqueueing a job.
 	 */
 	public function test_enqueue_job() {
-		$job_id   = 'test_job_1';
-		$callable = function () {
-			return 'success';
-		};
-
 		$result = WP_MCP_AI_Job_Queue_Manager::enqueue_job(
-			$job_id,
+			'test_job_1',
 			array(
-				'callable' => $callable,
+				'callable' => array( 'WP_MCP_AI_Job_Queue_Manager_Test_Worker', 'succeed' ),
 				'args'     => array(),
 				'priority' => WP_MCP_AI_Job_Queue_Manager::PRIORITY_HIGH,
 			)
@@ -41,19 +49,16 @@ class WP_MCP_AI_Job_Queue_Manager_Test extends WP_UnitTestCase {
 	 * Test enqueueing duplicate job fails.
 	 */
 	public function test_enqueue_duplicate_job() {
-		$job_id   = 'test_job_1';
-		$callable = function () {
-			return 'success';
-		};
+		$callable = array( 'WP_MCP_AI_Job_Queue_Manager_Test_Worker', 'succeed' );
 
 		WP_MCP_AI_Job_Queue_Manager::enqueue_job(
-			$job_id,
+			'test_job_1',
 			array( 'callable' => $callable )
 		);
 
 		// Try to enqueue again.
 		$result = WP_MCP_AI_Job_Queue_Manager::enqueue_job(
-			$job_id,
+			'test_job_1',
 			array( 'callable' => $callable )
 		);
 
@@ -76,23 +81,16 @@ class WP_MCP_AI_Job_Queue_Manager_Test extends WP_UnitTestCase {
 	 * Test processing queue.
 	 */
 	public function test_process_queue() {
-		$executed = false;
-
-		$callable = function () use ( &$executed ) {
-			$executed = true;
-			return 'success';
-		};
-
 		WP_MCP_AI_Job_Queue_Manager::enqueue_job(
 			'test_job',
-			array( 'callable' => $callable )
+			array( 'callable' => array( 'WP_MCP_AI_Job_Queue_Manager_Test_Worker', 'succeed' ) )
 		);
 
 		$result = WP_MCP_AI_Job_Queue_Manager::process_queue( 3 );
 
 		$this->assertIsArray( $result );
 		$this->assertSame( 1, $result['processed'] );
-		$this->assertTrue( $executed );
+		$this->assertTrue( WP_MCP_AI_Job_Queue_Manager_Test_Worker::$executed );
 	}
 
 	/**
@@ -106,9 +104,7 @@ class WP_MCP_AI_Job_Queue_Manager_Test extends WP_UnitTestCase {
 			WP_MCP_AI_Job_Queue_Manager::enqueue_job(
 				"job_{$i}",
 				array(
-					'callable' => function () {
-						return 'success';
-					},
+					'callable' => array( 'WP_MCP_AI_Job_Queue_Manager_Test_Worker', 'succeed' ),
 				)
 			);
 		}
@@ -123,16 +119,13 @@ class WP_MCP_AI_Job_Queue_Manager_Test extends WP_UnitTestCase {
 	 * Test queue priority ordering.
 	 */
 	public function test_queue_priority_ordering() {
-		$execution_order = array();
+		$worker = 'WP_MCP_AI_Job_Queue_Manager_Test_Worker';
 
 		// Enqueue jobs with different priorities.
 		WP_MCP_AI_Job_Queue_Manager::enqueue_job(
 			'low_priority',
 			array(
-				'callable' => function () use ( &$execution_order ) {
-					$execution_order[] = 'low';
-					return 'success';
-				},
+				'callable' => array( $worker, 'record_low' ),
 				'priority' => WP_MCP_AI_Job_Queue_Manager::PRIORITY_LOW,
 			)
 		);
@@ -140,10 +133,7 @@ class WP_MCP_AI_Job_Queue_Manager_Test extends WP_UnitTestCase {
 		WP_MCP_AI_Job_Queue_Manager::enqueue_job(
 			'high_priority',
 			array(
-				'callable' => function () use ( &$execution_order ) {
-					$execution_order[] = 'high';
-					return 'success';
-				},
+				'callable' => array( $worker, 'record_high' ),
 				'priority' => WP_MCP_AI_Job_Queue_Manager::PRIORITY_HIGH,
 			)
 		);
@@ -151,10 +141,7 @@ class WP_MCP_AI_Job_Queue_Manager_Test extends WP_UnitTestCase {
 		WP_MCP_AI_Job_Queue_Manager::enqueue_job(
 			'normal_priority',
 			array(
-				'callable' => function () use ( &$execution_order ) {
-					$execution_order[] = 'normal';
-					return 'success';
-				},
+				'callable' => array( $worker, 'record_normal' ),
 				'priority' => WP_MCP_AI_Job_Queue_Manager::PRIORITY_NORMAL,
 			)
 		);
@@ -163,7 +150,7 @@ class WP_MCP_AI_Job_Queue_Manager_Test extends WP_UnitTestCase {
 		WP_MCP_AI_Job_Queue_Manager::process_queue( 10 );
 
 		// High priority should execute first.
-		$this->assertSame( 'high', $execution_order[0] );
+		$this->assertSame( 'high', WP_MCP_AI_Job_Queue_Manager_Test_Worker::$execution_order[0] );
 	}
 
 	/**
@@ -183,9 +170,7 @@ class WP_MCP_AI_Job_Queue_Manager_Test extends WP_UnitTestCase {
 		WP_MCP_AI_Job_Queue_Manager::enqueue_job(
 			'test_job',
 			array(
-				'callable' => function () {
-					return 'success';
-				},
+				'callable' => array( 'WP_MCP_AI_Job_Queue_Manager_Test_Worker', 'succeed' ),
 			)
 		);
 
@@ -198,22 +183,20 @@ class WP_MCP_AI_Job_Queue_Manager_Test extends WP_UnitTestCase {
 	 * Test clearing queue.
 	 */
 	public function test_clear_queue() {
+		$worker = 'WP_MCP_AI_Job_Queue_Manager_Test_Worker';
+
 		// Enqueue jobs.
 		WP_MCP_AI_Job_Queue_Manager::enqueue_job(
 			'job_1',
 			array(
-				'callable' => function () {
-					return 'success';
-				},
+				'callable' => array( $worker, 'succeed' ),
 			)
 		);
 
 		WP_MCP_AI_Job_Queue_Manager::enqueue_job(
 			'job_2',
 			array(
-				'callable' => function () {
-					return 'success';
-				},
+				'callable' => array( $worker, 'succeed' ),
 			)
 		);
 
@@ -233,13 +216,9 @@ class WP_MCP_AI_Job_Queue_Manager_Test extends WP_UnitTestCase {
 	 * Test job with exception handling.
 	 */
 	public function test_job_exception_handling() {
-		$callable = function () {
-			throw new Exception( 'Test exception' );
-		};
-
 		WP_MCP_AI_Job_Queue_Manager::enqueue_job(
 			'exception_job',
-			array( 'callable' => $callable )
+			array( 'callable' => array( 'WP_MCP_AI_Job_Queue_Manager_Test_Worker', 'explode' ) )
 		);
 
 		$result = WP_MCP_AI_Job_Queue_Manager::process_queue( 1 );
@@ -256,24 +235,17 @@ class WP_MCP_AI_Job_Queue_Manager_Test extends WP_UnitTestCase {
 	 * Test job arguments are passed correctly.
 	 */
 	public function test_job_arguments() {
-		$received_args = null;
-
-		$callable = function ( $arg1, $arg2 ) use ( &$received_args ) {
-			$received_args = array( $arg1, $arg2 );
-			return 'success';
-		};
-
 		WP_MCP_AI_Job_Queue_Manager::enqueue_job(
 			'args_job',
 			array(
-				'callable' => $callable,
+				'callable' => array( 'WP_MCP_AI_Job_Queue_Manager_Test_Worker', 'record_args' ),
 				'args'     => array( 'value1', 'value2' ),
 			)
 		);
 
 		WP_MCP_AI_Job_Queue_Manager::process_queue( 1 );
 
-		$this->assertIsArray( $received_args );
-		$this->assertSame( array( 'value1', 'value2' ), $received_args );
+		$this->assertIsArray( WP_MCP_AI_Job_Queue_Manager_Test_Worker::$received_args );
+		$this->assertSame( array( 'value1', 'value2' ), WP_MCP_AI_Job_Queue_Manager_Test_Worker::$received_args );
 	}
 }

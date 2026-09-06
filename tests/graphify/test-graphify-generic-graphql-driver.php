@@ -14,6 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/bootstrap.php';
+
 /**
  * Test_Graphify_Generic_GraphQL_Driver
  */

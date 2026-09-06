@@ -114,6 +114,10 @@ class Test_Site_Pipeline_Executor extends WP_UnitTestCase {
 	public function test_topological_sort_order() {
 		// text_b depends on text_a. text_c depends on text_b.
 		// Expected order: text_a → text_b → text_c.
+		//
+		// Under the edge-override contract each node's content port receives
+		// the upstream node's HTML (see test_edge_values_override_static_inputs),
+		// so the chain wraps the leaf value: A must flow through both hops.
 		$graph = array(
 			'nodes' => array(
 				'text_a' => array( 'slug' => 'text_block', 'inputs' => array( 'content' => 'A' ) ),
@@ -129,10 +133,11 @@ class Test_Site_Pipeline_Executor extends WP_UnitTestCase {
 		$result  = $this->executor->execute( $graph, 'test_pipeline' );
 		$outputs = $result['outputs'];
 
-		// text_c should contain all three letters (wrapped through the chain).
-		$this->assertStringContainsString( 'A', $outputs['text_c']['html'] );
-		$this->assertStringContainsString( 'B', $outputs['text_c']['html'] );
-		$this->assertStringContainsString( 'C', $outputs['text_c']['html'] );
+		// Each hop wraps the previous node's output; A reaching text_c proves
+		// text_a executed before text_b and text_b before text_c.
+		$this->assertStringContainsString( '<div>A</div>', $outputs['text_a']['html'] );
+		$this->assertStringContainsString( '<div><div>A</div></div>', $outputs['text_b']['html'] );
+		$this->assertStringContainsString( '<div><div><div>A</div></div></div>', $outputs['text_c']['html'] );
 	}
 
 	/**

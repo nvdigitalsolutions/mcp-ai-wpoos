@@ -3,8 +3,15 @@
  * WordPress-specific tool for vectorizing raster images to SVG.
  *
  * Lives in the WordPress adapter because it uses wp_get_image_editor,
- * wp_tempnam, wp_upload_bits, wp_insert_attachment, Node.js subprocess
- * via WP_MCP_AI_NodeJS_Subprocess trait, and WP_MCP_AI_Optional_Components.
+ * wp_tempnam, wp_upload_bits, wp_insert_attachment, and Node.js
+ * subprocess execution.
+ *
+ * Standalone hardening (D8 Cluster 2): the base plugin's
+ * WP_MCP_AI_Media_Worker_Client trait is inlined as self-contained
+ * private helpers (byte-identical endpoints, headers, and error codes)
+ * so the class loads without the base plugin. Node.js execution
+ * requires the base plugin's bundled vectorizer script; standalone
+ * installs use the Media Worker sidecar instead.
  *
  * @package Nvoos\WordPress
  * @since   1.0.0
@@ -16,14 +23,19 @@ declare(strict_types=1);
 namespace Nvoos\WordPress\Tool;
 
 use Nvoos\Core\Tool\AbstractTool;
-use WP_MCP_AI_Media_Worker_Client;
 
 /**
  * Converts raster images (PNG, JPEG, WebP, GIF) to SVG vector format
  * using the @neplex/vectorizer Node.js library.
  */
 class VectorizeImageTool extends AbstractTool {
-	use WP_MCP_AI_Media_Worker_Client;
+
+	/**
+	 * Memoized sidecar health-check result.
+	 *
+	 * @var bool|null
+	 */
+	private $sidecar_available = null;
 
 	public function getSlug(): string {
 		return 'vectorize_image';
@@ -102,19 +114,19 @@ class VectorizeImageTool extends AbstractTool {
 		$has_token = ! empty( $context['token_authenticated'] );
 
 		if ( ! $user_id && ! $has_token ) {
-			return $this->errors->accessDenied( 'You must be authenticated to vectorize images.' );
+			return $this->errors->forbidden( 'You must be authenticated to vectorize images.' );
 		}
 
 		if ( $user_id && ! \user_can( $user_id, 'upload_files' ) ) {
-			return $this->errors->accessDenied( 'You do not have permission to edit images.' );
+			return $this->errors->forbidden( 'You do not have permission to edit images.' );
 		}
 
 		if ( $user_id && \is_multisite() && ! \is_user_member_of_blog( $user_id, \get_current_blog_id() ) ) {
-			return $this->errors->accessDenied( 'You do not have access to this site.' );
+			return $this->errors->forbidden( 'You do not have access to this site.' );
 		}
 
-		// Node.js (local) or the Media Worker sidecar is required. The
-		// vectorizer library itself is bundled with the base plugin.
+		// Node.js (local, base-plugin script) or the Media Worker sidecar is
+		// required. Standalone installs without a sidecar cannot vectorize.
 		if ( ! $this->isNodeJsAvailable() && ! $this->is_sidecar_upload_supported() ) {
 			return $this->errors->create(
 				'wp_mcp_ai_nodejs_required',
@@ -172,7 +184,8 @@ class VectorizeImageTool extends AbstractTool {
 
 		// Execute vectorization: try the Media Worker sidecar first (opt-in
 		// routing — fails fast when no sidecar URL is configured or the
-		// health check fails), then fall back to the local script.
+		// health check fails), then fall back to the base plugin's local
+		// script (monolith installs only).
 		$result = null;
 		if ( $this->is_sidecar_upload_supported() ) {
 			$sidecar = $this->sidecar_upload(
@@ -190,7 +203,17 @@ class VectorizeImageTool extends AbstractTool {
 		}
 
 		if ( null === $result ) {
-			// Execute Node.js vectorizer.
+			// Execute Node.js vectorizer (base-plugin script; standalone
+			// installs without a sidecar never reach this point).
+			if ( ! \defined( 'WP_MCP_AI_PATH' ) ) {
+				\wp_delete_file( $temp_input );
+				\wp_delete_file( $temp_output );
+				return $this->errors->create(
+					'wp_mcp_ai_vectorizer_unavailable',
+					'Image vectorization is unavailable in this install. Configure the Media Worker sidecar.'
+				);
+			}
+
 			$script_path = \WP_MCP_AI_PATH . 'bin/vectorize-image.js';
 			$result      = $this->runNodeScript( $script_path, array( $temp_input, $temp_output, \wp_json_encode( $options ) ) );
 		}
@@ -349,9 +372,14 @@ class VectorizeImageTool extends AbstractTool {
 	}
 
 	/**
-	 * Check if Node.js is available on the system.
+	 * Check if Node.js is available on the system (monolith only — the
+	 * base plugin's subprocess helper is required).
 	 */
 	private function isNodeJsAvailable(): bool {
+		if ( ! \defined( 'WP_MCP_AI_PATH' ) || ! \class_exists( 'WP_MCP_AI_NodeJS_Subprocess_Helper' ) ) {
+			return false;
+		}
+
 		$result = \WP_MCP_AI_NodeJS_Subprocess_Helper::is_nodejs_available();
 		return ! \is_wp_error( $result ) && $result;
 	}
@@ -360,7 +388,7 @@ class VectorizeImageTool extends AbstractTool {
 	 * Execute a Node.js script and return parsed JSON output.
 	 */
 	private function runNodeScript( string $script_path, array $args = array() ) {
-		if ( ! \class_exists( 'WP_MCP_AI_NodeJS_Subprocess_Helper' ) ) {
+		if ( ! \defined( 'WP_MCP_AI_PATH' ) || ! \class_exists( 'WP_MCP_AI_NodeJS_Subprocess_Helper' ) ) {
 			return new \WP_Error( 'wp_mcp_ai_error', 'Node.js subprocess helper not available.' );
 		}
 
@@ -369,5 +397,159 @@ class VectorizeImageTool extends AbstractTool {
 			$args,
 			array( 'timeout' => 60, 'parse_json' => true )
 		);
+	}
+
+	// ─── Media Worker sidecar (inlined from the base trait) ───────────
+
+	/**
+	 * Resolve the Media Worker sidecar URL.
+	 */
+	private function get_sidecar_url() {
+		if ( \defined( 'WP_MEDIA_WORKER_URL' ) && \WP_MEDIA_WORKER_URL ) {
+			return \rtrim( \WP_MEDIA_WORKER_URL, '/' );
+		}
+
+		$option = \get_option( 'wp_mcp_ai_media_worker_url', '' );
+		return $option ? \rtrim( $option, '/' ) : '';
+	}
+
+	/**
+	 * Resolve the sidecar site token.
+	 */
+	private function get_sidecar_token() {
+		if ( \defined( 'WP_MEDIA_WORKER_TOKEN' ) && \WP_MEDIA_WORKER_TOKEN ) {
+			return \WP_MEDIA_WORKER_TOKEN;
+		}
+
+		$token = \get_option( 'wp_mcp_ai_media_worker_token', '' );
+		if ( ! empty( $token ) ) {
+			return $token;
+		}
+
+		return \wp_hash( \home_url() );
+	}
+
+	/**
+	 * Health-check the sidecar (memoized per request).
+	 */
+	private function is_sidecar_available() {
+		if ( null !== $this->sidecar_available ) {
+			return $this->sidecar_available;
+		}
+
+		$url = $this->get_sidecar_url();
+		if ( empty( $url ) ) {
+			$this->sidecar_available = false;
+			return false;
+		}
+
+		$response = \wp_remote_get(
+			\rtrim( $url, '/' ) . '/api/health',
+			array( 'timeout' => 3 )
+		);
+
+		if ( \is_wp_error( $response ) ) {
+			$this->sidecar_available = false;
+			return false;
+		}
+
+		$status = \wp_remote_retrieve_response_code( $response );
+		$body   = \json_decode( \wp_remote_retrieve_body( $response ), true );
+
+		$this->sidecar_available = ( 200 === $status && isset( $body['status'] ) && 'ok' === $body['status'] );
+		return $this->sidecar_available;
+	}
+
+	/**
+	 * Whether multipart uploads to the sidecar are supported.
+	 */
+	private function is_sidecar_upload_supported() {
+		return \function_exists( 'curl_file_create' ) && $this->is_sidecar_available();
+	}
+
+	/**
+	 * Upload a file to the sidecar (byte-identical contract to the base
+	 * plugin's WP_MCP_AI_Media_Worker_Client trait).
+	 */
+	private function sidecar_upload( $endpoint, $file_path, $fields = array(), $timeout = 330 ) {
+		if ( ! \function_exists( 'curl_file_create' ) ) {
+			return new \WP_Error( 'wp_mcp_ai_curl_required', 'Multipart uploads require the cURL extension.' );
+		}
+		if ( ! \file_exists( $file_path ) ) {
+			return new \WP_Error( 'wp_mcp_ai_file_not_found', 'File not found.', array( 'status' => 404 ) );
+		}
+		$url = $this->get_sidecar_url();
+		if ( empty( $url ) ) {
+			return new \WP_Error( 'wp_mcp_ai_sidecar_not_configured', 'Media Worker sidecar URL is not configured.' );
+		}
+
+		$filetype = \wp_check_filetype( $file_path );
+		$mime     = ! empty( $filetype['type'] ) ? $filetype['type'] : 'application/octet-stream';
+
+		$postfields = $fields;
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_file_create -- cURL streaming multipart upload; the WordPress HTTP API cannot stream file parts.
+		$postfields['file'] = \curl_file_create( $file_path, $mime, \basename( $file_path ) );
+
+		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_init,WordPress.WP.AlternativeFunctions.curl_curl_setopt,WordPress.WP.AlternativeFunctions.curl_curl_exec,WordPress.WP.AlternativeFunctions.curl_curl_errno,WordPress.WP.AlternativeFunctions.curl_curl_error,WordPress.WP.AlternativeFunctions.curl_curl_getinfo,WordPress.WP.AlternativeFunctions.curl_curl_close -- Streaming multipart upload via cURL; see method docblock.
+		$ch = \curl_init( \rtrim( $url, '/' ) . '/' . \ltrim( $endpoint, '/' ) );
+		if ( false === $ch ) {
+			return new \WP_Error( 'wp_mcp_ai_curl_init_failed', 'Failed to initialise cURL.' );
+		}
+
+		\curl_setopt( $ch, CURLOPT_POST, true );
+		\curl_setopt( $ch, CURLOPT_POSTFIELDS, $postfields );
+		\curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+		\curl_setopt( $ch, CURLOPT_TIMEOUT, (int) $timeout );
+		\curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, 15 );
+		\curl_setopt(
+			$ch,
+			CURLOPT_HTTPHEADER,
+			array(
+				'X-Site-Token: ' . $this->get_sidecar_token(),
+				'X-Site-Url: ' . \home_url(),
+			)
+		);
+
+		$ch = \apply_filters( 'wp_mcp_ai_sidecar_upload_handle', $ch, $endpoint, $fields );
+
+		$raw = \curl_exec( $ch );
+		if ( false === $raw ) {
+			$errno = \curl_errno( $ch );
+			$error = \curl_error( $ch );
+			\curl_close( $ch );
+			$this->sidecar_available = false;
+
+			return new \WP_Error(
+				'wp_mcp_ai_sidecar_upload_failed',
+				\sprintf( 'Upload failed: [%d] %s', $errno, $error )
+			);
+		}
+
+		$status  = (int) \curl_getinfo( $ch, CURLINFO_RESPONSE_CODE );
+		\curl_close( $ch );
+
+		$decoded = \json_decode( $raw, true );
+
+		if ( 200 !== $status && 202 !== $status ) {
+			$error_msg = isset( $decoded['error'] )
+				? $decoded['error']
+				: \sprintf( 'HTTP %d: %s', $status, \substr( $raw, 0, 200 ) );
+
+			return new \WP_Error(
+				'wp_mcp_ai_sidecar_error',
+				$error_msg,
+				array(
+					'status'   => $status,
+					'response' => $decoded,
+				)
+			);
+		}
+
+		if ( null === $decoded ) {
+			return new \WP_Error( 'wp_mcp_ai_sidecar_invalid_json', 'Media Worker returned invalid JSON.' );
+		}
+
+		$this->sidecar_available = true;
+		return $decoded;
 	}
 }

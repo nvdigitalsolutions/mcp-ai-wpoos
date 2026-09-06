@@ -146,7 +146,7 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
-	 * @return array
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Enforce manage_options capability regardless of tool-framework checks.
@@ -190,7 +190,7 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 	 * Create vault item
 	 *
 	 * @param array $arguments Tool arguments.
-	 * @return array
+	 * @return array|WP_Error
 	 */
 	protected function create_item( $arguments ) {
 		// Validate required fields.
@@ -258,7 +258,7 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 	 * Update vault item
 	 *
 	 * @param array $arguments Tool arguments.
-	 * @return array
+	 * @return array|WP_Error
 	 */
 	protected function update_item( $arguments ) {
 		// Validate required fields.
@@ -331,7 +331,7 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 	 * Delete vault item
 	 *
 	 * @param array $arguments Tool arguments.
-	 * @return array
+	 * @return array|WP_Error
 	 */
 	protected function delete_item( $arguments ) {
 		// Validate required fields.

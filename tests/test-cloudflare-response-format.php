@@ -251,9 +251,8 @@ class Test_Cloudflare_Response_Format extends WP_UnitTestCase {
 
 		$payload = $method->invoke( $this->client, $messages, $options );
 
-		// Empty array is still technically an array, so it should be added.
-		$this->assertArrayHasKey( 'response_format', $payload, 'Empty response_format array should still be added' );
-		$this->assertSame( array(), $payload['response_format'], 'response_format should be empty array' );
+		// Empty response_format is skipped to avoid sending empty arrays.
+		$this->assertArrayNotHasKey( 'response_format', $payload, 'Empty response_format array should not be added' );
 	}
 
 	/**

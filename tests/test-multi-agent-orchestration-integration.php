@@ -27,6 +27,13 @@ class Test_Multi_Agent_Orchestration_Integration extends WP_UnitTestCase {
 	protected $profession_ids = array();
 
 	/**
+	 * Test assistant IDs for delegation targets.
+	 *
+	 * @var array
+	 */
+	protected $assistant_ids = array();
+
+	/**
 	 * Set up test environment.
 	 */
 	public function setUp(): void {
@@ -36,6 +43,19 @@ class Test_Multi_Agent_Orchestration_Integration extends WP_UnitTestCase {
 		$this->profession_ids['planner']  = $this->create_test_profession( 'Project Manager', 'planner' );
 		$this->profession_ids['executor'] = $this->create_test_profession( 'Data Scientist', 'executor' );
 		$this->profession_ids['critic']   = $this->create_test_profession( 'Technical Editor', 'critic' );
+
+		// Create test assistants as delegation targets. delegate_to_agent
+		// now requires real mcp_ai_assistant posts (profession IDs are no
+		// longer valid targets).
+		foreach ( array( 'planner', 'executor', 'critic' ) as $role ) {
+			$this->assistant_ids[ $role ] = wp_insert_post(
+				array(
+					'post_title'  => ucfirst( $role ) . ' Assistant',
+					'post_type'   => 'mcp_ai_assistant',
+					'post_status' => 'publish',
+				)
+			);
+		}
 	}
 
 	/**
@@ -44,6 +64,11 @@ class Test_Multi_Agent_Orchestration_Integration extends WP_UnitTestCase {
 	public function tearDown(): void {
 		// Clean up test professions.
 		foreach ( $this->profession_ids as $post_id ) {
+			wp_delete_post( $post_id, true );
+		}
+
+		// Clean up test assistants.
+		foreach ( $this->assistant_ids as $post_id ) {
 			wp_delete_post( $post_id, true );
 		}
 
@@ -109,14 +134,22 @@ class Test_Multi_Agent_Orchestration_Integration extends WP_UnitTestCase {
 		$result = $tool->execute( $arguments, $context );
 
 		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'team_id', $result );
-		$this->assertArrayHasKey( 'team_composition', $result );
-		$this->assertArrayHasKey( 'workflow', $result );
+		$this->assertArrayHasKey( 'team', $result );
 
-		$composition = $result['team_composition'];
-		$this->assertArrayHasKey( 'planner', $composition );
-		$this->assertArrayHasKey( 'executors', $composition );
-		$this->assertArrayHasKey( 'critic', $composition );
+		$team = $result['team'];
+		$this->assertArrayHasKey( 'team_id', $team );
+		$this->assertArrayHasKey( 'task_type', $team );
+		$this->assertArrayHasKey( 'template', $team );
+		$this->assertArrayHasKey( 'members', $team );
+		$this->assertArrayHasKey( 'workflow', $team );
+		$this->assertArrayHasKey( 'status', $team );
+		$this->assertNotEmpty( $team['members'], 'Team should have members' );
+
+		// Members carry role + agent_id for delegation.
+		foreach ( $team['members'] as $member ) {
+			$this->assertArrayHasKey( 'agent_id', $member );
+			$this->assertArrayHasKey( 'role', $member );
+		}
 	}
 
 	/**
@@ -129,7 +162,7 @@ class Test_Multi_Agent_Orchestration_Integration extends WP_UnitTestCase {
 		$this->assertNotNull( $tool );
 
 		$arguments = array(
-			'agent_id'        => $this->profession_ids['executor'],
+			'agent_id'        => $this->assistant_ids['executor'],
 			'task'            => 'Analyze dataset and create visualization',
 			'context'         => array(
 				'parent_task_id' => 'research-1',
@@ -144,18 +177,22 @@ class Test_Multi_Agent_Orchestration_Integration extends WP_UnitTestCase {
 		);
 
 		$context = array(
-			'assistant_id' => 1,
+			'assistant_id' => $this->assistant_ids['planner'],
 			'user_id'      => 1,
 		);
 
 		$result = $tool->execute( $arguments, $context );
 
 		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'delegation_id', $result );
-		$this->assertArrayHasKey( 'agent_id', $result );
-		$this->assertArrayHasKey( 'task', $result );
-		$this->assertArrayHasKey( 'status', $result );
-		$this->assertEquals( 'delegated', $result['status'] );
+		$this->assertArrayHasKey( 'delegation', $result );
+
+		$delegation = $result['delegation'];
+		$this->assertArrayHasKey( 'delegation_id', $delegation );
+		$this->assertArrayHasKey( 'agent_id', $delegation );
+		$this->assertArrayHasKey( 'task', $delegation );
+		$this->assertArrayHasKey( 'status', $delegation );
+		$this->assertNotEmpty( $delegation['status'], 'Delegation should reach a terminal status' );
+		$this->assertEquals( $this->assistant_ids['executor'], $delegation['agent_id'] );
 	}
 
 	/**
@@ -191,10 +228,13 @@ class Test_Multi_Agent_Orchestration_Integration extends WP_UnitTestCase {
 		$result = $tool->execute( $arguments, $context );
 
 		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'aggregated_result', $result );
-		$this->assertArrayHasKey( 'confidence_score', $result );
-		$this->assertArrayHasKey( 'strategy_used', $result );
-		$this->assertEquals( 'consensus', $result['strategy_used'] );
+		$this->assertArrayHasKey( 'aggregation', $result );
+
+		$aggregation = $result['aggregation'];
+		$this->assertArrayHasKey( 'strategy', $aggregation );
+		$this->assertArrayHasKey( 'result', $aggregation );
+		$this->assertArrayHasKey( 'confidence', $aggregation );
+		$this->assertEquals( 'consensus', $aggregation['strategy'] );
 	}
 
 	/**
@@ -403,8 +443,8 @@ class Test_Multi_Agent_Orchestration_Integration extends WP_UnitTestCase {
 			$result = $tool->execute( $arguments, $context );
 
 			$this->assertIsArray( $result );
-			$this->assertArrayHasKey( 'strategy_used', $result );
-			$this->assertEquals( $strategy, $result['strategy_used'] );
+			$this->assertArrayHasKey( 'aggregation', $result );
+			$this->assertEquals( $strategy, $result['aggregation']['strategy'] );
 		}
 	}
 
@@ -469,7 +509,7 @@ class Test_Multi_Agent_Orchestration_Integration extends WP_UnitTestCase {
 			return;
 		}
 
-		$service = new WP_MCP_AI_Profession_Service();
+		$service = new WP_MCP_AI_Profession_Service( new WP_MCP_AI_Profession_Repository() );
 
 		// Test get_professions_by_agent_role().
 		$planners = $service->get_professions_by_agent_role( 'planner' );
@@ -509,19 +549,27 @@ class Test_Multi_Agent_Orchestration_Integration extends WP_UnitTestCase {
 
 		$team_result = $create_team_tool->execute( $team_args, array( 'user_id' => 1 ) );
 		$this->assertIsArray( $team_result );
-		$this->assertArrayHasKey( 'team_id', $team_result );
+		$this->assertArrayHasKey( 'team', $team_result );
+		$this->assertArrayHasKey( 'team_id', $team_result['team'] );
 
 		// 2. Delegate to executor.
 		$delegate_tool = $tool_registry->get_tool( 'delegate_to_agent' );
 
 		$delegate_args = array(
-			'agent_id' => $this->profession_ids['executor'],
+			'agent_id' => $this->assistant_ids['executor'],
 			'task'     => 'Analyze research data',
 		);
 
-		$delegation_result = $delegate_tool->execute( $delegate_args, array( 'user_id' => 1 ) );
+		$delegation_result = $delegate_tool->execute(
+			$delegate_args,
+			array(
+				'user_id'      => 1,
+				'assistant_id' => $this->assistant_ids['planner'],
+			)
+		);
 		$this->assertIsArray( $delegation_result );
-		$this->assertArrayHasKey( 'delegation_id', $delegation_result );
+		$this->assertArrayHasKey( 'delegation', $delegation_result );
+		$this->assertArrayHasKey( 'delegation_id', $delegation_result['delegation'] );
 
 		// 3. Aggregate results.
 		$aggregate_tool = $tool_registry->get_tool( 'aggregate_agent_results' );
@@ -539,6 +587,6 @@ class Test_Multi_Agent_Orchestration_Integration extends WP_UnitTestCase {
 
 		$aggregate_result = $aggregate_tool->execute( $aggregate_args, array( 'user_id' => 1 ) );
 		$this->assertIsArray( $aggregate_result );
-		$this->assertArrayHasKey( 'aggregated_result', $aggregate_result );
+		$this->assertArrayHasKey( 'aggregation', $aggregate_result );
 	}
 }

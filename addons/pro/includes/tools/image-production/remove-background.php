@@ -31,6 +31,59 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 		);
 	}
 
+	// Security: verify the file is within the WordPress uploads directory
+	// BEFORE any other handling. This prevents arbitrary file exfiltration
+	// (including via symlinks and traversal) regardless of API key state.
+	$upload_dir = wp_upload_dir();
+	if ( isset( $upload_dir['error'] ) && false !== $upload_dir['error'] ) {
+		return new WP_Error(
+			'wp_mcp_ai_upload_dir_error',
+			$upload_dir['error']
+		);
+	}
+
+	$uploads_basedir = isset( $upload_dir['basedir'] ) ? wp_normalize_path( $upload_dir['basedir'] ) : '';
+	if ( empty( $uploads_basedir ) ) {
+		return new WP_Error(
+			'wp_mcp_ai_upload_dir_error',
+			__( 'Unable to determine uploads directory.', 'mcp-ai-wpoos' )
+		);
+	}
+
+	// Resolve the real path. realpath() also resolves symlinks for existing
+	// files; when the file itself does not exist (e.g. a traversal attempt)
+	// resolve the parent directory so the containment check still applies.
+	$realpath = realpath( $image_path );
+	if ( false === $realpath ) {
+		$dirname = realpath( dirname( $image_path ) );
+		if ( false === $dirname ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_image_path',
+				__( 'Access denied. Only files in the WordPress uploads directory can be processed.', 'mcp-ai-wpoos' ),
+				array( 'status' => 403 )
+			);
+		}
+		$realpath = wp_normalize_path( $dirname . '/' . wp_basename( $image_path ) );
+	} else {
+		$realpath = wp_normalize_path( $realpath );
+	}
+
+	// Normalize paths by removing trailing slashes for consistent comparison.
+	$uploads_basedir = rtrim( $uploads_basedir, '/' );
+	$realpath        = rtrim( $realpath, '/' );
+
+	// Check if the file is within the uploads directory.
+	// Add trailing slash to uploads_basedir to prevent bypass via paths like /uploads_malicious/.
+	// The file path must start with uploads directory followed by a slash or be exactly the uploads directory.
+	if ( 0 !== strpos( $realpath . '/', $uploads_basedir . '/' ) &&
+		$realpath !== $uploads_basedir ) {
+		return new WP_Error(
+			'wp_mcp_ai_invalid_image_path',
+			__( 'Access denied. Only files in the WordPress uploads directory can be processed.', 'mcp-ai-wpoos' ),
+			array( 'status' => 403 )
+		);
+	}
+
 	// Check if file exists.
 	if ( ! file_exists( $image_path ) ) {
 		return new WP_Error(
@@ -59,52 +112,6 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 
 	// Prepare the API request.
 	$api_url = 'https://api.remove.bg/v1.0/removebg';
-
-	// Validate that the image path is safe to read.
-	$realpath = realpath( $image_path );
-	if ( false === $realpath ) {
-		return new WP_Error(
-			'wp_mcp_ai_invalid_image_path',
-			__( 'Invalid image path provided.', 'mcp-ai-wpoos' )
-		);
-	}
-
-	// Security: Verify the file is within the WordPress uploads directory.
-	// This prevents arbitrary file exfiltration by ensuring only files in the.
-	// uploads directory can be sent to the remove.bg API.
-	$upload_dir = wp_upload_dir();
-	if ( isset( $upload_dir['error'] ) && false !== $upload_dir['error'] ) {
-		return new WP_Error(
-			'wp_mcp_ai_upload_dir_error',
-			$upload_dir['error']
-		);
-	}
-
-	$uploads_basedir = isset( $upload_dir['basedir'] ) ? wp_normalize_path( $upload_dir['basedir'] ) : '';
-	if ( empty( $uploads_basedir ) ) {
-		return new WP_Error(
-			'wp_mcp_ai_upload_dir_error',
-			__( 'Unable to determine uploads directory.', 'mcp-ai-wpoos' )
-		);
-	}
-
-	$normalized_realpath = wp_normalize_path( $realpath );
-
-	// Normalize paths by removing trailing slashes for consistent comparison.
-	$uploads_basedir     = rtrim( $uploads_basedir, '/' );
-	$normalized_realpath = rtrim( $normalized_realpath, '/' );
-
-	// Check if the file is within the uploads directory.
-	// Add trailing slash to uploads_basedir to prevent bypass via paths like /uploads_malicious/.
-	// The file path must start with uploads directory followed by a slash or be exactly the uploads directory.
-	if ( 0 !== strpos( $normalized_realpath . '/', $uploads_basedir . '/' ) &&
-		$normalized_realpath !== $uploads_basedir ) {
-		return new WP_Error(
-			'wp_mcp_ai_invalid_image_path',
-			__( 'Access denied. Only files in the WordPress uploads directory can be processed.', 'mcp-ai-wpoos' ),
-			array( 'status' => 403 )
-		);
-	}
 
 	// Read image file.
 	$image_data = file_get_contents( $realpath ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.

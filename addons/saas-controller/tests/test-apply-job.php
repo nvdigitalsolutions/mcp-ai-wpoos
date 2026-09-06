@@ -65,6 +65,13 @@ class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 		$this->engine = new NVOOS_SaaS_Controller_Apply_Engine( $this->stub );
 
 		add_filter( 'nvoos_saas_controller_apply_job_engine', array( $this, 'inject_engine' ) );
+
+		// Under DISABLE_WP_CRON (always true in the test environment) the
+		// inline loop drains the whole queue in one handle_tick() call.
+		// Disable it so the per-tick progress tests can assert one row per
+		// tick — the drain behavior is covered by the production code path
+		// and the inline-kick tests below.
+		add_filter( 'wp_mcp_ai_inline_tick_loop_enabled', '__return_false' );
 	}
 
 	/**
@@ -73,6 +80,7 @@ class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 	 * @return void
 	 */
 	public function tearDown(): void {
+		remove_filter( 'wp_mcp_ai_inline_tick_loop_enabled', '__return_false' );
 		remove_filter( 'nvoos_saas_controller_apply_job_engine', array( $this, 'inject_engine' ) );
 		delete_option( NVOOS_SaaS_Controller_Audit_Log::OPTION );
 		delete_option( NVOOS_SaaS_Controller_Apply_Engine::DEPLOYED_OPTION );
@@ -382,9 +390,14 @@ class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 		};
 		add_action( 'wp_mcp_ai_inline_kick_completed', $listener, 10, 4 );
 
+		// Core hooks wp_ob_end_flush_all() onto `shutdown` at priority 1;
+		// firing the action directly would drain PHPUnit's own output
+		// buffers, so neutralize it for the simulated shutdown.
+		remove_action( 'shutdown', 'wp_ob_end_flush_all', 1 );
 		try {
 			do_action( 'shutdown' );
 		} finally {
+			add_action( 'shutdown', 'wp_ob_end_flush_all', 1 );
 			remove_action( 'wp_mcp_ai_inline_kick_completed', $listener, 10 );
 		}
 
@@ -426,7 +439,15 @@ class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 		try {
 			$state = NVOOS_SaaS_Controller_Apply_Job::enqueue_plan( $this->plan_with_two_creates_and_one_update() );
 
-			do_action( 'shutdown' );
+			// Core hooks wp_ob_end_flush_all() onto `shutdown` at priority 1;
+			// firing the action directly would drain PHPUnit's own output
+			// buffers, so neutralize it for the simulated shutdown.
+			remove_action( 'shutdown', 'wp_ob_end_flush_all', 1 );
+			try {
+				do_action( 'shutdown' );
+			} finally {
+				add_action( 'shutdown', 'wp_ob_end_flush_all', 1 );
+			}
 
 			$progress = NVOOS_SaaS_Controller_Apply_Job::get_progress( $state['id'] );
 			$this->assertSame( 'queued', $progress['status'], 'with the filter disabled the inline kick must not advance the job' );

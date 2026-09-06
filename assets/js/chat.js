@@ -684,7 +684,38 @@
             if (options.signal) {
                 fetchOptions.signal = options.signal;
             }
-            return fetch(url, fetchOptions);
+
+            const doFetch = function () {
+                return fetch(url, fetchOptions);
+            };
+
+            // Self-heal a stale session nonce before reading the response
+            // body: on 403 rest_cookie_invalid_nonce, mint a fresh nonce from
+            // the /session/nonce endpoint and re-issue the request once. This
+            // mirrors the retry inside chat-http-client-service.js for the
+            // Ky-based paths; SSE streaming deliberately bypasses Ky.
+            return doFetch().then(function (response) {
+                if (response.status !== 403 || !httpClientService || !httpClientService.refreshRestNonce) {
+                    return response;
+                }
+
+                return response.clone().json()
+                    .catch(function () { return null; })
+                    .then(function (body) {
+                        if (!body || body.code !== 'rest_cookie_invalid_nonce') {
+                            return response;
+                        }
+
+                        return httpClientService.refreshRestNonce().then(function (nonce) {
+                            if (!nonce) {
+                                return response;
+                            }
+
+                            headers['X-WP-Nonce'] = nonce;
+                            return doFetch();
+                        });
+                    });
+            });
         }
         
         // Use HTTP client service if available
@@ -5352,22 +5383,42 @@
         return '';
     }
 
+    /**
+     * Resolve the REST nonce for a request, preferring a nonce refreshed at
+     * runtime over the nonce embedded in the page HTML.
+     *
+     * The embedded nonce is bound to the current user's session token and
+     * goes stale on full-page-cached pages or after session-token rotation.
+     * Once the HTTP client has refreshed it (see chat-http-client-service.js,
+     * which sets globalConfig.nonceRefreshed), every subsequent request must
+     * use the fresh value.
+     *
+     * @param {Object} state Chat instance state.
+     * @return {string} Nonce ('' when unavailable).
+     */
+    function resolveNonce(state) {
+        // globalConfig is a snapshot taken at bundle load; the refreshed nonce
+        // is written to the live window.wpMcpAiChat object by the HTTP client
+        // (chat-http-client-service.js), so read it from the live global.
+        const live = window.wpMcpAiChat;
+        if (live && live.nonceRefreshed && live.nonce) {
+            return live.nonce;
+        }
+        if (state && state.config && state.config.restNonce) {
+            return state.config.restNonce;
+        }
+        if (globalConfig && globalConfig.nonce) {
+            return globalConfig.nonce;
+        }
+        return '';
+    }
+
     function buildHistoryHeaders(state) {
         const headers = { 'Accept': 'application/json' };
-        let nonce = '';
+        const nonce = resolveNonce(state);
 
-        if (state && state.config) {
-            if (state.config.restNonce) {
-                nonce = state.config.restNonce;
-            } else if (globalConfig.nonce) {
-                nonce = globalConfig.nonce;
-            }
-
-            if (state.config.guestToken) {
-                headers['X-WP-MCP-AI-Guest'] = state.config.guestToken;
-            }
-        } else if (globalConfig.nonce) {
-            nonce = globalConfig.nonce;
+        if (state && state.config && state.config.guestToken) {
+            headers['X-WP-MCP-AI-Guest'] = state.config.guestToken;
         }
 
         if (nonce) {
@@ -6354,14 +6405,8 @@
     }
 
     function buildJsonHeaders(state) {
-        let nonce = '';
-        
-        // Priority: state.config.restNonce > globalConfig.nonce
-        if (state && state.config && state.config.restNonce) {
-            nonce = state.config.restNonce;
-        } else if (globalConfig && globalConfig.nonce) {
-            nonce = globalConfig.nonce;
-        }
+        // Priority: runtime-refreshed nonce > instance nonce > page nonce.
+        const nonce = resolveNonce(state);
         
         const headers = {
             'Content-Type': 'application/json',
@@ -7474,12 +7519,7 @@
         if (guestToken) {
             params.push('guest_token=' + encodeURIComponent(guestToken));
         } else {
-            let nonce = '';
-            if (state && state.config && state.config.restNonce) {
-                nonce = state.config.restNonce;
-            } else if (globalConfig.nonce) {
-                nonce = globalConfig.nonce;
-            }
+            const nonce = resolveNonce(state);
 
             if (nonce) {
                 params.push('_wpnonce=' + encodeURIComponent(nonce));
@@ -10710,12 +10750,7 @@
             if (guestToken) {
                 url += '&guest_token=' + encodeURIComponent(guestToken);
             } else {
-                let nonce = '';
-                if (state && state.config && state.config.restNonce) {
-                    nonce = state.config.restNonce;
-                } else if (globalConfig.nonce) {
-                    nonce = globalConfig.nonce;
-                }
+                const nonce = resolveNonce(state);
 
                 if (nonce) {
                     url += '&_wpnonce=' + encodeURIComponent(nonce);

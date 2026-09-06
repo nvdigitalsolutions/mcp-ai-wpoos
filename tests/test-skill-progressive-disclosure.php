@@ -81,11 +81,17 @@ class WP_MCP_AI_Skill_Progressive_Disclosure_Test extends WP_UnitTestCase {
 	/**
 	 * Redirect uploads basedir to the temporary test directory.
 	 *
+	 * Point `basedir` at the per-test directory so the registry resolves its
+	 * skills dir to `{$this->test_skills_dir}/mcp-ai-skills` — fully isolated
+	 * per test and removed wholesale in tearDown. (Previously the filter used
+	 * `dirname()`, which shared the system temp dir across suites and leaked
+	 * installed skills between runs.)
+	 *
 	 * @param array $dirs Upload dir info.
 	 * @return array
 	 */
 	public function filter_upload_dir( $dirs ) {
-		$dirs['basedir'] = dirname( $this->test_skills_dir );
+		$dirs['basedir'] = $this->test_skills_dir;
 		return $dirs;
 	}
 

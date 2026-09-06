@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Composio — Create Connect Link.
  */
-class WP_MCP_AI_Tool_Composio_Create_Connect_Link implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Composio_Create_Connect_Link implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface {
 	use WP_MCP_AI_Tool_Envelope;
 
 	/**
@@ -59,7 +59,7 @@ class WP_MCP_AI_Tool_Composio_Create_Connect_Link implements WP_MCP_AI_Tool_Inte
 				),
 				'connection_id' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional Composio connection ID.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Optional NV oOS Composio connection ID ("conn_..."), identifying this site\'s Composio project integration. NOT a connected-account ID — do not pass a "ca_..." value here. Omit it to use the first enabled Composio connection.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'   => array( 'toolkit' ),
@@ -128,6 +128,16 @@ class WP_MCP_AI_Tool_Composio_Create_Connect_Link implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_capability_flags(): array {
 		return array( 'write', 'pro', 'requires-capability', 'remote-api' );
+	}
+
+	/**
+	 * The hosted Connect Link is a bearer capability: the `lk_...` path
+	 * segment alone lets anyone holding the URL complete the OAuth flow.
+	 *
+	 * {@inheritdoc}
+	 */
+	public function get_sensitive_result_fields(): array {
+		return array( 'url' );
 	}
 
 	/**

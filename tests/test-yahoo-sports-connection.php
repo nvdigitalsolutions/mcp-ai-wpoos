@@ -27,10 +27,15 @@ class WP_MCP_AI_Yahoo_Sports_Connection_Test extends WP_UnitTestCase {
 		);
 		wp_set_current_user( $this->admin_user );
 
-		// Ensure admin classes are loaded.
-		if ( ! did_action( 'admin_init' ) ) {
-			do_action( 'admin_init' );
-		}
+		// Construct the admin settings service so its constructor registers the
+		// connection-test AJAX handlers. In production this happens inside the
+		// is_admin() loader block; the CLI test context is never admin, so the
+		// tests construct it explicitly instead of firing admin_init (which
+		// would re-register WooCommerce/admin-only hooks and trip
+		// _doing_it_wrong notices). A fresh instance is used per test because
+		// WP_UnitTestCase restores the hook snapshot in tearDown, wiping
+		// registrations made during setUp.
+		new WP_MCP_AI_Admin_Settings();
 	}
 
 	/**
@@ -44,38 +49,37 @@ class WP_MCP_AI_Yahoo_Sports_Connection_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that Yahoo Sports fields are included in integrations section.
+	 * Test that Yahoo Sports fields are no longer exposed by the base
+	 * integrations section.
+	 *
+	 * The Yahoo/ESPN credentials moved to the Pro addon and then out to the
+	 * standalone fantasy-football addon, so the base plugin must not ship the
+	 * pro-only fields (base/pro separation).
 	 */
-	public function test_yahoo_sports_fields_exist_in_integrations() {
+	public function test_yahoo_sports_fields_excluded_from_base_integrations() {
 		$section = new WP_MCP_AI_Section_Integrations();
 		$fields  = $section->get_fields();
 
-		$this->assertArrayHasKey( 'yahoo_client_id', $fields, 'Yahoo Client ID field should exist' );
-		$this->assertArrayHasKey( 'yahoo_client_secret', $fields, 'Yahoo Client Secret field should exist' );
-
-		// Verify field structure.
-		$this->assertEquals( 'text', $fields['yahoo_client_id']['type'] );
-		$this->assertEquals( 'password', $fields['yahoo_client_secret']['type'] );
+		$this->assertArrayNotHasKey( 'yahoo_client_id', $fields, 'Yahoo Client ID must not be exposed by the base integrations section' );
+		$this->assertArrayNotHasKey( 'yahoo_client_secret', $fields, 'Yahoo Client Secret must not be exposed by the base integrations section' );
 	}
 
 	/**
-	 * Test that Yahoo Sports is in the connections subtab groups.
+	 * Test that Yahoo Sports is no longer a base integrations subtab.
+	 *
+	 * The Fantasy Sports subtab moved out with the fantasy-football addon
+	 * split; the base integrations section must not render the pro-only
+	 * connection group.
 	 */
-	public function test_yahoo_sports_in_subtab_groups() {
+	public function test_yahoo_sports_subtab_excluded_from_base_integrations() {
 		$section    = new WP_MCP_AI_Section_Integrations();
 		$reflection = new ReflectionClass( $section );
 		$method     = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
 		$subtab_groups = $method->invoke( $section );
 
-		$this->assertArrayHasKey( 'yahoo_sports', $subtab_groups, 'Yahoo Sports should be in subtab groups' );
-
-		$yahoo_group = $subtab_groups['yahoo_sports'];
-		$this->assertEquals( 'yahoo_sports', $yahoo_group['id'] );
-		$this->assertEquals( 'dashicons-awards', $yahoo_group['icon'] );
-		$this->assertTrue( $yahoo_group['pro'], 'Yahoo Sports should be marked as Pro feature' );
-		$this->assertContains( 'yahoo_client_id', $yahoo_group['fields'] );
-		$this->assertContains( 'yahoo_client_secret', $yahoo_group['fields'] );
+		$this->assertArrayNotHasKey( 'yahoo_sports', $subtab_groups, 'Yahoo Sports must not be a base integrations subtab' );
+		$this->assertArrayNotHasKey( 'fantasy_sports', $subtab_groups, 'Fantasy Sports must not be a base integrations subtab' );
 	}
 
 	/**
@@ -203,12 +207,18 @@ class WP_MCP_AI_Yahoo_Sports_Connection_Test extends WP_UnitTestCase {
 		$_POST['client_id']     = '';
 		$_POST['client_secret'] = '';
 
-		// Create instance and call handler.
+		// Create instance and call handler. The handler terminates via
+		// wp_send_json, which the test framework converts into a
+		// WPAjaxDieContinueException.
 		$ajax_handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
 
 		// Capture output.
 		ob_start();
-		$ajax_handlers->handle_test_yahoo_connection();
+		try {
+			$ajax_handlers->handle_test_yahoo_connection();
+		} catch ( WPAjaxDieContinueException $e ) {
+			unset( $e ); // Expected: wp_send_json ends the request through the test die handler.
+		}
 		$response = ob_get_clean();
 
 		// Parse JSON response.
@@ -234,12 +244,18 @@ class WP_MCP_AI_Yahoo_Sports_Connection_Test extends WP_UnitTestCase {
 		$_POST['client_id']     = 'dj0yJmk9V2VxZW1NRE9zV2lVJmQ9WVdrOVRuYzJWR3BKYkUwbWNHbzlNQT09JnM9Y29uc3VtZXJzZWNyZXQmc3Y9MCZ4PTQ4';
 		$_POST['client_secret'] = '1733cd6d727fc75f981a0d44a07d5ffa961696e3';
 
-		// Create instance and call handler.
+		// Create instance and call handler. The handler terminates via
+		// wp_send_json, which the test framework converts into a
+		// WPAjaxDieContinueException.
 		$ajax_handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
 
 		// Capture output.
 		ob_start();
-		$ajax_handlers->handle_test_yahoo_connection();
+		try {
+			$ajax_handlers->handle_test_yahoo_connection();
+		} catch ( WPAjaxDieContinueException $e ) {
+			unset( $e ); // Expected: wp_send_json ends the request through the test die handler.
+		}
 		$response = ob_get_clean();
 
 		// Parse JSON response.
