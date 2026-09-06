@@ -50,6 +50,7 @@ final class Plugin {
 		$this->registerA2aRest();
 		$this->registerWorkflowCpts();
 		$this->registerTenant();
+		$this->registerIntegrations();
 	}
 
 	private function registerAdmin(): void {
@@ -438,6 +439,87 @@ final class Plugin {
 		if ( class_exists( __NAMESPACE__ . '\Tenant\TenantBootstrap' ) ) {
 			\NvoosContentGraphAiPlatform\Tenant\TenantBootstrap::register();
 		}
+	}
+
+	/**
+	 * Register the OAuth integrations (Wave E4, sub-cluster 2).
+	 *
+	 * Standalone-only: the base plugin owns the same `admin_post_*`
+	 * wiring (admin-settings component for the Gmail/Drive/Calendar
+	 * flows; github/meta/quickbooks integration init files for the
+	 * provider handlers) in monolith installs; double registration
+	 * would double-handle every OAuth action.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return void
+	 */
+	private function registerIntegrations(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Integrations\OAuthManager' ) ) {
+			$oauth = new \NvoosContentGraphAiPlatform\Integrations\OAuthManager();
+			add_action( 'admin_post_wp_mcp_ai_gmail_oauth_start', array( $oauth, 'handle_gmail_oauth_start' ) );
+			add_action( 'admin_post_wp_mcp_ai_gmail_disconnect', array( $oauth, 'handle_gmail_disconnect' ) );
+			add_action( 'admin_post_wp_mcp_ai_google_drive_oauth_start', array( $oauth, 'handle_google_drive_oauth_start' ) );
+			add_action( 'admin_post_wp_mcp_ai_google_drive_disconnect', array( $oauth, 'handle_google_drive_disconnect' ) );
+			add_action( 'admin_post_wp_mcp_ai_google_calendar_oauth_start', array( $oauth, 'handle_google_calendar_oauth_start' ) );
+			add_action( 'admin_post_wp_mcp_ai_google_calendar_disconnect', array( $oauth, 'handle_google_calendar_disconnect' ) );
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Integrations\GithubOAuthHandler' ) ) {
+			$github = new \NvoosContentGraphAiPlatform\Integrations\GithubOAuthHandler();
+			add_action( 'admin_post_wp_mcp_ai_github_oauth_start', array( $github, 'handle_github_oauth_start' ) );
+			add_action( 'admin_post_wp_mcp_ai_github_oauth_callback', array( $github, 'handle_github_oauth_callback' ) );
+			add_filter( 'allowed_redirect_hosts', array( $github, 'allow_github_oauth_redirect_host' ), 10, 2 );
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Integrations\MetaOAuthHandler' ) ) {
+			$meta = new \NvoosContentGraphAiPlatform\Integrations\MetaOAuthHandler();
+			add_action( 'admin_post_wp_mcp_ai_meta_oauth_start', array( $meta, 'handle_meta_oauth_start' ) );
+			add_action( 'admin_post_wp_mcp_ai_meta_oauth_callback', array( $meta, 'handle_meta_oauth_callback' ) );
+			add_action( 'admin_post_wp_mcp_ai_meta_disconnect', array( $meta, 'handle_meta_disconnect' ) );
+			add_filter( 'allowed_redirect_hosts', array( $meta, 'allow_meta_oauth_redirect_host' ), 10, 2 );
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Integrations\QuickbooksOAuthHandler' ) ) {
+			$quickbooks = new \NvoosContentGraphAiPlatform\Integrations\QuickbooksOAuthHandler();
+			add_action( 'admin_post_wp_mcp_ai_quickbooks_oauth_start', array( $quickbooks, 'handle_quickbooks_oauth_start' ) );
+			add_action( 'admin_post_wp_mcp_ai_quickbooks_oauth_callback', array( $quickbooks, 'handle_quickbooks_oauth_callback' ) );
+			add_action( 'admin_post_wp_mcp_ai_quickbooks_disconnect', array( $quickbooks, 'handle_quickbooks_disconnect' ) );
+			add_action(
+				'admin_notices',
+				static function (): void {
+					$notice = get_transient( 'wp_mcp_ai_quickbooks_oauth_notice' );
+
+					if ( ! $notice || ! is_array( $notice ) ) {
+						return;
+					}
+
+					delete_transient( 'wp_mcp_ai_quickbooks_oauth_notice' );
+
+					$type    = isset( $notice['type'] ) ? sanitize_key( $notice['type'] ) : 'info';
+					$message = isset( $notice['message'] ) ? $notice['message'] : '';
+
+					if ( empty( $message ) ) {
+						return;
+					}
+
+					$class = 'notice notice-' . $type . ' is-dismissible';
+					printf(
+						'<div class="%s"><p>%s</p></div>',
+						esc_attr( $class ),
+						wp_kses_post( $message )
+					);
+				}
+			);
+		}
+
+		// Mailjet: byte-identical to the base — its integration init wires
+		// only the webhook handler; the OAuth handler is a static token
+		// utility with no hooks of its own.
 	}
 
 	private function __clone() {}
