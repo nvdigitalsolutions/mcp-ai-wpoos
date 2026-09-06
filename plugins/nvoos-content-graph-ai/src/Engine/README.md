@@ -20,7 +20,11 @@ ZIP distribution, and the skill-knowledge generator (see
 `Okf/README.md`). Sub-cluster 5 — crawler: the
 Crawl4AI background coordinator from the base plugin's
 `includes/crawler/` plus its required inline-async-tick trait
-collaborator (see `Crawler/README.md`). All ported into the AI
+collaborator (see `Crawler/README.md`). Sub-cluster 6 — oos-bridge
+wave-1 helpers: the session-log/telemetry + canary flags (on
+`OosEngineFlags`) and the five wave-1 service-bridge factories
+(`OosServiceBridges` — semantic compressor, data budget, erlang C,
+error/cost tracking). All ported into the AI
 addon per decision D4 (engine pieces fold into `nvoos-content-graph-ai`
 under the `Engine\` namespace).
 
@@ -38,7 +42,8 @@ under the `Engine\` namespace).
 | Symbol | File | Used by |
 |---|---|---|
 | `NvoosContentGraphAi\Engine\OosShadowRunner` | `OosShadowRunner.php` | hooked on `wp_mcp_ai_before_chat_request` priority 1 (standalone-only); the parity CLI reads its store |
-| `NvoosContentGraphAi\Engine\OosEngineFlags` | `OosEngineFlags.php` | `OosShadowRunner`, `OosShadowSuppression` — shadow/engine gates + write-class classifier |
+| `NvoosContentGraphAi\Engine\OosEngineFlags` | `OosEngineFlags.php` | `OosShadowRunner`, `OosShadowSuppression` — shadow/engine/session-log/telemetry/canary gates + write-class classifier |
+| `NvoosContentGraphAi\Engine\OosServiceBridges` | `OosServiceBridges.php` | wave-1 service resolvers (semantic compressor, data budget, erlang C, error/cost tracking) |
 | `NvoosContentGraphAi\Engine\OosShadowSuppression` | `OosShadowSuppression.php` | `Plugin::registerEngine()` — `tools/execute` waterfall (priority 20) |
 | `NvoosContentGraphAi\Cli\OosParityCommand` | `../Cli/OosParityCommand.php` | `wp nvoos-cg-ai oos parity [diff <run-id>]` (standalone-only) |
 | `NvoosContentGraphAi\Engine\Markup\MarkupBootstrap` | `Markup/MarkupBootstrap.php` | `Plugin::registerEngine()` — wraps the base `markup-init.php` hook surface (standalone-only); see `Markup/README.md` for the full 15-class surface |
@@ -104,6 +109,10 @@ option/filter surface (`enable_oos_shadow`, `oos_shadow_sample_rate`,
   containment paths, the capped newest-first store, flag helpers,
   classifier, the suppression waterfall (real dispatcher + registry),
   per-mode seams, and the CLI aggregate/diff data methods.
+- `tests/Ecosystem/test-oos-service-bridges.php` — the wave-1
+  service-bridge resolvers (contract + math + caching per mode,
+  incl. the data-budget dead-branch quirk) and the session-log/
+  telemetry/canary flag helpers.
 - `tests/Ecosystem/test-markup-*.php` — markup core (value objects,
   store, validator, rasterizer), loop/REST (interceptor gate chain,
   per-mode wiring, REST contract, tool-resume seam), telemetry/UI
@@ -128,6 +137,7 @@ option/filter surface (`enable_oos_shadow`, `oos_shadow_sample_rate`,
 
 ```bash
 vendor/bin/phpunit -c plugins/nvoos-content-graph-ai/phpunit-ecosystem.xml.dist plugins/nvoos-content-graph-ai/tests/Ecosystem/test-oos-shadow-runner.php
+vendor/bin/phpunit -c plugins/nvoos-content-graph-ai/phpunit-ecosystem.xml.dist plugins/nvoos-content-graph-ai/tests/Ecosystem/test-oos-service-bridges.php
 vendor/bin/phpunit -c plugins/nvoos-content-graph-ai/phpunit-ecosystem.xml.dist plugins/nvoos-content-graph-ai/tests/Ecosystem/test-markup-core.php
 ```
 

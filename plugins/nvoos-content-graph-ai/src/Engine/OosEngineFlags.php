@@ -4,13 +4,16 @@
  *
  * Aligned port of the base plugin's OOS gate helpers from
  * `includes/bootstrap/oos-bridge.php`: byte-identical option keys
- * (`enable_oos_shadow`, `oos_shadow_sample_rate`, `enable_oos_engine`),
+ * (`enable_oos_shadow`, `oos_shadow_sample_rate`, `enable_oos_engine`,
+ * `enable_oos_session_log`, `enable_oos_session_telemetry`),
  * the `wp_mcp_ai_oos_shadow_enabled` / `wp_mcp_ai_oos_shadow_sample_rate`
- * / `wp_mcp_ai_oos_shadow_timeout_seconds` filters, the
- * `WP_MCP_AI_OOS_ENGINE` constant, the `X-WP-MCP-AI-Engine: oos` header
- * and `?engine=oos` query probes, and the write-class classifier
+ * / `wp_mcp_ai_oos_shadow_timeout_seconds` / `wp_mcp_ai_enable_session_log`
+ * / `wp_mcp_ai_enable_session_telemetry` / `wp_mcp_ai_oos_canary` filters,
+ * the `WP_MCP_AI_OOS_ENGINE` constant, the `X-WP-MCP-AI-Engine: oos` header
+ * and `?engine=oos` query probes, the write-class classifier
  * (`ToolWriteClassInterface` capability-flag semantics; capability
- * heuristic fails safe).
+ * heuristic fails safe), and the canary `_wp_mcp_ai_engine` post-meta
+ * probe.
  *
  * Documented deviations:
  *  - Class name/namespace — the AI addon's PSR-4 tree (decision D4:
@@ -146,5 +149,81 @@ final class OosEngineFlags {
 
 		// Fail safe: any capability beyond read/public implies mutation.
 		return '' !== $capability && 'read' !== $capability && 'public' !== $capability;
+	}
+
+	/**
+	 * Whether OOS session logging (Proposal 029, Phase 3) is enabled.
+	 *
+	 * Off by default until replay tests prove log-derived history parity.
+	 * Enable via the admin setting enable_oos_session_log or the
+	 * wp_mcp_ai_enable_session_log filter.
+	 *
+	 * @return bool
+	 */
+	public static function session_log_enabled(): bool {
+		if ( \function_exists( 'wp_mcp_ai_enable_session_log' ) ) {
+			return \wp_mcp_ai_enable_session_log();
+		}
+
+		$settings = \get_option( 'wp_mcp_ai_settings', array() );
+		if ( ! empty( $settings['enable_oos_session_log'] ) ) {
+			return true;
+		}
+
+		return (bool) \apply_filters( 'wp_mcp_ai_enable_session_log', false );
+	}
+
+	/**
+	 * Whether OOS session-log telemetry (Proposal 029, Phase 5.8) is enabled.
+	 *
+	 * Off by default: when enabled, every appended session-log entry fans out
+	 * to WordPress consumers via the wp_mcp_ai_session_log_event action —
+	 * the single path audit/telemetry subscribers consume instead of
+	 * re-wrapping the loop. Requires session logging (above) to be enabled.
+	 *
+	 * Enable via the admin setting enable_oos_session_telemetry or the
+	 * wp_mcp_ai_enable_session_telemetry filter.
+	 *
+	 * @return bool
+	 */
+	public static function session_telemetry_enabled(): bool {
+		if ( \function_exists( 'wp_mcp_ai_enable_session_telemetry' ) ) {
+			return \wp_mcp_ai_enable_session_telemetry();
+		}
+
+		$settings = \get_option( 'wp_mcp_ai_settings', array() );
+		if ( ! empty( $settings['enable_oos_session_telemetry'] ) ) {
+			return true;
+		}
+
+		return (bool) \apply_filters( 'wp_mcp_ai_enable_session_telemetry', false );
+	}
+
+	/**
+	 * Whether the request's assistant is canary-opted into the OOS engine
+	 * via the _wp_mcp_ai_engine post meta (Proposal 029, Phase 4.2).
+	 *
+	 * @param \WP_REST_Request|null $request Optional request to read the assistant from.
+	 * @return bool
+	 */
+	public static function canary_enabled( $request = null ): bool {
+		if ( \function_exists( 'wp_mcp_ai_oos_canary_enabled' ) ) {
+			return \wp_mcp_ai_oos_canary_enabled( $request );
+		}
+
+		if ( ! (bool) \apply_filters( 'wp_mcp_ai_oos_canary', false ) ) {
+			return false;
+		}
+
+		$assistant_id = 0;
+		if ( $request instanceof \WP_REST_Request ) {
+			$assistant_id = (int) $request->get_param( 'assistant_id' );
+		}
+
+		if ( $assistant_id > 0 ) {
+			return 'oos' === \get_post_meta( $assistant_id, '_wp_mcp_ai_engine', true );
+		}
+
+		return false;
 	}
 }

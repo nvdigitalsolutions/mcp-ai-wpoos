@@ -16,7 +16,7 @@ Process strictly top-to-bottom; skip a cluster only when its notes say "blocked"
 | 2 | E5 | A2A REST receive routes | S–M | Closes MIGRATION-GAPS. Controller extends `WP_MCP_AI_REST_Controller_Base` and holds the main REST instance — needs per-mode seams, do NOT drag in `includes/a2a/` beyond what the controller requires. |
 | 3 | E1 | Workflow engine + CPTs + triggers | XL | Split into sub-clusters (CPTs first, then dispatcher, then WorkflowEngineV2 + optimizer). One PR per sub-cluster. |
 | 4 | E4 | Tenant + integrations (OAuth, Calendar, site-builder, conversation-import) | L | Split per integration. |
-| 5 | E6 | OOS/markup/paper-store/OKF/crawler | M | Decision D4 resolved (fold into CG-AI under `Engine\`, gap-analysis §10); sub-clusters 1 (OOS shadow) + 2 (markup) + 3 (paper-store) + 4 (OKF) + 5 (crawler) landed — continue with the oos-bridge wave-1/2 service helpers (pending consumer ports). |
+| 5 | E6 | OOS/markup/paper-store/OKF/crawler | M | Decision D4 resolved (fold into CG-AI under `Engine\`, gap-analysis §10); sub-clusters 1 (OOS shadow) + 2 (markup) + 3 (paper-store) + 4 (OKF) + 5 (crawler) + 6 (oos-bridge wave-1 helpers: session-log/telemetry + canary flags, semantic compressor, data budget, erlang C, error/cost tracking bridges) landed — E6 complete. The six wave-2 factory bridges (model catalog, token budget, file validation/upload/orchestration, rate limiter) remain base-owned pending their consumer ports. |
 | 6 | E-UI-1 | Dashboards (multi-agent, orchestration, slash-commands, run timeline) | M | Needs E2 (done) + E3 (cluster 1). |
 | 7 | E-UI-2 | Managers (tool/token/cron/DAG/DLQ/approvals) | L | Split per manager. |
 | 8 | E-UI-3 | Integrations screens | M | |
