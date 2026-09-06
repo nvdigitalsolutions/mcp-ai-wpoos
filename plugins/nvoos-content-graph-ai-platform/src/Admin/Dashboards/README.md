@@ -25,7 +25,24 @@ actions, the documentation links, the recent-workflows transient
 list, the agent memory stats widget (type/wing/importance
 breakdowns, wings/rooms, mined count, persistent CCT vs cache split,
 retrieval-path chart, RAG features, context health metrics) and the
-workflow execute/restart AJAX flows.
+workflow execute/restart AJAX flows. Sub-cluster 3
+(`SlashCommandsDashboard`) is the aligned port of
+`WP_MCP_AI_Admin_Slash_Commands_Dashboard`: byte-identical page slug
+(`mcp-ai-slash-commands`) with the `edit_posts` (Contributor+) menu
+capability, the five AJAX actions (execute-command / get-history /
+get-entry / clear-history / execute-workflow), the four in-page tabs
+(commands/workflows/history/test with the `$_GET['tab']` whitelist),
+the command statistics + global/toolkit grouping + help display, the
+workflows table + details + execution boxes, the history table, the
+command tester, the handler-driven command list, the
+orchestrator-driven workflow list (built-in + uploads YAML), the
+execution history option (100-entry cap, 500-char truncation), and
+the execute/history AJAX flows. Its handler/orchestrator resolve
+through the `wp_mcp_ai_get_slash_command_handler()` /
+`wp_mcp_ai_get_workflow_orchestrator()` globals (base monolith /
+platform shim standalone — no seam needed); the toolkit grouping uses
+the `toolkit_manager()`/`toolkit_name()` seams; the base's `private`
+helpers become `protected` for test exposure (documented).
 
 ## Tier
 
@@ -43,6 +60,7 @@ workflow execute/restart AJAX flows.
 |---|---|---|
 | `NvoosContentGraphAiPlatform\Admin\Dashboards\MultiAgentDashboard` | `MultiAgentDashboard.php` | `Plugin::registerDashboards()` — standalone menu/enqueue/AJAX wiring |
 | `NvoosContentGraphAiPlatform\Admin\Dashboards\OrchestrationDashboard` | `OrchestrationDashboard.php` | `Plugin::registerDashboards()` — standalone menu/enqueue/AJAX wiring |
+| `NvoosContentGraphAiPlatform\Admin\Dashboards\SlashCommandsDashboard` | `SlashCommandsDashboard.php` | `Plugin::registerDashboards()` — standalone menu/enqueue/AJAX wiring |
 
 ## Inputs / Outputs / Neighbors
 
@@ -98,6 +116,20 @@ workflow execute/restart AJAX flows.
   retrieval-path), the render output (incl. the per-mode settings
   links), the AJAX nonce/capability gates, the workflow restart
   flow, and the per-mode asset enqueues. Runs in both matrices.
+- `tests/test-slash-commands-dashboard.php` — characterization suite
+  covering the byte-identical constants/slug/nonce/action names,
+  per-mode menu registration (edit_posts capability), register
+  idempotence, the toolkit manager/name seams + grouping, the
+  handler-driven command list shape, the orchestrator-driven
+  workflow list shape, the execution history sort/limit/entry/
+  truncation/cap, the four-tab routing with the `$_GET['tab']`
+  whitelist, the render capability gate, the AJAX nonce/capability/
+  empty-input gates, the execute-command success + error envelopes,
+  the history get/entry/clear flows, the execute-workflow gates, and
+  the per-mode asset enqueues. Standalone loads the slash-command
+  global-function shims in `setUp` (the production boot path fires
+  before the test bootstrap requires the ecosystem files). Runs in
+  both matrices.
 
 ## Also Load
 
@@ -108,6 +140,6 @@ workflow execute/restart AJAX flows.
 
 ## See Also
 
-- Base originals: `includes/admin/class-wp-mcp-ai-admin-multi-agent-dashboard.php` (sub-cluster 1), `class-wp-mcp-ai-admin-orchestration-dashboard.php` (sub-cluster 2), `class-wp-mcp-ai-admin-slash-commands-dashboard.php`, `class-wp-mcp-ai-admin-run-timeline-dashboard.php`
+- Base originals: `includes/admin/class-wp-mcp-ai-admin-multi-agent-dashboard.php` (sub-cluster 1), `class-wp-mcp-ai-admin-orchestration-dashboard.php` (sub-cluster 2), `class-wp-mcp-ai-admin-slash-commands-dashboard.php` (sub-cluster 3), `class-wp-mcp-ai-admin-run-timeline-dashboard.php`
 - [`docs/project/plans/ecosystem-port-cluster-loop.md`](../../../../docs/project/plans/ecosystem-port-cluster-loop.md) — cluster ordering + pipeline
 - [`docs/project/ecosystem-port-tracker.md`](../../../../docs/project/ecosystem-port-tracker.md) — E-UI-1 row status
