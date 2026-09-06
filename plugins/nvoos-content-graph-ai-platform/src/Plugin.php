@@ -69,6 +69,27 @@ final class Plugin {
 		if ( class_exists( __NAMESPACE__ . '\Admin\PlatformSettings' ) ) {
 			( new \NvoosContentGraphAiPlatform\Admin\PlatformSettings() )->register();
 		}
+
+		// 4. Operator dashboards (Wave E-UI-1) — standalone-only; the base
+		//    admin owns the same pages under the base settings menu monolith.
+		$this->registerDashboards();
+	}
+
+	/**
+	 * Register the E-UI-1 operator dashboards (standalone-only).
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return void
+	 */
+	private function registerDashboards(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Dashboards\MultiAgentDashboard' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Dashboards\MultiAgentDashboard() )->register();
+		}
 	}
 
 	/**
