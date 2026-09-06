@@ -248,7 +248,7 @@ class Test_Dispatcher extends \WP_UnitTestCase {
 		if ( defined( 'WP_MCP_AI_PATH' ) ) {
 			$this->assertSame( 'WP_MCP_AI_Workflow_Engine_V2', DispatcherProbeSeam::probe_engine() );
 		} else {
-			$this->assertNull( DispatcherProbeSeam::probe_engine() );
+			$this->assertSame( 'NvoosContentGraphAiPlatform\Workflows\WorkflowEngine', DispatcherProbeSeam::probe_engine() );
 		}
 	}
 
