@@ -1,0 +1,76 @@
+{
+  "slug": "two-column-text",
+  "name": "Two-Column Text Layout",
+  "description": "A two-column layout with a heading and body text side by side.",
+  "version": "1.0.0",
+  "inputs": {
+    "left_heading": {
+      "type": "string",
+      "label": "Left Heading",
+      "default": "Feature One"
+    },
+    "left_body": {
+      "type": "string",
+      "label": "Left Body",
+      "default": "Description of the first feature goes here."
+    },
+    "right_heading": {
+      "type": "string",
+      "label": "Right Heading",
+      "default": "Feature Two"
+    },
+    "right_body": {
+      "type": "string",
+      "label": "Right Body",
+      "default": "Description of the second feature goes here."
+    }
+  },
+  "outputs": {
+    "html": {
+      "type": "html",
+      "node": "outer_row",
+      "port": "html"
+    }
+  },
+  "internalGraph": {
+    "nodes": {
+      "left_head": {
+        "slug": "text_block",
+        "inputs": { "tag": "h3", "content": "{left_heading}", "className": "feature-heading" }
+      },
+      "left_body": {
+        "slug": "text_block",
+        "inputs": { "tag": "p", "content": "{left_body}", "className": "feature-body" }
+      },
+      "left_col": {
+        "slug": "flex_container",
+        "inputs": { "direction": "column", "gap": "8px", "padding": "16px" }
+      },
+      "right_head": {
+        "slug": "text_block",
+        "inputs": { "tag": "h3", "content": "{right_heading}", "className": "feature-heading" }
+      },
+      "right_body": {
+        "slug": "text_block",
+        "inputs": { "tag": "p", "content": "{right_body}", "className": "feature-body" }
+      },
+      "right_col": {
+        "slug": "flex_container",
+        "inputs": { "direction": "column", "gap": "8px", "padding": "16px" }
+      },
+      "outer_row": {
+        "slug": "flex_container",
+        "inputs": { "direction": "row", "gap": "32px", "padding": "40px 0" }
+      }
+    },
+    "edges": [
+      { "source": "left_head", "sourcePort": "html", "target": "left_col", "targetPort": "children" },
+      { "source": "left_body", "sourcePort": "html", "target": "left_col", "targetPort": "children" },
+      { "source": "right_head", "sourcePort": "html", "target": "right_col", "targetPort": "children" },
+      { "source": "right_body", "sourcePort": "html", "target": "right_col", "targetPort": "children" },
+      { "source": "left_col", "sourcePort": "html", "target": "outer_row", "targetPort": "children" },
+      { "source": "right_col", "sourcePort": "html", "target": "outer_row", "targetPort": "children" }
+    ],
+    "outputNode": "outer_row"
+  }
+}
