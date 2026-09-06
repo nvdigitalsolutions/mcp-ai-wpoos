@@ -13,7 +13,19 @@ action names (`wp_ajax_wp_mcp_ai_get_multi_agent_stats`,
 `wp_ajax_wp_mcp_ai_reinstall_agents`), menu/enqueue/render
 registration, the `manage_options` render gate, the nonce+capability
 AJAX gates, the statistics shape, the workflow-pattern classification
-and the default-assistant reinstall flow.
+and the default-assistant reinstall flow. Sub-cluster 2
+(`OrchestrationDashboard`) is the aligned port of
+`WP_MCP_AI_Admin_Orchestration_Dashboard`: byte-identical page slug
+(`mcp-ai-orchestration`), nonce action (`wp_mcp_ai_orchestration`),
+the six AJAX actions (seeder/stats/recent-workflows/execute/restart/
+refresh-memory), the orchestration statistics shape, the status
+banner thresholds, the statistics cards, the system-status monitor
+(cron/async/health/SSE), the role distribution chart, the quick
+actions, the documentation links, the recent-workflows transient
+list, the agent memory stats widget (type/wing/importance
+breakdowns, wings/rooms, mined count, persistent CCT vs cache split,
+retrieval-path chart, RAG features, context health metrics) and the
+workflow execute/restart AJAX flows.
 
 ## Tier
 
@@ -30,6 +42,7 @@ and the default-assistant reinstall flow.
 | Symbol | File | Used by |
 |---|---|---|
 | `NvoosContentGraphAiPlatform\Admin\Dashboards\MultiAgentDashboard` | `MultiAgentDashboard.php` | `Plugin::registerDashboards()` — standalone menu/enqueue/AJAX wiring |
+| `NvoosContentGraphAiPlatform\Admin\Dashboards\OrchestrationDashboard` | `OrchestrationDashboard.php` | `Plugin::registerDashboards()` — standalone menu/enqueue/AJAX wiring |
 
 ## Inputs / Outputs / Neighbors
 
@@ -73,6 +86,18 @@ and the default-assistant reinstall flow.
   matrices; uses an exposer fixture + an AJAX capture harness
   (`wp_send_json` echoes then dies; `check_ajax_referer` failures die
   through the throwing test handler).
+- `tests/test-orchestration-dashboard.php` — characterization suite
+  covering the byte-identical slug/nonce/action names, per-mode menu
+  registration, register idempotence, the per-mode collaborator
+  seams (profession meta keys, seeder, tool inventory, context
+  manager, SSE probe, settings cross-links), the orchestration
+  statistics shape (real profession posts), the status banner
+  thresholds, the system status shape, the recent-workflows
+  transient list (with namespace isolation), the agent memory stats
+  aggregation (type/wing/importance/rooms/mined/persistent/
+  retrieval-path), the render output (incl. the per-mode settings
+  links), the AJAX nonce/capability gates, the workflow restart
+  flow, and the per-mode asset enqueues. Runs in both matrices.
 
 ## Also Load
 
@@ -83,6 +108,6 @@ and the default-assistant reinstall flow.
 
 ## See Also
 
-- Base originals: `includes/admin/class-wp-mcp-ai-admin-multi-agent-dashboard.php` (sub-cluster 1), `class-wp-mcp-ai-admin-orchestration-dashboard.php`, `class-wp-mcp-ai-admin-slash-commands-dashboard.php`, `class-wp-mcp-ai-admin-run-timeline-dashboard.php`
+- Base originals: `includes/admin/class-wp-mcp-ai-admin-multi-agent-dashboard.php` (sub-cluster 1), `class-wp-mcp-ai-admin-orchestration-dashboard.php` (sub-cluster 2), `class-wp-mcp-ai-admin-slash-commands-dashboard.php`, `class-wp-mcp-ai-admin-run-timeline-dashboard.php`
 - [`docs/project/plans/ecosystem-port-cluster-loop.md`](../../../../docs/project/plans/ecosystem-port-cluster-loop.md) — cluster ordering + pipeline
 - [`docs/project/ecosystem-port-tracker.md`](../../../../docs/project/ecosystem-port-tracker.md) — E-UI-1 row status

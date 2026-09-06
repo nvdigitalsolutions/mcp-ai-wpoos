@@ -90,6 +90,10 @@ final class Plugin {
 		if ( class_exists( __NAMESPACE__ . '\Admin\Dashboards\MultiAgentDashboard' ) ) {
 			( new \NvoosContentGraphAiPlatform\Admin\Dashboards\MultiAgentDashboard() )->register();
 		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Dashboards\OrchestrationDashboard' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Dashboards\OrchestrationDashboard() )->register();
+		}
 	}
 
 	/**
