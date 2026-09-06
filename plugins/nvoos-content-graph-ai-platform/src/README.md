@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Contains the entire PSR-4 source tree for the NV oOS Content Graph — Platform addon — composition root and all platform subsystems: agents, skills, slash-commands, harness, measurement, professions, A2A, ACP, federation, blueprints, and the ported operator-runtime waves (Workflows, Queues, Approvals, Rest, Tenant).
+Contains the entire PSR-4 source tree for the NV oOS Content Graph — Platform addon — composition root and all platform subsystems: agents, skills, slash-commands, harness, measurement, professions, A2A, ACP, federation, blueprints, and the ported operator-runtime waves (Workflows, Queues, Approvals, Rest, Tenant, Integrations, Google).
 
 ## Tier
 
@@ -27,7 +27,7 @@ Root-level classes form the addon's backbone:
 - **Reads from:** `nvoos_content_graph_settings` option (settings), core `NvoosContentGraph\ToolRegistry`, AI addon services
 - **Writes to:** Admin UI sections, REST responses
 - **Upstream callers:** `nvoos-content-graph-ai-platform.php` (bootstrap), core `NvoosContentGraph\Plugin`
-- **Downstream collaborators:** All subdirectories — `Admin/`, future `Agents/`, `Skills/`, `A2A/`, `Federation/`, etc.; the ported waves `Workflows/`, `Queues/`, `Approvals/`, `Rest/`, `Tenant/` are wired by `Plugin::register*()` methods.
+- **Downstream collaborators:** All subdirectories — `Admin/`, future `Agents/`, `Skills/`, `A2A/`, `Federation/`, etc.; the ported waves `Workflows/`, `Queues/`, `Approvals/`, `Rest/`, `Tenant/`, `Integrations/`, `Google/` are wired by `Plugin::register*()` methods.
 - **Events listened to:** `nvoos_content_graph/admin/register_sections`, `nvoos_content_graph/register_tools`, `rest_api_init`
 
 ## Conventions

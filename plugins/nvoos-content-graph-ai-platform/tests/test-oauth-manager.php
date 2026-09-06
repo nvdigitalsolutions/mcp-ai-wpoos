@@ -264,7 +264,9 @@ class Test_OAuth_Manager extends \WP_UnitTestCase {
 	}
 
 	public function test_google_services_availability_resolves_per_mode(): void {
-		// Monolith: the base plugin's google classes exist. Standalone: absent.
-		$this->assertSame( defined( 'WP_MCP_AI_PATH' ), $this->manager->seam_google_services_available() );
+		// Monolith: the base plugin's google classes exist. Standalone: the
+		// platform `Google\*` classes (Wave E4, sub-cluster 3) resolve via the
+		// PSR-4 autoloader. Available in both modes.
+		$this->assertTrue( $this->manager->seam_google_services_available() );
 	}
 }
