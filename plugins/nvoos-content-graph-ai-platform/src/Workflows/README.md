@@ -23,7 +23,13 @@ array|WP_Error = ownership), the default-executor fallback chain
 (Engine V2 when available and enabled), and the `no_workflow_executor`
 error envelope — the pluggable entry point the trigger CPT, replay
 tool, and any workflow consumer call without hard-binding to the
-engine. The engine itself lands in a later sub-cluster.
+engine. `TriggerRegistry` is the aligned port of
+`WP_MCP_AI_Workflow_Trigger_Registry`: byte-identical singleton
+lifecycle, the `register()` contract, the seven built-in trigger
+definitions with their schemas, and the
+`wp_mcp_ai_register_workflow_triggers` extension action — the central
+catalog the trigger admin/REST surfaces (E-UI-2) render from. The
+engine itself lands in a later sub-cluster.
 
 ## Tier
 
@@ -43,6 +49,7 @@ engine. The engine itself lands in a later sub-cluster.
 | `NvoosContentGraphAiPlatform\Workflows\WorkflowRunCpt` | `WorkflowRunCpt.php` | `Plugin::registerWorkflowCpts()` — CPT + meta at `init` 13; consumed by the engine/dispatcher (E1) |
 | `NvoosContentGraphAiPlatform\Workflows\WorkflowTriggerCpt` | `WorkflowTriggerCpt.php` | `Plugin::registerWorkflowCpts()` — CPT + meta at `init` 14, trigger hooking at 20; consumed by trigger registry (E1) |
 | `NvoosContentGraphAiPlatform\Workflows\Dispatcher` | `Dispatcher.php` | `WorkflowTriggerCpt::fire_trigger()` hand-off (standalone), the replay tool, third-party executors via the `wp_mcp_ai_workflow_executor` filter |
+| `NvoosContentGraphAiPlatform\Workflows\TriggerRegistry` | `TriggerRegistry.php` | Lazy singleton — consumed by the trigger admin/REST surfaces (E-UI-2) + third-party registrations via `wp_mcp_ai_register_workflow_triggers` |
 
 ## Inputs / Outputs / Neighbors
 
@@ -89,6 +96,10 @@ engine. The engine itself lands in a later sub-cluster.
   executor fallback with a fake engine (enabled/disabled), the
   `no_workflow_executor` degradation, the per-mode engine seam, and the
   trigger hand-off integration through the real filter (both matrices).
+- `tests/test-trigger-registry.php` — characterization suite covering
+  the singleton + registration action, the seven built-in definitions
+  with schemas, custom registration with defaults, sanitized-type
+  lookups, and the no-op empty-type guard (both matrices).
 
 ## Also Load
 
