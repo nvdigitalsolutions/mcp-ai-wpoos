@@ -217,11 +217,12 @@ final class Plugin {
 	 *
 	 * Standalone-only: the base plugin's bridge/init files own the same
 	 * shadow-runner subscriber, suppression waterfall, markup wiring,
-	 * Paper Store tool registration, and OKF tool registration +
-	 * generator hooks in monolith installs; double registration would
-	 * double-record shadow runs, double-short-circuit write-class tools,
-	 * and double-register tools. Dormant until a standalone surface emits
-	 * the respective hooks (byte-identical dormancy).
+	 * Paper Store tool registration, OKF tool registration + generator
+	 * hooks, and Crawl4AI cron-hook registration in monolith installs;
+	 * double registration would double-record shadow runs,
+	 * double-short-circuit write-class tools, and double-register tools
+	 * and cron handlers. Dormant until a standalone surface emits the
+	 * respective hooks (byte-identical dormancy).
 	 *
 	 * @since 1.1.0
 	 *
@@ -256,6 +257,12 @@ final class Plugin {
 		// owns the same tool registration + generator hooks monolith.
 		if ( class_exists( 'NvoosContentGraphAi\Engine\Okf\OkfBootstrap' ) ) {
 			\NvoosContentGraphAi\Engine\Okf\OkfBootstrap::register();
+		}
+
+		// Crawl4AI coordinator (Wave E6, sub-cluster 5) — the base plugin
+		// bootstrap owns the same cron-hook registration monolith.
+		if ( class_exists( 'NvoosContentGraphAi\Engine\Crawler\Crawler' ) ) {
+			\NvoosContentGraphAi\Engine\Crawler\Crawler::init();
 		}
 	}
 
