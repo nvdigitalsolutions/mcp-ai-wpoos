@@ -40,12 +40,15 @@ class NV_oOS_Comic_Reader_Shortcode {
 	 * @return string HTML output.
 	 */
 	public static function render( $atts ) {
+		// Site-wide settings defaults fill in any attribute the embed omits.
+		$site_defaults = NV_oOS_Comic_Reader_Settings::get_reader_defaults();
+
 		$atts = shortcode_atts(
 			array(
 				'id'        => '',
 				'mode'      => 'library',
 				'height'    => '',
-				'direction' => 'ltr',
+				'direction' => isset( $site_defaults['direction'] ) ? $site_defaults['direction'] : 'ltr',
 			),
 			$atts,
 			self::SHORTCODE
@@ -57,10 +60,12 @@ class NV_oOS_Comic_Reader_Shortcode {
 		}
 
 		$config = array(
-			'comicId'   => absint( $atts['id'] ),
-			'mode'      => in_array( $atts['mode'], array( 'library', 'reader' ), true ) ? $atts['mode'] : 'library',
-			'height'    => sanitize_text_field( $atts['height'] ),
-			'direction' => in_array( $atts['direction'], array( 'ltr', 'rtl' ), true ) ? $atts['direction'] : 'ltr',
+			'comicId'        => absint( $atts['id'] ),
+			'mode'           => in_array( $atts['mode'], array( 'library', 'reader' ), true ) ? $atts['mode'] : 'library',
+			'height'         => sanitize_text_field( $atts['height'] ),
+			'direction'      => in_array( $atts['direction'], array( 'ltr', 'rtl' ), true ) ? $atts['direction'] : 'ltr',
+			'defaults'       => $site_defaults,
+			'serverProgress' => NV_oOS_Comic_Reader_Settings::progress_sync_enabled(),
 		);
 
 		self::enqueue_assets( $config );
@@ -73,7 +78,7 @@ class NV_oOS_Comic_Reader_Shortcode {
 		$height_attr = '' !== $config['height'] ? 'min-height:' . $config['height'] . ';' : '';
 
 		return sprintf(
-			'<div class="nvoos-comic-reader-root" role="application" aria-label="%1$s" data-config="%2$s" style="%3$s"></div>',
+			'<div class="nvoos-comic-reader-root" role="region" aria-label="%1$s" data-config="%2$s" style="%3$s"></div>',
 			esc_attr__( 'Comic Reader', 'nvoos-comic-reader' ),
 			esc_attr( $config_json ),
 			esc_attr( $height_attr )

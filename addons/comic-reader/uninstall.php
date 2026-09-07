@@ -31,18 +31,18 @@ if ( ! empty( $user_ids ) ) {
 }
 
 // Series and collection terms.
-$taxonomies = array( 'nvoos_comic_series', 'nvoos_comic_collection' );
-foreach ( $taxonomies as $taxonomy ) {
+$taxonomy_slugs = array( 'nvoos_comic_series', 'nvoos_comic_collection' );
+foreach ( $taxonomy_slugs as $tax_name ) {
 	$term_ids = get_terms(
 		array(
-			'taxonomy'   => $taxonomy,
+			'taxonomy'   => $tax_name,
 			'hide_empty' => false,
 			'fields'     => 'ids',
 		)
 	);
 	if ( ! is_wp_error( $term_ids ) ) {
 		foreach ( $term_ids as $term_id ) {
-			wp_delete_term( $term_id, $taxonomy );
+			wp_delete_term( $term_id, $tax_name );
 		}
 	}
 }

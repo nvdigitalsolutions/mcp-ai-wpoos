@@ -415,5 +415,45 @@ Per phase, before merge:
 
 ---
 
+## 11. Implementation status (branch feat/comic-reader-industry-upgrade)
+
+All four phases are implemented and validated on
+`feat/comic-reader-industry-upgrade`, shipped as 0.5.0:
+
+| Phase | Status | Notes |
+|---|---|---|
+| 0 — Correctness & security (0.2.1) | ✅ Done | Magic-byte validation, size cap, upload-handler seam, owner-scoped delete, Range serving, covers fixed, fullscreen leak fixed, RTL spread fixed, addon wired into the PHPUnit bootstrap |
+| 1 — Reader parity (0.3.0) | ✅ Done | Settings dialog + persistence, scroll/webtoon modes, 4 scale types, double-page rules, thumbnails explorer, help dialog, F/W/H/P/R/G/? shortcuts, gestures, backgrounds, transitions, continue-reading shelf |
+| 2 — Metadata & organization (0.4.0) | ✅ Done | ComicInfo.xml parsing + auto-RTL, series/collection taxonomies, metadata editor, collection picker, search/sort/series-filter/pagination, per-user server progress sync |
+| 3 — Admin & ops (0.5.0) | ✅ Done | Settings page (Settings → Comic Reader), capability overrides, shortcode defaults merge, `role="region"`, README/CHANGELOG rewrite, version 0.5.0 |
+
+### Decisions recorded
+
+- **Q1** — Kept client-side extraction; server-side ZipArchive extraction is
+  CBZ-cover-only and toggleable (`cover_extraction` setting).
+- **Q2** — Dedicated `nvoos_comic_series` + `nvoos_comic_collection`
+  taxonomies (reversible, no migration). Unification with `mcp_ai_comic`
+  remains a future option.
+- **Q3** — Standalone page under **Settings → Comic Reader** (the addon is
+  standalone; the Pro `mcp_ai_comic` submenus stay with Pro).
+- **Q4** — Guest reading not enabled; `nvoos_comic_reader_read_capability`
+  plus the settings override are the supported seams.
+- **Q5** — OPDS deferred to a future 0.5.x; progress sync shipped first.
+
+### Deferred (out of scope, see §7)
+
+Kobo/KOReader sync, duplicate detection, cbl import, PDF/EPUB reading,
+server-side transcoding, OPDS feeds, guest reading.
+
+### Validation run
+
+- PHPUnit: 45 addon tests / ~104 assertions green (rest, shortcode, mime,
+  settings) in the Docker WP 6.9 environment.
+- phpcs: 0 errors on all addon PHP (warnings only: pre-existing style notes).
+- Frontend: `npm test` 19 green, `npm run typecheck` clean,
+  `npm run lint:a11y` clean, production build 201.6 KB JS / 11.6 KB CSS.
+
+---
+
 *Maintained by the NV oOS team. Update this plan as phases complete and record
-decisions for §10 in the phase release notes.*
+ decisions for §10 in the phase release notes.*

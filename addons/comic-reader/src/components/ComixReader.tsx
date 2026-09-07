@@ -42,6 +42,10 @@ import { t } from '../utils/i18n';
 interface ComixReaderProps {
 	comic: ComicItem;
 	initialDirection: ReadingDirection;
+	/** Site-wide reader defaults from the settings page. */
+	siteDefaults?: Partial<ReaderPrefs>;
+	/** Whether server-side progress sync is enabled for this site. */
+	serverProgressEnabled?: boolean;
 }
 
 interface PageDims {
@@ -91,13 +95,18 @@ function computeSpread(
 	return { left: first, right: second };
 }
 
-export function ComixReader({ comic, initialDirection }: ComixReaderProps) {
+export function ComixReader({
+	comic,
+	initialDirection,
+	siteDefaults,
+	serverProgressEnabled = true,
+}: ComixReaderProps) {
 	const [pages, setPages] = useState<PageData[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [extractProgress, setExtractProgress] = useState('');
 	const [prefs, setPrefs] = useState<ReaderPrefs>(() => ({
-		...loadPrefs(comic.id),
+		...loadPrefs(comic.id, siteDefaults),
 		direction: initialDirection,
 	}));
 	const [pageDims, setPageDims] = useState<Record<number, PageDims>>({});
@@ -307,10 +316,12 @@ export function ComixReader({ comic, initialDirection }: ComixReaderProps) {
 			completed,
 		};
 		saveLocalProgress(comic.id, { ...record, ts: Date.now() });
-		saveComicProgress(comic.id, record).catch(() => {
-			// Offline or logged-out users keep local-only progress.
-		});
-	}, [activePage, pages.length, loading, comic.id]);
+		if (serverProgressEnabled) {
+			saveComicProgress(comic.id, record).catch(() => {
+				// Offline or logged-out users keep local-only progress.
+			});
+		}
+	}, [activePage, pages.length, loading, comic.id, serverProgressEnabled]);
 
 	// Restore reading progress, preferring the newer of server and local.
 	useEffect(() => {
@@ -318,6 +329,17 @@ export function ComixReader({ comic, initialDirection }: ComixReaderProps) {
 
 		let cancelled = false;
 		const local = readLocalProgress(comic.id);
+
+		if (!serverProgressEnabled) {
+			if (local && local.page > 1) {
+				if (prefs.readingMode === 'paged') {
+					goToPage(Math.min(local.page, pages.length));
+				} else {
+					setScrollPage(Math.min(local.page, pages.length));
+				}
+			}
+			return;
+		}
 
 		fetchComicProgress(comic.id)
 			.then((server) => {

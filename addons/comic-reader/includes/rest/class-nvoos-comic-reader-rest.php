@@ -595,6 +595,7 @@ class NV_oOS_Comic_Reader_REST {
 			'version'           => defined( 'NVOOS_COMIC_READER_VERSION' ) ? NVOOS_COMIC_READER_VERSION : 'unknown',
 			'surface'           => 'reader',
 			'supported_formats' => self::COMIC_EXTENSIONS,
+			'server_progress'   => NV_oOS_Comic_Reader_Settings::progress_sync_enabled(),
 			'bundle'            => array(
 				'js'  => defined( 'NVOOS_COMIC_READER_URL' ) ? NVOOS_COMIC_READER_URL . 'assets/dist/comic-reader.js' : '',
 				'css' => defined( 'NVOOS_COMIC_READER_URL' ) ? NVOOS_COMIC_READER_URL . 'assets/dist/comic-reader.css' : '',
@@ -695,10 +696,10 @@ class NV_oOS_Comic_Reader_REST {
 	/**
 	 * Get the current user's progress map for all comics.
 	 *
-	 * @param WP_REST_Request $request Request object.
+	 * @param WP_REST_Request $_request Request object (unused).
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public static function get_progress_map( $request ) {
+	public static function get_progress_map( $_request ) {
 		$user_id = get_current_user_id();
 		return rest_ensure_response(
 			array(
@@ -902,10 +903,10 @@ class NV_oOS_Comic_Reader_REST {
 	/**
 	 * List series facets with comic counts.
 	 *
-	 * @param WP_REST_Request $request Request object.
+	 * @param WP_REST_Request $_request Request object (unused).
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public static function list_series( $request ) {
+	public static function list_series( $_request ) {
 		$terms = get_terms(
 			array(
 				'taxonomy'   => NV_oOS_Comic_Reader_Taxonomy::SERIES_TAXONOMY,
@@ -934,10 +935,10 @@ class NV_oOS_Comic_Reader_REST {
 	/**
 	 * List collections with their ordered comic IDs.
 	 *
-	 * @param WP_REST_Request $request Request object.
+	 * @param WP_REST_Request $_request Request object (unused).
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public static function list_collections( $request ) {
+	public static function list_collections( $_request ) {
 		$terms = get_terms(
 			array(
 				'taxonomy'   => NV_oOS_Comic_Reader_Taxonomy::COLLECTION_TAXONOMY,
@@ -1296,8 +1297,8 @@ class NV_oOS_Comic_Reader_REST {
 			);
 		}
 
-		// Enforce a configurable upload size cap.
-		$max_bytes = (int) apply_filters( 'nvoos_comic_reader_max_upload_bytes', 256 * MB_IN_BYTES );
+		// Enforce a configurable upload size cap (settings page + filter).
+		$max_bytes = NV_oOS_Comic_Reader_Settings::get_max_upload_bytes();
 		if ( ! empty( $file['size'] ) && (int) $file['size'] > $max_bytes ) {
 			return new WP_Error(
 				'file_too_large',
@@ -1341,9 +1342,11 @@ class NV_oOS_Comic_Reader_REST {
 			);
 		}
 
-		// Best-effort server-side cover extraction (CBZ only). Failures must
-		// never fail the upload — the client can extract covers instead.
-		self::extract_cover_attachment( (int) $attachment_id );
+		// Best-effort server-side cover extraction (CBZ only, when enabled).
+		// Failures must never fail the upload — the client can extract covers instead.
+		if ( NV_oOS_Comic_Reader_Settings::cover_extraction_enabled() ) {
+			self::extract_cover_attachment( (int) $attachment_id );
+		}
 
 		$post = get_post( $attachment_id );
 
@@ -1358,8 +1361,7 @@ class NV_oOS_Comic_Reader_REST {
 	 * @return bool|WP_Error
 	 */
 	public static function read_permission() {
-		// phpcs:ignore WordPress.WP.Capabilities.Undetermined -- capability is filterable by design.
-		$cap = apply_filters( 'nvoos_comic_reader_read_capability', 'read' );
+		$cap = NV_oOS_Comic_Reader_Settings::get_capability( 'read' );
 		// phpcs:ignore WordPress.WP.Capabilities.Undetermined
 		if ( is_user_logged_in() && current_user_can( $cap ) ) {
 			return true;
@@ -1373,8 +1375,7 @@ class NV_oOS_Comic_Reader_REST {
 	 * @return bool|WP_Error
 	 */
 	public static function upload_permission() {
-		// phpcs:ignore WordPress.WP.Capabilities.Undetermined -- capability is filterable by design.
-		$cap = apply_filters( 'nvoos_comic_reader_upload_capability', 'upload_files' );
+		$cap = NV_oOS_Comic_Reader_Settings::get_capability( 'upload' );
 		// phpcs:ignore WordPress.WP.Capabilities.Undetermined
 		if ( current_user_can( $cap ) ) {
 			return true;
@@ -1390,8 +1391,7 @@ class NV_oOS_Comic_Reader_REST {
 	 * @return bool|WP_Error
 	 */
 	public static function edit_permission( $request ) {
-		// phpcs:ignore WordPress.WP.Capabilities.Undetermined -- capability is filterable by design.
-		$cap = apply_filters( 'nvoos_comic_reader_edit_capability', 'edit_posts' );
+		$cap = NV_oOS_Comic_Reader_Settings::get_capability( 'edit' );
 		// phpcs:ignore WordPress.WP.Capabilities.Undetermined
 		if ( ! current_user_can( $cap ) ) {
 			return new WP_Error( 'forbidden', __( 'You do not have permission to edit comics.', 'nvoos-comic-reader' ), array( 'status' => 403 ) );
@@ -1412,8 +1412,7 @@ class NV_oOS_Comic_Reader_REST {
 	 * @return bool|WP_Error
 	 */
 	public static function collections_edit_permission() {
-		// phpcs:ignore WordPress.WP.Capabilities.Undetermined -- capability is filterable by design.
-		$cap = apply_filters( 'nvoos_comic_reader_edit_capability', 'edit_posts' );
+		$cap = NV_oOS_Comic_Reader_Settings::get_capability( 'edit' );
 		// phpcs:ignore WordPress.WP.Capabilities.Undetermined
 		if ( ! current_user_can( $cap ) ) {
 			return new WP_Error( 'forbidden', __( 'You do not have permission to manage collections.', 'nvoos-comic-reader' ), array( 'status' => 403 ) );
@@ -1432,8 +1431,7 @@ class NV_oOS_Comic_Reader_REST {
 	 * @return bool|WP_Error
 	 */
 	public static function delete_permission( $request ) {
-		// phpcs:ignore WordPress.WP.Capabilities.Undetermined -- capability is filterable by design.
-		$cap = apply_filters( 'nvoos_comic_reader_delete_capability', 'delete_posts' );
+		$cap = NV_oOS_Comic_Reader_Settings::get_capability( 'delete' );
 		// phpcs:ignore WordPress.WP.Capabilities.Undetermined
 		if ( ! current_user_can( $cap ) ) {
 			return new WP_Error( 'forbidden', __( 'You do not have permission to delete files.', 'nvoos-comic-reader' ), array( 'status' => 403 ) );

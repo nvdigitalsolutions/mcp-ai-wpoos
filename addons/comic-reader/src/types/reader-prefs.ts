@@ -51,25 +51,29 @@ function mergePrefs(...sources: Array<Partial<ReaderPrefs>>): ReaderPrefs {
 
 /**
  * Load reader preferences, applying the per-comic override over the global
- * defaults. Never throws — falls back to defaults when storage is unavailable.
+ * defaults, with optional site-wide defaults layered in between. Never
+ * throws — falls back to defaults when storage is unavailable.
  */
-export function loadPrefs(comicId?: number): ReaderPrefs {
+export function loadPrefs(
+	comicId?: number,
+	base: Partial<ReaderPrefs> = {}
+): ReaderPrefs {
 	try {
 		const globalRaw = localStorage.getItem(GLOBAL_KEY);
 		const global = globalRaw
 			? (JSON.parse(globalRaw) as Partial<ReaderPrefs>)
 			: {};
 		if (!comicId) {
-			return mergePrefs(global);
+			return mergePrefs(base, global);
 		}
 
 		const comicRaw = localStorage.getItem(perComicKey(comicId));
 		const comic = comicRaw
 			? (JSON.parse(comicRaw) as Partial<ReaderPrefs>)
 			: {};
-		return mergePrefs(global, comic);
+		return mergePrefs(base, global, comic);
 	} catch {
-		return { ...DEFAULT_PREFS };
+		return mergePrefs(base);
 	}
 }
 

@@ -92,14 +92,13 @@ class NV_oOS_Comic_Reader_Mime {
 	 * @since 0.2.0
 	 *
 	 * @param array  $data      Filetype data.
-	 * @param string $file      Full path to the file.
+	 * @param string $_file     Full path to the file (unused).
 	 * @param string $filename  The name of the file.
-	 * @param array  $mimes     Allowed MIME types.
-	 * @param string $real_mime Real MIME type from finfo.
+	 * @param array  $_mimes    Allowed MIME types (unused).
+	 * @param string $_real_mime Real MIME type from finfo (unused).
 	 * @return array Modified filetype data.
 	 */
-	public static function fix_comic_filetype( $data, $file, $filename, $mimes, $real_mime ) {
-		// phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- WP filter signature requires the params.
+	public static function fix_comic_filetype( $data, $_file, $filename, $_mimes, $_real_mime ) {
 		$ext = strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) );
 
 		if ( ! isset( self::COMIC_MIME_MAP[ $ext ] ) ) {
@@ -112,8 +111,6 @@ class NV_oOS_Comic_Reader_Mime {
 			$data['ext']  = $ext;
 			$data['type'] = self::COMIC_MIME_MAP[ $ext ];
 		}
-
-		// phpcs:enable Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 
 		return $data;
 	}

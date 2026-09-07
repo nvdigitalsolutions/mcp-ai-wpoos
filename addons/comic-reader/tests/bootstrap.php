@@ -28,12 +28,13 @@ if ( ! defined( 'NVOOS_COMIC_READER_URL' ) ) {
 }
 
 if ( ! defined( 'NVOOS_COMIC_READER_VERSION' ) ) {
-	define( 'NVOOS_COMIC_READER_VERSION', '0.2.0' );
+	define( 'NVOOS_COMIC_READER_VERSION', '0.5.0' );
 }
 
 require_once NVOOS_COMIC_READER_PATH . 'includes/class-nvoos-comic-reader-plugin.php';
 require_once NVOOS_COMIC_READER_PATH . 'includes/class-nvoos-comic-reader-mime.php';
 require_once NVOOS_COMIC_READER_PATH . 'includes/class-nvoos-comic-reader-taxonomy.php';
+require_once NVOOS_COMIC_READER_PATH . 'includes/admin/class-nvoos-comic-reader-settings.php';
 require_once NVOOS_COMIC_READER_PATH . 'includes/rest/class-nvoos-comic-reader-rest.php';
 require_once NVOOS_COMIC_READER_PATH . 'includes/shortcode/class-nvoos-comic-reader-shortcode.php';
 require_once NVOOS_COMIC_READER_PATH . 'includes/block/class-nvoos-comic-reader-block.php';

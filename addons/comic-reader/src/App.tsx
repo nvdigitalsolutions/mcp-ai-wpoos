@@ -16,6 +16,7 @@ import { PanelGenerator } from './components/creator/PanelGenerator';
 import { ExportPanel } from './components/creator/ExportPanel';
 import { createCreatorComic } from './api/comic-api';
 import type { ComicItem } from './api/comic-api';
+import type { ReaderPrefs } from './types/reader-prefs';
 import { t } from './utils/i18n';
 
 interface AppProps {
@@ -24,6 +25,8 @@ interface AppProps {
 		mode: 'library' | 'reader';
 		height: string;
 		direction: 'ltr' | 'rtl';
+		defaults?: Partial<ReaderPrefs>;
+		serverProgress?: boolean;
 	};
 }
 
@@ -303,6 +306,10 @@ export function App({ initialConfig }: AppProps) {
 					<ComixReader
 						comic={activeComic}
 						initialDirection={initialConfig.direction}
+						siteDefaults={initialConfig.defaults}
+						serverProgressEnabled={
+							initialConfig.serverProgress !== false
+						}
 					/>
 				)}
 				{viewMode === 'upload' && (
