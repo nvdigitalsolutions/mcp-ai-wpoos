@@ -94,6 +94,10 @@ final class Plugin {
 		if ( class_exists( __NAMESPACE__ . '\Admin\Managers\ApprovalsManager' ) ) {
 			( new \NvoosContentGraphAiPlatform\Admin\Managers\ApprovalsManager() )->register();
 		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Managers\TokenManager' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Managers\TokenManager() )->register();
+		}
 	}
 
 	/**

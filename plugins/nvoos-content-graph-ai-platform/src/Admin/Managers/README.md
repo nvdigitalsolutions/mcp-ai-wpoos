@@ -14,7 +14,21 @@ title, the two AJAX actions (`wp_mcp_ai_list_approvals`,
 config envelope (nine-string i18n block), the toolbar + assistant
 filter + seven-column table render surface, the pending-count probe,
 and the list/resolve AJAX flows (requester display-name + date
-enrichment, approve/deny transitions with notes).
+enrichment, approve/deny transitions with notes). Sub-cluster 2
+(`TokenManager`) is the aligned port of
+`WP_MCP_AI_Admin_Token_Manager`: byte-identical page slug
+(`wp-mcp-ai-token-manager`), the two `admin_post_*` handlers
+(revoke/delete with per-token nonces), the inline-stylesheet enqueue
++ `restrictions-admin.js` asset with the `wpMcpAiRestrictionsAdmin`
+envelope, the intro / restricted-users panel / action notices /
+statistics cards / credentials table / empty state / security-note
+render surface, the credentials listing (newest-first via
+`_sort_timestamp`), the statistics shape
+(total/active/revoked/assistants), the user display-name helper, and
+the revoke/delete redirect flows. Its credentials store resolves per
+mode via the `credentials_class()` seam (base `WP_MCP_AI_Credentials`
+monolith / null standalone — documented empty-state + `action=error`
+redirect degradation); the restrictions panel probe is boot-gated.
 
 ## Tier
 
@@ -31,6 +45,7 @@ enrichment, approve/deny transitions with notes).
 | Symbol | File | Used by |
 |---|---|---|
 | `NvoosContentGraphAiPlatform\Admin\Managers\ApprovalsManager` | `ApprovalsManager.php` | `Plugin::registerManagers()` — standalone menu/enqueue/AJAX wiring |
+| `NvoosContentGraphAiPlatform\Admin\Managers\TokenManager` | `TokenManager.php` | `Plugin::registerManagers()` — standalone menu/enqueue/admin-post wiring |
 
 ## Inputs / Outputs / Neighbors
 
@@ -66,8 +81,18 @@ enrichment, approve/deny transitions with notes).
   the per-mode approval-queue seam, the pending-count probe (real
   enqueued posts), the render output + capability gate, the AJAX
   nonce/capability gates, the list payload enrichment, the
-  approve/deny/invalid envelopes, and the per-mode asset enqueues.
+  the approve/deny/invalid envelopes, and the per-mode asset enqueues.
   Runs in both matrices.
+- `tests/test-token-manager.php` — characterization suite covering
+  the byte-identical page slug + admin_post action names, per-mode
+  menu registration, register idempotence, the credentials-store
+  seam, the credentials listing (monolith seeded via the base store;
+  standalone empty), the statistics shape, the display-name helper,
+  the render surface per mode (restrictions panel + table vs empty
+  state), the silent non-manager render, the revoke/delete capability
+  + missing-identifier gates, the per-mode redirect envelopes
+  (intercepted via the `wp_redirect` filter), and the per-mode asset
+  enqueues. Runs in both matrices.
 
 ## Also Load
 
