@@ -61,13 +61,17 @@ spl_autoload_register(
 
 		// Ported files mirror the base addon's includes/ layout; scan the
 		// known subtree roots (extend this list as new waves land). `class-`,
-		// `interface-`, and `trait-` file prefixes are probed.
-		$nvoos_content_graph_pro_file_name = strtolower( str_replace( '_', '-', $fqcn ) ) . '.php';
+		// `interface-`, and `trait-` file prefixes are probed. Interface and
+		// trait files drop the `_Interface`/`_Trait` FQCN suffix (the
+		// prefix carries it in the filename, e.g.
+		// `interface-wp-mcp-ai-toolkit-server.php`).
+		$nvoos_content_graph_pro_file_name = strtolower( str_replace( '_', '-', preg_replace( '/_(Interface|Trait)$/', '', $fqcn ) ) ) . '.php';
 		$nvoos_content_graph_pro_subdirs   = array(
 			'src/',
 			'src/admin/',
 			'src/data-stores/',
 			'src/interfaces/',
+			'src/mcp-servers/',
 			'src/rest/',
 			'src/services/',
 			'src/tools/',
