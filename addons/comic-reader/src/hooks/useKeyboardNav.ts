@@ -30,6 +30,8 @@ interface KeyboardNavCallbacks {
 	onThumbnails?: () => void;
 	onHelp?: () => void;
 	direction: 'ltr' | 'rtl';
+	/** When false, arrow keys keep native scrolling (scroll/webtoon modes). */
+	captureArrows?: boolean;
 }
 
 export function useKeyboardNav(
@@ -47,13 +49,16 @@ export function useKeyboardNav(
 			if (e.ctrlKey || e.metaKey || e.altKey) return;
 
 			const isRtl = callbacks.direction === 'rtl';
+			const captureArrows = callbacks.captureArrows !== false;
 
 			switch (e.key) {
 				case 'ArrowRight':
+					if (!captureArrows) return;
 					e.preventDefault();
 					isRtl ? callbacks.onPrev() : callbacks.onNext();
 					break;
 				case 'ArrowLeft':
+					if (!captureArrows) return;
 					e.preventDefault();
 					isRtl ? callbacks.onNext() : callbacks.onPrev();
 					break;
