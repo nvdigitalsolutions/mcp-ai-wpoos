@@ -15,9 +15,9 @@
  *    remaining tool files land with their F2 sub-clusters; every deferred
  *    require stays file-gated so this init degrades gracefully until each
  *    file exists (same wave-proof pattern as the F1 module files guards).
- *    The CRM REST controller, the command-center page, the per-CPT
- *    settings pages, and the blueprints page landed with their F2
- *    slices.
+ *    The CRM REST controller, the command-center page, the CRM settings
+ *    page, the per-CPT settings pages, and the blueprints page landed
+ *    with their F2 slices.
  * 4. The JetEngine company-field registration stays byte-identical
  *    (`function_exists( 'jet_engine' )` + `class_exists(
  *    'WP_MCP_AI_JetEngine_Meta_Helper' )` guard — dormant standalone).
@@ -156,6 +156,13 @@ if ( $nvoos_content_graph_pro_is_enabled && ! $nvoos_content_graph_pro_is_base )
 		if ( file_exists( $nvoos_content_graph_pro_command_center_page ) ) {
 			require_once $nvoos_content_graph_pro_command_center_page;
 			WP_MCP_AI_CRM_Command_Center_Page::init();
+		}
+
+		// CRM Settings page (self-boots at file load, byte-identical with the
+		// base init's `new WP_MCP_AI_CRM_Settings_Page()`).
+		$nvoos_content_graph_pro_crm_settings_page = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/admin/class-wp-mcp-ai-crm-settings-page.php';
+		if ( file_exists( $nvoos_content_graph_pro_crm_settings_page ) ) {
+			require_once $nvoos_content_graph_pro_crm_settings_page;
 		}
 
 		// CRM Blueprints page (F2 admin remainder).
