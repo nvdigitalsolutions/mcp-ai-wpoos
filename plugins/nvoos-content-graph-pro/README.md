@@ -44,8 +44,12 @@ are added to `define_modules()` as their waves land.
    class names and `wp_mcp_ai_*` function/hook names — ecosystem code
    (e.g. `NvoosContentGraphAi\Engine\PaperStore\PaperStoreRemoteTrait`) and
    the byte-identical-surface principle depend on them. Files live under
-   `src/` and autoload via Composer classmap (primary) or the entry's spl
-   fallback (`WP_MCP_AI_Foo_Bar` → `src/class-wp-mcp-ai-foo-bar.php`).
+   `src/` (mirroring the base addon's `includes/` layout) and autoload via
+   Composer classmap (primary) or the entry's spl fallback
+   (`WP_MCP_AI_Foo_Bar` → `src/class-wp-mcp-ai-foo-bar.php`, probing the
+   known subtree roots `admin/`, `data-stores/`, `interfaces/`, `rest/`,
+   `services/`, `tools/`, `vault/` — extend the entry's subdir list as new
+   waves land).
 2. **Path constant swap.** Every `WP_MCP_AI_PRO_PATH . 'includes/...'`
    reference becomes `NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/...'`. F2+ ported
    consumers that `require_once` the data-store factory on demand must use
