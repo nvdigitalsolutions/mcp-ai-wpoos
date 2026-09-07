@@ -27,6 +27,10 @@ auto-detection, and tool assignment.
 - API keys not being picked up from Docker environment variables
 - Troubleshooting 0 tools returned from `tools/list`
 - Configuring the plugin for IGCSE study (which tools to assign)
+- WordPress.org submission prep — Plugin Check (PCP) runs, wp.org listing
+  screenshots, packaging exclusions, and the compliance checklist are covered
+  by the `.agents/skills/mcp-ai-wpoos-wporg-submission` skill instead of this
+  one (see that skill for Docker PCP recipes and the CI gate anatomy)
 
 ## Architecture
 
