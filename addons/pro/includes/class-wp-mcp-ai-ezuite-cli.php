@@ -140,17 +140,45 @@ class WP_MCP_AI_EZuite_CLI {
 
 		WP_CLI::log( __( 'Dispatching full sync from EZuite API...', 'mcp-ai-wpoos-pro' ) );
 
-		// Dispatch full sync via Action Scheduler.
+		// Resolve the connections enabled for sync in toolkit settings.
+		$settings         = get_option( 'wp_mcp_ai_ezuite_toolkit_settings', array() );
+		$sync_connections = isset( $settings['sync_connections'] ) ? $settings['sync_connections'] : array();
+
+		if ( empty( $sync_connections ) ) {
+			WP_CLI::error( __( 'No EZuite sync connections configured. Enable at least one connection in EZuite Toolkit Settings.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		// Dispatch one full-sync action per configured connection so each
+		// action carries its own connection ID (same args shape as the
+		// recurring schedule).
 		if ( function_exists( 'as_enqueue_async_action' ) ) {
-			as_enqueue_async_action(
-				WP_MCP_AI_EZuite_Sync_Engine::HOOK_FULL_SYNC,
-				array(),
-				WP_MCP_AI_EZuite_Sync_Engine::GROUP
-			);
-			WP_CLI::log( __( 'Full sync action enqueued.', 'mcp-ai-wpoos-pro' ) );
+			foreach ( $sync_connections as $conn_id ) {
+				$conn_id = sanitize_key( $conn_id );
+				if ( empty( $conn_id ) ) {
+					continue;
+				}
+
+				as_enqueue_async_action(
+					WP_MCP_AI_EZuite_Sync_Engine::HOOK_FULL_SYNC,
+					array(
+						'dry_run'       => false,
+						'connection_id' => $conn_id,
+					),
+					WP_MCP_AI_EZuite_Sync_Engine::GROUP
+				);
+			}
+			WP_CLI::log( __( 'Full sync actions enqueued.', 'mcp-ai-wpoos-pro' ) );
 		} else {
-			// Fallback: run synchronously.
-			WP_MCP_AI_EZuite_Sync_Engine::run_full_sync();
+			// Fallback: run synchronously per connection.
+			foreach ( $sync_connections as $conn_id ) {
+				$conn_id = sanitize_key( $conn_id );
+				if ( empty( $conn_id ) ) {
+					continue;
+				}
+
+				WP_MCP_AI_EZuite_Sync_Engine::run_full_sync( false, $conn_id );
+			}
 			WP_CLI::log( __( 'Full sync executed synchronously.', 'mcp-ai-wpoos-pro' ) );
 		}
 
