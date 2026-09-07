@@ -71,13 +71,13 @@ class Test_Crm_Tools_Core_Email extends WP_UnitTestCase {
 	 */
 	public function test_serving_sources(): void {
 		$symbols = array(
-			'WP_MCP_AI_Tool_Manage_CRM_Contact'             => 'tools/crm/class-wp-mcp-ai-tool-manage-crm-contact.php',
-			'WP_MCP_AI_Tool_CRM_Email_Search_Leads'         => 'tools/crm/class-wp-mcp-ai-tool-crm-email-search-leads.php',
+			'WP_MCP_AI_Tool_Manage_CRM_Contact'          => 'tools/crm/class-wp-mcp-ai-tool-manage-crm-contact.php',
+			'WP_MCP_AI_Tool_CRM_Email_Search_Leads'      => 'tools/crm/class-wp-mcp-ai-tool-crm-email-search-leads.php',
 			'WP_MCP_AI_Tool_CRM_Email_Search_Correspondence' => 'tools/crm/class-wp-mcp-ai-tool-crm-email-search-correspondence.php',
-			'WP_MCP_AI_Tool_CRM_Email_Search_Accounting'    => 'tools/crm/class-wp-mcp-ai-tool-crm-email-search-accounting.php',
-			'WP_MCP_AI_Tool_CRM_Capture_Interaction'        => 'tools/crm/class-wp-mcp-ai-tool-crm-capture-interaction.php',
-			'WP_MCP_AI_Pro_Capture_Tool_Base'               => 'tools/capture/class-wp-mcp-ai-pro-capture-tool-base.php',
-			'WP_MCP_AI_CRM_Gmail_Client'                    => 'services/class-wp-mcp-ai-crm-gmail-client.php',
+			'WP_MCP_AI_Tool_CRM_Email_Search_Accounting' => 'tools/crm/class-wp-mcp-ai-tool-crm-email-search-accounting.php',
+			'WP_MCP_AI_Tool_CRM_Capture_Interaction'     => 'tools/crm/class-wp-mcp-ai-tool-crm-capture-interaction.php',
+			'WP_MCP_AI_Pro_Capture_Tool_Base'            => 'tools/capture/class-wp-mcp-ai-pro-capture-tool-base.php',
+			'WP_MCP_AI_CRM_Gmail_Client'                 => 'services/class-wp-mcp-ai-crm-gmail-client.php',
 		);
 
 		foreach ( $symbols as $class => $file ) {

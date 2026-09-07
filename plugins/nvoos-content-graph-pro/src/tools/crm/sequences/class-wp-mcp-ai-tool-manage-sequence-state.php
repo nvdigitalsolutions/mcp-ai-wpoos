@@ -1,0 +1,152 @@
+<?php
+/**
+ * Manage Sequence State Tool (ecosystem port — Wave F2, CRM sequences
+ * batch).
+ *
+ * Ported from the base Pro addon's
+ * `addons/pro/includes/tools/crm/sequences/class-wp-mcp-ai-tool-manage-sequence-state.php`
+ * for the standalone `nvoos-content-graph-pro` addon. Kept
+ * byte-identical. The base Pro addon owns the class in monolith
+ * installs — the addon's autoloader skips its copy when
+ * `WP_MCP_AI_PRO_PATH` is defined (see the plugin entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain
+ * `nvoos-content-graph-pro`.
+ *
+ * @package NvoosContentGraphPro
+ * @since 2.3.0
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Manage Sequence State tool.
+ *
+ * @since 2.3.0
+ */
+class WP_MCP_AI_Tool_Manage_Sequence_State implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public static function is_available() {
+		$s = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $s['enable_crm_toolkit'] );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public static function get_unavailable_reason() {
+		return __( 'CRM Toolkit required.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_slug() {
+		return 'manage_sequence_state';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Manage Sequence State', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_description() {
+		return __( 'Pause, resume, or exit a lead from their active sequence.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_parameters_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'lead_id' => array( 'type' => 'integer' ),
+				'action'  => array(
+					'type' => 'string',
+					'enum' => array( 'pause', 'resume', 'exit' ),
+				),
+			),
+			'required'   => array( 'lead_id', 'action' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function requires_base_pro() {
+		return true;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array( 'pro', 'database-write', 'requires-capability' );
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context including user_id.
+	 * @return array|WP_Error
+	 */
+	public function execute( array $arguments = array(), array $context = array() ) {
+		$lead_id = absint( $arguments['lead_id'] );
+		$action  = sanitize_key( $arguments['action'] );
+		$lp      = get_post( $lead_id );
+		if ( ! $lp ) {
+			return new WP_Error( 'not_found', __( 'Lead not found.', 'nvoos-content-graph-pro' ) );
+		}
+		switch ( $action ) {
+			case 'pause':
+				update_post_meta( $lead_id, '_sequence_paused', '1' );
+				update_post_meta( $lead_id, '_sequence_paused_at', gmdate( 'c' ) );
+				$msg = __( 'Sequence paused.', 'nvoos-content-graph-pro' );
+				break;
+			case 'resume':
+				delete_post_meta( $lead_id, '_sequence_paused' );
+				delete_post_meta( $lead_id, '_sequence_paused_at' );
+				$msg = __( 'Sequence resumed.', 'nvoos-content-graph-pro' );
+				break;
+			case 'exit':
+				delete_post_meta( $lead_id, '_active_sequence_id' );
+				delete_post_meta( $lead_id, '_sequence_step' );
+				delete_post_meta( $lead_id, '_sequence_paused' );
+				update_post_meta( $lead_id, '_sequence_exited_at', gmdate( 'c' ) );
+				$msg = __( 'Sequence exited.', 'nvoos-content-graph-pro' );
+				break;
+			default:
+				return new WP_Error( 'invalid_action', __( 'Invalid action.', 'nvoos-content-graph-pro' ) );
+		}
+		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
+			WP_MCP_AI_CRM_Audit::record( 'sequence_state_changed', 'sequence_enrollment', $lead_id, array( 'action' => $action ) );
+		}
+		return array(
+			'success' => true,
+			'message' => $msg,
+			'lead_id' => $lead_id,
+			'action'  => $action,
+		);
+	}
+}
