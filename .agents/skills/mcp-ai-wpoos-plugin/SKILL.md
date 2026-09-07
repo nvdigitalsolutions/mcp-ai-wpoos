@@ -5,8 +5,8 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.71"
-  plugin-version-tested: "1.1.71"
+  plugin-version: "1.1.72"
+  plugin-version-tested: "1.1.72"
   last-updated: "2026-09-05"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
@@ -43,7 +43,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~303 base / ~1,566 full tools
+     │  Tool Registry     │  ~303 base / ~1,568 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -624,6 +624,29 @@ Import external AI conversation exports into the JetEngine
   registration; CSV list args accept `"1,2"` and `"1, 2"`;
   assistant-builder and Pro toolkit blocks register idempotently
   (WP 7.1 notices).
+
+## Woo Price/Qty Tools & Ecosystem Port Waves (v1.1.72+)
+
+- **WooCommerce price & quantity tools** (PR #6388) —
+  `update_woo_product_price` (regular/sale, all product types) and
+  `update_woo_product_qty` (stock + management) share the new
+  `WP_MCP_AI_Woo_Price_Qty_Updater` trait; `bulk_update_products` uses it;
+  tool presets register the new slugs.
+- **Scheduled sync connection ID** (PR #6386) — EZuite/FlowHub scheduled
+  syncs deliver the assigned connection ID (the scheduled action was
+  dropping it).
+- **Pro update vendor integrity** (PR #6338) — "Update Pro Now" verifies the
+  Pro package's `vendor/` before and after updating.
+- **Container binding** (PR #6339) — `tool_registry` is registered
+  `transient`; every `get()` resolves the live singleton (test-swap safe).
+- **Deps + defaults** (PRs #6365, #6332) — browserslist/qs patched (12
+  Dependabot alerts); `gpt-image-2` aligned across all three settings
+  layers.
+- **Ecosystem ports** (PRs #6330–#6387) — Wave D8 closes the standalone
+  tool-execution gap in Content Graph AI; Wave E6 engine pieces fold into
+  the AI addon; the platform addon closes Waves E2/E3/E5/E1/E4 +
+  E-UI-1/2/3. Sub-project versions unchanged (1.0.4 / 1.0.4 / 2.0.0).
+- **Tool count** — +2 Pro: ~303 base + ~1,265 Pro (~1,568 total).
 
 ## Rate-Limit Unlock, Model Catalog & Ecosystem (v1.1.71+)
 
