@@ -165,6 +165,12 @@ function wp_mcp_ai_pro_register_crm_tools( $tools ) {
 		'WP_MCP_AI_Tool_Delete_Lead'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/leads/class-wp-mcp-ai-tool-delete-lead.php',
 		'WP_MCP_AI_Tool_Convert_Lead_To_Customer' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/leads/class-wp-mcp-ai-tool-convert-lead-to-customer.php',
 		'WP_MCP_AI_Tool_Create_Customer'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/customers/class-wp-mcp-ai-tool-create-customer.php',
+		'WP_MCP_AI_Tool_Create_Deal'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/deals/class-wp-mcp-ai-tool-create-deal.php',
+		'WP_MCP_AI_Tool_List_Deals'               => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/deals/class-wp-mcp-ai-tool-list-deals.php',
+		'WP_MCP_AI_Tool_Get_Deal'                 => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/deals/class-wp-mcp-ai-tool-get-deal.php',
+		'WP_MCP_AI_Tool_Update_Deal'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/deals/class-wp-mcp-ai-tool-update-deal.php',
+		'WP_MCP_AI_Tool_Delete_Deal'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/deals/class-wp-mcp-ai-tool-delete-deal.php',
+		'WP_MCP_AI_Tool_Move_Deal_Stage'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/deals/class-wp-mcp-ai-tool-move-deal-stage.php',
 	);
 
 	return array_merge( $tools, $crm_tools );
@@ -199,6 +205,12 @@ function wp_mcp_ai_pro_register_crm_ecosystem_tools() {
 			'WP_MCP_AI_Tool_Delete_Lead',
 			'WP_MCP_AI_Tool_Convert_Lead_To_Customer',
 			'WP_MCP_AI_Tool_Create_Customer',
+			'WP_MCP_AI_Tool_Create_Deal',
+			'WP_MCP_AI_Tool_List_Deals',
+			'WP_MCP_AI_Tool_Get_Deal',
+			'WP_MCP_AI_Tool_Update_Deal',
+			'WP_MCP_AI_Tool_Delete_Deal',
+			'WP_MCP_AI_Tool_Move_Deal_Stage',
 		) as $tool_class
 	) {
 		$adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $tool_class() );
