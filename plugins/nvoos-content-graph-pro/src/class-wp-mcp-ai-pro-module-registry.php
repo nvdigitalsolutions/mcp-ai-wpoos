@@ -407,12 +407,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 				array(),
 				array(
 					'files' => array(
+						$p . 'interfaces/interface-wp-mcp-ai-toolkit-data-store.php',
+						$p . 'class-wp-mcp-ai-tenant-repository.php',
 						$p . 'class-wp-mcp-ai-toolkit-data-store-factory.php',
 						$p . 'data-stores/class-wp-mcp-ai-toolkit-cct-store.php',
 						$p . 'data-stores/class-wp-mcp-ai-toolkit-cpt-store.php',
 					),
 				),
 				function () use ( $p ) {
+					require_once $p . 'interfaces/interface-wp-mcp-ai-toolkit-data-store.php';
+					require_once $p . 'class-wp-mcp-ai-tenant-repository.php';
 					require_once $p . 'class-wp-mcp-ai-toolkit-data-store-factory.php';
 					require_once $p . 'data-stores/class-wp-mcp-ai-toolkit-cct-store.php';
 					require_once $p . 'data-stores/class-wp-mcp-ai-toolkit-cpt-store.php';
