@@ -80,6 +80,15 @@
         <exclude name="WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode"/>
     </rule>
 
+    <!--
+        Ported analytics tools query full CRM pipelines with high
+        posts_per_page limits (500-1000) — byte-identical with the
+        monolith copies.
+    -->
+    <rule ref="WordPress.WP.PostsPerPage">
+        <severity>0</severity>
+    </rule>
+
     <file>./nvoos-content-graph-pro.php</file>
     <file>./src/</file>
     <file>./tests/</file>
