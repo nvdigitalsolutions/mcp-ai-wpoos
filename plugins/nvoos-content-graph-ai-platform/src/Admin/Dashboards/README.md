@@ -43,6 +43,22 @@ through the `wp_mcp_ai_get_slash_command_handler()` /
 platform shim standalone — no seam needed); the toolkit grouping uses
 the `toolkit_manager()`/`toolkit_name()` seams; the base's `private`
 helpers become `protected` for test exposure (documented).
+Sub-cluster 4 (`RunTimelineDashboard`) is the aligned port of
+`WP_MCP_AI_Admin_Run_Timeline`: byte-identical page slug
+(`mcp-ai-run-timeline`), the two AJAX actions
+(`wp_mcp_ai_run_timeline_get_run` / `wp_mcp_ai_run_timeline_list_runs`),
+the `wpMcpAiRunTimeline` localize envelope (incl. the six-string i18n
+block), the `RUNS_PER_PAGE`/`CACHE_PREFIX` constants, the sidebar
+run-list + detail render surface, the OTel notice, the assistant
+filter options, the metric-store-driven summaries with the
+reasoning-trace post-meta fallback, the run detail loader with the
+`wp_mcp_ai_run_timeline_detail` filter, and the try/catch AJAX
+handlers (403/400/404/500 envelopes). Collaborators resolve per mode
+via the `metric_event_store()` / `reasoning_trace_class()` /
+`otel_enabled()` / `observability_settings_url()` seams (base store /
+platform `Measurement\MetricEventStore`; base trace / platform
+`Harness\ReasoningTrace` — byte-identical `META_KEY` + `sanitize()`;
+OTel probe monolith-only; settings link per mode).
 
 ## Tier
 
@@ -61,6 +77,7 @@ helpers become `protected` for test exposure (documented).
 | `NvoosContentGraphAiPlatform\Admin\Dashboards\MultiAgentDashboard` | `MultiAgentDashboard.php` | `Plugin::registerDashboards()` — standalone menu/enqueue/AJAX wiring |
 | `NvoosContentGraphAiPlatform\Admin\Dashboards\OrchestrationDashboard` | `OrchestrationDashboard.php` | `Plugin::registerDashboards()` — standalone menu/enqueue/AJAX wiring |
 | `NvoosContentGraphAiPlatform\Admin\Dashboards\SlashCommandsDashboard` | `SlashCommandsDashboard.php` | `Plugin::registerDashboards()` — standalone menu/enqueue/AJAX wiring |
+| `NvoosContentGraphAiPlatform\Admin\Dashboards\RunTimelineDashboard` | `RunTimelineDashboard.php` | `Plugin::registerDashboards()` — standalone menu/enqueue/AJAX wiring |
 
 ## Inputs / Outputs / Neighbors
 
@@ -130,6 +147,21 @@ helpers become `protected` for test exposure (documented).
   global-function shims in `setUp` (the production boot path fires
   before the test bootstrap requires the ecosystem files). Runs in
   both matrices.
+- `tests/test-run-timeline-dashboard.php` — characterization suite
+  covering the byte-identical constants/slug/nonce/action names,
+  per-mode menu registration, register idempotence, the per-mode
+  collaborator seams (metric store, reasoning trace meta key, OTel
+  probe, observability settings link), the render surface (incl. the
+  OTel notice), the assistant filter options, the post-meta fallback
+  summaries, the summary envelope pagination math, the run detail
+  loader (meta trace + detail filter), the AJAX gates and envelopes
+  (nonce gate asserted through the ported Throwable-guard 500
+  envelope — the suite's `wp_doing_ajax` filter requires an
+  AJAX-shaped payload; success paths asserted via string matching
+  because the guard re-catches the harness's
+  WPAjaxDieContinueException and appends a second 500 document — a
+  byte-identical harness artifact), and the per-mode asset enqueues.
+  Runs in both matrices.
 
 ## Also Load
 
@@ -140,6 +172,6 @@ helpers become `protected` for test exposure (documented).
 
 ## See Also
 
-- Base originals: `includes/admin/class-wp-mcp-ai-admin-multi-agent-dashboard.php` (sub-cluster 1), `class-wp-mcp-ai-admin-orchestration-dashboard.php` (sub-cluster 2), `class-wp-mcp-ai-admin-slash-commands-dashboard.php` (sub-cluster 3), `class-wp-mcp-ai-admin-run-timeline-dashboard.php`
+- Base originals: `includes/admin/class-wp-mcp-ai-admin-multi-agent-dashboard.php` (sub-cluster 1), `class-wp-mcp-ai-admin-orchestration-dashboard.php` (sub-cluster 2), `class-wp-mcp-ai-admin-slash-commands-dashboard.php` (sub-cluster 3), `class-wp-mcp-ai-admin-run-timeline.php` (sub-cluster 4)
 - [`docs/project/plans/ecosystem-port-cluster-loop.md`](../../../../docs/project/plans/ecosystem-port-cluster-loop.md) — cluster ordering + pipeline
 - [`docs/project/ecosystem-port-tracker.md`](../../../../docs/project/ecosystem-port-tracker.md) — E-UI-1 row status

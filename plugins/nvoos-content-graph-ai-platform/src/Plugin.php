@@ -98,6 +98,10 @@ final class Plugin {
 		if ( class_exists( __NAMESPACE__ . '\Admin\Dashboards\SlashCommandsDashboard' ) ) {
 			( new \NvoosContentGraphAiPlatform\Admin\Dashboards\SlashCommandsDashboard() )->register();
 		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Dashboards\RunTimelineDashboard' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Dashboards\RunTimelineDashboard() )->register();
+		}
 	}
 
 	/**
