@@ -102,6 +102,10 @@ final class Plugin {
 		if ( class_exists( __NAMESPACE__ . '\Admin\Managers\CronManagerPage' ) ) {
 			( new \NvoosContentGraphAiPlatform\Admin\Managers\CronManagerPage() )->register();
 		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Managers\DagBuilder' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Managers\DagBuilder() )->register();
+		}
 	}
 
 	/**
