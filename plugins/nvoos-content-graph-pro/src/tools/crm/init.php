@@ -154,7 +154,10 @@ if ( $nvoos_content_graph_pro_is_enabled && ! $nvoos_content_graph_pro_is_base )
  */
 function wp_mcp_ai_pro_register_crm_tools( $tools ) {
 	$crm_tools = array(
-		'WP_MCP_AI_Tool_Create_Company' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-create-company.php',
+		'WP_MCP_AI_Tool_Create_Company'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-create-company.php',
+		'WP_MCP_AI_Tool_Get_Companies'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-get-companies.php',
+		'WP_MCP_AI_Tool_Research_Company'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-research-company.php',
+		'WP_MCP_AI_Tool_Archive_Stale_Contacts' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-archive-stale-contacts.php',
 	);
 
 	return array_merge( $tools, $crm_tools );
@@ -176,7 +179,14 @@ function wp_mcp_ai_pro_register_crm_ecosystem_tools() {
 		return;
 	}
 
-	foreach ( array( 'WP_MCP_AI_Tool_Create_Company' ) as $tool_class ) {
+	foreach (
+		array(
+			'WP_MCP_AI_Tool_Create_Company',
+			'WP_MCP_AI_Tool_Get_Companies',
+			'WP_MCP_AI_Tool_Research_Company',
+			'WP_MCP_AI_Tool_Archive_Stale_Contacts',
+		) as $tool_class
+	) {
 		$adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $tool_class() );
 		try {
 			$parent_registry->register( $adapter );
