@@ -900,3 +900,9 @@ require_once __DIR__ . '/paper-store/trait-paper-store-test-helpers.php';
 if ( file_exists( __DIR__ . '/../addons/checkout-api/tests/bootstrap.php' ) ) {
 	require_once __DIR__ . '/../addons/checkout-api/tests/bootstrap.php';
 }
+
+// Comic Reader addon tests (addons/comic-reader). Same self-guarding
+// constants + class-requires pattern as the Checkout API addon above.
+if ( file_exists( __DIR__ . '/../addons/comic-reader/tests/bootstrap.php' ) ) {
+	require_once __DIR__ . '/../addons/comic-reader/tests/bootstrap.php';
+}

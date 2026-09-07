@@ -21,6 +21,15 @@ interface PageViewerProps {
 	direction: 'ltr' | 'rtl';
 }
 
+function translate(key: string, ...args: (string | number)[]): string {
+	const i18n = window.NVOOS_COMIC_READER?.i18n || {};
+	let msg = i18n[key] || key;
+	args.forEach((arg, i) => {
+		msg = msg.replace(`%${i + 1}$d`, String(arg));
+	});
+	return msg;
+}
+
 export function PageViewer({
 	leftPage,
 	rightPage,
@@ -33,7 +42,7 @@ export function PageViewer({
 	if (!leftPage && !rightPage) {
 		return (
 			<div className="nvoos-cr-page-viewer nvoos-cr-page-viewer--empty">
-				<p>No pages to display.</p>
+				<p>{translate('noPages')}</p>
 			</div>
 		);
 	}
@@ -59,7 +68,7 @@ export function PageViewer({
 					<div className="nvoos-cr-page" key={leftPage.index}>
 						<img
 							src={leftPage.url}
-							alt={`Page ${leftPage.index + 1}`}
+							alt={translate('pageAlt', leftPage.index + 1)}
 							style={imageStyle}
 							draggable={false}
 						/>
@@ -69,7 +78,7 @@ export function PageViewer({
 					<div className="nvoos-cr-page" key={rightPage.index}>
 						<img
 							src={rightPage.url}
-							alt={`Page ${rightPage.index + 1}`}
+							alt={translate('pageAlt', rightPage.index + 1)}
 							style={imageStyle}
 							draggable={false}
 						/>

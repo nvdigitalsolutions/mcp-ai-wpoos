@@ -2,10 +2,14 @@
  * NV oOS Comic Reader — Keyboard Navigation Hook
  *
  * Adds keyboard shortcuts for comic reading:
- *   ← → or A/D: Previous/next page
+ *   ← → (direction-aware) or A/D: Previous/next page
  *   +/= or -: Zoom in/out
  *   F: Toggle fullscreen
  *   W: Fit width / H: Fit height
+ *   P: Toggle double-page spread
+ *   R: Toggle reading direction
+ *   G: Thumbnails overview
+ *   ?: Keyboard help dialog
  *
  * @package NV_oOS_Comic_Reader
  * @since   0.1.0
@@ -18,6 +22,13 @@ interface KeyboardNavCallbacks {
 	onPrev: () => void;
 	onZoomIn: () => void;
 	onZoomOut: () => void;
+	onFitWidth?: () => void;
+	onFitHeight?: () => void;
+	onFullscreen?: () => void;
+	onToggleDoublePage?: () => void;
+	onToggleDirection?: () => void;
+	onThumbnails?: () => void;
+	onHelp?: () => void;
 	direction: 'ltr' | 'rtl';
 }
 
@@ -30,9 +41,10 @@ export function useKeyboardNav(
 		if (!el) return;
 
 		const handleKeyDown = (e: KeyboardEvent) => {
-			// Ignore when typing in inputs.
+			// Ignore when typing in inputs or when a modifier is held.
 			const tag = (e.target as HTMLElement)?.tagName;
 			if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+			if (e.ctrlKey || e.metaKey || e.altKey) return;
 
 			const isRtl = callbacks.direction === 'rtl';
 
@@ -63,6 +75,40 @@ export function useKeyboardNav(
 				case '-':
 					e.preventDefault();
 					callbacks.onZoomOut();
+					break;
+				case 'f':
+				case 'F':
+					e.preventDefault();
+					callbacks.onFullscreen?.();
+					break;
+				case 'w':
+				case 'W':
+					e.preventDefault();
+					callbacks.onFitWidth?.();
+					break;
+				case 'h':
+				case 'H':
+					e.preventDefault();
+					callbacks.onFitHeight?.();
+					break;
+				case 'p':
+				case 'P':
+					e.preventDefault();
+					callbacks.onToggleDoublePage?.();
+					break;
+				case 'g':
+				case 'G':
+					e.preventDefault();
+					callbacks.onThumbnails?.();
+					break;
+				case 'r':
+				case 'R':
+					e.preventDefault();
+					callbacks.onToggleDirection?.();
+					break;
+				case '?':
+					e.preventDefault();
+					callbacks.onHelp?.();
 					break;
 				default:
 					break;

@@ -8,7 +8,7 @@
  * @since   0.1.0
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 interface ReaderStateOptions {
 	total: number;
@@ -97,14 +97,17 @@ export function useReaderState({ total }: ReaderStateOptions): ReaderState {
 		});
 	}, []);
 
-	// Listen for fullscreen exit via Escape key or browser controls.
-	if (typeof document !== 'undefined') {
-		document.addEventListener('fullscreenchange', () => {
+	// Sync state when the user exits fullscreen via Escape or browser controls.
+	useEffect(() => {
+		const handleFullscreenChange = () => {
 			if (!document.fullscreenElement) {
 				setIsFullscreen(false);
 			}
-		});
-	}
+		};
+		document.addEventListener('fullscreenchange', handleFullscreenChange);
+		return () =>
+			document.removeEventListener('fullscreenchange', handleFullscreenChange);
+	}, []);
 
 	return {
 		currentPage,

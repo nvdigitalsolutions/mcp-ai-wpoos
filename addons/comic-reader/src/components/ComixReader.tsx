@@ -7,12 +7,13 @@
  * @since   0.1.0
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { ComicItem } from '../api/comic-api';
 import { fetchComicFileUrl } from '../api/comic-api';
 import { PageViewer } from './PageViewer';
 import { useKeyboardNav } from '../hooks/useKeyboardNav';
 import { useReaderState } from '../hooks/useReaderState';
+import { t } from '../utils/i18n';
 
 interface PageData {
 	index: number;
@@ -25,16 +26,6 @@ interface ComixReaderProps {
 	direction: 'ltr' | 'rtl';
 }
 
-// Build a Blob URL for the worker from our source.
-// In a production build, esbuild inlines the worker.
-function createWorkerFromSource(): Worker {
-	const workerCode = `
-		${/* The worker will be inlined at build time */ ''}
-	`;
-	const blob = new Blob([workerCode], { type: 'application/javascript' });
-	return new Worker(URL.createObjectURL(blob));
-}
-
 export function ComixReader({ comic, direction }: ComixReaderProps) {
 	const [pages, setPages] = useState<PageData[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -42,15 +33,6 @@ export function ComixReader({ comic, direction }: ComixReaderProps) {
 	const [extractProgress, setExtractProgress] = useState('');
 	const workerRef = useRef<Worker | null>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
-
-	const t = (key: string, ...args: (string | number)[]): string => {
-		const i18n = window.NVOOS_COMIC_READER?.i18n || {};
-		let msg = i18n[key] || key;
-		args.forEach((arg, i) => {
-			msg = msg.replace(`%${i + 1}$d`, String(arg));
-		});
-		return msg;
-	};
 
 	const {
 		currentPage,
@@ -212,8 +194,19 @@ export function ComixReader({ comic, direction }: ComixReaderProps) {
 		);
 	}
 
-	const leftPage = isDoublePage ? currentPage : currentPage;
-	const rightPage = isDoublePage ? currentPage + 1 : null;
+	const isRtl = direction === 'rtl';
+
+	// In RTL spreads the higher page number sits on the visual left.
+	const leftPage = isDoublePage
+		? isRtl
+			? currentPage + 1
+			: currentPage
+		: currentPage;
+	const rightPage = isDoublePage
+		? isRtl
+			? currentPage
+			: currentPage + 1
+		: null;
 
 	return (
 		<div

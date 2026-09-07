@@ -137,6 +137,22 @@ class NV_oOS_Comic_Reader_REST {
 
 		register_rest_route(
 			self::REST_NAMESPACE,
+			'/comics/(?P<id>\d+)/cover/generate',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'generate_cover' ),
+				'permission_callback' => array( __CLASS__, 'upload_permission' ),
+				'args'                => array(
+					'id' => array(
+						'type'              => 'integer',
+						'sanitize_callback' => 'absint',
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
 			'/comics/(?P<id>\d+)/delete',
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
@@ -422,6 +438,7 @@ class NV_oOS_Comic_Reader_REST {
 			'post_status'    => 'inherit',
 			'posts_per_page' => $per_page,
 			'paged'          => $page,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- extension matching on _wp_attached_file is the only way to find comics in the Media Library.
 			'meta_query'     => array(
 				array(
 					'key'     => '_wp_attached_file',
@@ -469,8 +486,7 @@ class NV_oOS_Comic_Reader_REST {
 			return new WP_Error( 'not_found', __( 'Comic not found.', 'nvoos-comic-reader' ), array( 'status' => 404 ) );
 		}
 
-		$ext = strtolower( pathinfo( $post->guid, PATHINFO_EXTENSION ) );
-		if ( ! in_array( $ext, self::COMIC_EXTENSIONS, true ) ) {
+		if ( ! in_array( self::get_comic_ext( $id ), self::COMIC_EXTENSIONS, true ) ) {
 			return new WP_Error( 'invalid_format', __( 'File is not a supported comic format.', 'nvoos-comic-reader' ), array( 'status' => 400 ) );
 		}
 
@@ -480,7 +496,9 @@ class NV_oOS_Comic_Reader_REST {
 	/**
 	 * Get the raw comic file for client-side extraction.
 	 *
-	 * Forces download of the archive so the browser can process it.
+	 * Serves the archive with HTTP Range support (206 Partial Content) so
+	 * large files can be streamed/resumed, and reads the file in bounded
+	 * chunks instead of loading it fully into memory.
 	 *
 	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error
@@ -503,16 +521,39 @@ class NV_oOS_Comic_Reader_REST {
 			return new WP_Error( 'invalid_format', __( 'File is not a supported comic format.', 'nvoos-comic-reader' ), array( 'status' => 400 ) );
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
-		$content = file_get_contents( $file_path );
+		$file_size = (int) filesize( $file_path );
+
+		// Parse and validate a single byte range (e.g. "bytes=0-1023").
+		$range = self::parse_byte_range( $request->get_header( 'Range' ), $file_size );
+		if ( false === $range ) {
+			$response = new WP_REST_Response( '', 416 );
+			$response->header( 'Content-Range', 'bytes */' . $file_size );
+			return $response;
+		}
+
+		if ( null !== $range ) {
+			list( $start, $end ) = $range;
+			$length              = $end - $start + 1;
+			$status              = 206;
+			$content             = self::read_file_chunk( $file_path, $start, $length );
+		} else {
+			$status  = 200;
+			$content = self::read_file_chunk( $file_path, 0, $file_size );
+		}
+
 		if ( false === $content ) {
 			return new WP_Error( 'read_error', __( 'Failed to read comic file.', 'nvoos-comic-reader' ), array( 'status' => 500 ) );
 		}
 
-		$response = new WP_REST_Response( $content, 200 );
+		$response = new WP_REST_Response( $content, $status );
 		$response->header( 'Content-Type', self::get_mime_type( $ext ) );
-		$response->header( 'Content-Length', (string) filesize( $file_path ) );
+		$response->header( 'Content-Length', (string) ( isset( $range ) && null !== $range ? $range[1] - $range[0] + 1 : $file_size ) );
 		$response->header( 'Content-Disposition', 'inline; filename="' . basename( $file_path ) . '"' );
+		$response->header( 'Accept-Ranges', 'bytes' );
+
+		if ( 206 === $status ) {
+			$response->header( 'Content-Range', 'bytes ' . $start . '-' . $end . '/' . $file_size );
+		}
 
 		return $response;
 	}
@@ -561,6 +602,47 @@ class NV_oOS_Comic_Reader_REST {
 	}
 
 	/**
+	 * Generate and cache a cover thumbnail for a comic (CBZ only, server-side).
+	 *
+	 * Extracts the first image page of a CBZ archive with ZipArchive,
+	 * sideloads it into the Media Library as a child of the comic attachment,
+	 * and stores the generated attachment ID in `_nvoos_comic_cover_id`.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function generate_cover( $request ) {
+		$id   = $request->get_param( 'id' );
+		$post = get_post( $id );
+
+		if ( ! $post || 'attachment' !== $post->post_type ) {
+			return new WP_Error( 'not_found', __( 'Comic not found.', 'nvoos-comic-reader' ), array( 'status' => 404 ) );
+		}
+
+		$file_path = get_attached_file( $id );
+		$ext       = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
+		if ( ! in_array( $ext, self::COMIC_EXTENSIONS, true ) ) {
+			return new WP_Error( 'invalid_format', __( 'File is not a supported comic format.', 'nvoos-comic-reader' ), array( 'status' => 400 ) );
+		}
+
+		$cover_id = self::extract_cover_attachment( $id );
+		if ( is_wp_error( $cover_id ) ) {
+			return $cover_id;
+		}
+
+		$cover_medium = wp_get_attachment_image_url( $cover_id, 'medium' );
+		$cover_full   = wp_get_attachment_url( $cover_id );
+
+		return rest_ensure_response(
+			array(
+				'id'       => $id,
+				'cover_id' => $cover_id,
+				'url'      => $cover_medium ? $cover_medium : $cover_full,
+			)
+		);
+	}
+
+	/**
 	 * Delete a comic from the media library.
 	 *
 	 * @param WP_REST_Request $request Request object.
@@ -574,14 +656,20 @@ class NV_oOS_Comic_Reader_REST {
 			return new WP_Error( 'not_found', __( 'Comic not found.', 'nvoos-comic-reader' ), array( 'status' => 404 ) );
 		}
 
-		$ext = strtolower( pathinfo( $post->guid, PATHINFO_EXTENSION ) );
-		if ( ! in_array( $ext, self::COMIC_EXTENSIONS, true ) ) {
+		if ( ! in_array( self::get_comic_ext( $id ), self::COMIC_EXTENSIONS, true ) ) {
 			return new WP_Error( 'invalid_format', __( 'File is not a supported comic format.', 'nvoos-comic-reader' ), array( 'status' => 400 ) );
 		}
+
+		$cover_id = get_post_meta( $id, '_nvoos_comic_cover_id', true );
 
 		$result = wp_delete_attachment( $id, true );
 		if ( false === $result ) {
 			return new WP_Error( 'delete_failed', __( 'Failed to delete comic.', 'nvoos-comic-reader' ), array( 'status' => 500 ) );
+		}
+
+		// Remove the generated cover thumbnail alongside the comic.
+		if ( $cover_id && get_post( (int) $cover_id ) ) {
+			wp_delete_attachment( (int) $cover_id, true );
 		}
 
 		return rest_ensure_response(
@@ -621,12 +709,42 @@ class NV_oOS_Comic_Reader_REST {
 			);
 		}
 
-		// Use WordPress media upload handling.
+		// Enforce a configurable upload size cap.
+		$max_bytes = (int) apply_filters( 'nvoos_comic_reader_max_upload_bytes', 256 * MB_IN_BYTES );
+		if ( ! empty( $file['size'] ) && (int) $file['size'] > $max_bytes ) {
+			return new WP_Error(
+				'file_too_large',
+				sprintf(
+					/* translators: %s: human-readable maximum file size */
+					__( 'Comic file exceeds the maximum allowed size of %s.', 'nvoos-comic-reader' ),
+					size_format( $max_bytes )
+				),
+				array( 'status' => 413 )
+			);
+		}
+
+		// Validate the archive signature (magic bytes) so a renamed text file
+		// cannot pass as a comic archive.
+		if ( ! empty( $file['tmp_name'] ) && ! NV_oOS_Comic_Reader_Mime::has_valid_archive_signature( $file['tmp_name'] ) ) {
+			return new WP_Error(
+				'invalid_archive',
+				__( 'The uploaded file is not a valid comic archive. Only genuine CBR, CBZ, CB7 and CBT files are accepted.', 'nvoos-comic-reader' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Use WordPress media upload handling by default. A filterable handler
+		// seam lets integrations (off-site storage, custom sanitizers) replace
+		// media_handle_upload entirely; it receives the raw file array and
+		// must return an attachment ID or WP_Error.
 		require_once ABSPATH . 'wp-admin/includes/file.php';
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 		require_once ABSPATH . 'wp-admin/includes/media.php';
 
-		$attachment_id = media_handle_upload( 'file', 0 );
+		$upload_handler = apply_filters( 'nvoos_comic_reader_upload_handler', null );
+		$attachment_id  = is_callable( $upload_handler )
+			? call_user_func( $upload_handler, $file )
+			: media_handle_upload( 'file', 0 );
 
 		if ( is_wp_error( $attachment_id ) ) {
 			return new WP_Error(
@@ -636,48 +754,70 @@ class NV_oOS_Comic_Reader_REST {
 			);
 		}
 
+		// Best-effort server-side cover extraction (CBZ only). Failures must
+		// never fail the upload — the client can extract covers instead.
+		self::extract_cover_attachment( (int) $attachment_id );
+
 		$post = get_post( $attachment_id );
 
-		return rest_ensure_response(
-			self::format_comic_item( $post ),
-			201
-		);
+		// WP 6.9 removed the $status parameter from rest_ensure_response(),
+		// so construct the 201 response explicitly.
+		return new WP_REST_Response( self::format_comic_item( $post ), 201 );
 	}
 
 	/**
-	 * Read permission — user must be logged in with the read capability.
+	 * Read permission — user must be logged in with the (filterable) read capability.
 	 *
 	 * @return bool|WP_Error
 	 */
 	public static function read_permission() {
-		if ( is_user_logged_in() && current_user_can( 'read' ) ) {
+		// phpcs:ignore WordPress.WP.Capabilities.Undetermined -- capability is filterable by design.
+		$cap = apply_filters( 'nvoos_comic_reader_read_capability', 'read' );
+		// phpcs:ignore WordPress.WP.Capabilities.Undetermined
+		if ( is_user_logged_in() && current_user_can( $cap ) ) {
 			return true;
 		}
 		return new WP_Error( 'forbidden', __( 'You must be logged in to access comics.', 'nvoos-comic-reader' ), array( 'status' => 401 ) );
 	}
 
 	/**
-	 * Upload permission — user must be able to upload files.
+	 * Upload permission — user must hold the (filterable) upload capability.
 	 *
 	 * @return bool|WP_Error
 	 */
 	public static function upload_permission() {
-		if ( current_user_can( 'upload_files' ) ) {
+		// phpcs:ignore WordPress.WP.Capabilities.Undetermined -- capability is filterable by design.
+		$cap = apply_filters( 'nvoos_comic_reader_upload_capability', 'upload_files' );
+		// phpcs:ignore WordPress.WP.Capabilities.Undetermined
+		if ( current_user_can( $cap ) ) {
 			return true;
 		}
 		return new WP_Error( 'forbidden', __( 'You do not have permission to upload files.', 'nvoos-comic-reader' ), array( 'status' => 403 ) );
 	}
 
 	/**
-	 * Delete permission — user must be able to delete posts.
+	 * Delete permission — scoped to the specific attachment.
 	 *
+	 * The broad capability is filterable; the per-object `delete_post` check
+	 * ensures non-admin users can only delete their own comics.
+	 *
+	 * @param WP_REST_Request $request Request object.
 	 * @return bool|WP_Error
 	 */
-	public static function delete_permission() {
-		if ( current_user_can( 'delete_posts' ) ) {
-			return true;
+	public static function delete_permission( $request ) {
+		// phpcs:ignore WordPress.WP.Capabilities.Undetermined -- capability is filterable by design.
+		$cap = apply_filters( 'nvoos_comic_reader_delete_capability', 'delete_posts' );
+		// phpcs:ignore WordPress.WP.Capabilities.Undetermined
+		if ( ! current_user_can( $cap ) ) {
+			return new WP_Error( 'forbidden', __( 'You do not have permission to delete files.', 'nvoos-comic-reader' ), array( 'status' => 403 ) );
 		}
-		return new WP_Error( 'forbidden', __( 'You do not have permission to delete files.', 'nvoos-comic-reader' ), array( 'status' => 403 ) );
+
+		$id = (int) $request->get_param( 'id' );
+		if ( $id && ! current_user_can( 'delete_post', $id ) ) {
+			return new WP_Error( 'forbidden', __( 'You do not have permission to delete this comic.', 'nvoos-comic-reader' ), array( 'status' => 403 ) );
+		}
+
+		return true;
 	}
 
 	/**
@@ -1096,21 +1236,211 @@ class NV_oOS_Comic_Reader_REST {
 		$file_path = get_attached_file( $post->ID );
 		$file_size = $file_path && file_exists( $file_path ) ? (int) filesize( $file_path ) : 0;
 		$file_url  = wp_get_attachment_url( $post->ID );
-		$ext       = strtolower( pathinfo( $post->guid, PATHINFO_EXTENSION ) );
 
 		return array(
 			'id'            => (int) $post->ID,
 			'title'         => get_the_title( $post ),
-			'filename'      => basename( get_attached_file( $post->ID ) ?: '' ),
-			'format'        => strtoupper( $ext ),
+			'filename'      => basename( $file_path ? $file_path : '' ),
+			'format'        => strtoupper( self::get_comic_ext( $post->ID ) ),
 			'file_size'     => $file_size,
-			'file_url'      => $file_url ?: '',
+			'file_url'      => $file_url ? $file_url : '',
 			'file_endpoint' => rest_url( self::REST_NAMESPACE . '/comics/' . $post->ID . '/file' ),
-			'cover_url'     => '',
+			'cover_url'     => self::get_cover_url( $post->ID ),
 			'date'          => get_the_date( 'c', $post ),
 			'modified'      => get_the_modified_date( 'c', $post ),
 			'mime_type'     => $post->post_mime_type,
 		);
+	}
+
+	/**
+	 * Get the lowercase file extension of a comic attachment from its real
+	 * path on disk. The post GUID is not reliable — it can be a permalink.
+	 *
+	 * @param int $post_id Attachment ID.
+	 * @return string Lowercase extension (may be empty).
+	 */
+	private static function get_comic_ext( $post_id ) {
+		$file_path = get_attached_file( $post_id );
+		$file_path = $file_path ? $file_path : '';
+		return strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
+	}
+
+	/**
+	 * Get the cached cover URL for a comic attachment, if one was generated.
+	 *
+	 * @param int $attachment_id Comic attachment ID.
+	 * @return string Cover URL or empty string.
+	 */
+	private static function get_cover_url( $attachment_id ) {
+		$cover_id = get_post_meta( $attachment_id, '_nvoos_comic_cover_id', true );
+		if ( ! $cover_id ) {
+			return '';
+		}
+
+		// Prefer the medium thumbnail; fall back to the full image for
+		// covers too small to have generated intermediate sizes.
+		$url = wp_get_attachment_image_url( (int) $cover_id, 'medium' );
+		if ( $url ) {
+			return $url;
+		}
+
+		$full = wp_get_attachment_url( (int) $cover_id );
+		return $full ? $full : '';
+	}
+
+	/**
+	 * Extract the first image page of a CBZ archive into a cached cover
+	 * attachment (child of the comic).
+	 *
+	 * @param int $attachment_id Comic attachment ID.
+	 * @return int|WP_Error Generated cover attachment ID, or WP_Error.
+	 */
+	private static function extract_cover_attachment( $attachment_id ) {
+		$existing = get_post_meta( $attachment_id, '_nvoos_comic_cover_id', true );
+		if ( $existing && get_post( (int) $existing ) ) {
+			return (int) $existing;
+		}
+
+		if ( ! class_exists( 'ZipArchive' ) ) {
+			return new WP_Error( 'unsupported', __( 'Server-side cover extraction requires the ZipArchive PHP extension.', 'nvoos-comic-reader' ), array( 'status' => 501 ) );
+		}
+
+		$file_path = get_attached_file( $attachment_id );
+		$ext       = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
+		if ( 'cbz' !== $ext ) {
+			return new WP_Error( 'unsupported_format', __( 'Server-side cover extraction currently supports CBZ archives only.', 'nvoos-comic-reader' ), array( 'status' => 501 ) );
+		}
+
+		$zip = new ZipArchive();
+		if ( true !== $zip->open( $file_path ) ) {
+			return new WP_Error( 'extract_failed', __( 'Failed to open the comic archive.', 'nvoos-comic-reader' ), array( 'status' => 500 ) );
+		}
+
+		// Collect image entries, sorted naturally (cover = first page).
+		$entries = array();
+		$count   = $zip->count();
+		for ( $i = 0; $i < $count; $i++ ) {
+			$name = $zip->getNameIndex( $i );
+			if ( is_string( $name ) && preg_match( '/\.(jpe?g|png|gif|webp|bmp)$/i', $name ) ) {
+				$entries[] = $name;
+			}
+		}
+		sort( $entries, SORT_NATURAL | SORT_FLAG_CASE );
+
+		if ( empty( $entries ) ) {
+			$zip->close();
+			return new WP_Error( 'no_pages', __( 'No image pages were found inside the archive.', 'nvoos-comic-reader' ), array( 'status' => 500 ) );
+		}
+
+		$cover_name = $entries[0];
+		$stream     = $zip->getStream( $cover_name );
+		if ( false === $stream ) {
+			$zip->close();
+			return new WP_Error( 'extract_failed', __( 'Failed to read the cover page from the archive.', 'nvoos-comic-reader' ), array( 'status' => 500 ) );
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+		$cover_bytes = stream_get_contents( $stream );
+		fclose( $stream ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+		$zip->close();
+
+		if ( false === $cover_bytes || '' === $cover_bytes ) {
+			return new WP_Error( 'extract_failed', __( 'Failed to read the cover page from the archive.', 'nvoos-comic-reader' ), array( 'status' => 500 ) );
+		}
+
+		// Write to a temp file so media_handle_sideload can move it.
+		$tmp = wp_tempnam( 'nvoos-comic-cover-' );
+		if ( ! $tmp ) {
+			return new WP_Error( 'temp_file_failed', __( 'Could not create a temporary file for the cover.', 'nvoos-comic-reader' ), array( 'status' => 500 ) );
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		if ( false === file_put_contents( $tmp, $cover_bytes ) ) {
+			return new WP_Error( 'temp_file_failed', __( 'Could not write the cover to a temporary file.', 'nvoos-comic-reader' ), array( 'status' => 500 ) );
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+
+		$file_array = array(
+			'name'     => basename( $cover_name ),
+			'tmp_name' => $tmp,
+		);
+
+		$cover_id = media_handle_sideload( $file_array, $attachment_id );
+		if ( is_wp_error( $cover_id ) ) {
+			return $cover_id;
+		}
+
+		update_post_meta( $attachment_id, '_nvoos_comic_cover_id', (int) $cover_id );
+
+		return (int) $cover_id;
+	}
+
+	/**
+	 * Parse a single HTTP byte range header against a file size.
+	 *
+	 * @param string|null $header    Raw Range header value (e.g. "bytes=0-1023").
+	 * @param int         $file_size Total file size in bytes.
+	 * @return array{int,int}|false|null [start, end], false when unsatisfiable, null when absent.
+	 */
+	private static function parse_byte_range( $header, $file_size ) {
+		if ( ! is_string( $header ) || ! preg_match( '/^bytes=(\d*)-(\d*)$/', trim( $header ), $matches ) ) {
+			return null;
+		}
+
+		$start = '' === $matches[1] ? null : (int) $matches[1];
+		$end   = '' === $matches[2] ? null : (int) $matches[2];
+
+		if ( null === $start && null !== $end ) {
+			// Suffix range: the final N bytes.
+			$start = max( 0, $file_size - $end );
+			$end   = $file_size - 1;
+		} elseif ( null === $end ) {
+			$end = $file_size - 1;
+		}
+
+		if ( $start < 0 || $start >= $file_size || $end < $start ) {
+			return false;
+		}
+
+		return array( $start, min( $end, $file_size - 1 ) );
+	}
+
+	/**
+	 * Read a bounded byte range from a file without loading it fully in memory.
+	 *
+	 * @param string $path   Absolute file path.
+	 * @param int    $offset Start offset in bytes.
+	 * @param int    $length Number of bytes to read.
+	 * @return string|false File contents, or false on failure.
+	 */
+	private static function read_file_chunk( $path, $offset, $length ) {
+		$handle = fopen( $path, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+		if ( ! $handle ) {
+			return false;
+		}
+
+		if ( $offset > 0 ) {
+			fseek( $handle, $offset ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fseek
+		}
+
+		$remaining = $length;
+		$chunk     = '';
+		while ( $remaining > 0 && ! feof( $handle ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+			$read = fread( $handle, min( 1048576, $remaining ) );
+			if ( false === $read || '' === $read ) {
+				break;
+			}
+			$chunk    .= $read;
+			$remaining = $remaining - strlen( $read );
+		}
+
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+
+		return $chunk;
 	}
 
 	/**
