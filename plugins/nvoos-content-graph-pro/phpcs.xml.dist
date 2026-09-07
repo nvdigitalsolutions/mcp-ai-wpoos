@@ -45,6 +45,33 @@
         </properties>
     </rule>
 
+    <!--
+        Vault CPT custom capabilities: the item/folder CPT registrations
+        map them via capability_type, so the Capabilities sniff must not
+        flag them as unknown/typoed capabilities.
+    -->
+    <rule ref="WordPress.WP.Capabilities">
+        <properties>
+            <property name="custom_capabilities" type="array">
+                <element value="edit_own_vault_items"/>
+                <element value="edit_others_vault_items"/>
+                <element value="edit_own_vault_folders"/>
+                <element value="edit_others_vault_folders"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!--
+        The ported vault encryption service encodes ciphertext/IV/auth-tag
+        payloads with base64 — byte-identical with the monolith (the
+        obfuscation sniff is a code-obfuscation heuristic, not a
+        crypto-encoding ban).
+    -->
+    <rule ref="WordPress.PHP.DiscouragedPHPFunctions">
+        <exclude name="WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode"/>
+        <exclude name="WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode"/>
+    </rule>
+
     <file>./nvoos-content-graph-pro.php</file>
     <file>./src/</file>
     <file>./tests/</file>
