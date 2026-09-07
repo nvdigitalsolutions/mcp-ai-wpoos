@@ -450,12 +450,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 				array(
 					'files' => array(
 						$p . 'services/class-wp-mcp-ai-vector-store-adapter.php',
-						$p . 'tools/vector-storage/class-wp-mcp-ai-tool-prepare-file-for-vector-store.php',
 					),
 				),
 				function () use ( $p ) {
 					require_once $p . 'services/class-wp-mcp-ai-vector-store-adapter.php';
-					require_once $p . 'tools/vector-storage/class-wp-mcp-ai-tool-prepare-file-for-vector-store.php';
+					// The prepare-file tool stays monolith-registered via
+					// wp_mcp_ai_pro_register_tools(); standalone it loads once
+					// the D8 wave ports the base tool infrastructure
+					// (WP_MCP_AI_Tool_Interface + the chat-response trait +
+					// WP_MCP_AI_File_Preprocessing_Helper) out of includes/.
 				}
 			);
 		}
