@@ -1,7 +1,9 @@
 # NV oOS Testing Patterns
 
 > **GSD Context File** — Load this when writing or reviewing PHPUnit tests.
-> Last reviewed: September 5, 2026 (v1.1.71).
+> Last reviewed: September 7, 2026 (v1.1.72).
+>
+> **New in v1.1.72:** the post-catalog drift trio (#6331, #6332, #6336) aligned the `gpt-image-2` OpenAI image default across all three settings layers — the lesson restated: defaults live in three layers (settings-base defaults, section field, client constant) and tests pin each layer, so change all three together. #6339 registered the container's `tool_registry` binding `transient` (every `get()` resolves the live singleton — safe against per-test instance swaps; the cached binding broke transcript-mining job logging). #6343 fixed the platform standalone CPT-wiring tests that failed whenever WooCommerce was active in the test environment. #6330 added the content-graph wp.org resubmission audit suites. The `mcp-ai-wpoos-test-suite` skill stays at **40** patterns.
 >
 > **New in v1.1.71:** the post-K16 singles PR (#6327, CI run 91942465749) closed the remaining order-dependent failures: the chat-transcript display-metadata suite restores the transcript repository mock **unconditionally** in tearDown (the repository is lazily created — the old null-guard left the mock installed for the rest of the process); `test-hooks-registry.php` tearDown restores the shared tool-registry instance **untouched** (calling `clear_tools()` on it wiped tools registered by one-shot `wp_mcp_ai_bootstrapped` actions — e.g. the Pro OKF tools — for every later suite); Site Health connectivity tests `unset` the other provider keys before asserting `good`; transcript-mining logging calls `WP_MCP_AI_Admin_Settings::reset_settings_cache()` after enabling logging. The checkout-api addon's 6 suites joined `phpunit.xml.dist` + `tests/bootstrap.php` (#6315). The `mcp-ai-wpoos-test-suite` skill grew to **40** patterns (38–40: Graphify graph-mode wing leak — production fix in `matches_wake_filters()`, PHP 8 static-callable rule, opt-in logging cache gates).
 >

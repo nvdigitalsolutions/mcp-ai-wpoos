@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: September 5, 2026 (v1.1.71).
+> Last reviewed: September 7, 2026 (v1.1.72).
+>
+> **New in v1.1.72 (no base REST changes):** no base REST surface changed this window — the two new Woo tools (#6388) are Pro tool-surface only and the scheduled-sync fix (#6386) is Action-Scheduler-side. Sub-project: the platform addon gained the JobNotifier REST surface port (#6344).
 >
 > **New in v1.1.71 (PR #6322, no new routes):** the general REST request limiter (`WP_MCP_AI_REST::check_rate_limit()`) now uses fixed-window accounting — the transient stores `{count, first_seen}`, the TTL is never extended past the window end, and `retry_after` reports the **remaining** time (a contract change: clients should not assume the full window). When the limit trips, the limiter fires `wp_mcp_ai_rest_request_rate_limit_exceeded` (window-end timestamp) and `WP_MCP_AI_Restriction_Registry` flags a `rate_limit` restriction (scope `rest`, auto-release at window end) so blocked users appear in the Restrictions tab + Token Manager; lifting a `rate_limit` restriction deletes the `wp_mcp_ai_rate_limit_user_{id}` transient. Guest (IP-keyed) blocks are not user-attached and expire on their own.
 >

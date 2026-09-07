@@ -1,5 +1,44 @@
 # oOS – Changelog
 
+## [1.1.72] - 2026-09-07
+
+### Added — WooCommerce Product Price & Quantity Update Tools (PR #6388)
+
+- Two new Pro E-commerce toolkit tools give agents direct, all-product-type-aware price and stock control: `update_woo_product_price` (regular and sale price) and `update_woo_product_qty` (stock quantity with stock-management handling). Both are built on a shared `WP_MCP_AI_Woo_Price_Qty_Updater` trait, `bulk_update_products` is refactored onto the same trait, and the tool-presets helper registers the new slugs. Pro tool count +2 (~1,263 → ~1,265; total ~1,568).
+
+### Fixed — Scheduled Sync Connection-ID Delivery (PR #6386)
+
+- Scheduled EZuite and FlowHub inventory syncs failed with `No EZuite connection ID provided` (plus an admin error email) even when a connection ID was correctly assigned in the toolkit settings — the scheduled action never delivered the ID to the sync job. The scheduled sync now receives the assigned connection ID.
+
+### Fixed — Pro Update Vendor Integrity (PR #6338)
+
+- Updating the standalone Pro addon via Settings → Advanced → Data Management → "Update Pro Now" could white-screen the site with `Failed opening required …` when the fresh package's `vendor/` directory was incomplete. The plugin updater now verifies Pro vendor integrity before and after the update, failing safely instead of swapping in a broken package.
+
+### Fixed — Stale Tool-Registry Container Binding (PR #6339)
+
+- `WP_MCP_AI_Container`'s `tool_registry` binding is now registered `transient` so every `get()` resolves the **live** `WP_MCP_AI_Tool_Registry` singleton instead of a cached reference. Test suites swap the singleton's `$instance` per test, and a cached binding resolved mid-swap permanently pointed at a discarded instance — the transcript-mining job logging test then wrote to an empty recent-errors option. In production the singleton never changes, so behavior is unchanged.
+
+### Security — Dependabot Patch Bumps (PR #6365)
+
+- `browserslist` and `qs` bumped to patched versions across all seven `package-lock.json` files, closing the 12 open Dependabot alerts.
+
+### Changed — gpt-image-2 Defaults Completion (PR #6332)
+
+- Completes the September catalog refresh's OpenAI image-model default across all three settings layers: the settings-base defaults moved to `gpt-image-2` in #6328 but the Providers section field and the OpenAI client still referenced `gpt-image-1`; all three layers now agree. (Follow-ups #6331 and #6336 are test-drift only.)
+
+### Changed — Content Graph Ecosystem Port Waves (PRs #6330–#6387)
+
+- **Wave D8 — standalone tool execution (PRs #6340–#6342).** `nvoos-content-graph-ai` now serves and executes the base plugin's tool inventory standalone: pre-ported core tools register, `tools/call` execution is ported, and the base `lib/wordpress-adapter` tools are hardened for standalone use; the final Cluster 2c-5 batch (13 tools) and the Cluster 3 harness tools close the standalone tool-execution gap.
+- **Wave E6 — engine pieces (PRs #6362–#6364, #6367–#6369).** The OOS shadow engine, markup elicitation subsystem, Paper Store, OKF engine, Crawl4AI coordinator, and oos-bridge wave-1 helpers fold into the AI addon under the `Engine\` namespace, closing the E6 wave.
+- **Platform addon waves (PRs #6333–#6335, #6337, #6344, #6346–#6361).** `nvoos-content-graph-ai-platform` closes Wave E2 (SlaManager, CronManager, OutboundWebhook, SchedulerBridge, JobNotifier + REST surface), Wave E3 (HITL approval queue), Wave E5 (A2A REST receive routes), all of Wave E1 (workflow/run/trigger CPTs, dispatcher, trigger registry, workflow engine V2, pattern templates, agentic workflow optimizer), and Wave E4 (tenant isolation, OAuth manager + provider handlers, Google Calendar, content assistant, site builder, conversation import).
+- **Admin UI waves E-UI-1/2/3 (PRs #6370–#6378, #6381–#6385, #6387).** Byte-identical ports of the base's admin surfaces: dashboards, orchestration, slash commands, run timeline (E-UI-1); approvals, token/cron/DAG/DLQ managers, media-library columns, asset inventory (E-UI-2); profession/team pages and the Elementor/WooCommerce/JetEngine/Plugins integration screens (E-UI-3).
+- **Content Graph wp.org hardening (PR #6330).** The standalone `nvoos-content-graph` v1.0.4 gets its pre-submission audit fixes (MEDIUM/LOW findings) for the next WordPress.org upload.
+- Docs/workflow-only: the ecosystem port cluster-loop workflow + plan (PR #6345) and the agentic-engineering gap-closure proposal (PR #6379).
+
+### Versioning
+
+- Bumped to 1.1.72 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.72. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.4** (unchanged — wp.org hardening landed in-window). nvoos-content-graph-ai: **1.0.4** (unchanged — Wave D8 + E6 ports landed in-window). nvoos-content-graph-ai-platform: **2.0.0** (unchanged — Wave E2-cont/E3/E5/E1/E4/E-UI ports landed in-window). Checkout API: **v0.1.0** (unchanged). Docs Hub addon: **0.4.2** (unchanged). Tool count: ~303 base + ~1,265 Pro (~1,568 total; live registry authoritative — two new Woo tools, PR #6388). Providers: 15. Addons: 27. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: **54**. Stale 1.1.70 + 1.1.71 build ZIPs removed.
+
 ## [1.1.71] - 2026-09-05
 
 ### Fixed — REST Rate-Limit Unlock & Fixed-Window Timer (PR #6322)

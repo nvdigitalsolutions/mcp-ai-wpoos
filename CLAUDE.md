@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > This file is loaded every turn by Claude Code. Keep it focused and actionable.
-> Last reviewed: **September 5, 2026** · Version: **2.24**
+> Last reviewed: **September 7, 2026** · Version: **2.25**
 
 ### Related Files
 
@@ -17,7 +17,7 @@
 
 ## What This Is
 
-NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,566 tools (~303 base + ~1,263 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), **33 per-toolkit MCP JSON-RPC servers** (including Phase 8: Pro Scheduler, FlowHub, Shopify Sync, EZuite), **OAuth 2.0 MCP authentication** (PKCE, hierarchical scopes, browser-based login), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, Layer J Necessity Gate (irreversibility-weighted safety profiles), and Server-Sent Events streaming.
+NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,568 tools (~303 base + ~1,265 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), **33 per-toolkit MCP JSON-RPC servers** (including Phase 8: Pro Scheduler, FlowHub, Shopify Sync, EZuite), **OAuth 2.0 MCP authentication** (PKCE, hierarchical scopes, browser-based login), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, Layer J Necessity Gate (irreversibility-weighted safety profiles), and Server-Sent Events streaming.
 
 ## PHP Compatibility — Critical
 
@@ -50,7 +50,7 @@ includes/
 ├── bootstrap/                          ← Boot: constants → autoload → hooks → loader
 ├── class-wp-mcp-ai-plugin.php          ← Main singleton + DI container
 ├── class-wp-mcp-ai-rest.php            ← Core REST API + agentic loop
-├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,566 tools total; live count is authoritative)
+├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,568 tools total; live count is authoritative)
 ├── class-wp-mcp-ai-transcript-retention.php ← Chat transcript retention (base)
 ├── rest/                                ← REST controllers incl. class-wp-mcp-ai-sse-session-store.php (legacy MCP HTTP+SSE session store, v1.1.55)
 ├── security/                           ← Security infrastructure (7 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store)
@@ -186,7 +186,7 @@ The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WP
 
 - **Base:** Core WordPress functionality, no third-party APIs, useful to any site
 - **Pro:** Paid APIs (Shopify, Upwork), optional plugins (JetEngine, WooCommerce), healthcare, enterprise
-- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~303 base tool classes) or `false` (~1,566 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~303 base tool classes) or `false` (~1,568 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **Guard:** `if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) { /* pro code */ }`
 
 ## Key Architecture Patterns
@@ -452,6 +452,12 @@ Seven security infrastructure classes in `includes/security/` that operate acros
 - **Rate limiter + chat hooks** (v1.1.69, PR #6265) — `check_rate_limit()` classifies internal dispatches by their real HTTP verb; the nefarious monitor keeps its own namespaced counter; `wp_mcp_ai_before_chat_request` subscribers tolerate the legacy 2-arg emitter shape.
 - **Misc production fixes** (v1.1.69) — shortcut-task `Throwable` containment on the assistant edit screen (#6271); model-catalog fixes: `gpt-4o` 128k, `gemini-2.0-flash` video-capable, `claude-sonnet-4-6`/`gpt-4o` active, two Qwen entries (#6274); settings save restores cache-addition suspension correctly (read state before suspending — WP 7.1 inline-async tick locks, #6277).
 - **Fourth PHPUnit repair wave** (v1.1.69, PRs #6260/#6262–#6276) — ~9 test-only PRs; the `mcp-ai-wpoos-test-suite` skill grew to **37** patterns (#6265).
+- **WooCommerce price & quantity tools** (v1.1.72, PR #6388) — new Pro E-commerce tools `update_woo_product_price` (regular/sale price, all product types) and `update_woo_product_qty` (stock quantity + management) on a shared `WP_MCP_AI_Woo_Price_Qty_Updater` trait (`bulk_update_products` refactored onto it; presets register the slugs). Pro count → ~1,265, total ~1,568.
+- **Scheduled sync connection-ID fix** (v1.1.72, PR #6386) — scheduled EZuite/FlowHub inventory syncs deliver the assigned connection ID (the scheduled action was dropping it, failing with `No EZuite connection ID provided`).
+- **Pro update vendor integrity** (v1.1.72, PR #6338) — "Update Pro Now" verifies Pro `vendor/` before and after updating (no white-screens from incomplete packages).
+- **Container binding** (v1.1.72, PR #6339) — `tool_registry` is registered `transient`; every `get()` resolves the live registry singleton (test-swap safe; production-equivalent).
+- **Deps + defaults** (v1.1.72, PRs #6365, #6332) — browserslist/qs patched across seven lockfiles (12 Dependabot alerts); `gpt-image-2` aligned across all three settings layers.
+- **Ecosystem port waves** (v1.1.72, PRs #6330–#6387) — Wave D8 closes the standalone tool-execution gap in Content Graph AI (base `lib/wordpress-adapter` tools hardened for standalone use); Wave E6 engine pieces fold into the AI addon; the platform addon closes Waves E2/E3/E5/E1/E4 + E-UI-1/2/3; `nvoos-content-graph` wp.org hardening (#6330). Sub-project versions unchanged (content-graph 1.0.4, content-graph-ai 1.0.4, platform 2.0.0).
 - **REST rate-limit unlock + fixed-window timer** (v1.1.71, PR #6322) — `check_rate_limit()` uses fixed-window accounting (`{count, first_seen}` transient payload, TTL never extended past window end, legacy integer transients normalized on read) and returns remaining time in `retry_after`; a new `wp_mcp_ai_rest_request_rate_limit_exceeded` action makes `WP_MCP_AI_Restriction_Registry` flag a `rate_limit` restriction (scope `rest`, auto-release at window end) so blocked users appear in the Restrictions tab + Token Manager with the Lift button; lifting deletes the `wp_mcp_ai_rate_limit_user_{id}` transient. Guest (IP-keyed) blocks are not user-attached and expire on their own.
 - **MemPalace wing-scope enforcement** (v1.1.71, PR #6327) — `matches_wake_filters()` now enforces `wing`/`room` exclusions (the Graphify graph anchors only *boost* scores; they never excluded out-of-scope memories, leaking cross-wing memories into wing-scoped blocks once the Graphify addon loaded). Post-K16 test isolation: transcript repository mock restored unconditionally; shared tool-registry instance restored untouched; Site Health provider-key isolation; transcript-mining settings-cache reset.
 - **September 2026 model catalog** (v1.1.71, PR #6328) — 217 → 228 models (gpt-5.6 family, `gpt-6-astra` preview, `gpt-image-2`, `claude-opus-5`, `claude-fable-5.1`, `claude-mythos-5`, gemini-3.6/3.7/3.8-flash, `gemini-3.5-flash-lite`, `deepseek-v4-flash-vision-exp`, `kimi-k3`, `kimi-k2.7-code`); retired DeepSeek chat/reasoner/coder + `gemini-3.1-flash` + `imagen-4` with migration-map successors; pricing drift fixes (deepseek-v4-flash input 10×, Claude Opus inputs $15 → $5); defaults `default_gemini_model` → `gemini-3.6-flash`, `openai_image_model` → `gpt-image-2`, Kimi → `kimi-k3`. ~45 derived files; `lib/core/`, `lib/wordpress-adapter/`, and the Content Graph AI plugin keep their own mirrored tracks.
