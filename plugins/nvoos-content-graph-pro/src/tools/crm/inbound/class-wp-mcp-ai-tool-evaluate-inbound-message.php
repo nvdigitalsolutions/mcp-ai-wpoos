@@ -1,0 +1,485 @@
+<?php
+/**
+ * Evaluate Inbound Message Tool (ecosystem port — Wave F2, CRM inbound batch).
+ *
+ * Ported from the base Pro addon's
+ * `addons/pro/includes/tools/crm/inbound/class-wp-mcp-ai-tool-evaluate-inbound-message.php` for the standalone `nvoos-content-graph-pro` addon.
+ * Kept byte-identical. The base Pro addon owns the class in monolith
+ * installs — the addon's autoloader skips its copy when
+ * `WP_MCP_AI_PRO_PATH` is defined (see the plugin entry).
+ *
+ * Evaluate Inbound Message — CRM triage orchestrator.
+ *
+ * This is the central inbox pipeline.  An inbound message from ANY channel
+ * (email, SMS, WhatsApp, Telegram, webchat, form submission) flows through:
+ *
+ *   1. classify_message_intent   → intent + sentiment + is_spam
+ *   2. detect_buying_signals     → flag hot/active buyer-language
+ *   3. extract_lead_from_message → upsert a lead/contact record
+ *   4. score_lead                → composite 0–100 score
+ *   5. qualify_lead_bant/meddic  → BANT/MEDDIC assessment
+ *   6. auto_reply_inbound        → rule-driven auto-reply (if applicable)
+ *   7. schedule_follow_up        → task reminder
+ *
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain
+ * `nvoos-content-graph-pro`.
+ *
+ * @package NvoosContentGraphPro
+ * @since 2.3.0
+ * @since 2.9.0 Added message logging via WP_MCP_AI_CRM_Message_Log on entry.
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Full inbound triage pipeline: classify intent, detect buying signals,
+ * extract/upsert lead, score, qualify, and optionally auto-reply.
+ *
+ * @since 2.3.0
+ */
+class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * Check if the tool is available.
+	 *
+	 * @return bool
+	 */
+	public static function is_available() {
+		$s = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $s['enable_crm_toolkit'] );
+	}
+
+	/**
+	 * Get the reason the tool is unavailable.
+	 *
+	 * @return string
+	 */
+	public static function get_unavailable_reason() {
+		return __( 'CRM Toolkit required.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'evaluate_inbound_message';
+	}
+
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'Evaluate Inbound Message', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Full inbound triage pipeline: classify intent, detect buying signals, extract/upsert lead, score, qualify, and optionally auto-reply.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
+	public function get_parameters_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'message_body'            => array(
+					'type'        => 'string',
+					'description' => __( 'Message text, transcript, or email body.', 'nvoos-content-graph-pro' ),
+				),
+				'message_subject'         => array(
+					'type'        => 'string',
+					'description' => __( 'Optional subject line (email).', 'nvoos-content-graph-pro' ),
+				),
+				'channel'                 => array(
+					'type'        => 'string',
+					'enum'        => WP_MCP_AI_CRM_Codes::CHANNELS,
+					'default'     => 'email',
+					'description' => __( 'Message channel.', 'nvoos-content-graph-pro' ),
+				),
+				'channel_contact_id'      => array(
+					'type'        => 'string',
+					'description' => __( 'Platform-side contact/user ID for source traceability.', 'nvoos-content-graph-pro' ),
+				),
+				'sender_email'            => array(
+					'type'        => 'string',
+					'description' => __( 'Sender email address.', 'nvoos-content-graph-pro' ),
+				),
+				'sender_phone'            => array(
+					'type'        => 'string',
+					'description' => __( 'Sender phone (E.164 format).', 'nvoos-content-graph-pro' ),
+				),
+				'sender_name'             => array(
+					'type'        => 'string',
+					'description' => __( 'Sender display name.', 'nvoos-content-graph-pro' ),
+				),
+				'existing_contact_id'     => array(
+					'type'        => 'integer',
+					'description' => __( 'If a matching contact already exists, provide the ID to skip extraction.', 'nvoos-content-graph-pro' ),
+				),
+				'auto_reply'              => array(
+					'type'        => 'boolean',
+					'default'     => false,
+					'description' => __( 'If true, attempt an auto-reply on the same channel.', 'nvoos-content-graph-pro' ),
+				),
+				'qualification_framework' => array(
+					'type'    => 'string',
+					'enum'    => array( 'bant', 'meddic' ),
+					'default' => 'bant',
+				),
+				'connection_id'           => array(
+					'type'        => 'string',
+					'description' => __( 'Remote Site Manager connection ID for source attribution.', 'nvoos-content-graph-pro' ),
+				),
+				'message_id'              => array(
+					'type'        => 'string',
+					'description' => __( 'Platform message ID for source traceability.', 'nvoos-content-graph-pro' ),
+				),
+			),
+			'required'   => array( 'message_body' ),
+		);
+	}
+
+	/**
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Whether the tool requires base pro.
+	 *
+	 * @return bool
+	 */
+	public function requires_base_pro() {
+		return true;
+	}
+
+	/**
+	 * Get the capability flags.
+	 *
+	 * @return array
+	 */
+	public function get_capability_flags() {
+		return array( 'pro', 'database-write', 'requires-capability' );
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
+	public function execute( array $arguments = array(), array $context = array() ) {
+		if ( ! self::is_available() ) {
+			return new WP_Error( 'unavailable', self::get_unavailable_reason() );
+		}
+
+		$uid = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {
+			return new WP_Error( 'forbidden', __( 'Permission denied.', 'nvoos-content-graph-pro' ) );
+		}
+
+		$channel         = sanitize_key( $arguments['channel'] ?? 'email' );
+		$message_body    = sanitize_textarea_field( $arguments['message_body'] . ( ! empty( $arguments['message_subject'] ) ? "\n\nSubject: " . $arguments['message_subject'] : '' ) );
+		$message_subject = sanitize_text_field( $arguments['message_subject'] ?? '' );
+		$sender_email    = sanitize_email( $arguments['sender_email'] ?? '' );
+		$sender_phone    = sanitize_text_field( $arguments['sender_phone'] ?? '' );
+		$sender_name     = sanitize_text_field( $arguments['sender_name'] ?? '' );
+		$source          = sanitize_key( $arguments['source'] ?? $channel );
+		$connection_id   = sanitize_text_field( $arguments['connection_id'] ?? '' );
+		$platform_msg_id = sanitize_text_field( $arguments['message_id'] ?? '' );
+
+		// ── Log raw message before pipeline processing. ──
+		$message_log_id = 0;
+		if ( class_exists( 'WP_MCP_AI_CRM_Message_Log' ) && ! empty( $arguments['message_body'] ) ) {
+			$log_result = WP_MCP_AI_CRM_Message_Log::log(
+				array(
+					'message_id'         => $platform_msg_id,
+					'channel'            => $channel,
+					'sender_email'       => $sender_email,
+					'sender_name'        => $sender_name,
+					'sender_phone'       => $sender_phone,
+					'subject'            => $message_subject,
+					'body'               => $arguments['message_body'] ?? '',
+					'source'             => $source,
+					'connection_id'      => $connection_id,
+					'channel_contact_id' => sanitize_text_field( $arguments['channel_contact_id'] ?? '' ),
+				)
+			);
+			if ( ! is_wp_error( $log_result ) ) {
+				$message_log_id = $log_result;
+			}
+		}
+
+		$result = array(
+			'success'  => true,
+			'pipeline' => array(),
+		);
+
+		// --- Step 1: Classify intent ---
+		$classification = null;
+		if ( class_exists( 'WP_MCP_AI_CRM_Classifier' ) ) {
+			$classification = WP_MCP_AI_CRM_Classifier::classify( $message_body, $channel );
+			if ( ! is_wp_error( $classification ) ) {
+				$result['pipeline']['classification'] = $classification;
+				if ( ! empty( $classification['is_spam'] ) ) {
+					$result['message'] = __( 'Message classified as spam — skipped further processing.', 'nvoos-content-graph-pro' );
+					return $result;
+				}
+			} else {
+				$classification = null;
+			}
+		}
+
+		// --- Step 2: Detect buying signals ---
+		if ( class_exists( 'WP_MCP_AI_CRM_Classifier' ) ) {
+			$signals = array();
+			$kw      = apply_filters(
+				'wp_mcp_ai_crm_buying_signal_keywords',
+				array( 'pricing', 'demo', 'next step', 'timeline', 'budget', 'decision maker', 'trial', 'buy', 'purchase' )
+			);
+			$lower   = mb_strtolower( $message_body );
+			foreach ( $kw as $k ) {
+				if ( false !== strpos( $lower, $k ) ) {
+					$signals[] = $k;
+				}
+			}
+			$result['pipeline']['buying_signals'] = $signals;
+		}
+
+		// --- Step 3: Extract / upsert lead ---
+		$contact_id = absint( $arguments['existing_contact_id'] ?? 0 );
+		if ( ! $contact_id && ( $sender_email || $sender_phone ) ) {
+			// Try to find existing contact by email or phone.
+			if ( $sender_email ) {
+				$q = new WP_Query(
+					array(
+						'post_type'      => array( 'mcp_ai_lead', 'mcp_crm_contacts' ),
+						'post_status'    => 'publish',
+						'posts_per_page' => 1,
+						'fields'         => 'ids',
+						'meta_query'     => array(
+							array(
+								'key'   => 'email',
+								'value' => $sender_email,
+							),
+						),
+						'no_found_rows'  => true,
+					)
+				);
+				if ( $q->have_posts() ) {
+					$contact_id = $q->posts[0];
+				}
+			}
+			if ( ! $contact_id && $sender_phone ) {
+				$q = new WP_Query(
+					array(
+						'post_type'      => array( 'mcp_ai_lead', 'mcp_crm_contacts' ),
+						'post_status'    => 'publish',
+						'posts_per_page' => 1,
+						'fields'         => 'ids',
+						'meta_query'     => array(
+							array(
+								'key'   => 'phone',
+								'value' => $sender_phone,
+							),
+						),
+						'no_found_rows'  => true,
+					)
+				);
+				if ( $q->have_posts() ) {
+					$contact_id = $q->posts[0];
+				}
+			}
+		}
+
+		if ( ! $contact_id ) {
+			// Create a new lead.
+			$post_id = wp_insert_post(
+				array(
+					'post_type'   => 'mcp_ai_lead',
+					'post_title'  => $sender_name ? $sender_name : __( 'Inbound Lead', 'nvoos-content-graph-pro' ),
+					'post_status' => 'publish',
+				),
+				true
+			);
+			if ( ! is_wp_error( $post_id ) ) {
+				$contact_id = $post_id;
+				if ( $sender_name ) {
+					$parts = explode( ' ', $sender_name, 2 );
+					update_post_meta( $contact_id, 'first_name', sanitize_text_field( $parts[0] ) );
+					if ( isset( $parts[1] ) ) {
+						update_post_meta( $contact_id, 'last_name', sanitize_text_field( $parts[1] ) );
+					}
+				}
+				update_post_meta( $contact_id, 'email', $sender_email );
+				update_post_meta( $contact_id, 'phone', $sender_phone );
+				update_post_meta( $contact_id, 'source', $channel );
+				update_post_meta( $contact_id, 'lead_status', 'new' );
+				update_post_meta( $contact_id, 'lifecycle_stage', 'lead' );
+				// Auto-assign owner.
+				if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+					$owner = WP_MCP_AI_CRM_Engine::get_next_owner();
+					if ( $owner ) {
+						update_post_meta( $contact_id, 'contact_owner', $owner );
+					}
+				}
+			}
+		}
+
+		$result['pipeline']['contact_id']  = $contact_id;
+		$result['pipeline']['is_new_lead'] = empty( $arguments['existing_contact_id'] );
+
+		// Link message log to contact.
+		if ( $message_log_id && $contact_id && class_exists( 'WP_MCP_AI_CRM_Message_Log' ) ) {
+			WP_MCP_AI_CRM_Message_Log::link_to_contact( $message_log_id, $contact_id );
+		}
+
+		// Store source connection metadata for traceability.
+		$connection_id_arg = $connection_id;
+		$message_id_arg    = isset( $arguments['message_id'] ) ? sanitize_text_field( $arguments['message_id'] ) : '';
+		if ( $contact_id && $connection_id_arg ) {
+			update_post_meta( $contact_id, '_source_connection_id', $connection_id_arg );
+		}
+		if ( $contact_id && $message_id_arg ) {
+			update_post_meta( $contact_id, '_source_message_id', $message_id_arg );
+		}
+		if ( $contact_id && ! empty( $arguments['channel_contact_id'] ) ) {
+			update_post_meta( $contact_id, '_source_channel_contact_id', sanitize_text_field( $arguments['channel_contact_id'] ) );
+		}
+
+		// --- Step 4: Score lead ---
+		if ( $contact_id && class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			$classification_intent = ( is_array( $classification ) && isset( $classification['intent'] ) ) ? $classification['intent'] : '';
+			$score                 = WP_MCP_AI_CRM_Engine::calculate_lead_score(
+				array(
+					'fit'        => 40,
+					'intent'     => in_array( $classification_intent, array( 'demo_request', 'pricing_inquiry' ), true ) ? 80 : 30,
+					'engagement' => 50,
+					'recency'    => 90,
+				)
+			);
+			update_post_meta( $contact_id, 'lead_score', $score );
+			$result['pipeline']['lead_score']  = $score;
+			$result['pipeline']['score_label'] = WP_MCP_AI_CRM_Engine::score_label( $score );
+		}
+
+		// --- Step 5: Qualify ---
+		$framework = sanitize_key( $arguments['qualification_framework'] ?? 'bant' );
+		if ( $contact_id && class_exists( 'WP_MCP_AI_CRM_Classifier' ) ) {
+			if ( 'meddic' === $framework ) {
+				$qual = WP_MCP_AI_CRM_Classifier::extract_meddic( $message_body );
+				if ( ! is_wp_error( $qual ) ) {
+					update_post_meta( $contact_id, 'meddic_assessment', $qual );
+					$result['pipeline']['meddic'] = $qual;
+				}
+			} else {
+				$qual = WP_MCP_AI_CRM_Classifier::extract_bant( $message_body );
+				if ( ! is_wp_error( $qual ) ) {
+					update_post_meta( $contact_id, 'bant_assessment', $qual );
+					$result['pipeline']['bant'] = $qual;
+				}
+			}
+		}
+
+		// --- Step 6: Auto-reply (if enabled) ---
+		if ( ! empty( $arguments['auto_reply'] ) && $contact_id ) {
+			$intent   = ( is_array( $classification ) && isset( $classification['intent'] ) ) ? $classification['intent'] : 'general';
+			$auto_msg = sprintf(
+				/* translators: %s: intent type */
+				__( 'Thanks for reaching out! Our team will get back to you shortly. (Auto-reply for: %s)', 'nvoos-content-graph-pro' ),
+				$intent
+			);
+			$result['pipeline']['auto_reply'] = array(
+				'sent'    => true,
+				'channel' => $channel,
+				'message' => $auto_msg,
+			);
+
+			// If this is a support request, include ticket info in auto-reply.
+			if ( is_array( $classification ) && isset( $classification['intent'] ) && 'support_request' === $classification['intent'] && $contact_id ) {
+				/**
+				 * Fires when an inbound support request is detected.
+				 *
+				 * Hook WP_MCP_AI_CRM_Ticket_Notifications::auto_create_support_ticket
+				 * to auto-create a support ticket.
+				 *
+				 * @since 2.6.0
+				 * @param int   $contact_id Lead/contact ID of the sender.
+				 * @param array $message    Message context.
+				 */
+				$support_message = array(
+					'body'    => $message_body,
+					'subject' => isset( $arguments['message_subject'] ) ? sanitize_text_field( $arguments['message_subject'] ) : '',
+					'channel' => $channel,
+					'email'   => $sender_email,
+				);
+				do_action( 'wp_mcp_ai_crm_inbound_support_detected', $contact_id, $support_message );
+			}
+		}
+
+		// --- Step 7: Schedule follow-up ---
+		if ( $contact_id ) {
+			// Include lead name in the activity title for clarity.
+			$contact_post = get_post( $contact_id );
+			if ( $contact_post && 'mcp_ai_lead' === $contact_post->post_type ) {
+				$follow_up_title = sprintf(
+					/* translators: 1: lead name, 2: lead ID */
+					__( 'Follow up with %1$s (Lead #%2$d)', 'nvoos-content-graph-pro' ),
+					get_the_title( $contact_post ),
+					$contact_id
+				);
+			} else {
+				$follow_up_title = sprintf(
+					/* translators: %d: lead ID */
+					__( 'Follow up with lead #%d', 'nvoos-content-graph-pro' ),
+					$contact_id
+				);
+			}
+
+			$follow_up_id = wp_insert_post(
+				array(
+					'post_type'   => 'mcp_ai_crm_activity',
+					'post_title'  => $follow_up_title,
+					'post_status' => 'publish',
+				),
+				true
+			);
+			if ( ! is_wp_error( $follow_up_id ) ) {
+				update_post_meta( $follow_up_id, 'activity_type', 'task' );
+				update_post_meta( $follow_up_id, 'related_type', 'lead' );
+				update_post_meta( $follow_up_id, 'related_id', $contact_id );
+				update_post_meta( $follow_up_id, 'due_date', gmdate( 'Y-m-d', strtotime( '+2 days' ) ) );
+				$result['pipeline']['follow_up_activity_id'] = $follow_up_id;
+			}
+		}
+
+		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
+			WP_MCP_AI_CRM_Audit::record( 'inbound_evaluated', 'message', $contact_id, array( 'channel' => $channel ) );
+		}
+
+		$result['message'] = __( 'Inbound message evaluated successfully.', 'nvoos-content-graph-pro' );
+		return $result;
+	}
+}

@@ -240,6 +240,13 @@ function wp_mcp_ai_pro_register_crm_tools( $tools ) {
 		'WP_MCP_AI_Tool_Rotate_Leads'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/routing/class-wp-mcp-ai-tool-rotate-leads.php',
 		'WP_MCP_AI_Tool_Compute_ICP_Score'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/icp/class-wp-mcp-ai-tool-compute-icp-score.php',
 		'WP_MCP_AI_Tool_Manage_ICP_Profile'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/icp/class-wp-mcp-ai-tool-manage-icp-profile.php',
+		'WP_MCP_AI_Tool_Evaluate_Inbound_Message'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/inbound/class-wp-mcp-ai-tool-evaluate-inbound-message.php',
+		'WP_MCP_AI_Tool_Classify_Message_Intent'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/inbound/class-wp-mcp-ai-tool-classify-message-intent.php',
+		'WP_MCP_AI_Tool_Extract_Lead_From_Message' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/inbound/class-wp-mcp-ai-tool-extract-lead-from-message.php',
+		'WP_MCP_AI_Tool_Detect_Buying_Signals'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/inbound/class-wp-mcp-ai-tool-detect-buying-signals.php',
+		'WP_MCP_AI_Tool_Score_Lead'                => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/inbound/class-wp-mcp-ai-tool-score-lead.php',
+		'WP_MCP_AI_Tool_Qualify_Lead_Bant'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/inbound/class-wp-mcp-ai-tool-qualify-lead-bant.php',
+		'WP_MCP_AI_Tool_Qualify_Lead_Meddic'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/inbound/class-wp-mcp-ai-tool-qualify-lead-meddic.php',
 	);
 
 	return array_merge( $tools, $crm_tools );
@@ -294,6 +301,13 @@ function wp_mcp_ai_pro_register_crm_ecosystem_tools() {
 			'WP_MCP_AI_Tool_Rotate_Leads',
 			'WP_MCP_AI_Tool_Compute_ICP_Score',
 			'WP_MCP_AI_Tool_Manage_ICP_Profile',
+			'WP_MCP_AI_Tool_Evaluate_Inbound_Message',
+			'WP_MCP_AI_Tool_Classify_Message_Intent',
+			'WP_MCP_AI_Tool_Extract_Lead_From_Message',
+			'WP_MCP_AI_Tool_Detect_Buying_Signals',
+			'WP_MCP_AI_Tool_Score_Lead',
+			'WP_MCP_AI_Tool_Qualify_Lead_Bant',
+			'WP_MCP_AI_Tool_Qualify_Lead_Meddic',
 		) as $tool_class
 	) {
 		$adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $tool_class() );
