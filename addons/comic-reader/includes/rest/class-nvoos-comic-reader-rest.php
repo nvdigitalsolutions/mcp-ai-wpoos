@@ -89,22 +89,6 @@ class NV_oOS_Comic_Reader_REST {
 
 		register_rest_route(
 			self::REST_NAMESPACE,
-			'/comics/(?P<id>\d+)',
-			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( __CLASS__, 'get_comic' ),
-				'permission_callback' => array( __CLASS__, 'read_permission' ),
-				'args'                => array(
-					'id' => array(
-						'type'              => 'integer',
-						'sanitize_callback' => 'absint',
-					),
-				),
-			)
-		);
-
-		register_rest_route(
-			self::REST_NAMESPACE,
 			'/comics/(?P<id>\d+)/file',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -177,6 +161,194 @@ class NV_oOS_Comic_Reader_REST {
 			)
 		);
 
+		// ─── Progress & Metadata Routes ───────────────────────────
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/comics/progress',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'get_progress_map' ),
+				'permission_callback' => array( __CLASS__, 'read_permission' ),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/comics/(?P<id>\d+)/progress',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'get_comic_progress' ),
+					'permission_callback' => array( __CLASS__, 'read_permission' ),
+					'args'                => array(
+						'id' => array(
+							'type'              => 'integer',
+							'sanitize_callback' => 'absint',
+						),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( __CLASS__, 'save_comic_progress' ),
+					'permission_callback' => array( __CLASS__, 'read_permission' ),
+					'args'                => array(
+						'id'        => array(
+							'type'              => 'integer',
+							'sanitize_callback' => 'absint',
+						),
+						'page'      => array(
+							'type'              => 'integer',
+							'sanitize_callback' => 'absint',
+							'default'           => 1,
+						),
+						'total'     => array(
+							'type'              => 'integer',
+							'sanitize_callback' => 'absint',
+							'default'           => 0,
+						),
+						'completed' => array(
+							'type'    => 'boolean',
+							'default' => false,
+						),
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/comics/(?P<id>\d+)/metadata',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'get_comic_metadata' ),
+					'permission_callback' => array( __CLASS__, 'read_permission' ),
+					'args'                => array(
+						'id' => array(
+							'type'              => 'integer',
+							'sanitize_callback' => 'absint',
+						),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( __CLASS__, 'save_comic_metadata' ),
+					'permission_callback' => array( __CLASS__, 'edit_permission' ),
+					'args'                => array(
+						'id' => array(
+							'type'              => 'integer',
+							'sanitize_callback' => 'absint',
+						),
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/comics/(?P<id>\d+)',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'get_comic' ),
+					'permission_callback' => array( __CLASS__, 'read_permission' ),
+					'args'                => array(
+						'id' => array(
+							'type'              => 'integer',
+							'sanitize_callback' => 'absint',
+						),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::EDITABLE,
+					'callback'            => array( __CLASS__, 'update_comic' ),
+					'permission_callback' => array( __CLASS__, 'edit_permission' ),
+					'args'                => array(
+						'id' => array(
+							'type'              => 'integer',
+							'sanitize_callback' => 'absint',
+						),
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/series',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'list_series' ),
+				'permission_callback' => array( __CLASS__, 'read_permission' ),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/collections',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'list_collections' ),
+					'permission_callback' => array( __CLASS__, 'read_permission' ),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( __CLASS__, 'create_collection' ),
+					'permission_callback' => array( __CLASS__, 'collections_edit_permission' ),
+					'args'                => array(
+						'name' => array(
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/collections/(?P<id>\d+)/items',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'add_collection_item' ),
+				'permission_callback' => array( __CLASS__, 'collections_edit_permission' ),
+				'args'                => array(
+					'id'       => array(
+						'type'              => 'integer',
+						'sanitize_callback' => 'absint',
+					),
+					'comic_id' => array(
+						'type'              => 'integer',
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/collections/(?P<id>\d+)/items/(?P<comic_id>\d+)',
+			array(
+				'methods'             => WP_REST_Server::DELETABLE,
+				'callback'            => array( __CLASS__, 'remove_collection_item' ),
+				'permission_callback' => array( __CLASS__, 'collections_edit_permission' ),
+				'args'                => array(
+					'id'       => array(
+						'type'              => 'integer',
+						'sanitize_callback' => 'absint',
+					),
+					'comic_id' => array(
+						'type'              => 'integer',
+						'sanitize_callback' => 'absint',
+					),
+				),
+			)
+		);
+
 		// ─── Creator Routes ───────────────────────────────────────
 
 		register_rest_route(
@@ -233,6 +405,15 @@ class NV_oOS_Comic_Reader_REST {
 						'search'   => array(
 							'type'              => 'string',
 							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'series'   => array(
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'orderby'  => array(
+							'type'    => 'string',
+							'enum'    => array( 'date', 'title' ),
+							'default' => 'date',
 						),
 					),
 				),
@@ -432,6 +613,14 @@ class NV_oOS_Comic_Reader_REST {
 		$page     = $request->get_param( 'page' );
 		$per_page = $request->get_param( 'per_page' );
 		$search   = $request->get_param( 'search' );
+		$series   = $request->get_param( 'series' );
+
+		$orderby_map = array(
+			'date'  => 'date',
+			'title' => 'title',
+		);
+		$orderby     = $request->get_param( 'orderby' );
+		$orderby     = isset( $orderby_map[ $orderby ] ) ? $orderby_map[ $orderby ] : 'date';
 
 		$args = array(
 			'post_type'      => 'attachment',
@@ -446,12 +635,22 @@ class NV_oOS_Comic_Reader_REST {
 					'compare' => 'REGEXP',
 				),
 			),
-			'orderby'        => 'date',
+			'orderby'        => $orderby,
 			'order'          => 'DESC',
 		);
 
 		if ( ! empty( $search ) ) {
 			$args['s'] = $search;
+		}
+
+		if ( ! empty( $series ) ) {
+			$args['tax_query'] = array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- series filtering is an explicit user choice.
+				array(
+					'taxonomy' => NV_oOS_Comic_Reader_Taxonomy::SERIES_TAXONOMY,
+					'field'    => 'slug',
+					'terms'    => sanitize_title( $series ),
+				),
+			);
 		}
 
 		$query  = new WP_Query( $args );
@@ -491,6 +690,394 @@ class NV_oOS_Comic_Reader_REST {
 		}
 
 		return rest_ensure_response( self::format_comic_item( $post ) );
+	}
+
+	/**
+	 * Get the current user's progress map for all comics.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function get_progress_map( $request ) {
+		$user_id = get_current_user_id();
+		return rest_ensure_response(
+			array(
+				'progress' => self::get_user_progress( $user_id ),
+			)
+		);
+	}
+
+	/**
+	 * Get the current user's progress for a single comic.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function get_comic_progress( $request ) {
+		$id   = $request->get_param( 'id' );
+		$post = get_post( $id );
+
+		if ( ! $post || 'attachment' !== $post->post_type ) {
+			return new WP_Error( 'not_found', __( 'Comic not found.', 'nvoos-comic-reader' ), array( 'status' => 404 ) );
+		}
+
+		$progress = self::get_user_progress( get_current_user_id() );
+
+		return rest_ensure_response(
+			array(
+				'progress' => isset( $progress[ $id ] ) ? $progress[ $id ] : null,
+			)
+		);
+	}
+
+	/**
+	 * Record the current user's reading progress for a comic.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function save_comic_progress( $request ) {
+		$id   = $request->get_param( 'id' );
+		$post = get_post( $id );
+
+		if ( ! $post || 'attachment' !== $post->post_type ) {
+			return new WP_Error( 'not_found', __( 'Comic not found.', 'nvoos-comic-reader' ), array( 'status' => 404 ) );
+		}
+
+		$user_id  = get_current_user_id();
+		$progress = self::get_user_progress( $user_id );
+
+		$progress[ $id ] = array(
+			'page'      => (int) $request->get_param( 'page' ),
+			'total'     => (int) $request->get_param( 'total' ),
+			'completed' => (bool) $request->get_param( 'completed' ),
+			'ts'        => time(),
+		);
+
+		self::set_user_progress( $user_id, $progress );
+
+		return rest_ensure_response(
+			array(
+				'saved'    => true,
+				'progress' => $progress[ $id ],
+			)
+		);
+	}
+
+	/**
+	 * Get the stored (ComicInfo.xml-derived) metadata for a comic.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function get_comic_metadata( $request ) {
+		$id   = $request->get_param( 'id' );
+		$post = get_post( $id );
+
+		if ( ! $post || 'attachment' !== $post->post_type ) {
+			return new WP_Error( 'not_found', __( 'Comic not found.', 'nvoos-comic-reader' ), array( 'status' => 404 ) );
+		}
+
+		$metadata = get_post_meta( $id, '_nvoos_comic_metadata', true );
+
+		return rest_ensure_response(
+			array(
+				'metadata' => is_array( $metadata ) ? $metadata : array(),
+			)
+		);
+	}
+
+	/**
+	 * Store ComicInfo.xml metadata parsed client-side from the archive.
+	 *
+	 * Mirrors Komga's embedded-metadata import: the parsed fields are
+	 * persisted as attachment meta and the series is applied as a term so
+	 * the library groups comics by series.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function save_comic_metadata( $request ) {
+		$id   = $request->get_param( 'id' );
+		$post = get_post( $id );
+
+		if ( ! $post || 'attachment' !== $post->post_type ) {
+			return new WP_Error( 'not_found', __( 'Comic not found.', 'nvoos-comic-reader' ), array( 'status' => 404 ) );
+		}
+
+		if ( ! in_array( self::get_comic_ext( $id ), self::COMIC_EXTENSIONS, true ) ) {
+			return new WP_Error( 'invalid_format', __( 'File is not a supported comic format.', 'nvoos-comic-reader' ), array( 'status' => 400 ) );
+		}
+
+		$payload = $request->get_json_params();
+		if ( ! is_array( $payload ) ) {
+			return new WP_Error( 'invalid_payload', __( 'A JSON metadata payload is required.', 'nvoos-comic-reader' ), array( 'status' => 400 ) );
+		}
+
+		$allowed_fields = array( 'title', 'series', 'number', 'volume', 'writer', 'penciller', 'publisher', 'genre', 'page_count', 'rtl', 'manga' );
+		$metadata       = array();
+		foreach ( $allowed_fields as $field ) {
+			if ( isset( $payload[ $field ] ) ) {
+				$metadata[ $field ] = sanitize_text_field( (string) $payload[ $field ] );
+			}
+		}
+
+		update_post_meta( $id, '_nvoos_comic_metadata', $metadata );
+
+		// Apply the series as a taxonomy term.
+		if ( ! empty( $metadata['series'] ) ) {
+			wp_set_object_terms( $id, $metadata['series'], NV_oOS_Comic_Reader_Taxonomy::SERIES_TAXONOMY, false );
+		}
+
+		// Persist the reading-direction hint for auto-detection.
+		if ( isset( $metadata['rtl'] ) && '' !== $metadata['rtl'] ) {
+			update_post_meta( $id, '_nvoos_comic_reading_direction', 'Yes' === $metadata['rtl'] ? 'rtl' : 'ltr' );
+		}
+
+		return rest_ensure_response(
+			array(
+				'saved'    => true,
+				'metadata' => $metadata,
+			)
+		);
+	}
+
+	/**
+	 * Edit a comic's user-facing details (title, series, credits…).
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function update_comic( $request ) {
+		$id   = $request->get_param( 'id' );
+		$post = get_post( $id );
+
+		if ( ! $post || 'attachment' !== $post->post_type ) {
+			return new WP_Error( 'not_found', __( 'Comic not found.', 'nvoos-comic-reader' ), array( 'status' => 404 ) );
+		}
+
+		$payload = $request->get_json_params();
+		if ( ! is_array( $payload ) ) {
+			return new WP_Error( 'invalid_payload', __( 'A JSON payload is required.', 'nvoos-comic-reader' ), array( 'status' => 400 ) );
+		}
+
+		if ( isset( $payload['title'] ) ) {
+			wp_update_post(
+				array(
+					'ID'         => $id,
+					'post_title' => sanitize_text_field( (string) $payload['title'] ),
+				)
+			);
+		}
+
+		if ( isset( $payload['series'] ) ) {
+			$series = sanitize_text_field( (string) $payload['series'] );
+			if ( '' === $series ) {
+				wp_set_object_terms( $id, array(), NV_oOS_Comic_Reader_Taxonomy::SERIES_TAXONOMY, false );
+			} else {
+				wp_set_object_terms( $id, $series, NV_oOS_Comic_Reader_Taxonomy::SERIES_TAXONOMY, false );
+			}
+		}
+
+		// Scalar text fields stored both as dedicated meta and in the
+		// combined metadata blob so both consumers see the same data.
+		$scalar_fields = array( 'number', 'volume', 'writer', 'publisher', 'reading_direction' );
+		$metadata      = get_post_meta( $id, '_nvoos_comic_metadata', true );
+		$metadata      = is_array( $metadata ) ? $metadata : array();
+
+		foreach ( $scalar_fields as $field ) {
+			if ( ! isset( $payload[ $field ] ) ) {
+				continue;
+			}
+			$value = sanitize_text_field( (string) $payload[ $field ] );
+			update_post_meta( $id, '_nvoos_comic_' . $field, $value );
+			$metadata[ $field ] = $value;
+		}
+
+		update_post_meta( $id, '_nvoos_comic_metadata', $metadata );
+
+		return rest_ensure_response( self::format_comic_item( get_post( $id ) ) );
+	}
+
+	/**
+	 * List series facets with comic counts.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function list_series( $request ) {
+		$terms = get_terms(
+			array(
+				'taxonomy'   => NV_oOS_Comic_Reader_Taxonomy::SERIES_TAXONOMY,
+				'hide_empty' => false,
+			)
+		);
+
+		if ( is_wp_error( $terms ) ) {
+			return rest_ensure_response( array( 'series' => array() ) );
+		}
+
+		$series = array_map(
+			function ( $term ) {
+				return array(
+					'id'    => (int) $term->term_id,
+					'name'  => $term->name,
+					'count' => (int) $term->count,
+				);
+			},
+			$terms
+		);
+
+		return rest_ensure_response( array( 'series' => $series ) );
+	}
+
+	/**
+	 * List collections with their ordered comic IDs.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function list_collections( $request ) {
+		$terms = get_terms(
+			array(
+				'taxonomy'   => NV_oOS_Comic_Reader_Taxonomy::COLLECTION_TAXONOMY,
+				'hide_empty' => false,
+			)
+		);
+
+		if ( is_wp_error( $terms ) ) {
+			return rest_ensure_response( array( 'collections' => array() ) );
+		}
+
+		$collections = array_map(
+			function ( $term ) {
+				return array(
+					'id'    => (int) $term->term_id,
+					'name'  => $term->name,
+					'items' => NV_oOS_Comic_Reader_Taxonomy::get_collection_items( $term->term_id ),
+				);
+			},
+			$terms
+		);
+
+		return rest_ensure_response( array( 'collections' => $collections ) );
+	}
+
+	/**
+	 * Create a new collection.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function create_collection( $request ) {
+		$name = $request->get_param( 'name' );
+		if ( '' === $name ) {
+			return new WP_Error( 'invalid_name', __( 'A collection name is required.', 'nvoos-comic-reader' ), array( 'status' => 400 ) );
+		}
+
+		$term = wp_insert_term( $name, NV_oOS_Comic_Reader_Taxonomy::COLLECTION_TAXONOMY );
+		if ( is_wp_error( $term ) ) {
+			// Reuse an existing term with the same name.
+			if ( isset( $term->error_data['term_exists'] ) ) {
+				$term_id = (int) $term->error_data['term_exists'];
+			} else {
+				return new WP_Error( 'create_failed', $term->get_error_message(), array( 'status' => 400 ) );
+			}
+		} else {
+			$term_id = (int) $term['term_id'];
+		}
+
+		// WP 6.9 removed the $status parameter from rest_ensure_response().
+		return new WP_REST_Response(
+			array(
+				'id'    => $term_id,
+				'name'  => $name,
+				'items' => array(),
+			),
+			201
+		);
+	}
+
+	/**
+	 * Add a comic to a collection.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function add_collection_item( $request ) {
+		$term_id  = $request->get_param( 'id' );
+		$comic_id = $request->get_param( 'comic_id' );
+
+		if ( ! term_exists( $term_id, NV_oOS_Comic_Reader_Taxonomy::COLLECTION_TAXONOMY ) ) {
+			return new WP_Error( 'not_found', __( 'Collection not found.', 'nvoos-comic-reader' ), array( 'status' => 404 ) );
+		}
+
+		$post = get_post( $comic_id );
+		if ( ! $post || 'attachment' !== $post->post_type ) {
+			return new WP_Error( 'not_found', __( 'Comic not found.', 'nvoos-comic-reader' ), array( 'status' => 404 ) );
+		}
+
+		NV_oOS_Comic_Reader_Taxonomy::add_collection_item( (int) $term_id, (int) $comic_id );
+
+		return rest_ensure_response(
+			array(
+				'added' => true,
+				'items' => NV_oOS_Comic_Reader_Taxonomy::get_collection_items( (int) $term_id ),
+			)
+		);
+	}
+
+	/**
+	 * Remove a comic from a collection.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function remove_collection_item( $request ) {
+		$term_id  = $request->get_param( 'id' );
+		$comic_id = $request->get_param( 'comic_id' );
+
+		if ( ! term_exists( $term_id, NV_oOS_Comic_Reader_Taxonomy::COLLECTION_TAXONOMY ) ) {
+			return new WP_Error( 'not_found', __( 'Collection not found.', 'nvoos-comic-reader' ), array( 'status' => 404 ) );
+		}
+
+		NV_oOS_Comic_Reader_Taxonomy::remove_collection_item( (int) $term_id, (int) $comic_id );
+
+		return rest_ensure_response(
+			array(
+				'removed' => true,
+				'items'   => NV_oOS_Comic_Reader_Taxonomy::get_collection_items( (int) $term_id ),
+			)
+		);
+	}
+
+	/**
+	 * Read the current user's stored progress map.
+	 *
+	 * @param int $user_id User ID.
+	 * @return array<int, array{page:int,total:int,completed:bool,ts:int}> Progress keyed by comic ID.
+	 */
+	private static function get_user_progress( $user_id ) {
+		$progress = get_user_meta( (int) $user_id, 'nvoos_comic_reader_progress', true );
+		return is_array( $progress ) ? $progress : array();
+	}
+
+	/**
+	 * Persist the user's progress map, pruned to the most recent 500 comics.
+	 *
+	 * @param int   $user_id  User ID.
+	 * @param array $progress Progress keyed by comic ID.
+	 * @return void
+	 */
+	private static function set_user_progress( $user_id, $progress ) {
+		uasort(
+			$progress,
+			function ( $a, $b ) {
+				return (int) ( $b['ts'] ?? 0 ) <=> (int) ( $a['ts'] ?? 0 );
+			}
+		);
+		$progress = array_slice( $progress, 0, 500, true );
+		update_user_meta( (int) $user_id, 'nvoos_comic_reader_progress', $progress );
 	}
 
 	/**
@@ -793,6 +1380,46 @@ class NV_oOS_Comic_Reader_REST {
 			return true;
 		}
 		return new WP_Error( 'forbidden', __( 'You do not have permission to upload files.', 'nvoos-comic-reader' ), array( 'status' => 403 ) );
+	}
+
+	/**
+	 * Edit permission — the user must hold the (filterable) edit capability
+	 * and pass the per-object check on the attachment.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return bool|WP_Error
+	 */
+	public static function edit_permission( $request ) {
+		// phpcs:ignore WordPress.WP.Capabilities.Undetermined -- capability is filterable by design.
+		$cap = apply_filters( 'nvoos_comic_reader_edit_capability', 'edit_posts' );
+		// phpcs:ignore WordPress.WP.Capabilities.Undetermined
+		if ( ! current_user_can( $cap ) ) {
+			return new WP_Error( 'forbidden', __( 'You do not have permission to edit comics.', 'nvoos-comic-reader' ), array( 'status' => 403 ) );
+		}
+
+		$id = (int) $request->get_param( 'id' );
+		if ( $id && ! current_user_can( 'edit_post', $id ) ) {
+			return new WP_Error( 'forbidden', __( 'You do not have permission to edit this comic.', 'nvoos-comic-reader' ), array( 'status' => 403 ) );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Collections edit permission — capability-only gate (the route ID is a
+	 * taxonomy term, not a post, so no per-object check applies).
+	 *
+	 * @return bool|WP_Error
+	 */
+	public static function collections_edit_permission() {
+		// phpcs:ignore WordPress.WP.Capabilities.Undetermined -- capability is filterable by design.
+		$cap = apply_filters( 'nvoos_comic_reader_edit_capability', 'edit_posts' );
+		// phpcs:ignore WordPress.WP.Capabilities.Undetermined
+		if ( ! current_user_can( $cap ) ) {
+			return new WP_Error( 'forbidden', __( 'You do not have permission to manage collections.', 'nvoos-comic-reader' ), array( 'status' => 403 ) );
+		}
+
+		return true;
 	}
 
 	/**
@@ -1237,18 +1864,41 @@ class NV_oOS_Comic_Reader_REST {
 		$file_size = $file_path && file_exists( $file_path ) ? (int) filesize( $file_path ) : 0;
 		$file_url  = wp_get_attachment_url( $post->ID );
 
+		$series_names = wp_get_object_terms(
+			$post->ID,
+			NV_oOS_Comic_Reader_Taxonomy::SERIES_TAXONOMY,
+			array( 'fields' => 'names' )
+		);
+
+		$metadata = get_post_meta( $post->ID, '_nvoos_comic_metadata', true );
+
+		$progress = null;
+		$user_id  = get_current_user_id();
+		if ( $user_id ) {
+			$user_progress = self::get_user_progress( $user_id );
+			if ( isset( $user_progress[ $post->ID ] ) ) {
+				$progress = $user_progress[ $post->ID ];
+			}
+		}
+
+		$direction = get_post_meta( $post->ID, '_nvoos_comic_reading_direction', true );
+
 		return array(
-			'id'            => (int) $post->ID,
-			'title'         => get_the_title( $post ),
-			'filename'      => basename( $file_path ? $file_path : '' ),
-			'format'        => strtoupper( self::get_comic_ext( $post->ID ) ),
-			'file_size'     => $file_size,
-			'file_url'      => $file_url ? $file_url : '',
-			'file_endpoint' => rest_url( self::REST_NAMESPACE . '/comics/' . $post->ID . '/file' ),
-			'cover_url'     => self::get_cover_url( $post->ID ),
-			'date'          => get_the_date( 'c', $post ),
-			'modified'      => get_the_modified_date( 'c', $post ),
-			'mime_type'     => $post->post_mime_type,
+			'id'                => (int) $post->ID,
+			'title'             => get_the_title( $post ),
+			'filename'          => basename( $file_path ? $file_path : '' ),
+			'format'            => strtoupper( self::get_comic_ext( $post->ID ) ),
+			'file_size'         => $file_size,
+			'file_url'          => $file_url ? $file_url : '',
+			'file_endpoint'     => rest_url( self::REST_NAMESPACE . '/comics/' . $post->ID . '/file' ),
+			'cover_url'         => self::get_cover_url( $post->ID ),
+			'date'              => get_the_date( 'c', $post ),
+			'modified'          => get_the_modified_date( 'c', $post ),
+			'mime_type'         => $post->post_mime_type,
+			'series'            => is_array( $series_names ) ? array_values( $series_names ) : array(),
+			'metadata'          => is_array( $metadata ) ? $metadata : array(),
+			'progress'          => $progress,
+			'reading_direction' => 'rtl' === $direction ? 'rtl' : 'ltr',
 		);
 	}
 

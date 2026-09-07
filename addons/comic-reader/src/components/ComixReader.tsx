@@ -13,7 +13,13 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { ComicItem } from '../api/comic-api';
-import { fetchComicFileUrl } from '../api/comic-api';
+import {
+	fetchComicFileUrl,
+	fetchComicProgress,
+	saveComicProgress,
+	saveComicMetadata,
+} from '../api/comic-api';
+import type { ComicInfoMetadata } from '../api/archive-worker';
 import { PageViewer } from './PageViewer';
 import type { PageData } from './PageViewer';
 import { ScrollViewer } from './ScrollViewer';
@@ -26,6 +32,7 @@ import { useTouchGestures } from '../hooks/useTouchGestures';
 import {
 	loadPrefs,
 	savePrefs,
+	hasPrefsOverride,
 	backgroundToColor,
 } from '../types/reader-prefs';
 import type { ReaderPrefs, ReadingDirection } from '../types/reader-prefs';
@@ -216,16 +223,39 @@ export function ComixReader({ comic, initialDirection }: ComixReaderProps) {
 				worker.onmessage = (e: MessageEvent) => {
 					if (cancelled) return;
 
-					const { type, pages: extractedPages, message } = e.data;
+					const {
+						type,
+						pages: extractedPages,
+						message,
+						metadata,
+					} = e.data as {
+						type: string;
+						pages?: PageData[];
+						message?: string;
+						metadata?: ComicInfoMetadata | null;
+					};
 
-					if (type === 'success') {
+					if (type === 'success' && extractedPages) {
 						const pageData: PageData[] = extractedPages;
 						pageData.forEach((p) => cleanupUrls.push(p.url));
 						setPages(pageData);
 						setLoading(false);
 						setExtractProgress('');
+
+						// ComicInfo.xml handling: auto-apply RTL direction for
+						// manga unless the user chose a per-comic override, and
+						// sync the parsed metadata to the server (best-effort).
+						if (metadata && Object.keys(metadata).length > 0) {
+							if (
+								(metadata.rtl || '').toLowerCase() === 'yes' &&
+								!hasPrefsOverride(comic.id)
+							) {
+								updatePrefs({ direction: 'rtl' });
+							}
+							saveComicMetadata(comic.id, metadata);
+						}
 					} else if (type === 'error') {
-						setError(message);
+						setError(message || t('errorLoad'));
 						setLoading(false);
 						setExtractProgress('');
 					}
@@ -267,29 +297,48 @@ export function ComixReader({ comic, initialDirection }: ComixReaderProps) {
 		// Extraction is keyed by comic identity; t() is a stable helper.
 	}, [comic.id, comic.filename]);
 
-	// Save reading progress (localStorage; server sync lands in 0.4.0).
+	// Save reading progress locally and sync it to the server.
 	useEffect(() => {
 		if (loading || pages.length === 0 || activePage <= 0) return;
 		const completed = activePage >= pages.length;
-		saveLocalProgress(comic.id, {
+		const record = {
 			page: activePage,
 			total: pages.length,
 			completed,
-			ts: Date.now(),
+		};
+		saveLocalProgress(comic.id, { ...record, ts: Date.now() });
+		saveComicProgress(comic.id, record).catch(() => {
+			// Offline or logged-out users keep local-only progress.
 		});
 	}, [activePage, pages.length, loading, comic.id]);
 
-	// Restore reading progress.
+	// Restore reading progress, preferring the newer of server and local.
 	useEffect(() => {
 		if (loading || pages.length === 0) return;
-		const saved = readLocalProgress(comic.id);
-		if (!saved || saved.page <= 1) return;
 
-		if (prefs.readingMode === 'paged') {
-			goToPage(Math.min(saved.page, pages.length));
-		} else {
-			setScrollPage(Math.min(saved.page, pages.length));
-		}
+		let cancelled = false;
+		const local = readLocalProgress(comic.id);
+
+		fetchComicProgress(comic.id)
+			.then((server) => {
+				if (cancelled) return;
+				const source =
+					server && (!local || server.ts >= local.ts) ? server : local;
+				if (!source || source.page <= 1) return;
+
+				if (prefs.readingMode === 'paged') {
+					goToPage(Math.min(source.page, pages.length));
+				} else {
+					setScrollPage(Math.min(source.page, pages.length));
+				}
+			})
+			.catch(() => {
+				// Server unavailable — local only.
+			});
+
+		return () => {
+			cancelled = true;
+		};
 		// Restore runs once per comic open.
 	}, [loading, pages.length, comic.id]);
 

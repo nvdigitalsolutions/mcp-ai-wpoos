@@ -57,6 +57,11 @@ class Test_Comic_Reader_REST extends WP_UnitTestCase {
 			NV_oOS_Comic_Reader_Mime::init();
 		}
 
+		// Register the series/collection taxonomies.
+		if ( class_exists( 'NV_oOS_Comic_Reader_Taxonomy' ) ) {
+			NV_oOS_Comic_Reader_Taxonomy::register_taxonomies();
+		}
+
 		// Ensure REST routes are registered. The addon's bootstrap hooks
 		// register_routes onto rest_api_init; the global REST server fires
 		// the action once when first created.
@@ -529,5 +534,246 @@ class Test_Comic_Reader_REST extends WP_UnitTestCase {
 
 		$this->assertEquals( 200, $response->get_status() );
 		$this->assertNull( get_post( $cover_id ), 'Generated cover attachment should be deleted with the comic.' );
+	}
+
+	/**
+	 * Test per-user reading progress save and read.
+	 *
+	 * @return void
+	 */
+	public function test_progress_save_and_read() {
+		$attachment_id = $this->create_comic_attachment( 'progress.cbz', "PK\x03\x04" . str_repeat( 'p', 64 ), $this->admin_id );
+
+		wp_set_current_user( $this->subscriber_id );
+
+		$request = new WP_REST_Request( 'POST', '/nvoos-comic-reader/v1/comics/' . $attachment_id . '/progress' );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'page'      => 12,
+					'total'     => 30,
+					'completed' => false,
+				)
+			)
+		);
+		$request->set_header( 'Content-Type', 'application/json' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$data = $response->get_data();
+		$this->assertTrue( $data['saved'] );
+		$this->assertEquals( 12, $data['progress']['page'] );
+
+		// Read it back.
+		$request  = new WP_REST_Request( 'GET', '/nvoos-comic-reader/v1/comics/' . $attachment_id . '/progress' );
+		$response = rest_get_server()->dispatch( $request );
+		$this->assertEquals( 12, $response->get_data()['progress']['page'] );
+
+		// Progress is per-user: a different user sees nothing.
+		wp_set_current_user( $this->author_id );
+		$request  = new WP_REST_Request( 'GET', '/nvoos-comic-reader/v1/comics/' . $attachment_id . '/progress' );
+		$response = rest_get_server()->dispatch( $request );
+		$this->assertNull( $response->get_data()['progress'] );
+	}
+
+	/**
+	 * Test the progress map endpoint and that the comic payload embeds it.
+	 *
+	 * @return void
+	 */
+	public function test_progress_map_endpoint() {
+		$attachment_id = $this->create_comic_attachment( 'progmap.cbz', "PK\x03\x04" . str_repeat( 'm', 64 ), $this->admin_id );
+
+		wp_set_current_user( $this->subscriber_id );
+
+		$request = new WP_REST_Request( 'POST', '/nvoos-comic-reader/v1/comics/' . $attachment_id . '/progress' );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'page'      => 3,
+					'total'     => 10,
+					'completed' => false,
+				)
+			)
+		);
+		$request->set_header( 'Content-Type', 'application/json' );
+		rest_get_server()->dispatch( $request );
+
+		$request  = new WP_REST_Request( 'GET', '/nvoos-comic-reader/v1/comics/progress' );
+		$response = rest_get_server()->dispatch( $request );
+		$this->assertEquals( 200, $response->get_status() );
+		$this->assertArrayHasKey( $attachment_id, $response->get_data()['progress'] );
+	}
+
+	/**
+	 * Test ComicInfo metadata import sets the series term and direction meta.
+	 *
+	 * @return void
+	 */
+	public function test_save_metadata_sets_series_and_direction() {
+		$attachment_id = $this->create_comic_attachment( 'meta.cbz', "PK\x03\x04" . str_repeat( 't', 64 ), $this->author_id );
+
+		wp_set_current_user( $this->author_id );
+
+		$payload = array(
+			'title'      => 'One Piece Vol 1',
+			'series'     => 'One Piece',
+			'number'     => '1',
+			'writer'     => 'Eiichiro Oda',
+			'publisher'  => 'Shueisha',
+			'rtl'        => 'Yes',
+			'manga'      => 'Yes',
+			'page_count' => '200',
+		);
+
+		$request = new WP_REST_Request( 'POST', '/nvoos-comic-reader/v1/comics/' . $attachment_id . '/metadata' );
+		$request->set_body( wp_json_encode( $payload ) );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$this->assertTrue( $response->get_data()['saved'] );
+
+		// Series term was applied.
+		$series = wp_get_object_terms(
+			$attachment_id,
+			NV_oOS_Comic_Reader_Taxonomy::SERIES_TAXONOMY,
+			array( 'fields' => 'names' )
+		);
+		$this->assertContains( 'One Piece', $series );
+
+		// RTL flag persisted as reading direction.
+		$this->assertEquals( 'rtl', get_post_meta( $attachment_id, '_nvoos_comic_reading_direction', true ) );
+	}
+
+	/**
+	 * Test metadata import requires edit capability.
+	 *
+	 * @return void
+	 */
+	public function test_save_metadata_requires_edit_permission() {
+		$attachment_id = $this->create_comic_attachment( 'meta2.cbz', "PK\x03\x04" . str_repeat( 'u', 64 ), $this->admin_id );
+
+		wp_set_current_user( $this->subscriber_id );
+
+		$request = new WP_REST_Request( 'POST', '/nvoos-comic-reader/v1/comics/' . $attachment_id . '/metadata' );
+		$request->set_body( wp_json_encode( array( 'title' => 'Nope' ) ) );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertEquals( 403, $response->get_status() );
+	}
+
+	/**
+	 * Test editing comic details via PUT.
+	 *
+	 * @return void
+	 */
+	public function test_update_comic_edits_details() {
+		$attachment_id = $this->create_comic_attachment( 'editme.cbz', "PK\x03\x04" . str_repeat( 'e', 64 ), $this->author_id );
+
+		wp_set_current_user( $this->author_id );
+
+		$request = new WP_REST_Request( 'PUT', '/nvoos-comic-reader/v1/comics/' . $attachment_id );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'title'             => 'Edited Title',
+					'series'            => 'My Series',
+					'writer'            => 'A. Writer',
+					'reading_direction' => 'rtl',
+				)
+			)
+		);
+		$request->set_header( 'Content-Type', 'application/json' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$data = $response->get_data();
+		$this->assertEquals( 'Edited Title', $data['title'] );
+		$this->assertContains( 'My Series', $data['series'] );
+		$this->assertEquals( 'rtl', $data['reading_direction'] );
+		$this->assertEquals( 'A. Writer', $data['metadata']['writer'] );
+	}
+
+	/**
+	 * Test collections CRUD flow.
+	 *
+	 * @return void
+	 */
+	public function test_collections_crud() {
+		$attachment_id = $this->create_comic_attachment( 'collect.cbz', "PK\x03\x04" . str_repeat( 'c', 64 ), $this->admin_id );
+
+		wp_set_current_user( $this->author_id );
+
+		// Create.
+		$request = new WP_REST_Request( 'POST', '/nvoos-comic-reader/v1/collections' );
+		$request->set_body( wp_json_encode( array( 'name' => 'Favorites' ) ) );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$response = rest_get_server()->dispatch( $request );
+		$this->assertEquals( 201, $response->get_status() );
+		$collection_id = $response->get_data()['id'];
+
+		// Add an item.
+		$request = new WP_REST_Request( 'POST', '/nvoos-comic-reader/v1/collections/' . $collection_id . '/items' );
+		$request->set_body( wp_json_encode( array( 'comic_id' => $attachment_id ) ) );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$response = rest_get_server()->dispatch( $request );
+		$this->assertEquals( 200, $response->get_status() );
+		$this->assertContains( $attachment_id, $response->get_data()['items'] );
+
+		// List.
+		$request  = new WP_REST_Request( 'GET', '/nvoos-comic-reader/v1/collections' );
+		$response = rest_get_server()->dispatch( $request );
+		$names    = wp_list_pluck( $response->get_data()['collections'], 'name' );
+		$this->assertContains( 'Favorites', $names );
+
+		// Remove the item.
+		$request  = new WP_REST_Request( 'DELETE', '/nvoos-comic-reader/v1/collections/' . $collection_id . '/items/' . $attachment_id );
+		$response = rest_get_server()->dispatch( $request );
+		$this->assertNotContains( $attachment_id, $response->get_data()['items'] );
+	}
+
+	/**
+	 * Test list comics supports series filtering.
+	 *
+	 * @return void
+	 */
+	public function test_list_comics_filters_by_series() {
+		$in_series  = $this->create_comic_attachment( 's1.cbz', "PK\x03\x04" . str_repeat( 's', 64 ), $this->admin_id );
+		$out_series = $this->create_comic_attachment( 's2.cbz', "PK\x03\x04" . str_repeat( 's', 64 ), $this->admin_id );
+
+		wp_set_object_terms( $in_series, 'Batman', NV_oOS_Comic_Reader_Taxonomy::SERIES_TAXONOMY );
+		wp_set_object_terms( $out_series, 'Superman', NV_oOS_Comic_Reader_Taxonomy::SERIES_TAXONOMY );
+
+		wp_set_current_user( $this->subscriber_id );
+
+		$request = new WP_REST_Request( 'GET', '/nvoos-comic-reader/v1/comics' );
+		$request->set_param( 'series', 'batman' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$ids = wp_list_pluck( $response->get_data()['comics'], 'id' );
+		$this->assertContains( $in_series, $ids );
+		$this->assertNotContains( $out_series, $ids );
+	}
+
+	/**
+	 * Test the series facets endpoint.
+	 *
+	 * @return void
+	 */
+	public function test_list_series_facets() {
+		$attachment_id = $this->create_comic_attachment( 'facet.cbz', "PK\x03\x04" . str_repeat( 'f', 64 ), $this->admin_id );
+		wp_set_object_terms( $attachment_id, 'Saga', NV_oOS_Comic_Reader_Taxonomy::SERIES_TAXONOMY );
+
+		wp_set_current_user( $this->subscriber_id );
+
+		$request  = new WP_REST_Request( 'GET', '/nvoos-comic-reader/v1/series' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$names = wp_list_pluck( $response->get_data()['series'], 'name' );
+		$this->assertContains( 'Saga', $names );
 	}
 }

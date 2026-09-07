@@ -88,6 +88,18 @@ export function savePrefs(prefs: ReaderPrefs, comicId?: number): void {
 	}
 }
 
+/**
+ * Whether the user has stored an explicit per-comic prefs override.
+ * Used to avoid overriding user choices with metadata auto-detection.
+ */
+export function hasPrefsOverride(comicId: number): boolean {
+	try {
+		return localStorage.getItem(perComicKey(comicId)) !== null;
+	} catch {
+		return false;
+	}
+}
+
 /** Map a background preference to a concrete CSS color. */
 export function backgroundToColor(background: ReaderBackground): string {
 	switch (background) {

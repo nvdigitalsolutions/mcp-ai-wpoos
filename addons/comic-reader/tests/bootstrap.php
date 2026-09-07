@@ -33,6 +33,7 @@ if ( ! defined( 'NVOOS_COMIC_READER_VERSION' ) ) {
 
 require_once NVOOS_COMIC_READER_PATH . 'includes/class-nvoos-comic-reader-plugin.php';
 require_once NVOOS_COMIC_READER_PATH . 'includes/class-nvoos-comic-reader-mime.php';
+require_once NVOOS_COMIC_READER_PATH . 'includes/class-nvoos-comic-reader-taxonomy.php';
 require_once NVOOS_COMIC_READER_PATH . 'includes/rest/class-nvoos-comic-reader-rest.php';
 require_once NVOOS_COMIC_READER_PATH . 'includes/shortcode/class-nvoos-comic-reader-shortcode.php';
 require_once NVOOS_COMIC_READER_PATH . 'includes/block/class-nvoos-comic-reader-block.php';

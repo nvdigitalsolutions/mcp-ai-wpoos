@@ -22,6 +22,7 @@ import {
 } from '../types/progress';
 import { HelpDialog } from '../components/HelpDialog';
 import { ReaderSettings } from '../components/ReaderSettings';
+import { parseComicInfo } from '../api/archive-worker';
 
 const mockPage = {
 	index: 0,
@@ -167,6 +168,39 @@ describe('ReaderSettings', () => {
 		expect(onChange).toHaveBeenCalledWith(
 			expect.objectContaining({ readingMode: 'webtoon' })
 		);
+	});
+});
+
+describe('ComicInfo parsing', () => {
+	it('extracts standard ComicInfo.xml fields', () => {
+		const xml = `<?xml version="1.0"?>
+<ComicInfo>
+  <Title>Scott Pilgrim</Title>
+  <Series>Scott Pilgrim</Series>
+  <Number>1</Number>
+  <Writer>Bryan Lee O&apos;Malley</Writer>
+  <Publisher>Oni Press</Publisher>
+  <PageCount>168</PageCount>
+  <Manga>No</Manga>
+</ComicInfo>`;
+		const meta = parseComicInfo(xml);
+		expect(meta.title).toBe('Scott Pilgrim');
+		expect(meta.series).toBe('Scott Pilgrim');
+		expect(meta.number).toBe('1');
+		expect(meta.writer).toBe("Bryan Lee O'Malley");
+		expect(meta.publisher).toBe('Oni Press');
+		expect(meta.page_count).toBe('168');
+	});
+
+	it('maps RightToLeft to the rtl flag', () => {
+		const xml = '<ComicInfo><RightToLeft>Yes</RightToLeft><Manga>Yes</Manga></ComicInfo>';
+		const meta = parseComicInfo(xml);
+		expect(meta.rtl).toBe('Yes');
+		expect(meta.manga).toBe('Yes');
+	});
+
+	it('returns an empty object for non-ComicInfo content', () => {
+		expect(parseComicInfo('<html><body>nope</body></html>')).toEqual({});
 	});
 });
 

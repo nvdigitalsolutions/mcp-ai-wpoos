@@ -28,6 +28,9 @@ class NV_oOS_Comic_Reader_Plugin {
 		// Register MIME types for comic archive uploads.
 		NV_oOS_Comic_Reader_Mime::init();
 
+		// Register the series/collection taxonomies.
+		NV_oOS_Comic_Reader_Taxonomy::init();
+
 		add_action( 'init', array( 'NV_oOS_Comic_Reader_Shortcode', 'register' ), 12 );
 		add_action( 'init', array( 'NV_oOS_Comic_Reader_Block', 'register' ), 12 );
 		add_action( 'rest_api_init', array( 'NV_oOS_Comic_Reader_REST', 'register_routes' ) );
