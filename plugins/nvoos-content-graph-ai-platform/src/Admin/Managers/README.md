@@ -51,7 +51,18 @@ the SLA stats (base `WP_MCP_AI_SLA_Manager` / platform
 `Queues\SlaManager`), the job store (base `WP_MCP_AI_Job_Store`
 monolith / null standalone — section hidden, documented), and the
 retention period (base `WP_MCP_AI_Settings_Registry` monolith / the
-`wp_mcp_ai_settings` option standalone).
+`wp_mcp_ai_settings` option standalone). Sub-cluster 4 (`DagBuilder`)
+is the aligned port of `WP_MCP_AI_Admin_DAG_Builder`: byte-identical
+page slug (`wp-mcp-ai-dag-builder`), the `mcpAiDagBuilder` localized
+envelope (ajaxUrl/restUrl/wp_rest nonce/workflowId/version), the
+workflow list sidebar (New Workflow button, version badges, Edit/Run
+actions, empty state), the canvas root with the resolved workflow id,
+and the query-string workflow-id resolution with CPT ownership check
+(deduplicated into the `resolve_workflow_id()` helper — additive). Its
+workflow CPT resolves per mode (base `WP_MCP_AI_Workflow_CPT`
+monolith / platform `Workflows\WorkflowCpt` standalone — byte-identical
+`CPT`/`META_VERSION` constants, the E1 port; null → `workflow_id`
+degrades to 0, documented guard).
 
 ## Tier
 
@@ -70,6 +81,7 @@ retention period (base `WP_MCP_AI_Settings_Registry` monolith / the
 | `NvoosContentGraphAiPlatform\Admin\Managers\ApprovalsManager` | `ApprovalsManager.php` | `Plugin::registerManagers()` — standalone menu/enqueue/AJAX wiring |
 | `NvoosContentGraphAiPlatform\Admin\Managers\TokenManager` | `TokenManager.php` | `Plugin::registerManagers()` — standalone menu/enqueue/admin-post wiring |
 | `NvoosContentGraphAiPlatform\Admin\Managers\CronManagerPage` | `CronManagerPage.php` | `Plugin::registerManagers()` — standalone menu/enqueue/admin-post/AJAX wiring |
+| `NvoosContentGraphAiPlatform\Admin\Managers\DagBuilder` | `DagBuilder.php` | `Plugin::registerManagers()` — standalone menu/enqueue wiring |
 
 ## Inputs / Outputs / Neighbors
 
@@ -134,6 +146,15 @@ retention period (base `WP_MCP_AI_Settings_Registry` monolith / the
   filter), the AJAX nonce/capability gates, the AJAX success payload
   (stats/jobs/dlq/job-store shape), and the per-mode asset enqueues.
   Runs in both matrices.
+- `tests/test-dag-builder.php` — characterization suite covering the
+  byte-identical page slug, per-mode menu registration, register
+  idempotence (hook-registry dedup delta), the per-mode workflow-CPT
+  seam, the query-string workflow-id resolution (default/reject/
+  accept), the non-manager render gate (wp_die), the empty + seeded
+  render surface (sidebar, version badges, is-active marker, canvas
+  root attribute, version fallback), and the per-mode asset enqueues
+  with the `mcpAiDagBuilder` envelope (incl. per-workflow version
+  resolution). Runs in both matrices.
 
 ## Also Load
 
