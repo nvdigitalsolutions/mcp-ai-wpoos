@@ -11,12 +11,12 @@
  *
  * 1. `declare(strict_types=1)` added.
  * 2. File paths resolve from `NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/'`.
- * 3. Slimmed wiring — the admin pages, research-add, inbound listeners,
- *    and the remaining tool files land with their F2 sub-clusters; every
- *    deferred require stays file-gated so this init degrades gracefully
- *    until each file exists (same wave-proof pattern as the F1 module
- *    files guards). The CRM REST controller landed with the F2 REST
- *    slice.
+ * 3. Slimmed wiring — the blueprints/command-center pages, research-add,
+ *    inbound listeners, and the remaining tool files land with their F2
+ *    sub-clusters; every deferred require stays file-gated so this init
+ *    degrades gracefully until each file exists (same wave-proof pattern
+ *    as the F1 module files guards). The CRM REST controller and the
+ *    per-CPT settings pages landed with their F2 slices.
  * 4. The JetEngine company-field registration stays byte-identical
  *    (`function_exists( 'jet_engine' )` + `class_exists(
  *    'WP_MCP_AI_JetEngine_Meta_Helper' )` guard — dormant standalone).
@@ -145,6 +145,23 @@ if ( $nvoos_content_graph_pro_is_enabled && ! $nvoos_content_graph_pro_is_base )
 			require_once $nvoos_content_graph_pro_crm_admin_menu;
 			WP_MCP_AI_CRM_Admin_Menu::init();
 		}
+
+		// Per-CPT settings pages (F2 admin settings batch).
+		$nvoos_content_graph_pro_cpt_settings_pages = array(
+			'company'        => 'WP_MCP_AI_Company_Settings_Page',
+			'lead'           => 'WP_MCP_AI_Lead_Settings_Page',
+			'deal'           => 'WP_MCP_AI_Deal_Settings_Page',
+			'support-ticket' => 'WP_MCP_AI_Support_Ticket_Settings_Page',
+			'customer'       => 'WP_MCP_AI_Customer_Settings_Page',
+		);
+		foreach ( $nvoos_content_graph_pro_cpt_settings_pages as $nvoos_content_graph_pro_cpt_slug => $nvoos_content_graph_pro_cpt_class ) {
+			$nvoos_content_graph_pro_cpt_page = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/admin/class-wp-mcp-ai-' . $nvoos_content_graph_pro_cpt_slug . '-settings-page.php';
+			if ( file_exists( $nvoos_content_graph_pro_cpt_page ) ) {
+				require_once $nvoos_content_graph_pro_cpt_page;
+				$nvoos_content_graph_pro_cpt_class::init();
+			}
+		}
+		unset( $nvoos_content_graph_pro_cpt_slug, $nvoos_content_graph_pro_cpt_class, $nvoos_content_graph_pro_cpt_page );
 
 		// ICP Profiles admin page (F2 admin slice).
 		$nvoos_content_graph_pro_icp_admin = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/admin/class-wp-mcp-ai-icp-admin-page.php';
