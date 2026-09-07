@@ -62,7 +62,21 @@ and the query-string workflow-id resolution with CPT ownership check
 workflow CPT resolves per mode (base `WP_MCP_AI_Workflow_CPT`
 monolith / platform `Workflows\WorkflowCpt` standalone — byte-identical
 `CPT`/`META_VERSION` constants, the E1 port; null → `workflow_id`
-degrades to 0, documented guard).
+degrades to 0, documented guard). Sub-cluster 5 (`DlqManager`) is the
+aligned port of `WP_MCP_AI_Admin_DLQ_Manager`: byte-identical page slug
+(`wp-mcp-ai-dlq-manager`), the `admin_post_wp_mcp_ai_dlq_bulk_action`
+and `admin_post_wp_mcp_ai_dlq_single_action` handlers with their nonce
+actions, the inline-stylesheet enqueue (`wp-mcp-ai-dlq-inline`), the
+intro / notices / statistics cards / filter form / seven-column items
+table (type badge, identifier, failure reason, retry count, human-time
+added, per-row retry/dismiss/delete links) / empty state render
+surface, the bulk-action processed/errors redirect envelope, the
+single-action success/error redirect envelopes, the type-badge and
+item-action helpers, and the page-URL builder. Its dead-letter queue
+resolves per mode (base `WP_MCP_AI_Dead_Letter_Queue` monolith /
+platform `Queues\DeadLetterQueue` standalone — byte-compatible static
+`get_all()`/`get_stats()`/`retry()`/`dismiss()`/`remove()` contract,
+the E2 port; null → empty listing + zeroed stats, documented guard).
 
 ## Tier
 
@@ -82,6 +96,7 @@ degrades to 0, documented guard).
 | `NvoosContentGraphAiPlatform\Admin\Managers\TokenManager` | `TokenManager.php` | `Plugin::registerManagers()` — standalone menu/enqueue/admin-post wiring |
 | `NvoosContentGraphAiPlatform\Admin\Managers\CronManagerPage` | `CronManagerPage.php` | `Plugin::registerManagers()` — standalone menu/enqueue/admin-post/AJAX wiring |
 | `NvoosContentGraphAiPlatform\Admin\Managers\DagBuilder` | `DagBuilder.php` | `Plugin::registerManagers()` — standalone menu/enqueue wiring |
+| `NvoosContentGraphAiPlatform\Admin\Managers\DlqManager` | `DlqManager.php` | `Plugin::registerManagers()` — standalone menu/enqueue/admin-post wiring |
 
 ## Inputs / Outputs / Neighbors
 
@@ -155,6 +170,19 @@ degrades to 0, documented guard).
   root attribute, version fallback), and the per-mode asset enqueues
   with the `mcpAiDagBuilder` envelope (incl. per-workflow version
   resolution). Runs in both matrices.
+- `tests/test-dlq-manager.php` — characterization suite covering the
+  byte-identical page slug + admin_post action names, per-mode menu
+  registration, register idempotence, the per-mode dead-letter-queue
+  seam, the page-URL builder, the type-badge and item-action helpers
+  (incl. the dismissed-item link suppression), the non-manager render
+  gate (silent), the empty + seeded render surface, the notices/
+  statistics/filters sub-renders, the bulk-action capability/nonce/
+  missing-params gates and the dismiss/delete/retry redirect
+  envelopes (processed+errors counts), the single-action
+  capability/missing-params/nonce gates and the dismiss/delete
+  success + retry error-code envelopes, and the inline-stylesheet
+  enqueue. Runs in both matrices against the real DLQ table (E2
+  DDL-suspension pattern).
 
 ## Also Load
 

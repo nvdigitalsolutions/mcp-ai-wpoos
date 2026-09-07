@@ -106,6 +106,10 @@ final class Plugin {
 		if ( class_exists( __NAMESPACE__ . '\Admin\Managers\DagBuilder' ) ) {
 			( new \NvoosContentGraphAiPlatform\Admin\Managers\DagBuilder() )->register();
 		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Managers\DlqManager' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Managers\DlqManager() )->register();
+		}
 	}
 
 	/**
