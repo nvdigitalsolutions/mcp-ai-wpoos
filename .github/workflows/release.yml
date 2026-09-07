@@ -629,6 +629,40 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
 
+    # WordPress cannot boot without a database, and `wp plugin check` (and
+    # `wp plugin install`) load WordPress — so the PCP job needs a real
+    # MySQL. Same service recipe as the phpunit workflow and the
+    # build-spa-addons.yml plugin-check job.
+    #
+    # NOTE: this is the LEGACY release path (v* tags). The active release
+    # path is build-nvdigital-oos-wporg.yml (nvdigital-oos-v* tags), which
+    # transforms the text domain to nvdigital-open-operator-system-oos at
+    # packaging time. Until the base plugin adopts that slug/domain natively,
+    # this gate will report the TextDomainMismatch backlog (expected
+    # 'wp-mcp-ai' vs the repo's 'mcp-ai-wpoos') — the report is the point;
+    # see the wp.org submission checklist row R-T-04.
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_pluginchk
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      WP_DB_NAME: wordpress_pluginchk
+      WP_DB_USER: wordpress
+      WP_DB_PASSWORD: wordpress
+      WP_DB_HOST: 127.0.0.1
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -653,26 +687,29 @@ jobs:
           cd /tmp/wp
           wp core download --version=latest --skip-content --path=/tmp/wp
           wp config create \
-            --dbname=wordpress_pluginchk \
-            --dbuser=root \
-            --dbpass='' \
-            --dbhost=127.0.0.1 \
-            --skip-check \
+            --dbname="${WP_DB_NAME}" \
+            --dbuser="${WP_DB_USER}" \
+            --dbpass="${WP_DB_PASSWORD}" \
+            --dbhost="${WP_DB_HOST}" \
             --path=/tmp/wp
-          # plugin-check works without a populated DB; we only need WP loaded.
+          # Plugin Check runs runtime checks, so WordPress must actually boot.
+          # Install a minimal site against the mysql service container.
+          wp core install \
+            --url="http://127.0.0.1" \
+            --title="Plugin Check QA" \
+            --admin_user="admin" \
+            --admin_password="admin" \
+            --admin_email="admin@example.com" \
+            --skip-email \
+            --path=/tmp/wp
 
       - name: Install Plugin Check (PCP) plugin
         run: |
           set -euo pipefail
-          cd /tmp/wp
-          # Skip DB-bound install steps; we only need the plugin code on disk.
-          wp plugin install plugin-check \
-            --path=/tmp/wp \
-            --skip-themes \
-            --skip-plugins \
-            --quiet || true
-          # Verify the PCP code is present on disk.
-          test -d /tmp/wp/wp-content/plugins/plugin-check
+          # Must be ACTIVATED for the wp-cli command to register. (Passing
+          # --require=<plugin-check/plugin.php> loads PCP before WordPress
+          # boots and fatal-errors with undefined plugin_dir_path().)
+          wp plugin install plugin-check --activate --path=/tmp/wp
 
       - name: Extract built ZIP into wp-content/plugins
         run: |
@@ -688,12 +725,10 @@ jobs:
         run: |
           set -euo pipefail
           cd /tmp/wp
-          # Allow PCP to load without activating the plugin (it scans on disk).
           wp plugin check "${PLUGIN_SLUG}" \
             --path=/tmp/wp \
             --format=json \
             --severity=5 \
-            --require=/tmp/wp/wp-content/plugins/plugin-check/plugin.php \
             > /tmp/pcp-report.json 2>/tmp/pcp-stderr.log || PCP_EXIT=$?
           PCP_EXIT="${PCP_EXIT:-0}"
           echo "pcp_exit=${PCP_EXIT}" >> $GITHUB_OUTPUT
@@ -706,9 +741,10 @@ jobs:
           cat /tmp/pcp-report.json || true
           echo "::endgroup::"
 
-          # Count Errors vs Warnings.
-          ERRORS=$(jq '[.[] | select(.type=="ERROR")] | length' /tmp/pcp-report.json 2>/dev/null || echo 0)
-          WARNINGS=$(jq '[.[] | select(.type=="WARNING")] | length' /tmp/pcp-report.json 2>/dev/null || echo 0)
+          # Count Errors vs Warnings. The report is chunked per file, so
+          # slurp it into one array before counting.
+          ERRORS=$(jq -s '[.[][] | select(.type=="ERROR")] | length' /tmp/pcp-report.json 2>/dev/null || echo 0)
+          WARNINGS=$(jq -s '[.[][] | select(.type=="WARNING")] | length' /tmp/pcp-report.json 2>/dev/null || echo 0)
           echo "Plugin Check ERRORS=${ERRORS}, WARNINGS=${WARNINGS}"
           {
             echo "## WordPress.org Plugin Check"
