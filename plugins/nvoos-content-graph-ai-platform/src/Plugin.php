@@ -77,6 +77,10 @@ final class Plugin {
 		// 5. Operator managers (Wave E-UI-2) — standalone-only; the base
 		//    admin owns the same pages under the base settings menu monolith.
 		$this->registerManagers();
+
+		// 6. Integrations screens (Wave E-UI-3) — standalone-only; the base
+		//    admin owns the same pages monolith.
+		$this->registerIntegrationsScreens();
 	}
 
 	/**
@@ -117,6 +121,27 @@ final class Plugin {
 
 		if ( class_exists( __NAMESPACE__ . '\Admin\Managers\AssetInventoryPage' ) ) {
 			( new \NvoosContentGraphAiPlatform\Admin\Managers\AssetInventoryPage() )->register();
+		}
+	}
+
+	/**
+	 * Register the E-UI-3 integrations screens (standalone-only).
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return void
+	 */
+	private function registerIntegrationsScreens(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Integrations\ProfessionResearchPage' ) ) {
+			\NvoosContentGraphAiPlatform\Admin\Integrations\ProfessionResearchPage::init();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Integrations\ProfessionSettings' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Integrations\ProfessionSettings() )->register();
 		}
 	}
 
