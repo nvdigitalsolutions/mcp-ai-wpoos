@@ -486,7 +486,7 @@ class NV_oOS_Docs_Hub_Cache {
 				$basename = basename( $src );
 				$dst      = $live_pages . DIRECTORY_SEPARATOR . $basename;
 				// PHP rename() is atomic on the same filesystem.
-				if ( ! @rename( $src, $dst ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				if ( ! @rename( $src, $dst ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.rename_rename -- atomic same-volume move; cross-volume copy fallback below.
 					$contents = file_get_contents( $src ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 					if ( false !== $contents ) {
 						file_put_contents( $dst, $contents ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
@@ -563,7 +563,7 @@ class NV_oOS_Docs_Hub_Cache {
 			}
 		}
 		// rmdir is intentionally suppressed — non-empty corner cases shouldn't fatal.
-		@rmdir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		@rmdir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- no WP API for rmdir; suppressed, non-empty dirs fall through.
 	}
 
 	/**

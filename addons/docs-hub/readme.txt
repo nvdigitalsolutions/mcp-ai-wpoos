@@ -1,10 +1,10 @@
 === NV oOS Docs Hub ===
 Contributors: nvdigitalsolutions
-Tags: documentation, markdown, react, docs browser, spa, github
+Tags: documentation, markdown, github
 Requires at least: 6.0
-Tested up to: 6.9
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.4.2
+Stable tag: 0.4.3
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -117,7 +117,41 @@ rebuilds when the installed plugin versions no longer match the cached index.
 You can also rebuild manually from the settings page, via WP-CLI, or via the
 REST API (requires `manage_options`).
 
+== Screenshots ==
+
+1. Settings — documentation index status and rebuild panel.
+2. Settings — remote repositories with the GitHub file/folder tree picker.
+3. Frontend `[nvoos_docs]` embed — sidebar, content, and table of contents.
+4. Frontend `[nvoos_docs]` embed — full-text search.
+
+== External Services ==
+
+When you configure a remote documentation repository, this plugin contacts
+GitHub's public API — **server-side only, over HTTPS**, and only the hosts
+listed below. Every request is restricted to these hosts (all others are
+rejected, including private and reserved IP addresses), carries a bounded
+timeout and response-size cap, and only happens after an administrator
+configures a repository and triggers a rebuild (or the nightly cron runs).
+No requests are made if no remote repository is configured, and the plugin
+does not send any personal data to these services — it only fetches the
+public repository content exactly as GitHub serves it.
+
+* `api.github.com` — repository tree metadata used by the file/folder
+  picker and the indexer.
+  Terms: https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
+  Privacy: https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement
+* `raw.githubusercontent.com` — raw Markdown file content fetched during
+  index rebuilds.
+  Terms: https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
+  Privacy: https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement
+
 == Changelog ==
+
+= 0.4.3 =
+* Added: WordPress.org listing screenshots and a Playwright capture script (`bin/capture-nvoos-docs-hub-screenshots.js`).
+* Added: WordPress.org submission preparation — External Services section in the readme, a translation template (languages/nvoos-docs-hub.pot), and a WordPress.org Plugin Check gate in CI.
+* Changed: settings-page scripts moved to a static asset (no inline <script> blocks), text-domain consistency fix, dev files excluded from distribution ZIPs.
+* Changed: readme tags trimmed to directory-standard tags.
 
 = 0.4.2 =
 * Fixed: clicking internal links on local pages left the SPA — links now resolve to `#/slug` hash routes with heading anchors preserved.
@@ -181,6 +215,9 @@ REST API (requires `manage_options`).
 * Initial release.
 
 == Upgrade Notice ==
+
+= 0.4.3 =
+WordPress.org submission hardening — no functional changes for existing sites. Recommended for all users.
 
 = 0.4.2 =
 Local-page links and TOC anchors now navigate inside the SPA, and broken-link fix suggestions resolve relative to the source page. Recommended for all users.
