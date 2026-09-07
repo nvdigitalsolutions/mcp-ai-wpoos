@@ -83,6 +83,7 @@ spl_autoload_register(
 			'src/tools/crm/icp/',
 			'src/tools/crm/inbound/',
 			'src/tools/crm/leads/',
+			'src/tools/crm/linkedin/',
 			'src/tools/crm/outbound/',
 			'src/tools/crm/routing/',
 			'src/tools/crm/sequences/',
