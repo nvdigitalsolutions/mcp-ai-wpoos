@@ -143,6 +143,14 @@ final class Plugin {
 		if ( class_exists( __NAMESPACE__ . '\Admin\Integrations\ProfessionSettings' ) ) {
 			( new \NvoosContentGraphAiPlatform\Admin\Integrations\ProfessionSettings() )->register();
 		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Integrations\TeamResearchPage' ) ) {
+			\NvoosContentGraphAiPlatform\Admin\Integrations\TeamResearchPage::init();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Integrations\TeamSettings' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Integrations\TeamSettings() )->register();
+		}
 	}
 
 	/**

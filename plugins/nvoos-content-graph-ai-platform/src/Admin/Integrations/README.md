@@ -16,7 +16,18 @@ import form, review quality dashboard) with the `wpMcpAiResearchPage`
 envelope, the three registered profession default settings, the
 tabbed settings render (overview/configuration/tools/help), and the
 nonce-gated save flow with the temperature clamp + settings-updated
-redirect.
+redirect. Sub-cluster 2 (`TeamResearchPage` + `TeamSettings`) is the
+aligned port of `WP_MCP_AI_Admin_Team_Research_Page` and
+`WP_MCP_AI_Admin_Team_Settings`: byte-identical page slugs
+(`research-team`, `wp-mcp-ai-team-settings`), the three-workflow
+research surface (chat embed + no-assistant notice, import form,
+review quality dashboard with members/orchestration/driver metrics,
+View Professions cross-link) with the `wpMcpAiResearchPage` envelope
+(entityType=team), the four registered team default settings
+(incl. driver_assistant), the tabbed settings render
+(overview/configuration/tools/help with the team orchestration card),
+and the nonce-gated save flow with the temperature clamp +
+settings-updated redirect.
 
 ## Tier
 
@@ -34,6 +45,8 @@ redirect.
 |---|---|---|
 | `NvoosContentGraphAiPlatform\Admin\Integrations\ProfessionResearchPage` | `ProfessionResearchPage.php` | `Plugin::registerIntegrationsScreens()` — standalone menu/enqueue wiring (static `init()`) |
 | `NvoosContentGraphAiPlatform\Admin\Integrations\ProfessionSettings` | `ProfessionSettings.php` | `Plugin::registerIntegrationsScreens()` — standalone menu/settings wiring |
+| `NvoosContentGraphAiPlatform\Admin\Integrations\TeamResearchPage` | `TeamResearchPage.php` | `Plugin::registerIntegrationsScreens()` — standalone menu/enqueue wiring (static `init()`) |
+| `NvoosContentGraphAiPlatform\Admin\Integrations\TeamSettings` | `TeamSettings.php` | `Plugin::registerIntegrationsScreens()` — standalone menu/settings wiring |
 
 ## Inputs / Outputs / Neighbors
 
@@ -72,6 +85,16 @@ redirect.
   tab renders (overview/configuration/tools/help), the capability
   gate, and the nonce-gated save flow (options + clamp + redirect).
   Runs in both matrices.
+- `tests/test-team-pages.php` — characterization suite covering the
+  byte-identical slugs, per-mode menu registration under the team CPT
+  menu, init/register idempotence (hook-registry dedup delta), the
+  per-mode post-type and shortcode seams, the enqueue gate +
+  `wpMcpAiResearchPage` envelope (entityType=team), the render surface
+  (common surface incl. View Professions cross-link, no-assistant
+  notice, import form, review quality metrics with seeded teams), the
+  four settings registrations, the settings tab renders, the
+  capability gate, and the nonce-gated save flow (options + clamp +
+  redirect). Runs in both matrices.
 
 ## Also Load
 
