@@ -16,8 +16,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load the shared price/quantity updater trait (guarded for load-order independence).
+if ( ! trait_exists( 'WP_MCP_AI_Woo_Price_Qty_Updater' ) ) {
+	require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/trait-wp-mcp-ai-woo-price-qty-updater.php';
+}
+
 /**
- * Tool for bulk updating WooCommerce products.
+ * Tool for bulk-updating WooCommerce products.
  *
  * Supports updating:
  * - Pricing (regular, sale)
@@ -30,6 +35,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.1.0
  */
 class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_Woo_Price_Qty_Updater;
 
 	/**
 	 * {@inheritdoc}
@@ -411,21 +418,34 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 
 		$changes = array();
 
-		// Update pricing.
+		// Update pricing via the shared price/quantity updater so sale-price
+		// validation and variable-parent handling stay consistent.
+		$price_args = array();
 		if ( isset( $updates['regular_price'] ) ) {
-			$new_price = floatval( $updates['regular_price'] );
-			if ( ! $dry_run ) {
-				$product->set_regular_price( $new_price );
-			}
-			$changes['regular_price'] = $new_price;
+			$price_args['regular_price'] = $updates['regular_price'];
+		}
+		if ( array_key_exists( 'sale_price', $updates ) ) {
+			$price_args['sale_price'] = $updates['sale_price'];
 		}
 
-		if ( isset( $updates['sale_price'] ) ) {
-			$new_price = floatval( $updates['sale_price'] );
-			if ( ! $dry_run ) {
-				$product->set_sale_price( $new_price );
+		if ( ! empty( $price_args ) ) {
+			if ( $dry_run ) {
+				if ( isset( $updates['regular_price'] ) ) {
+					$changes['regular_price'] = floatval( $updates['regular_price'] );
+				}
+				if ( array_key_exists( 'sale_price', $updates ) ) {
+					$changes['sale_price'] = floatval( $updates['sale_price'] );
+				}
+			} else {
+				$price_changes = array();
+				$price_result  = $this->apply_price_fields( $product, $price_args, $price_changes );
+
+				if ( is_wp_error( $price_result ) ) {
+					return $price_result;
+				}
+
+				$changes = array_merge( $changes, $price_changes );
 			}
-			$changes['sale_price'] = $new_price;
 		}
 
 		// Apply price adjustment.
@@ -457,12 +477,20 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 			}
 		}
 
-		// Update stock.
+		// Update stock via the shared updater so stock status stays in sync
+		// and low-stock / no-stock notifications fire.
 		if ( isset( $updates['stock_quantity'] ) ) {
 			if ( ! $dry_run ) {
-				$product->set_stock_quantity( absint( $updates['stock_quantity'] ) );
+				$stock_result = $this->apply_stock_quantity( $product, absint( $updates['stock_quantity'] ), 'set', true );
+
+				if ( is_wp_error( $stock_result ) ) {
+					return $stock_result;
+				}
+
+				$changes['stock_quantity'] = $stock_result['after'];
+			} else {
+				$changes['stock_quantity'] = absint( $updates['stock_quantity'] );
 			}
-			$changes['stock_quantity'] = absint( $updates['stock_quantity'] );
 		}
 
 		if ( isset( $updates['stock_status'] ) ) {
@@ -498,6 +526,8 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 		// Save the product.
 		if ( ! $dry_run ) {
 			$product->save();
+			$this->sync_variable_parent( $product );
+			wc_delete_product_transients( $product_id );
 
 			// Update taxonomy terms.
 			$this->update_product_taxonomies( $product_id, $updates );

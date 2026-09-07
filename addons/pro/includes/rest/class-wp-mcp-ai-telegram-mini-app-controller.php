@@ -5032,7 +5032,7 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 				'setting'    => 'enable_ecommerce_toolkit',
 				'always'     => false,
 				'post_types' => array(),
-				'tool_slugs' => array( 'woo_products', 'woo_orders', 'product_actualization', 'lookup_product_price', 'create_woo_product', 'create_woo_variable_product' ),
+				'tool_slugs' => array( 'woo_products', 'woo_orders', 'update_woo_product_price', 'update_woo_product_qty', 'product_actualization', 'lookup_product_price', 'create_woo_product', 'create_woo_variable_product' ),
 			),
 			'enable_social_media_toolkit'            => array(
 				'label'      => __( 'Social Media Toolkit', 'mcp-ai-wpoos-pro' ),

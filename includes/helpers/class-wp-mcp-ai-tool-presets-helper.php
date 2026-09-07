@@ -465,6 +465,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'create_product_advanced',
 					'create_discount_campaign',
 					'bulk_update_products',
+					'update_woo_product_price',
+					'update_woo_product_qty',
 					'bulk_order_status_update',
 					'abandoned_cart_recovery',
 					'refund_order_advanced',

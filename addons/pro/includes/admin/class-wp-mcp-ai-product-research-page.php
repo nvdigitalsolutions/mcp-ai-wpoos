@@ -280,6 +280,8 @@ class WP_MCP_AI_Product_Research_Page {
 								// Product management.
 								'get_woo_products',
 								'bulk_update_products',
+								'update_woo_product_price',
+								'update_woo_product_qty',
 								'import_products_csv',
 								'export_products_report',
 								// Inventory management.

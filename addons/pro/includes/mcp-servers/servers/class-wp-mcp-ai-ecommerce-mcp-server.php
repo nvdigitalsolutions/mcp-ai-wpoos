@@ -91,6 +91,8 @@ class WP_MCP_AI_Ecommerce_MCP_Server extends WP_MCP_AI_Toolkit_Server_Base {
 			array(
 				'create_product_advanced',
 				'bulk_update_products',
+				'update_woo_product_price',
+				'update_woo_product_qty',
 				'import_products_csv',
 				'export_products_report',
 				'sync_product_inventory',

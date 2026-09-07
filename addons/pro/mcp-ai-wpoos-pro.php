@@ -1308,10 +1308,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 
 		// Add E-commerce Toolkit tools if enabled (Phase 2 - New Pro Toolkits).
 		if ( ! empty( $settings['enable_ecommerce_toolkit'] ) ) {
+			// Load the shared WooCommerce price/quantity updater trait before any
+			// tool that consumes it (load-order independence, mirrors the Shopify trait).
+			if ( ! trait_exists( 'WP_MCP_AI_Woo_Price_Qty_Updater' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/trait-wp-mcp-ai-woo-price-qty-updater.php';
+			}
+
 			$ecommerce_toolkit_tools = array(
 				// Product Management tools.
 				'WP_MCP_AI_Tool_Create_Product_Advanced'  => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-create-product-advanced.php',
 				'WP_MCP_AI_Tool_Bulk_Update_Products'     => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-bulk-update-products.php',
+				'WP_MCP_AI_Tool_Update_Woo_Product_Price' => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-update-woo-product-price.php',
+				'WP_MCP_AI_Tool_Update_Woo_Product_Qty'   => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-update-woo-product-qty.php',
 				'WP_MCP_AI_Tool_Import_Products_CSV'      => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-import-products-csv.php',
 				'WP_MCP_AI_Tool_Export_Products_Report'   => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-export-products-report.php',
 				'WP_MCP_AI_Tool_Sync_Product_Inventory'   => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-sync-product-inventory.php',
@@ -2208,6 +2216,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'woo_orders'                         => 'wordpress-plugins',
 			'woo_customers'                      => 'wordpress-plugins',
 			'woo_coupons'                        => 'wordpress-plugins',
+			'update_woo_product_price'           => 'wordpress-plugins',
+			'update_woo_product_qty'             => 'wordpress-plugins',
 			// JetEngine tools - Require JetEngine plugin.
 			'jetengine'                          => 'wordpress-plugins',
 			'jetengine_mcp'                      => 'wordpress-plugins',
@@ -2690,6 +2700,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_categories' ) ) {
 			$categories['medium_resource']['tools'][] = 'woo_orders';
 			$categories['medium_resource']['tools'][] = 'woo_customers';
 			$categories['medium_resource']['tools'][] = 'woo_coupons';
+			$categories['medium_resource']['tools'][] = 'update_woo_product_price';
+			$categories['medium_resource']['tools'][] = 'update_woo_product_qty';
 			$categories['medium_resource']['tools'][] = 'jetengine';
 			$categories['medium_resource']['tools'][] = 'jetengine_mcp';
 			$categories['medium_resource']['tools'][] = 'jetengine_create_post_type';
