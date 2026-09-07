@@ -389,6 +389,7 @@ rsync -a "addons/docs-hub/" "${TMP_DIR}/docs-hub-stage/nvoos-docs-hub/" \
 --exclude '.git/' \
 --exclude '.DS_Store' \
 --exclude '.gitignore' \
+--exclude '.distignore' \
 --exclude 'tests/' \
 --exclude 'package-lock.json' \
 --exclude 'package.json' \
