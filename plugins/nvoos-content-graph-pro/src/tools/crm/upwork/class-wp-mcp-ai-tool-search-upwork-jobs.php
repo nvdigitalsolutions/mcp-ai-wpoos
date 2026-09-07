@@ -1,0 +1,702 @@
+<?php
+/**
+ * Upwork Job Search Tool (ecosystem port — Wave F2, CRM upwork batch).
+ *
+ * Ported from the base Pro addon's
+ * `addons/pro/includes/tools/crm/upwork/class-wp-mcp-ai-tool-search-upwork-jobs.php`
+ * for the standalone `nvoos-content-graph-pro` addon. Kept
+ * byte-identical. The base Pro addon owns the class in monolith
+ * installs — the addon's autoloader skips its copy when
+ * `WP_MCP_AI_PRO_PATH` is defined (see the plugin entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain
+ * `nvoos-content-graph-pro`; the Upwork client require resolves from
+ * `NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-upwork-client.php'`
+ * (ported in the same slice); the `execute_fallback()` registry reference
+ * gained a wave-proof `class_exists( 'WP_MCP_AI_Tool_Registry' )` guard —
+ * the base plugin owns the registry (root classmap); real standalone
+ * installs degrade to the same fallback-unavailable error.
+ *
+ * @package NvoosContentGraphPro
+ * @subpackage CRM_Toolkit
+ * @since 1.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Searches the Upwork marketplace for job postings matching specified criteria.
+ *
+ * @since 1.0.0
+ */
+class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * Determine whether CRM toolkit is enabled.
+	 *
+	 * @since 2.3.0
+	 * @return bool
+	 */
+	public static function is_available() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $settings['enable_crm_toolkit'] ) && class_exists( 'WP_MCP_AI_Upwork_Client' );
+	}
+
+	/**
+	 * Message explaining why the tool is unavailable.
+	 *
+	 * @since 2.3.0
+	 * @return string
+	 */
+	public static function get_unavailable_reason() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_crm_toolkit'] ) ) {
+			return __( 'The Search Upwork Jobs tool requires the CRM Toolkit to be enabled in plugin settings.', 'nvoos-content-graph-pro' );
+		}
+		return __( 'The Search Upwork Jobs tool requires the Upwork client integration to be configured.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * GraphQL query used to search job postings.
+	 *
+	 * @var string
+	 */
+	const SEARCH_QUERY = '
+		query SearchUpworkJobs($marketPlaceJobFilter: MarketplaceJobPostingsSearchFilter, $paging: Paging) {
+			marketplaceJobPostingsSearch(
+				marketPlaceJobFilter: $marketPlaceJobFilter,
+				paging: $paging
+			) {
+				totalCount
+				edges {
+					node {
+						id
+						title
+						description
+						createdDateTime
+						publishedDateTime
+						contractorTier
+						jobType
+						engagement
+						duration
+						budget { amount currency }
+						hourlyBudget { min max currency }
+						skills { prettyName }
+						client {
+							totalFeedback
+							totalHires
+							totalJobsPosted
+							totalSpent { amount currency }
+							paymentVerificationStatus
+							location { country }
+						}
+						category { name }
+						subcategory { name }
+						totalApplicants
+						tierText
+					}
+					cursor
+				}
+				pageInfo { endCursor hasNextPage }
+			}
+		}
+	';
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_slug() {
+		return 'search_upwork_jobs';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Search Upwork Jobs', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_description() {
+		return __( 'Search Upwork marketplace job postings with filters for keyword, category, skills, budget, job type, experience level, duration, and more. Returns a paginated list of matching jobs. When no Upwork connection is configured, automatically falls back to web search for job discovery.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_parameters_schema() {
+		return array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'connection_id'      => array(
+					'type'        => 'string',
+					'description' => __( 'Remote Sites Upwork connection ID. Optional — when omitted or invalid, falls back to web search.', 'nvoos-content-graph-pro' ),
+				),
+				'query'              => array(
+					'type'        => 'string',
+					'description' => __( 'Keyword search query.', 'nvoos-content-graph-pro' ),
+				),
+				'category2'          => array(
+					'type'        => 'string',
+					'description' => __( 'Job category name (e.g. "Web, Mobile & Software Dev").', 'nvoos-content-graph-pro' ),
+				),
+				'skills'             => array(
+					'type'        => 'array',
+					'items'       => array( 'type' => 'string' ),
+					'description' => __( 'Required skill names.', 'nvoos-content-graph-pro' ),
+				),
+				'budget_min'         => array(
+					'type'        => 'number',
+					'description' => __( 'Minimum budget amount.', 'nvoos-content-graph-pro' ),
+				),
+				'budget_max'         => array(
+					'type'        => 'number',
+					'description' => __( 'Maximum budget amount.', 'nvoos-content-graph-pro' ),
+				),
+				'job_type'           => array(
+					'type'        => 'string',
+					'enum'        => array( 'hourly', 'fixed' ),
+					'description' => __( 'Job type filter.', 'nvoos-content-graph-pro' ),
+				),
+				'experience_level'   => array(
+					'type'        => 'string',
+					'enum'        => array( 'entry', 'intermediate', 'expert' ),
+					'description' => __( 'Required experience level.', 'nvoos-content-graph-pro' ),
+				),
+				'duration_weeks_min' => array(
+					'type'        => 'number',
+					'description' => __( 'Minimum engagement duration in weeks.', 'nvoos-content-graph-pro' ),
+				),
+				'duration_weeks_max' => array(
+					'type'        => 'number',
+					'description' => __( 'Maximum engagement duration in weeks.', 'nvoos-content-graph-pro' ),
+				),
+				'limit'              => array(
+					'type'        => 'integer',
+					'description' => __( 'Number of results to return (1-50, default 10).', 'nvoos-content-graph-pro' ),
+					'default'     => 10,
+					'minimum'     => 1,
+					'maximum'     => 50,
+				),
+				'cursor'             => array(
+					'type'        => 'string',
+					'description' => __( 'Pagination cursor from a previous search response.', 'nvoos-content-graph-pro' ),
+				),
+			),
+			'required'             => array(),
+			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function requires_base_pro() {
+		return true;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'pro',
+			'read-only',
+			'requires-capability',
+			'external-api',
+			'rate-limited',
+		);
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context including user_id.
+	 * @return array|WP_Error Tool results or WP_Error on failure.
+	 */
+	public function execute( array $arguments = array(), array $context = array() ) {
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+
+		if ( ! $user_id || ! user_can( $user_id, $this->get_required_capability() ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_forbidden',
+				__( 'You do not have permission to search Upwork jobs.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Resolve defaults from CRM toolkit settings when arguments are omitted.
+		$arguments = $this->apply_defaults( $arguments );
+
+		// Determine whether the Upwork API is available.
+		$use_api = $this->has_valid_connection( $arguments );
+
+		// Fall back to web search when the Upwork connection is not configured.
+		if ( ! $use_api ) {
+			return $this->execute_fallback( $arguments, $context );
+		}
+
+		$connection_id = sanitize_text_field( $arguments['connection_id'] );
+
+		// Build GraphQL variables.
+		$filter = array();
+
+		if ( ! empty( $arguments['query'] ) ) {
+			$filter['searchExpression'] = sanitize_text_field( $arguments['query'] );
+		}
+
+		if ( ! empty( $arguments['category2'] ) ) {
+			$filter['category2'] = sanitize_text_field( $arguments['category2'] );
+		}
+
+		if ( ! empty( $arguments['skills'] ) && is_array( $arguments['skills'] ) ) {
+			$filter['skills'] = array_map( 'sanitize_text_field', $arguments['skills'] );
+		}
+
+		if ( isset( $arguments['budget_min'] ) || isset( $arguments['budget_max'] ) ) {
+			$budget = array();
+			if ( isset( $arguments['budget_min'] ) ) {
+				$budget['min'] = (float) $arguments['budget_min'];
+			}
+			if ( isset( $arguments['budget_max'] ) ) {
+				$budget['max'] = (float) $arguments['budget_max'];
+			}
+			$filter['budget'] = $budget;
+		}
+
+		if ( ! empty( $arguments['job_type'] ) ) {
+			// Use the jobType filter for hourly/fixed — distinct from contractorTier (experience level).
+			$filter['jobType'] = strtoupper( sanitize_text_field( $arguments['job_type'] ) );
+		}
+
+		$exp_map = array(
+			'entry'        => 1,
+			'intermediate' => 2,
+			'expert'       => 3,
+		);
+		if ( ! empty( $arguments['experience_level'] ) && isset( $exp_map[ $arguments['experience_level'] ] ) ) {
+			// contractorTier maps to the experience level tier (1=Entry, 2=Intermediate, 3=Expert).
+			$filter['contractorTier'] = $exp_map[ $arguments['experience_level'] ];
+		}
+
+		if ( isset( $arguments['duration_weeks_min'] ) || isset( $arguments['duration_weeks_max'] ) ) {
+			$duration = array();
+			if ( isset( $arguments['duration_weeks_min'] ) ) {
+				$duration['min'] = (int) $arguments['duration_weeks_min'];
+			}
+			if ( isset( $arguments['duration_weeks_max'] ) ) {
+				$duration['max'] = (int) $arguments['duration_weeks_max'];
+			}
+			$filter['durationV3'] = $duration;
+		}
+
+		$limit  = isset( $arguments['limit'] ) ? min( 50, max( 1, absint( $arguments['limit'] ) ) ) : 10;
+		$paging = array( 'first' => $limit );
+		if ( ! empty( $arguments['cursor'] ) ) {
+			$paging['after'] = sanitize_text_field( $arguments['cursor'] );
+		}
+
+		$variables = array(
+			'paging' => $paging,
+		);
+
+		if ( ! empty( $filter ) ) {
+			$variables['marketPlaceJobFilter'] = $filter;
+		}
+
+		// Execute the search.
+		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-upwork-client.php';
+		$client = new WP_MCP_AI_Upwork_Client( $connection_id );
+		$result = $client->graphql( self::SEARCH_QUERY, $variables );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		$search_data = isset( $result['data']['marketplaceJobPostingsSearch'] )
+			? $result['data']['marketplaceJobPostingsSearch']
+			: array();
+
+		$jobs      = array();
+		$page_info = isset( $search_data['pageInfo'] ) ? $search_data['pageInfo'] : array();
+		$total     = isset( $search_data['totalCount'] ) ? (int) $search_data['totalCount'] : 0;
+		$edges     = isset( $search_data['edges'] ) ? $search_data['edges'] : array();
+
+		foreach ( $edges as $edge ) {
+			$node = isset( $edge['node'] ) ? $edge['node'] : array();
+			if ( empty( $node ) ) {
+				continue;
+			}
+
+			$jobs[] = array(
+				'id'            => isset( $node['id'] ) ? $node['id'] : '',
+				'title'         => isset( $node['title'] ) ? $node['title'] : '',
+				'description'   => isset( $node['description'] ) ? wp_trim_words( $node['description'], 60 ) : '',
+				'created'       => isset( $node['createdDateTime'] ) ? $node['createdDateTime'] : '',
+				'published'     => isset( $node['publishedDateTime'] ) ? $node['publishedDateTime'] : '',
+				'job_type'      => isset( $node['jobType'] ) ? $node['jobType'] : '',
+				'engagement'    => isset( $node['engagement'] ) ? $node['engagement'] : '',
+				'duration'      => isset( $node['duration'] ) ? $node['duration'] : '',
+				'budget'        => isset( $node['budget'] ) ? $node['budget'] : null,
+				'hourly_budget' => isset( $node['hourlyBudget'] ) ? $node['hourlyBudget'] : null,
+				'skills'        => isset( $node['skills'] ) ? wp_list_pluck( $node['skills'], 'prettyName' ) : array(),
+				'category'      => isset( $node['category']['name'] ) ? $node['category']['name'] : '',
+				'subcategory'   => isset( $node['subcategory']['name'] ) ? $node['subcategory']['name'] : '',
+				'applicants'    => isset( $node['totalApplicants'] ) ? (int) $node['totalApplicants'] : 0,
+				'tier'          => isset( $node['tierText'] ) ? $node['tierText'] : '',
+				'client'        => array(
+					'feedback'         => isset( $node['client']['totalFeedback'] ) ? (float) $node['client']['totalFeedback'] : null,
+					'total_hires'      => isset( $node['client']['totalHires'] ) ? (int) $node['client']['totalHires'] : null,
+					'jobs_posted'      => isset( $node['client']['totalJobsPosted'] ) ? (int) $node['client']['totalJobsPosted'] : null,
+					'total_spent'      => isset( $node['client']['totalSpent'] ) ? $node['client']['totalSpent'] : null,
+					'payment_verified' => isset( $node['client']['paymentVerificationStatus'] ) ? $node['client']['paymentVerificationStatus'] : null,
+					'country'          => isset( $node['client']['location']['country'] ) ? $node['client']['location']['country'] : '',
+				),
+				'cursor'        => isset( $edge['cursor'] ) ? $edge['cursor'] : '',
+			);
+		}
+
+		$jobs = $this->apply_result_format( $jobs );
+
+		return array(
+			'success'       => true,
+			'mode'          => 'api',
+			'total_count'   => $total,
+			'count'         => count( $jobs ),
+			'jobs'          => $jobs,
+			'page_info'     => $page_info,
+			'has_next_page' => isset( $page_info['hasNextPage'] ) ? (bool) $page_info['hasNextPage'] : false,
+			'end_cursor'    => isset( $page_info['endCursor'] ) ? $page_info['endCursor'] : null,
+		);
+	}
+
+	/**
+	 * Check whether the arguments include a valid, enabled Upwork connection.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return bool True when the Upwork API can be used.
+	 */
+	private function has_valid_connection( array $arguments ) {
+		if ( empty( $arguments['connection_id'] ) ) {
+			return false;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			return false;
+		}
+
+		$connection_id = sanitize_text_field( $arguments['connection_id'] );
+		$connection    = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection ) {
+			return false;
+		}
+		if ( 'upwork' !== ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+			return false;
+		}
+		if ( empty( $connection['enabled'] ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Execute a web-search-based fallback when the Upwork API is unavailable.
+	 *
+	 * Builds one or more targeted search queries from the provided filters,
+	 * runs them through the web_search tool, and returns the results in a
+	 * format consistent with the primary API response.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error Fallback results or error.
+	 */
+	private function execute_fallback( array $arguments, array $context ) {
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+			// Deviation: wave-proof guard — the base plugin owns the tool
+			// registry (root classmap); real standalone installs degrade to
+			// the same fallback-unavailable error.
+			return new WP_Error(
+				'wp_mcp_ai_fallback_unavailable',
+				__( 'Upwork connection is not configured and the web search tool is not available. Please configure an Upwork connection in Remote Sites or enable the web_search tool.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		$registry        = WP_MCP_AI_Tool_Registry::get_instance();
+		$web_search_tool = $registry->get_tool( 'web_search' );
+
+		if ( ! $web_search_tool ) {
+			return new WP_Error(
+				'wp_mcp_ai_fallback_unavailable',
+				__( 'Upwork connection is not configured and the web search tool is not available. Please configure an Upwork connection in Remote Sites or enable the web_search tool.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Build a descriptive search query from the provided filters.
+		$search_query = $this->build_fallback_query( $arguments );
+
+		$limit         = isset( $arguments['limit'] ) ? min( 50, max( 1, absint( $arguments['limit'] ) ) ) : 10;
+		$max_results   = min( $limit, 10 ); // Web search typically caps at ~10 results.
+		$search_result = $web_search_tool->execute(
+			array(
+				'query'       => $search_query,
+				'max_results' => $max_results,
+			),
+			$context
+		);
+
+		if ( is_wp_error( $search_result ) ) {
+			return $search_result;
+		}
+
+		// Normalise web search results into the standard job listing format.
+		$jobs    = array();
+		$results = isset( $search_result['results'] ) && is_array( $search_result['results'] )
+			? $search_result['results']
+			: array();
+
+		foreach ( $results as $idx => $result ) {
+			$title   = isset( $result['title'] ) ? $result['title'] : '';
+			$snippet = isset( $result['snippet'] ) ? $result['snippet'] : '';
+			$url     = isset( $result['url'] ) ? $result['url'] : '';
+
+			$jobs[] = array(
+				'id'            => 'web_' . ( $idx + 1 ),
+				'title'         => $title,
+				'description'   => $snippet,
+				'url'           => $url,
+				'created'       => '',
+				'published'     => '',
+				'job_type'      => '',
+				'engagement'    => '',
+				'duration'      => '',
+				'budget'        => null,
+				'hourly_budget' => null,
+				'skills'        => array(),
+				'category'      => '',
+				'subcategory'   => '',
+				'applicants'    => 0,
+				'tier'          => '',
+				'client'        => array(
+					'feedback'         => null,
+					'total_hires'      => null,
+					'jobs_posted'      => null,
+					'total_spent'      => null,
+					'payment_verified' => null,
+					'country'          => '',
+				),
+				'cursor'        => '',
+			);
+		}
+
+		return array(
+			'success'       => true,
+			'mode'          => 'fallback',
+			'source'        => 'web_search',
+			'total_count'   => count( $jobs ),
+			'count'         => count( $jobs ),
+			'jobs'          => $jobs,
+			'page_info'     => array(),
+			'has_next_page' => false,
+			'end_cursor'    => null,
+			'notice'        => __( 'Results obtained via web search because no Upwork connection is configured. Data is less structured than the Upwork API. Configure an Upwork connection in Remote Sites for full access to job details, client history, and pagination.', 'nvoos-content-graph-pro' ),
+		);
+	}
+
+	/**
+	 * Build a natural-language search query from the tool arguments.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return string Search query string.
+	 */
+	private function build_fallback_query( array $arguments ) {
+		$parts = array( 'site:upwork.com/freelance-jobs' );
+
+		if ( ! empty( $arguments['query'] ) ) {
+			$parts[] = sanitize_text_field( $arguments['query'] );
+		}
+
+		if ( ! empty( $arguments['category2'] ) ) {
+			$parts[] = sanitize_text_field( $arguments['category2'] );
+		}
+
+		if ( ! empty( $arguments['skills'] ) && is_array( $arguments['skills'] ) ) {
+			$parts[] = implode( ' ', array_map( 'sanitize_text_field', array_slice( $arguments['skills'], 0, 5 ) ) );
+		}
+
+		if ( ! empty( $arguments['job_type'] ) ) {
+			$parts[] = sanitize_text_field( $arguments['job_type'] );
+		}
+
+		if ( ! empty( $arguments['experience_level'] ) ) {
+			$parts[] = sanitize_text_field( $arguments['experience_level'] ) . ' level';
+		}
+
+		if ( isset( $arguments['budget_min'] ) || isset( $arguments['budget_max'] ) ) {
+			$budget_str = '';
+			if ( isset( $arguments['budget_min'] ) ) {
+				$budget_str .= '$' . number_format( (float) $arguments['budget_min'], 0 );
+			}
+			if ( isset( $arguments['budget_min'] ) && isset( $arguments['budget_max'] ) ) {
+				$budget_str .= '-';
+			}
+			if ( isset( $arguments['budget_max'] ) ) {
+				$budget_str .= '$' . number_format( (float) $arguments['budget_max'], 0 );
+			}
+			if ( $budget_str ) {
+				$parts[] = $budget_str;
+			}
+		}
+
+		// If no meaningful filters were provided, add a sensible default.
+		if ( count( $parts ) <= 1 ) {
+			$parts[] = 'latest freelance jobs';
+		}
+
+		return implode( ' ', $parts );
+	}
+
+	/**
+	 * Fill missing search arguments from CRM toolkit settings.
+	 *
+	 * @since 2.12.0
+	 * @param array $arguments Tool arguments.
+	 * @return array Arguments with defaults applied.
+	 */
+	private function apply_defaults( array $arguments ) {
+		if ( ! class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			return $arguments;
+		}
+
+		$crm_settings = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+		$upwork_cfg   = isset( $crm_settings['external_sourcing']['upwork'] )
+			? $crm_settings['external_sourcing']['upwork']
+			: array();
+
+		// Resolve the connection_id from defaults if not provided.
+		if ( empty( $arguments['connection_id'] ) && ! empty( $upwork_cfg['default_connection_id'] ) ) {
+			$arguments['connection_id'] = $upwork_cfg['default_connection_id'];
+		}
+
+		// Search keywords.
+		if ( empty( $arguments['query'] ) && ! empty( $upwork_cfg['default_search_keywords'] ) ) {
+			$arguments['query'] = $upwork_cfg['default_search_keywords'];
+		}
+
+		// Job type (hourly / fixed).
+		if ( empty( $arguments['job_type'] ) && ! empty( $upwork_cfg['default_job_type'] ) ) {
+			$arguments['job_type'] = $upwork_cfg['default_job_type'];
+		}
+
+		// Experience level.
+		if ( empty( $arguments['experience_level'] ) && ! empty( $upwork_cfg['default_experience_level'] ) ) {
+			$arguments['experience_level'] = $upwork_cfg['default_experience_level'];
+		}
+
+		// Categories.
+		if ( empty( $arguments['category2'] ) && ! empty( $upwork_cfg['default_categories'] ) ) {
+			$arguments['category2'] = $upwork_cfg['default_categories'];
+		}
+
+		// Budget range from shared defaults.
+		if ( empty( $arguments['budget_min'] ) && ! empty( $crm_settings['external_sourcing']['default_budget_min'] ) ) {
+			$arguments['budget_min'] = (float) $crm_settings['external_sourcing']['default_budget_min'];
+		}
+		if ( empty( $arguments['budget_max'] ) && ! empty( $crm_settings['external_sourcing']['default_budget_max'] ) ) {
+			$arguments['budget_max'] = (float) $crm_settings['external_sourcing']['default_budget_max'];
+		}
+
+		// Max results per search.
+		if ( empty( $arguments['limit'] ) && ! empty( $upwork_cfg['max_results_per_search'] ) ) {
+			$arguments['limit'] = (int) $upwork_cfg['max_results_per_search'];
+		}
+
+		return $arguments;
+	}
+
+	/**
+	 * Apply result format settings to search results.
+	 *
+	 * Reads the result_format configuration from CRM toolkit settings
+	 * and filters the jobs array accordingly — trimming descriptions,
+	 * conditionally removing fields, and applying compact mode.
+	 *
+	 * @since 2.12.0
+	 * @param array $jobs Array of job result arrays.
+	 * @return array Filtered jobs.
+	 */
+	private function apply_result_format( array $jobs ) {
+		if ( ! class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			return $jobs;
+		}
+
+		$crm_settings = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+		$fmt          = isset( $crm_settings['external_sourcing']['result_format'] )
+			? $crm_settings['external_sourcing']['result_format']
+			: array();
+
+		if ( empty( $fmt ) ) {
+			return $jobs;
+		}
+
+		// Resolve description trim length.  0 = full, >0 = trim to N words.
+		$trim_length = isset( $fmt['description_length'] ) ? (int) $fmt['description_length'] : 200;
+
+		foreach ( $jobs as &$job ) {
+			// Trim description.
+			if ( $trim_length > 0 && ! empty( $job['description'] ) ) {
+				$job['description'] = wp_trim_words( $job['description'], $trim_length );
+			}
+
+			// Conditionally remove fields.
+			if ( empty( $fmt['include_email'] ) ) {
+				unset( $job['email'] );
+			}
+			if ( empty( $fmt['include_client_info'] ) ) {
+				unset( $job['client'] );
+			}
+			if ( empty( $fmt['include_budget'] ) ) {
+				unset( $job['budget'], $job['hourly_budget'] );
+			}
+			if ( empty( $fmt['include_skills'] ) ) {
+				unset( $job['skills'] );
+			}
+			if ( empty( $fmt['include_applicants'] ) ) {
+				unset( $job['applicants'] );
+			}
+
+			// Compact mode: strip null, empty-string, and empty-array values.
+			if ( ! empty( $fmt['compact_mode'] ) ) {
+				$job = array_filter(
+					$job,
+					function ( $v ) {
+						if ( is_array( $v ) ) {
+							return ! empty( $v );
+						}
+						return null !== $v && '' !== $v;
+					}
+				);
+			}
+		}
+		unset( $job );
+
+		return $jobs;
+	}
+}
