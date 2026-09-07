@@ -27,7 +27,7 @@ Root-level classes form the addon's backbone:
 - **Reads from:** `nvoos_content_graph_settings` option (settings), core `NvoosContentGraph\ToolRegistry`, AI addon services
 - **Writes to:** Admin UI sections, REST responses
 - **Upstream callers:** `nvoos-content-graph-ai-platform.php` (bootstrap), core `NvoosContentGraph\Plugin`
-- **Downstream collaborators:** All subdirectories — `Admin/`, future `Agents/`, `Skills/`, `A2A/`, `Federation/`, etc.; the ported waves `Workflows/`, `Queues/`, `Approvals/`, `Rest/`, `Tenant/`, `Integrations/`, `Google/`, `ContentAssistant/`, `SiteBuilder/`, `ConversationImport/`, `Admin/Dashboards/` are wired by `Plugin::register*()` methods.
+- **Downstream collaborators:** All subdirectories — `Admin/`, future `Agents/`, `Skills/`, `A2A/`, `Federation/`, etc.; the ported waves `Workflows/`, `Queues/`, `Approvals/`, `Rest/`, `Tenant/`, `Integrations/`, `Google/`, `ContentAssistant/`, `SiteBuilder/`, `ConversationImport/`, `Admin/Dashboards/`, `Admin/Managers/` are wired by `Plugin::register*()` methods.
 - **Events listened to:** `nvoos_content_graph/admin/register_sections`, `nvoos_content_graph/register_tools`, `rest_api_init`
 
 ## Conventions

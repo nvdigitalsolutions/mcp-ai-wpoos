@@ -73,6 +73,27 @@ final class Plugin {
 		// 4. Operator dashboards (Wave E-UI-1) — standalone-only; the base
 		//    admin owns the same pages under the base settings menu monolith.
 		$this->registerDashboards();
+
+		// 5. Operator managers (Wave E-UI-2) — standalone-only; the base
+		//    admin owns the same pages under the base settings menu monolith.
+		$this->registerManagers();
+	}
+
+	/**
+	 * Register the E-UI-2 operator managers (standalone-only).
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return void
+	 */
+	private function registerManagers(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Managers\ApprovalsManager' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Managers\ApprovalsManager() )->register();
+		}
 	}
 
 	/**
