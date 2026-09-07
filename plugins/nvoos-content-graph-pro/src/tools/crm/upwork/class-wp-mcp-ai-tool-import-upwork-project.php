@@ -1,0 +1,378 @@
+<?php
+/**
+ * Tool for importing an Upwork job/project into the CRM as a Deal or Project. (ecosystem port — Wave F2, CRM CC-page extras).
+ *
+ * Ported from the base Pro addon's `addons/pro/includes/tools/crm/upwork/class-wp-mcp-ai-tool-import-upwork-project.php` for the standalone
+ * `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro
+ * addon owns the class in monolith installs — the addon's autoloader
+ * skips its copy when `WP_MCP_AI_PRO_PATH` is defined (see the plugin
+ * entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain
+ * `nvoos-content-graph-pro`; tool-file requires resolve from
+ * `NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/'`.
+ *
+ * @package NvoosContentGraphPro
+ * @since 2.10.0
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Imports an Upwork job as a CRM Deal or Project.
+ *
+ * @since 2.10.0
+ */
+class WP_MCP_AI_Tool_Import_Upwork_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * Determine whether CRM toolkit and Upwork client are available.
+	 *
+	 * @since 2.10.0
+	 * @return bool
+	 */
+	public static function is_available() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $settings['enable_crm_toolkit'] ) && class_exists( 'WP_MCP_AI_Upwork_Client' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public static function get_unavailable_reason() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_crm_toolkit'] ) ) {
+			return __( 'The Import Upwork Project tool requires the CRM Toolkit to be enabled.', 'nvoos-content-graph-pro' );
+		}
+		return __( 'The Import Upwork Project tool requires the Upwork client integration.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_slug() {
+		return 'import_upwork_project';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Import Upwork Project', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_description() {
+		return __( 'Import an Upwork job posting into the CRM as a Deal, Project, or Task for pipeline tracking.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_parameters_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'job_id'          => array(
+					'type'        => 'string',
+					'description' => __( 'Upwork job posting ID to import.', 'nvoos-content-graph-pro' ),
+				),
+				'job_title'       => array(
+					'type'        => 'string',
+					'description' => __( 'Job title override (used when job_id is unavailable).', 'nvoos-content-graph-pro' ),
+				),
+				'job_description' => array(
+					'type'        => 'string',
+					'description' => __( 'Job description (used when job_id is unavailable).', 'nvoos-content-graph-pro' ),
+				),
+				'estimated_value' => array(
+					'type'        => 'number',
+					'description' => __( 'Estimated project value in your default currency.', 'nvoos-content-graph-pro' ),
+				),
+				'save_as'         => array(
+					'type'        => 'string',
+					'description' => __( 'CRM entity type to create.', 'nvoos-content-graph-pro' ),
+					'enum'        => array( 'deal', 'project', 'task' ),
+					'default'     => 'deal',
+				),
+				'connection_id'   => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Remote Sites Upwork connection ID.', 'nvoos-content-graph-pro' ),
+				),
+			),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function requires_base_pro() {
+		return true;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'pro',
+			'write',
+			'state-changing',
+			'requires-capability',
+			'external-api',
+			'rate-limited',
+		);
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context including user_id.
+	 * @return array|WP_Error Tool results or WP_Error on failure.
+	 */
+	public function execute( array $arguments = array(), array $context = array() ) {
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+
+		if ( ! $user_id || ! user_can( $user_id, $this->get_required_capability() ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_forbidden',
+				__( 'You do not have permission to import Upwork projects.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		$job_title       = ! empty( $arguments['job_title'] ) ? sanitize_text_field( $arguments['job_title'] ) : '';
+		$job_description = ! empty( $arguments['job_description'] ) ? sanitize_textarea_field( $arguments['job_description'] ) : '';
+		$estimated_value = isset( $arguments['estimated_value'] ) ? (float) $arguments['estimated_value'] : 0;
+		$save_as         = ! empty( $arguments['save_as'] ) ? sanitize_text_field( $arguments['save_as'] ) : 'deal';
+		$job_id          = ! empty( $arguments['job_id'] ) ? sanitize_text_field( $arguments['job_id'] ) : '';
+
+		// Attempt API fetch when a connection is available and job_id is provided.
+		$api_fetched = false;
+		$api_data    = array();
+		if ( ! empty( $arguments['job_id'] ) ) {
+			$api_data = $this->fetch_job_details( $arguments );
+			if ( ! is_wp_error( $api_data ) && ! empty( $api_data ) ) {
+				$job_title       = ! empty( $api_data['title'] ) ? $api_data['title'] : $job_title;
+				$job_description = ! empty( $api_data['description'] ) ? $api_data['description'] : $job_description;
+				$api_fetched     = true;
+				// Resolve budget from API if not explicitly provided.
+				if ( empty( $estimated_value ) ) {
+					if ( ! empty( $api_data['budget']['amount'] ) ) {
+						$estimated_value = (float) $api_data['budget']['amount'];
+					} elseif ( ! empty( $api_data['hourlyBudget']['max'] ) ) {
+						$estimated_value = (float) $api_data['hourlyBudget']['max'];
+					}
+				}
+			}
+		}
+
+		if ( empty( $job_title ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_title',
+				__( 'Please provide a job_id or job_title for the project.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Determine the default pipeline stage.
+		$default_stage = 'qualification';
+		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			$settings      = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+			$pipeline      = isset( $settings['pipeline']['stages'] ) ? $settings['pipeline']['stages'] : array();
+			$stage_keys    = array_keys( $pipeline );
+			$default_stage = ! empty( $stage_keys[0] ) ? $stage_keys[0] : 'qualification';
+		}
+
+		// Build description with all available metadata.
+		$description  = '';
+		$description .= $job_description . "\n\n";
+
+		// Include skills from API response.
+		$skills_list = array();
+		if ( ! empty( $api_data['skills'] ) && is_array( $api_data['skills'] ) ) {
+			foreach ( $api_data['skills'] as $skill ) {
+				if ( ! empty( $skill['prettyName'] ) ) {
+					$skills_list[] = $skill['prettyName'];
+				}
+			}
+		}
+		if ( ! empty( $skills_list ) ) {
+			$description .= sprintf(
+				/* translators: %s: comma-separated skills */
+				__( 'Skills: %s', 'nvoos-content-graph-pro' ) . "\n",
+				implode( ', ', $skills_list )
+			);
+		}
+
+		// Include client info from API response.
+		$client_name = '';
+		if ( ! empty( $api_data['client']['location']['country'] ) ) {
+			$client_name  = $api_data['client']['location']['country'];
+			$spent        = ! empty( $api_data['client']['totalSpent']['amount'] )
+				? '$' . number_format( (float) $api_data['client']['totalSpent']['amount'], 0 )
+				: '';
+			$hires        = isset( $api_data['client']['totalHires'] ) ? (int) $api_data['client']['totalHires'] : 0;
+			$description .= sprintf(
+				/* translators: 1: country, 2: spend, 3: hires */
+				__( 'Client: %1$s | Spent: %2$s | Hires: %3$d', 'nvoos-content-graph-pro' ) . "\n",
+				$client_name,
+				$spent,
+				$hires
+			);
+		}
+
+		// Include Upwork job URL.
+		$upwork_url = '';
+		if ( ! empty( $job_id ) ) {
+			$upwork_url   = 'https://www.upwork.com/jobs/' . $job_id;
+			$description .= sprintf(
+				/* translators: %s: Upwork job URL */
+				__( 'Upwork URL: %s', 'nvoos-content-graph-pro' ) . "\n",
+				$upwork_url
+			);
+		}
+
+		$description .= sprintf(
+			/* translators: %s: source platform */
+			__( 'Source: Upwork (imported %s)', 'nvoos-content-graph-pro' ) . "\n",
+			gmdate( 'Y-m-d H:i' )
+		);
+
+		// Create the CRM entity.
+		if ( 'deal' === $save_as && class_exists( 'WP_MCP_AI_Deal_CPT' ) ) {
+			$entity_data = array(
+				'name'   => $job_title,
+				'value'  => $estimated_value,
+				'stage'  => $default_stage,
+				'source' => 'upwork',
+				'notes'  => $description,
+			);
+
+			$entity_data = array_filter(
+				$entity_data,
+				function ( $v ) {
+					return ! empty( $v ) || is_numeric( $v );
+				}
+			);
+
+			$post_id = WP_MCP_AI_Deal_CPT::create( $entity_data );
+		} elseif ( 'project' === $save_as && class_exists( 'WP_MCP_AI_Project_CPT' ) ) {
+			$entity_data = array(
+				'name'        => $job_title,
+				'description' => $description,
+				'budget'      => $estimated_value,
+				'source'      => 'upwork',
+			);
+
+			$entity_data = array_filter(
+				$entity_data,
+				function ( $v ) {
+					return ! empty( $v ) || is_numeric( $v );
+				}
+			);
+
+			$post_id = WP_MCP_AI_Project_CPT::create( $entity_data );
+		} else {
+			// Generic post fallback.
+			$post_data = array(
+				'post_type'    => 'post',
+				'post_title'   => $job_title,
+				'post_content' => $description,
+				'post_status'  => 'publish',
+				'meta_input'   => array(
+					'_wp_mcp_ai_deal_stage'  => $default_stage,
+					'_wp_mcp_ai_deal_value'  => $estimated_value,
+					'_wp_mcp_ai_deal_source' => 'upwork',
+				),
+			);
+			$post_id   = wp_insert_post( $post_data, true );
+		}
+
+		if ( is_wp_error( $post_id ) ) {
+			return $post_id;
+		}
+
+		// Save Upwork URL as post meta on the created entity.
+		if ( ! empty( $upwork_url ) ) {
+			update_post_meta( $post_id, '_external_source_url', esc_url_raw( $upwork_url ) );
+			update_post_meta( $post_id, '_external_source_id', sanitize_text_field( $job_id ) );
+			update_post_meta( $post_id, '_external_source_platform', 'upwork' );
+		}
+
+		return array(
+			'success'     => true,
+			'save_as'     => $save_as,
+			'entity_id'   => $post_id,
+			'stage'       => $default_stage,
+			'api_fetched' => $api_fetched,
+			'message'     => $api_fetched
+				? sprintf(
+					/* translators: 1: entity type, 2: job title */
+					__( 'Upwork project imported via API as %1$s: "%2$s".', 'nvoos-content-graph-pro' ),
+					$save_as,
+					$job_title
+				)
+				: sprintf(
+					/* translators: 1: entity type, 2: job title */
+					__( 'Upwork project saved as %1$s: "%2$s". Connect an Upwork account for automatic data import.', 'nvoos-content-graph-pro' ),
+					$save_as,
+					$job_title
+				),
+		);
+	}
+
+	/**
+	 * Fetch job details from the Upwork API.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return array|WP_Error Job data or WP_Error.
+	 */
+	protected function fetch_job_details( $arguments ) {
+		$connection_id = ! empty( $arguments['connection_id'] )
+			? sanitize_text_field( $arguments['connection_id'] )
+			: '';
+
+		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-upwork-client.php';
+		$client = new WP_MCP_AI_Upwork_Client( $connection_id );
+
+		$job_id = sanitize_text_field( $arguments['job_id'] );
+
+		$query = '
+			query GetJobDetails($id: ID!) {
+				marketplaceJobPosting(id: $id) {
+					id
+					title
+					description
+					createdDateTime
+					jobType
+					engagement
+					duration
+					budget { amount currency }
+					hourlyBudget { min max currency }
+					skills { prettyName }
+					client {
+						totalFeedback
+						totalHires
+						location { country }
+					}
+					category { name }
+				}
+			}
+		';
+
+		return $client->graphql( $query, array( 'id' => $job_id ) );
+	}
+}

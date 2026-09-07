@@ -27,7 +27,11 @@
  *    carrying the ported tool subset (inert standalone — the base plugin
  *    consumes it monolith) plus `wp_mcp_ai_pro_register_crm_ecosystem_tools()`
  *    registering the ported tools into the ecosystem graph ToolRegistry via
- *    `WP_MCP_AI_Pro_Tool_Adapter` (same wiring as the vault).
+ *    `WP_MCP_AI_Pro_Tool_Adapter` (same wiring as the vault). The eight
+ *    CC-page extras (Gmail import, Upwork import/list/sync, LinkedIn
+ *    import/save/score/search) exist in the base tree but are NOT part of
+ *    the monolith's `$crm_tools` map — the filter/ecosystem additions here
+ *    are the standalone registrations for those files (documented).
  *
  * @package NvoosContentGraphPro
  * @since   1.0.0
@@ -259,6 +263,14 @@ function wp_mcp_ai_pro_register_crm_tools( $tools ) {
 		'WP_MCP_AI_Tool_Get_Contact_Interactions'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-get-contact-interactions.php',
 		'WP_MCP_AI_Tool_Recalculate_Engagement_Scores'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-recalculate-engagement-scores.php',
 		'WP_MCP_AI_Tool_Scan_Duplicate_Contacts'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-scan-duplicate-contacts.php',
+		'WP_MCP_AI_Tool_Import_Gmail_To_CRM'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/inbound/class-wp-mcp-ai-tool-import-gmail-to-crm.php',
+		'WP_MCP_AI_Tool_Import_Upwork_Project'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/upwork/class-wp-mcp-ai-tool-import-upwork-project.php',
+		'WP_MCP_AI_Tool_List_Upwork_Contracts'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/upwork/class-wp-mcp-ai-tool-list-upwork-contracts.php',
+		'WP_MCP_AI_Tool_Sync_Upwork_Tasks'               => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/upwork/class-wp-mcp-ai-tool-sync-upwork-tasks.php',
+		'WP_MCP_AI_Tool_Import_Linkedin_Profile'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/linkedin/class-wp-mcp-ai-tool-import-linkedin-profile.php',
+		'WP_MCP_AI_Tool_Save_Linkedin_Job'               => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/linkedin/class-wp-mcp-ai-tool-save-linkedin-job.php',
+		'WP_MCP_AI_Tool_Score_Linkedin_Job'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/linkedin/class-wp-mcp-ai-tool-score-linkedin-job.php',
+		'WP_MCP_AI_Tool_Search_Linkedin_Jobs'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/linkedin/class-wp-mcp-ai-tool-search-linkedin-jobs.php',
 		'WP_MCP_AI_Tool_Get_Companies'                   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-get-companies.php',
 		'WP_MCP_AI_Tool_Research_Company'                => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-research-company.php',
 		'WP_MCP_AI_Tool_Archive_Stale_Contacts'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-archive-stale-contacts.php',
@@ -370,6 +382,14 @@ function wp_mcp_ai_pro_register_crm_ecosystem_tools() {
 			'WP_MCP_AI_Tool_Get_Contact_Interactions',
 			'WP_MCP_AI_Tool_Recalculate_Engagement_Scores',
 			'WP_MCP_AI_Tool_Scan_Duplicate_Contacts',
+			'WP_MCP_AI_Tool_Import_Gmail_To_CRM',
+			'WP_MCP_AI_Tool_Import_Upwork_Project',
+			'WP_MCP_AI_Tool_List_Upwork_Contracts',
+			'WP_MCP_AI_Tool_Sync_Upwork_Tasks',
+			'WP_MCP_AI_Tool_Import_Linkedin_Profile',
+			'WP_MCP_AI_Tool_Save_Linkedin_Job',
+			'WP_MCP_AI_Tool_Score_Linkedin_Job',
+			'WP_MCP_AI_Tool_Search_Linkedin_Jobs',
 			'WP_MCP_AI_Tool_Get_Companies',
 			'WP_MCP_AI_Tool_Research_Company',
 			'WP_MCP_AI_Tool_Archive_Stale_Contacts',
