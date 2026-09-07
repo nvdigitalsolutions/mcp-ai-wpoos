@@ -39,6 +39,19 @@ the widget showcase grid, the five-tool status table, the Full
 Version note, and the save redirects. The settings store resolves per
 mode (base `WP_MCP_AI_Admin_Settings::OPTION_NAME` monolith / the
 byte-identical `wp_mcp_ai_settings` option key standalone).
+Sub-cluster 4 (`JetEngineIntegration` + `PluginsIntegration`, final)
+is the aligned port of `WP_MCP_AI_Admin_JetEngine_Integration` and
+`WP_MCP_AI_Admin_Plugins_Integration`: byte-identical page slugs
+(`wp-mcp-ai-jetengine`, `wp-mcp-ai-plugins`), the
+`admin_post_wp_mcp_ai_save_jetengine_settings|_plugins_settings`
+handlers with their nonce actions (incl. the byte-identical
+`wp_mcp_ai_plugins_integration_redirect_terminate` filter), the
+active/inactive banners, the CCT/tools + MCP section (availability
+banner, endpoint, integration/context/cache-TTL fields, MCP tool
+table), the four-section plugins form (JetEngine, WooCommerce,
+Elementor, Newsletter probes + warning notices), and the save
+redirects. The MCP-server probe resolves per mode (base
+`WP_MCP_AI_JetEngine_Compat` monolith / false standalone — documented).
 
 ## Tier
 
@@ -60,6 +73,8 @@ byte-identical `wp_mcp_ai_settings` option key standalone).
 | `NvoosContentGraphAiPlatform\Admin\Integrations\TeamSettings` | `TeamSettings.php` | `Plugin::registerIntegrationsScreens()` — standalone menu/settings wiring |
 | `NvoosContentGraphAiPlatform\Admin\Integrations\ElementorIntegration` | `ElementorIntegration.php` | `Plugin::registerIntegrationsScreens()` — standalone menu/admin-post wiring |
 | `NvoosContentGraphAiPlatform\Admin\Integrations\WooCommerceIntegration` | `WooCommerceIntegration.php` | `Plugin::registerIntegrationsScreens()` — standalone menu/admin-post wiring |
+| `NvoosContentGraphAiPlatform\Admin\Integrations\JetEngineIntegration` | `JetEngineIntegration.php` | `Plugin::registerIntegrationsScreens()` — standalone menu/admin-post wiring |
+| `NvoosContentGraphAiPlatform\Admin\Integrations\PluginsIntegration` | `PluginsIntegration.php` | `Plugin::registerIntegrationsScreens()` — standalone menu/admin-post wiring |
 
 ## Inputs / Outputs / Neighbors
 
@@ -115,7 +130,17 @@ byte-identical `wp_mcp_ai_settings` option key standalone).
   tool-table render surface (incl. the saved-flag checkbox states),
   the silent non-manager renders, and the save handlers
   (capability/nonce gates + option writes + redirect envelopes). Runs
-  in both matrices (the third-party plugins are active in both).
+  in both matrices (probe-conditional assertions — the third-party
+  plugins may or may not be loaded).
+- `tests/test-jetengine-plugins-pages.php` — characterization suite
+  covering the byte-identical slugs + admin_post action names,
+  per-mode menu registration, register idempotence, the per-mode
+  settings-store and MCP-server seams, the JetEngine render surface
+  (probe-conditional active branch with the CCT/tools/MCP sections),
+  the four-section plugins render with per-plugin warning notices,
+  the silent non-manager render, the save handlers (capability/nonce
+  gates + option writes + redirect envelopes, incl. the
+  terminate-filter path). Runs in both matrices.
 
 ## Also Load
 

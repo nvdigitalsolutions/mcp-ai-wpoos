@@ -159,6 +159,14 @@ final class Plugin {
 		if ( class_exists( __NAMESPACE__ . '\Admin\Integrations\WooCommerceIntegration' ) ) {
 			( new \NvoosContentGraphAiPlatform\Admin\Integrations\WooCommerceIntegration() )->register();
 		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Integrations\JetEngineIntegration' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Integrations\JetEngineIntegration() )->register();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Integrations\PluginsIntegration' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Integrations\PluginsIntegration() )->register();
+		}
 	}
 
 	/**
