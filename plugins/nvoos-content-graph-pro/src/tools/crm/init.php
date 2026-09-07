@@ -247,6 +247,14 @@ function wp_mcp_ai_pro_register_crm_tools( $tools ) {
 		'WP_MCP_AI_Tool_Score_Lead'                => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/inbound/class-wp-mcp-ai-tool-score-lead.php',
 		'WP_MCP_AI_Tool_Qualify_Lead_Bant'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/inbound/class-wp-mcp-ai-tool-qualify-lead-bant.php',
 		'WP_MCP_AI_Tool_Qualify_Lead_Meddic'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/inbound/class-wp-mcp-ai-tool-qualify-lead-meddic.php',
+		'WP_MCP_AI_Tool_Send_Lead_Email'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/outbound/class-wp-mcp-ai-tool-send-lead-email.php',
+		'WP_MCP_AI_Tool_Send_Lead_SMS'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/outbound/class-wp-mcp-ai-tool-send-lead-sms.php',
+		'WP_MCP_AI_Tool_Send_Lead_Whatsapp'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/outbound/class-wp-mcp-ai-tool-send-lead-whatsapp.php',
+		'WP_MCP_AI_Tool_Send_Lead_Dm'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/outbound/class-wp-mcp-ai-tool-send-lead-dm.php',
+		'WP_MCP_AI_Tool_Log_Call_Outcome'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/outbound/class-wp-mcp-ai-tool-log-call-outcome.php',
+		'WP_MCP_AI_Tool_Draft_Lead_Reply'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/outbound/class-wp-mcp-ai-tool-draft-lead-reply.php',
+		'WP_MCP_AI_Tool_Auto_Reply_Inbound'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/outbound/class-wp-mcp-ai-tool-auto-reply-inbound.php',
+		'WP_MCP_AI_Tool_Schedule_Follow_Up'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/outbound/class-wp-mcp-ai-tool-schedule-follow-up.php',
 	);
 
 	return array_merge( $tools, $crm_tools );
@@ -308,6 +316,14 @@ function wp_mcp_ai_pro_register_crm_ecosystem_tools() {
 			'WP_MCP_AI_Tool_Score_Lead',
 			'WP_MCP_AI_Tool_Qualify_Lead_Bant',
 			'WP_MCP_AI_Tool_Qualify_Lead_Meddic',
+			'WP_MCP_AI_Tool_Send_Lead_Email',
+			'WP_MCP_AI_Tool_Send_Lead_SMS',
+			'WP_MCP_AI_Tool_Send_Lead_Whatsapp',
+			'WP_MCP_AI_Tool_Send_Lead_Dm',
+			'WP_MCP_AI_Tool_Log_Call_Outcome',
+			'WP_MCP_AI_Tool_Draft_Lead_Reply',
+			'WP_MCP_AI_Tool_Auto_Reply_Inbound',
+			'WP_MCP_AI_Tool_Schedule_Follow_Up',
 		) as $tool_class
 	) {
 		$adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $tool_class() );

@@ -1,0 +1,247 @@
+<?php
+/**
+ * Send Lead Email Tool (ecosystem port — Wave F2, CRM outbound batch).
+ *
+ * Ported from the base Pro addon's
+ * `addons/pro/includes/tools/crm/outbound/class-wp-mcp-ai-tool-send-lead-email.php` for the standalone `nvoos-content-graph-pro` addon.
+ * Kept byte-identical. The base Pro addon owns the class in monolith
+ * installs — the addon's autoloader skips its copy when
+ * `WP_MCP_AI_PRO_PATH` is defined (see the plugin entry).
+ *
+ * Send Lead Email — outbound email with consent gate and audit trail.
+ *
+ * Uses nodemailer (PHP fallback via wp_mail) to send a templated email.
+ * Enforces consent check before sending.
+ *
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain
+ * `nvoos-content-graph-pro`.
+ *
+ * @package NvoosContentGraphPro
+ * @since  2.3.0
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Send an outbound email to a lead. Requires active email consent.
+ *
+ * @since 2.3.0
+ */
+class WP_MCP_AI_Tool_Send_Lead_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * Check if the tool is available.
+	 *
+	 * @return bool
+	 */
+	public static function is_available() {
+		$s = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $s['enable_crm_toolkit'] );
+	}
+
+	/**
+	 * Get the reason the tool is unavailable.
+	 *
+	 * @return string
+	 */
+	public static function get_unavailable_reason() {
+		return __( 'CRM Toolkit required.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'send_lead_email';
+	}
+
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'Send Lead Email', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Send an outbound email to a lead. Requires active email consent.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
+	public function get_parameters_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'lead_id'     => array(
+					'type'        => 'integer',
+					'description' => __( 'Lead or contact post ID.', 'nvoos-content-graph-pro' ),
+				),
+				'subject'     => array(
+					'type'        => 'string',
+					'description' => __( 'Email subject line.', 'nvoos-content-graph-pro' ),
+				),
+				'body'        => array(
+					'type'        => 'string',
+					'description' => __( 'Email body (HTML or plain text).', 'nvoos-content-graph-pro' ),
+				),
+				'template_id' => array(
+					'type'        => 'string',
+					'description' => __( 'Optional MJML template identifier.', 'nvoos-content-graph-pro' ),
+				),
+			),
+			'required'   => array( 'lead_id', 'subject', 'body' ),
+		);
+	}
+
+	/**
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Whether the tool requires base pro.
+	 *
+	 * @return bool
+	 */
+	public function requires_base_pro() {
+		return true;
+	}
+
+	/**
+	 * Get the capability flags.
+	 *
+	 * @return array
+	 */
+	public function get_capability_flags() {
+		return array( 'pro', 'outbound-network', 'database-write', 'requires-capability', 'requires-consent' );
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
+	public function execute( array $arguments = array(), array $context = array() ) {
+		if ( ! self::is_available() ) {
+			return new WP_Error( 'unavailable', self::get_unavailable_reason() );
+		}
+
+		$uid = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {
+			return new WP_Error( 'forbidden', __( 'Permission denied.', 'nvoos-content-graph-pro' ) );
+		}
+
+		$lead_id = absint( $arguments['lead_id'] );
+		$email   = get_post_meta( $lead_id, 'email', true );
+		if ( ! $email ) {
+			return new WP_Error( 'no_email', __( 'Lead has no email address.', 'nvoos-content-graph-pro' ) );
+		}
+
+		// Consent gate.
+		if ( class_exists( 'WP_MCP_AI_CRM_Consent' ) && ! WP_MCP_AI_CRM_Consent::is_permitted( $lead_id, 'email' ) ) {
+			return new WP_Error( 'consent_required', __( 'Lead has not consented to email communication.', 'nvoos-content-graph-pro' ) );
+		}
+
+		// DNC gate.
+		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) && WP_MCP_AI_CRM_Engine::check_dnc( $email, 'email' ) ) {
+			return new WP_Error( 'dnc_blocked', __( 'Lead email is on the Do Not Contact list.', 'nvoos-content-graph-pro' ) );
+		}
+
+		// Before-outbound-send hook (allows external code to veto).
+		$veto = apply_filters( 'wp_mcp_ai_crm_before_outbound_send', null, $lead_id, 'email', $context );
+		if ( is_wp_error( $veto ) ) {
+			return $veto;
+		}
+
+		// Suppression check (allows external DNC/compliance integrations to block).
+		$block = apply_filters( 'wp_mcp_ai_crm_suppression_check', null, $lead_id, 'email' );
+		if ( is_wp_error( $block ) ) {
+			return $block;
+		}
+
+		// Sequence step hooks — fire when this send is part of an outreach sequence.
+		$sequence_id = isset( $arguments['sequence_id'] ) ? absint( $arguments['sequence_id'] ) : 0;
+		$step_index  = isset( $arguments['sequence_step'] ) ? absint( $arguments['sequence_step'] ) : 0;
+		if ( $sequence_id ) {
+			do_action( 'wp_mcp_ai_crm_sequence_step_before_send', $lead_id, $sequence_id, $step_index, 'email', $arguments, $context );
+		}
+
+		$subject = sanitize_text_field( $arguments['subject'] );
+		$body    = wp_kses_post( $arguments['body'] );
+
+		// Append CAN-SPAM footer if configured.
+		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			$s = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+			if ( ! empty( $s['consent']['physical_address'] ) ) {
+				$body .= '<br><br><small>' . esc_html( $s['consent']['physical_address'] ) . '</small>';
+			}
+		}
+
+		$sent = wp_mail( $email, $subject, $body, array( 'Content-Type: text/html; charset=UTF-8' ) );
+
+		if ( ! $sent ) {
+			return new WP_Error( 'send_failed', __( 'Email failed to send.', 'nvoos-content-graph-pro' ) );
+		}
+
+		// Log as activity.
+		$activity_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_crm_activity',
+				'post_title'  => sprintf(
+					/* translators: %s: email subject */
+					__( 'Sent email: %s', 'nvoos-content-graph-pro' ),
+					$subject
+				),
+				'post_status' => 'publish',
+			),
+			true
+		);
+		if ( ! is_wp_error( $activity_id ) ) {
+			update_post_meta( $activity_id, 'activity_type', 'email' );
+			update_post_meta( $activity_id, 'related_type', 'lead' );
+			update_post_meta( $activity_id, 'related_id', $lead_id );
+			update_post_meta( $activity_id, 'disposition', 'sent' );
+		}
+
+		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
+			WP_MCP_AI_CRM_Audit::record( 'outbound_email_sent', 'lead', $lead_id, array( 'email' => $email ) );
+		}
+
+		do_action( 'wp_mcp_ai_crm_after_outbound_send', $lead_id, 'email', array( 'activity_id' => $activity_id ), $context );
+
+		if ( $sequence_id ) {
+			do_action( 'wp_mcp_ai_crm_sequence_step_after_send', $lead_id, $sequence_id, $step_index, 'email', $activity_id, $context );
+		}
+
+		return array(
+			'success'     => true,
+			'message'     => __( 'Email sent successfully.', 'nvoos-content-graph-pro' ),
+			'lead_id'     => $lead_id,
+			'to'          => $email,
+			'activity_id' => $activity_id,
+		);
+	}
+}
