@@ -1,0 +1,437 @@
+<?php
+/**
+ * Tool Interface (ecosystem port — Wave F2, D8-compat tool infra slice).
+ *
+ * Ported from the base plugin's
+ * `includes/interfaces/interface-wp-mcp-ai-tool.php` for the standalone
+ * `nvoos-content-graph-pro` addon. Kept byte-identical. The base plugin
+ * owns these interfaces in monolith installs — the addon's autoloader skips
+ * its copies when `WP_MCP_AI_PRO_PATH` is defined (see the plugin entry).
+ *
+ * Interface that all WP MCP AI tools must implement.
+ *
+ * Documented deviations: `declare(strict_types=1)` added.
+ *
+ * @package NvoosContentGraphPro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
+ *
+ * phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- All tool-related interfaces are grouped here for maintainability. These interfaces work together to define the tool system architecture.
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Shared interface for tool providers.
+ */
+interface WP_MCP_AI_Tool_Interface {
+	/**
+	 * Unique slug for the tool.
+	 *
+	 * @return string
+	 */
+	public function get_slug();
+
+	/**
+	 * Human readable name for the tool.
+	 *
+	 * @return string
+	 */
+	public function get_name();
+
+	/**
+	 * Description of what the tool does.
+	 *
+	 * @return string
+	 */
+	public function get_description();
+
+	/**
+	 * JSON schema describing accepted parameters.
+	 *
+	 * @return array
+	 */
+	public function get_parameters_schema();
+
+	/**
+	 * WordPress capability required to execute this tool.
+	 *
+	 * Return a capability string (e.g. 'edit_posts', 'manage_options').
+	 * Use {@see WP_MCP_AI_Tool_Default_Capability} to provide the standard
+	 * map-lookup → 'edit_posts' fallback without boilerplate.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability();
+
+	/**
+	 * Execute the tool with supplied arguments.
+	 *
+	 * @param array $arguments Parsed arguments from the assistant.
+	 * @param array $context   Contextual data about the request.
+	 * @return mixed|WP_Error
+	 */
+	public function execute( array $arguments = array(), array $context = array() );
+}
+
+/**
+ * Optional interface for tools that expose predefined shortcut tasks.
+ */
+interface WP_MCP_AI_Tool_Shortcuts_Interface {
+	/**
+	 * Provide shortcut task metadata for this tool.
+	 *
+	 * Returning `null` signals that the tool does not expose any predefined
+	 * shortcuts and that the shortcode renderer should not add fallback
+	 * buttons automatically.
+	 *
+	 * @return array[]|null Array of associative arrays containing task metadata
+	 *                      or null to opt out of automatic shortcut creation.
+	 */
+	public function get_shortcut_tasks();
+}
+
+/**
+ * Optional interface for tools that want to control automatic fallback shortcuts.
+ */
+interface WP_MCP_AI_Tool_Fallback_Shortcut_Interface {
+	/**
+	 * Decide whether a fallback shortcut should be registered automatically.
+	 *
+	 * Returning false opts the tool out of the generic fallback entry that
+	 * mirrors the tool slug, while still allowing the global "What can you do?"
+	 * shortcut to be appended later in the process.
+	 *
+	 * @param int $assistant_id Assistant post ID.
+	 * @return bool
+	 */
+	public function should_register_fallback_shortcut( $assistant_id );
+}
+
+/**
+ * Optional interface for tools that expose capability flags for orchestration.
+ *
+ * Capability flags provide metadata beyond grouping to help orchestrate
+ * agentic workflows without errors by identifying tool requirements and
+ * characteristics.
+ */
+interface WP_MCP_AI_Tool_Capability_Flags_Interface {
+	/**
+	 * Retrieve capability flags for this tool.
+	 *
+	 * Capability flags help orchestrate agentic workflows by providing
+	 * metadata about tool requirements and characteristics.
+	 *
+	 * Standard flags (Tier):
+	 * - 'pro': Tool is part of the Pro tier/addon
+	 *
+	 * Standard flags (Requirement Flags):
+	 * - 'requires-credentials': Tool requires external API credentials
+	 * - 'requires-plugin': Tool requires a specific WordPress plugin
+	 * - 'requires-capability': Tool requires specific WordPress user capabilities
+	 * - 'requires-model': Tool requires AI model specification
+	 * - 'requires-vision-model': Tool requires vision-capable AI model
+	 * - 'requires-multimodal-model': Tool requires multimodal AI model
+	 * - 'requires-video-model': Tool requires video-capable AI model
+	 *
+	 * Standard flags (Operational Characteristics):
+	 * - 'read-only': Tool only reads data, does not modify state
+	 * - 'write': Tool creates or modifies data
+	 * - 'state-changing': Tool modifies database or site state
+	 * - 'reversible': Changes can be undone (e.g., via revisions)
+	 * - 'irreversible': Action CANNOT be undone once executed (since 1.9.0)
+	 * - 'idempotent': Tool can be called multiple times safely with same result
+	 * - 'performance-impact': Tool may temporarily affect site performance
+	 * - 'consumes-tokens': Tool uses AI model tokens/credits
+	 * - 'model-dependent': Tool behavior varies by AI model selected
+	 *
+	 * Standard flags (Network & Performance):
+	 * - 'local-only': Tool works entirely locally (no external API calls)
+	 * - 'external-api': Tool makes external HTTP requests
+	 * - 'network-dependent': Tool requires internet connectivity
+	 * - 'async': Tool may take significant time to complete
+	 * - 'rate-limited': Tool is subject to rate limiting
+	 * - 'deferred-result': Result available later, not immediately
+	 * - 'requires-polling': May need to poll for completion status
+	 * - 'supports-webhook': Can notify via webhook when complete
+	 * - 'requires-callback': Needs callback URL for result delivery
+	 * - 'long-running': Execution may take minutes or hours
+	 * - 'may-timeout': May exceed typical HTTP request timeout
+	 * - 'background-only': Must run in background to avoid timeouts
+	 * - 'streaming-capable': Supports streaming responses
+	 *
+	 * Standard flags (Data Characteristics):
+	 * - 'cacheable': Tool results can be cached
+	 * - 'non-deterministic': Results may vary over time for same inputs
+	 * - 'pii-data': Tool returns personally identifiable information
+	 * - 'large-response': May return large data sets (>1MB)
+	 * - 'paginated': Supports pagination to manage response size
+	 * - 'supports-compression': Can compress output to reduce size
+	 *
+	 * Standard flags (Safety & Impact — since 1.9.0):
+	 * - 'financial-impact': Involves monetary transactions or financial data
+	 * - 'external-communication': Sends messages to recipients outside the system
+	 * - 'data-destruction': Permanently removes data beyond recovery
+	 * - 'access-control-change': Modifies user permissions or access rights
+	 *
+	 * @return array<string> Array of capability flag strings.
+	 */
+	public function get_capability_flags();
+}
+
+/**
+ * Optional interface for tools that require specific model capabilities.
+ *
+ * Model capability requirements specify what AI model features are needed
+ * for the tool to function correctly (e.g., vision, image generation, multimodal).
+ *
+ * @since 1.0.0
+ */
+interface WP_MCP_AI_Tool_Model_Requirements_Interface {
+	/**
+	 * Get required model capabilities for this tool.
+	 *
+	 * Returns an array of model capability flags that determine which
+	 * AI models are compatible with this tool. These flags are used
+	 * to filter available models in dropdowns and enforce compatibility.
+	 *
+	 * Standard model capability flags:
+	 * - 'vision': Model can process and understand images
+	 * - 'multimodal': Model can handle text, images, audio, video
+	 * - 'image-generation': Model can generate images from text
+	 * - 'image-editing': Model can edit/modify existing images
+	 * - 'audio': Model can process audio input
+	 * - 'video': Model can process video input
+	 * - 'function-calling': Model supports native function/tool calling
+	 * - 'code-execution': Model can execute code
+	 * - 'web-search': Model has web search capabilities
+	 *
+	 * @return array<string> Array of required model capability flags.
+	 */
+	public function get_model_requirements();
+}
+
+/**
+ * Optional interface for tools that define specific execution rules.
+ *
+ * Tool-specific rules provide detailed constraints and requirements
+ * that go beyond capability flags, enabling precise orchestration control.
+ */
+interface WP_MCP_AI_Tool_Rules_Interface {
+	/**
+	 * Retrieve tool-specific execution rules.
+	 *
+	 * Rules define constraints, requirements, and behaviors that the
+	 * orchestrator should enforce before and during tool execution.
+	 *
+	 * Example rule structure:
+	 * array(
+	 *     'model_requirements' => array(
+	 *         'providers' => array( 'openai', 'anthropic' ),  // Allowed providers.
+	 *         'models' => array( 'gpt-4', 'claude-3-opus' ),  // Specific models.
+	 *         'min_context_window' => 8000,                   // Minimum context.
+	 *         'capabilities' => array( 'vision', 'tools' ),   // Required capabilities.
+	 *     ),
+	 *     'parameter_constraints' => array(
+	 *         'max_items' => 100,              // Maximum items to process.
+	 *         'required_fields' => array( 'prompt', 'model' ),
+	 *         'optional_fields' => array( 'temperature', 'max_tokens' ),
+	 *     ),
+	 *     'rate_limits' => array(
+	 *         'requests_per_minute' => 20,
+	 *         'requests_per_hour' => 500,
+	 *         'concurrent_requests' => 5,
+	 *     ),
+	 *     'timeout_constraints' => array(
+	 *         'max_execution_time' => 120,     // seconds.
+	 *         'recommended_timeout' => 60,
+	 *         'must_use_background' => true,
+	 *     ),
+	 *     'response_constraints' => array(
+	 *         'max_size' => 5242880,           // 5MB.
+	 *         'supports_streaming' => true,
+	 *         'supports_pagination' => true,
+	 *         'default_page_size' => 20,
+	 *     ),
+	 *     'dependencies' => array(
+	 *         'required_plugins' => array( 'woocommerce' ),
+	 *         'required_extensions' => array( 'gd', 'imagick' ),
+	 *         'required_settings' => array( 'api_key' => 'wp_mcp_ai_openai_api_key' ),
+	 *     ),
+	 *     'orchestration_hints' => array(
+	 *         'can_run_parallel' => false,     // Can multiple instances run concurrently?
+	 *         'requires_lock' => true,         // Needs exclusive execution lock?
+	 *         'cache_ttl' => 300,              // Cache time-to-live in seconds.
+	 *         'retry_strategy' => 'exponential_backoff',
+	 *         'max_retries' => 3,
+	 *     ),
+	 * )
+	 *
+	 * @return array Associative array of tool-specific rules.
+	 */
+	public function get_tool_rules();
+}
+
+/**
+ * Optional interface for tools that declare flow stage eligibility.
+ *
+ * Flow stage eligibility controls when a tool can be invoked during
+ * an agentic workflow based on the current stage of execution.
+ *
+ * @since 1.0.0
+ */
+interface WP_MCP_AI_Tool_Flow_Stage_Interface {
+	/**
+	 * Retrieve the eligible flow stages for this tool.
+	 *
+	 * Tools can be restricted to specific stages of an agentic workflow:
+	 * - 'anytime': Tool can be used at any stage (default)
+	 * - 'start': Tool can only be used in the first iteration (iteration 0)
+	 * - 'middle': Tool can only be used in middle iterations (1 to n-1)
+	 * - 'end': Tool can only be used in the final iteration
+	 *
+	 * Multiple stages can be specified, e.g., array('start', 'middle')
+	 *
+	 * @return array<string> Array of eligible stage identifiers.
+	 */
+	public function get_flow_stages();
+}
+
+/**
+ * Optional interface for tools that declare a data contract for composability.
+ *
+ * The `produces` / `consumes` fields describe the *shape* of a tool's
+ * output / input payload (e.g. `post_object`, `attachment_id`, `order_id`).
+ * They complement — but do not replace — the operational flags exposed by
+ * {@see WP_MCP_AI_Tool_Capability_Flags_Interface} and the orchestration
+ * constraints exposed by {@see WP_MCP_AI_Tool_Rules_Interface}.
+ *
+ * The AI model uses these hints to chain tool calls autonomously, e.g.
+ * "the output of `get_post` (produces=`post_object`) can be fed to
+ * `update_post_seo` (consumes=`post_object`)".
+ *
+ * Both keys are optional. Return `null` for either to opt out of that side
+ * of the contract. The registry will not emit a contract block when both
+ * keys are null/empty.
+ *
+ * Example:
+ * ```php
+ * public function get_data_contract() {
+ *     return array(
+ *         'produces' => 'post_object',
+ *         'consumes' => null,
+ *     );
+ * }
+ * ```
+ *
+ * @since 1.2.1
+ */
+interface WP_MCP_AI_Tool_Data_Contract_Interface {
+	/**
+	 * Retrieve the data contract for this tool.
+	 *
+	 * Return shape:
+	 * ```
+	 * array(
+	 *     'produces' => string|null,           // Single named contract.
+	 *     'consumes' => string|string[]|null,  // Single named contract OR list of accepted contracts.
+	 * )
+	 * ```
+	 *
+	 * Implementations should use stable, snake_case identifiers (e.g.
+	 * `post_object`, `attachment_id`, `order_id`, `wc_product_id`).
+	 *
+	 * @return array{produces?: string|null, consumes?: string|string[]|null}
+	 */
+	public function get_data_contract();
+}
+
+/**
+ * Optional interface for tools that restrict access from certain contexts.
+ *
+ * Context restrictions control which endpoints or interfaces can invoke a tool.
+ * This is useful for preventing sensitive operations from public-facing interfaces.
+ *
+ * @since 1.0.0
+ */
+interface WP_MCP_AI_Tool_Context_Restrictions_Interface {
+	/**
+	 * Determine if the tool can be used in the given context.
+	 *
+	 * Common contexts include:
+	 * - 'chat-client': Browser-based public chat interface
+	 * - 'chat': MCP protocol endpoint (more controlled)
+	 * - 'direct': Direct tool invocation via REST API
+	 * - 'shortcode': Shortcode-based invocation
+	 *
+	 * @param array $context Execution context with 'endpoint' or 'source' keys.
+	 * @return true|WP_Error True if allowed, WP_Error if restricted.
+	 */
+	public function is_allowed_in_context( $context );
+}
+
+// Load the default capability trait so it is available wherever this interface file is included.
+require_once dirname( __DIR__ ) . '/tools/trait-wp-mcp-ai-tool-default-capability.php';
+
+// Load the legacy-definition trait so legacy-format tool classes can
+// implement this interface without restructuring their metadata.
+if ( ! trait_exists( 'WP_MCP_AI_Tool_Legacy_Definition' ) ) {
+	require_once dirname( __DIR__ ) . '/tools/trait-wp-mcp-ai-tool-legacy-definition.php';
+}
+
+/**
+ * Optional interface for tools that declare non-loggable result fields.
+ *
+ * Some tools legitimately return capability credentials in their success
+ * envelope: one-time OAuth connect links, booking URLs whose path segment is
+ * a bearer token, or decrypted vault payloads. No key deny-list or
+ * string-pattern heuristic can reliably identify those values — only the
+ * tool itself knows that a given result field is secret — so tools that
+ * produce them opt in here.
+ *
+ * `WP_MCP_AI_Logger::log_tool_execution()` consults this declaration before
+ * building `result_preview`, masking every declared path with the standard
+ * `[redacted]` placeholder. The same paths are masked inside `arguments` and
+ * on the `tool_error` path. The declaration affects logging only: the value
+ * returned to the caller is never altered.
+ *
+ * Path syntax is dot-notation with `*` as a single-segment wildcard for
+ * numerically-indexed lists, e.g.:
+ *   - 'url'                              → top-level key
+ *   - 'data.url'                         → nested key
+ *   - 'components.plugins.*.download_url' → any list element
+ *
+ * A path names the value to mask; when a non-final segment matches, the
+ * entire subtree below it is masked (declaring 'result' hides an arbitrary
+ * third-party payload wholesale). Declaring a key that is absent from the
+ * payload is a safe no-op.
+ *
+ * @since 1.1.64
+ */
+interface WP_MCP_AI_Tool_Sensitive_Result_Interface {
+	/**
+	 * Result keys whose values must never be persisted to a log.
+	 *
+	 * @since 1.1.64
+	 *
+	 * @return string[] Dot-notation paths, e.g. array( 'url', 'data.token' ).
+	 */
+	public function get_sensitive_result_fields();
+}
+
+// Load the legacy-tool wrapper so pre-interface tool classes can be
+// transparently wrapped into this interface at registration time.
+if ( ! class_exists( 'WP_MCP_AI_Legacy_Tool_Wrapper' ) ) {
+	require_once dirname( __DIR__ ) . '/tools/class-wp-mcp-ai-legacy-tool-wrapper.php';
+}
+
+// Load the safety profile interface so tool classes can reference it.
+// Guarded behind interface_exists to avoid double-declaration when loaded from other entry points.
+if ( ! interface_exists( 'WP_MCP_AI_Tool_Safety_Profile_Interface' ) ) {
+	require_once __DIR__ . '/interface-wp-mcp-ai-tool-safety-profile.php';
+}

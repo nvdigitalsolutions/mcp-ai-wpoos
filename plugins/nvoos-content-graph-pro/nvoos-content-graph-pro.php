@@ -60,8 +60,8 @@ spl_autoload_register(
 		}
 
 		// Ported files mirror the base addon's includes/ layout; scan the
-		// known subtree roots (extend this list as new waves land). Both
-		// `class-` and `interface-` file prefixes are probed.
+		// known subtree roots (extend this list as new waves land). `class-`,
+		// `interface-`, and `trait-` file prefixes are probed.
 		$nvoos_content_graph_pro_file_name = strtolower( str_replace( '_', '-', $fqcn ) ) . '.php';
 		$nvoos_content_graph_pro_subdirs   = array(
 			'src/',
@@ -77,7 +77,7 @@ spl_autoload_register(
 			'src/vault/',
 		);
 		foreach ( $nvoos_content_graph_pro_subdirs as $nvoos_content_graph_pro_subdir ) {
-			foreach ( array( 'class-', 'interface-' ) as $nvoos_content_graph_pro_prefix ) {
+			foreach ( array( 'class-', 'interface-', 'trait-' ) as $nvoos_content_graph_pro_prefix ) {
 				$nvoos_content_graph_pro_file = NVOOS_CONTENT_GRAPH_PRO_PATH . $nvoos_content_graph_pro_subdir . $nvoos_content_graph_pro_prefix . $nvoos_content_graph_pro_file_name;
 				if ( file_exists( $nvoos_content_graph_pro_file ) ) {
 					require_once $nvoos_content_graph_pro_file;
