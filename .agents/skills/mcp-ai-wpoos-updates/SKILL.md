@@ -118,7 +118,9 @@ Per `AGENTS.md` §6, when adding a skill under `.agents/skills/[slug]/`:
 - Update the skill count (e.g. 53 → 54) in `AGENTS.md` §1 (inventory row + the
   coding-time-vs-runtime paragraph), `.github/copilot-instructions.md`
   (multi-agent-awareness bullet + repo-tree comment), and the `README.md` repo
-  map row.
+  map row. (The 2026-09-07 `mcp-ai-wpoos-wporg-submission` skill is the
+  example — wp.org submission/PCP/screenshot playbook; see that skill for
+  the submission track itself.)
 - Fold the new skill + count into the **next** release's changelog/README
   "Versioning" line (do not post-hoc edit an executed release entry).
 - Leave historical per-version count lines untouched.
