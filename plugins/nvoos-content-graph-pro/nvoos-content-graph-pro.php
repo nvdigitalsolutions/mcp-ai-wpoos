@@ -69,6 +69,7 @@ spl_autoload_register(
 		$nvoos_content_graph_pro_subdirs   = array(
 			'src/',
 			'src/admin/',
+			'src/admin/remote-capabilities/',
 			'src/data-stores/',
 			'src/interfaces/',
 			'src/mcp-servers/',
