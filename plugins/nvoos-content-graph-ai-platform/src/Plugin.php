@@ -98,6 +98,10 @@ final class Plugin {
 		if ( class_exists( __NAMESPACE__ . '\Admin\Managers\TokenManager' ) ) {
 			( new \NvoosContentGraphAiPlatform\Admin\Managers\TokenManager() )->register();
 		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Managers\CronManagerPage' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Managers\CronManagerPage() )->register();
+		}
 	}
 
 	/**
