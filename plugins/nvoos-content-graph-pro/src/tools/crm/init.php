@@ -154,10 +154,17 @@ if ( $nvoos_content_graph_pro_is_enabled && ! $nvoos_content_graph_pro_is_base )
  */
 function wp_mcp_ai_pro_register_crm_tools( $tools ) {
 	$crm_tools = array(
-		'WP_MCP_AI_Tool_Create_Company'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-create-company.php',
-		'WP_MCP_AI_Tool_Get_Companies'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-get-companies.php',
-		'WP_MCP_AI_Tool_Research_Company'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-research-company.php',
-		'WP_MCP_AI_Tool_Archive_Stale_Contacts' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-archive-stale-contacts.php',
+		'WP_MCP_AI_Tool_Create_Company'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-create-company.php',
+		'WP_MCP_AI_Tool_Get_Companies'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-get-companies.php',
+		'WP_MCP_AI_Tool_Research_Company'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-research-company.php',
+		'WP_MCP_AI_Tool_Archive_Stale_Contacts'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-archive-stale-contacts.php',
+		'WP_MCP_AI_Tool_Create_Lead'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/leads/class-wp-mcp-ai-tool-create-lead.php',
+		'WP_MCP_AI_Tool_List_Leads'               => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/leads/class-wp-mcp-ai-tool-list-leads.php',
+		'WP_MCP_AI_Tool_Get_Lead'                 => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/leads/class-wp-mcp-ai-tool-get-lead.php',
+		'WP_MCP_AI_Tool_Update_Lead'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/leads/class-wp-mcp-ai-tool-update-lead.php',
+		'WP_MCP_AI_Tool_Delete_Lead'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/leads/class-wp-mcp-ai-tool-delete-lead.php',
+		'WP_MCP_AI_Tool_Convert_Lead_To_Customer' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/leads/class-wp-mcp-ai-tool-convert-lead-to-customer.php',
+		'WP_MCP_AI_Tool_Create_Customer'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/customers/class-wp-mcp-ai-tool-create-customer.php',
 	);
 
 	return array_merge( $tools, $crm_tools );
@@ -185,6 +192,13 @@ function wp_mcp_ai_pro_register_crm_ecosystem_tools() {
 			'WP_MCP_AI_Tool_Get_Companies',
 			'WP_MCP_AI_Tool_Research_Company',
 			'WP_MCP_AI_Tool_Archive_Stale_Contacts',
+			'WP_MCP_AI_Tool_Create_Lead',
+			'WP_MCP_AI_Tool_List_Leads',
+			'WP_MCP_AI_Tool_Get_Lead',
+			'WP_MCP_AI_Tool_Update_Lead',
+			'WP_MCP_AI_Tool_Delete_Lead',
+			'WP_MCP_AI_Tool_Convert_Lead_To_Customer',
+			'WP_MCP_AI_Tool_Create_Customer',
 		) as $tool_class
 	) {
 		$adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $tool_class() );
