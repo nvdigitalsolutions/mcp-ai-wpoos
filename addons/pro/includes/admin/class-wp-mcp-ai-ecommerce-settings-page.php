@@ -97,7 +97,7 @@ class WP_MCP_AI_Ecommerce_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 			<h2><?php esc_html_e( 'E-commerce Toolkit Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
 			
 			<div class="toolkit-description">
-				<p><?php esc_html_e( 'Advanced WooCommerce integration toolkit providing 20 powerful tools for managing products, orders, inventory, and customers.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<p><?php esc_html_e( 'Advanced WooCommerce integration toolkit providing 22 powerful tools for managing products, orders, inventory, and customers.', 'mcp-ai-wpoos-pro' ); ?></p>
 			</div>
 
 			<h3><?php esc_html_e( 'Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
@@ -164,6 +164,8 @@ class WP_MCP_AI_Ecommerce_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 		return array(
 			'create_product_advanced'     => __( 'Create Product (Advanced)', 'mcp-ai-wpoos-pro' ),
 			'bulk_update_products'        => __( 'Bulk Update Products', 'mcp-ai-wpoos-pro' ),
+			'update_woo_product_price'    => __( 'Update Product Price (All Types)', 'mcp-ai-wpoos-pro' ),
+			'update_woo_product_qty'      => __( 'Update Product Quantity (All Types)', 'mcp-ai-wpoos-pro' ),
 			'import_products_csv'         => __( 'Import Products from CSV', 'mcp-ai-wpoos-pro' ),
 			'export_products_report'      => __( 'Export Products Report', 'mcp-ai-wpoos-pro' ),
 			'sync_product_inventory'      => __( 'Sync Product Inventory', 'mcp-ai-wpoos-pro' ),

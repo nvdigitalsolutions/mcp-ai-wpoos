@@ -12,6 +12,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load the shared price/quantity updater trait (guarded for load-order independence).
+if ( ! trait_exists( 'WP_MCP_AI_Woo_Price_Qty_Updater' ) ) {
+	require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/trait-wp-mcp-ai-woo-price-qty-updater.php';
+}
+
 /**
  * Tool for WooCommerce product operations.
  *
@@ -26,6 +31,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.0.0
  */
 class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_Woo_Price_Qty_Updater;
 
 	/**
 	 * {@inheritdoc}
@@ -564,12 +571,23 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 			$product->set_sku( sanitize_text_field( $arguments['sku'] ) );
 		}
 
+		// Price fields route through the shared updater so sale-price
+		// validation stays consistent across the toolkit.
+		$price_args = array();
 		if ( ! empty( $arguments['price'] ) ) {
-			$product->set_regular_price( wc_format_decimal( $arguments['price'] ) );
+			$price_args['regular_price'] = $arguments['price'];
+		}
+		if ( array_key_exists( 'sale_price', $arguments ) ) {
+			$price_args['sale_price'] = $arguments['sale_price'];
 		}
 
-		if ( ! empty( $arguments['sale_price'] ) ) {
-			$product->set_sale_price( wc_format_decimal( $arguments['sale_price'] ) );
+		if ( ! empty( $price_args ) ) {
+			$price_changes = array();
+			$price_result  = $this->apply_price_fields( $product, $price_args, $price_changes );
+
+			if ( is_wp_error( $price_result ) ) {
+				return $price_result;
+			}
 		}
 
 		if ( ! empty( $arguments['description'] ) ) {
@@ -581,8 +599,11 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		if ( isset( $arguments['stock_quantity'] ) ) {
-			$product->set_manage_stock( true );
-			$product->set_stock_quantity( absint( $arguments['stock_quantity'] ) );
+			$stock_result = $this->apply_stock_quantity( $product, absint( $arguments['stock_quantity'] ), 'set', true );
+
+			if ( is_wp_error( $stock_result ) ) {
+				return $stock_result;
+			}
 		}
 
 		if ( ! empty( $arguments['stock_status'] ) ) {
@@ -648,6 +669,10 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 			$this->apply_images( $product, $featured_image, $images );
 			$product->save();
 		}
+
+		// Re-sync variable parents and clear product transients.
+		$this->sync_variable_parent( $product );
+		wc_delete_product_transients( $product->get_id() );
 
 		return $this->format_product( $product );
 	}
