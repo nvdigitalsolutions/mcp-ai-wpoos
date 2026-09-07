@@ -65,7 +65,11 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 		 */
 		public static function init() {
 			add_action( 'init', array( __CLASS__, 'schedule_recurring_syncs' ) );
-			add_action( self::HOOK_FULL_SYNC, array( __CLASS__, 'run_full_sync' ) );
+			// Action Scheduler delivers queued args positionally via
+			// do_action_ref_array( $hook, array_values( $args ) ), so the
+			// callback must accept both $dry_run and $connection_id or the
+			// connection ID is silently truncated to the first argument.
+			add_action( self::HOOK_FULL_SYNC, array( __CLASS__, 'run_full_sync' ), 10, 2 );
 			add_action( self::HOOK_WC_SYNC, array( __CLASS__, 'run_wc_sync' ) );
 			add_action( 'wp_mcp_ai_flowhub_after_sync', array( __CLASS__, 'log_sync_event' ), 10, 1 );
 		}
