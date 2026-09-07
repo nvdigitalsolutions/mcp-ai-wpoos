@@ -528,6 +528,18 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 			}
 		}
 
+		// Create the async job queue table (v2.0.0).
+		// The class's init hook runs on plugins_loaded, but creating the
+		// table here guarantees it exists the moment an update/activation
+		// completes — before the Load Guard's next REST dispatch.
+		$async_queue_file = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-async-job-queue.php';
+		if ( file_exists( $async_queue_file ) ) {
+			require_once $async_queue_file;
+			if ( method_exists( 'WP_MCP_AI_Async_Job_Queue', 'create_table' ) ) {
+				WP_MCP_AI_Async_Job_Queue::create_table();
+			}
+		}
+
 		// Create the general-purpose job store table (v1.1.45).
 		// Used by the QueueClient adapter for durable, transport-agnostic job tracking.
 		$job_store_file = WP_MCP_AI_PATH . 'includes/db/class-wp-mcp-ai-job-store.php';
