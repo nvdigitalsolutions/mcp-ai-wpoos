@@ -46,6 +46,14 @@
     </rule>
 
     <!--
+        Reserved keyword parameter names ($namespace, $default, $class) are
+        idiomatic in PHP 8.1+ and byte-identical with the monolith copies.
+    -->
+    <rule ref="Universal.NamingConventions.NoReservedKeywordParameterNames">
+        <severity>0</severity>
+    </rule>
+
+    <!--
         Vault CPT custom capabilities: the item/folder CPT registrations
         map them via capability_type, so the Capabilities sniff must not
         flag them as unknown/typoed capabilities.

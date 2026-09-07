@@ -60,8 +60,9 @@ spl_autoload_register(
 		}
 
 		// Ported files mirror the base addon's includes/ layout; scan the
-		// known subtree roots (extend this list as new waves land).
-		$nvoos_content_graph_pro_file_name = 'class-' . strtolower( str_replace( '_', '-', $fqcn ) ) . '.php';
+		// known subtree roots (extend this list as new waves land). Both
+		// `class-` and `interface-` file prefixes are probed.
+		$nvoos_content_graph_pro_file_name = strtolower( str_replace( '_', '-', $fqcn ) ) . '.php';
 		$nvoos_content_graph_pro_subdirs   = array(
 			'src/',
 			'src/admin/',
@@ -71,13 +72,16 @@ spl_autoload_register(
 			'src/services/',
 			'src/tools/',
 			'src/tools/vault/',
+			'src/tools/vector-storage/',
 			'src/vault/',
 		);
 		foreach ( $nvoos_content_graph_pro_subdirs as $nvoos_content_graph_pro_subdir ) {
-			$nvoos_content_graph_pro_file = NVOOS_CONTENT_GRAPH_PRO_PATH . $nvoos_content_graph_pro_subdir . $nvoos_content_graph_pro_file_name;
-			if ( file_exists( $nvoos_content_graph_pro_file ) ) {
-				require_once $nvoos_content_graph_pro_file;
-				return;
+			foreach ( array( 'class-', 'interface-' ) as $nvoos_content_graph_pro_prefix ) {
+				$nvoos_content_graph_pro_file = NVOOS_CONTENT_GRAPH_PRO_PATH . $nvoos_content_graph_pro_subdir . $nvoos_content_graph_pro_prefix . $nvoos_content_graph_pro_file_name;
+				if ( file_exists( $nvoos_content_graph_pro_file ) ) {
+					require_once $nvoos_content_graph_pro_file;
+					return;
+				}
 			}
 		}
 	}
