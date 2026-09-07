@@ -49,6 +49,13 @@ class Test_Async_Job_Queue_Table_Resilience extends WP_UnitTestCase {
 		global $wpdb;
 		$this->table_name = $wpdb->prefix . WP_MCP_AI_Async_Job_Queue::TABLE_NAME;
 
+		// create_table() also resets the class's static table-existence
+		// cache. That cache survives across suites in the same process, so
+		// an earlier suite's probe (e.g. the Load Guard on a REST dispatch)
+		// would otherwise short-circuit the probe here and send the query
+		// path against the just-dropped table (CI regression: stats come
+		// back as NULLs instead of the fail-soft zeroes).
+		WP_MCP_AI_Async_Job_Queue::create_table();
 		$this->drop_real_table();
 		delete_option( 'wp_mcp_ai_async_job_queue_db_version' );
 		$wpdb->last_error = '';
