@@ -73,6 +73,7 @@ spl_autoload_register(
 			'src/tools/',
 			'src/tools/crm/',
 			'src/tools/crm/customers/',
+			'src/tools/crm/deals/',
 			'src/tools/crm/leads/',
 			'src/tools/vault/',
 			'src/tools/vector-storage/',
