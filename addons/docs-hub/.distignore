@@ -1,0 +1,40 @@
+# Files to exclude when packaging the NV oOS Docs Hub addon as a standalone
+# WordPress.org plugin (e.g. `wp dist-archive addons/docs-hub`).
+# Mirrors the exclusion lists in bin/build-addon-zips.sh (docs-hub step) and
+# bin/strip-dev-files.sh — keep the three in sync.
+
+# Git
+.git
+.gitignore
+
+# Development configuration
+.eslintrc.json
+.editorconfig
+
+# Build tools and dependencies
+node_modules
+composer.json
+composer.lock
+package.json
+package-lock.json
+esbuild.config.js
+eslint.config.js
+tsconfig.json
+vitest.config.ts
+.npmrc
+
+# Testing
+tests
+phpunit.xml.dist
+
+# Source files (only the built bundles in assets/dist/ ship)
+src
+
+# Development documentation (readme.txt / README.md / CHANGELOG.md are kept)
+docs
+
+# Temporary files
+*.log
+.DS_Store
+Thumbs.db
+*~

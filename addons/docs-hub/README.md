@@ -28,7 +28,10 @@ and every installed addon, presenting it in a **GitBook-style three-column inter
 
 - **WordPress** 6.0+
 - **PHP** 7.4+
-- **NV oOS base plugin** active
+- **NV oOS base plugin** — *optional*. Required only for the local
+  `base`/`addons`/`root` sources. Fresh installs default to remote-only
+  sources (`sources = ['remote']`) and index any public GitHub repository
+  with no base plugin installed.
 
 ---
 
@@ -36,7 +39,9 @@ and every installed addon, presenting it in a **GitBook-style three-column inter
 
 1. Copy `addons/docs-hub/` into `wp-content/plugins/nvoos-docs-hub/`.
 2. Activate **NV oOS Docs Hub** in the WordPress plugins admin.
-3. Go to **Settings → NV oOS Docs Hub** and click **Rebuild Index**.
+3. Go to **Settings → NV oOS Docs Hub**, add a remote GitHub repository
+   (or enable local sources if the base plugin is active) and click
+   **Rebuild Index**.
 4. Add `[nvoos_docs]` to any page to display the browser.
 
 ---
