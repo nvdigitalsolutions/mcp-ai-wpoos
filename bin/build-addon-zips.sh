@@ -397,7 +397,12 @@ rsync -a "addons/docs-hub/" "${TMP_DIR}/docs-hub-stage/nvoos-docs-hub/" \
 --exclude 'esbuild.config.js' \
 --exclude 'eslint.config.js' \
 --exclude 'vitest.config.ts' \
---exclude 'src/'
+--exclude 'src/' \
+--exclude 'vendor/' \
+--exclude 'composer.json' \
+--exclude 'composer.lock' \
+--exclude 'docs/' \
+--exclude '.wordpress-org/'
 (
 cd "${TMP_DIR}/docs-hub-stage"
 zip -r -q "${ROOT_DIR}/${DOCS_HUB_ZIP}" nvoos-docs-hub/

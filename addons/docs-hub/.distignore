@@ -23,6 +23,13 @@ tsconfig.json
 vitest.config.ts
 .npmrc
 
+# Composer dev dependencies (the plugin has no production deps — all
+# classes are required manually in the main plugin file)
+vendor
+
+# WordPress.org listing assets (SVN assets/ directory — not shipped in the ZIP)
+.wordpress-org
+
 # Testing
 tests
 phpunit.xml.dist
