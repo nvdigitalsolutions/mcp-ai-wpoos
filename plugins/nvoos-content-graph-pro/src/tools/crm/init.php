@@ -12,13 +12,20 @@
  * 1. `declare(strict_types=1)` added.
  * 2. File paths resolve from `NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/'`.
  * 3. Slimmed wiring — the admin pages, REST controller, research-add,
- *    inbound listeners, and the tool files land with their F2
+ *    inbound listeners, and the remaining tool files land with their F2
  *    sub-clusters; every deferred require stays file-gated so this init
  *    degrades gracefully until each file exists (same wave-proof pattern
  *    as the F1 module files guards).
  * 4. The JetEngine company-field registration stays byte-identical
  *    (`function_exists( 'jet_engine' )` + `class_exists(
  *    'WP_MCP_AI_JetEngine_Meta_Helper' )` guard — dormant standalone).
+ * 5. New standalone-only tool wiring (no monolith counterpart — the
+ *    monolith builds the CRM tool map inline inside
+ *    `wp_mcp_ai_pro_register_tools()`): a `wp_mcp_ai_pro_tools` filter
+ *    carrying the ported tool subset (inert standalone — the base plugin
+ *    consumes it monolith) plus `wp_mcp_ai_pro_register_crm_ecosystem_tools()`
+ *    registering the ported tools into the ecosystem graph ToolRegistry via
+ *    `WP_MCP_AI_Pro_Tool_Adapter` (same wiring as the vault).
  *
  * @package NvoosContentGraphPro
  * @since   1.0.0
@@ -114,6 +121,79 @@ if ( $nvoos_content_graph_pro_is_enabled && ! $nvoos_content_graph_pro_is_base )
 		if ( file_exists( $nvoos_content_graph_pro_crm_admin_menu ) ) {
 			require_once $nvoos_content_graph_pro_crm_admin_menu;
 			WP_MCP_AI_CRM_Admin_Menu::init();
+		}
+	}
+
+	// ---- F2 tool sub-clusters (file-gated) -----------------------------
+	// The CRM tool files land with their sub-clusters; the proof pair wires
+	// the first one. The `wp_mcp_ai_pro_tools` filter carries the ported
+	// tool subset (inert standalone — the base plugin consumes it
+	// monolith); the ecosystem registration below is the standalone path.
+	add_filter( 'wp_mcp_ai_pro_tools', 'wp_mcp_ai_pro_register_crm_tools', 10 );
+
+	// Standalone-only ecosystem tool registration (deviation 5, same
+	// wiring as the vault). The graph plugin's
+	// `nvoos_content_graph/register_tools` action fired at plugins_loaded
+	// 10 — before this addon boots at 15 — so register directly into the
+	// registries instead of hooking the action.
+	if ( ! defined( 'WP_MCP_AI_PATH' ) && function_exists( 'nvoos_content_graph_get_tool_registry' ) ) {
+		wp_mcp_ai_pro_register_crm_ecosystem_tools();
+	}
+}
+
+/**
+ * Register the ported CRM tools with the `wp_mcp_ai_pro_tools` filter
+ * (deviation 5 — a subset of the monolith's inline `$crm_tools` map built
+ * inside `wp_mcp_ai_pro_register_tools()`; the base plugin consumes the
+ * filter monolith, standalone it is inert — documented).
+ *
+ * @since 1.0.0
+ *
+ * @param array $tools Existing tools array.
+ * @return array Updated tools array.
+ */
+function wp_mcp_ai_pro_register_crm_tools( $tools ) {
+	$crm_tools = array(
+		'WP_MCP_AI_Tool_Create_Company' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-create-company.php',
+	);
+
+	return array_merge( $tools, $crm_tools );
+}
+
+/**
+ * Register the ported CRM tools with the ecosystem registries (standalone
+ * only — deviation 5, same wiring as the vault).
+ *
+ * @since 1.0.0
+ * @return void
+ */
+function wp_mcp_ai_pro_register_crm_ecosystem_tools() {
+	require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-pro-tool-adapter.php';
+	require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-create-company.php';
+
+	$parent_registry = nvoos_content_graph_get_tool_registry();
+	if ( ! $parent_registry instanceof \NvoosContentGraph\ToolRegistry ) {
+		return;
+	}
+
+	foreach ( array( 'WP_MCP_AI_Tool_Create_Company' ) as $tool_class ) {
+		$adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $tool_class() );
+		try {
+			$parent_registry->register( $adapter );
+		} catch ( \RuntimeException $e ) {
+			unset( $e ); // Duplicate slug — non-fatal.
+		}
+
+		// Wrap into the nvoos/core registry so the agentic chat loop can
+		// resolve and execute the tool (same path the AI addon uses for
+		// graph tools).
+		if ( class_exists( 'NvoosContentGraphAi\\CoreBridge' ) ) {
+			$core_tools = \NvoosContentGraphAi\CoreBridge::instance()->tools;
+			try {
+				$core_tools->register( new \NvoosContentGraphAi\Adapter\GraphToolAdapter( $adapter ) );
+			} catch ( \RuntimeException $e ) {
+				unset( $e ); // Duplicate slug — non-fatal.
+			}
 		}
 	}
 }
