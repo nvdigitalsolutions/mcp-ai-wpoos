@@ -73,6 +73,21 @@ if ( $nvoos_content_graph_pro_is_enabled && ! $nvoos_content_graph_pro_is_base )
 	require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-company-cpt.php';
 	WP_MCP_AI_Company_CPT::init();
 
+	// ---- Phase G: ICP (Ideal Customer Profile) Module ----
+	// Load ICP Profile data store and scoring engine before the ICP tools
+	// (mirrors the base init's Phase G).
+	$nvoos_content_graph_pro_icp_dir   = $nvoos_content_graph_pro_crm_engine_dir . 'icp/';
+	$nvoos_content_graph_pro_icp_files = array(
+		'class-wp-mcp-ai-icp-profile.php',
+		'class-wp-mcp-ai-icp-scorer.php',
+	);
+	foreach ( $nvoos_content_graph_pro_icp_files as $nvoos_content_graph_pro_icp_file ) {
+		$nvoos_content_graph_pro_icp_path = $nvoos_content_graph_pro_icp_dir . $nvoos_content_graph_pro_icp_file;
+		if ( file_exists( $nvoos_content_graph_pro_icp_path ) ) {
+			require_once $nvoos_content_graph_pro_icp_path;
+		}
+	}
+
 	// Register Company meta fields with JetEngine for listing/discovery
 	// (dormant standalone — the helper lands with a later wave).
 	if ( function_exists( 'jet_engine' ) && class_exists( 'WP_MCP_AI_JetEngine_Meta_Helper' ) ) {
@@ -118,14 +133,24 @@ if ( $nvoos_content_graph_pro_is_enabled && ! $nvoos_content_graph_pro_is_base )
 	WP_MCP_AI_CRM_REST_Controller::get_instance()->init();
 
 	// ---- Deferred F2 sub-clusters (file-gated) -------------------------
-	// Admin pages, CRM REST controller, research-add, support tools,
-	// Upwork/LinkedIn/ICP files, and the inbound listeners land with their
+	// Per-CPT settings pages, blueprints, research-add, support tools,
+	// Upwork/LinkedIn files, and the inbound listeners land with their
 	// sub-clusters; each require below fires only once the file exists.
 	if ( is_admin() ) {
+		// CRM admin menu (command-center landing page is a forward-reference
+		// — its class lands with a later admin slice; the menu callback
+		// resolves lazily at render time).
 		$nvoos_content_graph_pro_crm_admin_menu = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/admin/class-wp-mcp-ai-crm-admin-menu.php';
 		if ( file_exists( $nvoos_content_graph_pro_crm_admin_menu ) ) {
 			require_once $nvoos_content_graph_pro_crm_admin_menu;
 			WP_MCP_AI_CRM_Admin_Menu::init();
+		}
+
+		// ICP Profiles admin page (F2 admin slice).
+		$nvoos_content_graph_pro_icp_admin = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/admin/class-wp-mcp-ai-icp-admin-page.php';
+		if ( file_exists( $nvoos_content_graph_pro_icp_admin ) ) {
+			require_once $nvoos_content_graph_pro_icp_admin;
+			WP_MCP_AI_ICP_Admin_Page::init();
 		}
 	}
 
@@ -188,6 +213,8 @@ function wp_mcp_ai_pro_register_crm_tools( $tools ) {
 		'WP_MCP_AI_Tool_Identify_Top_Clients'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/analytics/class-wp-mcp-ai-tool-identify-top-clients.php',
 		'WP_MCP_AI_Tool_Assign_Lead_To_Owner'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/routing/class-wp-mcp-ai-tool-assign-lead-to-owner.php',
 		'WP_MCP_AI_Tool_Rotate_Leads'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/routing/class-wp-mcp-ai-tool-rotate-leads.php',
+		'WP_MCP_AI_Tool_Compute_ICP_Score'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/icp/class-wp-mcp-ai-tool-compute-icp-score.php',
+		'WP_MCP_AI_Tool_Manage_ICP_Profile'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/icp/class-wp-mcp-ai-tool-manage-icp-profile.php',
 	);
 
 	return array_merge( $tools, $crm_tools );
@@ -240,6 +267,8 @@ function wp_mcp_ai_pro_register_crm_ecosystem_tools() {
 			'WP_MCP_AI_Tool_Identify_Top_Clients',
 			'WP_MCP_AI_Tool_Assign_Lead_To_Owner',
 			'WP_MCP_AI_Tool_Rotate_Leads',
+			'WP_MCP_AI_Tool_Compute_ICP_Score',
+			'WP_MCP_AI_Tool_Manage_ICP_Profile',
 		) as $tool_class
 	) {
 		$adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $tool_class() );
