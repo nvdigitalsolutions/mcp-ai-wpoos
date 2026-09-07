@@ -76,6 +76,7 @@ spl_autoload_register(
 			'src/tools/crm/analytics/',
 			'src/tools/crm/customers/',
 			'src/tools/crm/deals/',
+			'src/tools/crm/icp/',
 			'src/tools/crm/leads/',
 			'src/tools/crm/routing/',
 			'src/tools/vault/',
