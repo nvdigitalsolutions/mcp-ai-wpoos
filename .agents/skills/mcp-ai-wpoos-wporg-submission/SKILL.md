@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-wporg-submission
-description: "Operational guide for WordPress.org submission readiness of NV oOS standalone plugins (nvoos-docs-hub today; base plugin and future standalone addons). Covers the official Plugin Check (PCP) gate in CI and Docker (MySQL service bootstrap, activate-not---require, jq error gate with allowlisted false positives), triaging PCP findings (OffloadedContent false positive, TextDomainMismatch/slug backlog, trait-prefix stubs), packaging exclusion tri-sync, readme.txt wp.org standards (External Services, Screenshots), .wordpress-org asset layout and Playwright screenshot capture with QA verification, and the 18-point compliance checklist. Use when preparing a wp.org submission, fixing the plugin-check CI job, generating listing screenshots/banners, triaging PCP findings, or reviewing the compliance checklist."
+description: "Operational guide for WordPress.org submission readiness of NV oOS standalone plugins (nvoos-docs-hub today; base plugin and future standalone addons). Covers the 18 official wp.org guidelines with repo-specific verification mapping, the official Plugin Check (PCP) gate in CI and Docker (MySQL service bootstrap, activate-not---require, jq error gate with allowlisted false positives), triaging PCP findings (OffloadedContent false positive, TextDomainMismatch/slug backlog, trait-prefix stubs), packaging exclusion tri-sync, readme.txt wp.org standards (External Services, Screenshots), .wordpress-org asset layout and Playwright screenshot capture with QA verification. Use when preparing a wp.org submission, fixing the plugin-check CI job, generating listing screenshots/banners, triaging PCP findings, or reviewing the compliance checklist."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -25,14 +25,46 @@ plugin should ship to wp.org" and "the listing assets are in SVN".
 - Adding/fixing the packaging exclusions for a standalone ZIP
 - Reviewing readme.txt against wp.org standards
 
-## Submission checklist (source of truth)
+## The 18 official wp.org guidelines (with repo mapping)
 
-The 18-point checklist lives in three places — read the checklist doc, then
-work it top-down; the CI gate (R-T-04) is only one row:
+The authoritative list is
+https://developer.wordpress.org/plugins/wordpress-org/detailed-plugin-guidelines/
+(18 numbered points, last updated 2026-03-11). Some third-party "20-point"
+checklists add security and listing-assets items — those live in separate
+wp.org handbooks and are covered by this skill's other sections (PCP gate,
+`.wordpress-org` assets). Work the 18 below top-down for any submission;
+"where verified" tells you which artifact proves compliance for this repo.
 
-- `SUBMISSION.md` (repo root) — base-plugin submission state
-- `.github/agents/wp-org-compliance-auditor.agent.md` — auditor agent scope
-- `docs/operations/compliance/WORDPRESS_ORG_SUBMISSION_CHECKLIST.md` — 18 points
+| # | Guideline (condensed) | Where verified in this repo |
+|---|---|---|
+| 1 | GPL-compatible licensing (GPLv2+ recommended); all bundled code/data/images licensed compatibly | `License: GPLv3 or later` header, `LICENSE` copied into ZIPs by `release.yml`/`build-nvdigital-oos-wporg.yml`, PCP readme license check |
+| 2 | Developer is responsible for all contents and actions; verify third-party licenses before SVN upload | `SUBMISSION.md` manifest; `wp-org-compliance-auditor` agent scope |
+| 3 | A stable version must always be available from the directory page | SVN `trunk` + `tags/<ver>` discipline (`.wordpress-org/README.md` runbook) |
+| 4 | Code must be (mostly) human readable — no obfuscation/packer/mangled names; ship source or link build tooling | Audit row R-Q-06 (every `.min.js` has a sibling source/map); PCP code-quality checks |
+| 5 | No trialware — no locked/paywalled features inside the plugin | Pro features ship in the separate Pro addon; base ZIP has no locked functionality (`SUBMISSION.md`) |
+| 6 | SaaS is permitted — the service must provide real functionality and be documented with ToS links | AI providers are services; `readme.txt == External Services ==` (ToS + privacy URLs per host); the docs-hub `OffloadedContent` PCP allowlist rationale |
+| 7 | No tracking without explicit, informed consent; no phone-home; document data collection | All remote fetches are server-side and only after admin config (readme wording); auditor agent flags new `wp_remote_*` without disclosure |
+| 8 | No executable code via third-party systems; no CDN-loaded JS/CSS (fonts excepted); no remote update/install | Auditor agent: "no remote JS/CSS" rule; `release.yml` `BASE_ONLY_EXCLUDES` strips the langchain/transformers/web-worker CDN enqueue files from the wp.org ZIP |
+| 9 | Nothing illegal, dishonest, or morally offensive; no fake reviews/black-hat SEO | Manual audit scope (`wp-org-compliance-auditor`) |
+| 10 | No embedded links/credits on public site without explicit opt-in; "Powered by" must default OFF | Auditor agent success criteria: no unsolicited attribution |
+| 11 | No admin-dashboard hijacking — dismissible, contextual notices only; resolve-and-remove errors | Auditor agent success criteria; docs-hub settings page limits notices to its own page |
+| 12 | Readmes must not spam — ≤ 5 tags, no keyword stuffing, no affiliate links, written for people | Docs-hub readme trimmed to 3 standard tags; PCP flags tag/keyword issues |
+| 13 | Use WordPress' bundled libraries (jQuery, SimplePie, PHPMailer…) — don't ship your own copies | PCP `library_core_files` finding (present in the base-plugin report); bundle only non-WP deps in `vendor/` |
+| 14 | Avoid frequent SVN commits; descriptive commit messages; releases only | Process note — commit per release, not per change (`.wordpress-org/README.md`) |
+| 15 | Version must increment each release; trunk readme must reflect current version | Version-bump commits per release; PCP readme checks (`Stable tag` == header `Version`, `Tested up to` fresh) |
+| 16 | A complete plugin must exist at submission — no slug reservations/placeholders | PCP `no_plugin_readme` ERROR (readme.txt must be at the ZIP root); no empty-dir submissions |
+| 17 | Respect trademarks — no other product's term as the slug's initial term | PCP `trademarked_term` (base plugin: `wp-mcp-ai` contains "wp" → warning; the chosen slug `nvdigital-open-operator-system-oos` avoids it) |
+| 18 | The directory team reserves maintenance rights (updates to rules, removals, exceptions) | Informational — factor review feedback loops into the submission timeline |
+
+### Checklist source documents (read before executing)
+
+- `SUBMISSION.md` (repo root) — base-plugin submission state + per-finding
+  reviewer-reply table
+- `.github/agents/wp-org-compliance-auditor.agent.md` — PR-level auditor
+  (set_time_limit, attribution, do_shortcode wrap, CLI write paths, External
+  Services disclosure, CDN ban)
+- `docs/operations/compliance/WORDPRESS_ORG_SUBMISSION_CHECKLIST.md` —
+  pre-submission requirements + SVN process (account → review → SVN)
 - `docs/project/audits/2026-04/wp-org-submission-checklist.md` — executed
   audit with per-row status + IDs (R-D-01, R-Q-01…, R-S-01…, R-T-04…)
 
