@@ -1,5 +1,6 @@
 /** @jsxImportSource react */
 import '@testing-library/jest-dom/vitest';
+import { beforeAll } from 'vitest';
 
 /**
  * Provide a minimal `NVOOS_COMIC_READER` global for tests, mirroring the
