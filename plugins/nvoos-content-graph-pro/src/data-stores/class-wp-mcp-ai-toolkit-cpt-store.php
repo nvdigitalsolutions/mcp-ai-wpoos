@@ -1,0 +1,513 @@
+<?php
+/**
+ * Toolkit CPT Data Store (ecosystem port — Wave F1, sub-cluster 3a).
+ *
+ * Ported from the base Pro addon's
+ * `addons/pro/includes/data-stores/class-wp-mcp-ai-toolkit-cpt-store.php`
+ * for the standalone `nvoos-content-graph-pro` addon. The global class name
+ * is kept byte-identical; in monolith installs the base Pro addon owns the
+ * class (this file is only loaded standalone).
+ *
+ * WordPress Custom Post Type implementation of toolkit data storage.
+ * This is the fallback storage backend that works without any dependencies.
+ *
+ * Documented deviations from the monolith copy:
+ *
+ * 1. `declare(strict_types=1)` added.
+ * 2. Interface path resolves from `NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/'`.
+ * 3. The tenant-repository require is monolith-gated on
+ *    `defined( 'WP_MCP_AI_PATH' )`; standalone the addon's bridge class
+ *    (`src/class-wp-mcp-ai-tenant-repository.php`, extending the Platform
+ *    addon's `Tenant\TenantRepository` port) autoloads instead.
+ * 4. Text domain `mcp-ai-wpoos-pro` → `nvoos-content-graph-pro`.
+ *
+ * @package NvoosContentGraphPro
+ * @since   1.0.0
+ * @author  NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/interfaces/interface-wp-mcp-ai-toolkit-data-store.php';
+
+// Load tenant infrastructure when available (base plugin monolith). In
+// standalone mode the addon's bridge class autoloads instead
+// (src/class-wp-mcp-ai-tenant-repository.php).
+if ( defined( 'WP_MCP_AI_PATH' ) ) {
+	$nvoos_content_graph_pro_cpt_tenant_repo_path = WP_MCP_AI_PATH . 'includes/tenant/class-wp-mcp-ai-tenant-repository.php';
+	if ( file_exists( $nvoos_content_graph_pro_cpt_tenant_repo_path ) ) {
+		require_once $nvoos_content_graph_pro_cpt_tenant_repo_path;
+	}
+	unset( $nvoos_content_graph_pro_cpt_tenant_repo_path );
+}
+
+/**
+ * CPT-based data store for toolkit entities.
+ *
+ * @since 2.0.0
+ * @since 3.1.0 Extended WP_MCP_AI_Tenant_Repository for multi-tenant isolation.
+ */
+class WP_MCP_AI_Toolkit_CPT_Store extends WP_MCP_AI_Tenant_Repository implements WP_MCP_AI_Toolkit_Data_Store {
+
+	/**
+	 * Toolkit slug.
+	 *
+	 * @var string
+	 */
+	private $toolkit_slug;
+
+	/**
+	 * Entity type.
+	 *
+	 * @var string
+	 */
+	private $entity_type;
+
+	/**
+	 * Custom post type slug.
+	 *
+	 * @var string
+	 */
+	private $post_type;
+
+	/**
+	 * Field schema for this entity.
+	 *
+	 * @var array
+	 */
+	private $field_schema;
+
+	/**
+	 * Constructor.
+	 *
+	 * @since 2.0.0
+	 * @since 3.1.0 Added $tenant_type and $tenant_id parameters.
+	 *
+	 * @param string $toolkit_slug Toolkit identifier.
+	 * @param string $entity_type  Entity type.
+	 * @param string $tenant_type  Optional tenant type (default '' = bypass).
+	 * @param int    $tenant_id    Optional tenant ID (default 0 = bypass).
+	 */
+	public function __construct( $toolkit_slug, $entity_type, $tenant_type = '', $tenant_id = 0 ) {
+		$this->toolkit_slug = $toolkit_slug;
+		$this->entity_type  = $entity_type;
+		$this->post_type    = $this->generate_post_type_slug();
+		$this->field_schema = $this->load_field_schema();
+
+		// Set tenant context when provided.
+		if ( ! empty( $tenant_type ) || $tenant_id > 0 ) {
+			$this->set_tenant_context( $tenant_type, $tenant_id );
+		}
+
+		// Register the custom post type.
+		add_action( 'init', array( $this, 'register_post_type' ) );
+	}
+
+	/**
+	 * Generate post type slug from toolkit and entity.
+	 *
+	 * Uses an explicit map for known CRM post types that were created
+	 * before the toolkit data-store pattern was introduced.  Without this
+	 * map the auto-generated slug (e.g. mcp_crm_leads) differs from the
+	 * canonical post type (e.g. mcp_ai_lead), causing read-path tools to
+	 * fail with "Item not found" for records that actually exist.
+	 *
+	 * @return string Post type slug (max 20 characters).
+	 */
+	private function generate_post_type_slug() {
+		// Canonical post-type map for toolkits where the auto-generated
+		// slug does not match the post type already in use.
+		$canonical_types = array(
+			'crm' => array(
+				'leads'      => 'mcp_ai_lead',
+				'contacts'   => 'mcp_crm_contacts',
+				'deals'      => 'mcp_ai_deal',
+				'activities' => 'mcp_ai_crm_activity',
+			),
+		);
+
+		if ( isset( $canonical_types[ $this->toolkit_slug ][ $this->entity_type ] ) ) {
+			return $canonical_types[ $this->toolkit_slug ][ $this->entity_type ];
+		}
+
+		// Default: mcp_{toolkit}_{entity} (truncated to 20 chars).
+		$slug = 'mcp_' . $this->toolkit_slug . '_' . $this->entity_type;
+		return substr( $slug, 0, 20 );
+	}
+
+	/**
+	 * Load field schema for this entity type.
+	 *
+	 * @return array Field definitions.
+	 */
+	private function load_field_schema() {
+		$schema = array();
+
+		// Allow toolkits to define their field schemas.
+		$schema = apply_filters(
+			'wp_mcp_ai_toolkit_cpt_field_schema',
+			$schema,
+			$this->toolkit_slug,
+			$this->entity_type
+		);
+
+		return $schema;
+	}
+
+	/**
+	 * Register custom post type.
+	 *
+	 * Skips registration when the post type already exists (e.g. because
+	 * it is one of the canonical types mapped in generate_post_type_slug
+	 * that was registered by another component).
+	 */
+	public function register_post_type() {
+		// Do not override a post type that is already registered.
+		if ( post_type_exists( $this->post_type ) ) {
+			return;
+		}
+
+		$labels = array(
+			'name'               => sprintf( '%s %s', ucwords( str_replace( '_', ' ', $this->toolkit_slug ) ), ucwords( str_replace( '_', ' ', $this->entity_type ) ) ),
+			'singular_name'      => sprintf( '%s %s', ucwords( str_replace( '_', ' ', $this->toolkit_slug ) ), rtrim( ucwords( str_replace( '_', ' ', $this->entity_type ) ), 's' ) ),
+			'add_new'            => __( 'Add New', 'nvoos-content-graph-pro' ),
+			'add_new_item'       => __( 'Add New Item', 'nvoos-content-graph-pro' ),
+			'edit_item'          => __( 'Edit Item', 'nvoos-content-graph-pro' ),
+			'new_item'           => __( 'New Item', 'nvoos-content-graph-pro' ),
+			'view_item'          => __( 'View Item', 'nvoos-content-graph-pro' ),
+			'search_items'       => __( 'Search Items', 'nvoos-content-graph-pro' ),
+			'not_found'          => __( 'No items found', 'nvoos-content-graph-pro' ),
+			'not_found_in_trash' => __( 'No items found in trash', 'nvoos-content-graph-pro' ),
+		);
+
+		$args = array(
+			'labels'          => $labels,
+			'public'          => false,
+			'show_ui'         => true,
+			'show_in_menu'    => false,
+			'capability_type' => 'post',
+			'hierarchical'    => false,
+			'supports'        => array( 'title', 'editor', 'custom-fields' ),
+			'has_archive'     => false,
+			'rewrite'         => false,
+			'query_var'       => false,
+			'show_in_rest'    => true,
+			'rest_base'       => $this->post_type,
+		);
+
+		// Allow customization of CPT args.
+		$args = apply_filters(
+			'wp_mcp_ai_toolkit_cpt_args',
+			$args,
+			$this->toolkit_slug,
+			$this->entity_type
+		);
+
+		register_post_type( $this->post_type, $args );
+	}
+
+	/**
+	 * Create a new item.
+	 *
+	 * @param array $data Item data.
+	 * @return int|WP_Error Post ID on success, WP_Error on failure.
+	 */
+	public function create_item( $data ) {
+		$post_data = array(
+			'post_type'   => $this->post_type,
+			'post_status' => 'publish',
+		);
+
+		// Extract title from data.
+		if ( isset( $data['title'] ) ) {
+			$post_data['post_title'] = sanitize_text_field( $data['title'] );
+			unset( $data['title'] );
+		}
+
+		// Extract content from data.
+		if ( isset( $data['content'] ) ) {
+			$post_data['post_content'] = wp_kses_post( $data['content'] );
+			unset( $data['content'] );
+		}
+
+		// Create the post.
+		$post_id = wp_insert_post( $post_data, true );
+
+		if ( is_wp_error( $post_id ) ) {
+			return $post_id;
+		}
+
+		// Save remaining data as post meta.
+		foreach ( $data as $key => $value ) {
+			$meta_key = sanitize_key( $key );
+			update_post_meta( $post_id, $meta_key, $value );
+		}
+
+		// Store toolkit and entity type for filtering.
+		update_post_meta( $post_id, '_toolkit_slug', $this->toolkit_slug );
+		update_post_meta( $post_id, '_entity_type', $this->entity_type );
+
+		// Stamp tenant ownership when tenant context is active.
+		$this->save_tenant_meta( $post_id );
+
+		return $post_id;
+	}
+
+	/**
+	 * Get an item.
+	 *
+	 * @param int $item_id Post ID.
+	 * @return array|WP_Error Item data on success, WP_Error on failure.
+	 */
+	public function get_item( $item_id ) {
+		$post = get_post( $item_id );
+
+		if ( ! $post || $post->post_type !== $this->post_type ) {
+			return new WP_Error( 'item_not_found', __( 'Item not found', 'nvoos-content-graph-pro' ) );
+		}
+
+		// Enforce tenant isolation when context is active.
+		if ( ! $this->validate_tenant_ownership( $item_id ) ) {
+			return new WP_Error( 'item_not_found', __( 'Item not found', 'nvoos-content-graph-pro' ) );
+		}
+
+		$data = array(
+			'id'      => $post->ID,
+			'title'   => $post->post_title,
+			'content' => $post->post_content,
+		);
+
+		// Get all meta fields.
+		$meta = get_post_meta( $post->ID );
+		foreach ( $meta as $key => $values ) {
+			// Skip WordPress internal meta and our internal tracking.
+			if ( strpos( $key, '_' ) === 0 ) {
+				continue;
+			}
+			$data[ $key ] = maybe_unserialize( $values[0] );
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Update an item.
+	 *
+	 * @param int   $item_id Post ID.
+	 * @param array $data    Updated data.
+	 * @return bool|WP_Error True on success, WP_Error on failure.
+	 */
+	public function update_item( $item_id, $data ) {
+		$post = get_post( $item_id );
+
+		if ( ! $post || $post->post_type !== $this->post_type ) {
+			return new WP_Error( 'item_not_found', __( 'Item not found', 'nvoos-content-graph-pro' ) );
+		}
+
+		// Enforce tenant isolation when context is active.
+		if ( ! $this->validate_tenant_ownership( $item_id ) ) {
+			return new WP_Error( 'item_not_found', __( 'Item not found', 'nvoos-content-graph-pro' ) );
+		}
+
+		$post_data = array( 'ID' => $item_id );
+
+		// Update title if provided.
+		if ( isset( $data['title'] ) ) {
+			$post_data['post_title'] = sanitize_text_field( $data['title'] );
+			unset( $data['title'] );
+		}
+
+		// Update content if provided.
+		if ( isset( $data['content'] ) ) {
+			$post_data['post_content'] = wp_kses_post( $data['content'] );
+			unset( $data['content'] );
+		}
+
+		// Update the post if title or content changed.
+		if ( count( $post_data ) > 1 ) {
+			$result = wp_update_post( $post_data, true );
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+		}
+
+		// Update meta fields.
+		foreach ( $data as $key => $value ) {
+			$meta_key = sanitize_key( $key );
+			update_post_meta( $item_id, $meta_key, $value );
+		}
+
+		// Re-stamp tenant ownership (ensures tenant fields stay current).
+		$this->save_tenant_meta( $item_id );
+
+		return true;
+	}
+
+	/**
+	 * Delete an item.
+	 *
+	 * @param int $item_id Post ID.
+	 * @return bool|WP_Error True on success, WP_Error on failure.
+	 */
+	public function delete_item( $item_id ) {
+		$post = get_post( $item_id );
+
+		if ( ! $post || $post->post_type !== $this->post_type ) {
+			return new WP_Error( 'item_not_found', __( 'Item not found', 'nvoos-content-graph-pro' ) );
+		}
+
+		// Enforce tenant isolation when context is active.
+		if ( ! $this->validate_tenant_ownership( $item_id ) ) {
+			return new WP_Error( 'item_not_found', __( 'Item not found', 'nvoos-content-graph-pro' ) );
+		}
+
+		$result = wp_delete_post( $item_id, true );
+
+		if ( ! $result ) {
+			return new WP_Error( 'delete_failed', __( 'Failed to delete item', 'nvoos-content-graph-pro' ) );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Query items.
+	 *
+	 * Accepts the same `per_page` key used by the CCT store so callers can
+	 * treat both stores interchangeably through the data-store interface.
+	 * `per_page` is mapped to WP_Query's `posts_per_page` before the query runs.
+	 *
+	 * @param array $args Query arguments. Supports `per_page` (alias for
+	 *                    `posts_per_page`) plus any standard WP_Query arg.
+	 * @return array Array of items.
+	 */
+	public function query_items( $args = array() ) {
+		// Map the interface-level `per_page` key to WP_Query's `posts_per_page`
+		// so callers that use the store interface can pass a consistent key.
+		if ( isset( $args['per_page'] ) && ! isset( $args['posts_per_page'] ) ) {
+			$args['posts_per_page'] = $args['per_page'];
+			unset( $args['per_page'] );
+		}
+
+		// Inject tenant meta query for multi-tenant isolation.
+		$tenant_meta_query = $this->tenant_meta_query();
+		if ( ! empty( $tenant_meta_query ) ) {
+			if ( isset( $args['meta_query'] ) && is_array( $args['meta_query'] ) ) {
+				$args['meta_query'] = array(
+					'relation' => 'AND',
+					$tenant_meta_query,
+					$args['meta_query'],
+				);
+			} else {
+				$args['meta_query'] = $tenant_meta_query;
+			}
+		}
+
+		$defaults = array(
+			'post_type'        => $this->post_type,
+			'posts_per_page'   => 20,
+			'orderby'          => 'date',
+			'order'            => 'DESC',
+			// Suppress external post-query filters so that third-party plugins
+			// cannot inadvertently limit the result set.
+			'suppress_filters' => true,
+			'no_found_rows'    => false,
+		);
+
+		$query_args = wp_parse_args( $args, $defaults );
+		$query      = new WP_Query( $query_args );
+
+		$items = array();
+		if ( $query->have_posts() ) {
+			while ( $query->have_posts() ) {
+				$query->the_post();
+				$items[] = $this->get_item( get_the_ID() );
+			}
+			wp_reset_postdata();
+		}
+
+		return $items;
+	}
+
+	/**
+	 * Get storage type.
+	 *
+	 * @return string Always 'cpt'.
+	 */
+	public function get_storage_type() {
+		return 'cpt';
+	}
+
+	/**
+	 * Get post type slug.
+	 *
+	 * @return string Post type slug.
+	 */
+	public function get_content_type_slug() {
+		return $this->post_type;
+	}
+
+	/**
+	 * Check if storage is available.
+	 *
+	 * @return bool Always true (CPT is always available).
+	 */
+	public function is_available() {
+		return true;
+	}
+
+	/**
+	 * Get field schema.
+	 *
+	 * @return array Field definitions.
+	 */
+	public function get_field_schema() {
+		return $this->field_schema;
+	}
+
+	/**
+	 * Set the tenant context for this store instance.
+	 *
+	 * Delegates to the parent repository's set_tenant_context() so that
+	 * all CRUD operations are automatically scoped to the given tenant.
+	 *
+	 * @since 3.1.0
+	 *
+	 * @param string $type Tenant type (e.g. 'school', 'company').
+	 * @param int    $id   Tenant ID. Use 0 to bypass (backward-compat).
+	 * @return void
+	 */
+	// phpcs:ignore Generic.CodeAnalysis.UselessOverridingMethod -- Kept byte-identical with the monolith; the override re-exposes the tenant-context setter for direct store construction.
+	public function set_tenant_context( string $type, int $id ): void {
+		parent::set_tenant_context( $type, $id );
+	}
+
+	/**
+	 * Validate that a post belongs to the current tenant context.
+	 *
+	 * In bypass mode (tenant_id = 0) this always returns true so existing
+	 * code without tenant context continues to work.
+	 *
+	 * @since 3.1.0
+	 *
+	 * @param int $post_id Post ID to validate.
+	 * @return bool True when the post belongs to the current tenant or bypass is active.
+	 */
+	private function validate_tenant_ownership( $post_id ) {
+		// Bypass mode — no tenant scoping active.
+		if ( 0 === $this->tenant_id && ! $this->strict ) {
+			return true;
+		}
+
+		$post_tenant_id   = (int) get_post_meta( $post_id, '_tenant_id', true );
+		$post_tenant_type = get_post_meta( $post_id, '_tenant_type', true );
+
+		return ( $post_tenant_id === $this->tenant_id && $post_tenant_type === $this->tenant_type );
+	}
+}
