@@ -11,12 +11,13 @@
  *
  * 1. `declare(strict_types=1)` added.
  * 2. File paths resolve from `NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/'`.
- * 3. Slimmed wiring — the blueprints/command-center pages, research-add,
- *    inbound listeners, and the remaining tool files land with their F2
+ * 3. Slimmed wiring — the command-center page, research-add, inbound
+ *    listeners, and the remaining tool files land with their F2
  *    sub-clusters; every deferred require stays file-gated so this init
  *    degrades gracefully until each file exists (same wave-proof pattern
- *    as the F1 module files guards). The CRM REST controller and the
- *    per-CPT settings pages landed with their F2 slices.
+ *    as the F1 module files guards). The CRM REST controller, the
+ *    per-CPT settings pages, and the blueprints page landed with their
+ *    F2 slices.
  * 4. The JetEngine company-field registration stays byte-identical
  *    (`function_exists( 'jet_engine' )` + `class_exists(
  *    'WP_MCP_AI_JetEngine_Meta_Helper' )` guard — dormant standalone).
@@ -144,6 +145,13 @@ if ( $nvoos_content_graph_pro_is_enabled && ! $nvoos_content_graph_pro_is_base )
 		if ( file_exists( $nvoos_content_graph_pro_crm_admin_menu ) ) {
 			require_once $nvoos_content_graph_pro_crm_admin_menu;
 			WP_MCP_AI_CRM_Admin_Menu::init();
+		}
+
+		// CRM Blueprints page (F2 admin remainder).
+		$nvoos_content_graph_pro_blueprints_page = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/admin/class-wp-mcp-ai-crm-blueprints-page.php';
+		if ( file_exists( $nvoos_content_graph_pro_blueprints_page ) ) {
+			require_once $nvoos_content_graph_pro_blueprints_page;
+			WP_MCP_AI_CRM_Blueprints_Page::init();
 		}
 
 		// Per-CPT settings pages (F2 admin settings batch).
