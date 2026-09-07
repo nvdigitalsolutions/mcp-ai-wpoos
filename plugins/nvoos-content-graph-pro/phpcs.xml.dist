@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<ruleset name="NvoosContentGraphPro">
+    <description>NV oOS Content Graph — Pro WordPress Coding Standards</description>
+
+    <!-- Use WordPress-Extra as the baseline. -->
+    <rule ref="WordPress-Extra">
+        <!-- Short ternaries are perfectly fine in modern PHP. -->
+        <exclude name="Universal.Operators.DisallowShortTernary.Found"/>
+        <!--
+            Mixed file conventions: the namespaced composition root and
+            test seams use PSR-4-style file names (Plugin.php), while the
+            ported Pro classes keep the base addon's WP_MCP_AI_* names
+            inside class-wp-mcp-ai-*.php files (byte-identical surface).
+            Same exclusion as the platform/AI addons.
+        -->
+        <exclude name="WordPress.Files.FileName"/>
+    </rule>
+
+    <!-- Require strict types. -->
+    <rule ref="Generic.PHP.RequireStrictTypes"/>
+
+    <!--
+        Extraction transition: ported subsystems intentionally keep the
+        base Pro addon's global WP_MCP_AI_* class and wp_mcp_ai_* hook
+        names so the public surface stays byte-identical (see the plugin
+        README §Porting rules). Remove once the base Pro copies are gone.
+    -->
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+        <properties>
+            <property name="prefixes" type="array">
+                <element value="NvoosContentGraphPro"/>
+                <element value="nvoos_content_graph_pro"/>
+                <element value="NVOOS_CONTENT_GRAPH_PRO"/>
+                <element value="wp_mcp_ai"/>
+                <element value="WP_MCP_AI"/>
+            </property>
+        </properties>
+    </rule>
+
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array">
+                <element value="nvoos-content-graph-pro"/>
+            </property>
+        </properties>
+    </rule>
+
+    <file>./nvoos-content-graph-pro.php</file>
+    <file>./src/</file>
+    <file>./tests/</file>
+
+    <exclude-pattern>/vendor/*</exclude-pattern>
+    <exclude-pattern>/node_modules/*</exclude-pattern>
+
+    <config name="minimum_supported_wp_version" value="6.5"/>
+    <config name="testVersion" value="8.1-"/>
+</ruleset>

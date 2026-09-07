@@ -16,6 +16,7 @@
 #   PORT_CORE_VOL   wp-core volume           (default oos-wp_wp_core)
 #   PORT_VENDOR_VOL composer vendor volume   (default pearl-snipe-vendor)
 #   PORT_SUITE_DIR  phpunit config dir       (default plugins/nvoos-content-graph-ai-platform)
+#   PORT_STANDALONE_VAR standalone matrix env var (default WP_MCP_AI_PLATFORM_STANDALONE)
 #   PORT_EXTRA_ARGS extra phpunit args       (default "")
 
 set -u
@@ -28,6 +29,7 @@ NETWORK="${PORT_NETWORK:-oos-wp_default}"
 CORE_VOL="${PORT_CORE_VOL:-oos-wp_wp_core}"
 VENDOR_VOL="${PORT_VENDOR_VOL:-pearl-snipe-vendor}"
 SUITE_DIR="${PORT_SUITE_DIR:-plugins/nvoos-content-graph-ai-platform}"
+STANDALONE_VAR="${PORT_STANDALONE_VAR:-WP_MCP_AI_PLATFORM_STANDALONE}"
 EXTRA_ARGS="${PORT_EXTRA_ARGS:-}"
 WIN_ROOT="$(cygpath -w "$REPO_ROOT" 2>/dev/null || echo "$REPO_ROOT")"
 
@@ -87,7 +89,7 @@ cmd_gates() {
 	echo "phpcs exit: $PHPCS_EXIT"
 
 	echo "== standalone matrix =="
-	run_matrix "-e WP_MCP_AI_PLATFORM_STANDALONE=1" 2>&1 | grep -E "^(Tests|There (was|were)|FAILURES|OK)|risky" || true
+	run_matrix "-e ${STANDALONE_VAR}=1" 2>&1 | grep -E "^(Tests|There (was|were)|FAILURES|OK)|risky" || true
 	echo "== monolith matrix =="
 	run_matrix "" 2>&1 | grep -E "^(Tests|There (was|were)|FAILURES|OK)|risky" || true
 }
