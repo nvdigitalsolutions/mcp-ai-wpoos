@@ -77,6 +77,21 @@ resolves per mode (base `WP_MCP_AI_Dead_Letter_Queue` monolith /
 platform `Queues\DeadLetterQueue` standalone — byte-compatible static
 `get_all()`/`get_stats()`/`retry()`/`dismiss()`/`remove()` contract,
 the E2 port; null → empty listing + zeroed stats, documented guard).
+Sub-cluster 6 (`MediaLibraryColumns`) is the aligned port of
+`WP_MCP_AI_Admin_Media_Library_Columns`: byte-identical singleton
+contract (`get_instance()`/`init()`), `_wp_mcp_ai_usage` meta key, the
+`wp_mcp_ai_usage` AI Usage column, the no-usage dash and the
+tokens/cost/operations badge render surface, the token-count and cost
+formatters, the attachment-usage reader, the per-attachment usage
+tracker (`wp_mcp_ai_after_tool_execution`, image-tool allowlist,
+argument/result attachment-id extraction, accumulation with per-tool
+counts, provider/model stamps), and the media-page-only inline
+stylesheet. The cost calculator is base-owned (monolith-only —
+standalone cost stays 0.0, documented); the constructor wiring is
+extracted into a protected `wire_hooks()` (additive — wp-phpunit hook
+snapshot restore, documented); wiring invoked standalone-only via
+`Plugin::registerManagers()` (the base loader owns the same integration
+monolith).
 
 ## Tier
 
@@ -97,6 +112,7 @@ the E2 port; null → empty listing + zeroed stats, documented guard).
 | `NvoosContentGraphAiPlatform\Admin\Managers\CronManagerPage` | `CronManagerPage.php` | `Plugin::registerManagers()` — standalone menu/enqueue/admin-post/AJAX wiring |
 | `NvoosContentGraphAiPlatform\Admin\Managers\DagBuilder` | `DagBuilder.php` | `Plugin::registerManagers()` — standalone menu/enqueue wiring |
 | `NvoosContentGraphAiPlatform\Admin\Managers\DlqManager` | `DlqManager.php` | `Plugin::registerManagers()` — standalone menu/enqueue/admin-post wiring |
+| `NvoosContentGraphAiPlatform\Admin\Managers\MediaLibraryColumns` | `MediaLibraryColumns.php` | `Plugin::registerManagers()` — standalone media-column/tracking/style wiring (singleton `init()`) |
 
 ## Inputs / Outputs / Neighbors
 
@@ -183,6 +199,15 @@ the E2 port; null → empty listing + zeroed stats, documented guard).
   success + retry error-code envelopes, and the inline-stylesheet
   enqueue. Runs in both matrices against the real DLQ table (E2
   DDL-suspension pattern).
+- `tests/test-media-library-columns.php` — characterization suite
+  covering the byte-identical meta key, the singleton contract, the
+  AI Usage column, the no-usage dash + badge render surface, the
+  token-count and cost formatters, the attachment-usage reader (null
+  degradations), the usage tracker (allowlist, argument/result id
+  extraction, accumulation, provider/model stamps, per-mode cost),
+  the admin-context hook wiring (exposer re-arm against the
+  wp-phpunit hook-snapshot restore), and the media-page-only
+  stylesheet enqueue. Runs in both matrices.
 
 ## Also Load
 
