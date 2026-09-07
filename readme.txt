@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.71
+Stable tag: 1.1.72
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.72 - September 7, 2026 =
+
+E-commerce and ecosystem-port release. Two new Pro tools give agents direct WooCommerce price and stock control: update_woo_product_price (regular and sale price) and update_woo_product_qty (stock quantity with stock management), both all-product-type-aware and sharing a new Woo price/qty updater trait that bulk_update_products also uses. Fixed: scheduled EZuite and FlowHub inventory syncs now deliver their assigned connection ID (the scheduled action was dropping it, failing with "No EZuite connection ID provided"); "Update Pro Now" verifies Pro vendor integrity before and after updating, so an incomplete package can no longer white-screen the site; the container's tool_registry binding now always resolves the live tool-registry singleton (stale cached binding broke the transcript-mining job). Security: browserslist and qs bumped to patched versions across all seven package-lock files (12 Dependabot alerts). The OpenAI image model default now reads gpt-image-2 across all three settings layers. The Content Graph ecosystem completes its engine waves: Content Graph AI executes the base tool inventory standalone (Wave D8) and gains the shadow engine, markup, Paper Store, OKF, crawler, and OOS-bridge ports (Wave E6); the platform addon closes Waves E2/E3/E5/E1/E4 plus the E-UI-1/2/3 admin screen ports; the standalone Content Graph plugin was hardened for wp.org resubmission. Stale 1.1.70 and 1.1.71 build ZIPs removed. Tool count: ~303 base + ~1,265 Pro (~1,568 total; live registry authoritative).
 
 = 1.1.71 - September 5, 2026 =
 

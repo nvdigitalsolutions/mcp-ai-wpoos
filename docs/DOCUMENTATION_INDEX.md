@@ -1,13 +1,15 @@
 # NV oOS Documentation Index
 
-**Last Updated:** September 5, 2026
-**Plugin Version:** 1.1.71
+**Last Updated:** September 7, 2026
+**Plugin Version:** 1.1.72
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
+
+> **SEPTEMBER 7, 2026 UPDATE (v1.1.72):** E-COMMERCE & ECOSYSTEM-PORT RELEASE. **TWO NEW WOO TOOLS** (PR #6388) — `update_woo_product_price` (REGULAR/SALE, ALL PRODUCT TYPES) + `update_woo_product_qty` (STOCK + MANAGEMENT) ON A SHARED `WP_MCP_AI_Woo_Price_Qty_Updater` TRAIT (ALSO USED BY `bulk_update_products`). **SCHEDULED SYNC FIX** (PR #6386) — EZuite/FlowHub SCHEDULED SYNCs DELIVER THEIR ASSIGNED CONNECTION ID (THE SCHEDULED ACTION WAS DROPPING IT). **PRO UPDATE VENDOR INTEGRITY** (PR #6338) — "Update Pro Now" VERIFIES THE PRO PACKAGE'S `vendor/` BEFORE/AFTER UPDATING (NO WHITE-SCREENS). **CONTAINER BINDING FIX** (PR #6339) — `tool_registry` RESOLVES THE LIVE SINGLETON ON EVERY `get()`. **DEPENDENCY SECURITY** (PR #6365) — `browserslist` + `qs` PATCHED ACROSS ALL SEVEN LOCKFILES (12 DEPENDABOT ALERTS). **GPT-IMAGE-2 EVERYWHERE** (PR #6332) — OPENAI IMAGE DEFAULT ALIGNED ACROSS ALL THREE SETTINGS LAYERS. **ECOSYSTEM PORT WAVES** (PRs #6330–#6387) — WAVE D8 CLOSES THE STANDALONE TOOL-EXECUTION GAP IN CONTENT GRAPH AI; WAVE E6 PORTS SHADOW/MARKUP/PAPER STORE/OKF/CRAWLER/OOS-BRIDGE INTO THE AI ADDON; THE PLATFORM ADDON CLOSES WAVES E2/E3/E5/E1/E4 + E-UI-1/2/3 ADMIN SCREENS; `nvoos-content-graph` HARDENED FOR WP.ORG. TOOL COUNT: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.70 + 1.1.71 BUILD ZIPS REMOVED. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
 > **SEPTEMBER 5, 2026 UPDATE (v1.1.71):** RATE-LIMIT, MODEL-CATALOG & ECOSYSTEM. **REST RATE-LIMIT UNLOCK** (PR #6322) — `check_rate_limit()` NOW USES FIXED-WINDOW ACCOUNTING (HONEST REMAINING-TIME `retry_after`, NO INFINITE SLIDE; LEGACY TRANSIENTS NORMALIZED) AND FIRES `wp_mcp_ai_rest_request_rate_limit_exceeded` SO THE RESTRICTION REGISTRY FLAGS BLOCKED USERS INTO THE RESTRICTIONS TAB + TOKEN MANAGER WITH THE LIFT BUTTON (LIFT CLEARS THE REQUEST WINDOW; GUEST IP-KEYED BLOCKS EXPIRE ON THEIR OWN). **MEMPALACE WING-SCOPE ENFORCEMENT** (PR #6327) — `matches_wake_filters()` APPLIES `wing`/`room` EXCLUSIONS (GRAPHIFY ANCHORS ONLY BOOST, NEVER EXCLUDE). **CHECKOUT API INTO THE PIPELINE** (PR #6315) — ADDON BUILD ZIP + MAIN-SUITE TESTS; TOKEN/CRYPTO CLASSES USE `wp_salt()` (NO RAW SALT CONSTANTS). **CONNECTORS LINKS** → `options-connectors.php` (PR #6314). **SEPTEMBER 2026 MODEL CATALOG** (PR #6328) — 228 MODELS (GPT-5.6 FAMILY, GPT-6-ASTRA, GPT-IMAGE-2, CLAUDE-OPUS-5, GEMINI-3.6/3.7/3.8-FLASH, KIMI-K3), RETIRED DEEPSEEK/GEMINI-3.1-FLASH/IMAGEN-4 IDs WITH MIGRATION-MAP SUCCESSORS, PRICING DRIFT FIXES, NEW DEFAULTS (`gemini-3.6-flash`, `gpt-image-2`, `kimi-k3`). **CONTENT GRAPH ECOSYSTEM** — STANDALONE PLUGIN 1.0.4 VISUAL EXPERIENCE (THEME ENGINE, APPEARANCE TAB, SVG GLYPHS, EXPLORER CHROME, EDGES ROUTE, EXPORT, CHECKOUT FALLBACK, PR #6318); CONTENT GRAPH AI ASSISTANT-BUILDER BLOCKS + SETTINGS SHELL (PRs #6316/#6317); PLATFORM WAVE E2 QUEUE LAYER (ASYNCJOBQUEUE → QUEUEMANAGER → JOBQUEUEMANAGER → DEADLETTERQUEUE, PRs #6319–#6321/#6325). **NEW `mcp-ai-wpoos-updates` SKILL** — CODING-TIME SKILLS 53 → 54 (PRs #6323/#6324). TEST-SUITE SKILL → 40 PATTERNS. STALE 1.1.68 + 1.1.69 BUILD ZIPS REMOVED. TOOL COUNT UNCHANGED: ~303 BASE + ~1,263 PRO (~1,566 TOTAL). UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 >
@@ -636,6 +638,16 @@ n#### New Audit & Compliance Docs
 - **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.39 latest updates section, version bump, duplicate section cleanup.
 
 ---
+
+## 🆕 September 2026 — v1.1.72: Woo Price/Qty Tools, Scheduled-Sync Fix, Ecosystem Port Waves
+
+### New and updated documents (September 7, 2026, v1.1.72)
+
+- **[docs/project/plans/v1.1.72-docs-catch-up.md](project/plans/v1.1.72-docs-catch-up.md)** ⭐ **NEW** — v1.1.72 docs & release catch-up plan (PRs #6330–#6388, full PR-description review + housekeeping). (September 7, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.72 highlights + latest updates (Woo tools, sync fix, ecosystem port waves, ~1,568 tools). (September 7, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.72] section with PR-level detail. (September 7, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.72 + changelog entry. (September 7, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.72 entry. (September 7, 2026)
 
 ## 🆕 September 2026 — v1.1.71: Rate-Limit Unlock, September Model Catalog, Content Graph 1.0.4, Wave E2 Queue Layer
 
