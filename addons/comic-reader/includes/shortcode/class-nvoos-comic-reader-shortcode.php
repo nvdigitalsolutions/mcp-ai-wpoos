@@ -40,12 +40,15 @@ class NV_oOS_Comic_Reader_Shortcode {
 	 * @return string HTML output.
 	 */
 	public static function render( $atts ) {
+		// Site-wide settings defaults fill in any attribute the embed omits.
+		$site_defaults = NV_oOS_Comic_Reader_Settings::get_reader_defaults();
+
 		$atts = shortcode_atts(
 			array(
 				'id'        => '',
 				'mode'      => 'library',
 				'height'    => '',
-				'direction' => 'ltr',
+				'direction' => isset( $site_defaults['direction'] ) ? $site_defaults['direction'] : 'ltr',
 			),
 			$atts,
 			self::SHORTCODE
@@ -57,10 +60,12 @@ class NV_oOS_Comic_Reader_Shortcode {
 		}
 
 		$config = array(
-			'comicId'   => absint( $atts['id'] ),
-			'mode'      => in_array( $atts['mode'], array( 'library', 'reader' ), true ) ? $atts['mode'] : 'library',
-			'height'    => sanitize_text_field( $atts['height'] ),
-			'direction' => in_array( $atts['direction'], array( 'ltr', 'rtl' ), true ) ? $atts['direction'] : 'ltr',
+			'comicId'        => absint( $atts['id'] ),
+			'mode'           => in_array( $atts['mode'], array( 'library', 'reader' ), true ) ? $atts['mode'] : 'library',
+			'height'         => sanitize_text_field( $atts['height'] ),
+			'direction'      => in_array( $atts['direction'], array( 'ltr', 'rtl' ), true ) ? $atts['direction'] : 'ltr',
+			'defaults'       => $site_defaults,
+			'serverProgress' => NV_oOS_Comic_Reader_Settings::progress_sync_enabled(),
 		);
 
 		self::enqueue_assets( $config );
@@ -73,7 +78,7 @@ class NV_oOS_Comic_Reader_Shortcode {
 		$height_attr = '' !== $config['height'] ? 'min-height:' . $config['height'] . ';' : '';
 
 		return sprintf(
-			'<div class="nvoos-comic-reader-root" role="application" aria-label="%1$s" data-config="%2$s" style="%3$s"></div>',
+			'<div class="nvoos-comic-reader-root" role="region" aria-label="%1$s" data-config="%2$s" style="%3$s"></div>',
 			esc_attr__( 'Comic Reader', 'nvoos-comic-reader' ),
 			esc_attr( $config_json ),
 			esc_attr( $height_attr )
@@ -179,6 +184,62 @@ class NV_oOS_Comic_Reader_Shortcode {
 					'noCharacters'      => __( 'No characters defined yet.', 'nvoos-comic-reader' ),
 					'editComic'         => __( 'Edit Comic', 'nvoos-comic-reader' ),
 					'createComic'       => __( 'Create Comic', 'nvoos-comic-reader' ),
+					// Reader UX (v0.3.0).
+					'retry'             => __( 'Retry', 'nvoos-comic-reader' ),
+					'cancel'            => __( 'Cancel', 'nvoos-comic-reader' ),
+					'noPages'           => __( 'No pages to display.', 'nvoos-comic-reader' ),
+					'pageAlt'           => __( 'Page %1$d', 'nvoos-comic-reader' ),
+					'settings'          => __( 'Reader settings', 'nvoos-comic-reader' ),
+					'close'             => __( 'Close', 'nvoos-comic-reader' ),
+					'help'              => __( 'Keyboard shortcuts', 'nvoos-comic-reader' ),
+					'thumbnails'        => __( 'Pages overview', 'nvoos-comic-reader' ),
+					'readingMode'       => __( 'Reading mode', 'nvoos-comic-reader' ),
+					'modePaged'         => __( 'Paged', 'nvoos-comic-reader' ),
+					'modeScroll'        => __( 'Vertical scroll', 'nvoos-comic-reader' ),
+					'modeWebtoon'       => __( 'Webtoon', 'nvoos-comic-reader' ),
+					'scaleType'         => __( 'Scale', 'nvoos-comic-reader' ),
+					'fitScreen'         => __( 'Fit to screen', 'nvoos-comic-reader' ),
+					'original'          => __( 'Original size', 'nvoos-comic-reader' ),
+					'background'        => __( 'Background', 'nvoos-comic-reader' ),
+					'backgroundWhite'   => __( 'White', 'nvoos-comic-reader' ),
+					'backgroundGray'    => __( 'Gray', 'nvoos-comic-reader' ),
+					'backgroundBlack'   => __( 'Black', 'nvoos-comic-reader' ),
+					'transitions'       => __( 'Page transition', 'nvoos-comic-reader' ),
+					'transitionNone'    => __( 'None', 'nvoos-comic-reader' ),
+					'transitionFade'    => __( 'Fade', 'nvoos-comic-reader' ),
+					'transitionSlide'   => __( 'Slide', 'nvoos-comic-reader' ),
+					'gestures'          => __( 'Touch gestures', 'nvoos-comic-reader' ),
+					'gesturesOn'        => __( 'Enabled', 'nvoos-comic-reader' ),
+					'gesturesOff'       => __( 'Disabled', 'nvoos-comic-reader' ),
+					'continueReading'   => __( 'Continue reading', 'nvoos-comic-reader' ),
+					'allComics'         => __( 'All comics', 'nvoos-comic-reader' ),
+					'searchPlaceholder' => __( 'Search comics…', 'nvoos-comic-reader' ),
+					'sortLabel'         => __( 'Sort', 'nvoos-comic-reader' ),
+					'sortDate'          => __( 'Newest first', 'nvoos-comic-reader' ),
+					'sortTitle'         => __( 'Title A–Z', 'nvoos-comic-reader' ),
+					'sortSize'          => __( 'Largest first', 'nvoos-comic-reader' ),
+					'filterSeries'      => __( 'Series', 'nvoos-comic-reader' ),
+					'allSeries'         => __( 'All series', 'nvoos-comic-reader' ),
+					'noSeries'          => __( 'No series', 'nvoos-comic-reader' ),
+					'readPercent'       => __( '%1$d%% read', 'nvoos-comic-reader' ),
+					'completedLabel'    => __( 'Completed', 'nvoos-comic-reader' ),
+					// Library & metadata (v0.4.0).
+					'editMetadata'      => __( 'Edit details', 'nvoos-comic-reader' ),
+					'save'              => __( 'Save', 'nvoos-comic-reader' ),
+					'title'             => __( 'Title', 'nvoos-comic-reader' ),
+					'series'            => __( 'Series', 'nvoos-comic-reader' ),
+					'number'            => __( 'Issue number', 'nvoos-comic-reader' ),
+					'volume'            => __( 'Volume', 'nvoos-comic-reader' ),
+					'writer'            => __( 'Writer', 'nvoos-comic-reader' ),
+					'publisher'         => __( 'Publisher', 'nvoos-comic-reader' ),
+					'metadataSaved'     => __( 'Details saved.', 'nvoos-comic-reader' ),
+					'errorSave'         => __( 'Failed to save details.', 'nvoos-comic-reader' ),
+					'addToCollection'   => __( 'Add to collection', 'nvoos-comic-reader' ),
+					'collections'       => __( 'Collections', 'nvoos-comic-reader' ),
+					'newCollection'     => __( 'New collection…', 'nvoos-comic-reader' ),
+					'upload'            => __( 'Upload', 'nvoos-comic-reader' ),
+					'noResults'         => __( 'No comics match your search.', 'nvoos-comic-reader' ),
+					'pageProgress'      => __( 'Page %1$d', 'nvoos-comic-reader' ),
 				),
 			)
 		);

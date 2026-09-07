@@ -1,33 +1,37 @@
 /**
  * NV oOS Comic Reader — Reader State Hook
  *
- * Manages current page, zoom level, fit mode, double-page spread toggle,
- * and fullscreen state for the comic reader.
+ * Manages current page, zoom level, scale (fit) mode, double-page spread
+ * toggle, and fullscreen state for the comic reader.
  *
  * @package NV_oOS_Comic_Reader
  * @since   0.1.0
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import type { ScaleType } from '../types/reader-prefs';
 
 interface ReaderStateOptions {
 	total: number;
+	initialScale: ScaleType;
+	initialDoublePage: boolean;
 }
 
 interface ReaderState {
 	currentPage: number;
 	totalPages: number;
 	zoomLevel: number;
-	fitMode: 'none' | 'width' | 'height';
+	scale: ScaleType;
 	isDoublePage: boolean;
 	isFullscreen: boolean;
 	goToPage: (page: number) => void;
-	nextPage: () => void;
-	prevPage: () => void;
+	nextPage: (step?: number) => void;
+	prevPage: (step?: number) => void;
 	zoomIn: () => void;
 	zoomOut: () => void;
-	setFitMode: (mode: 'none' | 'width' | 'height') => void;
+	setScale: (mode: ScaleType) => void;
 	toggleDoublePage: () => void;
+	setDoublePage: (value: boolean) => void;
 	toggleFullscreen: () => void;
 }
 
@@ -35,11 +39,15 @@ const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 4.0;
 const ZOOM_STEP = 0.1;
 
-export function useReaderState({ total }: ReaderStateOptions): ReaderState {
+export function useReaderState({
+	total,
+	initialScale,
+	initialDoublePage,
+}: ReaderStateOptions): ReaderState {
 	const [currentPage, setCurrentPage] = useState(1);
 	const [zoomLevel, setZoomLevel] = useState(1);
-	const [fitMode, setFitModeState] = useState<'none' | 'width' | 'height'>('width');
-	const [isDoublePage, setIsDoublePage] = useState(false);
+	const [scale, setScaleState] = useState<ScaleType>(initialScale);
+	const [isDoublePage, setIsDoublePage] = useState(initialDoublePage);
 	const [isFullscreen, setIsFullscreen] = useState(false);
 
 	const totalPages = Math.max(total, 1);
@@ -51,32 +59,29 @@ export function useReaderState({ total }: ReaderStateOptions): ReaderState {
 		[totalPages]
 	);
 
-	const nextPage = useCallback(() => {
-		setCurrentPage((p) => {
-			const step = isDoublePage ? 2 : 1;
-			return Math.min(p + step, totalPages);
-		});
-	}, [isDoublePage, totalPages]);
+	const nextPage = useCallback(
+		(step = 1) => {
+			setCurrentPage((p) => Math.min(p + Math.max(1, step), totalPages));
+		},
+		[totalPages]
+	);
 
-	const prevPage = useCallback(() => {
-		setCurrentPage((p) => {
-			const step = isDoublePage ? 2 : 1;
-			return Math.max(p - step, 1);
-		});
-	}, [isDoublePage]);
+	const prevPage = useCallback((step = 1) => {
+		setCurrentPage((p) => Math.max(p - Math.max(1, step), 1));
+	}, []);
 
 	const zoomIn = useCallback(() => {
-		setFitModeState('none');
+		setScaleState('none');
 		setZoomLevel((z) => Math.min(z + ZOOM_STEP, MAX_ZOOM));
 	}, []);
 
 	const zoomOut = useCallback(() => {
-		setFitModeState('none');
+		setScaleState('none');
 		setZoomLevel((z) => Math.max(z - ZOOM_STEP, MIN_ZOOM));
 	}, []);
 
-	const setFitMode = useCallback((mode: 'none' | 'width' | 'height') => {
-		setFitModeState(mode);
+	const setScale = useCallback((mode: ScaleType) => {
+		setScaleState(mode);
 		if (mode !== 'none') {
 			setZoomLevel(1);
 		}
@@ -84,6 +89,10 @@ export function useReaderState({ total }: ReaderStateOptions): ReaderState {
 
 	const toggleDoublePage = useCallback(() => {
 		setIsDoublePage((d) => !d);
+	}, []);
+
+	const setDoublePage = useCallback((value: boolean) => {
+		setIsDoublePage(value);
 	}, []);
 
 	const toggleFullscreen = useCallback(() => {
@@ -97,20 +106,23 @@ export function useReaderState({ total }: ReaderStateOptions): ReaderState {
 		});
 	}, []);
 
-	// Listen for fullscreen exit via Escape key or browser controls.
-	if (typeof document !== 'undefined') {
-		document.addEventListener('fullscreenchange', () => {
+	// Sync state when the user exits fullscreen via Escape or browser controls.
+	useEffect(() => {
+		const handleFullscreenChange = () => {
 			if (!document.fullscreenElement) {
 				setIsFullscreen(false);
 			}
-		});
-	}
+		};
+		document.addEventListener('fullscreenchange', handleFullscreenChange);
+		return () =>
+			document.removeEventListener('fullscreenchange', handleFullscreenChange);
+	}, []);
 
 	return {
 		currentPage,
 		totalPages,
 		zoomLevel,
-		fitMode,
+		scale,
 		isDoublePage,
 		isFullscreen,
 		goToPage,
@@ -118,8 +130,9 @@ export function useReaderState({ total }: ReaderStateOptions): ReaderState {
 		prevPage,
 		zoomIn,
 		zoomOut,
-		setFitMode,
+		setScale,
 		toggleDoublePage,
+		setDoublePage,
 		toggleFullscreen,
 	};
 }
