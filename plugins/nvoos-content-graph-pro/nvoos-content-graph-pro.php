@@ -70,6 +70,7 @@ spl_autoload_register(
 			'src/rest/',
 			'src/services/',
 			'src/tools/',
+			'src/tools/vault/',
 			'src/vault/',
 		);
 		foreach ( $nvoos_content_graph_pro_subdirs as $nvoos_content_graph_pro_subdir ) {
