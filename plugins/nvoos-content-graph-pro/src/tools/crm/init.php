@@ -171,6 +171,11 @@ function wp_mcp_ai_pro_register_crm_tools( $tools ) {
 		'WP_MCP_AI_Tool_Update_Deal'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/deals/class-wp-mcp-ai-tool-update-deal.php',
 		'WP_MCP_AI_Tool_Delete_Deal'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/deals/class-wp-mcp-ai-tool-delete-deal.php',
 		'WP_MCP_AI_Tool_Move_Deal_Stage'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/deals/class-wp-mcp-ai-tool-move-deal-stage.php',
+		'WP_MCP_AI_Tool_Create_CRM_Activity'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/activities/class-wp-mcp-ai-tool-create-crm-activity.php',
+		'WP_MCP_AI_Tool_List_CRM_Activities'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/activities/class-wp-mcp-ai-tool-list-crm-activities.php',
+		'WP_MCP_AI_Tool_Get_CRM_Activity'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/activities/class-wp-mcp-ai-tool-get-crm-activity.php',
+		'WP_MCP_AI_Tool_Complete_CRM_Activity'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/activities/class-wp-mcp-ai-tool-complete-crm-activity.php',
+		'WP_MCP_AI_Tool_Snooze_CRM_Activity'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/activities/class-wp-mcp-ai-tool-snooze-crm-activity.php',
 	);
 
 	return array_merge( $tools, $crm_tools );
@@ -211,6 +216,11 @@ function wp_mcp_ai_pro_register_crm_ecosystem_tools() {
 			'WP_MCP_AI_Tool_Update_Deal',
 			'WP_MCP_AI_Tool_Delete_Deal',
 			'WP_MCP_AI_Tool_Move_Deal_Stage',
+			'WP_MCP_AI_Tool_Create_CRM_Activity',
+			'WP_MCP_AI_Tool_List_CRM_Activities',
+			'WP_MCP_AI_Tool_Get_CRM_Activity',
+			'WP_MCP_AI_Tool_Complete_CRM_Activity',
+			'WP_MCP_AI_Tool_Snooze_CRM_Activity',
 		) as $tool_class
 	) {
 		$adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $tool_class() );

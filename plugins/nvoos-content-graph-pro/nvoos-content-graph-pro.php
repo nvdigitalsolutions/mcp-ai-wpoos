@@ -72,6 +72,7 @@ spl_autoload_register(
 			'src/services/',
 			'src/tools/',
 			'src/tools/crm/',
+			'src/tools/crm/activities/',
 			'src/tools/crm/customers/',
 			'src/tools/crm/deals/',
 			'src/tools/crm/leads/',
