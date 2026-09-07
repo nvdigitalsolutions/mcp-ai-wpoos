@@ -27,7 +27,18 @@ View Professions cross-link) with the `wpMcpAiResearchPage` envelope
 (incl. driver_assistant), the tabbed settings render
 (overview/configuration/tools/help with the team orchestration card),
 and the nonce-gated save flow with the temperature clamp +
-settings-updated redirect.
+settings-updated redirect. Sub-cluster 3 (`ElementorIntegration` +
+`WooCommerceIntegration`) is the aligned port of
+`WP_MCP_AI_Admin_Elementor_Integration` and
+`WP_MCP_AI_Admin_WooCommerce_Integration`: byte-identical page slugs
+(`wp-mcp-ai-elementor`, `wp-mcp-ai-woocommerce`), the
+`admin_post_wp_mcp_ai_save_elementor_settings|_woocommerce_settings`
+handlers with their nonce actions, the active/inactive status banners
+(third-party probes — byte-identical), the checkbox settings forms,
+the widget showcase grid, the five-tool status table, the Full
+Version note, and the save redirects. The settings store resolves per
+mode (base `WP_MCP_AI_Admin_Settings::OPTION_NAME` monolith / the
+byte-identical `wp_mcp_ai_settings` option key standalone).
 
 ## Tier
 
@@ -47,6 +58,8 @@ settings-updated redirect.
 | `NvoosContentGraphAiPlatform\Admin\Integrations\ProfessionSettings` | `ProfessionSettings.php` | `Plugin::registerIntegrationsScreens()` — standalone menu/settings wiring |
 | `NvoosContentGraphAiPlatform\Admin\Integrations\TeamResearchPage` | `TeamResearchPage.php` | `Plugin::registerIntegrationsScreens()` — standalone menu/enqueue wiring (static `init()`) |
 | `NvoosContentGraphAiPlatform\Admin\Integrations\TeamSettings` | `TeamSettings.php` | `Plugin::registerIntegrationsScreens()` — standalone menu/settings wiring |
+| `NvoosContentGraphAiPlatform\Admin\Integrations\ElementorIntegration` | `ElementorIntegration.php` | `Plugin::registerIntegrationsScreens()` — standalone menu/admin-post wiring |
+| `NvoosContentGraphAiPlatform\Admin\Integrations\WooCommerceIntegration` | `WooCommerceIntegration.php` | `Plugin::registerIntegrationsScreens()` — standalone menu/admin-post wiring |
 
 ## Inputs / Outputs / Neighbors
 
@@ -95,6 +108,14 @@ settings-updated redirect.
   four settings registrations, the settings tab renders, the
   capability gate, and the nonce-gated save flow (options + clamp +
   redirect). Runs in both matrices.
+- `tests/test-elementor-woocommerce-pages.php` — characterization
+  suite covering the byte-identical slugs + admin_post action names,
+  per-mode menu registration, register idempotence, the per-mode
+  settings-store seam, the active-banner + checkbox-form +
+  tool-table render surface (incl. the saved-flag checkbox states),
+  the silent non-manager renders, and the save handlers
+  (capability/nonce gates + option writes + redirect envelopes). Runs
+  in both matrices (the third-party plugins are active in both).
 
 ## Also Load
 
