@@ -29,6 +29,29 @@ the revoke/delete redirect flows. Its credentials store resolves per
 mode via the `credentials_class()` seam (base `WP_MCP_AI_Credentials`
 monolith / null standalone — documented empty-state + `action=error`
 redirect degradation); the restrictions panel probe is boot-gated.
+Sub-cluster 3 (`CronManagerPage`) is the aligned port of
+`WP_MCP_AI_Admin_Cron_Manager`: byte-identical page slug
+(`wp-mcp-ai-cron-manager`) and nonce action
+(`wp_mcp_ai_cron_manager`), the `admin_post_wp_mcp_ai_delete_cron`
+delete handler with per-job nonces, the
+`wp_ajax_wp_mcp_ai_get_cron_manager_stats` stats handler, the
+inline-stylesheet + shared monitor stylesheet + `admin-cron-manager.js`
+asset enqueues with the `wpMcpAiCronManager` localized envelope, the
+auto-refresh controls, the retention-period intro, the updated/error
+notices, the statistics cards, the eight-column jobs table (status
+pill, next-run human time, schedule-type pill, pretty-printed args,
+creator, created-at, per-row delete form), the empty state, the
+DLQ/SLA job-queue-health section (incl. the tier table + tuning
+recommendations), the job-store section, and the delete/redirect
+flow. Its collaborators resolve per mode: the runtime cron manager
+(base `WP_MCP_AI_Cron_Manager` monolith / platform
+`Queues\CronManager` standalone), the DLQ stats (base
+`WP_MCP_AI_Dead_Letter_Queue` / platform `Queues\DeadLetterQueue`),
+the SLA stats (base `WP_MCP_AI_SLA_Manager` / platform
+`Queues\SlaManager`), the job store (base `WP_MCP_AI_Job_Store`
+monolith / null standalone — section hidden, documented), and the
+retention period (base `WP_MCP_AI_Settings_Registry` monolith / the
+`wp_mcp_ai_settings` option standalone).
 
 ## Tier
 
@@ -46,14 +69,19 @@ redirect degradation); the restrictions panel probe is boot-gated.
 |---|---|---|
 | `NvoosContentGraphAiPlatform\Admin\Managers\ApprovalsManager` | `ApprovalsManager.php` | `Plugin::registerManagers()` — standalone menu/enqueue/AJAX wiring |
 | `NvoosContentGraphAiPlatform\Admin\Managers\TokenManager` | `TokenManager.php` | `Plugin::registerManagers()` — standalone menu/enqueue/admin-post wiring |
+| `NvoosContentGraphAiPlatform\Admin\Managers\CronManagerPage` | `CronManagerPage.php` | `Plugin::registerManagers()` — standalone menu/enqueue/admin-post/AJAX wiring |
 
 ## Inputs / Outputs / Neighbors
 
 - **Reads from:** the per-mode approval queue
   (`Approvals\ApprovalQueue` — the E3 port), assistant posts for the
-  filter dropdown, the current user (requester display names)
+  filter dropdown, the current user (requester display names), the
+  per-mode cron manager / DLQ / SLA / job-store collaborators
+  (sub-cluster 3), WP-Cron scheduling state, the `wp_mcp_ai_settings`
+  option (standalone retention + SLA tuning)
 - **Writes to:** approval transitions (approve/deny via the resolved
-  queue), AJAX JSON envelopes (list/resolve)
+  queue), cron-job removals (delete handler — option store + WP-Cron
+  unscheduling), AJAX JSON envelopes (list/resolve/stats)
 - **Upstream callers:** `Plugin::registerManagers()` (standalone menu
   mounting under `PlatformDashboard::PAGE_SLUG`), admin `wp_ajax_*`
   requests
@@ -93,6 +121,19 @@ redirect degradation); the restrictions panel probe is boot-gated.
   + missing-identifier gates, the per-mode redirect envelopes
   (intercepted via the `wp_redirect` filter), and the per-mode asset
   enqueues. Runs in both matrices.
+- `tests/test-cron-manager-page.php` — characterization suite
+  covering the byte-identical page slug + nonce action, per-mode menu
+  registration, register idempotence, the per-mode
+  cron/DLQ/SLA/job-store/retention seams, the byte-identical DLQ
+  cross-link, the statistics shape (mixed scheduled/unscheduled
+  jobs), the render surface per mode (auto-refresh + intro + health
+  section + empty state vs seeded jobs table), the silent
+  non-manager render, the updated-notice surfaces, the delete
+  capability/missing-id/nonce gates, the per-mode delete redirect
+  envelopes (success + unknown-job, intercepted via the `wp_redirect`
+  filter), the AJAX nonce/capability gates, the AJAX success payload
+  (stats/jobs/dlq/job-store shape), and the per-mode asset enqueues.
+  Runs in both matrices.
 
 ## Also Load
 
