@@ -1,0 +1,477 @@
+<?php
+/**
+ * CRM Contact Management Tool (ecosystem port — Wave F2, CRM core + email
+ * search batch).
+ *
+ * Ported from the base Pro addon's
+ * `addons/pro/includes/tools/crm/class-wp-mcp-ai-tool-manage-crm-contact.php`
+ * for the standalone `nvoos-content-graph-pro` addon. Kept
+ * byte-identical. The base Pro addon owns the class in monolith
+ * installs — the addon's autoloader skips its copy when
+ * `WP_MCP_AI_PRO_PATH` is defined (see the plugin entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain
+ * `nvoos-content-graph-pro`; the validator-service requires resolve from
+ * `NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/services/'`.
+ *
+ * @package NvoosContentGraphPro
+ * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * CRM Contact Management Tool.
+ *
+ * Provides contact management operations using toolkit data store pattern:
+ * - Create, read, update, delete contacts
+ * - List and search contacts
+ * - Validate contact data (email, phone)
+ * - Supports both CCT (JetEngine) and CPT storage backends
+ *
+ * @since 1.1.0
+ */
+class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * Data store instance.
+	 *
+	 * @var WP_MCP_AI_Toolkit_Data_Store
+	 */
+	private $data_store;
+
+	/**
+	 * Determine whether the CRM toolkit is enabled.
+	 *
+	 * @since 2.3.0
+	 * @return bool
+	 */
+	public static function is_available() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $settings['enable_crm_toolkit'] );
+	}
+
+	/**
+	 * Message explaining why the tool is unavailable.
+	 *
+	 * @since 2.3.0
+	 * @return string
+	 */
+	public static function get_unavailable_reason() {
+		return __( 'The Manage CRM Contact tool requires the CRM Toolkit to be enabled in plugin settings.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		// Initialize data store using factory pattern.
+		if ( class_exists( 'WP_MCP_AI_Toolkit_Data_Store_Factory' ) ) {
+			$this->data_store = WP_MCP_AI_Toolkit_Data_Store_Factory::get_tenant_store( 'crm', 'contacts' );
+		}
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_slug() {
+		return 'manage_crm_contact';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Manage CRM Contact', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_description() {
+		return __( 'Comprehensive CRM contact management. Create, read, update, delete, list, and search contacts. Includes email/phone validation and CCT/CPT storage support.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_parameters_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'action'       => array(
+					'type'        => 'string',
+					'enum'        => array( 'create', 'read', 'update', 'delete', 'list', 'search' ),
+					'description' => __( 'Action to perform', 'nvoos-content-graph-pro' ),
+				),
+				'contact_id'   => array(
+					'type'        => 'integer',
+					'description' => __( 'Contact ID (required for read, update, delete)', 'nvoos-content-graph-pro' ),
+				),
+				'contact_data' => array(
+					'type'        => 'object',
+					'description' => __( 'Contact data (required for create, update)', 'nvoos-content-graph-pro' ),
+					'properties'  => array(
+						'first_name' => array( 'type' => 'string' ),
+						'last_name'  => array( 'type' => 'string' ),
+						'email'      => array( 'type' => 'string' ),
+						'phone'      => array( 'type' => 'string' ),
+						'company'    => array( 'type' => 'string' ),
+						'job_title'  => array( 'type' => 'string' ),
+						'tags'       => array(
+							'type'  => 'array',
+							'items' => array( 'type' => 'string' ),
+						),
+					),
+				),
+				'search_query' => array(
+					'type'        => 'string',
+					'description' => __( 'Search query (for search action)', 'nvoos-content-graph-pro' ),
+				),
+				'per_page'     => array(
+					'type'        => 'integer',
+					'description' => __( 'Results per page (for list/search)', 'nvoos-content-graph-pro' ),
+					'default'     => 20,
+				),
+				'page'         => array(
+					'type'        => 'integer',
+					'description' => __( 'Page number (for list/search)', 'nvoos-content-graph-pro' ),
+					'default'     => 1,
+				),
+			),
+			'required'   => array( 'action' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function requires_base_pro() {
+		return true;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'pro',
+			'write',
+			'requires-capability',
+			'external-dependency',
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 */
+	public function execute( array $arguments = array(), array $context = array() ) {
+		// Check if data store is available.
+		if ( ! $this->data_store ) {
+			return new WP_Error(
+				'tool_error',
+				__( 'CRM data store not available. Please ensure toolkit is enabled.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		$action = isset( $arguments['action'] ) ? sanitize_text_field( $arguments['action'] ) : '';
+
+		switch ( $action ) {
+			case 'create':
+				return $this->create_contact( $arguments );
+
+			case 'read':
+				return $this->read_contact( $arguments );
+
+			case 'update':
+				return $this->update_contact( $arguments );
+
+			case 'delete':
+				return $this->delete_contact( $arguments );
+
+			case 'list':
+				return $this->list_contacts( $arguments );
+
+			case 'search':
+				return $this->search_contacts( $arguments );
+
+			default:
+				return new WP_Error(
+					'tool_error',
+					__( 'Invalid action. Must be one of: create, read, update, delete, list, search.', 'nvoos-content-graph-pro' )
+				);
+		}
+	}
+
+	/**
+	 * Create a new contact.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return array Result.
+	 */
+	private function create_contact( $arguments ) {
+		if ( empty( $arguments['contact_data'] ) ) {
+			return new WP_Error(
+				'tool_error',
+				__( 'Contact data is required.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		$contact_data = $arguments['contact_data'];
+
+		// Validate required fields.
+		if ( empty( $contact_data['email'] ) ) {
+			return new WP_Error(
+				'tool_error',
+				__( 'Email is required.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Validate using validator service.
+		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/services/class-wp-mcp-ai-validator-service.php';
+		$validator = new WP_MCP_AI_Validator_Service();
+
+		$email_valid = $validator->is_email( $contact_data['email'] );
+		if ( is_wp_error( $email_valid ) ) {
+			return new WP_Error(
+				'tool_error',
+				$email_valid->get_error_message()
+			);
+		}
+
+		// Validate phone number via libphonenumber-js when provided.
+		if ( ! empty( $contact_data['phone'] ) ) {
+			$phone_valid = $validator->is_phone_number( $contact_data['phone'] );
+			if ( is_wp_error( $phone_valid ) ) {
+				return new WP_Error(
+					'tool_error',
+					$phone_valid->get_error_message()
+				);
+			}
+		}
+
+		// Create contact using data store.
+		$contact_id = $this->data_store->create_item( $contact_data );
+
+		if ( is_wp_error( $contact_id ) ) {
+			return new WP_Error(
+				'tool_error',
+				$contact_id->get_error_message()
+			);
+		}
+
+		return array(
+			'success'      => true,
+			'message'      => __( 'Contact created successfully.', 'nvoos-content-graph-pro' ),
+			'contact_id'   => $contact_id,
+			'storage_type' => $this->data_store->get_storage_type(),
+		);
+	}
+
+	/**
+	 * Read contact data.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return array Result.
+	 */
+	private function read_contact( $arguments ) {
+		if ( empty( $arguments['contact_id'] ) ) {
+			return new WP_Error(
+				'tool_error',
+				__( 'Contact ID is required.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		$contact_id = absint( $arguments['contact_id'] );
+		$contact    = $this->data_store->get_item( $contact_id );
+
+		if ( is_wp_error( $contact ) ) {
+			return new WP_Error(
+				'tool_error',
+				$contact->get_error_message()
+			);
+		}
+
+		return array(
+			'success'      => true,
+			'contact'      => $contact,
+			'storage_type' => $this->data_store->get_storage_type(),
+		);
+	}
+
+	/**
+	 * Update contact data.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return array Result.
+	 */
+	private function update_contact( $arguments ) {
+		if ( empty( $arguments['contact_id'] ) ) {
+			return new WP_Error(
+				'tool_error',
+				__( 'Contact ID is required.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		if ( empty( $arguments['contact_data'] ) ) {
+			return new WP_Error(
+				'tool_error',
+				__( 'Contact data is required.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		$contact_id   = absint( $arguments['contact_id'] );
+		$contact_data = $arguments['contact_data'];
+
+		// Validate if email provided.
+		if ( isset( $contact_data['email'] ) ) {
+			require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/services/class-wp-mcp-ai-validator-service.php';
+			$validator   = new WP_MCP_AI_Validator_Service();
+			$email_valid = $validator->is_email( $contact_data['email'] );
+			if ( is_wp_error( $email_valid ) ) {
+				return new WP_Error(
+					'tool_error',
+					$email_valid->get_error_message()
+				);
+			}
+		}
+
+		// Validate phone via libphonenumber-js when provided.
+		if ( ! empty( $contact_data['phone'] ) ) {
+			require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/services/class-wp-mcp-ai-validator-service.php';
+			$validator   = new WP_MCP_AI_Validator_Service();
+			$phone_valid = $validator->is_phone_number( $contact_data['phone'] );
+			if ( is_wp_error( $phone_valid ) ) {
+				return new WP_Error(
+					'tool_error',
+					$phone_valid->get_error_message()
+				);
+			}
+		}
+
+		// Update using data store.
+		$result = $this->data_store->update_item( $contact_id, $contact_data );
+
+		if ( is_wp_error( $result ) ) {
+			return new WP_Error(
+				'tool_error',
+				$result->get_error_message()
+			);
+		}
+
+		return array(
+			'success'      => true,
+			'message'      => __( 'Contact updated successfully.', 'nvoos-content-graph-pro' ),
+			'storage_type' => $this->data_store->get_storage_type(),
+		);
+	}
+
+	/**
+	 * Delete contact.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return array Result.
+	 */
+	private function delete_contact( $arguments ) {
+		if ( empty( $arguments['contact_id'] ) ) {
+			return new WP_Error(
+				'tool_error',
+				__( 'Contact ID is required.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		$contact_id = absint( $arguments['contact_id'] );
+		$result     = $this->data_store->delete_item( $contact_id );
+
+		if ( is_wp_error( $result ) ) {
+			return new WP_Error(
+				'tool_error',
+				$result->get_error_message()
+			);
+		}
+
+		return array(
+			'success'      => true,
+			'message'      => __( 'Contact deleted successfully.', 'nvoos-content-graph-pro' ),
+			'storage_type' => $this->data_store->get_storage_type(),
+		);
+	}
+
+	/**
+	 * List contacts.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return array Result.
+	 */
+	private function list_contacts( $arguments ) {
+		$per_page = isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 20;
+		$page     = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
+
+		$query_args = array(
+			'per_page' => $per_page,
+			'page'     => $page,
+		);
+
+		$contacts = $this->data_store->query_items( $query_args );
+
+		return array(
+			'success'      => true,
+			'contacts'     => $contacts,
+			'per_page'     => $per_page,
+			'page'         => $page,
+			'storage_type' => $this->data_store->get_storage_type(),
+		);
+	}
+
+	/**
+	 * Search contacts.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return array Result.
+	 */
+	private function search_contacts( $arguments ) {
+		if ( empty( $arguments['search_query'] ) ) {
+			return new WP_Error(
+				'tool_error',
+				__( 'Search query is required.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		$per_page = isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 20;
+		$page     = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
+
+		$query_args = array(
+			'search'   => sanitize_text_field( $arguments['search_query'] ),
+			'per_page' => $per_page,
+			'page'     => $page,
+		);
+
+		$contacts = $this->data_store->query_items( $query_args );
+
+		return array(
+			'success'      => true,
+			'contacts'     => $contacts,
+			'search_query' => $arguments['search_query'],
+			'per_page'     => $per_page,
+			'page'         => $page,
+			'storage_type' => $this->data_store->get_storage_type(),
+		);
+	}
+}

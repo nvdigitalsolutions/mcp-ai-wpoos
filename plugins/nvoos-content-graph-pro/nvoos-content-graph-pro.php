@@ -71,6 +71,7 @@ spl_autoload_register(
 			'src/rest/',
 			'src/services/',
 			'src/tools/',
+			'src/tools/capture/',
 			'src/tools/crm/',
 			'src/tools/crm/activities/',
 			'src/tools/crm/analytics/',
@@ -83,6 +84,7 @@ spl_autoload_register(
 			'src/tools/crm/routing/',
 			'src/tools/vault/',
 			'src/tools/vector-storage/',
+			'src/traits/',
 			'src/vault/',
 		);
 		foreach ( $nvoos_content_graph_pro_subdirs as $nvoos_content_graph_pro_subdir ) {
