@@ -114,6 +114,10 @@ final class Plugin {
 		if ( class_exists( __NAMESPACE__ . '\Admin\Managers\MediaLibraryColumns' ) ) {
 			\NvoosContentGraphAiPlatform\Admin\Managers\MediaLibraryColumns::init();
 		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Managers\AssetInventoryPage' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Managers\AssetInventoryPage() )->register();
+		}
 	}
 
 	/**

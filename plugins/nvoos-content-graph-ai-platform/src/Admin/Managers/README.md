@@ -91,7 +91,18 @@ standalone cost stays 0.0, documented); the constructor wiring is
 extracted into a protected `wire_hooks()` (additive — wp-phpunit hook
 snapshot restore, documented); wiring invoked standalone-only via
 `Plugin::registerManagers()` (the base loader owns the same integration
-monolith).
+monolith). Sub-cluster 7 (`AssetInventoryPage`, final) is the aligned
+port of `WP_MCP_AI_Asset_Inventory_Admin`: byte-identical page slug
+(`nvoos-asset-inventory`), the `wpMcpAiAssetInventory` localized
+envelope (wp_rest nonce, `mcp-ai/v1/assets` REST apiUrl, four-string
+i18n block), the Discover Assets action, the stats grid, the
+classification/type filter selects, the six-column assets table
+(classification badges, data-* attributes), the empty state, and the
+ISO 27001 A.5.9 about section. Its collaborators resolve per mode
+(base `WP_MCP_AI_Asset_Inventory` monolith / null standalone — the
+engine is not yet ported, empty-state degradation documented; the
+fleet capability via the base helper monolith / an inline replication
+of the same default + filter standalone).
 
 ## Tier
 
@@ -113,6 +124,7 @@ monolith).
 | `NvoosContentGraphAiPlatform\Admin\Managers\DagBuilder` | `DagBuilder.php` | `Plugin::registerManagers()` — standalone menu/enqueue wiring |
 | `NvoosContentGraphAiPlatform\Admin\Managers\DlqManager` | `DlqManager.php` | `Plugin::registerManagers()` — standalone menu/enqueue/admin-post wiring |
 | `NvoosContentGraphAiPlatform\Admin\Managers\MediaLibraryColumns` | `MediaLibraryColumns.php` | `Plugin::registerManagers()` — standalone media-column/tracking/style wiring (singleton `init()`) |
+| `NvoosContentGraphAiPlatform\Admin\Managers\AssetInventoryPage` | `AssetInventoryPage.php` | `Plugin::registerManagers()` — standalone menu/enqueue wiring |
 
 ## Inputs / Outputs / Neighbors
 
@@ -208,6 +220,15 @@ monolith).
   the admin-context hook wiring (exposer re-arm against the
   wp-phpunit hook-snapshot restore), and the media-page-only
   stylesheet enqueue. Runs in both matrices.
+- `tests/test-asset-inventory-page.php` — characterization suite
+  covering the byte-identical page slug, per-mode menu registration
+  (fleet capability), register idempotence (hook-registry dedup
+  delta), the per-mode engine/capability seams, the inventory
+  resolution shape per mode, the render surface (Discover Assets,
+  empty state both modes, seeded table monolith — stats grid,
+  badges, data-* attributes, filters, last-updated), and the
+  per-mode asset enqueues with the `wpMcpAiAssetInventory` envelope
+  (incl. the base hook-suffix gate). Runs in both matrices.
 
 ## Also Load
 
