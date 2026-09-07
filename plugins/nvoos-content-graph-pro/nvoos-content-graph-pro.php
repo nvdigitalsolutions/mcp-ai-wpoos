@@ -71,6 +71,7 @@ spl_autoload_register(
 			'src/rest/',
 			'src/services/',
 			'src/tools/',
+			'src/tools/crm/',
 			'src/tools/vault/',
 			'src/tools/vector-storage/',
 			'src/vault/',

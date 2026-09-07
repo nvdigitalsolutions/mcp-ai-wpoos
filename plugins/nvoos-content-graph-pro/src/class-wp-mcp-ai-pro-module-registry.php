@@ -461,6 +461,21 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 					// WP_MCP_AI_File_Preprocessing_Helper) out of includes/.
 				}
 			);
+
+			// ── F2: pro-business toolkits ────────────────────────────
+			$this->add_module(
+				'toolkit_crm',
+				'CRM Toolkit',
+				array(),
+				array(
+					// Byte-identical enabled gate (enable_crm_toolkit setting).
+					'enabled' => ! empty( $settings['enable_crm_toolkit'] ),
+					'files'   => array( $p . 'tools/crm/init.php' ),
+				),
+				function () use ( $p ) {
+					require_once $p . 'tools/crm/init.php';
+				}
+			);
 		}
 	}
 }

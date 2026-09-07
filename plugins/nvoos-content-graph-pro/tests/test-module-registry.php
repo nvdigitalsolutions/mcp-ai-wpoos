@@ -101,6 +101,12 @@ class Test_Pro_Module_Registry extends WP_UnitTestCase {
 		$registry->boot();
 
 		foreach ( $registry->get_modules() as $id => $mod ) {
+			// Disabled modules (e.g. toolkit_crm without enable_crm_toolkit)
+			// must be skipped regardless of their files.
+			if ( isset( $mod['enabled'] ) && ! $mod['enabled'] ) {
+				$this->assertFalse( $registry->is_loaded( $id ), "Disabled module \"{$id}\" must not load." );
+				continue;
+			}
 			if ( empty( $mod['files'] ) ) {
 				continue;
 			}
@@ -134,6 +140,7 @@ class Test_Pro_Module_Registry extends WP_UnitTestCase {
 			'pro_skills_manager',
 			'toolkit_vault',
 			'vector_storage',
+			'toolkit_crm',
 		);
 
 		$this->assertSame( $expected, array_keys( $registry->modules() ) );
