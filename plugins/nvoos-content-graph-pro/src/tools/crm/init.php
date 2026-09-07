@@ -11,11 +11,12 @@
  *
  * 1. `declare(strict_types=1)` added.
  * 2. File paths resolve from `NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/'`.
- * 3. Slimmed wiring — the admin pages, REST controller, research-add,
- *    inbound listeners, and the remaining tool files land with their F2
- *    sub-clusters; every deferred require stays file-gated so this init
- *    degrades gracefully until each file exists (same wave-proof pattern
- *    as the F1 module files guards).
+ * 3. Slimmed wiring — the admin pages, research-add, inbound listeners,
+ *    and the remaining tool files land with their F2 sub-clusters; every
+ *    deferred require stays file-gated so this init degrades gracefully
+ *    until each file exists (same wave-proof pattern as the F1 module
+ *    files guards). The CRM REST controller landed with the F2 REST
+ *    slice.
  * 4. The JetEngine company-field registration stays byte-identical
  *    (`function_exists( 'jet_engine' )` + `class_exists(
  *    'WP_MCP_AI_JetEngine_Meta_Helper' )` guard — dormant standalone).
@@ -111,6 +112,10 @@ if ( $nvoos_content_graph_pro_is_enabled && ! $nvoos_content_graph_pro_is_base )
 	}
 	WP_MCP_AI_Sequence_CPT::init();
 	WP_MCP_AI_CRM_Workflow_Rule_CPT::init();
+
+	// Load CRM REST controller for Toolkit Shell SPA (F2 REST slice).
+	require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/rest/class-wp-mcp-ai-crm-rest-controller.php';
+	WP_MCP_AI_CRM_REST_Controller::get_instance()->init();
 
 	// ---- Deferred F2 sub-clusters (file-gated) -------------------------
 	// Admin pages, CRM REST controller, research-add, support tools,
