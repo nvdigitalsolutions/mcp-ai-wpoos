@@ -117,6 +117,13 @@ rebuilds when the installed plugin versions no longer match the cached index.
 You can also rebuild manually from the settings page, via WP-CLI, or via the
 REST API (requires `manage_options`).
 
+== Screenshots ==
+
+1. Settings — documentation index status and rebuild panel.
+2. Settings — remote repositories with the GitHub file/folder tree picker.
+3. Frontend `[nvoos_docs]` embed — sidebar, content, and table of contents.
+4. Frontend `[nvoos_docs]` embed — full-text search.
+
 == External Services ==
 
 When you configure a remote documentation repository, this plugin contacts
@@ -141,6 +148,7 @@ public repository content exactly as GitHub serves it.
 == Changelog ==
 
 = 0.4.3 =
+* Added: WordPress.org listing screenshots and a Playwright capture script (`bin/capture-nvoos-docs-hub-screenshots.js`).
 * Added: WordPress.org submission preparation — External Services section in the readme, a translation template (languages/nvoos-docs-hub.pot), and a WordPress.org Plugin Check gate in CI.
 * Changed: settings-page scripts moved to a static asset (no inline <script> blocks), text-domain consistency fix, dev files excluded from distribution ZIPs.
 * Changed: readme tags trimmed to directory-standard tags.

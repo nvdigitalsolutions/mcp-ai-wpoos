@@ -26,16 +26,28 @@ master, 1344×768 banner master, 1440×900 screenshot captures), following the
 
 Screenshots are captured from a running QA site at 1440×900 viewport with the
 plugin active and a configured remote repository (so the browser shows real
-docs). The content-graph capture script is the template:
-`plugins/nvoos-content-graph/bin/capture-nvoos-content-graph-screenshots.js`
-(Playwright). Capture sites:
+docs). The capture script is `bin/capture-nvoos-docs-hub-screenshots.js`
+(Playwright, modeled on `bin/capture-nvoos-content-graph-screenshots.js`).
+The four PNGs below are already generated and committed here.
 
-1. Spin up the QA stack (`docker compose up -d`, site on http://localhost:8000).
+Capture workflow (if the assets ever need refreshing):
+
+1. Spin up the QA stack (`docker compose up -d`, site on http://localhost:8000,
+   admin `admin` / `password`).
 2. Activate NV oOS Docs Hub, configure a public GitHub repository under
-   **Settings → NV oOS Docs Hub**, and run **Rebuild Documentation Index**.
-3. Publish a page containing the `[nvoos_docs]` shortcode.
-4. Capture the four screenshots above; downscale icon/banner masters to the
-   listed targets.
+   **Settings → NV oOS Docs Hub**, and run **Rebuild Documentation Index**
+   (`wp nvoos-docs rebuild --sync`).
+3. Publish a page containing the `[nvoos_docs]` shortcode (the script defaults
+   to `/docs-hub-test/`; override via `DOCS_PAGE_PATH`).
+4. Run `node bin/capture-nvoos-docs-hub-screenshots.js` and review the four
+   PNGs (the script logs in as admin for the settings shots and captures the
+   frontend as a guest; it widens the theme's content CSS so the three-pane
+   embed renders at listing width).
+
+Icons (`icon-128x128.png`, `icon-256x256.png`) and banners
+(`banner-772x250.png`, `banner-1544x500.png`) are manual artwork — downscale
+1024×1024 icon and 1344×768 banner masters into `source/` and export the
+listed targets.
 
 Screenshot `alt` text used in `readme.txt` (the `== Screenshots ==` section is
 added to `readme.txt` when the PNGs land in SVN `assets/`).
