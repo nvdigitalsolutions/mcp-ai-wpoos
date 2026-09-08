@@ -170,6 +170,8 @@ This document provides a comprehensive index of all documentation available for 
 > - **Coverage** — REST + JS tests for session replay route, service, and drawer behavior.
 > - **Versioning** — bumped to 1.1.20 across all manifests.
 
+> **📌 SEPTEMBER 8, 2026 DOCUMENTATION REFRESH (v1.1.72):** `docs/getting-started/USE_CASES_AND_QUICKSTARTS.md` refreshed to independent doc revision 3.0 with `docs/getting-started/_USE_CASES_FACT_SHEET.md` (Rev 3.0) as the companion source for point-in-time counts. Current public framing: ~1,568 tools (~303 base + ~1,265 Pro), ~190 profession templates, 10 GA SPA-manifested Pro toolkits, 31 Pro toolkits, 33 toolkit MCP servers, 74 base + 41 Pro bundled skills, 15 shipping providers, and model catalog `2026.09.05` (228 models); the live registry remains authoritative. New coverage: Google Workspace, Vision Analysis, Workflow Builder + Pro Schedule Manager, Deep Research, Pro SPA v2, Content Graph ecosystem, Chat SPA 0.7.0 (Phase 8), Docs Hub 0.4.3.
+
 > **📌 MAY 17, 2026 DOCUMENTATION REFRESH:** `docs/getting-started/USE_CASES_AND_QUICKSTARTS.md` was refreshed to independent doc revision 2.0 and now cites `docs/getting-started/_USE_CASES_FACT_SHEET.md` as the companion source for point-in-time counts. Current public framing is ~830 tools (~195 base + ~635 Pro), ~190 profession templates, 10 GA SPA-manifested Pro toolkits, and model catalog `2026.05.04`; the live registry remains authoritative.
 
 > **📌 MAY 18, 2026 UPDATE (v1.1.19):** 📡🔒🧩💬 **KIMI PROVIDER, ACP SERVER, MCP BRIDGE, P7 FOLDER READMES, SECURITY HARDENING, CHAT BUBBLE SWEEP**
@@ -1716,7 +1718,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [README.md](../README.md) | Main plugin documentation with features, installation, and usage | Everyone |
-| [USE_CASES_AND_QUICKSTARTS.md](getting-started/USE_CASES_AND_QUICKSTARTS.md) | **NEW:** Comprehensive use cases and quickstart guides covering 7 major categories (41KB) | Everyone |
+| [USE_CASES_AND_QUICKSTARTS.md](getting-started/USE_CASES_AND_QUICKSTARTS.md) | Comprehensive use cases and quickstart guides — 14+ categories including Google Workspace, Vision Analysis, Workflow Builder, Deep Research, Chat SPA, and Pro SPA (Rev 3.0) | Everyone |
 | [QUICK_START_5_MINUTES.md](getting-started/QUICK_START_5_MINUTES.md) | 5-minute quick start guide from zero to first chat | Beginners |
 | [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) | Complete setup checklist for new installations | Admins |
 | [BEST_PRACTICES.md](developer/best-practices/BEST_PRACTICES.md) | Recommended practices for using NV oOS | All Users |
