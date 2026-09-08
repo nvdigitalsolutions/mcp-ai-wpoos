@@ -185,6 +185,14 @@
     </rule>
 
     <!--
+        Byte-identical social generate-post-ideas tool calls count() in a
+        FOR loop test part (the monolith copy carries the same loop).
+    -->
+    <rule ref="Generic.CodeAnalysis.ForLoopWithTestFunctionCall.NotAllowed">
+        <severity>0</severity>
+    </rule>
+
+    <!--
         Byte-identical import-services file handling: the base copy uses
         fopen/fclose/fwrite/file_put_contents + @unlink for its CSV import
         temp files, with the same silenced-error and while-assignment
