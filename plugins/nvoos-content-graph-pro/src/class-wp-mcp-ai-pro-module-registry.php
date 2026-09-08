@@ -613,6 +613,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 						require_once $p . 'mcp-servers/mcp-servers-init.php';
 					}
 				);
+
+				// Mirrors the base registry's `remote_connection` module (the
+				// manager itself is class_exists-served — byte-identical with
+				// the monolith, where the base module only requires the
+				// connection class).
+				$this->add_module(
+					'remote_connection',
+					'Remote Connection',
+					array(),
+					array(
+						'files' => array( $p . 'class-wp-mcp-ai-remote-connection.php' ),
+					),
+					function () use ( $p ) {
+						require_once $p . 'class-wp-mcp-ai-remote-connection.php';
+					}
+				);
 		}
 	}
 }
