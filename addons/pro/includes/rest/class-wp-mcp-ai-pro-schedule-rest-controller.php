@@ -272,6 +272,7 @@ class WP_MCP_AI_Pro_Schedule_REST_Controller {
 			'max_retries'         => $request->get_param( 'max_retries' ),
 			'notify_on_failure'   => $request->get_param( 'notify_on_failure' ),
 			'notify_email'        => $request->get_param( 'notify_email' ),
+			'result_delivery'     => $request->get_param( 'result_delivery' ),
 		);
 
 		// Remove null values so defaults are used.
@@ -517,6 +518,10 @@ class WP_MCP_AI_Pro_Schedule_REST_Controller {
 				'type'              => 'string',
 				'format'            => 'email',
 				'sanitize_callback' => 'sanitize_email',
+			),
+			'result_delivery'     => array(
+				'type'        => 'object',
+				'description' => __( 'Delivery channel configuration for successful and failed runs. Shape: {on_success: {channels: {telegram: {enabled, connection_id, chat_id}}}, on_failure: {channels: {}}}. Channels may reference a Remote Sites connection via connection_id or carry inline credentials under <channel>_credentials.', 'mcp-ai-wpoos-pro' ),
 			),
 			'workflow_steps'      => array(
 				'type' => 'array',

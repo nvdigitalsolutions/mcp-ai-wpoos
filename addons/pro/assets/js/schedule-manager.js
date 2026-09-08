@@ -1009,6 +1009,22 @@
 		},
 
 		/**
+		 * Maps delivery channel slugs to Remote Sites connection types.
+		 *
+		 * Used by the edit modal to offer the right connection dropdown per
+		 * channel (Remote Sites stores messenger/teams under different keys).
+		 */
+		CONN_TYPE_MAP: {
+			telegram:    'telegram',
+			slack:       'slack',
+			discord:     'discord',
+			teams:       'microsoft_teams',
+			messenger:   'facebook_messenger',
+			whatsapp:    'whatsapp',
+			google_chat: 'google_chat',
+		},
+
+		/**
 		 * Build a delivery channel row for the edit modal.
 		 *
 		 * @param {string} channelSlug Internal slug (e.g., "telegram", "teams").
@@ -1090,7 +1106,33 @@
 			if ( credsValue && typeof credsValue === 'object' ) {
 				credsValue = JSON.stringify( credsValue );
 			}
-			html += ' <input type="text" id="' + prefix + channelSlug + '-creds" class="regular-text" value="' + this.esc( credsValue ) + '" placeholder="Connection ID or JSON credentials" style="max-width:200px">';
+
+			const connType    = this.CONN_TYPE_MAP[ channelSlug ] || '';
+			const connections = ( wpMcpAiScheduleManager.connections || [] ).filter( function ( c ) {
+				return c.type === connType;
+			} );
+
+			if ( connType && connections.length > 0 ) {
+				// Dropdown of Remote Sites connections, plus a custom option for
+				// inline JSON credentials or a manual connection ID.
+				let connOpts = '<option value="">' + this.esc( '— No connection (site default) —' ) + '</option>';
+				let matched  = false;
+				for ( i = 0; i < connections.length; i++ ) {
+					const c     = connections[ i ];
+					const isSel = c.id === credsValue;
+					if ( isSel ) {
+						matched = true;
+					}
+					connOpts += '<option value="' + this.esc( c.id ) + '"' + ( isSel ? ' selected' : '' ) + '>' +
+						this.esc( c.name + ' (' + c.id + ')' + ( c.enabled ? '' : ' — disabled' ) ) + '</option>';
+				}
+				const useCustom = ! matched && credsValue;
+				connOpts += '<option value="__custom__"' + ( useCustom ? ' selected' : '' ) + '>' + this.esc( 'Custom credentials…' ) + '</option>';
+				html += ' <select id="' + prefix + channelSlug + '-conn" class="wp-mcp-ai-sm-conn-select" style="max-width:240px">' + connOpts + '</select>';
+				html += ' <input type="text" id="' + prefix + channelSlug + '-creds" class="regular-text" value="' + this.esc( credsValue ) + '" placeholder="Connection ID or JSON credentials" style="max-width:200px;' + ( useCustom ? '' : ' display:none;' ) + '">';
+			} else {
+				html += ' <input type="text" id="' + prefix + channelSlug + '-creds" class="regular-text" value="' + this.esc( credsValue ) + '" placeholder="Connection ID or JSON credentials" style="max-width:200px">';
+			}
 
 			return this.editRow( label, html );
 		},
@@ -1146,9 +1188,11 @@
 				}
 			}
 
-			// Credential reference.
-			const credsRaw = $( '#' + prefix + channelSlug + '-creds' ).val().trim();
-			if ( credsRaw ) {
+			// Credential reference: dropdown (Remote Sites connection) or custom text.
+			const applyCustomCreds = function ( credsRaw ) {
+				if ( ! credsRaw ) {
+					return;
+				}
 				// If it looks like a Remote Sites connection ID, a UUID, or a
 				// numeric ID, treat as connection_id.
 				if ( /^[a-f0-9\-]{20,}$/i.test( credsRaw ) || /^\d+$/.test( credsRaw ) || /^conn_[a-z0-9]+$/i.test( credsRaw ) ) {
@@ -1165,6 +1209,18 @@
 				} else {
 					cfg[ channelSlug + '_credentials' ] = credsRaw;
 				}
+			};
+
+			const connSel = $( '#' + prefix + channelSlug + '-conn' );
+			if ( connSel.length ) {
+				const connVal = connSel.val() || '';
+				if ( '__custom__' === connVal ) {
+					applyCustomCreds( $( '#' + prefix + channelSlug + '-creds' ).val().trim() );
+				} else if ( connVal ) {
+					cfg.connection_id = connVal;
+				}
+			} else {
+				applyCustomCreds( $( '#' + prefix + channelSlug + '-creds' ).val().trim() );
 			}
 
 			return cfg;
@@ -1306,6 +1362,18 @@
 			html += '</table>';
 
 			$body.html( html );
+
+			// Toggle the custom credentials input when the connection dropdown changes.
+			$body.find( '.wp-mcp-ai-sm-conn-select' ).on( 'change', function () {
+				const $sel   = $( this );
+				const credsId = $sel.attr( 'id' ).replace( /-conn$/, '-creds' );
+				const custom = '__custom__' === ( $sel.val() || '' );
+				$( '#' + credsId ).toggle( custom );
+				if ( ! custom ) {
+					$( '#' + credsId ).val( '' );
+				}
+			} );
+
 			$modal.fadeIn( 200 );
 		},
 

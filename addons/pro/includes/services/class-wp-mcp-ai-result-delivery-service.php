@@ -215,7 +215,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				$payload  = self::format_for_channel( $envelope, $channel, $template, $schedule, $action_log );
 
 				try {
-					$result = self::send_to_channel( $channel, $payload, $config );
+					$result = self::send_to_channel( $channel, $payload, $config, $schedule );
 				} catch ( Throwable $e ) {
 					$result = new WP_Error(
 						'result_delivery_exception',
@@ -568,20 +568,28 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		// -------------------------------------------------------------------------
 
 		/**
-		 * Resolve credentials for a delivery channel using a three-tier fallback.
+		 * Resolve credentials for a delivery channel using a four-tier fallback.
 		 *
 		 * Priority:
 		 *   1. connection_id → Remote Sites stored connection
 		 *   2. Inline {channel}_credentials in the channel config
 		 *   3. Chat Channels Toolkit global settings (via filter)
+		 *   4. First enabled Remote Sites connection of this channel's type
+		 *      (preferring one the schedule's assistant is assigned to)
+		 *
+		 * Tier 4 exists so schedules configured without an explicit credential
+		 * reference still deliver — the bot token lives on the Remote Sites
+		 * connection that also powers interactive chat, so reusing it is
+		 * predictable and avoids credential duplication.
 		 *
 		 * @since 1.0.0
 		 *
-		 * @param string $channel Channel slug (slack, telegram, etc.).
-		 * @param array  $config  Channel config from schedule['result_delivery'].
+		 * @param string $channel  Channel slug (slack, telegram, etc.).
+		 * @param array  $config   Channel config from schedule['result_delivery'].
+		 * @param array  $schedule Schedule record (for assistant-scoped preference).
 		 * @return array Empty array if no credentials resolved, or credential map keyed by channel.
 		 */
-		protected static function resolve_channel_credentials( $channel, array $config ) {
+		protected static function resolve_channel_credentials( $channel, array $config, array $schedule = array() ) {
 			// 1. Try Remote Sites connection reference.
 			if ( ! empty( $config['connection_id'] ) ) {
 				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -607,7 +615,81 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			}
 
 			// 3. Allow integrators to supply global defaults.
-			return apply_filters( 'wp_mcp_ai_delivery_channel_default_credentials', array(), $channel, $config );
+			$defaults = apply_filters( 'wp_mcp_ai_delivery_channel_default_credentials', array(), $channel, $config );
+			if ( ! empty( $defaults ) ) {
+				return $defaults;
+			}
+
+			// 4. Fall back to an enabled Remote Sites connection of this
+			// channel's type. Prefer the connection the schedule's assistant
+			// is assigned to; otherwise use the first enabled match.
+			$conn_type = self::get_channel_connection_type( $channel );
+			if ( '' !== $conn_type && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				$assistant_id   = isset( $schedule['assistant_config']['assistant_id'] ) ? absint( $schedule['assistant_config']['assistant_id'] ) : 0;
+				$fallback_creds = null;
+
+				foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $connection ) {
+					if ( ! is_array( $connection ) || empty( $connection['enabled'] ) ) {
+						continue;
+					}
+
+					$stored_type = isset( $connection['connection_type'] ) ? sanitize_key( (string) $connection['connection_type'] ) : '';
+					if ( $stored_type !== $conn_type ) {
+						continue;
+					}
+
+					$creds = self::extract_credentials_from_connection( $channel, $connection );
+					if ( empty( $creds ) ) {
+						continue;
+					}
+
+					// Prefer the connection the schedule's assistant is assigned to.
+					if ( $assistant_id > 0 && ! empty( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] ) ) {
+						$assigned = array_map( 'absint', $connection['assigned_assistant_ids'] );
+						if ( in_array( $assistant_id, $assigned, true ) ) {
+							return self::merge_channel_destination_fields( $channel, $creds, $config );
+						}
+					}
+
+					if ( null === $fallback_creds ) {
+						$fallback_creds = $creds;
+					}
+				}
+
+				if ( null !== $fallback_creds ) {
+					return self::merge_channel_destination_fields( $channel, $fallback_creds, $config );
+				}
+			}
+
+			return array();
+		}
+
+		/**
+		 * Map a delivery channel slug to its Remote Sites connection type.
+		 *
+		 * Chat channels are stored under slightly different type keys in the
+		 * Remote Site Manager (e.g. messenger → facebook_messenger, teams →
+		 * microsoft_teams), so a single mapping is shared by credential
+		 * resolution and diagnostics.
+		 *
+		 * @since 1.1.75
+		 *
+		 * @param string $channel Delivery channel slug.
+		 * @return string Remote Sites connection type, or empty string when the
+		 *                channel has no Remote Sites equivalent.
+		 */
+		protected static function get_channel_connection_type( $channel ) {
+			$map = array(
+				'telegram'    => 'telegram',
+				'slack'       => 'slack',
+				'discord'     => 'discord',
+				'teams'       => 'microsoft_teams',
+				'messenger'   => 'facebook_messenger',
+				'whatsapp'    => 'whatsapp',
+				'google_chat' => 'google_chat',
+			);
+
+			return isset( $map[ $channel ] ) ? $map[ $channel ] : '';
 		}
 
 		/**
@@ -719,12 +801,13 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		/**
 		 * Send a formatted payload to the appropriate channel backend.
 		 *
-		 * @param string $channel Channel slug.
-		 * @param array  $payload Formatted payload.
-		 * @param array  $config  Channel config from schedule['result_delivery'].
+		 * @param string $channel  Channel slug.
+		 * @param array  $payload  Formatted payload.
+		 * @param array  $config   Channel config from schedule['result_delivery'].
+		 * @param array  $schedule Schedule record (for assistant-scoped credential fallback).
 		 * @return true|WP_Error True on success, WP_Error on failure.
 		 */
-		protected static function send_to_channel( $channel, array $payload, array $config ) {
+		protected static function send_to_channel( $channel, array $payload, array $config, array $schedule = array() ) {
 			switch ( $channel ) {
 				case 'email':
 					return self::send_email( $payload, $config );
@@ -749,7 +832,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				case 'messenger':
 				case 'whatsapp':
 				case 'google_chat':
-					return self::send_chat( $channel, $payload, $config );
+					return self::send_chat( $channel, $payload, $config, $schedule );
 
 				default:
 					return new WP_Error(
@@ -881,12 +964,13 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		/**
 		 * Send a message to chat channels via unified_channel_broadcast tool.
 		 *
-		 * @param string $channel Channel slug (slack, telegram, etc.).
-		 * @param array  $payload Formatted chat payload (must contain 'message').
-		 * @param array  $config  Channel config.
+		 * @param string $channel  Channel slug (slack, telegram, etc.).
+		 * @param array  $payload  Formatted chat payload (must contain 'message').
+		 * @param array  $config   Channel config.
+		 * @param array  $schedule Schedule record (for credential fallback and user context).
 		 * @return true|WP_Error
 		 */
-		protected static function send_chat( $channel, array $payload, array $config ) {
+		protected static function send_chat( $channel, array $payload, array $config, array $schedule = array() ) {
 			if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				return new WP_Error( 'no_tool_registry', __( 'Tool registry not available.', 'mcp-ai-wpoos-pro' ) );
 			}
@@ -899,13 +983,14 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			$message = isset( $payload['message'] ) ? (string) $payload['message'] : '';
 
 			/*
-			 * Resolve credentials using three-tier fallback:
+			 * Resolve credentials using four-tier fallback:
 			 *   1. connection_id → Remote Sites connection.
 			 *   2. Inline {channel}_credentials in config.
 			 *   3. Chat Channels Toolkit global settings (via filter).
+			 *   4. First enabled Remote Sites connection of this channel's type.
 			 */
 			$credentials = array();
-			$resolved    = self::resolve_channel_credentials( $channel, $config );
+			$resolved    = self::resolve_channel_credentials( $channel, $config, $schedule );
 			if ( ! empty( $resolved ) ) {
 				$credentials[ $channel ] = self::normalize_channel_credentials( $resolved );
 			} elseif ( isset( $config['credentials'] ) ) {
@@ -921,7 +1006,8 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 						/* translators: %s: channel name */
 						__( 'No valid credentials found for the %s channel.', 'mcp-ai-wpoos-pro' ),
 						$channel
-					)
+					),
+					self::build_credential_diagnostics( $channel, $config )
 				);
 			}
 
@@ -931,7 +1017,10 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 					'channels'    => array( $channel ),
 					'credentials' => $credentials,
 				),
-				array( 'source' => 'pro_schedule_manager_result_delivery' )
+				array(
+					'source'  => 'pro_schedule_manager_result_delivery',
+					'user_id' => isset( $schedule['created_by'] ) ? absint( $schedule['created_by'] ) : 0,
+				)
 			);
 
 			if ( is_wp_error( $result ) ) {
@@ -950,6 +1039,51 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			}
 
 			return true;
+		}
+
+		/**
+		 * Build diagnostics describing why a channel's credentials did not resolve.
+		 *
+		 * Attached as WP_Error data so the delivery warning log tells the admin
+		 * exactly which tier failed and whether a usable Remote Sites connection
+		 * exists at all. Never contains secret material.
+		 *
+		 * @since 1.1.75
+		 *
+		 * @param string $channel Channel slug.
+		 * @param array  $config  Channel config from schedule['result_delivery'].
+		 * @return array<string,mixed> Diagnostic map.
+		 */
+		protected static function build_credential_diagnostics( $channel, array $config ) {
+			$diagnostics = array(
+				'channel'                      => $channel,
+				'connection_id'                => isset( $config['connection_id'] ) ? sanitize_text_field( (string) $config['connection_id'] ) : '',
+				'has_inline_credentials'       => ! empty( $config[ $channel . '_credentials' ] ) || ! empty( $config['credentials'] ),
+				'has_destination_field'        => isset( $config['chat_id'] ) ? ! empty( $config['chat_id'] ) : false,
+				'matching_connections'         => 0,
+				'enabled_matching_connections' => 0,
+			);
+
+			$conn_type = self::get_channel_connection_type( $channel );
+			if ( '' !== $conn_type && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $connection ) {
+					if ( ! is_array( $connection ) ) {
+						continue;
+					}
+
+					$stored_type = isset( $connection['connection_type'] ) ? sanitize_key( (string) $connection['connection_type'] ) : '';
+					if ( $stored_type !== $conn_type ) {
+						continue;
+					}
+
+					++$diagnostics['matching_connections'];
+					if ( ! empty( $connection['enabled'] ) && ! empty( $connection['api_key'] ) ) {
+						++$diagnostics['enabled_matching_connections'];
+					}
+				}
+			}
+
+			return $diagnostics;
 		}
 
 		/**
@@ -1178,9 +1312,10 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		protected static function log_delivery( $schedule_id, $channel, $result, $is_success ) {
 			$is_ok  = true === $result || ! is_wp_error( $result );
 			$status = array(
-				'channel' => $channel,
-				'success' => $is_ok,
-				'error'   => is_wp_error( $result ) ? $result->get_error_message() : '',
+				'channel'    => $channel,
+				'success'    => $is_ok,
+				'error'      => is_wp_error( $result ) ? $result->get_error_message() : '',
+				'error_data' => is_wp_error( $result ) ? $result->get_error_data() : null,
 			);
 
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
@@ -1532,5 +1667,36 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 
 			return $md;
 		}
+
+		/**
+		 * Relax the unified_channel_broadcast capability check for scheduled deliveries.
+		 *
+		 * Result delivery runs inside WP cron, where no user is logged in, so the
+		 * broadcast tool's manage_options gate would otherwise reject every
+		 * scheduled chat delivery. The schedule itself was configured by an
+		 * administrator (manage_options) at creation time and the outgoing
+		 * message is system-generated, so the per-user capability check is
+		 * waived for this internal delivery context only.
+		 *
+		 * @since 1.1.75
+		 *
+		 * @param string|false $required Required capability (manage_options by default).
+		 * @param array        $context  Execution context from the tool call.
+		 * @return string|false
+		 */
+		public static function broadcast_capability_for_scheduled_delivery( $required, $context ) {
+			if ( isset( $context['source'] ) && 'pro_schedule_manager_result_delivery' === $context['source'] ) {
+				return false;
+			}
+
+			return $required;
+		}
 	}
+
+	add_filter(
+		'wp_mcp_ai_unified_channel_broadcast_capability',
+		array( 'WP_MCP_AI_Result_Delivery_Service', 'broadcast_capability_for_scheduled_delivery' ),
+		10,
+		2
+	);
 }

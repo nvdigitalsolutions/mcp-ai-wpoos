@@ -574,4 +574,171 @@ class Test_Pro_Result_Delivery_Email_Format extends WP_UnitTestCase {
 
 		delete_option( WP_MCP_AI_Pro_Remote_Site_Manager::OPTION_NAME );
 	}
+
+	/**
+	 * When a channel config carries no connection_id and no inline credentials,
+	 * resolve_channel_credentials() must fall back to the first enabled Remote
+	 * Sites connection of the channel's type and merge the destination field
+	 * (chat_id) from the schedule config.
+	 */
+	public function test_resolve_channel_credentials_falls_back_to_enabled_connection() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		update_option(
+			WP_MCP_AI_Pro_Remote_Site_Manager::OPTION_NAME,
+			array(
+				'conn_fallbackbot' => array(
+					'id'              => 'conn_fallbackbot',
+					'name'            => 'Fallback Bot',
+					'connection_type' => 'telegram',
+					'enabled'         => true,
+					'api_key'         => '111111:TOKEN_ONE',
+				),
+			)
+		);
+
+		$creds = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'resolve_channel_credentials',
+			array(
+				'telegram',
+				array( 'chat_id' => '-100987654321' ),
+				array(),
+			)
+		);
+
+		$this->assertSame( '111111:TOKEN_ONE', $creds['token'] );
+		$this->assertSame( '-100987654321', $creds['chat_id'] );
+
+		delete_option( WP_MCP_AI_Pro_Remote_Site_Manager::OPTION_NAME );
+	}
+
+	/**
+	 * The fallback must prefer a connection the schedule's assistant is
+	 * assigned to over other enabled connections of the same type.
+	 */
+	public function test_resolve_channel_credentials_prefers_assistant_assigned_connection() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		update_option(
+			WP_MCP_AI_Pro_Remote_Site_Manager::OPTION_NAME,
+			array(
+				'conn_firstbot'    => array(
+					'id'              => 'conn_firstbot',
+					'name'            => 'First Bot',
+					'connection_type' => 'telegram',
+					'enabled'         => true,
+					'api_key'         => '222222:TOKEN_FIRST',
+				),
+				'conn_assignedbot' => array(
+					'id'                     => 'conn_assignedbot',
+					'name'                   => 'Assigned Bot',
+					'connection_type'        => 'telegram',
+					'enabled'                => true,
+					'api_key'                => '333333:TOKEN_ASSIGNED',
+					'assigned_assistant_ids' => array( 42 ),
+				),
+			)
+		);
+
+		$creds = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'resolve_channel_credentials',
+			array(
+				'telegram',
+				array( 'chat_id' => '-100111' ),
+				array( 'assistant_config' => array( 'assistant_id' => 42 ) ),
+			)
+		);
+
+		$this->assertSame( '333333:TOKEN_ASSIGNED', $creds['token'] );
+
+		delete_option( WP_MCP_AI_Pro_Remote_Site_Manager::OPTION_NAME );
+	}
+
+	/**
+	 * Disabled Remote Sites connections must be ignored by the fallback, and a
+	 * channel with no usable connection at all must resolve to an empty array.
+	 */
+	public function test_resolve_channel_credentials_skips_disabled_connections() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		update_option(
+			WP_MCP_AI_Pro_Remote_Site_Manager::OPTION_NAME,
+			array(
+				'conn_offbot' => array(
+					'id'              => 'conn_offbot',
+					'name'            => 'Disabled Bot',
+					'connection_type' => 'telegram',
+					'enabled'         => false,
+					'api_key'         => '444444:TOKEN_OFF',
+				),
+			)
+		);
+
+		$creds = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'resolve_channel_credentials',
+			array(
+				'telegram',
+				array( 'chat_id' => '-100222' ),
+				array(),
+			)
+		);
+
+		$this->assertSame( array(), $creds );
+
+		delete_option( WP_MCP_AI_Pro_Remote_Site_Manager::OPTION_NAME );
+	}
+
+	/**
+	 * Verify build_credential_diagnostics() describes the resolution failure
+	 * without ever leaking secret material.
+	 */
+	public function test_build_credential_diagnostics_never_contains_secrets() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		update_option(
+			WP_MCP_AI_Pro_Remote_Site_Manager::OPTION_NAME,
+			array(
+				'conn_diagbot' => array(
+					'id'              => 'conn_diagbot',
+					'name'            => 'Diag Bot',
+					'connection_type' => 'telegram',
+					'enabled'         => true,
+					'api_key'         => '555555:SUPER_SECRET',
+				),
+			)
+		);
+
+		$diagnostics = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'build_credential_diagnostics',
+			array(
+				'telegram',
+				array(
+					'enabled' => true,
+					'chat_id' => '-100333',
+				),
+			)
+		);
+
+		$this->assertSame( 1, $diagnostics['matching_connections'] );
+		$this->assertSame( 1, $diagnostics['enabled_matching_connections'] );
+		$this->assertTrue( $diagnostics['has_destination_field'] );
+		$this->assertFalse( $diagnostics['has_inline_credentials'] );
+
+		$serialized = wp_json_encode( $diagnostics );
+		$this->assertStringNotContainsString( 'SUPER_SECRET', $serialized );
+
+		delete_option( WP_MCP_AI_Pro_Remote_Site_Manager::OPTION_NAME );
+	}
 }
