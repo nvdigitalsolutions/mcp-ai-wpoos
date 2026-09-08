@@ -157,6 +157,20 @@ class WP_MCP_AI_Pro_Tool_Update_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 						),
 					),
 				),
+				'assistant_config'  => array(
+					'type'        => 'object',
+					'description' => __( 'Updated configuration for "assistant_run" type schedules. Merged with the existing config, so partial updates are allowed.', 'mcp-ai-wpoos-pro' ),
+					'properties'  => array(
+						'assistant_id' => array(
+							'type'        => 'integer',
+							'description' => __( 'Post ID of the NV oOS assistant to run.', 'mcp-ai-wpoos-pro' ),
+						),
+						'message'      => array(
+							'type'        => 'string',
+							'description' => __( 'Message to send to the assistant.', 'mcp-ai-wpoos-pro' ),
+						),
+					),
+				),
 			),
 			'required'             => array( 'schedule_id' ),
 			'additionalProperties' => false,

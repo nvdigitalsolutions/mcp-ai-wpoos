@@ -1017,20 +1017,20 @@
 		 * @return {string} HTML table row.
 		 */
 		editChannelRow: function ( channelSlug, config, prefix ) {
-			var def      = this.CHANNEL_DEFS[ channelSlug ];
-			var cfg      = config || {};
-			var label    = def.label;
-			var html     = '';
-			var fieldHtml = '';
-			var i;
+			const def       = this.CHANNEL_DEFS[ channelSlug ];
+			const cfg       = config || {};
+			const label     = def.label;
+			let html        = '';
+			let fieldHtml  = '';
+			let i;
 
 			// Checkbox + label.
 			html += '<label><input type="checkbox" id="' + prefix + channelSlug + '" ' + ( cfg.enabled ? 'checked' : '' ) + '> ' + this.esc( label ) + '</label>';
 
 			// Target identifier fields per channel type.
 			for ( i = 0; i < def.fields.length; i++ ) {
-				var f = def.fields[ i ];
-				var placeholder = '';
+				const f           = def.fields[ i ];
+				let placeholder   = '';
 				switch ( f ) {
 					case 'to':          placeholder = channelSlug === 'email' ? 'team@example.com' : '+15551234567'; break;
 					case 'channel':     placeholder = '#research'; break;
@@ -1048,10 +1048,10 @@
 
 			// Template selector (where applicable).
 			if ( def.templates.length > 0 ) {
-				var tplSel = cfg.template || def.templates[ 0 ];
+				const tplSel = cfg.template || def.templates[ 0 ];
 				html += ' <select id="' + prefix + channelSlug + '-template">';
 				for ( i = 0; i < def.templates.length; i++ ) {
-					var t = def.templates[ i ];
+					const t = def.templates[ i ];
 					html += '<option value="' + t + '"' + ( t === tplSel ? ' selected' : '' ) + '>' + t.charAt( 0 ).toUpperCase() + t.slice( 1 ) + '</option>';
 				}
 				html += '</select>';
@@ -1059,11 +1059,11 @@
 
 			// Email presentation format selector (HTML / Markdown / both).
 			if ( def.formats && def.formats.length > 0 ) {
-				var fmtSel    = cfg.format || def.formats[ 0 ];
-				var fmtLabels = { both: 'HTML + Plain Text', html: 'HTML only', markdown: 'Markdown only' };
+				const fmtSel    = cfg.format || def.formats[ 0 ];
+				const fmtLabels = { both: 'HTML + Plain Text', html: 'HTML only', markdown: 'Markdown only' };
 				html += ' <select id="' + prefix + channelSlug + '-format" title="Email presentation format">';
 				for ( i = 0; i < def.formats.length; i++ ) {
-					var fmt = def.formats[ i ];
+					const fmt = def.formats[ i ];
 					html += '<option value="' + fmt + '"' + ( fmt === fmtSel ? ' selected' : '' ) + '>' + ( fmtLabels[ fmt ] || fmt ) + '</option>';
 				}
 				html += '</select>';
@@ -1071,13 +1071,13 @@
 
 			// Extra fields for paper_store and wordpress (dropdowns, checkboxes).
 			if ( def.extra && def.extra.length > 0 && channelSlug === 'paper_store' ) {
-				var driverVal = cfg.driver || 'json';
+				const driverVal = cfg.driver || 'json';
 				html += ' <select id="' + prefix + channelSlug + '-driver"><option value="json"' + ( driverVal === 'json' ? ' selected' : '' ) + '>JSON</option><option value="markdown_yaml"' + ( driverVal === 'markdown_yaml' ? ' selected' : '' ) + '>Markdown + YAML</option></select>';
 				html += ' <input type="number" id="' + prefix + channelSlug + '-retention" class="small-text" value="' + ( parseInt( cfg.retention, 10 ) || 30 ) + '" min="0" max="100" style="width:60px"> runs';
 			}
 			if ( def.extra && def.extra.length > 0 && channelSlug === 'wordpress' ) {
-				var wpPostType = cfg.post_type || 'post';
-				var wpStatus = cfg.post_status || 'draft';
+				const wpPostType = cfg.post_type || 'post';
+				const wpStatus   = cfg.post_status || 'draft';
 				html += '<br><span class="description">When the AI already calls create_post during the run, this channel is automatically skipped to avoid duplicate posts.</span>';
 				html += '<br><label style="margin-top:4px;display:inline-block"><input type="checkbox" id="' + prefix + channelSlug + '-skip-if-ai" ' + ( false !== cfg.skip_if_ai_posted ? 'checked' : '' ) + '> Skip if AI already created posts</label>';
 				html += '<br><select id="' + prefix + channelSlug + '-post-type" style="margin-top:4px"><option value="post"' + ( wpPostType === 'post' ? ' selected' : '' ) + '>Post</option><option value="page"' + ( wpPostType === 'page' ? ' selected' : '' ) + '>Page</option></select>';
@@ -1104,13 +1104,13 @@
 	 * @return {object} Sanitized channel config.
 	 */
 		collectChannelConfig: function ( channelSlug, prefix, def ) {
-			var cfg = {
+			const cfg = {
 				enabled:  $( '#' + prefix + channelSlug ).is( ':checked' ),
 				template: $( '#' + prefix + channelSlug + '-template' ).val() || def.templates[ 0 ] || 'summary',
 			};
 
 			// Target identifier fields.
-			var i, f, val;
+			let i, f, val;
 			for ( i = 0; i < def.fields.length; i++ ) {
 				f = def.fields[ i ];
 				val = $( '#' + prefix + channelSlug + '-' + f ).val();
@@ -1143,7 +1143,7 @@
 			}
 
 			// Credential reference.
-			var credsRaw = $( '#' + prefix + channelSlug + '-creds' ).val().trim();
+			const credsRaw = $( '#' + prefix + channelSlug + '-creds' ).val().trim();
 			if ( credsRaw ) {
 				// If it looks like a UUID or numeric ID, treat as connection_id.
 				if ( /^[a-f0-9\-]{20,}$/i.test( credsRaw ) || /^\d+$/.test( credsRaw ) ) {
@@ -1215,6 +1215,29 @@
 				);
 			}
 
+			// Assistant run config (if assistant_run type).
+			if ( 'assistant_run' === type ) {
+				const astCfg    = schedule.assistant_config || {};
+				const astList   = s.assistants || [];
+				const currentId = parseInt( astCfg.assistant_id, 10 ) || 0;
+				let astOpts     = '<option value="">— Select assistant —</option>';
+				let hasCurrent  = false;
+				astList.forEach( function ( ast ) {
+					const astId = parseInt( ast.id, 10 );
+					const sel   = astId === currentId ? ' selected' : '';
+					if ( sel ) {
+						hasCurrent = true;
+					}
+					astOpts += '<option value="' + this.esc( astId ) + '"' + sel + '>' + this.esc( ast.title ) + '</option>';
+				}.bind( this ) );
+				// Keep a stored assistant selectable even if it was deleted from the site.
+				if ( currentId && ! hasCurrent ) {
+					astOpts += '<option value="' + this.esc( currentId ) + '" selected>ID ' + this.esc( currentId ) + ' (missing)</option>';
+				}
+				html += this.editRow( 'Assistant', '<select id="edit-assistant-id">' + astOpts + '</select>' );
+				html += this.editRow( 'Message', '<textarea id="edit-assistant-message" class="large-text" rows="3">' + this.esc( astCfg.message || '' ) + '</textarea>' );
+			}
+
 			// Result capture / display settings.
 			const disp    = schedule.display || {};
 			const dWd     = disp.widget_defaults || {};
@@ -1245,10 +1268,10 @@
 			html += this.editRow( 'Widget auto-refresh (s)', '<input type="number" id="edit-widget-refresh-interval" class="small-text" min="0" max="3600" value="' + ( parseInt( dWd.refresh_interval, 10 ) || 0 ) + '"><br><span class="description">0 = off</span>' );
 
 			// Result Delivery section — all supported channels.
-			var rd = schedule.result_delivery || {};
-			var rdSuccess = ( rd.on_success || {} ).channels || {};
-			var rdFailure = ( rd.on_failure || {} ).channels || {};
-			var self = this;
+			const rd        = schedule.result_delivery || {};
+			const rdSuccess = ( rd.on_success || {} ).channels || {};
+			const rdFailure = ( rd.on_failure || {} ).channels || {};
+			const self      = this;
 			html += '<tr><td colspan="2"><hr><strong>Result Delivery</strong><br><span class="description">Configure where results are sent. Credentials can reference a Remote Sites connection ID.</span></td></tr>';
 
 			// On Success — all channels.
@@ -1312,6 +1335,18 @@
 				data.workflow_steps = steps;
 			}
 
+			// Assistant run config (mirrors create-form validation).
+			if ( $( '#edit-assistant-id' ).length ) {
+				const assistantId  = parseInt( $( '#edit-assistant-id' ).val(), 10 );
+				const assistantMsg = $( '#edit-assistant-message' ).val().trim();
+				if ( ! assistantId || ! assistantMsg ) {
+					$btn.prop( 'disabled', false ).text( 'Save Changes' );
+					alert( 'Assistant and message are required.' );
+					return;
+				}
+				data.assistant_config = { assistant_id: assistantId, message: assistantMsg };
+			}
+
 			// Result capture / display settings.
 			data.display = {
 				result_capture:   $( '#edit-result-capture' ).val() || 'summary',
@@ -1326,18 +1361,18 @@
 
 			// Result delivery config.
 			data.result_delivery = (function() {
-				var rdSuccessChannels = {};
-				var rdFailureChannels = {};
-				var chDefs = self.CHANNEL_DEFS;
+				const rdSuccessChannels = {};
+				const rdFailureChannels = {};
+				const chDefs = self.CHANNEL_DEFS;
 
 				Object.keys( chDefs ).forEach( function ( ch ) {
-					var def = chDefs[ ch ];
-					var sc  = self.collectChannelConfig( ch, 'edit-rd-success-', def );
+					const def = chDefs[ ch ];
+					const sc  = self.collectChannelConfig( ch, 'edit-rd-success-', def );
 					if ( sc.enabled ) {
 						rdSuccessChannels[ ch ] = sc;
 					}
 					if ( ch !== 'paper_store' && ch !== 'wordpress' ) {
-						var fc = self.collectChannelConfig( ch, 'edit-rd-failure-', def );
+						const fc = self.collectChannelConfig( ch, 'edit-rd-failure-', def );
 						if ( fc.enabled ) {
 							rdFailureChannels[ ch ] = fc;
 						}

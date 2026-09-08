@@ -520,6 +520,32 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				// Allow updating the broadcast message / channels in update_schedule.
 				$updated['broadcast_config'] = $data['broadcast_config'];
 			}
+			if ( isset( $data['assistant_config'] ) && is_array( $data['assistant_config'] ) ) {
+				// Merge with the stored config so fields not exposed in the edit modal
+				// (context, max_agentic_iterations) survive partial updates.
+				$stored_config    = isset( $existing['assistant_config'] ) && is_array( $existing['assistant_config'] )
+					? $existing['assistant_config']
+					: array();
+				$assistant_config = array_merge( $stored_config, $data['assistant_config'] );
+
+				if ( empty( $assistant_config['assistant_id'] ) ) {
+					return new WP_Error( 'missing_assistant_id', __( 'An assistant_id is required for assistant_run-type schedules.', 'mcp-ai-wpoos-pro' ) );
+				}
+				if ( empty( $assistant_config['message'] ) ) {
+					return new WP_Error( 'missing_assistant_message', __( 'A message is required for assistant_run-type schedules.', 'mcp-ai-wpoos-pro' ) );
+				}
+
+				$updated['assistant_config'] = array(
+					'assistant_id'           => max( 0, absint( $assistant_config['assistant_id'] ) ),
+					'message'                => sanitize_textarea_field( $assistant_config['message'] ),
+					'context'                => isset( $assistant_config['context'] ) && is_array( $assistant_config['context'] )
+						? $assistant_config['context']
+						: array(),
+					'max_agentic_iterations' => isset( $assistant_config['max_agentic_iterations'] )
+						? max( 0, absint( $assistant_config['max_agentic_iterations'] ) )
+						: 0,
+				);
+			}
 			if ( isset( $data['max_retries'] ) ) {
 				$updated['max_retries'] = max( 0, min( 5, (int) $data['max_retries'] ) );
 			}
