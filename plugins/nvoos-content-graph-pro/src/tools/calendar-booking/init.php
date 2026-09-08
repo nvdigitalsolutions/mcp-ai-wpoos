@@ -29,7 +29,14 @@
  *    deviation 5): a `wp_mcp_ai_pro_tools` filter carrying the ported
  *    calendar tool subset (fills as the tool batches land) plus
  *    `wp_mcp_ai_pro_register_calendar_ecosystem_tools()` registering the
- *    ported tools into the ecosystem graph ToolRegistry.
+ *    ported tools into the ecosystem graph ToolRegistry. The fifteen
+ *    appointment/slot extras (block-time-slot, cancel/create/update/
+ *    reschedule-appointment, check-availability, available-slots,
+ *    appointment-details, booking-link, reminders/confirmations,
+ *    availability-rules, optimize-schedule, google/outlook sync) exist in
+ *    the base tree but are NOT part of the monolith's inline calendar tool
+ *    map — the filter/ecosystem additions here are the standalone
+ *    registrations for those files (CRM CC-extras precedent).
  *
  * @package NvoosContentGraphPro
  * @since   1.0.0
@@ -132,6 +139,21 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 			'WP_MCP_AI_Tool_Get_JetAppointment_Services'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-get-jetappointment-services.php',
 			'WP_MCP_AI_Tool_Get_JetBooking_Units'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-get-jetbooking-units.php',
 			'WP_MCP_AI_Tool_Get_JetBooking_Instances'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-get-jetbooking-instances.php',
+			'WP_MCP_AI_Tool_Block_Time_Slot'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-block-time-slot.php',
+			'WP_MCP_AI_Tool_Cancel_Appointment'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-cancel-appointment.php',
+			'WP_MCP_AI_Tool_Check_Availability'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-check-availability.php',
+			'WP_MCP_AI_Tool_Create_Appointment'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-create-appointment.php',
+			'WP_MCP_AI_Tool_Update_Appointment'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-update-appointment.php',
+			'WP_MCP_AI_Tool_Get_Appointment_Details'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-get-appointment-details.php',
+			'WP_MCP_AI_Tool_Get_Available_Slots'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-get-available-slots.php',
+			'WP_MCP_AI_Tool_Generate_Booking_Link'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-generate-booking-link.php',
+			'WP_MCP_AI_Tool_Reschedule_Appointment'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-reschedule-appointment.php',
+			'WP_MCP_AI_Tool_Send_Appointment_Reminder'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-send-appointment-reminder.php',
+			'WP_MCP_AI_Tool_Send_Booking_Confirmation'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-send-booking-confirmation.php',
+			'WP_MCP_AI_Tool_Set_Availability_Rules'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-set-availability-rules.php',
+			'WP_MCP_AI_Tool_Optimize_Schedule'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-optimize-schedule.php',
+			'WP_MCP_AI_Tool_Sync_Google_Calendar'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-sync-google-calendar.php',
+			'WP_MCP_AI_Tool_Sync_Outlook_Calendar'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-sync-outlook-calendar.php',
 		);
 
 		return array_merge( $tools, $nvoos_content_graph_pro_cal_tools );
@@ -175,6 +197,21 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 				'WP_MCP_AI_Tool_Get_JetAppointment_Services',
 				'WP_MCP_AI_Tool_Get_JetBooking_Units',
 				'WP_MCP_AI_Tool_Get_JetBooking_Instances',
+				'WP_MCP_AI_Tool_Block_Time_Slot',
+				'WP_MCP_AI_Tool_Cancel_Appointment',
+				'WP_MCP_AI_Tool_Check_Availability',
+				'WP_MCP_AI_Tool_Create_Appointment',
+				'WP_MCP_AI_Tool_Update_Appointment',
+				'WP_MCP_AI_Tool_Get_Appointment_Details',
+				'WP_MCP_AI_Tool_Get_Available_Slots',
+				'WP_MCP_AI_Tool_Generate_Booking_Link',
+				'WP_MCP_AI_Tool_Reschedule_Appointment',
+				'WP_MCP_AI_Tool_Send_Appointment_Reminder',
+				'WP_MCP_AI_Tool_Send_Booking_Confirmation',
+				'WP_MCP_AI_Tool_Set_Availability_Rules',
+				'WP_MCP_AI_Tool_Optimize_Schedule',
+				'WP_MCP_AI_Tool_Sync_Google_Calendar',
+				'WP_MCP_AI_Tool_Sync_Outlook_Calendar',
 			) as $nvoos_content_graph_pro_tool_class
 		) {
 			$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
