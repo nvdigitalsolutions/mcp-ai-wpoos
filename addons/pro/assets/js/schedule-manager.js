@@ -1086,7 +1086,11 @@
 			}
 
 			// Credential reference (connection_id or inline).
-			html += ' <input type="text" id="' + prefix + channelSlug + '-creds" class="regular-text" value="' + this.esc( cfg.connection_id || cfg[ channelSlug + '_credentials' ] || '' ) + '" placeholder="Connection ID or token" style="max-width:200px">';
+			let credsValue = cfg.connection_id || cfg[ channelSlug + '_credentials' ] || '';
+			if ( credsValue && typeof credsValue === 'object' ) {
+				credsValue = JSON.stringify( credsValue );
+			}
+			html += ' <input type="text" id="' + prefix + channelSlug + '-creds" class="regular-text" value="' + this.esc( credsValue ) + '" placeholder="Connection ID or JSON credentials" style="max-width:200px">';
 
 			return this.editRow( label, html );
 		},
@@ -1145,9 +1149,19 @@
 			// Credential reference.
 			const credsRaw = $( '#' + prefix + channelSlug + '-creds' ).val().trim();
 			if ( credsRaw ) {
-				// If it looks like a UUID or numeric ID, treat as connection_id.
-				if ( /^[a-f0-9\-]{20,}$/i.test( credsRaw ) || /^\d+$/.test( credsRaw ) ) {
+				// If it looks like a Remote Sites connection ID, a UUID, or a
+				// numeric ID, treat as connection_id.
+				if ( /^[a-f0-9\-]{20,}$/i.test( credsRaw ) || /^\d+$/.test( credsRaw ) || /^conn_[a-z0-9]+$/i.test( credsRaw ) ) {
 					cfg.connection_id = credsRaw;
+				} else if ( credsRaw.charAt( 0 ) === '{' ) {
+					// JSON credentials object — parse and store as an object so the
+					// result delivery service receives the expected array shape.
+					try {
+						const parsed = JSON.parse( credsRaw );
+						cfg[ channelSlug + '_credentials' ] = ( parsed && typeof parsed === 'object' ) ? parsed : credsRaw;
+					} catch ( e ) {
+						cfg[ channelSlug + '_credentials' ] = credsRaw;
+					}
 				} else {
 					cfg[ channelSlug + '_credentials' ] = credsRaw;
 				}

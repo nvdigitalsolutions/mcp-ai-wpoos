@@ -589,15 +589,21 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 					if ( is_array( $connection ) && ! empty( $connection ) ) {
 						$creds = self::extract_credentials_from_connection( $channel, $connection );
 						if ( ! empty( $creds ) ) {
-							return $creds;
+							$creds = self::merge_channel_destination_fields( $channel, $creds, $config );
+							if ( ! empty( $creds ) ) {
+								return $creds;
+							}
 						}
 					}
 				}
 			}
 
 			// 2. Try inline credentials stored under the canonical key.
-			if ( isset( $config[ $channel . '_credentials' ] ) && is_array( $config[ $channel . '_credentials' ] ) ) {
-				return $config[ $channel . '_credentials' ];
+			if ( isset( $config[ $channel . '_credentials' ] ) ) {
+				$inline = self::normalize_channel_credentials( $config[ $channel . '_credentials' ] );
+				if ( ! empty( $inline ) ) {
+					return $inline;
+				}
 			}
 
 			// 3. Allow integrators to supply global defaults.
@@ -607,8 +613,12 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		/**
 		 * Extract delivery credentials from a Remote Sites connection record.
 		 *
-		 * Maps the connection-type-agnostic storage to the per-channel shape
-		 * expected by unified_channel_broadcast.
+		 * Maps the real Remote Sites storage schema to the per-channel shape
+		 * expected by unified_channel_broadcast. Tokens are stored encrypted
+		 * under `api_key` (Slack, Discord, Telegram, Messenger, WhatsApp) or
+		 * `token` (Microsoft Teams), so they are decrypted here. Destination
+		 * fields (chat/channel IDs) live on the schedule's channel config and
+		 * are merged in by {@see merge_channel_destination_fields()}.
 		 *
 		 * @since 1.0.0
 		 *
@@ -617,35 +627,35 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		 * @return array Credential map for this channel, or empty array.
 		 */
 		protected static function extract_credentials_from_connection( $channel, array $connection ) {
+			$decrypt = function ( $key ) use ( $connection ) {
+				if ( empty( $connection[ $key ] ) ) {
+					return '';
+				}
+
+				// decrypt_value() returns plaintext values untouched, so this is
+				// safe for both encrypted records and legacy plaintext ones.
+				return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( (string) $connection[ $key ] );
+			};
+
 			$map = array(
-				'slack'       => array(
-					'token'   => isset( $connection['slack_bot_token'] ) ? (string) $connection['slack_bot_token'] : '',
-					'channel' => isset( $connection['slack_default_channel'] ) ? (string) $connection['slack_default_channel'] : '',
+				'slack'     => array(
+					'token' => $decrypt( 'api_key' ),
 				),
-				'telegram'    => array(
-					'token'   => isset( $connection['telegram_bot_token'] ) ? (string) $connection['telegram_bot_token'] : '',
-					'chat_id' => isset( $connection['telegram_chat_id'] ) ? (string) $connection['telegram_chat_id'] : '',
+				'telegram'  => array(
+					'token' => $decrypt( 'api_key' ),
 				),
-				'discord'     => array(
-					'token'      => isset( $connection['discord_bot_token'] ) ? (string) $connection['discord_bot_token'] : '',
-					'channel_id' => isset( $connection['discord_channel_id'] ) ? (string) $connection['discord_channel_id'] : '',
+				'discord'   => array(
+					'token' => $decrypt( 'api_key' ),
 				),
-				'teams'       => array(
-					'token'      => isset( $connection['teams_token'] ) ? (string) $connection['teams_token'] : '',
-					'team_id'    => isset( $connection['teams_team_id'] ) ? (string) $connection['teams_team_id'] : '',
-					'channel_id' => isset( $connection['teams_channel_id'] ) ? (string) $connection['teams_channel_id'] : '',
+				'teams'     => array(
+					'token' => $decrypt( 'token' ),
 				),
-				'messenger'   => array(
-					'access_token' => isset( $connection['messenger_access_token'] ) ? (string) $connection['messenger_access_token'] : '',
-					'recipient_id' => isset( $connection['messenger_recipient_id'] ) ? (string) $connection['messenger_recipient_id'] : '',
+				'messenger' => array(
+					'access_token' => $decrypt( 'api_key' ),
 				),
-				'whatsapp'    => array(
-					'access_token'    => isset( $connection['whatsapp_access_token'] ) ? (string) $connection['whatsapp_access_token'] : '',
-					'phone_number_id' => isset( $connection['whatsapp_phone_number_id'] ) ? (string) $connection['whatsapp_phone_number_id'] : '',
-					'to'              => isset( $connection['whatsapp_to'] ) ? (string) $connection['whatsapp_to'] : '',
-				),
-				'google_chat' => array(
-					'webhook_url' => isset( $connection['google_chat_webhook_url'] ) ? (string) $connection['google_chat_webhook_url'] : '',
+				'whatsapp'  => array(
+					'access_token'    => $decrypt( 'api_key' ),
+					'phone_number_id' => isset( $connection['phone_number_id'] ) ? (string) $connection['phone_number_id'] : '',
 				),
 			);
 
@@ -662,6 +672,44 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			}
 
 			return array();
+		}
+
+		/**
+		 * Merge per-channel destination fields from the channel config into
+		 * credentials resolved from a Remote Sites connection.
+		 *
+		 * Connections store the secret (token) but not the delivery destination,
+		 * which the user supplies per-schedule (e.g. the Telegram `chat_id`
+		 * field in the Schedule Manager edit modal).
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $channel Channel slug.
+		 * @param array  $creds   Credentials resolved from the connection.
+		 * @param array  $config  Channel config from schedule['result_delivery'].
+		 * @return array Merged credential map.
+		 */
+		protected static function merge_channel_destination_fields( $channel, array $creds, array $config ) {
+			$fields = array(
+				'telegram'  => array( 'chat_id' ),
+				'slack'     => array( 'channel' ),
+				'discord'   => array( 'channel_id' ),
+				'teams'     => array( 'team_id', 'channel_id' ),
+				'messenger' => array( 'recipient_id' ),
+				'whatsapp'  => array( 'to' ),
+			);
+
+			if ( ! isset( $fields[ $channel ] ) ) {
+				return $creds;
+			}
+
+			foreach ( $fields[ $channel ] as $field ) {
+				if ( empty( $creds[ $field ] ) && ! empty( $config[ $field ] ) ) {
+					$creds[ $field ] = sanitize_text_field( $config[ $field ] );
+				}
+			}
+
+			return $creds;
 		}
 
 		// -------------------------------------------------------------------------
@@ -799,6 +847,38 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		}
 
 		/**
+		 * Normalize channel credentials into the array shape expected by the
+		 * unified_channel_broadcast tool.
+		 *
+		 * The Schedule Manager edit modal stores inline credentials as raw
+		 * strings (e.g. a JSON literal or a bare bot token). Passing those
+		 * through to the broadcast tool triggers a TypeError because its
+		 * per-channel credentials parameter is type-hinted as an array. This
+		 * helper coerces JSON strings into arrays and rejects any other
+		 * non-array value with an empty array so callers fail gracefully with
+		 * a descriptive error instead of a fatal.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param mixed $raw Raw credentials value from a channel config.
+		 * @return array Credential map, empty when the value is not a valid array.
+		 */
+		protected static function normalize_channel_credentials( $raw ) {
+			if ( is_array( $raw ) ) {
+				return $raw;
+			}
+
+			if ( is_string( $raw ) && '' !== trim( $raw ) ) {
+				$decoded = json_decode( $raw, true );
+				if ( is_array( $decoded ) ) {
+					return $decoded;
+				}
+			}
+
+			return array();
+		}
+
+		/**
 		 * Send a message to chat channels via unified_channel_broadcast tool.
 		 *
 		 * @param string $channel Channel slug (slack, telegram, etc.).
@@ -827,11 +907,22 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			$credentials = array();
 			$resolved    = self::resolve_channel_credentials( $channel, $config );
 			if ( ! empty( $resolved ) ) {
-				$credentials[ $channel ] = $resolved;
-			} elseif ( isset( $config['credentials'] ) && is_array( $config['credentials'] ) ) {
-				$credentials[ $channel ] = $config['credentials'];
+				$credentials[ $channel ] = self::normalize_channel_credentials( $resolved );
+			} elseif ( isset( $config['credentials'] ) ) {
+				$credentials[ $channel ] = self::normalize_channel_credentials( $config['credentials'] );
 			} elseif ( isset( $config[ $channel . '_credentials' ] ) ) {
-				$credentials[ $channel ] = $config[ $channel . '_credentials' ];
+				$credentials[ $channel ] = self::normalize_channel_credentials( $config[ $channel . '_credentials' ] );
+			}
+
+			if ( empty( $credentials[ $channel ] ) ) {
+				return new WP_Error(
+					'missing_channel_credentials',
+					sprintf(
+						/* translators: %s: channel name */
+						__( 'No valid credentials found for the %s channel.', 'mcp-ai-wpoos-pro' ),
+						$channel
+					)
+				);
 			}
 
 			$result = $tool->execute(

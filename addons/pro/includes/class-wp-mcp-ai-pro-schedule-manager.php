@@ -3255,8 +3255,19 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 						$entry['connection_id'] = sanitize_text_field( $config['connection_id'] );
 					}
 					// Inline credentials (fallback when no connection is configured).
+					// Tolerate JSON-encoded strings saved by older edit-modal builds
+					// and coerce them into a sanitized credential array.
 					if ( isset( $config[ $channel . '_credentials' ] ) ) {
-						$entry[ $channel . '_credentials' ] = $config[ $channel . '_credentials' ];
+						$creds = $config[ $channel . '_credentials' ];
+						if ( is_string( $creds ) && '' !== trim( $creds ) ) {
+							$decoded = json_decode( $creds, true );
+							if ( is_array( $decoded ) ) {
+								$creds = $decoded;
+							}
+						}
+						if ( is_array( $creds ) ) {
+							$entry[ $channel . '_credentials' ] = array_map( 'sanitize_text_field', $creds );
+						}
 					}
 					if ( isset( $config['channel'] ) ) {
 						$entry['channel'] = sanitize_text_field( $config['channel'] );

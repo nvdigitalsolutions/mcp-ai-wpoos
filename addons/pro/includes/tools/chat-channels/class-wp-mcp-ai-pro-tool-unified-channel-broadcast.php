@@ -213,7 +213,26 @@ class WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast implements WP_MCP_AI_Tool_Int
 				continue;
 			}
 
-			$result = $this->send_to_channel( $channel, $message, $credentials[ $channel ], $context );
+			$channel_credentials = $credentials[ $channel ];
+
+			// Coerce JSON-encoded credential strings (e.g. saved verbatim from
+			// the Schedule Manager edit modal) into arrays and reject any other
+			// malformed value gracefully instead of throwing a TypeError.
+			if ( is_string( $channel_credentials ) && '' !== trim( $channel_credentials ) ) {
+				$decoded = json_decode( $channel_credentials, true );
+				if ( is_array( $decoded ) ) {
+					$channel_credentials = $decoded;
+				}
+			}
+
+			if ( ! is_array( $channel_credentials ) ) {
+				$results['failures'][ $channel ] = array(
+					'error' => __( 'Invalid credentials for this channel. Credentials must be an object of token/key values, e.g. {"token":"…","chat_id":"…"}.', 'mcp-ai-wpoos-pro' ),
+				);
+				continue;
+			}
+
+			$result = $this->send_to_channel( $channel, $message, $channel_credentials, $context );
 
 			if ( is_wp_error( $result ) ) {
 				$results['failures'][ $channel ] = array(
