@@ -99,6 +99,8 @@ spl_autoload_register(
 			'src/tools/project-management/analytics/',
 			'src/tools/project-management/command-center/',
 			'src/tools/project-management/risk/',
+			'src/tools/project-management/sprints/',
+			'src/tools/project-management/templates/',
 			'src/tools/project-management/workflow/',
 			'src/tools/vault/',
 			'src/tools/vector-storage/',

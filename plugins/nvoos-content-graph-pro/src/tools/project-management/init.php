@@ -588,6 +588,12 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 			'WP_MCP_AI_Tool_Create_PM_Workflow_Rule'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/workflow/class-wp-mcp-ai-tool-create-pm-workflow-rule.php',
 			'WP_MCP_AI_Tool_List_PM_Workflow_Rules'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/workflow/class-wp-mcp-ai-tool-list-pm-workflow-rules.php',
 			'WP_MCP_AI_Tool_Simulate_PM_Workflow_Rule' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/workflow/class-wp-mcp-ai-tool-simulate-pm-workflow-rule.php',
+			'WP_MCP_AI_Tool_Create_Task_Template'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/templates/class-wp-mcp-ai-tool-create-task-template.php',
+			'WP_MCP_AI_Tool_List_Task_Templates'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/templates/class-wp-mcp-ai-tool-list-task-templates.php',
+			'WP_MCP_AI_Tool_Instantiate_Task_Template' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/templates/class-wp-mcp-ai-tool-instantiate-task-template.php',
+			'WP_MCP_AI_Tool_Create_Sprint'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/sprints/class-wp-mcp-ai-tool-create-sprint.php',
+			'WP_MCP_AI_Tool_Plan_Sprint'               => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/sprints/class-wp-mcp-ai-tool-plan-sprint.php',
+			'WP_MCP_AI_Tool_Close_Sprint'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/sprints/class-wp-mcp-ai-tool-close-sprint.php',
 		);
 
 		return array_merge( $tools, $nvoos_content_graph_pro_pm_tools );
@@ -646,6 +652,12 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 			'WP_MCP_AI_Tool_Create_PM_Workflow_Rule',
 			'WP_MCP_AI_Tool_List_PM_Workflow_Rules',
 			'WP_MCP_AI_Tool_Simulate_PM_Workflow_Rule',
+			'WP_MCP_AI_Tool_Create_Task_Template',
+			'WP_MCP_AI_Tool_List_Task_Templates',
+			'WP_MCP_AI_Tool_Instantiate_Task_Template',
+			'WP_MCP_AI_Tool_Create_Sprint',
+			'WP_MCP_AI_Tool_Plan_Sprint',
+			'WP_MCP_AI_Tool_Close_Sprint',
 		) as $nvoos_content_graph_pro_tool_class
 		) {
 			$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
