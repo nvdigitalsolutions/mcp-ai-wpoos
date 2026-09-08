@@ -1,13 +1,16 @@
 <?php
 /**
- * CPT Settings Page Base Class (ecosystem port — Wave F2, e-commerce admin pages batch).
+ * Financial admin page (ecosystem port — Wave F2, financial admin slice).
  *
- * Ported from the base Pro addon's `addons/pro/includes/admin/class-wp-mcp-ai-cpt-settings-page-base.php` for the standalone `nvoos-content-graph-pro` addon. Kept
- * byte-identical. The base Pro addon owns the class in monolith installs —
- * the addon's autoloader skips its copy when `WP_MCP_AI_PRO_PATH` is defined
- * (see the plugin entry).
+ * Ported from the base Pro addon's `addons/pro/includes/admin/class-wp-mcp-ai-cpt-settings-page-base.php` for the standalone
+ * `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro
+ * addon owns the class in monolith installs — the addon's autoloader
+ * skips its copy when `NVOOS_CONTENT_GRAPH_PRO_PATH` is defined (see the plugin
+ * entry).
  *
- * Documented deviations: `declare(strict_types=1)` added; text domain `nvoos-content-graph-pro`; no path constants — no path swaps.
+ * Documented deviations: `declare(strict_types=1)` added; text domain
+ * `nvoos-content-graph-pro`; `NVOOS_CONTENT_GRAPH_PRO_PATH` swaps with the
+ * `src/` root (base-class/yfinance-service requires).
  *
  * @package NvoosContentGraphPro
  * @since 1.1.0

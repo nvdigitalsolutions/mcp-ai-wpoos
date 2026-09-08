@@ -16,8 +16,8 @@
  * 3. The JetEngine meta-helper guard stays byte-identical (base-owned
  *    `WP_MCP_AI_JetEngine_Meta_Helper` — classmap-served, dormant standalone
  *    unless JetEngine is present).
- * 4. The admin pages (CPT settings + research) stay file-gated — they land
- *    with the financial admin slice.
+ * 4. The admin pages (CPT settings + research) land with the financial
+ *    admin slice (ported; the file-gates below now fire).
  * 5. Monolith guard — this init declares the global helper
  *    `wp_mcp_ai_enqueue_financial_planner_toolkit_admin_styles()` that the
  *    base financial init also declares; the collision is a compile-time
