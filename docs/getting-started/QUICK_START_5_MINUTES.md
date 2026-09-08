@@ -157,7 +157,7 @@ You just:
 ## Learn More
 
 - **[Full Quick Reference](../QUICK_REFERENCE.md)** - Common tasks
-- **[Settings Dashboard Guide](../guides/admin/SETTINGS_DASHBOARD_GUIDE.md)** - All 9 tabs explained
+- **[Settings Dashboard Guide](../admin-guides/SETTINGS_DASHBOARD_GUIDE.md)** - All 9 tabs explained
 - **[Token Management Guide](../features/performance/TOKEN_MANAGEMENT_GUIDE.md)** - Control costs
 - **[Documentation Index](../DOCUMENTATION_INDEX.md)** - 659 guides
 
@@ -167,7 +167,7 @@ You just:
 
 - **GitHub:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 - **Docs:** [Complete Index](../DOCUMENTATION_INDEX.md)
-- **Troubleshooting:** [Common Issues](../troubleshooting/)
+- **Troubleshooting:** [Common Issues](../operations/troubleshooting/)
 
 ---
 
