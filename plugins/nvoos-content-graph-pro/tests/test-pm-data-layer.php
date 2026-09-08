@@ -115,18 +115,26 @@ class Test_Pm_Data_Layer extends WP_UnitTestCase {
 		$settings['enable_project_management'] = 1;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
+		// First-loader-gated: if an earlier test already required the init,
+		// the per-test hook backup/restore wiped its file-scope hooks, so
+		// the hook assertions only run on the true first load.
+		$pm_init_first_load = ! function_exists( 'wp_mcp_ai_register_project_management_post_types' );
+
 		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/init.php';
 
-		// Inline sprint + PM workflow-rule CPTs register at require time.
+		// Inline sprint + PM workflow-rule CPTs register at require time
+		// (post-type registrations are global, not hook-backed-up).
 		$this->assertTrue( post_type_exists( 'mcp_ai_sprint' ) );
 		$this->assertTrue( post_type_exists( 'mcp_ai_pm_wf_rule' ) );
 
-		// Backward-compat hook wiring.
-		$this->assertNotFalse( has_action( 'init', 'wp_mcp_ai_register_project_management_post_types' ) );
-		$this->assertNotFalse( has_action( 'init', 'wp_mcp_ai_register_project_management_taxonomies' ) );
-		$this->assertNotFalse( has_action( 'init', 'wp_mcp_ai_init_pm_notifications' ) );
-		$this->assertNotFalse( has_action( 'admin_init', 'wp_mcp_ai_init_project_management_admin' ) );
-		$this->assertNotFalse( has_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_project_management_admin_styles' ) );
+		// Backward-compat hook wiring (first-load only).
+		if ( $pm_init_first_load ) {
+			$this->assertNotFalse( has_action( 'init', 'wp_mcp_ai_register_project_management_post_types' ) );
+			$this->assertNotFalse( has_action( 'init', 'wp_mcp_ai_register_project_management_taxonomies' ) );
+			$this->assertNotFalse( has_action( 'init', 'wp_mcp_ai_init_pm_notifications' ) );
+			$this->assertNotFalse( has_action( 'admin_init', 'wp_mcp_ai_init_project_management_admin' ) );
+			$this->assertNotFalse( has_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_project_management_admin_styles' ) );
+		}
 
 		// The auxiliary CPT registration stays enabled-gated.
 		wp_mcp_ai_register_project_management_post_types();
