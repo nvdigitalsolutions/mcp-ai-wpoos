@@ -1,0 +1,21 @@
+/**
+ * Remote Sites Admin Styles
+ *
+ * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+.wp-mcp-ai-remote-sites .form-table th {
+	padding: 20px 10px 20px 0;
+	width: 200px;
+}
+
+.wp-mcp-ai-remote-sites .required {
+	color: #d63638;
+}
+
+.wp-mcp-ai-remote-sites .notice {
+	margin: 20px 0;
+}

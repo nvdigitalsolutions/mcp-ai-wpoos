@@ -629,6 +629,30 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 						require_once $p . 'class-wp-mcp-ai-remote-connection.php';
 					}
 				);
+
+				// Mirrors the base registry's `admin_remote_sites` module — the
+				// remote-sites admin UI plus the assistant metabox. The
+				// webhook-status page is loaded here too: the base loads it via
+				// `wp_mcp_ai_pro_load_admin_sections()`, which the standalone
+				// addon does not yet carry (documented deviation).
+				$this->add_module(
+					'admin_remote_sites',
+					'Remote Sites Admin',
+					array(),
+					array(
+						'context' => 'admin',
+						'files'   => array(
+							$p . 'admin/class-wp-mcp-ai-pro-remote-sites-admin.php',
+							$p . 'admin/class-wp-mcp-ai-pro-metabox-remote-connections.php',
+							$p . 'admin/class-wp-mcp-ai-pro-webhook-status-page.php',
+						),
+					),
+					function () use ( $p ) {
+						require_once $p . 'admin/class-wp-mcp-ai-pro-remote-sites-admin.php';
+						require_once $p . 'admin/class-wp-mcp-ai-pro-metabox-remote-connections.php';
+						require_once $p . 'admin/class-wp-mcp-ai-pro-webhook-status-page.php';
+					}
+				);
 		}
 	}
 }
