@@ -12,6 +12,9 @@
  * - send_email(): format routing — markdown sends text/plain only, html and
  *   both send text/html, and both supplies html + text to Nodemailer.
  * - sanitize_result_delivery(): email format allowlist with 'both' default.
+ * - normalize_channel_credentials(): JSON-string credential coercion.
+ * - resolve_channel_credentials(): Remote Sites connection token mapping
+ *   (api_key → token) with per-schedule destination field merge.
  *
  * @package WP_MCP_AI_Pro
  * @author    NV Digital Solutions
@@ -451,5 +454,124 @@ class Test_Pro_Result_Delivery_Email_Format extends WP_UnitTestCase {
 		unset( $delivery['on_success']['channels']['email']['format'] );
 		$sanitized = WP_MCP_AI_Pro_Schedule_Manager::sanitize_result_delivery( $delivery );
 		$this->assertSame( 'both', $sanitized['on_success']['channels']['email']['format'] );
+	}
+
+	/**
+	 * Inline chat-channel credentials stored as a JSON string (the shape the
+	 * Schedule Manager edit modal previously saved) must be coerced back into
+	 * a sanitized array at the sanitize_result_delivery() boundary.
+	 */
+	public function test_sanitize_result_delivery_coerces_string_credentials() {
+		$delivery = array(
+			'on_success' => array(
+				'channels' => array(
+					'telegram' => array(
+						'enabled'              => true,
+						'template'             => 'summary',
+						'telegram_credentials' => '{"token":"123:ABC","chat_id":"-1001"}',
+					),
+				),
+			),
+			'on_failure' => array(
+				'channels' => array(),
+			),
+		);
+
+		$sanitized = WP_MCP_AI_Pro_Schedule_Manager::sanitize_result_delivery( $delivery );
+		$telegram  = $sanitized['on_success']['channels']['telegram'];
+
+		$this->assertArrayHasKey( 'telegram_credentials', $telegram );
+		$this->assertIsArray( $telegram['telegram_credentials'] );
+		$this->assertSame( '123:ABC', $telegram['telegram_credentials']['token'] );
+		$this->assertSame( '-1001', $telegram['telegram_credentials']['chat_id'] );
+	}
+
+	/**
+	 * Normalize_channel_credentials() must decode JSON-string credentials and
+	 * return an empty array for any other non-array value so send_chat()
+	 * fails with a WP_Error instead of a TypeError.
+	 */
+	public function test_normalize_channel_credentials_decodes_json_strings() {
+		$normalize = function ( $raw ) {
+			return $this->invoke_static(
+				'WP_MCP_AI_Result_Delivery_Service',
+				'normalize_channel_credentials',
+				array( $raw )
+			);
+		};
+
+		// JSON string → array.
+		$decoded = $normalize( '{"token":"123:ABC","chat_id":"-1001"}' );
+		$this->assertSame(
+			array(
+				'token'   => '123:ABC',
+				'chat_id' => '-1001',
+			),
+			$decoded
+		);
+
+		// Array passes through untouched.
+		$array = array( 'token' => '456:DEF' );
+		$this->assertSame( $array, $normalize( $array ) );
+
+		// Bare non-JSON string → empty array.
+		$this->assertSame( array(), $normalize( '123:ABC' ) );
+
+		// Scalar garbage → empty array.
+		$this->assertSame( array(), $normalize( 42 ) );
+		$this->assertSame( array(), $normalize( null ) );
+	}
+
+	/**
+	 * Connection-ID resolution must read the real Remote Sites storage
+	 * schema (encrypted token under api_key) and merge the destination
+	 * chat_id from the schedule's channel config.
+	 */
+	public function test_resolve_channel_credentials_from_connection_merges_destination() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		update_option(
+			WP_MCP_AI_Pro_Remote_Site_Manager::OPTION_NAME,
+			array(
+				'conn_testbot123' => array(
+					'id'              => 'conn_testbot123',
+					'name'            => 'Telegram Bot',
+					'connection_type' => 'telegram',
+					'api_key'         => '1234567890:ABCdefGHIjklMNOpqrsTUVwxyz',
+				),
+			)
+		);
+
+		$creds = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'resolve_channel_credentials',
+			array(
+				'telegram',
+				array(
+					'connection_id' => 'conn_testbot123',
+					'chat_id'       => '-1001234567890',
+				),
+			)
+		);
+
+		$this->assertSame( '1234567890:ABCdefGHIjklMNOpqrsTUVwxyz', $creds['token'] );
+		$this->assertSame( '-1001234567890', $creds['chat_id'] );
+
+		// Without a destination in the config the connection still resolves
+		// the token alone; the broadcast tool reports the missing chat_id.
+		$token_only = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'resolve_channel_credentials',
+			array(
+				'telegram',
+				array( 'connection_id' => 'conn_testbot123' ),
+			)
+		);
+		$this->assertSame( '1234567890:ABCdefGHIjklMNOpqrsTUVwxyz', $token_only['token'] );
+		$this->assertArrayNotHasKey( 'chat_id', $token_only );
+
+		delete_option( WP_MCP_AI_Pro_Remote_Site_Manager::OPTION_NAME );
 	}
 }

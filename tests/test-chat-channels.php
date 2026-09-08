@@ -1032,6 +1032,51 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$this->assertSame( 'unified_channel_broadcast', $tool->get_slug() );
 	}
 
+	/**
+	 * String (JSON-encoded) per-channel credentials must fail gracefully
+	 * instead of throwing a TypeError inside send_to_channel().
+	 *
+	 * Regression: the Schedule Manager edit modal stored inline credentials
+	 * as a raw string, and the tool's array type-hint on send_to_channel()
+	 * turned that into a fatal.
+	 */
+	public function test_chat_channels_unified_broadcast_string_credentials_fail_gracefully() {
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast',
+			'class-wp-mcp-ai-pro-tool-unified-channel-broadcast.php'
+		);
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$tool = new WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast();
+
+		// Credentials stored as a JSON string — the exact shape produced by
+		// older Schedule Manager edit-modal saves.
+		$result = $tool->execute(
+			array(
+				'message'     => 'Broadcast test',
+				'channels'    => array( 'telegram' ),
+				'credentials' => array(
+					'telegram' => '{"token":"123:ABC","chat_id":"-1001"}',
+				),
+			),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'summary', $result );
+		$this->assertSame( 0, (int) $result['summary']['successful_channels'] );
+		$this->assertSame( 1, (int) $result['summary']['failed_channels'] );
+		$this->assertArrayHasKey( 'telegram', $result['failures'] );
+
+		wp_set_current_user( 0 );
+	}
+
 	// ----- OpenClaw Feb 2026 parity: Reactions & Voice -----------------------
 
 	/** Discord add-message-reaction tool must be loadable. */
