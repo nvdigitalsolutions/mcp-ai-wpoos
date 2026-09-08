@@ -706,6 +706,24 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 									require_once $p . 'tools/analytics/init.php';
 								}
 							);
+
+								// Standalone-only module (no monolith registry counterpart — the
+								// base tree ships the multilingual init but nothing loads it;
+								// the base registers the multilingual tools inline via
+								// `wp_mcp_ai_pro_register_tools()`). Boots the slim
+								// multilingual init standalone so the ported tools land in the
+								// ecosystem registries (analytics precedent).
+								$this->add_module(
+									'toolkit_multilingual',
+									'Multilingual Toolkit',
+									array(),
+									array(
+										'files' => array( $p . 'tools/multilingual/init.php' ),
+									),
+									function () use ( $p ) {
+										require_once $p . 'tools/multilingual/init.php';
+									}
+								);
 		}
 	}
 }
