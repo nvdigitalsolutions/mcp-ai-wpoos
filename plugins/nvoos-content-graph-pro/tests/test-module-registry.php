@@ -107,6 +107,12 @@ class Test_Pro_Module_Registry extends WP_UnitTestCase {
 				$this->assertFalse( $registry->is_loaded( $id ), "Disabled module \"{$id}\" must not load." );
 				continue;
 			}
+			// Admin-context modules (admin_remote_sites) only boot when the
+			// matrix runs in an admin context (is_admin()).
+			if ( ! empty( $mod['context'] ) && 'admin' === $mod['context'] && ! is_admin() ) {
+				$this->assertFalse( $registry->is_loaded( $id ), "Admin module \"{$id}\" must not load outside admin context." );
+				continue;
+			}
 			if ( empty( $mod['files'] ) ) {
 				continue;
 			}
@@ -150,6 +156,7 @@ class Test_Pro_Module_Registry extends WP_UnitTestCase {
 			'toolkit_social_media',
 			'mcp_servers_framework',
 			'remote_connection',
+			'admin_remote_sites',
 		);
 
 		$this->assertSame( $expected, array_keys( $registry->modules() ) );
