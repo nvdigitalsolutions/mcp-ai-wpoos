@@ -33,14 +33,11 @@ class WP_MCP_AI_Speed_Benchmarks_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		// See test-optimization-comparison.php: the MCP adapter's default
-		// server and Rank Math's bundled mcp-oauth transport both look up the
-		// shared mcp-adapter/* abilities on the first REST request, which the
-		// earlier abilities suites never register. Disable both servers so a
-		// reordering of the performance suites cannot resurrect the incorrect
-		// usage notices.
-		add_filter( 'mcp_adapter_create_default_server', '__return_false' );
-		add_filter( 'wpmedia_mcp_oauth_server_enabled', '__return_false' );
+		// Third-party MCP servers — WooCommerce's MCP Adapter default server
+		// and Rank Math's bundled mcp-oauth transport — are neutralised
+		// process-wide in tests/bootstrap.php. Without that guard, their
+		// shared mcp-adapter/* ability lookups raise incorrect-usage notices
+		// on the first REST request here, after the abilities suites run.
 
 		// Create admin user with manage_options capability for REST API calls.
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );

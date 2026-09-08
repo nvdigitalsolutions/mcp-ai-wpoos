@@ -25,24 +25,11 @@ class WP_MCP_AI_Optimization_Comparison_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		// WooCommerce bundles the WordPress MCP Adapter. Its default-server
-		// factory queries the three built-in mcp-adapter/* abilities on the
-		// first REST request, but wp-phpunit's hook restore can drop the
-		// adapter's wp_abilities_api_init registration before the persistent
-		// abilities registry initializes. The lookup then flags missing
-		// abilities as incorrect usage and fails this suite. The adapter's
-		// own gate disables the default server entirely — the WooCommerce
-		// abilities (registered at bootstrap) are unaffected.
-		add_filter( 'mcp_adapter_create_default_server', '__return_false' );
-
-		// Rank Math >= 1.0.278 bundles wp-media/mcp-oauth, whose transport
-		// server registers on mcp_adapter_init with the three shared
-		// mcp-adapter/* abilities as its tools. Those abilities are only ever
-		// registered before the persistent abilities registry initializes
-		// (earlier suites), so the OAuth server's first REST-time registration
-		// queries three missing abilities and flags each as incorrect usage.
-		// Its own enable filter disables the OAuth server entirely.
-		add_filter( 'wpmedia_mcp_oauth_server_enabled', '__return_false' );
+		// Third-party MCP servers — WooCommerce's MCP Adapter default server
+		// and Rank Math's bundled mcp-oauth transport — are neutralised
+		// process-wide in tests/bootstrap.php. Without that guard, their
+		// shared mcp-adapter/* ability lookups raise incorrect-usage notices
+		// on the first REST request here, after the abilities suites run.
 
 		// Create admin user with manage_options capability for REST API calls.
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
