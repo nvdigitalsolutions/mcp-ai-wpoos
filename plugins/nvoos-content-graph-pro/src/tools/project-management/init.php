@@ -535,17 +535,25 @@ add_action( 'init', 'wp_mcp_ai_init_pm_notifications', 20 );
  */
 function wp_mcp_ai_pro_register_pm_tools( $tools ) {
 	$nvoos_content_graph_pro_pm_tools = array(
-		'WP_MCP_AI_Tool_Create_Project'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-create-project.php',
-		'WP_MCP_AI_Tool_Update_Project'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-update-project.php',
-		'WP_MCP_AI_Tool_Delete_Project'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-delete-project.php',
-		'WP_MCP_AI_Tool_List_Projects'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-list-projects.php',
-		'WP_MCP_AI_Tool_Create_Task'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-create-task.php',
-		'WP_MCP_AI_Tool_Update_Task'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-update-task.php',
-		'WP_MCP_AI_Tool_Delete_Task'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-delete-task.php',
-		'WP_MCP_AI_Tool_List_Tasks'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-list-tasks.php',
-		'WP_MCP_AI_Tool_Add_Task_Dependency'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-add-task-dependency.php',
-		'WP_MCP_AI_Tool_Remove_Task_Dependency' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-remove-task-dependency.php',
-		'WP_MCP_AI_Tool_Get_Task_Dependencies'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-get-task-dependencies.php',
+		'WP_MCP_AI_Tool_Create_Project'                   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-create-project.php',
+		'WP_MCP_AI_Tool_Update_Project'                   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-update-project.php',
+		'WP_MCP_AI_Tool_Delete_Project'                   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-delete-project.php',
+		'WP_MCP_AI_Tool_List_Projects'                    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-list-projects.php',
+		'WP_MCP_AI_Tool_Create_Task'                      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-create-task.php',
+		'WP_MCP_AI_Tool_Update_Task'                      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-update-task.php',
+		'WP_MCP_AI_Tool_Delete_Task'                      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-delete-task.php',
+		'WP_MCP_AI_Tool_List_Tasks'                       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-list-tasks.php',
+		'WP_MCP_AI_Tool_Add_Task_Dependency'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-add-task-dependency.php',
+		'WP_MCP_AI_Tool_Remove_Task_Dependency'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-remove-task-dependency.php',
+		'WP_MCP_AI_Tool_Get_Task_Dependencies'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-get-task-dependencies.php',
+		'WP_MCP_AI_Tool_PARA_Classify_Item'               => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-para-classify-item.php',
+		'WP_MCP_AI_Tool_PARA_Create_Area'                 => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-para-create-area.php',
+		'WP_MCP_AI_Tool_PARA_List_Areas'                  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-para-list-areas.php',
+		'WP_MCP_AI_Tool_PARA_Move_To_Archives'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-para-move-to-archives.php',
+		'WP_MCP_AI_Tool_PARA_Promote_Resource_To_Project' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-para-promote-resource-to-project.php',
+		'WP_MCP_AI_Tool_PARA_Update_Area'                 => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-para-update-area.php',
+		'WP_MCP_AI_Tool_PARA_Weekly_Review'               => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-para-weekly-review.php',
+		'WP_MCP_AI_Tool_PM_Capture_Decision'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-pm-capture-decision.php',
 	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_pm_tools );
@@ -580,6 +588,14 @@ function wp_mcp_ai_pro_register_pm_ecosystem_tools() {
 			'WP_MCP_AI_Tool_Add_Task_Dependency',
 			'WP_MCP_AI_Tool_Remove_Task_Dependency',
 			'WP_MCP_AI_Tool_Get_Task_Dependencies',
+			'WP_MCP_AI_Tool_PARA_Classify_Item',
+			'WP_MCP_AI_Tool_PARA_Create_Area',
+			'WP_MCP_AI_Tool_PARA_List_Areas',
+			'WP_MCP_AI_Tool_PARA_Move_To_Archives',
+			'WP_MCP_AI_Tool_PARA_Promote_Resource_To_Project',
+			'WP_MCP_AI_Tool_PARA_Update_Area',
+			'WP_MCP_AI_Tool_PARA_Weekly_Review',
+			'WP_MCP_AI_Tool_PM_Capture_Decision',
 		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );

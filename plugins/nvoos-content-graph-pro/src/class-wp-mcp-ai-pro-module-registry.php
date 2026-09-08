@@ -508,6 +508,20 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 					require_once $p . 'tools/project-management/init.php';
 				}
 			);
+
+			$this->add_module(
+				'pro_para',
+				'PARA Init',
+				array(),
+				array(
+					// No gate in the monolith either — the PARA init self-boots
+					// the taxonomy/CPT/lifecycle/admin-column hooks at load.
+					'files' => array( $p . 'para/class-wp-mcp-ai-para-init.php' ),
+				),
+				function () use ( $p ) {
+					require_once $p . 'para/class-wp-mcp-ai-para-init.php';
+				}
+			);
 		}
 	}
 }
