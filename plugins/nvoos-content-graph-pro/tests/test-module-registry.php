@@ -159,6 +159,7 @@ class Test_Pro_Module_Registry extends WP_UnitTestCase {
 			'admin_remote_sites',
 			'remote_connections',
 			'toolkit_video_production',
+			'toolkit_analytics',
 		);
 
 		$this->assertSame( $expected, array_keys( $registry->modules() ) );
