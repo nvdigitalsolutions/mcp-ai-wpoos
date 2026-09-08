@@ -131,18 +131,18 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) && function_exists( 'nvoos_content_graph_get_
 	wp_mcp_ai_pro_register_ecommerce_ecosystem_tools();
 }
 
-/**
- * Byte-identical WooCommerce-tools enablement gate (deviation: the
- * monolith defines this inline inside `mcp-ai-wpoos-pro.php`; standalone it
- * lives here — enabled by default unless `enable_woocommerce_tools` is
- * explicitly falsy).
- *
- * @since 1.0.0
- *
- * @param array|null $settings Optional settings array.
- * @return bool Whether the WooCommerce tools are enabled.
- */
 if ( ! function_exists( 'wp_mcp_ai_pro_is_woocommerce_tools_enabled' ) ) {
+	/**
+	 * Byte-identical WooCommerce-tools enablement gate (deviation: the
+	 * monolith defines this inline inside `mcp-ai-wpoos-pro.php`; standalone it
+	 * lives here — enabled by default unless `enable_woocommerce_tools` is
+	 * explicitly falsy).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array|null $settings Optional settings array.
+	 * @return bool Whether the WooCommerce tools are enabled.
+	 */
 	function wp_mcp_ai_pro_is_woocommerce_tools_enabled( $settings = null ) {
 		if ( null === $settings ) {
 			$settings = get_option( 'wp_mcp_ai_settings', array() );
