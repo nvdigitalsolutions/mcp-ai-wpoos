@@ -490,6 +490,24 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 					require_once $p . 'tools/ecommerce/init.php';
 				}
 			);
+
+			$this->add_module(
+				'toolkit_project_management',
+				'Project Management Toolkit',
+				array(),
+				array(
+					// Byte-identical enabled gate (enable_project_management
+					// setting). The monolith declares `jetengine_meta_helper`
+					// as a dependency — dormant standalone (the helper lands
+					// with a later wave; the init's JetEngine guard stays
+					// byte-identical).
+					'enabled' => ! empty( $settings['enable_project_management'] ),
+					'files'   => array( $p . 'tools/project-management/init.php' ),
+				),
+				function () use ( $p ) {
+					require_once $p . 'tools/project-management/init.php';
+				}
+			);
 		}
 	}
 }
