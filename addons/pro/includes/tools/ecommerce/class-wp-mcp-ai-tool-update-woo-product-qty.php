@@ -118,7 +118,7 @@ class WP_MCP_AI_Tool_Update_Woo_Product_Qty implements WP_MCP_AI_Tool_Interface,
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Updates the stock quantity of a WooCommerce product across all stock-managed product types. Handles simple products, variations, variable products (via variations with automatic parent sync), and grouped products (via child products). Supports set, increase, and decrease operations; stock status and low-stock notifications are handled automatically. External/affiliate products are not stock-managed and are rejected.', 'mcp-ai-wpoos-pro' );
+		return __( 'Updates the stock quantity of a WooCommerce product across all stock-managed product types. Handles simple products, variations, variable products (via variations with automatic parent sync), and grouped products (via child products). Supports set, increase, and decrease operations; stock status and low-stock notifications are handled automatically. Set notify to false to suppress low-stock/no-stock notification emails for bulk or automated restock passes. External/affiliate products are not stock-managed and are rejected.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -154,6 +154,11 @@ class WP_MCP_AI_Tool_Update_Woo_Product_Qty implements WP_MCP_AI_Tool_Interface,
 				'manage_stock' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to enable stock management on the product when it is currently disabled. Default: true.', 'mcp-ai-wpoos-pro' ),
+					'default'     => true,
+				),
+				'notify'       => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether to send WooCommerce low-stock/no-stock notification emails for this update. Set to false for bulk or automated restock passes. Stock status sync and the woocommerce_low_stock/woocommerce_no_stock actions are unaffected. Default: true.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
 			),
@@ -199,6 +204,7 @@ class WP_MCP_AI_Tool_Update_Woo_Product_Qty implements WP_MCP_AI_Tool_Interface,
 		$operation  = in_array( $operation, array( 'set', 'increase', 'decrease' ), true ) ? $operation : 'set';
 		$raw_qty    = isset( $arguments['quantity'] ) ? $arguments['quantity'] : null;
 		$manage     = isset( $arguments['manage_stock'] ) ? (bool) $arguments['manage_stock'] : true;
+		$notify     = isset( $arguments['notify'] ) ? (bool) $arguments['notify'] : true;
 
 		if ( empty( $product_id ) ) {
 			return new WP_Error(
@@ -272,7 +278,7 @@ class WP_MCP_AI_Tool_Update_Woo_Product_Qty implements WP_MCP_AI_Tool_Interface,
 		$updated = array();
 
 		foreach ( $targets as $target ) {
-			$result = $this->apply_stock_quantity( $target, $quantity, $operation, $manage );
+			$result = $this->apply_stock_quantity( $target, $quantity, $operation, $manage, $notify );
 
 			if ( is_wp_error( $result ) ) {
 				return $result;

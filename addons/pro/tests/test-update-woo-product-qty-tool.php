@@ -100,6 +100,8 @@ class WP_MCP_AI_Update_Woo_Product_Qty_Tool_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'operation', $schema['properties'] );
 		$this->assertArrayHasKey( 'scope', $schema['properties'] );
 		$this->assertArrayHasKey( 'manage_stock', $schema['properties'] );
+		$this->assertArrayHasKey( 'notify', $schema['properties'] );
+		$this->assertTrue( $schema['properties']['notify']['default'] );
 		$this->assertContains( 'product_id', $schema['required'] );
 		$this->assertContains( 'quantity', $schema['required'] );
 		$this->assertContains( 'increase', $schema['properties']['operation']['enum'] );
@@ -385,6 +387,136 @@ class WP_MCP_AI_Update_Woo_Product_Qty_Tool_Test extends WP_UnitTestCase {
 
 		$product = wc_get_product( $product_id );
 		$this->assertSame( 'outofstock', $product->get_stock_status() );
+
+		wp_delete_post( $product_id, true );
+	}
+
+	// ----------------------------------------------------------------
+	// Notification suppression (notify flag).
+	// ----------------------------------------------------------------
+
+	/**
+	 * Test notify=false suppresses the no-stock notification decision for the
+	 * call only.
+	 */
+	public function test_notify_false_suppresses_notification_during_call() {
+		if ( ! $this->wc_exists() ) {
+			$this->markTestSkipped( 'WooCommerce not available' );
+		}
+
+		$product_id = $this->create_simple_product();
+		$product    = wc_get_product( $product_id );
+		$product->set_manage_stock( true );
+		$product->set_stock_quantity( 7 );
+		$product->save();
+
+		// Probe the same gate WC_Emails::no_stock() uses: resolve the
+		// should-send filter while the zero-quantity path fires
+		// woocommerce_no_stock inside the tool call.
+		$resolved_during = null;
+		add_action(
+			'woocommerce_no_stock',
+			function ( $product ) use ( &$resolved_during ) {
+				$resolved_during = apply_filters( 'woocommerce_should_send_no_stock_notification', true, $product->get_id() );
+			},
+			0
+		);
+
+		$tool   = new WP_MCP_AI_Tool_Update_Woo_Product_Qty();
+		$result = $tool->execute(
+			array(
+				'product_id' => $product_id,
+				'quantity'   => 0,
+				'notify'     => false,
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 0, $result['updated'][0]['after_qty'] );
+		$this->assertFalse( $resolved_during, 'No-stock notification should resolve to false during the call.' );
+
+		// Suppression is scoped to the call: the filters are removed afterwards
+		// and the notification decision is back to its default.
+		$this->assertFalse( has_filter( 'woocommerce_should_send_no_stock_notification', '__return_false' ) );
+		$this->assertFalse( has_filter( 'woocommerce_should_send_low_stock_notification', '__return_false' ) );
+		$this->assertTrue( apply_filters( 'woocommerce_should_send_no_stock_notification', true, $product_id ) );
+
+		wp_delete_post( $product_id, true );
+	}
+
+	/**
+	 * Test the default notify=true keeps the notification decision open.
+	 */
+	public function test_notify_default_keeps_notifications_open() {
+		if ( ! $this->wc_exists() ) {
+			$this->markTestSkipped( 'WooCommerce not available' );
+		}
+
+		$product_id = $this->create_simple_product();
+		$product    = wc_get_product( $product_id );
+		$product->set_manage_stock( true );
+		$product->set_stock_quantity( 7 );
+		$product->save();
+
+		$resolved_during = null;
+		add_action(
+			'woocommerce_no_stock',
+			function ( $product ) use ( &$resolved_during ) {
+				$resolved_during = apply_filters( 'woocommerce_should_send_no_stock_notification', true, $product->get_id() );
+			},
+			0
+		);
+
+		$tool   = new WP_MCP_AI_Tool_Update_Woo_Product_Qty();
+		$result = $tool->execute(
+			array(
+				'product_id' => $product_id,
+				'quantity'   => 0,
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $resolved_during, 'No-stock notification should resolve to true by default.' );
+
+		wp_delete_post( $product_id, true );
+	}
+
+	/**
+	 * Test notify=false still performs the stock write and status sync.
+	 */
+	public function test_notify_false_still_updates_stock() {
+		if ( ! $this->wc_exists() ) {
+			$this->markTestSkipped( 'WooCommerce not available' );
+		}
+
+		$product_id = $this->create_simple_product();
+		$product    = wc_get_product( $product_id );
+		$product->set_manage_stock( true );
+		$product->set_stock_quantity( 2 );
+		$product->save();
+
+		$tool   = new WP_MCP_AI_Tool_Update_Woo_Product_Qty();
+		$result = $tool->execute(
+			array(
+				'product_id' => $product_id,
+				'quantity'   => 15,
+				'notify'     => false,
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 15, $result['updated'][0]['after_qty'] );
+		$this->assertSame( 'instock', $result['updated'][0]['stock_status'] );
+
+		$product = wc_get_product( $product_id );
+		$this->assertSame( 15, $product->get_stock_quantity() );
+
+		// Suppression filters are removed after the call.
+		$this->assertFalse( has_filter( 'woocommerce_should_send_low_stock_notification', '__return_false' ) );
+		$this->assertFalse( has_filter( 'woocommerce_should_send_no_stock_notification', '__return_false' ) );
 
 		wp_delete_post( $product_id, true );
 	}

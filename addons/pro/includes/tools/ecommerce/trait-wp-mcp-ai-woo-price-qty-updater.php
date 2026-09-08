@@ -274,15 +274,25 @@ trait WP_MCP_AI_Woo_Price_Qty_Updater {
 	 * A resulting quantity of zero uses the CRUD path because
 	 * wc_update_product_stock() rejects falsy quantities.
 	 *
+	 * When $notify is false, the WooCommerce low-stock / no-stock admin
+	 * notification emails are suppressed for this call only. The
+	 * woocommerce_low_stock / woocommerce_no_stock actions still fire so
+	 * non-email observers (push notifications, inventory plugins) are
+	 * unaffected.
+	 *
 	 * @param WC_Product $product            Product or variation to update.
 	 * @param int        $quantity           Quantity (absolute or delta).
 	 * @param string     $operation          One of: set, increase, decrease.
 	 * @param bool       $enable_manage_stock Whether to enable stock management.
+	 * @param bool       $notify              Whether to send WooCommerce
+	 *                                        low-stock / no-stock notification
+	 *                                        emails for this update.
 	 * @return array|WP_Error Change details, or an error on failure.
 	 */
-	protected function apply_stock_quantity( $product, $quantity, $operation = 'set', $enable_manage_stock = true ) {
+	protected function apply_stock_quantity( $product, $quantity, $operation = 'set', $enable_manage_stock = true, $notify = true ) {
 		$quantity = absint( $quantity );
 		$current  = max( 0, (int) $product->get_stock_quantity() );
+		$notify   = (bool) $notify;
 
 		switch ( $operation ) {
 			case 'increase':
@@ -295,25 +305,40 @@ trait WP_MCP_AI_Woo_Price_Qty_Updater {
 				$new_qty = $quantity;
 		}
 
-		if ( $enable_manage_stock && ! $product->get_manage_stock() ) {
-			$product->set_manage_stock( true );
-			$product->save();
+		// Scope low-stock / no-stock notification-email suppression to this
+		// call only; the finally block guarantees the filters are removed even
+		// when the write returns an error.
+		if ( ! $notify ) {
+			add_filter( 'woocommerce_should_send_low_stock_notification', '__return_false', 999 );
+			add_filter( 'woocommerce_should_send_no_stock_notification', '__return_false', 999 );
 		}
 
-		if ( $new_qty > 0 ) {
-			$updated = wc_update_product_stock( $product->get_id(), $new_qty, 'set' );
-
-			if ( false === $updated ) {
-				return new WP_Error(
-					'stock_update_failed',
-					__( 'Could not update the stock quantity.', 'mcp-ai-wpoos-pro' )
-				);
+		try {
+			if ( $enable_manage_stock && ! $product->get_manage_stock() ) {
+				$product->set_manage_stock( true );
+				$product->save();
 			}
-		} else {
-			$product->set_stock_quantity( 0 );
-			$product->save();
-			wc_delete_product_transients( $product->get_id() );
-			do_action( 'woocommerce_no_stock', $product );
+
+			if ( $new_qty > 0 ) {
+				$updated = wc_update_product_stock( $product->get_id(), $new_qty, 'set' );
+
+				if ( false === $updated ) {
+					return new WP_Error(
+						'stock_update_failed',
+						__( 'Could not update the stock quantity.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+			} else {
+				$product->set_stock_quantity( 0 );
+				$product->save();
+				wc_delete_product_transients( $product->get_id() );
+				do_action( 'woocommerce_no_stock', $product );
+			}
+		} finally {
+			if ( ! $notify ) {
+				remove_filter( 'woocommerce_should_send_low_stock_notification', '__return_false', 999 );
+				remove_filter( 'woocommerce_should_send_no_stock_notification', '__return_false', 999 );
+			}
 		}
 
 		// Re-read the product so the reported stock status reflects the save.
