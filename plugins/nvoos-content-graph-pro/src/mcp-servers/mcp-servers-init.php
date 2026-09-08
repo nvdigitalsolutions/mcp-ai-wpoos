@@ -44,8 +44,67 @@ require_once __DIR__ . '/class-wp-mcp-ai-pro-toolkit-server-token.php';
 // Phase 8 — shared trait for Action Scheduler-backed sync servers.
 require_once __DIR__ . '/trait-wp-mcp-ai-scheduled-toolkit-server.php';
 
-// Toolkit servers are file-gated — the batch-B servers land with the next
-// cluster.
+// Phase 6 Tier-2 promotions (9 servers, alphabetical).
+$nvoos_content_graph_pro_mcp_server_analytics = __DIR__ . '/servers/class-wp-mcp-ai-analytics-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_analytics ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_analytics;
+}
+$nvoos_content_graph_pro_mcp_server_architect_agent = __DIR__ . '/servers/class-wp-mcp-ai-architect-agent-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_architect_agent ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_architect_agent;
+}
+$nvoos_content_graph_pro_mcp_server_chat_channels = __DIR__ . '/servers/class-wp-mcp-ai-chat-channels-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_chat_channels ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_chat_channels;
+}
+$nvoos_content_graph_pro_mcp_server_cloudways = __DIR__ . '/servers/class-wp-mcp-ai-cloudways-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_cloudways ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_cloudways;
+}
+$nvoos_content_graph_pro_mcp_server_comic = __DIR__ . '/servers/class-wp-mcp-ai-comic-creation-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_comic ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_comic;
+}
+$nvoos_content_graph_pro_mcp_server_extended = __DIR__ . '/servers/class-wp-mcp-ai-extended-cognition-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_extended ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_extended;
+}
+$nvoos_content_graph_pro_mcp_server_hc_imaging = __DIR__ . '/servers/class-wp-mcp-ai-healthcare-imaging-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_hc_imaging ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_hc_imaging;
+}
+$nvoos_content_graph_pro_mcp_server_hc_wellness = __DIR__ . '/servers/class-wp-mcp-ai-healthcare-wellness-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_hc_wellness ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_hc_wellness;
+}
+$nvoos_content_graph_pro_mcp_server_site_creator = __DIR__ . '/servers/class-wp-mcp-ai-site-creator-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_site_creator ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_site_creator;
+}
+
+// DietPi Pro Toolkit (Phase 1).
+$nvoos_content_graph_pro_mcp_server_dietpi = __DIR__ . '/servers/class-wp-mcp-ai-dietpi-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_dietpi ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_dietpi;
+}
+
+// Phase 8 — Pro Scheduler + Inventory Sync MCP Servers (4 servers).
+$nvoos_content_graph_pro_mcp_server_pro_scheduler = __DIR__ . '/servers/class-wp-mcp-ai-pro-scheduler-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_pro_scheduler ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_pro_scheduler;
+}
+$nvoos_content_graph_pro_mcp_server_flowhub = __DIR__ . '/servers/class-wp-mcp-ai-flowhub-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_flowhub ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_flowhub;
+}
+$nvoos_content_graph_pro_mcp_server_shopify = __DIR__ . '/servers/class-wp-mcp-ai-shopify-sync-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_shopify ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_shopify;
+}
+$nvoos_content_graph_pro_mcp_server_ezuite = __DIR__ . '/servers/class-wp-mcp-ai-ezuite-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_ezuite ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_ezuite;
+}
 //
 // Phase 1 pilot servers.
 $nvoos_content_graph_pro_mcp_server_crm = __DIR__ . '/servers/class-wp-mcp-ai-crm-mcp-server.php';
