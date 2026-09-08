@@ -1,0 +1,205 @@
+<?php
+/**
+ * Financial planning tool (ecosystem port — Wave F2, financial tools batch A).
+ *
+ * Ported from the base Pro addon's `addons/pro/includes/tools/financial-planning/class-wp-mcp-ai-tool-cash-flow-analyzer.php` for the standalone
+ * `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro
+ * addon owns the class in monolith installs — the addon's autoloader
+ * skips its copy when `NVOOS_CONTENT_GRAPH_PRO_PATH` is defined (see the plugin
+ * entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain
+ * `nvoos-content-graph-pro`; `NVOOS_CONTENT_GRAPH_PRO_PATH` swaps (yfinance
+ * service require / vendor autoload probe).
+ *
+ * @package NvoosContentGraphPro
+ * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+declare(strict_types=1);
+
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Cash Flow Analyzer Tool class.
+ *
+ * @since 1.1.0
+ */
+class WP_MCP_AI_Tool_Cash_Flow_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Check if the tool is available.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return bool True if available, false otherwise.
+	 */
+	public static function is_available() {
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+			return false; }
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $settings['enable_financial_planner_toolkit'] );
+	}
+
+	/**
+	 * Get the unavailable reason.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return string Reason message.
+	 */
+	public static function get_unavailable_reason() {
+		return __( 'Financial planner toolkit is not enabled.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * Get the tool slug.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return string Tool slug.
+	 */
+	public function get_slug() {
+		return 'cash_flow_analyzer';
+	}
+
+	/**
+	 * Get the tool name.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return string Tool name.
+	 */
+	public function get_name() {
+		return __( 'Cash Flow Analyzer', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * Get the tool description.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return string Tool description.
+	 */
+	public function get_description() {
+		return __( 'Analyze income vs expenses with monthly forecasting. Track cash flow trends, identify surplus/deficit months, and project future cash positions.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * Get the parameters schema.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return array Parameters schema.
+	 */
+	public function get_parameters_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'monthly_income'         => array(
+					'type'        => 'number',
+					'description' => __( 'Monthly income', 'nvoos-content-graph-pro' ),
+					'minimum'     => 0,
+				),
+				'monthly_expenses'       => array(
+					'type'        => 'number',
+					'description' => __( 'Monthly expenses', 'nvoos-content-graph-pro' ),
+					'minimum'     => 0,
+				),
+				'forecast_months'        => array(
+					'type'        => 'integer',
+					'description' => __( 'Months to forecast', 'nvoos-content-graph-pro' ),
+					'minimum'     => 1,
+					'maximum'     => 36,
+					'default'     => 12,
+				),
+				'income_growth_rate'     => array(
+					'type'        => 'number',
+					'description' => __( 'Annual income growth rate (%)', 'nvoos-content-graph-pro' ),
+					'default'     => 0,
+				),
+				'expense_inflation_rate' => array(
+					'type'        => 'number',
+					'description' => __( 'Annual expense inflation rate (%)', 'nvoos-content-graph-pro' ),
+					'default'     => 3,
+				),
+			),
+			'required'   => array( 'monthly_income', 'monthly_expenses' ),
+		);
+	}
+
+	/**
+	 * Get the capability flags.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return array Capability flags.
+	 */
+	public function get_capability_flags() {
+		return array( 'pro', 'computation' );
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Context data.
+	 *
+	 * @return array|WP_Error Analysis result or error.
+	 */
+	public function execute( array $arguments = array(), array $context = array() ) {
+		$current_user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'Permission denied.', 'nvoos-content-graph-pro' ) );
+		}
+		if ( ! self::is_available() ) {
+			return new WP_Error( 'tool_not_available', self::get_unavailable_reason() );
+		}
+
+		$monthly_income    = floatval( $arguments['monthly_income'] ?? 0 );
+		$monthly_expenses  = floatval( $arguments['monthly_expenses'] ?? 0 );
+		$forecast_months   = absint( $arguments['forecast_months'] ?? 12 );
+		$income_growth     = floatval( $arguments['income_growth_rate'] ?? 0 ) / 100 / 12;
+		$expense_inflation = floatval( $arguments['expense_inflation_rate'] ?? 3 ) / 100 / 12;
+
+		$monthly_cash_flow = $monthly_income - $monthly_expenses;
+		$projections       = array();
+		$income            = $monthly_income;
+		$expenses          = $monthly_expenses;
+
+		for ( $month = 1; $month <= $forecast_months; $month++ ) {
+			$income       *= ( 1 + $income_growth );
+			$expenses     *= ( 1 + $expense_inflation );
+			$cash_flow     = $income - $expenses;
+			$projections[] = array(
+				'month'     => $month,
+				'income'    => round( $income, 2 ),
+				'expenses'  => round( $expenses, 2 ),
+				'cash_flow' => round( $cash_flow, 2 ),
+			);
+		}
+
+		return array(
+			'success'                   => true,
+			'current_monthly_cash_flow' => round( $monthly_cash_flow, 2 ),
+			'is_positive'               => $monthly_cash_flow > 0,
+			'projections'               => $projections,
+			/* translators: %s: formatted currency amount */
+			'message'                   => sprintf( __( 'Current monthly cash flow: $%s', 'nvoos-content-graph-pro' ), number_format( $monthly_cash_flow, 2 ) ),
+		);
+	}
+}
