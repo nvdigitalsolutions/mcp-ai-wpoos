@@ -195,6 +195,11 @@ function wp_mcp_ai_pro_register_ecommerce_tools( $tools ) {
 		'WP_MCP_AI_Pro_Tool_Woo_Orders'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-pro-tool-woo-orders.php',
 		'WP_MCP_AI_Pro_Tool_Woo_Customers'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-pro-tool-woo-customers.php',
 		'WP_MCP_AI_Pro_Tool_Woo_Coupons'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-pro-tool-woo-coupons.php',
+		'WP_MCP_AI_Pro_Tool_Shopify_Products'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-pro-tool-shopify-products.php',
+		'WP_MCP_AI_Pro_Tool_Shopify_Orders'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-pro-tool-shopify-orders.php',
+		'WP_MCP_AI_Pro_Tool_Shopify_Customers'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-pro-tool-shopify-customers.php',
+		'WP_MCP_AI_Pro_Tool_Shopify_Inventory'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-pro-tool-shopify-inventory.php',
+		'WP_MCP_AI_Pro_Tool_Shopify_Catalog'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-pro-tool-shopify-catalog.php',
 	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_ecommerce_tools );
@@ -248,6 +253,11 @@ function wp_mcp_ai_pro_register_ecommerce_ecosystem_tools() {
 			'WP_MCP_AI_Pro_Tool_Woo_Orders',
 			'WP_MCP_AI_Pro_Tool_Woo_Customers',
 			'WP_MCP_AI_Pro_Tool_Woo_Coupons',
+			'WP_MCP_AI_Pro_Tool_Shopify_Products',
+			'WP_MCP_AI_Pro_Tool_Shopify_Orders',
+			'WP_MCP_AI_Pro_Tool_Shopify_Customers',
+			'WP_MCP_AI_Pro_Tool_Shopify_Inventory',
+			'WP_MCP_AI_Pro_Tool_Shopify_Catalog',
 		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
