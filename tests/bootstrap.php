@@ -373,6 +373,39 @@ tests_add_filter( 'wp_die_jsonp_handler', 'wp_mcp_ai_tests_die_handler_filter', 
 tests_add_filter( 'wp_doing_ajax', 'wp_mcp_ai_tests_wp_doing_ajax_filter', 10 );
 
 /**
+ * Neutralise third-party MCP servers for the whole test run.
+ *
+ * WooCommerce bundles the WordPress MCP Adapter and Rank Math >= 1.0.278
+ * bundles wp-media/mcp-oauth. Both integrate with the WordPress Abilities
+ * API, whose persistent registry fires `wp_abilities_api_init` exactly once
+ * per process (lazily, on first use). The adapter only attaches its
+ * `register_default_abilities` hook from the first `rest_api_init`
+ * (priority 15) — too late once an earlier suite has already initialised the
+ * registry — and the OAuth registrar only registers the shared
+ * `mcp-adapter/*` abilities itself when the adapter's default server is
+ * disabled. The result is that the three shared abilities are never
+ * registered, and the first MCP server build (a REST request in the
+ * performance suites) calls `wp_get_ability()` on them, raising
+ * `_doing_it_wrong()` notices that fail the suite.
+ *
+ * Registering both kill-switch filters process-wide, before any test runs:
+ *
+ * 1. Disables the adapter's default MCP server and Rank Math's OAuth MCP
+ *    transport server, so no third-party server build ever resolves the
+ *    shared abilities against the registry.
+ * 2. Makes the OAuth registrar register the shared abilities itself when
+ *    `wp_abilities_api_init` fires, so any consumer that still looks them up
+ *    finds them instead of raising an incorrect-usage notice.
+ *
+ * Both plugins are present on every CI run (`bin/install-test-plugins.sh`
+ * installs WooCommerce and Rank Math from wp.org "latest stable"), and this
+ * ordering hazard is independent of the suites' own `setUp()` guards, so it
+ * is neutralised once, here, at bootstrap.
+ */
+tests_add_filter( 'mcp_adapter_create_default_server', '__return_false' );
+tests_add_filter( 'wpmedia_mcp_oauth_server_enabled', '__return_false' );
+
+/**
  * Test-safe override of the pluggable check_ajax_referer().
  *
  * Bridges two test-environment gaps:
