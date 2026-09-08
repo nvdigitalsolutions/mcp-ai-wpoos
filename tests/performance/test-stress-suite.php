@@ -26,6 +26,15 @@ class WP_MCP_AI_Stress_Suite_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// See test-optimization-comparison.php: the MCP adapter's default
+		// server and Rank Math's bundled mcp-oauth transport both look up the
+		// shared mcp-adapter/* abilities on the first REST request, which the
+		// earlier abilities suites never register. Disable both servers so a
+		// reordering of the performance suites cannot resurrect the incorrect
+		// usage notices.
+		add_filter( 'mcp_adapter_create_default_server', '__return_false' );
+		add_filter( 'wpmedia_mcp_oauth_server_enabled', '__return_false' );
+
 		// Chat requests require a configured provider key before dispatch.
 		// The mocked HTTP layer below intercepts the network call, so the
 		// value only needs to be non-empty.
