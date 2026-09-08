@@ -63,8 +63,14 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 			return false;
 		}
 
-		// Check if e-commerce toolkit is enabled.
-		return function_exists( 'wp_mcp_ai_is_ecommerce_toolkit_enabled' ) && wp_mcp_ai_is_ecommerce_toolkit_enabled();
+		// Check if e-commerce toolkit is enabled (fall back to the raw option
+		// when the toolkit bootstrap has not loaded the shared helper yet).
+		if ( function_exists( 'wp_mcp_ai_is_ecommerce_toolkit_enabled' ) ) {
+			return wp_mcp_ai_is_ecommerce_toolkit_enabled();
+		}
+
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $settings['enable_ecommerce_toolkit'] );
 	}
 
 	/**
@@ -79,7 +85,11 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 			return __( 'Bulk product update requires WooCommerce to be installed and activated.', 'mcp-ai-wpoos-pro' );
 		}
 
-		if ( function_exists( 'wp_mcp_ai_is_ecommerce_toolkit_enabled' ) && ! wp_mcp_ai_is_ecommerce_toolkit_enabled() ) {
+		$enabled = function_exists( 'wp_mcp_ai_is_ecommerce_toolkit_enabled' )
+			? wp_mcp_ai_is_ecommerce_toolkit_enabled()
+			: ! empty( get_option( 'wp_mcp_ai_settings', array() )['enable_ecommerce_toolkit'] );
+
+		if ( ! $enabled ) {
 			return __( 'E-commerce toolkit is not enabled. Please enable it in plugin settings.', 'mcp-ai-wpoos-pro' );
 		}
 
@@ -110,7 +120,7 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Update multiple WooCommerce products at once. Supports updating pricing, stock, categories, status, and other product attributes. Use product IDs or query filters to select products to update.', 'mcp-ai-wpoos-pro' );
+		return __( 'Update multiple WooCommerce products at once. Supports updating pricing, stock, categories, status, and other product attributes. Use product IDs or query filters to select products to update. By default (scope "all"), price and stock updates expand variable products to their variations and grouped products to their children, then re-sync variable parents; use scope "product" to update only the exact selected IDs.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -226,6 +236,12 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 					'description' => __( 'Preview changes without applying them', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
+				'scope'       => array(
+					'type'        => 'string',
+					'description' => __( 'How price/stock updates apply to selected products. "all" (default) expands variable products to their variations and grouped products to their child products before applying price/stock fields, then re-syncs variable parents. "product" applies updates to the exact selected IDs only (legacy behavior). Status, featured, category, and tag updates always apply to the selected product itself.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'all', 'product' ),
+					'default'     => 'all',
+				),
 			),
 			'required'   => array( 'updates' ),
 		);
@@ -295,19 +311,25 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 		$dry_run = isset( $arguments['dry_run'] ) && $arguments['dry_run'];
 		$updates = $arguments['updates'];
 
+		// Sanitize scope at entry (two-gate rule, gate one).
+		$scope = isset( $arguments['scope'] ) ? sanitize_key( $arguments['scope'] ) : 'all';
+		$scope = in_array( $scope, array( 'all', 'product' ), true ) ? $scope : 'all';
+
 		// Apply updates.
 		$results = array(
 			'success'          => true,
 			'dry_run'          => $dry_run,
+			'scope'            => $scope,
 			'total_found'      => count( $product_ids ),
 			'updated'          => 0,
+			'updated_targets'  => 0,
 			'failed'           => 0,
 			'updated_products' => array(),
 			'errors'           => array(),
 		);
 
 		foreach ( $product_ids as $product_id ) {
-			$result = $this->update_single_product( $product_id, $updates, $dry_run );
+			$result = $this->update_single_product( $product_id, $updates, $dry_run, $scope );
 
 			if ( is_wp_error( $result ) ) {
 				++$results['failed'];
@@ -317,6 +339,7 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 				);
 			} else {
 				++$results['updated'];
+				$results['updated_targets']   += count( $result['targets'] );
 				$results['updated_products'][] = $result;
 			}
 		}
@@ -395,14 +418,16 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 	}
 
 	/**
-	 * Update a single product.
+	 * Update a single product (or its expanded price/stock targets).
 	 *
-	 * @param int   $product_id Product ID.
-	 * @param array $updates    Updates to apply.
-	 * @param bool  $dry_run    Whether this is a dry run.
-	 * @return array|WP_Error Product data or error.
+	 * @param int    $product_id Product ID.
+	 * @param array  $updates    Updates to apply.
+	 * @param bool   $dry_run    Whether this is a dry run.
+	 * @param string $scope      Bulk scope: "all" expands variable/grouped
+	 *                           parents, "product" keeps exact-ID semantics.
+	 * @return array|WP_Error Per-input-ID result or error.
 	 */
-	protected function update_single_product( $product_id, $updates, $dry_run = false ) {
+	protected function update_single_product( $product_id, $updates, $dry_run = false, $scope = 'all' ) {
 		$product = wc_get_product( $product_id );
 
 		if ( ! $product ) {
@@ -416,6 +441,108 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
+		// Resolve the objects price/stock fields apply to. Variable parents
+		// store price/stock on their variations, grouped parents on their
+		// children — WooCommerce silently ignores parent-level price/stock.
+		$targets = $this->resolve_bulk_targets( $product, $updates, $scope );
+
+		if ( is_wp_error( $targets ) ) {
+			return $targets;
+		}
+
+		$entry = array(
+			'product_id' => $product_id,
+			'name'       => $product->get_name(),
+			'type'       => $product->get_type(),
+			'changes'    => array(),
+			'targets'    => array(),
+		);
+
+		// Apply price/stock updates to each resolved target.
+		foreach ( $targets as $target ) {
+			$target_changes = $this->apply_target_updates( $target, $updates, $dry_run );
+
+			if ( is_wp_error( $target_changes ) ) {
+				return $target_changes;
+			}
+
+			$entry['targets'][] = array(
+				'id'      => $target->get_id(),
+				'sku'     => $target->get_sku(),
+				'type'    => $target->get_type(),
+				'changes' => $target_changes,
+			);
+		}
+
+		// Apply status/featured updates to the selected product itself.
+		$entry['changes'] = $this->apply_parent_updates( $product, $updates, $dry_run );
+
+		if ( ! $dry_run ) {
+			// Re-sync variable parents after their variations were updated, and
+			// re-sync a direct variation's parent variable product.
+			$this->sync_variable_parent( $product );
+
+			if ( $product->is_type( 'variation' ) ) {
+				$parent = wc_get_product( $product->get_parent_id() );
+				if ( $parent ) {
+					$this->sync_variable_parent( $parent );
+				}
+			}
+
+			// Clear transients for the selected product (expansion parents
+			// included) and update its taxonomy terms.
+			wc_delete_product_transients( $product_id );
+			$this->update_product_taxonomies( $product_id, $updates );
+		}
+
+		return $entry;
+	}
+
+	/**
+	 * Resolve the objects that price/stock updates apply to for one bulk entry.
+	 *
+	 * Under scope "all", variable parents expand to their variations and
+	 * grouped parents to their children; every other product is its own
+	 * target. Under scope "product" (legacy exact-ID semantics) the selected
+	 * product is always the only target. Updates that carry no price/stock
+	 * fields never expand.
+	 *
+	 * @param WC_Product $product Selected product.
+	 * @param array      $updates Updates object.
+	 * @param string     $scope   Bulk scope: "all" or "product".
+	 * @return WC_Product[]|WP_Error Resolved targets, or an error.
+	 */
+	protected function resolve_bulk_targets( $product, $updates, $scope ) {
+		$target_fields = array( 'regular_price', 'sale_price', 'price_adjustment', 'stock_quantity', 'stock_status', 'manage_stock' );
+
+		$has_target_fields = false;
+		foreach ( $target_fields as $field ) {
+			if ( array_key_exists( $field, $updates ) ) {
+				$has_target_fields = true;
+				break;
+			}
+		}
+
+		if (
+			'all' === $scope
+			&& $has_target_fields
+			&& ( $product->is_type( 'variable' ) || $product->is_type( 'grouped' ) )
+		) {
+			return $this->resolve_update_targets( $product, 'all', 'price' );
+		}
+
+		return array( $product );
+	}
+
+	/**
+	 * Apply price/stock updates to a single resolved target.
+	 *
+	 * @param WC_Product $target  Product or variation to update.
+	 * @param array      $updates Updates object.
+	 * @param bool       $dry_run Whether this is a dry run.
+	 * @return array|WP_Error Change log, or an error.
+	 */
+	protected function apply_target_updates( $target, $updates, $dry_run = false ) {
 		$changes = array();
 
 		// Update pricing via the shared price/quantity updater so sale-price
@@ -438,7 +565,7 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 				}
 			} else {
 				$price_changes = array();
-				$price_result  = $this->apply_price_fields( $product, $price_args, $price_changes );
+				$price_result  = $this->apply_price_fields( $target, $price_args, $price_changes );
 
 				if ( is_wp_error( $price_result ) ) {
 					return $price_result;
@@ -448,10 +575,10 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 			}
 		}
 
-		// Apply price adjustment.
+		// Apply price adjustment from the target's own current price.
 		if ( ! empty( $updates['price_adjustment'] ) ) {
 			$adjustment    = $updates['price_adjustment'];
-			$current_price = $product->get_regular_price();
+			$current_price = $target->get_regular_price();
 
 			if ( $current_price > 0 ) {
 				$new_price = $current_price;
@@ -471,7 +598,7 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 				$new_price = max( 0, $new_price );
 
 				if ( ! $dry_run ) {
-					$product->set_regular_price( $new_price );
+					$target->set_regular_price( $new_price );
 				}
 				$changes['regular_price'] = $new_price;
 			}
@@ -481,7 +608,7 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 		// and low-stock / no-stock notifications fire.
 		if ( isset( $updates['stock_quantity'] ) ) {
 			if ( ! $dry_run ) {
-				$stock_result = $this->apply_stock_quantity( $product, absint( $updates['stock_quantity'] ), 'set', true );
+				$stock_result = $this->apply_stock_quantity( $target, absint( $updates['stock_quantity'] ), 'set', true );
 
 				if ( is_wp_error( $stock_result ) ) {
 					return $stock_result;
@@ -495,17 +622,40 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 
 		if ( isset( $updates['stock_status'] ) ) {
 			if ( ! $dry_run ) {
-				$product->set_stock_status( sanitize_text_field( $updates['stock_status'] ) );
+				$target->set_stock_status( sanitize_text_field( $updates['stock_status'] ) );
 			}
 			$changes['stock_status'] = sanitize_text_field( $updates['stock_status'] );
 		}
 
 		if ( isset( $updates['manage_stock'] ) ) {
 			if ( ! $dry_run ) {
-				$product->set_manage_stock( (bool) $updates['manage_stock'] );
+				$target->set_manage_stock( (bool) $updates['manage_stock'] );
 			}
 			$changes['manage_stock'] = (bool) $updates['manage_stock'];
 		}
+
+		// Persist the target when anything changed.
+		if ( ! $dry_run && ! empty( $changes ) ) {
+			$target->save();
+			wc_delete_product_transients( $target->get_id() );
+		}
+
+		return $changes;
+	}
+
+	/**
+	 * Apply status/featured updates to the selected product itself.
+	 *
+	 * These fields are never expanded to child products: they always belong to
+	 * the product the caller selected.
+	 *
+	 * @param WC_Product $product Selected product.
+	 * @param array      $updates Updates object.
+	 * @param bool       $dry_run Whether this is a dry run.
+	 * @return array Change log.
+	 */
+	protected function apply_parent_updates( $product, $updates, $dry_run = false ) {
+		$changes = array();
 
 		// Update status.
 		if ( isset( $updates['status'] ) ) {
@@ -523,21 +673,13 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 			$changes['featured'] = (bool) $updates['featured'];
 		}
 
-		// Save the product.
-		if ( ! $dry_run ) {
+		// Persist the selected product when anything changed.
+		if ( ! $dry_run && ! empty( $changes ) ) {
 			$product->save();
-			$this->sync_variable_parent( $product );
-			wc_delete_product_transients( $product_id );
-
-			// Update taxonomy terms.
-			$this->update_product_taxonomies( $product_id, $updates );
+			wc_delete_product_transients( $product->get_id() );
 		}
 
-		return array(
-			'product_id' => $product_id,
-			'name'       => $product->get_name(),
-			'changes'    => $changes,
-		);
+		return $changes;
 	}
 
 	/**

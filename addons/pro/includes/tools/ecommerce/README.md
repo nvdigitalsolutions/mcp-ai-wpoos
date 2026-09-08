@@ -10,7 +10,7 @@ This directory contains all tools for the E-commerce Pro Toolkit.
 
 ### Product Management (7 tools)
 - [x] create_product_advanced - Create product with all WooCommerce meta
-- [x] bulk_update_products - Update multiple products at once
+- [x] bulk_update_products - Update multiple products at once (scope "all" expands variable/grouped parents to their variations/children with parent re-sync)
 - [x] update_woo_product_price - Update price for all product types (simple, variable/variations, grouped, external)
 - [x] update_woo_product_qty - Update stock quantity for all stock-managed types (set/increase/decrease)
 - [x] import_products_csv - Import products from CSV/Excel
