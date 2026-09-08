@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.72
+Stable tag: 1.1.73
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.73 - September 8, 2026 =
+
+WooCommerce tool-upgrade and ecosystem-port release. bulk_update_products gains variable-parent scope expansion: a new scope argument (all by default) expands price/stock fields from variable parents to their variations and grouped parents to their children via the shared Woo price/qty updater trait, re-syncs variable parents, and reports targets per input ID (scope=product keeps the legacy exact-ID behavior); status/featured/category/tag updates always apply to the selected product. update_woo_product_qty gains a notify flag (default true) that suppresses the low-stock/no-stock notification emails for a single write without touching the woocommerce_low_stock/no_stock actions. Fixed: the async job queue table bootstrap — the class was never loaded in time to create its table, so the Load Guard queried a missing table on every REST dispatch (SQL-error flood); the class now boots properly, activation creates the table, and queue stats fail soft on a missing table. The Comic Reader addon jumps 0.2.0 to 0.5.0 with a Komga-parity upgrade (archive validation, Range serving, vertical/webtoon modes, ComicInfo.xml RTL detection, per-user progress, settings page). The Content Graph ecosystem completes Wave F2: the new nvoos-content-graph-pro standalone addon (v1.0.0) ports the Pro CRM and e-commerce surface byte-identical (43 e-commerce tools), and Docs Hub 0.4.3 completes wp.org submission prep. New mcp-ai-wpoos-wporg-submission coding-time skill (skills now 55). Stale comic-reader 0.2.0 and docs-hub 0.4.2 build ZIPs removed. Tool count unchanged: ~303 base + ~1,265 Pro (~1,568 total; live registry authoritative).
 
 = 1.1.72 - September 7, 2026 =
 
