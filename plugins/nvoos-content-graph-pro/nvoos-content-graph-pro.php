@@ -117,6 +117,8 @@ spl_autoload_register(
 			'src/tools/analytics/examples/',
 			'src/tools/multilingual/',
 			'src/tools/multilingual/examples/',
+			'src/cloudways/',
+			'src/tools/cloudways/',
 			'src/tools/orchestration/',
 			'src/tools/financial-planning/',
 			'src/tools/financial-planning/examples/',

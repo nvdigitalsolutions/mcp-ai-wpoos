@@ -724,6 +724,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 										require_once $p . 'tools/multilingual/init.php';
 									}
 								);
+
+									// Standalone-only module (no monolith registry counterpart — the
+									// base loads the cloudways init via its own toolkit loader).
+									// Boots the slim cloudways init standalone so the ported tools
+									// land in the ecosystem registries (multilingual precedent).
+									$this->add_module(
+										'toolkit_cloudways',
+										'Cloudways Toolkit',
+										array(),
+										array(
+											'files' => array( $p . 'tools/cloudways/init.php' ),
+										),
+										function () use ( $p ) {
+											require_once $p . 'tools/cloudways/init.php';
+										}
+									);
 		}
 	}
 }
