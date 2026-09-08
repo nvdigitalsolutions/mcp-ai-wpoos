@@ -44,8 +44,88 @@ require_once __DIR__ . '/class-wp-mcp-ai-pro-toolkit-server-token.php';
 // Phase 8 — shared trait for Action Scheduler-backed sync servers.
 require_once __DIR__ . '/trait-wp-mcp-ai-scheduled-toolkit-server.php';
 
-// Toolkit servers are file-gated — they land with the server batches.
-// require_once __DIR__ . '/servers/class-wp-mcp-ai-*-mcp-server.php';
+// Toolkit servers are file-gated — the batch-B servers land with the next
+// cluster.
+//
+// Phase 1 pilot servers.
+$nvoos_content_graph_pro_mcp_server_crm = __DIR__ . '/servers/class-wp-mcp-ai-crm-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_crm ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_crm;
+}
+$nvoos_content_graph_pro_mcp_server_healthcare = __DIR__ . '/servers/class-wp-mcp-ai-healthcare-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_healthcare ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_healthcare;
+}
+$nvoos_content_graph_pro_mcp_server_architectural = __DIR__ . '/servers/class-wp-mcp-ai-architectural-design-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_architectural ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_architectural;
+}
+
+// Phase 2 Tier-1 promotions (16 servers, alphabetical).
+$nvoos_content_graph_pro_mcp_server_ai_tool_builder = __DIR__ . '/servers/class-wp-mcp-ai-ai-tool-builder-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_ai_tool_builder ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_ai_tool_builder;
+}
+$nvoos_content_graph_pro_mcp_server_calendar = __DIR__ . '/servers/class-wp-mcp-ai-calendar-booking-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_calendar ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_calendar;
+}
+$nvoos_content_graph_pro_mcp_server_cre_debt = __DIR__ . '/servers/class-wp-mcp-ai-cre-debt-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_cre_debt ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_cre_debt;
+}
+$nvoos_content_graph_pro_mcp_server_dj = __DIR__ . '/servers/class-wp-mcp-ai-dj-management-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_dj ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_dj;
+}
+$nvoos_content_graph_pro_mcp_server_doc_gen = __DIR__ . '/servers/class-wp-mcp-ai-document-generation-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_doc_gen ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_doc_gen;
+}
+$nvoos_content_graph_pro_mcp_server_eca = __DIR__ . '/servers/class-wp-mcp-ai-eca-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_eca ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_eca;
+}
+$nvoos_content_graph_pro_mcp_server_ecommerce = __DIR__ . '/servers/class-wp-mcp-ai-ecommerce-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_ecommerce ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_ecommerce;
+}
+$nvoos_content_graph_pro_mcp_server_financial = __DIR__ . '/servers/class-wp-mcp-ai-financial-planner-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_financial ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_financial;
+}
+$nvoos_content_graph_pro_mcp_server_image = __DIR__ . '/servers/class-wp-mcp-ai-image-production-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_image ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_image;
+}
+$nvoos_content_graph_pro_mcp_server_law_firm = __DIR__ . '/servers/class-wp-mcp-ai-law-firm-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_law_firm ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_law_firm;
+}
+$nvoos_content_graph_pro_mcp_server_media = __DIR__ . '/servers/class-wp-mcp-ai-media-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_media ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_media;
+}
+$nvoos_content_graph_pro_mcp_server_multilingual = __DIR__ . '/servers/class-wp-mcp-ai-multilingual-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_multilingual ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_multilingual;
+}
+$nvoos_content_graph_pro_mcp_server_pm = __DIR__ . '/servers/class-wp-mcp-ai-project-management-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_pm ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_pm;
+}
+$nvoos_content_graph_pro_mcp_server_regulatory = __DIR__ . '/servers/class-wp-mcp-ai-regulatory-registration-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_regulatory ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_regulatory;
+}
+$nvoos_content_graph_pro_mcp_server_social = __DIR__ . '/servers/class-wp-mcp-ai-social-media-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_social ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_social;
+}
+$nvoos_content_graph_pro_mcp_server_video = __DIR__ . '/servers/class-wp-mcp-ai-video-production-mcp-server.php';
+if ( file_exists( $nvoos_content_graph_pro_mcp_server_video ) ) {
+	require_once $nvoos_content_graph_pro_mcp_server_video;
+}
 
 // Phase 6 — /.well-known/mcp discovery endpoint.
 require_once __DIR__ . '/class-wp-mcp-ai-pro-well-known-mcp.php';
