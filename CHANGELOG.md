@@ -1,5 +1,30 @@
 # oOS – Changelog
 
+## [1.1.74] - 2026-09-08
+
+### Fixed — Google Calendar Date Queries & Free/Busy (PR #6460)
+
+- Every date-filtered Calendar query failed with Google's HTTP 400 `Bad Request`: `WP_MCP_AI_Google_Calendar_Client::request()` built query strings with WordPress's `add_query_arg()`, which deliberately leaves values **unencoded** — the literal `+` in normalized RFC3339 timestamps (`2026-09-07T00:00:00+05:30`) was decoded by Google as a space, mangling `timeMin`/`timeMax` into invalid timestamps (unfiltered listings worked because they carry no `+`). Every query value is now `rawurlencode()`d before `add_query_arg()`, so RFC3339 offsets, IANA timezone names, and free-text search terms survive the round trip — fixing every Calendar tool on the shared client. Also: `calendar.freebusy` joins the Standard scope profile so `check_google_calendar_availability` works after a normal connection (previously required the Full profile). The scope change applies to **new** OAuth grants — existing connections keep their stored scope set until reconnected (the date-range fix needs no reconnect). The platform addon's ported client + scopes got the identical fix.
+
+### Added — Result Delivery Email Formats (PR #6465)
+
+- Scheduler Result Delivery emails flattened the assistant's Markdown digest into raw text — recipients saw `##`, `**`, and `|` table pipes literally. A new dependency-free `WP_MCP_AI_Markdown_Converter` (`addons/pro/includes/services/`) now renders headings, emphasis, inline/fenced code, lists, blockquotes, horizontal rules, and GFM tables to email-safe inline-styled HTML — every text node is HTML-escaped and the assembled fragment passes a `wp_kses` allowlist with protocol-allowlisted links, so raw assistant HTML can never reach the email body. `Result_Delivery_Service::format_email()` produces an `html_body` alongside the Markdown `text/plain` part (the industry-standard multipart shape); a new per-channel `format` setting (`both` | `html` | `markdown`, default `both` — existing schedules get formatted HTML with zero migration) routes bodies through Nodemailer multipart/alternative or a single-content-type `wp_mail` fallback; the Schedule Manager sanitizer allowlists `format` and the edit modal gains a format dropdown.
+
+### Added — Schedule Manager Assistant-Prompt Editing (PR #6469)
+
+- `assistant_run` schedules could not show or edit their configured prompt — the edit modal only rendered type-specific fields for `workflow` schedules and `update_schedule()` had no `assistant_config` handling. The modal now renders an assistant dropdown (with a fallback option for since-deleted assistants) and a message textarea; `update_schedule()` merges `assistant_config` with the stored config (so `context` / `max_agentic_iterations` survive partial updates) and sanitizes with the create-path validation (`missing_assistant_id` / `missing_assistant_message`); and the `update_pro_schedule` MCP tool schema gains `assistant_config` so prompts can be updated via MCP as well. Drive-by JS cleanup: the 29 pre-existing `no-var` ESLint errors in the edit-modal code are converted to `let`/`const`.
+
+### Changed — Content Graph Ecosystem Port Wave F2: PM + Calendar Toolkits (PRs #6450–#6472)
+
+- **Project Management toolkit port complete.** The byte-identical PM surface lands in `nvoos-content-graph-pro`: data layer (#6452), core CRUD + dependency tools (#6453), PARA subsystem + tools + capture-decision (#6454), analytics + risk tools (#6455), command-center + workflow tools (#6456), templates + sprints tools (#6458), reports + blueprint import + the shared installer (#6459), admin slice A — menu, command center, settings, blueprints (#6462) — and the research/settings/consolidate pages closing the toolkit (#6463).
+- **Calendar-booking toolkit port complete.** Data layer (#6466), calendar event tools + ICS export (#6467), calendar services + JetAppointment/JetBooking sync + query tools with the two concrete booking adapters (#6468), the appointment/slot extras batch (#6471), and the calendar admin slice — research + settings pages (#6472).
+- **E-commerce admin pages batch (#6450).** The F2 e-commerce admin surfaces port byte-identical into the standalone pro addon.
+- CI/docs: `plugins/nvoos-content-graph-pro/**` is excluded from the root WPCS + PHP-compat gate and lints under its own standard (#6457); the perf-suite MCP-abilities CI failure is fixed process-wide in `tests/bootstrap.php` (#6470, superseding the per-suite guards from #6464) — the WordPress Abilities registry is a once-per-process lazy singleton, so the WooCommerce `mcp-adapter` + Rank Math `mcp-oauth` kill-switch filters now apply before any suite runs.
+
+### Versioning
+
+- Bumped to 1.1.74 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.74. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.4** (unchanged). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — PM + calendar-booking wave slices landed without a bump). Checkout API: **v0.1.0** (unchanged). Docs Hub addon: **0.4.3** (unchanged). Comic Reader addon: **0.5.0** (unchanged). Tool count: ~303 base + ~1,265 Pro (~1,568 total; live registry authoritative — unchanged this window; `update_pro_schedule` gains a schema field only). Providers: 15. Addons: 27. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: **55** (unchanged). Stale 1.1.72 build ZIPs removed (30 files).
+
 ## [1.1.73] - 2026-09-08
 
 ### Added — Woo Tool Upgrades: Variable-Scope Bulk Updates & Notify Suppression (PRs #6447, #6448)

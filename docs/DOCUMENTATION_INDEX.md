@@ -1,13 +1,15 @@
 # NV oOS Documentation Index
 
 **Last Updated:** September 8, 2026
-**Plugin Version:** 1.1.73
+**Plugin Version:** 1.1.74
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
+
+> **SEPTEMBER 8, 2026 UPDATE (v1.1.74):** CALENDAR, SCHEDULING & ECOSYSTEM-PORT RELEASE. **GOOGLE CALENDAR DATE-QUERY FIX** (PR #6460) — EVERY QUERY VALUE IS `rawurlencode()`D BEFORE `add_query_arg()` (THE RAW `+` IN RFC3339 OFFSETS WAS DECODED AS A SPACE, 400-ING ALL `time_min`/`time_max` QUERIES); `calendar.freebusy` JOINS THE STANDARD SCOPE PROFILE (NEW GRANTS ONLY). **RESULT DELIVERY EMAIL FORMATS** (PR #6465) — NEW `WP_MCP_AI_Markdown_Converter` (ESCAPED + `wp_kses`-ALLOWLISTED + PROTOCOL-ALLOWLISTED LINKS; RAW ASSISTANT HTML NEUTRALIZED) + PER-CHANNEL `format` SETTING (`both` DEFAULT | `html` | `markdown`), NODEMAILER MULTIPART + `wp_mail` FALLBACK. **SCHEDULE MANAGER ASSISTANT-PROMPT EDITING** (PR #6469) — EDIT MODAL SHOWS/UPDATES THE PROMPT FOR `assistant_run` SCHEDULES; `update_pro_schedule` ACCEPTS `assistant_config` VIA MCP. **WAVE F2 COMPLETES THE PM + CALENDAR-BOOKING TOOLKIT PORTS** IN `nvoos-content-graph-pro` (PRs #6450–#6472). **TEST/CI** — PERF-SUITE MCP-ABILITIES FAILURE FIXED PROCESS-WIDE IN `tests/bootstrap.php` (#6470, SUPERSEDES #6464); CONTENT-GRAPH-PRO EXCLUDED FROM THE ROOT WPCS GATE (#6457). TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.72 BUILD ZIPS REMOVED. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
 > **SEPTEMBER 8, 2026 UPDATE (v1.1.73):** WOO TOOL UPGRADES & ECOSYSTEM-PORT RELEASE. **`bulk_update_products` VARIABLE-SCOPE EXPANSION** (PR #6447) — NEW `scope` ARG (`all` DEFAULT | `product` LEGACY) EXPANDS PRICE/STOCK FIELDS FROM VARIABLE PARENTS TO VARIATIONS AND GROUPED PARENTS TO CHILDREN VIA `resolve_update_targets()`, RE-SYNCS VARIABLE PARENTS, AND REPORTS `targets[]` PER INPUT ID (+ `scope`/`updated_targets` KEYS; STATUS/FEATURED/CATEGORY/TAG ALWAYS APPLY TO THE SELECTED PRODUCT). **`update_woo_product_qty` `notify` FLAG** (PR #6448) — DEFAULT `true`; `false` SUPPRESSES LOW/NO-STOCK EMAILS FOR THE WRITE VIA `finally`-SCOPED `woocommerce_should_send_*` FILTERS (THE `woocommerce_*_stock` ACTIONS STILL FIRE). **ASYNC JOB QUEUE TABLE BOOTSTRAP FIX** (PR #6423) — THE QUEUE CLASS NOW BOOTS IN TIME TO CREATE ITS TABLE (ACTIVATION + FIRST-LOAD SELF-HEAL; `get_queue_stats()` FAILS SOFT), ENDING THE MISSING-TABLE SQL FLOODS. **COMIC READER 0.2.0 → 0.5.0** KOMPA-PARITY UPGRADE (PR #6402). **ECOSYSTEM WAVE F2** (PRs #6397–#6445, #6449) — NEW `nvoos-content-graph-pro` STANDALONE ADDON (V1.0.0) WITH BYTE-IDENTICAL PRO CRM + E-COMMERCE PORTS (43 E-COMMERCE TOOLS); **DOCS HUB 0.4.3** WP.ORG PREP. **DOCS/TOOLING** — NEW `mcp-ai-wpoos-wporg-submission` SKILL (SKILLS → 55) + PLUGIN-CHECK GATE REPAIR (#6418); USE-CASES REV 3.0 (#6443); BROKEN-LINK FIXES (#6446); SYNC WORKFLOWS (#6439). TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE COMIC-READER 0.2.0 + DOCS-HUB 0.4.2 BUILD ZIPS REMOVED. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
@@ -642,6 +644,16 @@ n#### New Audit & Compliance Docs
 - **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.39 latest updates section, version bump, duplicate section cleanup.
 
 ---
+
+## 🆕 September 2026 — v1.1.74: Calendar Query Fix, Email Formats, Assistant-Prompt Editing, PM + Calendar Ports
+
+### New and updated documents (September 8, 2026, v1.1.74)
+
+- **[docs/project/plans/v1.1.74-docs-catch-up.md](project/plans/v1.1.74-docs-catch-up.md)** ⭐ **NEW** — v1.1.74 docs & release catch-up plan (PRs #6450–#6472, full PR-description review + housekeeping). (September 8, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.74 highlights + latest updates (calendar query fix, email formats, assistant-prompt editing, PM + calendar ports, ~1,568 tools). (September 8, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.74] section with PR-level detail. (September 8, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.74 + changelog entry. (September 8, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.74 entry. (September 8, 2026)
 
 ## 🆕 September 2026 — v1.1.73: Woo Tool Upgrades, Queue Bootstrap Fix, Wave F2 + Content Graph Pro
 

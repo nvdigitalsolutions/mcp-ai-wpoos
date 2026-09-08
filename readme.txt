@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.73
+Stable tag: 1.1.74
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.74 - September 8, 2026 =
+
+Calendar, scheduling, and ecosystem-port release. Fixed: every date-filtered Google Calendar query failed with a 400 because query values were built unencoded (the + in RFC3339 timestamps was decoded as a space) — all calendar query values are now percent-encoded, fixing every tool on the shared client, and calendar.freebusy joins the Standard scope profile so availability checks work on a normal connection (new OAuth grants only). Added: Result Delivery emails now render assistant Markdown digests as HTML — a new Markdown converter (escaped + wp_kses allowlisted + protocol-allowlisted links, so raw assistant HTML can never reach the email body) powers a per-channel email format setting (both/html/markdown, default both with zero migration); the Pro Schedule Manager edit modal can now display and update the assistant prompt for assistant_run schedules (merged config, create-path validation), and update_pro_schedule accepts assistant_config via MCP. The Content Graph ecosystem Wave F2 continues: the Project Management toolkit port completes (data layer through research/settings pages) and the calendar-booking toolkit port completes (data layer through the calendar admin slice) in nvoos-content-graph-pro (still v1.0.0). Test/CI: the perf-suite MCP-abilities CI failure is fixed process-wide in tests/bootstrap.php, and nvoos-content-graph-pro is excluded from the root WPCS gate (it lints under its own standard). Stale 1.1.72 build ZIPs removed. Tool count unchanged: ~303 base + ~1,265 Pro (~1,568 total; live registry authoritative).
 
 = 1.1.73 - September 8, 2026 =
 
