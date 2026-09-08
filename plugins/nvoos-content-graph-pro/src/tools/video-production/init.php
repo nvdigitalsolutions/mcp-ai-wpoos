@@ -26,12 +26,11 @@
 	 * `wp_mcp_ai_pro_register_video_production_ecosystem_tools()` registering
 	 * them into the ecosystem graph ToolRegistry and the nvoos/core registry
 	 * via `WP_MCP_AI_Pro_Tool_Adapter`. The tree-only import-blueprint tool
-	 * (the base registers it nowhere) is carried here too (CRM CC-extras
-	 * precedent). The four always-on exec-service
-	 * tools (transcode/extract-frames/get-metadata/create-remotion) stay
-	 * deferred — they depend on the base-owned
- *    `\WP_MCP_AI\Services\WP_MCP_AI_Process_Service` and the Pro-owned
- *    frame-extractor/fluent-ffmpeg services (D8 + video-services slice).
+	 * (the base registers it nowhere) is carried here too, as are the four
+	 * always-on exec-service tools (transcode/extract-frames/get-metadata/
+	 * create-remotion — the base registers them in the unconditional
+	 * `$pro_tools` map; they load the D8-compat interface/trait copies and
+	 * the namespaced Process-service copy through per-file seams).
  *
  * @package NvoosContentGraphPro
  * @since   1.1.0
@@ -135,6 +134,12 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 			// filter/ecosystem additions are its registration, CRM CC-extras
 			// precedent).
 			'WP_MCP_AI_Tool_Import_Video_Production_Blueprint' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/video-production/examples/class-wp-mcp-ai-tool-import-video-production-blueprint.php',
+			// The always-on exec-service tools (the base registers these in the
+			// unconditional `$pro_tools` map — they carry no enable gate).
+			'WP_MCP_AI_Tool_Transcode_Video'               => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/video-production/class-wp-mcp-ai-tool-transcode-video.php',
+			'WP_MCP_AI_Tool_Extract_Video_Frames'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/video-production/class-wp-mcp-ai-tool-extract-video-frames.php',
+			'WP_MCP_AI_Tool_Get_Video_Metadata'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/video-production/class-wp-mcp-ai-tool-get-video-metadata.php',
+			'WP_MCP_AI_Tool_Create_Remotion_Video'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/video-production/class-wp-mcp-ai-tool-create-remotion-video.php',
 		);
 
 		return array_merge( $tools, $nvoos_content_graph_pro_video_tools );
@@ -178,6 +183,10 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 				'WP_MCP_AI_Tool_Upload_Video_Batch',
 				'WP_MCP_AI_Tool_Transcribe_Video',
 				'WP_MCP_AI_Tool_Import_Video_Production_Blueprint',
+				'WP_MCP_AI_Tool_Transcode_Video',
+				'WP_MCP_AI_Tool_Extract_Video_Frames',
+				'WP_MCP_AI_Tool_Get_Video_Metadata',
+				'WP_MCP_AI_Tool_Create_Remotion_Video',
 			) as $nvoos_content_graph_pro_tool_class
 		) {
 			$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );

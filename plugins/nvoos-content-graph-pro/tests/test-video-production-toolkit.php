@@ -54,6 +54,43 @@ class Test_Video_Production_Toolkit extends WP_UnitTestCase {
 				WP_MCP_AI_Tool_Import_Video_Production_Blueprint::BLUEPRINTS_DIR
 			);
 		}
+
+		// The always-on exec-service tool surfaces.
+		$metadata = new WP_MCP_AI_Tool_Get_Video_Metadata();
+		$this->assertSame( 'get_video_metadata', $metadata->get_slug() );
+		$this->assertSame( 'edit_posts', $metadata->get_required_capability() );
+
+		$transcode = new WP_MCP_AI_Tool_Transcode_Video();
+		$this->assertSame( 'transcode_video', $transcode->get_slug() );
+		$this->assertTrue( $transcode->requires_base_pro() );
+
+		$frames = new WP_MCP_AI_Tool_Extract_Video_Frames();
+		$this->assertSame( 'extract_video_frames', $frames->get_slug() );
+
+		$remotion = new WP_MCP_AI_Tool_Create_Remotion_Video();
+		$this->assertSame( 'create_remotion_video', $remotion->get_slug() );
+		$this->assertSame( 'upload_files', $remotion->get_required_capability() );
+		$this->assertTrue( $remotion->requires_base_pro() );
+	}
+
+	/**
+	 * The get-video-metadata execute() contracts must degrade gracefully with
+	 * no video source (no external probes are exercised).
+	 */
+	public function test_get_video_metadata_execute_contracts(): void {
+		$user_id = self::factory()->user->create( array( 'role' => 'author' ) );
+		wp_set_current_user( $user_id );
+
+		$tool = new WP_MCP_AI_Tool_Get_Video_Metadata();
+
+		$missing = $tool->execute( array(), array( 'user_id' => $user_id ) );
+		$this->assertInstanceOf( 'WP_Error', $missing );
+		$this->assertSame( 'wp_mcp_ai_missing_video', $missing->get_error_code() );
+
+		$subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		$forbidden     = $tool->execute( array(), array( 'user_id' => $subscriber_id ) );
+		$this->assertInstanceOf( 'WP_Error', $forbidden );
+		$this->assertSame( 'wp_mcp_ai_forbidden', $forbidden->get_error_code() );
 	}
 
 	/**
@@ -144,13 +181,17 @@ class Test_Video_Production_Toolkit extends WP_UnitTestCase {
 		add_filter( 'wp_mcp_ai_pro_tools', 'wp_mcp_ai_pro_register_video_production_tools', 10 );
 
 		$tools = apply_filters( 'wp_mcp_ai_pro_tools', array() );
-		$this->assertCount( 18, $tools );
+		$this->assertCount( 22, $tools );
 		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_Trim_Video', $tools );
 		$this->assertSame(
 			NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/video-production/class-wp-mcp-ai-tool-trim-video.php',
 			$tools['WP_MCP_AI_Tool_Trim_Video']
 		);
 		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_Transcribe_Video', $tools );
+		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_Transcode_Video', $tools );
+		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_Extract_Video_Frames', $tools );
+		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_Get_Video_Metadata', $tools );
+		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_Create_Remotion_Video', $tools );
 		// The tree-only import-blueprint tool is carried standalone (the base
 		// registers it nowhere — CRM CC-extras precedent).
 		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_Import_Video_Production_Blueprint', $tools );
@@ -181,5 +222,7 @@ class Test_Video_Production_Toolkit extends WP_UnitTestCase {
 		$this->assertTrue( $core_tools->has( 'trim_video' ) );
 		$this->assertTrue( $core_tools->has( 'get_queued_videos' ) );
 		$this->assertTrue( $core_tools->has( 'import_video_production_blueprint' ) );
+		$this->assertTrue( $core_tools->has( 'get_video_metadata' ) );
+		$this->assertTrue( $core_tools->has( 'create_remotion_video' ) );
 	}
 }

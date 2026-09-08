@@ -210,6 +210,17 @@
     <rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents">
         <severity>0</severity>
     </rule>
+    <!--
+        Byte-identical video exec-service tools create/remove their temp
+        frame directories with mkdir/rmdir (the monolith copies carry the
+        same calls).
+    -->
+    <rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_mkdir">
+        <severity>0</severity>
+    </rule>
+    <rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_rmdir">
+        <severity>0</severity>
+    </rule>
     <rule ref="WordPress.WP.AlternativeFunctions.unlink_unlink">
         <severity>0</severity>
     </rule>
