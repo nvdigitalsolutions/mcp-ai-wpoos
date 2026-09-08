@@ -166,6 +166,34 @@
         <severity>0</severity>
     </rule>
 
+    <!--
+        Byte-identical import-services file handling: the base copy uses
+        fopen/fclose/fwrite/file_put_contents + @unlink for its CSV import
+        temp files, with the same silenced-error and while-assignment
+        patterns.
+    -->
+    <rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_fopen">
+        <severity>0</severity>
+    </rule>
+    <rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_fclose">
+        <severity>0</severity>
+    </rule>
+    <rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_fwrite">
+        <severity>0</severity>
+    </rule>
+    <rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents">
+        <severity>0</severity>
+    </rule>
+    <rule ref="WordPress.WP.AlternativeFunctions.unlink_unlink">
+        <severity>0</severity>
+    </rule>
+    <rule ref="WordPress.PHP.NoSilencedErrors">
+        <severity>0</severity>
+    </rule>
+    <rule ref="Generic.CodeAnalysis.AssignmentInCondition">
+        <severity>0</severity>
+    </rule>
+
     <file>./nvoos-content-graph-pro.php</file>
     <file>./src/</file>
     <file>./tests/</file>

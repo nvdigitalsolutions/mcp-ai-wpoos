@@ -113,12 +113,25 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 	 */
 	function wp_mcp_ai_pro_register_calendar_tools( $tools ) {
 		$nvoos_content_graph_pro_cal_tools = array(
-			'WP_MCP_AI_Tool_Create_Event'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-create-event.php',
-			'WP_MCP_AI_Tool_Update_Event'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-update-event.php',
-			'WP_MCP_AI_Tool_Delete_Event'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-delete-event.php',
-			'WP_MCP_AI_Tool_List_Events'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-list-events.php',
-			'WP_MCP_AI_Tool_Get_Calendar_View'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-get-calendar-view.php',
-			'WP_MCP_AI_Tool_Export_Calendar_ICS' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-export-calendar-ics.php',
+			'WP_MCP_AI_Tool_Create_Event'                 => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-create-event.php',
+			'WP_MCP_AI_Tool_Update_Event'                 => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-update-event.php',
+			'WP_MCP_AI_Tool_Delete_Event'                 => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-delete-event.php',
+			'WP_MCP_AI_Tool_List_Events'                  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-list-events.php',
+			'WP_MCP_AI_Tool_Get_Calendar_View'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-get-calendar-view.php',
+			'WP_MCP_AI_Tool_Export_Calendar_ICS'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-export-calendar-ics.php',
+			'WP_MCP_AI_Tool_Create_Service'               => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-create-service.php',
+			'WP_MCP_AI_Tool_Import_Services'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-import-services.php',
+			'WP_MCP_AI_Tool_Get_No_Show_Appointments'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-get-no-show-appointments.php',
+			'WP_MCP_AI_Tool_Get_Unconfirmed_Bookings'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-get-unconfirmed-bookings.php',
+			'WP_MCP_AI_Tool_Send_Booking_Confirmations'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-send-booking-confirmations.php',
+			'WP_MCP_AI_Tool_Send_Reschedule_Invitation'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-send-reschedule-invitation.php',
+			'WP_MCP_AI_Tool_Sync_From_JetAppointment'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-sync-from-jetappointment.php',
+			'WP_MCP_AI_Tool_Sync_To_JetAppointment'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-sync-to-jetappointment.php',
+			'WP_MCP_AI_Tool_Sync_From_JetBooking'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-sync-from-jetbooking.php',
+			'WP_MCP_AI_Tool_Get_JetAppointment_Providers' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-get-jetappointment-providers.php',
+			'WP_MCP_AI_Tool_Get_JetAppointment_Services'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-get-jetappointment-services.php',
+			'WP_MCP_AI_Tool_Get_JetBooking_Units'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-get-jetbooking-units.php',
+			'WP_MCP_AI_Tool_Get_JetBooking_Instances'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-get-jetbooking-instances.php',
 		);
 
 		return array_merge( $tools, $nvoos_content_graph_pro_cal_tools );
@@ -149,6 +162,19 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 				'WP_MCP_AI_Tool_List_Events',
 				'WP_MCP_AI_Tool_Get_Calendar_View',
 				'WP_MCP_AI_Tool_Export_Calendar_ICS',
+				'WP_MCP_AI_Tool_Create_Service',
+				'WP_MCP_AI_Tool_Import_Services',
+				'WP_MCP_AI_Tool_Get_No_Show_Appointments',
+				'WP_MCP_AI_Tool_Get_Unconfirmed_Bookings',
+				'WP_MCP_AI_Tool_Send_Booking_Confirmations',
+				'WP_MCP_AI_Tool_Send_Reschedule_Invitation',
+				'WP_MCP_AI_Tool_Sync_From_JetAppointment',
+				'WP_MCP_AI_Tool_Sync_To_JetAppointment',
+				'WP_MCP_AI_Tool_Sync_From_JetBooking',
+				'WP_MCP_AI_Tool_Get_JetAppointment_Providers',
+				'WP_MCP_AI_Tool_Get_JetAppointment_Services',
+				'WP_MCP_AI_Tool_Get_JetBooking_Units',
+				'WP_MCP_AI_Tool_Get_JetBooking_Instances',
 			) as $nvoos_content_graph_pro_tool_class
 		) {
 			$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
