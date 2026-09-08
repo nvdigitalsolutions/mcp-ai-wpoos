@@ -106,7 +106,17 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 	 */
 	function wp_mcp_ai_pro_register_social_tools( $tools ) {
 		$nvoos_content_graph_pro_sm_tools = array(
-			// Social tool batches fill this map as they land.
+			'WP_MCP_AI_Pro_Tool_Download_Google_Maps_Images' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/social-media/class-wp-mcp-ai-pro-tool-download-google-maps-images.php',
+			'WP_MCP_AI_Pro_Tool_Download_Facebook_Page_Images' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/social-media/class-wp-mcp-ai-pro-tool-download-facebook-page-images.php',
+			'WP_MCP_AI_Pro_Tool_Download_Instagram_Page_Images' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/social-media/class-wp-mcp-ai-pro-tool-download-instagram-page-images.php',
+			'WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/social-media/class-wp-mcp-ai-pro-tool-post-facebook-instagram.php',
+			'WP_MCP_AI_Pro_Tool_Post_Tiktok_Video'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/social-media/class-wp-mcp-ai-pro-tool-post-tiktok-video.php',
+			'WP_MCP_AI_Pro_Tool_Post_Linkedin_Update'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/social-media/class-wp-mcp-ai-pro-tool-post-linkedin-update.php',
+			'WP_MCP_AI_Pro_Tool_Post_Google_Business_Update' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/social-media/class-wp-mcp-ai-pro-tool-post-google-business-update.php',
+			'WP_MCP_AI_Pro_Tool_Get_Facebook_Instagram_Insights' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/social-media/class-wp-mcp-ai-pro-tool-get-facebook-instagram-insights.php',
+			'WP_MCP_AI_Pro_Tool_Get_Tiktok_Insights'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/social-media/class-wp-mcp-ai-pro-tool-get-tiktok-insights.php',
+			'WP_MCP_AI_Pro_Tool_Get_Linkedin_Insights'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/social-media/class-wp-mcp-ai-pro-tool-get-linkedin-insights.php',
+			'WP_MCP_AI_Pro_Tool_Get_Google_Business_Insights' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/social-media/class-wp-mcp-ai-pro-tool-get-google-business-insights.php',
 		);
 
 		return array_merge( $tools, $nvoos_content_graph_pro_sm_tools );
@@ -131,7 +141,17 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 
 		foreach (
 			array(
-				// Social tool batches fill this list as they land.
+				'WP_MCP_AI_Pro_Tool_Download_Google_Maps_Images',
+				'WP_MCP_AI_Pro_Tool_Download_Facebook_Page_Images',
+				'WP_MCP_AI_Pro_Tool_Download_Instagram_Page_Images',
+				'WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram',
+				'WP_MCP_AI_Pro_Tool_Post_Tiktok_Video',
+				'WP_MCP_AI_Pro_Tool_Post_Linkedin_Update',
+				'WP_MCP_AI_Pro_Tool_Post_Google_Business_Update',
+				'WP_MCP_AI_Pro_Tool_Get_Facebook_Instagram_Insights',
+				'WP_MCP_AI_Pro_Tool_Get_Tiktok_Insights',
+				'WP_MCP_AI_Pro_Tool_Get_Linkedin_Insights',
+				'WP_MCP_AI_Pro_Tool_Get_Google_Business_Insights',
 			) as $nvoos_content_graph_pro_tool_class
 		) {
 			$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
