@@ -105,6 +105,20 @@ class Test_Google_Calendar_Foundation extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The Standard profile must grant free/busy reads so availability checks
+	 * work after a normal connection instead of requiring the Full profile.
+	 */
+	public function test_standard_profile_includes_freebusy_scope() {
+		$scopes = WP_MCP_AI_Google_Calendar_Scopes::get_profile_scopes(
+			WP_MCP_AI_Google_Calendar_Scopes::PROFILE_STANDARD
+		);
+
+		$this->assertContains( WP_MCP_AI_Google_Calendar_Scopes::SCOPE_EVENTS, $scopes );
+		$this->assertContains( WP_MCP_AI_Google_Calendar_Scopes::SCOPE_FREEBUSY, $scopes );
+		$this->assertContains( WP_MCP_AI_Google_Calendar_Scopes::SCOPE_CALENDARLIST_READONLY, $scopes );
+	}
+
+	/**
 	 * Broader scopes must satisfy narrower requirements.
 	 */
 	public function test_broader_scopes_imply_narrower_ones() {
@@ -261,6 +275,50 @@ class Test_Google_Calendar_Foundation extends WP_UnitTestCase {
 		$this->assertSame( 250, WP_MCP_AI_Google_Calendar_Client::clamp_max_results( 0 ) );
 		$this->assertSame( 250, WP_MCP_AI_Google_Calendar_Client::clamp_max_results( -5 ) );
 		$this->assertSame( 10, WP_MCP_AI_Google_Calendar_Client::clamp_max_results( 10 ) );
+	}
+
+	// URL building.
+
+	/**
+	 * Query values must be percent-encoded before they reach Google.
+	 *
+	 * Because `add_query_arg()` deliberately leaves values unencoded and Google
+	 * decodes a raw `+` in the query string as a space, an RFC3339 offset such as
+	 * `2026-09-07T00:00:00+05:30` used to arrive mangled and every date-filtered
+	 * events.list request was rejected with HTTP 400.
+	 */
+	public function test_query_values_are_percent_encoded() {
+		$client = new WP_MCP_AI_Google_Calendar_Client( 'test-token' );
+
+		$captured_url = '';
+		$http_stub    = function ( $preempt, $args, $url ) use ( &$captured_url ) {
+			$captured_url = $url;
+
+			return array(
+				'body'     => wp_json_encode( array( 'items' => array() ) ),
+				'response' => array( 'code' => 200 ),
+				'headers'  => array(),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $client->list_events(
+			'primary',
+			array(
+				'timeMin'      => '2026-09-07T00:00:00+05:30',
+				'timeMax'      => '2026-09-14T00:00:00+05:30',
+				'singleEvents' => 'true',
+				'timeZone'     => 'Asia/Colombo',
+			)
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertIsArray( $result );
+		$this->assertStringContainsString( 'timeMin=2026-09-07T00%3A00%3A00%2B05%3A30', $captured_url );
+		$this->assertStringContainsString( 'timeZone=Asia%2FColombo', $captured_url );
+		$this->assertStringNotContainsString( 'timeMin=2026-09-07T00:00:00+05:30', $captured_url );
 	}
 
 	// Error classification.

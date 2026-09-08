@@ -84,6 +84,20 @@ class Test_Google_Scopes extends \WP_UnitTestCase {
 	}
 
 	/**
+	 * The Standard profile must grant free/busy reads so availability checks
+	 * work after a normal connection instead of requiring the Full profile.
+	 */
+	public function test_standard_profile_includes_freebusy_scope() {
+		$scopes = GoogleCalendarScopes::get_profile_scopes(
+			GoogleCalendarScopes::PROFILE_STANDARD
+		);
+
+		$this->assertContains( GoogleCalendarScopes::SCOPE_EVENTS, $scopes );
+		$this->assertContains( GoogleCalendarScopes::SCOPE_FREEBUSY, $scopes );
+		$this->assertContains( GoogleCalendarScopes::SCOPE_CALENDARLIST_READONLY, $scopes );
+	}
+
+	/**
 	 * Broader scopes must satisfy narrower requirements.
 	 */
 	public function test_broader_scopes_imply_narrower_ones() {

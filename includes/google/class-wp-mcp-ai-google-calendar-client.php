@@ -621,7 +621,13 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Calendar_Client' ) ) {
 			$url = self::API_BASE . $path;
 
 			if ( ! empty( $params ) ) {
-				$url = add_query_arg( array_map( array( $this, 'stringify_param' ), $params ), $url );
+				// add_query_arg() deliberately leaves values unencoded, and Google
+				// decodes a raw `+` in the query string as a space. A normalised
+				// RFC3339 offset such as `2026-09-07T00:00:00+05:30` would therefore
+				// arrive mangled and be rejected with HTTP 400, so every value is
+				// percent-encoded up front.
+				$params = array_map( 'rawurlencode', array_map( array( $this, 'stringify_param' ), $params ) );
+				$url    = add_query_arg( $params, $url );
 			}
 
 			$args = array(
