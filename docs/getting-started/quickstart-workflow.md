@@ -82,7 +82,7 @@ For extra safety — and to see the harness in action — you can also turn on t
 3. Under harness options, tick **Require approval for destructive actions** (maps to `injection_detector.enabled = true` in the harness profile).
 4. Click **Update** to save.
 
-> **What this does:** The harness layer inspects every tool call for injection patterns before execution. It's off by default to preserve existing behaviour; enabling it per-assistant gives you a targeted safety net without affecting other assistants. See [`docs/llm-harness.md`](llm-harness.md) for the full harness profile schema.
+> **What this does:** The harness layer inspects every tool call for injection patterns before execution. It's off by default to preserve existing behaviour; enabling it per-assistant gives you a targeted safety net without affecting other assistants. See [`docs/features/llm-harness.md`](../features/llm-harness.md) for the full harness profile schema.
 
 ---
 
@@ -174,7 +174,7 @@ You've just built and run a Human-in-the-Loop workflow entirely inside WordPress
 
 - **Add more tools.** Enable `send_slack_message` or `send_email` on the assistant and update the system prompt to notify your team after publishing.
 - **Try multi-agent delegation.** Configure a second assistant (e.g. an SEO auditor) and have My Workflow Bot delegate to it via `delegate_to_agent` before requesting approval.
-- **Compare platforms.** Wondering how NV oOS stacks up against LangGraph or n8n? See [docs/orchestration-platform-comparison.md](orchestration-platform-comparison.md).
+- **Compare platforms.** Wondering how NV oOS stacks up against LangGraph or n8n? See [docs/project/proposals/orchestration-platform-comparison.md](../project/proposals/orchestration-platform-comparison.md).
 
 ### Get help
 

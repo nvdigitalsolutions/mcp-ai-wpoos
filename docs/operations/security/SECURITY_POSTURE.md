@@ -79,7 +79,7 @@ Low Fixed count includes 4 findings closed as false-positive in the April 2026 a
 |---|---|---|
 | F-EXEC-01 | 11 `shell_exec`/`exec` calls in Pro tools | Migrated to `proc_open` array form. Gated behind `WP_MCP_AI_ALLOW_SHELL_TOOLS` (default `false`) + `manage_options` capability. |
 | F-SQL-01 | 7 unprepared SQL statements in Graphify | Converted to `$wpdb->prepare()` with `%i` placeholders. |
-| F-PRIV-03 | Missing HIPAA posture for healthcare/DICOM addons | PHI never reaches AI providers. Multisite guard added. Privacy API exporter + eraser cover all health CPTs. `docs/HIPAA_POSTURE.md` documents data flow. |
+| F-PRIV-03 | Missing HIPAA posture for healthcare/DICOM addons | PHI never reaches AI providers. Multisite guard added. Privacy API exporter + eraser cover all health CPTs. `docs/operations/security/HIPAA_POSTURE.md` documents data flow. |
 | F-SSRF-01 | No SSRF allowlist on tool-driven outbound HTTP | Central `wp_mcp_ai_is_safe_outbound_url()` helper. Resolves DNS, blocks loopback/private/link-local/multicast/IPA. |
 | F-TLS-01 | `sslverify => false` in tool classes | Removed. All outbound requests now verify TLS. |
 | F-PRIV-01/02 | Pro CCT/CPT not covered by Privacy API; AI-provider data flows undisclosed | Privacy API auto-wiring implemented. `EXTERNAL_SERVICES.md` documents all 45 base + 3 Pro external services. |

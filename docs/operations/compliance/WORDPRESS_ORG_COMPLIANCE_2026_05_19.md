@@ -258,7 +258,7 @@ Five providers were previously functional but missing from the provider validati
 ### 12b. New External Service: Baseten API (11th Provider)
 
 Baseten (`api.baseten.co/v1`) is now a first-class provider with full OpenAI-compatible integration (chat, tools, streaming, reasoning passthrough). Service documented in:
-- `docs/EXTERNAL_SERVICES.md` §6f — Terms of Service, Privacy Policy, data transmission details
+- `docs/reference/EXTERNAL_SERVICES.md` §6f — Terms of Service, Privacy Policy, data transmission details
 - `readme.txt` — added to language-model providers list
 - `README.md` — privacy/terms notice updated
 
@@ -291,7 +291,7 @@ Replaced mock malware payloads in `tests/test-skill-registry.php` with benign te
 
 ### 12g. LM Studio External Service URLs
 
-All `lmstudio.ai` URLs replaced with GitHub organization URL (`github.com/lmstudio-ai`) after upstream began returning HTTP 500 errors. Updated in `readme.txt`, `docs/EXTERNAL_SERVICES.md`, and provider configuration. The self-hosted nature of LM Studio is unchanged — no data is transmitted externally when using LM Studio.
+All `lmstudio.ai` URLs replaced with GitHub organization URL (`github.com/lmstudio-ai`) after upstream began returning HTTP 500 errors. Updated in `readme.txt`, `docs/reference/EXTERNAL_SERVICES.md`, and provider configuration. The self-hosted nature of LM Studio is unchanged — no data is transmitted externally when using LM Studio.
 
 ### 12h. Addons PHPCS Cleanup (PRs #5070, #5078)
 
@@ -316,5 +316,5 @@ All post-May-21 changes are either:
 | [`WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](WORDPRESS_ORG_COMPLIANCE_2026_05_09.md) | May 9 audit — B3, B8, B10, B13, Build |
 | [`WORDPRESS_ORG_COMPLIANCE_2026_04_15.md`](WORDPRESS_ORG_COMPLIANCE_2026_04_15.md) | April 15, 2026 — Full 13-guideline baseline audit |
 | [`SUBMISSION.md`](../../SUBMISSION.md) | Submission manifest and per-finding response table |
-| [`WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`](../../docs/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md) | v1.1.11 era final status (historical) |
+| [`WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`](WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md) | v1.1.11 era final status (historical) |
 | `readme.txt` | External services documentation |

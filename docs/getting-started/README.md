@@ -5,14 +5,16 @@ Quick start guides and installation documentation for Open Operator System (NV o
 ## 📂 Contents
 
 ### Use Cases & Quickstart Guides
-- **[Use Cases & Quickstart Guides](USE_CASES_AND_QUICKSTARTS.md) ⭐ NEW** - Comprehensive guide covering:
+- **[Use Cases & Quickstart Guides](USE_CASES_AND_QUICKSTARTS.md)** - Comprehensive guide (Rev 3.0, tested against v1.1.72) covering:
   - Content Creation & Management
-  - E-Commerce Automation
-  - Media Generation & Processing
-  - Business Operations
-  - Research & Data Analysis
-  - Developer & Technical Integration
+  - E-Commerce Automation + Google Workspace
+  - Media Generation + Vision Analysis
+  - Business Operations + Workflow Builder & Pro Schedule Manager
+  - Research & Data Analysis + Deep Research
+  - Developer & Technical Integration + Content Graph ecosystem
   - Education & Knowledge Management
+  - Multi-Agent Orchestration, Workflow Automation, Video, Site Building, Compliance
+  - Front-End Chat SPA, Pro SPA, and Docs Hub
 - [5-Minute Quick Start](QUICK_START_5_MINUTES.md) - From zero to first chat in 5 minutes
 
 ### Installation & Setup

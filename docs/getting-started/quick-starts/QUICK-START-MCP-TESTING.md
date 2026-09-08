@@ -153,7 +153,7 @@ fetch('/wp-json/mcp-ai/v1/mcp', {
 ## 6. Get Full Details
 
 For comprehensive troubleshooting, see:
-- `docs/mcp-diagnostic-troubleshooting.md` - Complete troubleshooting guide
+- `docs/operations/troubleshooting/mcp/mcp-diagnostic-troubleshooting.md` - Complete troubleshooting guide
 - `tests/test-mcp-diagnostic-endpoints.php` - Automated test examples
 
 ## 7. Still Having Issues?

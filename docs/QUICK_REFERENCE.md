@@ -695,7 +695,7 @@ Discovery endpoint: `GET /.well-known/mcp` (returns JSON array of all enabled to
 ### Full Documentation
 - [Complete README](../README.md) - 1,027 lines of comprehensive docs
 - [Documentation Index](DOCUMENTATION_INDEX.md) - All 39 documentation files
-- [Tool Reference](reference/tools/tool-reference.md) - All ~830 tools detailed (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- [Tool Reference](reference/tools/tool-reference.md) - All ~1,568 tools detailed (~303 base + ~1,265 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - [REST API Guide](reference/api/rest-api.md) - Complete API documentation
 - [Orchestration Budget Enforcement](architecture/orchestration/orchestration-budget-enforcement.md) - Budget prediction and adjustment
 
@@ -743,7 +743,7 @@ Discovery endpoint: `GET /.well-known/mcp` (returns JSON array of all enabled to
 
 ### Quick Start Resources
 - **Getting Started Wizard** ⭐ NEW — Activate and follow the 4-step setup at **NV oOS → Getting Started** to create your first assistant in under 2 minutes
-- **[Use Cases & Quickstart Guides](getting-started/USE_CASES_AND_QUICKSTARTS.md) ⭐ NEW** - 7 major use cases with step-by-step guides
+- **[Use Cases & Quickstart Guides](getting-started/USE_CASES_AND_QUICKSTARTS.md)** - 14+ use cases with step-by-step guides (Rev 3.0)
 - **[5-Minute Quick Start](getting-started/QUICK_START_5_MINUTES.md)** - Get started immediately
 - **[Documentation Index](DOCUMENTATION_INDEX.md)** - Complete documentation map
 

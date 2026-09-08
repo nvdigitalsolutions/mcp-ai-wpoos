@@ -110,7 +110,7 @@ configurable, default it sanely, and let admins exempt agent tokens.
      `tool_rate_limit_exempt_tokens = rest_sanitize_boolean(...)`.
    - Defaults registered in `includes/admin/class-wp-mcp-ai-admin-settings-base.php`
      (near `rate_limit_requests`, ~line 644).
-5. **Docs:** `docs/rest-api.md` note + changelog.
+5. **Docs:** `docs/reference/api/rest-api.md` note + changelog.
 
 **Acceptance:**
 - Settings appear under oOS → Security and persist.
