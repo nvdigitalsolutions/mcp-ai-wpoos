@@ -1,0 +1,1741 @@
+<?php
+/**
+ * PM Command Center Page (ecosystem port — Wave F2, PM admin slice A).
+ *
+ * Ported from the base Pro addon's `addons/pro/includes/admin/class-wp-mcp-ai-pm-command-center-page.php` (or `research-add/`) for the
+ * standalone `nvoos-content-graph-pro` addon. Kept byte-identical. The
+ * base Pro addon owns the class in monolith installs — the addon's
+ * autoloader skips its copy when `NVOOS_CONTENT_GRAPH_PRO_PATH` is defined (see
+ * the plugin entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain\n * `nvoos-content-graph-pro`; the upwork/inbound sync requires resolve from the addon's `src/tools/crm/` copies (file-gated, dormant until those batches land); the CCT/engine/assistant-service seams stay class_exists-guarded.
+ *
+ * @package NvoosContentGraphPro
+ * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+declare(strict_types=1);
+
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Project Management Command Center Page Class
+ */
+class WP_MCP_AI_PM_Command_Center_Page {
+
+	/**
+	 * Page slug.
+	 *
+	 * @var string
+	 */
+	const PAGE_SLUG = 'nvoos-pm-command-center';
+
+	/**
+	 * AJAX nonce action.
+	 *
+	 * @var string
+	 */
+	const NONCE_ACTION = 'wp_mcp_ai_pm_cc';
+
+	/**
+	 * Page hook.
+	 *
+	 * @var string
+	 */
+	private static $page_hook = '';
+
+	/**
+	 * Initialize the command center page.
+	 */
+	public static function init() {
+		add_action( 'admin_menu', array( __CLASS__, 'register_page' ), 26 );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_pm_cc_get_kpis', array( __CLASS__, 'ajax_get_kpis' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_pm_cc_get_pipeline', array( __CLASS__, 'ajax_get_pipeline' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_pm_cc_get_deadlines', array( __CLASS__, 'ajax_get_deadlines' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_pm_cc_get_activity', array( __CLASS__, 'ajax_get_activity' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_pm_cc_ingest_work_items', array( __CLASS__, 'ajax_ingest_work_items' ) );
+	}
+
+	/**
+	 * Register the submenu page under NV Projects.
+	 */
+	public static function register_page() {
+		self::$page_hook = add_submenu_page(
+			WP_MCP_AI_PM_Admin_Menu::PARENT_SLUG,
+			__( 'PM Command Center', 'nvoos-content-graph-pro' ),
+			__( 'Command Center', 'nvoos-content-graph-pro' ),
+			'edit_posts',
+			self::PAGE_SLUG,
+			array( __CLASS__, 'render_page' )
+		);
+	}
+
+	/**
+	 * Enqueue assets for the command center page.
+	 *
+	 * @param string $hook Current admin page hook.
+	 */
+	public static function enqueue_assets( $hook ) {
+		if ( self::$page_hook !== $hook ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin page detection for asset enqueue.
+			$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+			if ( ! $page || ! in_array( $page, array( self::PAGE_SLUG, WP_MCP_AI_PM_Admin_Menu::PARENT_SLUG ), true ) ) {
+				return;
+			}
+		}
+
+		// PM command center styles (inline for now; extract later).
+		add_action(
+			'admin_head',
+			function () {
+				?>
+				<style>
+				.pm-cc-wrap { margin: 0 0 0 -20px; }
+				.pm-cc-header {
+					background: #fff;
+					border-bottom: 1px solid #c3c4c7;
+					padding: 16px 24px;
+					display: flex;
+					align-items: center;
+					justify-content: space-between;
+				}
+				.pm-cc-header h1 {
+					margin: 0;
+					font-size: 20px;
+					display: flex;
+					align-items: center;
+					gap: 8px;
+				}
+				.pm-cc-header .dashicons { font-size: 28px; width: 28px; height: 28px; color: #2271b1; }
+				.pm-cc-badge {
+					background: #2271b1;
+					color: #fff;
+					font-size: 10px;
+					padding: 2px 6px;
+					border-radius: 3px;
+					text-transform: uppercase;
+					font-weight: 600;
+				}
+				.pm-cc-subtitle { color: #646970; margin: 4px 0 0; font-size: 13px; }
+				.pm-cc-nav {
+					background: #fff;
+					border-bottom: 1px solid #c3c4c7;
+					padding: 0 24px;
+				}
+				.pm-cc-nav .nav-tab-wrapper { border-bottom: none; margin-bottom: 0; padding-top: 8px; }
+				.pm-cc-content { padding: 24px; }
+				.pm-cc-kpi-grid {
+					display: grid;
+					grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+					gap: 16px;
+					margin-bottom: 24px;
+				}
+				.pm-cc-kpi {
+					background: #fff;
+					border: 1px solid #c3c4c7;
+					border-radius: 4px;
+					padding: 16px;
+				}
+				.pm-cc-kpi-label {
+					font-size: 12px;
+					color: #646970;
+					text-transform: uppercase;
+					font-weight: 600;
+					margin-bottom: 8px;
+				}
+				.pm-cc-kpi-value {
+					font-size: 28px;
+					font-weight: 700;
+					line-height: 1.2;
+				}
+				.pm-cc-kpi-sub {
+					font-size: 12px;
+					color: #646970;
+					margin-top: 4px;
+				}
+				.pm-cc-kpi-value.good { color: #00a32a; }
+				.pm-cc-kpi-value.warn { color: #dba617; }
+				.pm-cc-kpi-value.danger { color: #d63638; }
+				.pm-cc-pipeline-stage {
+					display: flex;
+					align-items: center;
+					margin-bottom: 12px;
+				}
+				.pm-cc-pipeline-stage-name {
+					width: 140px;
+					font-weight: 600;
+					font-size: 13px;
+				}
+				.pm-cc-pipeline-bar-wrap {
+					flex: 1;
+					background: #f0f0f1;
+					border-radius: 3px;
+					height: 20px;
+					margin: 0 12px;
+					overflow: hidden;
+				}
+				.pm-cc-pipeline-bar {
+					background: #2271b1;
+					height: 100%;
+					border-radius: 3px;
+					min-width: 2px;
+					transition: width 0.3s ease;
+				}
+				.pm-cc-pipeline-count {
+					font-weight: 600;
+					font-size: 13px;
+					min-width: 60px;
+					text-align: right;
+				}
+				.pm-cc-section {
+					background: #fff;
+					border: 1px solid #c3c4c7;
+					border-radius: 4px;
+					padding: 20px;
+					margin-bottom: 24px;
+				}
+				.pm-cc-section h2 {
+					margin: 0 0 16px;
+					font-size: 16px;
+				}
+				.pm-cc-inline-cards {
+					display: grid;
+					grid-template-columns: 1fr 1fr;
+					gap: 16px;
+				}
+				.pm-cc-muted { color: #646970; font-style: italic; }
+				.pm-cc-badge-status {
+					display: inline-block;
+					padding: 1px 7px;
+					border-radius: 3px;
+					font-size: 11px;
+					font-weight: 600;
+				}
+				.pm-cc-badge-status.planning { background: #d1ecf1; color: #0c5460; }
+				.pm-cc-badge-status.idea { background: #e7e8ea; color: #3c434a; }
+				.pm-cc-badge-status.active { background: #d4edda; color: #155724; }
+				.pm-cc-badge-status.at-risk { background: #fff3cd; color: #856404; }
+				.pm-cc-badge-status.on-hold { background: #f8d7da; color: #721c24; }
+				.pm-cc-badge-status.completed { background: #cce5ff; color: #004085; }
+				.pm-cc-badge-status.cancelled { background: #f8d7da; color: #721c24; }
+				.pm-cc-badge-status.todo { background: #e7e8ea; color: #3c434a; }
+				.pm-cc-badge-status.backlog { background: #d1ecf1; color: #0c5460; }
+				.pm-cc-badge-status.in-progress { background: #d4edda; color: #155724; }
+				.pm-cc-badge-status.review { background: #fff3cd; color: #856404; }
+				.pm-cc-badge-status.blocked { background: #f8d7da; color: #721c24; }
+				.pm-cc-badge-status.done { background: #cce5ff; color: #004085; }
+				.pm-cc-priority.critical { color: #d63638; font-weight: 700; }
+				.pm-cc-priority.high { color: #dba617; font-weight: 600; }
+				.pm-cc-priority.highest { color: #e6502a; font-weight: 700; }
+				.pm-cc-health-bar-wrap {
+					background: #f0f0f1;
+					border-radius: 3px;
+					height: 8px;
+					margin: 8px 0 4px;
+					overflow: hidden;
+				}
+				.pm-cc-health-bar {
+					height: 100%;
+					border-radius: 3px;
+					transition: width 0.4s ease;
+					min-width: 2px;
+				}
+				@media (max-width: 768px) {
+					.pm-cc-inline-cards { grid-template-columns: 1fr; }
+					.pm-cc-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+				}
+				</style>
+				<?php
+			}
+		);
+	}
+
+	/**
+	 * Render the main command center page.
+	 */
+	public static function render_page() {
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'nvoos-content-graph-pro' ) );
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview';
+		$valid_tabs  = array( 'overview', 'projects', 'tasks', 'events', 'analytics', 'para', 'risk', 'workflows', 'templates', 'configuration' );
+		if ( ! in_array( $current_tab, $valid_tabs, true ) ) {
+			$current_tab = 'overview';
+		}
+
+		$base_url = admin_url( 'admin.php?page=' . self::PAGE_SLUG );
+		?>
+		<div class="wrap pm-cc-wrap">
+			<div class="pm-cc-header">
+				<div>
+					<h1>
+						<span class="dashicons dashicons-portfolio"></span>
+						<?php esc_html_e( 'PM Command Center', 'nvoos-content-graph-pro' ); ?>
+						<span class="pm-cc-badge"><?php esc_html_e( 'PRO', 'nvoos-content-graph-pro' ); ?></span>
+					</h1>
+					<p class="pm-cc-subtitle">
+						<?php esc_html_e( 'Monitor your project portfolio, track tasks and events, review analytics, and manage PARA organization.', 'nvoos-content-graph-pro' ); ?>
+					</p>
+				</div>
+			</div>
+
+			<div class="pm-cc-nav">
+				<nav class="nav-tab-wrapper">
+					<?php
+					$tabs = array(
+						'overview'      => __( 'Overview', 'nvoos-content-graph-pro' ),
+						'projects'      => __( 'Projects', 'nvoos-content-graph-pro' ),
+						'tasks'         => __( 'Tasks', 'nvoos-content-graph-pro' ),
+						'events'        => __( 'Events', 'nvoos-content-graph-pro' ),
+						'analytics'     => __( 'Analytics', 'nvoos-content-graph-pro' ),
+						'para'          => __( 'PARA', 'nvoos-content-graph-pro' ),
+						'risk'          => __( 'Risk', 'nvoos-content-graph-pro' ),
+						'workflows'     => __( 'Workflows', 'nvoos-content-graph-pro' ),
+						'templates'     => __( 'Templates', 'nvoos-content-graph-pro' ),
+						'configuration' => __( 'Configuration', 'nvoos-content-graph-pro' ),
+					);
+
+					foreach ( $tabs as $slug => $label ) {
+						$class = 'nav-tab' . ( $current_tab === $slug ? ' nav-tab-active' : '' );
+						printf(
+							'<a href="%s" class="%s">%s</a>',
+							esc_url( add_query_arg( 'tab', $slug, $base_url ) ),
+							esc_attr( $class ),
+							esc_html( $label )
+						);
+					}
+					?>
+				</nav>
+			</div>
+
+			<div class="pm-cc-content">
+				<?php
+				switch ( $current_tab ) {
+					case 'projects':
+						self::render_projects_tab();
+						break;
+					case 'tasks':
+						self::render_tasks_tab();
+						break;
+					case 'events':
+						self::render_events_tab();
+						break;
+					case 'analytics':
+						self::render_analytics_tab();
+						break;
+					case 'para':
+						self::render_para_tab();
+						break;
+					case 'risk':
+						self::render_risk_tab();
+						break;
+					case 'workflows':
+						self::render_workflows_tab();
+						break;
+					case 'templates':
+						self::render_templates_tab();
+						break;
+					case 'configuration':
+						self::render_configuration_tab();
+						break;
+					default:
+						self::render_overview_tab();
+						break;
+				}
+				?>
+			</div>
+		</div>
+		<?php
+	}
+
+	// =========================================================================
+	// Overview Tab
+	// =========================================================================
+
+	/**
+	 * Render the Overview tab with PM KPIs, pipeline, deadlines, and recent activity.
+	 */
+	private static function render_overview_tab() {
+		$settings = class_exists( 'WP_MCP_AI_PM_Engine' ) ? WP_MCP_AI_PM_Engine::get_toolkit_settings() : array();
+
+		// KPI counts.
+		$active_projects     = self::get_active_project_count();
+		$total_projects      = self::get_cpt_count( 'mcp_ai_project' );
+		$open_tasks          = self::get_open_task_count();
+		$completed_this_week = self::get_completed_this_week();
+		$upcoming_events     = self::get_cpt_count_by_meta_date( 'mcp_ai_event', '_event_date', 7 );
+		$events_today        = self::get_cpt_count_by_meta_date( 'mcp_ai_event', '_event_date', 1 );
+		$overdue_tasks       = self::get_overdue_task_count();
+		$blocked_tasks       = self::get_cpt_count_by_meta( 'mcp_ai_task', '_task_status', 'blocked' );
+		$new_blocked_week    = self::get_new_blocked_this_week();
+
+		$health = class_exists( 'WP_MCP_AI_PM_Engine' ) ? WP_MCP_AI_PM_Engine::calculate_portfolio_health() : array( 'score' => 0 );
+
+		$health_class = 'good';
+		if ( $health['score'] < 40 ) {
+			$health_class = 'danger';
+		} elseif ( $health['score'] < 70 ) {
+			$health_class = 'warn';
+		}
+
+		// Pipeline data.
+		$pipeline = array();
+		if ( class_exists( 'WP_MCP_AI_PM_Pipeline_Stages' ) ) {
+			$stages = WP_MCP_AI_PM_Pipeline_Stages::get_open_stages();
+			foreach ( $stages as $stage_id => $stage_def ) {
+				$count = self::get_cpt_count_by_meta( 'mcp_ai_project', '_project_status', $stage_id ); // phpcs:ignore Generic.Formatting.MultipleStatementAlignment.NotSameWarning -- Aligned correctly within foreach scope; WPCS comparing across block boundaries.
+				$pipeline[ $stage_id ] = array(
+					'label' => $stage_def['label'],
+					'count' => $count,
+					'color' => $stage_def['color'] ?? '#2271b1',
+				);
+			}
+		}
+
+		$total_pipeline = array_sum( wp_list_pluck( $pipeline, 'count' ) );
+		$deadlines      = class_exists( 'WP_MCP_AI_PM_Engine' ) ? WP_MCP_AI_PM_Engine::get_upcoming_deadlines( 7, 10 ) : array();
+		$recent_tasks   = self::get_recent_activity( 5 );
+		?>
+		<div class="pm-cc-kpi-grid">
+			<div class="pm-cc-kpi">
+				<div class="pm-cc-kpi-label"><?php esc_html_e( 'Active Projects', 'nvoos-content-graph-pro' ); ?></div>
+				<div class="pm-cc-kpi-value"><?php echo esc_html( $active_projects ); ?></div>
+				<div class="pm-cc-kpi-sub">
+					<?php
+					printf(
+						/* translators: %d: total number of projects */
+						esc_html__( '%d total', 'nvoos-content-graph-pro' ),
+						(int) $total_projects
+					);
+					?>
+				</div>
+			</div>
+			<div class="pm-cc-kpi">
+				<div class="pm-cc-kpi-label"><?php esc_html_e( 'Open Tasks', 'nvoos-content-graph-pro' ); ?></div>
+				<div class="pm-cc-kpi-value"><?php echo esc_html( $open_tasks ); ?></div>
+				<div class="pm-cc-kpi-sub">
+					<?php
+					printf(
+						/* translators: %d: number of tasks completed this week */
+						esc_html__( '%d completed this week', 'nvoos-content-graph-pro' ),
+						(int) $completed_this_week
+					);
+					?>
+				</div>
+			</div>
+			<div class="pm-cc-kpi">
+				<div class="pm-cc-kpi-label"><?php esc_html_e( 'Upcoming Events', 'nvoos-content-graph-pro' ); ?></div>
+				<div class="pm-cc-kpi-value"><?php echo esc_html( $upcoming_events ); ?></div>
+				<div class="pm-cc-kpi-sub">
+					<?php
+					printf(
+						/* translators: %d: number of events today */
+						esc_html__( '%d today', 'nvoos-content-graph-pro' ),
+						(int) $events_today
+					);
+					?>
+				</div>
+			</div>
+			<div class="pm-cc-kpi">
+				<div class="pm-cc-kpi-label"><?php esc_html_e( 'Overdue Tasks', 'nvoos-content-graph-pro' ); ?></div>
+				<div class="pm-cc-kpi-value <?php echo $overdue_tasks > 5 ? 'danger' : ( $overdue_tasks > 0 ? 'warn' : 'good' ); ?>"><?php echo esc_html( $overdue_tasks ); ?></div>
+				<div class="pm-cc-kpi-sub">
+					<?php
+					printf(
+						/* translators: %.0f: percentage of open tasks that are overdue */
+						esc_html__( '%.0f%% of open tasks', 'nvoos-content-graph-pro' ),
+						$open_tasks > 0 ? (float) round( $overdue_tasks / $open_tasks * 100 ) : 0
+					);
+					?>
+				</div>
+			</div>
+			<div class="pm-cc-kpi">
+				<div class="pm-cc-kpi-label"><?php esc_html_e( 'Blocked Tasks', 'nvoos-content-graph-pro' ); ?></div>
+				<div class="pm-cc-kpi-value <?php echo $blocked_tasks > 3 ? 'danger' : ( $blocked_tasks > 0 ? 'warn' : 'good' ); ?>"><?php echo esc_html( $blocked_tasks ); ?></div>
+				<div class="pm-cc-kpi-sub">
+					<?php
+					printf(
+						/* translators: %d: number of newly blocked tasks this week */
+						esc_html__( '%d new this week', 'nvoos-content-graph-pro' ),
+						(int) $new_blocked_week
+					);
+					?>
+				</div>
+			</div>
+			<div class="pm-cc-kpi">
+				<div class="pm-cc-kpi-label"><?php esc_html_e( 'Portfolio Health', 'nvoos-content-graph-pro' ); ?></div>
+				<div class="pm-cc-kpi-value <?php echo esc_attr( $health_class ); ?>"><?php echo esc_html( $health['score'] ); ?>%</div>
+				<div class="pm-cc-health-bar-wrap">
+					<div class="pm-cc-health-bar" style="width: <?php echo esc_attr( $health['score'] ); ?>%; background: <?php echo esc_attr( $health['score'] >= 70 ? '#00a32a' : ( $health['score'] >= 40 ? '#dba617' : '#d63638' ) ); ?>;"></div>
+				</div>
+			</div>
+		</div>
+
+		<div class="pm-cc-section">
+			<h2><?php esc_html_e( 'Project Pipeline', 'nvoos-content-graph-pro' ); ?></h2>
+			<?php if ( empty( $pipeline ) ) : ?>
+				<p class="pm-cc-muted"><?php esc_html_e( 'No active projects.', 'nvoos-content-graph-pro' ); ?></p>
+			<?php else : ?>
+				<?php foreach ( $pipeline as $stage ) : ?>
+					<div class="pm-cc-pipeline-stage">
+						<span class="pm-cc-pipeline-stage-name"><?php echo esc_html( $stage['label'] ); ?></span>
+						<div class="pm-cc-pipeline-bar-wrap">
+							<div class="pm-cc-pipeline-bar" style="width: <?php echo $total_pipeline > 0 ? esc_attr( round( $stage['count'] / $total_pipeline * 100 ) ) : 0; ?>%; background: <?php echo esc_attr( $stage['color'] ); ?>;"></div>
+						</div>
+						<span class="pm-cc-pipeline-count"><?php echo esc_html( $stage['count'] ); ?></span>
+					</div>
+				<?php endforeach; ?>
+			<?php endif; ?>
+		</div>
+
+		<div class="pm-cc-inline-cards">
+			<div class="pm-cc-section">
+				<h2><?php esc_html_e( 'Upcoming Deadlines (Next 7 Days)', 'nvoos-content-graph-pro' ); ?></h2>
+				<?php if ( empty( $deadlines ) ) : ?>
+					<p class="pm-cc-muted"><?php esc_html_e( 'No upcoming deadlines.', 'nvoos-content-graph-pro' ); ?></p>
+				<?php else : ?>
+					<table class="widefat fixed striped">
+						<tbody>
+						<?php foreach ( $deadlines as $dl ) : ?>
+							<tr>
+								<td>
+									<strong><?php echo esc_html( $dl['title'] ); ?></strong>
+									<br><small><?php echo esc_html( $dl['type'] ?? '' ); ?></small>
+								</td>
+								<td><?php echo esc_html( $dl['due_date'] ); ?></td>
+								<td>
+									<?php if ( isset( $dl['priority'] ) && 'critical' === $dl['priority'] ) : ?>
+										<span class="pm-cc-priority critical"><?php esc_html_e( 'Critical', 'nvoos-content-graph-pro' ); ?></span>
+									<?php elseif ( isset( $dl['priority'] ) && in_array( $dl['priority'], array( 'high', 'highest' ), true ) ) : ?>
+										<span class="pm-cc-priority high"><?php echo esc_html( ucfirst( $dl['priority'] ) ); ?></span>
+									<?php endif; ?>
+									<?php if ( isset( $dl['days_until'] ) && $dl['days_until'] < 0 ) : ?>
+										<span class="pm-cc-priority critical"><?php esc_html_e( 'Overdue', 'nvoos-content-graph-pro' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+						</tbody>
+					</table>
+				<?php endif; ?>
+			</div>
+
+			<div class="pm-cc-section">
+				<h2><?php esc_html_e( 'Recent Activity', 'nvoos-content-graph-pro' ); ?></h2>
+				<?php if ( empty( $recent_tasks ) ) : ?>
+					<p class="pm-cc-muted"><?php esc_html_e( 'No recent activity.', 'nvoos-content-graph-pro' ); ?></p>
+				<?php else : ?>
+					<table class="widefat fixed striped">
+						<tbody>
+						<?php foreach ( $recent_tasks as $item ) : ?>
+							<tr>
+								<td>
+									<strong><?php echo esc_html( $item['title'] ); ?></strong>
+									<br><small><?php echo esc_html( $item['type'] ); ?></small>
+								</td>
+								<td>
+									<span class="pm-cc-badge-status <?php echo esc_attr( $item['status'] ?? '' ); ?>"><?php echo esc_html( ucfirst( $item['status'] ?? '' ) ); ?></span>
+								</td>
+								<td><small><?php echo esc_html( self::get_relative_time( $item['modified'] ) ); ?></small></td>
+							</tr>
+						<?php endforeach; ?>
+						</tbody>
+					</table>
+				<?php endif; ?>
+			</div>
+		</div>
+
+		<?php
+		// Autonomous orchestration section.
+		$autonomous_sessions = 0;
+		$task_plans_count    = 0;
+		$orchestration_url   = admin_url( 'admin.php?page=mcp-ai-orchestration-pro' );
+
+		if ( class_exists( 'WP_MCP_AI_Autonomous_Sessions_CCT' ) && WP_MCP_AI_Autonomous_Sessions_CCT::is_available() ) {
+			$autonomous_sessions = WP_MCP_AI_Autonomous_Sessions_CCT::count_by_status( 'active' );
+		}
+
+		$plan_posts       = wp_count_posts( 'mcp_task_plan' );
+		$task_plans_count = isset( $plan_posts->publish ) ? (int) $plan_posts->publish : 0;
+		?>
+
+		<div class="pm-cc-section">
+			<h2>
+				<span class="dashicons dashicons-update"></span>
+				<?php esc_html_e( 'Autonomous Orchestration', 'nvoos-content-graph-pro' ); ?>
+			</h2>
+			<div class="pm-cc-inline-cards">
+				<div class="pm-cc-kpi">
+					<div class="pm-cc-kpi-label"><?php esc_html_e( 'Active Sessions', 'nvoos-content-graph-pro' ); ?></div>
+					<div class="pm-cc-kpi-value"><?php echo esc_html( $autonomous_sessions ); ?></div>
+					<div class="pm-cc-kpi-sub">
+						<a href="<?php echo esc_url( $orchestration_url ); ?>">
+							<?php esc_html_e( 'View Orchestration Monitor →', 'nvoos-content-graph-pro' ); ?>
+						</a>
+					</div>
+				</div>
+				<div class="pm-cc-kpi">
+					<div class="pm-cc-kpi-label"><?php esc_html_e( 'Task Plans', 'nvoos-content-graph-pro' ); ?></div>
+					<div class="pm-cc-kpi-value"><?php echo esc_html( $task_plans_count ); ?></div>
+					<div class="pm-cc-kpi-sub">
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=nvoos-pro-agent-command-center&tab=tasks' ) ); ?>">
+							<?php esc_html_e( 'View in Agent Command Center →', 'nvoos-content-graph-pro' ); ?>
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+		<?php
+	}
+
+	// =========================================================================
+	// Projects Tab
+	// =========================================================================
+
+	/**
+	 * Render the Projects tab.
+	 */
+	private static function render_projects_tab() {
+		$projects = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_project',
+				'post_status'    => 'publish',
+				'posts_per_page' => 30,
+				'orderby'        => 'modified',
+				'order'          => 'DESC',
+			)
+		);
+		?>
+		<div class="pm-cc-section">
+			<h2><?php esc_html_e( 'Projects', 'nvoos-content-graph-pro' ); ?></h2>
+			<?php if ( empty( $projects ) ) : ?>
+				<p class="pm-cc-muted"><?php esc_html_e( 'No projects found.', 'nvoos-content-graph-pro' ); ?></p>
+			<?php else : ?>
+				<table class="widefat fixed striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Project', 'nvoos-content-graph-pro' ); ?></th>
+							<th><?php esc_html_e( 'Status', 'nvoos-content-graph-pro' ); ?></th>
+							<th><?php esc_html_e( 'Tasks', 'nvoos-content-graph-pro' ); ?></th>
+							<th><?php esc_html_e( 'Due Date', 'nvoos-content-graph-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+					<?php
+					foreach ( $projects as $project ) :
+						$status_raw = get_post_meta( $project->ID, '_project_status', true );
+						$status     = $status_raw ? $status_raw : 'planning';
+						$end_date   = get_post_meta( $project->ID, '_project_end_date', true );
+						$task_count = class_exists( 'WP_MCP_AI_PM_Engine' ) ? WP_MCP_AI_PM_Engine::count_tasks( $project->ID ) : 0;
+						?>
+						<tr>
+							<td>
+								<a href="<?php echo esc_url( get_edit_post_link( $project->ID ) ); ?>"><strong><?php echo esc_html( $project->post_title ); ?></strong></a>
+							</td>
+							<td><span class="pm-cc-badge-status <?php echo esc_attr( $status ); ?>"><?php echo esc_html( ucfirst( $status ) ); ?></span></td>
+							<td><?php echo esc_html( $task_count ); ?></td>
+							<td><?php echo esc_html( $end_date ? $end_date : '—' ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+			<p style="margin-top:12px;">
+				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_project' ) ); ?>" class="button"><?php esc_html_e( 'View All Projects', 'nvoos-content-graph-pro' ); ?></a>
+			</p>
+		</div>
+		<?php
+	}
+
+	// =========================================================================
+	// Tasks Tab
+	// =========================================================================
+
+	/**
+	 * Render the Tasks tab.
+	 */
+	private static function render_tasks_tab() {
+		$tasks = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_task',
+				'post_status'    => 'publish',
+				'posts_per_page' => 30,
+				'orderby'        => 'modified',
+				'order'          => 'DESC',
+			)
+		);
+
+		// --- Work Ingestion stats ---
+		$last_ingestion      = get_option( 'wp_mcp_ai_pm_cc_last_work_ingestion', false );
+		$last_ingestion_text = $last_ingestion
+			? sprintf(
+				/* translators: %s: human-readable time ago */
+				__( 'Last ingested %s ago', 'nvoos-content-graph-pro' ),
+				human_time_diff( (int) $last_ingestion, time() )
+			)
+			: __( 'Never ingested', 'nvoos-content-graph-pro' );
+
+		$total_tasks    = self::get_cpt_count( 'mcp_ai_task' );
+		$total_projects = self::get_cpt_count( 'mcp_ai_project' );
+		$total_events   = self::get_cpt_count( 'mcp_ai_event' );
+		$source_count   = self::get_pm_source_count();
+		$ingest_nonce   = wp_create_nonce( self::NONCE_ACTION );
+		?>
+
+		<!-- Work Ingestion Section -->
+		<div class="pm-cc-section" style="border-left: 3px solid #2271b1;">
+			<h2 style="display: flex; align-items: center; gap: 8px;">
+				<span class="dashicons dashicons-download" style="color:#2271b1;"></span>
+				<?php esc_html_e( 'Work Ingestion', 'nvoos-content-graph-pro' ); ?>
+			</h2>
+			<p class="description" style="margin-bottom: 16px;">
+				<?php esc_html_e( 'Manually pull tasks, projects, and events from all configured inbound sources (Upwork, email, remote sites) into the PM system and auto-categorize them using your workflow rules and templates.', 'nvoos-content-graph-pro' ); ?>
+			</p>
+
+			<div class="pm-cc-source-stats" style="margin: 0 0 16px; padding: 12px; background: #f9f9f9; border-radius: 3px; display: flex; gap: 24px; flex-wrap: wrap;">
+				<div>
+					<strong><?php esc_html_e( 'Total Tasks:', 'nvoos-content-graph-pro' ); ?></strong>
+					<span id="pm-cc-total-tasks"><?php echo absint( $total_tasks ); ?></span>
+				</div>
+				<div>
+					<strong><?php esc_html_e( 'Total Projects:', 'nvoos-content-graph-pro' ); ?></strong>
+					<?php echo absint( $total_projects ); ?>
+				</div>
+				<div>
+					<strong><?php esc_html_e( 'Total Events:', 'nvoos-content-graph-pro' ); ?></strong>
+					<?php echo absint( $total_events ); ?>
+				</div>
+				<div>
+					<strong><?php esc_html_e( 'Configured Sources:', 'nvoos-content-graph-pro' ); ?></strong>
+					<?php echo absint( $source_count ); ?>
+				</div>
+				<div>
+					<strong><?php esc_html_e( 'Last Ingestion:', 'nvoos-content-graph-pro' ); ?></strong>
+					<span id="pm-cc-last-ingestion"><?php echo esc_html( $last_ingestion_text ); ?></span>
+				</div>
+			</div>
+
+			<p>
+				<button type="button" class="button button-primary" id="pm-cc-ingest-work-btn">
+					<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
+					<?php esc_html_e( 'Pull & Create from All Sources', 'nvoos-content-graph-pro' ); ?>
+				</button>
+				<span class="description" style="margin-left: 10px;">
+					<?php esc_html_e( 'Imports new tasks, projects, and events from Upwork, email, and configured remote sources.', 'nvoos-content-graph-pro' ); ?>
+				</span>
+			</p>
+
+			<div id="pm-cc-ingest-message" class="notice" style="display: none; margin: 15px 0 0;">
+				<p></p>
+			</div>
+		</div>
+
+		<script>
+		jQuery(document).ready(function($) {
+			var $ingestBtn     = $('#pm-cc-ingest-work-btn');
+			var $ingestMsg     = $('#pm-cc-ingest-message');
+			var $ingestMsgP    = $ingestMsg.find('p');
+			var $lastIngest    = $('#pm-cc-last-ingestion');
+			var $totalTasks    = $('#pm-cc-total-tasks');
+			var ingestNonce    = <?php echo wp_json_encode( $ingest_nonce ); ?>;
+			var ingestProcessing = <?php echo wp_json_encode( __( 'Processing…', 'nvoos-content-graph-pro' ) ); ?>;
+
+			$ingestBtn.on('click', function() {
+				if ($ingestBtn.prop('disabled')) return;
+
+				$ingestBtn.prop('disabled', true);
+				$ingestBtn.find('.dashicons').addClass('spin');
+
+				// Hide previous message.
+				$ingestMsg.hide().removeClass('notice-success notice-error notice-warning');
+
+				$.ajax({
+					url: ajaxurl,
+					type: 'POST',
+					data: {
+						action: 'wp_mcp_ai_pm_cc_ingest_work_items',
+						nonce: ingestNonce
+					},
+					success: function(response) {
+						$ingestBtn.prop('disabled', false);
+						$ingestBtn.find('.dashicons').removeClass('spin');
+
+						if (response.success && response.data) {
+							var data = response.data;
+							var msg  = [];
+
+							if (data.sources_checked) {
+								msg.push(data.sources_checked + ' source(s) processed.');
+							}
+							if (data.tasks_created) {
+								msg.push(data.tasks_created + ' task(s) created.');
+							}
+							if (data.tasks_updated) {
+								msg.push(data.tasks_updated + ' task(s) updated.');
+							}
+							if (data.projects_created) {
+								msg.push(data.projects_created + ' project(s) created.');
+							}
+							if (data.events_created) {
+								msg.push(data.events_created + ' event(s) created.');
+							}
+							if (data.new_items > 0) {
+								msg.push(data.new_items + ' new item(s) overall.');
+							}
+
+							var summary = msg.length ? msg.join(' ') : <?php echo wp_json_encode( __( 'No new items found.', 'nvoos-content-graph-pro' ) ); ?>;
+
+							$ingestMsg.addClass('notice-success').show();
+							$ingestMsgP.text(summary);
+
+							// Update stats.
+							if (data.total_tasks !== undefined) {
+								$totalTasks.text(data.total_tasks);
+							}
+							$lastIngest.text(<?php echo wp_json_encode( __( 'Just now', 'nvoos-content-graph-pro' ) ); ?>);
+						} else {
+							var errMsg = (response.data && response.data.message) ? response.data.message : <?php echo wp_json_encode( __( 'An error occurred.', 'nvoos-content-graph-pro' ) ); ?>;
+							$ingestMsg.addClass('notice-error').show();
+							$ingestMsgP.text(errMsg);
+						}
+					},
+					error: function() {
+						$ingestBtn.prop('disabled', false);
+						$ingestBtn.find('.dashicons').removeClass('spin');
+						$ingestMsg.addClass('notice-error').show();
+						$ingestMsgP.text(<?php echo wp_json_encode( __( 'Network error. Please try again.', 'nvoos-content-graph-pro' ) ); ?>);
+					}
+				});
+			});
+		});
+		</script>
+
+		<div class="pm-cc-section">
+			<h2><?php esc_html_e( 'Recent Tasks', 'nvoos-content-graph-pro' ); ?></h2>
+			<?php if ( empty( $tasks ) ) : ?>
+				<p class="pm-cc-muted"><?php esc_html_e( 'No tasks found.', 'nvoos-content-graph-pro' ); ?></p>
+			<?php else : ?>
+				<table class="widefat fixed striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Task', 'nvoos-content-graph-pro' ); ?></th>
+							<th><?php esc_html_e( 'Status', 'nvoos-content-graph-pro' ); ?></th>
+							<th><?php esc_html_e( 'Priority', 'nvoos-content-graph-pro' ); ?></th>
+							<th><?php esc_html_e( 'Project', 'nvoos-content-graph-pro' ); ?></th>
+							<th><?php esc_html_e( 'Due Date', 'nvoos-content-graph-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+					<?php
+					foreach ( $tasks as $task ) :
+						$status_raw   = get_post_meta( $task->ID, '_task_status', true );
+						$status       = $status_raw ? $status_raw : 'todo';
+						$priority_raw = get_post_meta( $task->ID, '_task_priority', true );
+						$priority     = $priority_raw ? $priority_raw : 'medium';
+						$project_id   = get_post_meta( $task->ID, '_task_project_id', true );
+						$due_date     = get_post_meta( $task->ID, '_task_due_date', true );
+						?>
+						<tr>
+							<td><a href="<?php echo esc_url( get_edit_post_link( $task->ID ) ); ?>"><strong><?php echo esc_html( $task->post_title ); ?></strong></a></td>
+							<td><span class="pm-cc-badge-status <?php echo esc_attr( $status ); ?>"><?php echo esc_html( ucfirst( $status ) ); ?></span></td>
+							<td class="pm-cc-priority <?php echo in_array( $priority, array( 'critical', 'highest', 'high' ), true ) ? esc_attr( $priority ) : ''; ?>"><?php echo esc_html( ucfirst( $priority ) ); ?></td>
+							<td>
+								<?php
+								if ( $project_id ) {
+									echo '<a href="' . esc_url( get_edit_post_link( $project_id ) ) . '">' . esc_html( get_the_title( $project_id ) ) . '</a>';
+								} else {
+									echo '—';
+								}
+								?>
+							</td>
+							<td><?php echo esc_html( $due_date ? $due_date : '—' ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+			<p style="margin-top:12px;">
+				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_task' ) ); ?>" class="button"><?php esc_html_e( 'View All Tasks', 'nvoos-content-graph-pro' ); ?></a>
+			</p>
+		</div>
+		<?php
+	}
+
+	// =========================================================================
+	// Events Tab
+	// =========================================================================
+
+	/**
+	 * Render the Events tab.
+	 */
+	private static function render_events_tab() {
+		$events = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_event',
+				'post_status'    => 'publish',
+				'posts_per_page' => 30,
+				'meta_key'       => '_event_date', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Ordered display of date-oriented CPT.
+				'orderby'        => 'meta_value',
+				'order'          => 'ASC',
+			)
+		);
+		?>
+		<div class="pm-cc-section">
+			<h2><?php esc_html_e( 'Events', 'nvoos-content-graph-pro' ); ?></h2>
+			<?php if ( empty( $events ) ) : ?>
+				<p class="pm-cc-muted"><?php esc_html_e( 'No events found.', 'nvoos-content-graph-pro' ); ?></p>
+			<?php else : ?>
+				<table class="widefat fixed striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Event', 'nvoos-content-graph-pro' ); ?></th>
+							<th><?php esc_html_e( 'Date', 'nvoos-content-graph-pro' ); ?></th>
+							<th><?php esc_html_e( 'Time', 'nvoos-content-graph-pro' ); ?></th>
+							<th><?php esc_html_e( 'Location', 'nvoos-content-graph-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+					<?php
+					foreach ( $events as $event ) :
+						$event_date = get_post_meta( $event->ID, '_event_date', true );
+						$event_time = get_post_meta( $event->ID, '_event_time', true );
+						$location   = get_post_meta( $event->ID, '_event_location', true );
+						?>
+						<tr>
+							<td><a href="<?php echo esc_url( get_edit_post_link( $event->ID ) ); ?>"><strong><?php echo esc_html( $event->post_title ); ?></strong></a></td>
+							<td><?php echo esc_html( $event_date ? $event_date : '—' ); ?></td>
+							<td><?php echo esc_html( $event_time ? $event_time : '—' ); ?></td>
+							<td><?php echo esc_html( $location ? $location : '—' ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+			<p style="margin-top:12px;">
+				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_event' ) ); ?>" class="button"><?php esc_html_e( 'View All Events', 'nvoos-content-graph-pro' ); ?></a>
+			</p>
+		</div>
+		<?php
+	}
+
+	// =========================================================================
+	// Analytics Tab
+	// =========================================================================
+
+	/**
+	 * Render the Analytics tab placeholder.
+	 */
+	private static function render_analytics_tab() {
+		?>
+		<div class="pm-cc-section">
+			<h2><?php esc_html_e( 'PM Analytics', 'nvoos-content-graph-pro' ); ?></h2>
+			<p><?php esc_html_e( 'Use the AI Assistant to run analytics queries:', 'nvoos-content-graph-pro' ); ?></p>
+			<ul>
+				<li><?php esc_html_e( 'Burndown charts via get_burndown_chart', 'nvoos-content-graph-pro' ); ?></li>
+				<li><?php esc_html_e( 'Team velocity via get_team_velocity', 'nvoos-content-graph-pro' ); ?></li>
+				<li><?php esc_html_e( 'Portfolio health via get_portfolio_health', 'nvoos-content-graph-pro' ); ?></li>
+				<li><?php esc_html_e( 'Resource utilization via get_resource_utilization', 'nvoos-content-graph-pro' ); ?></li>
+			</ul>
+		</div>
+		<?php
+	}
+
+	// =========================================================================
+	// PARA Tab
+	// =========================================================================
+
+	/**
+	 * Render the PARA organization tab.
+	 */
+	private static function render_para_tab() {
+		?>
+		<div class="pm-cc-section">
+			<h2><?php esc_html_e( 'PARA Organization', 'nvoos-content-graph-pro' ); ?></h2>
+			<?php if ( class_exists( 'WP_MCP_AI_PARA_Taxonomy' ) && WP_MCP_AI_PARA_Taxonomy::is_enabled() ) : ?>
+				<p><?php esc_html_e( 'PARA methodology is active. Use AI tools to classify items:', 'nvoos-content-graph-pro' ); ?></p>
+				<ul>
+					<li><?php esc_html_e( 'para_classify_item — Classify any item into P/A/R/A', 'nvoos-content-graph-pro' ); ?></li>
+					<li><?php esc_html_e( 'para_create_area — Create a new Area of responsibility', 'nvoos-content-graph-pro' ); ?></li>
+					<li><?php esc_html_e( 'para_list_areas — List all Areas', 'nvoos-content-graph-pro' ); ?></li>
+					<li><?php esc_html_e( 'para_weekly_review — Run weekly review', 'nvoos-content-graph-pro' ); ?></li>
+				</ul>
+			<?php else : ?>
+				<p><?php esc_html_e( 'Enable PARA organization in Settings to use the PARA methodology.', 'nvoos-content-graph-pro' ); ?></p>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	// =========================================================================
+	// Risk Tab
+	// =========================================================================
+
+	/**
+	 * Render the Risk Assessment tab.
+	 */
+	private static function render_risk_tab() {
+		?>
+		<div class="pm-cc-section">
+			<h2><?php esc_html_e( 'Risk Assessment', 'nvoos-content-graph-pro' ); ?></h2>
+			<?php
+			if ( class_exists( 'WP_MCP_AI_PM_Engine' ) ) {
+				$stale_tasks = WP_MCP_AI_PM_Engine::detect_stale_tasks();
+				if ( ! empty( $stale_tasks ) ) {
+					echo '<h3>' . esc_html__( 'Stale Tasks (>14 days)', 'nvoos-content-graph-pro' ) . '</h3>';
+					echo '<table class="widefat fixed striped"><thead><tr><th>' . esc_html__( 'Task', 'nvoos-content-graph-pro' ) . '</th><th>' . esc_html__( 'Status', 'nvoos-content-graph-pro' ) . '</th><th>' . esc_html__( 'Days Stale', 'nvoos-content-graph-pro' ) . '</th></tr></thead><tbody>';
+					foreach ( $stale_tasks as $t ) {
+						echo '<tr><td><a href="' . esc_url( get_edit_post_link( $t['id'] ) ) . '">' . esc_html( $t['title'] ) . '</a></td><td>' . esc_html( $t['status'] ) . '</td><td>' . esc_html( $t['days_stale'] ) . '</td></tr>';
+					}
+					echo '</tbody></table>';
+				} else {
+					echo '<p>' . esc_html__( 'No stale tasks detected.', 'nvoos-content-graph-pro' ) . '</p>';
+				}
+
+				$utilization = WP_MCP_AI_PM_Engine::get_resource_utilization();
+				if ( ! empty( $utilization ) ) {
+					echo '<h3>' . esc_html__( 'Resource Utilization', 'nvoos-content-graph-pro' ) . '</h3>';
+					echo '<table class="widefat fixed striped"><thead><tr><th>' . esc_html__( 'User', 'nvoos-content-graph-pro' ) . '</th><th>' . esc_html__( 'Tasks', 'nvoos-content-graph-pro' ) . '</th><th>' . esc_html__( 'Utilization %', 'nvoos-content-graph-pro' ) . '</th><th>' . esc_html__( 'Status', 'nvoos-content-graph-pro' ) . '</th></tr></thead><tbody>';
+					foreach ( $utilization as $u ) {
+						$class = 'over_allocated' === $u['status'] ? 'danger' : ( 'under_allocated' === $u['status'] ? 'warn' : '' );
+						echo '<tr><td>' . esc_html( $u['display_name'] ) . '</td><td>' . esc_html( $u['task_count'] ) . '</td><td>' . esc_html( $u['utilization_pct'] ) . '%</td><td><span class="pm-cc-kpi-value ' . esc_attr( $class ) . '" style="font-size:14px;">' . esc_html( ucfirst( str_replace( '_', ' ', $u['status'] ) ) ) . '</span></td></tr>';
+					}
+					echo '</tbody></table>';
+				}
+			} else {
+				echo '<p class="pm-cc-muted">' . esc_html__( 'PM Engine not available.', 'nvoos-content-graph-pro' ) . '</p>';
+			}
+			?>
+		</div>
+		<?php
+	}
+
+	// =========================================================================
+	// Workflows Tab
+	// =========================================================================
+
+	/**
+	 * Render the Workflow Rules tab.
+	 */
+	private static function render_workflows_tab() {
+		?>
+		<div class="pm-cc-section">
+			<h2><?php esc_html_e( 'Workflow Rules', 'nvoos-content-graph-pro' ); ?></h2>
+			<?php
+			$rules = get_posts(
+				array(
+					'post_type'      => 'mcp_ai_pm_wf_rule',
+					'post_status'    => 'publish',
+					'posts_per_page' => 20,
+				)
+			);
+			if ( empty( $rules ) ) :
+				?>
+				<p><?php esc_html_e( 'No workflow rules defined yet. Use the AI Assistant to create automation rules.', 'nvoos-content-graph-pro' ); ?></p>
+			<?php else : ?>
+				<table class="widefat fixed striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Rule', 'nvoos-content-graph-pro' ); ?></th>
+							<th><?php esc_html_e( 'Trigger', 'nvoos-content-graph-pro' ); ?></th>
+							<th><?php esc_html_e( 'Active', 'nvoos-content-graph-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+					<?php
+					foreach ( $rules as $rule ) :
+						$trigger = get_post_meta( $rule->ID, '_pm_wf_trigger_type', true );
+						$active  = get_post_meta( $rule->ID, '_pm_wf_active', true );
+						?>
+						<tr>
+							<td><strong><?php echo esc_html( $rule->post_title ); ?></strong></td>
+							<td><?php echo esc_html( $trigger ); ?></td>
+							<td><?php echo '1' === $active ? '✅' : '❌'; ?></td>
+						</tr>
+					<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	// =========================================================================
+	// Templates Tab
+	// =========================================================================
+
+	/**
+	 * Render the Task Templates tab.
+	 */
+	private static function render_templates_tab() {
+		?>
+		<div class="pm-cc-section">
+			<h2><?php esc_html_e( 'Task Templates', 'nvoos-content-graph-pro' ); ?></h2>
+			<?php
+			$templates = get_posts(
+				array(
+					'post_type'      => 'mcp_task_template',
+					'post_status'    => 'publish',
+					'posts_per_page' => 20,
+				)
+			);
+			if ( empty( $templates ) ) :
+				?>
+				<p><?php esc_html_e( 'No task templates found.', 'nvoos-content-graph-pro' ); ?></p>
+			<?php else : ?>
+				<table class="widefat fixed striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Template', 'nvoos-content-graph-pro' ); ?></th>
+							<th><?php esc_html_e( 'Description', 'nvoos-content-graph-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+					<?php foreach ( $templates as $tpl ) : ?>
+						<tr>
+							<td><a href="<?php echo esc_url( get_edit_post_link( $tpl->ID ) ); ?>"><strong><?php echo esc_html( $tpl->post_title ); ?></strong></a></td>
+							<td><?php echo esc_html( $tpl->post_excerpt ? $tpl->post_excerpt : '—' ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	// =========================================================================
+	// Configuration Tab
+	// =========================================================================
+
+	/**
+	 * Render the Configuration tab.
+	 */
+	private static function render_configuration_tab() {
+		?>
+		<div class="pm-cc-section">
+			<h2><?php esc_html_e( 'Configuration', 'nvoos-content-graph-pro' ); ?></h2>
+			<?php
+			if ( class_exists( 'WP_MCP_AI_PM_Engine' ) ) :
+				$settings = WP_MCP_AI_PM_Engine::get_toolkit_settings();
+				?>
+				<table class="widefat fixed striped" style="max-width:700px;">
+					<tbody>
+						<tr>
+							<th><?php esc_html_e( 'Default Project Status', 'nvoos-content-graph-pro' ); ?></th>
+							<td><?php echo esc_html( $settings['default_project_status'] ?? 'planning' ); ?></td>
+						</tr>
+						<tr>
+							<th><?php esc_html_e( 'Default Task Priority', 'nvoos-content-graph-pro' ); ?></th>
+							<td><?php echo esc_html( $settings['default_task_priority'] ?? 'medium' ); ?></td>
+						</tr>
+						<tr>
+							<th><?php esc_html_e( 'Estimation Method', 'nvoos-content-graph-pro' ); ?></th>
+							<td><?php echo esc_html( $settings['estimation_method'] ?? 'hours' ); ?></td>
+						</tr>
+						<tr>
+							<th><?php esc_html_e( 'Sprint Duration (days)', 'nvoos-content-graph-pro' ); ?></th>
+							<td><?php echo esc_html( $settings['sprint_duration_days'] ?? '14' ); ?></td>
+						</tr>
+						<tr>
+							<th><?php esc_html_e( 'Stale Task Threshold (days)', 'nvoos-content-graph-pro' ); ?></th>
+							<td><?php echo esc_html( $settings['risk_thresholds']['stale_task_days'] ?? '14' ); ?></td>
+						</tr>
+					</tbody>
+				</table>
+			<?php else : ?>
+				<p class="pm-cc-muted"><?php esc_html_e( 'PM Engine not available.', 'nvoos-content-graph-pro' ); ?></p>
+			<?php endif; ?>
+			<p style="margin-top:12px;">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-project-management-toolkit-settings' ) ); ?>" class="button"><?php esc_html_e( 'Full Toolkit Settings', 'nvoos-content-graph-pro' ); ?></a>
+			</p>
+		</div>
+		<?php
+	}
+
+	// =========================================================================
+	// AJAX Handlers
+	// =========================================================================
+
+	/**
+	 * AJAX handler: get KPI data.
+	 */
+	public static function ajax_get_kpis() {
+		check_ajax_referer( self::NONCE_ACTION, 'nonce' );
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'nvoos-content-graph-pro' ) ) );
+		}
+		wp_send_json_success(
+			array(
+				'active_projects' => self::get_active_project_count(),
+				'open_tasks'      => self::get_open_task_count(),
+				'health'          => class_exists( 'WP_MCP_AI_PM_Engine' ) ? WP_MCP_AI_PM_Engine::calculate_portfolio_health() : array( 'score' => 0 ),
+			)
+		);
+	}
+
+	/**
+	 * AJAX handler: get pipeline data.
+	 */
+	public static function ajax_get_pipeline() {
+		check_ajax_referer( self::NONCE_ACTION, 'nonce' );
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'nvoos-content-graph-pro' ) ) );
+		}
+		$pipeline = array();
+		if ( class_exists( 'WP_MCP_AI_PM_Pipeline_Stages' ) ) {
+			foreach ( WP_MCP_AI_PM_Pipeline_Stages::get_open_stages() as $id => $def ) {
+				$pipeline[ $id ] = array(
+					'label' => $def['label'],
+					'count' => self::get_cpt_count_by_meta( 'mcp_ai_project', '_project_status', $id ),
+					'color' => $def['color'] ?? '#2271b1',
+				);
+			}
+		}
+		wp_send_json_success( $pipeline );
+	}
+
+	/**
+	 * AJAX handler: get upcoming deadlines.
+	 */
+	public static function ajax_get_deadlines() {
+		check_ajax_referer( self::NONCE_ACTION, 'nonce' );
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'nvoos-content-graph-pro' ) ) );
+		}
+		$deadlines = class_exists( 'WP_MCP_AI_PM_Engine' ) ? WP_MCP_AI_PM_Engine::get_upcoming_deadlines( 7, 20 ) : array();
+		wp_send_json_success( $deadlines );
+	}
+
+	/**
+	 * AJAX handler: get recent activity.
+	 */
+	public static function ajax_get_activity() {
+		check_ajax_referer( self::NONCE_ACTION, 'nonce' );
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'nvoos-content-graph-pro' ) ) );
+		}
+		wp_send_json_success( self::get_recent_activity( 20 ) );
+	}
+
+	// =========================================================================
+	// Data helpers
+	// =========================================================================
+
+	/**
+	 * Get count of posts for a given post type and status.
+	 *
+	 * @param string $post_type Post type.
+	 * @param string $status    Post status.
+	 * @return int
+	 */
+	private static function get_cpt_count( $post_type, $status = 'publish' ) {
+		$counts = wp_count_posts( $post_type );
+		return isset( $counts->$status ) ? (int) $counts->$status : 0;
+	}
+
+	/**
+	 * Get count of posts filtered by a single meta value.
+	 *
+	 * @param string $post_type  Post type.
+	 * @param string $meta_key   Meta key.
+	 * @param mixed  $meta_value Meta value (string for single, array for IN).
+	 * @return int
+	 */
+	private static function get_cpt_count_by_meta( $post_type, $meta_key, $meta_value ) {
+		$query = new WP_Query(
+			array(
+				'post_type'      => $post_type,
+				'post_status'    => 'publish',
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				// phpcs:disable WordPress.DB.SlowDBQuery.slow_db_query_meta_key, WordPress.DB.SlowDBQuery.slow_db_query_meta_value, WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Intentional single-key count lookup.
+				'meta_key'       => is_array( $meta_value ) ? '' : $meta_key,
+				'meta_value'     => is_array( $meta_value ) ? '' : $meta_value,
+				'no_found_rows'  => false,
+				'meta_query'     => is_array( $meta_value ) ? array(
+					array(
+						'key'     => $meta_key,
+						'value'   => $meta_value,
+						'compare' => 'IN',
+					),
+				) : array(),
+				// phpcs:enable
+			)
+		);
+		$count = $query->found_posts;
+		wp_reset_postdata();
+		return $count;
+	}
+
+	/**
+	 * Get count of posts filtered by a date-range meta value.
+	 *
+	 * @param string $post_type Post type.
+	 * @param string $meta_key  Meta key.
+	 * @param int    $days      Number of days from now.
+	 * @return int
+	 */
+	private static function get_cpt_count_by_meta_date( $post_type, $meta_key, $days ) {
+		$query = new WP_Query(
+			array(
+				'post_type'      => $post_type,
+				'post_status'    => 'publish',
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				'no_found_rows'  => false,
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Controlled, intentional date-range count lookup.
+					array(
+						'key'     => $meta_key,
+						'value'   => array( gmdate( 'Y-m-d' ), gmdate( 'Y-m-d', time() + ( $days * DAY_IN_SECONDS ) ) ),
+						'compare' => 'BETWEEN',
+						'type'    => 'DATE',
+					),
+				),
+			)
+		);
+		$count = $query->found_posts;
+		wp_reset_postdata();
+		return $count;
+	}
+
+	/**
+	 * Get the count of active projects (idea, planning, active, at-risk).
+	 *
+	 * @return int
+	 */
+	private static function get_active_project_count() {
+		return self::get_cpt_count_by_meta(
+			'mcp_ai_project',
+			'_project_status',
+			array( 'idea', 'planning', 'active', 'at-risk' )
+		);
+	}
+
+	/**
+	 * Get the count of open tasks (backlog, todo, in-progress, review, blocked).
+	 *
+	 * @return int
+	 */
+	private static function get_open_task_count() {
+		return self::get_cpt_count_by_meta(
+			'mcp_ai_task',
+			'_task_status',
+			array( 'backlog', 'todo', 'in-progress', 'review', 'blocked' )
+		);
+	}
+
+	/**
+	 * Get the number of tasks completed this week.
+	 *
+	 * @return int
+	 */
+	private static function get_completed_this_week() {
+		global $wpdb;
+		$week_start = gmdate( 'Y-m-d', strtotime( 'monday this week' ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Intentional aggregate count of completed tasks; caching overhead not justified for admin dashboard KPI.
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*)
+				FROM {$wpdb->postmeta} pm
+				INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+				WHERE p.post_type = 'mcp_ai_task'
+				AND p.post_status = 'publish'
+				AND pm.meta_key = '_task_status'
+				AND pm.meta_value = 'completed'
+				AND p.post_modified >= %s",
+				$week_start
+			)
+		);
+	}
+
+	/**
+	 * Get the number of overdue tasks.
+	 *
+	 * @return int
+	 */
+	private static function get_overdue_task_count() {
+		$query = new WP_Query(
+			array(
+				'post_type'      => 'mcp_ai_task',
+				'post_status'    => 'publish',
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				'no_found_rows'  => false,
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Controlled, intentional count lookup.
+					'relation' => 'AND',
+					array(
+						'key'     => '_task_due_date',
+						'value'   => gmdate( 'Y-m-d' ),
+						'compare' => '<',
+						'type'    => 'DATE',
+					),
+					array(
+						'key'     => '_task_status',
+						'value'   => array( 'completed', 'cancelled' ),
+						'compare' => 'NOT IN',
+					),
+				),
+			)
+		);
+		$count = $query->found_posts;
+		wp_reset_postdata();
+		return $count;
+	}
+
+	/**
+	 * Get the number of tasks newly blocked this week.
+	 *
+	 * @return int
+	 */
+	private static function get_new_blocked_this_week() {
+		$week_start = gmdate( 'Y-m-d', strtotime( 'monday this week' ) );
+		$query      = new WP_Query(
+			array(
+				'post_type'      => 'mcp_ai_task',
+				'post_status'    => 'publish',
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				'no_found_rows'  => false,
+				'date_query'     => array(
+					array(
+						'column' => 'post_modified',
+						'after'  => $week_start,
+					),
+				),
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Controlled, intentional count lookup.
+					array(
+						'key'   => '_task_status',
+						'value' => 'blocked',
+					),
+				),
+			)
+		);
+		$count = $query->found_posts; // phpcs:ignore Generic.Formatting.MultipleStatementAlignment.NotSameWarning -- Aligned correctly within method; WPCS comparing across block boundaries.
+		wp_reset_postdata();
+		return $count;
+	}
+
+	/**
+	 * Get recent task activity.
+	 *
+	 * @param int $limit Maximum number of items.
+	 * @return array
+	 */
+	private static function get_recent_activity( $limit = 5 ) {
+		$items = array();
+		$tasks = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_task',
+				'post_status'    => 'publish',
+				'posts_per_page' => $limit,
+				'orderby'        => 'modified',
+				'order'          => 'DESC',
+			)
+		);
+
+		foreach ( $tasks as $task ) {
+			$items[] = array(
+				'id'       => $task->ID,
+				'title'    => $task->post_title,
+				'type'     => 'task',
+				'status'   => get_post_meta( $task->ID, '_task_status', true ),
+				'modified' => $task->post_modified,
+			);
+		}
+		return $items;
+	}
+
+	// =========================================================================
+	// Work Ingestion
+	// =========================================================================
+
+	/**
+	 * AJAX handler: ingest work items from all configured PM sources.
+	 *
+	 * Pulls tasks, projects, and events from Upwork connections, Gmail/email
+	 * sources, and remote sites into the PM system.
+	 *
+	 * @since 2.8.0
+	 */
+	public static function ajax_ingest_work_items() {
+		check_ajax_referer( self::NONCE_ACTION, 'nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		$stats = array(
+			'sources_checked'  => 0,
+			'tasks_created'    => 0,
+			'tasks_updated'    => 0,
+			'projects_created' => 0,
+			'events_created'   => 0,
+			'skipped_existing' => 0,
+			'total_tasks'      => self::get_cpt_count( 'mcp_ai_task' ),
+			'total_projects'   => self::get_cpt_count( 'mcp_ai_project' ),
+			'total_events'     => self::get_cpt_count( 'mcp_ai_event' ),
+		);
+
+		$stats['total_items_before'] = $stats['total_tasks'] + $stats['total_projects'] + $stats['total_events'];
+		$user_context                = array( 'user_id' => get_current_user_id() );
+
+		// ── 1. Sync from Upwork connections ──
+		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+
+			// Filter to Upwork-type connections.
+			$upwork_connections = array();
+			foreach ( $all_connections as $conn_id => $connection ) {
+				$conn_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
+				if ( 'upwork' === $conn_type ) {
+					$upwork_connections[ $conn_id ] = $connection;
+				}
+			}
+
+			if ( ! empty( $upwork_connections ) ) {
+				$_sync_file = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/upwork/class-wp-mcp-ai-tool-sync-upwork-tasks.php';
+				if ( file_exists( $_sync_file ) ) {
+					require_once $_sync_file;
+				}
+
+				$_import_file = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/upwork/class-wp-mcp-ai-tool-import-upwork-project.php';
+				if ( file_exists( $_import_file ) ) {
+					require_once $_import_file;
+				}
+
+				foreach ( $upwork_connections as $conn_id => $connection ) {
+					++$stats['sources_checked'];
+
+					// Sync tasks from Upwork contracts if available.
+					if ( class_exists( 'WP_MCP_AI_Tool_Sync_Upwork_Tasks' ) ) {
+						try {
+							$syncer    = new WP_MCP_AI_Tool_Sync_Upwork_Tasks();
+							$contracts = self::get_upwork_contracts_for_connection( $conn_id );
+
+							if ( ! empty( $contracts ) ) {
+								foreach ( $contracts as $contract_id ) {
+									$result = $syncer->execute(
+										array(
+											'contract_id' => $contract_id,
+											'connection_id' => $conn_id,
+											'limit'       => 10,
+										),
+										$user_context
+									);
+
+									if ( ! is_wp_error( $result ) ) {
+										$synced = isset( $result['synced'] ) ? (int) $result['synced'] : 0;
+										// Approximate: half are creates, half are updates when syncing.
+										$stats['tasks_created'] += $synced;
+									}
+								}
+							}
+						} catch ( \Exception $e ) {
+							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+								// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+								error_log( 'PM CC work ingestion Upwork sync error: ' . $e->getMessage() );
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// ── 2. Pull from Gmail/email connections (convert emails to tasks) ──
+		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+
+			foreach ( $all_connections as $conn_id => $connection ) {
+				$conn_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
+				if ( ! in_array( $conn_type, array( 'gmail', 'google_workspace', 'email_imap' ), true ) ) {
+					continue;
+				}
+
+				++$stats['sources_checked'];
+
+				// Attempt email-to-task conversion via the Gmail import tool if PM toolkit is enabled.
+				$_import_gmail_file = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/inbound/class-wp-mcp-ai-tool-import-gmail-to-crm.php';
+				if ( file_exists( $_import_gmail_file ) && class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+					require_once $_import_gmail_file;
+
+					if ( class_exists( 'WP_MCP_AI_Tool_Import_Gmail_To_CRM' ) ) {
+						try {
+							$default_query = 'newer_than:7d is:unread';
+							$crm_settings  = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+							$default_query = $crm_settings['integrations']['gmail_default_query'] ?? $default_query;
+
+							$importer = new WP_MCP_AI_Tool_Import_Gmail_To_CRM();
+							$result   = $importer->execute(
+								array(
+									'query'       => $default_query,
+									'max_results' => 5,
+									'auto_reply'  => false,
+								),
+								$user_context
+							);
+
+							if ( ! is_wp_error( $result ) ) {
+								// Gmail import creates leads primarily, but also can create tasks if workflow rules map them.
+								$stats['tasks_created']    += isset( $result['tasks_created'] ) ? (int) $result['tasks_created'] : 0;
+								$stats['projects_created'] += isset( $result['projects_created'] ) ? (int) $result['projects_created'] : 0;
+							}
+						} catch ( \Exception $e ) {
+							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+								// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+								error_log( 'PM CC work ingestion Gmail error: ' . $e->getMessage() );
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// ── 3. Run template-based task creation for any pending template instantiations ──
+		// (Future: trigger template-based task/project creation here when scheduled.)
+
+		// ── Recalculate totals ──
+		$stats['total_tasks']    = self::get_cpt_count( 'mcp_ai_task' );
+		$stats['total_projects'] = self::get_cpt_count( 'mcp_ai_project' );
+		$stats['total_events']   = self::get_cpt_count( 'mcp_ai_event' );
+
+		$total_after        = $stats['total_tasks'] + $stats['total_projects'] + $stats['total_events'];
+		$stats['new_items'] = max( 0, $total_after - $stats['total_items_before'] );
+
+		// Save the last-ingestion timestamp.
+		update_option( 'wp_mcp_ai_pm_cc_last_work_ingestion', time(), false );
+
+		wp_send_json_success( $stats );
+	}
+
+	/**
+	 * Get Upwork contract IDs associated with a remote connection.
+	 *
+	 * @since 2.8.0
+	 * @param string $connection_id Remote site connection ID.
+	 * @return array List of Upwork contract IDs.
+	 */
+	private static function get_upwork_contracts_for_connection( $connection_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Reserved for future connection-scoped contract resolution.
+		$contracts = array();
+
+		// Look for CRM tasks/deals with Upwork source that have active contract IDs.
+		$posts = get_posts(
+			array(
+				'post_type'      => array( 'mcp_ai_task', 'mcp_ai_deal' ),
+				'post_status'    => 'publish',
+				'posts_per_page' => 20,
+				'fields'         => 'ids',
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					array(
+						'key'     => '_wp_mcp_ai_task_upwork_contract_id',
+						'compare' => 'EXISTS',
+					),
+				),
+			)
+		);
+
+		foreach ( $posts as $post_id ) {
+			$contract_id = get_post_meta( $post_id, '_wp_mcp_ai_task_upwork_contract_id', true );
+			if ( $contract_id && ! in_array( $contract_id, $contracts, true ) ) {
+				$contracts[] = $contract_id;
+			}
+		}
+
+		return $contracts;
+	}
+
+	/**
+	 * Count configured inbound sources for PM ingestion.
+	 *
+	 * Includes Upwork connections, Gmail/email connections, and any remote
+	 * site connections that can feed work items into the PM system.
+	 *
+	 * @since 2.8.0
+	 * @return int Number of configured sources.
+	 */
+	private static function get_pm_source_count() {
+		$count = 0;
+
+		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+			foreach ( $all_connections as $connection ) {
+				$conn_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
+				// Count Upwork, Gmail, Google Workspace, and IMAP email connections.
+				if ( in_array( $conn_type, array( 'upwork', 'gmail', 'google_workspace', 'email_imap' ), true ) ) {
+					++$count;
+				}
+			}
+		}
+
+		return $count;
+	}
+
+	/**
+	 * Get relative time string (e.g. "2 hours ago").
+	 *
+	 * Mirrors the CRM Command Center get_relative_time pattern.
+	 *
+	 * @since 2.6.0
+	 * @param string $datetime Datetime string.
+	 * @return string Relative time description.
+	 */
+	private static function get_relative_time( $datetime ) {
+		if ( ! $datetime ) {
+			return '';
+		}
+
+		$timestamp = strtotime( $datetime );
+		if ( ! $timestamp ) {
+			return '';
+		}
+
+		$diff = time() - $timestamp;
+
+		if ( $diff < 60 ) {
+			return __( 'Just now', 'nvoos-content-graph-pro' );
+		} elseif ( $diff < HOUR_IN_SECONDS ) {
+			$mins = round( $diff / MINUTE_IN_SECONDS );
+			return sprintf(
+				/* translators: %d: number of minutes */
+				_n( '%d min ago', '%d mins ago', $mins, 'nvoos-content-graph-pro' ),
+				$mins
+			);
+		} elseif ( $diff < DAY_IN_SECONDS ) {
+			$hours = round( $diff / HOUR_IN_SECONDS );
+			return sprintf(
+				/* translators: %d: number of hours */
+				_n( '%d hour ago', '%d hours ago', $hours, 'nvoos-content-graph-pro' ),
+				$hours
+			);
+		} elseif ( $diff < WEEK_IN_SECONDS ) {
+			$days = round( $diff / DAY_IN_SECONDS );
+			return sprintf(
+				/* translators: %d: number of days */
+				_n( '%d day ago', '%d days ago', $days, 'nvoos-content-graph-pro' ),
+				$days
+			);
+		} elseif ( $diff < MONTH_IN_SECONDS ) {
+			$weeks = round( $diff / WEEK_IN_SECONDS );
+			return sprintf(
+				/* translators: %d: number of weeks */
+				_n( '%d week ago', '%d weeks ago', $weeks, 'nvoos-content-graph-pro' ),
+				$weeks
+			);
+		} else {
+			$months = round( $diff / MONTH_IN_SECONDS );
+			return sprintf(
+				/* translators: %d: number of months */
+				_n( '%d month ago', '%d months ago', $months, 'nvoos-content-graph-pro' ),
+				$months
+			);
+		}
+	}
+}
