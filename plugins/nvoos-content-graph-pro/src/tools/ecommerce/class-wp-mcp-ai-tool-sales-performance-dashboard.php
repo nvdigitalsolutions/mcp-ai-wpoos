@@ -268,7 +268,7 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 		if ( in_array( 'revenue', $metrics, true ) ) {
 			$revenue = $wpdb->get_var(
 				$wpdb->prepare(
-					// phpcs:disable WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+					// phpcs:disable WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 					"SELECT SUM(pm.meta_value) 
 					FROM {$wpdb->posts} p
 					INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
@@ -289,7 +289,7 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 		if ( in_array( 'orders', $metrics, true ) ) {
 			$orders_count = $wpdb->get_var(
 				$wpdb->prepare(
-					// phpcs:disable WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+					// phpcs:disable WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 					"SELECT COUNT(DISTINCT p.ID) 
 					FROM {$wpdb->posts} p
 					WHERE p.post_type = 'shop_order'
@@ -307,7 +307,7 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 		if ( in_array( 'customers', $metrics, true ) ) {
 			$customers_count = $wpdb->get_var(
 				$wpdb->prepare(
-					// phpcs:disable WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+					// phpcs:disable WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 					"SELECT COUNT(DISTINCT pm.meta_value) 
 					FROM {$wpdb->posts} p
 					INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
@@ -352,7 +352,7 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$daily_revenue = $wpdb->get_results(
 			$wpdb->prepare(
-				// phpcs:disable WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+				// phpcs:disable WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 				"SELECT DATE(p.post_date) as date, SUM(pm.meta_value) as revenue, COUNT(DISTINCT p.ID) as orders
 				FROM {$wpdb->posts} p
 				INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id

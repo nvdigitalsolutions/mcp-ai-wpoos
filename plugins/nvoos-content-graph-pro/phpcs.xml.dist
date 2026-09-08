@@ -54,6 +54,16 @@
     </rule>
 
     <!--
+        Byte-identical base query shapes in the e-commerce analytics tools
+        build the placeholder-less SQL strings inline (the base owns the
+        same pattern monolith), so the prepare() replacement-count check
+        is disabled for those copies.
+    -->
+    <rule ref="WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber">
+        <severity>0</severity>
+    </rule>
+
+    <!--
         Vault CPT custom capabilities: the item/folder CPT registrations
         map them via capability_type, so the Capabilities sniff must not
         flag them as unknown/typoed capabilities.

@@ -167,6 +167,9 @@ function wp_mcp_ai_pro_register_ecommerce_tools( $tools ) {
 		'WP_MCP_AI_Tool_Send_Cart_Recovery_Email'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-send-cart-recovery-email.php',
 		'WP_MCP_AI_Tool_Upsell_Recommendations'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-upsell-recommendations.php',
 		'WP_MCP_AI_Tool_Sales_Performance_Dashboard' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-sales-performance-dashboard.php',
+		'WP_MCP_AI_Tool_Shipping_Box_Packer'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-shipping-box-packer.php',
+		'WP_MCP_AI_Tool_Shipping_Rate_Estimator'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-shipping-rate-estimator.php',
+		'WP_MCP_AI_Tool_Generate_WooCommerce_Order_Invoice_PDF' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-generate-woocommerce-order-invoice-pdf.php',
 	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_ecommerce_tools );
@@ -213,6 +216,9 @@ function wp_mcp_ai_pro_register_ecommerce_ecosystem_tools() {
 			'WP_MCP_AI_Tool_Send_Cart_Recovery_Email',
 			'WP_MCP_AI_Tool_Upsell_Recommendations',
 			'WP_MCP_AI_Tool_Sales_Performance_Dashboard',
+			'WP_MCP_AI_Tool_Shipping_Box_Packer',
+			'WP_MCP_AI_Tool_Shipping_Rate_Estimator',
+			'WP_MCP_AI_Tool_Generate_WooCommerce_Order_Invoice_PDF',
 		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
