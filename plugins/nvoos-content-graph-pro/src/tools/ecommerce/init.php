@@ -45,8 +45,9 @@ if ( is_admin() ) {
 
 	if ( $nvoos_content_graph_pro_is_enabled && ( ! $nvoos_content_graph_pro_is_base || $nvoos_content_graph_pro_is_pro_active ) && $nvoos_content_graph_pro_has_wc ) {
 		// Deviation: file-gated requires — the four e-commerce admin pages
-		// land with the F2 admin slice; each require degrades until the file
-		// exists (same wave-proof pattern as the CRM init).
+		// landed with the F2 admin slice; each require stays file-gated so a
+		// partial checkout degrades gracefully (same wave-proof pattern as
+		// the CRM init).
 
 		// Load E-commerce Toolkit Settings page.
 		$nvoos_content_graph_pro_eco_settings = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/admin/class-wp-mcp-ai-ecommerce-settings-page.php';
