@@ -126,10 +126,11 @@ class Test_Crm_Tools_Imports extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Standalone only: without the not-yet-ported orchestration installer,
-	 * the blueprint import must degrade to the wave-proof WP_Error.
+	 * Standalone only: the orchestration blueprint installer has landed
+	 * (Wave F2 PM reports batch), so the CRM blueprint import must now
+	 * resolve the installer and install the asset instead of degrading.
 	 */
-	public function test_blueprint_installer_degrades_standalone(): void {
+	public function test_blueprint_installer_resolves_standalone(): void {
 		if ( defined( 'WP_MCP_AI_PATH' ) ) {
 			$this->markTestSkipped( 'Monolith matrix: the Pro addon serves the blueprint installer.' );
 		}
@@ -139,8 +140,10 @@ class Test_Crm_Tools_Imports extends WP_UnitTestCase {
 			array( 'blueprint' => 'agency-account-manager' ),
 			array( 'user_id' => 1 )
 		);
-		$this->assertInstanceOf( 'WP_Error', $result );
-		$this->assertSame( 'wp_mcp_ai_blueprint_installer_missing', $result->get_error_code() );
+		$this->assertNotInstanceOf( 'WP_Error', $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertGreaterThan( 0, $result['assistant_id'] );
+		$this->assertSame( 'mcp_ai_assistant', get_post( $result['assistant_id'] )->post_type );
 	}
 
 	/**

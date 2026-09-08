@@ -594,6 +594,9 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 			'WP_MCP_AI_Tool_Create_Sprint'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/sprints/class-wp-mcp-ai-tool-create-sprint.php',
 			'WP_MCP_AI_Tool_Plan_Sprint'               => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/sprints/class-wp-mcp-ai-tool-plan-sprint.php',
 			'WP_MCP_AI_Tool_Close_Sprint'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/sprints/class-wp-mcp-ai-tool-close-sprint.php',
+			'WP_MCP_AI_Tool_Generate_Status_Report'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/reports/class-wp-mcp-ai-tool-generate-status-report.php',
+			'WP_MCP_AI_Tool_Export_Project_CSV'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/reports/class-wp-mcp-ai-tool-export-project-csv.php',
+			'WP_MCP_AI_Tool_Import_Project_Management_Blueprint' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/examples/class-wp-mcp-ai-tool-import-project-management-blueprint.php',
 		);
 
 		return array_merge( $tools, $nvoos_content_graph_pro_pm_tools );
@@ -658,6 +661,9 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 			'WP_MCP_AI_Tool_Create_Sprint',
 			'WP_MCP_AI_Tool_Plan_Sprint',
 			'WP_MCP_AI_Tool_Close_Sprint',
+			'WP_MCP_AI_Tool_Generate_Status_Report',
+			'WP_MCP_AI_Tool_Export_Project_CSV',
+			'WP_MCP_AI_Tool_Import_Project_Management_Blueprint',
 		) as $nvoos_content_graph_pro_tool_class
 		) {
 			$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
