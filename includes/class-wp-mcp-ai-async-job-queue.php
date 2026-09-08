@@ -47,6 +47,23 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 		const TABLE_NAME = 'mcp_ai_job_queue';
 
 		/**
+		 * Database schema version for the job queue table.
+		 *
+		 * Bump when the table structure changes so `maybe_create_table()`
+		 * re-runs dbDelta on the next page load.
+		 *
+		 * @var string
+		 */
+		const DB_VERSION = '1.0.0';
+
+		/**
+		 * Flag tracking whether the custom table is available.
+		 *
+		 * @var bool|null
+		 */
+		private static $table_exists = null;
+
+		/**
 		 * Job priority levels.
 		 */
 		const PRIORITY_URGENT = 1; // Real-time (< 1s).
@@ -107,8 +124,8 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 		 * @return void
 		 */
 		public static function init() {
-			// Create database table.
-			self::create_table();
+			// Create database table (version-gated; dbDelta only runs when needed).
+			self::maybe_create_table();
 
 			// Schedule cron jobs.
 			self::schedule_cron_jobs();
@@ -124,6 +141,53 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 
 			// Re-evaluate cron scheduling when RabbitMQ settings change.
 			add_action( 'update_option_wp_mcp_ai_settings', array( __CLASS__, 'on_settings_updated' ), 10, 2 );
+		}
+
+		/**
+		 * Create the job queue table if it is missing or outdated.
+		 *
+		 * Runs on every page load via `init()`, but dbDelta is only invoked
+		 * when the stored schema version differs or the table is missing
+		 * (e.g. after a restore or a manual table drop).
+		 *
+		 * @since 1.3.0
+		 * @return void
+		 */
+		public static function maybe_create_table() {
+			if ( self::DB_VERSION === get_option( 'wp_mcp_ai_async_job_queue_db_version' ) && self::use_custom_table() ) {
+				return;
+			}
+
+			self::create_table();
+
+			// Persist the version only when the table verifiably exists.
+			// dbDelta can fail silently (e.g. restricted DB privileges),
+			// and persisting regardless would leave the table permanently
+			// missing without retrying.
+			if ( self::use_custom_table() ) {
+				update_option( 'wp_mcp_ai_async_job_queue_db_version', self::DB_VERSION );
+			}
+		}
+
+		/**
+		 * Check if the custom table is available.
+		 *
+		 * @since 1.3.0
+		 * @return bool True if the custom table exists and should be used.
+		 */
+		private static function use_custom_table() {
+			if ( null !== self::$table_exists ) {
+				return self::$table_exists;
+			}
+
+			global $wpdb;
+			$table_name = $wpdb->prefix . self::TABLE_NAME;
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Lightweight existence probe on a custom plugin table; no WP API for custom tables.
+			$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
+
+			self::$table_exists = ( $table_name === $exists );
+			return self::$table_exists;
 		}
 
 		/**
@@ -165,6 +229,11 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 				require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 			}
 			dbDelta( $sql );
+
+			// Verify instead of optimistically trusting dbDelta: it can fail
+			// silently, and a poisoned cache would turn every queue read into
+			// a flood of "table doesn't exist" database errors.
+			self::$table_exists = null;
 		}
 
 		/**
@@ -1004,6 +1073,18 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 		 * @return array Queue statistics.
 		 */
 		public static function get_queue_stats() {
+			if ( ! self::use_custom_table() ) {
+				// Fail soft: the Load Guard calls this on every REST dispatch,
+				// so a missing table must never spam SQL errors per request.
+				return array(
+					'total'     => 0,
+					'queued'    => 0,
+					'running'   => 0,
+					'completed' => 0,
+					'failed'    => 0,
+				);
+			}
+
 			global $wpdb;
 
 			$table_name = esc_sql( $wpdb->prefix . self::TABLE_NAME );
