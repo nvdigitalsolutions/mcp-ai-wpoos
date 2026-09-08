@@ -112,6 +112,7 @@ spl_autoload_register(
 			'src/tools/orchestration/',
 			'src/tools/financial-planning/',
 			'src/tools/financial-planning/examples/',
+			'src/tools/social-media/',
 			'src/tools/vault/',
 			'src/tools/vector-storage/',
 			'src/traits/',
