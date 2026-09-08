@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: September 7, 2026 (v1.1.72).
+> Last reviewed: September 8, 2026 (v1.1.73).
+>
+> **New in v1.1.73 (no base REST changes):** no base REST surface changed this window — the Woo tool upgrades (#6447/#6448) are tool-surface only (the `bulk_update_products` response-shape change is tool-level, not REST), and the queue-table bootstrap fix (#6423) is boot/activation-side. Sub-project: the new `nvoos-content-graph-pro` addon gains the MCP toolkit server core (OAuth server, token manager, audit log, REST controller) and the CRM REST controller ports as part of Wave F2 (#6434/#6435, #6414).
 >
 > **New in v1.1.72 (no base REST changes):** no base REST surface changed this window — the two new Woo tools (#6388) are Pro tool-surface only and the scheduled-sync fix (#6386) is Action-Scheduler-side. Sub-project: the platform addon gained the JobNotifier REST surface port (#6344).
 >
