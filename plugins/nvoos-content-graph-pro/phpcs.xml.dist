@@ -79,6 +79,12 @@
 				<element value="edit_shop_orders"/>
 				<element value="view_order"/>
 				<element value="manage_woocommerce"/>
+				<element value="publish_products"/>
+				<element value="delete_products"/>
+				<element value="manage_product_terms"/>
+				<element value="edit_product_terms"/>
+				<element value="read_shop_order"/>
+				<element value="edit_shop_order"/>
             			</property>
         </properties>
     </rule>
