@@ -3212,6 +3212,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				if ( 'email' === $channel && isset( $config['to'] ) ) {
 					$entry['to'] = sanitize_email( $config['to'] );
 				}
+				if ( 'email' === $channel ) {
+					// Presentation format: both (HTML + plain-text Markdown fallback),
+					// html only, or markdown only. Defaults to 'both' so pre-existing
+					// schedules gain properly formatted HTML emails without migration.
+					$entry['format'] = isset( $config['format'] ) && in_array( $config['format'], array( 'both', 'html', 'markdown' ), true )
+						? $config['format']
+						: 'both';
+				}
 				if ( 'sms' === $channel && isset( $config['to'] ) ) {
 					$entry['to'] = sanitize_text_field( $config['to'] );
 				}

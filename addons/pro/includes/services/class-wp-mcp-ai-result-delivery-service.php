@@ -21,6 +21,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/class-wp-mcp-ai-markdown-converter.php';
+
 if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 	/**
 	 * Result Delivery Service — static methods, no constructor state.
@@ -63,6 +65,18 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		 * @var string[]
 		 */
 		const EMAIL_TEMPLATES = array( 'full', 'summary', 'error', 'response_only' );
+
+		/**
+		 * Valid presentation formats for email delivery.
+		 *
+		 * - `both`: HTML body rendered from Markdown plus a text/plain Markdown
+		 *   fallback (multipart/alternative — the industry-standard shape).
+		 * - `html`: HTML body only.
+		 * - `markdown`: plain-text Markdown only.
+		 *
+		 * @var string[]
+		 */
+		const EMAIL_FORMATS = array( 'both', 'html', 'markdown' );
 
 		/**
 		 * Valid template modes for chat / SMS delivery.
@@ -313,10 +327,15 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		/**
 		 * Format for email delivery.
 		 *
+		 * The payload carries both a `plain` (Markdown source, used as the
+		 * text/plain multipart alternative) and an `html_body` (Markdown
+		 * rendered to email-safe HTML) so the sender can honour the channel's
+		 * presentation format setting.
+		 *
 		 * @param array  $shared   Common formatted fields.
 		 * @param array  $envelope Full envelope.
 		 * @param string $template Template mode.
-		 * @return array Email payload (subject, plain, html, template_mode).
+		 * @return array Email payload (subject, plain, html_body, template_mode).
 		 */
 		protected static function format_email( array $shared, array $envelope, $template ) {
 			$site_name = get_bloginfo( 'name' );
@@ -357,9 +376,16 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 
 			$manage_url = admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=orchestration' );
 
+			// Render the Markdown source to email-safe HTML so clients can
+			// display the formatted digest. The Markdown itself is kept as the
+			// multipart text/plain alternative — Markdown reads cleanly as
+			// plain text, satisfying the industry-standard fallback.
+			$html_body = WP_MCP_AI_Markdown_Converter::to_html( $body );
+
 			return array(
 				'subject'       => $subject,
 				'plain'         => $body,
+				'html_body'     => $html_body,
 				'summary'       => $shared['summary'],
 				'is_error'      => $is_error,
 				'template_mode' => $template,
@@ -689,8 +715,13 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		/**
 		 * Send email via Nodemailer (preferred) or wp_mail fallback.
 		 *
-		 * @param array $payload Formatted email payload.
-		 * @param array $config  Channel config (must contain 'to').
+		 * Honours the channel's `format` setting (EMAIL_FORMATS):
+		 * - `both` (default): HTML body + text/plain Markdown alternative.
+		 * - `html`: HTML body only.
+		 * - `markdown`: text/plain Markdown only.
+		 *
+		 * @param array $payload Formatted email payload (subject, plain, html_body).
+		 * @param array $config  Channel config (must contain 'to'; optional 'format').
 		 * @return true|WP_Error
 		 */
 		protected static function send_email( array $payload, array $config ) {
@@ -699,25 +730,30 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				return new WP_Error( 'missing_email_recipient', __( 'No email recipient configured.', 'mcp-ai-wpoos-pro' ) );
 			}
 
-			$subject  = isset( $payload['subject'] ) ? (string) $payload['subject'] : __( 'Schedule Result', 'mcp-ai-wpoos-pro' );
-			$plain    = isset( $payload['plain'] ) ? (string) $payload['plain'] : '';
-			$is_error = ! empty( $payload['is_error'] );
+			$subject = isset( $payload['subject'] ) ? (string) $payload['subject'] : __( 'Schedule Result', 'mcp-ai-wpoos-pro' );
+			$plain   = isset( $payload['plain'] ) ? (string) $payload['plain'] : '';
+			$format  = self::resolve_email_format( $config );
 
-			// Build HTML body (MJML when available).
-			$html = self::build_email_html( $payload );
+			// Build the HTML body (MJML when available) for html/both formats.
+			$html = 'markdown' === $format ? '' : self::build_email_html( $payload );
 
-			// Try Nodemailer first.
+			// Try Nodemailer first. Supplying both html and text lets it emit
+			// a multipart/alternative message (the industry-standard shape).
 			if ( class_exists( 'WP_MCP_AI_Nodemailer_Service' ) ) {
 				$nodemailer = new WP_MCP_AI_Nodemailer_Service();
 				if ( $nodemailer->is_available() ) {
-					$result = $nodemailer->send_email(
-						array(
-							'to'      => $to,
-							'subject' => $subject,
-							'html'    => $html,
-							'text'    => $plain,
-						)
+					$email_args = array(
+						'to'      => $to,
+						'subject' => $subject,
 					);
+					if ( 'markdown' !== $format && '' !== $html ) {
+						$email_args['html'] = $html;
+					}
+					if ( 'html' !== $format && '' !== $plain ) {
+						$email_args['text'] = $plain;
+					}
+
+					$result = $nodemailer->send_email( $email_args );
 					if ( ! is_wp_error( $result ) ) {
 						return true;
 					}
@@ -725,15 +761,41 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				}
 			}
 
-			// wp_mail fallback.
-			$sent = wp_mail(
-				$to,
-				$subject,
-				$html,
-				array( 'Content-Type: text/html; charset=UTF-8' )
-			);
+			// wp_mail fallback. wp_mail has no built-in multipart/alternative
+			// support, so send a single body per the selected format.
+			if ( 'markdown' === $format ) {
+				$sent = wp_mail(
+					$to,
+					$subject,
+					$plain,
+					array( 'Content-Type: text/plain; charset=UTF-8' )
+				);
+			} else {
+				$sent = wp_mail(
+					$to,
+					$subject,
+					$html,
+					array( 'Content-Type: text/html; charset=UTF-8' )
+				);
+			}
 
 			return $sent ? true : new WP_Error( 'wp_mail_failed', __( 'wp_mail() returned false.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		/**
+		 * Resolve the email presentation format from a channel config.
+		 *
+		 * Defaults to `both` so existing schedules (saved without a format
+		 * field) immediately benefit from properly rendered HTML emails with a
+		 * plain-text fallback.
+		 *
+		 * @param array $config Channel config from schedule['result_delivery'].
+		 * @return string One of self::EMAIL_FORMATS.
+		 */
+		protected static function resolve_email_format( array $config ) {
+			return isset( $config['format'] ) && in_array( $config['format'], self::EMAIL_FORMATS, true )
+				? $config['format']
+				: 'both';
 		}
 
 		/**
@@ -1185,7 +1247,13 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			$site_name    = isset( $payload['site_name'] ) ? $payload['site_name'] : get_bloginfo( 'name' );
 			$schedule     = isset( $payload['schedule_name'] ) ? $payload['schedule_name'] : '';
 			$body_text    = isset( $payload['plain'] ) ? $payload['plain'] : '';
-			$manage_url   = isset( $payload['manage_url'] ) ? $payload['manage_url'] : admin_url();
+			// Prefer the pre-rendered Markdown→HTML body; fall back to the
+			// legacy nl2br(esc_html()) rendering for callers that only supply
+			// a plain body.
+			$body_html  = isset( $payload['html_body'] ) && '' !== (string) $payload['html_body']
+				? (string) $payload['html_body']
+				: nl2br( esc_html( $body_text ) );
+			$manage_url = isset( $payload['manage_url'] ) ? $payload['manage_url'] : admin_url();
 
 			// Try MJML first.
 			if ( class_exists( 'WP_MCP_AI_MJML_Service' ) ) {
@@ -1200,7 +1268,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 					$mjml_src .= '</mj-text></mj-column></mj-section>';
 					$mjml_src .= '<mj-section background-color="#ffffff" padding="20px 24px">';
 					$mjml_src .= '<mj-column><mj-text font-size="14px" color="#333">';
-					$mjml_src .= nl2br( esc_html( $body_text ) );
+					$mjml_src .= $body_html;
 					$mjml_src .= '</mj-text></mj-column></mj-section>';
 					$mjml_src .= '<mj-section background-color="#ffffff" padding="0 24px 20px">';
 					$mjml_src .= '<mj-column>';
@@ -1223,7 +1291,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			$html .= '</div>';
 			$html .= '<div style="padding:20px;background:#fff">';
 			$html .= '<p style="font-size:13px;color:#888;margin:0 0 12px">' . esc_html( $site_name ) . '</p>';
-			$html .= '<div style="font-size:14px;line-height:1.6">' . nl2br( esc_html( $body_text ) ) . '</div>';
+			$html .= '<div style="font-size:14px;line-height:1.6">' . $body_html . '</div>';
 			$html .= '</div>';
 			$html .= '<div style="padding:12px 20px;background:#f9f9f9">';
 			$html .= '<a href="' . esc_url( $manage_url ) . '" style="color:#2271b1">' . esc_html__( 'View Dashboard', 'mcp-ai-wpoos-pro' ) . '</a>';
