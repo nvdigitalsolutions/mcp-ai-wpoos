@@ -151,6 +151,10 @@ function wp_mcp_ai_pro_register_ecommerce_tools( $tools ) {
 		'WP_MCP_AI_Tool_Import_Products_CSV'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-import-products-csv.php',
 		'WP_MCP_AI_Tool_Export_Products_Report'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-export-products-report.php',
 		'WP_MCP_AI_Tool_Sync_Product_Inventory'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-sync-product-inventory.php',
+		'WP_MCP_AI_Tool_Bulk_Order_Status_Update' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-bulk-order-status-update.php',
+		'WP_MCP_AI_Tool_Get_Order_Analytics'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-get-order-analytics.php',
+		'WP_MCP_AI_Tool_Process_Order_Workflow'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-process-order-workflow.php',
+		'WP_MCP_AI_Tool_Refund_Order_Advanced'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-refund-order-advanced.php',
 	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_ecommerce_tools );
@@ -181,6 +185,10 @@ function wp_mcp_ai_pro_register_ecommerce_ecosystem_tools() {
 			'WP_MCP_AI_Tool_Import_Products_CSV',
 			'WP_MCP_AI_Tool_Export_Products_Report',
 			'WP_MCP_AI_Tool_Sync_Product_Inventory',
+			'WP_MCP_AI_Tool_Bulk_Order_Status_Update',
+			'WP_MCP_AI_Tool_Get_Order_Analytics',
+			'WP_MCP_AI_Tool_Process_Order_Workflow',
+			'WP_MCP_AI_Tool_Refund_Order_Advanced',
 		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
