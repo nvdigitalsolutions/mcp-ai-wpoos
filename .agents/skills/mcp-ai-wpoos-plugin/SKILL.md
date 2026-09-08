@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.72"
-  plugin-version-tested: "1.1.72"
-  last-updated: "2026-09-05"
+  plugin-version: "1.1.73"
+  plugin-version-tested: "1.1.73"
+  last-updated: "2026-09-08"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -628,6 +628,27 @@ Import external AI conversation exports into the JetEngine
   registration; CSV list args accept `"1,2"` and `"1, 2"`;
   assistant-builder and Pro toolkit blocks register idempotently
   (WP 7.1 notices).
+
+## Woo Tool Upgrades, Queue Bootstrap Fix & Wave F2 (v1.1.73+)
+
+- **`bulk_update_products` variable scope** (PR #6447) — new `scope`
+  argument (`all` default, `product` legacy) expands price/stock fields
+  from variable parents to variations and grouped parents to children
+  (`resolve_update_targets()` + `WC_Product_Variable::sync()`); the
+  response reports `targets[]` per input ID + `scope`/`updated_targets`
+  keys (acknowledged shape change).
+- **`update_woo_product_qty` notify flag** (PR #6448) — `notify` (default
+  `true`) suppresses low/no-stock emails for the write via scoped
+  `woocommerce_should_send_*` filters removed in a `finally`;
+  `woocommerce_*_stock` actions still fire.
+- **Async job queue table bootstrap fix** (PR #6423) — the queue class now
+  boots in time to create its table (activation + first-load self-heal;
+  `get_queue_stats()` fails soft) — no more missing-table SQL floods.
+- **Comic Reader 0.5.0** (PR #6402) — Komga-parity upgrade; **Docs Hub
+  0.4.3** (PRs #6397/#6403) — wp.org prep; **Wave F2** (PRs #6397–#6445,
+  #6449) — new `nvoos-content-graph-pro` v1.0.0 standalone addon (Pro CRM
+  + e-commerce ports, 43 e-commerce tools).
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
 
 ## Woo Price/Qty Tools & Ecosystem Port Waves (v1.1.72+)
 

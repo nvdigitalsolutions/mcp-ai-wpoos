@@ -1,13 +1,15 @@
 # NV oOS Documentation Index
 
-**Last Updated:** September 7, 2026
-**Plugin Version:** 1.1.72
+**Last Updated:** September 8, 2026
+**Plugin Version:** 1.1.73
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
+
+> **SEPTEMBER 8, 2026 UPDATE (v1.1.73):** WOO TOOL UPGRADES & ECOSYSTEM-PORT RELEASE. **`bulk_update_products` VARIABLE-SCOPE EXPANSION** (PR #6447) — NEW `scope` ARG (`all` DEFAULT | `product` LEGACY) EXPANDS PRICE/STOCK FIELDS FROM VARIABLE PARENTS TO VARIATIONS AND GROUPED PARENTS TO CHILDREN VIA `resolve_update_targets()`, RE-SYNCS VARIABLE PARENTS, AND REPORTS `targets[]` PER INPUT ID (+ `scope`/`updated_targets` KEYS; STATUS/FEATURED/CATEGORY/TAG ALWAYS APPLY TO THE SELECTED PRODUCT). **`update_woo_product_qty` `notify` FLAG** (PR #6448) — DEFAULT `true`; `false` SUPPRESSES LOW/NO-STOCK EMAILS FOR THE WRITE VIA `finally`-SCOPED `woocommerce_should_send_*` FILTERS (THE `woocommerce_*_stock` ACTIONS STILL FIRE). **ASYNC JOB QUEUE TABLE BOOTSTRAP FIX** (PR #6423) — THE QUEUE CLASS NOW BOOTS IN TIME TO CREATE ITS TABLE (ACTIVATION + FIRST-LOAD SELF-HEAL; `get_queue_stats()` FAILS SOFT), ENDING THE MISSING-TABLE SQL FLOODS. **COMIC READER 0.2.0 → 0.5.0** KOMPA-PARITY UPGRADE (PR #6402). **ECOSYSTEM WAVE F2** (PRs #6397–#6445, #6449) — NEW `nvoos-content-graph-pro` STANDALONE ADDON (V1.0.0) WITH BYTE-IDENTICAL PRO CRM + E-COMMERCE PORTS (43 E-COMMERCE TOOLS); **DOCS HUB 0.4.3** WP.ORG PREP. **DOCS/TOOLING** — NEW `mcp-ai-wpoos-wporg-submission` SKILL (SKILLS → 55) + PLUGIN-CHECK GATE REPAIR (#6418); USE-CASES REV 3.0 (#6443); BROKEN-LINK FIXES (#6446); SYNC WORKFLOWS (#6439). TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE COMIC-READER 0.2.0 + DOCS-HUB 0.4.2 BUILD ZIPS REMOVED. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
 > **SEPTEMBER 7, 2026 UPDATE (v1.1.72):** E-COMMERCE & ECOSYSTEM-PORT RELEASE. **TWO NEW WOO TOOLS** (PR #6388) — `update_woo_product_price` (REGULAR/SALE, ALL PRODUCT TYPES) + `update_woo_product_qty` (STOCK + MANAGEMENT) ON A SHARED `WP_MCP_AI_Woo_Price_Qty_Updater` TRAIT (ALSO USED BY `bulk_update_products`). **SCHEDULED SYNC FIX** (PR #6386) — EZuite/FlowHub SCHEDULED SYNCs DELIVER THEIR ASSIGNED CONNECTION ID (THE SCHEDULED ACTION WAS DROPPING IT). **PRO UPDATE VENDOR INTEGRITY** (PR #6338) — "Update Pro Now" VERIFIES THE PRO PACKAGE'S `vendor/` BEFORE/AFTER UPDATING (NO WHITE-SCREENS). **CONTAINER BINDING FIX** (PR #6339) — `tool_registry` RESOLVES THE LIVE SINGLETON ON EVERY `get()`. **DEPENDENCY SECURITY** (PR #6365) — `browserslist` + `qs` PATCHED ACROSS ALL SEVEN LOCKFILES (12 DEPENDABOT ALERTS). **GPT-IMAGE-2 EVERYWHERE** (PR #6332) — OPENAI IMAGE DEFAULT ALIGNED ACROSS ALL THREE SETTINGS LAYERS. **ECOSYSTEM PORT WAVES** (PRs #6330–#6387) — WAVE D8 CLOSES THE STANDALONE TOOL-EXECUTION GAP IN CONTENT GRAPH AI; WAVE E6 PORTS SHADOW/MARKUP/PAPER STORE/OKF/CRAWLER/OOS-BRIDGE INTO THE AI ADDON; THE PLATFORM ADDON CLOSES WAVES E2/E3/E5/E1/E4 + E-UI-1/2/3 ADMIN SCREENS; `nvoos-content-graph` HARDENED FOR WP.ORG. TOOL COUNT: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.70 + 1.1.71 BUILD ZIPS REMOVED. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
@@ -640,6 +642,16 @@ n#### New Audit & Compliance Docs
 - **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.39 latest updates section, version bump, duplicate section cleanup.
 
 ---
+
+## 🆕 September 2026 — v1.1.73: Woo Tool Upgrades, Queue Bootstrap Fix, Wave F2 + Content Graph Pro
+
+### New and updated documents (September 8, 2026, v1.1.73)
+
+- **[docs/project/plans/v1.1.73-docs-catch-up.md](project/plans/v1.1.73-docs-catch-up.md)** ⭐ **NEW** — v1.1.73 docs & release catch-up plan (PRs #6397–#6449, full PR-description review + housekeeping). (September 8, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.73 highlights + latest updates (Woo tool upgrades, queue bootstrap fix, Wave F2 + content-graph-pro, ~1,568 tools). (September 8, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.73] section with PR-level detail. (September 8, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.73 + changelog entry. (September 8, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.73 entry. (September 8, 2026)
 
 ## 🆕 September 2026 — v1.1.72: Woo Price/Qty Tools, Scheduled-Sync Fix, Ecosystem Port Waves
 

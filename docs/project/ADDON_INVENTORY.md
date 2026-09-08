@@ -1,7 +1,7 @@
 # Addon Inventory
 
 > **Purpose:** One-stop reference for every addon in this monorepo — its status, version, license, dependencies, and whether it's production-ready.
-> **Last Updated:** September 7, 2026 (v1.1.72)
+> **Last Updated:** September 8, 2026 (v1.1.73)
 
 ---
 
@@ -50,7 +50,7 @@
 | 10 | **Cornerstone3D** | `addons/cornerstone3d/` | 0.1.0 | ✅ Production | Proprietary | Pro addon | Pre-built Cornerstone3D ESM bundles for medical imaging (DICOM rendering). Eliminates CDN dependency for the Pro Healthcare Imaging Toolkit. |
 | 11 | **SaaS Controller** | `addons/saas-controller/` | 0.1.0 | ✅ Production | Proprietary | Base plugin | Operator toolkit for deploying/managing NV oOS Cloud (Cloudflare Workers + D1 + KV + AI Gateway, Stripe billing, OpenRouter). One-click wizard, Plan/Apply dashboard, drift detector, audit log. |
 | 12 | **Cloudways Dashboard** | `addons/cloudways-dashboard/` | 0.1.0 | ✅ Production | GPL-3.0 | Base plugin | SaaS operator dashboard for managing Cloudways servers, WordPress sites, and NV oOS toolkits. Velzon-themed React SPA. |
-| 13 | **Comic Reader** | `addons/comic-reader/` | 0.2.0 | ✅ Production | GPL-3.0 | Base plugin | Comic book reader & creator. Supports CBR/CBZ/CB7/CBT formats with React-based reading interface. AI-powered comic creation tools. |
+| 13 | **Comic Reader** | `addons/comic-reader/` | 0.5.0 | ✅ Production | GPL-3.0 | Base plugin | Comic book reader & creator. Supports CBR/CBZ/CB7/CBT formats with React-based reading interface. AI-powered comic creation tools. 0.5.0: Komga-parity industry upgrade (0.2.0 → 0.5.0) — archive magic-byte validation + size cap + owner-scoped delete + HTTP Range serving + CBZ cover extraction; persisted reader settings, vertical scroll/webtoon modes, scale types, double-page rules, gestures, continue-reading shelf; ComicInfo.xml RTL detection, series/collection taxonomies, per-user progress; settings page + capability overrides. |
 | 14 | **Funiq Bridge** | `addons/funiq-bridge/` | 1.0.0 | ✅ Production | GPL-3.0 | Base plugin | Payload CMS-to-WordPress bridge for the Funiq React PWA. REST API, CPTs (Product, Promotion, Promocode), taxonomies (Category, Brand, Color, Status), React admin SPA. |
 | 15 | **LibreChat** | `addons/librechat/` | 0.1.0 | ✅ Production | GPL-3.0 | Base plugin | Code interpreter (sandboxed Python/JavaScript), speech services (TTS/STT), and web search reranker. SPA build integration. |
 | 16 | **Page Agent** | `addons/page-agent/` | 0.1.0 | ⚠️ Experimental | GPL-3.0 | Base plugin | AI-powered browser page control copilot powered by Alibaba Page Agent (MIT). Give any WordPress page its own AI agent that can click, type, and navigate via natural language. Client-side only — no headless browser required. Includes shortcode, Elementor widget, REST endpoints, and MCP tool bridge. |
