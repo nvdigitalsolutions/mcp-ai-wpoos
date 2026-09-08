@@ -3659,7 +3659,7 @@ The repository runs ~30 automated GitHub Actions workflows on every push and PR:
 | `link-check.yml` | Documentation link validation |
 | `cloud-worker-tests.yml` | Cloud Worker integration tests |
 | `post-deploy-health.yml` | Post-deployment health checks |
-| `sync-nvoos-*.yml` | lib/ package sync to standalone repos (5 workflows) |
+| `sync-nvoos-*.yml` | Monorepo subtree sync to standalone repos (9 workflows) |
 | `stale.yml` | Stale issue/PR management |
 | `auto-label.yml` | Automated PR labeling |
 | `project-automation.yml` | GitHub project board automation |

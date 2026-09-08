@@ -1,0 +1,26 @@
+name: Sync nvoos-docs-hub
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'addons/docs-hub/**'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Split subtree
+        run: |
+          git subtree split --prefix=addons/docs-hub --branch=nvoos-docs-hub-split
+
+      - name: Push to nvoos-docs-hub
+        run: |
+          git config --local --unset-all http.https://github.com/.extraheader
+          git push https://x-access-token:${{ secrets.NVOOS_DOCS_HUB_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-docs-hub.git nvoos-docs-hub-split:main --force
