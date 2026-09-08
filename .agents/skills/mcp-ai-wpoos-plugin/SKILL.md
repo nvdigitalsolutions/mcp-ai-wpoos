@@ -5,8 +5,8 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.73"
-  plugin-version-tested: "1.1.73"
+  plugin-version: "1.1.74"
+  plugin-version-tested: "1.1.74"
   last-updated: "2026-09-08"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
@@ -628,6 +628,25 @@ Import external AI conversation exports into the JetEngine
   registration; CSV list args accept `"1,2"` and `"1, 2"`;
   assistant-builder and Pro toolkit blocks register idempotently
   (WP 7.1 notices).
+
+## Calendar Query Fix, Email Formats & Wave F2 PM/Calendar (v1.1.74+)
+
+- **Google Calendar date queries** (PR #6460) — calendar query values are
+  now `rawurlencode()`d before `add_query_arg()` (the raw `+` in RFC3339
+  offsets decoded as a space → 400); `calendar.freebusy` in the Standard
+  scope profile (new grants only).
+- **Result Delivery email formats** (PR #6465) — new
+  `WP_MCP_AI_Markdown_Converter` (escaped + `wp_kses` allowlist +
+  protocol-allowlisted links) + per-channel `format` setting (`both`
+  default | `html` | `markdown`).
+- **Schedule Manager assistant prompts** (PR #6469) — the edit modal shows
+  and updates `assistant_run` prompts; `update_pro_schedule` accepts
+  `assistant_config` via MCP.
+- **Wave F2 PM + calendar-booking ports** (PRs #6450–#6472) —
+  `nvoos-content-graph-pro` (1.0.0) completes both toolkit ports;
+  perf-suite MCP-abilities fix process-wide in `tests/bootstrap.php`
+  (#6470); content-graph-pro excluded from the root WPCS gate (#6457).
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
 
 ## Woo Tool Upgrades, Queue Bootstrap Fix & Wave F2 (v1.1.73+)
 
