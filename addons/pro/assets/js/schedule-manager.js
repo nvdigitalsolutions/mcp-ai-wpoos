@@ -994,7 +994,7 @@
 		 * and any extra configuration fields needed for the edit modal.
 		 */
 		CHANNEL_DEFS: {
-			email:       { label: 'Email',           fields: ['to'],                         templates: ['full','summary','error'], group: 'direct' },
+			email:       { label: 'Email',           fields: ['to'],                         templates: ['full','summary','error'], formats: ['both','html','markdown'], group: 'direct' },
 			slack:       { label: 'Slack',           fields: ['channel'],                    templates: ['summary','error'],       group: 'chat' },
 			telegram:    { label: 'Telegram',        fields: ['chat_id'],                    templates: ['summary','error'],       group: 'chat' },
 			discord:     { label: 'Discord',         fields: ['channel_id'],                 templates: ['summary','error'],       group: 'chat' },
@@ -1053,6 +1053,18 @@
 				for ( i = 0; i < def.templates.length; i++ ) {
 					var t = def.templates[ i ];
 					html += '<option value="' + t + '"' + ( t === tplSel ? ' selected' : '' ) + '>' + t.charAt( 0 ).toUpperCase() + t.slice( 1 ) + '</option>';
+				}
+				html += '</select>';
+			}
+
+			// Email presentation format selector (HTML / Markdown / both).
+			if ( def.formats && def.formats.length > 0 ) {
+				var fmtSel    = cfg.format || def.formats[ 0 ];
+				var fmtLabels = { both: 'HTML + Plain Text', html: 'HTML only', markdown: 'Markdown only' };
+				html += ' <select id="' + prefix + channelSlug + '-format" title="Email presentation format">';
+				for ( i = 0; i < def.formats.length; i++ ) {
+					var fmt = def.formats[ i ];
+					html += '<option value="' + fmt + '"' + ( fmt === fmtSel ? ' selected' : '' ) + '>' + ( fmtLabels[ fmt ] || fmt ) + '</option>';
 				}
 				html += '</select>';
 			}
@@ -1119,6 +1131,14 @@
 				// Checkbox extras.
 				if ( channelSlug === 'wordpress' ) {
 					cfg.skip_if_ai_posted = $( '#' + prefix + channelSlug + '-skip-if-ai' ).is( ':checked' );
+				}
+			}
+
+			// Email presentation format (both / html / markdown).
+			if ( def.formats && def.formats.length > 0 ) {
+				val = $( '#' + prefix + channelSlug + '-format' ).val();
+				if ( val ) {
+					cfg.format = val;
 				}
 			}
 
