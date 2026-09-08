@@ -1,0 +1,4139 @@
+<?php
+/**
+ * Remote sites data layer (ecosystem port — Wave F6, remote-sites slice).
+ *
+ * Ported from the base Pro addon's `addons/pro/includes/class-wp-mcp-ai-pro-remote-site-manager.php` for the standalone
+ * `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro
+ * addon owns the class in monolith installs — the addon's autoloader
+ * skips its copy when `NVOOS_CONTENT_GRAPH_PRO_PATH` is defined (see the plugin
+ * entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain
+ * `nvoos-content-graph-pro`; `NVOOS_CONTENT_GRAPH_PRO_PATH` swaps with the
+ * `src/` root; the base-owned `WP_MCP_AI_PATH` requires gain a
+ * `defined( 'WP_MCP_AI_PATH' )` per-mode seam and the not-yet-ported
+ * client requires gain `file_exists()` guards (graceful standalone
+ * degrade until those files land).
+ *
+ * @package NvoosContentGraphPro
+ * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+declare(strict_types=1);
+
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Manages remote WordPress/WooCommerce site connections.
+ *
+ * @since 1.0.0
+ */
+class WP_MCP_AI_Pro_Remote_Site_Manager {
+
+	/**
+	 * Option name for storing remote site connections.
+	 *
+	 * @var string
+	 */
+	const OPTION_NAME = 'wp_mcp_ai_pro_remote_sites';
+
+	/**
+	 * Supported authentication types.
+	 *
+	 * @var array<string>
+	 */
+	const AUTH_TYPES = array( 'application_password', 'basic_auth', 'jwt', 'woocommerce', 'custom_header', 'none' );
+
+	/**
+	 * Fields within a connection array that contain secrets.
+	 *
+	 * Used by the export/import provider to identify which values
+	 * need decryption on export and re-encryption on import.
+	 *
+	 * @since 1.2.0
+	 * @var array<string>
+	 */
+	const CREDENTIAL_FIELDS = array(
+		'api_key',
+		'api_secret',
+		'client_secret',
+		'bot_token',
+		'password',
+		'access_token',
+		'access_token_secret',
+		'refresh_token',
+		'webhook_secret',
+		'private_key',
+		'mesh_inbound_api_key',
+		'consumer_key',
+		'consumer_secret',
+		'app_password',
+		'auth_code',
+		'bearer_token',
+		'signing_secret',
+		'public_key',
+		'encryption_key',
+	);
+
+	/**
+	 * Prefix that marks values encrypted with the modern AES-256-CBC scheme.
+	 *
+	 * Legacy values (XOR cipher) lack this prefix and are still readable by
+	 * decrypt_value() for backward compatibility.
+	 */
+	const ENCRYPT_V2_PREFIX = 'v2.';
+
+	/**
+	 * Determine whether a stored value is already encrypted.
+	 *
+	 * A value is considered encrypted if it carries the V2 prefix (AES-256-CBC)
+	 * or is a valid base64 string (legacy XOR cipher). Plaintext values return
+	 * false so they will be encrypted on the next save.
+	 *
+	 * @since 1.1.35
+	 *
+	 * @param string $value Stored credential value.
+	 * @return bool True if the value appears already encrypted.
+	 */
+	private static function is_value_encrypted( $value ) {
+		if ( '' === $value ) {
+			return false;
+		}
+
+		// V2 AES-256-CBC: starts with the version prefix.
+		if ( str_starts_with( $value, self::ENCRYPT_V2_PREFIX ) ) {
+			return true;
+		}
+
+		// Legacy XOR cipher: valid base64.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Used for format detection only.
+		if ( false !== base64_decode( $value, true ) ) {
+			return true;
+		}
+
+		// Plaintext — re-encrypt on next save.
+		return false;
+	}
+
+	/**
+	 * Check whether a connection field name is a credential field.
+	 *
+	 * Used by the export/import system to identify which connection
+	 * fields contain secrets that must be decrypted on export and
+	 * re-encrypted on import.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $field_name Field key within a connection array.
+	 * @return bool
+	 */
+	public static function is_credential_field( string $field_name ): bool {
+		return in_array( $field_name, self::CREDENTIAL_FIELDS, true );
+	}
+
+	/**
+	 * Get all configured remote site connections.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return array Array of site connections.
+	 */
+	public static function get_all_connections() {
+		$connections = get_option( self::OPTION_NAME, array() );
+
+		if ( ! is_array( $connections ) ) {
+			return array();
+		}
+
+		// Migrate connection IDs to lowercase if needed.
+		$connections = self::migrate_connection_ids( $connections );
+
+		return $connections;
+	}
+
+	/**
+	 * Get a specific remote site connection by ID.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @return array|null Connection data or null if not found.
+	 */
+	public static function get_connection( $connection_id ) {
+		$connections   = self::get_all_connections();
+		$connection_id = sanitize_key( $connection_id );
+
+		if ( isset( $connections[ $connection_id ] ) ) {
+			return $connections[ $connection_id ];
+		}
+
+		return null;
+	}
+
+	/**
+	 * Add or update a remote site connection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection_data Connection data.
+	 * @return string|WP_Error Connection ID on success, WP_Error on failure.
+	 */
+	public static function save_connection( $connection_data ) {
+		$connections = self::get_all_connections();
+
+		// Generate or use existing connection ID.
+		$is_update = false;
+		if ( empty( $connection_data['id'] ) ) {
+			$connection_id = self::generate_connection_id();
+		} else {
+			$connection_id = sanitize_key( $connection_data['id'] );
+			$is_update     = isset( $connections[ $connection_id ] );
+		}
+
+		// If updating and password/token fields are empty, preserve existing values.
+		if ( $is_update ) {
+			$existing_connection = $connections[ $connection_id ];
+
+			// Preserve existing password if not provided.
+			if ( empty( $connection_data['password'] ) && ! empty( $existing_connection['password'] ) ) {
+				$connection_data['password'] = $existing_connection['password'];
+				// Mark as already encrypted only if it actually is.
+				$connection_data['_password_encrypted'] = self::is_value_encrypted( $existing_connection['password'] );
+			}
+
+			// Preserve existing token if not provided.
+			if ( empty( $connection_data['token'] ) && ! empty( $existing_connection['token'] ) ) {
+				$connection_data['token'] = $existing_connection['token'];
+				// Mark as already encrypted only if it actually is.
+				$connection_data['_token_encrypted'] = self::is_value_encrypted( $existing_connection['token'] );
+			}
+
+			// Preserve existing consumer_key if not provided.
+			if ( empty( $connection_data['consumer_key'] ) && ! empty( $existing_connection['consumer_key'] ) ) {
+				$connection_data['consumer_key']            = $existing_connection['consumer_key'];
+				$connection_data['_consumer_key_encrypted'] = self::is_value_encrypted( $existing_connection['consumer_key'] );
+			}
+
+			// Preserve existing consumer_secret if not provided.
+			if ( empty( $connection_data['consumer_secret'] ) && ! empty( $existing_connection['consumer_secret'] ) ) {
+				$connection_data['consumer_secret']            = $existing_connection['consumer_secret'];
+				$connection_data['_consumer_secret_encrypted'] = self::is_value_encrypted( $existing_connection['consumer_secret'] );
+			}
+
+			// Preserve existing api_key if not provided.
+			if ( empty( $connection_data['api_key'] ) && ! empty( $existing_connection['api_key'] ) ) {
+				$connection_data['api_key']            = $existing_connection['api_key'];
+				$connection_data['_api_key_encrypted'] = self::is_value_encrypted( $existing_connection['api_key'] );
+			}
+
+			// Preserve existing api_secret if not provided.
+			if ( empty( $connection_data['api_secret'] ) && ! empty( $existing_connection['api_secret'] ) ) {
+				$connection_data['api_secret']            = $existing_connection['api_secret'];
+				$connection_data['_api_secret_encrypted'] = self::is_value_encrypted( $existing_connection['api_secret'] );
+			}
+
+			// Preserve existing client_id if not provided.
+			if ( empty( $connection_data['client_id'] ) && ! empty( $existing_connection['client_id'] ) ) {
+				$connection_data['client_id'] = $existing_connection['client_id'];
+			}
+
+			// Preserve existing client_secret if not provided.
+			if ( empty( $connection_data['client_secret'] ) && ! empty( $existing_connection['client_secret'] ) ) {
+				$connection_data['client_secret']            = $existing_connection['client_secret'];
+				$connection_data['_client_secret_encrypted'] = self::is_value_encrypted( $existing_connection['client_secret'] );
+			}
+
+			// Preserve existing app_id if not provided.
+			if ( empty( $connection_data['app_id'] ) && ! empty( $existing_connection['app_id'] ) ) {
+				$connection_data['app_id'] = $existing_connection['app_id'];
+			}
+
+			// Preserve existing app_secret if not provided.
+			if ( empty( $connection_data['app_secret'] ) && ! empty( $existing_connection['app_secret'] ) ) {
+				$connection_data['app_secret']            = $existing_connection['app_secret'];
+				$connection_data['_app_secret_encrypted'] = self::is_value_encrypted( $existing_connection['app_secret'] );
+			}
+
+			// Preserve existing refresh_token (Gmail) if not provided.
+			if ( empty( $connection_data['refresh_token'] ) && ! empty( $existing_connection['refresh_token'] ) ) {
+				$connection_data['refresh_token']            = $existing_connection['refresh_token'];
+				$connection_data['_refresh_token_encrypted'] = self::is_value_encrypted( $existing_connection['refresh_token'] );
+			}
+
+			// Preserve existing user_email (Gmail) if not provided.
+			if ( empty( $connection_data['user_email'] ) && ! empty( $existing_connection['user_email'] ) ) {
+				$connection_data['user_email'] = $existing_connection['user_email'];
+			}
+
+			// Preserve existing folder_id (Google Drive) if not provided.
+			if ( empty( $connection_data['folder_id'] ) && ! empty( $existing_connection['folder_id'] ) ) {
+				$connection_data['folder_id'] = $existing_connection['folder_id'];
+			}
+
+			// Preserve Google Calendar fields when not supplied. The OAuth callback
+			// re-saves a partial connection, so without these an authorisation
+			// round-trip would silently blank the calendar and sync state.
+			foreach ( array( 'calendar_id', 'scope_profile', 'granted_scopes', 'sync_token', 'channel_id', 'channel_resource_id', 'channel_expiration' ) as $gcal_field ) {
+				if ( empty( $connection_data[ $gcal_field ] ) && ! empty( $existing_connection[ $gcal_field ] ) ) {
+					$connection_data[ $gcal_field ] = $existing_connection[ $gcal_field ];
+				}
+			}
+
+			// Preserve existing proxy_password if not provided.
+			if ( empty( $connection_data['proxy_password'] ) && ! empty( $existing_connection['proxy_password'] ) ) {
+				$connection_data['proxy_password']            = $existing_connection['proxy_password'];
+				$connection_data['_proxy_password_encrypted'] = self::is_value_encrypted( $existing_connection['proxy_password'] );
+			}
+
+			// Preserve existing webhook_secret (Composio) if not provided.
+			if ( empty( $connection_data['webhook_secret'] ) && ! empty( $existing_connection['webhook_secret'] ) ) {
+				$connection_data['webhook_secret']            = $existing_connection['webhook_secret'];
+				$connection_data['_webhook_secret_encrypted'] = self::is_value_encrypted( $existing_connection['webhook_secret'] );
+			}
+
+			// Preserve existing upwork_username (Upwork) if not provided.
+			if ( empty( $connection_data['upwork_username'] ) && ! empty( $existing_connection['upwork_username'] ) ) {
+				$connection_data['upwork_username'] = $existing_connection['upwork_username'];
+			}
+
+			// Preserve existing bot_username (Telegram) if not provided.
+			if ( empty( $connection_data['bot_username'] ) && ! empty( $existing_connection['bot_username'] ) ) {
+				$connection_data['bot_username'] = $existing_connection['bot_username'];
+			}
+
+			// Preserve existing enable_groups (Telegram) if not provided.
+			if ( ! isset( $connection_data['enable_groups'] ) && isset( $existing_connection['enable_groups'] ) ) {
+				$connection_data['enable_groups'] = $existing_connection['enable_groups'];
+			}
+
+			// Preserve existing enable_web_login (Telegram) if not provided.
+			if ( ! isset( $connection_data['enable_web_login'] ) && isset( $existing_connection['enable_web_login'] ) ) {
+				$connection_data['enable_web_login'] = $existing_connection['enable_web_login'];
+			}
+
+			// Preserve existing web_login_redirect_url (Telegram) if not provided.
+			if ( ! isset( $connection_data['web_login_redirect_url'] ) && isset( $existing_connection['web_login_redirect_url'] ) ) {
+				$connection_data['web_login_redirect_url'] = $existing_connection['web_login_redirect_url'];
+			}
+
+			// Preserve existing enable_mini_app (Telegram Mini App) if not provided.
+			if ( ! isset( $connection_data['enable_mini_app'] ) && isset( $existing_connection['enable_mini_app'] ) ) {
+				$connection_data['enable_mini_app'] = $existing_connection['enable_mini_app'];
+			}
+
+			// Preserve existing mini_app_assistant_id (Telegram Mini App) if not provided.
+			if ( ! isset( $connection_data['mini_app_assistant_id'] ) && isset( $existing_connection['mini_app_assistant_id'] ) ) {
+				$connection_data['mini_app_assistant_id'] = $existing_connection['mini_app_assistant_id'];
+			}
+
+			// Preserve existing mini_app_template (Telegram Mini App) if not provided.
+			if ( ! isset( $connection_data['mini_app_template'] ) && isset( $existing_connection['mini_app_template'] ) ) {
+				$connection_data['mini_app_template'] = $existing_connection['mini_app_template'];
+			}
+
+			// Preserve existing mini_app_woo_source (Telegram Mini App) if not provided.
+			if ( ! isset( $connection_data['mini_app_woo_source'] ) && isset( $existing_connection['mini_app_woo_source'] ) ) {
+				$connection_data['mini_app_woo_source'] = $existing_connection['mini_app_woo_source'];
+			}
+
+			// Preserve existing mini_app_woo_connection_id (Telegram Mini App) if not provided.
+			if ( ! isset( $connection_data['mini_app_woo_connection_id'] ) && isset( $existing_connection['mini_app_woo_connection_id'] ) ) {
+				$connection_data['mini_app_woo_connection_id'] = $existing_connection['mini_app_woo_connection_id'];
+			}
+
+			// Preserve existing mini_app_shopify_connection_id (Telegram Mini App) if not provided.
+			if ( ! isset( $connection_data['mini_app_shopify_connection_id'] ) && isset( $existing_connection['mini_app_shopify_connection_id'] ) ) {
+				$connection_data['mini_app_shopify_connection_id'] = $existing_connection['mini_app_shopify_connection_id'];
+			}
+
+			// Preserve existing auto_create_wp_user (Telegram) if not provided.
+			if ( ! isset( $connection_data['auto_create_wp_user'] ) && isset( $existing_connection['auto_create_wp_user'] ) ) {
+				$connection_data['auto_create_wp_user'] = $existing_connection['auto_create_wp_user'];
+			}
+
+			// Preserve existing new_user_role (Telegram) if not provided.
+			if ( ! isset( $connection_data['new_user_role'] ) && isset( $existing_connection['new_user_role'] ) ) {
+				$connection_data['new_user_role'] = $existing_connection['new_user_role'];
+			}
+
+			// Preserve existing allowed_chat_ids (Telegram) if not provided.
+			if ( ! isset( $connection_data['allowed_chat_ids'] ) && isset( $existing_connection['allowed_chat_ids'] ) ) {
+				$connection_data['allowed_chat_ids'] = $existing_connection['allowed_chat_ids'];
+			}
+
+			// Preserve existing WhatsApp-specific fields if not provided.
+			if ( empty( $connection_data['phone_number_id'] ) && ! empty( $existing_connection['phone_number_id'] ) ) {
+				$connection_data['phone_number_id'] = $existing_connection['phone_number_id'];
+			}
+
+			if ( empty( $connection_data['business_account_id'] ) && ! empty( $existing_connection['business_account_id'] ) ) {
+				$connection_data['business_account_id'] = $existing_connection['business_account_id'];
+			}
+
+			if ( empty( $connection_data['system_user_id'] ) && ! empty( $existing_connection['system_user_id'] ) ) {
+				$connection_data['system_user_id'] = $existing_connection['system_user_id'];
+			}
+
+			// For Google Chat the Audience URL (verify_token) is an optional field that is always
+			// rendered and submitted in the edit form, so allow the user to clear it.
+			// For WhatsApp and Messenger the verify_token is a required webhook secret; preserve
+			// the stored value when the submitted field is empty to avoid accidental erasure.
+			$saved_connection_type = isset( $connection_data['connection_type'] ) ? $connection_data['connection_type'] : '';
+			if ( empty( $connection_data['verify_token'] ) && ! empty( $existing_connection['verify_token'] )
+				&& 'google_chat' !== $saved_connection_type ) {
+				$connection_data['verify_token'] = $existing_connection['verify_token'];
+			}
+
+			if ( empty( $connection_data['graph_api_version'] ) && ! empty( $existing_connection['graph_api_version'] ) ) {
+				$connection_data['graph_api_version'] = $existing_connection['graph_api_version'];
+			}
+
+			if ( empty( $connection_data['display_phone_number'] ) && ! empty( $existing_connection['display_phone_number'] ) ) {
+				$connection_data['display_phone_number'] = $existing_connection['display_phone_number'];
+			}
+
+			if ( empty( $connection_data['channel_description'] ) && ! empty( $existing_connection['channel_description'] ) ) {
+				$connection_data['channel_description'] = $existing_connection['channel_description'];
+			}
+
+			if ( empty( $connection_data['channel_url'] ) && ! empty( $existing_connection['channel_url'] ) ) {
+				$connection_data['channel_url'] = $existing_connection['channel_url'];
+			}
+
+			if ( empty( $connection_data['group_id'] ) && ! empty( $existing_connection['group_id'] ) ) {
+				$connection_data['group_id'] = $existing_connection['group_id'];
+			}
+
+			// Preserve existing workspace_id (Slack) if not provided.
+			if ( empty( $connection_data['workspace_id'] ) && ! empty( $existing_connection['workspace_id'] ) ) {
+				$connection_data['workspace_id'] = $existing_connection['workspace_id'];
+			}
+
+			// Preserve existing slack_bot_user_id (Slack) if not provided.
+			if ( empty( $connection_data['slack_bot_user_id'] ) && ! empty( $existing_connection['slack_bot_user_id'] ) ) {
+				$connection_data['slack_bot_user_id'] = $existing_connection['slack_bot_user_id'];
+			}
+
+			// Preserve existing Discord-specific fields if not provided.
+			if ( empty( $connection_data['application_id'] ) && ! empty( $existing_connection['application_id'] ) ) {
+				$connection_data['application_id'] = $existing_connection['application_id'];
+			}
+
+			if ( empty( $connection_data['guild_id'] ) && ! empty( $existing_connection['guild_id'] ) ) {
+				$connection_data['guild_id'] = $existing_connection['guild_id'];
+			}
+
+			if ( empty( $connection_data['public_key'] ) && ! empty( $existing_connection['public_key'] ) ) {
+				$connection_data['public_key'] = $existing_connection['public_key'];
+			}
+
+			// Preserve existing tenant_id (Microsoft Teams) if not provided.
+			if ( empty( $connection_data['tenant_id'] ) && ! empty( $existing_connection['tenant_id'] ) ) {
+				$connection_data['tenant_id'] = $existing_connection['tenant_id'];
+			}
+
+			// Preserve existing token_expiry (Microsoft Teams OAuth) if not provided.
+			if ( empty( $connection_data['token_expiry'] ) && ! empty( $existing_connection['token_expiry'] ) ) {
+				$connection_data['token_expiry'] = $existing_connection['token_expiry'];
+			}
+
+			// Preserve existing signing_secret (Slack / Teams outgoing webhook) if not provided.
+			if ( empty( $connection_data['signing_secret'] ) && ! empty( $existing_connection['signing_secret'] ) ) {
+				$connection_data['signing_secret']            = $existing_connection['signing_secret'];
+				$connection_data['_signing_secret_encrypted'] = self::is_value_encrypted( $existing_connection['signing_secret'] );
+			}
+
+			// Preserve existing secret_token (Telegram webhook) if not provided.
+			if ( empty( $connection_data['secret_token'] ) && ! empty( $existing_connection['secret_token'] ) ) {
+				$connection_data['secret_token']            = $existing_connection['secret_token'];
+				$connection_data['_secret_token_encrypted'] = self::is_value_encrypted( $existing_connection['secret_token'] );
+			}
+
+			// Preserve existing page_id (Facebook Messenger) if not provided.
+			if ( empty( $connection_data['page_id'] ) && ! empty( $existing_connection['page_id'] ) ) {
+				$connection_data['page_id'] = $existing_connection['page_id'];
+			}
+
+			// Preserve existing p2p_connection_id (WebChat) if not provided.
+			if ( empty( $connection_data['p2p_connection_id'] ) && ! empty( $existing_connection['p2p_connection_id'] ) ) {
+				$connection_data['p2p_connection_id'] = $existing_connection['p2p_connection_id'];
+			}
+
+			// Preserve existing google_chat_space (Google Chat) if not provided.
+			if ( empty( $connection_data['google_chat_space'] ) && ! empty( $existing_connection['google_chat_space'] ) ) {
+				$connection_data['google_chat_space'] = $existing_connection['google_chat_space'];
+			}
+
+			// Preserve existing reply_webhook_url (Google Chat incoming webhook) only when the
+			// key is entirely absent from the submitted data. When the admin form explicitly
+			// submits the field as an empty string (user cleared the optional field), the key
+			// will be present and we must honour that intent — using array_key_exists() rather
+			// than empty() is what makes the field clearable.
+			if ( ! array_key_exists( 'reply_webhook_url', $connection_data ) && ! empty( $existing_connection['reply_webhook_url'] ) ) {
+				$connection_data['reply_webhook_url'] = $existing_connection['reply_webhook_url'];
+			}
+
+			// Preserve existing connection_method (Google Chat) if not provided.
+			if ( empty( $connection_data['connection_method'] ) && ! empty( $existing_connection['connection_method'] ) ) {
+				$connection_data['connection_method'] = $existing_connection['connection_method'];
+			}
+
+			// Preserve existing assigned_assistant_ids (channel routing) if not provided.
+			if ( ! isset( $connection_data['assigned_assistant_ids'] ) && ! empty( $existing_connection['assigned_assistant_ids'] ) ) {
+				$connection_data['assigned_assistant_ids'] = $existing_connection['assigned_assistant_ids'];
+			}
+
+			// Preserve existing require_mention (chat channels) if not provided.
+			if ( ! isset( $connection_data['require_mention'] ) && isset( $existing_connection['require_mention'] ) ) {
+				$connection_data['require_mention'] = $existing_connection['require_mention'];
+			}
+
+			// Preserve existing test_endpoint if not provided.
+			if ( empty( $connection_data['test_endpoint'] ) && ! empty( $existing_connection['test_endpoint'] ) ) {
+				$connection_data['test_endpoint'] = $existing_connection['test_endpoint'];
+			}
+
+			// Preserve existing cache_ttl if not provided.
+			if ( ! isset( $connection_data['cache_ttl'] ) && isset( $existing_connection['cache_ttl'] ) ) {
+				$connection_data['cache_ttl'] = $existing_connection['cache_ttl'];
+			}
+
+			// Preserve existing location_id only when the key is absent from submission
+			// (use array_key_exists so an explicit empty string — user cleared the field —
+			// is honoured instead of being overwritten by the stored value).
+			if ( ! array_key_exists( 'location_id', $connection_data ) && ! empty( $existing_connection['location_id'] ) ) {
+				$connection_data['location_id'] = $existing_connection['location_id'];
+			}
+
+			// Preserve existing company_id only when the key is absent from submission.
+			if ( ! array_key_exists( 'company_id', $connection_data ) && ! empty( $existing_connection['company_id'] ) ) {
+				$connection_data['company_id'] = $existing_connection['company_id'];
+			}
+
+				// Preserve existing store_id only when the key is absent from submission
+					// (use array_key_exists so an explicit empty string — user cleared the
+					// field — is honoured instead of being overwritten by the stored value).
+			if ( ! array_key_exists( 'store_id', $connection_data ) && ! empty( $existing_connection['store_id'] ) ) {
+				$connection_data['store_id'] = $existing_connection['store_id'];
+			}
+
+				// Preserve existing sandbox_mode if not provided.
+			if ( ! isset( $connection_data['sandbox_mode'] ) && isset( $existing_connection['sandbox_mode'] ) ) {
+				$connection_data['sandbox_mode'] = $existing_connection['sandbox_mode'];
+			}
+
+			// Preserve existing post_type_access if not provided.
+			if ( ! isset( $connection_data['post_type_access'] ) && isset( $existing_connection['post_type_access'] ) ) {
+				$connection_data['post_type_access'] = $existing_connection['post_type_access'];
+			}
+
+			// Preserve existing wc_resource_access if not provided.
+			if ( ! isset( $connection_data['wc_resource_access'] ) && isset( $existing_connection['wc_resource_access'] ) ) {
+				$connection_data['wc_resource_access'] = $existing_connection['wc_resource_access'];
+			}
+
+			// Preserve existing custom_post_types if not provided.
+			if ( ! isset( $connection_data['custom_post_types'] ) && isset( $existing_connection['custom_post_types'] ) ) {
+				$connection_data['custom_post_types'] = $existing_connection['custom_post_types'];
+			}
+
+			// Preserve existing jetengine_cct_access if not provided.
+			if ( ! isset( $connection_data['jetengine_cct_access'] ) && isset( $existing_connection['jetengine_cct_access'] ) ) {
+				$connection_data['jetengine_cct_access'] = $existing_connection['jetengine_cct_access'];
+			}
+
+			// Preserve Upwork/LinkedIn mode and search criteria when updating.
+			if ( ! isset( $connection_data['upwork_mode'] ) && isset( $existing_connection['upwork_mode'] ) ) {
+				$connection_data['upwork_mode'] = $existing_connection['upwork_mode'];
+			}
+			if ( ! isset( $connection_data['upwork_search_query'] ) && isset( $existing_connection['upwork_search_query'] ) ) {
+				$connection_data['upwork_search_query'] = $existing_connection['upwork_search_query'];
+			}
+			if ( ! isset( $connection_data['upwork_search_category'] ) && isset( $existing_connection['upwork_search_category'] ) ) {
+				$connection_data['upwork_search_category'] = $existing_connection['upwork_search_category'];
+			}
+			if ( ! isset( $connection_data['upwork_search_job_type'] ) && isset( $existing_connection['upwork_search_job_type'] ) ) {
+				$connection_data['upwork_search_job_type'] = $existing_connection['upwork_search_job_type'];
+			}
+			if ( ! isset( $connection_data['linkedin_mode'] ) && isset( $existing_connection['linkedin_mode'] ) ) {
+				$connection_data['linkedin_mode'] = $existing_connection['linkedin_mode'];
+			}
+			if ( ! isset( $connection_data['linkedin_search_query'] ) && isset( $existing_connection['linkedin_search_query'] ) ) {
+				$connection_data['linkedin_search_query'] = $existing_connection['linkedin_search_query'];
+			}
+			if ( ! isset( $connection_data['linkedin_search_location'] ) && isset( $existing_connection['linkedin_search_location'] ) ) {
+				$connection_data['linkedin_search_location'] = $existing_connection['linkedin_search_location'];
+			}
+
+			// Preserve created timestamp.
+			if ( ! isset( $connection_data['created'] ) && ! empty( $existing_connection['created'] ) ) {
+				$connection_data['created'] = $existing_connection['created'];
+			}
+		}
+
+		$validation = self::validate_connection_data( $connection_data );
+
+		if ( is_wp_error( $validation ) ) {
+			return $validation;
+		}
+
+		// Prepare connection data.
+		$connection = array(
+			'id'                             => $connection_id,
+			'name'                           => sanitize_text_field( $connection_data['name'] ),
+			'url'                            => esc_url_raw( trailingslashit( $connection_data['url'] ) ),
+			'connection_type'                => isset( $connection_data['connection_type'] ) ? sanitize_key( $connection_data['connection_type'] ) : 'wordpress',
+			'auth_type'                      => isset( $connection_data['auth_type'] ) ? sanitize_key( $connection_data['auth_type'] ) : 'none',
+			'username'                       => isset( $connection_data['username'] ) ? sanitize_text_field( $connection_data['username'] ) : '',
+			'password'                       => isset( $connection_data['password'] ) ? $connection_data['password'] : '',
+			'token'                          => isset( $connection_data['token'] ) ? $connection_data['token'] : '',
+			'consumer_key'                   => isset( $connection_data['consumer_key'] ) ? $connection_data['consumer_key'] : '',
+			'consumer_secret'                => isset( $connection_data['consumer_secret'] ) ? $connection_data['consumer_secret'] : '',
+			'api_key'                        => isset( $connection_data['api_key'] ) ? $connection_data['api_key'] : '',
+			'api_secret'                     => isset( $connection_data['api_secret'] ) ? $connection_data['api_secret'] : '',
+			'client_id'                      => isset( $connection_data['client_id'] ) ? sanitize_text_field( $connection_data['client_id'] ) : '',
+			'client_secret'                  => isset( $connection_data['client_secret'] ) ? $connection_data['client_secret'] : '',
+			'app_id'                         => isset( $connection_data['app_id'] ) ? sanitize_text_field( $connection_data['app_id'] ) : '',
+			'app_secret'                     => isset( $connection_data['app_secret'] ) ? $connection_data['app_secret'] : '',
+			'location_id'                    => isset( $connection_data['location_id'] ) ? sanitize_text_field( $connection_data['location_id'] ) : '',
+			'company_id'                     => isset( $connection_data['company_id'] ) ? sanitize_text_field( $connection_data['company_id'] ) : '',
+			'store_id'                       => isset( $connection_data['store_id'] ) ? sanitize_text_field( $connection_data['store_id'] ) : '',
+			'sandbox_mode'                   => ! empty( $connection_data['sandbox_mode'] ),
+			// FlowHub proxy fields.
+			'proxy_enabled'                  => ! empty( $connection_data['proxy_enabled'] ),
+			'proxy_url'                      => isset( $connection_data['proxy_url'] ) ? sanitize_text_field( $connection_data['proxy_url'] ) : '',
+			'proxy_username'                 => isset( $connection_data['proxy_username'] ) ? sanitize_text_field( $connection_data['proxy_username'] ) : '',
+			'proxy_password'                 => isset( $connection_data['proxy_password'] ) ? $connection_data['proxy_password'] : '',
+			'has_woocommerce'                => ! empty( $connection_data['has_woocommerce'] ),
+			'enabled'                        => ! empty( $connection_data['enabled'] ),
+			'created'                        => isset( $connection_data['created'] ) ? $connection_data['created'] : current_time( 'mysql' ),
+			'updated'                        => current_time( 'mysql' ),
+			// Gmail-specific fields.
+			'refresh_token'                  => isset( $connection_data['refresh_token'] ) ? $connection_data['refresh_token'] : '',
+			'user_email'                     => isset( $connection_data['user_email'] ) ? sanitize_email( $connection_data['user_email'] ) : '',
+			// Google Drive-specific fields.
+			'folder_id'                      => isset( $connection_data['folder_id'] ) ? sanitize_text_field( $connection_data['folder_id'] ) : '',
+			// Google Calendar-specific fields. `calendar_id` is intentionally separate
+			// from `folder_id`: that key is populated for every connection type, so
+			// sharing it would let a Calendar save overwrite a Drive folder scope.
+			'calendar_id'                    => isset( $connection_data['calendar_id'] ) ? sanitize_text_field( $connection_data['calendar_id'] ) : '',
+			'scope_profile'                  => isset( $connection_data['scope_profile'] ) ? sanitize_key( $connection_data['scope_profile'] ) : '',
+			'granted_scopes'                 => isset( $connection_data['granted_scopes'] ) ? sanitize_text_field( $connection_data['granted_scopes'] ) : '',
+			'sync_token'                     => isset( $connection_data['sync_token'] ) ? sanitize_text_field( $connection_data['sync_token'] ) : '',
+			'channel_id'                     => isset( $connection_data['channel_id'] ) ? sanitize_text_field( $connection_data['channel_id'] ) : '',
+			'channel_resource_id'            => isset( $connection_data['channel_resource_id'] ) ? sanitize_text_field( $connection_data['channel_resource_id'] ) : '',
+			'channel_expiration'             => isset( $connection_data['channel_expiration'] ) ? absint( $connection_data['channel_expiration'] ) : 0,
+			// Telegram-specific fields.
+			'bot_username'                   => isset( $connection_data['bot_username'] ) ? sanitize_text_field( $connection_data['bot_username'] ) : '',
+			'enable_groups'                  => ! empty( $connection_data['enable_groups'] ),
+			// Telegram Web Login feature flag and after-login redirect URL.
+			'enable_web_login'               => ! empty( $connection_data['enable_web_login'] ),
+			'web_login_redirect_url'         => isset( $connection_data['web_login_redirect_url'] ) ? esc_url_raw( $connection_data['web_login_redirect_url'] ) : '',
+			// Telegram WordPress account creation for new Telegram users.
+			'auto_create_wp_user'            => ! empty( $connection_data['auto_create_wp_user'] ),
+			'new_user_role'                  => isset( $connection_data['new_user_role'] ) ? sanitize_key( $connection_data['new_user_role'] ) : 'subscriber',
+			// Telegram Mini App settings.
+			'enable_mini_app'                => ! empty( $connection_data['enable_mini_app'] ),
+			'mini_app_assistant_id'          => isset( $connection_data['mini_app_assistant_id'] ) ? absint( $connection_data['mini_app_assistant_id'] ) : 0,
+			'mini_app_template'              => isset( $connection_data['mini_app_template'] ) ? sanitize_key( $connection_data['mini_app_template'] ) : '',
+			'mini_app_woo_source'            => ( isset( $connection_data['mini_app_woo_source'] ) && 'remote' === $connection_data['mini_app_woo_source'] ) ? 'remote' : 'local',
+			'mini_app_woo_connection_id'     => isset( $connection_data['mini_app_woo_connection_id'] ) ? sanitize_key( $connection_data['mini_app_woo_connection_id'] ) : '',
+			'mini_app_shopify_connection_id' => isset( $connection_data['mini_app_shopify_connection_id'] ) ? sanitize_key( $connection_data['mini_app_shopify_connection_id'] ) : '',
+			// WhatsApp-specific fields.
+			'phone_number_id'                => isset( $connection_data['phone_number_id'] ) ? sanitize_text_field( $connection_data['phone_number_id'] ) : '',
+			'display_phone_number'           => isset( $connection_data['display_phone_number'] ) ? sanitize_text_field( $connection_data['display_phone_number'] ) : '',
+			'business_account_id'            => isset( $connection_data['business_account_id'] ) ? sanitize_text_field( $connection_data['business_account_id'] ) : '',
+			'system_user_id'                 => isset( $connection_data['system_user_id'] ) ? sanitize_text_field( $connection_data['system_user_id'] ) : '',
+			'verify_token'                   => isset( $connection_data['verify_token'] ) ? sanitize_text_field( $connection_data['verify_token'] ) : '',
+			'channel_description'            => isset( $connection_data['channel_description'] ) ? sanitize_text_field( $connection_data['channel_description'] ) : '',
+			'channel_url'                    => isset( $connection_data['channel_url'] ) ? esc_url_raw( $connection_data['channel_url'] ) : '',
+			'group_id'                       => isset( $connection_data['group_id'] ) ? sanitize_text_field( $connection_data['group_id'] ) : '',
+			// Slack-specific fields.
+			'workspace_id'                   => isset( $connection_data['workspace_id'] ) ? sanitize_text_field( $connection_data['workspace_id'] ) : '',
+			// Bot's Slack user ID (U-prefixed), populated by the admin connection test.
+			// Used to detect native Slack @mentions (<@USER_ID>) in incoming messages.
+			'slack_bot_user_id'              => isset( $connection_data['slack_bot_user_id'] ) ? sanitize_text_field( $connection_data['slack_bot_user_id'] ) : '',
+			// Discord-specific fields.
+			'application_id'                 => isset( $connection_data['application_id'] ) ? sanitize_text_field( $connection_data['application_id'] ) : '',
+			'guild_id'                       => isset( $connection_data['guild_id'] ) ? sanitize_text_field( $connection_data['guild_id'] ) : '',
+			// Discord Ed25519 public key for interaction signature verification.
+			'public_key'                     => isset( $connection_data['public_key'] ) ? sanitize_text_field( $connection_data['public_key'] ) : '',
+			// Microsoft Teams-specific fields.
+			'tenant_id'                      => isset( $connection_data['tenant_id'] ) ? sanitize_text_field( $connection_data['tenant_id'] ) : '',
+			// Unix timestamp when the OAuth access token expires (Teams / Office 365 OAuth connections).
+			'token_expiry'                   => isset( $connection_data['token_expiry'] ) ? absint( $connection_data['token_expiry'] ) : 0,
+			// HMAC-SHA256 signing secret (Slack Events API / Teams outgoing webhooks).
+			'signing_secret'                 => isset( $connection_data['signing_secret'] ) ? $connection_data['signing_secret'] : '',
+			// Composio Connect fields.
+			'webhook_secret'                 => isset( $connection_data['webhook_secret'] ) ? $connection_data['webhook_secret'] : '',
+			'webhook_subscription_id'        => isset( $connection_data['webhook_subscription_id'] ) ? sanitize_text_field( $connection_data['webhook_subscription_id'] ) : '',
+			'base_url'                       => isset( $connection_data['base_url'] ) ? esc_url_raw( $connection_data['base_url'] ) : '',
+			'default_user_mode'              => isset( $connection_data['default_user_mode'] ) ? sanitize_key( $connection_data['default_user_mode'] ) : 'admin_shared',
+			'default_user_id'                => isset( $connection_data['default_user_id'] ) ? sanitize_text_field( $connection_data['default_user_id'] ) : '',
+			'toolkit_allowlist'              => isset( $connection_data['toolkit_allowlist'] ) && is_array( $connection_data['toolkit_allowlist'] ) ? $connection_data['toolkit_allowlist'] : array(),
+			// Telegram webhook secret token (X-Telegram-Bot-Api-Secret-Token).
+			'secret_token'                   => isset( $connection_data['secret_token'] ) ? $connection_data['secret_token'] : '',
+			// Facebook Messenger-specific fields.
+			'page_id'                        => isset( $connection_data['page_id'] ) ? sanitize_text_field( $connection_data['page_id'] ) : '',
+			// Graph API version (WhatsApp and Facebook Messenger).
+			'graph_api_version'              => isset( $connection_data['graph_api_version'] ) && preg_match( '/^v\d+\.\d+$/', $connection_data['graph_api_version'] ) ? $connection_data['graph_api_version'] : '',
+			// WebChat P2P-specific fields.
+			'p2p_connection_id'              => isset( $connection_data['p2p_connection_id'] ) ? sanitize_text_field( $connection_data['p2p_connection_id'] ) : '',
+			// Google Chat-specific fields.
+			'google_chat_space'              => isset( $connection_data['google_chat_space'] ) ? sanitize_text_field( $connection_data['google_chat_space'] ) : '',
+			// Google Chat incoming webhook URL for sending AI replies (no OAuth needed).
+			'reply_webhook_url'              => isset( $connection_data['reply_webhook_url'] ) ? esc_url_raw( $connection_data['reply_webhook_url'] ) : '',
+			// When true, OIDC token validation is skipped for incoming webhook events.
+			// Useful for environments where the Authorization header is stripped by a proxy or WAF.
+			'disable_oidc_verification'      => ! empty( $connection_data['disable_oidc_verification'] ),
+			// Shared-secret fallback token used to authenticate webhook requests when
+			// disable_oidc_verification is enabled. Requests must supply it via the
+			// ?token= query parameter or the X-Google-Chat-Token header.
+			'verification_token'             => isset( $connection_data['verification_token'] ) ? sanitize_text_field( $connection_data['verification_token'] ) : '',
+			// Google Chat authentication method: service_account | oauth | webhook.
+			'connection_method'              => isset( $connection_data['connection_method'] ) ? sanitize_key( $connection_data['connection_method'] ) : '',
+			// Channel routing: assistant IDs that listen on this connection (used by all chat-channel types).
+			'assigned_assistant_ids'         => isset( $connection_data['assigned_assistant_ids'] ) && is_array( $connection_data['assigned_assistant_ids'] )
+				? array_values( array_map( 'absint', $connection_data['assigned_assistant_ids'] ) )
+				: array(),
+			// Chat-channel setting: only auto-reply when an assigned assistant is @mentioned.
+			'require_mention'                => ! empty( $connection_data['require_mention'] ),
+			// Telegram allowlist: numeric user/chat IDs permitted to interact with the bot.
+			'allowed_chat_ids'               => isset( $connection_data['allowed_chat_ids'] ) && is_array( $connection_data['allowed_chat_ids'] )
+				? array_values(
+					array_filter(
+						array_map( 'sanitize_text_field', $connection_data['allowed_chat_ids'] ),
+						static function ( $id ) {
+							return '' !== $id && preg_match( '/^-?\d+$/', $id );
+						}
+					)
+				)
+				: array(),
+			// Generic API test endpoint.
+			'test_endpoint'                  => isset( $connection_data['test_endpoint'] ) ? sanitize_text_field( $connection_data['test_endpoint'] ) : '',
+			// Cache TTL.
+			'cache_ttl'                      => isset( $connection_data['cache_ttl'] ) ? max( 0, min( 3600, absint( $connection_data['cache_ttl'] ) ) ) : 300,
+			// Shopify-specific fields.
+			'shopify_api_version'            => isset( $connection_data['shopify_api_version'] ) && preg_match( '/^\d{4}-\d{2}$/', $connection_data['shopify_api_version'] )
+				? sanitize_text_field( $connection_data['shopify_api_version'] )
+				: '2025-01',
+			'shopify_api_mode'               => isset( $connection_data['shopify_api_mode'] ) && in_array( $connection_data['shopify_api_mode'], array( 'admin_api', 'catalog_api' ), true )
+				? $connection_data['shopify_api_mode']
+				: 'admin_api',
+			'shopify_catalog_shop_id'        => isset( $connection_data['shopify_catalog_shop_id'] )
+				? sanitize_text_field( $connection_data['shopify_catalog_shop_id'] )
+				: '',
+			// ShipEngine-specific fields.
+			'shipengine_carrier_id'          => isset( $connection_data['shipengine_carrier_id'] )
+				? sanitize_text_field( $connection_data['shipengine_carrier_id'] )
+				: '',
+			// ShipStation-specific fields.
+			'shipstation_carrier_code'       => isset( $connection_data['shipstation_carrier_code'] )
+				? sanitize_text_field( $connection_data['shipstation_carrier_code'] )
+				: 'stamps_com',
+			// Upwork/LinkedIn operation mode: 'api' (OAuth) or 'web_search' (AI-powered web search).
+			// The Upwork account username/display name is stored here, not in
+			// user_email (which is sanitized as an email address).
+			'upwork_username'                => isset( $connection_data['upwork_username'] ) ? sanitize_text_field( $connection_data['upwork_username'] ) : '',
+			'upwork_mode'                    => isset( $connection_data['upwork_mode'] ) && in_array( $connection_data['upwork_mode'], array( 'api', 'web_search' ), true )
+				? $connection_data['upwork_mode']
+				: 'api',
+			'upwork_search_query'            => isset( $connection_data['upwork_search_query'] ) ? sanitize_text_field( $connection_data['upwork_search_query'] ) : '',
+			'upwork_search_category'         => isset( $connection_data['upwork_search_category'] ) ? sanitize_text_field( $connection_data['upwork_search_category'] ) : '',
+			'upwork_search_job_type'         => isset( $connection_data['upwork_search_job_type'] ) && in_array( $connection_data['upwork_search_job_type'], array( 'hourly', 'fixed', '' ), true )
+				? $connection_data['upwork_search_job_type']
+				: '',
+			'linkedin_mode'                  => isset( $connection_data['linkedin_mode'] ) && in_array( $connection_data['linkedin_mode'], array( 'api', 'web_search' ), true )
+				? $connection_data['linkedin_mode']
+				: 'api',
+			'linkedin_search_query'          => isset( $connection_data['linkedin_search_query'] ) ? sanitize_text_field( $connection_data['linkedin_search_query'] ) : '',
+			'linkedin_search_location'       => isset( $connection_data['linkedin_search_location'] ) ? sanitize_text_field( $connection_data['linkedin_search_location'] ) : '',
+			// WordPress/WooCommerce granular access controls.
+			'post_type_access'               => self::sanitize_access_controls( isset( $connection_data['post_type_access'] ) ? $connection_data['post_type_access'] : array() ),
+			'wc_resource_access'             => self::sanitize_access_controls( isset( $connection_data['wc_resource_access'] ) ? $connection_data['wc_resource_access'] : array() ),
+			'custom_post_types'              => isset( $connection_data['custom_post_types'] ) ? sanitize_text_field( $connection_data['custom_post_types'] ) : '',
+			// JetEngine CCT granular access controls.
+			'jetengine_cct_access'           => self::sanitize_access_controls( isset( $connection_data['jetengine_cct_access'] ) ? $connection_data['jetengine_cct_access'] : array() ),
+		);
+
+		// Encrypt sensitive data (only if not already encrypted).
+		if ( ! empty( $connection['password'] ) && empty( $connection_data['_password_encrypted'] ) ) {
+			$connection['password'] = self::encrypt_value( $connection['password'] );
+		}
+
+		if ( ! empty( $connection['token'] ) && empty( $connection_data['_token_encrypted'] ) ) {
+			$connection['token'] = self::encrypt_value( $connection['token'] );
+		}
+
+		if ( ! empty( $connection['consumer_key'] ) && empty( $connection_data['_consumer_key_encrypted'] ) ) {
+			$connection['consumer_key'] = self::encrypt_value( $connection['consumer_key'] );
+		}
+
+		if ( ! empty( $connection['consumer_secret'] ) && empty( $connection_data['_consumer_secret_encrypted'] ) ) {
+			$connection['consumer_secret'] = self::encrypt_value( $connection['consumer_secret'] );
+		}
+
+		if ( ! empty( $connection['api_key'] ) && empty( $connection_data['_api_key_encrypted'] ) ) {
+			$connection['api_key'] = self::encrypt_value( $connection['api_key'] );
+		}
+
+		if ( ! empty( $connection['api_secret'] ) && empty( $connection_data['_api_secret_encrypted'] ) ) {
+			$connection['api_secret'] = self::encrypt_value( $connection['api_secret'] );
+		}
+
+		if ( ! empty( $connection['client_secret'] ) && empty( $connection_data['_client_secret_encrypted'] ) ) {
+			$connection['client_secret'] = self::encrypt_value( $connection['client_secret'] );
+		}
+
+		if ( ! empty( $connection['app_secret'] ) && empty( $connection_data['_app_secret_encrypted'] ) ) {
+			$connection['app_secret'] = self::encrypt_value( $connection['app_secret'] );
+		}
+
+		if ( ! empty( $connection['refresh_token'] ) && empty( $connection_data['_refresh_token_encrypted'] ) ) {
+			$connection['refresh_token'] = self::encrypt_value( $connection['refresh_token'] );
+		}
+
+		if ( ! empty( $connection['signing_secret'] ) && empty( $connection_data['_signing_secret_encrypted'] ) ) {
+			$connection['signing_secret'] = self::encrypt_value( $connection['signing_secret'] );
+		}
+
+		if ( ! empty( $connection['secret_token'] ) && empty( $connection_data['_secret_token_encrypted'] ) ) {
+			$connection['secret_token'] = self::encrypt_value( $connection['secret_token'] );
+		}
+
+		if ( ! empty( $connection['proxy_password'] ) && empty( $connection_data['_proxy_password_encrypted'] ) ) {
+			$connection['proxy_password'] = self::encrypt_value( $connection['proxy_password'] );
+		}
+
+		if ( ! empty( $connection['webhook_secret'] ) && empty( $connection_data['_webhook_secret_encrypted'] ) ) {
+			$connection['webhook_secret'] = self::encrypt_value( $connection['webhook_secret'] );
+		}
+
+		$connections[ $connection_id ] = $connection;
+
+		$updated = update_option( self::OPTION_NAME, $connections );
+
+		if ( false === $updated && ! isset( $connections[ $connection_id ] ) ) {
+			// update_option returns false if the value is the same, which shouldn't happen here
+			// but also returns false on actual failure. Check if it was actually saved.
+			$saved_connections = get_option( self::OPTION_NAME, array() );
+			if ( ! isset( $saved_connections[ $connection_id ] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_save_failed',
+					__( 'Failed to save connection. Please try again.', 'nvoos-content-graph-pro' )
+				);
+			}
+		}
+
+		/**
+		 * Fires after a remote site connection is saved.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $connection_id Connection ID.
+		 * @param array  $connection    Connection data.
+		 */
+		do_action( 'wp_mcp_ai_pro_remote_site_saved', $connection_id, $connection );
+
+		return $connection_id;
+	}
+
+	/**
+	 * Update the encrypted API key (access token) stored for a connection.
+	 *
+	 * This is a lightweight alternative to calling the full save_connection()
+	 * when only the access token needs to change (e.g. after an automatic
+	 * token refresh).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id  Connection ID.
+	 * @param string $new_token      Plain-text new access token.
+	 * @return bool True on success, false on failure.
+	 */
+	public static function update_api_key( $connection_id, $new_token ) {
+		$connections   = self::get_all_connections();
+		$connection_id = sanitize_key( $connection_id );
+
+		if ( ! isset( $connections[ $connection_id ] ) || '' === (string) $new_token ) {
+			return false;
+		}
+
+		$connections[ $connection_id ]['api_key'] = self::encrypt_value( $new_token );
+
+		return (bool) update_option( self::OPTION_NAME, $connections );
+	}
+
+	/**
+	 * Attempt to automatically refresh a WhatsApp access token using stored Meta app credentials.
+	 *
+	 * Two strategies are tried in order:
+	 *
+	 * 1. **fb_exchange_token** — exchanges the current access token for a new long-lived
+	 *    User Access Token (~60 days). Works when the existing token is still valid or
+	 *    only mildly expired.
+	 *
+	 * 2. **System User token generation** — obtains an App Access Token via the
+	 *    `client_credentials` grant and then calls `POST /{system_user_id}/access_tokens`
+	 *    to mint a new never-expiring System User token. This works even when the previous
+	 *    token has fully expired, provided the app has admin access to the system user.
+	 *
+	 * When a new token is obtained it is automatically persisted via {@see update_api_key()}.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array  $connection        Full connection data array (encrypted secrets are decrypted internally).
+	 * @param string $connection_id     Connection ID used to persist the refreshed token.
+	 * @param string $current_token     Current (possibly expired) plain-text access token.
+	 * @param string $graph_api_version Graph API version string (e.g. 'v21.0').
+	 * @return string|false New plain-text access token on success, false when refresh is not possible.
+	 */
+	public static function refresh_whatsapp_token( array $connection, $connection_id, $current_token, $graph_api_version ) {
+		$app_id     = isset( $connection['app_id'] ) ? trim( (string) $connection['app_id'] ) : '';
+		$app_secret = isset( $connection['api_secret'] ) ? trim( (string) self::decrypt_value( $connection['api_secret'] ) ) : '';
+
+		if ( '' === $app_id || '' === $app_secret ) {
+			return false;
+		}
+
+		// --- Strategy 1: fb_exchange_token ----------------------------------------.
+		$exchange_url = add_query_arg(
+			array(
+				'grant_type'        => 'fb_exchange_token',
+				'client_id'         => $app_id,
+				'client_secret'     => $app_secret,
+				'fb_exchange_token' => $current_token,
+			),
+			sprintf( 'https://graph.facebook.com/%s/oauth/access_token', rawurlencode( $graph_api_version ) )
+		);
+
+		$exchange_response = wp_remote_get(
+			$exchange_url,
+			array(
+				'timeout' => 15,
+				'headers' => array( 'Accept' => 'application/json' ),
+			)
+		);
+
+		if ( ! is_wp_error( $exchange_response ) && 200 === (int) wp_remote_retrieve_response_code( $exchange_response ) ) {
+			$exchange_body = json_decode( wp_remote_retrieve_body( $exchange_response ), true );
+			if ( is_array( $exchange_body ) && ! empty( $exchange_body['access_token'] ) ) {
+				$new_token = trim( (string) $exchange_body['access_token'] );
+				if ( '' !== $new_token ) {
+					if ( $new_token !== $current_token ) {
+						// A new token was returned — save and return it.
+						self::update_api_key( $connection_id, $new_token );
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'whatsapp_token_refreshed',
+								'WhatsApp access token refreshed via fb_exchange_token.',
+								array( 'connection_id' => $connection_id )
+							);
+						}
+						return $new_token;
+					}
+					// Same token returned — it is still valid; return it as-is
+					// without persisting (nothing changed) and skip Strategy 2.
+					return $new_token;
+				}
+			}
+		}
+
+		// --- Strategy 2: System User token generation ------------------------------.
+		$system_user_id = isset( $connection['system_user_id'] ) ? trim( (string) $connection['system_user_id'] ) : '';
+		if ( '' === $system_user_id ) {
+			return false;
+		}
+
+		// Step 2a: obtain an App Access Token.
+		$app_token_url = add_query_arg(
+			array(
+				'client_id'     => $app_id,
+				'client_secret' => $app_secret,
+				'grant_type'    => 'client_credentials',
+			),
+			sprintf( 'https://graph.facebook.com/%s/oauth/access_token', rawurlencode( $graph_api_version ) )
+		);
+
+		$app_token_response = wp_remote_get(
+			$app_token_url,
+			array(
+				'timeout' => 15,
+				'headers' => array( 'Accept' => 'application/json' ),
+			)
+		);
+
+		if ( is_wp_error( $app_token_response ) || 200 !== (int) wp_remote_retrieve_response_code( $app_token_response ) ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'WhatsApp token refresh: failed to obtain App Access Token.',
+					array( 'connection_id' => $connection_id )
+				);
+			}
+			return false;
+		}
+
+		$app_token_body = json_decode( wp_remote_retrieve_body( $app_token_response ), true );
+		$app_token      = is_array( $app_token_body ) && ! empty( $app_token_body['access_token'] ) ? trim( (string) $app_token_body['access_token'] ) : '';
+		if ( '' === $app_token ) {
+			return false;
+		}
+
+		// Step 2b: generate a new System User Access Token.
+		$sys_token_url = sprintf(
+			'https://graph.facebook.com/%s/%s/access_tokens',
+			rawurlencode( $graph_api_version ),
+			rawurlencode( $system_user_id )
+		);
+
+		$sys_token_response = wp_remote_post(
+			$sys_token_url,
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $app_token,
+					'Content-Type'  => 'application/x-www-form-urlencoded',
+				),
+				'body'    => http_build_query(
+					array(
+						'business_app' => $app_id,
+						'scope'        => 'whatsapp_business_messaging,whatsapp_business_management',
+					)
+				),
+			)
+		);
+
+		if ( is_wp_error( $sys_token_response ) || 200 !== (int) wp_remote_retrieve_response_code( $sys_token_response ) ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'WhatsApp token refresh: System User token generation failed.',
+					array(
+						'connection_id'  => $connection_id,
+						'system_user_id' => substr( $system_user_id, 0, 4 ) . '***',
+					)
+				);
+			}
+			return false;
+		}
+
+		$sys_token_body = json_decode( wp_remote_retrieve_body( $sys_token_response ), true );
+		$new_token      = is_array( $sys_token_body ) && ! empty( $sys_token_body['access_token'] ) ? trim( (string) $sys_token_body['access_token'] ) : '';
+		if ( '' === $new_token ) {
+			return false;
+		}
+
+		self::update_api_key( $connection_id, $new_token );
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'whatsapp_token_refreshed',
+				'WhatsApp access token refreshed via System User token generation.',
+				array( 'connection_id' => $connection_id )
+			);
+		}
+		return $new_token;
+	}
+
+	/**
+	 * Delete a remote site connection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID to delete.
+	 * @return bool True on success, false on failure.
+	 */
+	public static function delete_connection( $connection_id ) {
+		$connections   = self::get_all_connections();
+		$connection_id = sanitize_key( $connection_id );
+
+		if ( ! isset( $connections[ $connection_id ] ) ) {
+			return false;
+		}
+
+		/**
+		 * Fires before a remote site connection is deleted.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $connection_id Connection ID.
+		 */
+		do_action( 'wp_mcp_ai_pro_remote_site_deleted', $connection_id );
+
+		unset( $connections[ $connection_id ] );
+
+		return update_option( self::OPTION_NAME, $connections );
+	}
+
+	/**
+	 * Test a remote site connection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array|string $connection Connection data array or connection ID.
+	 * @return array|WP_Error Test results on success, WP_Error on failure.
+	 */
+	public static function test_connection( $connection ) {
+		if ( is_string( $connection ) ) {
+			$connection = self::get_connection( $connection );
+
+			if ( null === $connection ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_invalid_connection',
+					__( 'Connection not found.', 'nvoos-content-graph-pro' )
+				);
+			}
+		}
+
+		$validation = self::validate_connection_data( $connection );
+
+		if ( is_wp_error( $validation ) ) {
+			return $validation;
+		}
+
+		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'WordPress';
+
+		// Handle Mesh Peer connections separately.
+		if ( 'mesh_peer' === $connection_type ) {
+			return self::test_mesh_peer_connection( $connection );
+		}
+
+		// Handle Telegram connections separately.
+		if ( 'telegram' === $connection_type ) {
+			return self::test_telegram_connection( $connection );
+		}
+
+		// Handle WhatsApp connections separately.
+		if ( 'whatsapp' === $connection_type ) {
+			return self::test_whatsapp_connection( $connection );
+		}
+
+		// Handle Flowhub connections separately.
+		if ( 'flowhub' === $connection_type ) {
+			return self::test_flowhub_connection( $connection );
+		}
+
+		// Handle Shopify connections separately.
+		if ( 'shopify' === $connection_type ) {
+			return self::test_shopify_connection( $connection );
+		}
+
+		// Handle Printful connections separately.
+		if ( 'printful' === $connection_type ) {
+			return self::test_printful_connection( $connection );
+		}
+
+		// Handle EZuite ERP connections separately.
+		if ( 'ezuite_erp' === $connection_type ) {
+			return self::test_ezuite_connection( $connection );
+		}
+
+		// Handle Slack connections separately.
+		if ( 'slack' === $connection_type ) {
+			return self::test_slack_connection( $connection );
+		}
+
+		// Handle Google Chat connections separately.
+		if ( 'google_chat' === $connection_type ) {
+			return self::test_google_chat_connection( $connection );
+		}
+
+		// Handle Gmail connections separately.
+		if ( 'gmail' === $connection_type ) {
+			return array(
+				'success' => true,
+				'gmail'   => true,
+				'message' => __( 'Gmail OAuth credentials saved. Complete the OAuth flow via the connect button to finish setup.', 'nvoos-content-graph-pro' ),
+			);
+		}
+
+		// Handle Google Drive connections separately.
+		if ( 'google_drive' === $connection_type ) {
+			return array(
+				'success'      => true,
+				'google_drive' => true,
+				'message'      => __( 'Google Drive OAuth credentials saved. Complete the OAuth flow via the connect button to finish setup.', 'nvoos-content-graph-pro' ),
+			);
+		}
+
+		// Handle Google Calendar connections separately.
+		// Unlike the Gmail and Drive stubs above, this performs a real probe once a
+		// refresh token exists, so "Test" reports actual reachability rather than
+		// merely confirming that fields were saved.
+		if ( 'google_calendar' === $connection_type ) {
+			return self::test_google_calendar_connection( $connection );
+		}
+
+		// Handle Upwork connections separately.
+		if ( 'upwork' === $connection_type ) {
+			return array(
+				'success' => true,
+				'upwork'  => true,
+				'message' => __( 'Upwork OAuth credentials saved. Complete the OAuth flow via the connect button to finish setup.', 'nvoos-content-graph-pro' ),
+			);
+		}
+
+		// Handle LinkedIn connections separately.
+		if ( 'linkedin' === $connection_type ) {
+			return array(
+				'success'  => true,
+				'linkedin' => true,
+				'message'  => __( 'LinkedIn OAuth credentials saved. Complete the OAuth flow via the connect button to finish setup.', 'nvoos-content-graph-pro' ),
+			);
+		}
+
+		// Handle ShipEngine (ShipStation API) connections separately.
+		if ( 'shipengine' === $connection_type ) {
+			return self::test_shipengine_connection( $connection );
+		}
+
+		// Handle ShipStation V1 (Legacy) connections separately.
+		if ( 'shipstation' === $connection_type ) {
+			return self::test_shipstation_connection( $connection );
+		}
+
+		// Handle Composio connections separately.
+		if ( 'composio' === $connection_type ) {
+			return self::test_composio_connection( $connection );
+		}
+
+		// Pre-flight DNS reachability check (non-blocking diagnostic).
+		$parsed_url = wp_parse_url( $connection['url'] );
+		$host       = isset( $parsed_url['host'] ) ? $parsed_url['host'] : '';
+
+		if ( '' !== $host ) {
+			$dns_check = self::check_host_reachability( $host );
+		}
+
+		// Test basic WordPress REST API access.
+		$response = self::make_request( $connection, 'wp/v2/types' );
+
+		if ( is_wp_error( $response ) ) {
+			// If we have a DNS warning and the request failed, prepend the DNS
+			// diagnostic so the user sees the likely root cause first.
+			if ( isset( $dns_check ) && ! $dns_check['reachable'] ) {
+				$dns_error = new WP_Error(
+					'wp_mcp_ai_pro_dns_unreachable',
+					$dns_check['message'] . ' ' . $response->get_error_message()
+				);
+				return $dns_error;
+			}
+			return $response;
+		}
+
+		$results = array(
+			'success'     => true,
+			'wordpress'   => true,
+			'woocommerce' => false,
+			'site_name'   => '',
+			'site_url'    => $connection['url'],
+			'message'     => __( 'Connection successful.', 'nvoos-content-graph-pro' ),
+		);
+
+		// Surface DNS warnings for reachable hosts that resolve
+		// (the request succeeded despite the warning).
+		if ( isset( $dns_check ) && ! $dns_check['reachable'] ) {
+			$results['warning'] = $dns_check['message'];
+		}
+
+		// Test WooCommerce API access if enabled.
+		if ( ! empty( $connection['has_woocommerce'] ) ) {
+			$wc_response = self::make_request( $connection, 'wc/v3/system_status' );
+
+			if ( ! is_wp_error( $wc_response ) ) {
+				$results['woocommerce'] = true;
+			}
+		}
+
+		// Get site info.
+		$site_info = self::make_request( $connection, 'wp/v2' );
+
+		if ( ! is_wp_error( $site_info ) && isset( $site_info['name'] ) ) {
+			$results['site_name'] = $site_info['name'];
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Test Google Chat API connection.
+	 *
+	 * Supports Service Account JSON key, OAuth refresh token, or OAuth
+	 * Client ID + Secret only (partial setup — OAuth flow not yet completed).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	/**
+	 * Test a Google Calendar connection.
+	 *
+	 * Performs a real single-item `calendarList.list` probe once a refresh token
+	 * exists, so the result reflects actual reachability rather than merely
+	 * confirming that the credential fields were saved. Before authorisation it
+	 * falls back to a saved-credentials acknowledgement, matching the Gmail and
+	 * Drive behaviour.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_google_calendar_connection( $connection ) {
+		$client_id     = isset( $connection['client_id'] ) ? trim( (string) $connection['client_id'] ) : '';
+		$client_secret = isset( $connection['client_secret'] ) ? trim( (string) $connection['client_secret'] ) : '';
+		$refresh_token = isset( $connection['refresh_token'] ) ? trim( (string) $connection['refresh_token'] ) : '';
+
+		if ( '' === $refresh_token ) {
+			return array(
+				'success'         => true,
+				'google_calendar' => true,
+				'message'         => __( 'Google Calendar OAuth credentials saved. Complete the OAuth flow via the connect button to finish setup.', 'nvoos-content-graph-pro' ),
+			);
+		}
+
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-credentials.php';
+		}
+
+		$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
+
+		$credentials = array(
+			'client_id'       => $client_id,
+			'client_secret'   => self::decrypt_value( $client_secret ),
+			'refresh_token'   => self::decrypt_value( $refresh_token ),
+			'access_token'    => '',
+			'user_email'      => isset( $connection['user_email'] ) ? (string) $connection['user_email'] : '',
+			'calendar_id'     => isset( $connection['calendar_id'] ) ? (string) $connection['calendar_id'] : 'primary',
+			'granted_scopes'  => isset( $connection['granted_scopes'] ) ? (string) $connection['granted_scopes'] : '',
+			'scope_profile'   => isset( $connection['scope_profile'] ) ? (string) $connection['scope_profile'] : '',
+			'cache_key'       => '' !== $connection_id ? 'connection:' . $connection_id : 'connection:test',
+			'service_account' => array(),
+		);
+
+		$client = WP_MCP_AI_Google_Calendar_Credentials::make_client( $credentials );
+
+		if ( is_wp_error( $client ) ) {
+			return $client;
+		}
+
+		$result = $client->list_calendars( array( 'maxResults' => 1 ) );
+
+		if ( is_wp_error( $result ) ) {
+			$needs_reconnect = WP_MCP_AI_Google_Calendar_Client::is_auth_failure( $result );
+
+			return new WP_Error(
+				'wp_mcp_ai_pro_google_calendar_test_failed',
+				$needs_reconnect
+					? __( 'Google rejected the stored credentials. Reconnect this Google Calendar connection.', 'nvoos-content-graph-pro' )
+					: $result->get_error_message(),
+				array( 'needs_reconnect' => $needs_reconnect )
+			);
+		}
+
+		$calendar_count = isset( $result['items'] ) && is_array( $result['items'] ) ? count( $result['items'] ) : 0;
+
+		return array(
+			'success'         => true,
+			'google_calendar' => true,
+			'message'         => $calendar_count > 0
+				? __( 'Connected to Google Calendar successfully.', 'nvoos-content-graph-pro' )
+				: __( 'Connected to Google Calendar, but no calendars were returned. Check that the account has at least one calendar and that the granted permissions include calendar list access.', 'nvoos-content-graph-pro' ),
+		);
+	}
+
+	/**
+	 * Test a Google Chat connection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_google_chat_connection( $connection ) {
+		$has_api_key       = ! empty( $connection['api_key'] );
+		$has_refresh       = ! empty( $connection['refresh_token'] );
+		$has_credentials   = ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] );
+		$connection_method = isset( $connection['connection_method'] ) ? $connection['connection_method'] : 'service_account';
+
+		// When the connection method is Incoming Webhook (outbound-only), and no
+		// Service Account key or OAuth credentials are configured, verify the webhook
+		// URL is present and return an informative result. This method can post
+		// outbound messages but cannot receive inbound events from Google Chat.
+		if ( 'webhook' === $connection_method && ! $has_api_key && ! $has_refresh && ! $has_credentials ) {
+			if ( ! empty( $connection['reply_webhook_url'] ) ) {
+				return array(
+					'success'     => true,
+					'google_chat' => true,
+					'partial'     => true,
+					'message'     => __( 'Incoming Webhook URL is configured. The bot can post outbound messages to the configured space.', 'nvoos-content-graph-pro' ),
+					'notice'      => __( 'Note: The Incoming Webhook method is outbound-only. To receive and respond to messages from Google Chat, switch to the Service Account or OAuth 2.0 method and configure the webhook URL in the Google Cloud Console.', 'nvoos-content-graph-pro' ),
+				);
+			}
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_google_chat_webhook_url',
+				__( 'No Incoming Webhook URL configured. Paste the webhook URL from your Google Chat space settings (Apps & integrations → Manage webhooks) to enable outbound messaging.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		if ( ! $has_api_key && ! $has_refresh && ! $has_credentials ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_google_chat_credentials',
+				__( 'No credentials configured for this Google Chat connection. Please add a Service Account JSON key or complete the OAuth setup (OAuth Client ID and Client Secret).', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// If only OAuth client credentials are present (no service account key and no refresh
+		// token) we cannot make a live API call yet — the OAuth flow must be completed first.
+		if ( ! $has_api_key && ! $has_refresh ) {
+			return array(
+				'success'     => true,
+				'google_chat' => true,
+				'partial'     => true,
+				'message'     => __( 'OAuth credentials saved. Complete the OAuth flow via the "Connect to Google Chat" button to finish setup and obtain a refresh token.', 'nvoos-content-graph-pro' ),
+			);
+		}
+
+		// Load the Google Service Account helper.
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Service_Account' ) ) {
+			$nvoos_content_graph_pro_google_service_account = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/chat-channels/class-wp-mcp-ai-pro-google-service-account.php';
+			if ( file_exists( $nvoos_content_graph_pro_google_service_account ) ) {
+				require_once $nvoos_content_graph_pro_google_service_account;
+			}
+		}
+
+		$access_token = '';
+
+		// Try Service Account JSON key first.
+		if ( $has_api_key ) {
+			$api_key      = self::decrypt_value( $connection['api_key'] );
+			$token_result = WP_MCP_AI_Pro_Google_Service_Account::get_access_token_from_key(
+				$api_key,
+				'https://www.googleapis.com/auth/chat.bot'
+			);
+
+			if ( ! is_wp_error( $token_result ) ) {
+				$access_token = $token_result;
+			} elseif ( ! $has_refresh ) {
+				return $token_result;
+			}
+		}
+
+		// Fall back to OAuth refresh token.
+		if ( '' === $access_token && $has_refresh ) {
+			$client_id     = isset( $connection['client_id'] ) ? $connection['client_id'] : '';
+			$client_secret = ! empty( $connection['client_secret'] ) ? self::decrypt_value( $connection['client_secret'] ) : '';
+			$refresh_token = self::decrypt_value( $connection['refresh_token'] );
+
+			$token_result = WP_MCP_AI_Pro_Google_Service_Account::get_access_token_from_refresh_token(
+				$client_id,
+				$client_secret,
+				$refresh_token
+			);
+
+			if ( is_wp_error( $token_result ) ) {
+				return $token_result;
+			}
+
+			$access_token = $token_result;
+		}
+
+		if ( '' === $access_token ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_google_chat_token_error',
+				__( 'Failed to obtain a Google access token. Please check your credentials.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Verify the token by calling the Google Chat spaces.list endpoint.
+		$response = wp_remote_get(
+			'https://chat.googleapis.com/v1/spaces?pageSize=1',
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $access_token,
+					'Accept'        => 'application/json',
+				),
+				'timeout' => 15,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_google_chat_request_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to Google Chat API: %s', 'nvoos-content-graph-pro' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+		$body        = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( 200 !== $status_code ) {
+			$error_msg = isset( $body['error']['message'] ) ? $body['error']['message'] : __( 'Invalid response from Google Chat API.', 'nvoos-content-graph-pro' );
+			return new WP_Error(
+				'wp_mcp_ai_pro_google_chat_api_error',
+				sprintf(
+					/* translators: 1: HTTP status code, 2: error message */
+					__( 'Google Chat API error (Status: %1$d): %2$s', 'nvoos-content-graph-pro' ),
+					$status_code,
+					$error_msg
+				)
+			);
+		}
+
+		$spaces      = isset( $body['spaces'] ) && is_array( $body['spaces'] ) ? $body['spaces'] : array();
+		$space_count = count( $spaces );
+
+		$result = array(
+			'success'     => true,
+			'google_chat' => true,
+			/* translators: %d: number of accessible Google Chat spaces */
+			'message'     => sprintf( _n( 'Google Chat connection successful. %d space accessible.', 'Google Chat connection successful. %d spaces accessible.', $space_count, 'nvoos-content-graph-pro' ), $space_count ),
+			'space_count' => $space_count,
+		);
+
+		// Warn when the Audience URL (verify_token) is not set and OIDC verification is
+		// not explicitly disabled. Without an audience URL, incoming webhook events will
+		// still be accepted (the OIDC token issuer is verified) but the audience claim
+		// will not be checked — which is less secure. Surfacing this in the test result
+		// helps admins configure the setting before going live.
+		if ( empty( $connection['verify_token'] ) && empty( $connection['disable_oidc_verification'] ) ) {
+			$result['notice'] = __( 'Tip: No Audience URL is configured. Incoming events will be accepted from any valid Google-signed token without audience checking. For stricter security, set the Audience URL to your webhook URL.', 'nvoos-content-graph-pro' );
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Test ShipEngine (ShipStation API) connection.
+	 *
+	 * Verifies the API key by calling GET /v1/carriers on the ShipEngine API.
+	 * ShipEngine uses the same base URL for both production and sandbox;
+	 * the environment is determined by the API key prefix (TEST_ = sandbox).
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_shipengine_connection( $connection ) {
+		$api_key = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+
+		if ( empty( $api_key ) || false === $api_key ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_shipengine_key',
+				__( 'ShipEngine API key is not configured.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		$response = self::make_request_with_retry(
+			'https://api.shipengine.com/v1/carriers',
+			array(
+				'method'  => 'GET',
+				'timeout' => 15,
+				'headers' => array(
+					'API-Key'      => $api_key,
+					'Content-Type' => 'application/json',
+					'User-Agent'   => 'WP-MCP-AI-Pro/' . WP_MCP_AI_PRO_VERSION,
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_shipengine_connection_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'ShipEngine connection failed: %s', 'nvoos-content-graph-pro' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+
+		if ( 401 === $code || 403 === $code ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_shipengine_auth_failed',
+				__( 'Invalid ShipEngine API key. Please check your credentials.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		if ( $code < 200 || $code >= 300 ) {
+			$error_message = __( 'ShipEngine API error.', 'nvoos-content-graph-pro' );
+			if ( is_array( $body ) && ! empty( $body['errors'] ) && is_array( $body['errors'] ) ) {
+				$messages = array();
+				foreach ( $body['errors'] as $err ) {
+					if ( isset( $err['message'] ) ) {
+						$messages[] = $err['message'];
+					}
+				}
+				if ( ! empty( $messages ) ) {
+					$error_message = implode( '; ', $messages );
+				}
+			}
+			return new WP_Error(
+				'wp_mcp_ai_pro_shipengine_api_error',
+				sprintf(
+					/* translators: 1: HTTP status code, 2: error message */
+					__( 'ShipEngine returned HTTP %1$d: %2$s', 'nvoos-content-graph-pro' ),
+					$code,
+					$error_message
+				)
+			);
+		}
+
+		$carriers   = isset( $body['carriers'] ) ? $body['carriers'] : array();
+		$is_sandbox = ! empty( $connection['sandbox_mode'] ) || 0 === strpos( $api_key, 'TEST_' );
+
+		// Verify carrier_id if provided.
+		$carrier_id   = isset( $connection['shipengine_carrier_id'] ) ? $connection['shipengine_carrier_id'] : '';
+		$carrier_info = '';
+		if ( '' !== $carrier_id ) {
+			$found = false;
+			foreach ( $carriers as $c ) {
+				if ( isset( $c['carrier_id'] ) && $c['carrier_id'] === $carrier_id ) {
+					$found        = true;
+					$carrier_info = isset( $c['friendly_name'] ) ? $c['friendly_name'] : '';
+					break;
+				}
+			}
+
+			if ( ! $found ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_shipengine_carrier_not_found',
+					sprintf(
+						/* translators: %s: carrier ID */
+						__( 'Carrier ID "%s" was not found in your ShipEngine account. Please verify the carrier ID.', 'nvoos-content-graph-pro' ),
+						$carrier_id
+					)
+				);
+			}
+		}
+
+		$message = $is_sandbox
+			? __( 'ShipStation API (sandbox) connection successful!', 'nvoos-content-graph-pro' )
+			: __( 'ShipStation API connection successful!', 'nvoos-content-graph-pro' );
+
+		if ( ! empty( $carrier_info ) ) {
+			/* translators: 1: status message, 2: carrier name */
+			$message = sprintf( __( '%1$s Carrier: %2$s.', 'nvoos-content-graph-pro' ), $message, $carrier_info );
+		}
+
+		/* translators: 1: status message, 2: number of carriers */
+		$message = sprintf( __( '%1$s Found %2$d carrier(s).', 'nvoos-content-graph-pro' ), $message, count( $carriers ) );
+
+		return array(
+			'success'       => true,
+			'shipengine'    => true,
+			'sandbox_mode'  => $is_sandbox,
+			'environment'   => $is_sandbox ? 'sandbox' : 'production',
+			'carrier_count' => count( $carriers ),
+			'message'       => $message,
+		);
+	}
+
+	/**
+	 * Test ShipStation V1 (Legacy) API connection.
+	 *
+	 * Verifies the API key and secret by calling GET /carriers on the
+	 * ShipStation V1 API using Basic Authentication.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_shipstation_connection( $connection ) {
+		$api_key    = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+		$api_secret = isset( $connection['api_secret'] ) ? self::decrypt_value( $connection['api_secret'] ) : '';
+
+		if ( empty( $api_key ) || false === $api_key || empty( $api_secret ) || false === $api_secret ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_shipstation_credentials',
+				__( 'ShipStation API key and secret are required.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		$auth = base64_encode( $api_key . ':' . $api_secret ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Standard Basic-Auth encoding.
+
+		/**
+		 * Filter the ShipStation API base URL.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $url Default ShipStation API base URL.
+		 */
+		$api_url  = (string) apply_filters( 'wp_mcp_ai_shipstation_api_url', 'https://ssapi.shipstation.com' );
+		$endpoint = trailingslashit( $api_url ) . 'carriers';
+
+		$response = self::make_request_with_retry(
+			$endpoint,
+			array(
+				'method'  => 'GET',
+				'timeout' => 15,
+				'headers' => array(
+					'Authorization' => 'Basic ' . $auth,
+					'Content-Type'  => 'application/json',
+					'User-Agent'    => 'WP-MCP-AI-Pro/' . WP_MCP_AI_PRO_VERSION,
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_shipstation_connection_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'ShipStation V1 connection failed: %s', 'nvoos-content-graph-pro' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+
+		if ( 401 === $code || 403 === $code ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_shipstation_auth_failed',
+				__( 'Invalid ShipStation V1 credentials. Please check your API key and secret.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		if ( $code < 200 || $code >= 300 ) {
+			$error_message = '';
+			if ( is_array( $body ) && ! empty( $body['Message'] ) ) {
+				$error_message = (string) $body['Message'];
+			} elseif ( is_array( $body ) && ! empty( $body['message'] ) ) {
+				$error_message = (string) $body['message'];
+			}
+			return new WP_Error(
+				'wp_mcp_ai_pro_shipstation_api_error',
+				sprintf(
+					/* translators: 1: HTTP status code, 2: error message */
+					__( 'ShipStation V1 returned HTTP %1$d%2$s', 'nvoos-content-graph-pro' ),
+					$code,
+					'' !== $error_message ? ': ' . $error_message : '.'
+				)
+			);
+		}
+
+		$is_sandbox = ! empty( $connection['sandbox_mode'] );
+		$carriers   = is_array( $body ) ? $body : array();
+
+		$message = $is_sandbox
+			? __( 'ShipStation V1 (sandbox) connection successful!', 'nvoos-content-graph-pro' )
+			: __( 'ShipStation V1 connection successful!', 'nvoos-content-graph-pro' );
+
+		/* translators: 1: status message, 2: number of carriers */
+		$message = sprintf( __( '%1$s Found %2$d carrier(s).', 'nvoos-content-graph-pro' ), $message, count( $carriers ) );
+
+		return array(
+			'success'       => true,
+			'shipstation'   => true,
+			'sandbox_mode'  => $is_sandbox,
+			'environment'   => $is_sandbox ? 'sandbox' : 'production',
+			'carrier_count' => count( $carriers ),
+			'message'       => $message,
+		);
+	}
+
+	/**
+	 * Test Composio Connect API connection.
+	 *
+	 * Verifies the project API key by fetching the tool enum (the smallest
+	 * authenticated call on the Composio backend API).
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_composio_connection( $connection ) {
+		if ( ! class_exists( 'WP_MCP_AI_Composio_Client' ) && defined( 'NVOOS_CONTENT_GRAPH_PRO_PATH' ) ) {
+			$client_file = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/composio/class-wp-mcp-ai-composio-client.php';
+			if ( file_exists( $client_file ) ) {
+				require_once $client_file;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Composio_Client' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_composio_client_missing',
+				__( 'The Composio client is not available. Ensure the Pro addon is up to date.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		$client = WP_MCP_AI_Composio_Client::from_connection( $connection );
+		$result = $client->test_connection();
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Test Flowhub API connection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_flowhub_connection( $connection ) {
+		$client_id   = isset( $connection['client_id'] ) ? $connection['client_id'] : '';
+		$api_key     = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+		$location_id = isset( $connection['location_id'] ) ? $connection['location_id'] : '';
+		$sandbox     = ! empty( $connection['sandbox_mode'] );
+
+		if ( empty( $client_id ) || empty( $api_key ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_flowhub_credentials',
+				__( 'API key and client ID are required for Flowhub connections.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Determine base URL — respect sandbox mode.
+		$base_url = $sandbox ? 'https://api.sandbox.flowhub.co' : 'https://api.flowhub.co';
+
+		// Build the inventory endpoint. When location_id is available, scope to that
+		// location. Otherwise use the root inventoryNonZero endpoint (no location required).
+		if ( ! empty( $location_id ) ) {
+			$url = $base_url . '/v0/locations/' . rawurlencode( $location_id ) . '/inventoryNonZero?limit=1';
+		} else {
+			$url = $base_url . '/v0/inventoryNonZero?limit=1';
+		}
+
+		// Attach proxy via http_api_curl when configured.
+		$proxy_enabled  = ! empty( $connection['proxy_enabled'] );
+		$proxy_url      = isset( $connection['proxy_url'] ) ? $connection['proxy_url'] : '';
+		$proxy_username = isset( $connection['proxy_username'] ) ? $connection['proxy_username'] : '';
+		$proxy_password = isset( $connection['proxy_password'] ) ? self::decrypt_value( $connection['proxy_password'] ) : '';
+
+		$curl_proxy = null;
+		if ( $proxy_enabled && ! empty( $proxy_url ) ) {
+			$proxy_auth = ( ! empty( $proxy_username ) || ! empty( $proxy_password ) )
+				? $proxy_username . ':' . $proxy_password
+				: '';
+			$curl_proxy = function ( $handle ) use ( $proxy_url, $proxy_auth ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt -- Proxy support requires cURL-level configuration.
+				curl_setopt( $handle, CURLOPT_PROXY, $proxy_url );
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+				curl_setopt( $handle, CURLOPT_PROXYTYPE, CURLPROXY_HTTP );
+				if ( ! empty( $proxy_auth ) ) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+					curl_setopt( $handle, CURLOPT_PROXYUSERPWD, $proxy_auth );
+				}
+			};
+			add_action( 'http_api_curl', $curl_proxy, 10, 1 );
+		}
+
+		try {
+			$response = wp_remote_get(
+				$url,
+				array(
+					'timeout' => 15,
+					'headers' => array(
+						'clientId' => $client_id,
+						'key'      => $api_key,
+						'Accept'   => 'application/json',
+					),
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_flowhub_connection_failed',
+					sprintf(
+						/* translators: %s: error message */
+						__( 'Flowhub connection failed: %s', 'nvoos-content-graph-pro' ),
+						$response->get_error_message()
+					)
+				);
+			}
+
+			$code = (int) wp_remote_retrieve_response_code( $response );
+
+			if ( 401 === $code || 403 === $code ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_flowhub_auth_failed',
+					__( 'Flowhub API authentication failed. Check your client ID and API key.', 'nvoos-content-graph-pro' )
+				);
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_flowhub_api_error',
+					sprintf(
+						/* translators: %d: HTTP status code */
+						__( 'Flowhub API returned HTTP %d.', 'nvoos-content-graph-pro' ),
+						$code
+					)
+				);
+			}
+
+			$body            = json_decode( wp_remote_retrieve_body( $response ), true );
+			$inventory_count = isset( $body['data'] ) && is_array( $body['data'] ) ? count( $body['data'] ) : 0;
+
+			$results = array(
+				'success' => true,
+				'flowhub' => true,
+				'message' => __( 'Flowhub connection successful. API credentials verified.', 'nvoos-content-graph-pro' ),
+			);
+
+			if ( $inventory_count > 0 ) {
+				$results['inventory_count'] = $inventory_count;
+				/* translators: %d: number of inventory items */
+				$results['message'] = sprintf( __( 'Flowhub connection successful. Found %d inventory items.', 'nvoos-content-graph-pro' ), $inventory_count );
+			}
+
+			return $results;
+		} finally {
+			if ( null !== $curl_proxy ) {
+				remove_action( 'http_api_curl', $curl_proxy, 10 );
+			}
+		}
+	}
+
+	/**
+	 * Test Printful API connection.
+	 *
+	 * Verifies the Bearer token by fetching the authorized stores list.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_printful_connection( $connection ) {
+		if ( ! class_exists( 'WP_MCP_AI_Printful_Client' ) ) {
+			if ( defined( 'WP_MCP_AI_PATH' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-printful-client.php';
+			}
+		}
+
+		$connection_id = isset( $connection['id'] ) ? $connection['id'] : null;
+		$client        = new WP_MCP_AI_Printful_Client( $connection_id );
+
+		$response = $client->get_stores();
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$store_count = is_array( $response ) ? count( $response ) : 0;
+
+		$results = array(
+			'success'     => true,
+			'printful'    => true,
+			'store_count' => $store_count,
+		);
+
+		if ( $store_count > 0 ) {
+			$results['message'] = sprintf(
+				/* translators: %d: number of authorized stores */
+				_n(
+					'Printful connection successful. %d store authorized.',
+					'Printful connection successful. %d stores authorized.',
+					$store_count,
+					'nvoos-content-graph-pro'
+				),
+				$store_count
+			);
+
+			// Collect store names for the test result display.
+			$store_names = array();
+			foreach ( $response as $store ) {
+				if ( ! empty( $store['name'] ) ) {
+					$store_names[] = $store['name'] . ' (ID: ' . ( isset( $store['id'] ) ? $store['id'] : '?' ) . ')';
+				}
+			}
+			if ( ! empty( $store_names ) ) {
+				$results['stores'] = $store_names;
+			}
+		} else {
+			$results['message'] = __( 'Printful connection successful, but no stores found. Create a store in your Printful dashboard.', 'nvoos-content-graph-pro' );
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Test Shopify Admin GraphQL API connection.
+	 *
+	 * Queries the shop's basic information using the Admin GraphQL API to
+	 * verify that the access token and store URL are correct.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_shopify_connection( $connection ) {
+		if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
+			$nvoos_content_graph_pro_shopify_client = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-shopify-client.php';
+			if ( file_exists( $nvoos_content_graph_pro_shopify_client ) ) {
+				require_once $nvoos_content_graph_pro_shopify_client;
+			}
+		}
+
+		$shopify_api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
+
+		if ( 'catalog_api' === $shopify_api_mode ) {
+			return self::test_shopify_catalog_connection( $connection );
+		}
+
+		$connection_id = isset( $connection['id'] ) ? $connection['id'] : null;
+		$client        = new WP_MCP_AI_Shopify_Client( $connection_id );
+
+		$query    = 'query { shop { name myshopifyDomain plan { displayName } } }';
+		$response = $client->graphql( $query );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		if ( isset( $response['errors'] ) && ! empty( $response['errors'] ) ) {
+			$error_msg = isset( $response['errors'][0]['message'] ) ? $response['errors'][0]['message'] : __( 'Unknown GraphQL error.', 'nvoos-content-graph-pro' );
+			return new WP_Error( 'wp_mcp_ai_pro_shopify_error', $error_msg );
+		}
+
+		$shop_name = isset( $response['data']['shop']['name'] ) ? $response['data']['shop']['name'] : '';
+		$shop_plan = isset( $response['data']['shop']['plan']['displayName'] ) ? $response['data']['shop']['plan']['displayName'] : '';
+
+		$message = ! empty( $shop_name )
+			? sprintf( /* translators: 1: store name, 2: plan name */ __( 'Shopify connection successful. Connected to "%1$s" (%2$s).', 'nvoos-content-graph-pro' ), $shop_name, $shop_plan )
+			: __( 'Shopify connection successful.', 'nvoos-content-graph-pro' );
+
+		return array(
+			'success'   => true,
+			'shopify'   => true,
+			'shop_name' => $shop_name,
+			'shop_plan' => $shop_plan,
+			'message'   => $message,
+		);
+	}
+
+	/**
+	 * Test Shopify Catalog API connection.
+	 *
+	 * Exchanges client_id + client_secret for a JWT bearer token and verifies
+	 * the search endpoint is reachable.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_shopify_catalog_connection( $connection ) {
+		if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
+			$nvoos_content_graph_pro_shopify_client = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-shopify-client.php';
+			if ( file_exists( $nvoos_content_graph_pro_shopify_client ) ) {
+				require_once $nvoos_content_graph_pro_shopify_client;
+			}
+		}
+
+		$connection_id = isset( $connection['id'] ) ? $connection['id'] : null;
+		$client        = new WP_MCP_AI_Shopify_Client( $connection_id );
+
+		// Attempt to obtain a Catalog API JWT bearer token first.
+		$token = $client->get_catalog_token();
+		if ( is_wp_error( $token ) ) {
+			return $token;
+		}
+
+		// Verify the search endpoint with a minimal query.
+		$response = $client->catalog_search( 'test', 1 );
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		return array(
+			'success' => true,
+			'shopify' => true,
+			'message' => __( 'Shopify Catalog API connection successful. JWT token acquired and search endpoint verified.', 'nvoos-content-graph-pro' ),
+		);
+	}
+
+	/**
+	 * Test EZuite ERP API connection.
+	 *
+	 * Makes a simple API call to verify the connection and API key.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_ezuite_connection( $connection ) {
+		// Validate required fields.
+		if ( empty( $connection['url'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_url',
+				__( 'EZuite API URL is required.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		if ( empty( $connection['api_key'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_api_key',
+				__( 'EZuite API key is required.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Decrypt the API key.
+		$api_key = self::decrypt_value( $connection['api_key'] );
+
+		if ( empty( $api_key ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_invalid_api_key',
+				__( 'Invalid or corrupted API key.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Prepare a simple test request - use LX_ItemPull with a limit to minimize data.
+		$url = untrailingslashit( $connection['url'] );
+
+		$request_body = array(
+			'API_Key'    => $api_key,
+			'API_Action' => 'LX_ItemPull',
+			'API_Body'   => array(
+				array(
+					'Location_Code' => 'ALL',
+					'Limit'         => 1, // Only fetch 1 item to test connection.
+				),
+			),
+		);
+
+		$args = array(
+			'method'  => 'POST',
+			'timeout' => 30,
+			'headers' => array(
+				'Content-Type' => 'application/json',
+			),
+			'body'    => wp_json_encode( $request_body ),
+		);
+
+		// Make the request.
+		$response = wp_remote_request( $url, $args );
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_connection_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to EZuite API: %s', 'nvoos-content-graph-pro' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		$status_code = wp_remote_retrieve_response_code( $response );
+		$body        = wp_remote_retrieve_body( $response );
+
+		if ( 200 !== $status_code ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_api_error',
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'EZuite API returned error status %d. Please check your API URL and credentials.', 'nvoos-content-graph-pro' ),
+					$status_code
+				)
+			);
+		}
+
+		// Parse the JSON response.
+		$data = json_decode( $body, true );
+
+		if ( null === $data || ! is_array( $data ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_invalid_response',
+				__( 'EZuite API returned invalid JSON response.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Check the response status.
+		$ezuite_status = isset( $data['Status_Code'] ) ? absint( $data['Status_Code'] ) : 0;
+
+		if ( 200 !== $ezuite_status ) {
+			$error_message = isset( $data['Message'] ) ? sanitize_text_field( $data['Message'] ) : __( 'Unknown error', 'nvoos-content-graph-pro' );
+			return new WP_Error(
+				'wp_mcp_ai_pro_ezuite_error',
+				sprintf(
+					/* translators: 1: status code, 2: error message */
+					__( 'EZuite API error (Status: %1$d): %2$s', 'nvoos-content-graph-pro' ),
+					$ezuite_status,
+					$error_message
+				)
+			);
+		}
+
+		// Connection successful!
+		$results = array(
+			'success'    => true,
+			'ezuite_erp' => true,
+			'api_url'    => $connection['url'],
+			'message'    => __( 'EZuite ERP connection successful. API credentials verified.', 'nvoos-content-graph-pro' ),
+		);
+
+		// Add item count if available in response.
+		if ( isset( $data['Response_Body'] ) && is_array( $data['Response_Body'] ) ) {
+			$item_count = count( $data['Response_Body'] );
+			if ( $item_count > 0 ) {
+				/* translators: %d: number of items retrieved */
+				$results['message'] = sprintf( __( 'EZuite ERP connection successful. Retrieved %d test item(s).', 'nvoos-content-graph-pro' ), $item_count );
+			}
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Validate a Telegram bot token format.
+	 *
+	 * Telegram bot tokens follow the format: {numeric_id}:{alphanumeric_string_≥30_chars}
+	 *
+	 * @param string $bot_token The bot token to validate.
+	 * @return bool True when the token format is valid, false otherwise.
+	 */
+	public static function is_valid_telegram_bot_token( $bot_token ) {
+		return 1 === preg_match( '/^\d+:[A-Za-z0-9_-]{30,}$/', (string) $bot_token );
+	}
+
+	/**
+	 * Validate a Telegram webhook secret token format.
+	 *
+	 * Per the Telegram Bot API, secret tokens may only contain A–Z, a–z, 0–9, underscores
+	 * and hyphens (1–256 characters).
+	 *
+	 * @param string $secret_token The secret token to validate.
+	 * @return bool True when the secret token format is valid, false otherwise.
+	 */
+	public static function is_valid_telegram_secret_token( $secret_token ) {
+		return 1 === preg_match( '/^[A-Za-z0-9_-]{1,256}$/', (string) $secret_token );
+	}
+
+	/**
+	 * Test Slack Bot API connection.
+	 *
+	 * Verifies the Slack Bot Token by calling the auth.test endpoint and
+	 * checks that the Event Subscriptions Request URL is reachable.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_slack_connection( $connection ) {
+		$bot_token = ! empty( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+
+		if ( '' === $bot_token ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_slack_missing_token',
+				__( 'Slack Bot Token is required. Enter the Bot User OAuth Token (starts with xoxb-) and save before testing.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		$response = wp_remote_post(
+			'https://slack.com/api/auth.test',
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $bot_token,
+					'Content-Type'  => 'application/json; charset=utf-8',
+				),
+				'timeout' => 15,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_slack_http_error',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to Slack API: %s', 'nvoos-content-graph-pro' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( empty( $body['ok'] ) ) {
+			$error_code = isset( $body['error'] ) ? $body['error'] : 'unknown_error';
+			return new WP_Error(
+				'wp_mcp_ai_pro_slack_api_error',
+				sprintf(
+					/* translators: %s: Slack API error code */
+					__( 'Slack API error: %s — Check that the Bot Token is valid and that your Slack app has the required scopes (chat:write, channels:history, app_mentions:read).', 'nvoos-content-graph-pro' ),
+					$error_code
+				)
+			);
+		}
+
+		$connection_id = isset( $connection['id'] ) ? $connection['id'] : '';
+		$webhook_path  = $connection_id
+			? '/wp-json/mcp-ai/v1/webhooks/slack/' . $connection_id
+			: '/wp-json/mcp-ai/v1/webhooks/slack';
+		$webhook_url   = home_url( $webhook_path );
+		$team          = isset( $body['team'] ) ? sanitize_text_field( $body['team'] ) : '';
+		$bot_user      = isset( $body['user'] ) ? sanitize_text_field( $body['user'] ) : '';
+		$team_id       = isset( $body['team_id'] ) ? sanitize_text_field( $body['team_id'] ) : '';
+		$bot_user_id   = isset( $body['user_id'] ) ? sanitize_text_field( $body['user_id'] ) : '';
+
+		$message = sprintf(
+			/* translators: 1: Slack team name, 2: bot username, 3: Slack team ID, 4: bot user ID, 5: webhook URL */
+			__( 'Team: %1$s (%2$s), Bot: %3$s (%4$s). Event Subscriptions URL: %5$s', 'nvoos-content-graph-pro' ),
+			$team,
+			$team_id,
+			$bot_user,
+			$bot_user_id,
+			$webhook_url
+		);
+
+		// Warn when the Signing Secret is not configured. Without it, HMAC
+		// signature validation rejects every incoming Slack event with a 403,
+		// so the bot will never respond even when the token is valid and the
+		// Event Subscriptions URL is correctly set up in Slack.
+		$has_signing_secret = ! empty( $connection['signing_secret'] ) || ! empty( $connection['api_secret'] );
+		$warning            = $has_signing_secret ? '' : __(
+			'Signing Secret is not configured. Without it, all Slack event webhooks are rejected with a 403 error and the bot cannot respond to messages. Add the Signing Secret from your Slack app\'s Basic Information page, enter it in the Signing Secret field, and save the connection.',
+			'nvoos-content-graph-pro'
+		);
+
+		return array(
+			'success'     => true,
+			'slack'       => true,
+			'team'        => $team,
+			'bot_user'    => $bot_user,
+			'team_id'     => $team_id,
+			'bot_user_id' => $bot_user_id,
+			'webhook_url' => $webhook_url,
+			'message'     => $message,
+			'warning'     => $warning,
+		);
+	}
+
+	/**
+	 * Test Telegram Bot API connection.
+	 *
+	 * Tests Telegram connection by calling getMe and getWebhookInfo on the Bot API.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_telegram_connection( $connection ) {
+		$bot_token = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+
+		if ( empty( $bot_token ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_telegram_missing_token',
+				__( 'Telegram bot token is required.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Validate token format: numeric_id:alphanum_string (at least 30 chars total).
+		if ( ! self::is_valid_telegram_bot_token( $bot_token ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_telegram_invalid_token',
+				__( 'The token format is invalid. A Telegram bot token looks like: 1234567890:ABCdefGHIjklMNOpqrsTUVwxyz. Obtain your token from @BotFather on Telegram.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		$api_base = 'https://api.telegram.org/bot' . rawurlencode( $bot_token );
+
+		// Call getMe to verify the bot token and retrieve bot identity.
+		$get_me_response = wp_remote_get(
+			$api_base . '/getMe',
+			array( 'timeout' => 15 )
+		);
+
+		if ( is_wp_error( $get_me_response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_telegram_http_error',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to Telegram API: %s', 'nvoos-content-graph-pro' ),
+					$get_me_response->get_error_message()
+				)
+			);
+		}
+
+		$get_me_code = wp_remote_retrieve_response_code( $get_me_response );
+		$get_me_data = json_decode( wp_remote_retrieve_body( $get_me_response ), true );
+
+		if ( 200 !== (int) $get_me_code || empty( $get_me_data['ok'] ) ) {
+			$tg_description = isset( $get_me_data['description'] ) ? $get_me_data['description'] : __( 'Invalid response from Telegram API.', 'nvoos-content-graph-pro' );
+			return new WP_Error(
+				'wp_mcp_ai_pro_telegram_api_error',
+				sprintf(
+					/* translators: %s: error description */
+					__( 'Telegram API error: %s', 'nvoos-content-graph-pro' ),
+					$tg_description
+				)
+			);
+		}
+
+		$bot = isset( $get_me_data['result'] ) ? $get_me_data['result'] : array();
+
+		$results = array(
+			'success'                 => true,
+			'telegram'                => true,
+			'bot_id'                  => isset( $bot['id'] ) ? $bot['id'] : '',
+			'bot_username'            => isset( $bot['username'] ) ? $bot['username'] : '',
+			'bot_name'                => isset( $bot['first_name'] ) ? $bot['first_name'] : '',
+			'can_join_groups'         => ! empty( $bot['can_join_groups'] ),
+			'can_read_all_messages'   => ! empty( $bot['can_read_all_group_messages'] ),
+			'supports_inline_queries' => ! empty( $bot['supports_inline_queries'] ),
+			'webhook_url'             => '',
+			'pending_updates'         => 0,
+			'message'                 => __( 'Telegram bot token verified successfully.', 'nvoos-content-graph-pro' ),
+		);
+
+		// Call getWebhookInfo to retrieve the current webhook configuration.
+		$webhook_response = wp_remote_get(
+			$api_base . '/getWebhookInfo',
+			array( 'timeout' => 15 )
+		);
+
+		if ( ! is_wp_error( $webhook_response ) && 200 === (int) wp_remote_retrieve_response_code( $webhook_response ) ) {
+			$webhook_data = json_decode( wp_remote_retrieve_body( $webhook_response ), true );
+			if ( ! empty( $webhook_data['ok'] ) && isset( $webhook_data['result'] ) ) {
+				$wh                         = $webhook_data['result'];
+				$results['webhook_url']     = isset( $wh['url'] ) ? $wh['url'] : '';
+				$results['pending_updates'] = isset( $wh['pending_update_count'] ) ? (int) $wh['pending_update_count'] : 0;
+				if ( ! empty( $wh['last_error_message'] ) ) {
+					$results['webhook_last_error'] = $wh['last_error_message'];
+				}
+				$connection_id = isset( $connection['id'] ) ? $connection['id'] : '';
+				$expected_url  = ! empty( $connection_id )
+					? home_url( '/wp-json/mcp-ai/v1/webhooks/telegram/' . $connection_id )
+					: home_url( '/wp-json/mcp-ai/v1/webhooks/telegram' );
+				if ( empty( $results['webhook_url'] ) ) {
+					$results['warning'] = sprintf(
+						/* translators: %s: expected webhook URL */
+						__( 'No webhook is set. Use the Set Webhook button or set it manually to: %s', 'nvoos-content-graph-pro' ),
+						$expected_url
+					);
+				} elseif ( false === strpos( $results['webhook_url'], home_url( '/' ) ) ) {
+					$results['warning'] = sprintf(
+						/* translators: 1: current webhook URL, 2: expected URL */
+						__( 'Webhook is set to a different site (%1$s). Expected: %2$s', 'nvoos-content-graph-pro' ),
+						$results['webhook_url'],
+						$expected_url
+					);
+				}
+			}
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Test WhatsApp Business API connection.
+	 *
+	 * Tests WhatsApp connection by verifying phone number and attempting to retrieve business profile.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_whatsapp_connection( $connection ) {
+		// Validate required fields.
+		$access_token    = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+		$phone_number_id = isset( $connection['phone_number_id'] ) ? $connection['phone_number_id'] : '';
+		$app_secret      = isset( $connection['api_secret'] ) ? self::decrypt_value( $connection['api_secret'] ) : '';
+
+		if ( empty( $access_token ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_whatsapp_missing_token',
+				__( 'WhatsApp access token is required.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		if ( empty( $phone_number_id ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_whatsapp_missing_phone_id',
+				__( 'WhatsApp phone number ID is required.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Reject App Access Tokens — they have the format "{numeric_app_id}|{hash}" and cannot
+		// send or receive messages via the WhatsApp Cloud API. Users must supply a
+		// System User Access Token from Meta Business Suite or a User Access Token
+		// with the whatsapp_business_messaging permission.
+		// Meta App Access Tokens always begin with the numeric App ID followed by a pipe,
+		// so a leading-digits-pipe pattern is a reliable and specific heuristic.
+		if ( 1 === preg_match( '/^\d+\|/', $access_token ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_whatsapp_app_token',
+				__( 'The access token appears to be a Meta App Access Token (format: {app_id}|{hash}). App Access Tokens cannot send or receive WhatsApp messages via the Cloud API. Please use a System User Access Token from Meta Business Suite (Business Settings → System Users) or a User Access Token with the whatsapp_business_messaging permission.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Extract the Graph API version from the connection URL, falling back to v21.0.
+		$graph_api_version = 'v21.0';
+		if ( isset( $connection['url'] ) && preg_match( '#graph\.facebook\.com/(v\d+\.\d+)#', $connection['url'], $version_matches ) ) {
+			$graph_api_version = $version_matches[1];
+		} elseif ( isset( $connection['graph_api_version'] ) && preg_match( '/^v\d+\.\d+$/', $connection['graph_api_version'] ) ) {
+			$graph_api_version = $connection['graph_api_version'];
+		}
+
+		// Compute appsecret_proof (HMAC-SHA256 of the access token keyed with the app secret).
+		// Required when the Meta app has "Require App Secret Proof for Server API calls" enabled
+		// in App Dashboard → Settings → Advanced.
+		$appsecret_proof = ! empty( $app_secret ) ? hash_hmac( 'sha256', $access_token, $app_secret ) : '';
+
+		// Test 1: Get phone number info.
+		// Only request fields accessible with whatsapp_business_messaging permission.
+		// quality_rating requires whatsapp_business_management and will cause a 403 with App Access Tokens.
+		$phone_query_args = array( 'fields' => 'display_phone_number,verified_name' );
+		if ( $appsecret_proof ) {
+			$phone_query_args['appsecret_proof'] = $appsecret_proof;
+		}
+		$phone_endpoint = add_query_arg(
+			$phone_query_args,
+			sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) )
+		);
+
+		$phone_response = wp_remote_get(
+			$phone_endpoint,
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+				'timeout' => 15,
+			)
+		);
+
+		if ( is_wp_error( $phone_response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_whatsapp_http_error',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to WhatsApp API: %s', 'nvoos-content-graph-pro' ),
+					$phone_response->get_error_message()
+				)
+			);
+		}
+
+		$phone_code = wp_remote_retrieve_response_code( $phone_response );
+		$phone_body = wp_remote_retrieve_body( $phone_response );
+		$phone_data = json_decode( $phone_body, true );
+
+		$limited_field_access = false;
+		if ( 200 !== $phone_code ) {
+			$fb_error_code = isset( $phone_data['error']['code'] ) ? (int) $phone_data['error']['code'] : 0;
+			$error_message = isset( $phone_data['error']['message'] ) ? $phone_data['error']['message'] : __( 'Invalid response from WhatsApp API.', 'nvoos-content-graph-pro' );
+
+			// When appsecret_proof is invalid (HTTP 400), the stored app secret does not
+			// match the app or the app does not require it.  Clear appsecret_proof and retry
+			// without it so the connection test can still succeed with a valid access token.
+			if ( 400 === (int) $phone_code && $appsecret_proof && false !== stripos( $error_message, 'appsecret_proof' ) ) {
+				$appsecret_proof  = '';
+				$retry_query_args = array( 'fields' => 'display_phone_number,verified_name' );
+				$retry_endpoint   = add_query_arg(
+					$retry_query_args,
+					sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) )
+				);
+				$retry_response   = wp_remote_get(
+					$retry_endpoint,
+					array(
+						'headers' => array(
+							'Authorization' => 'Bearer ' . $access_token,
+						),
+						'timeout' => 15,
+					)
+				);
+				if ( ! is_wp_error( $retry_response ) && 200 === (int) wp_remote_retrieve_response_code( $retry_response ) ) {
+					$phone_data = json_decode( wp_remote_retrieve_body( $retry_response ), true );
+				} else {
+					return new WP_Error(
+						'wp_mcp_ai_pro_whatsapp_api_error',
+						sprintf(
+							/* translators: 1: status code, 2: error message */
+							__( 'WhatsApp API error (Status: %1$d): %2$s', 'nvoos-content-graph-pro' ),
+							$phone_code,
+							$error_message
+						)
+					);
+				}
+
+				// When no appsecret_proof was sent but Meta still returns 400 "Invalid appsecret_proof",
+				// the app has "Require App Secret Proof" enabled.  Guide the user to enter the App Secret.
+			} elseif ( 400 === (int) $phone_code && ! $appsecret_proof && false !== stripos( $error_message, 'appsecret_proof' ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_whatsapp_appsecret_required',
+					__( 'The Meta app requires App Secret Proof for API calls. Please enter your Meta App Secret in the App Secret field of this connection and try again.', 'nvoos-content-graph-pro' )
+				);
+
+				// When the token lacks field-level access (Facebook error code 200 = permission
+				// error on a specific field), fall back to the base endpoint which returns only
+				// the phone number ID.  This lets tokens that have whatsapp_business_messaging
+				// for sending but cannot read phone-number fields still pass the connection test.
+			} elseif ( 403 === (int) $phone_code && 200 === $fb_error_code ) {
+				$fallback_base     = sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) );
+				$fallback_endpoint = $appsecret_proof ? add_query_arg( 'appsecret_proof', $appsecret_proof, $fallback_base ) : $fallback_base;
+				$fallback_response = wp_remote_get(
+					$fallback_endpoint,
+					array(
+						'headers' => array(
+							'Authorization' => 'Bearer ' . $access_token,
+						),
+						'timeout' => 15,
+					)
+				);
+				if ( ! is_wp_error( $fallback_response ) && 200 === (int) wp_remote_retrieve_response_code( $fallback_response ) ) {
+					$phone_data           = json_decode( wp_remote_retrieve_body( $fallback_response ), true );
+					$limited_field_access = true;
+				} else {
+					// Check if the fallback also returned a field-permission error (FB code 200).
+					// This means the token is valid but lacks permission to read any phone number fields.
+					// Messaging will still work if the token has whatsapp_business_messaging scope.
+					$fallback_http_code  = ! is_wp_error( $fallback_response ) ? (int) wp_remote_retrieve_response_code( $fallback_response ) : 0;
+					$fallback_body       = ! is_wp_error( $fallback_response ) ? json_decode( wp_remote_retrieve_body( $fallback_response ), true ) : array();
+					$fallback_error_code = isset( $fallback_body['error']['code'] ) ? (int) $fallback_body['error']['code'] : 0;
+
+					if ( 403 === $fallback_http_code && 200 === $fallback_error_code ) {
+						$phone_data           = array();
+						$limited_field_access = true;
+					} else {
+						return new WP_Error(
+							'wp_mcp_ai_pro_whatsapp_api_error',
+							sprintf(
+								/* translators: 1: status code, 2: error message */
+								__( 'WhatsApp API error (Status: %1$d): %2$s', 'nvoos-content-graph-pro' ),
+								$phone_code,
+								$error_message
+							)
+						);
+					}
+				}
+
+				// When the API returns HTTP 400 with FB error code 100 ("Tried accessing nonexisting
+				// field"), the token cannot read display_phone_number or verified_name as explicit
+				// field parameters. Fall back to the base phone number endpoint which returns default
+				// fields for tokens with sufficient permissions, or just the ID for messaging-only tokens.
+			} elseif ( 400 === (int) $phone_code && 100 === $fb_error_code ) {
+				$fallback_base     = sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) );
+				$fallback_endpoint = $appsecret_proof ? add_query_arg( 'appsecret_proof', $appsecret_proof, $fallback_base ) : $fallback_base;
+				$fallback_response = wp_remote_get(
+					$fallback_endpoint,
+					array(
+						'headers' => array(
+							'Authorization' => 'Bearer ' . $access_token,
+						),
+						'timeout' => 15,
+					)
+				);
+				if ( ! is_wp_error( $fallback_response ) && 200 === (int) wp_remote_retrieve_response_code( $fallback_response ) ) {
+					$phone_data           = json_decode( wp_remote_retrieve_body( $fallback_response ), true );
+					$limited_field_access = true;
+				} else {
+					$fallback_http_code  = ! is_wp_error( $fallback_response ) ? (int) wp_remote_retrieve_response_code( $fallback_response ) : 0;
+					$fallback_body       = ! is_wp_error( $fallback_response ) ? json_decode( wp_remote_retrieve_body( $fallback_response ), true ) : array();
+					$fallback_error_code = isset( $fallback_body['error']['code'] ) ? (int) $fallback_body['error']['code'] : 0;
+
+					if ( ( 403 === $fallback_http_code && 200 === $fallback_error_code ) || ( 400 === $fallback_http_code && 100 === $fallback_error_code ) ) {
+						$phone_data           = array();
+						$limited_field_access = true;
+					} else {
+						return new WP_Error(
+							'wp_mcp_ai_pro_whatsapp_api_error',
+							sprintf(
+								/* translators: 1: status code, 2: error message */
+								__( 'WhatsApp API error (Status: %1$d): %2$s', 'nvoos-content-graph-pro' ),
+								$phone_code,
+								$error_message
+							)
+						);
+					}
+				}
+			} else {
+				return new WP_Error(
+					'wp_mcp_ai_pro_whatsapp_api_error',
+					sprintf(
+						/* translators: 1: status code, 2: error message */
+						__( 'WhatsApp API error (Status: %1$d): %2$s', 'nvoos-content-graph-pro' ),
+						$phone_code,
+						$error_message
+					)
+				);
+			}
+		}
+
+		// Extract phone number details.
+		$display_phone = isset( $phone_data['display_phone_number'] ) ? $phone_data['display_phone_number'] : '';
+		$verified      = isset( $phone_data['verified_name'] ) ? $phone_data['verified_name'] : '';
+
+		// Optionally get quality rating — requires whatsapp_business_management permission.
+		// This is not available with App Access Tokens, so treat it as advisory only.
+		$quality            = 'unknown';
+		$quality_query_args = array( 'fields' => 'quality_rating' );
+		if ( $appsecret_proof ) {
+			$quality_query_args['appsecret_proof'] = $appsecret_proof;
+		}
+		$quality_endpoint = add_query_arg(
+			$quality_query_args,
+			sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) )
+		);
+		$quality_response = wp_remote_get(
+			$quality_endpoint,
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+				'timeout' => 15,
+			)
+		);
+		if ( ! is_wp_error( $quality_response ) && 200 === wp_remote_retrieve_response_code( $quality_response ) ) {
+			$quality_body = wp_remote_retrieve_body( $quality_response );
+			$quality_data = json_decode( $quality_body, true );
+			if ( isset( $quality_data['quality_rating'] ) ) {
+				$quality = $quality_data['quality_rating'];
+			}
+		}
+
+		// Test 2: Try to get business profile (optional, may not have permissions).
+		$profile_base     = sprintf( 'https://graph.facebook.com/%s/%s/whatsapp_business_profile', $graph_api_version, rawurlencode( $phone_number_id ) );
+		$profile_endpoint = $appsecret_proof ? add_query_arg( 'appsecret_proof', $appsecret_proof, $profile_base ) : $profile_base;
+
+		$profile_response = wp_remote_get(
+			$profile_endpoint,
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+				'timeout' => 15,
+			)
+		);
+
+		$business_name = '';
+		if ( ! is_wp_error( $profile_response ) && 200 === wp_remote_retrieve_response_code( $profile_response ) ) {
+			$profile_body = wp_remote_retrieve_body( $profile_response );
+			$profile_data = json_decode( $profile_body, true );
+
+			if ( isset( $profile_data['data'][0]['about'] ) ) {
+				$business_name = $profile_data['data'][0]['about'];
+			}
+		}
+
+		// Build success response.
+		$results = array(
+			'success'        => true,
+			'whatsapp'       => true,
+			'phone_number'   => $display_phone,
+			'verified_name'  => $verified,
+			'quality_rating' => $quality,
+			'business_name'  => $business_name,
+			'webhook_url'    => home_url( '/wp-json/mcp-ai/v1/webhooks/whatsapp' ),
+			'has_app_secret' => ! empty( $app_secret ),
+			'message'        => __( 'WhatsApp connection successful! Phone number verified and API credentials valid.', 'nvoos-content-graph-pro' ),
+		);
+
+		// Warn if app secret is missing (needed for webhook signature validation).
+		if ( empty( $app_secret ) ) {
+			$results['warning'] = __( 'App secret is not configured. Webhook signature validation will be disabled. Add your app secret to enable it.', 'nvoos-content-graph-pro' );
+		}
+
+		// Add quality rating note if not green (only overrides when quality is actually known).
+		if ( 'GREEN' !== strtoupper( $quality ) && 'unknown' !== $quality ) {
+			$quality_warning = sprintf(
+				/* translators: %s: quality rating */
+				__( 'Note: Phone number quality rating is %s. Monitor your messaging quality to maintain good standing.', 'nvoos-content-graph-pro' ),
+				strtoupper( $quality )
+			);
+			$results['warning'] = isset( $results['warning'] )
+				? $results['warning'] . ' ' . $quality_warning
+				: $quality_warning;
+		}
+
+		// Note when the token lacks permission to read phone-number details.
+		if ( $limited_field_access ) {
+			$field_note         = __( 'Note: Phone number details are unavailable because the access token lacks permission to read phone number fields. Messaging will still work if the token has the whatsapp_business_messaging scope.', 'nvoos-content-graph-pro' );
+			$results['warning'] = isset( $results['warning'] )
+				? $results['warning'] . ' ' . $field_note
+				: $field_note;
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Test mesh peer connection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_mesh_peer_connection( $connection ) {
+		// Use the base plugin's mesh peer tester if available.
+		if ( class_exists( 'WP_MCP_AI_Mesh_Peer_Tester' ) ) {
+			$peer = array(
+				'name'    => isset( $connection['name'] ) ? $connection['name'] : '',
+				'url'     => isset( $connection['url'] ) ? $connection['url'] : '',
+				'api_key' => isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '',
+			);
+
+			return WP_MCP_AI_Mesh_Peer_Tester::test_connection( $peer );
+		}
+
+		// Fallback if tester not available (shouldn't happen).
+		return new WP_Error(
+			'wp_mcp_ai_pro_tester_unavailable',
+			__( 'Mesh peer tester not available. Please ensure the base plugin is up to date.', 'nvoos-content-graph-pro' )
+		);
+	}
+
+	/**
+	 * Make an authenticated HTTP request to a remote site.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array  $connection Connection data.
+	 * @param string $endpoint   API endpoint (relative to REST base).
+	 * @param string $method     HTTP method (GET, POST, etc.).
+	 * @param array  $body       Request body for POST/PUT requests.
+	 * @return array|WP_Error Response data or error.
+	 */
+	public static function make_request( $connection, $endpoint, $method = 'GET', $body = array() ) {
+		$connection_id = isset( $connection['id'] ) ? $connection['id'] : '';
+		$start_time    = microtime( true );
+
+		$url = self::build_api_url( $connection['url'], $endpoint, $connection );
+
+		if ( is_wp_error( $url ) ) {
+			self::record_health_metric( $connection_id, false, 0 );
+			return $url;
+		}
+
+		// For WooCommerce authentication, add consumer key/secret to URL.
+		$auth_type = isset( $connection['auth_type'] ) ? $connection['auth_type'] : 'none';
+		if ( 'woocommerce' === $auth_type ) {
+			$consumer_key    = isset( $connection['consumer_key'] ) ? self::decrypt_value( $connection['consumer_key'] ) : '';
+			$consumer_secret = isset( $connection['consumer_secret'] ) ? self::decrypt_value( $connection['consumer_secret'] ) : '';
+
+			if ( ! empty( $consumer_key ) && ! empty( $consumer_secret ) ) {
+				$url = add_query_arg(
+					array(
+						'consumer_key'    => $consumer_key,
+						'consumer_secret' => $consumer_secret,
+					),
+					$url
+				);
+			}
+		}
+
+		$args = array(
+			'method'  => strtoupper( $method ),
+			'timeout' => 30,
+			'headers' => self::get_auth_headers( $connection ),
+		);
+
+		// Add compression support for large responses.
+		$args['headers']['Accept-Encoding'] = 'gzip, deflate';
+
+		if ( ! empty( $body ) && in_array( $args['method'], array( 'POST', 'PUT', 'PATCH' ), true ) ) {
+			$args['body']                    = wp_json_encode( $body );
+			$args['headers']['Content-Type'] = 'application/json';
+		}
+
+		// Check cache for GET requests only (read-only operations).
+		if ( 'GET' === $args['method'] && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+			$cache_key     = self::get_request_cache_key( $connection_id, $endpoint );
+			$cached_result = WP_MCP_AI_Cache_Helper::get( $cache_key );
+
+			if ( false !== $cached_result && is_array( $cached_result ) ) {
+				return $cached_result;
+			}
+		}
+
+		// Request deduplication - check if this exact request is already in progress.
+		$dedup_key   = self::get_dedup_key( $connection_id, $endpoint, $method, $body );
+		$in_progress = get_transient( $dedup_key );
+
+		if ( false !== $in_progress ) {
+			// Another request is in progress - wait briefly and check cache.
+			usleep( 100000 ); // Wait 0.1 seconds.
+			if ( 'GET' === $args['method'] && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+				$cache_key     = self::get_request_cache_key( $connection_id, $endpoint );
+				$cached_result = WP_MCP_AI_Cache_Helper::get( $cache_key );
+				if ( false !== $cached_result && is_array( $cached_result ) ) {
+					return $cached_result;
+				}
+			}
+			// If no cached result yet, proceed with request (acceptable race condition).
+		}
+
+		// Mark this request as in progress.
+		set_transient( $dedup_key, true, 30 );
+
+		// Perform request with retry logic.
+		$response = self::make_request_with_retry( $url, $args );
+
+		// Clear deduplication lock.
+		delete_transient( $dedup_key );
+
+		if ( is_wp_error( $response ) ) {
+			$duration = microtime( true ) - $start_time;
+			self::record_health_metric( $connection_id, false, $duration );
+
+			$error_message = sprintf(
+				/* translators: %s: raw error message */
+				__( 'Request failed: %s', 'nvoos-content-graph-pro' ),
+				$response->get_error_message()
+			);
+
+			// Append actionable guidance for well-known cURL errors.
+			$guidance = self::get_curl_error_guidance( $response );
+			if ( null !== $guidance ) {
+				$error_message .= ' ' . $guidance;
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_pro_request_failed',
+				$error_message
+			);
+		}
+
+		$status_code = wp_remote_retrieve_response_code( $response );
+		$body        = wp_remote_retrieve_body( $response );
+
+		if ( $status_code >= 400 ) {
+			$duration = microtime( true ) - $start_time;
+			self::record_health_metric( $connection_id, false, $duration );
+
+			$error_message = sprintf(
+				/* translators: %d: HTTP status code */
+				__( 'HTTP error %d', 'nvoos-content-graph-pro' ),
+				$status_code
+			);
+
+			$decoded = json_decode( $body, true );
+
+			if ( isset( $decoded['message'] ) ) {
+				$error_message .= ': ' . $decoded['message'];
+			}
+
+			return new WP_Error( 'wp_mcp_ai_pro_http_error', $error_message );
+		}
+
+		$decoded = json_decode( $body, true );
+
+		if ( null === $decoded ) {
+			$duration = microtime( true ) - $start_time;
+			self::record_health_metric( $connection_id, false, $duration );
+
+			return new WP_Error(
+				'wp_mcp_ai_pro_json_error',
+				__( 'Invalid JSON response from remote site.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Record successful request for health monitoring.
+		$duration = microtime( true ) - $start_time;
+		self::record_health_metric( $connection_id, true, $duration );
+
+		// Cache successful GET requests.
+		if ( 'GET' === $args['method'] && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+			// Use per-connection cache TTL if set, otherwise default to 5 minutes.
+			$cache_ttl = isset( $connection['cache_ttl'] ) ? absint( $connection['cache_ttl'] ) : 5 * MINUTE_IN_SECONDS;
+
+			// Validate cache_ttl is within acceptable range (0-3600 seconds).
+			if ( $cache_ttl > 3600 ) {
+				$cache_ttl = 3600; // Cap at 1 hour.
+			}
+
+			// Skip caching if TTL is 0 (disabled for this connection).
+			if ( $cache_ttl > 0 ) {
+				/**
+				 * Filter the cache TTL for remote site requests.
+				 *
+				 * @param int    $cache_ttl     Cache time-to-live in seconds (default: connection setting or 300).
+				 * @param string $connection_id Connection ID.
+				 * @param string $endpoint      API endpoint.
+				 * @param array  $connection    Full connection data.
+				 */
+				$cache_ttl = apply_filters( 'wp_mcp_ai_pro_remote_request_cache_ttl', $cache_ttl, $connection_id, $endpoint, $connection );
+
+				$cache_key = self::get_request_cache_key( $connection_id, $endpoint );
+				WP_MCP_AI_Cache_Helper::set( $cache_key, $decoded, $cache_ttl );
+			}
+		}
+
+		return $decoded;
+	}
+
+	/**
+	 * Build full API URL from base URL and endpoint.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $base_url  Base site URL.
+	 * @param string $endpoint  API endpoint.
+	 * @param array  $connection Optional connection data for context.
+	 * @return string|WP_Error Full URL or error.
+	 */
+	protected static function build_api_url( $base_url, $endpoint, $connection = array() ) {
+		$base_url = untrailingslashit( $base_url );
+		$endpoint = ltrim( $endpoint, '/' );
+
+		// For generic REST APIs, just append the endpoint directly.
+		if ( ! empty( $connection['connection_type'] ) && 'generic' === $connection['connection_type'] ) {
+			$api_url = $base_url . '/' . $endpoint;
+			return $api_url;
+		}
+
+		// For Shopify connections, build the Admin GraphQL API URL or Catalog API URL.
+		if ( ! empty( $connection['connection_type'] ) && 'shopify' === $connection['connection_type'] ) {
+			if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
+				$nvoos_content_graph_pro_shopify_client = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-shopify-client.php';
+				if ( file_exists( $nvoos_content_graph_pro_shopify_client ) ) {
+					require_once $nvoos_content_graph_pro_shopify_client;
+				}
+			}
+			$shopify_api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
+			if ( 'catalog_api' === $shopify_api_mode ) {
+				$path = '' === $endpoint ? 'global/v2/search' : ltrim( $endpoint, '/' );
+				return WP_MCP_AI_Shopify_Client::CATALOG_BASE_URL . '/' . $path;
+			}
+			$api_version = WP_MCP_AI_Shopify_Client::sanitize_api_version(
+				isset( $connection['shopify_api_version'] ) ? $connection['shopify_api_version'] : ''
+			);
+			if ( '' === $endpoint || 'graphql' === $endpoint || 'graphql.json' === $endpoint ) {
+				return $base_url . '/admin/api/' . $api_version . '/graphql.json';
+			}
+			// REST fallback: endpoint is used as-is under the versioned admin path.
+			return $base_url . '/admin/api/' . $api_version . '/' . ltrim( $endpoint, '/' );
+		}
+
+		// For WordPress/WooCommerce endpoints, use /wp-json/ prefix.
+		// Avoid double-prefixing when users enter a URL that already includes /wp-json.
+		$parsed = wp_parse_url( $base_url );
+		$path   = isset( $parsed['path'] ) ? untrailingslashit( $parsed['path'] ) : '';
+
+		if ( '/wp-json' === $path || '/wp-json' === substr( $path, -strlen( '/wp-json' ) ) ) {
+			// Base URL already points to the REST root — don't duplicate the prefix.
+			$api_url = $base_url . '/' . $endpoint;
+		} else {
+			$api_url = $base_url . '/wp-json/' . $endpoint;
+		}
+
+		return $api_url;
+	}
+
+	/**
+	 * Get authentication headers for a connection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array Headers array.
+	 */
+	protected static function get_auth_headers( $connection ) {
+		$headers = array(
+			'User-Agent' => 'WP-MCP-AI-Pro/' . WP_MCP_AI_PRO_VERSION,
+		);
+
+		// For Shopify connections, use mode-appropriate authentication.
+		if ( ! empty( $connection['connection_type'] ) && 'shopify' === $connection['connection_type'] ) {
+			$shopify_api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
+			if ( 'catalog_api' === $shopify_api_mode ) {
+				// Catalog API uses a short-lived JWT bearer token obtained from get_catalog_token().
+				// The token is fetched dynamically by WP_MCP_AI_Shopify_Client; here we set Content-Type only.
+				$headers['Content-Type'] = 'application/json';
+				$headers['Accept']       = 'application/json';
+			} else {
+				// Admin API uses the X-Shopify-Access-Token header (shpat_/shpca_/shpua_/shpss_).
+				$access_token = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+				if ( ! empty( $access_token ) ) {
+					$headers['X-Shopify-Access-Token'] = $access_token;
+				}
+				$headers['Content-Type'] = 'application/json';
+			}
+			return $headers;
+		}
+
+		// For Printful connections, use Bearer token + optional Store ID header.
+		if ( ! empty( $connection['connection_type'] ) && 'printful' === $connection['connection_type'] ) {
+			$token = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+			if ( ! empty( $token ) ) {
+				$headers['Authorization'] = 'Bearer ' . $token;
+			}
+			if ( ! empty( $connection['store_id'] ) ) {
+				$headers['X-PF-Store-Id'] = $connection['store_id'];
+			}
+			$headers['Accept']       = 'application/json';
+			$headers['Content-Type'] = 'application/json';
+			return $headers;
+		}
+
+		$auth_type = isset( $connection['auth_type'] ) ? $connection['auth_type'] : 'none';
+
+		switch ( $auth_type ) {
+			case 'application_password':
+			case 'basic_auth':
+				$username = isset( $connection['username'] ) ? $connection['username'] : '';
+				$password = isset( $connection['password'] ) ? self::decrypt_value( $connection['password'] ) : '';
+
+				if ( ! empty( $username ) && ! empty( $password ) ) {
+					$headers['Authorization'] = 'Basic ' . base64_encode( $username . ':' . $password ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Used for HTTP Basic auth header encoding.
+				}
+				break;
+
+			case 'jwt':
+				$token = isset( $connection['token'] ) ? self::decrypt_value( $connection['token'] ) : '';
+
+				if ( ! empty( $token ) ) {
+					$headers['Authorization'] = 'Bearer ' . $token;
+				}
+				break;
+		}
+
+		return $headers;
+	}
+
+	/**
+	 * Validate connection data.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return true|WP_Error True if valid, WP_Error if invalid.
+	 */
+	protected static function validate_connection_data( $connection ) {
+		if ( empty( $connection['name'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_name',
+				__( 'Connection name is required.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		if ( empty( $connection['url'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_url',
+				__( 'Connection URL is required.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		if ( ! filter_var( $connection['url'], FILTER_VALIDATE_URL ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_invalid_url',
+				__( 'Connection URL is not valid. URLs must include the protocol (e.g. https://example.com).', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Validate that the hostname portion looks well-formed.
+		$parsed = wp_parse_url( $connection['url'] );
+		$host   = isset( $parsed['host'] ) ? $parsed['host'] : '';
+
+		if ( '' === $host ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_invalid_url',
+				__( 'Connection URL does not contain a valid hostname.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Reject hostnames that point to reserved/private IP ranges when the
+		// connection type is expected to reach an external WordPress/WooCommerce
+		// site. This prevents accidental misconfiguration without blocking
+		// legitimate local-network setups.
+		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'WordPress';
+		if ( self::is_restricted_host( $host, $connection_type ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_restricted_host',
+				sprintf(
+					/* translators: %s: hostname */
+					__( 'The hostname "%s" points to a reserved or private IP range that is not reachable from this server. Use a publicly accessible domain or IP address.', 'nvoos-content-graph-pro' ),
+					$host
+				)
+			);
+		}
+
+		$auth_type = isset( $connection['auth_type'] ) ? $connection['auth_type'] : 'none';
+
+		if ( ! in_array( $auth_type, self::AUTH_TYPES, true ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_invalid_auth',
+				__( 'Invalid authentication type.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		if ( in_array( $auth_type, array( 'application_password', 'basic_auth' ), true ) ) {
+			if ( empty( $connection['username'] ) || empty( $connection['password'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_credentials',
+					__( 'Username and password are required for this authentication type.', 'nvoos-content-graph-pro' )
+				);
+			}
+		}
+
+		if ( 'jwt' === $auth_type && empty( $connection['token'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_token',
+				__( 'JWT token is required for JWT authentication.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		if ( 'woocommerce' === $auth_type ) {
+			if ( empty( $connection['consumer_key'] ) || empty( $connection['consumer_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_wc_keys',
+					__( 'Consumer key and consumer secret are required for WooCommerce authentication.', 'nvoos-content-graph-pro' )
+				);
+			}
+		}
+
+		// Validate connection type specific requirements.
+		if ( 'ezuite_erp' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_ezuite_credentials',
+					__( 'API key is required for EZuite ERP connections.', 'nvoos-content-graph-pro' )
+				);
+			}
+		}
+
+		if ( 'isams' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) || empty( $connection['api_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_isams_credentials',
+					__( 'API key and API secret are required for iSAMS connections.', 'nvoos-content-graph-pro' )
+				);
+			}
+		}
+
+		if ( 'flowhub' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) || empty( $connection['client_id'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_flowhub_credentials',
+					__( 'API key (key header) and client ID (clientId header) are required for Flowhub connections.', 'nvoos-content-graph-pro' )
+				);
+			}
+			// Location ID is optional: the root /inventoryNonZero endpoint works without it.
+		}
+
+		if ( 'printful' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_printful_token',
+					__( 'API token is required for Printful connections. Generate one in the Printful Developer Portal.', 'nvoos-content-graph-pro' )
+				);
+			}
+		}
+
+		if ( 'shopify' === $connection_type ) {
+			$shopify_api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
+			if ( empty( $connection['api_key'] ) ) {
+				$error_msg = 'catalog_api' === $shopify_api_mode
+					? __( 'Client ID is required for Shopify Catalog API connections.', 'nvoos-content-graph-pro' )
+					: __( 'Admin API access token is required for Shopify connections.', 'nvoos-content-graph-pro' );
+				return new WP_Error( 'wp_mcp_ai_pro_missing_shopify_credentials', $error_msg );
+			}
+			if ( 'catalog_api' === $shopify_api_mode && empty( $connection['api_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_shopify_credentials',
+					__( 'Client secret (shpss_…) is required for Shopify Catalog API connections.', 'nvoos-content-graph-pro' )
+				);
+			}
+		}
+
+		if ( 'payhere' === $connection_type ) {
+			if ( empty( $connection['app_id'] ) || empty( $connection['app_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_payhere_credentials',
+					__( 'App ID and app secret are required for PayHere connections.', 'nvoos-content-graph-pro' )
+				);
+			}
+		}
+
+		if ( 'shipengine' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_shipengine_credentials',
+					__( 'API key is required for ShipEngine connections.', 'nvoos-content-graph-pro' )
+				);
+			}
+		}
+
+		if ( 'shipstation' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) || empty( $connection['api_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_shipstation_credentials',
+					__( 'API key and API secret are required for ShipStation connections.', 'nvoos-content-graph-pro' )
+				);
+			}
+		}
+
+		if ( 'composio' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_composio_api_key',
+					__( 'A Composio project API key (ak_...) is required. Generate one in the Composio dashboard.', 'nvoos-content-graph-pro' )
+				);
+			}
+
+			// Plaintext keys must look like a Composio project API key (ak_...).
+			// Values already encrypted at rest (V2 prefix or legacy base64) are
+			// exempt — they are validated after decryption at request time.
+			if ( ! self::is_value_encrypted( $connection['api_key'] ) && ! str_starts_with( $connection['api_key'], 'ak_' ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_invalid_composio_api_key',
+					__( 'The Composio API key must be a project API key starting with "ak_". Create one in the Composio dashboard under Settings → API Keys. Integration keys and OAuth tokens are not supported here.', 'nvoos-content-graph-pro' )
+				);
+			}
+
+			// Validate the optional base_url override: must be a public HTTPS URL.
+			if ( ! empty( $connection['base_url'] ) ) {
+				$composio_base = wp_parse_url( $connection['base_url'] );
+				if ( empty( $composio_base['scheme'] ) || 'https' !== $composio_base['scheme'] || empty( $composio_base['host'] ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_pro_invalid_composio_base_url',
+						__( 'The Composio API base URL must be a public HTTPS URL.', 'nvoos-content-graph-pro' )
+					);
+				}
+
+				// Reject private/reserved hosts for the override (mirrors the SSRF guard).
+				if ( self::is_restricted_host( $composio_base['host'], 'generic' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_pro_restricted_composio_base_url',
+						__( 'The Composio API base URL points to a reserved or private address.', 'nvoos-content-graph-pro' )
+					);
+				}
+			}
+
+			if ( ! empty( $connection['default_user_mode'] ) && ! in_array( $connection['default_user_mode'], array( 'admin_shared', 'per_wp_user' ), true ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_invalid_composio_user_mode',
+					__( 'Invalid Composio identity mode.', 'nvoos-content-graph-pro' )
+				);
+			}
+		}
+
+		if ( 'quickbooks' === $connection_type ) {
+			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_quickbooks_credentials',
+					__( 'Client ID and client secret are required for QuickBooks connections.', 'nvoos-content-graph-pro' )
+				);
+			}
+		}
+
+		if ( 'quickbooks_desktop' === $connection_type ) {
+			if ( empty( $connection['url'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_qbd_relay_url',
+					__( 'The QODBC relay API URL is required for QuickBooks Desktop connections.', 'nvoos-content-graph-pro' )
+				);
+			}
+		}
+
+		if ( 'gmail' === $connection_type ) {
+			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_gmail_credentials',
+					__( 'OAuth Client ID and client secret are required for Gmail connections.', 'nvoos-content-graph-pro' )
+				);
+			}
+			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow.
+		}
+
+		if ( 'google_drive' === $connection_type ) {
+			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_google_drive_credentials',
+					__( 'OAuth Client ID and client secret are required for Google Drive connections.', 'nvoos-content-graph-pro' )
+				);
+			}
+			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow.
+			// Note: folder_id is optional - if not provided, full drive access within granted scopes.
+		}
+
+		if ( 'google_calendar' === $connection_type ) {
+			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_google_calendar_credentials',
+					__( 'OAuth Client ID and client secret are required for Google Calendar connections.', 'nvoos-content-graph-pro' )
+				);
+			}
+			// Note: refresh_token is optional during initial setup as it's obtained through the OAuth flow.
+			// Note: calendar_id is optional - defaults to "primary" when blank.
+			// Note: scope_profile is optional - normalised to the default profile when blank.
+		}
+
+		if ( 'upwork' === $connection_type ) {
+			$upwork_mode = isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : 'api';
+			if ( 'api' === $upwork_mode ) {
+				if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_pro_missing_upwork_credentials',
+						__( 'OAuth Client ID and client secret are required for Upwork API connections. Switch to Web Search mode to use without OAuth credentials.', 'nvoos-content-graph-pro' )
+					);
+				}
+			}
+			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow.
+		}
+
+		if ( 'linkedin' === $connection_type ) {
+			$linkedin_mode = isset( $connection['linkedin_mode'] ) ? $connection['linkedin_mode'] : 'api';
+			if ( 'api' === $linkedin_mode ) {
+				if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_pro_missing_linkedin_credentials',
+						__( 'OAuth Client ID and client secret are required for LinkedIn API connections. Switch to Web Search mode to use without OAuth credentials.', 'nvoos-content-graph-pro' )
+					);
+				}
+			}
+			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow.
+		}
+
+		return true;
+	}
+
+	/**
+	 * Check whether a hostname is in a restricted range that should not
+	 * be used for remote connections of the given type.
+	 *
+	 * Blocks loopback (127.x.x.x), link-local (169.254.x.x), and private
+	 * ranges (10.x, 172.16-31.x, 192.168.x) when the connection type is
+	 * expected to reach an external service.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $host            Hostname to check.
+	 * @param string $connection_type Connection type for context.
+	 * @return bool True if the host is in a restricted range.
+	 */
+	protected static function is_restricted_host( $host, $connection_type ) {
+		// Only enforce for connection types that make outbound HTTP requests
+		// to user-configured URLs (WordPress, WooCommerce, generic, iSAMS, etc.).
+		$enforced_types = array(
+			'WordPress',
+			'wordpress',
+			'generic',
+			'isams',
+			'flowhub',
+			'payhere',
+			'quickbooks',
+			'quickbooks_desktop',
+			'ezuite_erp',
+			'shipengine',
+			'shipstation',
+		);
+
+		if ( ! in_array( $connection_type, $enforced_types, true ) ) {
+			return false;
+		}
+
+		// If the host is already an IP, check it directly.
+		$ip = $host;
+		if ( ! filter_var( $host, FILTER_VALIDATE_IP ) ) {
+			// Attempt to resolve the hostname; skip the check if resolution fails
+			// (the real HTTP request will catch DNS issues with better messages).
+			$resolved = gethostbyname( $host );
+			if ( $resolved === $host ) {
+				// DNS resolution failed — let the HTTP layer diagnose this.
+				return false;
+			}
+			$ip = $resolved;
+		}
+
+		return ! filter_var(
+			$ip,
+			FILTER_VALIDATE_IP,
+			FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+		);
+	}
+
+	/**
+	 * Perform a lightweight DNS reachability check for a hostname.
+	 *
+	 * Uses PHP's native DNS functions when available. Returns diagnostic
+	 * information that can be surfaced to the user — never blocks the
+	 * connection test on DNS alone, since DNS may be temporarily unavailable.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $host Hostname extracted from the connection URL.
+	 * @return array{reachable: bool, message: string} Diagnostic result.
+	 */
+	protected static function check_host_reachability( $host ) {
+		if ( '' === $host || filter_var( $host, FILTER_VALIDATE_IP ) ) {
+			return array(
+				'reachable' => true,
+				'message'   => '',
+			);
+		}
+
+		/**
+		 * Filter whether to perform DNS reachability pre-checks.
+		 *
+		 * Set to false on hosts where DNS functions are unreliable or
+		 * when every outbound request goes through a forward proxy.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param bool $perform_check Whether to perform the DNS check. Default true.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_pro_remote_dns_precheck', true ) ) {
+			return array(
+				'reachable' => true,
+				'message'   => '',
+			);
+		}
+
+		// Use checkdnsrr when available (PHP 5.3+); fall back to gethostbyname.
+		if ( function_exists( 'checkdnsrr' ) ) {
+			// Suppress warnings in case DNS functions are restricted.
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			$has_dns = @checkdnsrr( $host . '.', 'A' ) || @checkdnsrr( $host . '.', 'AAAA' ) || @checkdnsrr( $host . '.', 'CNAME' );
+		} else {
+			$resolved = gethostbyname( $host );
+			$has_dns  = ( $resolved !== $host );
+		}
+
+		if ( $has_dns ) {
+			return array(
+				'reachable' => true,
+				'message'   => '',
+			);
+		}
+
+		return array(
+			'reachable' => false,
+			'message'   => sprintf(
+				/* translators: %s: hostname */
+				__( 'DNS could not resolve "%s". The domain may not exist, may be misspelled, or DNS records may still be propagating.', 'nvoos-content-graph-pro' ),
+				$host
+			),
+		);
+	}
+
+	/**
+	 * Generate a unique connection ID.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return string Connection ID.
+	 */
+	protected static function generate_connection_id() {
+		return 'conn_' . strtolower( wp_generate_password( 12, false ) );
+	}
+
+	/**
+	 * Migrate connection IDs to lowercase format.
+	 *
+	 * This method normalizes existing connection IDs that may have mixed case
+	 * to lowercase format for consistency with sanitize_key().
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connections Array of connections.
+	 * @return array Migrated connections array.
+	 */
+	protected static function migrate_connection_ids( $connections ) {
+		$needs_migration = false;
+		$migrated        = array();
+
+		foreach ( $connections as $key => $connection ) {
+			$lowercase_key = strtolower( $key );
+
+			// Check if key needs migration.
+			if ( $key !== $lowercase_key ) {
+				$needs_migration = true;
+				// Update the id field to match the new lowercase key.
+				$connection['id']           = $lowercase_key;
+				$migrated[ $lowercase_key ] = $connection;
+			} else {
+				$migrated[ $key ] = $connection;
+			}
+		}
+
+		// Save migrated data if changes were made.
+		if ( $needs_migration ) {
+			update_option( self::OPTION_NAME, $migrated );
+		}
+
+		return $migrated;
+	}
+
+	/**
+	 * Encrypt a sensitive value for storage.
+	 *
+	 * Uses AES-256-CBC via WP_MCP_AI_Encryption when available (PHP 7.4+,
+	 * OpenSSL required). Encrypted values are prefixed with ENCRYPT_V2_PREFIX
+	 * so decrypt_value() can distinguish them from legacy XOR-encrypted values.
+	 *
+	 * @since 1.0.0
+	 * @since 1.5.0 Upgraded from XOR to AES-256-CBC.
+	 *
+	 * @param string $value Value to encrypt.
+	 * @return string Encrypted value (prefixed) or empty string on failure.
+	 */
+	public static function encrypt_value( $value ) {
+		if ( empty( $value ) ) {
+			return '';
+		}
+
+		// Prefer proper AES-256-CBC encryption when the base plugin class is loaded.
+		if ( class_exists( 'WP_MCP_AI_Encryption' ) ) {
+			$encrypted = WP_MCP_AI_Encryption::encrypt( $value );
+			if ( false !== $encrypted ) {
+				// WP_MCP_AI_Encryption prepends its own 'v2:' GCM marker;
+				// ENCRYPT_V2_PREFIX already version-tags the stored value, so
+				// strip the inner marker to avoid the redundant 'v2.v2:' shape.
+				// decrypt_value() re-adds the marker before handing off.
+				if ( 0 === strpos( $encrypted, 'v2:' ) ) {
+					$encrypted = substr( $encrypted, 3 );
+				}
+				return self::ENCRYPT_V2_PREFIX . $encrypted;
+			}
+		}
+
+		// Fallback: XOR cipher (used only if WP_MCP_AI_Encryption is unavailable).
+		$key          = wp_salt( 'auth' );
+		$encrypted    = '';
+		$key_length   = strlen( $key );
+		$value_length = strlen( $value );
+
+		for ( $i = 0; $i < $value_length; $i++ ) {
+			$encrypted .= chr( ord( $value[ $i ] ) ^ ord( $key[ $i % $key_length ] ) );
+		}
+
+		return base64_encode( $encrypted ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Used for credential encryption.
+	}
+
+	/**
+	 * Decrypt a sensitive value.
+	 *
+	 * Handles both the modern AES-256-CBC format (prefixed with ENCRYPT_V2_PREFIX)
+	 * and the legacy XOR format (no prefix) for backward compatibility.
+	 *
+	 * @since 1.0.0
+	 * @since 1.5.0 Added AES-256-CBC format support with legacy XOR fallback.
+	 *
+	 * @param string $encrypted Encrypted value (with or without version prefix).
+	 * @return string Decrypted value or empty string on failure.
+	 */
+	public static function decrypt_value( $encrypted ) {
+		if ( empty( $encrypted ) ) {
+			return '';
+		}
+
+		// Modern AES-256-CBC format: prefixed with ENCRYPT_V2_PREFIX.
+		if ( str_starts_with( $encrypted, self::ENCRYPT_V2_PREFIX ) ) {
+			if ( class_exists( 'WP_MCP_AI_Encryption' ) ) {
+				$payload = substr( $encrypted, strlen( self::ENCRYPT_V2_PREFIX ) );
+				// Values written before the prefix de-duplication already carry
+				// the inner 'v2:' GCM marker; newer writes don't. Re-add it
+				// when missing so WP_MCP_AI_Encryption picks the GCM path.
+				if ( 0 !== strpos( $payload, 'v2:' ) ) {
+					$payload = 'v2:' . $payload;
+				}
+				$decrypted = WP_MCP_AI_Encryption::decrypt( $payload );
+				return ( false !== $decrypted ) ? $decrypted : '';
+			}
+			// WP_MCP_AI_Encryption not available — the encrypted value cannot be
+			// decrypted. Return empty so callers can detect the failure.
+			return '';
+		}
+
+		// Legacy XOR format (no prefix) — valid base64.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Used for credential decryption.
+		$data = base64_decode( $encrypted, true ); // Strict mode: reject malformed base64.
+		if ( false !== $data ) {
+			$key = wp_salt( 'auth' );
+
+			$decrypted   = '';
+			$key_length  = strlen( $key );
+			$data_length = strlen( $data );
+
+			for ( $i = 0; $i < $data_length; $i++ ) {
+				$decrypted .= chr( ord( $data[ $i ] ) ^ ord( $key[ $i % $key_length ] ) );
+			}
+
+			return $decrypted;
+		}
+
+		// Not base64 and not V2-prefixed — value was stored as plaintext.
+		// Return as-is so callers get the original credential rather than
+		// an empty string (which would cause a confusing auth failure).
+		return $encrypted;
+	}
+
+	/**
+	 * Generate cache key for remote site requests.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param string $endpoint      API endpoint with query parameters.
+	 * @return string Cache key.
+	 */
+	protected static function get_request_cache_key( $connection_id, $endpoint ) {
+		return 'remote_request_' . wp_hash( $connection_id . '_' . $endpoint );
+	}
+
+	/**
+	 * Invalidate cache for a specific connection.
+	 *
+	 * Useful when connection settings change or when fresh data is needed.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @return int Number of cache entries cleared.
+	 */
+	public static function invalidate_connection_cache( $connection_id ) {
+		// Use wp_hash for consistent hashing with cache key generation.
+		$hash_prefix = wp_hash( $connection_id . '_' );
+		return WP_MCP_AI_Cache_Helper::delete_pattern( 'remote_request_' . substr( $hash_prefix, 0, 8 ) . '%' );
+	}
+
+	/**
+	 * Make HTTP request with retry logic and exponential backoff.
+	 *
+	 * Skips retries for fatal errors that cannot be resolved by retrying
+	 * (DNS resolution failure, connection refused, malformed URL).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $url  Request URL.
+	 * @param array  $args Request arguments.
+	 * @return array|WP_Error HTTP response or error.
+	 */
+	protected static function make_request_with_retry( $url, $args ) {
+		$max_retries = 3;
+		$retry_delay = 1; // Start with 1 second.
+
+		/**
+		 * Filter the maximum number of retry attempts for remote requests.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param int $max_retries Maximum retry attempts (default: 3).
+		 */
+		$max_retries = apply_filters( 'wp_mcp_ai_pro_remote_request_max_retries', $max_retries );
+
+		for ( $attempt = 1; $attempt <= $max_retries; $attempt++ ) {
+			$response = wp_remote_request( $url, $args );
+
+			// Success - return response.
+			if ( ! is_wp_error( $response ) ) {
+				$status_code = wp_remote_retrieve_response_code( $response );
+				// Retry on 5xx errors (server errors) but not 4xx (client errors).
+				if ( $status_code < 500 ) {
+					return $response;
+				}
+			}
+
+			// Detect fatal errors that will never succeed on retry.
+			if ( is_wp_error( $response ) && self::is_fatal_curl_error( $response ) ) {
+				return $response;
+			}
+
+			// If this was the last attempt, return the error.
+			if ( $attempt >= $max_retries ) {
+				return $response;
+			}
+
+			// Wait before retrying (exponential backoff with shorter delays).
+			// Use microseconds for non-blocking behavior in web context.
+			usleep( $retry_delay * 100000 ); // 0.1s, 0.2s, 0.4s
+			$retry_delay *= 2; // Double the delay for next retry.
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Determine whether a cURL/WP_Error represents a fatal condition that
+	 * should not be retried.
+	 *
+	 * Retrying DNS failures (error 6), connection-refused (error 7), or
+	 * malformed-URL errors (error 3) is wasteful — these are configuration
+	 * problems that won't self-heal within a retry window.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WP_Error $error The error from wp_remote_request().
+	 * @return bool True if the error is fatal and should not be retried.
+	 */
+	protected static function is_fatal_curl_error( $error ) {
+		$message = $error->get_error_message();
+
+		// cURL error 6: Could not resolve host (DNS failure).
+		// cURL error 7: Failed to connect (connection refused / no route).
+		// cURL error 3: URL malformed.
+		// cURL error 5: Could not resolve proxy.
+		$fatal_patterns = array(
+			'/cURL error 6\b/',
+			'/cURL error 7\b/',
+			'/cURL error 3\b/',
+			'/cURL error 5\b/',
+			'/Could not resolve host/i',
+			'/Failed to connect/i',
+		);
+
+		foreach ( $fatal_patterns as $pattern ) {
+			if ( preg_match( $pattern, $message ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Translate a raw cURL/WP_Error message into a user-friendly diagnostic.
+	 *
+	 * Returns null when no specific guidance is available, so the caller
+	 * can fall back to the raw message.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WP_Error $error The error from wp_remote_request().
+	 * @return string|null Human-readable guidance, or null.
+	 */
+	protected static function get_curl_error_guidance( $error ) {
+		$message = $error->get_error_message();
+
+		if ( false !== strpos( $message, 'cURL error 6' ) || false !== stripos( $message, 'Could not resolve host' ) ) {
+			return __( 'The remote hostname could not be resolved by DNS. Verify the URL is correct and that the domain exists. If you recently changed DNS records, allow up to 48 hours for propagation.', 'nvoos-content-graph-pro' );
+		}
+
+		if ( false !== strpos( $message, 'cURL error 7' ) || false !== stripos( $message, 'Failed to connect' ) ) {
+			return __( 'Could not establish a connection to the remote server. The site may be down, behind a firewall, or blocking requests from this server.', 'nvoos-content-graph-pro' );
+		}
+
+		if ( false !== strpos( $message, 'cURL error 28' ) ) {
+			return __( 'The request timed out. The remote server may be slow, overloaded, or unreachable. Try increasing the timeout or check the remote site status.', 'nvoos-content-graph-pro' );
+		}
+
+		if ( false !== strpos( $message, 'cURL error 35' ) || false !== stripos( $message, 'SSL' ) ) {
+			return __( 'An SSL/TLS handshake error occurred. The remote server may have an invalid or expired SSL certificate, or may require a specific TLS version.', 'nvoos-content-graph-pro' );
+		}
+
+		if ( false !== strpos( $message, 'cURL error 3' ) ) {
+			return __( 'The request URL is malformed. Check that the connection URL is complete and includes the protocol (https://).', 'nvoos-content-graph-pro' );
+		}
+
+		return null;
+	}
+
+	/**
+	 * Generate deduplication key for requests.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param string $endpoint      API endpoint.
+	 * @param string $method        HTTP method.
+	 * @param array  $body          Request body.
+	 * @return string Deduplication key.
+	 */
+	protected static function get_dedup_key( $connection_id, $endpoint, $method, $body ) {
+		$key_parts = array( $connection_id, $endpoint, $method );
+		if ( ! empty( $body ) ) {
+			$key_parts[] = wp_json_encode( $body );
+		}
+		return 'remote_dedup_' . wp_hash( implode( '|', $key_parts ) );
+	}
+
+	/**
+	 * Record health metric for connection monitoring.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param bool   $success       Whether request was successful.
+	 * @param float  $duration      Request duration in seconds.
+	 * @return void
+	 */
+	protected static function record_health_metric( $connection_id, $success, $duration ) {
+		if ( empty( $connection_id ) ) {
+			return;
+		}
+
+		$health_key  = 'remote_health_' . sanitize_key( $connection_id );
+		$health_data = get_transient( $health_key );
+
+		if ( false === $health_data ) {
+			$health_data = array(
+				'success_count'  => 0,
+				'failure_count'  => 0,
+				'total_duration' => 0,
+				'request_count'  => 0,
+				'last_success'   => 0,
+				'last_failure'   => 0,
+			);
+		}
+
+		++$health_data['request_count'];
+		$health_data['total_duration'] += $duration;
+
+		if ( $success ) {
+			++$health_data['success_count'];
+			$health_data['last_success'] = time();
+		} else {
+			++$health_data['failure_count'];
+			$health_data['last_failure'] = time();
+		}
+
+		// Store for 1 hour.
+		set_transient( $health_key, $health_data, HOUR_IN_SECONDS );
+	}
+
+	/**
+	 * Get health metrics for a connection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @return array Health metrics.
+	 */
+	public static function get_health_metrics( $connection_id ) {
+		$health_key  = 'remote_health_' . sanitize_key( $connection_id );
+		$health_data = get_transient( $health_key );
+
+		if ( false === $health_data ) {
+			return array(
+				'success_count' => 0,
+				'failure_count' => 0,
+				'success_rate'  => 100,
+				'avg_duration'  => 0,
+				'request_count' => 0,
+				'last_success'  => null,
+				'last_failure'  => null,
+				'status'        => 'unknown',
+			);
+		}
+
+		$total_requests = $health_data['request_count'];
+		$success_rate   = $total_requests > 0 ? ( $health_data['success_count'] / $total_requests ) * 100 : 100;
+		$avg_duration   = $total_requests > 0 ? $health_data['total_duration'] / $total_requests : 0;
+
+		// Determine status.
+		$status = 'healthy';
+		if ( $success_rate < 50 ) {
+			$status = 'unhealthy';
+		} elseif ( $success_rate < 80 ) {
+			$status = 'degraded';
+		}
+
+		return array(
+			'success_count' => $health_data['success_count'],
+			'failure_count' => $health_data['failure_count'],
+			'success_rate'  => round( $success_rate, 2 ),
+			'avg_duration'  => round( $avg_duration, 3 ),
+			'request_count' => $total_requests,
+			'last_success'  => $health_data['last_success'] > 0 ? $health_data['last_success'] : null,
+			'last_failure'  => $health_data['last_failure'] > 0 ? $health_data['last_failure'] : null,
+			'status'        => $status,
+		);
+	}
+
+	/**
+	 * Sanitize an access-control map (post_type_access or wc_resource_access).
+	 *
+	 * Each entry must be an array of allowed CRUD operations. Only the values
+	 * 'read', 'create', 'update', and 'delete' are accepted; any other value is
+	 * stripped out. Slug keys are sanitized with sanitize_key().
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $access Raw access-control array from connection data.
+	 * @return array Sanitized access-control map.
+	 */
+	protected static function sanitize_access_controls( $access ) {
+		if ( ! is_array( $access ) ) {
+			return array();
+		}
+
+		$valid_operations = array( 'read', 'create', 'update', 'delete' );
+		$sanitized        = array();
+
+		foreach ( $access as $key => $ops ) {
+			$clean_key = sanitize_key( $key );
+
+			if ( empty( $clean_key ) ) {
+				continue;
+			}
+
+			$clean_ops = array();
+
+			if ( is_array( $ops ) ) {
+				foreach ( $ops as $op ) {
+					$op = sanitize_key( (string) $op );
+					if ( in_array( $op, $valid_operations, true ) ) {
+						$clean_ops[] = $op;
+					}
+				}
+			}
+
+			$sanitized[ $clean_key ] = array_values( array_unique( $clean_ops ) );
+		}
+
+		return $sanitized;
+	}
+
+	/**
+	 * Check whether a CRUD operation is permitted for a post type on a connection.
+	 *
+	 * When post_type_access is not configured on the connection (empty array or
+	 * missing key), backward-compatible behaviour applies: only read operations are
+	 * allowed for all post types; write operations are denied unless explicitly
+	 * enabled.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array  $connection Connection data array.
+	 * @param string $post_type  Post type slug (e.g. 'post', 'page', 'product').
+	 * @param string $operation  CRUD operation: 'read', 'create', 'update', or 'delete'.
+	 * @return bool True if the operation is allowed; false otherwise.
+	 */
+	public static function is_post_type_operation_allowed( $connection, $post_type, $operation = 'read' ) {
+		$post_type = sanitize_key( $post_type );
+		$operation = sanitize_key( $operation );
+
+		// When no access controls are configured, only permit reads (backward compatible).
+		if ( empty( $connection['post_type_access'] ) ) {
+			return 'read' === $operation;
+		}
+
+		$access = $connection['post_type_access'];
+
+		if ( ! isset( $access[ $post_type ] ) ) {
+			return false; // Post type not in the allowlist.
+		}
+
+		$allowed_ops = $access[ $post_type ];
+
+		return is_array( $allowed_ops ) && in_array( $operation, $allowed_ops, true );
+	}
+
+	/**
+	 * Check whether a CRUD operation is permitted for a WooCommerce resource on a connection.
+	 *
+	 * When wc_resource_access is not configured (empty array or missing key),
+	 * backward-compatible behaviour applies: only read operations are allowed for
+	 * all WooCommerce resources; write operations are denied unless explicitly enabled.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array  $connection Connection data array.
+	 * @param string $resource_type WooCommerce resource key: 'products', 'orders', 'customers', or 'categories'.
+	 * @param string $operation  CRUD operation: 'read', 'create', 'update', or 'delete'.
+	 * @return bool True if the operation is allowed; false otherwise.
+	 */
+	public static function is_wc_resource_operation_allowed( $connection, $resource_type, $operation = 'read' ) {
+		$resource  = sanitize_key( $resource_type );
+		$operation = sanitize_key( $operation );
+
+		// When no access controls are configured, only permit reads (backward compatible).
+		if ( empty( $connection['wc_resource_access'] ) ) {
+			return 'read' === $operation;
+		}
+
+		$access = $connection['wc_resource_access'];
+
+		if ( ! isset( $access[ $resource ] ) ) {
+			return false; // Resource not in the allowlist.
+		}
+
+		$allowed_ops = $access[ $resource ];
+
+		return is_array( $allowed_ops ) && in_array( $operation, $allowed_ops, true );
+	}
+
+	/**
+	 * Discover JetEngine Custom Content Types (CCTs) available on the remote site.
+	 *
+	 * Hits GET /wp-json/jet-cct/v1/ to enumerate CCTs that have at least one
+	 * REST endpoint enabled in JetEngine settings. Falls back gracefully when
+	 * JetEngine is not installed or no CCTs are exposed.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Array of CCT descriptors, or WP_Error on failure.
+	 */
+	public static function discover_jetengine_ccts( $connection ) {
+		$response = self::make_request( $connection, 'jet-cct/v1' );
+
+		if ( is_wp_error( $response ) ) {
+			// Graceful fallback: JetEngine not installed or REST disabled.
+			return array();
+		}
+
+		if ( ! is_array( $response ) ) {
+			return array();
+		}
+
+		$ccts = array();
+
+		foreach ( $response as $cct_slug => $cct_data ) {
+			if ( ! is_array( $cct_data ) ) {
+				continue;
+			}
+
+			$ccts[ $cct_slug ] = array(
+				'slug'   => $cct_slug,
+				'label'  => isset( $cct_data['label'] ) ? $cct_data['label'] : $cct_slug,
+				'args'   => isset( $cct_data['args'] ) ? $cct_data['args'] : array(),
+				'fields' => isset( $cct_data['fields'] ) ? $cct_data['fields'] : array(),
+			);
+		}
+
+		return $ccts;
+	}
+
+	/**
+	 * Check whether a CRUD operation is permitted for a JetEngine CCT on a connection.
+	 *
+	 * When jetengine_cct_access is not configured (empty array or missing key),
+	 * backward-compatible behaviour applies: only read operations are allowed
+	 * for all CCTs; write operations are denied unless explicitly enabled.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array  $connection Connection data array.
+	 * @param string $cct_slug   JetEngine CCT slug (e.g. 'attendees', 'inventory').
+	 * @param string $operation  CRUD operation: 'read', 'create', 'update', or 'delete'.
+	 * @return bool True if the operation is allowed; false otherwise.
+	 */
+	public static function is_jetengine_cct_operation_allowed( $connection, $cct_slug, $operation = 'read' ) {
+		$cct_slug  = sanitize_key( $cct_slug );
+		$operation = sanitize_key( $operation );
+
+		// When no JetEngine access controls are configured, only permit reads (backward compatible).
+		if ( empty( $connection['jetengine_cct_access'] ) ) {
+			return 'read' === $operation;
+		}
+
+		$access = $connection['jetengine_cct_access'];
+
+		if ( ! isset( $access[ $cct_slug ] ) ) {
+			return false; // CCT not in the allowlist.
+		}
+
+		$allowed_ops = $access[ $cct_slug ];
+
+		return is_array( $allowed_ops ) && in_array( $operation, $allowed_ops, true );
+	}
+}
