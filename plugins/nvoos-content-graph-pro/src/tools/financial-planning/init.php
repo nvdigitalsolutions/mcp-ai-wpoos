@@ -125,7 +125,24 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 	 */
 	function wp_mcp_ai_pro_register_financial_tools( $tools ) {
 		$nvoos_content_graph_pro_fin_tools = array(
-			// Financial tool batches fill this map as they land.
+			'WP_MCP_AI_Tool_Retirement_Calculator'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/financial-planning/class-wp-mcp-ai-tool-retirement-calculator.php',
+			'WP_MCP_AI_Tool_IRA_Roth_Comparison'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/financial-planning/class-wp-mcp-ai-tool-ira-roth-comparison.php',
+			'WP_MCP_AI_Tool_Withdrawal_Strategy_Planner'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/financial-planning/class-wp-mcp-ai-tool-withdrawal-strategy-planner.php',
+			'WP_MCP_AI_Tool_Social_Security_Optimizer'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/financial-planning/class-wp-mcp-ai-tool-social-security-optimizer.php',
+			'WP_MCP_AI_Tool_Pension_Analyzer'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/financial-planning/class-wp-mcp-ai-tool-pension-analyzer.php',
+			'WP_MCP_AI_Tool_Budget_Planner'               => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/financial-planning/class-wp-mcp-ai-tool-budget-planner.php',
+			'WP_MCP_AI_Tool_Expense_Tracker'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/financial-planning/class-wp-mcp-ai-tool-expense-tracker.php',
+			'WP_MCP_AI_Tool_Net_Worth_Calculator'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/financial-planning/class-wp-mcp-ai-tool-net-worth-calculator.php',
+			'WP_MCP_AI_Tool_Cash_Flow_Analyzer'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/financial-planning/class-wp-mcp-ai-tool-cash-flow-analyzer.php',
+			'WP_MCP_AI_Tool_Bank_Account_Sync'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/financial-planning/class-wp-mcp-ai-tool-bank-account-sync.php',
+			'WP_MCP_AI_Tool_Portfolio_Visualizer'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/financial-planning/class-wp-mcp-ai-tool-portfolio-visualizer.php',
+			'WP_MCP_AI_Tool_Asset_Allocation_Planner'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/financial-planning/class-wp-mcp-ai-tool-asset-allocation-planner.php',
+			'WP_MCP_AI_Tool_Investment_Return_Calculator' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/financial-planning/class-wp-mcp-ai-tool-investment-return-calculator.php',
+			'WP_MCP_AI_Tool_Rebalancing_Analyzer'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/financial-planning/class-wp-mcp-ai-tool-rebalancing-analyzer.php',
+			'WP_MCP_AI_Tool_Tax_Loss_Harvesting_Tracker'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/financial-planning/class-wp-mcp-ai-tool-tax-loss-harvesting-tracker.php',
+			'WP_MCP_AI_Tool_Debt_Payoff_Calculator'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/financial-planning/class-wp-mcp-ai-tool-debt-payoff-calculator.php',
+			'WP_MCP_AI_Tool_Mortgage_Calculator'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/financial-planning/class-wp-mcp-ai-tool-mortgage-calculator.php',
+			'WP_MCP_AI_Tool_Credit_Score_Tracker'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/financial-planning/class-wp-mcp-ai-tool-credit-score-tracker.php',
 		);
 
 		return array_merge( $tools, $nvoos_content_graph_pro_fin_tools );
@@ -150,7 +167,24 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 
 		foreach (
 			array(
-				// Financial tool batches fill this list as they land.
+				'WP_MCP_AI_Tool_Retirement_Calculator',
+				'WP_MCP_AI_Tool_IRA_Roth_Comparison',
+				'WP_MCP_AI_Tool_Withdrawal_Strategy_Planner',
+				'WP_MCP_AI_Tool_Social_Security_Optimizer',
+				'WP_MCP_AI_Tool_Pension_Analyzer',
+				'WP_MCP_AI_Tool_Budget_Planner',
+				'WP_MCP_AI_Tool_Expense_Tracker',
+				'WP_MCP_AI_Tool_Net_Worth_Calculator',
+				'WP_MCP_AI_Tool_Cash_Flow_Analyzer',
+				'WP_MCP_AI_Tool_Bank_Account_Sync',
+				'WP_MCP_AI_Tool_Portfolio_Visualizer',
+				'WP_MCP_AI_Tool_Asset_Allocation_Planner',
+				'WP_MCP_AI_Tool_Investment_Return_Calculator',
+				'WP_MCP_AI_Tool_Rebalancing_Analyzer',
+				'WP_MCP_AI_Tool_Tax_Loss_Harvesting_Tracker',
+				'WP_MCP_AI_Tool_Debt_Payoff_Calculator',
+				'WP_MCP_AI_Tool_Mortgage_Calculator',
+				'WP_MCP_AI_Tool_Credit_Score_Tracker',
 			) as $nvoos_content_graph_pro_tool_class
 		) {
 			$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );

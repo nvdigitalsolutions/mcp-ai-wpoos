@@ -176,6 +176,15 @@
     </rule>
 
     <!--
+        Byte-identical financial tax-loss tracker stamps records with
+        current_time( 'timestamp' ) (the monolith copy carries the same
+        call).
+    -->
+    <rule ref="WordPress.DateTime.CurrentTimeTimestamp.Requested">
+        <severity>0</severity>
+    </rule>
+
+    <!--
         Byte-identical import-services file handling: the base copy uses
         fopen/fclose/fwrite/file_put_contents + @unlink for its CSV import
         temp files, with the same silenced-error and while-assignment
