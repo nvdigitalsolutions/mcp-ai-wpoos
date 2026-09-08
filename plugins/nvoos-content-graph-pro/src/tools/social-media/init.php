@@ -12,8 +12,8 @@
  *
  * 1. `declare(strict_types=1)` added.
  * 2. File paths resolve from `NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/'`.
- * 3. The admin settings page stays file-gated — it lands with the social
- *    admin slice.
+ * 3. The admin settings page lands with the social admin slice (ported;
+ *    the file-gate below now fires).
  * 4. Monolith guard — this init declares the global helper
  *    `wp_mcp_ai_enqueue_social_media_toolkit_admin_styles()` that the base
  *    social init also declares; the collision is a compile-time fatal, so
