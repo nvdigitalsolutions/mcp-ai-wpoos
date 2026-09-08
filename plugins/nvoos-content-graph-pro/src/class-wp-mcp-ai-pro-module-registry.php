@@ -598,6 +598,21 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 						require_once $p . 'tools/social-media/init.php';
 					}
 				);
+
+				// Mirrors the base registry's `mcp_servers_framework` module —
+				// boots the slim mcp-servers init (server requires file-gated
+				// until the server batches land).
+				$this->add_module(
+					'mcp_servers_framework',
+					'MCP Servers Framework',
+					array(),
+					array(
+						'files' => array( $p . 'mcp-servers/mcp-servers-init.php' ),
+					),
+					function () use ( $p ) {
+						require_once $p . 'mcp-servers/mcp-servers-init.php';
+					}
+				);
 		}
 	}
 }
