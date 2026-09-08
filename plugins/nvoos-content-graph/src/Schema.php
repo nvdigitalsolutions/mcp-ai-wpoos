@@ -52,6 +52,18 @@ final class Schema {
 	// ─── Commerce ─────────────────────────────────────────────
 	public const PRODUCT_AI_ADDON = 'nvoos-content-graph-ai';
 
+	/**
+	 * Product id for the NV oOS Complete bundle sold through the checkout.
+	 *
+	 * The vendor checkout API validates this value (see
+	 * addons/checkout-api NVOOS_Checkout_API_Rest_Controller::PRODUCTS).
+	 * The legacy AI-addon product id stays listed for purchases made
+	 * before the Complete bundle replaced it.
+	 *
+	 * @since 1.0.6
+	 */
+	public const PRODUCT_COMPLETE = 'nvoos-oos-complete';
+
 	// ─── Cron hooks ────────────────────────────────────────────
 	public const CRON_BUILD  = 'nvoos_content_graph/cron_build';
 	public const CRON_ENRICH = 'nvoos_content_graph/cron_enrich';

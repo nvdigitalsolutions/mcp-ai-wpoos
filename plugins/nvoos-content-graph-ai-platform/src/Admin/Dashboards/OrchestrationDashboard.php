@@ -1688,6 +1688,48 @@ class OrchestrationDashboard {
 	}
 
 	/**
+	 * Whether any graph-backed memory bridge is connected.
+	 *
+	 * True when the Content Graph core bridge is loaded (always the case in
+	 * the ecosystem — this addon requires the core plugin), when the bundled
+	 * Graphify addon bridge is loaded (monolith mode), or when an external
+	 * bridge registered the wake-up retriever filter
+	 * (`wp_mcp_ai_wake_up_context_graph_retriever`) — the same sources the
+	 * `wake_up_context` tool consults when resolving its graph mode.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return bool
+	 */
+	protected function is_graph_memory_bridge_active() {
+		return \class_exists( 'NvoosContentGraph\Memory\Bridge' )
+			|| \class_exists( 'NV_oOS_Graphify_Memory_Bridge' )
+			|| \has_filter( 'wp_mcp_ai_wake_up_context_graph_retriever' );
+	}
+
+	/**
+	 * Admin URL of the connected graph explorer.
+	 *
+	 * The core Content Graph bridge serves wake-up retrieval first (its
+	 * retriever filter wins over the bundled bridge), so when both graphs
+	 * are connected the link points at the core explorer. Returns an empty
+	 * string when no graph is connected.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return string
+	 */
+	protected function get_graph_explorer_url() {
+		if ( \class_exists( 'NvoosContentGraph\Memory\Bridge' ) ) {
+			return \admin_url( 'admin.php?page=nvoos-content-graph' );
+		}
+		if ( \class_exists( 'NV_oOS_Graphify_Memory_Bridge' ) ) {
+			return \admin_url( 'admin.php?page=nvoos-graphify' );
+		}
+		return '';
+	}
+
+	/**
 	 * Get agent memory statistics.
 	 *
 	 * Retrieves stats from cache or calculates them fresh.
@@ -1714,7 +1756,7 @@ class OrchestrationDashboard {
 			// would otherwise keep the JetEngine "Install…" notice up for
 			// the lifetime of the cache.
 			if ( \is_array( $cached ) ) {
-				$cached['bridge_active'] = \class_exists( 'NV_oOS_Graphify_Memory_Bridge' );
+				$cached['bridge_active'] = $this->is_graph_memory_bridge_active();
 
 				$persistent_cached = isset( $cached['persistent_storage'] ) && \is_array( $cached['persistent_storage'] )
 					? $cached['persistent_storage']
@@ -1840,7 +1882,7 @@ class OrchestrationDashboard {
 			'wings_count'            => $wings_count,
 			'rooms_count'            => $rooms_count,
 			'mined_count'            => $mined_count,
-			'bridge_active'          => \class_exists( 'NV_oOS_Graphify_Memory_Bridge' ),
+			'bridge_active'          => $this->is_graph_memory_bridge_active(),
 			'retrieval_path'         => $this->get_retrieval_path_telemetry(),
 			'persistent_storage'     => $this->get_persistent_memory_stats(),
 		);
@@ -2033,7 +2075,7 @@ class OrchestrationDashboard {
 			'total'     => 0,
 		);
 
-		$graph_explorer_url = $bridge_active ? \admin_url( 'admin.php?page=nvoos-graphify' ) : '';
+		$graph_explorer_url = $bridge_active ? $this->get_graph_explorer_url() : '';
 
 		?>
 		<div class="agent-memory-stats-widget">

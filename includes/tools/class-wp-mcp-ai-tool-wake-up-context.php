@@ -232,15 +232,19 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$retrieve_args['query'] = $query;
 		}
 
-		// Resolve whether the graph path should be used.
-		$graphify_available = class_exists( 'NV_oOS_Graphify_Memory_Bridge' );
-		$use_graph          = false;
+		// Resolve whether the graph path should be used. Graph retrieval can
+		// be served by the bundled Graphify bridge or by an external memory
+		// bridge (e.g. the standalone NV oOS Content Graph plugin) through
+		// the `wp_mcp_ai_wake_up_context_graph_retriever` filter.
+		$graphify_available        = class_exists( 'NV_oOS_Graphify_Memory_Bridge' );
+		$graph_retriever_available = has_filter( 'wp_mcp_ai_wake_up_context_graph_retriever' );
+		$use_graph                 = false;
 		if ( 'graph' === $mode ) {
-			if ( ! $graphify_available ) {
+			if ( ! $graphify_available && ! $graph_retriever_available ) {
 				return new WP_Error( 'wp_mcp_ai_error', __( 'Graph mode requested but the Graphify addon is not active.', 'mcp-ai-wpoos' ) );
 			}
 			$use_graph = true;
-		} elseif ( 'auto' === $mode && $graphify_available ) {
+		} elseif ( 'auto' === $mode && ( $graphify_available || $graph_retriever_available ) ) {
 			$use_graph = true;
 		}
 
@@ -251,21 +255,46 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$graph_via = array();
 
 		if ( $use_graph ) {
-			// The graph bridge is advisory — any failure (WP_Error, throwable,
-			// malformed rows) must degrade to the transient retrieval path
-			// instead of surfacing as a fatal tool error (fix #5).
+			$retriever_args = array(
+				'agent_id' => $agent_id,
+				'wing'     => $wing,
+				'room'     => $room,
+				'query'    => $query,
+				'limit'    => $top_n,
+			);
+
+			/**
+			 * Filter: serve graph-retrieval rankings from an external memory
+			 * bridge (for example the standalone NV oOS Content Graph
+			 * plugin's Memory Bridge). Return `null` to defer to the bundled
+			 * Graphify bridge; return an array of `{context_id, score, via}`
+			 * rows to override it. Like the bundled bridge, this surface is
+			 * advisory — any failure must degrade to the transient retrieval
+			 * path instead of surfacing as a fatal tool error.
+			 *
+			 * @since 1.1.75
+			 *
+			 * @param array|null   $ranked Ranked memory rows, null to defer.
+			 * @param array        $args   Retrieval args: agent_id, wing, room,
+			 *                            query, limit.
+			 */
+			$ranked = null;
 			try {
-				$ranked = NV_oOS_Graphify_Memory_Bridge::retrieve_graph(
-					array(
-						'agent_id' => $agent_id,
-						'wing'     => $wing,
-						'room'     => $room,
-						'query'    => $query,
-						'limit'    => $top_n,
-					)
-				);
+				$ranked = apply_filters( 'wp_mcp_ai_wake_up_context_graph_retriever', null, $retriever_args );
 			} catch ( \Throwable $e ) {
-				$ranked = array();
+				$ranked = null;
+			}
+
+			if ( null === $ranked && $graphify_available ) {
+				// The bundled bridge is advisory — any failure (WP_Error,
+				// throwable, malformed rows) must degrade to the transient
+				// retrieval path instead of surfacing as a fatal tool error
+				// (fix #5).
+				try {
+					$ranked = NV_oOS_Graphify_Memory_Bridge::retrieve_graph( $retriever_args );
+				} catch ( \Throwable $e ) {
+					$ranked = array();
+				}
 			}
 			if ( is_wp_error( $ranked ) || ! is_array( $ranked ) ) {
 				$ranked = array();

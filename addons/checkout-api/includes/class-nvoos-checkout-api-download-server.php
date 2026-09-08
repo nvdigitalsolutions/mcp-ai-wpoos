@@ -113,7 +113,7 @@ class NVOOS_Checkout_API_Download_Server {
 		}
 
 		$dir  = trailingslashit( $uploads['basedir'] ) . self::CACHE_DIR;
-		$file = $dir . '/nvoos-content-graph-ai-v' . sanitize_file_name( $version ) . '.zip';
+		$file = $dir . '/' . self::cached_zip_name( $version );
 
 		if ( file_exists( $file ) ) {
 			return $file;
@@ -189,33 +189,65 @@ class NVOOS_Checkout_API_Download_Server {
 	}
 
 	/**
+	 * Canonical cached/download filename for a version.
+	 *
+	 * Matches the NV oOS Complete bundle release asset name
+	 * (`nvdigital-open-operator-system-oos-complete-{version}.zip`).
+	 *
+	 * @since 0.1.1
+	 *
+	 * @param string $version Bundle version.
+	 * @return string
+	 */
+	public static function cached_zip_name( string $version ): string {
+		return 'nvdigital-open-operator-system-oos-complete-' . sanitize_file_name( $version ) . '.zip';
+	}
+
+	/**
 	 * Stream the ZIP with the correct headers and exit.
+	 *
+	 * Chunked native read: the Complete bundle ZIP can be tens of MB and
+	 * must not be buffered whole into PHP memory on the vendor server.
 	 *
 	 * @param string $file    Absolute path to the ZIP.
 	 * @param string $version Addon version (used in the filename).
 	 * @return never
 	 */
 	private static function stream( string $file, string $version ) {
-		global $wp_filesystem;
-
-		require_once ABSPATH . 'wp-admin/includes/file.php';
-		if ( ! WP_Filesystem() ) {
-			self::fail( 500, __( 'Filesystem access unavailable.', 'nvoos-checkout-api' ) );
+		if ( ! file_exists( $file ) || ! is_readable( $file ) ) {
+			self::fail( 500, __( 'Could not read the package.', 'nvoos-checkout-api' ) );
 		}
 
-		$contents = $wp_filesystem->get_contents( $file );
-		if ( false === $contents ) {
-			self::fail( 500, __( 'Could not read the addon package.', 'nvoos-checkout-api' ) );
-		}
+		// Chunked native read: the Complete bundle ZIP can be tens of MB and
+		// must not be buffered whole into PHP memory on the vendor server.
+		// WP_Filesystem has no chunked reader, so native file handles are the
+		// streaming primitive here (this code runs only on the vendor's own
+		// server, never on customer sites).
+		// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.WP.AlternativeFunctions.file_system_operations_fread, WordPress.WP.AlternativeFunctions.file_system_operations_fclose, WordPress.WP.AlternativeFunctions.file_system_operations_filesize -- See above.
+		$size = (int) filesize( $file );
 
 		nocache_headers();
 		header( 'Content-Type: application/zip' );
-		header( 'Content-Length: ' . (string) strlen( $contents ) );
-		header( 'Content-Disposition: attachment; filename="nvoos-content-graph-ai-v' . sanitize_file_name( $version ) . '.zip"' );
+		header( 'Content-Length: ' . (string) $size );
+		header( 'Content-Disposition: attachment; filename="' . self::cached_zip_name( $version ) . '"' );
 		header( 'X-Content-Type-Options: nosniff' );
 
-		echo $contents; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- raw ZIP bytes.
+		$handle = fopen( $file, 'rb' );
+		if ( false === $handle ) {
+			self::fail( 500, __( 'Could not read the package.', 'nvoos-checkout-api' ) );
+		}
 
+		while ( ! feof( $handle ) ) {
+			$chunk = fread( $handle, 1024 * 1024 );
+			if ( false === $chunk ) {
+				fclose( $handle );
+				self::fail( 500, __( 'Could not read the package.', 'nvoos-checkout-api' ) );
+			}
+			echo $chunk; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- raw ZIP bytes.
+		}
+
+		fclose( $handle );
+		// phpcs:enable
 		exit;
 	}
 

@@ -191,11 +191,34 @@ class Test_Orchestration_Dashboard_Memory_Phase4a extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Bridge flag mirrors `class_exists()` of the Graphify bridge.
+	 * Bridge flag reflects any detectable graph memory bridge: the bundled
+	 * Graphify bridge class, the standalone Content Graph bridge class, or a
+	 * registered wake-up retriever filter.
 	 */
 	public function test_bridge_active_flag_reflects_class_existence() {
+		// Isolate the filter signal so the assertion is deterministic.
+		remove_all_filters( 'wp_mcp_ai_wake_up_context_graph_retriever' );
+
+		$expected = class_exists( 'NV_oOS_Graphify_Memory_Bridge' )
+			|| class_exists( 'NvoosContentGraph\Memory\Bridge' );
+
 		$stats = $this->invoke( 'get_agent_memory_stats' );
-		$this->assertSame( class_exists( 'NV_oOS_Graphify_Memory_Bridge' ), $stats['bridge_active'] );
+		$this->assertSame( $expected, $stats['bridge_active'] );
+	}
+
+	/**
+	 * An external memory bridge that registers the wake-up retriever filter
+	 * (e.g. the standalone NV oOS Content Graph plugin) must flip the bridge
+	 * flag to active even when no bridge class is loaded.
+	 */
+	public function test_bridge_active_true_when_retriever_filter_registered() {
+		add_filter( 'wp_mcp_ai_wake_up_context_graph_retriever', '__return_empty_array' );
+
+		$stats = $this->invoke( 'get_agent_memory_stats' );
+
+		$this->assertTrue( $stats['bridge_active'] );
+
+		remove_all_filters( 'wp_mcp_ai_wake_up_context_graph_retriever' );
 	}
 
 	/**
@@ -232,13 +255,19 @@ class Test_Orchestration_Dashboard_Memory_Phase4a extends WP_UnitTestCase {
 		);
 		set_transient( 'wp_mcp_ai_agent_memory_stats', $stale, 5 * MINUTE_IN_SECONDS );
 
+		// Isolate the filter signal before the recompute so the assertion
+		// compares against class detection only.
+		remove_all_filters( 'wp_mcp_ai_wake_up_context_graph_retriever' );
+
 		$stats = $this->invoke( 'get_agent_memory_stats' );
 
 		// Cached payload was returned (total_contexts is the cached zero, not
-		// a recomputed value), but `bridge_active` is the live class-existence
+		// a recomputed value), but `bridge_active` is the live bridge-detection
 		// state.
 		$this->assertSame( 0, $stats['total_contexts'] );
-		$this->assertSame( class_exists( 'NV_oOS_Graphify_Memory_Bridge' ), $stats['bridge_active'] );
+		$expected = class_exists( 'NV_oOS_Graphify_Memory_Bridge' )
+			|| class_exists( 'NvoosContentGraph\Memory\Bridge' );
+		$this->assertSame( $expected, $stats['bridge_active'] );
 	}
 
 	/**
@@ -343,5 +372,52 @@ class Test_Orchestration_Dashboard_Memory_Phase4a extends WP_UnitTestCase {
 		$today = gmdate( 'Y-m-d' );
 		$this->assertArrayHasKey( $today, $telemetry );
 		$this->assertSame( 1, (int) $telemetry[ $today ]['graph'] );
+	}
+
+	/**
+	 * With only the bundled Graphify bridge loaded, the Graph Explorer link
+	 * points at the bundled addon's explorer page. Skipped when the
+	 * standalone bridge class is already loaded by another suite (cannot be
+	 * unloaded).
+	 */
+	public function test_graph_explorer_url_points_at_bundled_explorer() {
+		if ( class_exists( 'NvoosContentGraph\Memory\Bridge' ) ) {
+			$this->markTestSkipped( 'Standalone bridge loaded; bundled-only path not isolated.' );
+		}
+
+		if ( ! class_exists( 'NV_oOS_Graphify_Memory_Bridge' ) ) {
+			$bridge_path = dirname( __DIR__ ) . '/addons/graphify/includes/class-nvoos-graphify-memory-bridge.php';
+			if ( file_exists( $bridge_path ) ) {
+				require_once $bridge_path;
+			}
+		}
+		if ( ! class_exists( 'NV_oOS_Graphify_Memory_Bridge' ) ) {
+			$this->markTestSkipped( 'Bundled Graphify bridge not loadable.' );
+		}
+
+		$url = $this->invoke( 'get_graph_explorer_url' );
+		$this->assertStringContainsString( 'page=nvoos-graphify', $url );
+	}
+
+	/**
+	 * When the standalone NV oOS Content Graph bridge is loaded, the Graph
+	 * Explorer link points at the standalone plugin's explorer page — it
+	 * serves wake-up retrieval first.
+	 */
+	public function test_graph_explorer_url_points_at_standalone_explorer() {
+		if ( ! class_exists( 'NvoosContentGraph\Memory\Bridge' ) ) {
+			$bridge_path = dirname( __DIR__ ) . '/plugins/nvoos-content-graph/src/Memory/Bridge.php';
+			if ( ! file_exists( $bridge_path ) ) {
+				$this->markTestSkipped( 'Standalone Content Graph plugin not present.' );
+			}
+			require_once $bridge_path;
+		}
+
+		$url = $this->invoke( 'get_graph_explorer_url' );
+		$this->assertStringContainsString( 'page=nvoos-content-graph', $url );
+
+		// The connected bridge must also flip the stats flag.
+		$stats = $this->invoke( 'get_agent_memory_stats' );
+		$this->assertTrue( $stats['bridge_active'] );
 	}
 }

@@ -32,9 +32,13 @@ class NVOOS_Checkout_API_Rest_Controller {
 	/**
 	 * Products this checkout sells.
 	 *
+	 * `nvoos-oos-complete` is the current product (the NV oOS Complete
+	 * bundle); `nvoos-content-graph-ai` stays accepted for legacy
+	 * purchases issued before the Complete bundle replaced the AI addon.
+	 *
 	 * @var string[]
 	 */
-	public const PRODUCTS = array( 'nvoos-content-graph-ai' );
+	public const PRODUCTS = array( 'nvoos-oos-complete', 'nvoos-content-graph-ai' );
 
 	/**
 	 * Register routes.

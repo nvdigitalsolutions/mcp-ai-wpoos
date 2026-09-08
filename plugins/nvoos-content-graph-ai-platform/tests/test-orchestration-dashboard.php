@@ -597,8 +597,10 @@ class Test_Orchestration_Dashboard extends \WP_UnitTestCase {
 		$this->assertFalse( $stats['persistent_storage']['available'] );
 		$this->assertSame( 0, $stats['persistent_storage']['cct_count'] );
 
-		// Bridge active follows the Graphify add-on probe.
-		$this->assertFalse( $stats['bridge_active'] );
+		// Bridge active follows the graph-bridge probe: the Content Graph core
+		// plugin (a required dependency in both matrices) always loads its
+		// Memory Bridge, so the flag is true everywhere in the ecosystem.
+		$this->assertTrue( $stats['bridge_active'] );
 
 		\delete_option( 'wp_mcp_ai_wake_up_telemetry' );
 		\delete_transient( 'mcp_ai_ctx_index_agenta' );

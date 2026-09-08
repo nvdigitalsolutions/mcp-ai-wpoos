@@ -5,7 +5,7 @@ Tags: knowledge graph, content visualization, cytoscape, content strategy, seman
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.4
+Stable tag: 1.0.6
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -127,13 +127,13 @@ When you configure a remote source driver (REST API, RSS/Sitemap feed, SPARQL en
 
 **Stripe payments (opt-in only)**
 
-The "Get NV oOS Content Graph — AI" buttons on the plugin's settings page open an optional checkout for the companion addon. Card and payment details are entered directly on Stripe's servers (`js.stripe.com` iframe); the plugin never stores or transmits card data. Stripe.js is loaded only when the purchase modal is opened — merely visiting the settings page contacts no third party. The checkout is created and verified by the vendor's own server (NV Digital Solutions); this plugin only sends the product name, your site URL, and the Stripe payment ID to that service. A local purchase record (license key, payment ID, price paid, and the purchasing administrator's email address) is stored after the vendor confirms the payment. Payment is entirely optional — the core plugin is fully functional without it.
+The "Get NV oOS Complete" buttons on the plugin's settings page open an optional checkout for the NV oOS Complete plugin bundle — the full NV oOS plugin (base + Pro) installed as a separate plugin. Card and payment details are entered directly on Stripe's servers (`js.stripe.com` iframe); the plugin never stores or transmits card data. Stripe.js is loaded only when the purchase modal is opened — merely visiting the settings page contacts no third party. The checkout is created and verified by the vendor's own server (NV Digital Solutions); this plugin only sends the product name, your site URL, and the Stripe payment ID to that service. A local purchase record (license key, payment ID, price paid, and the purchasing administrator's email address) is stored after the vendor confirms the payment. Payment is entirely optional — the core plugin is fully functional without it.
 
 - **Service provider:** Stripe, Inc. — Privacy Policy: https://stripe.com/privacy
 
 **GitHub download (opt-in only)**
 
-After a successful purchase, the plugin downloads the addon ZIP from a URL provided by the vendor's checkout service (which serves the package from the project's GitHub release page, `github.com`). No data is sent to GitHub.
+After a successful purchase, the plugin downloads the NV oOS Complete plugin ZIP from a URL provided by the vendor's checkout service (which serves the package from the project's GitHub release page, `github.com`). No data is sent to GitHub.
 
 == Third-Party Libraries ==
 
@@ -156,6 +156,16 @@ All libraries are served locally from `assets/vendor/` and never loaded from thi
 6. Graph Explorer — interactive Cytoscape.js visualization with search and node details
 
 == Changelog ==
+
+= 1.0.6 — 2026-09-08 =
+* Checkout now delivers the NV oOS Complete plugin bundle (base + Pro as a separate plugin) instead of the companion AI addon
+* The installer refuses to create a second copy of NV oOS when the base plugin is already installed on the site
+* Updated privacy disclosures for the checkout flow
+
+= 1.0.5 — 2026-09-08 =
+* Agent Memory Bridge: memories stored by the NV oOS base+Pro plugin (`wp_mcp_ai_memory_stored`) are now projected into the knowledge graph as `memory:*` nodes with agent/wing/room edges
+* Graph-ranked memory retrieval seam for the NV oOS `wake_up_context` tool (`wp_mcp_ai_wake_up_context_graph_retriever` filter)
+* New `Db::tablesInstalled()` schema probe; PHPUnit coverage for the bridge and its schema-absent degradation
 
 = 1.0.4 — 2026-09-05 =
 * New Appearance tab: themes (dark/light/auto/admin), per-type color and icon overrides, WCAG contrast report, and one-click style presets
