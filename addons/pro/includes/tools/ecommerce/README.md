@@ -4,7 +4,7 @@ This directory contains all tools for the E-commerce Pro Toolkit.
 
 - `init.php` — toolkit bootstrap; loads admin pages and optimization only when the toolkit is enabled.
 - `class-wp-mcp-ai-ecommerce-helpers.php` — side-effect-free helpers (e.g. `wp_mcp_ai_is_ecommerce_toolkit_enabled()`).
-- `trait-wp-mcp-ai-woo-price-qty-updater.php` — shared price/quantity update helpers used by `update_woo_product_price`, `update_woo_product_qty`, `woo_products`, and `bulk_update_products` (all-types target resolution, sale validation, canonical stock notifications, variable-parent sync, transient cleanup).
+- `trait-wp-mcp-ai-woo-price-qty-updater.php` — shared price/quantity update helpers used by `update_woo_product_price`, `update_woo_product_qty`, `woo_products`, and `bulk_update_products` (all-types target resolution, sale validation, canonical stock notifications with per-call `notify` suppression, variable-parent sync, transient cleanup).
 
 ## Tool Categories
 
@@ -12,7 +12,7 @@ This directory contains all tools for the E-commerce Pro Toolkit.
 - [x] create_product_advanced - Create product with all WooCommerce meta
 - [x] bulk_update_products - Update multiple products at once
 - [x] update_woo_product_price - Update price for all product types (simple, variable/variations, grouped, external)
-- [x] update_woo_product_qty - Update stock quantity for all stock-managed types (set/increase/decrease)
+- [x] update_woo_product_qty - Update stock quantity for all stock-managed types (set/increase/decrease, notify flag for suppressing low/no-stock emails)
 - [x] import_products_csv - Import products from CSV/Excel
 - [x] export_products_report - Export product catalog with analytics
 - [x] sync_product_inventory - Sync inventory across warehouses
