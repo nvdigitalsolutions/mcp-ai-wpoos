@@ -1,7 +1,9 @@
 # Per-Toolkit MCP Servers
 
-> Status: Phase 0 + Phase 1 + Phase 2 + Phase 3 (3a/3b/3c/3d/3e) + Phase 4 + Phase 5 + Phase 6 + Phase 7 shipped — all 26 toolkits promoted (19 Tier-1 + 7 Tier-2), `/.well-known/mcp` discovery endpoint active, the per-toolkit endpoint supports execution and rate limiting, a `/mcp-server` slash command + WP-CLI command are available, cross-mount reads are recorded in the audit log, toolkit-scoped bearer tokens (Phase 3d) allow credential-based access without a WordPress user session, and a dedicated Pro admin page (`nvoos-pro-toolkit-mcp-servers`) provides a first-class management UI.
-> ADR: [`docs/ADR_002_toolkit_mcp_servers.md`](../ADR_002_toolkit_mcp_servers.md)
+> Status: Phase 0 + Phase 1 + Phase 2 + Phase 3 (3a/3b/3c/3d/3e) + Phase 4 + Phase 5 + Phase 6 + Phase 7 shipped, plus Phase 8 (v1.1.40) — all 33 toolkit servers registered (19 Tier-1 + 7 Tier-2 + Pro Scheduler, FlowHub, Shopify Sync, EZuite), `/.well-known/mcp` discovery endpoint active, OAuth 2.0 MCP authentication (PKCE, hierarchical scopes, browser-based login, token-management UI), the per-toolkit endpoint supports execution and rate limiting, a `/mcp-server` slash command + WP-CLI command are available, cross-mount reads are recorded in the audit log, toolkit-scoped bearer tokens (Phase 3d) allow credential-based access without a WordPress user session, and a dedicated Pro admin page (`nvoos-pro-toolkit-mcp-servers`) provides a first-class management UI.
+> Design provenance: [`docs/features/toolkit-mcp-servers-phase7-admin-ui-plan.md`](toolkit-mcp-servers-phase7-admin-ui-plan.md)
+>
+> **Since Phase 7:** JSON-RPC errors return HTTP 200 with error envelopes (SDK compat), a legacy HTTP+SSE transport with a credential-bound session store is available, MCP protocol version negotiation supports Zed/Claude Desktop/Cursor, async tool responses are bounded (~45 s polling), and `GET`/`HEAD` are exempt from the REST request quota (v1.1.55). The toolkit MCP-server core was ported to the standalone `nvoos-content-graph-pro` plugin (v1.1.72). See also `docs/developer/implementation-plan-mcp-agent-compat.md` and `docs/developer/legacy-sse-transport-plan.md`.
 
 Each Pro toolkit can be promoted into a first-class MCP (Model Context Protocol) server with its own JSON-RPC endpoint, capability negotiation, discovery descriptor, and per-toolkit configuration page — without disturbing the existing monolithic `/mcp-ai/v1/mcp` endpoint.
 
@@ -357,7 +359,7 @@ The card shows:
 
 ### Server Reference Documentation
 
-`docs/mcp-servers.md` — auto-generated Markdown reference for all 19 Tier-1 servers. Includes: slug, name, description, REST endpoint table, configuration field reference, audit log query parameters, WP-CLI examples, and slash command cheatsheet.
+The auto-generated `docs/mcp-servers.md` reference was retired in the 2026 docs reorganization. Per-server slugs, REST routes, configuration fields, WP-CLI commands, and the slash-command cheatsheet are documented in this file and surfaced live in the Servers and Detail tabs of the `nvoos-pro-toolkit-mcp-servers` admin page.
 
 ### Tests
 

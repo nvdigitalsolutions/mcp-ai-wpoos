@@ -150,7 +150,7 @@ PHP-FPM pins one worker per open stream — this is the main operational cost
 | `includes/class-wp-mcp-ai-rest.php` | `handle_sse_handshake()` delegates to the real handshake; add session-owner helpers. |
 | `includes/rest/class-wp-mcp-ai-rest-authenticator.php` | Optional raw `cred_*` header acceptance (§5.2). |
 | `tests/test-legacy-sse-transport.php` | **NEW.** Unit tests (discriminator, session store, auth parsing, queueing). |
-| `docs/rest-api.md`, `docs/tool-reference.md` | Document the second transport + auth compat. |
+| `docs/reference/api/rest-api.md`, `docs/reference/tools/tool-reference.md` | Document the second transport + auth compat. |
 | `readme.txt` / changelog | Note the feature + `?stream=true` behavior change. |
 
 ## 5. Implementation steps

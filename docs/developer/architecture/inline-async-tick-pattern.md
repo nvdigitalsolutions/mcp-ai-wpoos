@@ -123,9 +123,9 @@ The Mine Memories regression suite at
 
 ## See also
 
-- [`docs/guides/developer/tool-development/async-tool-execution-guide.md`](../guides/developer/tool-development/async-tool-execution-guide.md)
+- [`docs/developer/tool-development/async-tool-execution-guide.md`](../tool-development/async-tool-execution-guide.md)
   — async-tool authoring guide; references this pattern.
-- [`docs/guides/developer/testing/CRON_TESTING_GUIDE.md`](../guides/developer/testing/CRON_TESTING_GUIDE.md)
+- [`docs/developer/testing-docs/CRON_TESTING_GUIDE.md`](../testing-docs/CRON_TESTING_GUIDE.md)
   — testing strategy for cron-driven jobs.
 - PR #4916 — original Mine Memories implementation that the trait
   generalises.

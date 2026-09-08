@@ -464,7 +464,7 @@ Example error:
 Once connected successfully:
 
 1. **Explore available tools** – Each assistant exposes different tool sets
-2. **Review tool documentation** – See [`docs/tool-reference.md`](../../reference/tools/tool-reference.md)
+2. **Review tool documentation** – See [`docs/reference/tools/tool-reference.md`](../../reference/tools/tool-reference.md)
 3. **Test common workflows** – Try content search, post creation, etc.
 4. **Monitor usage** – Track consumption in **Settings → NV oOS**
 5. **Secure your deployment** – Review [deployment troubleshooting](deployment-troubleshooting.md)

@@ -432,7 +432,7 @@ git commit -m "Baseline before Architect Agent modifications"
 
 ✅ **Valid paths** (relative to plugin root):
 - `"includes/tools/class-new-tool.php"`
-- `"docs/guides/new-guide.md"`
+- `"docs/user-guides/new-guide.md"`
 - `"assets/js/custom-script.js"`
 - `"tests/test-new-feature.php"`
 

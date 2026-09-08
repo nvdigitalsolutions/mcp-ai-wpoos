@@ -82,12 +82,14 @@ Industry-standards grounding (researched via web search before this plan):
 | Guide Rev 3.0 | ✅ | P0 + P1 + P2 + P3 edits applied |
 | Cross-ref sweep | ✅ | DOCUMENTATION_INDEX, getting-started README |
 | Validation | ✅ | Stale-value grep, link existence, catalog price diff |
+| Follow-up: linked-page sweep | ✅ | Post-reorg link rot repaired in 14 guide-linked + getting-started pages; `toolkit-mcp-servers.md` status line updated to Phase 8 / 33 servers / OAuth 2.0 |
 
 ## 4. Commit breakdown
 
 1. `docs: refresh use-cases fact sheet to Rev 3.0 (v1.1.72 ground truth)`
 2. `docs: refresh use cases & quickstarts guide to Rev 3.0`
 3. `docs: sync documentation index cross-references for use-cases Rev 3.0`
+4. `docs: repair link rot in getting-started and linked pages`
 
 ## 5. Validation
 
