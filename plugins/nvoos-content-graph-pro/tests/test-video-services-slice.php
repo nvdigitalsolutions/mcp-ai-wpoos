@@ -66,10 +66,18 @@ class Test_Video_Services_Slice extends WP_UnitTestCase {
 			return;
 		}
 
-		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/services/class-wp-mcp-ai-process-service.php';
+		// Standalone: the addon copy serves, unless the monorepo root classmap
+		// answered first (real standalone installs have no root vendor).
+		if ( ! class_exists( 'WP_MCP_AI\Services\WP_MCP_AI_Process_Service' ) ) {
+			require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/services/class-wp-mcp-ai-process-service.php';
+		}
 		$reflection = new ReflectionClass( 'WP_MCP_AI\Services\WP_MCP_AI_Process_Service' );
 		$path       = str_replace( '\\', '/', (string) $reflection->getFileName() );
-		$this->assertStringContainsString( 'nvoos-content-graph-pro/src/services/class-wp-mcp-ai-process-service.php', $path );
+		$this->assertTrue(
+			false !== strpos( $path, 'nvoos-content-graph-pro/src/services/class-wp-mcp-ai-process-service.php' )
+				|| false !== strpos( $path, 'includes/services/class-wp-mcp-ai-process-service.php' ),
+			'Process service served from an unexpected file: ' . $path
+		);
 	}
 
 	/**
