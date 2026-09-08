@@ -115,6 +115,8 @@ spl_autoload_register(
 			'src/tools/video-production/examples/',
 			'src/tools/analytics/',
 			'src/tools/analytics/examples/',
+			'src/tools/multilingual/',
+			'src/tools/multilingual/examples/',
 			'src/tools/orchestration/',
 			'src/tools/financial-planning/',
 			'src/tools/financial-planning/examples/',
