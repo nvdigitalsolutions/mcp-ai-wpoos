@@ -1,0 +1,102 @@
+<?php
+/**
+ * Media URL utils (ecosystem port - Wave F2, video-services D8-compat slice).
+ *
+ * Ported from the base plugin's `includes/` directory for the standalone `nvoos-content-graph-pro`
+ * addon (D8-compat copy - same pattern as the tool-interface/chat-response/envelope copies). Kept
+ * byte-identical. The base plugin owns the symbol in monolith installs - the addon boots nothing when
+ * `WP_MCP_AI_PRO_PATH` is defined (see the plugin entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain `nvoos-content-graph-pro`;
+ * the base-owned `WP_MCP_AI_PATH` message-attachments/openai-client requires gain `defined(
+ * 'WP_MCP_AI_PATH' )` guards (graceful standalone degrade until those base files land as D8 copies).
+ *
+ * Media URL utilities for ensuring local WordPress URLs.
+ *
+ * This utility class provides methods for retrieving local WordPress media URLs
+ * instead of external CDN/offloaded URLs. This is important for ensuring that
+ * the chat client shows local WordPress URLs even when media offloading plugins
+ * (like WP Offload Media) are active.
+ *
+ * @package WP_MCP_AI
+ * @since 1.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
+ */
+
+declare(strict_types=1);
+
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Media URL utility class.
+ *
+ * Provides SoC-compliant helper methods for URL handling that can be used
+ * across tools and services without duplication.
+ *
+ * @since 1.0.0
+ */
+class WP_MCP_AI_Media_URL_Utils {
+
+	/**
+	 * Get the local WordPress URL for an uploaded file.
+	 *
+	 * This method prefers the URL from wp_upload_bits() over wp_get_attachment_url()
+	 * to ensure we always return the local WordPress upload directory URL, not an
+	 * external URL from media offloading plugins (OneDrive, S3, etc.).
+	 *
+	 * Use this when you want to ensure the chat client displays the local WordPress
+	 * media URL, regardless of whether media offloading is configured.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $upload        Upload result from wp_upload_bits() containing 'url', 'file', 'error'.
+	 * @param int   $attachment_id Optional. Attachment ID to fall back to if upload URL not available.
+	 * @return string Local WordPress media URL, or empty string if not available.
+	 */
+	public static function get_local_upload_url( $upload, $attachment_id = 0 ) {
+		// Prefer the upload URL as it's always the local WordPress URL.
+		if ( isset( $upload['url'] ) && '' !== $upload['url'] ) {
+			return $upload['url'];
+		}
+
+		// Fallback to wp_get_attachment_url if upload URL not available.
+		// Note: This may return an external URL if offloading plugins are active.
+		if ( $attachment_id > 0 ) {
+			$url = wp_get_attachment_url( $attachment_id );
+			return $url ? $url : '';
+		}
+
+		return '';
+	}
+
+	/**
+	 * Build an attachment result array with local WordPress URLs.
+	 *
+	 * This method creates a standardized result array for tools/services that
+	 * save files to the media library, ensuring local URLs are used.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int   $attachment_id Attachment ID.
+	 * @param array $upload        Upload result from wp_upload_bits().
+	 * @return array Array with 'attachment_id', 'url', and 'file_name' keys.
+	 */
+	public static function build_attachment_result( $attachment_id, $upload ) {
+		// Extract filename from the upload file path.
+		$file_name = '';
+		if ( isset( $upload['file'] ) && '' !== $upload['file'] ) {
+			$file_name = basename( $upload['file'] );
+		}
+
+		return array(
+			'attachment_id' => (int) $attachment_id,
+			'url'           => self::get_local_upload_url( $upload, $attachment_id ),
+			'file_name'     => $file_name,
+		);
+	}
+}
