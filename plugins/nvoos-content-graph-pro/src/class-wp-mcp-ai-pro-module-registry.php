@@ -580,6 +580,24 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 						require_once $p . 'tools/financial-planning/init.php';
 					}
 				);
+
+				// Standalone-only module (no monolith registry counterpart — the
+				// base tree ships the social init but nothing loads it; the
+				// base registers the social tools inline via
+				// `wp_mcp_ai_pro_register_tools()`). Boots the slim social
+				// init standalone so the ported tools land in the ecosystem
+				// registries (financial-planning precedent).
+				$this->add_module(
+					'toolkit_social_media',
+					'Social Media Toolkit',
+					array(),
+					array(
+						'files' => array( $p . 'tools/social-media/init.php' ),
+					),
+					function () use ( $p ) {
+						require_once $p . 'tools/social-media/init.php';
+					}
+				);
 		}
 	}
 }

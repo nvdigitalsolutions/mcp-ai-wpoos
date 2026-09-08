@@ -147,6 +147,7 @@ class Test_Pro_Module_Registry extends WP_UnitTestCase {
 			'toolkit_calendar_booking',
 			'booking_adapters',
 			'toolkit_financial_planning',
+			'toolkit_social_media',
 		);
 
 		$this->assertSame( $expected, array_keys( $registry->modules() ) );
