@@ -143,6 +143,7 @@ class Test_Pro_Module_Registry extends WP_UnitTestCase {
 			'toolkit_crm',
 			'toolkit_ecommerce',
 			'toolkit_project_management',
+			'pro_para',
 		);
 
 		$this->assertSame( $expected, array_keys( $registry->modules() ) );
