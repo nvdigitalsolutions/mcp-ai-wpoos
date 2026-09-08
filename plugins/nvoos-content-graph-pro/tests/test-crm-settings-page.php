@@ -67,11 +67,11 @@ class Test_Crm_Settings_Page extends WP_UnitTestCase {
 		// The constructor stamps the toolkit surface onto the instance.
 		$reflection = new ReflectionClass( 'WP_MCP_AI_CRM_Settings_Page' );
 		$expected   = array(
-			'toolkit_slug' => 'crm',
-			'option_name'  => 'wp_mcp_ai_crm_toolkit_settings',
-			'page_slug'    => 'wp-mcp-ai-crm-toolkit-settings',
-			'parent_slug'  => 'nvoos-crm-dashboard',
-			'has_research' => false,
+			'toolkit_slug'     => 'crm',
+			'option_name'      => 'wp_mcp_ai_crm_toolkit_settings',
+			'page_slug'        => 'wp-mcp-ai-crm-toolkit-settings',
+			'parent_slug'      => 'nvoos-crm-dashboard',
+			'has_research'     => false,
 			'has_remote_sites' => false,
 		);
 		foreach ( $expected as $prop => $value ) {

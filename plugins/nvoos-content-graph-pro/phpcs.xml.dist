@@ -60,12 +60,16 @@
     -->
     <rule ref="WordPress.WP.Capabilities">
         <properties>
-            <property name="custom_capabilities" type="array">
-                <element value="edit_own_vault_items"/>
-                <element value="edit_others_vault_items"/>
-                <element value="edit_own_vault_folders"/>
-                <element value="edit_others_vault_folders"/>
-            </property>
+            			<property name="custom_capabilities" type="array">
+            				<element value="edit_own_vault_items"/>
+            				<element value="edit_others_vault_items"/>
+            				<element value="edit_own_vault_folders"/>
+            				<element value="edit_others_vault_folders"/>
+				<element value="edit_products"/>
+				<element value="edit_shop_orders"/>
+				<element value="view_order"/>
+				<element value="manage_woocommerce"/>
+            			</property>
         </properties>
     </rule>
 
@@ -131,6 +135,9 @@
     <exclude-pattern>/vendor/*</exclude-pattern>
     <exclude-pattern>/node_modules/*</exclude-pattern>
     <exclude-pattern>/assets/*</exclude-pattern>
+    <!-- Byte-identical Node.js worker scripts copied from the base addon
+         (generate-excel.js etc.) are not PHP/JS linted. -->
+    <exclude-pattern>/scripts/*</exclude-pattern>
 
     <config name="minimum_supported_wp_version" value="6.5"/>
     <config name="testVersion" value="8.1-"/>

@@ -141,6 +141,7 @@ class Test_Pro_Module_Registry extends WP_UnitTestCase {
 			'toolkit_vault',
 			'vector_storage',
 			'toolkit_crm',
+			'toolkit_ecommerce',
 		);
 
 		$this->assertSame( $expected, array_keys( $registry->modules() ) );

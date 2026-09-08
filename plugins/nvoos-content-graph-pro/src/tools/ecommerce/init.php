@@ -119,3 +119,86 @@ if ( wp_mcp_ai_is_ecommerce_toolkit_enabled() && ( ! $nvoos_content_graph_pro_is
 	require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-ecommerce-optimization.php';
 	WP_MCP_AI_Ecommerce_Optimization::init();
 }
+
+// ---- Standalone-only tool wiring (documented deviation, same pattern as
+// the CRM init deviation 5): a `wp_mcp_ai_pro_tools` filter carrying the
+// ported e-commerce tool subset (inert standalone — the base plugin
+// consumes it monolith) plus the ecosystem registration below. ----
+add_filter( 'wp_mcp_ai_pro_tools', 'wp_mcp_ai_pro_register_ecommerce_tools', 10 );
+
+if ( ! defined( 'WP_MCP_AI_PATH' ) && function_exists( 'nvoos_content_graph_get_tool_registry' ) ) {
+	wp_mcp_ai_pro_register_ecommerce_ecosystem_tools();
+}
+
+/**
+ * Register the ported e-commerce tools with the `wp_mcp_ai_pro_tools`
+ * filter (standalone-only wiring — a subset of the monolith's inline
+ * `$ecommerce_toolkit_tools` map built inside
+ * `wp_mcp_ai_pro_register_tools()`; the base plugin consumes the filter
+ * monolith, standalone it is inert — documented).
+ *
+ * @since 1.0.0
+ *
+ * @param array $tools Existing tools array.
+ * @return array Updated tools array.
+ */
+function wp_mcp_ai_pro_register_ecommerce_tools( $tools ) {
+	$nvoos_content_graph_pro_ecommerce_tools = array(
+		'WP_MCP_AI_Tool_Create_Product_Advanced'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-create-product-advanced.php',
+		'WP_MCP_AI_Tool_Bulk_Update_Products'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-bulk-update-products.php',
+		'WP_MCP_AI_Tool_Update_Woo_Product_Price' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-update-woo-product-price.php',
+		'WP_MCP_AI_Tool_Update_Woo_Product_Qty'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-update-woo-product-qty.php',
+		'WP_MCP_AI_Tool_Import_Products_CSV'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-import-products-csv.php',
+		'WP_MCP_AI_Tool_Export_Products_Report'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-export-products-report.php',
+		'WP_MCP_AI_Tool_Sync_Product_Inventory'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-sync-product-inventory.php',
+	);
+
+	return array_merge( $tools, $nvoos_content_graph_pro_ecommerce_tools );
+}
+
+/**
+ * Register the ported e-commerce tools with the ecosystem registries
+ * (standalone only — same wiring as the CRM init deviation 5).
+ *
+ * @since 1.0.0
+ * @return void
+ */
+function wp_mcp_ai_pro_register_ecommerce_ecosystem_tools() {
+	require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-pro-tool-adapter.php';
+	require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-create-product-advanced.php';
+
+	$nvoos_content_graph_pro_parent_registry = nvoos_content_graph_get_tool_registry();
+	if ( ! $nvoos_content_graph_pro_parent_registry instanceof \NvoosContentGraph\ToolRegistry ) {
+		return;
+	}
+
+	foreach (
+		array(
+			'WP_MCP_AI_Tool_Create_Product_Advanced',
+			'WP_MCP_AI_Tool_Bulk_Update_Products',
+			'WP_MCP_AI_Tool_Update_Woo_Product_Price',
+			'WP_MCP_AI_Tool_Update_Woo_Product_Qty',
+			'WP_MCP_AI_Tool_Import_Products_CSV',
+			'WP_MCP_AI_Tool_Export_Products_Report',
+			'WP_MCP_AI_Tool_Sync_Product_Inventory',
+		) as $nvoos_content_graph_pro_tool_class
+	) {
+		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
+		try {
+			$nvoos_content_graph_pro_parent_registry->register( $nvoos_content_graph_pro_adapter );
+		} catch ( \RuntimeException $nvoos_content_graph_pro_e ) {
+			unset( $nvoos_content_graph_pro_e ); // Duplicate slug — non-fatal.
+		}
+
+		// Wrap into the nvoos/core registry so the agentic chat loop can
+		// resolve and execute the tool (same path the AI addon uses).
+		if ( class_exists( 'NvoosContentGraphAi\CoreBridge' ) ) {
+			$nvoos_content_graph_pro_core_tools = \NvoosContentGraphAi\CoreBridge::instance()->tools;
+			try {
+				$nvoos_content_graph_pro_core_tools->register( new \NvoosContentGraphAi\Adapter\GraphToolAdapter( $nvoos_content_graph_pro_adapter ) );
+			} catch ( \RuntimeException $nvoos_content_graph_pro_e ) {
+				unset( $nvoos_content_graph_pro_e ); // Duplicate slug — non-fatal.
+			}
+		}
+	}
+}

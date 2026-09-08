@@ -476,6 +476,20 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 					require_once $p . 'tools/crm/init.php';
 				}
 			);
+
+			$this->add_module(
+				'toolkit_ecommerce',
+				'E-commerce Toolkit',
+				array(),
+				array(
+					// Byte-identical enabled gate (enable_ecommerce_toolkit setting).
+					'enabled' => ! empty( $settings['enable_ecommerce_toolkit'] ),
+					'files'   => array( $p . 'tools/ecommerce/init.php' ),
+				),
+				function () use ( $p ) {
+					require_once $p . 'tools/ecommerce/init.php';
+				}
+			);
 		}
 	}
 }
