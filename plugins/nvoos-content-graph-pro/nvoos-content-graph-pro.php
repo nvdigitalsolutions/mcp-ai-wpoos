@@ -111,6 +111,7 @@ spl_autoload_register(
 			'src/tools/project-management/workflow/',
 			'src/tools/orchestration/',
 			'src/tools/financial-planning/',
+			'src/tools/financial-planning/examples/',
 			'src/tools/vault/',
 			'src/tools/vector-storage/',
 			'src/traits/',
