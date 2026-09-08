@@ -35,6 +35,15 @@ class WP_MCP_AI_Optimization_Comparison_Test extends WP_UnitTestCase {
 		// abilities (registered at bootstrap) are unaffected.
 		add_filter( 'mcp_adapter_create_default_server', '__return_false' );
 
+		// Rank Math >= 1.0.278 bundles wp-media/mcp-oauth, whose transport
+		// server registers on mcp_adapter_init with the three shared
+		// mcp-adapter/* abilities as its tools. Those abilities are only ever
+		// registered before the persistent abilities registry initializes
+		// (earlier suites), so the OAuth server's first REST-time registration
+		// queries three missing abilities and flags each as incorrect usage.
+		// Its own enable filter disables the OAuth server entirely.
+		add_filter( 'wpmedia_mcp_oauth_server_enabled', '__return_false' );
+
 		// Create admin user with manage_options capability for REST API calls.
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );
