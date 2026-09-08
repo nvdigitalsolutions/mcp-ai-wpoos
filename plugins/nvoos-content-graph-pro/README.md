@@ -7,6 +7,10 @@ Wave F). It requires the core (`nvoos-content-graph`), AI
 (`nvoos-content-graph-ai`), and Platform (`nvoos-content-graph-ai-platform`)
 plugins.
 
+## Repository Sync
+
+This directory is subtree-synced to its standalone repository [`nvdigitalsolutions/nvoos-content-graph-pro`](https://github.com/nvdigitalsolutions/nvoos-content-graph-pro) via `.github/workflows/sync-nvoos-content-graph-pro.yml` (push-triggered on `main`/`alpha-working`).
+
 ## Waves
 
 | Wave | Scope | Status |

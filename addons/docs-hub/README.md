@@ -5,6 +5,10 @@ A React-based documentation browser SPA bundled as a NV oOS addon.
 It discovers, indexes, and renders Markdown documentation from the base plugin
 and every installed addon, presenting it in a **GitBook-style three-column interface**.
 
+## Repository Sync
+
+This directory is subtree-synced to its standalone repository [`nvdigitalsolutions/nvoos-docs-hub`](https://github.com/nvdigitalsolutions/nvoos-docs-hub) via `.github/workflows/sync-nvoos-docs-hub.yml` (push-triggered on `main`/`alpha-working`).
+
 ---
 
 ## Features
