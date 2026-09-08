@@ -23,11 +23,13 @@
  *    precedent): a `wp_mcp_ai_pro_tools` filter carrying the ported
  *    video-production tool subset (the base main file registers these
  *    inline behind the `enable_video_production_toolkit` gate) plus
- *    `wp_mcp_ai_pro_register_video_production_ecosystem_tools()` registering
- *    them into the ecosystem graph ToolRegistry and the nvoos/core registry
- *    via `WP_MCP_AI_Pro_Tool_Adapter`. The four always-on exec-service
- *    tools (transcode/extract-frames/get-metadata/create-remotion) stay
- *    deferred — they depend on the base-owned
+	 * `wp_mcp_ai_pro_register_video_production_ecosystem_tools()` registering
+	 * them into the ecosystem graph ToolRegistry and the nvoos/core registry
+	 * via `WP_MCP_AI_Pro_Tool_Adapter`. The tree-only import-blueprint tool
+	 * (the base registers it nowhere) is carried here too (CRM CC-extras
+	 * precedent). The four always-on exec-service
+	 * tools (transcode/extract-frames/get-metadata/create-remotion) stay
+	 * deferred — they depend on the base-owned
  *    `\WP_MCP_AI\Services\WP_MCP_AI_Process_Service` and the Pro-owned
  *    frame-extractor/fluent-ffmpeg services (D8 + video-services slice).
  *
@@ -103,9 +105,9 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 
 	/**
 	 * Standalone-only tool filter — carries the ported video-production tool
-	 * subset (inert standalone, consumed by the base plugin monolith). The
-	 * four always-on exec-service tools stay deferred until the D8 +
-	 * video-services slice lands.
+	 * subset (inert standalone, consumed by the base plugin monolith), plus
+	 * the tree-only import-blueprint tool. The four always-on exec-service
+	 * tools stay deferred until the D8 + video-services slice lands.
 	 *
 	 * @param array $tools Existing tool map (class => file).
 	 * @return array Extended tool map.
@@ -129,6 +131,10 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 			'WP_MCP_AI_Tool_Get_Videos_Without_Transcripts' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/video-production/class-wp-mcp-ai-tool-get-videos-without-transcripts.php',
 			'WP_MCP_AI_Tool_Upload_Video_Batch'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/video-production/class-wp-mcp-ai-tool-upload-video-batch.php',
 			'WP_MCP_AI_Tool_Transcribe_Video'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/video-production/class-wp-mcp-ai-tool-transcribe-video.php',
+			// Tree-only tool (the base registers it nowhere — the standalone
+			// filter/ecosystem additions are its registration, CRM CC-extras
+			// precedent).
+			'WP_MCP_AI_Tool_Import_Video_Production_Blueprint' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/video-production/examples/class-wp-mcp-ai-tool-import-video-production-blueprint.php',
 		);
 
 		return array_merge( $tools, $nvoos_content_graph_pro_video_tools );
@@ -171,6 +177,7 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 				'WP_MCP_AI_Tool_Get_Videos_Without_Transcripts',
 				'WP_MCP_AI_Tool_Upload_Video_Batch',
 				'WP_MCP_AI_Tool_Transcribe_Video',
+				'WP_MCP_AI_Tool_Import_Video_Production_Blueprint',
 			) as $nvoos_content_graph_pro_tool_class
 		) {
 			$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );

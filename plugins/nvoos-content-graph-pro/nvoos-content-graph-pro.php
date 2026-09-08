@@ -112,6 +112,7 @@ spl_autoload_register(
 			'src/tools/project-management/workflow/',
 			'src/tools/remote-connections/',
 			'src/tools/video-production/',
+			'src/tools/video-production/examples/',
 			'src/tools/orchestration/',
 			'src/tools/financial-planning/',
 			'src/tools/financial-planning/examples/',
