@@ -158,6 +158,14 @@
         <severity>0</severity>
     </rule>
 
+    <!--
+        Byte-identical booking-adapter factory keeps the monolith's
+        commented-out adapter-registration snippet (54% code heuristic).
+    -->
+    <rule ref="Squiz.PHP.CommentedOutCode">
+        <severity>0</severity>
+    </rule>
+
     <file>./nvoos-content-graph-pro.php</file>
     <file>./src/</file>
     <file>./tests/</file>

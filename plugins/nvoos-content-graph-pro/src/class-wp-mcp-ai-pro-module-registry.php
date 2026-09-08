@@ -522,6 +522,46 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 					require_once $p . 'para/class-wp-mcp-ai-para-init.php';
 				}
 			);
+
+			$this->add_module(
+				'toolkit_calendar_booking',
+				'Calendar Booking Toolkit',
+				array(),
+				array(
+					// No gate in the monolith either — the init always loads
+					// the appointment/service/staff CPTs.
+					'files' => array( $p . 'tools/calendar-booking/init.php' ),
+				),
+				function () use ( $p ) {
+					require_once $p . 'tools/calendar-booking/init.php';
+				}
+			);
+
+			$this->add_module(
+				'booking_adapters',
+				'Booking Adapters',
+				array(),
+				array(
+					// Byte-identical split: interface + factory always; the
+					// JetEngine/JetBooking concrete adapters stay dormant
+					// standalone (neither plugin is active in the matrices).
+					'files' => array(
+						$p . 'adapters/interface-wp-mcp-ai-booking-adapter.php',
+						$p . 'adapters/class-wp-mcp-ai-booking-adapter-factory.php',
+					),
+				),
+				function () use ( $p ) {
+					$nvoos_content_graph_pro_cal_adapters = $p . 'adapters/';
+					require_once $nvoos_content_graph_pro_cal_adapters . 'interface-wp-mcp-ai-booking-adapter.php';
+					require_once $nvoos_content_graph_pro_cal_adapters . 'class-wp-mcp-ai-booking-adapter-factory.php';
+					if ( function_exists( 'jet_engine' ) ) {
+						require_once $nvoos_content_graph_pro_cal_adapters . 'class-wp-mcp-ai-jetappointment-adapter.php';
+					}
+					if ( class_exists( 'Jet_Booking' ) ) {
+						require_once $nvoos_content_graph_pro_cal_adapters . 'class-wp-mcp-ai-jetbooking-adapter.php';
+					}
+				}
+			);
 		}
 	}
 }

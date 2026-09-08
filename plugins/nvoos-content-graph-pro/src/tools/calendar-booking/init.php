@@ -1,0 +1,166 @@
+<?php
+/**
+ * Calendar Booking Toolkit Initialization (ecosystem port — Wave F2,
+ * calendar-booking data layer).
+ *
+ * Ported from the base Pro addon's
+ * `addons/pro/includes/tools/calendar-booking/init.php` for the standalone
+ * `nvoos-content-graph-pro` addon. Loads the calendar-booking data layer:
+ * the appointment/service/staff CPTs (with their metaboxes) and the
+ * orchestration optimizer.
+ *
+ * Documented deviations from the monolith copy:
+ *
+ * 1. `declare(strict_types=1)` added.
+ * 2. File paths resolve from `NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/'`.
+ * 3. The booking adapters land via the registry's `booking_adapters`
+ *    module (same split as the monolith); the JetEngine/JetBooking
+ *    concrete adapters stay conditionally required (dormant standalone —
+ *    neither plugin is active in the test matrix).
+ * 4. The admin research/settings pages stay file-gated — they land with
+ *    the calendar admin slice.
+ * 5. Monolith guard — this init declares the global helper
+ *    `wp_mcp_ai_enqueue_calendar_booking_toolkit_admin_styles()` that the
+ *    base calendar init also declares; the collision is a compile-time
+ *    fatal, so the ENTIRE body is wrapped in a runtime
+ *    `! defined( 'WP_MCP_AI_PATH' )` block (the declarations register only
+ *    when the block executes — same pattern as the PM init deviation 6).
+ * 6. New standalone-only tool wiring (same pattern as the PM init
+ *    deviation 5): a `wp_mcp_ai_pro_tools` filter carrying the ported
+ *    calendar tool subset (fills as the tool batches land) plus
+ *    `wp_mcp_ai_pro_register_calendar_ecosystem_tools()` registering the
+ *    ported tools into the ecosystem graph ToolRegistry.
+ *
+ * @package NvoosContentGraphPro
+ * @since   1.0.0
+ * @author  NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+// Monolith guard (deviation 5): full-body runtime wrap — see the header.
+if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
+
+	// Load Calendar Booking Custom Post Types (always load for CPT registration).
+	require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/calendar-booking/class-wp-mcp-ai-appointment-cpt.php';
+	require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/calendar-booking/class-wp-mcp-ai-service-cpt.php';
+	require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/calendar-booking/class-wp-mcp-ai-staff-cpt.php';
+
+	// Load Calendar Booking admin pages only when the toolkit is enabled
+	// (deferred — file-gated until the calendar admin slice lands).
+	if ( is_admin() ) {
+		$nvoos_content_graph_pro_cal_settings      = get_option( 'wp_mcp_ai_settings', array() );
+		$nvoos_content_graph_pro_cal_is_enabled    = ! empty( $nvoos_content_graph_pro_cal_settings['enable_calendar_booking_toolkit'] );
+		$nvoos_content_graph_pro_cal_is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+		$nvoos_content_graph_pro_cal_is_pro_active = defined( 'NVOOS_CONTENT_GRAPH_PRO_VERSION' );
+
+		if ( $nvoos_content_graph_pro_cal_is_enabled && ( ! $nvoos_content_graph_pro_cal_is_base || $nvoos_content_graph_pro_cal_is_pro_active ) ) {
+			$nvoos_content_graph_pro_cal_research = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/admin/class-wp-mcp-ai-calendar-booking-research-page.php';
+			if ( file_exists( $nvoos_content_graph_pro_cal_research ) ) {
+				require_once $nvoos_content_graph_pro_cal_research;
+			}
+			$nvoos_content_graph_pro_cal_settings_page = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/admin/class-wp-mcp-ai-calendar-booking-settings-page.php';
+			if ( file_exists( $nvoos_content_graph_pro_cal_settings_page ) ) {
+				require_once $nvoos_content_graph_pro_cal_settings_page;
+			}
+		}
+	}
+
+	// --- Performance optimization (business hours autoload, appointment retention, schedule cap, orphan detection) ---
+	require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-calendar-orchestration-optimization.php';
+	WP_MCP_AI_Calendar_Orchestration_Optimization::init();
+
+	/**
+	 * Enqueue calendar booking toolkit admin styles.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $hook Current admin page hook (unused).
+	 */
+	function wp_mcp_ai_enqueue_calendar_booking_toolkit_admin_styles( $hook ) {
+		// Only load if toolkit is enabled.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_calendar_booking_toolkit'] ) ) {
+			return;
+		}
+
+		// Enqueue admin styles if available.
+		$nvoos_content_graph_pro_cal_css_file = NVOOS_CONTENT_GRAPH_PRO_PATH . 'assets/css/admin-calendar-booking-toolkit.css';
+		if ( file_exists( $nvoos_content_graph_pro_cal_css_file ) ) {
+			wp_enqueue_style(
+				'wp-mcp-ai-calendar-booking-toolkit-admin',
+				NVOOS_CONTENT_GRAPH_PRO_URL . 'assets/css/admin-calendar-booking-toolkit.css',
+				array(),
+				NVOOS_CONTENT_GRAPH_PRO_VERSION
+			);
+		}
+	}
+	add_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_calendar_booking_toolkit_admin_styles' );
+
+	/**
+	 * Standalone-only tool filter — carries the ported calendar tool subset
+	 * (inert standalone, consumed by the base plugin monolith). The map
+	 * fills as the calendar tool batches land.
+	 *
+	 * @param array $tools Existing tool map (class => file).
+	 * @return array Extended tool map.
+	 */
+	function wp_mcp_ai_pro_register_calendar_tools( $tools ) {
+		$nvoos_content_graph_pro_cal_tools = array();
+
+		return array_merge( $tools, $nvoos_content_graph_pro_cal_tools );
+	}
+
+	/**
+	 * Standalone-only ecosystem registration — registers the ported calendar
+	 * tools into the ecosystem graph ToolRegistry and the nvoos/core
+	 * registry via `WP_MCP_AI_Pro_Tool_Adapter` (same wiring as the
+	 * CRM/e-commerce/PM inits). The list fills as the calendar tool batches
+	 * land.
+	 *
+	 * @return void
+	 */
+	function wp_mcp_ai_pro_register_calendar_ecosystem_tools() {
+		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-pro-tool-adapter.php';
+
+		$nvoos_content_graph_pro_parent_registry = nvoos_content_graph_get_tool_registry();
+		if ( ! $nvoos_content_graph_pro_parent_registry instanceof \NvoosContentGraph\ToolRegistry ) {
+			return;
+		}
+
+		foreach (
+			array() as $nvoos_content_graph_pro_tool_class
+		) {
+			$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
+			try {
+				$nvoos_content_graph_pro_parent_registry->register( $nvoos_content_graph_pro_adapter );
+			} catch ( \RuntimeException $nvoos_content_graph_pro_e ) {
+				unset( $nvoos_content_graph_pro_e ); // Duplicate slug — non-fatal.
+			}
+
+			// Wrap into the nvoos/core registry so the agentic chat loop can
+			// resolve and execute the tool (same path the AI addon uses).
+			if ( class_exists( 'NvoosContentGraphAi\CoreBridge' ) ) {
+				$nvoos_content_graph_pro_core_tools = \NvoosContentGraphAi\CoreBridge::instance()->tools;
+				try {
+					$nvoos_content_graph_pro_core_tools->register( new \NvoosContentGraphAi\Adapter\GraphToolAdapter( $nvoos_content_graph_pro_adapter ) );
+				} catch ( \RuntimeException $nvoos_content_graph_pro_e ) {
+					unset( $nvoos_content_graph_pro_e ); // Duplicate slug — non-fatal.
+				}
+			}
+		}
+	}
+
+	// ---- Standalone-only tool wiring (deviation 6). ----
+	add_filter( 'wp_mcp_ai_pro_tools', 'wp_mcp_ai_pro_register_calendar_tools', 10 );
+
+	if ( function_exists( 'nvoos_content_graph_get_tool_registry' ) ) {
+		wp_mcp_ai_pro_register_calendar_ecosystem_tools();
+	}
+} // End monolith guard (deviation 5).
