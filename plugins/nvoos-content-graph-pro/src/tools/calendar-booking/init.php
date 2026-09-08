@@ -17,8 +17,8 @@
  *    module (same split as the monolith); the JetEngine/JetBooking
  *    concrete adapters stay conditionally required (dormant standalone —
  *    neither plugin is active in the test matrix).
- * 4. The admin research/settings pages stay file-gated — they land with
- *    the calendar admin slice.
+ * 4. The admin research/settings pages land with the calendar admin
+ *    slice (ported; the file-gates below now fire).
  * 5. Monolith guard — this init declares the global helper
  *    `wp_mcp_ai_enqueue_calendar_booking_toolkit_admin_styles()` that the
  *    base calendar init also declares; the collision is a compile-time
