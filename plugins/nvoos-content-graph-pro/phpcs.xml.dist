@@ -167,6 +167,15 @@
     </rule>
 
     <!--
+        Byte-identical financial-account CPT self-boot block reads the
+        settings option into a file-scope `$settings` variable (the
+        monolith copy carries the same global).
+    -->
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound">
+        <severity>0</severity>
+    </rule>
+
+    <!--
         Byte-identical import-services file handling: the base copy uses
         fopen/fclose/fwrite/file_put_contents + @unlink for its CSV import
         temp files, with the same silenced-error and while-assignment

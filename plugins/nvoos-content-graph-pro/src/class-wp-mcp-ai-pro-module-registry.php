@@ -562,6 +562,24 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 					}
 				}
 			);
+
+				// Standalone-only module (no monolith registry counterpart — the
+				// base tree ships the financial init but nothing loads it; the
+				// base registers the financial tools inline via
+				// `wp_mcp_ai_pro_register_tools()`). Boots the slim financial
+				// init standalone so the ported tools land in the ecosystem
+				// registries (toolkit_data_store/vector_storage precedent).
+				$this->add_module(
+					'toolkit_financial_planning',
+					'Financial Planning Toolkit',
+					array(),
+					array(
+						'files' => array( $p . 'tools/financial-planning/init.php' ),
+					),
+					function () use ( $p ) {
+						require_once $p . 'tools/financial-planning/init.php';
+					}
+				);
 		}
 	}
 }
