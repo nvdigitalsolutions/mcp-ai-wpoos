@@ -75,5 +75,5 @@ For more information about the Trade.gov Tariff Rates API:
 ## Related Documentation
 
 - [Tool Reference](../reference/tools/tool-reference.md) - Complete list of all tools
-- [Pro Features](../reference/models/FEATURE-MATRIX-CORE-PRO.md) - Core vs Pro feature comparison
-- [Settings Guide](../guides/admin/settings/SETTINGS-ARCHITECTURE-COMPARISON.md) - Settings system overview
+- [Base vs Full Comparison](../reference/technical/base-vs-full-comparison.md) - Core vs Pro feature comparison
+- [Settings Guide](../admin-guides/settings/SETTINGS-ARCHITECTURE-COMPARISON.md) - Settings system overview

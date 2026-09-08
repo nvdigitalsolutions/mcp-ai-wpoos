@@ -68,18 +68,18 @@ This quick reference provides fast access to the most common tasks and commands 
 
 ### Previous Updates (April 2026)
 
-- **Harmonization Sub-Toolkit** 🎨 — 14 new Pro tools under `addons/pro/includes/tools/image-production/harmonization/` that complement the end-to-end `product_actualization` tool with composable AI-compositing primitives (color harmonization, relighting, shadow synthesis, reflection, boundary refinement, AI-assisted background generation, outpainting, placement suggestion, lighting analysis, and an end-to-end orchestrator). See [`docs/harmonization-architecture.md`](harmonization-architecture.md). Example LLM prompts:
+- **Harmonization Sub-Toolkit** 🎨 — 14 new Pro tools under `addons/pro/includes/tools/image-production/harmonization/` that complement the end-to-end `product_actualization` tool with composable AI-compositing primitives (color harmonization, relighting, shadow synthesis, reflection, boundary refinement, AI-assisted background generation, outpainting, placement suggestion, lighting analysis, and an end-to-end orchestrator). See [`harmonization-architecture.md`](features/harmonization-architecture.md). Example LLM prompts:
   - *"Place this product photo on an AI-generated kitchen counter."*
   - *"Drop the attached subject onto this uploaded background, lower-center, with a soft contact shadow."*
   - *"Rebuild this catalog page with consistent harmonization across all eight products."*
 - **April 2026 Security Audit Summary** 🛡️ (v1.1.10) — New [`SECURITY_AUDIT_2026_04.md`](operations/compliance/SECURITY_AUDIT_2026_04.md) consolidates the nine deliverables under [`audits/2026-04/`](project/audits/2026-04/). No Critical findings; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational; 50 total. Standards: WP Plugin Handbook, WP.org Plugin Directory Guidelines, OWASP Top 10 / API Top 10, WPCS 3.3, PHPCompatibilityWP, GDPR/CCPA, MCP/SSE.
 - **Production-Ready Vendor Autoload** (v1.1.10) — `vendor/` regenerated with `composer install --no-dev --classmap-authoritative`; plugin is deployable from a clean clone (PR #4733).
 - **Veo 3.1 `generate_veo_video` Fix** (v1.1.10) — `seed` parameter now sent only to Veo 2.0 (`veo-2.0-generate-001`); Veo 3.1 (`veo-3.1-generate-preview`) rejects it (PR #4735).
-- **Measurement Subsystem GA** ⭐ (v1.1.9) — 12 sequenced PRs delivered the full measurement / evals / reward stack: stock metrics for tool-execution, chat-loop, agentic-loop, and SSE; persistent `{prefix}mcp_ai_metric_events` table with retention cron (`wp_mcp_ai_metric_retention_days`, default 30 days); eval harness with verifier-independence enforcement; Pro rubric presets (`prompt_adherence`, `json_schema`, `citation_presence`) and counterfactual runner; OTel JSON exporter; Measurement dashboard under **Tools → Measurement** with time-range + sparkline; `wp mcp-ai measurement run|alert-check|list-runs` WP-CLI runner with regression-aware exit codes. See [`docs/measurement/README.md`](measurement/README.md).
+- **Measurement Subsystem GA** ⭐ (v1.1.9) — 12 sequenced PRs delivered the full measurement / evals / reward stack: stock metrics for tool-execution, chat-loop, agentic-loop, and SSE; persistent `{prefix}mcp_ai_metric_events` table with retention cron (`wp_mcp_ai_metric_retention_days`, default 30 days); eval harness with verifier-independence enforcement; Pro rubric presets (`prompt_adherence`, `json_schema`, `citation_presence`) and counterfactual runner; OTel JSON exporter; Measurement dashboard under **Tools → Measurement** with time-range + sparkline; `wp mcp-ai measurement run|alert-check|list-runs` WP-CLI runner with regression-aware exit codes. See [`measurement/README.md`](reference/measurement/README.md).
 - **PHPUnit 11 Upgrade (CVE Fix)** 🔒 (v1.1.9) — PHPUnit upgraded to 11.x with WordPress-compatibility patches to resolve the argument-injection vulnerability **GHSA-qrr6-mg7r-m243**. CI PHP bumped 8.1 → 8.2.
 - **Chart.js Handle Normalization** (v1.1.9) — All admin dashboards now enqueue a single `wp-mcp-ai-chartjs` handle to eliminate duplicate registrations and version drift.
 - **Graphify Knowledge Graph Addon v0.5.0** (v1.1.9) — Optional WordPress Knowledge Graph addon restored under `addons/graphify/`.
-- **Orchestration Reference Doc** (v1.1.9) — New [`docs/ORCHESTRATION_REFERENCE.md`](ORCHESTRATION_REFERENCE.md) documents every workflow preset, resource preset, the PSO algorithm, and all orchestration hooks / filters / storage keys in one place.
+- **Orchestration Reference Doc** (v1.1.9) — New [`ORCHESTRATION_REFERENCE.md`](reference/orchestration/ORCHESTRATION_REFERENCE.md) documents every workflow preset, resource preset, the PSO algorithm, and all orchestration hooks / filters / storage keys in one place.
 - **Erlang C Queuing Theory Tools** (v1.1.8) – 4 workforce-management tools built on the Erlang C formula. `calculate_erlang_c` (general staffing solver), `erlang_c_concurrency_advisor` (AI session tuning), `erlang_c_staffing_advisor` (multi-channel with bot-deflection and WFM endpoint), `erlang_c_queue_health` (real-time SLA monitoring with `wp_mcp_ai_queue_alert` action hook). All four ship in the base plugin with no external dependencies. See [`docs/features/erlang-c-staffing-tools.md`](features/erlang-c-staffing-tools.md).
 - **tool-reference.md fully updated** – historical April audit superseded by current ~830-tool framing; use `WP_MCP_AI_Tool_Registry::get_tools()` for live counts. Added 14 new sections covering: OpenAI file/model management, text embeddings & vector stores, multi-agent orchestration, agent memory management, reasoning & code analysis, deep research, browser-native AI (client-side NLP), Yahoo Fantasy Football toolkit, Newsletter plugin integration, WP All Import/Export integration, Flowhub cannabis dispensary, PayHere payment gateway, and Erlang C queue tools.
 - **MCP Protocol Completion** ⭐ (v1.1.7) – Full MCP 2024-11-05 spec compliance: `resources/read`, `prompts/get`, `ping`, `completion/complete`, `logging/setLevel`, `notifications/cancelled`, JSON-RPC batching (up to 20 messages), tool annotations, `Mcp-Session-Id` management.
@@ -674,7 +674,7 @@ Settings → NV oOS → Chat Theme
 
 ## 🧠 LLM Harness Quick Toggle
 
-Per-assistant opt-in: Edit Assistant → **LLM Harness** metabox → Enable → check the layers you want (A–H). All layers are off by default. Reference: [docs/llm-harness.md](llm-harness.md).
+Per-assistant opt-in: Edit Assistant → **LLM Harness** metabox → Enable → check the layers you want (A–H). All layers are off by default. Reference: [llm-harness.md](features/llm-harness.md).
 
 ---
 
@@ -686,7 +686,7 @@ Admin: **NV oOS → Orchestration → Approvals**. Tool: `request_user_approval`
 
 ## 🔗 Toolkit MCP Discovery
 
-Discovery endpoint: `GET /.well-known/mcp` (returns JSON array of all enabled toolkit server URLs). Credentials: **NV oOS → Orchestration → Toolkit MCP → {Toolkit} → Credentials**. CLI: `wp mcp-ai mcp-server token-generate {slug}`. Reference: [docs/mcp-servers.md](mcp-servers.md).
+Discovery endpoint: `GET /.well-known/mcp` (returns JSON array of all enabled toolkit server URLs). Credentials: **NV oOS → Orchestration → Toolkit MCP → {Toolkit} → Credentials**. CLI: `wp mcp-ai mcp-server token-generate {slug}`. Reference: [mcp-servers.md](features/mcp-servers.md).
 
 ---
 
@@ -697,7 +697,7 @@ Discovery endpoint: `GET /.well-known/mcp` (returns JSON array of all enabled to
 - [Documentation Index](DOCUMENTATION_INDEX.md) - All 39 documentation files
 - [Tool Reference](reference/tools/tool-reference.md) - All ~1,568 tools detailed (~303 base + ~1,265 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - [REST API Guide](reference/api/rest-api.md) - Complete API documentation
-- [Orchestration Budget Enforcement](architecture/orchestration/orchestration-budget-enforcement.md) - Budget prediction and adjustment
+- [Orchestration Budget Enforcement](developer/architecture/orchestration/orchestration-budget-enforcement.md) - Budget prediction and adjustment
 
 ### External Links
 - [OpenAI Platform](https://platform.openai.com/)

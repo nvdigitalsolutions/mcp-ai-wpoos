@@ -166,9 +166,9 @@ You've just built and run a Human-in-the-Loop workflow entirely inside WordPress
 
 ### Deepen your orchestration knowledge
 
-- **[Orchestration Documentation Hub](orchestration-reference.md)** — the canonical index for all orchestration features including the full HITL API reference, OTel span exporter, prompt injection detection, and the Phase 3–6 roadmap.
-- **[LLM Harness Layers](llm-harness.md)** — seven opt-in per-assistant layers for better reasoning, retrieval-with-provenance, self-critique loops, and structured output enforcement.
-- **[Hooks Reference](hooks-reference.md)** — all 60+ action and filter hooks; use `wp_mcp_ai_before_tool_execution` to build custom approval logic in PHP.
+- **[Orchestration Documentation Hub](../reference/orchestration/ORCHESTRATION_REFERENCE.md)** — the canonical index for all orchestration features including the full HITL API reference, OTel span exporter, prompt injection detection, and the Phase 3–6 roadmap.
+- **[LLM Harness Layers](../features/llm-harness.md)** — seven opt-in per-assistant layers for better reasoning, retrieval-with-provenance, self-critique loops, and structured output enforcement.
+- **[Hooks Reference](../reference/hooks/hooks-reference.md)** — all 60+ action and filter hooks; use `wp_mcp_ai_before_tool_execution` to build custom approval logic in PHP.
 
 ### Extend the workflow
 
@@ -178,6 +178,6 @@ You've just built and run a Human-in-the-Loop workflow entirely inside WordPress
 
 ### Get help
 
-- **[Getting Started guides](getting-started/)** — installation, first assistant, and provider setup.
-- **[Troubleshooting](troubleshooting/)** — common issues and their fixes.
-- **[CONTRIBUTING.md](../CONTRIBUTING.md)** — if you want to extend NV oOS or contribute a skill or tool.
+- **[Getting Started guides](../getting-started/)** — installation, first assistant, and provider setup.
+- **[Troubleshooting](../operations/troubleshooting/)** — common issues and their fixes.
+- **[CONTRIBUTING.md](../../CONTRIBUTING.md)** — if you want to extend NV oOS or contribute a skill or tool.
