@@ -131,6 +131,27 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) && function_exists( 'nvoos_content_graph_get_
 }
 
 /**
+ * Byte-identical WooCommerce-tools enablement gate (deviation: the
+ * monolith defines this inline inside `mcp-ai-wpoos-pro.php`; standalone it
+ * lives here — enabled by default unless `enable_woocommerce_tools` is
+ * explicitly falsy).
+ *
+ * @since 1.0.0
+ *
+ * @param array|null $settings Optional settings array.
+ * @return bool Whether the WooCommerce tools are enabled.
+ */
+if ( ! function_exists( 'wp_mcp_ai_pro_is_woocommerce_tools_enabled' ) ) {
+	function wp_mcp_ai_pro_is_woocommerce_tools_enabled( $settings = null ) {
+		if ( null === $settings ) {
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+		}
+
+		return isset( $settings['enable_woocommerce_tools'] ) ? (bool) $settings['enable_woocommerce_tools'] : true;
+	}
+}
+
+/**
  * Register the ported e-commerce tools with the `wp_mcp_ai_pro_tools`
  * filter (standalone-only wiring — a subset of the monolith's inline
  * `$ecommerce_toolkit_tools` map built inside
@@ -170,6 +191,10 @@ function wp_mcp_ai_pro_register_ecommerce_tools( $tools ) {
 		'WP_MCP_AI_Tool_Shipping_Box_Packer'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-shipping-box-packer.php',
 		'WP_MCP_AI_Tool_Shipping_Rate_Estimator'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-shipping-rate-estimator.php',
 		'WP_MCP_AI_Tool_Generate_WooCommerce_Order_Invoice_PDF' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-generate-woocommerce-order-invoice-pdf.php',
+		'WP_MCP_AI_Pro_Tool_Woo_Products'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-pro-tool-woo-products.php',
+		'WP_MCP_AI_Pro_Tool_Woo_Orders'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-pro-tool-woo-orders.php',
+		'WP_MCP_AI_Pro_Tool_Woo_Customers'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-pro-tool-woo-customers.php',
+		'WP_MCP_AI_Pro_Tool_Woo_Coupons'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-pro-tool-woo-coupons.php',
 	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_ecommerce_tools );
@@ -219,6 +244,10 @@ function wp_mcp_ai_pro_register_ecommerce_ecosystem_tools() {
 			'WP_MCP_AI_Tool_Shipping_Box_Packer',
 			'WP_MCP_AI_Tool_Shipping_Rate_Estimator',
 			'WP_MCP_AI_Tool_Generate_WooCommerce_Order_Invoice_PDF',
+			'WP_MCP_AI_Pro_Tool_Woo_Products',
+			'WP_MCP_AI_Pro_Tool_Woo_Orders',
+			'WP_MCP_AI_Pro_Tool_Woo_Customers',
+			'WP_MCP_AI_Pro_Tool_Woo_Coupons',
 		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
