@@ -37,6 +37,23 @@ class Test_Video_Production_Toolkit extends WP_UnitTestCase {
 		$queued = new WP_MCP_AI_Tool_Get_Queued_Videos();
 		$this->assertSame( 'get_queued_videos', $queued->get_slug() );
 		$this->assertSame( 'read', $queued->get_required_capability() );
+
+		// The tree-only blueprint import tool surface.
+		$import = new WP_MCP_AI_Tool_Import_Video_Production_Blueprint();
+		$this->assertSame( 'import_video_production_blueprint', $import->get_slug() );
+		$this->assertSame( 'edit_posts', $import->get_required_capability() );
+		$this->assertSame( array( 'blueprint' ), $import->get_parameters_schema()['required'] );
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			$this->assertSame(
+				WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/examples',
+				WP_MCP_AI_Tool_Import_Video_Production_Blueprint::BLUEPRINTS_DIR
+			);
+		} else {
+			$this->assertSame(
+				NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/video-production/examples',
+				WP_MCP_AI_Tool_Import_Video_Production_Blueprint::BLUEPRINTS_DIR
+			);
+		}
 	}
 
 	/**
@@ -101,10 +118,15 @@ class Test_Video_Production_Toolkit extends WP_UnitTestCase {
 			'class-wp-mcp-ai-tool-get-videos-without-transcripts.php',
 			'class-wp-mcp-ai-tool-upload-video-batch.php',
 			'class-wp-mcp-ai-tool-transcribe-video.php',
+			'examples/class-wp-mcp-ai-tool-import-video-production-blueprint.php',
 		);
 		foreach ( $files as $file ) {
 			$this->assertFileExists( NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/video-production/' . $file );
 		}
+
+		// The blueprint JSONs ship alongside the import tool.
+		$this->assertFileExists( NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/video-production/examples/production-manager.json' );
+		$this->assertFileExists( NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/video-production/examples/video-editor.json' );
 	}
 
 	/**
@@ -122,13 +144,20 @@ class Test_Video_Production_Toolkit extends WP_UnitTestCase {
 		add_filter( 'wp_mcp_ai_pro_tools', 'wp_mcp_ai_pro_register_video_production_tools', 10 );
 
 		$tools = apply_filters( 'wp_mcp_ai_pro_tools', array() );
-		$this->assertCount( 17, $tools );
+		$this->assertCount( 18, $tools );
 		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_Trim_Video', $tools );
 		$this->assertSame(
 			NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/video-production/class-wp-mcp-ai-tool-trim-video.php',
 			$tools['WP_MCP_AI_Tool_Trim_Video']
 		);
 		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_Transcribe_Video', $tools );
+		// The tree-only import-blueprint tool is carried standalone (the base
+		// registers it nowhere — CRM CC-extras precedent).
+		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_Import_Video_Production_Blueprint', $tools );
+		$this->assertSame(
+			NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/video-production/examples/class-wp-mcp-ai-tool-import-video-production-blueprint.php',
+			$tools['WP_MCP_AI_Tool_Import_Video_Production_Blueprint']
+		);
 	}
 
 	/**
@@ -151,5 +180,6 @@ class Test_Video_Production_Toolkit extends WP_UnitTestCase {
 		$core_tools = \NvoosContentGraphAi\CoreBridge::instance()->tools;
 		$this->assertTrue( $core_tools->has( 'trim_video' ) );
 		$this->assertTrue( $core_tools->has( 'get_queued_videos' ) );
+		$this->assertTrue( $core_tools->has( 'import_video_production_blueprint' ) );
 	}
 }
