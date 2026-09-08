@@ -112,7 +112,14 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 	 * @return array Extended tool map.
 	 */
 	function wp_mcp_ai_pro_register_calendar_tools( $tools ) {
-		$nvoos_content_graph_pro_cal_tools = array();
+		$nvoos_content_graph_pro_cal_tools = array(
+			'WP_MCP_AI_Tool_Create_Event'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-create-event.php',
+			'WP_MCP_AI_Tool_Update_Event'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-update-event.php',
+			'WP_MCP_AI_Tool_Delete_Event'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-delete-event.php',
+			'WP_MCP_AI_Tool_List_Events'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-list-events.php',
+			'WP_MCP_AI_Tool_Get_Calendar_View'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-get-calendar-view.php',
+			'WP_MCP_AI_Tool_Export_Calendar_ICS' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/calendar-booking/class-wp-mcp-ai-tool-export-calendar-ics.php',
+		);
 
 		return array_merge( $tools, $nvoos_content_graph_pro_cal_tools );
 	}
@@ -135,7 +142,14 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 		}
 
 		foreach (
-			array() as $nvoos_content_graph_pro_tool_class
+			array(
+				'WP_MCP_AI_Tool_Create_Event',
+				'WP_MCP_AI_Tool_Update_Event',
+				'WP_MCP_AI_Tool_Delete_Event',
+				'WP_MCP_AI_Tool_List_Events',
+				'WP_MCP_AI_Tool_Get_Calendar_View',
+				'WP_MCP_AI_Tool_Export_Calendar_ICS',
+			) as $nvoos_content_graph_pro_tool_class
 		) {
 			$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
 			try {
