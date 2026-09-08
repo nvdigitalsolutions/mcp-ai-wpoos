@@ -1,0 +1,755 @@
+<?php
+/**
+ * Event Research & Add Page (ecosystem port — Wave F2, PM admin slice B).
+ *
+ * Ported from the base Pro addon's `addons/pro/includes/admin/class-wp-mcp-ai-event-research-page.php` for the standalone `nvoos-content-graph-pro`
+ * addon. Kept byte-identical. The base Pro addon owns the class in
+ * monolith installs — the addon's autoloader skips its copy when
+ * `NVOOS_CONTENT_GRAPH_PRO_PATH` is defined (see the plugin entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain
+ * `nvoos-content-graph-pro`; the `__DIR__` trait requires resolve from the addon's `src/admin/` copies; the create-event seam stays class_exists-guarded (dormant until the calendar-booking wave).
+ *
+ * @package NvoosContentGraphPro
+ * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+declare(strict_types=1);
+
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+require_once __DIR__ . '/trait-wp-mcp-ai-research-page-featured-image.php';
+require_once __DIR__ . '/trait-wp-mcp-ai-research-page-enhancements.php';
+
+/**
+ * Event Research Admin Page
+ *
+ * Adds a submenu page under Events menu for AI-powered event research.
+ */
+class WP_MCP_AI_Event_Research_Page {
+	use WP_MCP_AI_Research_Page_Featured_Image;
+	use WP_MCP_AI_Research_Page_Import_Handler;
+	use WP_MCP_AI_Research_Page_Consolidation;
+	use WP_MCP_AI_Research_Page_Data_Validation;
+	use WP_MCP_AI_Research_Page_Mode_Tabs;
+
+	/**
+	 * Page slug.
+	 *
+	 * @var string
+	 */
+	const PAGE_SLUG = 'research-event';
+
+	/**
+	 * Initialize the page.
+	 */
+	public static function init() {
+		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 20 );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_create_event_from_research', array( __CLASS__, 'handle_create_from_research' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_import_event', array( __CLASS__, 'ajax_handle_import' ) );
+	}
+
+	/**
+	 * Add submenu page under Events menu.
+	 */
+	public static function add_menu_page() {
+		add_submenu_page(
+			'edit.php?post_type=mcp_ai_event',
+			__( 'Research & Add Event', 'nvoos-content-graph-pro' ),
+			__( 'Research & Add', 'nvoos-content-graph-pro' ),
+			'edit_posts',
+			self::PAGE_SLUG,
+			array( __CLASS__, 'render_page' )
+		);
+	}
+
+	/**
+	 * Enqueue assets for the research page.
+	 *
+	 * @param string $hook Current admin page hook.
+	 */
+	public static function enqueue_assets( $hook ) {
+		// Only load on our research page.
+		if ( 'mcp_ai_event_page_' . self::PAGE_SLUG !== $hook ) {
+			return;
+		}
+
+		// Enqueue chat assets.
+		if ( class_exists( 'WP_MCP_AI_Shortcode' ) ) {
+			$shortcode_instance = new WP_MCP_AI_Shortcode();
+			$shortcode_instance->register_assets();
+			wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
+			wp_enqueue_script( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
+		}
+
+		// Enqueue enhanced research page styles.
+		wp_enqueue_style(
+			'wp-mcp-ai-enhanced-research-page',
+			WP_MCP_AI_URL . 'assets/css/enhanced-research-page.css',
+			array(),
+			WP_MCP_AI_VERSION
+		);
+
+		// Enqueue enhanced research page script.
+		wp_enqueue_script(
+			'wp-mcp-ai-enhanced-research-page',
+			WP_MCP_AI_URL . 'assets/js/enhanced-research-page.js',
+			array( 'jquery' ),
+			WP_MCP_AI_VERSION,
+			true
+		);
+
+		// Localize script.
+		wp_localize_script(
+			'wp-mcp-ai-enhanced-research-page',
+			'wpMcpAiResearchPage',
+			array(
+				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
+				'nonce'      => wp_create_nonce( 'wp_mcp_ai_research_event' ),
+				'entityType' => 'event',
+			)
+		);
+	}
+
+	/**
+	 * Render the research page.
+	 */
+	public static function render_page() {
+		// Get assistant from settings.
+		$settings     = get_option( 'wp_mcp_ai_event_settings', array() );
+		$assistant_id = isset( $settings['assistant_id'] ) ? absint( $settings['assistant_id'] ) : 0;
+
+		// If no assistant configured or invalid, get the first available assistant.
+		if ( ! $assistant_id || 'publish' !== get_post_status( $assistant_id ) ) {
+			$assistants = get_posts(
+				array(
+					'post_type'      => 'mcp_ai_assistant',
+					'post_status'    => 'publish',
+					'posts_per_page' => 1,
+					'orderby'        => 'date',
+					'order'          => 'DESC',
+				)
+			);
+
+			$assistant_id = ! empty( $assistants ) ? $assistants[0]->ID : 0;
+		}
+
+		?>
+		<div class="wrap wp-mcp-ai-research-page">
+			<h1 class="wp-heading-inline">
+				<?php esc_html_e( 'Research & Add Event', 'nvoos-content-graph-pro' ); ?>
+			</h1>
+
+			<hr class="wp-header-end">
+
+			<?php self::render_chat_interface( $assistant_id ); ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the chat interface.
+	 *
+	 * @param int $assistant_id Assistant ID.
+	 */
+	protected static function render_chat_interface( $assistant_id ) {
+		?>
+			<div class="wp-mcp-ai-research-container">
+				<div class="wp-mcp-ai-research-sidebar">
+					<div class="wp-mcp-ai-research-intro">
+						<h2><?php esc_html_e( 'How It Works', 'nvoos-content-graph-pro' ); ?></h2>
+						<ol>
+							<li><?php esc_html_e( 'Search existing events or research ideas on the web', 'nvoos-content-graph-pro' ); ?></li>
+							<li><?php esc_html_e( 'Use calendar view to check for scheduling conflicts', 'nvoos-content-graph-pro' ); ?></li>
+							<li><?php esc_html_e( 'Create events with proper timing and details', 'nvoos-content-graph-pro' ); ?></li>
+							<li><?php esc_html_e( 'Link events to projects and invite attendees', 'nvoos-content-graph-pro' ); ?></li>
+						</ol>
+					</div>
+
+					<div class="wp-mcp-ai-research-tips">
+						<h3><?php esc_html_e( 'Research Tips', 'nvoos-content-graph-pro' ); ?></h3>
+						<ul>
+							<li><strong><?php esc_html_e( 'Search first:', 'nvoos-content-graph-pro' ); ?></strong> <?php esc_html_e( 'List existing events to avoid conflicts', 'nvoos-content-graph-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Check calendar:', 'nvoos-content-graph-pro' ); ?></strong> <?php esc_html_e( 'Review calendar before scheduling', 'nvoos-content-graph-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Web research:', 'nvoos-content-graph-pro' ); ?></strong> <?php esc_html_e( 'Find venue information and best practices', 'nvoos-content-graph-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Link to projects:', 'nvoos-content-graph-pro' ); ?></strong> <?php esc_html_e( 'Associate events with relevant projects', 'nvoos-content-graph-pro' ); ?></li>
+						</ul>
+					</div>
+
+					<div class="wp-mcp-ai-research-examples">
+						<h3><?php esc_html_e( 'Example Queries', 'nvoos-content-graph-pro' ); ?></h3>
+						<ul class="wp-mcp-ai-example-list">
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research planning a team kickoff meeting with agenda, attendees, and materials needed">
+								<?php esc_html_e( '"Research planning a team kickoff meeting..."', 'nvoos-content-graph-pro' ); ?>
+							</button></li>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Find information about organizing a product launch event including venue, catering, and timeline">
+								<?php esc_html_e( '"Find information about organizing a product launch..."', 'nvoos-content-graph-pro' ); ?>
+							</button></li>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research scheduling a quarterly review meeting with preparation requirements and key topics">
+								<?php esc_html_e( '"Research scheduling a quarterly review..."', 'nvoos-content-graph-pro' ); ?>
+							</button></li>
+						</ul>
+					</div>
+
+					<div class="wp-mcp-ai-research-actions">
+						<h3><?php esc_html_e( 'Quick Actions', 'nvoos-content-graph-pro' ); ?></h3>
+						<p>
+							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_event' ) ); ?>" class="button">
+								<?php esc_html_e( 'View All Events', 'nvoos-content-graph-pro' ); ?>
+							</a>
+						</p>
+						<p>
+							<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_event' ) ); ?>" class="button">
+								<?php esc_html_e( 'Add Event Manually', 'nvoos-content-graph-pro' ); ?>
+							</a>
+						</p>
+					</div>
+				</div>
+
+				<div class="wp-mcp-ai-research-main">
+					<!-- Workflow Mode Selector -->
+					<div class="wp-mcp-ai-workflow-selector">
+						<h2><?php esc_html_e( 'Choose Your Workflow', 'nvoos-content-graph-pro' ); ?></h2>
+						<div class="workflow-options">
+							<button type="button" class="workflow-option active" data-workflow="research">
+								<span class="dashicons dashicons-format-chat"></span>
+								<strong><?php esc_html_e( 'AI Research', 'nvoos-content-graph-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Research and create events with AI assistance', 'nvoos-content-graph-pro' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="import">
+								<span class="dashicons dashicons-upload"></span>
+								<strong><?php esc_html_e( 'Import Data', 'nvoos-content-graph-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Bulk import event data', 'nvoos-content-graph-pro' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="review">
+								<span class="dashicons dashicons-analytics"></span>
+								<strong><?php esc_html_e( 'Review & Quality', 'nvoos-content-graph-pro' ); ?></strong>
+								<p><?php esc_html_e( 'View event quality and completeness', 'nvoos-content-graph-pro' ); ?></p>
+							</button>
+						</div>
+					</div>
+
+					<!-- AI Research Workflow (Default) -->
+					<div id="workflow-research" class="workflow-content active">
+					<?php if ( $assistant_id > 0 ) : ?>
+						<div class="wp-mcp-ai-research-chat">
+							<?php
+							// Render chat interface with comprehensive event and DJ management tools.
+							$event_tools = array(
+								// Core event management.
+								'create_event',
+								'update_event',
+								'delete_event',
+								'list_events',
+								'get_calendar_view',
+								// Event booking & details.
+								'create_event_booking',
+								'update_event_details',
+								// Event timeline & payments.
+								'generate_event_timeline',
+								'track_event_payments',
+								'send_event_confirmation',
+								// Event analytics.
+								'real_time_event_tracking',
+								// DJ Management tools.
+								'create_client_profile',
+								'generate_dj_contract',
+								'send_client_invoice',
+								'client_communication_log',
+								// Playlist & Music.
+								'create_playlist',
+								'generate_playlist_ai',
+								'manage_music_library',
+								'analyze_track_bpm',
+								'mix_transition_planner',
+								// Equipment management.
+								'add_equipment_item',
+								'reserve_equipment',
+								'track_equipment_maintenance',
+								'equipment_inventory_report',
+								// Project integration.
+								'list_projects',
+								'create_task',
+								'list_tasks',
+								// Research → Paper Store pipeline.
+								'generate_research_report',
+								'create_post_from_research',
+								// General research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
+							echo do_shortcode(
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $event_tools ) ) . '"]'
+							);
+							?>
+						</div>
+
+					<?php else : ?>
+						<div class="notice notice-error">
+							<p>
+								<?php
+								echo wp_kses_post(
+									sprintf(
+										/* translators: %s: Link to create assistant */
+										__( 'No AI assistant found. Please <a href="%s">create an assistant</a> first.', 'nvoos-content-graph-pro' ),
+										admin_url( 'post-new.php?post_type=mcp_ai_assistant' )
+									)
+								);
+								?>
+							</p>
+						</div>
+					<?php endif; ?>
+					</div>
+
+					<!-- Import Data Workflow -->
+					<div id="workflow-import" class="workflow-content">
+						<?php self::render_import_workflow(); ?>
+					</div>
+
+					<!-- Review & Quality Workflow -->
+					<div id="workflow-review" class="workflow-content">
+						<?php self::render_review_workflow(); ?>
+					</div>
+				</div>
+			</div>
+		<?php
+	}
+
+	/**
+	 * Handle AJAX request to create event from research.
+	 */
+	public static function handle_create_from_research() {
+		// Verify nonce.
+		check_ajax_referer( 'wp_mcp_ai_research_event', 'nonce' );
+
+		// Check user capability.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to create events.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		// Get research data from request.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Data is sanitized below per field.
+		$research_data_raw = isset( $_POST['research_data'] ) ? wp_unslash( $_POST['research_data'] ) : '';
+
+		if ( empty( $research_data_raw ) ) {
+			wp_send_json_error( array( 'message' => __( 'No research data provided.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		$research_data = json_decode( $research_data_raw, true );
+
+		// Validate JSON decoding.
+		if ( null === $research_data || JSON_ERROR_NONE !== json_last_error() ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid JSON data format.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		if ( empty( $research_data['title'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'Event title is required.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		// Process featured image generation request.
+		$research_data = self::process_featured_image_request( $research_data, $research_data['title'], 'an event' );
+
+		// Use the create_event tool to create the event.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Event' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Create Event tool not available.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		$tool   = new WP_MCP_AI_Tool_Create_Event();
+		$result = $tool->execute(
+			$research_data,
+			array( 'user_id' => get_current_user_id() )
+		);
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		// Return success with event ID and edit URL.
+		$event_id = isset( $result['event_id'] ) ? $result['event_id'] : 0;
+		$edit_url = $event_id > 0 ? admin_url( 'post.php?post=' . $event_id . '&action=edit' ) : '';
+
+		wp_send_json_success(
+			array(
+				'message'  => __( 'Event created successfully!', 'nvoos-content-graph-pro' ),
+				'event_id' => $event_id,
+				'edit_url' => $edit_url,
+			)
+		);
+	}
+
+	/**
+	 * Get supported import formats.
+	 *
+	 * @return array Import formats.
+	 */
+	protected static function get_import_formats() {
+		return array(
+			'ics'  => 'iCalendar (ICS)',
+			'csv'  => 'CSV',
+			'json' => 'JSON',
+		);
+	}
+
+	/**
+	 * Process imported data.
+	 *
+	 * @param string $data   Import data.
+	 * @param string $format Data format.
+	 * @return array|WP_Error Result or error.
+	 */
+	protected static function process_import_data( $data, $format ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundBeforeLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Required by trait interface.
+		return new WP_Error( 'not_implemented', __( 'Event import processing coming soon', 'nvoos-content-graph-pro' ) );
+	}
+
+	/**
+	 * Get validation schema (RFC 5545).
+	 *
+	 * @return array Validation schema.
+	 */
+	protected static function get_validation_schema() {
+		return array(
+			'required_fields'    => array(
+				'uid'     => __( 'UID', 'nvoos-content-graph-pro' ),
+				'summary' => __( 'Summary/Title', 'nvoos-content-graph-pro' ),
+				'dtstart' => __( 'Start Date/Time', 'nvoos-content-graph-pro' ),
+				'dtstamp' => __( 'Timestamp', 'nvoos-content-graph-pro' ),
+			),
+			'recommended_fields' => array(
+				'dtend'       => __( 'End Date/Time', 'nvoos-content-graph-pro' ),
+				'location'    => __( 'Location', 'nvoos-content-graph-pro' ),
+				'description' => __( 'Description', 'nvoos-content-graph-pro' ),
+				'organizer'   => __( 'Organizer', 'nvoos-content-graph-pro' ),
+			),
+			'validation_rules'   => array(
+				'dtstart' => array( 'type' => 'datetime' ),
+				'dtend'   => array( 'type' => 'datetime' ),
+			),
+			'quality_dimensions' => array(
+				'rfc_5545_compliance',
+				'completeness',
+				'accuracy',
+				'uniqueness',
+			),
+		);
+	}
+
+	/**
+	 * Calculate completeness.
+	 *
+	 * @return array Completeness data.
+	 */
+	protected static function calculate_completeness() {
+		$events = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_event',
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+			)
+		);
+
+		$total    = count( $events );
+		$complete = 0;
+		$missing  = array();
+
+		foreach ( $events as $event ) {
+			$start_date = get_post_meta( $event->ID, 'start_date', true );
+			$location   = get_post_meta( $event->ID, 'location', true );
+			if ( ! empty( $start_date ) && ! empty( $location ) && ! empty( $event->post_content ) ) {
+				++$complete;
+			}
+		}
+
+		$percentage = $total > 0 ? round( ( $complete / $total ) * 100 ) : 0;
+
+		if ( $complete < $total ) {
+			$missing[] = sprintf(
+				/* translators: %d: Number of incomplete events */
+				__( '%d events missing required data', 'nvoos-content-graph-pro' ),
+				$total - $complete
+			);
+		}
+
+		return array(
+			'percentage'  => $percentage,
+			'missing'     => $missing,
+			'suggestions' => array(
+				__( 'Add locations to all events', 'nvoos-content-graph-pro' ),
+				__( 'Include detailed event descriptions', 'nvoos-content-graph-pro' ),
+				__( 'Ensure all events have start/end times', 'nvoos-content-graph-pro' ),
+			),
+		);
+	}
+
+	/**
+	 * Get items for review.
+	 *
+	 * @return array Items.
+	 */
+	protected static function get_items_for_review() {
+		$events = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_event',
+				'post_status'    => 'any',
+				'posts_per_page' => 20,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+			)
+		);
+
+		$items = array();
+		foreach ( $events as $event ) {
+			$items[] = array(
+				'id'    => $event->ID,
+				'title' => $event->post_title,
+				'meta'  => array(
+					'start_date' => get_post_meta( $event->ID, 'start_date', true ),
+					'end_date'   => get_post_meta( $event->ID, 'end_date', true ),
+					'location'   => get_post_meta( $event->ID, 'location', true ),
+				),
+			);
+		}
+
+		return $items;
+	}
+
+	/**
+	 * Calculate quality score for item.
+	 *
+	 * @param array $item Item data.
+	 * @return array Quality data.
+	 */
+	protected static function calculate_quality_score( $item ) {
+		$score  = 0;
+		$issues = array();
+
+		// Check start date (30 points).
+		if ( ! empty( $item['meta']['start_date'] ) ) {
+			$score += 30;
+		} else {
+			$issues[] = __( 'Missing start date', 'nvoos-content-graph-pro' );
+		}
+
+		// Check end date (20 points).
+		if ( ! empty( $item['meta']['end_date'] ) ) {
+			$score += 20;
+		} else {
+			$issues[] = __( 'Missing end date', 'nvoos-content-graph-pro' );
+		}
+
+		// Check location (30 points).
+		if ( ! empty( $item['meta']['location'] ) ) {
+			$score += 30;
+		} else {
+			$issues[] = __( 'Missing location', 'nvoos-content-graph-pro' );
+		}
+
+		// Check title (20 points).
+		if ( ! empty( $item['title'] ) && strlen( $item['title'] ) > 10 ) {
+			$score += 20;
+		} else {
+			$issues[] = __( 'Title needs improvement', 'nvoos-content-graph-pro' );
+		}
+
+		if ( $score >= 80 ) {
+			$level = 'high';
+		} elseif ( $score >= 50 ) {
+			$level = 'medium';
+		} else {
+			$level = 'low';
+		}
+
+		return array(
+			'score'  => $score,
+			'level'  => $level,
+			'status' => 'high' === $level ? __( 'Complete', 'nvoos-content-graph-pro' ) : __( 'Needs Work', 'nvoos-content-graph-pro' ),
+			'issues' => $issues,
+		);
+	}
+
+	/**
+	 * Render import workflow.
+	 */
+	protected static function render_import_workflow() {
+		?>
+		<div class="wp-mcp-ai-import-section">
+			<h2><?php esc_html_e( 'Import Event Data', 'nvoos-content-graph-pro' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Import events from iCalendar (ICS), CSV, JSON, or paste structured data. The AI will automatically parse and organize the event information.', 'nvoos-content-graph-pro' ); ?>
+			</p>
+			
+			<div class="import-tips">
+				<h4><?php esc_html_e( 'Tips for better results:', 'nvoos-content-graph-pro' ); ?></h4>
+				<ul>
+					<li><?php esc_html_e( '✓ Include event title, start/end dates and times', 'nvoos-content-graph-pro' ); ?></li>
+					<li><?php esc_html_e( '✓ Specify location details and organizer information', 'nvoos-content-graph-pro' ); ?></li>
+					<li><?php esc_html_e( '✓ Add event descriptions and attendee lists', 'nvoos-content-graph-pro' ); ?></li>
+					<li><?php esc_html_e( '✓ Include project associations if applicable', 'nvoos-content-graph-pro' ); ?></li>
+				</ul>
+			</div>
+
+			<div class="import-form">
+				<h3><?php esc_html_e( 'Upload File or Paste Data', 'nvoos-content-graph-pro' ); ?></h3>
+				<form id="wp-mcp-ai-import-form" method="post" enctype="multipart/form-data">
+					<?php wp_nonce_field( 'wp_mcp_ai_import_events', 'import_nonce' ); ?>
+					
+					<div class="import-file-section">
+						<input type="file" id="wp-mcp-ai-import-file-input" name="import_file" accept=".ics,.csv,.json,.txt" style="display: none;">
+						<button type="button" class="button" onclick="document.getElementById('wp-mcp-ai-import-file-input').click();">
+							<span class="dashicons dashicons-upload"></span>
+							<?php esc_html_e( 'Choose File', 'nvoos-content-graph-pro' ); ?>
+						</button>
+						<span class="import-file-selected" style="margin-left: 10px; display: none;"></span>
+						<p class="description"><?php esc_html_e( 'Supported: ICS (iCalendar), CSV, JSON, TXT', 'nvoos-content-graph-pro' ); ?></p>
+					</div>
+
+					<p><strong><?php esc_html_e( 'OR', 'nvoos-content-graph-pro' ); ?></strong></p>
+
+					<textarea 
+						id="wp-mcp-ai-import-text" 
+						name="import_data" 
+						class="widefat" 
+						rows="12" 
+						placeholder="<?php esc_attr_e( 'Example:\n\nEvent: Team Kickoff Meeting\nStart: 2024-01-15 09:00 AM\nEnd: 2024-01-15 10:30 AM\nLocation: Conference Room A\nDescription: Quarterly kickoff meeting for the development team\nAttendees: john@example.com, jane@example.com\n\nEvent: Product Launch\nStart: 2024-02-01 02:00 PM\nEnd: 2024-02-01 05:00 PM\nLocation: Main Auditorium\nDescription: Official launch event for new product line', 'nvoos-content-graph-pro' ); ?>"
+					></textarea>
+					
+					<div class="import-options">
+						<label>
+							<input type="checkbox" name="auto_create" value="1" checked>
+							<?php esc_html_e( 'Automatically create events (recommended)', 'nvoos-content-graph-pro' ); ?>
+						</label>
+						<label>
+							<input type="checkbox" name="validate_data" value="1" checked>
+							<?php esc_html_e( 'Validate data quality before importing', 'nvoos-content-graph-pro' ); ?>
+						</label>
+					</div>
+
+					<p>
+						<button type="submit" class="button button-primary button-large">
+							<span class="dashicons dashicons-update"></span>
+							<?php esc_html_e( 'Import & Process', 'nvoos-content-graph-pro' ); ?>
+						</button>
+					</p>
+					<div class="import-result" style="display: none;"></div>
+				</form>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render review workflow.
+	 */
+	protected static function render_review_workflow() {
+		// Get event statistics.
+		$total_events    = wp_count_posts( 'mcp_ai_event' );
+		$published_count = isset( $total_events->publish ) ? $total_events->publish : 0;
+
+		// Calculate data quality metrics.
+		$events = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_event',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+			)
+		);
+
+		$complete_count = 0;
+		$with_dates     = 0;
+		$with_location  = 0;
+
+		foreach ( $events as $event ) {
+			$start_date = get_post_meta( $event->ID, 'start_date', true );
+			$end_date   = get_post_meta( $event->ID, 'end_date', true );
+			$location   = get_post_meta( $event->ID, 'location', true );
+			$has_desc   = ! empty( $event->post_content );
+
+			if ( ! empty( $start_date ) && ! empty( $end_date ) ) {
+				++$with_dates;
+			}
+			if ( ! empty( $location ) ) {
+				++$with_location;
+			}
+			if ( ! empty( $start_date ) && ! empty( $location ) && $has_desc ) {
+				++$complete_count;
+			}
+		}
+
+		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
+
+		?>
+		<div class="wp-mcp-ai-consolidate-section">
+			<h2><?php esc_html_e( 'Event Quality Dashboard', 'nvoos-content-graph-pro' ); ?></h2>
+			
+			<div class="quality-dashboard">
+				<h3><?php esc_html_e( 'Overall Completeness', 'nvoos-content-graph-pro' ); ?></h3>
+				<div class="completeness-indicator">
+					<div class="completeness-bar" style="width: <?php echo esc_attr( $completeness ); ?>%;"></div>
+					<span class="completeness-percentage"><?php echo esc_html( $completeness ); ?>%</span>
+				</div>
+
+				<div class="quality-metrics">
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $published_count ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'Total Events', 'nvoos-content-graph-pro' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $complete_count ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'Fully Complete', 'nvoos-content-graph-pro' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $with_dates ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'With Start/End Dates', 'nvoos-content-graph-pro' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $with_location ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'With Location', 'nvoos-content-graph-pro' ); ?></span>
+					</div>
+				</div>
+
+				<?php if ( $completeness < 80 ) : ?>
+					<div class="notice notice-warning inline">
+						<p>
+							<?php
+							printf(
+								/* translators: %d: Completeness percentage */
+								esc_html__( 'Event completeness is %d%%. Ensure all events have start/end dates, locations, and descriptions.', 'nvoos-content-graph-pro' ),
+								esc_html( $completeness )
+							);
+							?>
+						</p>
+					</div>
+				<?php endif; ?>
+			</div>
+
+			<?php self::render_quality_table(); ?>
+
+			<div class="items-list-table">
+				<h3><?php esc_html_e( 'Quick Actions', 'nvoos-content-graph-pro' ); ?></h3>
+				<p>
+					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_event' ) ); ?>" class="button button-primary">
+						<?php esc_html_e( 'View All Events', 'nvoos-content-graph-pro' ); ?>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_event' ) ); ?>" class="button">
+						<?php esc_html_e( 'Add New Event', 'nvoos-content-graph-pro' ); ?>
+					</a>
+					<button type="button" class="button refresh-quality-data">
+						<span class="dashicons dashicons-update"></span>
+						<?php esc_html_e( 'Refresh Data', 'nvoos-content-graph-pro' ); ?>
+					</button>
+				</p>
+			</div>
+		</div>
+		<?php
+	}
+}
+
+// Initialize.
+WP_MCP_AI_Event_Research_Page::init();
