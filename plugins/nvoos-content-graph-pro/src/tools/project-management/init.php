@@ -554,6 +554,15 @@ function wp_mcp_ai_pro_register_pm_tools( $tools ) {
 		'WP_MCP_AI_Tool_PARA_Update_Area'                 => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-para-update-area.php',
 		'WP_MCP_AI_Tool_PARA_Weekly_Review'               => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-para-weekly-review.php',
 		'WP_MCP_AI_Tool_PM_Capture_Decision'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/class-wp-mcp-ai-tool-pm-capture-decision.php',
+		'WP_MCP_AI_Tool_Get_Burndown_Chart'               => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/analytics/class-wp-mcp-ai-tool-get-burndown-chart.php',
+		'WP_MCP_AI_Tool_Get_Team_Velocity'                => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/analytics/class-wp-mcp-ai-tool-get-team-velocity.php',
+		'WP_MCP_AI_Tool_Get_Portfolio_Health'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/analytics/class-wp-mcp-ai-tool-get-portfolio-health.php',
+		'WP_MCP_AI_Tool_Get_Resource_Utilization'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/analytics/class-wp-mcp-ai-tool-get-resource-utilization.php',
+		'WP_MCP_AI_Tool_Get_Project_Timeline'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/analytics/class-wp-mcp-ai-tool-get-project-timeline.php',
+		'WP_MCP_AI_Tool_Forecast_Completion'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/analytics/class-wp-mcp-ai-tool-forecast-completion.php',
+		'WP_MCP_AI_Tool_Assess_Project_Risk'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/risk/class-wp-mcp-ai-tool-assess-project-risk.php',
+		'WP_MCP_AI_Tool_Detect_Stale_Tasks'               => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/risk/class-wp-mcp-ai-tool-detect-stale-tasks.php',
+		'WP_MCP_AI_Tool_Identify_Blockers'                => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/risk/class-wp-mcp-ai-tool-identify-blockers.php',
 	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_pm_tools );
@@ -596,6 +605,15 @@ function wp_mcp_ai_pro_register_pm_ecosystem_tools() {
 			'WP_MCP_AI_Tool_PARA_Update_Area',
 			'WP_MCP_AI_Tool_PARA_Weekly_Review',
 			'WP_MCP_AI_Tool_PM_Capture_Decision',
+			'WP_MCP_AI_Tool_Get_Burndown_Chart',
+			'WP_MCP_AI_Tool_Get_Team_Velocity',
+			'WP_MCP_AI_Tool_Get_Portfolio_Health',
+			'WP_MCP_AI_Tool_Get_Resource_Utilization',
+			'WP_MCP_AI_Tool_Get_Project_Timeline',
+			'WP_MCP_AI_Tool_Forecast_Completion',
+			'WP_MCP_AI_Tool_Assess_Project_Risk',
+			'WP_MCP_AI_Tool_Detect_Stale_Tasks',
+			'WP_MCP_AI_Tool_Identify_Blockers',
 		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
