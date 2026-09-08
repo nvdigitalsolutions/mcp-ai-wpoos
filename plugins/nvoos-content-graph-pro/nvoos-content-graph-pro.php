@@ -74,6 +74,7 @@ spl_autoload_register(
 			'src/interfaces/',
 			'src/mcp-servers/',
 			'src/para/',
+			'src/research-add/',
 			'src/rest/',
 			'src/services/',
 			'src/tools/',
