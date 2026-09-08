@@ -93,6 +93,7 @@ spl_autoload_register(
 			'src/tools/crm/routing/',
 			'src/tools/crm/sequences/',
 			'src/tools/crm/upwork/',
+			'src/tools/ecommerce/',
 			'src/tools/vault/',
 			'src/tools/vector-storage/',
 			'src/traits/',
