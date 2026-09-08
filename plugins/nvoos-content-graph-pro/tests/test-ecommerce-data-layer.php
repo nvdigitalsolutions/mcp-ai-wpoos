@@ -138,11 +138,21 @@ class Test_Ecommerce_Data_Layer extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Monolith matrix: the base plugin loads the e-commerce init.' );
 		}
 
+		// The WP test framework backs up/restores hooks per test, so the
+		// enqueue hook registered by an EARLIER test's first load is reset
+		// at that test's teardown and require_once cannot re-register it.
+		// The hook contract is therefore asserted only when this test is
+		// the first loader.
+		$nvoos_loaded_before = function_exists( 'wp_mcp_ai_enqueue_ecommerce_toolkit_admin_styles' );
+
 		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/init.php';
 
 		$this->assertTrue( function_exists( 'wp_mcp_ai_is_ecommerce_toolkit_enabled' ) );
 		$this->assertTrue( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) );
 		$this->assertTrue( class_exists( 'WP_MCP_AI_Ecommerce_Optimization' ) );
-		$this->assertNotFalse( has_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_ecommerce_toolkit_admin_styles' ) );
+
+		if ( ! $nvoos_loaded_before ) {
+			$this->assertNotFalse( has_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_ecommerce_toolkit_admin_styles' ) );
+		}
 	}
 }
