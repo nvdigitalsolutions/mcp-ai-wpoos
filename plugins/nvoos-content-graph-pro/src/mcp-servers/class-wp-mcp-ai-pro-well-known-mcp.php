@@ -1,0 +1,183 @@
+<?php
+/**
+ * Toolkit MCP server framework (ecosystem port — Wave F2, mcp-servers framework).
+ *
+ * Ported from the base Pro addon's `addons/pro/includes/mcp-servers/class-wp-mcp-ai-pro-well-known-mcp.php` for the standalone
+ * `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro
+ * addon owns the class in monolith installs — the addon's autoloader
+ * skips its copy when `NVOOS_CONTENT_GRAPH_PRO_PATH` is defined (see the plugin
+ * entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain
+ * `nvoos-content-graph-pro`; no path constants — no path swaps.
+ *
+ * @package NvoosContentGraphPro
+ * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+declare(strict_types=1);
+
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Handles the /.well-known/mcp endpoint for toolkit-MCP discovery.
+ */
+class WP_MCP_AI_Pro_Well_Known_MCP {
+
+	/**
+	 * Query-var name used to route the request.
+	 */
+	const QUERY_VAR = 'wp_mcp_ai_well_known_mcp';
+
+	/**
+	 * Constructor — wire WordPress hooks.
+	 */
+	public function __construct() {
+		add_action( 'init', array( $this, 'add_rewrite_rules' ) );
+		add_filter( 'query_vars', array( $this, 'add_query_vars' ) );
+		add_action( 'template_redirect', array( $this, 'handle_request' ), 5 );
+		add_filter( 'redirect_canonical', array( $this, 'prevent_canonical_redirect' ), 10, 2 );
+	}
+
+	/**
+	 * Add rewrite rule for the well-known MCP endpoint.
+	 */
+	public function add_rewrite_rules() {
+		add_rewrite_rule(
+			'^\.well-known/mcp/?$',
+			'index.php?' . self::QUERY_VAR . '=1',
+			'top'
+		);
+	}
+
+	/**
+	 * Register the query var.
+	 *
+	 * @param string[] $vars Existing query vars.
+	 * @return string[]
+	 */
+	public function add_query_vars( $vars ) {
+		$vars[] = self::QUERY_VAR;
+		return $vars;
+	}
+
+	/**
+	 * Prevent redirect_canonical from adding/removing a trailing slash
+	 * on the /.well-known/mcp URL. Without this, WordPress may 301-
+	 * redirect /.well-known/mcp → /.well-known/mcp/ (or vice versa)
+	 * before our handler runs, breaking MCP client discovery.
+	 *
+	 * @since 1.6.1
+	 *
+	 * @param string|false $redirect_url  Canonical URL to redirect to, or false.
+	 * @param string       $requested_url Original requested URL.
+	 * @return string|false
+	 */
+	public function prevent_canonical_redirect( $redirect_url, $requested_url ) {
+		if ( false !== strpos( $requested_url, '.well-known/mcp' ) ) {
+			return false;
+		}
+		return $redirect_url;
+	}
+
+	/**
+	 * Serve the /.well-known/mcp discovery document.
+	 *
+	 * Fires on template_redirect before any template output.
+	 */
+	public function handle_request() {
+		if ( ! get_query_var( self::QUERY_VAR ) ) {
+			return;
+		}
+
+		// Flush any buffered output.
+		while ( ob_get_level() > 0 ) {
+			ob_end_clean();
+		}
+
+		header( 'Content-Type: application/json; charset=utf-8' );
+		header( 'X-Content-Type-Options: nosniff' );
+		header( 'X-Robots-Tag: noindex' );
+		/**
+		 * Filter the Cache-Control max-age for the well-known MCP document.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param int $max_age Cache-Control max-age in seconds. Default 3600.
+		 */
+		$max_age = (int) apply_filters( 'wp_mcp_ai_well_known_mcp_cache_max_age', 3600 );
+		if ( $max_age > 0 ) {
+			header( 'Cache-Control: public, max-age=' . $max_age );
+		} else {
+			header( 'Cache-Control: no-store' );
+		}
+
+		echo wp_json_encode( $this->build_discovery_document(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+		exit;
+	}
+
+	/**
+	 * Build the MCP discovery document.
+	 *
+	 * Lists every enabled toolkit server whose `is_enabled()` returns true.
+	 * The `endpoint` field points at the per-server JSON-RPC route under the
+	 * REST namespace `mcp-ai-pro/v1`.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public function build_discovery_document() {
+		$servers = array();
+
+		if ( class_exists( 'WP_MCP_AI_Toolkit_Server_Registry' ) ) {
+			$registry    = WP_MCP_AI_Toolkit_Server_Registry::get_instance();
+			$rest_base   = rest_url( 'mcp-ai-pro/v1/mcp' );
+			$all_servers = $registry->all();
+
+			foreach ( $all_servers as $server ) {
+				if ( ! $server->is_enabled() ) {
+					continue;
+				}
+
+				$servers[] = array(
+					'slug'        => $server->get_slug(),
+					'name'        => $server->get_name(),
+					'description' => $server->get_description(),
+					'version'     => $server->get_version(),
+					'endpoint'    => trailingslashit( $rest_base ) . $server->get_slug(),
+				);
+			}
+		}
+
+		/**
+		 * Filter the complete MCP discovery document before it is sent.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param array<string,mixed> $document Discovery document.
+		 */
+		return apply_filters(
+			'wp_mcp_ai_well_known_mcp_document',
+			array( 'mcpServers' => $servers )
+		);
+	}
+
+	/**
+	 * Flush rewrite rules on plugin activation.
+	 */
+	public static function activate() {
+		flush_rewrite_rules();
+	}
+
+	/**
+	 * Flush rewrite rules on plugin deactivation.
+	 */
+	public static function deactivate() {
+		flush_rewrite_rules();
+	}
+}
