@@ -157,6 +157,7 @@ class Test_Pro_Module_Registry extends WP_UnitTestCase {
 			'mcp_servers_framework',
 			'remote_connection',
 			'admin_remote_sites',
+			'remote_connections',
 		);
 
 		$this->assertSame( $expected, array_keys( $registry->modules() ) );

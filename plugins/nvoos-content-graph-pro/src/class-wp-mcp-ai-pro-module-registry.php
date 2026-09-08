@@ -653,6 +653,23 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 						require_once $p . 'admin/class-wp-mcp-ai-pro-webhook-status-page.php';
 					}
 				);
+
+					// Standalone-only module (no monolith registry counterpart — the
+					// base registers the two remote-connections tools inline via
+					// `wp_mcp_ai_pro_register_tools()`). Boots the slim
+					// remote-connections init standalone so the ported tools land in
+					// the ecosystem registries (financial-planning precedent).
+					$this->add_module(
+						'remote_connections',
+						'Remote Connections Tools',
+						array(),
+						array(
+							'files' => array( $p . 'tools/remote-connections/init.php' ),
+						),
+						function () use ( $p ) {
+							require_once $p . 'tools/remote-connections/init.php';
+						}
+					);
 		}
 	}
 }
