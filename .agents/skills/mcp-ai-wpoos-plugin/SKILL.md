@@ -5,8 +5,8 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.74"
-  plugin-version-tested: "1.1.74"
+  plugin-version: "1.1.75"
+  plugin-version-tested: "1.1.75"
   last-updated: "2026-09-08"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
@@ -628,6 +628,26 @@ Import external AI conversation exports into the JetEngine
   registration; CSV list args accept `"1,2"` and `"1, 2"`;
   assistant-builder and Pro toolkit blocks register idempotently
   (WP 7.1 notices).
+
+## Telegram Delivery Fixes, Memory Bridge & Wave F2 Toolkit Completions (v1.1.75+)
+
+- **Telegram broadcast credentials** (PR #6482) — inline credentials stored as
+  JSON strings no longer fatal the array-typed broadcast tool;
+  `normalize_channel_credentials()` decodes/rejects, and the Remote Sites
+  schema mapping decrypts `api_key`/`token` for the real storage keys.
+- **Scheduled delivery credential fallback** (PR #6488) — tier-4 fallback
+  resolves the first enabled Remote Sites connection of the channel type for
+  cron delivery; `create_pro_schedule`/`update_pro_schedule` and the schedules
+  REST endpoint accept `result_delivery`; diagnostics never carry secrets.
+- **Content Graph memory bridge + NV oOS Complete checkout** (PR #6486) —
+  new `wp_mcp_ai_wake_up_context_graph_retriever` filter seam on
+  `wake_up_context`; the checkout sells the Complete bundle (base + Pro) with
+  a conflict guard; nvoos-content-graph **1.0.4 → 1.0.6**.
+- **Wave F2 port completions** (PRs #6476–#6501) — `nvoos-content-graph-pro`
+  (1.0.0) completes the financial-planning, social-media, and mcp-servers
+  toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
+  dj-management/image-production slices.
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
 
 ## Calendar Query Fix, Email Formats & Wave F2 PM/Calendar (v1.1.74+)
 

@@ -1,8 +1,8 @@
 # Docs & Release Catch-Up — Standing Open-Items Tracker
 
 > **Purpose:** Single registry of every open item identified (and parked or deferred) by the docs & release catch-up runs, so future passes carry from this file instead of re-copying items between plans.
-> **Last reviewed:** 2026-09-08 (v1.1.74 pass)
-> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.74-docs-catch-up.md`](v1.1.74-docs-catch-up.md).
+> **Last reviewed:** 2026-09-09 (v1.1.75 pass)
+> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.75-docs-catch-up.md`](v1.1.75-docs-catch-up.md).
 > **Rule for future passes:** read this file first; a catch-up plan's "Open items" section should point here and only add new items it introduces.
 
 ---
@@ -29,6 +29,7 @@
 | 10 | `@since 1.1.68` | `addons/pro/includes/tools/vision-analysis/` (5 files) + `class-wp-mcp-ai-vision-analysis-settings.php` + `class-wp-mcp-ai-hf-vision-inference-service.php` (PR #6267; also the "Vision Analysis Toolkit … 1.1.68" code comment in `addons/pro/mcp-ai-wpoos-pro.php`) | 1.1.69 | v1.1.69 plan |
 | 11 | `@since 1.1.69` | `addons/pro/includes/npm-integration-filters.php` (2×, PR #6295) + `addons/pro/mcp-ai-wpoos-pro.php` (`wp_mcp_ai_pro_get_tool_map()`, PR #6300) + `includes/integrations/class-wp-mcp-ai-github-oauth-handler.php` (PR #6301) + `includes/admin/class-wp-mcp-ai-admin-plugins-integration.php` (PR #6303) — 5 instances, all added in the wave-5 window | 1.1.70 | v1.1.70 plan |
 | 12 | `@since 1.0.0` | `addons/pro/includes/services/class-wp-mcp-ai-markdown-converter.php` — 1 instance (PR #6465) | 1.1.74 | v1.1.74 plan |
+| 13 | `@since 1.0.0` | `addons/pro/includes/services/class-wp-mcp-ai-result-delivery-service.php` — `merge_channel_destination_fields()` + `normalize_channel_credentials()`, 2 instances (PRs #6482/#6488) | 1.1.75 | v1.1.75 plan |
 
 - **Blocked on:** version-jump decision — does the next release stay on 1.1.x or jump to 1.2.0?
 - **Broader drift (new finding, 2026-08-26):** non-1.1.x tags are repo-wide (`@since 1.0.0` ×1,928 · `1.2.0` ×1,707 · `1.1.0` ×1,269 · `1.3.0` ×795 · `1.9.0` ×734, PHP source ex vendor). Many are legitimate history. A full-tree audit is a scripted-sweep project needing explicit sign-off — tracked inside issue #5968, not a catch-up-pass task.
@@ -38,7 +39,7 @@
 - **Status:** 🔒 Parked by user decision. Counts stay delta-derived in catch-up passes.
 - **Issue:** [#5967 — Re-derive live tool counts on a fully provisioned environment](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5967)
 - **What:** run `WP_MCP_AI_Tool_Registry::get_tools()` on a fully provisioned environment (seeded toolkits + optional plugins) and replace the delta-based figure.
-- **Current figure (v1.1.74):** ~303 base + ~1,265 Pro (~1,568 total), live-registry caveat retained on every count surface. (Delta-derived: +2 Woo price/qty tools, PR #6388; unchanged since — #6447/#6448 upgrade existing tools, #6469 extends a schema.)
+- **Current figure (v1.1.75):** ~303 base + ~1,265 Pro (~1,568 total), live-registry caveat retained on every count surface. (Delta-derived: +2 Woo price/qty tools, PR #6388; unchanged since — #6447/#6448 upgrade existing tools, #6469 extends a schema, #6488 extends the schedule-tool schemas with `result_delivery`.)
 - **Known attempt:** QA container (`oos-qa-wp`) returns 363 tools because its DB is unprovisioned — not usable as source of truth.
 - **First noted in:** v1.1.59 plan; carried every pass since.
 

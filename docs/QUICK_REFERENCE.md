@@ -1,11 +1,13 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.74
-**Last Updated:** September 8, 2026
+**Version:** 1.1.75
+**Last Updated:** September 9, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
 ## Recent Updates (September 2026)
+
+- **v1.1.75** (September 9): Scheduled-delivery & ecosystem-port release. **Telegram broadcast credentials fix** — inline credentials stored as JSON strings no longer fatal the array-typed broadcast tool (`normalize_channel_credentials()` decodes/rejects; per-channel `failures` repair saved schedules; real Remote Sites schema mapping with decrypted `api_key`/`token`, #6482). **Scheduled delivery credential fallback** — new tier-4 fallback resolves the first enabled Remote Sites connection of the channel type (assistant-assigned preferred) for cron delivery; broadcast capability waived for the internal `pro_schedule_manager_result_delivery` context only; `create/update_pro_schedule` + `POST /mcp-ai-pro/v1/schedules` accept `result_delivery`; diagnostics never carry secrets (#6488). **Content Graph memory bridge + NV oOS Complete checkout** — memories project into the standalone graph behind a new `wp_mcp_ai_wake_up_context_graph_retriever` filter seam; the checkout sells the Complete bundle with a conflict guard; nvoos-content-graph **1.0.4 → 1.0.6** (#6486). **Wave F2 completes the financial-planning, social-media, and mcp-servers toolkit ports** in `nvoos-content-graph-pro` (16 + 32 tools, all 33 MCP servers) plus remote-sites/video-production/analytics/multilingual/cloudways/dj-management/image-production slices (#6476–#6502). Tool count unchanged: ~303 base + ~1,265 Pro (~1,568 total). Stale 1.1.73 + content-graph 1.0.4 build ZIPs removed. See `docs/project/plans/v1.1.75-docs-catch-up.md`.
 
 - **v1.1.74** (September 8): Calendar, scheduling & ecosystem-port release. **Google Calendar date-query fix** — every query value is `rawurlencode()`d before `add_query_arg()` (the raw `+` in RFC3339 offsets was decoded as a space, 400-ing all `time_min`/`time_max` queries); `calendar.freebusy` joins the Standard scope profile (new grants only, #6460). **Result Delivery email formats** — new `WP_MCP_AI_Markdown_Converter` (escaped + `wp_kses`-allowlisted + protocol-allowlisted links; raw assistant HTML neutralized) + per-channel `format` setting (`both` default | `html` | `markdown`), Nodemailer multipart + `wp_mail` fallback (#6465). **Schedule Manager assistant-prompt editing** — edit modal shows/updates the prompt for `assistant_run` schedules; `update_schedule()` merges `assistant_config` with stored config; `update_pro_schedule` accepts it via MCP (#6469). **Wave F2 completes the PM + calendar-booking toolkit ports** in `nvoos-content-graph-pro` (data layer → admin slices, #6450–#6472). **Test/CI** — perf-suite MCP-abilities failure fixed process-wide in `tests/bootstrap.php` (#6470, supersedes #6464); content-graph-pro excluded from the root WPCS gate (#6457). Tool count unchanged: ~303 base + ~1,265 Pro (~1,568 total). Stale 1.1.72 build ZIPs removed. See `docs/project/plans/v1.1.74-docs-catch-up.md`.
 
