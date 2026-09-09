@@ -140,7 +140,9 @@ class Test_Pro_Privacy extends WP_UnitTestCase {
 
 	/**
 	 * Authored health records must export with labels, dates, and
-	 * non-internal meta only.
+	 * non-internal meta only.  Export order is unspecified (posts created
+	 * in the same second tie on `post_date`), so the assertions are
+	 * order-independent.
 	 */
 	public function test_export_health_wellness_exports_authored_records(): void {
 		$this->register_test_cpt( 'mcp_ai_member' );
@@ -159,9 +161,16 @@ class Test_Pro_Privacy extends WP_UnitTestCase {
 		$this->assertTrue( $result['done'] );
 		$this->assertCount( 2, $result['data'] );
 
-		$group = $result['data'][0];
+		$item_ids = wp_list_pluck( $result['data'], 'item_id' );
+		$this->assertEqualsCanonicalizing(
+			array( 'health-' . $ids[0], 'health-' . $ids[1] ),
+			$item_ids
+		);
+
+		// Assert the shared field shape on the group matching the first
+		// created record (either group satisfies it — order is unspecified).
+		$group = ( 'health-' . $ids[0] === $result['data'][0]['item_id'] ) ? $result['data'][0] : $result['data'][1];
 		$this->assertSame( 'wp-mcp-ai-pro-health-mcp_ai_member', $group['group_id'] );
-		$this->assertSame( 'health-' . $ids[0], $group['item_id'] );
 
 		$names = wp_list_pluck( $group['data'], 'name' );
 		$this->assertContains( 'Record type', $names );
