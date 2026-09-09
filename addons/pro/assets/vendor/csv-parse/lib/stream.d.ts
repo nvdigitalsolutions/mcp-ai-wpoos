@@ -1,11 +1,23 @@
-
-import { Options } from './index.js';
+import { Options } from "./index.js";
 
 declare function parse(options?: Options): TransformStream;
-// export default parse;
+
 export { parse };
 
 export {
-  CastingContext, CastingFunction, CastingDateFunction,
-  ColumnOption, Options, Info, CsvErrorCode, CsvError
-} from './index.js';
+  CastingContext, // Deprecated
+  CastingFunction,
+  CastingDateFunction,
+  ColumnOption,
+  Options,
+  OptionsNormalized,
+  OptionsWithColumns,
+  Info,
+  InfoCallback,
+  InfoDataSet,
+  InfoRecord,
+  InfoField,
+  CsvErrorCode,
+  CsvError,
+  normalize_options,
+} from "./index.js";

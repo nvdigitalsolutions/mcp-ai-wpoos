@@ -1,5 +1,5 @@
 {
-  "version": "5.6.0",
+  "version": "7.0.2",
   "name": "csv-parse",
   "description": "CSV parsing implementing the Node.js `stream.Transform` API",
   "keywords": [
@@ -72,28 +72,23 @@
     }
   },
   "devDependencies": {
-    "@eslint/js": "^9.15.0",
-    "@rollup/plugin-node-resolve": "^15.3.0",
-    "@types/mocha": "^10.0.9",
-    "@types/node": "^22.9.1",
-    "coffeescript": "^2.7.0",
-    "csv-generate": "^4.4.2",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^26.0.1",
+    "csv-generate": "^4.6.1",
     "csv-spectrum": "^2.0.0",
+    "dedent": "^1.7.2",
     "each": "^2.7.2",
-    "eslint": "^9.15.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-mocha": "^10.5.0",
-    "eslint-plugin-prettier": "^5.2.1",
-    "mocha": "^10.8.2",
+    "mocha": "^11.7.6",
     "pad": "^3.3.0",
-    "prettier": "^3.3.3",
-    "rollup": "^4.27.3",
+    "prettier": "^3.8.5",
+    "rollup": "^4.62.2",
     "rollup-plugin-node-builtins": "^2.1.2",
     "rollup-plugin-node-globals": "^1.4.0",
     "should": "^13.2.3",
-    "stream-transform": "^3.3.3",
+    "stream-transform": "^3.5.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.6.3"
+    "typescript": "^6.0.3"
   },
   "files": [
     "dist",
@@ -103,19 +98,12 @@
   "license": "MIT",
   "main": "./dist/cjs/index.cjs",
   "mocha": {
+    "import": "tsx",
     "inline-diffs": true,
-    "loader": "./test/loaders/all.js",
     "recursive": true,
     "reporter": "spec",
-    "require": [
-      "should"
-    ],
     "throw-deprecation": false,
     "timeout": 40000
-  },
-  "lint-staged": {
-    "*.js": "npm run lint:fix",
-    "*.md": "prettier -w"
   },
   "repository": {
     "type": "git",
@@ -125,14 +113,15 @@
   "scripts": {
     "build": "npm run build:rollup && npm run build:ts",
     "build:rollup": "npx rollup -c",
-    "build:ts": "cp lib/index.d.ts dist/cjs/index.d.cts && cp lib/sync.d.ts dist/cjs/sync.d.cts && cp lib/*.ts dist/esm",
+    "build:ts": "cp lib/index.d.ts dist/cjs/index.d.cts && cp lib/sync.d.ts dist/cjs/sync.d.cts && cp lib/stream.d.ts dist/cjs/stream.d.cts && cp lib/*.ts dist/esm",
     "postbuild:ts": "find dist/cjs -name '*.d.cts' -exec sh -c \"sed -i \"s/\\.js'/\\.cjs'/g\" {} || sed -i '' \"s/\\.js'/\\.cjs'/g\" {}\" \\;",
     "lint:check": "eslint",
     "lint:fix": "eslint --fix",
     "lint:ts": "tsc --noEmit true",
     "preversion": "npm run build && git add dist",
-    "test": "mocha 'test/**/*.{coffee,ts}'",
-    "test:legacy": "mocha --ignore test/api.web_stream.coffee --ignore test/api.web_stream.ts --ignore test/api.stream.finished.coffee --ignore test/api.stream.iterator.coffee --loader=./test/loaders/legacy/all.js 'test/**/*.{coffee,ts}'"
+    "test": "npx tsc --noEmit && mocha 'test/**/*.{js,ts}'",
+    "test:16": "mocha --ignore test/api.web_stream.js --ignore test/api.web_stream.ts --ignore test/api.stream.finished.ts --ignore test/api.stream.iterator.ts --ignore test/option.columns.js 'test/**/*.js'",
+    "test:legacy": "mocha --ignore test/api.web_stream.js --ignore test/api.web_stream.ts --ignore test/api.stream.finished.ts --ignore test/api.stream.iterator.ts 'test/**/*.{js,ts}'"
   },
   "type": "module",
   "types": "dist/esm/index.d.ts",
@@ -152,5 +141,5 @@
       ]
     }
   },
-  "gitHead": "cc1235a58de98dd9eab0665c7b1d03213e9633c7"
+  "gitHead": "288c9c6877b405c530181f6fb4967c63e0d8ffa1"
 }
