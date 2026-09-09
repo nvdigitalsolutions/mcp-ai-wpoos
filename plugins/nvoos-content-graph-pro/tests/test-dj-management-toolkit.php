@@ -35,6 +35,18 @@ class Test_Dj_Management_Toolkit extends WP_UnitTestCase {
 
 		$import = new WP_MCP_AI_Tool_Import_DJ_Management_Blueprint();
 		$this->assertSame( 'import_dj_management_blueprint', $import->get_slug() );
+
+		$jukebox = new WP_MCP_AI_Tool_Generate_Jukebox_Music();
+		$this->assertSame( 'generate_jukebox_music', $jukebox->get_slug() );
+		$this->assertSame( 'edit_posts', $jukebox->get_required_capability() );
+
+		$jukebox_status = new WP_MCP_AI_Tool_Check_Jukebox_Status();
+		$this->assertSame( 'check_jukebox_status', $jukebox_status->get_slug() );
+		$this->assertSame( 'edit_posts', $jukebox_status->get_required_capability() );
+
+		$this->assertSame( 20, WP_MCP_AI_Jukebox_Service::DEFAULT_SAMPLE_LENGTH );
+		$this->assertSame( 60, WP_MCP_AI_Jukebox_Service::MAX_SAMPLE_LENGTH );
+		$this->assertSame( '5b_lyrics', WP_MCP_AI_Jukebox_Service::DEFAULT_MODEL );
 	}
 
 	/**
@@ -71,7 +83,7 @@ class Test_Dj_Management_Toolkit extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Standalone only: the init's tool filter must carry all twenty-one
+	 * Standalone only: the init's tool filter must carry all twenty-three
 	 * ported tools with the addon's file paths.
 	 */
 	public function test_tools_filter_shape_standalone(): void {
@@ -83,13 +95,18 @@ class Test_Dj_Management_Toolkit extends WP_UnitTestCase {
 		add_filter( 'wp_mcp_ai_pro_tools', 'wp_mcp_ai_pro_register_dj_management_tools', 10 );
 
 		$tools = apply_filters( 'wp_mcp_ai_pro_tools', array() );
-		$this->assertCount( 21, $tools );
+		$this->assertCount( 23, $tools );
 		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_Get_Trending_Tracks', $tools );
 		$this->assertSame(
 			NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/dj-management/class-wp-mcp-ai-tool-get-trending-tracks.php',
 			$tools['WP_MCP_AI_Tool_Get_Trending_Tracks']
 		);
 		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_Import_DJ_Management_Blueprint', $tools );
+		$this->assertSame(
+			NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/dj-management/class-wp-mcp-ai-tool-generate-jukebox-music.php',
+			$tools['WP_MCP_AI_Tool_Generate_Jukebox_Music']
+		);
+		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_Check_Jukebox_Status', $tools );
 		$this->assertFileExists( NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/dj-management/examples/event-booking-coordinator.json' );
 		$this->assertFileExists( NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/dj-management/examples/dj-business-manager.json' );
 	}
@@ -110,9 +127,13 @@ class Test_Dj_Management_Toolkit extends WP_UnitTestCase {
 		$this->assertInstanceOf( 'NvoosContentGraph\\ToolRegistry', $parent );
 		$this->assertNotNull( $parent->all()['get_trending_tracks'] ?? null );
 		$this->assertNotNull( $parent->all()['import_dj_management_blueprint'] ?? null );
+		$this->assertNotNull( $parent->all()['generate_jukebox_music'] ?? null );
+		$this->assertNotNull( $parent->all()['check_jukebox_status'] ?? null );
 
 		$core_tools = \NvoosContentGraphAi\CoreBridge::instance()->tools;
 		$this->assertTrue( $core_tools->has( 'get_trending_tracks' ) );
 		$this->assertTrue( $core_tools->has( 'import_dj_management_blueprint' ) );
+		$this->assertTrue( $core_tools->has( 'generate_jukebox_music' ) );
+		$this->assertTrue( $core_tools->has( 'check_jukebox_status' ) );
 	}
 }
