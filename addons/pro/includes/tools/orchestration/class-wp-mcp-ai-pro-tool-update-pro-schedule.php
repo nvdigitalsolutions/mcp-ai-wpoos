@@ -171,6 +171,10 @@ class WP_MCP_AI_Pro_Tool_Update_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 						),
 					),
 				),
+				'result_delivery'   => array(
+					'type'        => 'object',
+					'description' => __( 'Delivery configuration for successful and failed runs. Shape: {on_success: {channels: {telegram: {enabled, connection_id, chat_id, template}}}, on_failure: {channels: {}}}. Supported channels: email, slack, telegram, discord, teams, messenger, whatsapp, google_chat, sms, paper_store, webhook, wordpress. Chat channels may reference a Remote Sites connection via connection_id (recommended) or carry inline credentials under <channel>_credentials. When neither is supplied, delivery falls back to the first enabled Remote Sites connection of that channel type.', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'             => array( 'schedule_id' ),
 			'additionalProperties' => false,

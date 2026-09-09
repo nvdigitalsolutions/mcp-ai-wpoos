@@ -220,6 +220,31 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 			);
 		}
 
+		// Chat-channel Remote Sites connections for the Result Delivery edit
+		// modal dropdown. Only names, IDs, types, and enabled state are exposed
+		// — never credentials.
+		$delivery_connections  = array();
+		$chat_connection_types = array( 'telegram', 'slack', 'discord', 'microsoft_teams', 'facebook_messenger', 'whatsapp', 'google_chat' );
+		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $connection ) {
+				if ( ! is_array( $connection ) ) {
+					continue;
+				}
+
+				$connection_type = isset( $connection['connection_type'] ) ? sanitize_key( (string) $connection['connection_type'] ) : '';
+				if ( ! in_array( $connection_type, $chat_connection_types, true ) ) {
+					continue;
+				}
+
+				$delivery_connections[] = array(
+					'id'      => isset( $connection['id'] ) ? sanitize_text_field( (string) $connection['id'] ) : '',
+					'name'    => isset( $connection['name'] ) ? sanitize_text_field( (string) $connection['name'] ) : '',
+					'type'    => $connection_type,
+					'enabled' => ! empty( $connection['enabled'] ),
+				);
+			}
+		}
+
 		wp_localize_script(
 			'wp-mcp-ai-schedule-manager',
 			'wpMcpAiScheduleManager',
@@ -228,6 +253,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 				'nonce'           => wp_create_nonce( self::NONCE_ACTION ),
 				'scheduleOptions' => $schedule_options,
 				'assistants'      => $preset_assistants,
+				'connections'     => $delivery_connections,
 				'strings'         => array(
 					'confirmDelete'          => __( 'Are you sure you want to delete this schedule and all its history?', 'mcp-ai-wpoos-pro' ),
 					'confirmClear'           => __( 'Are you sure you want to clear the run history for this schedule?', 'mcp-ai-wpoos-pro' ),
