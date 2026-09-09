@@ -13,15 +13,21 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
 
+use function absint;
 use function current_user_can;
 use function do_action;
 use function esc_url_raw;
 use function get_current_user_id;
 use function get_transient;
 use function home_url;
+use function in_array;
+use function is_array;
+use function is_email;
+use function is_numeric;
 use function is_wp_error;
 use function register_rest_route;
 use function rest_ensure_response;
+use function sanitize_email;
 use function sanitize_text_field;
 use function set_transient;
 use function time;
@@ -73,13 +79,34 @@ class CommerceController {
 				'callback'            => array( $this, 'verifyPayment' ),
 				'permission_callback' => array( $this, 'checkPermission' ),
 				'args'                => array(
-					'payment_intent' => array(
+					'payment_intent'  => array(
 						'required'          => true,
 						'type'              => 'string',
 						'validate_callback' => static function ( $value ) {
 							return is_string( $value ) && 1 === preg_match( '/^pi_[A-Za-z0-9]{8,}$/', $value );
 						},
 						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'terms_agreed_at' => array(
+						'type'              => 'integer',
+						'validate_callback' => static function ( $value ) {
+							if ( ! is_numeric( $value ) ) {
+								return false;
+							}
+
+							$ts = (int) $value;
+							return $ts > 0
+								&& $ts >= time() - 7 * DAY_IN_SECONDS
+								&& $ts <= time() + 10 * MINUTE_IN_SECONDS;
+						},
+						'sanitize_callback' => 'absint',
+					),
+					'buyer_email'     => array(
+						'type'              => 'string',
+						'validate_callback' => static function ( $value ) {
+							return is_string( $value ) && ( '' === $value || false !== is_email( $value ) );
+						},
+						'sanitize_callback' => 'sanitize_email',
 					),
 				),
 			)
@@ -150,11 +177,13 @@ class CommerceController {
 
 		return rest_ensure_response(
 			array(
-				'client_secret'   => sanitize_text_field( (string) $session['client_secret'] ),
-				'publishable_key' => sanitize_text_field( (string) $session['publishable_key'] ),
-				'amount'          => (int) ( $session['amount'] ?? Payments::priceCents() ),
-				'currency'        => sanitize_text_field( (string) ( $session['currency'] ?? Payments::currency() ) ),
-				'test_mode'       => (bool) ( $session['test_mode'] ?? false ),
+				'client_secret'     => sanitize_text_field( (string) $session['client_secret'] ),
+				'publishable_key'   => sanitize_text_field( (string) $session['publishable_key'] ),
+				'amount'            => (int) ( $session['amount'] ?? Payments::priceCents() ),
+				'currency'          => sanitize_text_field( (string) ( $session['currency'] ?? Payments::currency() ) ),
+				'test_mode'         => (bool) ( $session['test_mode'] ?? false ),
+				'terms_url'         => self::sanitizeLegalUrl( (string) ( $session['terms_url'] ?? '' ), Payments::termsUrl(), 'https://nvdigitalsolutions.com/terms-of-service' ),
+				'refund_policy_url' => self::sanitizeLegalUrl( (string) ( $session['refund_policy_url'] ?? '' ), Payments::refundPolicyUrl(), 'https://nvdigitalsolutions.com/refund-policy' ),
 			)
 		);
 	}
@@ -181,7 +210,9 @@ class CommerceController {
 			);
 		}
 
-		$intentId = (string) $request->get_param( 'payment_intent' );
+		$intentId      = (string) $request->get_param( 'payment_intent' );
+		$termsAgreedAt = (int) $request->get_param( 'terms_agreed_at' );
+		$buyerEmail    = (string) $request->get_param( 'buyer_email' );
 
 		if ( License::isLicensed() && Installer::isActive() ) {
 			return rest_ensure_response(
@@ -204,7 +235,7 @@ class CommerceController {
 		}
 
 		$vendor = new Vendor( Payments::vendorApiUrl() );
-		$result = $vendor->verify( $intentId );
+		$result = $vendor->verify( $intentId, $termsAgreedAt, $buyerEmail );
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -231,6 +262,8 @@ class CommerceController {
 			'purchaser_id'          => get_current_user_id(),
 			'purchaser_email'       => sanitize_text_field( (string) $user->user_email ),
 			'purchased_at'          => time(),
+			'terms_agreed_at'       => $termsAgreedAt,
+			'buyer_email'           => '' !== $buyerEmail ? sanitize_email( $buyerEmail ) : sanitize_email( (string) $user->user_email ),
 		);
 
 		License::save( $record );
@@ -301,6 +334,31 @@ class CommerceController {
 			return '';
 		}
 		return esc_url_raw( $url );
+	}
+
+	/**
+	 * Escape a legal-document URL, falling back to a client-side default.
+	 *
+	 * The vendor's session response carries the authoritative Terms of
+	 * Service and Refund Policy URLs; when the vendor omits them (or
+	 * returns something that is not an http(s) URL), the plugin's own
+	 * filterable defaults keep the consent links present.
+	 *
+	 * @since 1.0.4
+	 *
+	 * @param string $url          Candidate URL from the vendor response.
+	 * @param string $fallback     Client-side fallback URL.
+	 * @param string $hardFallback Last-resort URL for this link.
+	 * @return string An http(s) URL, never empty.
+	 */
+	private static function sanitizeLegalUrl( string $url, string $fallback, string $hardFallback ): string {
+		$parts = wp_parse_url( $url );
+		if ( is_array( $parts ) && in_array( $parts['scheme'] ?? '', array( 'http', 'https' ), true ) && ! empty( $parts['host'] ) ) {
+			return esc_url_raw( $url );
+		}
+
+		$fallback = esc_url_raw( $fallback );
+		return '' !== $fallback ? $fallback : $hardFallback;
 	}
 
 	/**

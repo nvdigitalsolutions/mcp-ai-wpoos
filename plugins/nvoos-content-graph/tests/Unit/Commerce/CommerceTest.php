@@ -85,11 +85,13 @@ class CommerceTest extends WP_UnitTestCase {
 			'response' => array( 'code' => 200 ),
 			'body'     => wp_json_encode(
 				array(
-					'client_secret'   => 'pi_test_secret_abc',
-					'publishable_key' => 'pk_test_abc',
-					'amount'          => 4900,
-					'currency'        => 'usd',
-					'test_mode'       => true,
+					'client_secret'     => 'pi_test_secret_abc',
+					'publishable_key'   => 'pk_test_abc',
+					'amount'            => 4900,
+					'currency'          => 'usd',
+					'test_mode'         => true,
+					'terms_url'         => 'https://vendor.example/terms',
+					'refund_policy_url' => 'https://vendor.example/refunds',
 				)
 			),
 		);
@@ -257,6 +259,67 @@ class CommerceTest extends WP_UnitTestCase {
 		$this->assertSame( 'pi_test_secret_abc', $data['client_secret'] );
 		$this->assertSame( 'pk_test_abc', $data['publishable_key'] );
 		$this->assertTrue( $data['test_mode'] );
+		$this->assertSame( 'https://vendor.example/terms', $data['terms_url'] );
+		$this->assertSame( 'https://vendor.example/refunds', $data['refund_policy_url'] );
+	}
+
+	/** @test */
+	public function sessionFallsBackToDefaultLegalUrls(): void {
+		$this->stubVendor(
+			array(
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'client_secret'   => 'pi_test_secret_abc',
+							'publishable_key' => 'pk_test_abc',
+							'amount'          => 4900,
+							'currency'        => 'usd',
+							'test_mode'       => true,
+							// No terms/refund URLs — a legacy vendor.
+						)
+					),
+				),
+			)
+		);
+
+		$controller = new CommerceController();
+		$response   = $controller->createSession( new \WP_REST_Request() );
+
+		$this->assertNotInstanceOf( WP_Error::class, $response );
+		$data = $response->get_data();
+		$this->assertSame( esc_url_raw( Payments::termsUrl() ), $data['terms_url'] );
+		$this->assertSame( esc_url_raw( Payments::refundPolicyUrl() ), $data['refund_policy_url'] );
+	}
+
+	/** @test */
+	public function sessionRejectsNonHttpLegalUrls(): void {
+		$this->stubVendor(
+			array(
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'client_secret'     => 'pi_test_secret_abc',
+							'publishable_key'   => 'pk_test_abc',
+							'amount'            => 4900,
+							'currency'          => 'usd',
+							'test_mode'         => true,
+							'terms_url'         => 'javascript:alert(1)',
+							'refund_policy_url' => 'ftp://vendor.example/refunds',
+						)
+					),
+				),
+			)
+		);
+
+		$controller = new CommerceController();
+		$response   = $controller->createSession( new \WP_REST_Request() );
+
+		$this->assertNotInstanceOf( WP_Error::class, $response );
+		$data = $response->get_data();
+		$this->assertSame( esc_url_raw( Payments::termsUrl() ), $data['terms_url'] );
+		$this->assertSame( esc_url_raw( Payments::refundPolicyUrl() ), $data['refund_policy_url'] );
 	}
 
 	/** @test */
@@ -457,5 +520,192 @@ class CommerceTest extends WP_UnitTestCase {
 		$this->assertTrue( License::isLicensed() );
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( Payments::zipUrl(), $result->get_error_data()['zip_url'] );
+	}
+
+	/** @test */
+	public function vendorVerifyForwardsConsentTimestamp(): void {
+		$captured = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args ) use ( &$captured ) {
+				$captured = json_decode( (string) $args['body'], true );
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array() ),
+				);
+			},
+			10,
+			2
+		);
+
+		$consentAt = time();
+
+		$vendor = new Vendor( 'https://vendor.example/api' );
+		$vendor->verify( 'pi_test_consent', $consentAt );
+
+		$this->assertIsArray( $captured );
+		$this->assertSame( $consentAt, $captured['terms_agreed_at'] );
+		$this->assertSame( 'pi_test_consent', $captured['payment_intent'] );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/** @test */
+	public function vendorVerifyOmitsConsentTimestampWhenAbsent(): void {
+		$captured = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args ) use ( &$captured ) {
+				$captured = json_decode( (string) $args['body'], true );
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array() ),
+				);
+			},
+			10,
+			2
+		);
+
+		$vendor = new Vendor( 'https://vendor.example/api' );
+		$vendor->verify( 'pi_test_no_consent' );
+
+		$this->assertIsArray( $captured );
+		$this->assertArrayNotHasKey( 'terms_agreed_at', $captured );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/** @test */
+	public function verifyRecordsConsentInLicenseRecord(): void {
+		add_filter( 'nvoos_content_graph/commerce/skip_base_plugin_detection', '__return_true' );
+
+		$this->stubVendor(
+			array(
+				// 1. Vendor /verify → license + signed download URL.
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'license_key'   => 'consent123',
+							'download_url'  => 'https://vendor.example/download/addon.zip',
+							'addon_version' => '1.0.4',
+							'amount'        => 4900,
+							'currency'      => 'usd',
+						)
+					),
+				),
+				// 2. Download of the signed URL → 404.
+				array(
+					'response' => array(
+						'code'    => 404,
+						'message' => 'Not Found',
+					),
+					'body'     => 'not found',
+				),
+			)
+		);
+
+		$consentAt = time();
+
+		$request = new \WP_REST_Request();
+		$request->set_param( 'payment_intent', 'pi_test_consent_paid' );
+		$request->set_param( 'terms_agreed_at', $consentAt );
+
+		$controller = new CommerceController();
+		$controller->verifyPayment( $request );
+
+		$this->assertTrue( License::isLicensed() );
+		$this->assertSame( $consentAt, License::get()['terms_agreed_at'] );
+	}
+
+	/** @test */
+	public function vendorVerifyForwardsBuyerEmail(): void {
+		$captured = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args ) use ( &$captured ) {
+				$captured = json_decode( (string) $args['body'], true );
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array() ),
+				);
+			},
+			10,
+			2
+		);
+
+		$vendor = new Vendor( 'https://vendor.example/api' );
+		$vendor->verify( 'pi_test_email', 0, ' buyer@example.com ' );
+
+		$this->assertIsArray( $captured );
+		$this->assertSame( 'buyer@example.com', $captured['buyer_email'] );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/** @test */
+	public function vendorVerifyOmitsBuyerEmailWhenAbsent(): void {
+		$captured = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args ) use ( &$captured ) {
+				$captured = json_decode( (string) $args['body'], true );
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array() ),
+				);
+			},
+			10,
+			2
+		);
+
+		$vendor = new Vendor( 'https://vendor.example/api' );
+		$vendor->verify( 'pi_test_no_email' );
+
+		$this->assertIsArray( $captured );
+		$this->assertArrayNotHasKey( 'buyer_email', $captured );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/** @test */
+	public function verifyRecordsBuyerEmailInLicenseRecord(): void {
+		add_filter( 'nvoos_content_graph/commerce/skip_base_plugin_detection', '__return_true' );
+
+		$this->stubVendor(
+			array(
+				// 1. Vendor /verify → license + signed download URL.
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'license_key'   => 'email123',
+							'download_url'  => 'https://vendor.example/download/addon.zip',
+							'addon_version' => '1.0.4',
+							'amount'        => 4900,
+							'currency'      => 'usd',
+						)
+					),
+				),
+				// 2. Download of the signed URL → 404.
+				array(
+					'response' => array(
+						'code'    => 404,
+						'message' => 'Not Found',
+					),
+					'body'     => 'not found',
+				),
+			)
+		);
+
+		$request = new \WP_REST_Request();
+		$request->set_param( 'payment_intent', 'pi_test_email_paid' );
+		$request->set_param( 'buyer_email', 'buyer@example.com' );
+
+		$controller = new CommerceController();
+		$controller->verifyPayment( $request );
+
+		$this->assertTrue( License::isLicensed() );
+		$this->assertSame( 'buyer@example.com', License::get()['buyer_email'] );
 	}
 }

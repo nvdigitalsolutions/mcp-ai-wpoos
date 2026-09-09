@@ -2,6 +2,12 @@
 
 ## 0.1.0 — Unreleased
 
+### New
+
+- **Checkout consent + legal links** — the `/session` response now carries `terms_url` and `refund_policy_url` (configurable in the storefront admin; defaults point at the vendor's published Terms of Service and Refund Policy), and `/verify` accepts an optional `terms_agreed_at` consent timestamp that is recorded on the license row (filling an empty value, never overwriting) as proof the buyer agreed to the Terms at purchase
+- **Buyer email on licenses** — `/verify` accepts an optional `buyer_email`; the intent's `receipt_email` (set by Stripe from the client's `confirmParams.receipt_email`) is authoritative, and the stored value is recorded in a new `buyer_email` license column (fill-once, never overwritten), including webhook-issued licenses
+- **Consent + email columns** — the licenses admin table shows when each buyer agreed to the Terms and their receipt/refund email
+
 ### Changed
 
 - Default product is now the **NV oOS Complete** bundle: `nvoos-oos-complete` added to the accepted products (legacy `nvoos-content-graph-ai` stays accepted), the default ZIP source and cache/download filenames target `nvdigital-open-operator-system-oos-complete-{VERSION}.zip` from the monorepo GitHub releases (`v*.*.*` tags), and the default sold version is `1.1.74`
@@ -16,6 +22,7 @@
 - Stripe webhook receiver (`POST /webhooks/stripe`) with signature verification and idempotent processing; refunds/disputes revoke the matching license
 - Per-IP rate limiting on the public endpoints
 - Storefront admin page: Stripe keys, price, currency, test mode, addon version, ZIP source, recent-license table with revoke action
+- Storefront admin fields for the Terms of Service and Refund Policy URLs shown at checkout
 
 ### Security
 

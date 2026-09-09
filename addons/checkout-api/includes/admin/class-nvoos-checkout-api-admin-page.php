@@ -183,6 +183,20 @@ class NVOOS_Checkout_API_Admin_Page {
 								<p class="description"><?php esc_html_e( 'https URL or absolute server path. Use {VERSION} as the version placeholder.', 'nvoos-checkout-api' ); ?></p>
 							</td>
 						</tr>
+						<tr>
+							<th scope="row"><label for="nvoos-checkout-terms"><?php esc_html_e( 'Terms of Service URL', 'nvoos-checkout-api' ); ?></label></th>
+							<td>
+								<input type="text" id="nvoos-checkout-terms" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[terms_url]" value="<?php echo esc_attr( $settings['terms_url'] ); ?>" class="large-text">
+								<p class="description"><?php esc_html_e( 'Shown next to the consent checkbox in the purchase modal. Leave blank to use the default.', 'nvoos-checkout-api' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="nvoos-checkout-refund"><?php esc_html_e( 'Refund Policy URL', 'nvoos-checkout-api' ); ?></label></th>
+							<td>
+								<input type="text" id="nvoos-checkout-refund" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[refund_policy_url]" value="<?php echo esc_attr( $settings['refund_policy_url'] ); ?>" class="large-text">
+								<p class="description"><?php esc_html_e( 'Shown next to the consent checkbox in the purchase modal. Leave blank to use the default.', 'nvoos-checkout-api' ); ?></p>
+							</td>
+						</tr>
 					</tbody>
 				</table>
 				<?php submit_button(); ?>
@@ -212,8 +226,10 @@ class NVOOS_Checkout_API_Admin_Page {
 		echo '<th>' . esc_html__( 'License key', 'nvoos-checkout-api' ) . '</th>';
 		echo '<th>' . esc_html__( 'Product', 'nvoos-checkout-api' ) . '</th>';
 		echo '<th>' . esc_html__( 'Site', 'nvoos-checkout-api' ) . '</th>';
+		echo '<th>' . esc_html__( 'Buyer email', 'nvoos-checkout-api' ) . '</th>';
 		echo '<th>' . esc_html__( 'Amount', 'nvoos-checkout-api' ) . '</th>';
 		echo '<th>' . esc_html__( 'Status', 'nvoos-checkout-api' ) . '</th>';
+		echo '<th>' . esc_html__( 'Terms agreed', 'nvoos-checkout-api' ) . '</th>';
 		echo '<th>' . esc_html__( 'Issued', 'nvoos-checkout-api' ) . '</th>';
 		echo '<th></th>';
 		echo '</tr></thead><tbody>';
@@ -224,8 +240,10 @@ class NVOOS_Checkout_API_Admin_Page {
 			echo '<td><code>' . esc_html( $row['license_key'] ) . '</code></td>';
 			echo '<td>' . esc_html( $row['product'] ) . '</td>';
 			echo '<td>' . esc_html( $row['site_url'] ) . '</td>';
+			echo '<td>' . ( empty( $row['buyer_email'] ) ? '—' : esc_html( $row['buyer_email'] ) ) . '</td>';
 			echo '<td>' . esc_html( number_format( (int) $row['amount'] / 100, 2 ) . ' ' . strtoupper( (string) $row['currency'] ) ) . '</td>';
 			echo '<td>' . esc_html( $row['status'] ) . '</td>';
+			echo '<td>' . ( empty( $row['terms_agreed_at'] ) ? '—' : esc_html( $row['terms_agreed_at'] ) ) . '</td>';
 			echo '<td>' . esc_html( $row['created_at'] ) . '</td>';
 			echo '<td>';
 			if ( ! $revoked ) {

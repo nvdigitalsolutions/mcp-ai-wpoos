@@ -15,9 +15,9 @@ sequenceDiagram
     WP->>V: POST /session {product, site_url, addon_version}
     V->>S: Create PaymentIntent (server-side amount + metadata)
     S-->>V: client_secret
-    V-->>WP: {client_secret, publishable_key, amount, currency, test_mode}
-    Note over WP,S: Payment Element iframe — card data goes to Stripe only
-    WP->>V: POST /verify {product, site_url, payment_intent}
+    V-->>WP: {client_secret, publishable_key, amount, currency, test_mode, terms_url, refund_policy_url}
+    Note over WP,S: Payment Element iframe — card data goes to Stripe only; buyer ticks the Terms of Service consent checkbox
+    WP->>V: POST /verify {product, site_url, payment_intent, terms_agreed_at, buyer_email}
     V->>S: Retrieve intent, verify status/amount/product/site binding
     V-->>WP: {license_key, download_url (signed, short-lived), addon_version}
     WP->>G: download_url() the signed ZIP
@@ -72,9 +72,15 @@ Response `200`:
   "publishable_key": "pk_live_…",
   "amount": 4900,
   "currency": "usd",
-  "test_mode": false
+  "test_mode": false,
+  "terms_url": "https://nvdigitalsolutions.com/terms-of-service",
+  "refund_policy_url": "https://nvdigitalsolutions.com/refund-policy"
 }
 ```
+
+`terms_url` and `refund_policy_url` are the authoritative links rendered next
+to the Terms-of-Service consent checkbox in the purchase modal. The plugin
+falls back to its own filterable defaults when a legacy vendor omits them.
 
 Errors: `402` price mismatch, `424` checkout not configured, `429` rate
 limited, `502` Stripe failure. All errors are `{"message": "…"}`.
@@ -87,9 +93,26 @@ Request JSON:
 {
   "product": "nvoos-oos-complete",
   "site_url": "https://customer-site.example",
-  "payment_intent": "pi_…"
+  "payment_intent": "pi_…",
+  "terms_agreed_at": 1757400000,
+  "buyer_email": "buyer@example.com"
 }
 ```
+
+`terms_agreed_at` is an **optional** Unix timestamp of the buyer's consent to
+the Terms of Service, captured by the consent checkbox in the purchase modal
+(absent on webhook-issued licenses, which have no browser). When present and
+plausible (within the last 7 days, not more than 10 minutes in the future),
+it is recorded on the license row — filling an empty value, never
+overwriting an existing one — as proof of acceptance at purchase time.
+
+`buyer_email` is an **optional** buyer receipt/refund address collected by
+the purchase modal (prefilled with the logged-in admin's email). The client
+also attaches it to the PaymentIntent via `confirmParams.receipt_email` so
+Stripe emails the payment receipt; on verification the vendor prefers the
+intent's `receipt_email` (authoritative) over the request param and stores
+the result in the license row's `buyer_email` column (fill-once, never
+overwritten).
 
 Server-side checks before issuing anything:
 
@@ -180,3 +203,5 @@ release publishing) see `addons/checkout-api/README.md`.
 | `nvoos_content_graph/payments/addon_version` | Version pinned in payloads + fallback URL (NV oOS release version) |
 | `nvoos_content_graph/payments/addon_zip_url` | Fallback ZIP URL when the vendor returns no `download_url` |
 | `nvoos_content_graph/payments/fallback_url` | Product-page redirect target when the checkout endpoint is unreachable (default: the GitHub releases page; empty = disabled) |
+| `nvoos_content_graph/payments/terms_url` | Client-side Terms of Service URL fallback (vendor session response is authoritative) |
+| `nvoos_content_graph/payments/refund_policy_url` | Client-side Refund Policy URL fallback (vendor session response is authoritative) |

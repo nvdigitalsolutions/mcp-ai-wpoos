@@ -24,6 +24,9 @@
 	var overlay = null;
 	var dialog = null;
 	var errorBox = null;
+	var consentCheckbox = null;
+	var consentAt = 0;
+	var emailInput = null;
 	var busy = false;
 	var verifying = false;
 
@@ -44,6 +47,22 @@
 			node.textContent = text;
 		}
 		return node;
+	}
+
+	/**
+	 * Build an anchor that opens in a new tab, safe by construction.
+	 *
+	 * @param  {string} klass CSS class.
+	 * @param  {string} text  Link text.
+	 * @param  {string} href  URL (comes pre-sanitized from the REST response).
+	 * @return {HTMLElement}
+	 */
+	function linkEl( klass, text, href ) {
+		var a = el( 'a', klass, text );
+		a.href = href;
+		a.target = '_blank';
+		a.rel = 'noopener noreferrer';
+		return a;
 	}
 
 	/**
@@ -135,10 +154,111 @@
 	 */
 	function setBusy( value ) {
 		busy = value;
-		var payBtn = dialog.querySelector( '.nvoos-cg-pay-btn' );
-		if ( payBtn ) {
-			payBtn.disabled = value;
+		updatePayState();
+	}
+
+	/**
+	 * Enable the pay button only when a payment session exists, the buyer
+	 * has entered a valid email, AND the Terms of Service consent checkbox
+	 * is ticked.
+	 *
+	 * @return {void}
+	 */
+	function updatePayState() {
+		if ( ! dialog ) {
+			return;
 		}
+		var payBtn = dialog.querySelector( '.nvoos-cg-pay-btn' );
+		if ( ! payBtn ) {
+			return;
+		}
+		var hasSecret = Boolean( payBtn.dataset.clientSecret );
+		var email = emailInput ? emailInput.value.trim() : '';
+		payBtn.disabled = busy || ! hasSecret || ! consentCheckbox || ! consentCheckbox.checked || ! isValidEmail( email );
+	}
+
+	/**
+	 * Loose client-side email check (server re-validates via is_email()).
+	 *
+	 * @param  {string} value Candidate address.
+	 * @return {boolean}
+	 */
+	function isValidEmail( value ) {
+		return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test( value );
+	}
+
+	/**
+	 * Build the buyer-email row, prefilled with the current user's address.
+	 *
+	 * The email is attached to the Stripe PaymentIntent via
+	 * confirmParams.receipt_email (so Stripe emails the receipt) and sent to
+	 * the vendor on /payments/verify, which stores it on the license row so
+	 * refund requests can be matched to the right transaction.
+	 *
+	 * @return {HTMLElement}
+	 */
+	function renderEmailRow() {
+		var row = el( 'div', 'nvoos-cg-email-row' );
+
+		var label = el( 'label', 'nvoos-cg-email-label', i18n.email_label || 'Email for receipt and refunds' );
+		label.htmlFor = 'nvoos-cg-buyer-email';
+		row.appendChild( label );
+
+		emailInput = document.createElement( 'input' );
+		emailInput.type = 'email';
+		emailInput.id = 'nvoos-cg-buyer-email';
+		emailInput.className = 'nvoos-cg-email-input';
+		emailInput.placeholder = i18n.email_placeholder || 'you@example.com';
+		emailInput.value = String( config.buyer_email || '' );
+		emailInput.addEventListener( 'input', updatePayState );
+		row.appendChild( emailInput );
+
+		return row;
+	}
+
+	/**
+	 * Build the Terms of Service consent row (checkbox + policy links).
+	 *
+	 * Ticking the checkbox records the consent timestamp and is the only
+	 * way to unlock the pay button. The timestamp is sent with the verify
+	 * request and stored on the license as proof of acceptance.
+	 *
+	 * @param  {Object} data Session response (may carry vendor URLs).
+	 * @return {HTMLElement}
+	 */
+	function renderConsent( data ) {
+		data = data || {};
+
+		var termsUrl = data.terms_url || config.terms_url || '';
+		var refundUrl = data.refund_policy_url || config.refund_policy_url || '';
+
+		consentCheckbox = document.createElement( 'input' );
+		consentCheckbox.type = 'checkbox';
+		consentCheckbox.id = 'nvoos-cg-terms-consent';
+		consentCheckbox.className = 'nvoos-cg-terms-checkbox';
+		consentCheckbox.addEventListener( 'change', function () {
+			consentAt = consentCheckbox.checked ? Math.floor( Date.now() / 1000 ) : 0;
+			updatePayState();
+		} );
+
+		var label = el( 'label', 'nvoos-cg-terms-label' );
+		label.htmlFor = 'nvoos-cg-terms-consent';
+		label.appendChild( consentCheckbox );
+		label.appendChild( document.createTextNode( ' ' + ( i18n.terms_consent || 'I have read and agree to the Terms of Service and the Refund Policy.' ) + ' ' ) );
+
+		if ( termsUrl ) {
+			label.appendChild( linkEl( 'nvoos-cg-terms-link', i18n.terms_link || 'Terms of Service', termsUrl ) );
+		}
+		if ( refundUrl ) {
+			if ( termsUrl ) {
+				label.appendChild( document.createTextNode( ' · ' ) );
+			}
+			label.appendChild( linkEl( 'nvoos-cg-terms-link', i18n.refund_link || 'Refund Policy', refundUrl ) );
+		}
+
+		var row = el( 'div', 'nvoos-cg-terms-row' );
+		row.appendChild( label );
+		return row;
 	}
 
 	/**
@@ -159,6 +279,9 @@
 		stripe = null;
 		busy = false;
 		verifying = false;
+		consentCheckbox = null;
+		consentAt = 0;
+		emailInput = null;
 		if ( overlay && overlay.parentNode ) {
 			overlay.parentNode.removeChild( overlay );
 		}
@@ -190,6 +313,7 @@
 		var modalBody = el( 'div', 'nvoos-cg-modal-body' );
 		modalBody.appendChild( el( 'p', 'nvoos-cg-price', config.price_label || '' ) );
 		modalBody.appendChild( el( 'p', 'nvoos-cg-secure-note', i18n.secure_note || '' ) );
+		modalBody.appendChild( renderEmailRow() );
 
 		errorBox = el( 'div', 'nvoos-cg-error' );
 		errorBox.style.display = 'none';
@@ -338,7 +462,11 @@
 				clientSecret: result.data.client_secret,
 				appearance: { theme: 'stripe' }
 			} );
-			paymentElement = elements.create( 'paymentElement' );
+			// The plugin collects the buyer email itself (receipt + refund
+			// matching); keep the Stripe iframe from asking for it again.
+			paymentElement = elements.create( 'paymentElement', {
+				fields: { billingDetails: { email: 'never' } }
+			} );
 			paymentElement.mount( payBox );
 
 			if ( result.data.test_mode ) {
@@ -346,8 +474,11 @@
 				modalBody.appendChild( el( 'p', 'nvoos-cg-test-mode', i18n.test_mode || '' ) );
 			}
 
+			var body = dialog.querySelector( '.nvoos-cg-modal-body' );
+			body.appendChild( renderConsent( result.data ) );
+
 			payBtn.dataset.clientSecret = result.data.client_secret;
-			payBtn.disabled = false;
+			updatePayState();
 		} ).catch( function () {
 			// Network-level failure (fetch rejection): the endpoint is
 			// unavailable — fall back to the product page.
@@ -362,6 +493,15 @@
 	 */
 	function handlePayClick() {
 		if ( busy ) {
+			return;
+		}
+		if ( ! consentCheckbox || ! consentCheckbox.checked ) {
+			showError( i18n.terms_required || 'Please agree to the Terms of Service and Refund Policy to continue.' );
+			return;
+		}
+		var buyerEmail = emailInput ? emailInput.value.trim() : '';
+		if ( ! isValidEmail( buyerEmail ) ) {
+			showError( i18n.email_invalid || 'Please enter a valid email address for your receipt.' );
 			return;
 		}
 		setBusy( true );
@@ -394,7 +534,10 @@
 
 		stripe.confirmPayment( {
 			elements: elements,
-			confirmParams: { return_url: window.location.href },
+			confirmParams: {
+				receipt_email: buyerEmail,
+				return_url: window.location.href
+			},
 			redirect: 'if_required'
 		} ).then( function ( result ) {
 			if ( result.error ) {
@@ -442,7 +585,19 @@
 		payBox.innerHTML = '';
 		payBox.appendChild( spinner );
 
-		apiPost( '/payments/verify', { payment_intent: paymentIntentId } ).then( function ( result ) {
+		var verifyBody = { payment_intent: paymentIntentId };
+		if ( consentAt > 0 ) {
+			// Omit the field (rather than send 0) when no consent timestamp
+			// exists — e.g. the interrupted-payment recovery path — because
+			// the endpoint rejects out-of-range values.
+			verifyBody.terms_agreed_at = consentAt;
+		}
+		var buyerEmail = emailInput ? emailInput.value.trim() : '';
+		if ( isValidEmail( buyerEmail ) ) {
+			verifyBody.buyer_email = buyerEmail;
+		}
+
+		apiPost( '/payments/verify', verifyBody ).then( function ( result ) {
 			var data = result.data || {};
 
 			if ( ! result.ok ) {

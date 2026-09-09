@@ -31,6 +31,17 @@ class NVOOS_Checkout_API_Settings {
 	public const DEFAULT_ADDON_VERSION = '1.1.74';
 
 	/**
+	 * Default legal-document URLs surfaced at checkout.
+	 *
+	 * Buyers must agree to the Terms of Service and acknowledge the Refund
+	 * Policy before paying; the checkout client renders these links next to
+	 * the consent checkbox and records the agreement timestamp with the
+	 * license. Override via settings (or leave blank for the defaults).
+	 */
+	public const DEFAULT_TERMS_URL         = 'https://nvdigitalsolutions.com/terms-of-service';
+	public const DEFAULT_REFUND_POLICY_URL = 'https://nvdigitalsolutions.com/refund-policy';
+
+	/**
 	 * Default ZIP source pattern.
 	 *
 	 * Serves the NV oOS Complete bundle release asset by default;
@@ -58,6 +69,8 @@ class NVOOS_Checkout_API_Settings {
 			'test_mode'              => true,
 			'addon_version'          => self::DEFAULT_ADDON_VERSION,
 			'zip_source'             => self::default_zip_source(),
+			'terms_url'              => self::DEFAULT_TERMS_URL,
+			'refund_policy_url'      => self::DEFAULT_REFUND_POLICY_URL,
 		);
 
 		$stored = get_option( self::OPTION, array() );
@@ -184,6 +197,31 @@ class NVOOS_Checkout_API_Settings {
 	}
 
 	/**
+	 * The Terms of Service URL shown at checkout.
+	 *
+	 * Falls back to the default when unset or invalid — the consent flow
+	 * must always have a terms link.
+	 *
+	 * @return string
+	 */
+	public static function terms_url(): string {
+		$url = esc_url_raw( (string) self::get( 'terms_url', self::DEFAULT_TERMS_URL ) );
+		return '' !== $url ? $url : self::DEFAULT_TERMS_URL;
+	}
+
+	/**
+	 * The Refund Policy URL shown at checkout.
+	 *
+	 * Falls back to the default when unset or invalid.
+	 *
+	 * @return string
+	 */
+	public static function refund_policy_url(): string {
+		$url = esc_url_raw( (string) self::get( 'refund_policy_url', self::DEFAULT_REFUND_POLICY_URL ) );
+		return '' !== $url ? $url : self::DEFAULT_REFUND_POLICY_URL;
+	}
+
+	/**
 	 * Sanitize the settings array on save.
 	 *
 	 * @param mixed $raw Raw submitted values.
@@ -231,6 +269,14 @@ class NVOOS_Checkout_API_Settings {
 			// Accept https URLs and absolute local paths only.
 			if ( '' === $source || 0 === strpos( $source, 'https://' ) || 0 === strpos( $source, '/' ) ) {
 				$sanitized['zip_source'] = $source;
+			}
+		}
+
+		// Legal-document URLs: empty falls back to the built-in defaults via
+		// the getters, so the checkout consent links can never disappear.
+		foreach ( array( 'terms_url', 'refund_policy_url' ) as $key ) {
+			if ( isset( $raw[ $key ] ) ) {
+				$sanitized[ $key ] = esc_url_raw( (string) $raw[ $key ] );
 			}
 		}
 

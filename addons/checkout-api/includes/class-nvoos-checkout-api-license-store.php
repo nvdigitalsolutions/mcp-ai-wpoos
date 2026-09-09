@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class NVOOS_Checkout_API_License_Store {
 
 	public const TABLE_NAME     = 'nvoos_checkout_licenses';
-	public const DB_VERSION     = '1';
+	public const DB_VERSION     = '3';
 	public const DB_VERSION_KEY = 'nvoos_checkout_licenses_db_version';
 
 	public const STATUS_ACTIVE  = 'active';
@@ -61,6 +61,8 @@ class NVOOS_Checkout_API_License_Store {
 			amount INT(11) NOT NULL DEFAULT 0,
 			currency CHAR(3) NOT NULL DEFAULT 'usd',
 			addon_version VARCHAR(16) NOT NULL DEFAULT '',
+			buyer_email VARCHAR(255) NOT NULL DEFAULT '',
+			terms_agreed_at DATETIME NULL DEFAULT NULL,
 			status VARCHAR(16) NOT NULL DEFAULT 'active',
 			created_at DATETIME NOT NULL,
 			PRIMARY KEY  (id),
@@ -85,6 +87,11 @@ class NVOOS_Checkout_API_License_Store {
 
 		$now = current_time( 'mysql', true );
 
+		// NULL (not '') for the DATETIME column when consent was never
+		// recorded — the webhook issuance path has no browser consent.
+		$terms_agreed_at = (string) ( $data['terms_agreed_at'] ?? '' );
+		$terms_agreed_at = '' !== $terms_agreed_at ? $terms_agreed_at : null;
+
 		$inserted = $wpdb->insert(
 			self::table_name(),
 			array(
@@ -96,10 +103,12 @@ class NVOOS_Checkout_API_License_Store {
 				'amount'                => (int) ( $data['amount'] ?? 0 ),
 				'currency'              => (string) ( $data['currency'] ?? 'usd' ),
 				'addon_version'         => (string) ( $data['addon_version'] ?? '' ),
+				'buyer_email'           => (string) ( $data['buyer_email'] ?? '' ),
+				'terms_agreed_at'       => $terms_agreed_at,
 				'status'                => self::STATUS_ACTIVE,
 				'created_at'            => $now,
 			),
-			array( '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s' )
+			array( '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
 
 		if ( false === $inserted ) {
@@ -121,9 +130,11 @@ class NVOOS_Checkout_API_License_Store {
 	public static function get_by_key( string $license_key ) {
 		global $wpdb;
 
-		$row = $wpdb->get_row(
+		$table = self::table_name();
+		$row   = $wpdb->get_row(
 			$wpdb->prepare(
-				'SELECT * FROM ' . self::table_name() . ' WHERE license_key = %s LIMIT 1',
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name comes from a class constant; values are prepared.
+				"SELECT * FROM {$table} WHERE license_key = %s LIMIT 1",
 				$license_key
 			),
 			ARRAY_A
@@ -141,9 +152,11 @@ class NVOOS_Checkout_API_License_Store {
 	public static function get_by_payment_intent( string $payment_intent ) {
 		global $wpdb;
 
-		$row = $wpdb->get_row(
+		$table = self::table_name();
+		$row   = $wpdb->get_row(
 			$wpdb->prepare(
-				'SELECT * FROM ' . self::table_name() . ' WHERE stripe_payment_intent = %s LIMIT 1',
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name comes from a class constant; values are prepared.
+				"SELECT * FROM {$table} WHERE stripe_payment_intent = %s LIMIT 1",
 				$payment_intent
 			),
 			ARRAY_A
@@ -173,6 +186,63 @@ class NVOOS_Checkout_API_License_Store {
 	}
 
 	/**
+	 * Record the buyer's Terms-of-Service consent timestamp on a license.
+	 *
+	 * Only fills an empty value — a consent timestamp, once recorded, is
+	 * never overwritten. Used by /verify when the license was already
+	 * issued by the payment webhook before the browser completed its flow.
+	 *
+	 * @param string $license_key      License key.
+	 * @param string $terms_agreed_at  GMT MySQL datetime (Y-m-d H:i:s).
+	 * @return bool True when a row was updated.
+	 */
+	public static function set_terms_agreed( string $license_key, string $terms_agreed_at ): bool {
+		global $wpdb;
+
+		// The column only ever holds NULL (no consent yet) or a valid
+		// datetime, so IS NULL alone gates the fill — comparing against ''
+		// trips MySQL 8 strict mode ("Incorrect DATETIME value").
+		$table   = self::table_name();
+		$updated = $wpdb->query(
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name comes from a class constant; values are prepared.
+				"UPDATE {$table} SET terms_agreed_at = %s WHERE license_key = %s AND terms_agreed_at IS NULL",
+				$terms_agreed_at,
+				$license_key
+			)
+		);
+
+		return false !== $updated;
+	}
+
+	/**
+	 * Record the buyer's receipt/refund email on a license.
+	 *
+	 * Only fills an empty value — an email, once recorded, is never
+	 * overwritten. Used by /verify when the license was already issued by
+	 * the payment webhook before the browser completed its flow.
+	 *
+	 * @param string $license_key License key.
+	 * @param string $email       Sanitized buyer email.
+	 * @return bool True when a row was updated.
+	 */
+	public static function set_buyer_email( string $license_key, string $email ): bool {
+		global $wpdb;
+
+		$table   = self::table_name();
+		$updated = $wpdb->query(
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name comes from a class constant; values are prepared.
+				"UPDATE {$table} SET buyer_email = %s WHERE license_key = %s AND buyer_email = ''",
+				$email,
+				$license_key
+			)
+		);
+
+		return false !== $updated;
+	}
+
+	/**
 	 * The most recent licenses (admin table).
 	 *
 	 * @param int $limit Row limit.
@@ -181,9 +251,11 @@ class NVOOS_Checkout_API_License_Store {
 	public static function recent( int $limit = 50 ): array {
 		global $wpdb;
 
-		$rows = $wpdb->get_results(
+		$table = self::table_name();
+		$rows  = $wpdb->get_results(
 			$wpdb->prepare(
-				'SELECT * FROM ' . self::table_name() . ' ORDER BY id DESC LIMIT %d',
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name comes from a class constant; values are prepared.
+				"SELECT * FROM {$table} ORDER BY id DESC LIMIT %d",
 				$limit
 			),
 			ARRAY_A
@@ -200,6 +272,8 @@ class NVOOS_Checkout_API_License_Store {
 	public static function count(): int {
 		global $wpdb;
 
-		return (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . self::table_name() );
+		$table = self::table_name();
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a class constant; no user input in this query.
+		return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
 	}
 }
