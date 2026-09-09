@@ -22,11 +22,12 @@
  *    fatal, so the ENTIRE body is wrapped in a runtime
  *    `! defined( 'WP_MCP_AI_PATH' )` block (financial-init deviation 5
  *    precedent).
- * 5. New standalone-only tool wiring (financial-init deviation 6
- *    precedent): a `wp_mcp_ai_pro_tools` filter plus
- *    `wp_mcp_ai_pro_register_document_generation_ecosystem_tools()` — both
- *    start with empty maps and fill as the document-generation tool batches
- *    land.
+	 * 5. New standalone-only tool wiring (financial-init deviation 6
+	 *    precedent): a `wp_mcp_ai_pro_tools` filter plus
+	 *    `wp_mcp_ai_pro_register_document_generation_ecosystem_tools()` —
+	 *    both carry all thirty-four ported tools (the eleven always-on
+	 *    email/QMS tools, the twenty-one toolkit-gated tools, the two
+	 *    tree-only OCR tools, and the tree-only import-blueprint tool).
  *
  * @package NvoosContentGraphPro
  * @since   1.1.0
@@ -140,7 +141,42 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 	 * @return array Extended tool map.
 	 */
 	function wp_mcp_ai_pro_register_document_generation_tools( $tools ) {
-		$nvoos_content_graph_pro_docgen_tools = array();
+		$nvoos_content_graph_pro_docgen_tools = array(
+			'WP_MCP_AI_Tool_Generate_Email_Template'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-generate-email-template.php',
+			'WP_MCP_AI_Tool_QMS_Create_Controlled_Document' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-qms-create-controlled-document.php',
+			'WP_MCP_AI_Tool_QMS_Submit_For_Review'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-qms-submit-for-review.php',
+			'WP_MCP_AI_Tool_QMS_Approve_Document'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-qms-approve-document.php',
+			'WP_MCP_AI_Tool_QMS_Release_Document'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-qms-release-document.php',
+			'WP_MCP_AI_Tool_QMS_Supersede_Document'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-qms-supersede-document.php',
+			'WP_MCP_AI_Tool_QMS_Mark_Obsolete'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-qms-mark-obsolete.php',
+			'WP_MCP_AI_Tool_QMS_Sign_Document'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-qms-sign-document.php',
+			'WP_MCP_AI_Tool_QMS_List_Controlled_Documents' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-qms-list-controlled-documents.php',
+			'WP_MCP_AI_Tool_QMS_Get_Audit_Trail'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-qms-get-audit-trail.php',
+			'WP_MCP_AI_Tool_QMS_Schedule_Review'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-qms-schedule-review.php',
+			'WP_MCP_AI_Tool_Pro_PDF'                       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-pro-pdf.php',
+			'WP_MCP_AI_Tool_Pro_Word'                      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-pro-word.php',
+			'WP_MCP_AI_Tool_Pro_Excel_Document'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-pro-excel-document.php',
+			'WP_MCP_AI_Tool_Generate_PDF'                  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-generate-pdf.php',
+			'WP_MCP_AI_Tool_Generate_Word'                 => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-generate-word.php',
+			'WP_MCP_AI_Tool_Generate_Excel'                => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-generate-excel.php',
+			'WP_MCP_AI_Tool_Extract_PDF_Text'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-extract-pdf-text.php',
+			'WP_MCP_AI_Tool_OCR_PDF_Text'                  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-ocr-pdf-text.php',
+			'WP_MCP_AI_Tool_Pro_Document_OCR'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-pro-document-ocr.php',
+			'WP_MCP_AI_Tool_HTML_To_PDF'                   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-html-to-pdf.php',
+			'WP_MCP_AI_Tool_Merge_PDFs'                    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-merge-pdfs.php',
+			'WP_MCP_AI_Tool_Add_Watermark_To_PDF'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-add-watermark-to-pdf.php',
+			'WP_MCP_AI_Tool_Generate_Invoice_PDF'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-generate-invoice-pdf.php',
+			'WP_MCP_AI_Tool_Excel_Data_Import'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-excel-data-import.php',
+			'WP_MCP_AI_Tool_Excel_Data_Export'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-excel-data-export.php',
+			'WP_MCP_AI_Tool_DocGen_Capture_Style_Memory'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-docgen-capture-style-memory.php',
+			'WP_MCP_AI_Tool_Get_Expired_Documents'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-get-expired-documents.php',
+			'WP_MCP_AI_Tool_Get_Uninvoiced_Orders'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-get-uninvoiced-orders.php',
+			'WP_MCP_AI_Tool_Archive_Documents'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-archive-documents.php',
+			'WP_MCP_AI_Tool_Generate_Invoice_Batch'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-generate-invoice-batch.php',
+			'WP_MCP_AI_Tool_Pro_Batch_OCR'                 => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-pro-batch-ocr.php',
+			'WP_MCP_AI_Tool_Pro_Unlimited_OCR'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/class-wp-mcp-ai-tool-pro-unlimited-ocr.php',
+			'WP_MCP_AI_Tool_Import_Document_Generation_Blueprint' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/document-generation/examples/class-wp-mcp-ai-tool-import-document-generation-blueprint.php',
+		);
 
 		return array_merge( $tools, $nvoos_content_graph_pro_docgen_tools );
 	}
@@ -162,7 +198,44 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 			return;
 		}
 
-		foreach ( array() as $nvoos_content_graph_pro_tool_class ) {
+		foreach (
+			array(
+				'WP_MCP_AI_Tool_Generate_Email_Template',
+				'WP_MCP_AI_Tool_QMS_Create_Controlled_Document',
+				'WP_MCP_AI_Tool_QMS_Submit_For_Review',
+				'WP_MCP_AI_Tool_QMS_Approve_Document',
+				'WP_MCP_AI_Tool_QMS_Release_Document',
+				'WP_MCP_AI_Tool_QMS_Supersede_Document',
+				'WP_MCP_AI_Tool_QMS_Mark_Obsolete',
+				'WP_MCP_AI_Tool_QMS_Sign_Document',
+				'WP_MCP_AI_Tool_QMS_List_Controlled_Documents',
+				'WP_MCP_AI_Tool_QMS_Get_Audit_Trail',
+				'WP_MCP_AI_Tool_QMS_Schedule_Review',
+				'WP_MCP_AI_Tool_Pro_PDF',
+				'WP_MCP_AI_Tool_Pro_Word',
+				'WP_MCP_AI_Tool_Pro_Excel_Document',
+				'WP_MCP_AI_Tool_Generate_PDF',
+				'WP_MCP_AI_Tool_Generate_Word',
+				'WP_MCP_AI_Tool_Generate_Excel',
+				'WP_MCP_AI_Tool_Extract_PDF_Text',
+				'WP_MCP_AI_Tool_OCR_PDF_Text',
+				'WP_MCP_AI_Tool_Pro_Document_OCR',
+				'WP_MCP_AI_Tool_HTML_To_PDF',
+				'WP_MCP_AI_Tool_Merge_PDFs',
+				'WP_MCP_AI_Tool_Add_Watermark_To_PDF',
+				'WP_MCP_AI_Tool_Generate_Invoice_PDF',
+				'WP_MCP_AI_Tool_Excel_Data_Import',
+				'WP_MCP_AI_Tool_Excel_Data_Export',
+				'WP_MCP_AI_Tool_DocGen_Capture_Style_Memory',
+				'WP_MCP_AI_Tool_Get_Expired_Documents',
+				'WP_MCP_AI_Tool_Get_Uninvoiced_Orders',
+				'WP_MCP_AI_Tool_Archive_Documents',
+				'WP_MCP_AI_Tool_Generate_Invoice_Batch',
+				'WP_MCP_AI_Tool_Pro_Batch_OCR',
+				'WP_MCP_AI_Tool_Pro_Unlimited_OCR',
+				'WP_MCP_AI_Tool_Import_Document_Generation_Blueprint',
+			) as $nvoos_content_graph_pro_tool_class
+		) {
 			$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
 			try {
 				$nvoos_content_graph_pro_parent_registry->register( $nvoos_content_graph_pro_adapter );

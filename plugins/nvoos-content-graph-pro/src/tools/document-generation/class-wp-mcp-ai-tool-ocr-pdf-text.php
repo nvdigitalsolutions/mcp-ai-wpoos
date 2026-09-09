@@ -1,0 +1,572 @@
+<?php
+/**
+ * WP_MCP_AI_Tool_OCR_PDF_Text (ecosystem port - Wave F2, document-generation tool batch).
+ *
+ * Ported from the base Pro addon's `addons/pro/includes/tools/document-generation/` directory for the
+ * standalone `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro addon owns the
+ * class in monolith installs - the addon boots nothing when `WP_MCP_AI_PRO_PATH` is defined (see
+ * the plugin entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain `nvoos-content-graph-pro`;
+ * the base-owned interface/Logger/trait requires gain exists-check seams resolving from the addon's D8-compat `src/` copies; the OCR-service require gains a class_exists seam resolving from `src/services/`; phpcbf whitespace on the upstream indentation (image-production sharp-tool precedent).
+ *
+ * @package WP_MCP_AI_Pro
+ * @subpackage Document_Generation
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+declare(strict_types=1);
+
+
+
+
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+// Standalone seam (documented deviation): the base-owned interface and
+// Logger requires gain exists-check seams resolving from the addon's
+// D8-compat copies (the monorepo root classmap serves the base copies
+// monolith).
+if ( ! interface_exists( 'WP_MCP_AI_Tool_Interface' ) ) {
+	$nvoos_content_graph_pro_tool_interface = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/interfaces/interface-wp-mcp-ai-tool.php';
+	if ( file_exists( $nvoos_content_graph_pro_tool_interface ) ) {
+		require_once $nvoos_content_graph_pro_tool_interface;
+	}
+}
+if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
+	$nvoos_content_graph_pro_logger = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-logger.php';
+	if ( file_exists( $nvoos_content_graph_pro_logger ) ) {
+		require_once $nvoos_content_graph_pro_logger;
+	}
+}
+
+
+// Load the chat response trait from base plugin.
+if ( ! trait_exists( 'WP_MCP_AI_Tool_Chat_Response' ) ) {
+	$nvoos_content_graph_pro_tool_chat_response = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/trait-wp-mcp-ai-tool-chat-response.php';
+	if ( file_exists( $nvoos_content_graph_pro_tool_chat_response ) ) {
+		require_once $nvoos_content_graph_pro_tool_chat_response;
+	}
+}
+
+// Load OCR service.
+if ( ! class_exists( 'WP_MCP_AI_OCR_Service' ) ) {
+	$nvoos_content_graph_pro_ocr_service = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/services/class-wp-mcp-ai-ocr-service.php';
+	if ( file_exists( $nvoos_content_graph_pro_ocr_service ) ) {
+		require_once $nvoos_content_graph_pro_ocr_service;
+	}
+}
+
+/**
+ * Extract text from scanned PDFs using OCR.
+ *
+ * Handles scanned/image-only PDF documents that don't contain
+ * machine-readable text. Uses multiple OCR providers with fallback.
+ *
+ * @since 1.3.0
+ */
+class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_slug() {
+		return 'ocr_pdf_text';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'OCR PDF Text Extraction', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_description() {
+		return __( 'Extract text from scanned or image-only PDF documents using OCR (Optical Character Recognition). Supports multiple OCR providers including OpenAI Vision, Google Gemini, Ollama, and Tesseract. Automatically detects if PDF needs OCR and applies image preprocessing for better accuracy.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_parameters_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'attachment_id' => array(
+					'type'        => 'integer',
+					'description' => __( 'WordPress attachment ID of the PDF file to extract text from.', 'nvoos-content-graph-pro' ),
+				),
+				'url'           => array(
+					'type'        => 'string',
+					'description' => __( 'URL of the PDF file to extract text from (alternative to attachment_id).', 'nvoos-content-graph-pro' ),
+				),
+				'max_pages'     => array(
+					'type'        => 'integer',
+					'description' => __( 'Maximum number of pages to process. Default: 10 (OCR is resource-intensive)', 'nvoos-content-graph-pro' ),
+				),
+				'provider'      => array(
+					'type'        => 'string',
+					'enum'        => array( 'auto', 'openai', 'gemini', 'ollama', 'tesseract' ),
+					'description' => __( 'OCR provider to use. "auto" selects best available. Default: auto', 'nvoos-content-graph-pro' ),
+				),
+				'preprocess'    => array(
+					'type'        => 'boolean',
+					'description' => __( 'Apply image preprocessing (grayscale, contrast, sharpening) for better OCR. Default: true', 'nvoos-content-graph-pro' ),
+				),
+				'language'      => array(
+					'type'        => 'string',
+					'description' => __( 'Language code for OCR (e.g., "eng" for English, "spa" for Spanish). Default: eng', 'nvoos-content-graph-pro' ),
+				),
+			),
+			'required'   => array(),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'pro',
+			'requires-capability', // read.
+			'read-only',
+			'requires-vision-model', // May use vision models.
+		);
+	}
+
+	/**
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
+	public function execute( array $arguments = array(), array $context = array() ) {
+		// Check user capability.
+		if ( ! current_user_can( 'read' ) ) {
+			return new WP_Error(
+				'permission_denied',
+				__(
+					'❌ **Permission Denied**
+
+You do not have permission to access files. The workflow will continue with other tasks.',
+					'nvoos-content-graph-pro'
+				)
+			);
+		}
+
+		// Get PDF file path.
+		$file_path = null;
+		$temp_file = null;
+
+		if ( ! empty( $arguments['attachment_id'] ) ) {
+			$attachment_id = absint( $arguments['attachment_id'] );
+			$file_path     = get_attached_file( $attachment_id );
+
+			if ( ! $file_path || ! file_exists( $file_path ) ) {
+				return new WP_Error(
+					'file_not_found',
+					sprintf(
+						/* translators: %d: attachment ID */
+						__(
+							'❌ **PDF File Not Found**
+
+The PDF file with attachment ID %d could not be found. This may be due to an incorrect attachment ID or the file may have been deleted.
+
+✅ The workflow will continue with other tasks.',
+							'nvoos-content-graph-pro'
+						),
+						$attachment_id
+					)
+				);
+			}
+		} elseif ( ! empty( $arguments['url'] ) ) {
+			// Validate the URL to prevent SSRF before downloading.
+			$url    = esc_url_raw( $arguments['url'] );
+			$scheme = wp_parse_url( $url, PHP_URL_SCHEME );
+			if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+				return new WP_Error(
+					'invalid_url',
+					__(
+						'❌ **Invalid URL**
+
+Only http and https URLs are supported.
+
+✅ The workflow will continue with other tasks.',
+						'nvoos-content-graph-pro'
+					)
+				);
+			}
+			$host = wp_parse_url( $url, PHP_URL_HOST );
+			if ( empty( $host ) ) {
+				return new WP_Error(
+					'invalid_url',
+					__(
+						'❌ **Invalid URL**
+
+Could not determine host from the provided URL.
+
+✅ The workflow will continue with other tasks.',
+						'nvoos-content-graph-pro'
+					)
+				);
+			}
+			// Resolve the hostname and reject private / reserved IP ranges (SSRF guard).
+			$resolved_ip = gethostbyname( $host );
+			if ( $resolved_ip === $host && false === filter_var( $host, FILTER_VALIDATE_IP ) ) {
+				return new WP_Error(
+					'invalid_url',
+					__(
+						'❌ **Invalid URL**
+
+URL hostname could not be resolved.
+
+✅ The workflow will continue with other tasks.',
+						'nvoos-content-graph-pro'
+					)
+				);
+			}
+			if ( false === filter_var( $resolved_ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+				return new WP_Error(
+					'invalid_url',
+					__(
+						'❌ **Invalid URL**
+
+URL resolves to a private or reserved address and cannot be fetched.
+
+✅ The workflow will continue with other tasks.',
+						'nvoos-content-graph-pro'
+					)
+				);
+			}
+			// Download PDF to a temp file, pinning the TCP connection to the already-resolved.
+			// IP address to prevent DNS-rebinding SSRF (a second gethostbyname() call inside.
+			// download_url() could return a different address after a short TTL expires).
+			$url_port  = wp_parse_url( $url, PHP_URL_PORT );
+			$url_path  = wp_parse_url( $url, PHP_URL_PATH );
+			$url_query = wp_parse_url( $url, PHP_URL_QUERY );
+			$safe_host = $resolved_ip . ( $url_port ? ':' . (int) $url_port : '' );
+			$safe_url  = $scheme . '://' . $safe_host . ( $url_path ? $url_path : '/' ) . ( $url_query ? '?' . $url_query : '' );
+
+			$response = wp_remote_get(
+				$safe_url,
+				array(
+					'timeout'     => 60,
+					'redirection' => 0,
+					'headers'     => array(
+						'Host' => $host . ( $url_port ? ':' . (int) $url_port : '' ),
+					),
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				return new WP_Error(
+					'download_failed',
+					sprintf(
+						/* translators: %s: error message */
+						__(
+							'❌ **Download Failed**
+
+Failed to download PDF from URL: %s
+
+✅ The workflow will continue with other tasks.',
+							'nvoos-content-graph-pro'
+						),
+						$response->get_error_message()
+					)
+				);
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+			if ( 200 !== $response_code ) {
+				return new WP_Error(
+					'download_failed',
+					sprintf(
+						/* translators: %d: HTTP response code */
+						__(
+							'❌ **Download Failed**
+
+The server returned HTTP %d.
+
+✅ The workflow will continue with other tasks.',
+							'nvoos-content-graph-pro'
+						),
+						(int) $response_code
+					)
+				);
+			}
+
+			$body = wp_remote_retrieve_body( $response );
+			if ( '' === $body ) {
+				return new WP_Error(
+					'download_failed',
+					__(
+						'❌ **Download Failed**
+.
+The downloaded file is empty.
+
+✅ The workflow will continue with other tasks.',
+						'nvoos-content-graph-pro'
+					)
+				);
+			}
+
+			if ( ! function_exists( 'wp_tempnam' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
+			$temp_file = wp_mcp_ai_tempnam( 'mcp_ai_pdf_', '.pdf' );
+			if ( is_wp_error( $temp_file ) ) {
+				$temp_file = wp_tempnam( 'mcp_ai_pdf_' ); // Fallback.
+			}
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			if ( false === file_put_contents( $temp_file, $body ) ) {
+				@unlink( $temp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				return new WP_Error(
+					'download_failed',
+					__(
+						'❌ **Download Failed**
+
+Failed to write downloaded PDF to a temporary file.
+
+✅ The workflow will continue with other tasks.',
+						'nvoos-content-graph-pro'
+					)
+				);
+			}
+
+			$file_path = $temp_file;
+		} else {
+			return new WP_Error(
+				'missing_input',
+				__(
+					'❌ **Missing Input**
+
+Either `attachment_id` or `url` parameter is required. Please provide one of these parameters.
+
+✅ The workflow will continue with other tasks.',
+					'nvoos-content-graph-pro'
+				)
+			);
+		}
+
+		// Validate it's a PDF.
+		$filetype  = wp_check_filetype( $file_path );
+		$mime_type = ! empty( $filetype['type'] ) ? $filetype['type'] : '';
+
+		if ( 'application/pdf' !== $mime_type ) {
+			if ( $temp_file ) {
+				@unlink( $temp_file );
+			}
+			return new WP_Error(
+				'invalid_file_type',
+				sprintf(
+					/* translators: %s: detected MIME type */
+					__(
+						'❌ **Invalid File Type**
+
+The file is not a valid PDF document (detected type: %s). Please provide a PDF file.
+
+✅ The workflow will continue with other tasks.',
+						'nvoos-content-graph-pro'
+					),
+					$mime_type
+				)
+			);
+		}
+
+		// Prepare OCR options.
+		$ocr_options = array(
+			'max_pages'  => ! empty( $arguments['max_pages'] ) ? min( absint( $arguments['max_pages'] ), 50 ) : 10, // Cap at 50 pages.
+			'provider'   => ! empty( $arguments['provider'] ) ? sanitize_text_field( $arguments['provider'] ) : 'auto',
+			'preprocess' => isset( $arguments['preprocess'] ) ? (bool) $arguments['preprocess'] : true,
+			'language'   => ! empty( $arguments['language'] ) ? sanitize_text_field( $arguments['language'] ) : 'eng',
+			'dpi'        => 300, // High DPI for better quality.
+		);
+
+		try {
+			$ocr_service = new WP_MCP_AI_OCR_Service();
+
+			// Check if PDF needs OCR.
+			$is_scanned = $ocr_service->is_scanned_pdf( $file_path );
+
+			// Extract text using OCR.
+			$start_time = microtime( true );
+			$text       = $ocr_service->extract_text_from_pdf( $file_path, $ocr_options );
+			$duration   = microtime( true ) - $start_time;
+
+			// Clean up temp file if we downloaded one.
+			if ( $temp_file ) {
+				@unlink( $temp_file );
+			}
+
+			if ( is_wp_error( $text ) ) {
+				return new WP_Error(
+					'ocr_failed',
+					sprintf(
+						/* translators: %s: error message */
+						__(
+							'❌ **OCR Extraction Failed**
+
+%s
+
+This may be due to:
+- Provider unavailability or API issues
+- Document complexity or poor image quality
+- Unsupported document format
+
+✅ The workflow will continue with other tasks.',
+							'nvoos-content-graph-pro'
+						),
+						$text->get_error_message()
+					)
+				);
+			}
+
+			$word_count = str_word_count( $text );
+			$char_count = strlen( $text );
+
+			// Log successful OCR.
+			WP_MCP_AI_Logger::log_event(
+				'ocr_extraction_success',
+				'Successfully extracted text using OCR',
+				array(
+					'provider'   => $ocr_options['provider'],
+					'pages'      => $ocr_options['max_pages'],
+					'word_count' => $word_count,
+					'duration'   => round( $duration, 2 ),
+					'is_scanned' => $is_scanned,
+				)
+			);
+
+			// Build OCR report for chat display.
+			$report = $this->build_ocr_report( $word_count, $char_count, $ocr_options, $is_scanned, $duration );
+
+			return array(
+				'success'  => true,
+				'report'   => $report,
+				'ocr_data' => array(
+					'text'       => $text,
+					'word_count' => $word_count,
+					'char_count' => $char_count,
+					'provider'   => $ocr_options['provider'],
+					'is_scanned' => $is_scanned,
+					'duration'   => round( $duration, 2 ),
+					'pages'      => $ocr_options['max_pages'],
+				),
+			);
+
+		} catch ( Exception $e ) {
+			// Clean up temp file if we downloaded one.
+			if ( $temp_file ) {
+				@unlink( $temp_file );
+			}
+
+			WP_MCP_AI_Logger::log_error(
+				'ocr_extraction_exception',
+				'OCR extraction threw exception',
+				array(
+					'message' => $e->getMessage(),
+					'trace'   => $e->getTraceAsString(),
+				)
+			);
+
+			return new WP_Error(
+				'exception',
+				sprintf(
+					/* translators: %s: error message */
+					__(
+						'❌ **Unexpected Error**
+
+OCR extraction encountered an unexpected error: %s
+
+✅ The workflow will continue with other tasks.',
+						'nvoos-content-graph-pro'
+					),
+					$e->getMessage()
+				)
+			);
+		}
+	}
+
+	/**
+	 * Build a user-friendly OCR report message.
+	 *
+	 * Creates a comprehensive summary of the OCR extraction that can be
+	 * displayed in the chat client.
+	 *
+	 * @param int   $word_count   Number of words extracted.
+	 * @param int   $char_count   Number of characters extracted.
+	 * @param array $ocr_options  OCR options used.
+	 * @param bool  $is_scanned   Whether the PDF was detected as scanned.
+	 * @param float $duration     Processing duration in seconds.
+	 * @return string Formatted OCR report message.
+	 */
+	protected function build_ocr_report( $word_count, $char_count, $ocr_options, $is_scanned, $duration ) {
+		$report = "## ✅ OCR Extraction Complete\n\n";
+
+		// Summary.
+		$report .= sprintf(
+			/* translators: 1: word count, 2: character count */
+			__( '**Extracted:** %1$d words (%2$d characters)', 'nvoos-content-graph-pro' ),
+			$word_count,
+			$char_count
+		);
+		$report .= "\n";
+
+		// Provider info.
+		$report .= sprintf(
+			/* translators: %s: OCR provider */
+			__( '**Provider:** %s', 'nvoos-content-graph-pro' ),
+			ucfirst( $ocr_options['provider'] )
+		);
+		$report .= "\n";
+
+		// Document type.
+		$doc_type = $is_scanned ? __( 'Scanned PDF (image-based)', 'nvoos-content-graph-pro' ) : __( 'Digital PDF (with OCR applied)', 'nvoos-content-graph-pro' );
+		$report  .= sprintf(
+			/* translators: %s: document type */
+			__( '**Document Type:** %s', 'nvoos-content-graph-pro' ),
+			$doc_type
+		);
+		$report .= "\n";
+
+		// Processing details.
+		if ( $ocr_options['max_pages'] > 0 ) {
+			$report .= sprintf(
+				/* translators: %d: number of pages */
+				__( '**Pages Processed:** Up to %d pages', 'nvoos-content-graph-pro' ),
+				$ocr_options['max_pages']
+			);
+			$report .= "\n";
+		}
+
+		$report .= sprintf(
+			/* translators: %s: processing time */
+			__( '**Processing Time:** %.2f seconds', 'nvoos-content-graph-pro' ),
+			$duration
+		);
+		$report .= "\n\n";
+
+		$report .= "---\n\n";
+		$report .= __( '✨ *Text extracted successfully and is available for use in the workflow.*', 'nvoos-content-graph-pro' );
+
+		return $report;
+	}
+}
