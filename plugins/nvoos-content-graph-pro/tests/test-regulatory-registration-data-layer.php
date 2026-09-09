@@ -86,8 +86,8 @@ class Test_Regulatory_Registration_Data_Layer extends WP_UnitTestCase {
 
 	/**
 	 * Standalone only: the slim init's file targets must exist and the tool
-	 * filter must start empty (the tool batches land with the following
-	 * sub-clusters).
+	 * filter must carry the sixty ported tools (the tool batch landed with
+	 * the following sub-cluster).
 	 */
 	public function test_init_gate_targets_standalone(): void {
 		if ( defined( 'WP_MCP_AI_PATH' ) ) {
@@ -105,6 +105,6 @@ class Test_Regulatory_Registration_Data_Layer extends WP_UnitTestCase {
 
 		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/regulatory-registration/init.php';
 		add_filter( 'wp_mcp_ai_pro_tools', 'wp_mcp_ai_pro_register_regulatory_registration_tools', 10 );
-		$this->assertSame( array(), apply_filters( 'wp_mcp_ai_pro_tools', array() ) );
+		$this->assertCount( 60, apply_filters( 'wp_mcp_ai_pro_tools', array() ) );
 	}
 }
