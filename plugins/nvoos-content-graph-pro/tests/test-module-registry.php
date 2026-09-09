@@ -166,6 +166,7 @@ class Test_Pro_Module_Registry extends WP_UnitTestCase {
 			'toolkit_image_production',
 			'toolkit_comic_creation',
 			'toolkit_ai_tool_builder',
+			'toolkit_architect_agent',
 		);
 
 		$this->assertSame( $expected, array_keys( $registry->modules() ) );
