@@ -758,6 +758,24 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 												require_once $p . 'tools/dj-management/init.php';
 											}
 										);
+
+											// Standalone-only module (no monolith registry counterpart — the
+											// base tree ships the image-production init but nothing loads it;
+											// the base registers a five-tool subset inline via
+											// `wp_mcp_ai_pro_register_tools()`). Boots the slim
+											// image-production init standalone so the ported tools land in
+											// the ecosystem registries (dj-management precedent).
+											$this->add_module(
+												'toolkit_image_production',
+												'Image Production Toolkit',
+												array(),
+												array(
+													'files' => array( $p . 'tools/image-production/init.php' ),
+												),
+												function () use ( $p ) {
+													require_once $p . 'tools/image-production/init.php';
+												}
+											);
 		}
 	}
 }
