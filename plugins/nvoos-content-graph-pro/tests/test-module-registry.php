@@ -164,6 +164,7 @@ class Test_Pro_Module_Registry extends WP_UnitTestCase {
 			'toolkit_cloudways',
 			'toolkit_dj_management',
 			'toolkit_image_production',
+			'toolkit_comic_creation',
 		);
 
 		$this->assertSame( $expected, array_keys( $registry->modules() ) );
