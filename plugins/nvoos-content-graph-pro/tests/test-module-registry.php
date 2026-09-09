@@ -162,6 +162,7 @@ class Test_Pro_Module_Registry extends WP_UnitTestCase {
 			'toolkit_analytics',
 			'toolkit_multilingual',
 			'toolkit_cloudways',
+			'toolkit_dj_management',
 		);
 
 		$this->assertSame( $expected, array_keys( $registry->modules() ) );
