@@ -521,7 +521,7 @@ class WP_MCP_AI_Pro_Schedule_REST_Controller {
 			),
 			'result_delivery'     => array(
 				'type'        => 'object',
-				'description' => __( 'Delivery channel configuration for successful and failed runs. Shape: {on_success: {channels: {telegram: {enabled, connection_id, chat_id}}}, on_failure: {channels: {}}}. Channels may reference a Remote Sites connection via connection_id or carry inline credentials under <channel>_credentials.', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Delivery channel configuration for successful and failed runs. Shape: {on_success: {channels: {telegram: {enabled, connection_id, chat_id}}}, on_failure: {channels: {}}}. Channels may reference a Remote Sites connection via connection_id or carry inline credentials under <channel>_credentials. Email and chat channels accept template (full, summary, response_only, error) and format (email: both/html/markdown; telegram: html/markdown/markdown_v2/plain; other chat: markdown/plain).', 'mcp-ai-wpoos-pro' ),
 			),
 			'workflow_steps'      => array(
 				'type' => 'array',

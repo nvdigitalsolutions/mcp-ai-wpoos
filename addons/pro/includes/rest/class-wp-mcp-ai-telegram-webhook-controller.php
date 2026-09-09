@@ -657,6 +657,14 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			if ( ! $bot_mentioned && ! $reply_to_bot ) {
 				// Also check for assistant @slug mentions.
 				if ( ! $this->message_mentions_assistant( $text, $assigned_assistant_ids ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'telegram_group_mention_required_ignored',
+						'Group message skipped: require_mention is enabled and the bot was not addressed.',
+						array(
+							'chat_type' => $chat_type,
+							'chat_id'   => $chat_id,
+						)
+					);
 					return; // Not addressed to the bot; no reply will be sent.
 				}
 			}

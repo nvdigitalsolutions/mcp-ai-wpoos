@@ -994,14 +994,14 @@
 		 * and any extra configuration fields needed for the edit modal.
 		 */
 		CHANNEL_DEFS: {
-			email:       { label: 'Email',           fields: ['to'],                         templates: ['full','summary','error'], formats: ['both','html','markdown'], group: 'direct' },
-			slack:       { label: 'Slack',           fields: ['channel'],                    templates: ['summary','error'],       group: 'chat' },
-			telegram:    { label: 'Telegram',        fields: ['chat_id'],                    templates: ['summary','error'],       group: 'chat' },
-			discord:     { label: 'Discord',         fields: ['channel_id'],                 templates: ['summary','error'],       group: 'chat' },
-			teams:       { label: 'Microsoft Teams', fields: ['team_id','channel_id'],       templates: ['summary','error'],       group: 'chat' },
-			messenger:   { label: 'Messenger',       fields: ['recipient_id'],               templates: ['summary','error'],       group: 'chat' },
-			whatsapp:    { label: 'WhatsApp',        fields: ['to'],                         templates: ['summary','error'],       group: 'chat' },
-			google_chat: { label: 'Google Chat',     fields: ['space_id'],                   templates: ['summary','error'],       group: 'chat' },
+			email:       { label: 'Email',           fields: ['to'],                         templates: ['full','summary','error','response_only'], formats: ['both','html','markdown'], group: 'direct' },
+			slack:       { label: 'Slack',           fields: ['channel'],                    templates: ['summary','full','error','response_only'], formats: ['markdown','plain'], group: 'chat' },
+			telegram:    { label: 'Telegram',        fields: ['chat_id'],                    templates: ['summary','full','error','response_only'], formats: ['html','markdown','markdown_v2','plain'], group: 'chat' },
+			discord:     { label: 'Discord',         fields: ['channel_id'],                 templates: ['summary','full','error','response_only'], formats: ['markdown','plain'], group: 'chat' },
+			teams:       { label: 'Microsoft Teams', fields: ['team_id','channel_id'],       templates: ['summary','full','error','response_only'], formats: ['markdown','plain'], group: 'chat' },
+			messenger:   { label: 'Messenger',       fields: ['recipient_id'],               templates: ['summary','full','error','response_only'], formats: ['plain'], group: 'chat' },
+			whatsapp:    { label: 'WhatsApp',        fields: ['to'],                         templates: ['summary','full','error','response_only'], formats: ['markdown','plain'], group: 'chat' },
+			google_chat: { label: 'Google Chat',     fields: ['space_id'],                   templates: ['summary','full','error','response_only'], formats: ['plain'], group: 'chat' },
 			sms:         { label: 'SMS',             fields: ['to'],                         templates: ['summary','error'],       group: 'direct' },
 			webhook:     { label: 'Webhook',         fields: ['url'],                        templates: [],                        group: 'automation' },
 			paper_store: { label: 'Paper Store',     fields: ['collection'],                 templates: [],                        group: 'automation', extra: ['driver','retention'] },
@@ -1073,11 +1073,17 @@
 				html += '</select>';
 			}
 
-			// Email presentation format selector (HTML / Markdown / both).
-			if ( def.formats && def.formats.length > 0 ) {
+			// Presentation format selector (email & chat channels).
+			if ( def.formats && def.formats.length > 1 ) {
 				const fmtSel    = cfg.format || def.formats[ 0 ];
-				const fmtLabels = { both: 'HTML + Plain Text', html: 'HTML only', markdown: 'Markdown only' };
-				html += ' <select id="' + prefix + channelSlug + '-format" title="Email presentation format">';
+				const fmtLabels = {
+					both:        'HTML + Plain Text',
+					html:        'HTML',
+					markdown:    'Markdown',
+					markdown_v2: 'MarkdownV2',
+					plain:       'Plain text',
+				};
+				html += ' <select id="' + prefix + channelSlug + '-format" title="' + ( 'email' === channelSlug ? 'Email presentation format' : 'Message format' ) + '">';
 				for ( i = 0; i < def.formats.length; i++ ) {
 					const fmt = def.formats[ i ];
 					html += '<option value="' + fmt + '"' + ( fmt === fmtSel ? ' selected' : '' ) + '>' + ( fmtLabels[ fmt ] || fmt ) + '</option>';
@@ -1180,7 +1186,7 @@
 				}
 			}
 
-			// Email presentation format (both / html / markdown).
+			// Presentation format (email: both/html/markdown; chat: html/markdown/markdown_v2/plain).
 			if ( def.formats && def.formats.length > 0 ) {
 				val = $( '#' + prefix + channelSlug + '-format' ).val();
 				if ( val ) {
