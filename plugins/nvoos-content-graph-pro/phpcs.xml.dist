@@ -95,6 +95,10 @@
 				<element value="edit_product_terms"/>
 				<element value="read_shop_order"/>
 				<element value="edit_shop_order"/>
+				<element value="view_medical_imaging"/>
+				<element value="upload_medical_imaging"/>
+				<element value="delete_medical_imaging"/>
+				<element value="manage_medical_imaging"/>
             			</property>
         </properties>
     </rule>
