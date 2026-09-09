@@ -764,7 +764,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		 * which the user supplies per-schedule (e.g. the Telegram `chat_id`
 		 * field in the Schedule Manager edit modal).
 		 *
-		 * @since 1.0.0
+		 * @since 1.1.75
 		 *
 		 * @param string $channel Channel slug.
 		 * @param array  $creds   Credentials resolved from the connection.
@@ -941,7 +941,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		 * non-array value with an empty array so callers fail gracefully with
 		 * a descriptive error instead of a fatal.
 		 *
-		 * @since 1.0.0
+		 * @since 1.1.75
 		 *
 		 * @param mixed $raw Raw credentials value from a channel config.
 		 * @return array Credential map, empty when the value is not a valid array.
