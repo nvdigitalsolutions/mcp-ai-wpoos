@@ -4,9 +4,11 @@
 
 ### New
 
+- **Buyer country + EU billing address (VAT records)** — the purchase modal gains a country selector; buyers choosing an EU member state must provide a billing address (street + city, postal optional), which is attached to the payment as Stripe `billing_details` and recorded on the license (`buyer_country` column, fill-once) via the optional `buyer_country` verify param
+- **Stripe statement descriptor + product/price metadata** — new storefront settings (`statement_descriptor`, `product_name`, `product_id`, `price_id`); `/session` attaches the descriptor and the Product/Price IDs to each PaymentIntent, and an admin action creates the `service`-type Product + one-time Price in Stripe (idempotent)
 - **Checkout consent + legal links** — the `/session` response now carries `terms_url` and `refund_policy_url` (configurable in the storefront admin; defaults point at the vendor's published Terms of Service and Refund Policy), and `/verify` accepts an optional `terms_agreed_at` consent timestamp that is recorded on the license row (filling an empty value, never overwriting) as proof the buyer agreed to the Terms at purchase
 - **Buyer email on licenses** — `/verify` accepts an optional `buyer_email`; the intent's `receipt_email` (set by Stripe from the client's `confirmParams.receipt_email`) is authoritative, and the stored value is recorded in a new `buyer_email` license column (fill-once, never overwritten), including webhook-issued licenses
-- **Consent + email columns** — the licenses admin table shows when each buyer agreed to the Terms and their receipt/refund email
+- **Consent + email + country columns** — the licenses admin table shows when each buyer agreed to the Terms, their receipt/refund email, and their country
 
 ### Changed
 

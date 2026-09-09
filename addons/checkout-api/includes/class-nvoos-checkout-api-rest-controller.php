@@ -118,6 +118,15 @@ class NVOOS_Checkout_API_Rest_Controller {
 						},
 						'sanitize_callback' => 'sanitize_email',
 					),
+					'buyer_country'   => array(
+						'type'              => 'string',
+						'validate_callback' => function ( $value ) {
+							return is_string( $value ) && ( '' === $value || 1 === preg_match( '/^[A-Z]{2}$/', $value ) );
+						},
+						'sanitize_callback' => function ( $value ) {
+							return strtoupper( sanitize_text_field( $value ) );
+						},
+					),
 				),
 			)
 		);
@@ -150,19 +159,34 @@ class NVOOS_Checkout_API_Rest_Controller {
 
 		$client = new NVOOS_Checkout_API_Stripe_Client( NVOOS_Checkout_API_Settings::stripe_secret_key() );
 
-		$intent = $client->create_payment_intent(
-			array(
-				'amount'                    => NVOOS_Checkout_API_Settings::price_cents(),
-				'currency'                  => NVOOS_Checkout_API_Settings::currency(),
-				'description'               => 'NV oOS ' . $request['product'] . ' license',
-				'automatic_payment_methods' => array( 'enabled' => true ),
-				'metadata'                  => array(
-					'product'       => (string) $request['product'],
-					'site_url'      => (string) $request['site_url'],
-					'addon_version' => (string) ( $request['addon_version'] ?? '' ),
-				),
-			)
+		$intent_params = array(
+			'amount'                    => NVOOS_Checkout_API_Settings::price_cents(),
+			'currency'                  => NVOOS_Checkout_API_Settings::currency(),
+			'description'               => 'NV oOS ' . $request['product'] . ' license',
+			'automatic_payment_methods' => array( 'enabled' => true ),
+			'metadata'                  => array(
+				'product'       => (string) $request['product'],
+				'site_url'      => (string) $request['site_url'],
+				'addon_version' => (string) ( $request['addon_version'] ?? '' ),
+			),
 		);
+
+		// Reporting/tax metadata — the Stripe Product/Price are created from
+		// the storefront admin and never change how the charge works.
+		if ( '' !== NVOOS_Checkout_API_Settings::product_id() ) {
+			$intent_params['metadata']['stripe_product_id'] = NVOOS_Checkout_API_Settings::product_id();
+		}
+		if ( '' !== NVOOS_Checkout_API_Settings::price_id() ) {
+			$intent_params['metadata']['stripe_price_id'] = NVOOS_Checkout_API_Settings::price_id();
+		}
+
+		// Card statement descriptor (omitted when unset/invalid so Stripe's
+		// default applies).
+		if ( '' !== NVOOS_Checkout_API_Settings::statement_descriptor() ) {
+			$intent_params['statement_descriptor'] = NVOOS_Checkout_API_Settings::statement_descriptor();
+		}
+
+		$intent = $client->create_payment_intent( $intent_params );
 
 		if ( is_wp_error( $intent ) ) {
 			return $intent;
@@ -248,6 +272,9 @@ class NVOOS_Checkout_API_Rest_Controller {
 		// confirmParams.receipt_email) is authoritative; the request param
 		// is the fallback for clients whose intent has no email.
 		$buyer_email = sanitize_email( (string) ( $intent['receipt_email'] ?? $request['buyer_email'] ?? '' ) );
+		// VAT records: the buyer-declared country code from the purchase
+		// modal (EU buyers are required to provide an address there).
+		$buyer_country = strtoupper( sanitize_text_field( (string) $request['buyer_country'] ) );
 
 		$existing = NVOOS_Checkout_API_License_Store::get_by_payment_intent( (string) $request['payment_intent'] );
 		if ( null !== $existing ) {
@@ -256,8 +283,8 @@ class NVOOS_Checkout_API_Rest_Controller {
 			}
 
 			// The webhook usually issues the license before the browser's
-			// /verify arrives — attach the buyer's consent timestamp and email
-			// to that existing row (never overwrites an existing value).
+			// /verify arrives — attach the buyer's consent timestamp, email,
+			// and country to that existing row (never overwrites).
 			if ( '' !== $terms_agreed_at && empty( $existing['terms_agreed_at'] ) ) {
 				NVOOS_Checkout_API_License_Store::set_terms_agreed( (string) $existing['license_key'], $terms_agreed_at );
 				$existing['terms_agreed_at'] = $terms_agreed_at;
@@ -265,6 +292,10 @@ class NVOOS_Checkout_API_Rest_Controller {
 			if ( '' !== $buyer_email && empty( $existing['buyer_email'] ) ) {
 				NVOOS_Checkout_API_License_Store::set_buyer_email( (string) $existing['license_key'], $buyer_email );
 				$existing['buyer_email'] = $buyer_email;
+			}
+			if ( '' !== $buyer_country && empty( $existing['buyer_country'] ) ) {
+				NVOOS_Checkout_API_License_Store::set_buyer_country( (string) $existing['license_key'], $buyer_country );
+				$existing['buyer_country'] = $buyer_country;
 			}
 
 			return rest_ensure_response( $this->license_response( $existing ) );
@@ -281,6 +312,7 @@ class NVOOS_Checkout_API_Rest_Controller {
 				'currency'              => NVOOS_Checkout_API_Settings::currency(),
 				'addon_version'         => NVOOS_Checkout_API_Settings::addon_version(),
 				'buyer_email'           => $buyer_email,
+				'buyer_country'         => $buyer_country,
 				'terms_agreed_at'       => $terms_agreed_at,
 			)
 		);

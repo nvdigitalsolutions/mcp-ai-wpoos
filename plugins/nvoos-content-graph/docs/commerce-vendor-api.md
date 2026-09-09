@@ -105,7 +105,8 @@ Request JSON:
   "site_url": "https://customer-site.example",
   "payment_intent": "pi_…",
   "terms_agreed_at": 1757400000,
-  "buyer_email": "buyer@example.com"
+  "buyer_email": "buyer@example.com",
+  "buyer_country": "DE"
 }
 ```
 
@@ -123,6 +124,16 @@ Stripe emails the payment receipt; on verification the vendor prefers the
 intent's `receipt_email` (authoritative) over the request param and stores
 the result in the license row's `buyer_email` column (fill-once, never
 overwritten).
+
+`buyer_country` is an **optional** ISO 3166-1 alpha-2 code of the buyer's
+declared country (the purchase modal collects it for VAT records — EU
+buyers are required to provide a billing address, which is attached to the
+payment as `billing_details`). Stored in the license row's `buyer_country`
+column, fill-once.
+
+The vendor also attaches optional `statement_descriptor` and
+`stripe_product_id` / `stripe_price_id` metadata to the PaymentIntent at
+`/session` time (reporting/tax tooling; configured on the storefront admin).
 
 Server-side checks before issuing anything:
 

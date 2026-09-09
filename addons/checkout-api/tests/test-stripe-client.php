@@ -22,7 +22,7 @@ class Test_Checkout_Api_Stripe_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * create_payment_intent returns the decoded intent.
+	 * The create_payment_intent method returns the decoded intent.
 	 *
 	 * @return void
 	 */
@@ -32,7 +32,12 @@ class Test_Checkout_Api_Stripe_Client extends WP_UnitTestCase {
 			static function () {
 				return array(
 					'response' => array( 'code' => 200 ),
-					'body'     => wp_json_encode( array( 'id' => 'pi_test_1', 'client_secret' => 'pi_test_1_secret' ) ),
+					'body'     => wp_json_encode(
+						array(
+							'id'            => 'pi_test_1',
+							'client_secret' => 'pi_test_1_secret',
+						)
+					),
 				);
 			},
 			10,
@@ -69,6 +74,71 @@ class Test_Checkout_Api_Stripe_Client extends WP_UnitTestCase {
 
 		$this->assertWPError( $result );
 		$this->assertSame( 'Card declined', $result->get_error_message() );
+	}
+
+	/**
+	 * The create_product method sends a service-typed product to Stripe.
+	 *
+	 * @return void
+	 */
+	public function test_create_product(): void {
+		$captured_url  = '';
+		$captured_body = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args, $url ) use ( &$captured_url, &$captured_body ) {
+				$captured_url  = $url;
+				$captured_body = $args['body'];
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array( 'id' => 'prod_test_1' ) ),
+				);
+			},
+			10,
+			3
+		);
+
+		$client = new NVOOS_Checkout_API_Stripe_Client( 'sk_test_abc' );
+		$result = $client->create_product( 'NV oOS Complete' );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'prod_test_1', $result['id'] );
+		$this->assertStringContainsString( '/v1/products', $captured_url );
+		$this->assertSame( 'NV oOS Complete', $captured_body['name'] );
+		$this->assertSame( 'service', $captured_body['type'] );
+	}
+
+	/**
+	 * The create_price method sends a one-time unit price to Stripe.
+	 *
+	 * @return void
+	 */
+	public function test_create_price(): void {
+		$captured_url  = '';
+		$captured_body = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args, $url ) use ( &$captured_url, &$captured_body ) {
+				$captured_url  = $url;
+				$captured_body = $args['body'];
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array( 'id' => 'price_test_1' ) ),
+				);
+			},
+			10,
+			3
+		);
+
+		$client = new NVOOS_Checkout_API_Stripe_Client( 'sk_test_abc' );
+		$result = $client->create_price( 'prod_test_1', 4900, 'usd' );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'price_test_1', $result['id'] );
+		$this->assertStringContainsString( '/v1/prices', $captured_url );
+		$this->assertSame( 'prod_test_1', $captured_body['product'] );
+		$this->assertSame( 4900, $captured_body['unit_amount'] );
+		$this->assertSame( 'usd', $captured_body['currency'] );
 	}
 
 	/**

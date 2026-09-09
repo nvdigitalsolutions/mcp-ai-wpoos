@@ -708,4 +708,111 @@ class CommerceTest extends WP_UnitTestCase {
 		$this->assertTrue( License::isLicensed() );
 		$this->assertSame( 'buyer@example.com', License::get()['buyer_email'] );
 	}
+
+	/** @test */
+	public function vendorVerifyForwardsBuyerCountry(): void {
+		$captured = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args ) use ( &$captured ) {
+				$captured = json_decode( (string) $args['body'], true );
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array() ),
+				);
+			},
+			10,
+			2
+		);
+
+		$vendor = new Vendor( 'https://vendor.example/api' );
+		$vendor->verify( 'pi_test_country', 0, '', 'de' );
+
+		$this->assertIsArray( $captured );
+		$this->assertSame( 'DE', $captured['buyer_country'] );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/** @test */
+	public function vendorVerifyOmitsBuyerCountryWhenAbsent(): void {
+		$captured = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args ) use ( &$captured ) {
+				$captured = json_decode( (string) $args['body'], true );
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array() ),
+				);
+			},
+			10,
+			2
+		);
+
+		$vendor = new Vendor( 'https://vendor.example/api' );
+		$vendor->verify( 'pi_test_no_country' );
+
+		$this->assertIsArray( $captured );
+		$this->assertArrayNotHasKey( 'buyer_country', $captured );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/** @test */
+	public function euCountryCodesDefaultsAndIsFilterable(): void {
+		$codes = Payments::euCountryCodes();
+
+		$this->assertCount( 27, $codes );
+		$this->assertContains( 'DE', $codes );
+		$this->assertContains( 'FR', $codes );
+		$this->assertNotContains( 'GB', $codes );
+		$this->assertNotContains( 'US', $codes );
+
+		add_filter( Schema::FILTER_EU_COUNTRIES, static fn() => array( 'DE', 'not-a-code', 'FR' ) );
+		$filtered = Payments::euCountryCodes();
+		$this->assertSame( array( 'DE', 'FR' ), $filtered );
+		remove_all_filters( Schema::FILTER_EU_COUNTRIES );
+	}
+
+	/** @test */
+	public function verifyRecordsBuyerCountryInLicenseRecord(): void {
+		add_filter( 'nvoos_content_graph/commerce/skip_base_plugin_detection', '__return_true' );
+
+		$this->stubVendor(
+			array(
+				// 1. Vendor /verify → license + signed download URL.
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'license_key'   => 'country123',
+							'download_url'  => 'https://vendor.example/download/addon.zip',
+							'addon_version' => '1.0.4',
+							'amount'        => 4900,
+							'currency'      => 'usd',
+						)
+					),
+				),
+				// 2. Download of the signed URL → 404.
+				array(
+					'response' => array(
+						'code'    => 404,
+						'message' => 'Not Found',
+					),
+					'body'     => 'not found',
+				),
+			)
+		);
+
+		$request = new \WP_REST_Request();
+		$request->set_param( 'payment_intent', 'pi_test_country_paid' );
+		$request->set_param( 'buyer_country', 'IE' );
+
+		$controller = new CommerceController();
+		$controller->verifyPayment( $request );
+
+		$this->assertTrue( License::isLicensed() );
+		$this->assertSame( 'IE', License::get()['buyer_country'] );
+	}
 }

@@ -80,6 +80,65 @@ class NVOOS_Checkout_API_Stripe_Client {
 	}
 
 	/**
+	 * Create a Stripe Product (type: service) for reporting/tax metadata.
+	 *
+	 * The product is referenced by the Price below and recorded on payment
+	 * intents as metadata — it does not change how payments are charged.
+	 *
+	 * @param string $name Product display name.
+	 * @return array<string,mixed>|WP_Error
+	 */
+	public function create_product( string $name ) {
+		$response = wp_remote_post(
+			self::API_BASE . '/products',
+			array(
+				'timeout' => 30,
+				'headers' => $this->headers(),
+				'body'    => array(
+					'name'        => $name,
+					'type'        => 'service',
+					'metadata'    => array(
+						'source' => 'nvoos-checkout-api',
+					),
+				),
+			)
+		);
+
+		return $this->parse_response( $response );
+	}
+
+	/**
+	 * Create a one-time Stripe Price for a product.
+	 *
+	 * Mirrors the storefront's configured price/currency so reporting and
+	 * tax tooling line up with what buyers actually pay.
+	 *
+	 * @param string $product_id Stripe Product ID.
+	 * @param int    $amount_cents Amount in the smallest currency unit.
+	 * @param string $currency Three-letter ISO currency code.
+	 * @return array<string,mixed>|WP_Error
+	 */
+	public function create_price( string $product_id, int $amount_cents, string $currency ) {
+		$response = wp_remote_post(
+			self::API_BASE . '/prices',
+			array(
+				'timeout' => 30,
+				'headers' => $this->headers(),
+				'body'    => array(
+					'currency'    => $currency,
+					'product'     => $product_id,
+					'unit_amount' => max( 50, $amount_cents ),
+					'metadata'    => array(
+						'source' => 'nvoos-checkout-api',
+					),
+				),
+			)
+		);
+
+		return $this->parse_response( $response );
+	}
+
+	/**
 	 * Verify a Stripe webhook signature.
 	 *
 	 * Mirrors Stripe's reference algorithm: parse `Stripe-Signature`

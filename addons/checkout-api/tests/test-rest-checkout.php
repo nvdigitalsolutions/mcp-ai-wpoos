@@ -311,6 +311,68 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Statement descriptors are sanitized strictly; invalid lengths drop out.
+	 *
+	 * @return void
+	 */
+	public function test_statement_descriptor_sanitization(): void {
+		$clean = NVOOS_Checkout_API_Settings::sanitize( array( 'statement_descriptor' => '  nv oos* complete!! ' ) );
+		$this->assertSame( 'NV OOS* COMPLETE', $clean['statement_descriptor'] );
+
+		$short = NVOOS_Checkout_API_Settings::sanitize( array( 'statement_descriptor' => 'ABC' ) );
+		$this->assertSame( '', $short['statement_descriptor'] );
+
+		$long = NVOOS_Checkout_API_Settings::sanitize( array( 'statement_descriptor' => str_repeat( 'A', 30 ) ) );
+		$this->assertSame( '', $long['statement_descriptor'] );
+	}
+
+	/**
+	 * /session attaches the descriptor and Stripe product/price metadata.
+	 *
+	 * @return void
+	 */
+	public function test_session_includes_descriptor_and_product_metadata(): void {
+		update_option(
+			NVOOS_Checkout_API_Settings::OPTION,
+			array_merge(
+				get_option( NVOOS_Checkout_API_Settings::OPTION, array() ),
+				array(
+					'statement_descriptor' => 'NV OOS COMPLETE',
+					'product_id'           => 'prod_test_1',
+					'price_id'             => 'price_test_1',
+				)
+			)
+		);
+
+		$captured = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args ) use ( &$captured ) {
+				$captured = $args['body'];
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'id'            => 'pi_descriptor',
+							'client_secret' => 'pi_descriptor_secret',
+						)
+					),
+				);
+			},
+			10,
+			2
+		);
+
+		$response = $this->controller->create_session( $this->session_request() );
+
+		$this->assertNotWPError( $response );
+		$this->assertIsArray( $captured );
+		$this->assertSame( 'NV OOS COMPLETE', $captured['statement_descriptor'] );
+		$this->assertSame( 'prod_test_1', $captured['metadata']['stripe_product_id'] );
+		$this->assertSame( 'price_test_1', $captured['metadata']['stripe_price_id'] );
+	}
+
+	/**
 	 * /verify records the buyer's consent timestamp on a fresh license.
 	 *
 	 * @return void
@@ -557,6 +619,104 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 
 		$license = NVOOS_Checkout_API_License_Store::get_by_payment_intent( 'pi_webhook_email' );
 		$this->assertSame( 'late@example.com', $license['buyer_email'] );
+	}
+
+	/**
+	 * /verify records the buyer's country code on a fresh license.
+	 *
+	 * @return void
+	 */
+	public function test_verify_records_buyer_country(): void {
+		$this->stub_stripe(
+			array(
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'id'              => 'pi_country',
+							'status'          => 'succeeded',
+							'amount_received' => 4900,
+							'currency'        => 'usd',
+							'metadata'        => array(
+								'product'  => 'nvoos-content-graph-ai',
+								'site_url' => 'https://customer.example',
+							),
+						)
+					),
+				),
+			)
+		);
+
+		$request = new WP_REST_Request( 'POST', '/nvoos-checkout/v1/verify' );
+		$request->set_param( 'product', 'nvoos-content-graph-ai' );
+		$request->set_param( 'site_url', 'https://customer.example' );
+		$request->set_param( 'payment_intent', 'pi_country' );
+		$request->set_param( 'buyer_country', 'DE' );
+
+		$response = $this->controller->verify_payment( $request );
+
+		$this->assertNotWPError( $response );
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_payment_intent( 'pi_country' );
+		$this->assertNotNull( $license );
+		$this->assertSame( 'DE', $license['buyer_country'] );
+	}
+
+	/**
+	 * /verify attaches the country to a webhook-issued license, fill-once.
+	 *
+	 * @return void
+	 */
+	public function test_verify_attaches_buyer_country_to_webhook_issued_license(): void {
+		NVOOS_Checkout_API_License_Store::create(
+			array(
+				'license_key'           => 'webhook-country',
+				'product'               => 'nvoos-content-graph-ai',
+				'site_url'              => 'https://customer.example',
+				'stripe_payment_intent' => 'pi_webhook_country',
+				'amount'                => 4900,
+			)
+		);
+
+		$this->stub_stripe(
+			array(
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'id'              => 'pi_webhook_country',
+							'status'          => 'succeeded',
+							'amount_received' => 4900,
+							'currency'        => 'usd',
+							'metadata'        => array(
+								'product'  => 'nvoos-content-graph-ai',
+								'site_url' => 'https://customer.example',
+							),
+						)
+					),
+				),
+			)
+		);
+
+		$request = new WP_REST_Request( 'POST', '/nvoos-checkout/v1/verify' );
+		$request->set_param( 'product', 'nvoos-content-graph-ai' );
+		$request->set_param( 'site_url', 'https://customer.example' );
+		$request->set_param( 'payment_intent', 'pi_webhook_country' );
+		$request->set_param( 'buyer_country', 'FR' );
+
+		$response = $this->controller->verify_payment( $request );
+
+		$this->assertNotWPError( $response );
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_payment_intent( 'pi_webhook_country' );
+		$this->assertSame( 'FR', $license['buyer_country'] );
+
+		// A later /verify must never overwrite the recorded country.
+		$request->set_param( 'buyer_country', 'ES' );
+		$this->controller->verify_payment( $request );
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_payment_intent( 'pi_webhook_country' );
+		$this->assertSame( 'FR', $license['buyer_country'] );
 	}
 
 	/**

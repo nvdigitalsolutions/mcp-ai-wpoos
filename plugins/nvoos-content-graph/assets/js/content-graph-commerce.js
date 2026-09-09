@@ -27,6 +27,11 @@
 	var consentCheckbox = null;
 	var consentAt = 0;
 	var emailInput = null;
+	var countrySelect = null;
+	var addressLine1 = null;
+	var addressCity = null;
+	var addressPostal = null;
+	var addressRow = null;
 	var busy = false;
 	var verifying = false;
 
@@ -174,7 +179,7 @@
 		}
 		var hasSecret = Boolean( payBtn.dataset.clientSecret );
 		var email = emailInput ? emailInput.value.trim() : '';
-		payBtn.disabled = busy || ! hasSecret || ! consentCheckbox || ! consentCheckbox.checked || ! isValidEmail( email );
+		payBtn.disabled = busy || ! hasSecret || ! consentCheckbox || ! consentCheckbox.checked || ! isValidEmail( email ) || ! isAddressValid();
 	}
 
 	/**
@@ -185,6 +190,139 @@
 	 */
 	function isValidEmail( value ) {
 		return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test( value );
+	}
+
+	/**
+	 * The EU country codes this install treats as requiring an address.
+	 *
+	 * @return {Array} ISO 3166-1 alpha-2 codes (server-provided).
+	 */
+	function euCountries() {
+		var list = config.eu_countries;
+		return Array.isArray( list ) ? list : [];
+	}
+
+	/**
+	 * Whether the buyer selected an EU country in the billing row.
+	 *
+	 * @return {boolean}
+	 */
+	function isEuSelected() {
+		if ( ! countrySelect ) {
+			return false;
+		}
+		return euCountries().indexOf( countrySelect.value ) !== -1;
+	}
+
+	/**
+	 * EU buyers must provide street + city (postal code optional);
+	 * non-EU buyers need no address at all.
+	 *
+	 * @return {boolean}
+	 */
+	function isAddressValid() {
+		if ( ! isEuSelected() ) {
+			return true;
+		}
+		if ( ! addressLine1 || ! addressCity ) {
+			return false;
+		}
+		return addressLine1.value.trim() !== '' && addressCity.value.trim() !== '';
+	}
+
+	/**
+	 * Build a labelled text input, re-validating the pay button on entry.
+	 *
+	 * @param  {HTMLElement} container Parent element.
+	 * @param  {string}      id        Input id.
+	 * @param  {string}      labelText Label text.
+	 * @return {HTMLElement} The input element.
+	 */
+	function buildField( container, id, labelText ) {
+		var label = el( 'label', 'nvoos-cg-field-label', labelText );
+		label.htmlFor = id;
+
+		var input = document.createElement( 'input' );
+		input.type = 'text';
+		input.id = id;
+		input.className = 'nvoos-cg-field-input';
+		input.addEventListener( 'input', updatePayState );
+
+		container.appendChild( label );
+		container.appendChild( input );
+		return input;
+	}
+
+	/**
+	 * Build the billing row: a country selector (EU vs other) plus an
+	 * address block that is visible and required only for EU countries —
+	 * VAT records for digitally supplied services.
+	 *
+	 * @return {HTMLElement}
+	 */
+	function renderBillingRow() {
+		var row = el( 'div', 'nvoos-cg-billing-row' );
+
+		var countryLabel = el( 'label', 'nvoos-cg-billing-label', i18n.country_label || 'Country (for VAT records)' );
+		countryLabel.htmlFor = 'nvoos-cg-country';
+		row.appendChild( countryLabel );
+
+		countrySelect = document.createElement( 'select' );
+		countrySelect.id = 'nvoos-cg-country';
+		countrySelect.className = 'nvoos-cg-country-select';
+
+		var otherOption = document.createElement( 'option' );
+		otherOption.value = '';
+		otherOption.textContent = i18n.country_other || 'Other / Non-EU';
+		countrySelect.appendChild( otherOption );
+
+		var codes = euCountries();
+		for ( var i = 0; i < codes.length; i++ ) {
+			var option = document.createElement( 'option' );
+			option.value = codes[ i ];
+			option.textContent = codes[ i ];
+			countrySelect.appendChild( option );
+		}
+
+		countrySelect.addEventListener( 'change', function () {
+			if ( addressRow ) {
+				addressRow.style.display = isEuSelected() ? 'block' : 'none';
+			}
+			updatePayState();
+		} );
+		row.appendChild( countrySelect );
+
+		addressRow = el( 'div', 'nvoos-cg-address-row' );
+		addressRow.style.display = 'none';
+		addressLine1 = buildField( addressRow, 'nvoos-cg-address-line1', i18n.address_line1_label || 'Street address' );
+		addressCity = buildField( addressRow, 'nvoos-cg-address-city', i18n.address_city_label || 'City' );
+		addressPostal = buildField( addressRow, 'nvoos-cg-address-postal', i18n.address_postal_label || 'Postal code (optional)' );
+		row.appendChild( addressRow );
+
+		return row;
+	}
+
+	/**
+	 * Build the Stripe billing_details object (email + EU address).
+	 *
+	 * @param  {string} email Buyer email.
+	 * @return {Object} Stripe billing_details shape.
+	 */
+	function buildBillingDetails( email ) {
+		var details = { email: email };
+
+		if ( isEuSelected() ) {
+			details.address = {
+				line1: addressLine1.value.trim(),
+				city: addressCity.value.trim(),
+				country: countrySelect.value
+			};
+			if ( addressPostal && addressPostal.value.trim() !== '' ) {
+				details.address.postal_code = addressPostal.value.trim();
+			}
+		}
+
+		return details;
 	}
 
 	/**
@@ -282,6 +420,11 @@
 		consentCheckbox = null;
 		consentAt = 0;
 		emailInput = null;
+		countrySelect = null;
+		addressLine1 = null;
+		addressCity = null;
+		addressPostal = null;
+		addressRow = null;
 		if ( overlay && overlay.parentNode ) {
 			overlay.parentNode.removeChild( overlay );
 		}
@@ -314,6 +457,7 @@
 		modalBody.appendChild( el( 'p', 'nvoos-cg-price', config.price_label || '' ) );
 		modalBody.appendChild( el( 'p', 'nvoos-cg-secure-note', i18n.secure_note || '' ) );
 		modalBody.appendChild( renderEmailRow() );
+		modalBody.appendChild( renderBillingRow() );
 
 		errorBox = el( 'div', 'nvoos-cg-error' );
 		errorBox.style.display = 'none';
@@ -462,10 +606,11 @@
 				clientSecret: result.data.client_secret,
 				appearance: { theme: 'stripe' }
 			} );
-			// The plugin collects the buyer email itself (receipt + refund
-			// matching); keep the Stripe iframe from asking for it again.
+			// The plugin collects the buyer email, country, and EU billing
+			// address itself (receipt + VAT records); keep the Stripe iframe
+			// from asking for them again.
 			paymentElement = elements.create( 'paymentElement', {
-				fields: { billingDetails: { email: 'never' } }
+				fields: { billingDetails: { email: 'never', address: 'never' } }
 			} );
 			paymentElement.mount( payBox );
 
@@ -504,6 +649,10 @@
 			showError( i18n.email_invalid || 'Please enter a valid email address for your receipt.' );
 			return;
 		}
+		if ( ! isAddressValid() ) {
+			showError( i18n.address_required || 'EU purchases require a billing address.' );
+			return;
+		}
 		setBusy( true );
 		hideError();
 
@@ -536,7 +685,10 @@
 			elements: elements,
 			confirmParams: {
 				receipt_email: buyerEmail,
-				return_url: window.location.href
+				return_url: window.location.href,
+				payment_method_data: {
+					billing_details: buildBillingDetails( buyerEmail )
+				}
 			},
 			redirect: 'if_required'
 		} ).then( function ( result ) {
@@ -595,6 +747,9 @@
 		var buyerEmail = emailInput ? emailInput.value.trim() : '';
 		if ( isValidEmail( buyerEmail ) ) {
 			verifyBody.buyer_email = buyerEmail;
+		}
+		if ( isEuSelected() ) {
+			verifyBody.buyer_country = countrySelect.value;
 		}
 
 		apiPost( '/payments/verify', verifyBody ).then( function ( result ) {
