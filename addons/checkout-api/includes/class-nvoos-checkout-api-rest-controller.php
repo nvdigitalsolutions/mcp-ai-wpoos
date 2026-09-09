@@ -84,7 +84,7 @@ class NVOOS_Checkout_API_Rest_Controller {
 				'callback'            => array( $this, 'verify_payment' ),
 				'permission_callback' => '__return_true', // Public by design — see class docblock.
 				'args'                => array(
-					'product'        => array(
+					'product'         => array(
 						'required'          => true,
 						'type'              => 'string',
 						'validate_callback' => function ( $value ) {
@@ -92,19 +92,31 @@ class NVOOS_Checkout_API_Rest_Controller {
 						},
 						'sanitize_callback' => 'sanitize_text_field',
 					),
-					'site_url'       => array(
+					'site_url'        => array(
 						'required'          => true,
 						'type'              => 'string',
 						'validate_callback' => array( $this, 'validate_site_url' ),
 						'sanitize_callback' => array( $this, 'sanitize_site_url' ),
 					),
-					'payment_intent' => array(
+					'payment_intent'  => array(
 						'required'          => true,
 						'type'              => 'string',
 						'validate_callback' => function ( $value ) {
 							return is_string( $value ) && 1 === preg_match( '/^pi_[A-Za-z0-9]{8,}$/', $value );
 						},
 						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'terms_agreed_at' => array(
+						'type'              => 'integer',
+						'validate_callback' => array( $this, 'validate_terms_agreed_at' ),
+						'sanitize_callback' => 'absint',
+					),
+					'buyer_email'     => array(
+						'type'              => 'string',
+						'validate_callback' => function ( $value ) {
+							return is_string( $value ) && ( '' === $value || false !== is_email( $value ) );
+						},
+						'sanitize_callback' => 'sanitize_email',
 					),
 				),
 			)
@@ -162,11 +174,13 @@ class NVOOS_Checkout_API_Rest_Controller {
 
 		return rest_ensure_response(
 			array(
-				'client_secret'   => sanitize_text_field( (string) $intent['client_secret'] ),
-				'publishable_key' => NVOOS_Checkout_API_Settings::stripe_publishable_key(),
-				'amount'          => NVOOS_Checkout_API_Settings::price_cents(),
-				'currency'        => NVOOS_Checkout_API_Settings::currency(),
-				'test_mode'       => NVOOS_Checkout_API_Settings::is_test_mode(),
+				'client_secret'     => sanitize_text_field( (string) $intent['client_secret'] ),
+				'publishable_key'   => NVOOS_Checkout_API_Settings::stripe_publishable_key(),
+				'amount'            => NVOOS_Checkout_API_Settings::price_cents(),
+				'currency'          => NVOOS_Checkout_API_Settings::currency(),
+				'test_mode'         => NVOOS_Checkout_API_Settings::is_test_mode(),
+				'terms_url'         => NVOOS_Checkout_API_Settings::terms_url(),
+				'refund_policy_url' => NVOOS_Checkout_API_Settings::refund_policy_url(),
 			)
 		);
 	}
@@ -229,11 +243,30 @@ class NVOOS_Checkout_API_Rest_Controller {
 		}
 
 		// ─── Idempotent license issuance ────────────────────────────
+		$terms_agreed_at = $this->terms_agreed_mysql( $request );
+		// The intent's receipt_email (set by Stripe from the modal's
+		// confirmParams.receipt_email) is authoritative; the request param
+		// is the fallback for clients whose intent has no email.
+		$buyer_email = sanitize_email( (string) ( $intent['receipt_email'] ?? $request['buyer_email'] ?? '' ) );
+
 		$existing = NVOOS_Checkout_API_License_Store::get_by_payment_intent( (string) $request['payment_intent'] );
 		if ( null !== $existing ) {
 			if ( NVOOS_Checkout_API_License_Store::STATUS_ACTIVE !== ( $existing['status'] ?? '' ) ) {
 				return new WP_Error( 'nvoos_checkout_license_revoked', __( 'This license has been revoked. Please contact support.', 'nvoos-checkout-api' ), array( 'status' => 402 ) );
 			}
+
+			// The webhook usually issues the license before the browser's
+			// /verify arrives — attach the buyer's consent timestamp and email
+			// to that existing row (never overwrites an existing value).
+			if ( '' !== $terms_agreed_at && empty( $existing['terms_agreed_at'] ) ) {
+				NVOOS_Checkout_API_License_Store::set_terms_agreed( (string) $existing['license_key'], $terms_agreed_at );
+				$existing['terms_agreed_at'] = $terms_agreed_at;
+			}
+			if ( '' !== $buyer_email && empty( $existing['buyer_email'] ) ) {
+				NVOOS_Checkout_API_License_Store::set_buyer_email( (string) $existing['license_key'], $buyer_email );
+				$existing['buyer_email'] = $buyer_email;
+			}
+
 			return rest_ensure_response( $this->license_response( $existing ) );
 		}
 
@@ -247,6 +280,8 @@ class NVOOS_Checkout_API_Rest_Controller {
 				'amount'                => (int) $intent['amount_received'],
 				'currency'              => NVOOS_Checkout_API_Settings::currency(),
 				'addon_version'         => NVOOS_Checkout_API_Settings::addon_version(),
+				'buyer_email'           => $buyer_email,
+				'terms_agreed_at'       => $terms_agreed_at,
 			)
 		);
 
@@ -369,6 +404,7 @@ class NVOOS_Checkout_API_Rest_Controller {
 				'amount'                => (int) $intent['amount_received'],
 				'currency'              => NVOOS_Checkout_API_Settings::currency(),
 				'addon_version'         => NVOOS_Checkout_API_Settings::addon_version(),
+				'buyer_email'           => sanitize_email( (string) ( $intent['receipt_email'] ?? '' ) ),
 			)
 		);
 
@@ -406,6 +442,38 @@ class NVOOS_Checkout_API_Rest_Controller {
 			return false;
 		}
 		return true;
+	}
+
+	/**
+	 * Validate a Terms-of-Service consent timestamp.
+	 *
+	 * Must be a plausible Unix timestamp: no older than seven days (covers
+	 * the checkout flow plus browser clock drift) and no more than ten
+	 * minutes in the future.
+	 *
+	 * @param mixed $value Candidate Unix timestamp.
+	 * @return bool
+	 */
+	public function validate_terms_agreed_at( $value ): bool {
+		if ( ! is_numeric( $value ) ) {
+			return false;
+		}
+
+		$ts = (int) $value;
+		return $ts > 0
+			&& $ts >= time() - 7 * DAY_IN_SECONDS
+			&& $ts <= time() + 10 * MINUTE_IN_SECONDS;
+	}
+
+	/**
+	 * The request's consent timestamp as a GMT MySQL datetime ('' when absent).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return string
+	 */
+	private function terms_agreed_mysql( WP_REST_Request $request ): string {
+		$ts = (int) $request->get_param( 'terms_agreed_at' );
+		return $ts > 0 ? gmdate( 'Y-m-d H:i:s', $ts ) : '';
 	}
 
 	/**

@@ -30,6 +30,7 @@ use function get_transient;
 use function number_format_i18n;
 use function register_setting;
 use function rest_url;
+use function sanitize_email;
 use function sanitize_key;
 use function set_transient;
 use function settings_errors;
@@ -40,6 +41,7 @@ use function wp_date;
 use function wp_die;
 use function wp_enqueue_script;
 use function wp_enqueue_style;
+use function wp_get_current_user;
 use function wp_localize_script;
 use function wp_parse_str;
 use function wp_parse_url;
@@ -532,16 +534,21 @@ class SettingsPage {
 		);
 
 		// Commerce config. No Stripe keys live in this plugin — the publishable
-		// key is returned per-session by the vendor checkout API.
+		// key is returned per-session by the vendor checkout API. The vendor's
+		// session response may also override the legal-document URLs; these
+		// are the client-side defaults that keep the consent links present.
 		\wp_localize_script(
 			'nvoos-content-graph-commerce',
 			'nvoosContentGraphCommerce',
 			array(
-				'rest_url'     => esc_url_raw( rest_url( Schema::REST_NAMESPACE ) ),
-				'nonce'        => wp_create_nonce( 'wp_rest' ),
-				'price_label'  => \NvoosContentGraph\Commerce\Payments::priceLabel(),
-				'fallback_url' => esc_url_raw( \NvoosContentGraph\Commerce\Payments::fallbackProductUrl() ),
-				'i18n'         => array(
+				'rest_url'          => esc_url_raw( rest_url( Schema::REST_NAMESPACE ) ),
+				'nonce'             => wp_create_nonce( 'wp_rest' ),
+				'price_label'       => \NvoosContentGraph\Commerce\Payments::priceLabel(),
+				'fallback_url'      => esc_url_raw( \NvoosContentGraph\Commerce\Payments::fallbackProductUrl() ),
+				'terms_url'         => esc_url_raw( \NvoosContentGraph\Commerce\Payments::termsUrl() ),
+				'refund_policy_url' => esc_url_raw( \NvoosContentGraph\Commerce\Payments::refundPolicyUrl() ),
+				'buyer_email'       => sanitize_email( (string) wp_get_current_user()->user_email ),
+				'i18n'              => array(
 					'title'              => __( 'Get NV oOS Complete', 'nvoos-content-graph' ),
 					'pay'                => __( 'Pay', 'nvoos-content-graph' ),
 					'cancel'             => __( 'Cancel', 'nvoos-content-graph' ),
@@ -561,6 +568,13 @@ class SettingsPage {
 					'payment_processing' => __( 'Payment is still processing. Click Verify once it completes.', 'nvoos-content-graph' ),
 					'payment_incomplete' => __( 'Payment did not complete. Status: ', 'nvoos-content-graph' ),
 					'download_zip'       => __( 'Download ZIP manually', 'nvoos-content-graph' ),
+					'terms_consent'      => __( 'I have read and agree to the Terms of Service and the Refund Policy, including the 30-day money-back guarantee.', 'nvoos-content-graph' ),
+					'terms_link'         => __( 'Terms of Service', 'nvoos-content-graph' ),
+					'refund_link'        => __( 'Refund Policy', 'nvoos-content-graph' ),
+					'terms_required'     => __( 'Please agree to the Terms of Service and Refund Policy to continue.', 'nvoos-content-graph' ),
+					'email_label'        => __( 'Email for receipt and refunds', 'nvoos-content-graph' ),
+					'email_placeholder'  => __( 'you@example.com', 'nvoos-content-graph' ),
+					'email_invalid'      => __( 'Please enter a valid email address for your receipt.', 'nvoos-content-graph' ),
 				),
 			)
 		);

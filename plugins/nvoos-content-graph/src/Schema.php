@@ -43,6 +43,8 @@ final class Schema {
 	public const FILTER_ADDON_ZIP_URL      = 'nvoos_content_graph/payments/addon_zip_url';
 	public const FILTER_VENDOR_API_URL     = 'nvoos_content_graph/payments/vendor_api_url';
 	public const FILTER_FALLBACK_URL       = 'nvoos_content_graph/payments/fallback_url';
+	public const FILTER_TERMS_URL          = 'nvoos_content_graph/payments/terms_url';
+	public const FILTER_REFUND_POLICY_URL  = 'nvoos_content_graph/payments/refund_policy_url';
 
 	// ─── Visual filters (see NvoosContentGraph\Visual\Tokens) ──
 	public const FILTER_TYPE_PALETTE  = 'nvoos_content_graph/type_palette';

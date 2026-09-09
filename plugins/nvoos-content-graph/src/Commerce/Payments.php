@@ -158,6 +158,42 @@ final class Payments {
 	}
 
 	/**
+	 * The Terms of Service URL linked from the purchase modal.
+	 *
+	 * The vendor's /session response is authoritative when it carries a
+	 * terms URL; this client-side default is the fallback so the consent
+	 * link is always present. Filterable via
+	 * `nvoos_content_graph/payments/terms_url`.
+	 *
+	 * @since 1.0.4
+	 *
+	 * @return string
+	 */
+	public static function termsUrl(): string {
+		return (string) apply_filters(
+			Schema::FILTER_TERMS_URL,
+			'https://nvdigitalsolutions.com/terms-of-service'
+		);
+	}
+
+	/**
+	 * The Refund Policy URL linked from the purchase modal.
+	 *
+	 * Same fallback semantics as {@see termsUrl()}. Filterable via
+	 * `nvoos_content_graph/payments/refund_policy_url`.
+	 *
+	 * @since 1.0.4
+	 *
+	 * @return string
+	 */
+	public static function refundPolicyUrl(): string {
+		return (string) apply_filters(
+			Schema::FILTER_REFUND_POLICY_URL,
+			'https://nvdigitalsolutions.com/refund-policy'
+		);
+	}
+
+	/**
 	 * Payload identifying this site and product to the vendor API.
 	 *
 	 * The vendor binds the payment to `site_url` so an intent created for

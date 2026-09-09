@@ -11,7 +11,10 @@
  */
 class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 
-	/** @var NVOOS_Checkout_API_Rest_Controller */
+	/** Controller under test.
+	 *
+	 * @var NVOOS_Checkout_API_Rest_Controller
+	 */
 	private $controller;
 
 	/**
@@ -92,7 +95,12 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 			array(
 				array(
 					'response' => array( 'code' => 200 ),
-					'body'     => wp_json_encode( array( 'id' => 'pi_1', 'client_secret' => 'pi_1_secret' ) ),
+					'body'     => wp_json_encode(
+						array(
+							'id'            => 'pi_1',
+							'client_secret' => 'pi_1_secret',
+						)
+					),
 				),
 			)
 		);
@@ -104,6 +112,8 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 		$this->assertSame( 'pi_1_secret', $data['client_secret'] );
 		$this->assertSame( 'pk_test_abc', $data['publishable_key'] );
 		$this->assertTrue( $data['test_mode'] );
+		$this->assertSame( 'https://nvdigitalsolutions.com/terms-of-service', $data['terms_url'] );
+		$this->assertSame( 'https://nvdigitalsolutions.com/refund-policy', $data['refund_policy_url'] );
 	}
 
 	/**
@@ -116,7 +126,12 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 			array(
 				array(
 					'response' => array( 'code' => 200 ),
-					'body'     => wp_json_encode( array( 'id' => 'pi_complete', 'client_secret' => 'pi_complete_secret' ) ),
+					'body'     => wp_json_encode(
+						array(
+							'id'            => 'pi_complete',
+							'client_secret' => 'pi_complete_secret',
+						)
+					),
 				),
 			)
 		);
@@ -282,6 +297,269 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The consent-timestamp validator accepts plausible timestamps only.
+	 *
+	 * @return void
+	 */
+	public function test_terms_agreed_at_validation(): void {
+		$this->assertTrue( $this->controller->validate_terms_agreed_at( time() ) );
+		$this->assertTrue( $this->controller->validate_terms_agreed_at( (string) ( time() - 60 ) ) );
+		$this->assertFalse( $this->controller->validate_terms_agreed_at( 0 ) );
+		$this->assertFalse( $this->controller->validate_terms_agreed_at( time() - 8 * DAY_IN_SECONDS ) );
+		$this->assertFalse( $this->controller->validate_terms_agreed_at( time() + 3600 ) );
+		$this->assertFalse( $this->controller->validate_terms_agreed_at( 'not-a-timestamp' ) );
+	}
+
+	/**
+	 * /verify records the buyer's consent timestamp on a fresh license.
+	 *
+	 * @return void
+	 */
+	public function test_verify_records_terms_consent(): void {
+		$this->stub_stripe(
+			array(
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'id'              => 'pi_consent',
+							'status'          => 'succeeded',
+							'amount_received' => 4900,
+							'currency'        => 'usd',
+							'metadata'        => array(
+								'product'  => 'nvoos-content-graph-ai',
+								'site_url' => 'https://customer.example',
+							),
+						)
+					),
+				),
+			)
+		);
+
+		$consent_at = time();
+
+		$request = new WP_REST_Request( 'POST', '/nvoos-checkout/v1/verify' );
+		$request->set_param( 'product', 'nvoos-content-graph-ai' );
+		$request->set_param( 'site_url', 'https://customer.example' );
+		$request->set_param( 'payment_intent', 'pi_consent' );
+		$request->set_param( 'terms_agreed_at', $consent_at );
+
+		$response = $this->controller->verify_payment( $request );
+
+		$this->assertNotWPError( $response );
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_payment_intent( 'pi_consent' );
+		$this->assertNotNull( $license );
+		$this->assertSame( gmdate( 'Y-m-d H:i:s', $consent_at ), $license['terms_agreed_at'] );
+	}
+
+	/**
+	 * /verify attaches consent to a license the webhook issued first.
+	 *
+	 * The payment webhook usually creates the row before the browser's
+	 * /verify arrives; the later call must fill — never overwrite — the
+	 * consent timestamp.
+	 *
+	 * @return void
+	 */
+	public function test_verify_attaches_consent_to_webhook_issued_license(): void {
+		// Simulate the webhook path: license exists without consent.
+		NVOOS_Checkout_API_License_Store::create(
+			array(
+				'license_key'           => 'webhook-first',
+				'product'               => 'nvoos-content-graph-ai',
+				'site_url'              => 'https://customer.example',
+				'stripe_payment_intent' => 'pi_webhook_first',
+				'amount'                => 4900,
+			)
+		);
+
+		$this->stub_stripe(
+			array(
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'id'              => 'pi_webhook_first',
+							'status'          => 'succeeded',
+							'amount_received' => 4900,
+							'currency'        => 'usd',
+							'metadata'        => array(
+								'product'  => 'nvoos-content-graph-ai',
+								'site_url' => 'https://customer.example',
+							),
+						)
+					),
+				),
+			)
+		);
+
+		$consent_at = time();
+
+		$request = new WP_REST_Request( 'POST', '/nvoos-checkout/v1/verify' );
+		$request->set_param( 'product', 'nvoos-content-graph-ai' );
+		$request->set_param( 'site_url', 'https://customer.example' );
+		$request->set_param( 'payment_intent', 'pi_webhook_first' );
+		$request->set_param( 'terms_agreed_at', $consent_at );
+
+		$response = $this->controller->verify_payment( $request );
+
+		$this->assertNotWPError( $response );
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_payment_intent( 'pi_webhook_first' );
+		$this->assertSame( gmdate( 'Y-m-d H:i:s', $consent_at ), $license['terms_agreed_at'] );
+
+		// A later /verify must never overwrite the recorded timestamp.
+		$request->set_param( 'terms_agreed_at', $consent_at + 500 );
+		$this->controller->verify_payment( $request );
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_payment_intent( 'pi_webhook_first' );
+		$this->assertSame( gmdate( 'Y-m-d H:i:s', $consent_at ), $license['terms_agreed_at'] );
+		$this->assertSame( 1, NVOOS_Checkout_API_License_Store::count() );
+	}
+
+	/**
+	 * /verify records the buyer's email on a fresh license.
+	 *
+	 * @return void
+	 */
+	public function test_verify_records_buyer_email(): void {
+		$this->stub_stripe(
+			array(
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'id'              => 'pi_email',
+							'status'          => 'succeeded',
+							'amount_received' => 4900,
+							'currency'        => 'usd',
+							'metadata'        => array(
+								'product'  => 'nvoos-content-graph-ai',
+								'site_url' => 'https://customer.example',
+							),
+						)
+					),
+				),
+			)
+		);
+
+		$request = new WP_REST_Request( 'POST', '/nvoos-checkout/v1/verify' );
+		$request->set_param( 'product', 'nvoos-content-graph-ai' );
+		$request->set_param( 'site_url', 'https://customer.example' );
+		$request->set_param( 'payment_intent', 'pi_email' );
+		$request->set_param( 'buyer_email', 'buyer@example.com' );
+
+		$response = $this->controller->verify_payment( $request );
+
+		$this->assertNotWPError( $response );
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_payment_intent( 'pi_email' );
+		$this->assertNotNull( $license );
+		$this->assertSame( 'buyer@example.com', $license['buyer_email'] );
+	}
+
+	/**
+	 * The intent's receipt_email (set by Stripe) wins over the request param.
+	 *
+	 * @return void
+	 */
+	public function test_verify_prefers_intent_receipt_email(): void {
+		$this->stub_stripe(
+			array(
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'id'              => 'pi_receipt',
+							'status'          => 'succeeded',
+							'amount_received' => 4900,
+							'currency'        => 'usd',
+							'receipt_email'   => 'stripe@example.com',
+							'metadata'        => array(
+								'product'  => 'nvoos-content-graph-ai',
+								'site_url' => 'https://customer.example',
+							),
+						)
+					),
+				),
+			)
+		);
+
+		$request = new WP_REST_Request( 'POST', '/nvoos-checkout/v1/verify' );
+		$request->set_param( 'product', 'nvoos-content-graph-ai' );
+		$request->set_param( 'site_url', 'https://customer.example' );
+		$request->set_param( 'payment_intent', 'pi_receipt' );
+		$request->set_param( 'buyer_email', 'request@example.com' );
+
+		$response = $this->controller->verify_payment( $request );
+
+		$this->assertNotWPError( $response );
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_payment_intent( 'pi_receipt' );
+		$this->assertNotNull( $license );
+		$this->assertSame( 'stripe@example.com', $license['buyer_email'] );
+	}
+
+	/**
+	 * /verify attaches the buyer email to a license the webhook issued first.
+	 *
+	 * @return void
+	 */
+	public function test_verify_attaches_buyer_email_to_webhook_issued_license(): void {
+		// Simulate the webhook path: license exists without an email.
+		NVOOS_Checkout_API_License_Store::create(
+			array(
+				'license_key'           => 'webhook-email',
+				'product'               => 'nvoos-content-graph-ai',
+				'site_url'              => 'https://customer.example',
+				'stripe_payment_intent' => 'pi_webhook_email',
+				'amount'                => 4900,
+			)
+		);
+
+		$this->stub_stripe(
+			array(
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'id'              => 'pi_webhook_email',
+							'status'          => 'succeeded',
+							'amount_received' => 4900,
+							'currency'        => 'usd',
+							'metadata'        => array(
+								'product'  => 'nvoos-content-graph-ai',
+								'site_url' => 'https://customer.example',
+							),
+						)
+					),
+				),
+			)
+		);
+
+		$request = new WP_REST_Request( 'POST', '/nvoos-checkout/v1/verify' );
+		$request->set_param( 'product', 'nvoos-content-graph-ai' );
+		$request->set_param( 'site_url', 'https://customer.example' );
+		$request->set_param( 'payment_intent', 'pi_webhook_email' );
+		$request->set_param( 'buyer_email', 'late@example.com' );
+
+		$response = $this->controller->verify_payment( $request );
+
+		$this->assertNotWPError( $response );
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_payment_intent( 'pi_webhook_email' );
+		$this->assertSame( 'late@example.com', $license['buyer_email'] );
+
+		// A later /verify must never overwrite the recorded email.
+		$request->set_param( 'buyer_email', 'other@example.com' );
+		$this->controller->verify_payment( $request );
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_payment_intent( 'pi_webhook_email' );
+		$this->assertSame( 'late@example.com', $license['buyer_email'] );
+	}
+
+	/**
 	 * A webhook with a valid signature revokes the matching license.
 	 *
 	 * @return void
@@ -330,8 +608,8 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * payment_intent.succeeded issues the license server-side (interrupted
-	 * browser recovery) and is idempotent across Stripe retries.
+	 * The payment_intent.succeeded webhook issues the license server-side
+	 * (interrupted browser recovery) and is idempotent across Stripe retries.
 	 *
 	 * @return void
 	 */
@@ -355,6 +633,7 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 						'amount_received' => 4900,
 						'currency'        => 'usd',
 						'customer'        => 'cus_orphan',
+						'receipt_email'   => 'webhook-buyer@example.com',
 						'metadata'        => array(
 							'product'  => 'nvoos-content-graph-ai',
 							'site_url' => 'https://customer.example',
@@ -379,6 +658,7 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 		$license = NVOOS_Checkout_API_License_Store::get_by_payment_intent( 'pi_orphan' );
 		$this->assertNotNull( $license );
 		$this->assertSame( NVOOS_Checkout_API_License_Store::STATUS_ACTIVE, $license['status'] );
+		$this->assertSame( 'webhook-buyer@example.com', $license['buyer_email'] );
 		$this->assertSame( 1, NVOOS_Checkout_API_License_Store::count() );
 
 		// A retried delivery of the same event must not duplicate the license.
@@ -418,7 +698,7 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 							),
 						)
 					),
-				)
+				),
 			)
 		);
 

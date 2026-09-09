@@ -186,6 +186,27 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The comparison hash must ignore the volatile "Generated:" timestamp,
+	 * otherwise a sync run in a later second always counts as a content
+	 * change and churns a new attachment (regression for CI idempotency).
+	 */
+	public function test_hash_ignores_generated_timestamp() {
+		$method = new ReflectionMethod( 'WP_MCP_AI_Profession_Playbook_Seeder', 'hash_playbook_content' );
+		$method->setAccessible( true );
+
+		$body = "# Test Profession - Professional Playbook\n\n## Global Guidelines\nBody text\n";
+
+		$hash_a = $method->invoke( null, "Generated: 2026-01-01 00:00:00 UTC\n" . $body );
+		$hash_b = $method->invoke( null, "Generated: 2026-09-09 03:04:05 UTC\n" . $body );
+
+		$this->assertSame( $hash_a, $hash_b, 'Hash must be stable across generation timestamps' );
+
+		// A real body change must still change the hash.
+		$hash_c = $method->invoke( null, "Generated: 2026-09-09 03:04:05 UTC\n" . $body . "Extra line\n" );
+		$this->assertNotEquals( $hash_b, $hash_c, 'Hash must still change when the body changes' );
+	}
+
+	/**
 	 * Test content update behavior - changing content creates new attachment.
 	 */
 	public function test_content_update_creates_new_attachment() {

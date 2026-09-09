@@ -7,6 +7,7 @@ use WP_Error;
 
 use function is_wp_error;
 use function json_decode;
+use function sanitize_email;
 use function sanitize_text_field;
 use function trailingslashit;
 use function wp_json_encode;
@@ -48,7 +49,7 @@ class Vendor {
 	 * @since 1.0.4
 	 *
 	 * @return array<string,mixed>|WP_Error
-	 *   array{client_secret: string, publishable_key: string, amount: int, currency: string, test_mode: bool}
+	 *   array{client_secret: string, publishable_key: string, amount: int, currency: string, test_mode: bool, terms_url: string, refund_policy_url: string}
 	 */
 	public function createSession() {
 		return $this->post( 'session', Payments::purchasePayload() );
@@ -60,12 +61,21 @@ class Vendor {
 	 * @since 1.0.4
 	 *
 	 * @param string $paymentIntentId Stripe PaymentIntent ID (pi_…).
+	 * @param int    $termsAgreedAt   Unix timestamp of the buyer's consent
+	 *                                to the Terms of Service (0 = absent).
+	 * @param string $buyerEmail      Buyer's receipt/refund email ('' = absent).
 	 * @return array<string,mixed>|WP_Error
 	 *   array{license_key: string, download_url: string, addon_version: string, amount: int, currency: string}
 	 */
-	public function verify( string $paymentIntentId ) {
+	public function verify( string $paymentIntentId, int $termsAgreedAt = 0, string $buyerEmail = '' ) {
 		$payload                   = Payments::purchasePayload();
 		$payload['payment_intent'] = $paymentIntentId;
+		if ( $termsAgreedAt > 0 ) {
+			$payload['terms_agreed_at'] = $termsAgreedAt;
+		}
+		if ( '' !== $buyerEmail ) {
+			$payload['buyer_email'] = sanitize_email( $buyerEmail );
+		}
 		return $this->post( 'verify', $payload );
 	}
 

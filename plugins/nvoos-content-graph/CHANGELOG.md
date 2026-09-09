@@ -1,5 +1,15 @@
 # NV oOS Content Graph — Changelog
 
+## 1.0.7 — Unreleased
+
+### New — Checkout consent & legal links
+
+- **Terms of Service consent checkbox in the purchase modal** — the Pay button stays disabled until the buyer ticks agreement to the Terms of Service and the 30-day money-back Refund Policy (links open in a new tab; URLs come from the vendor `/session` response with filterable client-side defaults `nvoos_content_graph/payments/terms_url` / `nvoos_content_graph/payments/refund_policy_url`)
+- **Buyer email collection in the purchase modal** — a required email field (prefilled with the logged-in admin's address) gates the Pay button alongside the consent checkbox; the address is attached to the Stripe PaymentIntent via `confirmParams.receipt_email` (so Stripe emails the receipt) and sent as `buyer_email` on `/payments/verify` for refund matching
+- **Consent recorded with the license** — the modal sends the consent timestamp as `terms_agreed_at` on `/payments/verify`; the plugin forwards it to the vendor, which stores it on the license row, and keeps it in the local purchase record
+- **Vendor contract update** — `docs/commerce-vendor-api.md` documents the new session fields, the optional verify params (`terms_agreed_at`, `buyer_email`), and their validation windows
+- Legal-document templates for the vendor: `docs/legal/TERMS-OF-SERVICE.md` + `docs/legal/REFUND-POLICY.md` (30-day no-questions-asked guarantee)
+
 ## 1.0.6 — 2026-09-08
 
 ### Changed — Checkout delivers the NV oOS Complete bundle
