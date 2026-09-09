@@ -891,7 +891,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 																							}
 																						);
 
-																						// Standalone-only module (the base registry registers
+																							// Standalone-only module (the base registry registers
 																						// `toolkit_regulatory_registration` dynamically via the
 																						// conditional toolkit loop with an `enabled` gate). Boots
 																						// the slim regulatory-registration init standalone
@@ -905,6 +905,24 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 																							),
 																							function () use ( $p ) {
 																								require_once $p . 'tools/regulatory-registration/init.php';
+																							}
+																						);
+
+																						// Standalone-only module (the base registry registers
+																						// `toolkit_healthcare` with the `jetengine_meta_helper`
+																						// dependency — dormant standalone; the helper lands with
+																						// a later wave and the inits' JetEngine guards stay
+																						// byte-identical, PM precedent). Boots the slim
+																						// healthcare init standalone.
+																						$this->add_module(
+																							'toolkit_healthcare',
+																							'Healthcare Toolkit',
+																							array(),
+																							array(
+																								'files' => array( $p . 'tools/healthcare/init.php' ),
+																							),
+																							function () use ( $p ) {
+																								require_once $p . 'tools/healthcare/init.php';
 																							}
 																						);
 		}
