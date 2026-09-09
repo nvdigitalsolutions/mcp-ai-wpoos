@@ -228,6 +228,15 @@
     </rule>
 
     <!--
+        Byte-identical document-generation pro-batch-ocr/pro-unlimited-ocr
+        descriptions concatenate string literals inside __() (the monolith
+        copies carry the same concatenations).
+    -->
+    <rule ref="WordPress.WP.I18n.NonSingularStringLiteralText">
+        <severity>0</severity>
+    </rule>
+
+    <!--
         Byte-identical import-services file handling: the base copy uses
         fopen/fclose/fwrite/file_put_contents + @unlink for its CSV import
         temp files, with the same silenced-error and while-assignment
