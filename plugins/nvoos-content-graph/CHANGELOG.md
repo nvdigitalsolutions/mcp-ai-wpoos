@@ -1,5 +1,24 @@
 # NV oOS Content Graph — Changelog
 
+## 1.0.6 — 2026-09-08
+
+### Changed — Checkout delivers the NV oOS Complete bundle
+
+- **Product swap** — the checkout now sells and installs the **NV oOS Complete** bundle (`nvdigital-open-operator-system-oos-complete-{version}.zip` from the monorepo GitHub releases: the full NV oOS plugin, base + Pro, as a separate WordPress plugin) instead of the not-yet-ready companion AI addon. Purchase payload product id: `nvoos-oos-complete` (the vendor checkout addon accepts it alongside the legacy `nvoos-content-graph-ai` id)
+- **Conflict guard** — `Installer::install()` now detects any other copy of the NV oOS base plugin on the site (dev folder, wp.org slug, or an active base plugin) and refuses with a clear `nvoos_content_graph_base_plugin_exists` error instead of creating a second copy that would redeclare constants/classes. Idempotent success still recognized for the legacy AI addon (pre-1.0.6 purchases)
+- **Copy + disclosures** — upsell buttons, purchase modal, and install messages now say "NV oOS Complete"; the fallback ZIP URL points at the Complete release assets; `readme.txt` Stripe/GitHub disclosure sections updated to describe the Complete bundle purchase; the checkout-unavailable fallback URL now defaults to the public GitHub releases page (filterable)
+- Docs: `docs/commerce-vendor-api.md` rewritten with the Complete-bundle flow plus the vendor-side setup (version + ZIP source pattern)
+
+## 1.0.5 — 2026-09-08
+
+### New — Agent Memory Bridge
+
+- **Memory projection into the graph** — `NvoosContentGraph\Memory\Bridge` now implements the agent-memory bridge (previously a stub). It subscribes to the NV oOS base+Pro plugin's canonical `wp_mcp_ai_memory_stored` event (in addition to the ecosystem-native `nvoos_content_graph/memory_stored`) and projects each memory as a `memory:*` node with agent (`OBSERVED_BY`), wing/room (`MEMBER_OF`), and source-post (`DERIVED_FROM`) edges into the graph DB
+- **Advisory degradation** — projection is wrapped defensively: malformed payloads, a missing schema, or any bridge failure never break the memory write (the source store remains the source of truth)
+- **Graph-ranked retrieval** — new `Bridge::retrieveGraph()` blends agent/wing/room anchor expansion with keyword search (tunable via the shared `wp_mcp_ai_graph_score_weights` filter) and serves the NV oOS `wake_up_context` graph mode through the `wp_mcp_ai_wake_up_context_graph_retriever` filter seam, so sites running NV oOS + Content Graph get graph-ranked memory wake-ups without the bundled Graphify addon
+- **Schema probe** — new `Db::tablesInstalled()` (uncached `SHOW TABLES` probe) gates projection/retrieval while the tables are absent
+- Tests: `tests/Integration/MemoryBridgeTest.php` (real-DDL projection/edges/retrieval/retriever) + `tests/Unit/Memory/BridgeTest.php` (mocked-`$wpdb` schema-absent degradation); the test bootstrap now ships the PHPUnit 11 compat shim used by the pinned wp-phpunit fork
+
 ## 1.0.4 — 2026-09-05
 
 ### New — Visual Experience System

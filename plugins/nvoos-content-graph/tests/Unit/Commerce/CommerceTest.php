@@ -49,6 +49,7 @@ class CommerceTest extends WP_UnitTestCase {
 	 */
 	protected function tearDown(): void {
 		remove_all_filters( 'pre_http_request' );
+		remove_all_filters( 'nvoos_content_graph/commerce/skip_base_plugin_detection' );
 		delete_option( Schema::OPTION_LICENSE );
 		delete_option( Schema::OPTION_SETTINGS );
 		parent::tearDown();
@@ -118,9 +119,9 @@ class CommerceTest extends WP_UnitTestCase {
 	}
 
 	/** @test */
-	public function fallbackProductUrlDefaultsToVendorPage(): void {
+	public function fallbackProductUrlDefaultsToReleasesPage(): void {
 		$this->assertSame(
-			'https://nvdigitalsolutions.com/plugins/nvoos-content-graph-ai/',
+			'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases',
 			Payments::fallbackProductUrl()
 		);
 	}
@@ -152,6 +153,96 @@ class CommerceTest extends WP_UnitTestCase {
 	public function installerReportsInstalledState(): void {
 		$this->assertIsBool( Installer::isInstalled() );
 		$this->assertIsBool( Installer::isActive() );
+		$this->assertIsBool( Installer::isBundleInstalled() );
+		$this->assertIsBool( Installer::isBundleActive() );
+	}
+
+	/** @test */
+	public function purchasePayloadUsesCompleteProduct(): void {
+		$payload = Payments::purchasePayload();
+
+		$this->assertSame( Schema::PRODUCT_COMPLETE, $payload['product'] );
+		$this->assertSame( 'nvoos-oos-complete', $payload['product'] );
+		$this->assertSame( home_url( '' ), $payload['site_url'] );
+		$this->assertSame( Payments::addonVersion(), $payload['addon_version'] );
+	}
+
+	/** @test */
+	public function zipUrlTargetsCompleteReleaseAsset(): void {
+		$url = Payments::zipUrl();
+
+		$this->assertStringContainsString( '/releases/download/v', $url );
+		$this->assertStringContainsString( 'nvdigital-open-operator-system-oos-complete-', $url );
+		$this->assertStringEndsWith( '.zip', $url );
+	}
+
+	/** @test */
+	public function installerDetectsExistingBasePlugin(): void {
+		// A known NV oOS distribution folder present on disk must be detected.
+		$fakeDir  = WP_PLUGIN_DIR . '/nvdigital-open-operator-system-oos';
+		$fakeFile = $fakeDir . '/nvdigital-open-operator-system-oos.php';
+
+		// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_mkdir, WordPress.WP.AlternativeFunctions.file_system_operations_touch, WordPress.WP.AlternativeFunctions.unlink_unlink, WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Test fixture plugin folder; native ops are the test seam.
+		if ( ! is_dir( $fakeDir ) ) {
+			mkdir( $fakeDir, 0777, true );
+		}
+		touch( $fakeFile );
+
+		try {
+			$detected = Installer::detectExistingBasePlugin();
+			$this->assertNotSame( '', $detected );
+			$this->assertContains( $detected, Installer::KNOWN_BASE_PLUGINS );
+		} finally {
+			unlink( $fakeFile );
+			rmdir( $fakeDir );
+		}
+		// phpcs:enable WordPress.WP.AlternativeFunctions.file_system_operations_mkdir, WordPress.WP.AlternativeFunctions.file_system_operations_touch, WordPress.WP.AlternativeFunctions.unlink_unlink, WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
+	}
+
+	/** @test */
+	public function installAbortsWhenBasePluginAlreadyInstalled(): void {
+		// The test environment must contain some known base-plugin folder;
+		// create one when the mount is absent.
+		$fakeDir  = WP_PLUGIN_DIR . '/nvdigital-open-operator-system-oos';
+		$fakeFile = $fakeDir . '/nvdigital-open-operator-system-oos.php';
+		$created  = ! is_dir( $fakeDir );
+		// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_mkdir, WordPress.WP.AlternativeFunctions.file_system_operations_touch, WordPress.WP.AlternativeFunctions.unlink_unlink, WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Test fixture plugin folder; native ops are the test seam.
+		if ( $created ) {
+			mkdir( $fakeDir, 0777, true );
+			touch( $fakeFile );
+		}
+
+		// Any HTTP attempt would mean the guard failed — count them.
+		$http_calls = 0;
+		add_filter(
+			'pre_http_request',
+			static function () use ( &$http_calls ) {
+				$http_calls++;
+				return array(
+					'response' => array( 'code' => 404 ),
+					'body'     => '',
+				);
+			},
+			10,
+			0
+		);
+
+		try {
+			$result = Installer::install( 'https://vendor.example/download/complete.zip' );
+
+			$this->assertInstanceOf( WP_Error::class, $result );
+			$this->assertSame( 'nvoos_content_graph_base_plugin_exists', $result->get_error_code() );
+			$data = $result->get_error_data();
+			$this->assertTrue( $data['manual'] );
+			$this->assertSame( 'https://vendor.example/download/complete.zip', $data['zip_url'] );
+			$this->assertSame( 0, $http_calls, 'The installer must not download when a base plugin exists.' );
+		} finally {
+			if ( $created ) {
+				unlink( $fakeFile );
+				rmdir( $fakeDir );
+			}
+		}
+		// phpcs:enable WordPress.WP.AlternativeFunctions.file_system_operations_mkdir, WordPress.WP.AlternativeFunctions.file_system_operations_touch, WordPress.WP.AlternativeFunctions.unlink_unlink, WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
 	}
 
 	/** @test */
@@ -281,6 +372,10 @@ class CommerceTest extends WP_UnitTestCase {
 
 	/** @test */
 	public function verifyRecordsLicenseAndAttemptsInstall(): void {
+		// The test environment may itself live inside a folder the base-plugin
+		// guard detects — skip detection so the download path is exercised.
+		add_filter( 'nvoos_content_graph/commerce/skip_base_plugin_detection', '__return_true' );
+
 		$this->stubVendor(
 			array(
 				// 1. Vendor /verify → license + signed download URL.
@@ -325,6 +420,10 @@ class CommerceTest extends WP_UnitTestCase {
 
 	/** @test */
 	public function verifyFallsBackWhenVendorOmitsDownloadUrl(): void {
+		// See verifyRecordsLicenseAndAttemptsInstall: skip the base-plugin
+		// guard so the fallback download path is exercised.
+		add_filter( 'nvoos_content_graph/commerce/skip_base_plugin_detection', '__return_true' );
+
 		$this->stubVendor(
 			array(
 				array(

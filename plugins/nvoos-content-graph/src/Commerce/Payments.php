@@ -18,6 +18,9 @@ use function rawurlencode;
  * URLs — is delegated to the vendor checkout API (run by NV Digital
  * Solutions on its own server, where the Stripe secret key lives).
  *
+ * The purchased artifact is the **NV oOS Complete** bundle (the full
+ * NV oOS plugin: base + Pro, distributed as a separate WordPress plugin).
+ *
  * The browser is never trusted with an amount: the price shown here is
  * for display only, and the vendor re-verifies everything server-side.
  *
@@ -28,8 +31,16 @@ final class Payments {
 	/** @var int Default price in the smallest currency unit (USD cents). */
 	public const DEFAULT_PRICE_CENTS = 4900;
 
-	/** @var string Addon version pinned for the fallback download URL. */
-	public const DEFAULT_ADDON_VERSION = '1.0.4';
+	/**
+	 * Bundle version pinned for the fallback download URL.
+	 *
+	 * Mirrors the base-plugin release (`nvdigital-open-operator-system-oos-complete-{version}.zip`)
+	 * published on the monorepo GitHub releases. The vendor's `/verify`
+	 * response is authoritative when it returns an `addon_version`.
+	 *
+	 * @var string
+	 */
+	public const DEFAULT_ADDON_VERSION = '1.1.74';
 
 	/**
 	 * Base URL of the vendor checkout API.
@@ -93,9 +104,9 @@ final class Payments {
 	}
 
 	/**
-	 * The addon version targeted by the installer.
+	 * The bundle version targeted by the installer.
 	 *
-	 * Bump this (or filter it) in lockstep with new addon releases.
+	 * Bump this (or filter it) in lockstep with new NV oOS releases.
 	 *
 	 * @since 1.0.4
 	 *
@@ -106,11 +117,11 @@ final class Payments {
 	}
 
 	/**
-	 * Fallback download URL of the addon ZIP.
+	 * Fallback download URL of the NV oOS Complete ZIP.
 	 *
 	 * Only used when the vendor does not return a signed `download_url`
 	 * in the verify response. Defaults to the monorepo GitHub release
-	 * asset built by `.github/workflows/build-nvoos-content-graph-ai.yml`.
+	 * asset built by `.github/workflows/release.yml`.
 	 *
 	 * @since 1.0.4
 	 *
@@ -119,7 +130,7 @@ final class Payments {
 	public static function zipUrl(): string {
 		$version = self::addonVersion();
 		$default = sprintf(
-			'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/content-graph-ai-v%s/nvoos-content-graph-ai-v%s.zip',
+			'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/v%s/nvdigital-open-operator-system-oos-complete-%s.zip',
 			rawurlencode( $version ),
 			rawurlencode( $version )
 		);
@@ -130,9 +141,10 @@ final class Payments {
 	 * Fallback product page URL.
 	 *
 	 * Shown (and redirected to) when the vendor checkout endpoint is not
-	 * available, so users can still purchase the AI addon from the vendor
-	 * site. Override via the `nvoos_content_graph/payments/fallback_url`
-	 * filter; an empty value disables the redirect fallback.
+	 * available, so users can still obtain the NV oOS Complete bundle.
+	 * Defaults to the public GitHub releases page; point it at the vendor
+	 * product page via the `nvoos_content_graph/payments/fallback_url`
+	 * filter. An empty value disables the redirect fallback.
 	 *
 	 * @since 1.0.4
 	 *
@@ -141,7 +153,7 @@ final class Payments {
 	public static function fallbackProductUrl(): string {
 		return (string) apply_filters(
 			Schema::FILTER_FALLBACK_URL,
-			'https://nvdigitalsolutions.com/plugins/nvoos-content-graph-ai/'
+			'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases'
 		);
 	}
 
@@ -155,7 +167,7 @@ final class Payments {
 	 */
 	public static function purchasePayload(): array {
 		return array(
-			'product'       => Schema::PRODUCT_AI_ADDON,
+			'product'       => Schema::PRODUCT_COMPLETE,
 			'site_url'      => home_url( '' ),
 			'addon_version' => self::addonVersion(),
 		);

@@ -1,10 +1,10 @@
 /* jshint esversion: 6 */
 /**
- * NV oOS Content Graph — Addon Purchase Modal
+ * NV oOS Content Graph — NV oOS Complete Purchase Modal
  *
  * Opens a modal with Stripe's Payment Element, processes the purchase of
- * the nvoos-content-graph-ai addon, then verifies the payment server-side
- * and installs the addon — a single flow.
+ * the NV oOS Complete plugin bundle, then verifies the payment
+ * server-side and installs the bundle — a single flow.
  *
  * Card details are entered inside Stripe's own iframe; this file never
  * sees card data. Amounts are decided server-side.
@@ -179,7 +179,7 @@
 		dialog = el( 'div', 'nvoos-cg-modal' );
 
 		var header = el( 'div', 'nvoos-cg-modal-header' );
-		var title = el( 'h2', 'nvoos-cg-modal-title', i18n.title || 'Get NV oOS Content Graph — AI' );
+		var title = el( 'h2', 'nvoos-cg-modal-title', i18n.title || 'Get NV oOS Complete' );
 		var closeBtn = el( 'button', 'nvoos-cg-modal-close', '×' );
 		closeBtn.type = 'button';
 		closeBtn.setAttribute( 'aria-label', i18n.close || 'Close' );
@@ -426,7 +426,8 @@
 	}
 
 	/**
-	 * Verify the payment server-side, then install and activate the addon.
+	 * Verify the payment server-side, then install and activate the
+	 * NV oOS Complete bundle.
 	 *
 	 * @param {string} paymentIntentId Stripe PaymentIntent ID.
 	 * @param {Object} opts            Options: { fromPending: bool } marks a

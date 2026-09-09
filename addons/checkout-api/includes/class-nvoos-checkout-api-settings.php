@@ -28,18 +28,19 @@ class NVOOS_Checkout_API_Settings {
 	public const OPTION = 'nvoos_checkout_settings';
 
 	public const DEFAULT_PRICE_CENTS   = 4900;
-	public const DEFAULT_ADDON_VERSION = '1.0.4';
+	public const DEFAULT_ADDON_VERSION = '1.1.74';
 
 	/**
 	 * Default ZIP source pattern.
 	 *
+	 * Serves the NV oOS Complete bundle release asset by default;
 	 * `{VERSION}` is replaced with the addon version of the license being
 	 * served. Override with a local path or a private mirror via settings.
 	 *
 	 * @return string
 	 */
 	public static function default_zip_source(): string {
-		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/content-graph-ai-v{VERSION}/nvoos-content-graph-ai-v{VERSION}.zip';
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/v{VERSION}/nvdigital-open-operator-system-oos-complete-{VERSION}.zip';
 	}
 
 	/**

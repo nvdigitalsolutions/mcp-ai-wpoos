@@ -2,6 +2,11 @@
 
 ## 0.1.0 — Unreleased
 
+### Changed
+
+- Default product is now the **NV oOS Complete** bundle: `nvoos-oos-complete` added to the accepted products (legacy `nvoos-content-graph-ai` stays accepted), the default ZIP source and cache/download filenames target `nvdigital-open-operator-system-oos-complete-{VERSION}.zip` from the monorepo GitHub releases (`v*.*.*` tags), and the default sold version is `1.1.74`
+- Download streaming is chunked (1 MB reads) instead of buffering the whole ZIP in memory — the Complete bundle can be tens of MB
+
 ### New
 
 - Stripe checkout endpoints: `POST /session` (PaymentIntent creation) and `POST /verify` (server-side verification + license issuance) under `/wp-json/nvoos-checkout/v1/`

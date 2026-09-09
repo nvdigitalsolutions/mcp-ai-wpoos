@@ -70,6 +70,24 @@ class Db {
 		return $wpdb->prefix . Schema::TABLE_EMBEDDINGS;
 	}
 
+	/**
+	 * Whether the plugin's custom tables exist.
+	 *
+	 * Uncached probe — SHOW TABLES is cheap and the result can never go
+	 * stale after an uninstall/reinstall cycle. Used by the Memory Bridge
+	 * to skip projection while the schema is absent (e.g. before first
+	 * activation or in CI).
+	 *
+	 * @since 1.0.5
+	 *
+	 * @return bool True when the nodes table exists.
+	 */
+	public static function tablesInstalled(): bool {
+		global $wpdb;
+		$name = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', self::nodesTable() ) );
+		return is_string( $name ) && self::nodesTable() === $name;
+	}
+
 	// ─── Schema install / upgrade ──────────────────────────────
 
 	/**

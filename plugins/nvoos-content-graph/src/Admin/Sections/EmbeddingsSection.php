@@ -109,7 +109,7 @@ class EmbeddingsSection extends Section {
 	}
 
 	/**
-	 * Render an upsell card for the AI addon.
+	 * Render an upsell card for the NV oOS Complete bundle.
 	 *
 	 * @return void
 	 */
@@ -118,16 +118,16 @@ class EmbeddingsSection extends Section {
 		<h2><?php echo \esc_html( $this->get_title() ); ?></h2>
 		<div class="nvoos-content-graph-upsell-card" style="background:#f0f6fc;border:1px solid #c5d9ed;border-left:4px solid #0073aa;padding:12px 16px;max-width:700px;">
 			<p style="margin:0 0 8px;">
-				<strong><?php esc_html_e( 'Vector embeddings require the AI addon', 'nvoos-content-graph' ); ?></strong>
+				<strong><?php esc_html_e( 'Vector embeddings require NV oOS Complete', 'nvoos-content-graph' ); ?></strong>
 			</p>
 			<p style="margin:0 0 8px;">
-				<?php esc_html_e( 'NV oOS Content Graph — AI adds vector embeddings, semantic search, RAG retrieval, and agent memory to your knowledge graph. Once installed, you can generate embeddings for every node using OpenAI, Google Gemini, or any of the 13 supported providers.', 'nvoos-content-graph' ); ?>
+				<?php esc_html_e( 'NV oOS Complete adds vector embeddings, semantic search, RAG retrieval, and agent memory to your knowledge graph. Once installed, you can generate embeddings for every node using OpenAI, Google Gemini, or any of the 13 supported providers.', 'nvoos-content-graph' ); ?>
 			</p>
 			<p style="margin:0;">
 				<button type="button" class="button button-primary nvoos-content-graph-buy-ai">
-					<?php esc_html_e( 'Get NV oOS Content Graph — AI', 'nvoos-content-graph' ); ?>
+					<?php esc_html_e( 'Get NV oOS Complete', 'nvoos-content-graph' ); ?>
 				</button>
-				<a href="https://github.com/nvdigitalsolutions/nvoos-content-graph-ai" class="button button-link" target="_blank" rel="noopener">
+				<a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos" class="button button-link" target="_blank" rel="noopener">
 					<?php esc_html_e( 'Learn more', 'nvoos-content-graph' ); ?>
 				</a>
 			</p>

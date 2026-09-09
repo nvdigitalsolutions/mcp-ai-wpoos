@@ -107,6 +107,31 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The NV oOS Complete product id passes validation and reaches Stripe.
+	 *
+	 * @return void
+	 */
+	public function test_session_accepts_complete_product(): void {
+		$this->stub_stripe(
+			array(
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array( 'id' => 'pi_complete', 'client_secret' => 'pi_complete_secret' ) ),
+				),
+			)
+		);
+
+		$request = $this->session_request();
+		$request->set_param( 'product', 'nvoos-oos-complete' );
+		$request->set_param( 'addon_version', '1.1.74' );
+
+		$response = $this->controller->create_session( $request );
+
+		$this->assertNotWPError( $response );
+		$this->assertSame( 'pi_complete_secret', $response->get_data()['client_secret'] );
+	}
+
+	/**
 	 * An unconfigured store returns 424.
 	 *
 	 * @return void

@@ -59,6 +59,7 @@ class Test_MemPalace_Phase4a_Graphify_Bridge extends WP_UnitTestCase {
 
 		remove_all_actions( 'wp_mcp_ai_memory_stored' );
 		remove_all_filters( 'wp_mcp_ai_wake_up_graph_context_ids' );
+		remove_all_filters( 'wp_mcp_ai_wake_up_context_graph_retriever' );
 
 		parent::tearDown();
 	}
@@ -412,6 +413,182 @@ class Test_MemPalace_Phase4a_Graphify_Bridge extends WP_UnitTestCase {
 		$this->assertSame( 2, $res['count'] );
 		$this->assertSame( $second['context_id'], $res['memories_loaded'][0]['context_id'] );
 		$this->assertSame( $first['context_id'], $res['memories_loaded'][1]['context_id'] );
+	}
+
+	/**
+	 * An external memory bridge (e.g. the standalone NV oOS Content Graph
+	 * plugin) serves graph rankings through the
+	 * `wp_mcp_ai_wake_up_context_graph_retriever` filter without the bundled
+	 * Graphify addon. The filter's ordering must drive the rendered block
+	 * and its provenance `via` signals must surface in `memories_loaded`.
+	 */
+	public function test_wake_up_graph_mode_uses_external_retriever_filter() {
+		$store = $this->registry->get_tool( 'store_agent_context' );
+
+		$first  = $store->execute(
+			array(
+				'agent_id'     => 41013,
+				'context_type' => 'fact',
+				'context_data' => array(
+					'title'   => 'First stored, lowest external rank',
+					'content' => 'first',
+				),
+			),
+			array()
+		);
+		$second = $store->execute(
+			array(
+				'agent_id'     => 41013,
+				'context_type' => 'fact',
+				'context_data' => array(
+					'title'   => 'Second stored, highest external rank',
+					'content' => 'second',
+				),
+			),
+			array()
+		);
+
+		$this->assertTrue( $first['success'] );
+		$this->assertTrue( $second['success'] );
+
+		$captured_args   = array();
+		$captured_ranked = 'unset';
+		add_filter(
+			'wp_mcp_ai_wake_up_context_graph_retriever',
+			static function ( $ranked, $args ) use ( $second, $first, &$captured_args, &$captured_ranked ) {
+				$captured_args   = $args;
+				$captured_ranked = $ranked;
+				return array(
+					array(
+						'context_id' => $second['context_id'],
+						'score'      => 0.9,
+						'via'        => array( 'room' ),
+					),
+					array(
+						'context_id' => $first['context_id'],
+						'score'      => 0.1,
+						'via'        => array( 'agent' ),
+					),
+				);
+			},
+			10,
+			2
+		);
+
+		$wake = $this->registry->get_tool( 'wake_up_context' );
+		$res  = $wake->execute(
+			array(
+				'agent_id' => 41013,
+				'mode'     => 'graph',
+			),
+			array()
+		);
+
+		// The retriever received the canonical argument shape and its ranking
+		// drove the rendered block.
+		$this->assertNull( $captured_ranked );
+		$this->assertSame( 41013, $captured_args['agent_id'] );
+		$this->assertSame( 5, $captured_args['limit'] );
+		$this->assertTrue( $res['success'] );
+		$this->assertSame( 'graph', $res['retrieval_path'] );
+		$this->assertSame( 2, $res['count'] );
+		$this->assertSame( $second['context_id'], $res['memories_loaded'][0]['context_id'] );
+		$this->assertSame( array( 'room' ), $res['memories_loaded'][0]['via'] );
+		$this->assertSame( $first['context_id'], $res['memories_loaded'][1]['context_id'] );
+		$this->assertSame( array( 'agent' ), $res['memories_loaded'][1]['via'] );
+	}
+
+	/**
+	 * `auto` mode must take the graph path when only an external retriever
+	 * filter is registered — no bundled bridge class required. Skipped when
+	 * another suite already loaded the bundled bridge (cannot be unloaded).
+	 */
+	public function test_wake_up_auto_mode_graph_via_external_retriever_only() {
+		if ( class_exists( 'NV_oOS_Graphify_Memory_Bridge' ) ) {
+			$this->markTestSkipped( 'Bundled bridge loaded; filter-only path not isolated.' );
+		}
+
+		$store = $this->registry->get_tool( 'store_agent_context' );
+		$store->execute(
+			array(
+				'agent_id'     => 41014,
+				'context_type' => 'fact',
+				'context_data' => array(
+					'title'   => 'External bridge only',
+					'content' => 'Served by the retriever filter.',
+				),
+			),
+			array()
+		);
+
+		$captured_args = array();
+		add_filter(
+			'wp_mcp_ai_wake_up_context_graph_retriever',
+			static function ( $ranked, $args ) use ( &$captured_args ) {
+				$captured_args = $args;
+				return array();
+			},
+			10,
+			2
+		);
+
+		$wake = $this->registry->get_tool( 'wake_up_context' );
+		$res  = $wake->execute(
+			array(
+				'agent_id' => 41014,
+				'mode'     => 'auto',
+			),
+			array()
+		);
+
+		// The retriever filter was consulted with the canonical argument
+		// shape, and — because it yielded nothing — the request degraded to
+		// the transient path without error.
+		$this->assertSame( 41014, $captured_args['agent_id'] );
+		$this->assertSame( 5, $captured_args['limit'] );
+		$this->assertTrue( $res['success'] );
+		$this->assertSame( 'transient', $res['retrieval_path'] );
+	}
+
+	/**
+	 * A misbehaving retriever listener (returns WP_Error or garbage) must
+	 * not break wake-up — the request degrades to the transient path.
+	 */
+	public function test_wake_up_graph_retriever_failure_degrades_to_transient() {
+		$store = $this->registry->get_tool( 'store_agent_context' );
+		$store->execute(
+			array(
+				'agent_id'     => 41015,
+				'context_type' => 'fact',
+				'context_data' => array(
+					'title'   => 'Survives retriever failure',
+					'content' => 'Still live.',
+				),
+			),
+			array()
+		);
+
+		add_filter(
+			'wp_mcp_ai_wake_up_context_graph_retriever',
+			static function () {
+				return new WP_Error( 'external_bridge_down', 'Bridge unavailable.' );
+			},
+			10,
+			2
+		);
+
+		$wake = $this->registry->get_tool( 'wake_up_context' );
+		$res  = $wake->execute(
+			array(
+				'agent_id' => 41015,
+				'mode'     => 'graph',
+			),
+			array()
+		);
+
+		$this->assertTrue( $res['success'] );
+		$this->assertSame( 'transient', $res['retrieval_path'] );
+		$this->assertGreaterThanOrEqual( 1, $res['count'] );
 	}
 
 	/**

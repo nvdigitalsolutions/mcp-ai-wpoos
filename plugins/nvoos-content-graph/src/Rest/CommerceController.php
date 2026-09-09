@@ -31,9 +31,9 @@ use function wp_parse_url;
 /**
  * REST controller for the addon purchase flow.
  *
- * Routes (all admin-only, cookie auth + X-WP-Nonce):
- *   POST /payments/session — start a checkout session via the vendor API.
- *   POST /payments/verify  — verify the paid intent, record the license, install the addon.
+	 * Routes (all admin-only, cookie auth + X-WP-Nonce):
+	 *   POST /payments/session — start a checkout session via the vendor API.
+	 *   POST /payments/verify  — verify the paid intent, record the license, install the NV oOS Complete bundle.
  *
  * All Stripe communication (PaymentIntent creation, secret keys,
  * server-side verification) happens on the vendor's server — see
@@ -160,7 +160,7 @@ class CommerceController {
 	}
 
 	/**
-	 * Verify a completed payment, record the license, and install the addon.
+	 * Verify a completed payment, record the license, and install the Complete bundle.
 	 *
 	 * The vendor re-verifies the PaymentIntent server-side (status, amount,
 	 * product, site binding) and returns a license key plus a signed
@@ -190,7 +190,7 @@ class CommerceController {
 					'installed'   => true,
 					'activated'   => true,
 					'license_key' => License::licenseKey(),
-					'message'     => __( 'NV oOS Content Graph — AI is already licensed and active on this site.', 'nvoos-content-graph' ),
+					'message'     => __( 'NV oOS is already licensed and active on this site.', 'nvoos-content-graph' ),
 				)
 			);
 		}
@@ -247,7 +247,7 @@ class CommerceController {
 		 */
 		do_action( 'nvoos_content_graph/payments/purchase_recorded', $record );
 
-		// ─── Install the addon ──────────────────────────────────────
+		// ─── Install the NV oOS Complete bundle ────────────────────
 		$zipUrl = self::sanitizeZipUrl(
 			(string) ( $result['download_url'] ?? '' )
 		);
@@ -263,7 +263,7 @@ class CommerceController {
 				$install->get_error_code(),
 				$install->get_error_message()
 					. ' '
-					. __( 'Your license is recorded — you can also download the addon ZIP manually and upload it on the Plugins screen.', 'nvoos-content-graph' ),
+					. __( 'Your license is recorded — you can also download the NV oOS Complete ZIP manually and upload it on the Plugins screen.', 'nvoos-content-graph' ),
 				array(
 					'status'   => 500,
 					'zip_url'  => is_array( $data ) && isset( $data['zip_url'] ) ? $data['zip_url'] : $zipUrl,
