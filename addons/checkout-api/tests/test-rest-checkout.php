@@ -123,7 +123,7 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 
 		$request = $this->session_request();
 		$request->set_param( 'product', 'nvoos-oos-complete' );
-		$request->set_param( 'addon_version', '1.1.74' );
+		$request->set_param( 'addon_version', '1.1.75' );
 
 		$response = $this->controller->create_session( $request );
 
