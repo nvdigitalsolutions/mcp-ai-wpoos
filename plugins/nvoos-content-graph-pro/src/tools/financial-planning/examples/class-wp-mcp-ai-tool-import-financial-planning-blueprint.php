@@ -125,7 +125,7 @@ class WP_MCP_AI_Tool_Import_Financial_Planning_Blueprint implements WP_MCP_AI_To
 	 * @return array|WP_Error   Canonical success envelope or WP_Error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$bp        = sanitize_key( $arguments['blueprint'] );
+		$bp        = sanitize_key( $arguments['blueprint'] ?? '' );
 		$overwrite = ! empty( $arguments['overwrite'] );
 
 		if ( ! class_exists( 'WP_MCP_AI_Blueprint_Installer' ) ) {
