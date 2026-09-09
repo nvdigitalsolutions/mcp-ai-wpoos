@@ -22,7 +22,7 @@ class Test_Checkout_Api_Stripe_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * create_payment_intent returns the decoded intent.
+	 * The create_payment_intent method returns the decoded intent.
 	 *
 	 * @return void
 	 */
@@ -32,7 +32,12 @@ class Test_Checkout_Api_Stripe_Client extends WP_UnitTestCase {
 			static function () {
 				return array(
 					'response' => array( 'code' => 200 ),
-					'body'     => wp_json_encode( array( 'id' => 'pi_test_1', 'client_secret' => 'pi_test_1_secret' ) ),
+					'body'     => wp_json_encode(
+						array(
+							'id'            => 'pi_test_1',
+							'client_secret' => 'pi_test_1_secret',
+						)
+					),
 				);
 			},
 			10,
@@ -72,7 +77,7 @@ class Test_Checkout_Api_Stripe_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * create_product sends a service-typed product to the Products endpoint.
+	 * The create_product method sends a service-typed product to Stripe.
 	 *
 	 * @return void
 	 */
@@ -104,7 +109,7 @@ class Test_Checkout_Api_Stripe_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * create_price sends a one-time unit price to the Prices endpoint.
+	 * The create_price method sends a one-time unit price to Stripe.
 	 *
 	 * @return void
 	 */

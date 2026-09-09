@@ -351,7 +351,12 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 				$captured = $args['body'];
 				return array(
 					'response' => array( 'code' => 200 ),
-					'body'     => wp_json_encode( array( 'id' => 'pi_descriptor', 'client_secret' => 'pi_descriptor_secret' ) ),
+					'body'     => wp_json_encode(
+						array(
+							'id'            => 'pi_descriptor',
+							'client_secret' => 'pi_descriptor_secret',
+						)
+					),
 				);
 			},
 			10,

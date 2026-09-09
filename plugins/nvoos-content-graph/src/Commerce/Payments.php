@@ -207,9 +207,33 @@ final class Payments {
 	 */
 	public static function euCountryCodes(): array {
 		$eu = array(
-			'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI',
-			'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU',
-			'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+			'AT',
+			'BE',
+			'BG',
+			'HR',
+			'CY',
+			'CZ',
+			'DK',
+			'EE',
+			'FI',
+			'FR',
+			'DE',
+			'GR',
+			'HU',
+			'IE',
+			'IT',
+			'LV',
+			'LT',
+			'LU',
+			'MT',
+			'NL',
+			'PL',
+			'PT',
+			'RO',
+			'SK',
+			'SI',
+			'ES',
+			'SE',
 		);
 
 		$filtered = apply_filters( Schema::FILTER_EU_COUNTRIES, $eu );
