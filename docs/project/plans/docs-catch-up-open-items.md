@@ -29,7 +29,6 @@
 | 10 | `@since 1.1.68` | `addons/pro/includes/tools/vision-analysis/` (5 files) + `class-wp-mcp-ai-vision-analysis-settings.php` + `class-wp-mcp-ai-hf-vision-inference-service.php` (PR #6267; also the "Vision Analysis Toolkit … 1.1.68" code comment in `addons/pro/mcp-ai-wpoos-pro.php`) | 1.1.69 | v1.1.69 plan |
 | 11 | `@since 1.1.69` | `addons/pro/includes/npm-integration-filters.php` (2×, PR #6295) + `addons/pro/mcp-ai-wpoos-pro.php` (`wp_mcp_ai_pro_get_tool_map()`, PR #6300) + `includes/integrations/class-wp-mcp-ai-github-oauth-handler.php` (PR #6301) + `includes/admin/class-wp-mcp-ai-admin-plugins-integration.php` (PR #6303) — 5 instances, all added in the wave-5 window | 1.1.70 | v1.1.70 plan |
 | 12 | `@since 1.0.0` | `addons/pro/includes/services/class-wp-mcp-ai-markdown-converter.php` — 1 instance (PR #6465) | 1.1.74 | v1.1.74 plan |
-| 13 | `@since 1.0.0` | `addons/pro/includes/services/class-wp-mcp-ai-result-delivery-service.php` — `merge_channel_destination_fields()` + `normalize_channel_credentials()`, 2 instances (PRs #6482/#6488) | 1.1.75 | v1.1.75 plan |
 
 - **Blocked on:** version-jump decision — does the next release stay on 1.1.x or jump to 1.2.0?
 - **Broader drift (new finding, 2026-08-26):** non-1.1.x tags are repo-wide (`@since 1.0.0` ×1,928 · `1.2.0` ×1,707 · `1.1.0` ×1,269 · `1.3.0` ×795 · `1.9.0` ×734, PHP source ex vendor). Many are legitimate history. A full-tree audit is a scripted-sweep project needing explicit sign-off — tracked inside issue #5968, not a catch-up-pass task.
@@ -100,6 +99,7 @@ Open items recorded in docs **outside** the catch-up plans (audits, TODO files, 
 | Stale `.context/testing.md` "March 2026" stamp | v1.1.63 pass drift | v1.1.63 pass | stamped + sweep/exit-trap notes |
 | Stale `.context/settings-storage.md` "July 2026" stamp | v1.1.64 pass drift | v1.1.64 pass | stamped + log-buffer compaction note |
 | [#5973](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5973) Ralph Wiggum CCT Orchestration — decide implement or defer | filed 2026-08-26 | closed 2026-08-26 | **Implemented** (shipped v1.1.29): 13 orchestration tools, 4 Ralph CCT schemas, PM-toolkit native integration. Decision recorded in `proposals-retirement-log.md` entry #6 + `PROPOSALS_COMPLETION_STATUS.md` |
+| OI-1 group 13 `@since 1.0.0` tags (`merge_channel_destination_fields()` + `normalize_channel_credentials()` in `addons/pro/includes/services/class-wp-mcp-ai-result-delivery-service.php`, PRs #6482/#6488) | v1.1.75 pass | v1.1.75 follow-up (2026-09-09, user-requested) | 2 tags corrected to `@since 1.1.75` in-place |
 
 ---
 
