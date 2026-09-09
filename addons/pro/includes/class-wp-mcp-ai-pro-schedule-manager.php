@@ -3211,7 +3211,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		protected static function sanitize_delivery_channels( array $channels ) {
 			$allowed         = array( 'email', 'slack', 'telegram', 'discord', 'teams', 'messenger', 'whatsapp', 'google_chat', 'sms', 'paper_store', 'webhook', 'wordpress' );
 			$email_templates = array( 'full', 'summary', 'error', 'response_only' );
-			$chat_templates  = array( 'summary', 'error', 'response_only' );
+			$chat_templates  = array( 'summary', 'error', 'response_only', 'full' );
+			$chat_formats    = array(
+				'telegram'    => array( 'html', 'markdown', 'markdown_v2', 'plain' ),
+				'whatsapp'    => array( 'markdown', 'plain' ),
+				'slack'       => array( 'markdown', 'plain' ),
+				'discord'     => array( 'markdown', 'plain' ),
+				'teams'       => array( 'markdown', 'plain' ),
+				'messenger'   => array( 'plain' ),
+				'google_chat' => array( 'plain' ),
+			);
 
 			$sanitized = array();
 			foreach ( $channels as $channel => $config ) {
@@ -3295,6 +3304,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					}
 					if ( 'google_chat' === $channel && isset( $config['space_id'] ) ) {
 						$entry['space_id'] = sanitize_text_field( $config['space_id'] );
+					}
+					// Chat presentation format (Telegram parse mode / markup style).
+					if ( isset( $chat_formats[ $channel ] ) && isset( $config['format'] ) && in_array( $config['format'], $chat_formats[ $channel ], true ) ) {
+						$entry['format'] = $config['format'];
 					}
 				}
 				if ( 'paper_store' === $channel ) {

@@ -90,7 +90,7 @@ class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interfa
 				),
 				'parse_mode'               => array(
 					'type'        => 'string',
-					'enum'        => array( 'Markdown', 'HTML' ),
+					'enum'        => array( 'Markdown', 'MarkdownV2', 'HTML' ),
 					'description' => __( 'Optional parse mode that controls how Telegram formats entities.', 'mcp-ai-wpoos-pro' ),
 				),
 				'disable_web_page_preview' => array(
@@ -154,7 +154,7 @@ class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interfa
 		if ( isset( $arguments['parse_mode'] ) && is_string( $arguments['parse_mode'] ) ) {
 			$candidate = sanitize_text_field( $arguments['parse_mode'] );
 
-			if ( in_array( $candidate, array( 'Markdown', 'HTML' ), true ) ) {
+			if ( in_array( $candidate, array( 'Markdown', 'MarkdownV2', 'HTML' ), true ) ) {
 				$parse_mode = $candidate;
 			}
 		}
