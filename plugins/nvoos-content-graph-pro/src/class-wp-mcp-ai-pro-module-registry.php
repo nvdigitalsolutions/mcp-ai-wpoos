@@ -861,6 +861,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 																						require_once $p . 'tools/site-creator-toolkit/init.php';
 																					}
 																				);
+
+																						// Standalone-only module (the base registry registers
+																						// `toolkit_document_generation` dynamically via the conditional
+																						// toolkit loop with an `enabled` gate). Boots the slim
+																						// document-generation init standalone (site-creator precedent).
+																						$this->add_module(
+																							'toolkit_document_generation',
+																							'Document Generation Toolkit',
+																							array(),
+																							array(
+																								'files' => array( $p . 'tools/document-generation/init.php' ),
+																							),
+																							function () use ( $p ) {
+																								require_once $p . 'tools/document-generation/init.php';
+																							}
+																						);
 		}
 	}
 }

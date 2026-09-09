@@ -144,6 +144,8 @@ spl_autoload_register(
 			'src/tools/site-creator-toolkit/',
 			'src/tools/site-creator-toolkit/examples/',
 			'src/site-creator-toolkit/',
+			'src/tools/document-generation/',
+			'src/tools/document-generation/examples/',
 			'src/helpers/',
 			'src/tools/orchestration/',
 			'src/tools/financial-planning/',
