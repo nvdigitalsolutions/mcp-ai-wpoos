@@ -828,6 +828,23 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 																		require_once $p . 'tools/architect-agent/init.php';
 																	}
 																);
+
+																		// Standalone-only module (the base registry registers
+																		// `toolkit_architectural_design` dynamically via the conditional
+																		// toolkit loop with an `enabled` gate). Boots the slim
+																		// architectural-design init standalone (architect-agent
+																		// precedent).
+																		$this->add_module(
+																			'toolkit_architectural_design',
+																			'Architectural Design Toolkit',
+																			array(),
+																			array(
+																				'files' => array( $p . 'tools/architectural-design/init.php' ),
+																			),
+																			function () use ( $p ) {
+																				require_once $p . 'tools/architectural-design/init.php';
+																			}
+																		);
 		}
 	}
 }
