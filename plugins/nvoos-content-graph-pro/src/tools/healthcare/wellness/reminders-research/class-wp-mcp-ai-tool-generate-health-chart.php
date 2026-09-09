@@ -1,0 +1,513 @@
+<?php
+/**
+ * wellness/reminders-research/class-wp-mcp-ai-tool-generate-health-chart.php (ecosystem port — Wave F4, healthcare wellness breadth batch).
+ *
+ * Ported from the base Pro addon's `addons/pro/includes/tools/healthcare/wellness/reminders-research/class-wp-mcp-ai-tool-generate-health-chart.php` for the
+ * standalone `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro addon owns the
+ * class in monolith installs — the addon boots nothing when `WP_MCP_AI_PRO_PATH` is defined
+ * (see the plugin entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain `nvoos-content-graph-pro`;
+ * `NVOOS_CONTENT_GRAPH_PRO_*` constant swaps (the capture-tool-base require resolves from the
+ * addon's already-ported `src/tools/capture/` copy; the media-worker-client trait resolves via
+ * the entry's `src/traits/` probe).
+ *
+ * @package NvoosContentGraphPro
+ * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Generate health data visualizations using Chart.js.
+ *
+ * This tool leverages Chart.js to provide:
+ * - Interactive health metric charts (vital signs, medication schedules)
+ * - HIPAA-compliant data visualization
+ * - Multiple chart types (line, bar, pie, radar)
+ * - Responsive and accessible charts
+ * - Real-time data updates
+ *
+ * @since 1.1.0
+ */
+class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Media_Worker_Client;
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_slug() {
+		return 'generate_health_chart';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Generate Health Chart', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_description() {
+		return __( 'Generate interactive health data visualizations using Chart.js. Create charts for patient vitals, medication schedules, health trends, and analytics. HIPAA-compliant with anonymized data handling. Supports line, bar, pie, and radar charts with responsive design.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_parameters_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'member_id'            => array(
+					'type'        => 'integer',
+					'description' => __( 'Member ID to generate chart for', 'nvoos-content-graph-pro' ),
+					'minimum'     => 1,
+				),
+				'chart_type'           => array(
+					'type'        => 'string',
+					'enum'        => array( 'line', 'bar', 'pie', 'radar', 'doughnut' ),
+					'description' => __( 'Type of chart to generate', 'nvoos-content-graph-pro' ),
+					'default'     => 'line',
+				),
+				'metric_type'          => array(
+					'type'        => 'string',
+					'enum'        => array( 'vitals', 'medication', 'checkups', 'allergies', 'custom' ),
+					'description' => __( 'Type of health metric to visualize', 'nvoos-content-graph-pro' ),
+					'default'     => 'vitals',
+				),
+				'specific_metric'      => array(
+					'type'        => 'string',
+					'enum'        => array( 'blood_pressure', 'heart_rate', 'temperature', 'weight', 'bmi', 'glucose' ),
+					'description' => __( 'Specific vital metric (for vitals metric_type)', 'nvoos-content-graph-pro' ),
+				),
+				'date_range_days'      => array(
+					'type'        => 'integer',
+					'description' => __( 'Number of days to include in chart (default: 30)', 'nvoos-content-graph-pro' ),
+					'minimum'     => 1,
+					'maximum'     => 365,
+					'default'     => 30,
+				),
+				'anonymize_data'       => array(
+					'type'        => 'boolean',
+					'description' => __( 'Remove personally identifiable information from chart', 'nvoos-content-graph-pro' ),
+					'default'     => true,
+				),
+				'show_reference_range' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Show normal reference ranges on chart (for vitals)', 'nvoos-content-graph-pro' ),
+					'default'     => true,
+				),
+				'chart_title'          => array(
+					'type'        => 'string',
+					'description' => __( 'Custom chart title. If not provided, auto-generated.', 'nvoos-content-graph-pro' ),
+				),
+				'width'                => array(
+					'type'        => 'integer',
+					'description' => __( 'Chart width in pixels (default: 600)', 'nvoos-content-graph-pro' ),
+					'minimum'     => 100,
+					'maximum'     => 2000,
+					'default'     => 600,
+				),
+				'height'               => array(
+					'type'        => 'integer',
+					'description' => __( 'Chart height in pixels (default: 400)', 'nvoos-content-graph-pro' ),
+					'minimum'     => 100,
+					'maximum'     => 2000,
+					'default'     => 400,
+				),
+				'return_format'        => array(
+					'type'        => 'string',
+					'enum'        => array( 'html', 'config', 'image' ),
+					'description' => __( 'Return format: html (chart HTML), config (Chart.js config JSON), or image (PNG)', 'nvoos-content-graph-pro' ),
+					'default'     => 'html',
+				),
+			),
+			'required'   => array( 'member_id', 'metric_type' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'read_private_posts';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function requires_base_pro() {
+		return true;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'health_wellness',
+			'post_type'             => 'mcp_ai_member',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'healthcare_provider', 'data_analyst' ),
+			'risk_level'            => 'info',
+		);
+	}
+
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
+	public function get_capability_flags() {
+		return array(
+			'pro',                  // Pro tier tool.
+			'read',                 // Primarily read operation.
+			'requires-capability',  // Requires read_private_posts for health data.
+			'pii-data',             // Handles personally identifiable health information.
+			'hipaa-relevant',       // Subject to HIPAA compliance requirements.
+			'external-dependency',  // Requires Chart.js.
+			'cacheable',            // Results can be cached.
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 */
+	public function execute( array $arguments = array(), array $context = array() ) {
+		// Check if health & wellness management is enabled.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_health_wellness_management'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_health_wellness_disabled',
+				__( 'Health & Wellness Management is not enabled. Please enable it in settings.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Validate member ID.
+		$member_id = absint( $arguments['member_id'] );
+		if ( ! $member_id || get_post_type( $member_id ) !== 'member' ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_member',
+				__( 'Invalid member ID.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Check if Chart.js is available.
+		$chartjs_available = $this->check_chartjs_availability();
+		if ( ! $chartjs_available ) {
+			return new WP_Error(
+				'wp_mcp_ai_chartjs_unavailable',
+				__( 'Chart.js is not available. Please ensure the package is installed. See documentation for setup instructions.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Collect health data for chart.
+		$metric_type = sanitize_text_field( $arguments['metric_type'] );
+		$health_data = $this->collect_health_data( $member_id, $metric_type, $arguments );
+
+		if ( empty( $health_data ) || isset( $health_data['error'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_no_health_data',
+				isset( $health_data['error'] ) ? $health_data['error'] : __( 'No health data found for this member.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Anonymize data if requested (HIPAA compliance).
+		$anonymize = isset( $arguments['anonymize_data'] ) ? (bool) $arguments['anonymize_data'] : true;
+		if ( $anonymize ) {
+			$health_data = $this->anonymize_health_data( $health_data );
+		}
+
+		// Build Chart.js configuration.
+		$chart_config = $this->build_chart_config( $health_data, $arguments );
+
+		// Generate chart based on return format.
+		$return_format = isset( $arguments['return_format'] ) ? sanitize_text_field( $arguments['return_format'] ) : 'html';
+
+		switch ( $return_format ) {
+			case 'config':
+				return array(
+					'success'      => true,
+					'message'      => __( 'Chart configuration generated successfully.', 'nvoos-content-graph-pro' ),
+					'member_id'    => $member_id,
+					'metric_type'  => $metric_type,
+					'chart_config' => $chart_config,
+				);
+
+			case 'image':
+				$image_result = $this->generate_chart_image( $chart_config );
+				if ( ! $image_result || isset( $image_result['error'] ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_chart_image_failed',
+						isset( $image_result['error'] ) ? $image_result['error'] : __( 'Chart image generation failed.', 'nvoos-content-graph-pro' )
+					);
+				}
+				return array(
+					'success'     => true,
+					'message'     => __( 'Chart image generated successfully.', 'nvoos-content-graph-pro' ),
+					'member_id'   => $member_id,
+					'metric_type' => $metric_type,
+					'image_url'   => $image_result['url'],
+					'image_path'  => $image_result['path'],
+				);
+
+			case 'html':
+			default:
+				$html = $this->generate_chart_html( $chart_config, $arguments );
+				return array(
+					'success'      => true,
+					'message'      => __( 'Health chart generated successfully.', 'nvoos-content-graph-pro' ),
+					'member_id'    => $member_id,
+					'metric_type'  => $metric_type,
+					'chart_html'   => $html,
+					'chart_config' => $chart_config,
+				);
+		}
+	}
+
+	/**
+	 * Check if Chart.js is available.
+	 *
+	 * @return bool True if Chart.js is available.
+	 */
+	private function check_chartjs_availability() {
+		// Check if package exists in vendor directory (production) or node_modules (development).
+		$vendor_path       = NVOOS_CONTENT_GRAPH_PRO_PATH . 'assets/vendor/chart.js/chart.umd.js';
+		$node_modules_path = NVOOS_CONTENT_GRAPH_PRO_PATH . 'node_modules/chart.js/dist/chart.umd.js';
+
+		if ( ! file_exists( $vendor_path ) && ! file_exists( $node_modules_path ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Collect health data for charting.
+	 *
+	 * @param int    $member_id Member ID.
+	 * @param string $metric_type Metric type.
+	 * @param array  $arguments Tool arguments.
+	 * @return array Health data.
+	 */
+	private function collect_health_data( $member_id, $metric_type, $arguments ) {
+		$date_range = isset( $arguments['date_range_days'] ) ? absint( $arguments['date_range_days'] ) : 30;
+		$data       = array(
+			'labels'   => array(),
+			'datasets' => array(),
+		);
+
+		// Query health records based on metric type.
+		switch ( $metric_type ) {
+			case 'vitals':
+				$specific_metric = isset( $arguments['specific_metric'] ) ? sanitize_text_field( $arguments['specific_metric'] ) : 'blood_pressure';
+				$data            = $this->get_vitals_data( $member_id, $specific_metric, $date_range );
+				break;
+
+			case 'medication':
+				$data = $this->get_medication_data( $member_id, $date_range );
+				break;
+
+			case 'checkups':
+				$data = $this->get_checkups_data( $member_id, $date_range );
+				break;
+
+			default:
+				return array( 'error' => __( 'Unsupported metric type.', 'nvoos-content-graph-pro' ) );
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Get vitals data for chart.
+	 *
+	 * @param int    $member_id Member ID.
+	 * @param string $metric Specific vital metric.
+	 * @param int    $days Number of days.
+	 * @return array Chart data.
+	 */
+	private function get_vitals_data( $member_id, $metric, $days ) {
+		// Query medical records with vital signs.
+		// This is a simplified implementation.
+		return array(
+			'labels'   => array(), // Date labels.
+			'datasets' => array(
+				array(
+					'label' => ucwords( str_replace( '_', ' ', $metric ) ),
+					'data'  => array(), // Metric values.
+				),
+			),
+		);
+	}
+
+	/**
+	 * Get medication data for chart.
+	 *
+	 * @param int $member_id Member ID.
+	 * @param int $days Number of days.
+	 * @return array Chart data.
+	 */
+	private function get_medication_data( $member_id, $days ) {
+		return array(
+			'labels'   => array(),
+			'datasets' => array(),
+		);
+	}
+
+	/**
+	 * Get checkups data for chart.
+	 *
+	 * @param int $member_id Member ID.
+	 * @param int $days Number of days.
+	 * @return array Chart data.
+	 */
+	private function get_checkups_data( $member_id, $days ) {
+		return array(
+			'labels'   => array(),
+			'datasets' => array(),
+		);
+	}
+
+	/**
+	 * Anonymize health data for HIPAA compliance.
+	 *
+	 * @param array $data Health data.
+	 * @return array Anonymized data.
+	 */
+	private function anonymize_health_data( $data ) {
+		// Remove any PII from labels and datasets.
+		// Replace specific dates with relative labels.
+		return $data;
+	}
+
+	/**
+	 * Build Chart.js configuration.
+	 *
+	 * @param array $data Health data.
+	 * @param array $arguments Tool arguments.
+	 * @return array Chart.js config.
+	 */
+	private function build_chart_config( $data, $arguments ) {
+		$chart_type = isset( $arguments['chart_type'] ) ? sanitize_text_field( $arguments['chart_type'] ) : 'line';
+
+		return array(
+			'type'    => $chart_type,
+			'data'    => $data,
+			'options' => array(
+				'responsive'          => true,
+				'maintainAspectRatio' => false,
+				'plugins'             => array(
+					'legend' => array(
+						'position' => 'top',
+					),
+					'title'  => array(
+						'display' => true,
+						'text'    => isset( $arguments['chart_title'] ) ? $arguments['chart_title'] : 'Health Metrics',
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * Generate chart HTML.
+	 *
+	 * @param array $config Chart configuration.
+	 * @param array $arguments Tool arguments.
+	 * @return string HTML markup.
+	 */
+	private function generate_chart_html( $config, $arguments ) {
+		$width     = isset( $arguments['width'] ) ? absint( $arguments['width'] ) : 600;
+		$height    = isset( $arguments['height'] ) ? absint( $arguments['height'] ) : 400;
+		$canvas_id = 'health-chart-' . uniqid();
+
+		$html = sprintf(
+			'<canvas id="%s" width="%d" height="%d" role="img" aria-label="Health metrics chart"></canvas>
+			<script>
+			if (typeof Chart !== "undefined") {
+				new Chart(document.getElementById("%s"), %s);
+			} else {
+				console.error("Chart.js not loaded");
+			}
+			</script>',
+			esc_attr( $canvas_id ),
+			absint( $width ),
+			absint( $height ),
+			esc_attr( $canvas_id ),
+			wp_json_encode( $config )
+		);
+
+		return $html;
+	}
+
+	/**
+	 * Generate chart as image (PNG).
+	 *
+	 * @param array $config Chart configuration.
+	 * @return array|false Image info or false on failure.
+	 */
+	private function generate_chart_image( $config ) {
+		/**
+		 * Filter to allow custom chart image generation.
+		 *
+		 * @param array|false $result Image generation result or false.
+		 * @param array       $config Chart configuration.
+		 */
+		$result = apply_filters( 'wp_mcp_ai_chartjs_generate_image', false, $config );
+		if ( false !== $result ) {
+			return $result;
+		}
+
+		// Try Media Worker sidecar. The worker returns the PNG as base64
+		// (data_base64) — its output_path points at the WORKER's filesystem
+		// and is unusable here, so the bytes are written to the local
+		// uploads directory.
+		$sidecar = $this->sidecar_request( '/api/data/render-chart', $config );
+		if ( ! is_wp_error( $sidecar ) && ! empty( $sidecar['data_base64'] ) ) {
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding worker-returned PNG bytes is the transport contract, not obfuscation.
+			$bytes = base64_decode( $sidecar['data_base64'], true );
+			if ( false !== $bytes && ! empty( $bytes ) ) {
+				$upload_dir = wp_upload_dir();
+				$filename   = 'health-chart-' . wp_generate_password( 12, false ) . '.png';
+				$file_path  = trailingslashit( $upload_dir['path'] ) . $filename;
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing a chart PNG into the site uploads directory.
+				file_put_contents( $file_path, $bytes );
+				if ( file_exists( $file_path ) && filesize( $file_path ) > 0 ) {
+					return array(
+						'path'   => $file_path,
+						'url'    => trailingslashit( $upload_dir['url'] ) . $filename,
+						'size'   => filesize( $file_path ),
+						'width'  => isset( $sidecar['width'] ) ? (int) $sidecar['width'] : 0,
+						'height' => isset( $sidecar['height'] ) ? (int) $sidecar['height'] : 0,
+					);
+				}
+			}
+		}
+
+		return array(
+			'error' => __( 'Chart image generation requires a Node.js service. Configure the Media Worker sidecar or implement the wp_mcp_ai_chartjs_generate_image filter.', 'nvoos-content-graph-pro' ),
+		);
+	}
+}
