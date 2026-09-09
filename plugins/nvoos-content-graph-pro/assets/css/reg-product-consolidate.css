@@ -1,0 +1,501 @@
+/**
+ * Registration Product Consolidate & Import Styles
+ *
+ * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+/* Product Selector */
+.wp-mcp-ai-product-selector {
+	margin-bottom: 20px;
+	padding-bottom: 15px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.wp-mcp-ai-product-selector h3 {
+	margin: 0 0 10px 0;
+}
+
+.wp-mcp-ai-product-selector select {
+	width: 100%;
+	margin-bottom: 10px;
+}
+
+/* Document Tools Info */
+.wp-mcp-ai-document-tools-info {
+	margin-bottom: 20px;
+	padding: 12px 15px;
+	background: #f0f6fc;
+	border: 1px solid #c8d7e1;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-document-tools-info h3 {
+	margin: 0 0 8px 0;
+	font-size: 14px;
+}
+
+.wp-mcp-ai-document-tools-info ul {
+	margin: 5px 0 10px 18px;
+	padding: 0;
+	font-size: 12px;
+	line-height: 1.6;
+}
+
+.wp-mcp-ai-document-tools-info em {
+	font-size: 12px;
+	color: #646970;
+}
+
+/* Bulk Import Section */
+.wp-mcp-ai-bulk-import-section {
+	padding: 20px;
+}
+
+.wp-mcp-ai-bulk-import-section h2 {
+	margin-top: 0;
+}
+
+.bulk-import-tips {
+	background: #fcf9e8;
+	border: 1px solid #dba617;
+	border-radius: 4px;
+	padding: 12px 15px;
+	margin-bottom: 20px;
+}
+
+.bulk-import-tips h4 {
+	margin: 0 0 8px 0;
+}
+
+.bulk-import-tips ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.bulk-import-tips li {
+	padding: 2px 0;
+	font-size: 13px;
+}
+
+/* File Upload Area */
+.bulk-import-file-section {
+	margin-bottom: 15px;
+}
+
+.file-upload-area {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-top: 8px;
+}
+
+.file-upload-note {
+	font-size: 12px;
+	color: #646970;
+}
+
+.file-upload-list {
+	margin: 10px 0;
+	padding: 10px 15px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+.file-upload-list ul {
+	margin: 5px 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.file-upload-list li {
+	padding: 4px 0;
+	font-size: 13px;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.file-upload-list .remove-file {
+	color: #b32d2e;
+	cursor: pointer;
+	font-weight: bold;
+	margin-left: 8px;
+	text-decoration: none;
+}
+
+.file-upload-list .uploading {
+	color: #2271b1;
+	font-style: italic;
+	font-size: 12px;
+}
+
+.form-section-divider {
+	margin: 20px 0;
+	border: none;
+	border-top: 1px solid #dcdcde;
+}
+
+/* Import Options */
+.bulk-import-options {
+	margin: 15px 0;
+}
+
+.bulk-import-options label {
+	display: block;
+	margin-bottom: 8px;
+	font-size: 13px;
+}
+
+.bulk-import-options input[type="checkbox"] {
+	margin-right: 6px;
+}
+
+/* Import Result */
+.bulk-import-result {
+	margin-top: 20px;
+	padding: 15px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+.import-summary-container h3 {
+	margin: 0 0 15px 0;
+	font-size: 16px;
+	color: #00a32a;
+}
+
+.import-stats-list {
+	list-style: none;
+	margin: 0 0 20px 0;
+	padding: 0;
+}
+
+.import-stats-list li {
+	display: flex;
+	align-items: center;
+	padding: 8px 0;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.import-stats-list li .dashicons {
+	margin-right: 8px;
+	color: #2271b1;
+}
+
+.import-created .success-message {
+	color: #00a32a;
+	font-weight: 600;
+}
+
+.import-created .success-message .dashicons {
+	color: #00a32a;
+	margin-right: 5px;
+}
+
+.created-items-list {
+	margin: 10px 0;
+	padding: 0;
+	list-style: none;
+}
+
+.created-items-list li {
+	padding: 5px 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+/* Guided Section */
+.wp-mcp-ai-guided-section {
+	padding: 20px;
+}
+
+.wp-mcp-ai-guided-section h2 {
+	margin-top: 0;
+}
+
+.record-type-buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-top: 15px;
+}
+
+.record-type-btn {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	width: 120px;
+	height: 90px;
+	border: 2px solid #dcdcde;
+	border-radius: 8px;
+	background: #fff;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	font-size: 13px;
+	color: #1d2327;
+}
+
+.record-type-btn:hover {
+	border-color: #2271b1;
+	background: #f0f6fc;
+}
+
+.record-type-btn.active {
+	border-color: #2271b1;
+	background: #e7f0f7;
+}
+
+.record-type-btn .dashicons {
+	font-size: 28px;
+	width: 28px;
+	height: 28px;
+	margin-bottom: 8px;
+	color: #2271b1;
+}
+
+.guided-form-container {
+	margin-top: 20px;
+	padding: 15px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+.guided-entry-redirect {
+	text-align: center;
+	padding: 20px;
+}
+
+.guided-entry-redirect p {
+	margin-bottom: 10px;
+}
+
+/* Product Records Preview */
+.wp-mcp-ai-product-preview-header {
+	margin-bottom: 20px;
+	padding-bottom: 15px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.wp-mcp-ai-product-preview-header h2 {
+	margin: 0 0 10px 0;
+}
+
+.brand-badge {
+	display: inline-block;
+	background: #2271b1;
+	color: #fff;
+	padding: 2px 8px;
+	border-radius: 3px;
+	font-size: 12px;
+	font-weight: normal;
+	vertical-align: middle;
+}
+
+.product-demographics {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 15px;
+}
+
+.product-demographics .demo-item {
+	font-size: 13px;
+}
+
+/* Records Grid */
+.wp-mcp-ai-records-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 15px;
+	margin-bottom: 20px;
+}
+
+.record-section {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 15px;
+}
+
+.record-section.wide {
+	grid-column: 1 / -1;
+}
+
+.record-section h3 {
+	margin: 0 0 10px 0;
+	font-size: 14px;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.count-badge {
+	display: inline-block;
+	background: #dcdcde;
+	color: #1d2327;
+	padding: 1px 6px;
+	border-radius: 10px;
+	font-size: 11px;
+	font-weight: normal;
+	margin-left: 5px;
+}
+
+.record-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.record-list li {
+	padding: 6px 0;
+	border-bottom: 1px solid #f0f0f1;
+	font-size: 13px;
+}
+
+.record-list li:last-child {
+	border-bottom: none;
+}
+
+.record-type {
+	color: #646970;
+	font-size: 12px;
+}
+
+.record-detail {
+	color: #646970;
+	font-size: 12px;
+	margin-left: 5px;
+}
+
+.no-records {
+	color: #646970;
+	font-size: 13px;
+	margin: 0;
+}
+
+.add-record-link {
+	display: inline-block;
+	margin-top: 5px;
+}
+
+.inci-text {
+	font-family: Consolas, Monaco, monospace;
+	font-size: 12px;
+	line-height: 1.6;
+	word-break: break-word;
+}
+
+/* Status Badges */
+.status-badge {
+	display: inline-block;
+	padding: 1px 6px;
+	border-radius: 3px;
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.status-badge.status-approved,
+.status-badge.status-active {
+	background: #d4edda;
+	color: #155724;
+}
+
+.status-badge.status-pending,
+.status-badge.status-submitted {
+	background: #fff3cd;
+	color: #856404;
+}
+
+.status-badge.status-expired,
+.status-badge.status-rejected {
+	background: #f8d7da;
+	color: #721c24;
+}
+
+.status-badge.status-draft {
+	background: #e2e3e5;
+	color: #383d41;
+}
+
+/* Completeness Indicator */
+.wp-mcp-ai-completeness-indicator {
+	margin-top: 20px;
+	padding: 15px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-completeness-indicator h3 {
+	margin: 0 0 10px 0;
+}
+
+.completeness-bar {
+	height: 20px;
+	background: #dcdcde;
+	border-radius: 10px;
+	overflow: hidden;
+	margin-bottom: 8px;
+}
+
+.completeness-progress {
+	height: 100%;
+	background: #00a32a;
+	border-radius: 10px;
+	transition: width 0.3s ease;
+}
+
+.completeness-text {
+	font-weight: 600;
+	margin: 0 0 5px 0;
+}
+
+.completeness-suggestion {
+	color: #646970;
+	font-style: italic;
+	margin: 0;
+	font-size: 13px;
+}
+
+/* Spinner animation */
+.dashicons.spin {
+	animation: wp-mcp-ai-spin 1s infinite linear;
+}
+
+@keyframes wp-mcp-ai-spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Responsive */
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-records-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.record-type-buttons {
+		justify-content: center;
+	}
+
+	.record-type-btn {
+		width: 100px;
+		height: 80px;
+	}
+
+	.product-demographics {
+		flex-direction: column;
+		gap: 5px;
+	}
+}

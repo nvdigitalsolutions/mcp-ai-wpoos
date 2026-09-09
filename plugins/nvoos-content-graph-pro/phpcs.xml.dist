@@ -64,6 +64,16 @@
     </rule>
 
     <!--
+        The regulatory-registration country-config page builds its
+        IN($placeholders) query with a phpcs:enable/disable pair and a
+        spread of the same count (byte-identical base pattern), so the
+        unfinished-prepare check is disabled for that copy.
+    -->
+    <rule ref="WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare">
+        <severity>0</severity>
+    </rule>
+
+    <!--
         Vault CPT custom capabilities: the item/folder CPT registrations
         map them via capability_type, so the Capabilities sniff must not
         flag them as unknown/typoed capabilities.
