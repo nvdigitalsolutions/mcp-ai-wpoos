@@ -24,10 +24,12 @@
  *    declares; the collision is a compile-time fatal, so the ENTIRE body is
  *    wrapped in a runtime `! defined( 'WP_MCP_AI_PATH' )` block
  *    (financial-init deviation 5 precedent).
- * 5. New standalone-only tool wiring (financial-init deviation 6
- *    precedent): a `wp_mcp_ai_pro_tools` filter plus
- *    `wp_mcp_ai_pro_register_site_creator_ecosystem_tools()` — both start
- *    with empty maps and fill as the site-creator tool batch lands.
+	 * 5. New standalone-only tool wiring (financial-init deviation 6
+	 *    precedent): a `wp_mcp_ai_pro_tools` filter plus
+	 *    `wp_mcp_ai_pro_register_site_creator_ecosystem_tools()` — both
+	 *    carry all thirty-three ported tools (the five always-on Pro tools,
+	 *    the twenty-seven loader tools, and the tree-only
+	 *    import-site-creator-blueprint tool).
  *
  * @package NvoosContentGraphPro
  * @since   1.1.0
@@ -132,7 +134,41 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 	 * @return array Extended tool map.
 	 */
 	function wp_mcp_ai_pro_register_site_creator_tools( $tools ) {
-		$nvoos_content_graph_pro_site_tools = array();
+		$nvoos_content_graph_pro_site_tools = array(
+			'WP_MCP_AI_Pro_Tool_Site_Creator'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-pro-tool-site-creator.php',
+			'WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-pro-tool-install-and-activate-plugin.php',
+			'WP_MCP_AI_Pro_Tool_Install_And_Activate_Theme' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-pro-tool-install-and-activate-theme.php',
+			'WP_MCP_AI_Pro_Tool_Update_Option'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-pro-tool-update-option.php',
+			'WP_MCP_AI_Pro_Tool_Elementor'                 => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-pro-tool-elementor.php',
+			'WP_MCP_AI_Tool_Research_Site_Best_Practices'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-research-site-best-practices.php',
+			'WP_MCP_AI_Tool_Analyze_Competitor_Sites'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-analyze-competitor-sites.php',
+			'WP_MCP_AI_Tool_Generate_Site_Plan'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-generate-site-plan.php',
+			'WP_MCP_AI_Tool_Suggest_Template_Patterns'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-suggest-template-patterns.php',
+			'WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-extract-site-design-from-mockups.php',
+			'WP_MCP_AI_Tool_Generate_Landing_Page'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-generate-landing-page.php',
+			'WP_MCP_AI_Tool_Create_Homepage_Layout'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-create-homepage-layout.php',
+			'WP_MCP_AI_Tool_Build_About_Page'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-build-about-page.php',
+			'WP_MCP_AI_Tool_Create_Service_Pages'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-create-service-pages.php',
+			'WP_MCP_AI_Tool_Generate_Blog_Layout'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-generate-blog-layout.php',
+			'WP_MCP_AI_Tool_Create_Hero_Section'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-create-hero-section.php',
+			'WP_MCP_AI_Tool_Generate_Feature_Section'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-generate-feature-section.php',
+			'WP_MCP_AI_Tool_Build_Testimonial_Section'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-build-testimonial-section.php',
+			'WP_MCP_AI_Tool_Create_CTA_Section'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-create-cta-section.php',
+			'WP_MCP_AI_Tool_Generate_Gallery_Section'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-generate-gallery-section.php',
+			'WP_MCP_AI_Tool_Build_Contact_Section'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-build-contact-section.php',
+			'WP_MCP_AI_Tool_Create_Custom_Widget'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-create-custom-widget.php',
+			'WP_MCP_AI_Tool_Build_Navigation_Menu'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-build-navigation-menu.php',
+			'WP_MCP_AI_Tool_Generate_Sidebar_Widget'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-generate-sidebar-widget.php',
+			'WP_MCP_AI_Tool_Create_Footer_Widget'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-create-footer-widget.php',
+			'WP_MCP_AI_Tool_Save_Site_Template'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-save-site-template.php',
+			'WP_MCP_AI_Tool_Import_Site_Template'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-import-site-template.php',
+			'WP_MCP_AI_Tool_Export_Template_Kit'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-export-template-kit.php',
+			'WP_MCP_AI_Tool_Manage_Template_Versions'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-manage-template-versions.php',
+			'WP_MCP_AI_Tool_Integrate_With_Architect'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-integrate-with-architect.php',
+			'WP_MCP_AI_Tool_Scaffold_Theme_Structure'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-scaffold-theme-structure.php',
+			'WP_MCP_AI_Tool_Automate_Development_Workflow' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/class-wp-mcp-ai-tool-automate-development-workflow.php',
+			'WP_MCP_AI_Tool_Import_Site_Creator_Blueprint' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/examples/class-wp-mcp-ai-tool-import-site-creator-blueprint.php',
+		);
 
 		return array_merge( $tools, $nvoos_content_graph_pro_site_tools );
 	}
@@ -154,7 +190,43 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 			return;
 		}
 
-		foreach ( array() as $nvoos_content_graph_pro_tool_class ) {
+		foreach (
+			array(
+				'WP_MCP_AI_Pro_Tool_Site_Creator',
+				'WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin',
+				'WP_MCP_AI_Pro_Tool_Install_And_Activate_Theme',
+				'WP_MCP_AI_Pro_Tool_Update_Option',
+				'WP_MCP_AI_Pro_Tool_Elementor',
+				'WP_MCP_AI_Tool_Research_Site_Best_Practices',
+				'WP_MCP_AI_Tool_Analyze_Competitor_Sites',
+				'WP_MCP_AI_Tool_Generate_Site_Plan',
+				'WP_MCP_AI_Tool_Suggest_Template_Patterns',
+				'WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups',
+				'WP_MCP_AI_Tool_Generate_Landing_Page',
+				'WP_MCP_AI_Tool_Create_Homepage_Layout',
+				'WP_MCP_AI_Tool_Build_About_Page',
+				'WP_MCP_AI_Tool_Create_Service_Pages',
+				'WP_MCP_AI_Tool_Generate_Blog_Layout',
+				'WP_MCP_AI_Tool_Create_Hero_Section',
+				'WP_MCP_AI_Tool_Generate_Feature_Section',
+				'WP_MCP_AI_Tool_Build_Testimonial_Section',
+				'WP_MCP_AI_Tool_Create_CTA_Section',
+				'WP_MCP_AI_Tool_Generate_Gallery_Section',
+				'WP_MCP_AI_Tool_Build_Contact_Section',
+				'WP_MCP_AI_Tool_Create_Custom_Widget',
+				'WP_MCP_AI_Tool_Build_Navigation_Menu',
+				'WP_MCP_AI_Tool_Generate_Sidebar_Widget',
+				'WP_MCP_AI_Tool_Create_Footer_Widget',
+				'WP_MCP_AI_Tool_Save_Site_Template',
+				'WP_MCP_AI_Tool_Import_Site_Template',
+				'WP_MCP_AI_Tool_Export_Template_Kit',
+				'WP_MCP_AI_Tool_Manage_Template_Versions',
+				'WP_MCP_AI_Tool_Integrate_With_Architect',
+				'WP_MCP_AI_Tool_Scaffold_Theme_Structure',
+				'WP_MCP_AI_Tool_Automate_Development_Workflow',
+				'WP_MCP_AI_Tool_Import_Site_Creator_Blueprint',
+			) as $nvoos_content_graph_pro_tool_class
+		) {
 			$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
 			try {
 				$nvoos_content_graph_pro_parent_registry->register( $nvoos_content_graph_pro_adapter );

@@ -78,7 +78,8 @@ class Test_Site_Creator_Data_Layer extends WP_UnitTestCase {
 
 	/**
 	 * Standalone only: the upgrader-skin D8 copy must load and the slim
-	 * init's file targets must exist with an empty tool filter.
+	 * init's file targets must exist with the now-filled tool filter (the
+	 * site-creator tool batch landed in the following sub-cluster).
 	 */
 	public function test_init_gate_targets_standalone(): void {
 		if ( defined( 'WP_MCP_AI_PATH' ) ) {
@@ -98,6 +99,6 @@ class Test_Site_Creator_Data_Layer extends WP_UnitTestCase {
 
 		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/site-creator-toolkit/init.php';
 		add_filter( 'wp_mcp_ai_pro_tools', 'wp_mcp_ai_pro_register_site_creator_tools', 10 );
-		$this->assertSame( array(), apply_filters( 'wp_mcp_ai_pro_tools', array() ) );
+		$this->assertCount( 33, apply_filters( 'wp_mcp_ai_pro_tools', array() ) );
 	}
 }
