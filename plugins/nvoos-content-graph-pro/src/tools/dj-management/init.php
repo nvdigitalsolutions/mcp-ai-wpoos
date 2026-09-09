@@ -25,9 +25,9 @@
  *    update-playlist-rotation in its gated map, so the remaining nineteen
  *    tree-only tools and the import-blueprint tool are carried here too
  *    (CRM CC-extras precedent). The two always-on jukebox tools
- *    (generate-jukebox-music/check-jukebox-status) stay deferred — they
- *    depend on the base-owned `WP_MCP_AI_Logger` + the Pro-owned jukebox
- *    service (D8 + dj-services slice).
+ *    (generate-jukebox-music/check-jukebox-status) landed with the jukebox
+ *    slice and are carried here as unconditional additions (video-exec
+ *    precedent — no enable gate in the base `$pro_tools` map).
  *
  * @package NvoosContentGraphPro
  * @since   1.1.0
@@ -103,6 +103,7 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 		$nvoos_content_graph_pro_dj_tools = array(
 			'WP_MCP_AI_Tool_Add_Equipment_Item'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/dj-management/class-wp-mcp-ai-tool-add-equipment-item.php',
 			'WP_MCP_AI_Tool_Analyze_Track_Bpm'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/dj-management/class-wp-mcp-ai-tool-analyze-track-bpm.php',
+			'WP_MCP_AI_Tool_Check_Jukebox_Status'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/dj-management/class-wp-mcp-ai-tool-check-jukebox-status.php',
 			'WP_MCP_AI_Tool_Client_Communication_Log'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/dj-management/class-wp-mcp-ai-tool-client-communication-log.php',
 			'WP_MCP_AI_Tool_Create_Client_Profile'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/dj-management/class-wp-mcp-ai-tool-create-client-profile.php',
 			'WP_MCP_AI_Tool_Create_Event_Booking'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/dj-management/class-wp-mcp-ai-tool-create-event-booking.php',
@@ -110,6 +111,7 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 			'WP_MCP_AI_Tool_Equipment_Inventory_Report'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/dj-management/class-wp-mcp-ai-tool-equipment-inventory-report.php',
 			'WP_MCP_AI_Tool_Generate_Dj_Contract'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/dj-management/class-wp-mcp-ai-tool-generate-dj-contract.php',
 			'WP_MCP_AI_Tool_Generate_Event_Timeline'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/dj-management/class-wp-mcp-ai-tool-generate-event-timeline.php',
+			'WP_MCP_AI_Tool_Generate_Jukebox_Music'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/dj-management/class-wp-mcp-ai-tool-generate-jukebox-music.php',
 			'WP_MCP_AI_Tool_Generate_Playlist_Ai'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/dj-management/class-wp-mcp-ai-tool-generate-playlist-ai.php',
 			'WP_MCP_AI_Tool_Get_Trending_Tracks'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/dj-management/class-wp-mcp-ai-tool-get-trending-tracks.php',
 			'WP_MCP_AI_Tool_Import_DJ_Management_Blueprint' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/dj-management/examples/class-wp-mcp-ai-tool-import-dj-management-blueprint.php',
@@ -148,6 +150,7 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 			array(
 				'WP_MCP_AI_Tool_Add_Equipment_Item',
 				'WP_MCP_AI_Tool_Analyze_Track_Bpm',
+				'WP_MCP_AI_Tool_Check_Jukebox_Status',
 				'WP_MCP_AI_Tool_Client_Communication_Log',
 				'WP_MCP_AI_Tool_Create_Client_Profile',
 				'WP_MCP_AI_Tool_Create_Event_Booking',
@@ -155,6 +158,7 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 				'WP_MCP_AI_Tool_Equipment_Inventory_Report',
 				'WP_MCP_AI_Tool_Generate_Dj_Contract',
 				'WP_MCP_AI_Tool_Generate_Event_Timeline',
+				'WP_MCP_AI_Tool_Generate_Jukebox_Music',
 				'WP_MCP_AI_Tool_Generate_Playlist_Ai',
 				'WP_MCP_AI_Tool_Get_Trending_Tracks',
 				'WP_MCP_AI_Tool_Import_DJ_Management_Blueprint',
