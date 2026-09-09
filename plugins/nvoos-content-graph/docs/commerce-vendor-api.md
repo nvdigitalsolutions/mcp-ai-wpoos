@@ -46,6 +46,16 @@ same constants/classes and break both plugins. In that case the customer is
 told to update their existing plugin from the Plugins screen; the purchase
 license is still recorded.
 
+### Manual install is the primary path
+
+Manual installation is the documented, recommended path: after a successful
+purchase the modal shows the signed `download_url`, and the buyer downloads
+the ZIP and uploads it via **Plugins → Add New Plugin → Upload Plugin**.
+The one-click automatic installer (which streams the same signed URL through
+`download_url()` + `Plugin_Upgrader`) is offered as a convenience and runs
+only after the buyer's explicit purchase and confirmation. Both paths use
+the same vendor-issued, expiring, download-capped URL.
+
 ## Endpoints
 
 Base URL default: `https://nvdigitalsolutions.com/wp-json/nvoos-checkout/v1`

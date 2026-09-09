@@ -669,6 +669,15 @@
 			payBox.appendChild( keyRow );
 		}
 
+		// Manual install is the primary documented path — always offer the
+		// signed ZIP download alongside the automatic install result.
+		if ( data.download_url ) {
+			var manual = el( 'div', 'nvoos-cg-manual-install' );
+			manual.appendChild( el( 'p', 'nvoos-cg-manual-note', i18n.manual_install_note || 'Prefer to install manually? Download the ZIP and upload it via Plugins → Add New Plugin → Upload Plugin.' ) );
+			manual.appendChild( linkEl( 'button', i18n.download_zip || 'Download ZIP manually', data.download_url ) );
+			payBox.appendChild( manual );
+		}
+
 		var footer = dialog.querySelector( '.nvoos-cg-modal-footer' );
 		footer.innerHTML = '';
 		var reloadBtn = el( 'button', 'button button-primary', i18n.refresh || 'Reload page' );
@@ -677,11 +686,6 @@
 			window.location.reload();
 		} );
 		footer.appendChild( reloadBtn );
-
-		// Auto-refresh so the upsell cards disappear and AI features appear.
-		window.setTimeout( function () {
-			window.location.reload();
-		}, 2500 );
 	}
 
 	/**
