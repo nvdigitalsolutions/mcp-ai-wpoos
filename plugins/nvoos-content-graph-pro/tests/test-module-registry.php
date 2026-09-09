@@ -169,6 +169,7 @@ class Test_Pro_Module_Registry extends WP_UnitTestCase {
 			'toolkit_architect_agent',
 			'toolkit_architectural_design',
 			'toolkit_site_creator',
+			'toolkit_document_generation',
 		);
 
 		$this->assertSame( $expected, array_keys( $registry->modules() ) );
