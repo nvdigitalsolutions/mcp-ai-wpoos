@@ -122,6 +122,7 @@ spl_autoload_register(
 			'src/tools/dj-management/',
 			'src/tools/dj-management/examples/',
 			'src/tools/image-production/',
+			'src/tools/image-production/examples/',
 			'src/tools/orchestration/',
 			'src/tools/financial-planning/',
 			'src/tools/financial-planning/examples/',
