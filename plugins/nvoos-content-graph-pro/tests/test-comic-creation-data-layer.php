@@ -103,6 +103,26 @@ class Test_Comic_Creation_Data_Layer extends WP_UnitTestCase {
 
 		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/comic-creation/init.php';
 		add_filter( 'wp_mcp_ai_pro_tools', 'wp_mcp_ai_pro_register_comic_creation_tools', 10 );
-		$this->assertSame( array(), apply_filters( 'wp_mcp_ai_pro_tools', array() ) );
+		$comic_tools = apply_filters( 'wp_mcp_ai_pro_tools', array() );
+		$this->assertCount( 13, $comic_tools );
+		foreach (
+			array(
+				'WP_MCP_AI_Tool_Generate_Comic_Script',
+				'WP_MCP_AI_Tool_Breakdown_Comic_Panels',
+				'WP_MCP_AI_Tool_Generate_Character_Sheet',
+				'WP_MCP_AI_Tool_Generate_Comic_Panel',
+				'WP_MCP_AI_Tool_Create_Comic_Layout',
+				'WP_MCP_AI_Tool_Add_Speech_Bubbles',
+				'WP_MCP_AI_Tool_Export_Comic_Cbz',
+				'WP_MCP_AI_Tool_Colorize_Comic_Panel',
+				'WP_MCP_AI_Tool_Ink_Comic_Panel',
+				'WP_MCP_AI_Tool_Letter_Comic_Panel',
+				'WP_MCP_AI_Tool_Upscale_Comic_Page',
+				'WP_MCP_AI_Tool_Apply_Comic_Style',
+				'WP_MCP_AI_Tool_Import_Comic_Creation_Blueprint',
+			) as $comic_class
+		) {
+			$this->assertArrayHasKey( $comic_class, $comic_tools );
+		}
 	}
 }

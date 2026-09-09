@@ -125,6 +125,7 @@ spl_autoload_register(
 			'src/tools/image-production/examples/',
 			'src/tools/image-production/harmonization/',
 			'src/tools/comic-creation/',
+			'src/tools/comic-creation/examples/',
 			'src/tools/orchestration/',
 			'src/tools/financial-planning/',
 			'src/tools/financial-planning/examples/',
