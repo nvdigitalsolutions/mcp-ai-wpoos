@@ -118,6 +118,26 @@ php -d memory_limit=1G vendor/bin/phpunit -c plugins/nvoos-content-graph-pro/php
 # Monolith matrix: same command WITHOUT the env var.
 ```
 
+**Shared-DB isolation (cross-worktree clobbering):** every worktree's one-off
+runner hits the SAME `wordpress_test` DB by default — a concurrent worktree's
+`install.php` re-runs wipe your schema mid-suite (mass "Table doesn't exist"
+failures). Isolate per worktree with a dedicated DB:
+
+```bash
+# One-time: create the isolated DB (db container name from docker ps; creds
+# in docker-compose.yml — oos-wp-db / wordpress:wordpress by default):
+docker exec oos-wp-db mysql -uroot -pwordpress -e \
+  "CREATE DATABASE IF NOT EXISTS wordpress_test_pearl; GRANT ALL PRIVILEGES ON wordpress_test_pearl.* TO 'wordpress'@'%'; FLUSH PRIVILEGES;"
+
+# Then point BOTH the schema install and every phpunit run at it:
+-e WP_DB_NAME=wordpress_test_pearl \
+# Schema install (once, or after the DB gets dropped):
+php vendor/wp-phpunit/wp-phpunit/includes/install.php tests/wp-tests-config.php
+```
+
+The env var overrides `DB_NAME` in `tests/wp-tests-config.php` (which reads
+`getenv( 'WP_DB_NAME' )`) — never edit the tracked config file.
+
 - Run `--filter Test_X` first, then the full suite — the full run is ~10-20
   min locally.
 - Sequential monolith + standalone runs may reuse `wordpress_test`; keep the

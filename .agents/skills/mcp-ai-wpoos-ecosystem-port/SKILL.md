@@ -139,6 +139,24 @@ new wiring (documented as a deviation every time):
 - **Double-declaration hazards**: never copy a symbol the root classmap
   serves; use D8-compat copies only for `includes/tools/` (classmap-excluded)
   symbols.
+- **Seam needles must be the FULL require expression**
+  (`require_once WP_MCP_AI_PATH . 'includes/...php';`), never just the
+  filename: a partial needle silently misses, the leftover path swap then
+  leaves a BARE addon-path `require_once`, and the root classmap's base copy
+  + the addon copy double-declare mid-suite (site-creator/docgen precedent —
+  surfaced as "Cannot declare trait X … already in use" in the standalone
+  matrix).
+- **No-autoload seams for non-self-contained D8 copies**: when a base-owned
+  copy itself references `WP_MCP_AI_PATH` (e.g. self-hosted-ocr-client), a
+  plain `class_exists()` seam lets the monorepo root classmap win the
+  autoload race and fatals on the undefined constant. Use
+  `if ( ! defined( 'WP_MCP_AI_PATH' ) && ! class_exists( 'X', false ) )`
+  (no autoload) — and replace only the FIRST occurrence (the seam): inner
+  execute-time `class_exists` availability checks stay byte-identical.
+- **Re-porting wipes post-steps**: port scripts re-read the source, so
+  phpcbf whitespace fixes, header notes, and domain patches are lost on
+  every re-run — keep those post-steps scripted (php -r batch) and re-apply
+  after each re-port.
 - **`phpcbf` exit 1** = fixed files (not an error); re-run phpcs for exit 0.
 - **Trackers are huge**: edit only the row tail (append sub-cluster entry +
   rewrite "Remaining:"), never the historical entries.

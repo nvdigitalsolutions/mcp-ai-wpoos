@@ -890,6 +890,23 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 																								require_once $p . 'qms/class-wp-mcp-ai-qms-init.php';
 																							}
 																						);
+
+																						// Standalone-only module (the base registry registers
+																						// `toolkit_regulatory_registration` dynamically via the
+																						// conditional toolkit loop with an `enabled` gate). Boots
+																						// the slim regulatory-registration init standalone
+																						// (site-creator precedent).
+																						$this->add_module(
+																							'toolkit_regulatory_registration',
+																							'Regulatory Registration Toolkit',
+																							array(),
+																							array(
+																								'files' => array( $p . 'tools/regulatory-registration/init.php' ),
+																							),
+																							function () use ( $p ) {
+																								require_once $p . 'tools/regulatory-registration/init.php';
+																							}
+																						);
 		}
 	}
 }
