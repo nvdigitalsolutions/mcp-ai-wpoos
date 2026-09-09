@@ -812,6 +812,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 																require_once $p . 'tools/ai-tool-builder/init.php';
 															}
 														);
+
+																// Standalone-only module (the base registry registers
+																// `toolkit_architect_agent` dynamically via the conditional toolkit
+																// loop with an `enabled` gate). Boots the slim architect-agent init
+																// standalone (ai-tool-builder precedent).
+																$this->add_module(
+																	'toolkit_architect_agent',
+																	'Architect Agent Toolkit',
+																	array(),
+																	array(
+																		'files' => array( $p . 'tools/architect-agent/init.php' ),
+																	),
+																	function () use ( $p ) {
+																		require_once $p . 'tools/architect-agent/init.php';
+																	}
+																);
 		}
 	}
 }

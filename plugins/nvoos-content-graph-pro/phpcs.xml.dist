@@ -201,6 +201,18 @@
     </rule>
 
     <!--
+        Byte-identical architect-agent proc helpers (D8-compat copy from the
+        base bootstrap helpers) use proc_open + stream reads directly — the
+        monolith copies carry the same calls.
+    -->
+    <rule ref="WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open">
+        <severity>0</severity>
+    </rule>
+    <rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_fread">
+        <severity>0</severity>
+    </rule>
+
+    <!--
         Byte-identical import-services file handling: the base copy uses
         fopen/fclose/fwrite/file_put_contents + @unlink for its CSV import
         temp files, with the same silenced-error and while-assignment
