@@ -185,9 +185,9 @@ class Test_Healthcare_Data_Layer extends WP_UnitTestCase {
 
 	/**
 	 * Standalone only: the slim init's file targets must exist, the tool
-	 * filter must carry the eleven wellness CRUD batch-1 tools (the further
-	 * healthcare tool batches land with the following sub-clusters), and the
-	 * wellness global helpers must load.
+	 * filter must carry the twenty-three wellness CRUD batch-1/2 tools (the
+	 * further healthcare tool batches land with the following sub-clusters),
+	 * and the wellness global helpers must load.
 	 */
 	public function test_init_gate_targets_standalone(): void {
 		if ( defined( 'WP_MCP_AI_PATH' ) ) {
@@ -207,7 +207,7 @@ class Test_Healthcare_Data_Layer extends WP_UnitTestCase {
 
 		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/init.php';
 		add_filter( 'wp_mcp_ai_pro_tools', 'wp_mcp_ai_pro_register_healthcare_tools', 10 );
-		$this->assertCount( 11, apply_filters( 'wp_mcp_ai_pro_tools', array() ) );
+		$this->assertCount( 23, apply_filters( 'wp_mcp_ai_pro_tools', array() ) );
 		$this->assertTrue( function_exists( 'wp_mcp_ai_pro_register_healthcare_ecosystem_tools' ) );
 
 		// The wellness sub-init loads unconditionally with the unified
