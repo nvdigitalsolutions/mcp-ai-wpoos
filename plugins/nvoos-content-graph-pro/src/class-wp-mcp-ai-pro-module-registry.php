@@ -877,6 +877,19 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 																								require_once $p . 'tools/document-generation/init.php';
 																							}
 																						);
+
+																						// Standalone-only module (the base registry registers
+																						// `pro_qms`). Boots the QMS subsystem standalone
+																						// (document-generation QMS slice).
+																						$this->add_module(
+																							'pro_qms',
+																							'QMS Init',
+																							array(),
+																							array(),
+																							function () use ( $p ) {
+																								require_once $p . 'qms/class-wp-mcp-ai-qms-init.php';
+																							}
+																						);
 		}
 	}
 }
