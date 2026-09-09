@@ -1,14 +1,17 @@
 <?php
 /**
- * Architectural interoperability engine (ecosystem port - Wave F2, architectural-design data layer).
+ * Architectural_Interop (ecosystem port - Wave F2, architectural-design tool batch).
  *
- * Ported from the base Pro addon's `addons/pro/includes/tools/architectural-design/` directory for the standalone
- * `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro addon owns the class in
- * monolith installs - the addon boots nothing when `WP_MCP_AI_PRO_PATH` is defined (see the
- * plugin entry).
+ * Ported from the base Pro addon's `addons/pro/includes/tools/architectural-design/` directory for the
+ * standalone `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro addon owns the
+ * class in monolith installs - the addon boots nothing when `WP_MCP_AI_PRO_PATH` is defined (see
+ * the plugin entry).
  *
  * Documented deviations: `declare(strict_types=1)` added; text domain `nvoos-content-graph-pro`;
- * `NVOOS_CONTENT_GRAPH_PRO_PATH` swaps with the `src/` root.
+ * per-file seams — the base-owned interface/Logger/media-url-utils requires gain exists-check seams
+ * resolving from the addon's D8-compat `src/` copies, the response/subprocess traits are
+ * wave-proof-guarded, the openai/gemini client requires stay monolith-gated, and the
+ * `WP_MCP_AI_PRO_PATH` refs swap to `NVOOS_CONTENT_GRAPH_PRO_PATH` with the `src/` root.
  *
  * @package WP_MCP_AI_Pro
  * @subpackage Architectural_Design

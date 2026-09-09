@@ -104,6 +104,9 @@ class Test_Architectural_Design_Data_Layer extends WP_UnitTestCase {
 
 		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/init.php';
 		add_filter( 'wp_mcp_ai_pro_tools', 'wp_mcp_ai_pro_register_architectural_design_tools', 10 );
-		$this->assertSame( array(), apply_filters( 'wp_mcp_ai_pro_tools', array() ) );
+		$arch_tools = apply_filters( 'wp_mcp_ai_pro_tools', array() );
+		$this->assertCount( 41, $arch_tools );
+		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_Generate_Floor_Plan', $arch_tools );
+		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_Generate_Architectural_Drawing', $arch_tools );
 	}
 }

@@ -219,6 +219,13 @@
     <rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_fread">
         <severity>0</severity>
     </rule>
+    <!--
+        Byte-identical architectural drawing tool renames its temp output files
+        with rename() (the monolith copy carries the same call).
+    -->
+    <rule ref="WordPress.WP.AlternativeFunctions.rename_rename">
+        <severity>0</severity>
+    </rule>
 
     <!--
         Byte-identical import-services file handling: the base copy uses

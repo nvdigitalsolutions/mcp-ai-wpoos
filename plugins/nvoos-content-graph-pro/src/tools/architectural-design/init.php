@@ -26,8 +26,8 @@
  * 5. New standalone-only tool wiring (financial-init deviation 6
  *    precedent): a `wp_mcp_ai_pro_tools` filter plus
  *    `wp_mcp_ai_pro_register_architectural_design_ecosystem_tools()` — both
- *    start with empty maps and fill as the architectural-design tool batch
- *    lands.
+ *    carry all forty-one ported tools (the 39 loader classes + the always-on
+ *    generate-architectural-drawing + the tree-only import-blueprint tool).
  *
  * @package NvoosContentGraphPro
  * @since   1.1.0
@@ -176,7 +176,49 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 	 * @return array Extended tool map.
 	 */
 	function wp_mcp_ai_pro_register_architectural_design_tools( $tools ) {
-		$nvoos_content_graph_pro_arch_design_tools = array();
+		$nvoos_content_graph_pro_arch_design_tools = array(
+			'WP_MCP_AI_Tool_Generate_Floor_Plan'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/floor-planning/class-wp-mcp-ai-tool-generate-floor-plan.php',
+			'WP_MCP_AI_Tool_Optimize_Space_Layout'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/floor-planning/class-wp-mcp-ai-tool-optimize-space-layout.php',
+			'WP_MCP_AI_Tool_Create_Floor_Plan_Variations'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/floor-planning/class-wp-mcp-ai-tool-create-floor-plan-variations.php',
+			'WP_MCP_AI_Tool_Convert_Sketch_To_Floor_Plan'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/floor-planning/class-wp-mcp-ai-tool-convert-sketch-to-floor-plan.php',
+			'WP_MCP_AI_Tool_Generate_3d_Model'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/visualization/class-wp-mcp-ai-tool-generate-3d-model.php',
+			'WP_MCP_AI_Tool_Render_Architectural_View'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/visualization/class-wp-mcp-ai-tool-render-architectural-view.php',
+			'WP_MCP_AI_Tool_Create_Walkthrough_Animation'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/visualization/class-wp-mcp-ai-tool-create-walkthrough-animation.php',
+			'WP_MCP_AI_Tool_Generate_Construction_Drawings' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/documentation/class-wp-mcp-ai-tool-generate-construction-drawings.php',
+			'WP_MCP_AI_Tool_Generate_Detail_Drawings'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/documentation/class-wp-mcp-ai-tool-generate-detail-drawings.php',
+			'WP_MCP_AI_Tool_Export_Architectural_Documents' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/documentation/class-wp-mcp-ai-tool-export-architectural-documents.php',
+			'WP_MCP_AI_Tool_Check_Building_Code_Compliance' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/analysis-compliance/class-wp-mcp-ai-tool-check-building-code-compliance.php',
+			'WP_MCP_AI_Tool_Analyze_Structural_Feasibility' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/analysis-compliance/class-wp-mcp-ai-tool-analyze-structural-feasibility.php',
+			'WP_MCP_AI_Tool_Calculate_Sustainability_Metrics' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/analysis-compliance/class-wp-mcp-ai-tool-calculate-sustainability-metrics.php',
+			'WP_MCP_AI_Tool_Generate_Material_Schedule'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/estimation-scheduling/class-wp-mcp-ai-tool-generate-material-schedule.php',
+			'WP_MCP_AI_Tool_Estimate_Construction_Cost'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/estimation-scheduling/class-wp-mcp-ai-tool-estimate-construction-cost.php',
+			'WP_MCP_AI_Tool_Generate_Construction_Timeline' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/estimation-scheduling/class-wp-mcp-ai-tool-generate-construction-timeline.php',
+			'WP_MCP_AI_Tool_Calculate_Wind_Loads'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/regional-compliance/class-wp-mcp-ai-tool-calculate-wind-loads.php',
+			'WP_MCP_AI_Tool_Calculate_Seismic_Loads'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/regional-compliance/class-wp-mcp-ai-tool-calculate-seismic-loads.php',
+			'WP_MCP_AI_Tool_Validate_Setbacks_And_Far'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/regional-compliance/class-wp-mcp-ai-tool-validate-setbacks-and-far.php',
+			'WP_MCP_AI_Tool_Check_UDA_Planning_Compliance' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/regional-compliance/class-wp-mcp-ai-tool-check-uda-planning-compliance.php',
+			'WP_MCP_AI_Tool_Check_JNBC_Hurricane_Compliance' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/regional-compliance/class-wp-mcp-ai-tool-check-jnbc-hurricane-compliance.php',
+			'WP_MCP_AI_Tool_Check_US_IBC_IRC_Compliance'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/regional-compliance/class-wp-mcp-ai-tool-check-us-ibc-irc-compliance.php',
+			'WP_MCP_AI_Tool_Generate_Compliance_Dossier'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/regional-compliance/class-wp-mcp-ai-tool-generate-compliance-dossier.php',
+			'WP_MCP_AI_Tool_Analyze_Natural_Ventilation'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/analysis-compliance/class-wp-mcp-ai-tool-analyze-natural-ventilation.php',
+			'WP_MCP_AI_Tool_Analyze_Daylight_And_Solar_Gain' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/analysis-compliance/class-wp-mcp-ai-tool-analyze-daylight-and-solar-gain.php',
+			'WP_MCP_AI_Tool_Simulate_Thermal_Comfort'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/sustainability/class-wp-mcp-ai-tool-simulate-thermal-comfort.php',
+			'WP_MCP_AI_Tool_Score_Edge_Certification'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/sustainability/class-wp-mcp-ai-tool-score-edge-certification.php',
+			'WP_MCP_AI_Tool_Score_Leed_V4_Certification'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/sustainability/class-wp-mcp-ai-tool-score-leed-v4-certification.php',
+			'WP_MCP_AI_Tool_Generate_Bill_Of_Quantities'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/estimation-scheduling/class-wp-mcp-ai-tool-generate-bill-of-quantities.php',
+			'WP_MCP_AI_Tool_Propose_Value_Engineering_Options' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/estimation-scheduling/class-wp-mcp-ai-tool-propose-value-engineering-options.php',
+			'WP_MCP_AI_Tool_Import_Dwg_Floor_Plan'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/interoperability/class-wp-mcp-ai-tool-import-dwg-floor-plan.php',
+			'WP_MCP_AI_Tool_Import_Ifc_Model'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/interoperability/class-wp-mcp-ai-tool-import-ifc-model.php',
+			'WP_MCP_AI_Tool_Export_To_Ifc'                 => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/interoperability/class-wp-mcp-ai-tool-export-to-ifc.php',
+			'WP_MCP_AI_Tool_Export_To_Gbxml'               => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/interoperability/class-wp-mcp-ai-tool-export-to-gbxml.php',
+			'WP_MCP_AI_Tool_Generate_Bim_Execution_Plan'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/project-delivery/class-wp-mcp-ai-tool-generate-bim-execution-plan.php',
+			'WP_MCP_AI_Tool_Manage_Rfi_Log'                => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/project-delivery/class-wp-mcp-ai-tool-manage-rfi-log.php',
+			'WP_MCP_AI_Tool_Manage_Submittal_Log'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/project-delivery/class-wp-mcp-ai-tool-manage-submittal-log.php',
+			'WP_MCP_AI_Tool_Manage_Architectural_Precedents' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/precedents/class-wp-mcp-ai-tool-manage-architectural-precedents.php',
+			'WP_MCP_AI_Tool_Search_Architectural_Precedents' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/precedents/class-wp-mcp-ai-tool-search-architectural-precedents.php',
+			'WP_MCP_AI_Tool_Generate_Architectural_Drawing' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/class-wp-mcp-ai-tool-generate-architectural-drawing.php',
+			'WP_MCP_AI_Tool_Import_Architectural_Design_Blueprint' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/architectural-design/examples/class-wp-mcp-ai-tool-import-architectural-design-blueprint.php',
+		);
 
 		return array_merge( $tools, $nvoos_content_graph_pro_arch_design_tools );
 	}
@@ -198,7 +240,51 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 			return;
 		}
 
-		foreach ( array() as $nvoos_content_graph_pro_tool_class ) {
+		foreach (
+			array(
+				'WP_MCP_AI_Tool_Generate_Floor_Plan',
+				'WP_MCP_AI_Tool_Optimize_Space_Layout',
+				'WP_MCP_AI_Tool_Create_Floor_Plan_Variations',
+				'WP_MCP_AI_Tool_Convert_Sketch_To_Floor_Plan',
+				'WP_MCP_AI_Tool_Generate_3d_Model',
+				'WP_MCP_AI_Tool_Render_Architectural_View',
+				'WP_MCP_AI_Tool_Create_Walkthrough_Animation',
+				'WP_MCP_AI_Tool_Generate_Construction_Drawings',
+				'WP_MCP_AI_Tool_Generate_Detail_Drawings',
+				'WP_MCP_AI_Tool_Export_Architectural_Documents',
+				'WP_MCP_AI_Tool_Check_Building_Code_Compliance',
+				'WP_MCP_AI_Tool_Analyze_Structural_Feasibility',
+				'WP_MCP_AI_Tool_Calculate_Sustainability_Metrics',
+				'WP_MCP_AI_Tool_Generate_Material_Schedule',
+				'WP_MCP_AI_Tool_Estimate_Construction_Cost',
+				'WP_MCP_AI_Tool_Generate_Construction_Timeline',
+				'WP_MCP_AI_Tool_Calculate_Wind_Loads',
+				'WP_MCP_AI_Tool_Calculate_Seismic_Loads',
+				'WP_MCP_AI_Tool_Validate_Setbacks_And_Far',
+				'WP_MCP_AI_Tool_Check_UDA_Planning_Compliance',
+				'WP_MCP_AI_Tool_Check_JNBC_Hurricane_Compliance',
+				'WP_MCP_AI_Tool_Check_US_IBC_IRC_Compliance',
+				'WP_MCP_AI_Tool_Generate_Compliance_Dossier',
+				'WP_MCP_AI_Tool_Analyze_Natural_Ventilation',
+				'WP_MCP_AI_Tool_Analyze_Daylight_And_Solar_Gain',
+				'WP_MCP_AI_Tool_Simulate_Thermal_Comfort',
+				'WP_MCP_AI_Tool_Score_Edge_Certification',
+				'WP_MCP_AI_Tool_Score_Leed_V4_Certification',
+				'WP_MCP_AI_Tool_Generate_Bill_Of_Quantities',
+				'WP_MCP_AI_Tool_Propose_Value_Engineering_Options',
+				'WP_MCP_AI_Tool_Import_Dwg_Floor_Plan',
+				'WP_MCP_AI_Tool_Import_Ifc_Model',
+				'WP_MCP_AI_Tool_Export_To_Ifc',
+				'WP_MCP_AI_Tool_Export_To_Gbxml',
+				'WP_MCP_AI_Tool_Generate_Bim_Execution_Plan',
+				'WP_MCP_AI_Tool_Manage_Rfi_Log',
+				'WP_MCP_AI_Tool_Manage_Submittal_Log',
+				'WP_MCP_AI_Tool_Manage_Architectural_Precedents',
+				'WP_MCP_AI_Tool_Search_Architectural_Precedents',
+				'WP_MCP_AI_Tool_Generate_Architectural_Drawing',
+				'WP_MCP_AI_Tool_Import_Architectural_Design_Blueprint',
+			) as $nvoos_content_graph_pro_tool_class
+		) {
 			$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
 			try {
 				$nvoos_content_graph_pro_parent_registry->register( $nvoos_content_graph_pro_adapter );
