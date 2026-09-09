@@ -194,6 +194,34 @@ final class Payments {
 	}
 
 	/**
+	 * ISO 3166-1 alpha-2 codes for EU member states (EU-27).
+	 *
+	 * Buyers selecting one of these in the purchase modal are required to
+	 * provide a billing address (VAT records for digital services); the
+	 * code is forwarded to the vendor and stored on the license. Filterable
+	 * via `nvoos_content_graph/payments/eu_countries`.
+	 *
+	 * @since 1.0.7
+	 *
+	 * @return array<int,string>
+	 */
+	public static function euCountryCodes(): array {
+		$eu = array(
+			'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI',
+			'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU',
+			'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+		);
+
+		$filtered = apply_filters( Schema::FILTER_EU_COUNTRIES, $eu );
+		return array_values(
+			array_filter(
+				is_array( $filtered ) ? $filtered : $eu,
+				static fn( $code ) => is_string( $code ) && 1 === preg_match( '/^[A-Z]{2}$/', $code )
+			)
+		);
+	}
+
+	/**
 	 * Payload identifying this site and product to the vendor API.
 	 *
 	 * The vendor binds the payment to `site_url` so an intent created for

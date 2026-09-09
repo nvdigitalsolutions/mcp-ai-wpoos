@@ -547,8 +547,9 @@ class SettingsPage {
 				'fallback_url'      => esc_url_raw( \NvoosContentGraph\Commerce\Payments::fallbackProductUrl() ),
 				'terms_url'         => esc_url_raw( \NvoosContentGraph\Commerce\Payments::termsUrl() ),
 				'refund_policy_url' => esc_url_raw( \NvoosContentGraph\Commerce\Payments::refundPolicyUrl() ),
-				'buyer_email'       => sanitize_email( (string) wp_get_current_user()->user_email ),
-				'i18n'              => array(
+				'buyer_email'        => sanitize_email( (string) wp_get_current_user()->user_email ),
+				'eu_countries'       => \NvoosContentGraph\Commerce\Payments::euCountryCodes(),
+				'i18n'               => array(
 					'title'               => __( 'Get NV oOS Complete', 'nvoos-content-graph' ),
 					'pay'                 => __( 'Pay', 'nvoos-content-graph' ),
 					'cancel'              => __( 'Cancel', 'nvoos-content-graph' ),
@@ -576,6 +577,12 @@ class SettingsPage {
 					'email_placeholder'   => __( 'you@example.com', 'nvoos-content-graph' ),
 					'email_invalid'       => __( 'Please enter a valid email address for your receipt.', 'nvoos-content-graph' ),
 					'manual_install_note' => __( 'Prefer to install manually? Download the ZIP and upload it via Plugins → Add New Plugin → Upload Plugin.', 'nvoos-content-graph' ),
+					'country_label'       => __( 'Country (for VAT records)', 'nvoos-content-graph' ),
+					'country_other'       => __( 'Other / Non-EU', 'nvoos-content-graph' ),
+					'address_line1_label' => __( 'Street address', 'nvoos-content-graph' ),
+					'address_city_label'  => __( 'City', 'nvoos-content-graph' ),
+					'address_postal_label' => __( 'Postal code (optional)', 'nvoos-content-graph' ),
+					'address_required'    => __( 'EU purchases require a billing address. Please complete the address fields.', 'nvoos-content-graph' ),
 				),
 			)
 		);

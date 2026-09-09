@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class NVOOS_Checkout_API_License_Store {
 
 	public const TABLE_NAME     = 'nvoos_checkout_licenses';
-	public const DB_VERSION     = '3';
+	public const DB_VERSION     = '4';
 	public const DB_VERSION_KEY = 'nvoos_checkout_licenses_db_version';
 
 	public const STATUS_ACTIVE  = 'active';
@@ -62,6 +62,7 @@ class NVOOS_Checkout_API_License_Store {
 			currency CHAR(3) NOT NULL DEFAULT 'usd',
 			addon_version VARCHAR(16) NOT NULL DEFAULT '',
 			buyer_email VARCHAR(255) NOT NULL DEFAULT '',
+			buyer_country CHAR(2) NOT NULL DEFAULT '',
 			terms_agreed_at DATETIME NULL DEFAULT NULL,
 			status VARCHAR(16) NOT NULL DEFAULT 'active',
 			created_at DATETIME NOT NULL,
@@ -104,11 +105,12 @@ class NVOOS_Checkout_API_License_Store {
 				'currency'              => (string) ( $data['currency'] ?? 'usd' ),
 				'addon_version'         => (string) ( $data['addon_version'] ?? '' ),
 				'buyer_email'           => (string) ( $data['buyer_email'] ?? '' ),
+				'buyer_country'         => (string) ( $data['buyer_country'] ?? '' ),
 				'terms_agreed_at'       => $terms_agreed_at,
 				'status'                => self::STATUS_ACTIVE,
 				'created_at'            => $now,
 			),
-			array( '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s' )
+			array( '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
 
 		if ( false === $inserted ) {
@@ -235,6 +237,32 @@ class NVOOS_Checkout_API_License_Store {
 				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name comes from a class constant; values are prepared.
 				"UPDATE {$table} SET buyer_email = %s WHERE license_key = %s AND buyer_email = ''",
 				$email,
+				$license_key
+			)
+		);
+
+		return false !== $updated;
+	}
+
+	/**
+	 * Record the buyer's country code on a license (VAT records).
+	 *
+	 * Fill-once, like the email — the first country the buyer declares at
+	 * purchase is the one kept for VAT evidence.
+	 *
+	 * @param string $license_key License key.
+	 * @param string $country     ISO 3166-1 alpha-2 country code.
+	 * @return bool True when a row was updated.
+	 */
+	public static function set_buyer_country( string $license_key, string $country ): bool {
+		global $wpdb;
+
+		$table   = self::table_name();
+		$updated = $wpdb->query(
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name comes from a class constant; values are prepared.
+				"UPDATE {$table} SET buyer_country = %s WHERE license_key = %s AND buyer_country = ''",
+				$country,
 				$license_key
 			)
 		);

@@ -114,6 +114,36 @@ class Test_Checkout_Api_License_Store extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The buyer country starts empty and can be recorded exactly once.
+	 *
+	 * @return void
+	 */
+	public function test_buyer_country_defaults_empty_and_is_set_once(): void {
+		NVOOS_Checkout_API_License_Store::create(
+			array(
+				'license_key'           => 'test-key-country',
+				'product'               => 'nvoos-content-graph-ai',
+				'site_url'              => 'https://customer.example',
+				'stripe_payment_intent' => 'pi_test_country',
+				'amount'                => 4900,
+			)
+		);
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_key( 'test-key-country' );
+		$this->assertSame( '', $license['buyer_country'] );
+
+		$this->assertTrue( NVOOS_Checkout_API_License_Store::set_buyer_country( 'test-key-country', 'DE' ) );
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_key( 'test-key-country' );
+		$this->assertSame( 'DE', $license['buyer_country'] );
+
+		// A second write targets zero rows (WHERE excludes filled values).
+		NVOOS_Checkout_API_License_Store::set_buyer_country( 'test-key-country', 'FR' );
+		$license = NVOOS_Checkout_API_License_Store::get_by_key( 'test-key-country' );
+		$this->assertSame( 'DE', $license['buyer_country'] );
+	}
+
+	/**
 	 * Consent starts empty (NULL) and can be recorded exactly once.
 	 *
 	 * @return void

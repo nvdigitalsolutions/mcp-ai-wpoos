@@ -64,10 +64,11 @@ class Vendor {
 	 * @param int    $termsAgreedAt   Unix timestamp of the buyer's consent
 	 *                                to the Terms of Service (0 = absent).
 	 * @param string $buyerEmail      Buyer's receipt/refund email ('' = absent).
+	 * @param string $buyerCountry    Buyer's ISO country code ('' = absent).
 	 * @return array<string,mixed>|WP_Error
 	 *   array{license_key: string, download_url: string, addon_version: string, amount: int, currency: string}
 	 */
-	public function verify( string $paymentIntentId, int $termsAgreedAt = 0, string $buyerEmail = '' ) {
+	public function verify( string $paymentIntentId, int $termsAgreedAt = 0, string $buyerEmail = '', string $buyerCountry = '' ) {
 		$payload                   = Payments::purchasePayload();
 		$payload['payment_intent'] = $paymentIntentId;
 		if ( $termsAgreedAt > 0 ) {
@@ -75,6 +76,9 @@ class Vendor {
 		}
 		if ( '' !== $buyerEmail ) {
 			$payload['buyer_email'] = sanitize_email( $buyerEmail );
+		}
+		if ( '' !== $buyerCountry ) {
+			$payload['buyer_country'] = strtoupper( sanitize_text_field( $buyerCountry ) );
 		}
 		return $this->post( 'verify', $payload );
 	}

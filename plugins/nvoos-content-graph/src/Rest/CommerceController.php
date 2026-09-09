@@ -108,6 +108,15 @@ class CommerceController {
 						},
 						'sanitize_callback' => 'sanitize_email',
 					),
+					'buyer_country'   => array(
+						'type'              => 'string',
+						'validate_callback' => static function ( $value ) {
+							return is_string( $value ) && ( '' === $value || 1 === preg_match( '/^[A-Z]{2}$/', $value ) );
+						},
+						'sanitize_callback' => static function ( $value ) {
+							return strtoupper( sanitize_text_field( $value ) );
+						},
+					),
 				),
 			)
 		);
@@ -213,6 +222,7 @@ class CommerceController {
 		$intentId      = (string) $request->get_param( 'payment_intent' );
 		$termsAgreedAt = (int) $request->get_param( 'terms_agreed_at' );
 		$buyerEmail    = (string) $request->get_param( 'buyer_email' );
+		$buyerCountry  = (string) $request->get_param( 'buyer_country' );
 
 		if ( License::isLicensed() && Installer::isActive() ) {
 			return rest_ensure_response(
@@ -235,7 +245,7 @@ class CommerceController {
 		}
 
 		$vendor = new Vendor( Payments::vendorApiUrl() );
-		$result = $vendor->verify( $intentId, $termsAgreedAt, $buyerEmail );
+		$result = $vendor->verify( $intentId, $termsAgreedAt, $buyerEmail, $buyerCountry );
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -264,6 +274,7 @@ class CommerceController {
 			'purchased_at'          => time(),
 			'terms_agreed_at'       => $termsAgreedAt,
 			'buyer_email'           => '' !== $buyerEmail ? sanitize_email( $buyerEmail ) : sanitize_email( (string) $user->user_email ),
+			'buyer_country'         => '' !== $buyerCountry && 1 === preg_match( '/^[A-Z]{2}$/', $buyerCountry ) ? strtoupper( $buyerCountry ) : '',
 		);
 
 		License::save( $record );

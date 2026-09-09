@@ -72,6 +72,71 @@ class Test_Checkout_Api_Stripe_Client extends WP_UnitTestCase {
 	}
 
 	/**
+	 * create_product sends a service-typed product to the Products endpoint.
+	 *
+	 * @return void
+	 */
+	public function test_create_product(): void {
+		$captured_url  = '';
+		$captured_body = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args, $url ) use ( &$captured_url, &$captured_body ) {
+				$captured_url  = $url;
+				$captured_body = $args['body'];
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array( 'id' => 'prod_test_1' ) ),
+				);
+			},
+			10,
+			3
+		);
+
+		$client = new NVOOS_Checkout_API_Stripe_Client( 'sk_test_abc' );
+		$result = $client->create_product( 'NV oOS Complete' );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'prod_test_1', $result['id'] );
+		$this->assertStringContainsString( '/v1/products', $captured_url );
+		$this->assertSame( 'NV oOS Complete', $captured_body['name'] );
+		$this->assertSame( 'service', $captured_body['type'] );
+	}
+
+	/**
+	 * create_price sends a one-time unit price to the Prices endpoint.
+	 *
+	 * @return void
+	 */
+	public function test_create_price(): void {
+		$captured_url  = '';
+		$captured_body = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args, $url ) use ( &$captured_url, &$captured_body ) {
+				$captured_url  = $url;
+				$captured_body = $args['body'];
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array( 'id' => 'price_test_1' ) ),
+				);
+			},
+			10,
+			3
+		);
+
+		$client = new NVOOS_Checkout_API_Stripe_Client( 'sk_test_abc' );
+		$result = $client->create_price( 'prod_test_1', 4900, 'usd' );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'price_test_1', $result['id'] );
+		$this->assertStringContainsString( '/v1/prices', $captured_url );
+		$this->assertSame( 'prod_test_1', $captured_body['product'] );
+		$this->assertSame( 4900, $captured_body['unit_amount'] );
+		$this->assertSame( 'usd', $captured_body['currency'] );
+	}
+
+	/**
 	 * A valid signature passes verification.
 	 *
 	 * @return void

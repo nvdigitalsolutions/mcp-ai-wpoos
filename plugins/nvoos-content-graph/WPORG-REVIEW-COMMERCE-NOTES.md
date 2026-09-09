@@ -54,9 +54,10 @@ feature-locked.**
 
 - **Stripe** (`js.stripe.com` / Stripe API via the vendor server): payment
   card details (entered in Stripe's own iframe — the plugin never sees
-  them), buyer email, and receipt delivery.
+  them), buyer email, buyer country, EU billing address (VAT records), and
+  receipt delivery.
 - **Vendor checkout server** (NV Digital Solutions): product name, site URL,
-  Stripe payment ID, buyer email, Terms consent timestamp.
+  Stripe payment ID, buyer email, buyer country, Terms consent timestamp.
 - **GitHub** (`github.com`): only an HTTPS download of the purchased ZIP via
   a vendor-signed URL; no data sent.
 
@@ -69,6 +70,9 @@ feature-locked.**
 - v1.0.7: ToS/refund consent checkbox + buyer email collection; manual
   download surfaced as the primary install path; readme disclosures updated
   to match the exact data sent.
+- v1.0.7 (later): buyer country + conditional EU billing address (VAT
+  records); vendor records country on the license; Stripe statement
+  descriptor and product/price metadata configurable on the vendor storefront.
 
 ## Review-team questions, pre-answered
 

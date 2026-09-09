@@ -41,6 +41,9 @@ class NVOOS_Checkout_API_Settings {
 	public const DEFAULT_TERMS_URL         = 'https://nvdigitalsolutions.com/terms-of-service';
 	public const DEFAULT_REFUND_POLICY_URL = 'https://nvdigitalsolutions.com/refund-policy';
 
+	/** Default Stripe product name used when auto-creating Product/Price. */
+	public const DEFAULT_PRODUCT_NAME = 'NV oOS Complete';
+
 	/**
 	 * Default ZIP source pattern.
 	 *
@@ -71,6 +74,10 @@ class NVOOS_Checkout_API_Settings {
 			'zip_source'             => self::default_zip_source(),
 			'terms_url'              => self::DEFAULT_TERMS_URL,
 			'refund_policy_url'      => self::DEFAULT_REFUND_POLICY_URL,
+			'statement_descriptor'   => '',
+			'product_name'           => self::DEFAULT_PRODUCT_NAME,
+			'product_id'             => '',
+			'price_id'               => '',
 		);
 
 		$stored = get_option( self::OPTION, array() );
@@ -222,6 +229,78 @@ class NVOOS_Checkout_API_Settings {
 	}
 
 	/**
+	 * The card statement descriptor, or '' to use Stripe's default.
+	 *
+	 * Stripe requires 5–22 characters of a restricted alphabet for card
+	 * charges; invalid values are dropped so the default descriptor applies.
+	 *
+	 * @return string
+	 */
+	public static function statement_descriptor(): string {
+		$descriptor = strtoupper( (string) self::get( 'statement_descriptor', '' ) );
+		$descriptor = preg_replace( '/[^A-Z0-9 ._+*,-]/', '', $descriptor ) ?? '';
+		$descriptor = trim( $descriptor );
+		return strlen( $descriptor ) >= 5 && strlen( $descriptor ) <= 22 ? $descriptor : '';
+	}
+
+	/**
+	 * The Stripe product name used when auto-creating Product/Price objects.
+	 *
+	 * @return string
+	 */
+	public static function product_name(): string {
+		$name = sanitize_text_field( (string) self::get( 'product_name', self::DEFAULT_PRODUCT_NAME ) );
+		return '' !== $name ? $name : self::DEFAULT_PRODUCT_NAME;
+	}
+
+	/**
+	 * The Stripe Product ID recorded on payment intents (reporting metadata).
+	 *
+	 * @return string
+	 */
+	public static function product_id(): string {
+		return (string) self::get( 'product_id', '' );
+	}
+
+	/**
+	 * The Stripe Price ID recorded on payment intents (reporting metadata).
+	 *
+	 * @return string
+	 */
+	public static function price_id(): string {
+		return (string) self::get( 'price_id', '' );
+	}
+
+	/**
+	 * Update a single non-secret settings field, bypassing the Settings API.
+	 *
+	 * Used by the admin-post handlers (e.g. auto-creating the Stripe
+	 * Product/Price). Reads the stored option directly so encrypted
+	 * credentials are never round-tripped through sanitization.
+	 *
+	 * @param string $key   Field key (product_id, price_id, product_name, statement_descriptor).
+	 * @param string $value New value.
+	 * @return bool True when the option was updated.
+	 */
+	public static function update_field( string $key, string $value ): bool {
+		$allowed = array( 'product_id', 'price_id', 'product_name', 'statement_descriptor' );
+		if ( ! in_array( $key, $allowed, true ) ) {
+			return false;
+		}
+
+		$sanitized = self::sanitize( array( $key => $value ) );
+		if ( ! array_key_exists( $key, $sanitized ) ) {
+			return false;
+		}
+
+		$stored          = get_option( self::OPTION, array() );
+		$stored          = is_array( $stored ) ? $stored : array();
+		$stored[ $key ] = $sanitized[ $key ];
+
+		return update_option( self::OPTION, $stored, false );
+	}
+
+	/**
 	 * Sanitize the settings array on save.
 	 *
 	 * @param mixed $raw Raw submitted values.
@@ -277,6 +356,26 @@ class NVOOS_Checkout_API_Settings {
 		foreach ( array( 'terms_url', 'refund_policy_url' ) as $key ) {
 			if ( isset( $raw[ $key ] ) ) {
 				$sanitized[ $key ] = esc_url_raw( (string) $raw[ $key ] );
+			}
+		}
+
+		// Statement descriptor: sanitized strictly; invalid lengths are
+		// dropped (empty) so Stripe's default descriptor applies.
+		if ( isset( $raw['statement_descriptor'] ) ) {
+			$descriptor = strtoupper( (string) $raw['statement_descriptor'] );
+			$descriptor = preg_replace( '/[^A-Z0-9 ._+*,-]/', '', $descriptor ) ?? '';
+			$descriptor = trim( $descriptor );
+			$sanitized['statement_descriptor'] = ( strlen( $descriptor ) >= 5 && strlen( $descriptor ) <= 22 ) ? $descriptor : '';
+		}
+
+		if ( isset( $raw['product_name'] ) ) {
+			$sanitized['product_name'] = sanitize_text_field( (string) $raw['product_name'] );
+		}
+
+		foreach ( array( 'product_id', 'price_id' ) as $key ) {
+			if ( isset( $raw[ $key ] ) ) {
+				$value = (string) $raw[ $key ];
+				$sanitized[ $key ] = preg_match( '/^[A-Za-z0-9_]+$/', $value ) ? $value : '';
 			}
 		}
 
