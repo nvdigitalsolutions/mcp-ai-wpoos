@@ -220,25 +220,34 @@ jobs:
           mkdir -p "dist/${ARTIFACT}/nvoos-${ADDON}"
 
           # Copy plugin source (exclude dev files)
-          rsync -a \
-            --exclude='node_modules/' \
-            --exclude='src/' \
-            --exclude='tests/' \
-            --exclude='package.json' \
-            --exclude='package-lock.json' \
-            --exclude='tsconfig.json' \
-            --exclude='esbuild.config.cjs' \
-            --exclude='esbuild.config.js' \
-            --exclude='eslint.config.js' \
-            --exclude='vitest.config.ts' \
-            --exclude='.gitignore' \
-            --exclude='.distignore' \
-            --exclude='.DS_Store' \
-            --exclude='vendor/' \
-            --exclude='composer.json' \
-            --exclude='composer.lock' \
-            --exclude='docs/' \
-            --exclude='.wordpress-org/' \
+          EXCLUDES=(
+            --exclude='node_modules/'
+            --exclude='src/'
+            --exclude='tests/'
+            --exclude='package.json'
+            --exclude='package-lock.json'
+            --exclude='tsconfig.json'
+            --exclude='esbuild.config.cjs'
+            --exclude='esbuild.config.js'
+            --exclude='eslint.config.js'
+            --exclude='vitest.config.ts'
+            --exclude='.gitignore'
+            --exclude='.distignore'
+            --exclude='.DS_Store'
+            --exclude='vendor/'
+            --exclude='composer.json'
+            --exclude='composer.lock'
+            --exclude='docs/'
+            --exclude='.wordpress-org/'
+          )
+
+          # WordPress.org zip: docs-hub ships only readme.txt — strip all
+          # Markdown (root README.md / CHANGELOG.md are dev-only docs).
+          if [ "${ADDON}" = "docs-hub" ]; then
+            EXCLUDES+=(--exclude='*.md')
+          fi
+
+          rsync -a "${EXCLUDES[@]}" \
             "addons/${ADDON}/" "dist/${ARTIFACT}/nvoos-${ADDON}/"
 
           echo "📁 Plugin directory contents:"

@@ -1,7 +1,7 @@
 # Files to exclude when packaging the NV oOS Docs Hub addon as a standalone
 # WordPress.org plugin (e.g. `wp dist-archive addons/docs-hub`).
 # Mirrors the exclusion lists in bin/build-addon-zips.sh (docs-hub step) and
-# bin/strip-dev-files.sh — keep the three in sync.
+# .github/workflows/build-spa-addons.yml (assemble step) — keep the three in sync.
 
 # Git
 .git
@@ -37,8 +37,12 @@ phpunit.xml.dist
 # Source files (only the built bundles in assets/dist/ ship)
 src
 
-# Development documentation (readme.txt / README.md / CHANGELOG.md are kept)
+# Development documentation — only readme.txt ships to WordPress.org.
+# Root README.md / CHANGELOG.md and any nested *.md are dev-only
+# (mirrors plugins/nvoos-content-graph/.distignore).
 docs
+*.md
+!readme.txt
 
 # Temporary files
 *.log
