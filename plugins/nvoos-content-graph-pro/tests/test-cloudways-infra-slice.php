@@ -92,10 +92,10 @@ class Test_Cloudways_Infra_Slice extends WP_UnitTestCase {
 			$this->assertFileExists( $target );
 		}
 
-		// The tool filter starts empty (fills with the tool batch).
+		// The tool filter carries the full sixty-tool batch.
 		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cloudways/init.php';
 		add_filter( 'wp_mcp_ai_pro_tools', 'wp_mcp_ai_pro_register_cloudways_tools', 10 );
-		$this->assertSame( array(), apply_filters( 'wp_mcp_ai_pro_tools', array() ) );
+		$this->assertCount( 60, apply_filters( 'wp_mcp_ai_pro_tools', array() ) );
 	}
 
 	/**
