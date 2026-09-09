@@ -845,6 +845,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 																				require_once $p . 'tools/architectural-design/init.php';
 																			}
 																		);
+
+																				// Standalone-only module (the base registry registers
+																				// `toolkit_site_creator` dynamically via the conditional toolkit
+																				// loop with an `enabled` gate). Boots the slim site-creator init
+																				// standalone (architectural-design precedent).
+																				$this->add_module(
+																					'toolkit_site_creator',
+																					'Site Creator Toolkit',
+																					array(),
+																					array(
+																						'files' => array( $p . 'tools/site-creator-toolkit/init.php' ),
+																					),
+																					function () use ( $p ) {
+																						require_once $p . 'tools/site-creator-toolkit/init.php';
+																					}
+																				);
 		}
 	}
 }
