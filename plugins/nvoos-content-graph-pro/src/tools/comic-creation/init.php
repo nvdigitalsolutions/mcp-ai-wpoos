@@ -22,8 +22,9 @@
  *    block (financial-init deviation 5 precedent).
  * 5. New standalone-only tool wiring (financial-init deviation 6
  *    precedent): a `wp_mcp_ai_pro_tools` filter plus
- *    `wp_mcp_ai_pro_register_comic_creation_ecosystem_tools()` — both start
- *    with empty maps and fill as the comic tool batch lands.
+ *    `wp_mcp_ai_pro_register_comic_creation_ecosystem_tools()` — both carry
+ *    all thirteen ported comic tools (the twelve monolith-map tools +
+ *    the tree-only import-blueprint tool).
  *
  * @package NvoosContentGraphPro
  * @since   1.1.0
@@ -138,13 +139,29 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 	/**
 	 * Standalone-only tool filter — carries the ported comic-creation tool
 	 * subset (inert standalone, consumed by the base plugin monolith). The
-	 * map fills as the comic tool batch lands.
+	 * twelve gated tools mirror the monolith's inline `$comic_tools` map;
+	 * the import-blueprint tool is tree-only (the base registers it
+	 * nowhere — CRM CC-extras precedent).
 	 *
 	 * @param array $tools Existing tool map (class => file).
 	 * @return array Extended tool map.
 	 */
 	function wp_mcp_ai_pro_register_comic_creation_tools( $tools ) {
-		$nvoos_content_graph_pro_comic_tools = array();
+		$nvoos_content_graph_pro_comic_tools = array(
+			'WP_MCP_AI_Tool_Generate_Comic_Script'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/comic-creation/class-wp-mcp-ai-tool-generate-comic-script.php',
+			'WP_MCP_AI_Tool_Breakdown_Comic_Panels'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/comic-creation/class-wp-mcp-ai-tool-breakdown-comic-panels.php',
+			'WP_MCP_AI_Tool_Generate_Character_Sheet' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/comic-creation/class-wp-mcp-ai-tool-generate-character-sheet.php',
+			'WP_MCP_AI_Tool_Generate_Comic_Panel'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/comic-creation/class-wp-mcp-ai-tool-generate-comic-panel.php',
+			'WP_MCP_AI_Tool_Create_Comic_Layout'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/comic-creation/class-wp-mcp-ai-tool-create-comic-layout.php',
+			'WP_MCP_AI_Tool_Add_Speech_Bubbles'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/comic-creation/class-wp-mcp-ai-tool-add-speech-bubbles.php',
+			'WP_MCP_AI_Tool_Export_Comic_Cbz'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/comic-creation/class-wp-mcp-ai-tool-export-comic-cbz.php',
+			'WP_MCP_AI_Tool_Colorize_Comic_Panel'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/comic-creation/class-wp-mcp-ai-tool-colorize-comic-panel.php',
+			'WP_MCP_AI_Tool_Ink_Comic_Panel'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/comic-creation/class-wp-mcp-ai-tool-ink-comic-panel.php',
+			'WP_MCP_AI_Tool_Letter_Comic_Panel'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/comic-creation/class-wp-mcp-ai-tool-letter-comic-panel.php',
+			'WP_MCP_AI_Tool_Upscale_Comic_Page'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/comic-creation/class-wp-mcp-ai-tool-upscale-comic-page.php',
+			'WP_MCP_AI_Tool_Apply_Comic_Style'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/comic-creation/class-wp-mcp-ai-tool-apply-comic-style.php',
+			'WP_MCP_AI_Tool_Import_Comic_Creation_Blueprint' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/comic-creation/examples/class-wp-mcp-ai-tool-import-comic-creation-blueprint.php',
+		);
 
 		return array_merge( $tools, $nvoos_content_graph_pro_comic_tools );
 	}
@@ -153,8 +170,8 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 	 * Standalone-only ecosystem registration — registers the ported
 	 * comic-creation tools into the ecosystem graph ToolRegistry and the
 	 * nvoos/core registry via `WP_MCP_AI_Pro_Tool_Adapter` (same wiring as
-	 * the image-production/video inits). The list fills as the comic tool
-	 * batch lands.
+	 * the image-production/video inits). Carries all thirteen ported tools
+	 * (the twelve monolith-map tools + the tree-only import-blueprint tool).
 	 *
 	 * @return void
 	 */
@@ -166,7 +183,23 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 			return;
 		}
 
-		foreach ( array() as $nvoos_content_graph_pro_tool_class ) {
+		foreach (
+			array(
+				'WP_MCP_AI_Tool_Generate_Comic_Script',
+				'WP_MCP_AI_Tool_Breakdown_Comic_Panels',
+				'WP_MCP_AI_Tool_Generate_Character_Sheet',
+				'WP_MCP_AI_Tool_Generate_Comic_Panel',
+				'WP_MCP_AI_Tool_Create_Comic_Layout',
+				'WP_MCP_AI_Tool_Add_Speech_Bubbles',
+				'WP_MCP_AI_Tool_Export_Comic_Cbz',
+				'WP_MCP_AI_Tool_Colorize_Comic_Panel',
+				'WP_MCP_AI_Tool_Ink_Comic_Panel',
+				'WP_MCP_AI_Tool_Letter_Comic_Panel',
+				'WP_MCP_AI_Tool_Upscale_Comic_Page',
+				'WP_MCP_AI_Tool_Apply_Comic_Style',
+				'WP_MCP_AI_Tool_Import_Comic_Creation_Blueprint',
+			) as $nvoos_content_graph_pro_tool_class
+		) {
 			$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
 			try {
 				$nvoos_content_graph_pro_parent_registry->register( $nvoos_content_graph_pro_adapter );
