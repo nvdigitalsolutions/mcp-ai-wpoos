@@ -32,6 +32,7 @@ Each page below covers:
 | Media (Sharp) | `enable_media_toolkit` | 30+ | [media.md](media.md) |
 | Image Production | `enable_image_production_toolkit` | 15 | [image-production.md](image-production.md) |
 | Video Production | `enable_video_production_toolkit` | 13 | [video-production.md](video-production.md) |
+| Comic Creation | `enable_comic_creation_toolkit` | 12 | [`comic-creation/README.md`](../../includes/tools/comic-creation/README.md) |
 
 ## Business Management
 
