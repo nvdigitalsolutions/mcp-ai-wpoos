@@ -119,6 +119,8 @@ spl_autoload_register(
 			'src/tools/multilingual/examples/',
 			'src/cloudways/',
 			'src/tools/cloudways/',
+			'src/tools/dj-management/',
+			'src/tools/dj-management/examples/',
 			'src/tools/orchestration/',
 			'src/tools/financial-planning/',
 			'src/tools/financial-planning/examples/',
