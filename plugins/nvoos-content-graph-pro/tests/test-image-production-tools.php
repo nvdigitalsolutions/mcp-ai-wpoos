@@ -35,6 +35,11 @@ class Test_Image_Production_Tools extends WP_UnitTestCase {
 
 		$import = new WP_MCP_AI_Tool_Import_Image_Production_Blueprint();
 		$this->assertSame( 'import_image_production_blueprint', $import->get_slug() );
+
+		// Harmonization sub-toolkit surfaces.
+		$harmonize = new WP_MCP_AI_Tool_Harmonize_Color();
+		$this->assertSame( 'harmonize_color', $harmonize->get_slug() );
+		$this->assertIsBool( WP_MCP_AI_Tool_Harmonize_Color::is_available() );
 	}
 
 	/**
@@ -83,13 +88,18 @@ class Test_Image_Production_Tools extends WP_UnitTestCase {
 		add_filter( 'wp_mcp_ai_pro_tools', 'wp_mcp_ai_pro_register_image_production_tools', 10 );
 
 		$tools = apply_filters( 'wp_mcp_ai_pro_tools', array() );
-		$this->assertCount( 23, $tools );
+		$this->assertCount( 37, $tools );
 		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_Get_Images_Without_Alt', $tools );
 		$this->assertSame(
 			NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-get-images-without-alt.php',
 			$tools['WP_MCP_AI_Tool_Get_Images_Without_Alt']
 		);
 		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_Import_Image_Production_Blueprint', $tools );
+		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_Harmonize_Image_Into_Background', $tools );
+		$this->assertSame(
+			NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/harmonization/class-wp-mcp-ai-tool-harmonize-image-into-background.php',
+			$tools['WP_MCP_AI_Tool_Harmonize_Image_Into_Background']
+		);
 		$this->assertFileExists( NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/examples/creative-image-producer.json' );
 	}
 
@@ -113,5 +123,6 @@ class Test_Image_Production_Tools extends WP_UnitTestCase {
 		$core_tools = \NvoosContentGraphAi\CoreBridge::instance()->tools;
 		$this->assertTrue( $core_tools->has( 'get_images_without_alt' ) );
 		$this->assertTrue( $core_tools->has( 'import_image_production_blueprint' ) );
+		$this->assertTrue( $core_tools->has( 'harmonize_image_into_background' ) );
 	}
 }

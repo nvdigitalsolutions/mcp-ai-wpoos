@@ -109,6 +109,6 @@ class Test_Image_Production_Data_Layer extends WP_UnitTestCase {
 
 		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/init.php';
 		add_filter( 'wp_mcp_ai_pro_tools', 'wp_mcp_ai_pro_register_image_production_tools', 10 );
-		$this->assertCount( 23, apply_filters( 'wp_mcp_ai_pro_tools', array() ) );
+		$this->assertCount( 37, apply_filters( 'wp_mcp_ai_pro_tools', array() ) );
 	}
 }
