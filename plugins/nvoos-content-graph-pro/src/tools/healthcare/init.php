@@ -16,7 +16,7 @@
  * standalone-only wiring (deviation, same as the CRM init): a
 	 * `wp_mcp_ai_pro_tools` filter plus
 	 * `wp_mcp_ai_pro_register_healthcare_ecosystem_tools()` — both carry the
-	 * twenty-three wellness CRUD batch-1/2 tools and fill further as the
+	 * thirty-four wellness CRUD batch-1/2/3 tools and fill further as the
 	 * healthcare tool batches land; local vars
  * prefixed `$nvoos_content_graph_pro_*`.
  *
@@ -155,6 +155,17 @@ function wp_mcp_ai_pro_register_healthcare_tools( $tools ) {
 		'WP_MCP_AI_Tool_Update_Medical_Record'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/medical-records/class-wp-mcp-ai-tool-update-medical-record.php',
 		'WP_MCP_AI_Tool_Delete_Medical_Record'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/medical-records/class-wp-mcp-ai-tool-delete-medical-record.php',
 		'WP_MCP_AI_Tool_Search_Medical_Records' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/medical-records/class-wp-mcp-ai-tool-search-medical-records.php',
+		'WP_MCP_AI_Tool_Create_Checkup'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/checkups/class-wp-mcp-ai-tool-create-checkup.php',
+		'WP_MCP_AI_Tool_List_Checkups'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/checkups/class-wp-mcp-ai-tool-list-checkups.php',
+		'WP_MCP_AI_Tool_Get_Checkup'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/checkups/class-wp-mcp-ai-tool-get-checkup.php',
+		'WP_MCP_AI_Tool_Update_Checkup'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/checkups/class-wp-mcp-ai-tool-update-checkup.php',
+		'WP_MCP_AI_Tool_Delete_Checkup'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/checkups/class-wp-mcp-ai-tool-delete-checkup.php',
+		'WP_MCP_AI_Tool_Get_Upcoming_Checkups'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/checkups/class-wp-mcp-ai-tool-get-upcoming-checkups.php',
+		'WP_MCP_AI_Tool_Create_Allergy'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/allergies/class-wp-mcp-ai-tool-create-allergy.php',
+		'WP_MCP_AI_Tool_List_Allergies'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/allergies/class-wp-mcp-ai-tool-list-allergies.php',
+		'WP_MCP_AI_Tool_Get_Allergy'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/allergies/class-wp-mcp-ai-tool-get-allergy.php',
+		'WP_MCP_AI_Tool_Update_Allergy'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/allergies/class-wp-mcp-ai-tool-update-allergy.php',
+		'WP_MCP_AI_Tool_Delete_Allergy'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/allergies/class-wp-mcp-ai-tool-delete-allergy.php',
 	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_health_tools );
@@ -201,6 +212,17 @@ function wp_mcp_ai_pro_register_healthcare_ecosystem_tools() {
 			'WP_MCP_AI_Tool_Update_Medical_Record',
 			'WP_MCP_AI_Tool_Delete_Medical_Record',
 			'WP_MCP_AI_Tool_Search_Medical_Records',
+			'WP_MCP_AI_Tool_Create_Checkup',
+			'WP_MCP_AI_Tool_List_Checkups',
+			'WP_MCP_AI_Tool_Get_Checkup',
+			'WP_MCP_AI_Tool_Update_Checkup',
+			'WP_MCP_AI_Tool_Delete_Checkup',
+			'WP_MCP_AI_Tool_Get_Upcoming_Checkups',
+			'WP_MCP_AI_Tool_Create_Allergy',
+			'WP_MCP_AI_Tool_List_Allergies',
+			'WP_MCP_AI_Tool_Get_Allergy',
+			'WP_MCP_AI_Tool_Update_Allergy',
+			'WP_MCP_AI_Tool_Delete_Allergy',
 		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );

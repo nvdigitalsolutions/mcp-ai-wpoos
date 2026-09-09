@@ -159,7 +159,7 @@ class Test_Healthcare_Wellness_Crud extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Standalone only: the init's tool filter must carry the twenty-three
+	 * Standalone only: the init's tool filter must carry the thirty-four
 	 * ported wellness CRUD tools with the addon's file paths.
 	 */
 	public function test_tools_filter_shape_standalone(): void {
@@ -171,7 +171,7 @@ class Test_Healthcare_Wellness_Crud extends WP_UnitTestCase {
 		add_filter( 'wp_mcp_ai_pro_tools', 'wp_mcp_ai_pro_register_healthcare_tools', 10 );
 
 		$tools = apply_filters( 'wp_mcp_ai_pro_tools', array() );
-		$this->assertCount( 23, $tools );
+		$this->assertCount( 34, $tools );
 		$this->assertSame(
 			NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/members/class-wp-mcp-ai-tool-create-member.php',
 			$tools['WP_MCP_AI_Tool_Create_Member']
