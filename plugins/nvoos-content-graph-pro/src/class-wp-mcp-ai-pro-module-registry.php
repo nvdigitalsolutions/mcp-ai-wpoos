@@ -776,6 +776,24 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 													require_once $p . 'tools/image-production/init.php';
 												}
 											);
+
+												// Standalone-only module (no monolith registry counterpart — the
+												// base tree ships the comic-creation init but nothing loads it;
+												// the base registers the twelve comic tools inline via
+												// `wp_mcp_ai_pro_register_tools()`). Boots the slim
+												// comic-creation init standalone so the ported tools land in the
+												// ecosystem registries (image-production precedent).
+												$this->add_module(
+													'toolkit_comic_creation',
+													'Comic Creation Toolkit',
+													array(),
+													array(
+														'files' => array( $p . 'tools/comic-creation/init.php' ),
+													),
+													function () use ( $p ) {
+														require_once $p . 'tools/comic-creation/init.php';
+													}
+												);
 		}
 	}
 }
