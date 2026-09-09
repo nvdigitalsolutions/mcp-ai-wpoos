@@ -98,7 +98,7 @@
 		"@babel/plugin-transform-modules-systemjs": ">=7.29.4",
 		"nanoid": "^5.1.16",
 					"js-yaml": ">=5.0.0",
-		"svgo": ">=4.0.2",
+		"svgo": ">=4.1.0",
 		"linkify-it": ">=5.0.2",
 		"mailparser": {
 			"nodemailer": ">=9.0.1"
