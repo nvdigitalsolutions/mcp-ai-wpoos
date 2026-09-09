@@ -407,10 +407,16 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 	public function test_recall_filters_by_wing_and_includes_all_core_records() {
 		$tool = new WP_MCP_AI_Tool_Recall_Memory();
 
+		// Priority PHP_INT_MAX so a leaked subscriber on the shared recall
+		// hook can never override or reorder the fixture. valid_from is
+		// backdated one minute: the recall tool's bi-temporal gate compares
+		// second-truncated timestamps against time(), so stamping "now"
+		// makes the fixture vulnerable to sub-second clock skew (a clock
+		// tick backwards drops every candidate and zeroes core_count).
 		add_filter(
 			'wp_mcp_ai_recall_memory_candidates',
 			static function () {
-				$now = current_time( 'mysql' );
+				$now = gmdate( 'Y-m-d H:i:s', time() - MINUTE_IN_SECONDS );
 				return array(
 					array(
 						'context_id' => 'ctx_a',
@@ -440,7 +446,8 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 						'valid_from' => $now,
 					),
 				);
-			}
+			},
+			PHP_INT_MAX
 		);
 
 		$result = $tool->execute(
@@ -468,7 +475,7 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 		add_filter(
 			'wp_mcp_ai_recall_memory_candidates',
 			static function () {
-				$now = current_time( 'mysql' );
+				$now = gmdate( 'Y-m-d H:i:s', time() - MINUTE_IN_SECONDS );
 				return array(
 					array(
 						'context_id' => 'a',
@@ -489,7 +496,8 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 						'valid_from' => $now,
 					),
 				);
-			}
+			},
+			PHP_INT_MAX
 		);
 		$result = $tool->execute(
 			array(
@@ -508,7 +516,9 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 	public function test_recall_bi_temporal_as_of() {
 		$tool = new WP_MCP_AI_Tool_Recall_Memory();
 		$past = gmdate( 'Y-m-d H:i:s', time() - ( 30 * DAY_IN_SECONDS ) );
-		$now  = current_time( 'mysql' );
+		// Backdated one minute: see the comment in
+		// test_recall_filters_by_wing_and_includes_all_core_records().
+		$now = gmdate( 'Y-m-d H:i:s', time() - MINUTE_IN_SECONDS );
 		add_filter(
 			'wp_mcp_ai_recall_memory_candidates',
 			static function () use ( $past, $now ) {
