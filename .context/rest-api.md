@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: September 8, 2026 (v1.1.74).
+> Last reviewed: September 9, 2026 (v1.1.75).
+>
+> **New in v1.1.75 (one Pro REST change):** `POST /mcp-ai-pro/v1/schedules` now accepts `result_delivery` (channels may reference a Remote Sites connection via `connection_id`, carry inline credentials, or rely on the new tier-4 fallback, #6488) — the create path previously silently dropped delivery configuration. No base REST surface changed. The `wake_up_context` graph-retriever seam (#6486) is a tool-level filter (`wp_mcp_ai_wake_up_context_graph_retriever`), not a route; the `create/update_pro_schedule` `result_delivery` parameter is MCP-tool-schema-level. Sub-project: the `nvoos-content-graph-pro` addon gains the financial-planning, social-media, and mcp-servers toolkit slices plus remote-sites/video/analytics/multilingual/cloudways/dj-management/image-production slices (no new REST routes beyond the ported toolkit surfaces).
 >
 > **New in v1.1.74 (no base REST changes):** no base REST surface changed this window. The `update_pro_schedule` `assistant_config` addition (#6469) is MCP-tool-schema-level (JSON-RPC `tools/call`), not a REST route; the Result Delivery email-format work (#6465) is service/email-layer; the Calendar query-encoding fix (#6460) is client-side. Sub-project: the `nvoos-content-graph-pro` addon gains the PM + calendar-booking toolkit slices as part of Wave F2 (no new REST routes beyond the ported toolkit surfaces).
 >
