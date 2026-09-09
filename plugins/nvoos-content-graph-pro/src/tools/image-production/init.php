@@ -135,13 +135,38 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 	/**
 	 * Standalone-only tool filter — carries the ported image-production tool
 	 * subset (inert standalone, consumed by the base plugin monolith). The
-	 * map fills as the image-production tool batches land.
+	 * map carries the twenty-two top-level tools plus the tree-only import
+	 * blueprint tool (the base registers only five of them inline).
 	 *
 	 * @param array $tools Existing tool map (class => file).
 	 * @return array Extended tool map.
 	 */
 	function wp_mcp_ai_pro_register_image_production_tools( $tools ) {
-		$nvoos_content_graph_pro_img_tools = array();
+		$nvoos_content_graph_pro_img_tools = array(
+			'WP_MCP_AI_Tool_Apply_Artistic_Style'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-apply-artistic-style.php',
+			'WP_MCP_AI_Tool_Apply_Watermark_Batch'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-apply-watermark-batch.php',
+			'WP_MCP_AI_Tool_Batch_Process_Images'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-batch-process-images.php',
+			'WP_MCP_AI_Tool_Colorize_Image'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-colorize-image.php',
+			'WP_MCP_AI_Tool_Compress_Image'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-compress-image.php',
+			'WP_MCP_AI_Tool_Convert_Image_Format'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-convert-image-format.php',
+			'WP_MCP_AI_Tool_Enhance_Image_Quality'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-enhance-image-quality.php',
+			'WP_MCP_AI_Tool_Generate_Image_Ai'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-generate-image-ai.php',
+			'WP_MCP_AI_Tool_Generate_Image_Variations'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-generate-image-variations.php',
+			'WP_MCP_AI_Tool_Generate_Responsive_Images' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-generate-responsive-images.php',
+			'WP_MCP_AI_Tool_Get_Images_Without_Alt'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-get-images-without-alt.php',
+			'WP_MCP_AI_Tool_Get_Unoptimised_Images'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-get-unoptimised-images.php',
+			'WP_MCP_AI_Tool_Get_Unwatermarked_Images'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-get-unwatermarked-images.php',
+			'WP_MCP_AI_Tool_Image_Inpainting'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-image-inpainting.php',
+			'WP_MCP_AI_Tool_Import_Image_Production_Blueprint' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/examples/class-wp-mcp-ai-tool-import-image-production-blueprint.php',
+			'WP_MCP_AI_Tool_Optimise_Images_Batch'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-optimise-images-batch.php',
+			'WP_MCP_AI_Tool_Optimize_For_Web'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-optimize-for-web.php',
+			'WP_MCP_AI_Tool_Optimize_Image_Sharp'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-optimize-image-sharp.php',
+			'WP_MCP_AI_Tool_Remove_Background'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-remove-background.php',
+			'WP_MCP_AI_Tool_Remove_Image_Background'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-remove-image-background.php',
+			'WP_MCP_AI_Tool_Resize_Image_Smart'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-resize-image-smart.php',
+			'WP_MCP_AI_Tool_Text_To_Image_Prompt_Optimizer' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-text-to-image-prompt-optimizer.php',
+			'WP_MCP_AI_Tool_Upscale_Image_Ai'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/image-production/class-wp-mcp-ai-tool-upscale-image-ai.php',
+		);
 
 		return array_merge( $tools, $nvoos_content_graph_pro_img_tools );
 	}
@@ -163,7 +188,33 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 			return;
 		}
 
-		foreach ( array() as $nvoos_content_graph_pro_tool_class ) {
+		foreach (
+			array(
+				'WP_MCP_AI_Tool_Apply_Artistic_Style',
+				'WP_MCP_AI_Tool_Apply_Watermark_Batch',
+				'WP_MCP_AI_Tool_Batch_Process_Images',
+				'WP_MCP_AI_Tool_Colorize_Image',
+				'WP_MCP_AI_Tool_Compress_Image',
+				'WP_MCP_AI_Tool_Convert_Image_Format',
+				'WP_MCP_AI_Tool_Enhance_Image_Quality',
+				'WP_MCP_AI_Tool_Generate_Image_Ai',
+				'WP_MCP_AI_Tool_Generate_Image_Variations',
+				'WP_MCP_AI_Tool_Generate_Responsive_Images',
+				'WP_MCP_AI_Tool_Get_Images_Without_Alt',
+				'WP_MCP_AI_Tool_Get_Unoptimised_Images',
+				'WP_MCP_AI_Tool_Get_Unwatermarked_Images',
+				'WP_MCP_AI_Tool_Image_Inpainting',
+				'WP_MCP_AI_Tool_Import_Image_Production_Blueprint',
+				'WP_MCP_AI_Tool_Optimise_Images_Batch',
+				'WP_MCP_AI_Tool_Optimize_For_Web',
+				'WP_MCP_AI_Tool_Optimize_Image_Sharp',
+				'WP_MCP_AI_Tool_Remove_Background',
+				'WP_MCP_AI_Tool_Remove_Image_Background',
+				'WP_MCP_AI_Tool_Resize_Image_Smart',
+				'WP_MCP_AI_Tool_Text_To_Image_Prompt_Optimizer',
+				'WP_MCP_AI_Tool_Upscale_Image_Ai',
+			) as $nvoos_content_graph_pro_tool_class
+		) {
 			$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
 			try {
 				$nvoos_content_graph_pro_parent_registry->register( $nvoos_content_graph_pro_adapter );
