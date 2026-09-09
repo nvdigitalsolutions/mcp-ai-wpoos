@@ -14,9 +14,10 @@
  * `src/` copies; the OpenMed tool requires + the `wp_mcp_ai_register_tools`
  * registration are file-gated until the healthcare tool batches land; NEW
  * standalone-only wiring (deviation, same as the CRM init): a
- * `wp_mcp_ai_pro_tools` filter plus
- * `wp_mcp_ai_pro_register_healthcare_ecosystem_tools()` — both start with
- * empty maps and fill as the healthcare tool batches land; local vars
+	 * `wp_mcp_ai_pro_tools` filter plus
+	 * `wp_mcp_ai_pro_register_healthcare_ecosystem_tools()` — both carry the
+	 * eleven wellness CRUD batch-1 tools and fill further as the healthcare
+	 * tool batches land; local vars
  * prefixed `$nvoos_content_graph_pro_*`.
  *
  * @package NvoosContentGraphPro
@@ -130,7 +131,19 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
  * @return array Extended tool map.
  */
 function wp_mcp_ai_pro_register_healthcare_tools( $tools ) {
-	$nvoos_content_graph_pro_health_tools = array();
+	$nvoos_content_graph_pro_health_tools = array(
+		'WP_MCP_AI_Tool_Create_Member'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/members/class-wp-mcp-ai-tool-create-member.php',
+		'WP_MCP_AI_Tool_List_Members'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/members/class-wp-mcp-ai-tool-list-members.php',
+		'WP_MCP_AI_Tool_Get_Member'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/members/class-wp-mcp-ai-tool-get-member.php',
+		'WP_MCP_AI_Tool_Update_Member'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/members/class-wp-mcp-ai-tool-update-member.php',
+		'WP_MCP_AI_Tool_Delete_Member'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/members/class-wp-mcp-ai-tool-delete-member.php',
+		'WP_MCP_AI_Tool_Create_Policy'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/policies/class-wp-mcp-ai-tool-create-policy.php',
+		'WP_MCP_AI_Tool_List_Policies'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/policies/class-wp-mcp-ai-tool-list-policies.php',
+		'WP_MCP_AI_Tool_Get_Policy'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/policies/class-wp-mcp-ai-tool-get-policy.php',
+		'WP_MCP_AI_Tool_Update_Policy'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/policies/class-wp-mcp-ai-tool-update-policy.php',
+		'WP_MCP_AI_Tool_Delete_Policy'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/policies/class-wp-mcp-ai-tool-delete-policy.php',
+		'WP_MCP_AI_Tool_Search_Policies' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/wellness/policies/class-wp-mcp-ai-tool-search-policies.php',
+	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_health_tools );
 }
@@ -152,7 +165,19 @@ function wp_mcp_ai_pro_register_healthcare_ecosystem_tools() {
 	}
 
 	foreach (
-		array() as $nvoos_content_graph_pro_tool_class
+		array(
+			'WP_MCP_AI_Tool_Create_Member',
+			'WP_MCP_AI_Tool_List_Members',
+			'WP_MCP_AI_Tool_Get_Member',
+			'WP_MCP_AI_Tool_Update_Member',
+			'WP_MCP_AI_Tool_Delete_Member',
+			'WP_MCP_AI_Tool_Create_Policy',
+			'WP_MCP_AI_Tool_List_Policies',
+			'WP_MCP_AI_Tool_Get_Policy',
+			'WP_MCP_AI_Tool_Update_Policy',
+			'WP_MCP_AI_Tool_Delete_Policy',
+			'WP_MCP_AI_Tool_Search_Policies',
+		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
 		try {
