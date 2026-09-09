@@ -1,0 +1,144 @@
+---
+name: mcp-ai-wpoos-ecosystem-port
+description: Operational guide for the base+pro → Content Graph ecosystem port loop — porting Pro addon files byte-identical into plugins/nvoos-content-graph-pro cluster-by-cluster (transform rules, byte-identity verifier, standalone-only wiring, dual-matrix validation, tracker updates, PR + self-merge). Use when the user asks to "continue the loop", "do the next cluster", "port <toolkit> to CG Pro", or resumes a Wave E/F port session.
+---
+
+# Ecosystem Port Loop — Base+Pro → Content Graph Pro Addon
+
+Operational playbook for the additive **base+pro → Content Graph ecosystem
+port** (decision D5, Waves E/F). Each cluster ports base Pro addon files
+byte-identical into the standalone `plugins/nvoos-content-graph-pro` addon,
+wires standalone-only tool/module registration, validates both test matrices,
+then self-merges after the two `PHPUnit Pro Addon` CI checks pass. Distilled
+from the Wave F2 toolkit clusters (CRM through comic-creation, ending at
+#6508).
+
+## Canonical references (read before starting a wave)
+
+- **Plan**: `docs/project/plans/base-pro-ecosystem-port-plan.md` (wave slicing,
+  D8-compat rules, ownership boundaries).
+- **State**: `docs/project/ecosystem-port-tracker.md` (per-cluster landed
+  entries + the "Remaining:" tail — the source of truth for what's next).
+- **Porting rules**: `plugins/nvoos-content-graph-pro/README.md` (§Porting
+  rules) and the per-folder READMEs.
+- **Test env**: `.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md` ("Pro addon
+  dual-matrix runs" + cross-worktree one-off runner).
+- **Monolith registration map**: `addons/pro/mcp-ai-wpoos-pro.php` →
+  `wp_mcp_ai_pro_register_tools()` — the authoritative per-toolkit tool maps
+  (gated on `enable_*_toolkit` settings).
+
+## The loop (per cluster)
+
+1. **Pick the next slice** from the tracker's "Remaining:" tail (usually:
+   data layer → tool batch(es) → admin slice → blueprint/extras).
+2. **Fresh branch** from `origin/alpha-working` — only after the previous
+   cluster's PR is MERGED (the next slice edits the same init/tests):
+   `git fetch origin alpha-working && git switch -c feat/ecosystem-port-<slug>
+   origin/alpha-working`. Never `git checkout alpha-working` (other worktrees
+   own it). Stage explicit paths only — never `git add -A`, never `vendor/`.
+3. **Port byte-identical** with the documented transforms (below).
+4. **Wire standalone-only registration** (below) — tool filter, ecosystem
+   registration, registry module, entry autoloader probe.
+5. **Write characterization tests** — derive every asserted constant from the
+   ported source first (see test-suite skill pattern 41: `mcp_ai_comic_char`,
+   not `mcp_ai_comic_character`).
+6. **Verify**: `php -l` the new files; PHPCS
+   (`--standard=plugins/nvoos-content-graph-pro/phpcs.xml.dist`; phpcbf for
+   array alignment; exit 0 required); the byte-identity verifier (below);
+   then local dual-matrix Docker runs (filter first, then full).
+7. **Update the tracker**: append the sub-cluster entry before the row's
+   "Remaining:" tail and rewrite the tail (remove landed slices).
+8. **Commit → push → PR to `alpha-working`** with the standard body
+   (what landed, documented deviations, standalone-only wiring, validation).
+9. **Merge after both `PHPUnit Pro Addon/test` checks pass** (monolith +
+   standalone). The PHP Linting workflow (WPCS 3.0 + PHP Compatibility) is
+   repo-wide and takes 20–30 min — local PHPCS on the changed files is the
+   substantive gate; watch with `gh pr checks <n> --repo
+   nvdigitalsolutions/mcp-ai-wpoos`.
+10. **Start the next cluster** from the merged `origin/alpha-working`.
+
+## Port transforms (byte-identity rules)
+
+Every ported file keeps the body byte-identical with exactly these documented
+deviations:
+
+- Prepend a port-note header: source path, "Kept byte-identical", ownership
+  boundary ("the base Pro addon owns the class in monolith installs — the
+  addon boots nothing when `WP_MCP_AI_PRO_PATH` is defined"), and the
+  documented deviations list.
+- Add `declare(strict_types=1);` after the header.
+- Text domain: `mcp-ai-wpoos-pro` → `nvoos-content-graph-pro` (for base-owned
+  D8-compat copies the source domain is `mcp-ai-wpoos` — swap to
+  `nvoos-content-graph-pro` either way).
+- `WP_MCP_AI_PRO_PATH . 'includes/` → `NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/`
+  (and `_URL` / `_VERSION` swaps).
+- Source directories differ per ownership: Pro-owned files come from
+  `addons/pro/includes/`; base-owned D8-compat copies (tool interface, traits,
+  `WP_MCP_AI_Logger`, image base, etc.) come from `includes/`.
+- Allowed seams (only where the source requires base-owned files):
+  `defined( 'WP_MCP_AI_PATH' )` guards, `file_exists`-gated requires resolving
+  to the addon's `src/` copies, `class_exists` re-checks with the byte-identical
+  degrade error. Never change behavior beyond the documented seam.
+
+## Byte-identity verifier
+
+Write a one-shot `bin/verify-<cluster>.php` that reverses the transforms and
+asserts identity: strip the port-note header (substr after the first `*/`),
+strip the `declare(strict_types=1);` line, swap the domain + constants back
+per-pair, collapse 3+ newline runs to `\n\n`, ltrim leading newlines. Use
+**per-pair source path + source domain** (Logger: `includes/` + `mcp-ai-wpoos`;
+CPTs/tools: `addons/pro/includes/` + `mcp-ai-wpoos-pro`). Delete the verifier
+after use — only `bin/port-cluster.sh` is committed; per-cluster verifiers are
+scratch.
+
+## Standalone-only wiring pattern
+
+The base tree ships many inits that NOTHING loads monolith; standalone needs
+new wiring (documented as a deviation every time):
+
+- **Slim init** `src/tools/<toolkit>/init.php`: full-body
+  `! defined( 'WP_MCP_AI_PATH' )` runtime guard whenever the base init declares
+  the same global helper functions (compile-time fatal otherwise); CPT
+  requires; deferred admin/research-add/consolidate requires file-gated until
+  those slices land; the byte-identical CPT init hook priority + enqueue
+  helper.
+- **Tool filter**: `wp_mcp_ai_pro_register_<toolkit>_tools( $tools )` on
+  `wp_mcp_ai_pro_tools` — mirrors the monolith's inline map (subset/inert
+  standalone), empty maps that fill as tool batches land.
+- **Ecosystem registration**: `wp_mcp_ai_pro_register_<toolkit>_ecosystem_tools()`
+  — register each tool into the graph `ToolRegistry` via
+  `WP_MCP_AI_Pro_Tool_Adapter` and wrap into the nvoos/core registry via the
+  AI addon's `GraphToolAdapter` (duplicate slugs non-fatal).
+- **Registry module**: standalone-only `toolkit_<name>` module in
+  `WP_MCP_AI_Pro_Module_Registry::define_modules()` (files guard on the init;
+  "the base tree ships the init but nothing loads it" comment). Update
+  `tests/test-module-registry.php` `$expected` — count the list yourself, do
+  not trust handoff ordinals.
+- **Entry autoloader**: add the `src/tools/<toolkit>/` (+ `examples/`,
+  `harmonization/` …) subtree probe in `nvoos-content-graph-pro.php`.
+- Tree-only files (not in the monolith map — CC extras, import-blueprint
+  tools) are standalone-only registrations (CRM CC-extras precedent).
+
+## Validation & test conventions
+
+- Serving-source assertions: monolith asserts `includes/<file>`; standalone
+  accepts `nvoos-content-graph-pro/src/<file>` OR `includes/<file>` for
+  base-owned D8 copies (the monorepo root classmap may serve base symbols in
+  the test matrix — real standalone installs have no root vendor).
+- Hook assertions on init wiring are first-loader-gated where earlier suites
+  require the init in-process.
+- Local matrix parity: standalone ~1 skip, monolith skips every
+  standalone-gated test (hundreds — not failures).
+- Per-matrix commands + Docker one-off runner: see the test-suite skill.
+
+## Common pitfalls
+
+- **Constant drift**: assert source constants, not guesses (comic character
+  slug is `mcp_ai_comic_char`).
+- **Module ordinals**: count from the registry test list.
+- **Double-declaration hazards**: never copy a symbol the root classmap
+  serves; use D8-compat copies only for `includes/tools/` (classmap-excluded)
+  symbols.
+- **`phpcbf` exit 1** = fixed files (not an error); re-run phpcs for exit 0.
+- **Trackers are huge**: edit only the row tail (append sub-cluster entry +
+  rewrite "Remaining:"), never the historical entries.

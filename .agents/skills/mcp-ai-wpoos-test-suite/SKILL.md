@@ -103,6 +103,33 @@ Clean up afterwards: `rm -rf docker-tmp-wp71` and `docker volume rm <worktree>-v
 — never stage either artifact. The no-concurrent-phpunit rule applies to
 one-off runners too (same shared DB).
 
+### Pro addon dual-matrix runs (nvoos-content-graph-pro)
+
+The `PHPUnit Pro Addon` CI workflow runs the addon suite twice (monolith +
+standalone) — mirror it locally with the same one-off runner:
+
+```bash
+# Standalone matrix (base plugin skipped; add the env var):
+-e WP_MCP_AI_PRO_STANDALONE=1 \
+# Config: the addon's own phpunit config (bootstrap loads the ecosystem
+# plugins + honours the env var):
+php -d memory_limit=1G vendor/bin/phpunit -c plugins/nvoos-content-graph-pro/phpunit.xml.dist <paths> --no-coverage
+
+# Monolith matrix: same command WITHOUT the env var.
+```
+
+- Run `--filter Test_X` first, then the full suite — the full run is ~10-20
+  min locally.
+- Sequential monolith + standalone runs may reuse `wordpress_test`; keep the
+  no-concurrent rule.
+- The `<worktree>-vendor` volume is reusable across clusters: re-run the
+  composer step (a no-op when current).
+- Expected skips: standalone ~1 skip; monolith skips every standalone-gated
+test (hundreds — not failures). A summary of "OK, but there were issues"
+with only warnings/deprecations/skips is a pass.
+- phpcs for the addon: `--standard=plugins/nvoos-content-graph-pro/phpcs.xml.dist`
+(phpcbf exit 1 = fixed files, not an error; re-run phpcs to confirm exit 0).
+
 ## Cluster → PR workflow
 
 1. `git fetch origin alpha-working` (auto-gc may make this time out — verify
@@ -117,6 +144,16 @@ one-off runners too (same shared DB).
    `nul` file in the repo — delete stray artifacts before staging.
 5. Commit with imperative subject ≤ 50 chars; PR base is `alpha-working`.
 6. The user merges manually; move to the next candidate regardless.
+
+### Watching CI checks
+
+- Check-run viewers may return empty statuses while jobs run; the reliable
+  watcher is `gh pr checks <n> --repo nvdigitalsolutions/mcp-ai-wpoos` from
+  the terminal.
+- The `PHPUnit Pro Addon` matrix jobs finish in ~3 min, but the `PHP Linting`
+  workflow (WPCS 3.0 + PHP Compatibility Check) is repo-wide and routinely
+  takes 20–30 min — it finishes long after the matrix checks. Local phpcs on
+the changed files is the substantive gate; plan CI waits accordingly.
 
 ## CI log triage (`logs_*.zip`)
 
@@ -401,6 +438,17 @@ one-off runners too (same shared DB).
     idea for provider-connectivity assertions: isolate the provider key under
     test — `unset` the other provider keys before asserting `good`, or a
     leftover invalid key downgrades the status to `recommended`.
+41. **Ported-constant drift in ecosystem-port characterization tests.**
+    Port characterization tests must derive constants from the ported
+    source — never from memory or class-name guesses. The Wave F2 comic
+    data-layer test asserted `mcp_ai_comic_character`, but the byte-identical
+    source declares `mcp_ai_comic_char` (the comic/panel/script slugs are all
+    shorter than the class names suggest). Before running a new port test,
+    grep the source's `const POST_TYPE` (and every other asserted constant)
+    and align the test — a wrong slug turns a byte-identical port into a
+    red-herring failure. Same discipline for module ordinals: count the
+    registry test's own `$expected` list rather than trusting handoff notes
+    (the comic handoff said "25th module"; the actual list has 24).
 
 ## Production fix vs test fix
 
