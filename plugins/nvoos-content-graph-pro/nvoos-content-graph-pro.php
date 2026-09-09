@@ -129,6 +129,7 @@ spl_autoload_register(
 			'src/tools/ai-tool-builder/',
 			'src/tools/ai-tool-builder/examples/',
 			'src/tools/architect-agent/',
+			'src/tools/architectural-design/',
 			'src/tools/orchestration/',
 			'src/tools/financial-planning/',
 			'src/tools/financial-planning/examples/',

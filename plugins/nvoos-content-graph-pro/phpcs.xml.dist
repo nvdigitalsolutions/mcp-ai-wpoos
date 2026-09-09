@@ -176,6 +176,14 @@
     </rule>
 
     <!--
+        Byte-identical architectural codes registry declares the global
+        esc_xml_safe() helper (the monolith copy carries the same function).
+    -->
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound">
+        <severity>0</severity>
+    </rule>
+
+    <!--
         Byte-identical financial tax-loss tracker stamps records with
         current_time( 'timestamp' ) (the monolith copy carries the same
         call).
