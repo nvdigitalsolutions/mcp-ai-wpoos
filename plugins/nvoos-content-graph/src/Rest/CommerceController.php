@@ -307,11 +307,15 @@ class CommerceController {
 
 		return rest_ensure_response(
 			array(
-				'licensed'    => true,
-				'installed'   => (bool) $install['installed'],
-				'activated'   => (bool) $install['activated'],
-				'license_key' => $record['license_key'],
-				'message'     => (string) $install['message'],
+				'licensed'     => true,
+				'installed'    => (bool) $install['installed'],
+				'activated'    => (bool) $install['activated'],
+				'license_key'  => $record['license_key'],
+				// Manual install is the primary documented path — always
+				// surface the signed download URL alongside the auto-install
+				// result so the buyer can upload the ZIP themselves.
+				'download_url' => $zipUrl,
+				'message'      => (string) $install['message'],
 			)
 		);
 	}
