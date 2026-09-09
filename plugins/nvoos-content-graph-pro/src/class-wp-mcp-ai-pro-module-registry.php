@@ -794,6 +794,24 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 														require_once $p . 'tools/comic-creation/init.php';
 													}
 												);
+
+														// Standalone-only module (the base registry registers
+														// `toolkit_ai_tool_builder` dynamically via the conditional toolkit
+														// loop with an `enabled` gate; the base tree ships the init but the
+														// tools are tree-only "Phase 2.9 planned" files — the standalone
+														// init carries the registrations). Boots the slim ai-tool-builder
+														// init standalone (comic-creation precedent).
+														$this->add_module(
+															'toolkit_ai_tool_builder',
+															'AI Tool Builder Toolkit',
+															array(),
+															array(
+																'files' => array( $p . 'tools/ai-tool-builder/init.php' ),
+															),
+															function () use ( $p ) {
+																require_once $p . 'tools/ai-tool-builder/init.php';
+															}
+														);
 		}
 	}
 }

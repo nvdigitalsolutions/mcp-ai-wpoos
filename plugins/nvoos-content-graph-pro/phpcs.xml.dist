@@ -193,6 +193,14 @@
     </rule>
 
     <!--
+        Byte-identical ai-tool-builder generate-tool-documentation keeps the
+        monolith's strip_tags() usage.
+    -->
+    <rule ref="WordPress.WP.AlternativeFunctions.strip_tags_strip_tags">
+        <severity>0</severity>
+    </rule>
+
+    <!--
         Byte-identical import-services file handling: the base copy uses
         fopen/fclose/fwrite/file_put_contents + @unlink for its CSV import
         temp files, with the same silenced-error and while-assignment
