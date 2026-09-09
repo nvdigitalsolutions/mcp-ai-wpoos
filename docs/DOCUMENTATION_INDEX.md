@@ -1,13 +1,15 @@
 # NV oOS Documentation Index
 
-**Last Updated:** September 8, 2026
-**Plugin Version:** 1.1.74
+**Last Updated:** September 9, 2026
+**Plugin Version:** 1.1.75
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
+
+> **SEPTEMBER 9, 2026 UPDATE (v1.1.75):** SCHEDULED-DELIVERY & ECOSYSTEM-PORT RELEASE. **TELEGRAM BROADCAST CREDENTIALS FIX** (PR #6482) — INLINE CREDENTIALS STORED AS JSON STRINGS NO LONGER FATAL THE ARRAY-TYPED BROADCAST TOOL (`normalize_channel_credentials()` DECODES/REJECTS; PER-CHANNEL `failures` REPAIR SAVED SCHEDULES; REAL REMOTE SITES SCHEMA MAPPING WITH DECRYPTED `api_key`/`token`). **SCHEDULED DELIVERY CREDENTIAL FALLBACK** (PR #6488) — NEW TIER-4 FALLBACK RESOLVES THE FIRST ENABLED REMOTE SITES CONNECTION OF THE CHANNEL TYPE (ASSISTANT-ASSIGNED PREFERRED); BROADCAST CAPABILITY WAIVED FOR THE INTERNAL `pro_schedule_manager_result_delivery` CONTEXT ONLY; `create_pro_schedule`/`update_pro_schedule` + `POST /mcp-ai-pro/v1/schedules` ACCEPT `result_delivery`; DIAGNOSTICS NEVER CARRY SECRETS. **CONTENT GRAPH MEMORY BRIDGE + NV OOS COMPLETE CHECKOUT** (PR #6486) — MEMORIES PROJECT INTO THE STANDALONE GRAPH BEHIND A NEW `wp_mcp_ai_wake_up_context_graph_retriever` FILTER SEAM; THE CHECKOUT SELLS THE COMPLETE BUNDLE (BASE + PRO) WITH A CONFLICT GUARD; NVOOS-CONTENT-GRAPH **1.0.4 → 1.0.6**. **WAVE F2 COMPLETES THE FINANCIAL-PLANNING, SOCIAL-MEDIA, AND MCP-SERVERS TOOLKIT PORTS** IN `nvoos-content-graph-pro` (16 + 32 TOOLS, ALL 33 MCP SERVERS) PLUS REMOTE-SITES/VIDEO-PRODUCTION/ANALYTICS/MULTILINGUAL/CLOUDWAYS/DJ-MANAGEMENT/IMAGE-PRODUCTION SLICES (PRs #6476–#6502). TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.73 + CONTENT-GRAPH 1.0.4 BUILD ZIPS REMOVED. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
 > **SEPTEMBER 8, 2026 UPDATE (v1.1.74):** CALENDAR, SCHEDULING & ECOSYSTEM-PORT RELEASE. **GOOGLE CALENDAR DATE-QUERY FIX** (PR #6460) — EVERY QUERY VALUE IS `rawurlencode()`D BEFORE `add_query_arg()` (THE RAW `+` IN RFC3339 OFFSETS WAS DECODED AS A SPACE, 400-ING ALL `time_min`/`time_max` QUERIES); `calendar.freebusy` JOINS THE STANDARD SCOPE PROFILE (NEW GRANTS ONLY). **RESULT DELIVERY EMAIL FORMATS** (PR #6465) — NEW `WP_MCP_AI_Markdown_Converter` (ESCAPED + `wp_kses`-ALLOWLISTED + PROTOCOL-ALLOWLISTED LINKS; RAW ASSISTANT HTML NEUTRALIZED) + PER-CHANNEL `format` SETTING (`both` DEFAULT | `html` | `markdown`), NODEMAILER MULTIPART + `wp_mail` FALLBACK. **SCHEDULE MANAGER ASSISTANT-PROMPT EDITING** (PR #6469) — EDIT MODAL SHOWS/UPDATES THE PROMPT FOR `assistant_run` SCHEDULES; `update_pro_schedule` ACCEPTS `assistant_config` VIA MCP. **WAVE F2 COMPLETES THE PM + CALENDAR-BOOKING TOOLKIT PORTS** IN `nvoos-content-graph-pro` (PRs #6450–#6472). **TEST/CI** — PERF-SUITE MCP-ABILITIES FAILURE FIXED PROCESS-WIDE IN `tests/bootstrap.php` (#6470, SUPERSEDES #6464); CONTENT-GRAPH-PRO EXCLUDED FROM THE ROOT WPCS GATE (#6457). TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.72 BUILD ZIPS REMOVED. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
@@ -644,6 +646,16 @@ n#### New Audit & Compliance Docs
 - **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.39 latest updates section, version bump, duplicate section cleanup.
 
 ---
+
+## 🆕 September 2026 — v1.1.75: Telegram Delivery Fixes, Memory Bridge + Complete Checkout, Wave F2 Toolkit Completions
+
+### New and updated documents (September 9, 2026, v1.1.75)
+
+- **[docs/project/plans/v1.1.75-docs-catch-up.md](project/plans/v1.1.75-docs-catch-up.md)** ⭐ **NEW** — v1.1.75 docs & release catch-up plan (PRs #6476–#6502, full PR-description review + housekeeping). (September 9, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.75 highlights + latest updates (delivery credential fixes, memory bridge + Complete checkout, Wave F2 toolkit completions, ~1,568 tools). (September 9, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.75] section with PR-level detail. (September 9, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.75 + changelog entry. (September 9, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.75 entry. (September 9, 2026)
 
 ## 🆕 September 2026 — v1.1.74: Calendar Query Fix, Email Formats, Assistant-Prompt Editing, PM + Calendar Ports
 

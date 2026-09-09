@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.74
+Stable tag: 1.1.75
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.75 - September 9, 2026 =
+
+Scheduled-delivery and ecosystem-port release. Fixed: assistant-run schedules with Telegram broadcast crashed with a TypeError because inline credentials were stored as a JSON string and passed to the array-typed broadcast tool — credentials are now normalized and validated end-to-end (malformed values fail gracefully per channel, and already-saved broken schedules repair without a re-save); scheduled delivery to Telegram failed with "no valid credentials" even though interactive chat worked — the pipeline now falls back to the first enabled Remote Sites connection of the channel type (preferring the assistant-assigned one), waives the broadcast capability gate for cron delivery (internal context only), and create/update_pro_schedule plus the schedules REST endpoint now accept result_delivery instead of silently dropping it, with diagnostics that never carry secrets. Added: the standalone Content Graph plugin gains a full memory bridge (base and ecosystem memories projected into the graph with advisory degradation) behind a new wake_up_context graph-retriever filter seam, and its checkout now sells the NV oOS Complete bundle (base + Pro) with a conflict guard — nvoos-content-graph bumps 1.0.4 to 1.0.6. The ecosystem Wave F2 continues in nvoos-content-graph-pro (still v1.0.0): the financial-planning toolkit port completes (16 tools + admin slice), the social-media toolkit port completes (32 tools + settings page), and all 33 MCP toolkit servers land standalone, plus remote-sites, video-production, analytics, multilingual, cloudways, dj-management, and image-production slices. Stale 1.1.73 build ZIPs and the superseded content-graph 1.0.4 ZIPs removed. Tool count unchanged: ~303 base + ~1,265 Pro (~1,568 total; live registry authoritative).
 
 = 1.1.74 - September 8, 2026 =
 
