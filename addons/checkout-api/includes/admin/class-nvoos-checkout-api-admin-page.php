@@ -207,6 +207,13 @@ class NVOOS_Checkout_API_Admin_Page {
 		}
 
 		$settings = NVOOS_Checkout_API_Settings::all();
+
+		// Decrypt only to detect that a credential is stored — the values
+		// themselves are never rendered into the page.
+		$has_secret_key       = '' !== NVOOS_Checkout_API_Settings::stripe_secret_key();
+		$has_webhook_secret   = '' !== NVOOS_Checkout_API_Settings::stripe_webhook_secret();
+		$secret_placeholder   = $has_secret_key ? '••••••••••••••••' : '';
+		$whsecret_placeholder = $has_webhook_secret ? '••••••••••••••••' : '';
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'NV oOS Checkout', 'nvoos-checkout-api' ); ?></h1>
@@ -286,8 +293,8 @@ class NVOOS_Checkout_API_Admin_Page {
 						<tr>
 							<th scope="row"><label for="nvoos-checkout-secret"><?php esc_html_e( 'Stripe secret key', 'nvoos-checkout-api' ); ?></label></th>
 							<td>
-								<input type="password" id="nvoos-checkout-secret" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[stripe_secret_key]" value="<?php echo esc_attr( NVOOS_Checkout_API_Settings::stripe_secret_key() ); ?>" class="regular-text" autocomplete="new-password">
-								<p class="description"><?php esc_html_e( 'sk_live_… or sk_test_…. Leave blank to keep the stored value. Stored encrypted at rest; never exposed via any endpoint.', 'nvoos-checkout-api' ); ?></p>
+								<input type="password" id="nvoos-checkout-secret" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[stripe_secret_key]" value="" placeholder="<?php echo esc_attr( $secret_placeholder ); ?>" class="regular-text" autocomplete="new-password">
+								<p class="description"><?php esc_html_e( 'sk_live_… or sk_test_…. Enter a new key to replace the stored one; leave blank to keep it. The stored key is never displayed and is encrypted at rest.', 'nvoos-checkout-api' ); ?></p>
 							</td>
 						</tr>
 						<tr>
@@ -300,13 +307,13 @@ class NVOOS_Checkout_API_Admin_Page {
 						<tr>
 							<th scope="row"><label for="nvoos-checkout-whsecret"><?php esc_html_e( 'Stripe webhook secret', 'nvoos-checkout-api' ); ?></label></th>
 							<td>
-								<input type="password" id="nvoos-checkout-whsecret" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[stripe_webhook_secret]" value="<?php echo esc_attr( NVOOS_Checkout_API_Settings::stripe_webhook_secret() ); ?>" class="regular-text" autocomplete="new-password">
+								<input type="password" id="nvoos-checkout-whsecret" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[stripe_webhook_secret]" value="" placeholder="<?php echo esc_attr( $whsecret_placeholder ); ?>" class="regular-text" autocomplete="new-password">
 								<p class="description">
 									<?php
 									echo wp_kses(
 										sprintf(
 											/* translators: %s: webhook endpoint URL. */
-											__( 'whsec_…. Point Stripe at %s with events: payment_intent.succeeded, charge.refunded, charge.dispute.created.', 'nvoos-checkout-api' ),
+											__( 'whsec_…. Enter a new secret to replace the stored one; leave blank to keep it. Point Stripe at %s with events: payment_intent.succeeded, charge.refunded, charge.dispute.created.', 'nvoos-checkout-api' ),
 											'<code>' . esc_html( rest_url( NVOOS_Checkout_API_Rest_Controller::REST_NAMESPACE . '/webhooks/stripe' ) ) . '</code>'
 										),
 										array( 'code' => array() )

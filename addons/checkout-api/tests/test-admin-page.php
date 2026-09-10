@@ -157,4 +157,97 @@ class Test_Checkout_Api_Admin_Page extends WP_UnitTestCase {
 		$this->assertSame( '', $result['product_id'] );
 		$this->assertSame( '', $result['price_id'] );
 	}
+
+	/**
+	 * Stored credentials are never rendered into the settings page HTML.
+	 *
+	 * @return void
+	 */
+	public function test_secrets_are_never_rendered(): void {
+		update_option(
+			NVOOS_Checkout_API_Settings::OPTION,
+			array(
+				'stripe_secret_key'     => NVOOS_Checkout_API_Crypto::encrypt( 'sk_test_supersecretvalue' ),
+				'stripe_webhook_secret' => NVOOS_Checkout_API_Crypto::encrypt( 'whsec_supersecretvalue' ),
+			)
+		);
+
+		$html = $this->render_page();
+
+		$this->assertStringNotContainsString( 'sk_test_supersecretvalue', $html );
+		$this->assertStringNotContainsString( 'whsec_supersecretvalue', $html );
+		$this->assertStringContainsString( 'name="nvoos_checkout_settings[stripe_secret_key]" value=""', $html );
+		$this->assertStringContainsString( 'name="nvoos_checkout_settings[stripe_webhook_secret]" value=""', $html );
+	}
+
+	/**
+	 * The masked placeholder appears only when a credential is stored.
+	 *
+	 * @return void
+	 */
+	public function test_secret_placeholder_indicates_stored_value(): void {
+		update_option(
+			NVOOS_Checkout_API_Settings::OPTION,
+			array( 'stripe_secret_key' => NVOOS_Checkout_API_Crypto::encrypt( 'sk_test_abc' ) )
+		);
+
+		$html = $this->render_page();
+		$this->assertStringContainsString( 'placeholder="••••••••••••••••"', $html );
+
+		delete_option( NVOOS_Checkout_API_Settings::OPTION );
+		$html = $this->render_page();
+		$this->assertStringNotContainsString( 'placeholder="••••••••••••••••"', $html );
+	}
+
+	/**
+	 * A blank secret key on save keeps the stored credential.
+	 *
+	 * The Settings API replaces the whole option array, so the sanitizer
+	 * must explicitly preserve stored credentials when the masked fields
+	 * are submitted empty.
+	 *
+	 * @return void
+	 */
+	public function test_sanitize_blank_secret_keeps_stored_value(): void {
+		// Nothing stored: a blank field stays absent.
+		delete_option( NVOOS_Checkout_API_Settings::OPTION );
+		$result = NVOOS_Checkout_API_Settings::sanitize(
+			array(
+				'stripe_secret_key' => '',
+				'price_cents'       => 4900,
+			)
+		);
+		$this->assertArrayNotHasKey( 'stripe_secret_key', $result );
+
+		// Encrypted credential stored: a blank save keeps it intact.
+		$encrypted = NVOOS_Checkout_API_Crypto::encrypt( 'sk_test_keepme' );
+		update_option(
+			NVOOS_Checkout_API_Settings::OPTION,
+			array( 'stripe_secret_key' => $encrypted )
+		);
+		$result = NVOOS_Checkout_API_Settings::sanitize(
+			array(
+				'stripe_secret_key' => '',
+				'price_cents'       => 4900,
+			)
+		);
+		$this->assertSame( $encrypted, $result['stripe_secret_key'] );
+	}
+
+	/**
+	 * A blank save upgrades legacy plaintext credentials to encrypted storage.
+	 *
+	 * @return void
+	 */
+	public function test_sanitize_blank_secret_upgrades_legacy_plaintext(): void {
+		update_option(
+			NVOOS_Checkout_API_Settings::OPTION,
+			array( 'stripe_secret_key' => 'sk_test_legacy' )
+		);
+
+		$result = NVOOS_Checkout_API_Settings::sanitize( array( 'stripe_secret_key' => '' ) );
+
+		$this->assertStringStartsWith( NVOOS_Checkout_API_Crypto::PREFIX, $result['stripe_secret_key'] );
+		$this->assertSame( 'sk_test_legacy', NVOOS_Checkout_API_Crypto::decrypt( $result['stripe_secret_key'] ) );
+	}
 }

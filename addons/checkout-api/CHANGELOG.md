@@ -34,6 +34,7 @@
 ### Security
 
 - Stripe secret key and webhook secret are encrypted at rest (AES-256-CBC keyed from AUTH_KEY + SECURE_AUTH_KEY) and never leave the vendor server; only the publishable key is returned by `/session`
+- The storefront admin never re-renders the stored secret/webhook keys — the password fields are masked with a placeholder (saving blank keeps the stored credential, and legacy plaintext values are upgraded to encrypted storage on save); IV generation now uses `random_bytes()`
 - Payment verification (status, amount, currency, product, site binding) happens server-side against Stripe before any license is issued — both in `/verify` and in the webhook path
 - Webhook signature verification mirrors Stripe's reference algorithm (tolerance window, constant-time compare, multiple v1 values); events are processed idempotently
 - Download links are signed (HMAC-SHA256), expiring, and capped at 10 downloads per link

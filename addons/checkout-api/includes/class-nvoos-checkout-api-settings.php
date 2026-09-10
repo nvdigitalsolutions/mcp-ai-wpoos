@@ -293,8 +293,8 @@ class NVOOS_Checkout_API_Settings {
 			return false;
 		}
 
-		$stored          = get_option( self::OPTION, array() );
-		$stored          = is_array( $stored ) ? $stored : array();
+		$stored         = get_option( self::OPTION, array() );
+		$stored         = is_array( $stored ) ? $stored : array();
 		$stored[ $key ] = $sanitized[ $key ];
 
 		return update_option( self::OPTION, $stored, false );
@@ -313,13 +313,23 @@ class NVOOS_Checkout_API_Settings {
 
 		$sanitized = array();
 
-		// Keys keep existing stored values when the submitted field is
-		// empty — re-saving settings must never wipe credentials. The
-		// secret key and webhook secret are encrypted at rest; the
-		// publishable key is public by design and stored as-is.
+		// The Settings API replaces the whole option array with this return
+		// value, so credentials must be explicitly preserved when the
+		// submitted field is blank — the admin page renders the secret key
+		// and webhook secret as masked, empty inputs ("leave blank to keep").
+		$stored = get_option( self::OPTION, array() );
+		$stored = is_array( $stored ) ? $stored : array();
+
 		foreach ( array( 'stripe_secret_key', 'stripe_webhook_secret' ) as $key ) {
 			if ( isset( $raw[ $key ] ) && is_string( $raw[ $key ] ) && '' !== trim( $raw[ $key ] ) ) {
 				$sanitized[ $key ] = NVOOS_Checkout_API_Crypto::encrypt( sanitize_text_field( $raw[ $key ] ) );
+			} elseif ( isset( $stored[ $key ] ) && is_string( $stored[ $key ] ) && '' !== $stored[ $key ] ) {
+				// Blank input: keep the stored credential untouched.
+				// Legacy plaintext values are upgraded to encrypted storage
+				// on the next save; already-encrypted values pass through.
+				$sanitized[ $key ] = str_starts_with( $stored[ $key ], NVOOS_Checkout_API_Crypto::PREFIX )
+					? $stored[ $key ]
+					: NVOOS_Checkout_API_Crypto::encrypt( $stored[ $key ] );
 			}
 		}
 
@@ -362,9 +372,9 @@ class NVOOS_Checkout_API_Settings {
 		// Statement descriptor: sanitized strictly; invalid lengths are
 		// dropped (empty) so Stripe's default descriptor applies.
 		if ( isset( $raw['statement_descriptor'] ) ) {
-			$descriptor = strtoupper( (string) $raw['statement_descriptor'] );
-			$descriptor = preg_replace( '/[^A-Z0-9 ._+*,-]/', '', $descriptor ) ?? '';
-			$descriptor = trim( $descriptor );
+			$descriptor                        = strtoupper( (string) $raw['statement_descriptor'] );
+			$descriptor                        = preg_replace( '/[^A-Z0-9 ._+*,-]/', '', $descriptor ) ?? '';
+			$descriptor                        = trim( $descriptor );
 			$sanitized['statement_descriptor'] = ( strlen( $descriptor ) >= 5 && strlen( $descriptor ) <= 22 ) ? $descriptor : '';
 		}
 
@@ -374,7 +384,7 @@ class NVOOS_Checkout_API_Settings {
 
 		foreach ( array( 'product_id', 'price_id' ) as $key ) {
 			if ( isset( $raw[ $key ] ) ) {
-				$value = (string) $raw[ $key ];
+				$value             = (string) $raw[ $key ];
 				$sanitized[ $key ] = preg_match( '/^[A-Za-z0-9_]+$/', $value ) ? $value : '';
 			}
 		}
