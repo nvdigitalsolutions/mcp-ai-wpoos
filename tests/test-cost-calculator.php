@@ -693,7 +693,7 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_model_pricing_at() resolves peak rates in-window and tags the rate class.
+	 * Resolves peak rates via get_model_pricing_at() and tags the rate class.
 	 */
 	public function test_get_model_pricing_at_deepseek_peak_and_off_peak() {
 		$peak     = WP_MCP_AI_Cost_Calculator::get_model_pricing_at( 'deepseek', 'deepseek-flash', gmmktime( 2, 0, 0, 9, 9, 2026 ) );
@@ -720,8 +720,8 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 	}
 
 	/**
-	 * calculate_cost_at() resolves peak pricing; legacy calculate_cost() stays
-	 * time-independent on the canonical (off-peak) rates.
+	 * Calculates peak-resolved costs via calculate_cost_at(); the legacy
+	 * calculate_cost() stays time-independent on the canonical (off-peak) rates.
 	 */
 	public function test_calculate_cost_at_deepseek_peak_vs_legacy() {
 		// 1M input + 1M output during peak: 0.30 + 1.20 = 1.50.

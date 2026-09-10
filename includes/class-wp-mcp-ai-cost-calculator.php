@@ -345,37 +345,37 @@ class WP_MCP_AI_Cost_Calculator {
 			// DeepSeek-V4.1-Flash — current flagship (cache-miss, off-peak pricing).
 			// Off-peak: $0.15/$0.60 per 1M; peak 2× (window in PEAK_WINDOWS).
 			// Cache hit: $0.003 off-peak / $0.006 peak.
-			'deepseek-flash'                 => array(
-				'input'              => 0.15,  // $0.15 per 1M input tokens (cache miss, off-peak).
-				'output'             => 0.60,  // $0.60 per 1M output tokens (off-peak).
-				'peak_input'         => 0.30,  // $0.30 per 1M input tokens (peak).
-				'peak_output'        => 1.20,  // $1.20 per 1M output tokens (peak).
-				'cached_input'       => 0.003, // Cache hit, off-peak.
-				'peak_cached_input'  => 0.006, // Cache hit, peak.
+			'deepseek-flash'               => array(
+				'input'             => 0.15,  // $0.15 per 1M input tokens (cache miss, off-peak).
+				'output'            => 0.60,  // $0.60 per 1M output tokens (off-peak).
+				'peak_input'        => 0.30,  // $0.30 per 1M input tokens (peak).
+				'peak_output'       => 1.20,  // $1.20 per 1M output tokens (peak).
+				'cached_input'      => 0.003, // Cache hit, off-peak.
+				'peak_cached_input' => 0.006, // Cache hit, peak.
 			),
 			// DeepSeek-V4-Pro — routed to V4.1 Flash from 2026-09-14 (12:00 Beijing)
 			// until V4.1 Pro ships. Off-peak: $0.66/$1.98 per 1M (cache miss).
 			// Peak 2×. Cache hit: $0.022 off-peak / $0.044 peak.
-			'deepseek-v4-pro'                => array(
-				'input'              => 0.66,  // $0.66 per 1M input tokens (cache miss, off-peak).
-				'output'             => 1.98,  // $1.98 per 1M output tokens (off-peak).
-				'peak_input'         => 1.32,
-				'peak_output'        => 3.96,
-				'cached_input'       => 0.022,
-				'peak_cached_input'  => 0.044,
+			'deepseek-v4-pro'              => array(
+				'input'             => 0.66,  // $0.66 per 1M input tokens (cache miss, off-peak).
+				'output'            => 1.98,  // $1.98 per 1M output tokens (off-peak).
+				'peak_input'        => 1.32,
+				'peak_output'       => 3.96,
+				'cached_input'      => 0.022,
+				'peak_cached_input' => 0.044,
 			),
 			// Retired 2026-09-10 — the ids now serve V4.1 Flash and bill at Flash prices.
-			'deepseek-v4-flash'              => array(
-				'input'        => 0.15, // Billed at V4.1 Flash price (off-peak cache miss).
-				'output'       => 0.60,
-				'peak_input'   => 0.30,
-				'peak_output'  => 1.20,
+			'deepseek-v4-flash'            => array(
+				'input'       => 0.15, // Billed at V4.1 Flash price (off-peak cache miss).
+				'output'      => 0.60,
+				'peak_input'  => 0.30,
+				'peak_output' => 1.20,
 			),
-			'deepseek-v4-flash-vision-exp'   => array(
-				'input'        => 0.15, // Billed at V4.1 Flash price (off-peak cache miss).
-				'output'       => 0.60,
-				'peak_input'   => 0.30,
-				'peak_output'  => 1.20,
+			'deepseek-v4-flash-vision-exp' => array(
+				'input'       => 0.15, // Billed at V4.1 Flash price (off-peak cache miss).
+				'output'      => 0.60,
+				'peak_input'  => 0.30,
+				'peak_output' => 1.20,
 			),
 		),
 		'huggingface'  => array(

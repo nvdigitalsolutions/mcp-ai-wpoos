@@ -13,7 +13,7 @@
  * - Cloudflare: @cf/meta/llama-4-scout-17b-instruct or @cf/deepseek/deepseek-v3.2-thinking
  * - HuggingFace: meta-llama/Llama-3.3-70B-Instruct or deepseek-ai/DeepSeek-V3.2
  * - Ollama: llama3.3 or deepseek-r1 (privacy-focused local research)
-		 * - DeepSeek: deepseek-flash (V4.1 Flash — thinking + non-thinking, native vision)
+ * - DeepSeek: deepseek-flash (V4.1 Flash — thinking + non-thinking, native vision)
  * - OpenRouter: openrouter/auto (access to 200+ models) or any specific model
  * - NVIDIA NIM: meta/llama-3.1-8b-instruct (fast inference)
  * - LM Studio: local models (privacy-focused, no API key needed)
