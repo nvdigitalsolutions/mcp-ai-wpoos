@@ -957,6 +957,24 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 																									require_once $p . 'tools/cre-debt/init.php';
 																								}
 																							);
+
+																							// Standalone-only module (the base registry registers
+																							// `toolkit_quiz` with the `jetengine_meta_helper`
+																							// dependency — dormant standalone; the helper lands with
+																							// a later wave and the init's JetEngine guards stay
+																							// byte-identical, healthcare precedent). Boots the slim
+																							// quiz init standalone.
+																							$this->add_module(
+																								'toolkit_quiz',
+																								'Quiz Toolkit',
+																								array(),
+																								array(
+																									'files' => array( $p . 'tools/quiz-management/init.php' ),
+																								),
+																								function () use ( $p ) {
+																									require_once $p . 'tools/quiz-management/init.php';
+																								}
+																							);
 		}
 	}
 }
