@@ -222,6 +222,79 @@ class Test_Pro_Result_Delivery_Email_Format extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The full email template must not print the summary when the response
+	 * already opens with it — assistant-run envelopes derive the summary
+	 * from the response's first words, which previously duplicated the
+	 * header inside the delivered email.
+	 */
+	public function test_format_email_full_skips_summary_prefix_of_response() {
+		$response = "Here's your 6-hour email review 👀\n\nWindow reviewed: 13:52 – 19:52 UTC (Wed, Sep 9).\nResult: 2 actionable emails landed in the window, both unread, with the rest being Pinterest promos or earlier messages.";
+		$summary  = wp_trim_words( wp_strip_all_tags( $response ), 25, '…' );
+		$shared   = array(
+			'schedule_name' => 'Inbox Digest',
+			'summary'       => $summary,
+			'response'      => $response,
+			'status'        => 'success',
+			'is_success'    => true,
+			'generated_at'  => time(),
+			'schedule_type' => 'assistant_run',
+		);
+		$envelope = array(
+			'summary'      => $summary,
+			'response'     => $response,
+			'status'       => 'success',
+			'generated_at' => time(),
+			'data'         => array( 'assistant_id' => 7 ),
+		);
+
+		$payload = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'format_email',
+			array( $shared, $envelope, 'full' )
+		);
+
+		// The duplicated summary is skipped — the body opens with the response.
+		$this->assertStringStartsWith( 'Results:', $payload['plain'] );
+		// The header line appears exactly once.
+		$this->assertSame( 1, substr_count( $payload['plain'], '6-hour email review' ) );
+		$this->assertStringContainsString( 'Pinterest promos', $payload['plain'] );
+		// The structured data section still follows.
+		$this->assertStringContainsString( 'assistant_id: 7', $payload['plain'] );
+	}
+
+	/**
+	 * A summary that is not derived from the response must still be prepended
+	 * in the full template (workflow/task summaries carry standalone context).
+	 */
+	public function test_format_email_full_keeps_non_prefix_summary() {
+		$shared   = array(
+			'schedule_name' => 'Inbox Digest',
+			'summary'       => 'Here is **your** digest.',
+			'response'      => "## Results\n\n**Item** 1\n\n| A | B |\n|---|---|\n| x | y |",
+			'status'        => 'success',
+			'is_success'    => true,
+			'generated_at'  => time(),
+			'schedule_type' => 'assistant_run',
+		);
+		$envelope = array(
+			'summary'      => 'Here is **your** digest.',
+			'response'     => "## Results\n\n**Item** 1\n\n| A | B |\n|---|---|\n| x | y |",
+			'status'       => 'success',
+			'generated_at' => time(),
+			'data'         => array( 'items' => array( 'a', 'b' ) ),
+		);
+
+		$payload = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'format_email',
+			array( $shared, $envelope, 'full' )
+		);
+
+		$this->assertStringStartsWith( 'Here is **your** digest.', $payload['plain'] );
+		$this->assertStringContainsString( 'Results:', $payload['plain'] );
+	}
+
+	/**
 	 * Test that build_email_html() embeds the converted body.
 	 */
 	public function test_build_email_html_embeds_converted_body() {
