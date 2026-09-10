@@ -52,14 +52,17 @@ msgid "Post Type"
 msgstr ""
 
 #: src/Admin/Bridge.php:40
+#: src/Admin/Bridge.php:120
 msgid "Include"
 msgstr ""
 
 #: src/Admin/Bridge.php:41
+#: src/Admin/Bridge.php:121
 msgid "Notes"
 msgstr ""
 
 #: src/Admin/Bridge.php:55
+#: src/Admin/Bridge.php:134
 msgid "Included by default"
 msgstr ""
 
@@ -77,6 +80,27 @@ msgstr ""
 
 #: src/Admin/Bridge.php:86
 msgid "No external database tables available in the core plugin. The NV oOS Content Graph AI Platform addon adds external table sources."
+msgstr ""
+
+#: src/Admin/Bridge.php:95
+#: src/Admin/Sections/SourcesCctsSection.php:79
+msgid "No Custom Content Types available."
+msgstr ""
+
+#: src/Admin/Bridge.php:104
+msgid "JetEngine is not active. Custom Content Types become available when the JetEngine plugin is enabled."
+msgstr ""
+
+#: src/Admin/Bridge.php:106
+msgid "No JetEngine Custom Content Types are registered."
+msgstr ""
+
+#: src/Admin/Bridge.php:119
+msgid "Content Type"
+msgstr ""
+
+#: src/Admin/Bridge.php:138
+msgid "Uncheck to exclude a Custom Content Type; check to include it. Changes take effect on the next graph build."
 msgstr ""
 
 #: src/Admin/RemoteAdmin.php:92
@@ -733,6 +757,14 @@ msgstr ""
 
 #: src/Admin/Sections/SourcesCptsSection.php:76
 msgid "No post types available."
+msgstr ""
+
+#: src/Admin/Sections/SourcesCctsSection.php:34
+msgid "Custom Content Types (JetEngine)"
+msgstr ""
+
+#: src/Admin/Sections/SourcesCctsSection.php:55
+msgid "Choose which JetEngine Custom Content Types should be indexed into the knowledge graph."
 msgstr ""
 
 #: src/Admin/Sections/SourcesExtSection.php:31

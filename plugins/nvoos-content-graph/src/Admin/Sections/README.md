@@ -23,6 +23,7 @@ Settings-page section renderers — each section is a self-contained class regis
 | `NvoosContentGraph\Admin\Sections\ExportSection` | `ExportSection.php` | `SettingsPage` |
 | `NvoosContentGraph\Admin\Sections\AnalysisSection` | `AnalysisSection.php` | `SettingsPage` |
 | `NvoosContentGraph\Admin\Sections\DisplaySection` | `DisplaySection.php` | `SettingsPage` |
+| `NvoosContentGraph\Admin\Sections\SourcesCctsSection` | `SourcesCctsSection.php` | `SettingsPage` |
 
 ## Neighbors
 
