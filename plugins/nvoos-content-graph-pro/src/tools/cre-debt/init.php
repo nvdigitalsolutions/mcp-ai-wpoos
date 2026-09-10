@@ -9,7 +9,7 @@
  *
  * Documented deviations: `declare(strict_types=1)` added; text domain `nvoos-content-graph-pro`;
  * `NVOOS_CONTENT_GRAPH_PRO_*` constant swaps; the CPT require resolves from the addon's `src/`
- * copy; the three admin-page requires are file-gated until the cre-debt admin slice lands; the
+ * copy; the three admin-page requires fire once the cre-debt admin slice lands; the
  * standalone copy adds `is_admin()`-gated loads keyed to the same `enable_portfolio_dashboard`
  * sub-setting; NEW standalone-only wiring (deviation, same as the CRM init): a
  * `wp_mcp_ai_pro_tools` filter plus `wp_mcp_ai_pro_register_cre_debt_ecosystem_tools()` — both
