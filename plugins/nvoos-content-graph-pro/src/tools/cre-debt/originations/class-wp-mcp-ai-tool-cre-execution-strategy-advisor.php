@@ -1,0 +1,552 @@
+<?php
+/**
+ * originations/class-wp-mcp-ai-tool-cre-execution-strategy-advisor.php (ecosystem port — Wave F4, cre-debt originations batch).
+ *
+ * Ported from the base Pro addon's `addons/pro/includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-execution-strategy-advisor.php` for the
+ * standalone `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro addon owns the
+ * class in monolith installs — the addon boots nothing when `WP_MCP_AI_PRO_PATH` is defined
+ * (see the plugin entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain `nvoos-content-graph-pro`;
+ * the `__DIR__` calculator requires resolve from the addon's already-ported
+ * `src/tools/cre-debt/` copy.
+ *
+ * @package NvoosContentGraphPro
+ * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
+
+/**
+ * Evaluates and ranks execution paths (balance sheet, agency, CMBS, debt fund,
+ * CRE CLO, life company, bank) based on deal characteristics. Each path receives
+ * a suitability score with pros and cons.
+ *
+ * @since 1.2.0
+ */
+class WP_MCP_AI_Tool_CRE_Execution_Strategy_Advisor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public static function is_available(): bool {
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+			return false;
+		}
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $settings['enable_cre_debt_toolkit'] );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public static function get_unavailable_reason(): string {
+		return __( 'CRE Debt & Securitization toolkit is not enabled.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_slug(): string {
+		return 'cre_execution_strategy_advisor';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name(): string {
+		return __( 'CRE Execution Strategy Advisor', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_description(): string {
+		return __( 'Score and rank CRE loan execution paths (balance sheet, agency, CMBS, debt fund, CRE CLO, life company, bank) based on deal characteristics, property type, and borrower profile. Returns suitability scores with pros and cons.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_parameters_schema(): array {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'loan_amount'        => array(
+					'type'        => 'number',
+					'description' => __( 'Loan amount.', 'nvoos-content-graph-pro' ),
+				),
+				'property_type'      => array(
+					'type'        => 'string',
+					'description' => __( 'Property type.', 'nvoos-content-graph-pro' ),
+					'enum'        => array( 'office', 'retail', 'industrial', 'multifamily', 'hotel', 'other' ),
+				),
+				'property_value'     => array(
+					'type'        => 'number',
+					'description' => __( 'Property value.', 'nvoos-content-graph-pro' ),
+				),
+				'noi'                => array(
+					'type'        => 'number',
+					'description' => __( 'Annual Net Operating Income.', 'nvoos-content-graph-pro' ),
+				),
+				'sponsor_experience' => array(
+					'type'        => 'integer',
+					'description' => __( 'Sponsor years of CRE experience.', 'nvoos-content-graph-pro' ),
+				),
+				'market_tier'        => array(
+					'type'        => 'string',
+					'description' => __( 'Market tier.', 'nvoos-content-graph-pro' ),
+					'enum'        => array( 'primary', 'secondary', 'tertiary' ),
+				),
+				'loan_purpose'       => array(
+					'type'        => 'string',
+					'description' => __( 'Loan purpose.', 'nvoos-content-graph-pro' ),
+					'enum'        => array( 'acquisition', 'refinance', 'construction', 'bridge' ),
+				),
+				'stabilized'         => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether the property is stabilized.', 'nvoos-content-graph-pro' ),
+					'default'     => true,
+				),
+				'occupancy_pct'      => array(
+					'type'        => 'number',
+					'description' => __( 'Current occupancy as percentage (e.g. 92 for 92%).', 'nvoos-content-graph-pro' ),
+					'default'     => 90,
+				),
+			),
+			'required'   => array( 'loan_amount', 'property_type', 'property_value', 'noi', 'loan_purpose' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags(): array {
+		return array( 'pro', 'read-only' );
+	}
+
+	/**
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
+	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
+		$current_user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'Permission denied.', 'nvoos-content-graph-pro' ) );
+		}
+		if ( ! self::is_available() ) {
+			return new WP_Error( 'tool_not_available', self::get_unavailable_reason() );
+		}
+
+		$loan_amount   = (float) ( $arguments['loan_amount'] ?? 0 );
+		$property_type = sanitize_text_field( $arguments['property_type'] ?? 'other' );
+		$prop_value    = (float) ( $arguments['property_value'] ?? 0 );
+		$noi           = (float) ( $arguments['noi'] ?? 0 );
+		$sponsor_exp   = (int) ( $arguments['sponsor_experience'] ?? 0 );
+		$market_tier   = sanitize_text_field( $arguments['market_tier'] ?? 'secondary' );
+		$loan_purpose  = sanitize_text_field( $arguments['loan_purpose'] ?? 'acquisition' );
+		$stabilized    = (bool) ( $arguments['stabilized'] ?? true );
+		$occupancy     = (float) ( $arguments['occupancy_pct'] ?? 90 );
+
+		if ( $loan_amount <= 0 || $prop_value <= 0 || $noi <= 0 ) {
+			return new WP_Error( 'invalid_input', __( 'Loan amount, property value, and NOI must be positive.', 'nvoos-content-graph-pro' ) );
+		}
+
+		$calc = WP_MCP_AI_CRE_Debt_Calculator::class;
+		$ltv  = $calc::calculate_ltv( $loan_amount, $prop_value );
+
+		// Build context for scoring.
+		$deal = array(
+			'loan_amount'   => $loan_amount,
+			'property_type' => $property_type,
+			'ltv'           => $ltv,
+			'noi'           => $noi,
+			'sponsor_exp'   => $sponsor_exp,
+			'market_tier'   => $market_tier,
+			'loan_purpose'  => $loan_purpose,
+			'stabilized'    => $stabilized,
+			'occupancy'     => $occupancy,
+		);
+
+		$paths = array(
+			'balance_sheet' => $this->score_balance_sheet( $deal ),
+			'agency'        => $this->score_agency( $deal ),
+			'cmbs'          => $this->score_cmbs( $deal ),
+			'debt_fund'     => $this->score_debt_fund( $deal ),
+			'cre_clo'       => $this->score_cre_clo( $deal ),
+			'life_company'  => $this->score_life_company( $deal ),
+			'bank'          => $this->score_bank( $deal ),
+		);
+
+		// Sort by score descending.
+		uasort(
+			$paths,
+			function ( $a, $b ) {
+				return $b['score'] <=> $a['score'];
+			}
+		);
+
+		$ranked = array();
+		$rank   = 1;
+		foreach ( $paths as $path_name => $info ) {
+			$ranked[] = array(
+				'rank'           => $rank++,
+				'execution_path' => $path_name,
+				'suitability'    => $info['score'] . '/100',
+				'rating'         => $this->score_to_rating( $info['score'] ),
+				'pros'           => $info['pros'],
+				'cons'           => $info['cons'],
+			);
+		}
+
+		return array(
+			'success' => true,
+			'message' => __( 'Execution strategy analysis complete. ANALYSIS ONLY - Not investment advice.', 'nvoos-content-graph-pro' ),
+			'data'    => array(
+				'deal_summary'         => array(
+					'loan_amount'   => $calc::format_currency( $loan_amount ),
+					'property_type' => $property_type,
+					'ltv'           => $calc::format_percentage( $ltv ),
+					'loan_purpose'  => $loan_purpose,
+					'stabilized'    => $stabilized ? __( 'Yes', 'nvoos-content-graph-pro' ) : __( 'No', 'nvoos-content-graph-pro' ),
+					'occupancy'     => $occupancy . '%',
+				),
+				'recommended_path'     => $ranked[0]['execution_path'],
+				'execution_strategies' => $ranked,
+			),
+		);
+	}
+
+	/**
+	 * Convert score to rating string.
+	 *
+	 * @param int $score Suitability score.
+	 * @return string
+	 */
+	private function score_to_rating( int $score ): string {
+		if ( $score >= 80 ) {
+			return __( 'Highly Suitable', 'nvoos-content-graph-pro' );
+		}
+		if ( $score >= 60 ) {
+			return __( 'Suitable', 'nvoos-content-graph-pro' );
+		}
+		if ( $score >= 40 ) {
+			return __( 'Marginal', 'nvoos-content-graph-pro' );
+		}
+		return __( 'Not Recommended', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * Score balance sheet execution.
+	 *
+	 * @param array $deal Deal context.
+	 * @return array
+	 */
+	private function score_balance_sheet( array $deal ): array {
+		$score = 50;
+		$pros  = array();
+		$cons  = array();
+
+		if ( $deal['sponsor_exp'] >= 10 ) {
+			$score += 15;
+			$pros[] = __( 'Experienced sponsor favored for relationship lending', 'nvoos-content-graph-pro' );
+		}
+		if ( $deal['loan_amount'] < 10000000 ) {
+			$score += 10;
+			$pros[] = __( 'Smaller deal size fits balance sheet appetite', 'nvoos-content-graph-pro' );
+		} else {
+			$score -= 10;
+			$cons[] = __( 'Larger deals may exceed single-lender hold limits', 'nvoos-content-graph-pro' );
+		}
+		if ( ! $deal['stabilized'] || 'construction' === $deal['loan_purpose'] || 'bridge' === $deal['loan_purpose'] ) {
+			$score += 15;
+			$pros[] = __( 'Balance sheet lenders offer flexibility for transitional assets', 'nvoos-content-graph-pro' );
+		}
+		if ( $deal['ltv'] > 0.75 ) {
+			$score -= 10;
+			$cons[] = __( 'High LTV may face regulatory capital constraints', 'nvoos-content-graph-pro' );
+		}
+
+		$pros[] = __( 'Flexible terms and relationship-based pricing', 'nvoos-content-graph-pro' );
+		$cons[] = __( 'Typically shorter terms (3-7 years)', 'nvoos-content-graph-pro' );
+
+		return array(
+			'score' => max( 0, min( 100, $score ) ),
+			'pros'  => $pros,
+			'cons'  => $cons,
+		);
+	}
+
+	/**
+	 * Score agency (Fannie/Freddie) execution.
+	 *
+	 * @param array $deal Deal context.
+	 * @return array
+	 */
+	private function score_agency( array $deal ): array {
+		$score = 30;
+		$pros  = array();
+		$cons  = array();
+
+		if ( 'multifamily' === $deal['property_type'] ) {
+			$score += 45;
+			$pros[] = __( 'Agency lending is purpose-built for multifamily', 'nvoos-content-graph-pro' );
+			$pros[] = __( 'Non-recourse with low rates and long terms', 'nvoos-content-graph-pro' );
+		} else {
+			$score -= 30;
+			$cons[] = __( 'Agency programs only available for multifamily', 'nvoos-content-graph-pro' );
+		}
+		if ( $deal['stabilized'] && $deal['occupancy'] >= 85 ) {
+			$score += 10;
+			$pros[] = __( 'Stabilized property meets agency occupancy requirements', 'nvoos-content-graph-pro' );
+		} else {
+			$score -= 15;
+			$cons[] = __( 'Non-stabilized or low-occupancy properties ineligible', 'nvoos-content-graph-pro' );
+		}
+		if ( 'primary' === $deal['market_tier'] || 'secondary' === $deal['market_tier'] ) {
+			$score += 5;
+		}
+		if ( in_array( $deal['loan_purpose'], array( 'construction', 'bridge' ), true ) ) {
+			$score -= 20;
+			$cons[] = __( 'Not suitable for construction or bridge loans', 'nvoos-content-graph-pro' );
+		}
+
+		$pros[] = __( 'Best-in-class pricing for qualifying deals', 'nvoos-content-graph-pro' );
+		$cons[] = __( 'Strict underwriting requirements and reporting', 'nvoos-content-graph-pro' );
+
+		return array(
+			'score' => max( 0, min( 100, $score ) ),
+			'pros'  => $pros,
+			'cons'  => $cons,
+		);
+	}
+
+	/**
+	 * Score CMBS execution.
+	 *
+	 * @param array $deal Deal context.
+	 * @return array
+	 */
+	private function score_cmbs( array $deal ): array {
+		$score = 50;
+		$pros  = array();
+		$cons  = array();
+
+		if ( $deal['stabilized'] && $deal['occupancy'] >= 80 ) {
+			$score += 15;
+			$pros[] = __( 'Stabilized assets with strong occupancy ideal for CMBS', 'nvoos-content-graph-pro' );
+		} else {
+			$score -= 20;
+			$cons[] = __( 'CMBS requires stabilized, performing collateral', 'nvoos-content-graph-pro' );
+		}
+		if ( $deal['loan_amount'] >= 5000000 ) {
+			$score += 10;
+			$pros[] = __( 'Deal size meets CMBS minimum thresholds', 'nvoos-content-graph-pro' );
+		} else {
+			$score -= 15;
+			$cons[] = __( 'Deal may be too small for efficient CMBS execution', 'nvoos-content-graph-pro' );
+		}
+		if ( in_array( $deal['loan_purpose'], array( 'acquisition', 'refinance' ), true ) ) {
+			$score += 5;
+		} else {
+			$score -= 15;
+			$cons[] = __( 'CMBS not suited for construction or bridge loans', 'nvoos-content-graph-pro' );
+		}
+
+		$pros[] = __( 'Non-recourse with fixed rate and 10-year terms', 'nvoos-content-graph-pro' );
+		$pros[] = __( 'Higher leverage available (up to 75% LTV)', 'nvoos-content-graph-pro' );
+		$cons[] = __( 'Defeasance or yield maintenance prepayment penalty', 'nvoos-content-graph-pro' );
+		$cons[] = __( 'Limited flexibility after closing', 'nvoos-content-graph-pro' );
+
+		return array(
+			'score' => max( 0, min( 100, $score ) ),
+			'pros'  => $pros,
+			'cons'  => $cons,
+		);
+	}
+
+	/**
+	 * Score debt fund execution.
+	 *
+	 * @param array $deal Deal context.
+	 * @return array
+	 */
+	private function score_debt_fund( array $deal ): array {
+		$score = 45;
+		$pros  = array();
+		$cons  = array();
+
+		if ( ! $deal['stabilized'] || in_array( $deal['loan_purpose'], array( 'bridge', 'construction' ), true ) ) {
+			$score += 25;
+			$pros[] = __( 'Debt funds specialize in transitional and value-add lending', 'nvoos-content-graph-pro' );
+		}
+		if ( $deal['ltv'] > 0.70 ) {
+			$score += 10;
+			$pros[] = __( 'Higher leverage available vs. traditional lenders', 'nvoos-content-graph-pro' );
+		}
+		if ( $deal['occupancy'] < 80 ) {
+			$score += 10;
+			$pros[] = __( 'Flexible on occupancy for value-add business plans', 'nvoos-content-graph-pro' );
+		}
+
+		$pros[] = __( 'Fast execution and flexible structuring', 'nvoos-content-graph-pro' );
+		$pros[] = __( 'IO periods and future funding available', 'nvoos-content-graph-pro' );
+		$cons[] = __( 'Higher spread and pricing than permanent lenders', 'nvoos-content-graph-pro' );
+		$cons[] = __( 'Floating rate with shorter terms (2-5 years)', 'nvoos-content-graph-pro' );
+
+		return array(
+			'score' => max( 0, min( 100, $score ) ),
+			'pros'  => $pros,
+			'cons'  => $cons,
+		);
+	}
+
+	/**
+	 * Score CRE CLO execution.
+	 *
+	 * @param array $deal Deal context.
+	 * @return array
+	 */
+	private function score_cre_clo( array $deal ): array {
+		$score = 40;
+		$pros  = array();
+		$cons  = array();
+
+		if ( ! $deal['stabilized'] ) {
+			$score += 15;
+			$pros[] = __( 'CRE CLO structure accommodates transitional assets', 'nvoos-content-graph-pro' );
+		}
+		if ( $deal['loan_amount'] >= 10000000 ) {
+			$score += 10;
+			$pros[] = __( 'Larger loan sizes efficiently securitizable', 'nvoos-content-graph-pro' );
+		} else {
+			$score -= 10;
+			$cons[] = __( 'Smaller loans may not justify securitization economics', 'nvoos-content-graph-pro' );
+		}
+		if ( 'primary' === $deal['market_tier'] ) {
+			$score += 10;
+			$pros[] = __( 'Primary market collateral enhances AAA bond execution', 'nvoos-content-graph-pro' );
+		}
+
+		$pros[] = __( 'Matched-term non-mark-to-market financing', 'nvoos-content-graph-pro' );
+		$cons[] = __( 'Complex structuring and longer lead times', 'nvoos-content-graph-pro' );
+		$cons[] = __( 'Requires originator with CLO program', 'nvoos-content-graph-pro' );
+
+		return array(
+			'score' => max( 0, min( 100, $score ) ),
+			'pros'  => $pros,
+			'cons'  => $cons,
+		);
+	}
+
+	/**
+	 * Score life company execution.
+	 *
+	 * @param array $deal Deal context.
+	 * @return array
+	 */
+	private function score_life_company( array $deal ): array {
+		$score = 45;
+		$pros  = array();
+		$cons  = array();
+
+		if ( $deal['stabilized'] && $deal['occupancy'] >= 90 ) {
+			$score += 20;
+			$pros[] = __( 'High-quality stabilized assets preferred by life companies', 'nvoos-content-graph-pro' );
+		} else {
+			$score -= 15;
+			$cons[] = __( 'Life companies require stabilized, institutional-quality assets', 'nvoos-content-graph-pro' );
+		}
+		if ( $deal['ltv'] <= 0.65 ) {
+			$score += 15;
+			$pros[] = __( 'Low-leverage sweet spot for life company pricing', 'nvoos-content-graph-pro' );
+		} else {
+			$score -= 10;
+			$cons[] = __( 'Typically limited to 65% LTV maximum', 'nvoos-content-graph-pro' );
+		}
+		if ( 'primary' === $deal['market_tier'] ) {
+			$score += 10;
+			$pros[] = __( 'Primary market focus aligns with portfolio strategy', 'nvoos-content-graph-pro' );
+		} elseif ( 'tertiary' === $deal['market_tier'] ) {
+			$score -= 10;
+			$cons[] = __( 'Tertiary markets generally outside appetite', 'nvoos-content-graph-pro' );
+		}
+		if ( in_array( $deal['loan_purpose'], array( 'construction', 'bridge' ), true ) ) {
+			$score -= 20;
+			$cons[] = __( 'Not suitable for construction or bridge financing', 'nvoos-content-graph-pro' );
+		}
+
+		$pros[] = __( 'Best pricing for low-leverage, high-quality deals', 'nvoos-content-graph-pro' );
+		$pros[] = __( 'Flexible prepayment and long terms available', 'nvoos-content-graph-pro' );
+		$cons[] = __( 'Longer approval process and conservative underwriting', 'nvoos-content-graph-pro' );
+
+		return array(
+			'score' => max( 0, min( 100, $score ) ),
+			'pros'  => $pros,
+			'cons'  => $cons,
+		);
+	}
+
+	/**
+	 * Score bank execution.
+	 *
+	 * @param array $deal Deal context.
+	 * @return array
+	 */
+	private function score_bank( array $deal ): array {
+		$score = 50;
+		$pros  = array();
+		$cons  = array();
+
+		if ( $deal['loan_amount'] < 25000000 ) {
+			$score += 10;
+			$pros[] = __( 'Banks competitive for smaller and mid-sized loans', 'nvoos-content-graph-pro' );
+		}
+		if ( $deal['sponsor_exp'] >= 5 ) {
+			$score += 10;
+			$pros[] = __( 'Relationship banking rewards experienced sponsors', 'nvoos-content-graph-pro' );
+		}
+		if ( $deal['ltv'] <= 0.70 ) {
+			$score += 5;
+		} else {
+			$score -= 5;
+			$cons[] = __( 'Regulatory constraints may limit leverage above 70% LTV', 'nvoos-content-graph-pro' );
+		}
+		if ( 'secondary' === $deal['market_tier'] || 'tertiary' === $deal['market_tier'] ) {
+			$score += 5;
+			$pros[] = __( 'Local/regional banks serve secondary and tertiary markets', 'nvoos-content-graph-pro' );
+		}
+
+		$pros[] = __( 'Deposit relationship can enhance pricing', 'nvoos-content-graph-pro' );
+		$pros[] = __( 'Construction and bridge lending available', 'nvoos-content-graph-pro' );
+		$cons[] = __( 'Typically shorter terms with recourse', 'nvoos-content-graph-pro' );
+		$cons[] = __( 'Variable rate most common', 'nvoos-content-graph-pro' );
+
+		return array(
+			'score' => max( 0, min( 100, $score ) ),
+			'pros'  => $pros,
+			'cons'  => $cons,
+		);
+	}
+}
