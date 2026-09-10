@@ -41,6 +41,11 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 	// Load lightweight DICOM metadata extractor.
 	require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-dicom-metadata.php';
 
+	// Load the DICOMweb HTTP client (the monolith requires it eagerly inside
+	// the imaging tool map — mirrored here so the Phase D tools' static
+	// references resolve standalone).
+	require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/imaging/class-wp-mcp-ai-dicomweb-client.php';
+
 	// Load Imaging Study CPT and register it.
 	require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-imaging-study-cpt.php';
 	WP_MCP_AI_Imaging_Study_CPT::init();
