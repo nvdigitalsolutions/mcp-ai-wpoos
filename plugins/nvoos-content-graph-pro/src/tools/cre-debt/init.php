@@ -13,9 +13,8 @@
  * standalone copy adds `is_admin()`-gated loads keyed to the same `enable_portfolio_dashboard`
  * sub-setting; NEW standalone-only wiring (deviation, same as the CRM init): a
  * `wp_mcp_ai_pro_tools` filter plus `wp_mcp_ai_pro_register_cre_debt_ecosystem_tools()` — both
- * carry the eleven originations tools plus the thirteen underwriting tools plus the ten cmbs tools
- * plus the eleven debt-fund tools and fill further as the cre-debt tool batches land; local vars
- * prefixed
+ * carry the full monolith cre-debt map plus the tree-only import-blueprint tool (57 + 1 tools);
+ * local vars prefixed
  * `$nvoos_content_graph_pro_*`; full-body `! defined( 'WP_MCP_AI_PATH' )` guard (the global
  * enqueue helper would collide compile-time with the base copy in the monorepo test matrix).
  *
@@ -182,6 +181,19 @@ function wp_mcp_ai_pro_register_cre_debt_tools( $tools ) {
 		'WP_MCP_AI_Tool_CRE_Fund_Scenario_Modeler'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-fund-scenario-modeler.php',
 		'WP_MCP_AI_Tool_CRE_LP_Report_Generator'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-lp-report-generator.php',
 		'WP_MCP_AI_Tool_CRE_Warehouse_Line_Manager'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-warehouse-line-manager.php',
+		'WP_MCP_AI_Tool_CRE_Asset_Disposition_Analyzer'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-asset-disposition-analyzer.php',
+		'WP_MCP_AI_Tool_CRE_Capex_Reserve_Planner'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-capex-reserve-planner.php',
+		'WP_MCP_AI_Tool_CRE_Hold_Sell_Analyzer'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-hold-sell-analyzer.php',
+		'WP_MCP_AI_Tool_CRE_Lease_Expiration_Manager'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-lease-expiration-manager.php',
+		'WP_MCP_AI_Tool_CRE_Loan_Modification_Calculator'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-loan-modification-calculator.php',
+		'WP_MCP_AI_Tool_CRE_Loan_Surveillance_Dashboard'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-loan-surveillance-dashboard.php',
+		'WP_MCP_AI_Tool_CRE_Property_Budget_Manager'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-property-budget-manager.php',
+		'WP_MCP_AI_Tool_CRE_Property_Performance_Tracker'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-property-performance-tracker.php',
+		'WP_MCP_AI_Tool_CRE_Servicing_Fee_Calculator'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-servicing-fee-calculator.php',
+		'WP_MCP_AI_Tool_CRE_Tenant_Credit_Analyzer'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-tenant-credit-analyzer.php',
+		'WP_MCP_AI_Tool_CRE_Watchlist_Manager'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-watchlist-manager.php',
+		'WP_MCP_AI_Tool_CRE_Workout_Scenario_Modeler'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-workout-scenario-modeler.php',
+		'WP_MCP_AI_Tool_Import_CRE_Debt_Blueprint'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/examples/class-wp-mcp-ai-tool-import-cre-debt-blueprint.php',
 	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_cre_tools );
@@ -250,6 +262,19 @@ function wp_mcp_ai_pro_register_cre_debt_ecosystem_tools() {
 			'WP_MCP_AI_Tool_CRE_Fund_Scenario_Modeler',
 			'WP_MCP_AI_Tool_CRE_LP_Report_Generator',
 			'WP_MCP_AI_Tool_CRE_Warehouse_Line_Manager',
+			'WP_MCP_AI_Tool_CRE_Asset_Disposition_Analyzer',
+			'WP_MCP_AI_Tool_CRE_Capex_Reserve_Planner',
+			'WP_MCP_AI_Tool_CRE_Hold_Sell_Analyzer',
+			'WP_MCP_AI_Tool_CRE_Lease_Expiration_Manager',
+			'WP_MCP_AI_Tool_CRE_Loan_Modification_Calculator',
+			'WP_MCP_AI_Tool_CRE_Loan_Surveillance_Dashboard',
+			'WP_MCP_AI_Tool_CRE_Property_Budget_Manager',
+			'WP_MCP_AI_Tool_CRE_Property_Performance_Tracker',
+			'WP_MCP_AI_Tool_CRE_Servicing_Fee_Calculator',
+			'WP_MCP_AI_Tool_CRE_Tenant_Credit_Analyzer',
+			'WP_MCP_AI_Tool_CRE_Watchlist_Manager',
+			'WP_MCP_AI_Tool_CRE_Workout_Scenario_Modeler',
+			'WP_MCP_AI_Tool_Import_CRE_Debt_Blueprint',
 		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
