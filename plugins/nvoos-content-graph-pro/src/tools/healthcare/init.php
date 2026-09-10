@@ -16,7 +16,7 @@
  * standalone-only wiring (deviation, same as the CRM init): a
 	 * `wp_mcp_ai_pro_tools` filter plus
 	 * `wp_mcp_ai_pro_register_healthcare_ecosystem_tools()` — both carry the
-	 * fifty-nine wellness + vitals tools and fill further as the
+	 * sixty-seven wellness + vitals + imaging tools and fill further as the
 	 * healthcare tool batches land; local vars
  * prefixed `$nvoos_content_graph_pro_*`.
  *
@@ -191,6 +191,14 @@ function wp_mcp_ai_pro_register_healthcare_tools( $tools ) {
 		'WP_MCP_AI_Tool_Log_Health_Metrics'                => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/vitals/class-wp-mcp-ai-tool-log-health-metrics.php',
 		'WP_MCP_AI_Tool_Log_Vital_Signs'                   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/vitals/class-wp-mcp-ai-tool-log-vital-signs.php',
 		'WP_MCP_AI_Tool_Track_Vaccinations'                => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/vitals/class-wp-mcp-ai-tool-track-vaccinations.php',
+		'WP_MCP_AI_Tool_Manage_Imaging_Studies'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/imaging/class-wp-mcp-ai-tool-manage-imaging-studies.php',
+		'WP_MCP_AI_Tool_Interpret_Imaging_Study'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/imaging/class-wp-mcp-ai-tool-interpret-imaging-study.php',
+		'WP_MCP_AI_Tool_Connect_DICOMweb'                  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/imaging/class-wp-mcp-ai-tool-connect-dicomweb.php',
+		'WP_MCP_AI_Tool_Import_DICOM_Study'                => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/imaging/class-wp-mcp-ai-tool-import-dicom-study.php',
+		'WP_MCP_AI_Tool_Export_DICOM_Study'                => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/imaging/class-wp-mcp-ai-tool-export-dicom-study.php',
+		'WP_MCP_AI_Tool_Attach_Radiology_Report'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/imaging/class-wp-mcp-ai-tool-attach-radiology-report.php',
+		'WP_MCP_AI_Tool_Compare_Imaging_Studies'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/imaging/class-wp-mcp-ai-tool-compare-imaging-studies.php',
+		'WP_MCP_AI_Tool_Get_Imaging_Hanging_Protocol'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/imaging/class-wp-mcp-ai-tool-get-imaging-hanging-protocol.php',
 	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_health_tools );
@@ -273,6 +281,14 @@ function wp_mcp_ai_pro_register_healthcare_ecosystem_tools() {
 			'WP_MCP_AI_Tool_Log_Health_Metrics',
 			'WP_MCP_AI_Tool_Log_Vital_Signs',
 			'WP_MCP_AI_Tool_Track_Vaccinations',
+			'WP_MCP_AI_Tool_Manage_Imaging_Studies',
+			'WP_MCP_AI_Tool_Interpret_Imaging_Study',
+			'WP_MCP_AI_Tool_Connect_DICOMweb',
+			'WP_MCP_AI_Tool_Import_DICOM_Study',
+			'WP_MCP_AI_Tool_Export_DICOM_Study',
+			'WP_MCP_AI_Tool_Attach_Radiology_Report',
+			'WP_MCP_AI_Tool_Compare_Imaging_Studies',
+			'WP_MCP_AI_Tool_Get_Imaging_Hanging_Protocol',
 		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
