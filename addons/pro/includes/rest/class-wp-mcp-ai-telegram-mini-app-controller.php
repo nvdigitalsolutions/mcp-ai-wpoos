@@ -5210,7 +5210,7 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 			}
 
 			// Media toolkit: always included in Pro unless base-only.
-			if ( '_always_media' === $key && ! $is_base ) {
+			if ( '_always_media' === $key && ( ! $is_base || defined( 'WP_MCP_AI_PRO_VERSION' ) ) ) {
 				if ( ! empty( $settings['enable_media_toolkit'] ) ) {
 					$active[ $key ] = array(
 						'key'        => $key,

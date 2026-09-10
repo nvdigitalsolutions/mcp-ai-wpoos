@@ -89,12 +89,13 @@ function wp_mcp_ai_init_architectural_design_admin() {
 }
 add_action( 'admin_init', 'wp_mcp_ai_init_architectural_design_admin' );
 
-// Only load tools if enabled and not in base version.
-$settings   = get_option( 'wp_mcp_ai_settings', array() );
-$is_enabled = ! empty( $settings['enable_architectural_design_toolkit'] );
-$is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+// Only load tools if enabled and (not in base version or the Pro addon is active).
+$settings      = get_option( 'wp_mcp_ai_settings', array() );
+$is_enabled    = ! empty( $settings['enable_architectural_design_toolkit'] );
+$is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 
-if ( $is_enabled && ! $is_base ) {
+if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 	// Load Architectural Design tools.
 	add_action( 'wp_mcp_ai_load_pro_tools', 'wp_mcp_ai_load_architectural_design_tools' );
 }

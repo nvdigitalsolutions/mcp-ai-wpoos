@@ -18,12 +18,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Check if Project Management toolkit is enabled.
-$settings   = get_option( 'wp_mcp_ai_settings', array() );
-$is_enabled = ! empty( $settings['enable_project_management'] );
-$is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+$settings      = get_option( 'wp_mcp_ai_settings', array() );
+$is_enabled    = ! empty( $settings['enable_project_management'] );
+$is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 
-// Only load if enabled and not in base version.
-if ( $is_enabled && ! $is_base ) {
+// Only load if enabled and (not in base version or the Pro addon is active).
+if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 
 	// ---- Phase A: Shared PM engine (loaded before any tool) ----
 	$pm_engine_dir = WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/';

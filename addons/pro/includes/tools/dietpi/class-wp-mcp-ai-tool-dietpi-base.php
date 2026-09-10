@@ -58,7 +58,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Base' ) ) {
 		 * @return bool
 		 */
 		public static function is_available() {
-			if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+			if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 				return false;
 			}
 
@@ -81,7 +81,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Base' ) ) {
 		 * @return string
 		 */
 		public static function get_unavailable_reason() {
-			if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+			if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 				return __( 'DietPi toolkit is only available in the Pro addon.', 'mcp-ai-wpoos-pro' );
 			}
 

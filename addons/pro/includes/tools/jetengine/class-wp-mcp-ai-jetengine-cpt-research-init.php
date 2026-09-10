@@ -51,7 +51,7 @@ class WP_MCP_AI_JetEngine_CPT_Research_Init {
 	 */
 	private function __construct() {
 		// Only initialize if Pro addon is active and not base version.
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return;
 		}
 

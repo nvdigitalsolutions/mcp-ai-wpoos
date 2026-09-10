@@ -986,7 +986,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 				),
 				function () use ( $p, $settings ) {
 					$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
-					if ( ! $is_base && class_exists( 'WooCommerce' ) ) {
+					if ( ( ! $is_base || defined( 'WP_MCP_AI_PRO_VERSION' ) ) && class_exists( 'WooCommerce' ) ) {
 						require_once $p . 'admin/class-wp-mcp-ai-product-research-page.php';
 						require_once $p . 'admin/class-wp-mcp-ai-product-settings-page.php';
 					}

@@ -136,7 +136,7 @@ class WP_MCP_AI_Tool_Send_Cart_Recovery_Email implements WP_MCP_AI_Tool_Interfac
 			return false;
 		}
 
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return false;
 		}
 

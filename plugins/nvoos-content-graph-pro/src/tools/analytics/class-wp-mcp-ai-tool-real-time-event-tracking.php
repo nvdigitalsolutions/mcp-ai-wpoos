@@ -49,7 +49,7 @@ class WP_MCP_AI_Tool_Real_Time_Event_Tracking implements WP_MCP_AI_Tool_Interfac
 	 * @return bool True if analytics toolkit is enabled.
 	 */
 	public static function is_available() {
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return false;
 		}
 

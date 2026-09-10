@@ -14,11 +14,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$settings   = get_option( 'wp_mcp_ai_settings', array() );
-$is_enabled = ! empty( $settings['enable_extended_cognition_toolkit'] );
-$is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+$settings      = get_option( 'wp_mcp_ai_settings', array() );
+$is_enabled    = ! empty( $settings['enable_extended_cognition_toolkit'] );
+$is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 
-if ( $is_enabled && ! $is_base ) {
+if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 
 	// Tool interface and shared trait (1.8.1).
 	require_once __DIR__ . '/interface-wp-mcp-ai-ext-cog-tool.php';
@@ -49,7 +50,7 @@ if ( $is_enabled && ! $is_base ) {
 function wp_mcp_ai_ext_cog_is_enabled() {
 	$settings = get_option( 'wp_mcp_ai_settings', array() );
 	return ! empty( $settings['enable_extended_cognition_toolkit'] )
-		&& ( ! function_exists( 'wp_mcp_ai_is_base_version' ) || ! wp_mcp_ai_is_base_version() );
+		&& ( ! function_exists( 'wp_mcp_ai_is_base_version' ) || ! wp_mcp_ai_is_base_version() || defined( 'WP_MCP_AI_PRO_VERSION' ) );
 }
 
 /**

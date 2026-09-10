@@ -35,9 +35,11 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 }
 
 // Load Shopify Sync toolkit when enabled.
+$is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 if ( wp_mcp_ai_is_shopify_sync_toolkit_enabled()
 	&& class_exists( 'WooCommerce' )
-	&& ! ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() )
+	&& ( ! $is_base || $is_pro_active )
 ) {
 	// Load core sync classes.
 	if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {

@@ -62,12 +62,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 
 	// Check if Project Management toolkit is enabled (byte-identical gate).
-	$nvoos_content_graph_pro_pm_settings   = get_option( 'wp_mcp_ai_settings', array() );
-	$nvoos_content_graph_pro_pm_is_enabled = ! empty( $nvoos_content_graph_pro_pm_settings['enable_project_management'] );
-	$nvoos_content_graph_pro_pm_is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+	$nvoos_content_graph_pro_pm_settings      = get_option( 'wp_mcp_ai_settings', array() );
+	$nvoos_content_graph_pro_pm_is_enabled    = ! empty( $nvoos_content_graph_pro_pm_settings['enable_project_management'] );
+	$nvoos_content_graph_pro_pm_is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+	$nvoos_content_graph_pro_pm_is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 
-	// Only load if enabled and not in base version.
-	if ( $nvoos_content_graph_pro_pm_is_enabled && ! $nvoos_content_graph_pro_pm_is_base ) {
+	// Only load if enabled and (not in base version or the Pro addon is active).
+	if ( $nvoos_content_graph_pro_pm_is_enabled && ( ! $nvoos_content_graph_pro_pm_is_base || $nvoos_content_graph_pro_pm_is_pro_active ) ) {
 
 		// ---- Phase A: Shared PM engine (loaded before any tool) ----
 		$nvoos_content_graph_pro_pm_engine_dir = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/project-management/';

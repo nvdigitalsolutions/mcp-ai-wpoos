@@ -40,12 +40,13 @@ if ( is_admin() ) {
 }
 
 // Check if Comic Creation toolkit is enabled for advanced features.
-$settings   = get_option( 'wp_mcp_ai_settings', array() );
-$is_enabled = ! empty( $settings['enable_comic_creation_toolkit'] );
-$is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+$settings      = get_option( 'wp_mcp_ai_settings', array() );
+$is_enabled    = ! empty( $settings['enable_comic_creation_toolkit'] );
+$is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 
-// Only load advanced features if enabled and not in base version.
-if ( $is_enabled && ! $is_base ) {
+// Only load advanced features if enabled and (not in base version or the Pro addon is active).
+if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 	// Load Research & Add for CCT/CPT integration.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/research-add/class-wp-mcp-ai-comic-research-add.php';
 	new WP_MCP_AI_Comic_Research_Add();
