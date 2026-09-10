@@ -10,7 +10,7 @@
  * Documented deviations: `declare(strict_types=1)` added; text domain
  * `nvoos-content-graph-pro`; `NVOOS_CONTENT_GRAPH_PRO_*` constant swaps; the
  * CPT require resolves from the addon's `src/` copy; the three admin-page
- * requires are file-gated until the law-firm admin slice lands; the
+ * requires fire once the law-firm admin slice lands; the
  * standalone copy adds `is_admin()`-gated loads keyed to the same
  * `enable_research`/`enable_firm_dashboard` sub-settings; NEW
  * standalone-only wiring (deviation, same as the CRM init): a
