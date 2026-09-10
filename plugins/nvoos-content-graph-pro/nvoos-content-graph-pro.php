@@ -179,6 +179,8 @@ spl_autoload_register(
 			'src/tools/cre-debt/underwriting/',
 			'src/tools/quiz-management/',
 			'src/tools/math/',
+			'src/eca/',
+			'src/tools/eca-management/',
 			'src/migrations/',
 			'src/qms/',
 			'src/helpers/',

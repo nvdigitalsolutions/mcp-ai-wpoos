@@ -975,6 +975,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 																									require_once $p . 'tools/quiz-management/init.php';
 																								}
 																							);
+
+																							// Standalone-only module (the base registry registers
+																							// `toolkit_eca` with the `jetengine_meta_helper`
+																							// dependency — dormant standalone; healthcare precedent).
+																							// Boots the slim ECA init standalone.
+																							$this->add_module(
+																								'toolkit_eca',
+																								'ECA Management Toolkit',
+																								array(),
+																								array(
+																									'files' => array( $p . 'tools/eca-management/init.php' ),
+																								),
+																								function () use ( $p ) {
+																									require_once $p . 'tools/eca-management/init.php';
+																								}
+																							);
 		}
 	}
 }
