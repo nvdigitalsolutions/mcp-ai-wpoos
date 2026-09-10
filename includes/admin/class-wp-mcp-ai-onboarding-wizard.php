@@ -1573,6 +1573,14 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				),
 			);
 
+			// The Knowledge Graph Companion is only offered when a knowledge
+			// graph is actually present (standalone Content Graph plugin,
+			// bundled Graphify addon, or an external graph bridge) — showing
+			// it on a site without a graph would only confuse the user.
+			if ( ! $this->is_content_graph_detected() ) {
+				unset( $defaults['knowledge_graph'] );
+			}
+
 			/**
 			 * Filter the onboarding preset definitions.
 			 *
@@ -1614,9 +1622,10 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 		 *
 		 * Covers the standalone NV oOS Content Graph plugin, the bundled
 		 * Graphify addon, and any external graph memory bridge registered on
-		 * the wake-up retriever seam. Used to pre-select the featured
-		 * Knowledge Graph Companion so Content Graph customers get a working
-		 * assistant out of the box.
+		 * the wake-up retriever seam. Gates both the visibility of the
+		 * Knowledge Graph Companion preset and its auto-selection, so Content
+		 * Graph customers get a working assistant out of the box while other
+		 * sites never see graph-only UI.
 		 *
 		 * @since 1.1.76
 		 *
@@ -1726,7 +1735,8 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				return is_array( $saved ) ? $saved : array();
 			}
 
-			if ( $this->is_content_graph_detected() ) {
+			if ( $this->is_content_graph_detected()
+				&& isset( $this->get_presets()['knowledge_graph'] ) ) {
 				return array( 'knowledge_graph' );
 			}
 
