@@ -82,10 +82,25 @@ deviations:
 
 ## Byte-identity verifier
 
-Write a one-shot `bin/verify-<cluster>.php` that reverses the transforms and
-asserts identity: strip the port-note header (substr after the first `*/`),
-strip the `declare(strict_types=1);` line, swap the domain + constants back
-per-pair, collapse 3+ newline runs to `\n\n`, ltrim leading newlines. Use
+Write a one-shot `bin/verify-<cluster>.php` that RECONSTRUCTS the expected
+ported body instead of reversing the destination (the port script has already
+replaced the source's own docblock header with the port-note header, so the
+raw source can never diff cleanly):
+
+1. Expected side: take the source file, strip its OWN docblock header (cut at
+the FIRST closing comment marker — the same cut the port script makes), then
+apply the same transforms the port script applies (path swap, text-domain
+swap).
+2. Actual side: take the destination, strip the port-note header (its first
+closing comment marker closes the port header), strip the added
+`declare(strict_types=1);` line.
+3. Normalize both: collapse 3+ newline runs to `\n\n`, ltrim leading
+newlines, then `rtrim`-compare.
+
+Traps: never write `*/` inside a verifier's own docblock/comment (it closes
+the comment early — parse error); cutting the DESTINATION at the port
+header's end must not cut the source's own docblock on the EXPECTED side (use
+the source cut on the source, the port cut on the destination). Use
 **per-pair source path + source domain** (Logger: `includes/` + `mcp-ai-wpoos`;
 CPTs/tools: `addons/pro/includes/` + `mcp-ai-wpoos-pro`). Delete the verifier
 after use — only `bin/port-cluster.sh` is committed; per-cluster verifiers are
@@ -125,6 +140,18 @@ new wiring (documented as a deviation every time):
   accepts `nvoos-content-graph-pro/src/<file>` OR `includes/<file>` for
   base-owned D8 copies (the monorepo root classmap may serve base symbols in
   the test matrix — real standalone installs have no root vendor).
+- **Capability variance is per-tool, not per-batch**: before writing the
+  surfaces test, `grep get_required_capability` across the whole batch — law-firm
+  batches shipped `manage_options` on 1–3 tools per batch (billing-trust ×3,
+  document-drafter) while the rest carry `edit_posts`. Assert a capability map,
+  not a uniform string.
+- **Gate-test choice**: pick a tool whose `execute()` is `edit_posts`-gated AND
+  has a `missing_required` first gate after the availability check — grep
+  `missing_required` across the batch first. Some tools compute with defaults
+  (no missing-required gate: damages-calculator), and a `manage_options`-gated
+  tool returns `wp_mcp_ai_forbidden` before any argument gate. Verify the gate
+  ORDER (some tools require the calculator BEFORE the argument gate — that's
+  fine; deterministic either way).
 - Hook assertions on init wiring are first-loader-gated where earlier suites
   require the init in-process.
 - Local matrix parity: standalone ~1 skip, monolith skips every
@@ -133,6 +160,14 @@ new wiring (documented as a deviation every time):
 
 ## Common pitfalls
 
+- **Resuming mid-cluster**: verify the worktree against the handoff before
+  trusting it (`git status` + `ls` the target dir) — a reset worktree keeps
+  the branch but drops uncommitted ports. Re-porting from scratch is cheap
+  (port scripts re-read the source); just redo port → verify → wire → test.
+- **Port scripts echo success on failed writes**: `file_put_contents` into a
+  missing directory only warns and the script still prints "ported:". Create
+  the destination subdir FIRST (`mkdir`), and always follow the script with
+  `php -l` + `ls` on the new files.
 - **Constant drift**: assert source constants, not guesses (comic character
   slug is `mcp_ai_comic_char`).
 - **Module ordinals**: count from the registry test list.
@@ -158,5 +193,9 @@ new wiring (documented as a deviation every time):
   every re-run — keep those post-steps scripted (php -r batch) and re-apply
   after each re-port.
 - **`phpcbf` exit 1** = fixed files (not an error); re-run phpcs for exit 0.
+  Do NOT chain `phpcbf && phpcs` and read the combined exit code — run phpcs
+  alone to verify exit 0.
+- **Transient Docker slowness**: a filtered matrix run can hang mid-suite and
+  hit a 600 s timeout; retry with `timeout_ms` 900000 before investigating.
 - **Trackers are huge**: edit only the row tail (append sub-cluster entry +
   rewrite "Remaining:"), never the historical entries.
