@@ -181,6 +181,7 @@ spl_autoload_register(
 			'src/tools/math/',
 			'src/eca/',
 			'src/tools/eca-management/',
+			'src/tools/eca-management/examples/',
 			'src/migrations/',
 			'src/qms/',
 			'src/helpers/',
