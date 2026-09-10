@@ -125,7 +125,8 @@ is a breach of these Terms.
 
 ## 7. Updates and Support
 
-7.1. While your license is active and we continue to maintain the Product,
+7.1. Your license includes updates for **one (1) year** from the date of
+purchase. During that period, and while we continue to maintain the Product,
 you may download updates for the purchased version line. We do not guarantee
 any specific update cadence, future feature set, or compatibility with your
 hosting environment, other plugins, or future WordPress versions.

@@ -46,6 +46,9 @@ final class Schema {
 	public const FILTER_TERMS_URL          = 'nvoos_content_graph/payments/terms_url';
 	public const FILTER_REFUND_POLICY_URL  = 'nvoos_content_graph/payments/refund_policy_url';
 	public const FILTER_EU_COUNTRIES       = 'nvoos_content_graph/payments/eu_countries';
+	public const FILTER_ROADMAP_URL        = 'nvoos_content_graph/payments/roadmap_url';
+	public const FILTER_CHANGELOG_URL      = 'nvoos_content_graph/payments/changelog_url';
+	public const FILTER_SUPPORT_EMAIL      = 'nvoos_content_graph/payments/support_email';
 
 	// ─── Visual filters (see NvoosContentGraph\Visual\Tokens) ──
 	public const FILTER_TYPE_PALETTE  = 'nvoos_content_graph/type_palette';

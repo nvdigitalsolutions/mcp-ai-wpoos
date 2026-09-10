@@ -26,6 +26,7 @@
 	var errorBox = null;
 	var consentCheckbox = null;
 	var consentAt = 0;
+	var euWithdrawalNote = null;
 	var emailInput = null;
 	var countrySelect = null;
 	var addressLine1 = null;
@@ -288,6 +289,9 @@
 			if ( addressRow ) {
 				addressRow.style.display = isEuSelected() ? 'block' : 'none';
 			}
+			if ( euWithdrawalNote ) {
+				euWithdrawalNote.style.display = isEuSelected() ? 'block' : 'none';
+			}
 			updatePayState();
 		} );
 		row.appendChild( countrySelect );
@@ -396,7 +400,108 @@
 
 		var row = el( 'div', 'nvoos-cg-terms-row' );
 		row.appendChild( label );
+
+		// EU buyers must acknowledge that immediate delivery ends their
+		// statutory right of withdrawal for digital content — shown only
+		// when an EU country is selected in the billing row.
+		euWithdrawalNote = el( 'p', 'nvoos-cg-terms-sub', i18n.terms_eu_withdrawal || '' );
+		euWithdrawalNote.style.display = isEuSelected() ? 'block' : 'none';
+		row.appendChild( euWithdrawalNote );
+
 		return row;
+	}
+
+	/**
+	 * Build the price block: amount, one-time label, license scope, VAT note.
+	 *
+	 * @return {HTMLElement}
+	 */
+	function renderPriceBlock() {
+		var block = el( 'div', 'nvoos-cg-price-block' );
+		block.appendChild( el( 'p', 'nvoos-cg-price', config.price_label || '' ) );
+
+		var oneTime = i18n.price_one_time || '';
+		if ( oneTime ) {
+			block.appendChild( el( 'p', 'nvoos-cg-price-sub', oneTime ) );
+		}
+
+		var scope = i18n.price_license_scope || '';
+		if ( scope ) {
+			block.appendChild( el( 'p', 'nvoos-cg-price-scope', scope ) );
+		}
+
+		var vatNote = i18n.price_vat_note || '';
+		if ( vatNote ) {
+			block.appendChild( el( 'p', 'nvoos-cg-price-vat', vatNote ) );
+		}
+
+		return block;
+	}
+
+	/**
+	 * Build the trust list: guarantee, instant delivery, Stripe security.
+	 *
+	 * @return {HTMLElement}
+	 */
+	function renderTrustList() {
+		var list = el( 'ul', 'nvoos-cg-trust' );
+		var items = [
+			i18n.trust_guarantee || '',
+			i18n.trust_instant || '',
+			i18n.secure_note || ''
+		];
+		for ( var i = 0; i < items.length; i++ ) {
+			if ( ! items[ i ] ) {
+				continue;
+			}
+			list.appendChild( el( 'li', 'nvoos-cg-trust-item', items[ i ] ) );
+		}
+		return list;
+	}
+
+	/**
+	 * Build the "what's included" block plus the roadmap/feedback line.
+	 *
+	 * The roadmap line renders only when a roadmap URL is configured —
+	 * promising feedback only when the owner actually reads it.
+	 *
+	 * @return {HTMLElement}
+	 */
+	function renderIncludesBlock() {
+		var block = el( 'div', 'nvoos-cg-includes' );
+
+		var title = i18n.includes_title || '';
+		if ( title ) {
+			block.appendChild( el( 'h3', 'nvoos-cg-includes-title', title ) );
+		}
+
+		var list = el( 'ul', 'nvoos-cg-includes-list' );
+		var items = [
+			i18n.includes_full || '',
+			i18n.includes_updates || '',
+			i18n.includes_support || '',
+			i18n.includes_roadmap || ''
+		];
+		for ( var i = 0; i < items.length; i++ ) {
+			if ( ! items[ i ] ) {
+				continue;
+			}
+			list.appendChild( el( 'li', 'nvoos-cg-includes-item', items[ i ] ) );
+		}
+		block.appendChild( list );
+
+		var roadmapUrl = String( config.roadmap_url || '' ).trim();
+		if ( roadmapUrl && /^https?:\/\//i.test( roadmapUrl ) ) {
+			var line = el( 'p', 'nvoos-cg-roadmap' );
+			var funded = i18n.roadmap_funded || '';
+			if ( funded ) {
+				line.appendChild( document.createTextNode( funded + ' ' ) );
+			}
+			line.appendChild( linkEl( 'nvoos-cg-roadmap-link', i18n.roadmap_link_label || 'Share your ideas', roadmapUrl ) );
+			block.appendChild( line );
+		}
+
+		return block;
 	}
 
 	/**
@@ -419,6 +524,7 @@
 		verifying = false;
 		consentCheckbox = null;
 		consentAt = 0;
+		euWithdrawalNote = null;
 		emailInput = null;
 		countrySelect = null;
 		addressLine1 = null;
@@ -454,8 +560,9 @@
 		header.appendChild( closeBtn );
 
 		var modalBody = el( 'div', 'nvoos-cg-modal-body' );
-		modalBody.appendChild( el( 'p', 'nvoos-cg-price', config.price_label || '' ) );
-		modalBody.appendChild( el( 'p', 'nvoos-cg-secure-note', i18n.secure_note || '' ) );
+		modalBody.appendChild( renderPriceBlock() );
+		modalBody.appendChild( renderTrustList() );
+		modalBody.appendChild( renderIncludesBlock() );
 		modalBody.appendChild( renderEmailRow() );
 		modalBody.appendChild( renderBillingRow() );
 
@@ -831,6 +938,44 @@
 			manual.appendChild( el( 'p', 'nvoos-cg-manual-note', i18n.manual_install_note || 'Prefer to install manually? Download the ZIP and upload it via Plugins → Add New Plugin → Upload Plugin.' ) );
 			manual.appendChild( linkEl( 'button', i18n.download_zip || 'Download ZIP manually', data.download_url ) );
 			payBox.appendChild( manual );
+		}
+
+		// "What happens next" checklist — post-purchase clarity sets
+		// expectations (receipt, install, license, roadmap) and reduces
+		// buyer's-remorse support contacts.
+		var steps = el( 'div', 'nvoos-cg-success-steps' );
+		var stepsTitle = i18n.success_steps_title || '';
+		if ( stepsTitle ) {
+			steps.appendChild( el( 'h4', 'nvoos-cg-success-steps-title', stepsTitle ) );
+		}
+		var stepsList = el( 'ol', 'nvoos-cg-success-steps-list' );
+		var stepItems = [
+			i18n.success_step_receipt || '',
+			i18n.success_step_installed || '',
+			i18n.success_step_license || ''
+		];
+		for ( var i = 0; i < stepItems.length; i++ ) {
+			if ( ! stepItems[ i ] ) {
+				continue;
+			}
+			stepsList.appendChild( el( 'li', '', stepItems[ i ] ) );
+		}
+		var roadmapStep = i18n.success_step_roadmap || '';
+		var changelogUrl = String( config.changelog_url || '' ).trim();
+		if ( roadmapStep || ( changelogUrl && /^https?:\/\//i.test( changelogUrl ) ) ) {
+			var last = el( 'li', '', roadmapStep );
+			if ( changelogUrl && /^https?:\/\//i.test( changelogUrl ) ) {
+				last.appendChild( document.createTextNode( ' ' ) );
+				last.appendChild( linkEl( 'nvoos-cg-changelog-link', i18n.changelog_link || 'View changelog', changelogUrl ) );
+			}
+			stepsList.appendChild( last );
+		}
+		steps.appendChild( stepsList );
+		payBox.appendChild( steps );
+
+		var support = i18n.support_line || '';
+		if ( support ) {
+			payBox.appendChild( el( 'p', 'nvoos-cg-support-line', support ) );
 		}
 
 		var footer = dialog.querySelector( '.nvoos-cg-modal-footer' );
