@@ -13,8 +13,8 @@
  * standalone copy adds `is_admin()`-gated loads keyed to the same `enable_portfolio_dashboard`
  * sub-setting; NEW standalone-only wiring (deviation, same as the CRM init): a
  * `wp_mcp_ai_pro_tools` filter plus `wp_mcp_ai_pro_register_cre_debt_ecosystem_tools()` — both
- * carry the eleven originations tools plus the thirteen underwriting tools and fill further as
- * the cre-debt tool batches land; local vars prefixed
+ * carry the eleven originations tools plus the thirteen underwriting tools plus the ten cmbs tools
+ * and fill further as the cre-debt tool batches land; local vars prefixed
  * `$nvoos_content_graph_pro_*`; full-body `! defined( 'WP_MCP_AI_PATH' )` guard (the global
  * enqueue helper would collide compile-time with the base copy in the monorepo test matrix).
  *
@@ -160,6 +160,16 @@ function wp_mcp_ai_pro_register_cre_debt_tools( $tools ) {
 		'WP_MCP_AI_Tool_CRE_Property_Valuation_Engine'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-property-valuation-engine.php',
 		'WP_MCP_AI_Tool_CRE_Environmental_Risk_Scorer'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-environmental-risk-scorer.php',
 		'WP_MCP_AI_Tool_CRE_Underwriting_Memo_Generator'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-underwriting-memo-generator.php',
+		'WP_MCP_AI_Tool_CMBS_Bond_Cash_Flow_Modeler'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-bond-cash-flow-modeler.php',
+		'WP_MCP_AI_Tool_CMBS_Deal_Structurer'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-deal-structurer.php',
+		'WP_MCP_AI_Tool_CMBS_Defeasance_Calculator'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-defeasance-calculator.php',
+		'WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-investor-reporting-generator.php',
+		'WP_MCP_AI_Tool_CMBS_Maturity_Risk_Analyzer'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-maturity-risk-analyzer.php',
+		'WP_MCP_AI_Tool_CMBS_Pool_Analyzer'                => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-pool-analyzer.php',
+		'WP_MCP_AI_Tool_CMBS_Rating_Agency_Analyzer'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-rating-agency-analyzer.php',
+		'WP_MCP_AI_Tool_CMBS_Special_Servicing_Tracker'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-special-servicing-tracker.php',
+		'WP_MCP_AI_Tool_CMBS_Surveillance_Monitor'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-surveillance-monitor.php',
+		'WP_MCP_AI_Tool_CRE_CLO_Modeler'                   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cre-clo-modeler.php',
 	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_cre_tools );
@@ -207,6 +217,16 @@ function wp_mcp_ai_pro_register_cre_debt_ecosystem_tools() {
 			'WP_MCP_AI_Tool_CRE_Property_Valuation_Engine',
 			'WP_MCP_AI_Tool_CRE_Environmental_Risk_Scorer',
 			'WP_MCP_AI_Tool_CRE_Underwriting_Memo_Generator',
+			'WP_MCP_AI_Tool_CMBS_Bond_Cash_Flow_Modeler',
+			'WP_MCP_AI_Tool_CMBS_Deal_Structurer',
+			'WP_MCP_AI_Tool_CMBS_Defeasance_Calculator',
+			'WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator',
+			'WP_MCP_AI_Tool_CMBS_Maturity_Risk_Analyzer',
+			'WP_MCP_AI_Tool_CMBS_Pool_Analyzer',
+			'WP_MCP_AI_Tool_CMBS_Rating_Agency_Analyzer',
+			'WP_MCP_AI_Tool_CMBS_Special_Servicing_Tracker',
+			'WP_MCP_AI_Tool_CMBS_Surveillance_Monitor',
+			'WP_MCP_AI_Tool_CRE_CLO_Modeler',
 		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
