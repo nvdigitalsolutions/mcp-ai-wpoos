@@ -25,8 +25,10 @@ use function is_array;
 use function is_email;
 use function is_numeric;
 use function is_wp_error;
+use function microtime;
 use function register_rest_route;
 use function rest_ensure_response;
+use function round;
 use function sanitize_email;
 use function sanitize_text_field;
 use function set_transient;
@@ -120,6 +122,16 @@ class CommerceController {
 				),
 			)
 		);
+
+		register_rest_route(
+			Schema::REST_NAMESPACE,
+			'/payments/health',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'checkHealth' ),
+				'permission_callback' => array( $this, 'checkPermission' ),
+			)
+		);
 	}
 
 	/**
@@ -193,6 +205,63 @@ class CommerceController {
 				'test_mode'         => (bool) ( $session['test_mode'] ?? false ),
 				'terms_url'         => self::sanitizeLegalUrl( (string) ( $session['terms_url'] ?? '' ), Payments::termsUrl(), 'https://nvdigitalsolutions.com/terms-of-service' ),
 				'refund_policy_url' => self::sanitizeLegalUrl( (string) ( $session['refund_policy_url'] ?? '' ), Payments::refundPolicyUrl(), 'https://nvdigitalsolutions.com/refund-policy' ),
+			)
+		);
+	}
+
+	/**
+	 * Connectivity probe: can this site reach the vendor checkout API?
+	 *
+	 * Calls the vendor's public `GET /health` endpoint and reports
+	 * reachability, round-trip latency, and the vendor's own status
+	 * payload. Deliberately **not** throttled: the session/verify buckets
+	 * exist to protect the purchase flow, and a diagnostic probe that
+	 * consumed them would make the "Too many checkout attempts" lockout
+	 * even harder to debug.
+	 *
+	 * @since 1.0.7
+	 *
+	 * @return WP_REST_Response
+	 */
+	public function checkHealth() {
+		$configured = Payments::isConfigured();
+		$base       = array(
+			'configured'     => $configured,
+			'vendor_api_url' => Payments::vendorApiUrl(),
+		);
+
+		if ( ! $configured ) {
+			return rest_ensure_response(
+				$base + array(
+					'reachable' => false,
+					'message'   => __( 'Checkout is not available on this build. Please contact the plugin vendor.', 'nvoos-content-graph' ),
+				)
+			);
+		}
+
+		$started = microtime( true );
+		$vendor  = new Vendor( Payments::vendorApiUrl() );
+		$health  = $vendor->health();
+		$latency = (int) round( ( microtime( true ) - $started ) * 1000 );
+
+		if ( is_wp_error( $health ) ) {
+			$data = $health->get_error_data();
+			return rest_ensure_response(
+				$base + array(
+					'reachable'  => false,
+					'status'     => is_array( $data ) && isset( $data['status'] ) ? (int) $data['status'] : 502,
+					'message'    => $health->get_error_message(),
+					'latency_ms' => $latency,
+				)
+			);
+		}
+
+		return rest_ensure_response(
+			$base + array(
+				'reachable'  => true,
+				'message'    => __( 'The checkout service is reachable.', 'nvoos-content-graph' ),
+				'vendor'     => $health,
+				'latency_ms' => $latency,
 			)
 		);
 	}

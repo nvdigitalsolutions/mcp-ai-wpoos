@@ -36,6 +36,7 @@ class Test_Checkout_Api_Admin_Page extends WP_UnitTestCase {
 	 * @return void
 	 */
 	public function tearDown(): void {
+		remove_all_filters( 'pre_http_request' );
 		delete_option( NVOOS_Checkout_API_Settings::OPTION );
 		parent::tearDown();
 	}
@@ -249,5 +250,146 @@ class Test_Checkout_Api_Admin_Page extends WP_UnitTestCase {
 
 		$this->assertStringStartsWith( NVOOS_Checkout_API_Crypto::PREFIX, $result['stripe_secret_key'] );
 		$this->assertSame( 'sk_test_legacy', NVOOS_Checkout_API_Crypto::decrypt( $result['stripe_secret_key'] ) );
+	}
+
+	/**
+	 * Register the checkout REST routes in-process for the endpoint tests.
+	 *
+	 * PHPUnit never boots the addon (no activation hooks), and
+	 * register_rest_route() may only run on the `rest_api_init` action —
+	 * so the registration is hooked there and a fresh REST server is
+	 * created to re-fire the action.
+	 *
+	 * @return void
+	 */
+	private function register_checkout_routes(): void {
+		add_action(
+			'rest_api_init',
+			static function (): void {
+				$controller = new NVOOS_Checkout_API_Rest_Controller();
+				$controller->register_routes();
+			}
+		);
+
+		// Force a fresh server: creating it fires rest_api_init, which runs
+		// the hook above on the correct action.
+		$GLOBALS['wp_rest_server'] = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Test isolation requires resetting the REST server singleton.
+		rest_get_server();
+	}
+
+	/**
+	 * The endpoints section renders with live per-route status.
+	 *
+	 * @return void
+	 */
+	public function test_endpoints_section_renders(): void {
+		$this->register_checkout_routes();
+
+		$html = $this->render_page();
+
+		$this->assertStringContainsString( 'REST endpoints', $html );
+		$this->assertStringContainsString( 'POST /nvoos-checkout/v1/session', $html );
+		$this->assertStringContainsString( 'GET /nvoos-checkout/v1/health', $html );
+		$this->assertStringContainsString( 'name="action" value="nvoos_checkout_check_endpoints"', $html );
+
+		// Every registered route renders a green tick.
+		$this->assertSame(
+			4,
+			substr_count( $html, 'dashicons-yes-alt' ),
+			'All four checkout routes must show the registered marker.'
+		);
+	}
+
+	/**
+	 * The route table status flips when routes get registered.
+	 *
+	 * @return void
+	 */
+	public function test_route_statuses_track_rest_registration(): void {
+		// Force a fresh REST server so earlier suites cannot leak routes in.
+		$GLOBALS['wp_rest_server'] = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Test isolation requires resetting the REST server singleton.
+
+		$before = NVOOS_Checkout_API_Admin_Page::route_statuses();
+		foreach ( $before as $registered ) {
+			$this->assertFalse( $registered, 'Nothing registers the checkout routes before the controller runs.' );
+		}
+
+		$this->register_checkout_routes();
+
+		$after = NVOOS_Checkout_API_Admin_Page::route_statuses();
+		$this->assertSame(
+			array(
+				'/nvoos-checkout/v1/session'         => true,
+				'/nvoos-checkout/v1/verify'          => true,
+				'/nvoos-checkout/v1/webhooks/stripe' => true,
+				'/nvoos-checkout/v1/health'          => true,
+			),
+			$after
+		);
+	}
+
+	/**
+	 * The full self-check reports healthy endpoints when the loopback
+	 * health call answers 200 with the expected payload.
+	 *
+	 * @return void
+	 */
+	public function test_check_endpoints_reports_healthy(): void {
+		$this->register_checkout_routes();
+
+		add_filter(
+			'pre_http_request',
+			static function () {
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'status'      => 'ok',
+							'service'     => 'nvoos-checkout',
+							'version'     => '0.1.0',
+							'configured'  => true,
+							'server_time' => time(),
+						)
+					),
+				);
+			},
+			10,
+			0
+		);
+
+		$result = NVOOS_Checkout_API_Admin_Page::check_endpoints();
+
+		$this->assertNotContains( false, $result['registered'] );
+		$this->assertSame( 200, $result['loopback']['status'] );
+		$this->assertTrue( $result['loopback']['body_ok'] );
+		$this->assertIsInt( $result['loopback']['latency_ms'] );
+		// Works with both pretty (?rest_route=) and plain (/wp-json/) permalinks.
+		$this->assertStringContainsString( 'nvoos-checkout/v1/health', $result['loopback']['url'] );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/**
+	 * A loopback transport failure surfaces its error message.
+	 *
+	 * @return void
+	 */
+	public function test_check_endpoints_reports_loopback_failure(): void {
+		$this->register_checkout_routes();
+
+		add_filter(
+			'pre_http_request',
+			static fn() => new WP_Error( 'http_request_failed', 'cURL error 7: Failed to connect' ),
+			10,
+			0
+		);
+
+		$result = NVOOS_Checkout_API_Admin_Page::check_endpoints();
+
+		$this->assertNotContains( false, $result['registered'] );
+		$this->assertArrayNotHasKey( 'status', $result['loopback'] );
+		$this->assertStringContainsString( 'cURL error 7', $result['loopback']['error'] );
+
+		remove_all_filters( 'pre_http_request' );
 	}
 }

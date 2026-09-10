@@ -140,6 +140,41 @@ class NVOOS_Checkout_API_Rest_Controller {
 				'permission_callback' => '__return_true', // Signature-gated inside the handler.
 			)
 		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/health',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'health' ),
+				'permission_callback' => '__return_true', // Public status probe — no secrets, no Stripe, no writes.
+			)
+		);
+	}
+
+	/**
+	 * GET /health — cheap public status probe.
+	 *
+	 * Lets customer sites (the free Content Graph plugin) verify that the
+	 * checkout endpoint is reachable and serving before they start a
+	 * payment session — without spending a rate-limit token or touching
+	 * Stripe. The response is deliberately small and stable so the client
+	 * can rely on it as a connectivity contract.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return WP_REST_Response
+	 */
+	public function health() {
+		return rest_ensure_response(
+			array(
+				'status'      => 'ok',
+				'service'     => 'nvoos-checkout',
+				'version'     => defined( 'NVOOS_CHECKOUT_API_VERSION' ) ? (string) NVOOS_CHECKOUT_API_VERSION : '0.1.0',
+				'configured'  => NVOOS_Checkout_API_Settings::is_configured(),
+				'server_time' => time(),
+			)
+		);
 	}
 
 	/**

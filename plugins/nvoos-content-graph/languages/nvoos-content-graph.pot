@@ -1658,6 +1658,10 @@ msgstr ""
 msgid "Too many attempts. Please wait a few minutes and try again."
 msgstr ""
 
+#: src/Rest/CommerceController.php:262
+msgid "The checkout service is reachable."
+msgstr ""
+
 #: src/Rest/CommerceController.php:193
 msgid "NV oOS Content Graph — AI is already licensed and active on this site."
 msgstr ""
