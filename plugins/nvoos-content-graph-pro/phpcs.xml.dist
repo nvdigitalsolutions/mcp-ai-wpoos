@@ -301,6 +301,13 @@
     <rule ref="Squiz.PHP.NonExecutableCode.Unreachable">
         <severity>0</severity>
     </rule>
+    <!--
+        Byte-identical eca-management update-eca tool: the source carries a
+        loose `!=` comparison in its meta-diff probe (monolith-identical).
+    -->
+    <rule ref="Universal.Operators.StrictComparisons">
+        <severity>0</severity>
+    </rule>
 
     <file>./nvoos-content-graph-pro.php</file>
     <file>./src/</file>

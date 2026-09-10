@@ -13,8 +13,8 @@
  * and the four admin-page requires are file-gated until the ECA admin slice lands (all inside the
  * byte-identical enabled/base-version/pro-active gate); NEW standalone-only wiring (deviation,
  * same as the quiz init): a `wp_mcp_ai_pro_tools` filter plus
- * `wp_mcp_ai_pro_register_eca_ecosystem_tools()` — both start empty and fill as the ECA tool
- * batch lands; full-body `! defined( 'WP_MCP_AI_PATH' )` guard (the global enqueue + REST-route
+ * `wp_mcp_ai_pro_register_eca_ecosystem_tools()` — both carry the full thirty-six-entry map (35
+ * monolith tools + the tree-only import tool); full-body `! defined( 'WP_MCP_AI_PATH' )` guard (the global enqueue + REST-route
  * helpers would collide compile-time with the base copy in the monorepo test matrix).
  *
  * @package NvoosContentGraphPro
@@ -142,14 +142,52 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 
 /**
  * Standalone-only tool filter — mirrors the monolith's inline ECA map (the
- * `enable_eca_management` gate in `mcp-ai-wpoos-pro.php`). The map fills as
- * the ECA tool batch lands.
+ * `enable_eca_management` gate in `mcp-ai-wpoos-pro.php`). Carries the full
+ * thirty-six-entry map (35 monolith tools + the tree-only import tool).
  *
  * @param array $tools Existing tool map.
  * @return array Extended tool map.
  */
 function wp_mcp_ai_pro_register_eca_tools( $tools ) {
-	$nvoos_content_graph_pro_eca_tools = array();
+	$nvoos_content_graph_pro_eca_tools = array(
+		'WP_MCP_AI_Tool_Create_ECA'                        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-create-eca.php',
+		'WP_MCP_AI_Tool_List_ECAs'                         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-list-ecas.php',
+		'WP_MCP_AI_Tool_Get_ECA'                           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-get-eca.php',
+		'WP_MCP_AI_Tool_Update_ECA'                        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-update-eca.php',
+		'WP_MCP_AI_Tool_Delete_ECA'                        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-delete-eca.php',
+		'WP_MCP_AI_Tool_Create_Student'                    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-create-student.php',
+		'WP_MCP_AI_Tool_List_Students'                     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-list-students.php',
+		'WP_MCP_AI_Tool_Get_Student'                       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-get-student.php',
+		'WP_MCP_AI_Tool_Update_Student'                    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-update-student.php',
+		'WP_MCP_AI_Tool_Delete_Student'                    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-delete-student.php',
+		'WP_MCP_AI_Tool_Enroll_Student_ECA'                => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-enroll-student-eca.php',
+		'WP_MCP_AI_Tool_Sync_Students_From_ISAMS'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-sync-students-from-isams.php',
+		'WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-sync-ecas-from-isams.php',
+		'WP_MCP_AI_Tool_Research_ECA'                      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-research-eca.php',
+		'WP_MCP_AI_Tool_Mark_ECA_Attendance'               => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-mark-eca-attendance.php',
+		'WP_MCP_AI_Tool_Get_ECA_Attendance_Report'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-get-eca-attendance-report.php',
+		'WP_MCP_AI_Tool_Get_Student_Participation_Summary' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-get-student-participation-summary.php',
+		'WP_MCP_AI_Tool_Manage_ECA_Waitlist'               => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-manage-eca-waitlist.php',
+		'WP_MCP_AI_Tool_Withdraw_Student_ECA'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-withdraw-student-eca.php',
+		'WP_MCP_AI_Tool_Bulk_Enroll_Students'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-bulk-enroll-students.php',
+		'WP_MCP_AI_Tool_Check_ECA_Conflicts'               => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-check-eca-conflicts.php',
+		'WP_MCP_AI_Tool_Set_ECA_Schedule'                  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-set-eca-schedule.php',
+		'WP_MCP_AI_Tool_Get_ECA_Timetable'                 => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-get-eca-timetable.php',
+		'WP_MCP_AI_Tool_Send_ECA_Notification'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-send-eca-notification.php',
+		'WP_MCP_AI_Tool_Configure_ECA_Notifications'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-configure-eca-notifications.php',
+		'WP_MCP_AI_Tool_Send_ECA_Parent_Report'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-send-eca-parent-report.php',
+		'WP_MCP_AI_Tool_Generate_ECA_Analytics'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-generate-eca-analytics.php',
+		'WP_MCP_AI_Tool_Generate_ECA_Participation_Report' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-generate-eca-participation-report.php',
+		'WP_MCP_AI_Tool_Export_ECA_Data'                   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-export-eca-data.php',
+		'WP_MCP_AI_Tool_Sync_ECA_Enrollments_From_ISAMS'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-sync-eca-enrollments-from-isams.php',
+		'WP_MCP_AI_Tool_Sync_ECAs_To_ISAMS'                => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-sync-ecas-to-isams.php',
+		'WP_MCP_AI_Tool_Sync_ECAs_From_SOCS'               => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-sync-ecas-from-socs.php',
+		'WP_MCP_AI_Tool_Manage_ECA_Term'                   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-manage-eca-term.php',
+		'WP_MCP_AI_Tool_Create_ECA_Workflow_Rule'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-create-eca-workflow-rule.php',
+		'WP_MCP_AI_Tool_Import_ECAs_CSV'                   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/class-wp-mcp-ai-tool-import-ecas-csv.php',
+		// Tree-only (not in the monolith map — CRM CC-extras precedent).
+		'WP_MCP_AI_Tool_Import_ECA_Management_Blueprint'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/eca-management/examples/class-wp-mcp-ai-tool-import-eca-management-blueprint.php',
+	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_eca_tools );
 }
@@ -158,7 +196,7 @@ function wp_mcp_ai_pro_register_eca_tools( $tools ) {
  * Standalone-only ecosystem registration — registers the ported ECA tools
  * into the ecosystem graph ToolRegistry and the nvoos/core registry via
  * `WP_MCP_AI_Pro_Tool_Adapter` (same wiring as the quiz inits). The list
- * fills as the ECA tool batch lands.
+ * carries the full thirty-six-entry map.
  *
  * @return void
  */
@@ -171,7 +209,44 @@ function wp_mcp_ai_pro_register_eca_ecosystem_tools() {
 	}
 
 	foreach (
-		array() as $nvoos_content_graph_pro_tool_class
+		array(
+			'WP_MCP_AI_Tool_Create_ECA',
+			'WP_MCP_AI_Tool_List_ECAs',
+			'WP_MCP_AI_Tool_Get_ECA',
+			'WP_MCP_AI_Tool_Update_ECA',
+			'WP_MCP_AI_Tool_Delete_ECA',
+			'WP_MCP_AI_Tool_Create_Student',
+			'WP_MCP_AI_Tool_List_Students',
+			'WP_MCP_AI_Tool_Get_Student',
+			'WP_MCP_AI_Tool_Update_Student',
+			'WP_MCP_AI_Tool_Delete_Student',
+			'WP_MCP_AI_Tool_Enroll_Student_ECA',
+			'WP_MCP_AI_Tool_Sync_Students_From_ISAMS',
+			'WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS',
+			'WP_MCP_AI_Tool_Research_ECA',
+			'WP_MCP_AI_Tool_Mark_ECA_Attendance',
+			'WP_MCP_AI_Tool_Get_ECA_Attendance_Report',
+			'WP_MCP_AI_Tool_Get_Student_Participation_Summary',
+			'WP_MCP_AI_Tool_Manage_ECA_Waitlist',
+			'WP_MCP_AI_Tool_Withdraw_Student_ECA',
+			'WP_MCP_AI_Tool_Bulk_Enroll_Students',
+			'WP_MCP_AI_Tool_Check_ECA_Conflicts',
+			'WP_MCP_AI_Tool_Set_ECA_Schedule',
+			'WP_MCP_AI_Tool_Get_ECA_Timetable',
+			'WP_MCP_AI_Tool_Send_ECA_Notification',
+			'WP_MCP_AI_Tool_Configure_ECA_Notifications',
+			'WP_MCP_AI_Tool_Send_ECA_Parent_Report',
+			'WP_MCP_AI_Tool_Generate_ECA_Analytics',
+			'WP_MCP_AI_Tool_Generate_ECA_Participation_Report',
+			'WP_MCP_AI_Tool_Export_ECA_Data',
+			'WP_MCP_AI_Tool_Sync_ECA_Enrollments_From_ISAMS',
+			'WP_MCP_AI_Tool_Sync_ECAs_To_ISAMS',
+			'WP_MCP_AI_Tool_Sync_ECAs_From_SOCS',
+			'WP_MCP_AI_Tool_Manage_ECA_Term',
+			'WP_MCP_AI_Tool_Create_ECA_Workflow_Rule',
+			'WP_MCP_AI_Tool_Import_ECAs_CSV',
+			'WP_MCP_AI_Tool_Import_ECA_Management_Blueprint',
+		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
 		try {
