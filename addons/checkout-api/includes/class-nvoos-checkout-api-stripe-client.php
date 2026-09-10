@@ -80,6 +80,74 @@ class NVOOS_Checkout_API_Stripe_Client {
 	}
 
 	/**
+	 * Test the secret key against the Stripe API.
+	 *
+	 * Reads the account balance — the cheapest authenticated read that works
+	 * for both live and test keys, and mutates nothing. Used by the admin
+	 * page's "Test connection" button.
+	 *
+	 * @return array{ok: bool, livemode: bool, balance_cents: int, balance_currency: string, message: string}
+	 */
+	public function test_connection(): array {
+		$response = wp_remote_get(
+			self::API_BASE . '/balance',
+			array(
+				'timeout' => 15,
+				'headers' => $this->headers(),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return array(
+				'ok'               => false,
+				'livemode'         => false,
+				'balance_cents'    => 0,
+				'balance_currency' => '',
+				'message'          => $response->get_error_message(),
+			);
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( $code < 200 || $code >= 300 || ! is_array( $data ) ) {
+			$message = is_array( $data ) && isset( $data['error']['message'] )
+				? sanitize_text_field( (string) $data['error']['message'] )
+				: sprintf(
+					/* translators: %d: HTTP status code. */
+					__( 'Stripe request failed (HTTP %d).', 'nvoos-checkout-api' ),
+					$code
+				);
+
+			return array(
+				'ok'               => false,
+				'livemode'         => false,
+				'balance_cents'    => 0,
+				'balance_currency' => '',
+				'message'          => $message,
+			);
+		}
+
+		$balance_cents    = 0;
+		$balance_currency = '';
+		foreach ( (array) ( $data['available'] ?? array() ) as $entry ) {
+			if ( is_array( $entry ) && isset( $entry['amount'], $entry['currency'] ) && is_numeric( $entry['amount'] ) ) {
+				$balance_cents    = (int) $entry['amount'];
+				$balance_currency = strtolower( (string) $entry['currency'] );
+				break;
+			}
+		}
+
+		return array(
+			'ok'               => true,
+			'livemode'         => ! empty( $data['livemode'] ),
+			'balance_cents'    => $balance_cents,
+			'balance_currency' => $balance_currency,
+			'message'          => '',
+		);
+	}
+
+	/**
 	 * Create a Stripe Product (type: service) for reporting/tax metadata.
 	 *
 	 * The product is referenced by the Price below and recorded on payment

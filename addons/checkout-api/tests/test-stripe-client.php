@@ -208,4 +208,89 @@ class Test_Checkout_Api_Stripe_Client extends WP_UnitTestCase {
 		$this->assertFalse( $verdict['ok'] );
 		$this->assertSame( 'missing_secret', $verdict['reason'] );
 	}
+
+	/**
+	 * The connection test reports a live balance.
+	 *
+	 * @return void
+	 */
+	public function test_test_connection_live_balance(): void {
+		add_filter(
+			'pre_http_request',
+			static function () {
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'object'    => 'balance',
+							'livemode'  => true,
+							'available' => array(
+								array(
+									'amount'   => 123456,
+									'currency' => 'usd',
+								),
+							),
+						)
+					),
+				);
+			},
+			10,
+			0
+		);
+
+		$client = new NVOOS_Checkout_API_Stripe_Client( 'sk_live_abc' );
+		$result = $client->test_connection();
+
+		$this->assertTrue( $result['ok'] );
+		$this->assertTrue( $result['livemode'] );
+		$this->assertSame( 123456, $result['balance_cents'] );
+		$this->assertSame( 'usd', $result['balance_currency'] );
+	}
+
+	/**
+	 * An invalid key fails the connection test with Stripe's message.
+	 *
+	 * @return void
+	 */
+	public function test_test_connection_invalid_key(): void {
+		add_filter(
+			'pre_http_request',
+			static function () {
+				return array(
+					'response' => array( 'code' => 401 ),
+					'body'     => wp_json_encode( array( 'error' => array( 'message' => 'Invalid API Key provided' ) ) ),
+				);
+			},
+			10,
+			0
+		);
+
+		$client = new NVOOS_Checkout_API_Stripe_Client( 'sk_bad' );
+		$result = $client->test_connection();
+
+		$this->assertFalse( $result['ok'] );
+		$this->assertSame( 'Invalid API Key provided', $result['message'] );
+	}
+
+	/**
+	 * Transport failures surface as a failed connection test.
+	 *
+	 * @return void
+	 */
+	public function test_test_connection_transport_error(): void {
+		add_filter(
+			'pre_http_request',
+			static function () {
+				return new WP_Error( 'http_request_failed', 'cURL error 28: timeout' );
+			},
+			10,
+			0
+		);
+
+		$client = new NVOOS_Checkout_API_Stripe_Client( 'sk_test_abc' );
+		$result = $client->test_connection();
+
+		$this->assertFalse( $result['ok'] );
+		$this->assertSame( 'cURL error 28: timeout', $result['message'] );
+	}
 }
