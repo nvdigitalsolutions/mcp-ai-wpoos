@@ -941,6 +941,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 																									require_once $p . 'tools/law-firm/init.php';
 																								}
 																							);
+
+																							// Standalone-only module (the base registry registers
+																							// `toolkit_cre_debt` dynamically via the conditional
+																							// toolkit loop with an `enabled` gate). Boots the slim
+																							// cre-debt init standalone.
+																							$this->add_module(
+																								'toolkit_cre_debt',
+																								'CRE Debt & Securitization Toolkit',
+																								array(),
+																								array(
+																									'files' => array( $p . 'tools/cre-debt/init.php' ),
+																								),
+																								function () use ( $p ) {
+																									require_once $p . 'tools/cre-debt/init.php';
+																								}
+																							);
 		}
 	}
 }

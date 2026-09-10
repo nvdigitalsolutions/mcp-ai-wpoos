@@ -1,0 +1,87 @@
+/**
+ * CRE Debt & Securitization Toolkit - Admin Styles
+ *
+ * Styles for CRE Loan and Property edit screens, meta boxes, and admin pages.
+ *
+ * @package WP_MCP_AI_Pro
+ * @since 2.0.0
+ */
+
+/* ── Meta Box Table Styles ──────────────────────────────────────── */
+.post-type-mcp_ai_cre_loan .form-table th,
+.post-type-mcp_ai_cre_property .form-table th {
+	width: 200px;
+	padding: 14px 10px 14px 0;
+}
+
+.post-type-mcp_ai_cre_loan .form-table td,
+.post-type-mcp_ai_cre_property .form-table td {
+	padding: 10px 10px;
+}
+
+/* ── Metrics Sidebar ────────────────────────────────────────────── */
+.mcp-ai-cre-metrics p,
+.mcp-ai-cre-property-financials p {
+	margin-bottom: 14px;
+}
+
+.mcp-ai-cre-metrics .description,
+.mcp-ai-cre-property-financials .description {
+	font-style: italic;
+	color: #757575;
+	font-size: 11px;
+	margin-top: 2px;
+}
+
+/* ── Admin Column Styles ────────────────────────────────────────── */
+.column-loan_amount,
+.column-interest_rate,
+.column-dscr,
+.column-ltv {
+	width: 100px;
+}
+
+.column-loan_status {
+	width: 120px;
+}
+
+/* ── Status Badge Colors ────────────────────────────────────────── */
+.cre-status-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 3px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
+}
+
+.cre-status-performing {
+	background: #e8f5e9;
+	color: #2e7d32;
+}
+
+.cre-status-watchlist {
+	background: #fff3e0;
+	color: #e65100;
+}
+
+.cre-status-special_service,
+.cre-status-delinquent_30,
+.cre-status-delinquent_60,
+.cre-status-delinquent_90,
+.cre-status-foreclosure {
+	background: #ffebee;
+	color: #c62828;
+}
+
+.cre-status-paid_off,
+.cre-status-defeased {
+	background: #e3f2fd;
+	color: #1565c0;
+}
+
+.cre-status-reo {
+	background: #fce4ec;
+	color: #ad1457;
+}
