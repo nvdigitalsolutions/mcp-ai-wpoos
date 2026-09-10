@@ -6,7 +6,7 @@
  */
 
 import { useState, type ReactNode } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useTenant } from '@/contexts/TenantContext';
 import { useAuth } from '@/contexts/AuthContext';
 import clsx from 'clsx';
@@ -34,7 +34,6 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const tenant = useTenant();
   const auth = useAuth();
-  const location = useLocation();
 
   return (
     <div className="flex h-screen bg-gray-50">
