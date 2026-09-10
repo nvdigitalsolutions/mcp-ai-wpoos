@@ -117,6 +117,7 @@ class WP_MCP_AI_Token_Budget_Manager {
 		'gemini-2.5-flash'               => 2097152,
 		'gemini-1.5-flash'               => 1048576,
 		// DeepSeek.
+		'deepseek-flash'                 => 1048576,
 		'deepseek-v4-flash-vision-exp'   => 1048576,
 		'deepseek-v4-flash'              => 1048576,
 		'deepseek-v4-pro'                => 1048576,
