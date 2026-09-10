@@ -1776,7 +1776,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [QUICK_START_5_MINUTES.md](getting-started/QUICK_START_5_MINUTES.md) | 5-minute quick start guide from zero to first chat | Beginners |
 | [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) | Complete setup checklist for new installations | Admins |
 | [BEST_PRACTICES.md](developer/best-practices/BEST_PRACTICES.md) | Recommended practices for using NV oOS | All Users |
-| **Onboarding Wizard** (built-in) | ⭐ **NEW:** 4-step Getting Started wizard at `/wp-admin/admin.php?page=wp-mcp-ai-getting-started`. 8 use-case presets seed fully-configured assistants with tools, system prompts, and temperatures. WCAG 2.1 accessible. See [README.md](../README.md#-installation). | Everyone |
+| **Onboarding Wizard** (built-in) | ⭐ **NEW:** 4-step Getting Started wizard at `/wp-admin/admin.php?page=wp-mcp-ai-getting-started`. 8 use-case presets seed fully-configured assistants with tools, system prompts, and temperatures. When the NV oOS Content Graph (or the bundled Graphify addon) is detected, a featured **Knowledge Graph Companion** is also offered — shown first and auto-selected. WCAG 2.1 accessible. See [README.md](../README.md#-installation). | Everyone |
 
 ### Architecture & Design
 
