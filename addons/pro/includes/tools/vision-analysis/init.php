@@ -33,7 +33,7 @@ if ( is_admin() ) {
 function wp_mcp_ai_vision_analysis_is_enabled() {
 	$settings = get_option( 'wp_mcp_ai_settings', array() );
 	return ! empty( $settings['enable_vision_analysis_toolkit'] )
-		&& ( ! function_exists( 'wp_mcp_ai_is_base_version' ) || ! wp_mcp_ai_is_base_version() );
+		&& ( ! function_exists( 'wp_mcp_ai_is_base_version' ) || ! wp_mcp_ai_is_base_version() || defined( 'WP_MCP_AI_PRO_VERSION' ) );
 }
 
 /**

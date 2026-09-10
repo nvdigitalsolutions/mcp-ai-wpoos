@@ -30,12 +30,13 @@ if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
  */
 if ( is_admin() ) {
 	// Check settings.
-	$settings   = get_option( 'wp_mcp_ai_settings', array() );
-	$is_enabled = ! empty( $settings['enable_site_creator_toolkit'] );
-	$is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+	$settings      = get_option( 'wp_mcp_ai_settings', array() );
+	$is_enabled    = ! empty( $settings['enable_site_creator_toolkit'] );
+	$is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+	$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 
-	// Load if enabled and not in base version mode.
-	if ( $is_enabled && ! $is_base ) {
+	// Load if enabled and (not in base version mode or the Pro addon is active).
+	if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 
 		// Load Site Creator admin pages.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-site-creator-toolkit-settings-page.php';

@@ -70,12 +70,13 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 	}
 
 	// Check if Document Generation toolkit is enabled for advanced features.
-	$nvoos_content_graph_pro_settings   = get_option( 'wp_mcp_ai_settings', array() );
-	$nvoos_content_graph_pro_is_enabled = ! empty( $nvoos_content_graph_pro_settings['enable_document_generation_toolkit'] );
-	$nvoos_content_graph_pro_is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+	$nvoos_content_graph_pro_settings      = get_option( 'wp_mcp_ai_settings', array() );
+	$nvoos_content_graph_pro_is_enabled    = ! empty( $nvoos_content_graph_pro_settings['enable_document_generation_toolkit'] );
+	$nvoos_content_graph_pro_is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+	$nvoos_content_graph_pro_is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 
-	// Only load advanced features if enabled and not in base version.
-	if ( $nvoos_content_graph_pro_is_enabled && ! $nvoos_content_graph_pro_is_base ) {
+	// Only load advanced features if enabled and (not in base version or the Pro addon is active).
+	if ( $nvoos_content_graph_pro_is_enabled && ( ! $nvoos_content_graph_pro_is_base || $nvoos_content_graph_pro_is_pro_active ) ) {
 		// Load Research & Add for CCT/CPT integration (file-gated — lands with
 		// the document-generation admin slice).
 		$nvoos_content_graph_pro_docgen_research_add = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/research-add/class-wp-mcp-ai-document-generation-research-add.php';

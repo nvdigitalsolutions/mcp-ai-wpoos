@@ -64,7 +64,7 @@ class WP_MCP_AI_Tool_Moderate_Comments implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public static function is_available() {
 		// Check if base version.
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return false;
 		}
 

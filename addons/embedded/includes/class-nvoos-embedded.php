@@ -519,7 +519,7 @@ class NV_oOS_Embedded {
 		// Load WebChat Settings page.
 		if ( is_admin() ) {
 			$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
-			if ( ! $is_base ) {
+			if ( ! $is_base || defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 				require_once NVOOS_EMBEDDED_PATH . 'includes/webchat/class-wp-mcp-ai-webchat-settings-page.php';
 			}
 		}

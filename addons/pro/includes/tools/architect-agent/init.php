@@ -18,12 +18,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Check if Architect Agent toolkit is enabled.
-$settings   = get_option( 'wp_mcp_ai_settings', array() );
-$is_enabled = ! empty( $settings['enable_architect_agent_toolkit'] );
-$is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+$settings      = get_option( 'wp_mcp_ai_settings', array() );
+$is_enabled    = ! empty( $settings['enable_architect_agent_toolkit'] );
+$is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 
-// Only load if enabled and not in base version.
-if ( $is_enabled && ! $is_base ) {
+// Only load if enabled and (not in base version or the Pro addon is active).
+if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 
 	// Load Architect Agent admin pages.
 	if ( is_admin() ) {

@@ -113,7 +113,7 @@ class WP_MCP_AI_Tool_Sync_ECAs_To_ISAMS implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public static function is_available() {
 		// ECA sync to iSAMS is a Pro feature.
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return false;
 		}
 

@@ -42,12 +42,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 
 	// Check if AI Tool Builder toolkit is enabled.
-	$nvoos_content_graph_pro_settings   = get_option( 'wp_mcp_ai_settings', array() );
-	$nvoos_content_graph_pro_is_enabled = ! empty( $nvoos_content_graph_pro_settings['enable_ai_tool_builder_toolkit'] );
-	$nvoos_content_graph_pro_is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+	$nvoos_content_graph_pro_settings      = get_option( 'wp_mcp_ai_settings', array() );
+	$nvoos_content_graph_pro_is_enabled    = ! empty( $nvoos_content_graph_pro_settings['enable_ai_tool_builder_toolkit'] );
+	$nvoos_content_graph_pro_is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+	$nvoos_content_graph_pro_is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 
-	// Only load if enabled and not in base version.
-	if ( $nvoos_content_graph_pro_is_enabled && ! $nvoos_content_graph_pro_is_base ) {
+	// Only load if enabled and (not in base version or the Pro addon is active).
+	if ( $nvoos_content_graph_pro_is_enabled && ( ! $nvoos_content_graph_pro_is_base || $nvoos_content_graph_pro_is_pro_active ) ) {
 
 		// Load AI Tool Builder admin pages.
 		if ( is_admin() ) {

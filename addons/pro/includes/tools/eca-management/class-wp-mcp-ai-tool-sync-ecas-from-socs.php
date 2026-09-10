@@ -115,7 +115,7 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_SOCS implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public static function is_available() {
 		// SOCS sync is a Pro feature.
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return false;
 		}
 

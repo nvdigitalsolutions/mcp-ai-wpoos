@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class WP_MCP_AI_Tool_Net_Worth_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 public static function is_available() {
-if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) { return false; }
+if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) { return false; }
 $settings = get_option( 'wp_mcp_ai_settings', array() );
 return ! empty( $settings['enable_financial_planner_toolkit'] );
 }

@@ -16,11 +16,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$settings   = get_option( 'wp_mcp_ai_settings', array() );
-$is_enabled = ! empty( $settings['enable_law_firm_toolkit'] );
-$is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+$settings      = get_option( 'wp_mcp_ai_settings', array() );
+$is_enabled    = ! empty( $settings['enable_law_firm_toolkit'] );
+$is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 
-if ( $is_enabled && ! $is_base ) {
+if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-law-firm-cpt.php';
 	WP_MCP_AI_Law_Firm_CPT::init();

@@ -34,7 +34,7 @@ class WP_MCP_AI_Tool_Generate_Material_Schedule implements WP_MCP_AI_Tool_Interf
 	 *              and the host plugin is not running in base mode.
 	 */
 	public static function is_available() {
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return false;
 		}
 		$settings = get_option( 'wp_mcp_ai_settings', array() );

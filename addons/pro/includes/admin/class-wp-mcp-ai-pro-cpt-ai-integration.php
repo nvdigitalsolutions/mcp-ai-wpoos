@@ -100,8 +100,8 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 	 * @return bool
 	 */
 	private function is_feature_enabled() {
-		// Feature is Pro only.
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		// Feature is Pro only (available in base mode when the Pro addon is active).
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return false;
 		}
 

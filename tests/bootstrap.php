@@ -158,8 +158,13 @@ define( 'WP_TESTS_CONFIG_FILE_PATH', $tests_config );
 
 // Enable full version for tests to load all integration classes.
 // Individual tests can use the wp_mcp_ai_base_version filter to test base version behavior.
+// The base+pro matrix (phpunit-basepro.xml.dist) sets WP_MCP_AI_TEST_BASE_VERSION=1,
+// which flips this constant to true so the suite boots as a base build with the
+// Pro addon active — the real base+pro deployment shape.
 if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
-	define( 'WP_MCP_AI_BASE_VERSION', false );
+	$wp_mcp_ai_test_base_version = getenv( 'WP_MCP_AI_TEST_BASE_VERSION' );
+	define( 'WP_MCP_AI_BASE_VERSION', in_array( $wp_mcp_ai_test_base_version, array( '1', 'true' ), true ) );
+	unset( $wp_mcp_ai_test_base_version );
 }
 
 // Marker consumed by production code at sites that must terminate a request
@@ -697,6 +702,26 @@ function wp_mcp_ai_register_pro_classmap_fallback_autoloader() {
 // unchanged: the base plugin loads unless WP_MCP_AI_SKIP_BASE_PLUGIN=1.
 if ( '1' !== getenv( 'WP_MCP_AI_SKIP_BASE_PLUGIN' ) ) {
 	tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_manually_load_plugin' );
+}
+
+// Base+pro matrix seeding (phpunit-basepro.xml.dist): enable the CRM and
+// Project Management toolkits BEFORE the plugin boots so the Pro module
+// registry loads their inits at boot through the base+pro gates — the
+// end-to-end deployment shape the regression pins cover. Gated on the same
+// env var that flips WP_MCP_AI_BASE_VERSION above; the monolith matrix is
+// untouched.
+if ( in_array( getenv( 'WP_MCP_AI_TEST_BASE_VERSION' ), array( '1', 'true' ), true ) ) {
+	tests_add_filter(
+		'muplugins_loaded',
+		static function () {
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+			$settings = is_array( $settings ) ? $settings : array();
+			$settings['enable_crm_toolkit']        = 1;
+			$settings['enable_project_management'] = 1;
+			update_option( 'wp_mcp_ai_settings', $settings );
+		},
+		1
+	);
 }
 
 /**

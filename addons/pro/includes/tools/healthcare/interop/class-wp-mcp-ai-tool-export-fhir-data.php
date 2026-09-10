@@ -128,7 +128,7 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public static function is_available() {
 		// Health and Wellness management is a Pro feature.
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return false;
 		}
 		$settings = get_option( 'wp_mcp_ai_settings', array() );

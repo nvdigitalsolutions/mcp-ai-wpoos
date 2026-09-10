@@ -80,7 +80,7 @@ class WP_MCP_AI_Tool_Create_WebChat_Room implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public static function is_available() {
 		// WebChat is a Pro feature.
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return false;
 		}
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
@@ -93,7 +93,7 @@ class WP_MCP_AI_Tool_Create_WebChat_Room implements WP_MCP_AI_Tool_Interface, WP
 	 * @return string Reason message.
 	 */
 	public static function get_unavailable_reason() {
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return __( 'WebChat integration is only available in the Pro version.', 'mcp-ai-wpoos-pro' );
 		}
 		return __( 'WebChat integration is not enabled in settings.', 'mcp-ai-wpoos-pro' );

@@ -40,11 +40,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 
-	$nvoos_content_graph_pro_settings   = get_option( 'wp_mcp_ai_settings', array() );
-	$nvoos_content_graph_pro_is_enabled = ! empty( $nvoos_content_graph_pro_settings['enable_law_firm_toolkit'] );
-	$nvoos_content_graph_pro_is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+	$nvoos_content_graph_pro_settings      = get_option( 'wp_mcp_ai_settings', array() );
+	$nvoos_content_graph_pro_is_enabled    = ! empty( $nvoos_content_graph_pro_settings['enable_law_firm_toolkit'] );
+	$nvoos_content_graph_pro_is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+	$nvoos_content_graph_pro_is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 
-	if ( $nvoos_content_graph_pro_is_enabled && ! $nvoos_content_graph_pro_is_base ) {
+	if ( $nvoos_content_graph_pro_is_enabled && ( ! $nvoos_content_graph_pro_is_base || $nvoos_content_graph_pro_is_pro_active ) ) {
 
 		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-law-firm-cpt.php';
 		WP_MCP_AI_Law_Firm_CPT::init();

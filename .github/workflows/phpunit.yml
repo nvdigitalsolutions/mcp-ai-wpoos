@@ -12,6 +12,8 @@ on:
       - 'composer.lock'
       - 'phpunit.xml'
       - 'phpunit.xml.dist'
+      - 'phpunit-basepro.xml.dist'
+      - 'tests/basepro/**'
       - 'bin/install-wp-tests.sh'
       - 'bin/install-test-plugins.sh'
       - 'bin/find-untested-classes.sh'
@@ -168,3 +170,92 @@ jobs:
 
       - name: Build production autoloader
         run: composer install --no-dev --prefer-dist --classmap-authoritative --no-interaction
+
+  # ────────────────────────────────────────────────────────────────
+  # Base+Pro regression matrix.
+  #
+  # Boots the monolith suite with WP_MCP_AI_BASE_VERSION=true (base
+  # entry-point shape) while the Pro addon stays loaded — mirroring the
+  # real base+pro deployment. Runs only tests/basepro/ via
+  # phpunit-basepro.xml.dist, which pins the load-gate and tool
+  # availability contracts added by the base+pro gating fixes.
+  # ────────────────────────────────────────────────────────────────
+  base-pro:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_test
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      WP_DB_NAME: wordpress_test
+      WP_DB_USER: wordpress
+      WP_DB_PASSWORD: wordpress
+      WP_DB_HOST: 127.0.0.1
+      WP_CORE_DIR: /tmp/wordpress
+      WP_TESTS_DIR: /tmp/wordpress-tests-lib
+
+    steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune -af || true
+          df -h
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+          extensions: mbstring, mysqli
+          tools: composer
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Configure Composer GitHub token
+        run: composer config --global github-oauth.github.com ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Install Pro addon dependencies
+        working-directory: addons/pro
+        run: composer install --no-dev --no-interaction --prefer-dist --ignore-platform-req=ext-fileinfo --ignore-platform-req=ext-gd --ignore-platform-req=ext-zip
+
+      - name: Configure WordPress test suite
+        run: |
+          bin/install-wp-tests.sh "$WP_DB_NAME" "$WP_DB_USER" "$WP_DB_PASSWORD" "$WP_DB_HOST" latest
+
+      - name: Install optional test plugins
+        run: |
+          chmod +x bin/install-test-plugins.sh
+          bash bin/install-test-plugins.sh || echo "Some test plugins could not be installed"
+        continue-on-error: true
+
+      - name: Run base+pro regression suite
+        run: vendor/bin/phpunit -c phpunit-basepro.xml.dist --no-coverage

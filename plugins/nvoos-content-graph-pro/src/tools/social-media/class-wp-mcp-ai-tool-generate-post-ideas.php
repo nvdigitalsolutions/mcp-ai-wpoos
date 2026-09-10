@@ -56,7 +56,7 @@ class WP_MCP_AI_Tool_Generate_Post_Ideas implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public static function is_available() {
 		// Check if base version.
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return false;
 		}
 
