@@ -815,4 +815,46 @@ class CommerceTest extends WP_UnitTestCase {
 		$this->assertTrue( License::isLicensed() );
 		$this->assertSame( 'IE', License::get()['buyer_country'] );
 	}
+
+	/** @test */
+	public function roadmapUrlDefaultsToDiscussions(): void {
+		$this->assertSame(
+			'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/discussions',
+			Payments::roadmapUrl()
+		);
+	}
+
+	/** @test */
+	public function roadmapUrlIsFilterable(): void {
+		add_filter( Schema::FILTER_ROADMAP_URL, static fn() => 'https://example.com/roadmap' );
+		$this->assertSame( 'https://example.com/roadmap', Payments::roadmapUrl() );
+		remove_all_filters( Schema::FILTER_ROADMAP_URL );
+	}
+
+	/** @test */
+	public function changelogUrlDefaultsToReleases(): void {
+		$this->assertSame(
+			'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases',
+			Payments::changelogUrl()
+		);
+	}
+
+	/** @test */
+	public function changelogUrlIsFilterable(): void {
+		add_filter( Schema::FILTER_CHANGELOG_URL, static fn() => 'https://example.com/changelog' );
+		$this->assertSame( 'https://example.com/changelog', Payments::changelogUrl() );
+		remove_all_filters( Schema::FILTER_CHANGELOG_URL );
+	}
+
+	/** @test */
+	public function supportEmailDefaultsToVendorAddress(): void {
+		$this->assertSame( 'support@nvdigitalsolutions.com', Payments::supportEmail() );
+	}
+
+	/** @test */
+	public function supportEmailIsFilterable(): void {
+		add_filter( Schema::FILTER_SUPPORT_EMAIL, static fn() => 'help@example.com' );
+		$this->assertSame( 'help@example.com', Payments::supportEmail() );
+		remove_all_filters( Schema::FILTER_SUPPORT_EMAIL );
+	}
 }

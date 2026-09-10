@@ -194,6 +194,56 @@ final class Payments {
 	}
 
 	/**
+	 * The roadmap / feature-feedback URL shown in the purchase modal.
+	 *
+	 * The modal renders the "funded by owners" line only when this URL is
+	 * non-empty — an empty value hides the promise entirely. Filterable via
+	 * `nvoos_content_graph/payments/roadmap_url`.
+	 *
+	 * @since 1.0.7
+	 *
+	 * @return string
+	 */
+	public static function roadmapUrl(): string {
+		return (string) apply_filters(
+			Schema::FILTER_ROADMAP_URL,
+			'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/discussions'
+		);
+	}
+
+	/**
+	 * The changelog/releases URL shown on the purchase success screen.
+	 *
+	 * Filterable via `nvoos_content_graph/payments/changelog_url`.
+	 *
+	 * @since 1.0.7
+	 *
+	 * @return string
+	 */
+	public static function changelogUrl(): string {
+		return (string) apply_filters(
+			Schema::FILTER_CHANGELOG_URL,
+			'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases'
+		);
+	}
+
+	/**
+	 * The support email shown on the purchase success screen.
+	 *
+	 * Filterable via `nvoos_content_graph/payments/support_email`.
+	 *
+	 * @since 1.0.7
+	 *
+	 * @return string
+	 */
+	public static function supportEmail(): string {
+		return (string) apply_filters(
+			Schema::FILTER_SUPPORT_EMAIL,
+			'support@nvdigitalsolutions.com'
+		);
+	}
+
+	/**
 	 * ISO 3166-1 alpha-2 codes for EU member states (EU-27).
 	 *
 	 * Buyers selecting one of these in the purchase modal are required to

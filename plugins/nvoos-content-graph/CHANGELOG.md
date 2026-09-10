@@ -21,6 +21,16 @@
 - **Vendor contract update** — `docs/commerce-vendor-api.md` documents the new session fields, the optional verify params (`terms_agreed_at`, `buyer_email`), and their validation windows
 - Legal-document templates for the vendor: `docs/legal/TERMS-OF-SERVICE.md` + `docs/legal/REFUND-POLICY.md` (30-day no-questions-asked guarantee)
 
+### New — Purchase modal trust, value & post-purchase enhancements
+
+- **Price block** — the modal price now sits in a dedicated block with "One-time payment — no subscription", the license scope line (**1 year of updates + email support**, mirroring the updated Terms §7.1), and a VAT note ("VAT may be added at checkout based on your country" — shown until Stripe Tax is enabled vendor-side)
+- **Trust list** — a checkmarked row under the price: 30-day money-back guarantee (matching the published Refund Policy), instant download + automatic install, and the existing Stripe security note
+- **"Included in NV oOS Complete" block** — a four-item value list (full base + Pro plugin, 1 year of updates, email support directly from the developer, Content Graph ecosystem access when it launches at no extra cost) plus an optional "your purchase funds the roadmap" line with a "Share your ideas" link; the roadmap line renders only when a roadmap URL is configured (`nvoos_content_graph/payments/roadmap_url` filter, default GitHub discussions)
+- **EU withdrawal acknowledgment** — when the buyer selects an EU country, the consent row shows the immediate-delivery note ("By downloading, you acknowledge that you lose your EU right of withdrawal for this digital content") as required for the statutory waiver; the 30-day guarantee remains on top of it
+- **Success-screen checklist** — after checkout the buyer sees "What happens next" (receipt email, install/activation, license key saved, changelog link with the ecosystem launch reminder) plus a "Questions? Email …" support line (`nvoos_content_graph/payments/support_email` + `nvoos_content_graph/payments/changelog_url` filters)
+- **Compliance docs** — `docs/checkout-enhancement-plan.md` captures the researched industry standards (Freemius licensing guidance, Stripe seller duties, EU withdrawal rules, trust-signal and post-purchase research) with sources, the hard-rules list (no fake scarcity/anchors, no release-date promises), and the owner launch checklist
+- Tests: `tests/Unit/Commerce/CommerceTest.php` extended for the new filter defaults (roadmap/changelog URLs, support email)
+
 ## 1.0.6 — 2026-09-08
 
 ### Changed — Checkout delivers the NV oOS Complete bundle

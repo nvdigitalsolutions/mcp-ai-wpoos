@@ -423,6 +423,129 @@
 	gap: 8px;
 }
 
+/* Purchase modal — pricing, trust, value & post-purchase blocks (1.0.7) */
+.nvoos-cg-price-block {
+	margin: 0 0 16px;
+	padding: 14px 16px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+}
+
+.nvoos-cg-price-block .nvoos-cg-price {
+	margin-bottom: 4px;
+}
+
+.nvoos-cg-price-sub {
+	margin: 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.nvoos-cg-price-scope,
+.nvoos-cg-price-vat {
+	margin: 6px 0 0;
+	font-size: 12px;
+	color: #646970;
+}
+
+.nvoos-cg-price-vat {
+	margin-top: 2px;
+}
+
+.nvoos-cg-trust {
+	list-style: none;
+	margin: 0 0 16px;
+	padding: 0;
+}
+
+.nvoos-cg-trust-item {
+	font-size: 13px;
+	color: #2c3338;
+	padding: 3px 0 3px 24px;
+	position: relative;
+}
+
+.nvoos-cg-trust-item::before {
+	content: "✓";
+	position: absolute;
+	left: 0;
+	color: #00a32a;
+	font-weight: 700;
+}
+
+.nvoos-cg-includes {
+	margin: 0 0 16px;
+	padding: 14px 16px;
+	background: #f0f6fc;
+	border: 1px solid #c5d9ed;
+	border-radius: 6px;
+}
+
+.nvoos-cg-includes-title {
+	margin: 0 0 8px;
+	font-size: 13px;
+}
+
+.nvoos-cg-includes-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.nvoos-cg-includes-item {
+	font-size: 13px;
+	color: #2c3338;
+	padding: 3px 0 3px 20px;
+	position: relative;
+}
+
+.nvoos-cg-includes-item::before {
+	content: "•";
+	position: absolute;
+	left: 4px;
+	color: #2271b1;
+}
+
+.nvoos-cg-roadmap {
+	margin: 8px 0 0;
+	font-size: 12px;
+	color: #646970;
+}
+
+.nvoos-cg-terms-sub {
+	margin: 8px 0 0;
+	font-size: 12px;
+	color: #646970;
+}
+
+.nvoos-cg-success-steps {
+	margin: 16px 0 0;
+}
+
+.nvoos-cg-success-steps-title {
+	margin: 0 0 6px;
+	font-size: 13px;
+}
+
+.nvoos-cg-success-steps-list {
+	margin: 0 0 0 18px;
+	padding: 0;
+	font-size: 13px;
+	color: #2c3338;
+}
+
+.nvoos-cg-success-steps-list li {
+	margin-bottom: 4px;
+}
+
+.nvoos-cg-support-line {
+	margin: 16px 0 0;
+	font-size: 12px;
+	color: #646970;
+}
+
 /* ----------------------------------------------------------------------------
    Addon purchase modal (Stripe Payment Element)
    ---------------------------------------------------------------------------- */
