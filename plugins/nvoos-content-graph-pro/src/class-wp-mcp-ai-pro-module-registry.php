@@ -991,6 +991,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 																									require_once $p . 'tools/eca-management/init.php';
 																								}
 																							);
+
+																							// Standalone-only module (the base registry registers
+																							// `chat_channels` via its dynamic conditional-toolkit
+																							// loop — cre-debt precedent). Boots the slim
+																							// chat-channels init standalone.
+																							$this->add_module(
+																								'chat_channels',
+																								'Chat Channels',
+																								array(),
+																								array(
+																									'files' => array( $p . 'tools/chat-channels/init.php' ),
+																								),
+																								function () use ( $p ) {
+																									require_once $p . 'tools/chat-channels/init.php';
+																								}
+																							);
 		}
 	}
 }
