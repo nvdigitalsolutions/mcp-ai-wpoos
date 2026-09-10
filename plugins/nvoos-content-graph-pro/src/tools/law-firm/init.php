@@ -16,8 +16,8 @@
  * standalone-only wiring (deviation, same as the CRM init): a
  * `wp_mcp_ai_pro_tools` filter plus
  * `wp_mcp_ai_pro_register_law_firm_ecosystem_tools()` — both carry the ten
- * matter-management batch-1 tools and fill further as the law-firm tool
- * batches land; local vars
+ * matter-management batch-1 tools plus the ten billing-trust tools and fill
+ * further as the law-firm tool batches land; local vars
  * prefixed `$nvoos_content_graph_pro_*`; full-body
  * `! defined( 'WP_MCP_AI_PATH' )` guard (the global enqueue helper would
  * collide compile-time with the base copy in the monorepo test matrix).
@@ -134,16 +134,26 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
  */
 function wp_mcp_ai_pro_register_law_firm_tools( $tools ) {
 	$nvoos_content_graph_pro_law_tools = array(
-		'WP_MCP_AI_Tool_LF_Calendar_Rule_Calculator' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-calendar-rule-calculator.php',
-		'WP_MCP_AI_Tool_LF_Case_Outcome_Predictor'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-case-outcome-predictor.php',
-		'WP_MCP_AI_Tool_LF_Case_Status_Dashboard'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-case-status-dashboard.php',
-		'WP_MCP_AI_Tool_LF_Case_Timeline_Generator'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-case-timeline-generator.php',
-		'WP_MCP_AI_Tool_LF_Court_Deadline_Tracker'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-court-deadline-tracker.php',
-		'WP_MCP_AI_Tool_LF_Matter_Budget_Manager'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-matter-budget-manager.php',
-		'WP_MCP_AI_Tool_LF_Matter_Pipeline_Manager'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-matter-pipeline-manager.php',
-		'WP_MCP_AI_Tool_LF_Opposing_Counsel_Tracker' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-opposing-counsel-tracker.php',
+		'WP_MCP_AI_Tool_LF_Calendar_Rule_Calculator'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-calendar-rule-calculator.php',
+		'WP_MCP_AI_Tool_LF_Case_Outcome_Predictor'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-case-outcome-predictor.php',
+		'WP_MCP_AI_Tool_LF_Case_Status_Dashboard'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-case-status-dashboard.php',
+		'WP_MCP_AI_Tool_LF_Case_Timeline_Generator'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-case-timeline-generator.php',
+		'WP_MCP_AI_Tool_LF_Court_Deadline_Tracker'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-court-deadline-tracker.php',
+		'WP_MCP_AI_Tool_LF_Matter_Budget_Manager'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-matter-budget-manager.php',
+		'WP_MCP_AI_Tool_LF_Matter_Pipeline_Manager'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-matter-pipeline-manager.php',
+		'WP_MCP_AI_Tool_LF_Opposing_Counsel_Tracker'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-opposing-counsel-tracker.php',
 		'WP_MCP_AI_Tool_LF_Statute_Of_Limitations_Calculator' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-statute-of-limitations-calculator.php',
-		'WP_MCP_AI_Tool_LF_Task_Assignment_Manager'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-task-assignment-manager.php',
+		'WP_MCP_AI_Tool_LF_Task_Assignment_Manager'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-task-assignment-manager.php',
+		'WP_MCP_AI_Tool_LF_Accounts_Receivable_Tracker'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-accounts-receivable-tracker.php',
+		'WP_MCP_AI_Tool_LF_Billing_Compliance_Checker'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-billing-compliance-checker.php',
+		'WP_MCP_AI_Tool_LF_Expense_Reimbursement_Tracker' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-expense-reimbursement-tracker.php',
+		'WP_MCP_AI_Tool_LF_Fee_Calculator'                => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-fee-calculator.php',
+		'WP_MCP_AI_Tool_LF_Invoice_Generator'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-invoice-generator.php',
+		'WP_MCP_AI_Tool_LF_Profitability_Analyzer'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-profitability-analyzer.php',
+		'WP_MCP_AI_Tool_LF_Retainer_Balance_Monitor'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-retainer-balance-monitor.php',
+		'WP_MCP_AI_Tool_LF_Time_Entry_Recorder'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-time-entry-recorder.php',
+		'WP_MCP_AI_Tool_LF_Trust_Account_Manager'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-trust-account-manager.php',
+		'WP_MCP_AI_Tool_LF_Trust_Reconciliation_Tool'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-trust-reconciliation-tool.php',
 	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_law_tools );
@@ -177,6 +187,16 @@ function wp_mcp_ai_pro_register_law_firm_ecosystem_tools() {
 			'WP_MCP_AI_Tool_LF_Opposing_Counsel_Tracker',
 			'WP_MCP_AI_Tool_LF_Statute_Of_Limitations_Calculator',
 			'WP_MCP_AI_Tool_LF_Task_Assignment_Manager',
+			'WP_MCP_AI_Tool_LF_Accounts_Receivable_Tracker',
+			'WP_MCP_AI_Tool_LF_Billing_Compliance_Checker',
+			'WP_MCP_AI_Tool_LF_Expense_Reimbursement_Tracker',
+			'WP_MCP_AI_Tool_LF_Fee_Calculator',
+			'WP_MCP_AI_Tool_LF_Invoice_Generator',
+			'WP_MCP_AI_Tool_LF_Profitability_Analyzer',
+			'WP_MCP_AI_Tool_LF_Retainer_Balance_Monitor',
+			'WP_MCP_AI_Tool_LF_Time_Entry_Recorder',
+			'WP_MCP_AI_Tool_LF_Trust_Account_Manager',
+			'WP_MCP_AI_Tool_LF_Trust_Reconciliation_Tool',
 		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
