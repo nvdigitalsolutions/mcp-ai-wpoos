@@ -1022,10 +1022,9 @@ class WP_MCP_AI_Model_Service {
 
 		$models = array();
 
-		// DeepSeek V4 series (current lineup).
-		$models['deepseek-v4-flash']            = 'DeepSeek V4 Flash (1M Context, Fast)';
-		$models['deepseek-v4-pro']              = 'DeepSeek V4 Pro (Enhanced Reasoning)';
-		$models['deepseek-v4-flash-vision-exp'] = 'DeepSeek V4 Flash Vision (Experimental)';
+		// DeepSeek current lineup: V4.1 Flash flagship; V4 Pro retiring Sep 14.
+		$models['deepseek-flash'] = 'DeepSeek V4.1 Flash (1M Context, Vision)';
+		$models['deepseek-v4-pro'] = 'DeepSeek V4 Pro (Retiring Sep 14)';
 
 		return $models;
 	}
@@ -1205,9 +1204,9 @@ class WP_MCP_AI_Model_Service {
 				'stable' => 'gemma-2-2b-it-q4f16_1-MLC',
 			),
 			'deepseek'     => array(
-				'stable' => 'deepseek-v4-flash',
-				'latest' => 'deepseek-v4-pro',
-				'budget' => 'deepseek-v4-flash',
+				'stable' => 'deepseek-flash',
+				'latest' => 'deepseek-flash',
+				'budget' => 'deepseek-flash',
 			),
 			'openrouter'   => array(
 				'stable' => 'openai/gpt-4.1',

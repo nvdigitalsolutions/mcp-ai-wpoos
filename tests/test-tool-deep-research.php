@@ -187,7 +187,7 @@ class Test_Tool_Deep_Research extends WP_UnitTestCase {
 			array(
 				array(
 					'provider' => 'deepseek',
-					'model'    => 'deepseek-v4-pro',
+					'model'    => 'deepseek-flash',
 					'client'   => $client,
 				),
 			)
@@ -243,7 +243,7 @@ class Test_Tool_Deep_Research extends WP_UnitTestCase {
 			array(
 				array(
 					'provider' => 'deepseek',
-					'model'    => 'deepseek-v4-pro',
+					'model'    => 'deepseek-flash',
 					'client'   => $first_client,
 				),
 				array(
@@ -301,7 +301,7 @@ class Test_Tool_Deep_Research extends WP_UnitTestCase {
 			array(
 				array(
 					'provider' => 'deepseek',
-					'model'    => 'deepseek-v4-pro',
+					'model'    => 'deepseek-flash',
 					'client'   => $client,
 				),
 			)
@@ -353,7 +353,7 @@ class Test_Tool_Deep_Research extends WP_UnitTestCase {
 			array(
 				array(
 					'provider' => 'deepseek',
-					'model'    => 'deepseek-v4-pro',
+					'model'    => 'deepseek-flash',
 					'client'   => $client,
 				),
 			)

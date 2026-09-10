@@ -54,7 +54,7 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 		$this->assertEquals( 'https://api.deepseek.com', WP_MCP_AI_DeepSeek_Client::DEFAULT_BASE_URL );
 		$this->assertEquals( '/chat/completions', WP_MCP_AI_DeepSeek_Client::API_ENDPOINT );
 		$this->assertEquals( '/models', WP_MCP_AI_DeepSeek_Client::API_MODELS );
-		$this->assertEquals( 'deepseek-v4-flash', WP_MCP_AI_DeepSeek_Client::DEFAULT_MODEL );
+		$this->assertEquals( 'deepseek-flash', WP_MCP_AI_DeepSeek_Client::DEFAULT_MODEL );
 		$this->assertEmpty( WP_MCP_AI_DeepSeek_Client::MODELS_WITHOUT_TOOL_CALLING, 'All current DeepSeek V4 models support tool calling.' );
 	}
 
@@ -90,11 +90,11 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 	 * Test get_model() returns configured model.
 	 */
 	public function test_get_model_returns_configured_model() {
-		update_option( 'wp_mcp_ai_settings', array( 'deepseek_model' => 'deepseek-v4-pro' ) );
+		update_option( 'wp_mcp_ai_settings', array( 'deepseek_model' => 'deepseek-flash' ) );
 
 		$model = $this->client->get_model();
 
-		$this->assertEquals( 'deepseek-v4-pro', $model );
+		$this->assertEquals( 'deepseek-flash', $model );
 	}
 
 	/**
@@ -192,7 +192,7 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 		);
 		$options  = array( 'tools' => array( $tool ) );
 
-		$payload = $method->invoke( $this->client, $messages, $options, 'deepseek-v4-flash' );
+		$payload = $method->invoke( $this->client, $messages, $options, 'deepseek-flash' );
 
 		$this->assertIsArray( $payload );
 		$this->assertArrayHasKey( 'tools', $payload );
@@ -424,7 +424,7 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 	}
 
 	public function test_model_supports_tools_public() {
-		$this->assertTrue( $this->client->model_supports_tools( 'deepseek-v4-flash' ) );
+		$this->assertTrue( $this->client->model_supports_tools( 'deepseek-flash' ) );
 		$this->assertTrue( $this->client->model_supports_tools( 'deepseek-v4-pro' ) );
 	}
 }

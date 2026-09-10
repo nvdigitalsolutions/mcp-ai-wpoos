@@ -474,7 +474,7 @@ class WP_MCP_AI_Blueprint_Installer {
 			'lm_studio'   => 'local',
 			'cloudflare'  => '@cf/meta/llama-4-scout-17b-16e-instruct',
 			'huggingface' => 'meta-llama/Llama-4-8B-Instruct',
-			'deepseek'    => 'deepseek-v4-pro',
+			'deepseek'    => 'deepseek-flash',
 			'embedded'    => 'Llama-3.2-1B-Instruct-q4f16_1-MLC',
 		);
 

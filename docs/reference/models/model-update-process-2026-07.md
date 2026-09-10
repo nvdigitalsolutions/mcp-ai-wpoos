@@ -331,3 +331,72 @@ git --no-pager diff -- includes/ addons/pro/includes/
 | `gemini-3.1-flash` | — | `gemini-3.5-flash` |
 | `imagen-4` | — | `gemini-3.1-flash-image` |
 | `deepseek-reasoner` / `deepseek-coder` | `deepseek-v4-flash` | `deepseek-v4-pro` |
+
+---
+
+## This Month's Changes (September 10, 2026 — DeepSeek V4.1 Flash refresh)
+
+Triggered by DeepSeek's V4.1 Flash release (2026-09-10): new-architecture flagship
+with native multimodal vision, V4 Flash / V4 Flash Vision retired, V4 Pro routing
+to V4.1 Flash from 2026-09-14. Sources: https://api-docs.deepseek.com/updates/ and
+https://api-docs.deepseek.com/quick_start/pricing/ (fetched 2026-09-10); cross-checked
+with CellCog's release tracker (yuan figures: cache hit 0.02 / cache miss 1.00 /
+output 4.00 off-peak, peak 2×).
+
+### New Models Added to Catalog
+| Model | Provider | Notes |
+|---|---|---|
+| `deepseek-flash` | deepseek | V4.1 Flash flagship (Sept 10, 2026). Native vision, 1M ctx, 384K out. Off-peak $0.15/$0.60 per 1M (cache miss; cache hit $0.003); peak 2× (Mon–Fri 01:00–04:00 + 06:00–10:00 UTC). Canonical id: `deepseek-flash`. |
+
+### Status Changes / Removals
+| Model | Change | Reason |
+|---|---|---|
+| `deepseek-v4-flash` | Removed | Retired 2026-09-10 — id now routes to V4.1 Flash and bills at Flash prices. |
+| `deepseek-v4-flash-vision-exp` | Removed | Retired 2026-09-10 — id now routes to V4.1 Flash. |
+| `deepseek-v4-pro` | Deprecated, sunset 2026-09-14 | DeepSeek routes `deepseek-v4-pro` to V4.1 Flash from 12:00 Beijing 2026-09-14 until V4.1 Pro ships. Fallback → `deepseek-flash`. |
+
+### Default Changes
+| Setting | Old | New |
+|---|---|---|
+| DeepSeek client `DEFAULT_MODEL` | `deepseek-v4-flash` | `deepseek-flash` |
+| DeepSeek section default / diagnostics fallbacks | `deepseek-v4-flash` | `deepseek-flash` |
+| Router draft: deepseek | `deepseek-v4-flash` | `deepseek-flash` |
+| Router verification: deepseek | `deepseek-v4-pro` | `deepseek-flash` |
+| Model-service fallback map (stable/latest/budget) | `deepseek-v4-flash` / `deepseek-v4-pro` | `deepseek-flash` |
+| Blueprint installer fallback: deepseek | `deepseek-v4-pro` | `deepseek-flash` |
+| Research-tool fallbacks (pro ×10 + deep-research) | `deepseek-v4-flash` | `deepseek-flash` |
+
+### Pricing Fixes
+| Model | Old | New | Notes |
+|---|---|---|---|
+| `deepseek-v4-pro` | $0.435/$0.87 | $0.66/$1.98 | Current pricing page (off-peak cache miss; peak 2×). |
+| `deepseek-v4-flash` | $0.14/$0.28 | $0.15/$0.60 | Retired id — billed at V4.1 Flash prices. |
+
+### New: Peak/Off-Peak Pricing Support
+`WP_MCP_AI_Cost_Calculator` now models DeepSeek's peak/off-peak billing
+(peak = Mon–Fri 01:00–04:00 + 06:00–10:00 UTC, all other hours off-peak at half price):
+
+- New additive keys on pricing entries: `peak_input`, `peak_output` (+ optional
+  `peak_cached_input`).
+- New `PEAK_WINDOWS` const holds the per-provider UTC schedule.
+- New methods: `is_peak_time()`, `get_model_pricing_at()`, `calculate_cost_at()`
+  (timestamp injectable for deterministic tests).
+- Legacy `calculate_cost()` / `get_model_pricing()` are unchanged and stay
+  time-independent on the canonical off-peak rates — no caller or test breakage.
+- The usage tracker's per-1K table mirrors the peak keys
+  (`peak_input_cost_per_1k` / `peak_output_cost_per_1k`); wiring a tracker-side
+  `calculate_cost_at()` is a follow-up.
+
+### Migration Map Fixes
+| Legacy ID | Old Target | New Target |
+|---|---|---|
+| `deepseek-chat` | `deepseek-v4-flash` | `deepseek-flash` |
+| `deepseek-reasoner` / `deepseek-coder` | `deepseek-v4-pro` | `deepseek-flash` |
+| `deepseek-v4-flash` / `deepseek-v4-flash-vision-exp` | — | `deepseek-flash` |
+| `deepseek-v4-pro` | — | **Deferred** — no mapping yet: stays servable until the 2026-09-14 sunset, so stored references are left alone. The post-sunset refresh adds `deepseek-v4-pro` → `deepseek-flash`. |
+
+### Out of Scope (flagged, not edited)
+- `lib/core/src/Infrastructure/Cost/CostCalculator.php` and the other `lib/core`
+  model mirrors keep their own tracks.
+- `plugins/nvoos-content-graph-ai/` mirrors the catalog in its own
+  `src/Model/model-catalog.json` — flagged for the content-graph workstream.

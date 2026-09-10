@@ -204,9 +204,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $deepseek_models ) ) {
 				$deepseek_models = array(
-					'deepseek-v4-flash'            => 'DeepSeek-V4 Flash (Recommended, 1M ctx, tools)',
-					'deepseek-v4-pro'              => 'DeepSeek-V4 Pro (Reasoning, coding, agents)',
-					'deepseek-v4-flash-vision-exp' => 'DeepSeek-V4 Flash Vision (Experimental)',
+					'deepseek-flash' => 'DeepSeek-V4.1 Flash (Recommended, 1M ctx, vision, tools)',
 				);
 			}
 
@@ -1288,14 +1286,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'deepseek_model'                     => array(
 					'type'        => 'select',
 					'label'       => __( 'Default DeepSeek Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'The default DeepSeek model to use. deepseek-v4-flash (1M context, 384K output) is the recommended general-purpose model supporting both non-thinking and thinking modes. deepseek-v4-pro offers enhanced reasoning for complex agentic workflows. deepseek-v4-flash-vision-exp adds vision support (experimental). Legacy models (chat, reasoner, coder) were retired from the API on July 24, 2026.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default DeepSeek model to use. deepseek-flash (V4.1 Flash: 1M context, 384K output, native vision) is the recommended general-purpose model supporting both non-thinking and thinking modes. deepseek-v4-pro is retiring — DeepSeek routes it to V4.1 Flash from September 14, 2026. Legacy models (chat, reasoner, coder, V4 Flash) are retired from the API.', 'mcp-ai-wpoos' ),
 					'options'     => $deepseek_models,
-					'default'     => 'deepseek-v4-flash',
+					'default'     => 'deepseek-flash',
 				),
 				'deepseek_base_url'                  => array(
 					'type'        => 'url',
 					'label'       => __( 'DeepSeek API Base URL (Optional)', 'mcp-ai-wpoos' ),
-					'description' => __( 'Custom base URL for DeepSeek API requests. Leave empty to use the default (https://api.deepseek.com). Useful for regional proxies (e.g., Volcano Engine) or DeepSeek-compatible services. Note: DeepSeek offers discounted off-peak pricing during UTC 16:30–00:30.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for DeepSeek API requests. Leave empty to use the default (https://api.deepseek.com). Useful for regional proxies (e.g., Volcano Engine) or DeepSeek-compatible services. Note: DeepSeek bills peak rates during 01:00–04:00 and 06:00–10:00 UTC weekdays; all other hours are off-peak (half price).', 'mcp-ai-wpoos' ),
 					'placeholder' => 'https://api.deepseek.com',
 				),
 
