@@ -13,20 +13,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Vendor-side admin page.
  *
- * Two sections:
+ * Three sections:
  *   1. Storefront settings — Stripe keys, price, currency, test mode,
  *      addon version, ZIP source. Served via the Settings API.
- *   2. Licenses — recent rows with a per-row revoke action (admin-post,
+ *   2. Stripe connection — read-only connection test plus the
+ *      Product/Price auto-creation actions (admin-post, nonce-protected).
+ *   3. Licenses — recent rows with a per-row revoke action (admin-post,
  *      nonce-protected).
  *
  * @since 0.1.0
  */
 class NVOOS_Checkout_API_Admin_Page {
 
-	public const MENU_SLUG        = 'nvoos-checkout';
-	public const NONCE_REVOKE     = 'nvoos_checkout_revoke_license';
-	public const NONCE_CREATE_PRODUCT = 'nvoos_checkout_create_product';
-	public const ACTION_CREATE_PRODUCT = 'nvoos_checkout_create_product';
+	public const MENU_SLUG              = 'nvoos-checkout';
+	public const NONCE_REVOKE           = 'nvoos_checkout_revoke_license';
+	public const NONCE_CREATE_PRODUCT   = 'nvoos_checkout_create_product';
+	public const ACTION_CREATE_PRODUCT  = 'nvoos_checkout_create_product';
+	public const NONCE_TEST_CONNECTION  = 'nvoos_checkout_test_connection';
+	public const ACTION_TEST_CONNECTION = 'nvoos_checkout_test_connection';
 
 	/**
 	 * Register menu + settings.
@@ -38,6 +42,7 @@ class NVOOS_Checkout_API_Admin_Page {
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
 		add_action( 'admin_post_nvoos_checkout_revoke', array( __CLASS__, 'handle_revoke' ) );
 		add_action( 'admin_post_' . self::ACTION_CREATE_PRODUCT, array( __CLASS__, 'handle_create_product' ) );
+		add_action( 'admin_post_' . self::ACTION_TEST_CONNECTION, array( __CLASS__, 'handle_test_connection' ) );
 	}
 
 	/**
@@ -145,6 +150,53 @@ class NVOOS_Checkout_API_Admin_Page {
 	}
 
 	/**
+	 * Handle the admin-post Stripe connection test.
+	 *
+	 * Reads the account balance with the stored secret key — a read-only
+	 * call that proves the key is valid and reports live vs test mode.
+	 * Result flags are round-tripped through the page URL so the render
+	 * method can show a notice without any state.
+	 *
+	 * @return void
+	 */
+	public static function handle_test_connection(): void {
+		check_admin_referer( self::NONCE_TEST_CONNECTION );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to perform this action.', 'nvoos-checkout-api' ) );
+		}
+
+		$secret = NVOOS_Checkout_API_Settings::stripe_secret_key();
+		if ( '' === $secret ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=' . self::MENU_SLUG . '&stripe_test=error&reason=unconfigured' ) );
+			exit;
+		}
+
+		$client = new NVOOS_Checkout_API_Stripe_Client( $secret );
+		$result = $client->test_connection();
+
+		if ( ! empty( $result['ok'] ) ) {
+			$args = array(
+				'stripe_test' => 'ok',
+				'mode'        => ! empty( $result['livemode'] ) ? 'live' : 'test',
+			);
+			if ( (int) $result['balance_cents'] > 0 && '' !== (string) $result['balance_currency'] ) {
+				$args['balance']  = (string) $result['balance_cents'];
+				$args['currency'] = (string) $result['balance_currency'];
+			}
+			wp_safe_redirect( admin_url( 'admin.php?page=' . self::MENU_SLUG . '&' . http_build_query( $args ) ) );
+			exit;
+		}
+
+		wp_safe_redirect(
+			admin_url(
+				'admin.php?page=' . self::MENU_SLUG . '&stripe_test=error&message=' . rawurlencode( (string) $result['message'] )
+			)
+		);
+		exit;
+	}
+
+	/**
 	 * Render the admin page.
 	 *
 	 * @return void
@@ -155,6 +207,13 @@ class NVOOS_Checkout_API_Admin_Page {
 		}
 
 		$settings = NVOOS_Checkout_API_Settings::all();
+
+		// Decrypt only to detect that a credential is stored — the values
+		// themselves are never rendered into the page.
+		$has_secret_key       = '' !== NVOOS_Checkout_API_Settings::stripe_secret_key();
+		$has_webhook_secret   = '' !== NVOOS_Checkout_API_Settings::stripe_webhook_secret();
+		$secret_placeholder   = $has_secret_key ? '••••••••••••••••' : '';
+		$whsecret_placeholder = $has_webhook_secret ? '••••••••••••••••' : '';
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'NV oOS Checkout', 'nvoos-checkout-api' ); ?></h1>
@@ -175,16 +234,67 @@ class NVOOS_Checkout_API_Admin_Page {
 				<?php endif; ?>
 			<?php endif; ?>
 
+			<?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- flag read only. ?>
+			<?php if ( isset( $_GET['stripe_test'] ) ) : ?>
+				<?php if ( 'ok' === $_GET['stripe_test'] ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- flag read only. ?>
+					<?php
+					// phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only redirect flags, no state changes.
+					$test_mode     = ! ( isset( $_GET['mode'] ) && 'live' === $_GET['mode'] );
+					$balance_cents = isset( $_GET['balance'] ) ? absint( $_GET['balance'] ) : 0;
+					$balance_cur   = isset( $_GET['currency'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_GET['currency'] ) ) ) : '';
+					// phpcs:enable WordPress.Security.NonceVerification.Recommended
+					$mode_label = $test_mode ? __( 'test mode', 'nvoos-checkout-api' ) : __( 'live mode', 'nvoos-checkout-api' );
+					?>
+					<div class="notice notice-success is-dismissible"><p>
+						<?php
+						if ( $balance_cents > 0 && '' !== $balance_cur ) {
+							echo esc_html(
+								sprintf(
+									/* translators: 1: live/test mode label, 2: formatted balance, 3: currency code. */
+									__( 'Connected to Stripe (%1$s). Available balance: %2$s %3$s.', 'nvoos-checkout-api' ),
+									$mode_label,
+									number_format( $balance_cents / 100, 2 ),
+									$balance_cur
+								)
+							);
+						} else {
+							/* translators: %s: live/test mode label. */
+							echo esc_html( sprintf( __( 'Connected to Stripe (%s).', 'nvoos-checkout-api' ), $mode_label ) );
+						}
+						?>
+					</p></div>
+				<?php else : ?>
+					<div class="notice notice-error is-dismissible"><p>
+						<?php
+						// phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only redirect flags, no state changes.
+						if ( isset( $_GET['reason'] ) && 'unconfigured' === $_GET['reason'] ) {
+							esc_html_e( 'Enter a Stripe secret key before testing the connection.', 'nvoos-checkout-api' );
+						} else {
+							$message = isset( $_GET['message'] ) ? sanitize_text_field( wp_unslash( $_GET['message'] ) ) : '';
+							if ( '' !== $message ) {
+								/* translators: %s: Stripe error message. */
+								echo esc_html( sprintf( __( 'Connection test failed: %s', 'nvoos-checkout-api' ), $message ) );
+							} else {
+								esc_html_e( 'Connection test failed. Check the secret key and try again.', 'nvoos-checkout-api' );
+							}
+						}
+						// phpcs:enable WordPress.Security.NonceVerification.Recommended
+						?>
+					</p></div>
+				<?php endif; ?>
+			<?php endif; ?>
+
 			<h2><?php esc_html_e( 'Storefront Settings', 'nvoos-checkout-api' ); ?></h2>
 			<form method="post" action="options.php">
 				<?php settings_fields( 'nvoos_checkout_settings_group' ); ?>
+				<?php wp_referer_field(); ?>
 				<table class="form-table">
 					<tbody>
 						<tr>
 							<th scope="row"><label for="nvoos-checkout-secret"><?php esc_html_e( 'Stripe secret key', 'nvoos-checkout-api' ); ?></label></th>
 							<td>
-								<input type="password" id="nvoos-checkout-secret" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[stripe_secret_key]" value="<?php echo esc_attr( NVOOS_Checkout_API_Settings::stripe_secret_key() ); ?>" class="regular-text" autocomplete="new-password">
-								<p class="description"><?php esc_html_e( 'sk_live_… or sk_test_…. Leave blank to keep the stored value. Stored encrypted at rest; never exposed via any endpoint.', 'nvoos-checkout-api' ); ?></p>
+								<input type="password" id="nvoos-checkout-secret" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[stripe_secret_key]" value="" placeholder="<?php echo esc_attr( $secret_placeholder ); ?>" class="regular-text" autocomplete="new-password">
+								<p class="description"><?php esc_html_e( 'sk_live_… or sk_test_…. Enter a new key to replace the stored one; leave blank to keep it. The stored key is never displayed and is encrypted at rest.', 'nvoos-checkout-api' ); ?></p>
 							</td>
 						</tr>
 						<tr>
@@ -197,13 +307,13 @@ class NVOOS_Checkout_API_Admin_Page {
 						<tr>
 							<th scope="row"><label for="nvoos-checkout-whsecret"><?php esc_html_e( 'Stripe webhook secret', 'nvoos-checkout-api' ); ?></label></th>
 							<td>
-								<input type="password" id="nvoos-checkout-whsecret" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[stripe_webhook_secret]" value="<?php echo esc_attr( NVOOS_Checkout_API_Settings::stripe_webhook_secret() ); ?>" class="regular-text" autocomplete="new-password">
+								<input type="password" id="nvoos-checkout-whsecret" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[stripe_webhook_secret]" value="" placeholder="<?php echo esc_attr( $whsecret_placeholder ); ?>" class="regular-text" autocomplete="new-password">
 								<p class="description">
 									<?php
 									echo wp_kses(
 										sprintf(
 											/* translators: %s: webhook endpoint URL. */
-											__( 'whsec_…. Point Stripe at %s with events: payment_intent.succeeded, charge.refunded, charge.dispute.created.', 'nvoos-checkout-api' ),
+											__( 'whsec_…. Enter a new secret to replace the stored one; leave blank to keep it. Point Stripe at %s with events: payment_intent.succeeded, charge.refunded, charge.dispute.created.', 'nvoos-checkout-api' ),
 											'<code>' . esc_html( rest_url( NVOOS_Checkout_API_Rest_Controller::REST_NAMESPACE . '/webhooks/stripe' ) ) . '</code>'
 										),
 										array( 'code' => array() )
@@ -276,26 +386,37 @@ class NVOOS_Checkout_API_Admin_Page {
 								<p class="description"><?php esc_html_e( 'Used when creating the Stripe product below (type: service).', 'nvoos-checkout-api' ); ?></p>
 							</td>
 						</tr>
-						<tr>
-							<th scope="row"><?php esc_html_e( 'Stripe product & price', 'nvoos-checkout-api' ); ?></th>
-							<td>
-								<p>
-									<?php esc_html_e( 'Product ID:', 'nvoos-checkout-api' ); ?>
-									<code><?php echo esc_html( '' !== $settings['product_id'] ? $settings['product_id'] : '—' ); ?></code><br>
-									<?php esc_html_e( 'Price ID:', 'nvoos-checkout-api' ); ?>
-									<code><?php echo esc_html( '' !== $settings['price_id'] ? $settings['price_id'] : '—' ); ?></code>
-								</p>
-								<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-									<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION_CREATE_PRODUCT ); ?>">
-									<?php wp_nonce_field( self::NONCE_CREATE_PRODUCT ); ?>
-									<?php submit_button( __( 'Create product & price in Stripe', 'nvoos-checkout-api' ), 'secondary', 'submit', false ); ?>
-								</form>
-								<p class="description"><?php esc_html_e( 'Creates a one-time price matching the configured price/currency and records both IDs on every payment for reporting and tax tooling. Safe to re-run.', 'nvoos-checkout-api' ); ?></p>
-							</td>
-						</tr>
 					</tbody>
 				</table>
+				<?php
+				// Product/Price IDs are plugin-managed metadata (set by the
+				// admin-post create action below). Round-tripping them as
+				// hidden fields stops a settings save from wiping them —
+				// update_option() replaces the whole option array.
+				?>
+				<input type="hidden" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[product_id]" value="<?php echo esc_attr( $settings['product_id'] ); ?>">
+				<input type="hidden" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[price_id]" value="<?php echo esc_attr( $settings['price_id'] ); ?>">
 				<?php submit_button(); ?>
+			</form>
+
+			<h2><?php esc_html_e( 'Stripe connection', 'nvoos-checkout-api' ); ?></h2>
+			<p>
+				<?php esc_html_e( 'Product ID:', 'nvoos-checkout-api' ); ?>
+				<code><?php echo esc_html( '' !== $settings['product_id'] ? $settings['product_id'] : '—' ); ?></code><br>
+				<?php esc_html_e( 'Price ID:', 'nvoos-checkout-api' ); ?>
+				<code><?php echo esc_html( '' !== $settings['price_id'] ? $settings['price_id'] : '—' ); ?></code>
+			</p>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION_TEST_CONNECTION ); ?>">
+				<?php wp_nonce_field( self::NONCE_TEST_CONNECTION ); ?>
+				<?php submit_button( __( 'Test connection', 'nvoos-checkout-api' ), 'secondary', 'nvoos_checkout_test', false ); ?>
+				<span class="description"><?php esc_html_e( 'Runs against the saved secret key — save the form above first if you just changed it. Read-only: reports live vs test mode and the available balance.', 'nvoos-checkout-api' ); ?></span>
+			</form>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION_CREATE_PRODUCT ); ?>">
+				<?php wp_nonce_field( self::NONCE_CREATE_PRODUCT ); ?>
+				<?php submit_button( __( 'Create product & price in Stripe', 'nvoos-checkout-api' ), 'secondary', 'nvoos_checkout_create_product', false ); ?>
+				<span class="description"><?php esc_html_e( 'Creates a one-time price matching the configured price/currency and records both IDs on every payment for reporting and tax tooling. Safe to re-run.', 'nvoos-checkout-api' ); ?></span>
 			</form>
 
 			<h2><?php esc_html_e( 'Licenses', 'nvoos-checkout-api' ); ?></h2>

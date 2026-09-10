@@ -9,11 +9,16 @@
 - **Checkout consent + legal links** — the `/session` response now carries `terms_url` and `refund_policy_url` (configurable in the storefront admin; defaults point at the vendor's published Terms of Service and Refund Policy), and `/verify` accepts an optional `terms_agreed_at` consent timestamp that is recorded on the license row (filling an empty value, never overwriting) as proof the buyer agreed to the Terms at purchase
 - **Buyer email on licenses** — `/verify` accepts an optional `buyer_email`; the intent's `receipt_email` (set by Stripe from the client's `confirmParams.receipt_email`) is authoritative, and the stored value is recorded in a new `buyer_email` license column (fill-once, never overwritten), including webhook-issued licenses
 - **Consent + email + country columns** — the licenses admin table shows when each buyer agreed to the Terms, their receipt/refund email, and their country
+- **Stripe connection test** — a "Test connection" action on the storefront admin reads the account balance with the stored secret key (read-only) and reports live vs test mode plus the available balance
 
 ### Changed
 
 - Default product is now the **NV oOS Complete** bundle: `nvoos-oos-complete` added to the accepted products (legacy `nvoos-content-graph-ai` stays accepted), the default ZIP source and cache/download filenames target `nvdigital-open-operator-system-oos-complete-{VERSION}.zip` from the monorepo GitHub releases (`v*.*.*` tags), and the default sold version is `1.1.74`
 - Download streaming is chunked (1 MB reads) instead of buffering the whole ZIP in memory — the Complete bundle can be tens of MB
+
+### Fixed
+
+- Storefront admin settings form no longer nests the Stripe product/price form inside the `options.php` settings form — browsers drop inner `<form>` tags, so the inner `action` input overrode the Settings API `action=update` and every save landed on a blank `options.php`; the action forms are now standalone sections, and the settings form round-trips `product_id`/`price_id` as hidden fields so a save can no longer wipe them
 
 ### New
 
@@ -29,6 +34,7 @@
 ### Security
 
 - Stripe secret key and webhook secret are encrypted at rest (AES-256-CBC keyed from AUTH_KEY + SECURE_AUTH_KEY) and never leave the vendor server; only the publishable key is returned by `/session`
+- The storefront admin never re-renders the stored secret/webhook keys — the password fields are masked with a placeholder (saving blank keeps the stored credential, and legacy plaintext values are upgraded to encrypted storage on save); IV generation now uses `random_bytes()`
 - Payment verification (status, amount, currency, product, site binding) happens server-side against Stripe before any license is issued — both in `/verify` and in the webhook path
 - Webhook signature verification mirrors Stripe's reference algorithm (tolerance window, constant-time compare, multiple v1 values); events are processed idempotently
 - Download links are signed (HMAC-SHA256), expiring, and capped at 10 downloads per link
