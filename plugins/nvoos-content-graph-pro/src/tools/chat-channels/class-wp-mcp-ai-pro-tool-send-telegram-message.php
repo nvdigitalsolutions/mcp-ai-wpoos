@@ -1,0 +1,358 @@
+<?php
+/**
+ * tools/chat-channels/class-wp-mcp-ai-pro-tool-send-telegram-message.php (ecosystem port — Wave F5, chat-channels tool batch).
+ *
+ * Ported from the base Pro addon's `addons/pro/includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-telegram-message.php` for the
+ * standalone `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro addon owns the
+ * class in monolith installs — the addon boots nothing when `WP_MCP_AI_PRO_PATH` is defined
+ * (see the plugin entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain `nvoos-content-graph-pro`;
+ * `NVOOS_CONTENT_GRAPH_PRO_*` constant swaps; the base-owned interface/logger/restrict/cron-manager
+ * requires gain exists-check seams resolving from the addon's D8-compat `src/` copies.
+ *
+ * @package NvoosContentGraphPro
+ * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+// Standalone seam (documented deviation): the base-owned interface require gains an
+// exists-check seam resolving from the addon's D8-compat copy.
+if ( ! interface_exists( 'WP_MCP_AI_Tool_Interface' ) ) {
+	$nvoos_content_graph_pro_tool_interface = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/interfaces/interface-wp-mcp-ai-tool.php';
+	if ( file_exists( $nvoos_content_graph_pro_tool_interface ) ) {
+		require_once $nvoos_content_graph_pro_tool_interface;
+	}
+}
+// Standalone seam (documented deviation): the base-owned logger require gains an
+// exists-check seam resolving from the addon's D8-compat copy.
+if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
+	$nvoos_content_graph_pro_logger = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-logger.php';
+	if ( file_exists( $nvoos_content_graph_pro_logger ) ) {
+		require_once $nvoos_content_graph_pro_logger;
+	}
+}
+
+// Load the trait that blocks execution from the public /chat-client endpoint.
+if ( ! trait_exists( 'WP_MCP_AI_Tool_Restrict_From_Chat_Client' ) ) {
+	// Standalone seam (documented deviation): the base-owned restrict trait require gains an
+	// exists-check seam resolving from the addon's D8-compat copy.
+	if ( ! trait_exists( 'WP_MCP_AI_Tool_Restrict_From_Chat_Client' ) ) {
+		$nvoos_content_graph_pro_tool_restrict = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/trait-wp-mcp-ai-tool-restrict-from-chat-client.php';
+		if ( file_exists( $nvoos_content_graph_pro_tool_restrict ) ) {
+			require_once $nvoos_content_graph_pro_tool_restrict;
+		}
+	}
+}
+
+/**
+ * Provides a tool for sending Telegram bot messages via the Bot API.
+ *
+ * Restricted from the /chat-client endpoint by default: an assistant invoked
+ * from a public chat surface must not be able to push messages into a
+ * Telegram chat (which would impersonate the bot owner and double-dispatch
+ * agentic runs). Sites that want to allow this can pass
+ * `allow_sensitive_tools=true` in the shortcode/widget settings.
+ */
+class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Context_Restrictions_Interface {
+	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
+
+	/**
+	 * Default timeout for Telegram requests.
+	 */
+	const DEFAULT_TIMEOUT = 15;
+
+	/**
+	 * Check if this tool is available.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return bool Always true - no dependencies.
+	 */
+	public static function is_available() {
+		return true;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_slug() {
+		return 'send_telegram_message';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Send Telegram Message', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_description() {
+		return __( 'Sends a text message to a Telegram chat using the Bot API.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_parameters_schema() {
+		return array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'token'                    => array(
+					'type'        => 'string',
+					'description' => __( 'Telegram bot token used to authenticate the request.', 'nvoos-content-graph-pro' ),
+				),
+				'chat_id'                  => array(
+					'type'        => 'string',
+					'description' => __( 'Unique identifier for the target chat or username of the target channel.', 'nvoos-content-graph-pro' ),
+				),
+				'text'                     => array(
+					'type'        => 'string',
+					'description' => __( 'Text of the message to be sent.', 'nvoos-content-graph-pro' ),
+				),
+				'parse_mode'               => array(
+					'type'        => 'string',
+					'enum'        => array( 'Markdown', 'MarkdownV2', 'HTML' ),
+					'description' => __( 'Optional parse mode that controls how Telegram formats entities.', 'nvoos-content-graph-pro' ),
+				),
+				'disable_web_page_preview' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Disables link previews for links in the sent message.', 'nvoos-content-graph-pro' ),
+					'default'     => false,
+				),
+			),
+			'required'             => array( 'token', 'chat_id', 'text' ),
+			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context including user_id.
+	 * @return array|WP_Error Tool results or error.
+	 */
+	public function execute( array $arguments = array(), array $context = array() ) {
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+
+		$default_capability  = 'manage_options';
+		$required_capability = apply_filters( 'wp_mcp_ai_send_telegram_message_capability', $default_capability, $context, $arguments, $this );
+
+		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to send Telegram messages.', 'nvoos-content-graph-pro' ) );
+		}
+
+		if ( is_multisite() && $user_id && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'nvoos-content-graph-pro' ) );
+		}
+
+		$token = isset( $arguments['token'] ) ? $this->sanitize_token( $arguments['token'] ) : '';
+
+		if ( '' === $token ) {
+			return new WP_Error( 'wp_mcp_ai_missing_telegram_token', __( 'A valid Telegram bot token is required.', 'nvoos-content-graph-pro' ) );
+		}
+
+		$chat_id = isset( $arguments['chat_id'] ) ? sanitize_text_field( $arguments['chat_id'] ) : '';
+
+		if ( '' === $chat_id ) {
+			return new WP_Error( 'wp_mcp_ai_missing_chat_id', __( 'A target chat identifier is required.', 'nvoos-content-graph-pro' ) );
+		}
+
+		$text = isset( $arguments['text'] ) ? $this->sanitize_message_text( $arguments['text'] ) : '';
+
+		if ( '' === $text ) {
+			return new WP_Error( 'wp_mcp_ai_missing_message_text', __( 'Message text must be provided.', 'nvoos-content-graph-pro' ) );
+		}
+
+		$parse_mode = '';
+		if ( isset( $arguments['parse_mode'] ) && is_string( $arguments['parse_mode'] ) ) {
+			$candidate = sanitize_text_field( $arguments['parse_mode'] );
+
+			if ( in_array( $candidate, array( 'Markdown', 'MarkdownV2', 'HTML' ), true ) ) {
+				$parse_mode = $candidate;
+			}
+		}
+
+		$disable_preview = ! empty( $arguments['disable_web_page_preview'] );
+
+		$endpoint = sprintf( 'https://api.telegram.org/bot%s/sendMessage', rawurlencode( $token ) );
+
+		$payload = array(
+			'chat_id' => $chat_id,
+			'text'    => $text,
+		);
+
+		if ( '' !== $parse_mode ) {
+			$payload['parse_mode'] = $parse_mode;
+		}
+
+		if ( $disable_preview ) {
+			$payload['disable_web_page_preview'] = true;
+		}
+
+		$body = wp_json_encode( $payload );
+
+		if ( false === $body ) {
+			return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the Telegram request payload.', 'nvoos-content-graph-pro' ) );
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'telegram_send_message_request',
+			'Sending Telegram sendMessage request.',
+			array(
+				'endpoint' => 'https://api.telegram.org/bot***/sendMessage',
+				'chat_id'  => $chat_id,
+				'options'  => array(
+					'parse_mode'               => $parse_mode,
+					'disable_web_page_preview' => $disable_preview,
+				),
+			)
+		);
+
+		$response = wp_remote_post(
+			$endpoint,
+			array(
+				'headers' => array(
+					'Content-Type' => 'application/json',
+				),
+				'timeout' => apply_filters( 'wp_mcp_ai_send_telegram_message_timeout', self::DEFAULT_TIMEOUT, $context, $arguments ),
+				'body'    => $body,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			WP_MCP_AI_Logger::log_error( 'Telegram sendMessage request failed.', array( 'error' => $response->get_error_message() ) );
+
+			return new WP_Error(
+				'wp_mcp_ai_telegram_http_error',
+				__( 'The Telegram API request failed to send.', 'nvoos-content-graph-pro' ),
+				array( 'error' => $response )
+			);
+		}
+
+		$code    = wp_remote_retrieve_response_code( $response );
+		$body    = wp_remote_retrieve_body( $response );
+		$decoded = json_decode( $body, true );
+
+		if ( null === $decoded ) {
+			$decoded = array();
+		}
+
+		if ( 200 !== $code || empty( $decoded['ok'] ) ) {
+			$message = isset( $decoded['description'] ) ? $decoded['description'] : __( 'Telegram API returned an error.', 'nvoos-content-graph-pro' );
+
+			WP_MCP_AI_Logger::log_error(
+				'Telegram sendMessage request was not successful.',
+				array(
+					'http_code'   => $code,
+					'chat_id'     => $chat_id,
+					'parse_mode'  => $parse_mode,
+					'api_message' => $message,
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_telegram_api_error',
+				esc_html( $message ),
+				array(
+					'code'     => $code,
+					'response' => $decoded,
+				)
+			);
+		}
+
+		return $decoded;
+	}
+
+	/**
+	 * Sanitize a Telegram bot token.
+	 *
+	 * @param string $token Raw token value.
+	 * @return string
+	 */
+	protected function sanitize_token( $token ) {
+		if ( ! is_string( $token ) && ! is_numeric( $token ) ) {
+			return '';
+		}
+
+		$token = trim( (string) $token );
+
+		if ( '' === $token ) {
+			return '';
+		}
+
+		return $token;
+	}
+
+	/**
+	 * Sanitize Telegram message text while preserving supported markup.
+	 *
+	 * @param string $text Raw text input.
+	 * @return string
+	 */
+	protected function sanitize_message_text( $text ) {
+		if ( ! is_string( $text ) ) {
+			return '';
+		}
+
+		$text = trim( $text );
+
+		if ( '' === $text ) {
+			return '';
+		}
+
+		$allowed_html = array(
+			'a'      => array(
+				'href'   => true,
+				'title'  => true,
+				'class'  => true,
+				'target' => true,
+			),
+			'b'      => array(),
+			'i'      => array(),
+			'em'     => array(),
+			'strong' => array(),
+			'u'      => array(),
+			's'      => array(),
+			'code'   => array(),
+			'pre'    => array(),
+			'span'   => array( 'class' => true ),
+		);
+
+		$sanitized = wp_kses( $text, $allowed_html );
+
+		return trim( $sanitized );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'pro',                  // Pro tier tool.
+			'write',                // Sends Telegram messages.
+			'external-api',         // Calls Telegram Bot API.
+			'network-dependent',    // Requires internet connectivity.
+			'requires-capability',  // Requires user capabilities.
+		);
+	}
+}

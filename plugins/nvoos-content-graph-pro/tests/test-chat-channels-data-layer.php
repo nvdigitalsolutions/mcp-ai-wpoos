@@ -102,8 +102,8 @@ class Test_Chat_Channels_Data_Layer extends WP_UnitTestCase {
 
 	/**
 	 * Standalone only: the slim init's file targets must exist, the tool
-	 * filter must carry zero chat-channels tools (the map fills as the tool
-	 * batch lands), and the standalone helper functions must load.
+	 * filter must carry the full fifty-one-entry chat-channels map, and the
+	 * standalone helper functions must load.
 	 */
 	public function test_init_gate_targets_standalone(): void {
 		if ( defined( 'WP_MCP_AI_PATH' ) ) {
@@ -126,7 +126,7 @@ class Test_Chat_Channels_Data_Layer extends WP_UnitTestCase {
 
 		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/chat-channels/init.php';
 		add_filter( 'wp_mcp_ai_pro_tools', 'wp_mcp_ai_pro_register_chat_channels_tools', 10 );
-		$this->assertCount( 0, apply_filters( 'wp_mcp_ai_pro_tools', array() ) );
+		$this->assertCount( 51, apply_filters( 'wp_mcp_ai_pro_tools', array() ) );
 		$this->assertTrue( function_exists( 'wp_mcp_ai_pro_register_chat_channels_ecosystem_tools' ) );
 		$this->assertTrue( function_exists( 'wp_mcp_ai_enqueue_chat_channels_toolkit_admin_styles' ) );
 		$this->assertTrue( function_exists( 'wp_mcp_ai_load_chat_channels_tools' ) );
