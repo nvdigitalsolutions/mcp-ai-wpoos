@@ -173,6 +173,7 @@ class Test_Pro_Module_Registry extends WP_UnitTestCase {
 			'pro_qms',
 			'toolkit_regulatory_registration',
 			'toolkit_healthcare',
+			'toolkit_law_firm',
 		);
 
 		$this->assertSame( $expected, array_keys( $registry->modules() ) );
