@@ -17,8 +17,8 @@
  * `wp_mcp_ai_pro_tools` filter plus
  * `wp_mcp_ai_pro_register_law_firm_ecosystem_tools()` — both carry the ten
  * matter-management batch-1 tools plus the ten billing-trust tools plus the
- * eight intake-management tools and fill further as the law-firm tool
- * batches land; local vars
+ * eight intake-management tools plus the eight litigation-support tools and
+ * fill further as the law-firm tool batches land; local vars
  * prefixed `$nvoos_content_graph_pro_*`; full-body
  * `! defined( 'WP_MCP_AI_PATH' )` guard (the global enqueue helper would
  * collide compile-time with the base copy in the monorepo test matrix).
@@ -163,6 +163,14 @@ function wp_mcp_ai_pro_register_law_firm_tools( $tools ) {
 		'WP_MCP_AI_Tool_LF_Engagement_Letter_Generator'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/intake-management/class-wp-mcp-ai-tool-lf-engagement-letter-generator.php',
 		'WP_MCP_AI_Tool_LF_Lead_Scoring_Calculator'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/intake-management/class-wp-mcp-ai-tool-lf-lead-scoring-calculator.php',
 		'WP_MCP_AI_Tool_LF_Referral_Source_Tracker'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/intake-management/class-wp-mcp-ai-tool-lf-referral-source-tracker.php',
+		'WP_MCP_AI_Tool_LF_Ediscovery_Document_Analyzer'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/litigation-support/class-wp-mcp-ai-tool-lf-ediscovery-document-analyzer.php',
+		'WP_MCP_AI_Tool_LF_Deposition_Summary_Generator'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/litigation-support/class-wp-mcp-ai-tool-lf-deposition-summary-generator.php',
+		'WP_MCP_AI_Tool_LF_Evidence_Catalog_Manager'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/litigation-support/class-wp-mcp-ai-tool-lf-evidence-catalog-manager.php',
+		'WP_MCP_AI_Tool_LF_Jury_Instruction_Drafter'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/litigation-support/class-wp-mcp-ai-tool-lf-jury-instruction-drafter.php',
+		'WP_MCP_AI_Tool_LF_Settlement_Value_Calculator'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/litigation-support/class-wp-mcp-ai-tool-lf-settlement-value-calculator.php',
+		'WP_MCP_AI_Tool_LF_Damages_Calculator'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/litigation-support/class-wp-mcp-ai-tool-lf-damages-calculator.php',
+		'WP_MCP_AI_Tool_LF_Expert_Witness_Tracker'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/litigation-support/class-wp-mcp-ai-tool-lf-expert-witness-tracker.php',
+		'WP_MCP_AI_Tool_LF_Trial_Preparation_Checklist'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/litigation-support/class-wp-mcp-ai-tool-lf-trial-preparation-checklist.php',
 	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_law_tools );
@@ -214,6 +222,14 @@ function wp_mcp_ai_pro_register_law_firm_ecosystem_tools() {
 			'WP_MCP_AI_Tool_LF_Engagement_Letter_Generator',
 			'WP_MCP_AI_Tool_LF_Lead_Scoring_Calculator',
 			'WP_MCP_AI_Tool_LF_Referral_Source_Tracker',
+			'WP_MCP_AI_Tool_LF_Ediscovery_Document_Analyzer',
+			'WP_MCP_AI_Tool_LF_Deposition_Summary_Generator',
+			'WP_MCP_AI_Tool_LF_Evidence_Catalog_Manager',
+			'WP_MCP_AI_Tool_LF_Jury_Instruction_Drafter',
+			'WP_MCP_AI_Tool_LF_Settlement_Value_Calculator',
+			'WP_MCP_AI_Tool_LF_Damages_Calculator',
+			'WP_MCP_AI_Tool_LF_Expert_Witness_Tracker',
+			'WP_MCP_AI_Tool_LF_Trial_Preparation_Checklist',
 		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
