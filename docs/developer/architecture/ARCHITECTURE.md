@@ -291,7 +291,7 @@ See [orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md](orchestration/ORCHESTRAT
 - `WP_MCP_AI_Tools_Manager` — Tools configuration UI with 61 quick-select presets
 - `WP_MCP_AI_Performance_Reporter` — Performance monitoring dashboard
 - `WP_MCP_AI_Cron_Manager` — Scheduled tasks management
-- `WP_MCP_AI_Onboarding_Wizard` — 4-step guided setup with 8 use-case presets
+- `WP_MCP_AI_Onboarding_Wizard` — 4-step guided setup with 9 use-case presets (featured Knowledge Graph Companion included)
 
 ## Data Flow
 

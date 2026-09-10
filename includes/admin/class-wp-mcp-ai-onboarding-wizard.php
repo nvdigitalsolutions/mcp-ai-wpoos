@@ -936,11 +936,8 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 		 */
 		private function render_step_presets() {
 			$presets         = $this->get_presets();
-			$saved_selection = get_option( 'wp_mcp_ai_onboarding_presets', array() );
-			if ( ! is_array( $saved_selection ) ) {
-				$saved_selection = array();
-			}
-			$nonce = wp_create_nonce( 'wp_mcp_ai_wizard_save_step' );
+			$saved_selection = $this->get_effective_preset_selection();
+			$nonce           = wp_create_nonce( 'wp_mcp_ai_wizard_save_step' );
 			?>
 			<div class="wp-mcp-ai-wizard-step-content">
 				<h2><?php esc_html_e( 'What will you use NV oOS for?', 'mcp-ai-wpoos' ); ?></h2>
@@ -950,13 +947,25 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 
 				<div class="wp-mcp-ai-wizard-presets" id="wp-mcp-ai-presets">
 					<?php foreach ( $presets as $key => $preset ) : ?>
-						<label class="wp-mcp-ai-preset-card <?php echo in_array( $key, $saved_selection, true ) ? 'is-selected' : ''; ?>"
+						<?php
+						$card_classes = array( 'wp-mcp-ai-preset-card' );
+						if ( in_array( $key, $saved_selection, true ) ) {
+							$card_classes[] = 'is-selected';
+						}
+						if ( ! empty( $preset['featured'] ) ) {
+							$card_classes[] = 'is-featured';
+						}
+						?>
+						<label class="<?php echo esc_attr( implode( ' ', $card_classes ) ); ?>"
 							aria-checked="<?php echo in_array( $key, $saved_selection, true ) ? 'true' : 'false'; ?>">
 							<input type="checkbox"
 									name="wp_mcp_ai_presets[]"
 									value="<?php echo esc_attr( $key ); ?>"
 									class="wp-mcp-ai-preset-checkbox"
 									<?php checked( in_array( $key, $saved_selection, true ) ); ?>>
+							<?php if ( ! empty( $preset['featured'] ) ) : ?>
+								<span class="wp-mcp-ai-preset-featured-badge"><?php esc_html_e( '⭐ Featured', 'mcp-ai-wpoos' ); ?></span>
+							<?php endif; ?>
 							<span class="wp-mcp-ai-preset-icon"><?php echo esc_html( $preset['icon'] ); ?></span>
 							<span class="wp-mcp-ai-preset-title"><?php echo esc_html( $preset['label'] ); ?></span>
 							<span class="wp-mcp-ai-preset-desc"><?php echo esc_html( $preset['description'] ); ?></span>
@@ -1348,6 +1357,47 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 		 */
 		public function get_presets() {
 			$defaults = array(
+				'knowledge_graph'  => array(
+					'label'         => __( 'Knowledge Graph Companion', 'mcp-ai-wpoos' ),
+					'icon'          => '🧠',
+					'description'   => __( 'Your AI guide to the Content Graph: explore nodes and topics, get answers grounded in your content, and grow a richer knowledge graph.', 'mcp-ai-wpoos' ),
+					'featured'      => true,
+					'tools'         => $this->get_knowledge_graph_preset_tools(),
+					'system_prompt' => "You are the Knowledge Graph Companion for a WordPress site powered by NV oOS, working alongside the NV oOS Content Graph that maps this site's content into an interactive knowledge graph.
+
+	WHO YOU ARE
+	A friendly, patient guide and analyst. The person you are talking to installed the Content Graph and purchased NV oOS Complete specifically to add AI to their knowledge graph, so most conversations will be about understanding, exploring, growing, and getting value from that graph.
+
+	HOW THE GRAPH WORKS (teach as needed)
+	- Nodes are the building blocks: posts, pages, categories, tags, authors, concepts, and remembered facts.
+	- Edges are the relationships between them: 'belongs to', 'links to', 'authored by', 'mentions'.
+	- Communities are tightly-connected clusters that reveal the site's main topics.
+	Explain these ideas in plain language, one concept at a time, whenever the user seems unsure.
+
+	YOUR TOOLKIT
+	- Graph tools (when available): graphify_graph_stats, graphify_query_graph, graphify_get_node, graphify_get_neighbors, graphify_get_community, graphify_god_nodes, graphify_shortest_path, graphify_suggest_links, graphify_content_gaps, graphify_retrieve_context, graphify_build_graph, graphify_resolve_external, graphify_list_remote_sources.
+	- Content tools: search_content, semantic_content_search, get_recent_posts, get_site_summary, suggest_internal_links, content_freshness_checker.
+	- Curated knowledge: okf_browse, okf_search, okf_read_concept, okf_traverse, okf_list_bundles.
+	- Memory: wake_up_context, retrieve_agent_memory, store_agent_context.
+	- Research and presentation: web_search, deep_research, client_summarize_text, client_extract_entities, create_chart, generate_mermaid.
+
+	REASONING PROTOCOL (GraphRAG style)
+	1. Understand the intent first — restate what the user wants to know or achieve.
+	2. Ground site-related answers in the graph or site content instead of model memory. For 'how are X and Y connected?' use graph traversal; for 'what does the site say about X?' use semantic or keyword search; for 'what is the site mostly about?' use graph stats, communities, and god nodes.
+	3. Go multi-hop when one lookup is not enough: walk neighbors and communities before answering, and use shortest_path to explain connections.
+	4. Explain and cite — tell the user which part of the graph or which content your answer came from, and be open about which tools you used.
+	5. Be honest — if the graph is empty, disabled, or does not hold the answer, say so plainly and explain the fix. Never invent nodes, relationships, or content that you did not verify with a tool.
+
+	ONBOARDING BEHAVIOR
+	- Start outcome-first: ask what the user wants to accomplish (overview, topic map, content gaps, external sources, or something else).
+	- Deliver value fast: if the graph is built, open with a quick win such as graph stats or a community overview. If it is not built, walk the user through building it and set expectations about how long it takes.
+	- Use progressive disclosure: introduce one concept or feature per reply and end with a single suggested next step. Do not dump the whole feature list at once.
+	- Suggest vs. execute: read-only lookups can run immediately. Before anything that changes data (graph builds, remote syncs, stored memories, writes), explain what will happen and confirm first.
+	- Remember what matters: use store_agent_context to keep the user's goals and preferences so later sessions continue where you left off.
+	- Keep replies friendly and concise — short paragraphs, numbered steps for instructions, bullet points for summaries.",
+					'temperature'   => 0.3,
+					'assistant'     => __( 'Knowledge Graph Companion', 'mcp-ai-wpoos' ),
+				),
 				'content_creator'  => array(
 					'label'         => __( 'Content Creator / Blogger', 'mcp-ai-wpoos' ),
 					'icon'          => '✍️',
@@ -1530,6 +1580,155 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			 * @param array $defaults Default preset definitions keyed by preset slug.
 			 */
 			return apply_filters( 'wp_mcp_ai_onboarding_presets', $defaults );
+		}
+
+		/**
+		 * Whether graph-query tools are available to onboarded assistants.
+		 *
+		 * True when the bundled Graphify addon is loaded and enabled (its tools
+		 * register with the base registry in that state). Filterable so
+		 * integrations — and tests — can override the detection.
+		 *
+		 * @since 1.1.76
+		 *
+		 * @return bool
+		 */
+		private function is_graph_tools_active() {
+			$active = class_exists( 'NV_oOS_Graphify' )
+				&& method_exists( 'NV_oOS_Graphify', 'is_enabled' )
+				&& NV_oOS_Graphify::is_enabled();
+
+			/**
+			 * Filter whether graph-query tools are available for onboarding presets.
+			 *
+			 * @since 1.1.76
+			 * @param bool $active Detected availability of the bundled Graphify tools.
+			 */
+			return (bool) apply_filters( 'wp_mcp_ai_onboarding_graph_tools_active', $active );
+		}
+
+		/**
+		 * Whether any knowledge-graph surface is connected to this site.
+		 *
+		 * Covers the standalone NV oOS Content Graph plugin, the bundled
+		 * Graphify addon, and any external graph memory bridge registered on
+		 * the wake-up retriever seam. Used to pre-select the featured
+		 * Knowledge Graph Companion so Content Graph customers get a working
+		 * assistant out of the box.
+		 *
+		 * @since 1.1.76
+		 *
+		 * @return bool
+		 */
+		private function is_content_graph_detected() {
+			$detected = function_exists( 'nvoos_content_graph_is_enabled' )
+				|| class_exists( 'NvoosContentGraph\Plugin' )
+				|| class_exists( 'NV_oOS_Graphify' )
+				|| has_filter( 'wp_mcp_ai_wake_up_context_graph_retriever' );
+
+			/**
+			 * Filter whether a knowledge graph is detected on this site.
+			 *
+			 * @since 1.1.76
+			 * @param bool $detected Detected presence of a knowledge-graph surface.
+			 */
+			return (bool) apply_filters( 'wp_mcp_ai_onboarding_graph_detected', $detected );
+		}
+
+		/**
+		 * Tool slugs provided by the bundled Graphify addon.
+		 *
+		 * @since 1.1.76
+		 *
+		 * @return string[]
+		 */
+		private function get_graphify_tool_slugs() {
+			return array(
+				'graphify_build_graph',
+				'graphify_graph_stats',
+				'graphify_query_graph',
+				'graphify_get_node',
+				'graphify_get_neighbors',
+				'graphify_get_community',
+				'graphify_god_nodes',
+				'graphify_shortest_path',
+				'graphify_suggest_links',
+				'graphify_content_gaps',
+				'graphify_retrieve_context',
+				'graphify_resolve_external',
+				'graphify_sync_remote_source',
+				'graphify_list_remote_sources',
+			);
+		}
+
+		/**
+		 * Assemble the Knowledge Graph Companion tool list.
+		 *
+		 * Always includes the graph-aware base tools (content search, semantic
+		 * search, agent memory, OKF reads, research, presentation). Appends the
+		 * Graphify graph tools when {@see is_graph_tools_active()} reports them
+		 * available, so the companion reasons over the knowledge graph out of
+		 * the box on sites where it is enabled.
+		 *
+		 * @since 1.1.76
+		 *
+		 * @return string[]
+		 */
+		private function get_knowledge_graph_preset_tools() {
+			$tools = array(
+				'search_content',
+				'semantic_content_search',
+				'get_recent_posts',
+				'get_site_summary',
+				'web_search',
+				'deep_research',
+				'client_summarize_text',
+				'client_extract_entities',
+				'suggest_internal_links',
+				'content_freshness_checker',
+				'create_chart',
+				'generate_mermaid',
+				'wake_up_context',
+				'retrieve_agent_memory',
+				'store_agent_context',
+				'okf_browse',
+				'okf_search',
+				'okf_read_concept',
+				'okf_traverse',
+				'okf_list_bundles',
+			);
+
+			if ( $this->is_graph_tools_active() ) {
+				$tools = array_merge( $tools, $this->get_graphify_tool_slugs() );
+			}
+
+			return $tools;
+		}
+
+		/**
+		 * Resolve the preset checkboxes shown on step 3.
+		 *
+		 * When nothing has been saved yet and a knowledge graph is detected,
+		 * the featured Knowledge Graph Companion is pre-selected so Content
+		 * Graph customers get a working assistant out of the box. Once the
+		 * user saves a selection (even an empty one), that choice wins.
+		 *
+		 * @since 1.1.76
+		 *
+		 * @return string[] Preset slugs to render as selected.
+		 */
+		private function get_effective_preset_selection() {
+			$saved = get_option( 'wp_mcp_ai_onboarding_presets', false );
+
+			if ( false !== $saved ) {
+				return is_array( $saved ) ? $saved : array();
+			}
+
+			if ( $this->is_content_graph_detected() ) {
+				return array( 'knowledge_graph' );
+			}
+
+			return array();
 		}
 
 		// -------------------------------------------------------------------------
@@ -1944,6 +2143,28 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			}
 			.wp-mcp-ai-preset-card.is-selected .wp-mcp-ai-preset-check {
 				opacity: 1;
+			}
+			.wp-mcp-ai-preset-card.is-featured {
+				border-color: #2271b1;
+				background: linear-gradient( 160deg, #eef6ff 0%, #ffffff 70% );
+				box-shadow: 0 1px 6px rgba( 34, 113, 177, 0.18 );
+			}
+			.wp-mcp-ai-preset-card.is-featured.is-selected {
+				background: #f0f6ff;
+			}
+			.wp-mcp-ai-preset-featured-badge {
+				position: absolute;
+				top: -11px;
+				left: 14px;
+				background: #2271b1;
+				color: #ffffff;
+				font-size: 0.68em;
+				font-weight: 700;
+				letter-spacing: 0.05em;
+				text-transform: uppercase;
+				padding: 3px 10px;
+				border-radius: 999px;
+				line-height: 1.4;
 			}
 			.wp-mcp-ai-wizard-preset-actions {
 				display: flex;
