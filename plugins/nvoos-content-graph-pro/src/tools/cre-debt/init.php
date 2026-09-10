@@ -13,7 +13,8 @@
  * standalone copy adds `is_admin()`-gated loads keyed to the same `enable_portfolio_dashboard`
  * sub-setting; NEW standalone-only wiring (deviation, same as the CRM init): a
  * `wp_mcp_ai_pro_tools` filter plus `wp_mcp_ai_pro_register_cre_debt_ecosystem_tools()` — both
- * start empty and fill as the cre-debt tool batches land; local vars prefixed
+ * carry the eleven originations batch-1 tools and fill further as the cre-debt tool batches land;
+ * local vars prefixed
  * `$nvoos_content_graph_pro_*`; full-body `! defined( 'WP_MCP_AI_PATH' )` guard (the global
  * enqueue helper would collide compile-time with the base copy in the monorepo test matrix).
  *
@@ -134,7 +135,19 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
  * @return array Extended tool map.
  */
 function wp_mcp_ai_pro_register_cre_debt_tools( $tools ) {
-	$nvoos_content_graph_pro_cre_tools = array();
+	$nvoos_content_graph_pro_cre_tools = array(
+		'WP_MCP_AI_Tool_CRE_Deal_Pipeline_Manager'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-deal-pipeline-manager.php',
+		'WP_MCP_AI_Tool_CRE_Borrower_Profile_Analyzer'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-borrower-profile-analyzer.php',
+		'WP_MCP_AI_Tool_CRE_Loan_Quote_Generator'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-loan-quote-generator.php',
+		'WP_MCP_AI_Tool_CRE_Market_Comp_Analyzer'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-market-comp-analyzer.php',
+		'WP_MCP_AI_Tool_CRE_Deal_Screening_Calculator'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-deal-screening-calculator.php',
+		'WP_MCP_AI_Tool_CRE_Origination_Volume_Tracker'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-origination-volume-tracker.php',
+		'WP_MCP_AI_Tool_CRE_Rate_Lock_Manager'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-rate-lock-manager.php',
+		'WP_MCP_AI_Tool_CRE_Broker_Relationship_Tracker' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-broker-relationship-tracker.php',
+		'WP_MCP_AI_Tool_CRE_Term_Sheet_Comparator'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-term-sheet-comparator.php',
+		'WP_MCP_AI_Tool_CRE_Execution_Strategy_Advisor'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-execution-strategy-advisor.php',
+		'WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-closing-checklist-manager.php',
+	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_cre_tools );
 }
@@ -156,7 +169,19 @@ function wp_mcp_ai_pro_register_cre_debt_ecosystem_tools() {
 	}
 
 	foreach (
-		array() as $nvoos_content_graph_pro_tool_class
+		array(
+			'WP_MCP_AI_Tool_CRE_Deal_Pipeline_Manager',
+			'WP_MCP_AI_Tool_CRE_Borrower_Profile_Analyzer',
+			'WP_MCP_AI_Tool_CRE_Loan_Quote_Generator',
+			'WP_MCP_AI_Tool_CRE_Market_Comp_Analyzer',
+			'WP_MCP_AI_Tool_CRE_Deal_Screening_Calculator',
+			'WP_MCP_AI_Tool_CRE_Origination_Volume_Tracker',
+			'WP_MCP_AI_Tool_CRE_Rate_Lock_Manager',
+			'WP_MCP_AI_Tool_CRE_Broker_Relationship_Tracker',
+			'WP_MCP_AI_Tool_CRE_Term_Sheet_Comparator',
+			'WP_MCP_AI_Tool_CRE_Execution_Strategy_Advisor',
+			'WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager',
+		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
 		try {
