@@ -177,6 +177,7 @@ class Test_Pro_Module_Registry extends WP_UnitTestCase {
 			'toolkit_cre_debt',
 			'toolkit_quiz',
 			'toolkit_eca',
+			'chat_channels',
 		);
 
 		$this->assertSame( $expected, array_keys( $registry->modules() ) );

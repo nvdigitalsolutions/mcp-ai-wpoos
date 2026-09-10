@@ -182,6 +182,8 @@ spl_autoload_register(
 			'src/eca/',
 			'src/tools/eca-management/',
 			'src/tools/eca-management/examples/',
+			'src/ChatChannels/',
+			'src/tools/chat-channels/',
 			'src/migrations/',
 			'src/qms/',
 			'src/helpers/',
