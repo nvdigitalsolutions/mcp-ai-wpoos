@@ -16,7 +16,7 @@
  * standalone-only wiring (deviation, same as the CRM init): a
 	 * `wp_mcp_ai_pro_tools` filter plus
 	 * `wp_mcp_ai_pro_register_healthcare_ecosystem_tools()` — both carry the
-	 * sixty-seven wellness + vitals + imaging tools and fill further as the
+	 * seventy-five healthcare tools (the full wellness/vitals/imaging/interop/OpenMed map + blueprint) and fill further as the
 	 * healthcare tool batches land; local vars
  * prefixed `$nvoos_content_graph_pro_*`.
  *
@@ -199,6 +199,14 @@ function wp_mcp_ai_pro_register_healthcare_tools( $tools ) {
 		'WP_MCP_AI_Tool_Attach_Radiology_Report'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/imaging/class-wp-mcp-ai-tool-attach-radiology-report.php',
 		'WP_MCP_AI_Tool_Compare_Imaging_Studies'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/imaging/class-wp-mcp-ai-tool-compare-imaging-studies.php',
 		'WP_MCP_AI_Tool_Get_Imaging_Hanging_Protocol'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/imaging/class-wp-mcp-ai-tool-get-imaging-hanging-protocol.php',
+		'WP_MCP_AI_Tool_Import_FHIR_Bundle'                => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/interop/class-wp-mcp-ai-tool-import-fhir-bundle.php',
+		'WP_MCP_AI_Tool_Export_CCDA_Document'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/interop/class-wp-mcp-ai-tool-export-ccda-document.php',
+		'WP_MCP_AI_Tool_Import_HL7v2_Message'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/interop/class-wp-mcp-ai-tool-import-hl7v2-message.php',
+		'WP_MCP_AI_Tool_Connect_To_EHR'                    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/interop/class-wp-mcp-ai-tool-connect-to-ehr.php',
+		'WP_MCP_AI_Tool_Export_FHIR_Data'                  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/interop/class-wp-mcp-ai-tool-export-fhir-data.php',
+		'WP_MCP_AI_Tool_Import_Healthcare_Blueprint'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/examples/class-wp-mcp-ai-tool-import-healthcare-blueprint.php',
+		'WP_MCP_AI_Tool_Deidentify_Health_Record'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/class-wp-mcp-ai-tool-deidentify-health-record.php',
+		'WP_MCP_AI_Tool_Extract_Clinical_Entities'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/healthcare/class-wp-mcp-ai-tool-extract-clinical-entities.php',
 	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_health_tools );
@@ -289,6 +297,14 @@ function wp_mcp_ai_pro_register_healthcare_ecosystem_tools() {
 			'WP_MCP_AI_Tool_Attach_Radiology_Report',
 			'WP_MCP_AI_Tool_Compare_Imaging_Studies',
 			'WP_MCP_AI_Tool_Get_Imaging_Hanging_Protocol',
+			'WP_MCP_AI_Tool_Import_FHIR_Bundle',
+			'WP_MCP_AI_Tool_Export_CCDA_Document',
+			'WP_MCP_AI_Tool_Import_HL7v2_Message',
+			'WP_MCP_AI_Tool_Connect_To_EHR',
+			'WP_MCP_AI_Tool_Export_FHIR_Data',
+			'WP_MCP_AI_Tool_Import_Healthcare_Blueprint',
+			'WP_MCP_AI_Tool_Deidentify_Health_Record',
+			'WP_MCP_AI_Tool_Extract_Clinical_Entities',
 		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
