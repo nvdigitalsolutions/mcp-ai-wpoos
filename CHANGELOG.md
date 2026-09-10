@@ -1,5 +1,45 @@
 # oOS – Changelog
 
+## [1.1.76] - 2026-09-10
+
+### Added — Full Report + Per-Channel Formats for Chat Result Delivery (PR #6525)
+
+- Chat channels (Telegram, WhatsApp, Slack, Discord, Teams, Messenger, Google Chat) now support the `full` delivery template — complete summary, substantive response, and structured envelope data — mirroring the email `full` template; a new per-channel `format` setting lets each schedule choose its presentation format (Telegram `html`/`markdown`/`markdown_v2`/`plain`, default `html`; WhatsApp/Slack/Discord/Teams `markdown`/`plain`, default `markdown`; Messenger/Google Chat `plain`). Telegram delivery now routes through `send_telegram_message` directly (the broadcast tool strips markup) so the Bot API `parse_mode` works — the cron capability waiver extends to `wp_mcp_ai_send_telegram_message_capability` for the internal `pro_schedule_manager_result_delivery` context only, and `send_telegram_message` accepts `MarkdownV2` with reserved-character escaping. Group chat IDs survive end-to-end, and group messages dropped by `require_mention` now log `telegram_group_mention_required_ignored` instead of failing silently. Existing schedules need no migration (missing/invalid `format` falls back to per-channel defaults).
+
+### Added — Comic Creation Toolkit Settings Toggle (PR #6512)
+
+- The Comic Creation toolkit (12 tools, 4 CPTs, settings/research/consolidate pages) had shipped without its `enable_comic_creation_toolkit` toggle registered anywhere, so it could never be enabled. The toggle is now registered in the Tools section field list + Pro Features subtab, the toolkit memory estimator (128 MB), `get_individual_toolkit_status()`/`get_toolkit_details()`, and both WP-CLI toolkit maps.
+
+### Added — Checkout Launch Series: Consent, Buyer Email, EU Billing & Commercial Legal Docs (PRs #6507, #6520, #6523, #6550)
+
+- **Purchase consent + buyer email (#6507).** The NV oOS Complete purchase modal gains a required ToS/refund consent checkbox and buyer-email field (`receipt_email` on the Stripe PaymentIntent); the vendor stores both fill-once on the license row (DB version 3, `dbDelta` migrates) including webhook-issued licenses. New `docs/legal/TERMS-OF-SERVICE.md` + `REFUND-POLICY.md`.
+- **Manual install primary (#6520).** The success modal always offers the signed ZIP download with upload instructions (auto-reload removed), `/payments/verify` returns `download_url` on success, and the readme.txt disclosure now lists buyer email + consent timestamp. New `WPORG-REVIEW-COMMERCE-NOTES.md`.
+- **EU billing + Stripe product metadata (#6523).** An EU-27 country selector reveals a required billing-address block (Stripe `billing_details`); new `buyer_country` license column (fill-once); a storefront "Create product & price in Stripe" admin action creates a `service` Product + one-time Price whose IDs (plus the statement descriptor) ride every PaymentIntent as metadata.
+- **Commercial legal policies (#6550, docs-only).** New `docs/legal/PRIVACY-POLICY.md` (CCPA/CPRA + GDPR-aware, "What We Do Not Collect" self-hosted section), `ACCEPTABLE-USE-POLICY.md` (AI-specific AUP + FTC disclosure duties), `CLICKWRAP-IMPLEMENTATION.md`, and `COMPLIANCE-CHECKLIST.md` (Florida LLC — FDUTPA/FIPA, ISO generative-AI exclusions); ToS gains §8.4 AI-output disclaimer, Florida governing law, and AUP/privacy incorporation. Checkout API stays **v0.1.0** (DB schema v3 migrates automatically).
+
+### Fixed — Duplicate Summary in Full Delivery Templates (PR #6548)
+
+- Scheduler emails using the `full` template printed the assistant header twice: assistant-run envelopes derive their `summary` from the response's first 25 words, and `format_email()` prepended that summary above the full response. New `response_starts_with_summary()` normalizes tags/whitespace and strips the trailing ellipsis, skipping the summary when the response already opens with it (non-derived summaries — workflow step counts, task hooks — still prepend). The chat `full` template gets the identical guard.
+
+### Fixed — Playbook Seeder Idempotency (direct commit `fe4d0ee880`)
+
+- `build_playbook()` stamps a `Generated: <time> UTC` header, so the stored content hash changed every second and each profession sync deleted + recreated the playbook attachment. New `hash_playbook_content()` hashes only the deterministic body (timestamp line stripped) — unchanged playbooks keep their attachment, body edits still change the hash. Regression test added.
+
+### Security — Four Dependency Sweeps (PRs #6515, #6532, #6546) + Docs-Hub Packaging (PR #6504)
+
+- **#6515** — 9 Dependabot alerts closed: `@tiptap/*` 3.30.4→3.30.5 (ReDoS), `multer` 2.2.0→2.3.0 (FD-leak DoS), `csv-parse` 5.6.0→7.0.2 (prototype replacement; Pro vendor copy refreshed), `react-router-dom` 6.30.4→6.30.6 (open redirect/XSS) across canvas-toolkit, document-editor, media-worker, pro (incl. spa, spa-v2), schedule-anything-spa, and cloudways-dashboard.
+- **#6532** — SVGO XSS bypass CVE-2026-84370: `svgo` override floor → `>=4.1.0` in media-worker (new override), pro, and saas-controller (build-time-only transitive dep).
+- **#6546** — `svgo` → `>=4.1.0` (root + pro/assets/spa), `hono` → `^4.13.7` (cloud-worker, tenant-router), `vitest`/`@vitest/mocker` → 4.1.11 (11 lockfiles incl. schedule-anything-spa) plus two schedule-anything-spa build blockers fixed (unused imports, `esbuild.supported.destructuring: true`). extract-zip/adm-zip have no patched release upstream (recommend dismissing).
+- **#6504** — docs-hub wp.org ZIP no longer ships dev Markdown: `*.md` excluded (readme.txt kept) via a packaging tri-sync (`.distignore`, `bin/build-addon-zips.sh`, `build-spa-addons.yml`); `nvoos-docs-hub-v0.4.3.zip` rebuilt (39→37 entries). Docs Hub version unchanged.
+
+### Changed — Content Graph Ecosystem Port Wave F2: Ten Toolkit Clusters Complete (PRs #6505–#6549)
+
+- **Image-production + comic-creation + dj-management + ai-tool-builder + architect-agent + architectural-design + site-creator + document-generation + regulatory-registration + healthcare + law-firm** clusters port byte-identical into `nvoos-content-graph-pro` (v1.0.0 unchanged): site-creator completes at 33 tools (#6524/#6526/#6527), document-generation completes (#6528/#6530/#6531), regulatory-registration completes (#6533–#6535), healthcare completes across nine batches from data layer to interop/OpenMed (#6536–#6544), and law-firm completes (data layer, matter-management, billing-trust — #6545/#6547/#6549). Each PR carries its own `tests/` suite; the privacy-export test was also stabilized order-independently in #6527 (test-only, privacy class untouched).
+
+### Versioning
+
+- Bumped to 1.1.76 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.76. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.6** (unchanged). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — wave slices land without a bump). Checkout API: **v0.1.0** (unchanged; license DB v3 migrates via `dbDelta`). Docs Hub addon: **0.4.3** (unchanged). Comic Reader addon: **0.5.0** (unchanged). Tool count: ~303 base + ~1,265 Pro (~1,568 total; live registry authoritative — unchanged this window; chat delivery gains a `full` template + per-channel `format` schema fields). Providers: 15. Addons: 27. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: **55 → 56** (new `mcp-ai-wpoos-ecosystem-port` port-loop playbook). Stale 1.1.74 build ZIPs removed (30 files).
+
 ## [1.1.75] - 2026-09-09
 
 ### Fixed — Telegram Broadcast Credentials for Schedules (PR #6482)

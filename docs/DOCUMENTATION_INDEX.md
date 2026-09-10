@@ -1,13 +1,15 @@
 # NV oOS Documentation Index
 
-**Last Updated:** September 9, 2026
-**Plugin Version:** 1.1.75
+**Last Updated:** September 10, 2026
+**Plugin Version:** 1.1.76
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
+
+> **SEPTEMBER 10, 2026 UPDATE (v1.1.76):** SCHEDULED-DELIVERY, CHECKOUT-LAUNCH & ECOSYSTEM-PORT RELEASE. **CHAT DELIVERY FULL REPORT + PER-CHANNEL FORMATS** (PR #6525) — ALL CHAT CHANNELS SUPPORT THE `full` TEMPLATE WITH PER-CHANNEL `format` (TELEGRAM `html`/`markdown`/`markdown_v2`/`plain` VIA `send_telegram_message` + BOT API PARSE MODE; WHATSAPP/SLACK/DISCORD/TEAMS `markdown`/`plain`; MESSENGER/GOOGLE CHAT `plain`); **DUPLICATE-SUMMARY FIX** (PR #6548) — `full` TEMPLATES NO LONGER PRINT THE ASSISTANT HEADER TWICE. **COMIC CREATION TOOLKIT TOGGLE REGISTERED** (PR #6512) — THE 12-TOOL TOOLKIT CAN FINALLY BE ENABLED. **CHECKOUT LAUNCH SERIES** (PRs #6507/#6520/#6523/#6550) — REQUIRED TOS/REFUND CONSENT + BUYER EMAIL, EU BILLING-ADDRESS BLOCK (`buyer_country`), STRIPE PRODUCT/PRICE METADATA + STATEMENT DESCRIPTOR, MANUAL-INSTALL-FIRST, AND THE FULL `docs/legal/` SET (PRIVACY, AUP, CLICKWRAP, COMPLIANCE CHECKLIST, UPDATED TOS). **PLAYBOOK SEEDER IDEMPOTENCY** (DIRECT COMMIT) — CONTENT HASH IGNORES THE PER-SECOND `Generated:` HEADER. **SECURITY SWEEPS** (PRs #6515/#6532/#6546) — 11 DEPENDABOT ALERTS CLOSED (TIPTAP, MULTER, CSV-PARSE, REACT-ROUTER-DOM, SVGO CVE-2026-84370, HONO, VITEST) + SCHEDULE-ANYTHING-SPA BUILD UNBLOCKED; DOCS-HUB WP.ORG ZIP STOPS SHIPPING DEV MARKDOWN (#6504). **WAVE F2 COMPLETES TEN `nvoos-content-graph-pro` CLUSTERS** (PRs #6505–#6549) — SITE-CREATOR (33 TOOLS), DOCUMENT-GENERATION, REGULATORY-REGISTRATION, HEALTHCARE (9 BATCHES), LAW-FIRM, IMAGE-PRODUCTION, COMIC-CREATION, DJ-MANAGEMENT, AI-TOOL-BUILDER, ARCHITECT-AGENT, ARCHITECTURAL-DESIGN. **NEW `mcp-ai-wpoos-ecosystem-port` SKILL — CODING-TIME SKILLS 55 → 56.** TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.74 BUILD ZIPS REMOVED (30 FILES). UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
 > **SEPTEMBER 9, 2026 UPDATE (v1.1.75):** SCHEDULED-DELIVERY & ECOSYSTEM-PORT RELEASE. **TELEGRAM BROADCAST CREDENTIALS FIX** (PR #6482) — INLINE CREDENTIALS STORED AS JSON STRINGS NO LONGER FATAL THE ARRAY-TYPED BROADCAST TOOL (`normalize_channel_credentials()` DECODES/REJECTS; PER-CHANNEL `failures` REPAIR SAVED SCHEDULES; REAL REMOTE SITES SCHEMA MAPPING WITH DECRYPTED `api_key`/`token`). **SCHEDULED DELIVERY CREDENTIAL FALLBACK** (PR #6488) — NEW TIER-4 FALLBACK RESOLVES THE FIRST ENABLED REMOTE SITES CONNECTION OF THE CHANNEL TYPE (ASSISTANT-ASSIGNED PREFERRED); BROADCAST CAPABILITY WAIVED FOR THE INTERNAL `pro_schedule_manager_result_delivery` CONTEXT ONLY; `create_pro_schedule`/`update_pro_schedule` + `POST /mcp-ai-pro/v1/schedules` ACCEPT `result_delivery`; DIAGNOSTICS NEVER CARRY SECRETS. **CONTENT GRAPH MEMORY BRIDGE + NV OOS COMPLETE CHECKOUT** (PR #6486) — MEMORIES PROJECT INTO THE STANDALONE GRAPH BEHIND A NEW `wp_mcp_ai_wake_up_context_graph_retriever` FILTER SEAM; THE CHECKOUT SELLS THE COMPLETE BUNDLE (BASE + PRO) WITH A CONFLICT GUARD; NVOOS-CONTENT-GRAPH **1.0.4 → 1.0.6**. **WAVE F2 COMPLETES THE FINANCIAL-PLANNING, SOCIAL-MEDIA, AND MCP-SERVERS TOOLKIT PORTS** IN `nvoos-content-graph-pro` (16 + 32 TOOLS, ALL 33 MCP SERVERS) PLUS REMOTE-SITES/VIDEO-PRODUCTION/ANALYTICS/MULTILINGUAL/CLOUDWAYS/DJ-MANAGEMENT/IMAGE-PRODUCTION SLICES (PRs #6476–#6502). TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.73 + CONTENT-GRAPH 1.0.4 BUILD ZIPS REMOVED. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
@@ -646,6 +648,22 @@ n#### New Audit & Compliance Docs
 - **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.39 latest updates section, version bump, duplicate section cleanup.
 
 ---
+
+## 🆕 September 2026 — v1.1.76: Chat Delivery Formats, Checkout Launch, Security Sweeps, Wave F2 Completions
+
+### New and updated documents (September 10, 2026, v1.1.76)
+
+- **[docs/project/plans/v1.1.76-docs-catch-up.md](project/plans/v1.1.76-docs-catch-up.md)** ⭐ **NEW** — v1.1.76 docs & release catch-up plan (PRs #6504–#6550, full PR-description review + skill bookkeeping + housekeeping). (September 10, 2026)
+- **[docs/legal/PRIVACY-POLICY.md](legal/PRIVACY-POLICY.md)** ⭐ **NEW** — US-focused (CCPA/CPRA + GDPR-aware) privacy policy with the "What We Do Not Collect" self-hosted section. (September 10, 2026)
+- **[docs/legal/ACCEPTABLE-USE-POLICY.md](legal/ACCEPTABLE-USE-POLICY.md)** ⭐ **NEW** — AI-specific acceptable-use policy (high-risk prohibitions, FTC disclosure duties). (September 10, 2026)
+- **[docs/legal/CLICKWRAP-IMPLEMENTATION.md](legal/CLICKWRAP-IMPLEMENTATION.md)** ⭐ **NEW** — Clickwrap enforcement guide (WooCommerce checkout, order-meta consent mu-plugin, policy versioning). (September 10, 2026)
+- **[docs/legal/COMPLIANCE-CHECKLIST.md](legal/COMPLIANCE-CHECKLIST.md)** ⭐ **NEW** — Pre-launch compliance tracker (Florida LLC: FDUTPA/FIPA, ISO generative-AI exclusions, recurring calendar). (September 10, 2026)
+- **[docs/legal/TERMS-OF-SERVICE.md](legal/TERMS-OF-SERVICE.md)** ⭐ **UPDATED** — §8.4 AI-output disclaimer, Florida governing law, AUP/privacy incorporation. (September 10, 2026)
+- **[docs/legal/REFUND-POLICY.md](legal/REFUND-POLICY.md)** ⭐ **NEW** — 30-day money-back guarantee with processing, refund-effects, abuse, and chargeback sections. (September 9, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.76 highlights + latest updates (delivery formats, checkout launch, security sweeps, Wave F2 completions, ~1,568 tools, 56 skills). (September 10, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.76] section with PR-level detail. (September 10, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.76 + changelog entry. (September 10, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.76 entry. (September 10, 2026)
 
 ## 🆕 September 2026 — v1.1.75: Telegram Delivery Fixes, Memory Bridge + Complete Checkout, Wave F2 Toolkit Completions
 
