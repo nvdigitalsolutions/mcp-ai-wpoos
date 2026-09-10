@@ -462,16 +462,27 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				$body = isset( $shared['response'] ) ? (string) $shared['response'] : $shared['summary'];
 			} elseif ( 'full' === $template && isset( $envelope['data'] ) ) {
 				// Full mode: include the response prominently, then the data structure.
-				$body     = $shared['summary'];
+				// Assistant-run envelopes derive the summary from the response's
+				// first words, so leading with the summary would print the header
+				// twice inside the delivered email.
 				$response = isset( $shared['response'] ) ? (string) $shared['response'] : '';
+				$summary  = (string) $shared['summary'];
+				$body     = '';
+				if ( '' !== $summary && ! self::response_starts_with_summary( $response, $summary ) ) {
+					$body = $summary;
+				}
 				if ( '' !== $response ) {
-					$body .= "\n\n---\n\n";
+					if ( '' !== $body ) {
+						$body .= "\n\n---\n\n";
+					}
 					/* translators: heading for the main result output in emails */
 					$body .= __( 'Results', 'mcp-ai-wpoos-pro' ) . ":\n";
 					$body .= $response;
 				}
 				if ( ! empty( $envelope['data'] ) ) {
-					$body .= "\n\n---\n\n";
+					if ( '' !== $body ) {
+						$body .= "\n\n---\n\n";
+					}
 					$body .= self::envelope_data_to_text( $envelope['data'] );
 				}
 			} else {
@@ -497,6 +508,47 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				'manage_url'    => $manage_url,
 				'generated_at'  => $shared['generated_at'],
 			);
+		}
+
+		/**
+		 * Determine whether a response already opens with the summary text.
+		 *
+		 * Assistant-run envelopes derive their summary from the response's
+		 * first words via {@see wp_trim_words()}, so the `full` delivery
+		 * templates would otherwise print the header twice — once as the
+		 * summary and again at the top of the response. The comparison
+		 * normalises tags and whitespace (wp_trim_words() joins words with
+		 * single spaces) and ignores the summary's trailing ellipsis, which
+		 * never appears verbatim inside the response.
+		 *
+		 * @param string $response Substantive response text.
+		 * @param string $summary  Summary text.
+		 * @return bool True when the response begins with the summary.
+		 */
+		protected static function response_starts_with_summary( $response, $summary ) {
+			$normalize = static function ( $text ) {
+				$text = wp_strip_all_tags( (string) $text );
+				$text = preg_replace( '/\s+/u', ' ', trim( $text ) );
+				$text = preg_replace( '/…+\s*$/u', '', $text );
+				return trim( $text );
+			};
+
+			$response_norm = $normalize( $response );
+			$summary_norm  = $normalize( $summary );
+
+			if ( '' === $summary_norm || '' === $response_norm ) {
+				return false;
+			}
+
+			if ( 0 !== mb_strpos( $response_norm, $summary_norm ) ) {
+				return false;
+			}
+
+			// The summary must end on a word boundary: the next character in
+			// the response must not continue the word ("Word" must not match
+			// the start of "Wordsmith").
+			$next = mb_substr( $response_norm, mb_strlen( $summary_norm ), 1 );
+			return '' === $next || 1 !== preg_match( '/^[\p{L}\p{N}_]$/u', $next );
 		}
 
 		/**
@@ -551,9 +603,15 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			if ( 'full' === $template ) {
 				// Full report: complete summary, substantive response, and the
 				// structured envelope data — mirrors the email full template.
-				$message .= "\n" . $esc( $shared['summary'] );
-
+				// Assistant-run summaries are a trim of the response's first
+				// words, so skip the summary when the response already opens
+				// with it (otherwise the header prints twice).
 				$response = isset( $shared['response'] ) ? (string) $shared['response'] : '';
+				$summary  = (string) $shared['summary'];
+				if ( '' === $summary || ! self::response_starts_with_summary( $response, $summary ) ) {
+					$message .= "\n" . $esc( $summary );
+				}
+
 				if ( '' !== $response ) {
 					$message .= "\n\n" . $esc( '---' ) . "\n\n";
 					/* translators: heading for the main result output in chat messages */

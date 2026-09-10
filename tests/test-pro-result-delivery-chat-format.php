@@ -250,6 +250,29 @@ class Test_Pro_Result_Delivery_Chat_Format extends WP_UnitTestCase {
 		$this->assertSame( '', $payload['parse_mode'] );
 	}
 
+	/**
+	 * The full chat template must not repeat the summary when the response
+	 * already begins with it (assistant-run summaries are a trim of the
+	 * response's first words).
+	 */
+	public function test_format_chat_full_skips_summary_prefix_of_response() {
+		$response           = "Here's your 6-hour email review 👀\n\nWindow reviewed: 13:52 – 19:52 UTC (Wed, Sep 9).\nResult: 2 actionable emails landed in the window, both unread, with the rest being Pinterest promos or earlier messages.";
+		$shared             = $this->chat_shared();
+		$shared['summary']  = wp_trim_words( wp_strip_all_tags( $response ), 25, '…' );
+		$shared['response'] = $response;
+
+		$payload = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'format_chat',
+			array( $shared, 'full', 'plain', array() )
+		);
+
+		// The header line appears exactly once — only inside the response.
+		$this->assertSame( 1, substr_count( $payload['message'], '6-hour email review' ) );
+		$this->assertStringContainsString( 'Results:', $payload['message'] );
+		$this->assertStringContainsString( 'Pinterest promos', $payload['message'] );
+	}
+
 	// -------------------------------------------------------------------------
 	// Sanitization
 	// -------------------------------------------------------------------------
