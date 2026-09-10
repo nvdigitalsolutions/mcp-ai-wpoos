@@ -342,22 +342,40 @@ class WP_MCP_AI_Cost_Calculator {
 			),
 		),
 		'deepseek'     => array(
-			// DeepSeek-V4-Flash — current flagship (cache-miss pricing).
-			// Standard: $0.14/$0.28 per 1M tokens. Cache hit: $0.0028.
-			'deepseek-v4-flash'            => array(
-				'input'  => 0.14,   // $0.14 per 1M input tokens (cache miss).
-				'output' => 0.28,   // $0.28 per 1M output tokens.
+			// DeepSeek-V4.1-Flash — current flagship (cache-miss, off-peak pricing).
+			// Off-peak: $0.15/$0.60 per 1M; peak 2× (window in PEAK_WINDOWS).
+			// Cache hit: $0.003 off-peak / $0.006 peak.
+			'deepseek-flash'                 => array(
+				'input'              => 0.15,  // $0.15 per 1M input tokens (cache miss, off-peak).
+				'output'             => 0.60,  // $0.60 per 1M output tokens (off-peak).
+				'peak_input'         => 0.30,  // $0.30 per 1M input tokens (peak).
+				'peak_output'        => 1.20,  // $1.20 per 1M output tokens (peak).
+				'cached_input'       => 0.003, // Cache hit, off-peak.
+				'peak_cached_input'  => 0.006, // Cache hit, peak.
 			),
-			// DeepSeek-V4-Flash Vision (experimental, August 2026).
-			// Images are converted to tokens by dimensions and billed as input.
-			'deepseek-v4-flash-vision-exp' => array(
-				'input'  => 0.14,   // $0.14 per 1M input tokens (cache miss).
-				'output' => 0.28,   // $0.28 per 1M output tokens.
+			// DeepSeek-V4-Pro — routed to V4.1 Flash from 2026-09-14 (12:00 Beijing)
+			// until V4.1 Pro ships. Off-peak: $0.66/$1.98 per 1M (cache miss).
+			// Peak 2×. Cache hit: $0.022 off-peak / $0.044 peak.
+			'deepseek-v4-pro'                => array(
+				'input'              => 0.66,  // $0.66 per 1M input tokens (cache miss, off-peak).
+				'output'             => 1.98,  // $1.98 per 1M output tokens (off-peak).
+				'peak_input'         => 1.32,
+				'peak_output'        => 3.96,
+				'cached_input'       => 0.022,
+				'peak_cached_input'  => 0.044,
 			),
-			// DeepSeek-V4-Pro — reasoning/agentic (official pricing, verified Aug 2026).
-			'deepseek-v4-pro'              => array(
-				'input'  => 0.435,  // $0.435 per 1M input tokens (cache miss).
-				'output' => 0.87,   // $0.87 per 1M output tokens.
+			// Retired 2026-09-10 — the ids now serve V4.1 Flash and bill at Flash prices.
+			'deepseek-v4-flash'              => array(
+				'input'        => 0.15, // Billed at V4.1 Flash price (off-peak cache miss).
+				'output'       => 0.60,
+				'peak_input'   => 0.30,
+				'peak_output'  => 1.20,
+			),
+			'deepseek-v4-flash-vision-exp'   => array(
+				'input'        => 0.15, // Billed at V4.1 Flash price (off-peak cache miss).
+				'output'       => 0.60,
+				'peak_input'   => 0.30,
+				'peak_output'  => 1.20,
 			),
 		),
 		'huggingface'  => array(
@@ -462,7 +480,37 @@ class WP_MCP_AI_Cost_Calculator {
 	);
 
 	/**
+	 * Provider peak-hour pricing windows (UTC).
+	 *
+	 * Providers that bill a peak and an off-peak rate per token (DeepSeek since
+	 * 2026-08-16) declare their schedule here. Each hour range is
+	 * `array( start, end )` with an inclusive start and exclusive end. Weekdays
+	 * use ISO-8601 numbering (1 = Monday … 7 = Sunday). Only models listed in
+	 * {@see PRICING} with `peak_input` / `peak_output` keys resolve against this
+	 * schedule — every other model ignores it entirely.
+	 *
+	 * @since 1.1.76
+	 *
+	 * @var array
+	 */
+	const PEAK_WINDOWS = array(
+		// DeepSeek: peak 01:00–04:00 and 06:00–10:00 UTC, Monday–Friday.
+		// Source: https://api-docs.deepseek.com/quick_start/pricing/ (2026-09-10).
+		'deepseek' => array(
+			'days'  => array( 1, 2, 3, 4, 5 ),
+			'hours' => array(
+				array( 1, 4 ),
+				array( 6, 10 ),
+			),
+		),
+	);
+
+	/**
 	 * Calculate cost for a specific usage record.
+	 *
+	 * Time-independent legacy entry point: always uses the canonical
+	 * (off-peak) rates. Use {@see calculate_cost_at()} for peak/off-peak
+	 * resolution.
 	 *
 	 * @param string $provider      Provider name (e.g., 'openai', 'gemini').
 	 * @param string $model         Model name (e.g., 'gpt-4o', 'gemini-1.5-pro').
@@ -545,6 +593,112 @@ class WP_MCP_AI_Cost_Calculator {
 
 		// No pricing found.
 		return null;
+	}
+
+	/**
+	 * Determine whether the given timestamp falls inside a provider's peak window.
+	 *
+	 * @since 1.1.76
+	 *
+	 * @param string   $provider  Provider name (e.g. 'deepseek').
+	 * @param int|null $timestamp Unix timestamp in UTC. Defaults to the current time.
+	 * @return bool True when the provider has a peak schedule and the timestamp is in-window.
+	 */
+	public static function is_peak_time( $provider, $timestamp = null ) {
+		$provider = sanitize_key( $provider );
+
+		if ( ! isset( self::PEAK_WINDOWS[ $provider ] ) ) {
+			return false;
+		}
+
+		$timestamp = null === $timestamp ? time() : max( 0, (int) $timestamp );
+		$window    = self::PEAK_WINDOWS[ $provider ];
+
+		$weekday = (int) gmdate( 'N', $timestamp );
+		$hour    = (int) gmdate( 'G', $timestamp );
+
+		if ( ! in_array( $weekday, $window['days'], true ) ) {
+			return false;
+		}
+
+		foreach ( $window['hours'] as $range ) {
+			if ( $hour >= $range[0] && $hour < $range[1] ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get pricing for a specific model resolved for a point in time.
+	 *
+	 * Returns the same shape as {@see get_model_pricing()} — `input`/`output`
+	 * hold the standard (off-peak) rates. When the model declares
+	 * `peak_input`/`peak_output` and the timestamp falls inside the provider's
+	 * peak window, those rates are substituted and a `rate_class` key
+	 * (`'peak'` or `'off-peak'`) is added. Models without peak keys are
+	 * returned unchanged, so existing consumers see identical data.
+	 *
+	 * @since 1.1.76
+	 *
+	 * @param string   $provider  Provider name.
+	 * @param string   $model     Model name.
+	 * @param int|null $timestamp Unix timestamp in UTC. Defaults to the current time.
+	 * @return array|null Pricing array, or null when the model is unknown.
+	 */
+	public static function get_model_pricing_at( $provider, $model, $timestamp = null ) {
+		$pricing = self::get_model_pricing( $provider, $model );
+
+		if ( ! $pricing || ! isset( $pricing['peak_input'], $pricing['peak_output'] ) ) {
+			return $pricing;
+		}
+
+		$rate_class = self::is_peak_time( $provider, $timestamp ) ? 'peak' : 'off-peak';
+		$resolved   = $pricing;
+
+		if ( 'peak' === $rate_class ) {
+			$resolved['input']  = $pricing['peak_input'];
+			$resolved['output'] = $pricing['peak_output'];
+
+			if ( isset( $pricing['cached_input'], $pricing['peak_cached_input'] ) ) {
+				$resolved['cached_input'] = $pricing['peak_cached_input'];
+			}
+		}
+
+		$resolved['rate_class'] = $rate_class;
+
+		return $resolved;
+	}
+
+	/**
+	 * Calculate cost for a specific usage record resolved for a point in time.
+	 *
+	 * Same math as {@see calculate_cost()}, but resolves peak/off-peak pricing
+	 * via {@see get_model_pricing_at()}. The legacy {@see calculate_cost()}
+	 * remains time-independent on the canonical (off-peak) rates, so existing
+	 * callers and tests are unaffected.
+	 *
+	 * @since 1.1.76
+	 *
+	 * @param string   $provider      Provider name.
+	 * @param string   $model         Model name.
+	 * @param int      $input_tokens  Input token count.
+	 * @param int      $output_tokens Output token count.
+	 * @param int|null $timestamp     Unix timestamp in UTC. Defaults to the current time.
+	 * @return float Cost in USD.
+	 */
+	public static function calculate_cost_at( $provider, $model, $input_tokens, $output_tokens, $timestamp = null ) {
+		$pricing = self::get_model_pricing_at( $provider, $model, $timestamp );
+
+		if ( ! $pricing ) {
+			return 0.0;
+		}
+
+		$input_cost  = ( $input_tokens / 1000000 ) * $pricing['input'];
+		$output_cost = ( $output_tokens / 1000000 ) * $pricing['output'];
+
+		return $input_cost + $output_cost;
 	}
 
 	/**
