@@ -14,7 +14,8 @@
  * sub-setting; NEW standalone-only wiring (deviation, same as the CRM init): a
  * `wp_mcp_ai_pro_tools` filter plus `wp_mcp_ai_pro_register_cre_debt_ecosystem_tools()` — both
  * carry the eleven originations tools plus the thirteen underwriting tools plus the ten cmbs tools
- * and fill further as the cre-debt tool batches land; local vars prefixed
+ * plus the eleven debt-fund tools and fill further as the cre-debt tool batches land; local vars
+ * prefixed
  * `$nvoos_content_graph_pro_*`; full-body `! defined( 'WP_MCP_AI_PATH' )` guard (the global
  * enqueue helper would collide compile-time with the base copy in the monorepo test matrix).
  *
@@ -170,6 +171,17 @@ function wp_mcp_ai_pro_register_cre_debt_tools( $tools ) {
 		'WP_MCP_AI_Tool_CMBS_Special_Servicing_Tracker'    => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-special-servicing-tracker.php',
 		'WP_MCP_AI_Tool_CMBS_Surveillance_Monitor'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-surveillance-monitor.php',
 		'WP_MCP_AI_Tool_CRE_CLO_Modeler'                   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cre-clo-modeler.php',
+		'WP_MCP_AI_Tool_CRE_Concentration_Limit_Monitor'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-concentration-limit-monitor.php',
+		'WP_MCP_AI_Tool_CRE_Covenant_Compliance_Checker'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-covenant-compliance-checker.php',
+		'WP_MCP_AI_Tool_CRE_Credit_Risk_Scorer'            => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-credit-risk-scorer.php',
+		'WP_MCP_AI_Tool_CRE_Debt_Waterfall_Modeler'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-debt-waterfall-modeler.php',
+		'WP_MCP_AI_Tool_CRE_Fund_Capital_Call_Calculator'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-fund-capital-call-calculator.php',
+		'WP_MCP_AI_Tool_CRE_Fund_Liquidity_Analyzer'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-fund-liquidity-analyzer.php',
+		'WP_MCP_AI_Tool_CRE_Fund_Portfolio_Dashboard'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-fund-portfolio-dashboard.php',
+		'WP_MCP_AI_Tool_CRE_Fund_Return_Calculator'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-fund-return-calculator.php',
+		'WP_MCP_AI_Tool_CRE_Fund_Scenario_Modeler'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-fund-scenario-modeler.php',
+		'WP_MCP_AI_Tool_CRE_LP_Report_Generator'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-lp-report-generator.php',
+		'WP_MCP_AI_Tool_CRE_Warehouse_Line_Manager'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-warehouse-line-manager.php',
 	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_cre_tools );
@@ -227,6 +239,17 @@ function wp_mcp_ai_pro_register_cre_debt_ecosystem_tools() {
 			'WP_MCP_AI_Tool_CMBS_Special_Servicing_Tracker',
 			'WP_MCP_AI_Tool_CMBS_Surveillance_Monitor',
 			'WP_MCP_AI_Tool_CRE_CLO_Modeler',
+			'WP_MCP_AI_Tool_CRE_Concentration_Limit_Monitor',
+			'WP_MCP_AI_Tool_CRE_Covenant_Compliance_Checker',
+			'WP_MCP_AI_Tool_CRE_Credit_Risk_Scorer',
+			'WP_MCP_AI_Tool_CRE_Debt_Waterfall_Modeler',
+			'WP_MCP_AI_Tool_CRE_Fund_Capital_Call_Calculator',
+			'WP_MCP_AI_Tool_CRE_Fund_Liquidity_Analyzer',
+			'WP_MCP_AI_Tool_CRE_Fund_Portfolio_Dashboard',
+			'WP_MCP_AI_Tool_CRE_Fund_Return_Calculator',
+			'WP_MCP_AI_Tool_CRE_Fund_Scenario_Modeler',
+			'WP_MCP_AI_Tool_CRE_LP_Report_Generator',
+			'WP_MCP_AI_Tool_CRE_Warehouse_Line_Manager',
 		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
