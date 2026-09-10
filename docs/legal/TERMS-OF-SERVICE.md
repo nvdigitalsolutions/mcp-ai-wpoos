@@ -1,7 +1,7 @@
 # Terms of Service — NV oOS Paid Products
 
 **Effective date:** September 9, 2026  
-**Last updated:** September 9, 2026
+**Last updated:** September 10, 2026
 
 These Terms of Service ("Terms") are a binding agreement between **NV Digital
 Solutions** ("NV Digital", "we", "us", "our") and the person or organisation
@@ -151,9 +151,22 @@ responsible for the availability, pricing, quality, or data handling of any
 third-party service.
 
 8.3. Content you transmit to third-party AI providers is governed by their
-privacy policies and by our Privacy Policy. You are responsible for ensuring
-your use of the Products complies with applicable data-protection laws
-(including GDPR, CCPA, and similar) with respect to data you process.
+privacy policies and by our [Privacy Policy](PRIVACY-POLICY.md). You are
+responsible for ensuring your use of the Products complies with applicable
+data-protection laws (including GDPR, CCPA, and similar) with respect to
+data you process.
+
+8.4. **AI outputs are not guaranteed.** Outputs generated through the
+Products — by AI assistants, models, or connected agents — may be
+inaccurate, incomplete, outdated, biased, or fabricated, and are provided
+for convenience only. They do not constitute professional advice of any kind
+(legal, financial, medical, tax, or otherwise). You are solely responsible
+for reviewing, verifying, and approving AI outputs before publishing or
+acting on them, for all content generated or transmitted through the
+Products, and for disclosing that content is AI-generated where applicable
+law (including FTC rules) requires it. The Products are not designed or
+suitable for safety-critical, life-support, medical-device, or critical
+infrastructure uses, and such uses are prohibited.
 
 ## 9. Your Responsibilities
 
@@ -164,7 +177,9 @@ You are responsible for:
 - configuring assistants, tools, permissions, and rate limits appropriately;
 - all content processed, generated, or transmitted through the Products;
 - complying with all applicable laws and third-party terms in your use of
-  the Products.
+  the Products;
+- complying with the [Acceptable Use Policy](ACCEPTABLE-USE-POLICY.md),
+  which forms part of these Terms.
 
 ## 10. No Warranty
 
@@ -216,8 +231,9 @@ where applicable law requires otherwise.
 
 ## 14. Governing Law and Disputes
 
-14.1. These Terms are governed by the laws of the jurisdiction in which NV
-Digital Solutions is registered, without regard to conflict-of-law rules.
+14.1. These Terms are governed by the laws of the State of Florida, United
+States, without regard to conflict-of-law rules, and you consent to the
+exclusive jurisdiction of the state and federal courts located in Florida.
 
 14.2. Before initiating any formal proceedings, you agree to contact us at
 [support@nvdigitalsolutions.com](mailto:support@nvdigitalsolutions.com) so
@@ -227,9 +243,10 @@ jurisdiction.
 
 ## 15. General
 
-15.1. These Terms, together with the Refund Policy and the Warranty Notice,
-constitute the entire agreement between you and NV Digital Solutions
-regarding the Products and supersede prior agreements.
+15.1. These Terms, together with the Refund Policy, the Acceptable Use
+Policy, the Privacy Policy, and the Warranty Notice, constitute the entire
+agreement between you and NV Digital Solutions regarding the Products and
+supersede prior agreements.
 
 15.2. If any provision of these Terms is held unenforceable, the remaining
 provisions remain in full force and effect.
