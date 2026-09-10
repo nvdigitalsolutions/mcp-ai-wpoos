@@ -393,7 +393,7 @@ output 4.00 off-peak, peak 2×).
 | `deepseek-chat` | `deepseek-v4-flash` | `deepseek-flash` |
 | `deepseek-reasoner` / `deepseek-coder` | `deepseek-v4-pro` | `deepseek-flash` |
 | `deepseek-v4-flash` / `deepseek-v4-flash-vision-exp` | — | `deepseek-flash` |
-| `deepseek-v4-pro` | — | `deepseek-flash` |
+| `deepseek-v4-pro` | — | **Deferred** — no mapping yet: stays servable until the 2026-09-14 sunset, so stored references are left alone. The post-sunset refresh adds `deepseek-v4-pro` → `deepseek-flash`. |
 
 ### Out of Scope (flagged, not edited)
 - `lib/core/src/Infrastructure/Cost/CostCalculator.php` and the other `lib/core`
