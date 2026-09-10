@@ -16,8 +16,9 @@
  * standalone-only wiring (deviation, same as the CRM init): a
  * `wp_mcp_ai_pro_tools` filter plus
  * `wp_mcp_ai_pro_register_law_firm_ecosystem_tools()` — both carry the ten
- * matter-management batch-1 tools plus the ten billing-trust tools and fill
- * further as the law-firm tool batches land; local vars
+ * matter-management batch-1 tools plus the ten billing-trust tools plus the
+ * eight intake-management tools and fill further as the law-firm tool
+ * batches land; local vars
  * prefixed `$nvoos_content_graph_pro_*`; full-body
  * `! defined( 'WP_MCP_AI_PATH' )` guard (the global enqueue helper would
  * collide compile-time with the base copy in the monorepo test matrix).
@@ -154,6 +155,14 @@ function wp_mcp_ai_pro_register_law_firm_tools( $tools ) {
 		'WP_MCP_AI_Tool_LF_Time_Entry_Recorder'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-time-entry-recorder.php',
 		'WP_MCP_AI_Tool_LF_Trust_Account_Manager'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-trust-account-manager.php',
 		'WP_MCP_AI_Tool_LF_Trust_Reconciliation_Tool'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-trust-reconciliation-tool.php',
+		'WP_MCP_AI_Tool_LF_Client_Communication_Logger'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/intake-management/class-wp-mcp-ai-tool-lf-client-communication-logger.php',
+		'WP_MCP_AI_Tool_LF_Client_Intake_Processor'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/intake-management/class-wp-mcp-ai-tool-lf-client-intake-processor.php',
+		'WP_MCP_AI_Tool_LF_Client_Portal_Manager'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/intake-management/class-wp-mcp-ai-tool-lf-client-portal-manager.php',
+		'WP_MCP_AI_Tool_LF_Client_Profile_Analyzer'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/intake-management/class-wp-mcp-ai-tool-lf-client-profile-analyzer.php',
+		'WP_MCP_AI_Tool_LF_Conflict_Of_Interest_Checker'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/intake-management/class-wp-mcp-ai-tool-lf-conflict-of-interest-checker.php',
+		'WP_MCP_AI_Tool_LF_Engagement_Letter_Generator'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/intake-management/class-wp-mcp-ai-tool-lf-engagement-letter-generator.php',
+		'WP_MCP_AI_Tool_LF_Lead_Scoring_Calculator'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/intake-management/class-wp-mcp-ai-tool-lf-lead-scoring-calculator.php',
+		'WP_MCP_AI_Tool_LF_Referral_Source_Tracker'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/intake-management/class-wp-mcp-ai-tool-lf-referral-source-tracker.php',
 	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_law_tools );
@@ -197,6 +206,14 @@ function wp_mcp_ai_pro_register_law_firm_ecosystem_tools() {
 			'WP_MCP_AI_Tool_LF_Time_Entry_Recorder',
 			'WP_MCP_AI_Tool_LF_Trust_Account_Manager',
 			'WP_MCP_AI_Tool_LF_Trust_Reconciliation_Tool',
+			'WP_MCP_AI_Tool_LF_Client_Communication_Logger',
+			'WP_MCP_AI_Tool_LF_Client_Intake_Processor',
+			'WP_MCP_AI_Tool_LF_Client_Portal_Manager',
+			'WP_MCP_AI_Tool_LF_Client_Profile_Analyzer',
+			'WP_MCP_AI_Tool_LF_Conflict_Of_Interest_Checker',
+			'WP_MCP_AI_Tool_LF_Engagement_Letter_Generator',
+			'WP_MCP_AI_Tool_LF_Lead_Scoring_Calculator',
+			'WP_MCP_AI_Tool_LF_Referral_Source_Tracker',
 		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
