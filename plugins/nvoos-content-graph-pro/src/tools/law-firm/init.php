@@ -18,8 +18,8 @@
  * `wp_mcp_ai_pro_register_law_firm_ecosystem_tools()` — both carry the ten
  * matter-management batch-1 tools plus the ten billing-trust tools plus the
  * eight intake-management tools plus the eight litigation-support tools plus
- * the eight compliance-ethics tools and fill further as the law-firm tool
- * batches land; local vars
+ * the eight compliance-ethics tools plus the ten document-automation tools
+ * and fill further as the law-firm tool batches land; local vars
  * prefixed `$nvoos_content_graph_pro_*`; full-body
  * `! defined( 'WP_MCP_AI_PATH' )` guard (the global enqueue helper would
  * collide compile-time with the base copy in the monorepo test matrix).
@@ -180,6 +180,16 @@ function wp_mcp_ai_pro_register_law_firm_tools( $tools ) {
 		'WP_MCP_AI_Tool_LF_Client_Confidentiality_Auditor' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/compliance-ethics/class-wp-mcp-ai-tool-lf-client-confidentiality-auditor.php',
 		'WP_MCP_AI_Tool_LF_Regulatory_Change_Monitor'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/compliance-ethics/class-wp-mcp-ai-tool-lf-regulatory-change-monitor.php',
 		'WP_MCP_AI_Tool_LF_AI_Usage_Disclosure_Generator'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/compliance-ethics/class-wp-mcp-ai-tool-lf-ai-usage-disclosure-generator.php',
+		'WP_MCP_AI_Tool_LF_Document_Drafter'               => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-document-drafter.php',
+		'WP_MCP_AI_Tool_LF_Contract_Reviewer'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-contract-reviewer.php',
+		'WP_MCP_AI_Tool_LF_Clause_Library_Manager'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-clause-library-manager.php',
+		'WP_MCP_AI_Tool_LF_Redline_Comparator'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-redline-comparator.php',
+		'WP_MCP_AI_Tool_LF_Pleading_Generator'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-pleading-generator.php',
+		'WP_MCP_AI_Tool_LF_Discovery_Request_Builder'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-discovery-request-builder.php',
+		'WP_MCP_AI_Tool_LF_Document_Version_Tracker'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-document-version-tracker.php',
+		'WP_MCP_AI_Tool_LF_Legal_Citation_Checker'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-legal-citation-checker.php',
+		'WP_MCP_AI_Tool_LF_Brief_Outline_Generator'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-brief-outline-generator.php',
+		'WP_MCP_AI_Tool_LF_Document_Template_Manager'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-document-template-manager.php',
 	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_law_tools );
@@ -247,6 +257,16 @@ function wp_mcp_ai_pro_register_law_firm_ecosystem_tools() {
 			'WP_MCP_AI_Tool_LF_Client_Confidentiality_Auditor',
 			'WP_MCP_AI_Tool_LF_Regulatory_Change_Monitor',
 			'WP_MCP_AI_Tool_LF_AI_Usage_Disclosure_Generator',
+			'WP_MCP_AI_Tool_LF_Document_Drafter',
+			'WP_MCP_AI_Tool_LF_Contract_Reviewer',
+			'WP_MCP_AI_Tool_LF_Clause_Library_Manager',
+			'WP_MCP_AI_Tool_LF_Redline_Comparator',
+			'WP_MCP_AI_Tool_LF_Pleading_Generator',
+			'WP_MCP_AI_Tool_LF_Discovery_Request_Builder',
+			'WP_MCP_AI_Tool_LF_Document_Version_Tracker',
+			'WP_MCP_AI_Tool_LF_Legal_Citation_Checker',
+			'WP_MCP_AI_Tool_LF_Brief_Outline_Generator',
+			'WP_MCP_AI_Tool_LF_Document_Template_Manager',
 		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
