@@ -178,6 +178,7 @@ spl_autoload_register(
 			'src/tools/cre-debt/originations/',
 			'src/tools/cre-debt/underwriting/',
 			'src/tools/quiz-management/',
+			'src/tools/math/',
 			'src/migrations/',
 			'src/qms/',
 			'src/helpers/',
