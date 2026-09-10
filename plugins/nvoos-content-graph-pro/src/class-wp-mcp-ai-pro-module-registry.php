@@ -925,6 +925,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 																								require_once $p . 'tools/healthcare/init.php';
 																							}
 																						);
+
+																							// Standalone-only module (the base registry registers
+																							// `toolkit_law_firm` dynamically via the conditional
+																							// toolkit loop with an `enabled` gate). Boots the slim
+																							// law-firm init standalone.
+																							$this->add_module(
+																								'toolkit_law_firm',
+																								'Law Firm Toolkit',
+																								array(),
+																								array(
+																									'files' => array( $p . 'tools/law-firm/init.php' ),
+																								),
+																								function () use ( $p ) {
+																									require_once $p . 'tools/law-firm/init.php';
+																								}
+																							);
 		}
 	}
 }
