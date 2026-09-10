@@ -95,6 +95,26 @@
 	}
 
 	/**
+	 * GET from the plugin REST API with the wp_rest nonce.
+	 *
+	 * @param  {string} route REST route (relative to the namespace root).
+	 * @return {Promise} Resolves with { ok, status, data }.
+	 */
+	function apiGet( route ) {
+		return fetch( config.rest_url + route, {
+			method: 'GET',
+			credentials: 'same-origin',
+			headers: {
+				'X-WP-Nonce': config.nonce
+			}
+		} ).then( function ( response ) {
+			return response.json().then( function ( json ) {
+				return { ok: response.ok, status: response.status, data: json };
+			} );
+		} );
+	}
+
+	/**
 	 * Show an error inside the modal.
 	 *
 	 * @param {string} message Error message.
@@ -150,6 +170,53 @@
 	 */
 	function hideError() {
 		errorBox.style.display = 'none';
+	}
+
+	/**
+	 * Append a "Test connection" action to the error box.
+	 *
+	 * Calls the server-side `GET /payments/health` probe, which checks
+	 * reachability of the vendor checkout API WITHOUT consuming a
+	 * session-throttle token — so the admin can tell a real connectivity
+	 * failure apart from the "Too many checkout attempts" lockout.
+	 *
+	 * @return {void}
+	 */
+	function renderDiagnoseLink() {
+		if ( ! errorBox ) {
+			return;
+		}
+
+		var btn = el( 'button', 'button-link nvoos-cg-diagnose-btn', i18n.diagnose || 'Test connection to the checkout service' );
+		btn.type = 'button';
+		btn.addEventListener( 'click', function () {
+			btn.disabled = true;
+			var original = btn.textContent;
+			btn.textContent = i18n.diagnosing || 'Testing connection…';
+
+			apiGet( '/payments/health' ).then( function ( result ) {
+				btn.disabled = false;
+				btn.textContent = original;
+
+				var line = el( 'p', 'nvoos-cg-diagnose-result' );
+				var data = result.data || {};
+				if ( result.ok && data.reachable ) {
+					var vendor = data.vendor || {};
+					var latency = 'number' === typeof data.latency_ms ? data.latency_ms : 0;
+					line.textContent = ( i18n.diagnose_ok || 'Checkout service is reachable' ) +
+						' — ' + ( vendor.service || 'nvoos-checkout' ) + ' v' + ( vendor.version || '?' ) +
+						' (' + latency + ' ms)';
+				} else {
+					line.textContent = data.message || i18n.generic_error || 'Connection test failed.';
+				}
+				errorBox.appendChild( line );
+			} ).catch( function () {
+				btn.disabled = false;
+				btn.textContent = original;
+				errorBox.appendChild( el( 'p', 'nvoos-cg-diagnose-result', i18n.generic_error || 'Connection test failed.' ) );
+			} );
+		} );
+		errorBox.appendChild( btn );
 	}
 
 	/**
@@ -287,10 +354,12 @@
 
 		countrySelect.addEventListener( 'change', function () {
 			if ( addressRow ) {
-				addressRow.style.display = isEuSelected() ? 'block' : 'none';
+				// Restore the stylesheet's grid layout when shown ('block'
+				// would override the CSS grid definition).
+				addressRow.style.display = isEuSelected() ? '' : 'none';
 			}
 			if ( euWithdrawalNote ) {
-				euWithdrawalNote.style.display = isEuSelected() ? 'block' : 'none';
+				euWithdrawalNote.style.display = isEuSelected() ? '' : 'none';
 			}
 			updatePayState();
 		} );
@@ -405,7 +474,7 @@
 		// statutory right of withdrawal for digital content — shown only
 		// when an EU country is selected in the billing row.
 		euWithdrawalNote = el( 'p', 'nvoos-cg-terms-sub', i18n.terms_eu_withdrawal || '' );
-		euWithdrawalNote.style.display = isEuSelected() ? 'block' : 'none';
+		euWithdrawalNote.style.display = isEuSelected() ? '' : 'none';
 		row.appendChild( euWithdrawalNote );
 
 		return row;
@@ -704,6 +773,7 @@
 					checkoutUnavailable();
 				} else {
 					showError( ( result.data && result.data.message ) || i18n.generic_error );
+					renderDiagnoseLink();
 				}
 				return;
 			}

@@ -13,12 +13,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Vendor-side admin page.
  *
- * Three sections:
+ * Four sections:
  *   1. Storefront settings — Stripe keys, price, currency, test mode,
  *      addon version, ZIP source. Served via the Settings API.
  *   2. Stripe connection — read-only connection test plus the
  *      Product/Price auto-creation actions (admin-post, nonce-protected).
- *   3. Licenses — recent rows with a per-row revoke action (admin-post,
+ *   3. REST endpoints — live per-route registration status plus a
+ *      loopback `GET /health` self-check (admin-post, nonce-protected).
+ *   4. Licenses — recent rows with a per-row revoke action (admin-post,
  *      nonce-protected).
  *
  * @since 0.1.0
@@ -31,6 +33,23 @@ class NVOOS_Checkout_API_Admin_Page {
 	public const ACTION_CREATE_PRODUCT  = 'nvoos_checkout_create_product';
 	public const NONCE_TEST_CONNECTION  = 'nvoos_checkout_test_connection';
 	public const ACTION_TEST_CONNECTION = 'nvoos_checkout_test_connection';
+	public const NONCE_CHECK_ENDPOINTS  = 'nvoos_checkout_check_endpoints';
+	public const ACTION_CHECK_ENDPOINTS = 'nvoos_checkout_check_endpoints';
+
+	/**
+	 * REST routes the checkout service must register, path => method.
+	 *
+	 * Mirrors {@see NVOOS_Checkout_API_Rest_Controller::register_routes()}
+	 * — the endpoint self-check reports any divergence.
+	 *
+	 * @var array<string,string>
+	 */
+	public const EXPECTED_ROUTES = array(
+		'/nvoos-checkout/v1/session'         => 'POST',
+		'/nvoos-checkout/v1/verify'          => 'POST',
+		'/nvoos-checkout/v1/webhooks/stripe' => 'POST',
+		'/nvoos-checkout/v1/health'          => 'GET',
+	);
 
 	/**
 	 * Register menu + settings.
@@ -43,6 +62,7 @@ class NVOOS_Checkout_API_Admin_Page {
 		add_action( 'admin_post_nvoos_checkout_revoke', array( __CLASS__, 'handle_revoke' ) );
 		add_action( 'admin_post_' . self::ACTION_CREATE_PRODUCT, array( __CLASS__, 'handle_create_product' ) );
 		add_action( 'admin_post_' . self::ACTION_TEST_CONNECTION, array( __CLASS__, 'handle_test_connection' ) );
+		add_action( 'admin_post_' . self::ACTION_CHECK_ENDPOINTS, array( __CLASS__, 'handle_check_endpoints' ) );
 	}
 
 	/**
@@ -197,6 +217,140 @@ class NVOOS_Checkout_API_Admin_Page {
 	}
 
 	/**
+	 * Admin-post handler: run the REST endpoint self-check.
+	 *
+	 * Verifies the routes are registered and fetches the public
+	 * `GET /health` endpoint over loopback HTTP. Result flags are
+	 * round-tripped through the page URL like the Stripe test above.
+	 *
+	 * @return void
+	 */
+	public static function handle_check_endpoints(): void {
+		check_admin_referer( self::NONCE_CHECK_ENDPOINTS );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to perform this action.', 'nvoos-checkout-api' ) );
+		}
+
+		$result = self::check_endpoints();
+
+		$missing = array();
+		foreach ( $result['registered'] as $path => $registered ) {
+			if ( ! $registered ) {
+				$missing[] = $path;
+			}
+		}
+
+		if ( ! empty( $missing ) ) {
+			wp_safe_redirect(
+				admin_url(
+					'admin.php?page=' . self::MENU_SLUG . '&endpoint_test=error&reason=routes&missing=' . rawurlencode( implode( ', ', $missing ) )
+				)
+			);
+			exit;
+		}
+
+		$loopback = $result['loopback'];
+
+		if ( isset( $loopback['error'] ) ) {
+			wp_safe_redirect(
+				admin_url(
+					'admin.php?page=' . self::MENU_SLUG . '&endpoint_test=error&reason=loopback&message=' . rawurlencode( (string) $loopback['error'] )
+				)
+			);
+			exit;
+		}
+
+		if ( 200 !== (int) $loopback['status'] || empty( $loopback['body_ok'] ) ) {
+			wp_safe_redirect(
+				admin_url(
+					'admin.php?page=' . self::MENU_SLUG . '&endpoint_test=error&reason=bad_response&http=' . absint( (int) $loopback['status'] )
+				)
+			);
+			exit;
+		}
+
+		wp_safe_redirect(
+			admin_url(
+				'admin.php?page=' . self::MENU_SLUG . '&endpoint_test=ok&http=' . absint( (int) $loopback['status'] ) . '&ms=' . absint( (int) $loopback['latency_ms'] )
+			)
+		);
+		exit;
+	}
+
+	/**
+	 * Whether each expected REST route is currently registered.
+	 *
+	 * Cheap (no HTTP): reads the REST server's route table, so the admin
+	 * page can render live per-route status on every load.
+	 *
+	 * @return array<string,bool> Route path => registered.
+	 */
+	public static function route_statuses(): array {
+		$routes = rest_get_server()->get_routes();
+		$status = array();
+
+		foreach ( self::EXPECTED_ROUTES as $path => $method ) {
+			$registered = false;
+
+			// get_routes() maps each path to a list of endpoint objects
+			// (one per registered method), not a single methods map.
+			if ( isset( $routes[ $path ] ) && is_array( $routes[ $path ] ) ) {
+				foreach ( $routes[ $path ] as $endpoint ) {
+					if ( is_array( $endpoint ) && isset( $endpoint['methods'][ $method ] ) ) {
+						$registered = true;
+						break;
+					}
+				}
+			}
+
+			$status[ $path ] = $registered;
+		}
+
+		return $status;
+	}
+
+	/**
+	 * Run the full endpoint self-check: route table + loopback health call.
+	 *
+	 * @return array<string,mixed>
+	 *   array{
+	 *     registered: array<string,bool>,
+	 *     loopback: array{url: string, latency_ms: int, status?: int, body_ok?: bool, error?: string}
+	 *   }
+	 */
+	public static function check_endpoints(): array {
+		$url      = rest_url( 'nvoos-checkout/v1/health' );
+		$started  = microtime( true );
+		$response = wp_remote_get(
+			$url,
+			array(
+				'timeout'   => 10,
+				'sslverify' => apply_filters( 'https_local_ssl_verify', false ),
+			)
+		);
+		$latency  = (int) round( ( microtime( true ) - $started ) * 1000 );
+
+		$loopback = array(
+			'url'        => $url,
+			'latency_ms' => $latency,
+		);
+
+		if ( is_wp_error( $response ) ) {
+			$loopback['error'] = $response->get_error_message();
+		} else {
+			$loopback['status']  = (int) wp_remote_retrieve_response_code( $response );
+			$body                = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+			$loopback['body_ok'] = is_array( $body ) && 'ok' === ( $body['status'] ?? '' );
+		}
+
+		return array(
+			'registered' => self::route_statuses(),
+			'loopback'   => $loopback,
+		);
+	}
+
+	/**
 	 * Render the admin page.
 	 *
 	 * @return void
@@ -279,6 +433,55 @@ class NVOOS_Checkout_API_Admin_Page {
 							}
 						}
 						// phpcs:enable WordPress.Security.NonceVerification.Recommended
+						?>
+					</p></div>
+				<?php endif; ?>
+			<?php endif; ?>
+
+			<?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- flag read only. ?>
+			<?php if ( isset( $_GET['endpoint_test'] ) ) : ?>
+				<?php if ( 'ok' === $_GET['endpoint_test'] ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- flag read only. ?>
+					<?php
+					// phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only redirect flags, no state changes.
+					$endpoint_http = isset( $_GET['http'] ) ? absint( $_GET['http'] ) : 0;
+					$endpoint_ms   = isset( $_GET['ms'] ) ? absint( $_GET['ms'] ) : 0;
+					// phpcs:enable WordPress.Security.NonceVerification.Recommended
+					?>
+					<div class="notice notice-success is-dismissible"><p>
+						<?php
+						echo esc_html(
+							sprintf(
+								/* translators: 1: HTTP status code, 2: latency in milliseconds. */
+								__( 'Endpoints are active — GET /health answered HTTP %1$d in %2$d ms.', 'nvoos-checkout-api' ),
+								$endpoint_http,
+								$endpoint_ms
+							)
+						);
+						?>
+					</p></div>
+				<?php else : ?>
+					<?php
+					// phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only redirect flags, no state changes.
+					$endpoint_reason  = isset( $_GET['reason'] ) ? sanitize_text_field( wp_unslash( $_GET['reason'] ) ) : '';
+					$endpoint_http    = isset( $_GET['http'] ) ? absint( $_GET['http'] ) : 0;
+					$endpoint_message = isset( $_GET['message'] ) ? sanitize_text_field( wp_unslash( $_GET['message'] ) ) : '';
+					$endpoint_missing = isset( $_GET['missing'] ) ? sanitize_text_field( wp_unslash( $_GET['missing'] ) ) : '';
+					// phpcs:enable WordPress.Security.NonceVerification.Recommended
+					?>
+					<div class="notice notice-error is-dismissible"><p>
+						<?php
+						if ( 'routes' === $endpoint_reason ) {
+							/* translators: %s: comma-separated missing route paths. */
+							echo esc_html( sprintf( __( 'Endpoint check failed — route(s) not registered: %s', 'nvoos-checkout-api' ), $endpoint_missing ) );
+						} elseif ( 'loopback' === $endpoint_reason ) {
+							/* translators: %s: error message. */
+							echo esc_html( sprintf( __( 'Endpoint check failed — this server could not reach its own REST API: %s', 'nvoos-checkout-api' ), $endpoint_message ) );
+						} elseif ( 'bad_response' === $endpoint_reason ) {
+							/* translators: %d: HTTP status code. */
+							echo esc_html( sprintf( __( 'Endpoint check failed — GET /health answered HTTP %d.', 'nvoos-checkout-api' ), $endpoint_http ) );
+						} else {
+							esc_html_e( 'Endpoint check failed. See the route status below.', 'nvoos-checkout-api' );
+						}
 						?>
 					</p></div>
 				<?php endif; ?>
@@ -417,6 +620,31 @@ class NVOOS_Checkout_API_Admin_Page {
 				<?php wp_nonce_field( self::NONCE_CREATE_PRODUCT ); ?>
 				<?php submit_button( __( 'Create product & price in Stripe', 'nvoos-checkout-api' ), 'secondary', 'nvoos_checkout_create_product', false ); ?>
 				<span class="description"><?php esc_html_e( 'Creates a one-time price matching the configured price/currency and records both IDs on every payment for reporting and tax tooling. Safe to re-run.', 'nvoos-checkout-api' ); ?></span>
+			</form>
+
+			<h2><?php esc_html_e( 'REST endpoints', 'nvoos-checkout-api' ); ?></h2>
+			<p>
+				<?php esc_html_e( 'Base URL:', 'nvoos-checkout-api' ); ?>
+				<code><?php echo esc_html( rest_url( 'nvoos-checkout/v1/' ) ); ?></code>
+			</p>
+			<?php $route_statuses = self::route_statuses(); ?>
+			<ul>
+				<?php foreach ( self::EXPECTED_ROUTES as $route_path => $route_method ) : ?>
+					<li>
+						<?php if ( $route_statuses[ $route_path ] ) : ?>
+							<span class="dashicons dashicons-yes-alt" style="color:#00a32a"></span>
+						<?php else : ?>
+							<span class="dashicons dashicons-no-alt" style="color:#d63638"></span>
+						<?php endif; ?>
+						<code><?php echo esc_html( $route_method . ' ' . $route_path ); ?></code>
+					</li>
+				<?php endforeach; ?>
+			</ul>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION_CHECK_ENDPOINTS ); ?>">
+				<?php wp_nonce_field( self::NONCE_CHECK_ENDPOINTS ); ?>
+				<?php submit_button( __( 'Check endpoints', 'nvoos-checkout-api' ), 'secondary', 'nvoos_checkout_endpoints', false ); ?>
+				<span class="description"><?php esc_html_e( 'Confirms every route is registered and fetches GET /health from this server over HTTP — the same call customer sites use to verify the checkout service is reachable.', 'nvoos-checkout-api' ); ?></span>
 			</form>
 
 			<h2><?php esc_html_e( 'Licenses', 'nvoos-checkout-api' ); ?></h2>

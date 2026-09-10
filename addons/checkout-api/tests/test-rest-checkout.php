@@ -875,4 +875,54 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'nvoos_checkout_download=1', $data['download_url'] );
 		$this->assertSame( 1, NVOOS_Checkout_API_License_Store::count() );
 	}
+
+	/**
+	 * The health probe returns a stable payload without touching Stripe.
+	 *
+	 * Customer sites use this endpoint to confirm the checkout API is
+	 * reachable before starting a payment session, so it must never
+	 * require Stripe credentials or spend a rate-limit token.
+	 *
+	 * @return void
+	 */
+	public function test_health_returns_ok_payload(): void {
+		$response = $this->controller->health();
+
+		$this->assertNotWPError( $response );
+		$data = $response->get_data();
+		$this->assertSame( 'ok', $data['status'] );
+		$this->assertSame( 'nvoos-checkout', $data['service'] );
+		$this->assertIsString( $data['version'] );
+		$this->assertTrue( $data['configured'] );
+		$this->assertIsInt( $data['server_time'] );
+	}
+
+	/**
+	 * The health probe works — and reports configured=false — even when
+	 * the store has no Stripe credentials yet, so connectivity can be
+	 * diagnosed before the storefront is set up.
+	 *
+	 * @return void
+	 */
+	public function test_health_reports_unconfigured_store(): void {
+		delete_option( NVOOS_Checkout_API_Settings::OPTION );
+
+		$response = $this->controller->health();
+
+		$this->assertNotWPError( $response );
+		$this->assertFalse( $response->get_data()['configured'] );
+	}
+
+	/**
+	 * The health probe is never rate-limited, no matter how many times a
+	 * customer site polls it while debugging connectivity.
+	 *
+	 * @return void
+	 */
+	public function test_health_is_not_rate_limited(): void {
+		for ( $i = 0; $i < 40; $i++ ) {
+			$response = $this->controller->health();
+			$this->assertNotWPError( $response );
+		}
+	}
 }

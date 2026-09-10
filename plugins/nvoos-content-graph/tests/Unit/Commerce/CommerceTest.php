@@ -857,4 +857,155 @@ class CommerceTest extends WP_UnitTestCase {
 		$this->assertSame( 'help@example.com', Payments::supportEmail() );
 		remove_all_filters( Schema::FILTER_SUPPORT_EMAIL );
 	}
+
+	/** @test */
+	public function vendorHealthReportsReachableService(): void {
+		$this->stubVendor(
+			array(
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'status'      => 'ok',
+							'service'     => 'nvoos-checkout',
+							'version'     => '0.1.1',
+							'configured'  => true,
+							'server_time' => time(),
+						)
+					),
+				),
+			)
+		);
+
+		$vendor = new Vendor( 'https://vendor.example/api' );
+		$health = $vendor->health();
+
+		$this->assertIsArray( $health );
+		$this->assertSame( 'ok', $health['status'] );
+		$this->assertSame( 'nvoos-checkout', $health['service'] );
+	}
+
+	/** @test */
+	public function vendorHealthReportsTransportFailure(): void {
+		add_filter(
+			'pre_http_request',
+			static fn() => new WP_Error( 'http_request_failed', 'cURL error 28: Operation timed out' ),
+			10,
+			0
+		);
+
+		$vendor = new Vendor( 'https://vendor.example/api' );
+		$health = $vendor->health();
+
+		$this->assertInstanceOf( WP_Error::class, $health );
+		$this->assertSame( 'nvoos_content_graph_vendor_unreachable', $health->get_error_code() );
+		$this->assertStringContainsString( 'cURL error 28', $health->get_error_message() );
+	}
+
+	/** @test */
+	public function vendorHealthSurfacesVendorError(): void {
+		$this->stubVendor(
+			array(
+				array(
+					'response' => array( 'code' => 500 ),
+					'body'     => 'boom',
+				),
+			)
+		);
+
+		$vendor = new Vendor( 'https://vendor.example/api' );
+		$health = $vendor->health();
+
+		$this->assertInstanceOf( WP_Error::class, $health );
+		$this->assertSame( 'nvoos_content_graph_vendor_error', $health->get_error_code() );
+	}
+
+	/** @test */
+	public function healthCheckReportsReachableVendor(): void {
+		$this->stubVendor(
+			array(
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'status'      => 'ok',
+							'service'     => 'nvoos-checkout',
+							'version'     => '0.1.1',
+							'configured'  => true,
+							'server_time' => time(),
+						)
+					),
+				),
+			)
+		);
+
+		$controller = new CommerceController();
+		$response   = $controller->checkHealth();
+
+		$this->assertNotInstanceOf( WP_Error::class, $response );
+		$data = $response->get_data();
+		$this->assertTrue( $data['reachable'] );
+		$this->assertTrue( $data['configured'] );
+		$this->assertIsInt( $data['latency_ms'] );
+		$this->assertSame( 'nvoos-checkout', $data['vendor']['service'] );
+	}
+
+	/** @test */
+	public function healthCheckIsNotThrottledWhenSessionBucketExhausted(): void {
+		$this->stubVendor(
+			array(
+				// The session bucket exhausts before the vendor is called.
+				$this->sessionResponse(),
+				$this->sessionResponse(),
+				$this->sessionResponse(),
+				$this->sessionResponse(),
+				$this->sessionResponse(),
+				// The health probe must still reach the vendor afterwards.
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'status'      => 'ok',
+							'service'     => 'nvoos-checkout',
+							'version'     => '0.1.1',
+							'configured'  => true,
+							'server_time' => time(),
+						)
+					),
+				),
+			)
+		);
+
+		$controller = new CommerceController();
+
+		for ( $i = 0; $i < 5; $i++ ) {
+			$controller->createSession( new \WP_REST_Request() );
+		}
+
+		// The 6th session request would be throttled…
+		$throttled = $controller->createSession( new \WP_REST_Request() );
+		$this->assertInstanceOf( WP_Error::class, $throttled );
+		$this->assertSame( 'nvoos_content_graph_rate_limited', $throttled->get_error_code() );
+
+		// …but the diagnostic probe is not, so admins can still find out
+		// whether the vendor is reachable while locked out.
+		$response = $controller->checkHealth();
+		$this->assertNotInstanceOf( WP_Error::class, $response );
+		$this->assertTrue( $response->get_data()['reachable'] );
+	}
+
+	/** @test */
+	public function healthCheckReportsUnconfiguredBuild(): void {
+		add_filter( Schema::FILTER_VENDOR_API_URL, static fn() => '' );
+
+		$controller = new CommerceController();
+		$response   = $controller->checkHealth();
+
+		$this->assertNotInstanceOf( WP_Error::class, $response );
+		$data = $response->get_data();
+		$this->assertFalse( $data['reachable'] );
+		$this->assertFalse( $data['configured'] );
+
+		remove_all_filters( Schema::FILTER_VENDOR_API_URL );
+	}
 }

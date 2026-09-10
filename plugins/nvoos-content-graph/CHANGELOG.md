@@ -2,6 +2,18 @@
 
 ## 1.0.7 — Unreleased
 
+### New — Checkout connectivity diagnostics
+
+- **`GET /payments/health` admin route** — pings the vendor's new public `GET /health` endpoint and reports reachability, round-trip latency, and the vendor's own status payload; deliberately **not** throttled so admins can diagnose connectivity without consuming the session/verify buckets (the probe can't trigger the "Too many checkout attempts" lockout)
+- **`Vendor::health()`** — thin client for the vendor health endpoint (10s timeout, same error envelopes as the session/verify calls)
+- **"Test connection" action in the purchase modal** — when session creation fails with a client error, the modal offers a one-click connectivity probe that renders the result inline (e.g. `Checkout service is reachable — nvoos-checkout v0.1.0 (123 ms)`)
+- Tests: `tests/Unit/Commerce/CommerceTest.php` extended with six health tests (reachable/unreachable/vendor-error paths, health-probe passthrough, health-not-throttled-when-session-bucket-exhausted, unconfigured-build report)
+
+### Changed — Purchase modal form styling
+
+- **Checkout form fields get real styling** — the email input, country selector, EU billing-address fields, Terms consent row, and the Stripe Payment Element mount point were previously unstyled browser defaults ("wireframe" look); they now use bordered WP-admin-style controls with focus rings, labelled-field spacing, a two-column address grid (street full-width, city + postal side by side), a card-style consent block with an accent-coloured checkbox, and a bordered Stripe element container
+- **Layout toggle fix** — the EU address/withdrawal rows now toggle to the stylesheet default ('' instead of inline `display: block`) so the CSS grid owns the layout; the truncated duplicate modal-style block at the end of `content-graph-admin.css` (a partial `.nvoos-cg-modal` rule cut off mid-declaration) was removed
+
 ### New — JetEngine Custom Content Type sources selection
 
 - **CCT checkbox grid on the Sources tab** — a new "Custom Content Types (JetEngine)" section (between the post-type and external-table grids) lists every JetEngine CCT registered on the site — including the CCTs the NV oOS base+Pro plugin registers — with include/exclude checkboxes, so CCTs are finally selectable sources instead of silently all-in

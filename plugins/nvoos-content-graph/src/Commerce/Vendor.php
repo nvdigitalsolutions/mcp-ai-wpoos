@@ -11,6 +11,7 @@ use function sanitize_email;
 use function sanitize_text_field;
 use function trailingslashit;
 use function wp_json_encode;
+use function wp_remote_get;
 use function wp_remote_post;
 use function wp_remote_retrieve_body;
 use function wp_remote_retrieve_response_code;
@@ -53,6 +54,59 @@ class Vendor {
 	 */
 	public function createSession() {
 		return $this->post( 'session', Payments::purchasePayload() );
+	}
+
+	/**
+	 * Ping the vendor's public health endpoint.
+	 *
+	 * Cheap connectivity probe used by the diagnostics route
+	 * (`GET /payments/health`): it never creates a Stripe intent and
+	 * never consumes a session/verify throttle token on either side, so
+	 * admins can poll it while debugging without triggering the
+	 * "Too many checkout attempts" lockout.
+	 *
+	 * @since 1.0.7
+	 *
+	 * @return array<string,mixed>|WP_Error
+	 *   array{status: string, service: string, version: string, configured: bool, server_time: int}
+	 */
+	public function health() {
+		$response = wp_remote_get(
+			$this->baseUrl . 'health',
+			array( 'timeout' => 10 )
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'nvoos_content_graph_vendor_unreachable',
+				sprintf(
+					/* translators: %s: error message. */
+					__( 'Could not reach the checkout service: %s', 'nvoos-content-graph' ),
+					$response->get_error_message()
+				),
+				array( 'status' => 502 )
+			);
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( $code < 200 || $code >= 300 || ! is_array( $data ) ) {
+			return new WP_Error(
+				'nvoos_content_graph_vendor_error',
+				sprintf(
+					/* translators: %d: HTTP status code. */
+					__( 'The checkout service returned an error (HTTP %d).', 'nvoos-content-graph' ),
+					$code
+				),
+				array(
+					'status' => $code >= 400 && $code < 500 ? $code : 502,
+					'vendor' => true,
+				)
+			);
+		}
+
+		return $data;
 	}
 
 	/**
