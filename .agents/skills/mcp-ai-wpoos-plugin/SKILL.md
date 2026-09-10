@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.75"
-  plugin-version-tested: "1.1.75"
-  last-updated: "2026-09-08"
+  plugin-version: "1.1.76"
+  plugin-version-tested: "1.1.76"
+  last-updated: "2026-09-10"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -647,6 +647,41 @@ Import external AI conversation exports into the JetEngine
   (1.0.0) completes the financial-planning, social-media, and mcp-servers
   toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
   dj-management/image-production slices.
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Delivery Formats, Checkout Legal Series & Wave F2 Completions (v1.1.76+)
+
+- **Chat delivery full report + per-channel formats** (PR #6525) — chat
+  channels support the `full` template (summary + substantive response +
+  envelope data); per-channel `format` allowlists (Telegram
+  `html`/`markdown`/`markdown_v2`/`plain`; WhatsApp/Slack/Discord/Teams
+  `markdown`/`plain`; Messenger/Google Chat `plain`); Telegram delivery
+  routes through `send_telegram_message` directly so `parse_mode` works;
+  `MarkdownV2` reserved-char escaping; group-mention skips log
+  `telegram_group_mention_required_ignored` instead of silently dropping.
+- **Duplicate-summary skip** (PR #6548) — assistant-run delivery skips the
+  derived summary when the response already opens with it
+  (`response_starts_with_summary()` normalizes tags/whitespace + strips
+  the trailing ellipsis).
+- **Comic Creation toolkit toggle + playbook seeder idempotency** (#6512,
+  direct commit) — the `enable_comic_creation_toolkit` toggle is now
+  registered (Tools section, Pro Features subtab, memory estimator,
+  WP-CLI maps); `hash_playbook_content()` strips the `Generated:`
+  timestamp so playbook syncs no longer recreate attachments.
+- **Checkout launch-complete series** (#6507/#6520/#6523/#6550) — required
+  ToS consent + buyer email, EU country selector + billing-address block,
+  Stripe product/price metadata, license DB v3 (`dbDelta`), manual install
+  as primary path (`/verify` returns `download_url`), commercial legal
+  docs (`docs/legal/`). Checkout API stays **0.1.0**.
+- **Security sweeps** (#6515/#6532/#6546/#6504) — 9 Dependabot alerts,
+  SVGO CVE-2026-84370 `>=4.1.0`, svgo/hono/vitest bumps, docs-hub ZIP
+  excludes `*.md` (keep `readme.txt`).
+- **Wave F2 port completions + new port skill** (PRs #6505–#6549) —
+  `nvoos-content-graph-pro` (1.0.0) completes ten toolkit ports
+  (comic-creation, dj-management, ai-tool-builder, architect-agent,
+  architectural-design, site-creator, document-generation,
+  regulatory-registration, healthcare, law-firm); new coding-time skill
+  `mcp-ai-wpoos-ecosystem-port` (skill count 55 → 56).
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
 
 ## Calendar Query Fix, Email Formats & Wave F2 PM/Calendar (v1.1.74+)

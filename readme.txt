@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.75
+Stable tag: 1.1.76
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.76 - September 10, 2026 =
+
+Scheduled-delivery, checkout-launch, and ecosystem-port release. Added: chat channels now support the full result-delivery template (complete summary, substantive response, and envelope data — mirroring email) plus a per-channel format setting with per-channel allowlists (Telegram html/markdown/markdown_v2/plain; WhatsApp/Slack/Discord/Teams markdown/plain; Messenger/Google Chat plain) — Telegram delivery routes through send_telegram_message directly so the Bot API parse_mode works, with the cron capability waiver extended to that tool for the internal delivery context only, MarkdownV2 reserved-character escaping, and a new log event when require_mention drops a group message. The Comic Creation toolkit's enable toggle is now registered in the Tools settings, Pro Features subtab, memory estimator, and WP-CLI toolkit maps (the toolkit's 12 tools shipped previously). The NV oOS Complete checkout launch series completes: required ToS/refund consent and buyer email at purchase (receipt_email, stored fill-once on the license), EU country selector with required billing-address block (buyer_country column), Stripe Product/Price creation with product metadata and statement descriptor, manual install promoted to the primary path, and the full commercial legal document set (privacy policy, acceptable-use policy, clickwrap guide, compliance checklist) plus updated Terms of Service. Fixed: full delivery templates no longer print the assistant summary twice (response_starts_with_summary skips the derived header when the response already opens with it), and profession playbook syncs no longer delete and recreate attachments every second (the Generated timestamp is stripped before content hashing). Security: nine Dependabot alerts closed (tiptap, multer, csv-parse, react-router-dom), the SVGO XSS bypass (CVE-2026-84370) patched to svgo >=4.1.0 across media-worker, pro, and saas-controller, and svgo/hono/vitest raised to patched versions repo-wide with the schedule-anything-spa build unblocked. The docs-hub wp.org ZIP no longer ships dev Markdown files (packaging tri-sync, ZIP rebuilt). The ecosystem Wave F2 continues in nvoos-content-graph-pro (still v1.0.0): site-creator (33 tools), document-generation, regulatory-registration, healthcare (nine batches through interop/OpenMed), and law-firm toolkits complete, plus image-production, comic-creation, dj-management, ai-tool-builder, architect-agent, and architectural-design slices. New coding-time skill mcp-ai-wpoos-ecosystem-port (skills 55 to 56). Stale 1.1.74 build ZIPs removed (30 files). Tool count unchanged: ~303 base + ~1,265 Pro (~1,568 total; live registry authoritative).
 
 = 1.1.75 - September 9, 2026 =
 

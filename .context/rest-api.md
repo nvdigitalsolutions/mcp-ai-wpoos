@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: September 9, 2026 (v1.1.75).
+> Last reviewed: September 10, 2026 (v1.1.76).
+>
+> **New in v1.1.76 (no base REST changes):** no base REST surface changed this window — the chat-delivery `full` template + per-channel `format` work (#6525) is result-delivery-service/tool-schema-level (`POST /mcp-ai-pro/v1/schedules` documents the new `template`/`format` result-delivery fields; no new routes). The duplicate-summary skip (#6548) is service-level; the Comic Creation settings toggle (#6512) is admin-settings-level. Sub-project: the `nvoos-content-graph-pro` addon completes the comic-creation, dj-management, ai-tool-builder, architect-agent, architectural-design, site-creator, document-generation, regulatory-registration, healthcare, and law-firm toolkit ports as part of Wave F2 (no new REST routes beyond the ported toolkit surfaces).
 >
 > **New in v1.1.75 (one Pro REST change):** `POST /mcp-ai-pro/v1/schedules` now accepts `result_delivery` (channels may reference a Remote Sites connection via `connection_id`, carry inline credentials, or rely on the new tier-4 fallback, #6488) — the create path previously silently dropped delivery configuration. No base REST surface changed. The `wake_up_context` graph-retriever seam (#6486) is a tool-level filter (`wp_mcp_ai_wake_up_context_graph_retriever`), not a route; the `create/update_pro_schedule` `result_delivery` parameter is MCP-tool-schema-level. Sub-project: the `nvoos-content-graph-pro` addon gains the financial-planning, social-media, and mcp-servers toolkit slices plus remote-sites/video/analytics/multilingual/cloudways/dj-management/image-production slices (no new REST routes beyond the ported toolkit surfaces).
 >

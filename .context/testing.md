@@ -1,7 +1,9 @@
 # NV oOS Testing Patterns
 
 > **GSD Context File** — Load this when writing or reviewing PHPUnit tests.
-> Last reviewed: September 9, 2026 (v1.1.75).
+> Last reviewed: September 10, 2026 (v1.1.76).
+>
+> **New in v1.1.76:** the scheduled-delivery suites grew again — `tests/test-pro-result-delivery-chat-format.php` (new in #6525: full template + per-channel format allowlists, Telegram parse-mode routing, reserved-char escaping, group-mention skip logging) and `tests/test-pro-result-delivery-email-format.php` extended with the duplicate-summary skip (#6548). Mempalace recall fixtures backdated one minute + fixture filters at `PHP_INT_MAX` (clock-skew flake, #6529); privacy-export order-independence via `assertEqualsCanonicalizing` (#6527); playbook-seeder hash regression ignores the `Generated:` timestamp (direct commit `fe4d0ee880`). Each Wave F2 port PR (#6505–#6549) carries its own `tests/` suite. The `mcp-ai-wpoos-test-suite` skill stays at **40** patterns.
 >
 > **New in v1.1.75:** the two scheduled-delivery fix PRs extended the delivery suites — `test-chat-channels.php` (string credentials fail gracefully: no TypeError, correct per-channel `failures` summary, #6482) and `test-pro-result-delivery-email-format.php` (sanitizer credential coercion + `normalize_channel_credentials()` decode/reject, #6482; fallback resolution from an enabled Remote Sites connection, assistant-assigned-connection preference, disabled-connection skip, and diagnostics shape with no secret leakage, #6488). The memory-bridge PR added `tests/test-mempalace-phase4a-graphify-bridge.php` (new, bridge projection + retriever-filter seams) and extended `test-orchestration-dashboard-memory-phase4a.php` (any-bridge detection). Each of the 24 Wave F2 port PRs (#6476–#6502) carries its own `tests/` suite (e.g. `test-financial-tools-b.php`, `test-social-tools-a.php`, `test-mcp-servers-framework.php`, `test-mcp-servers-batch-a/b.php`). The `mcp-ai-wpoos-test-suite` skill stays at **40** patterns.
 >
