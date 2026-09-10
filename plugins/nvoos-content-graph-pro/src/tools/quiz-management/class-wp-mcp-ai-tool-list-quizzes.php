@@ -1,0 +1,199 @@
+<?php
+/**
+ * tools/quiz-management/class-wp-mcp-ai-tool-list-quizzes.php (ecosystem port — Wave F5, quiz-management tool batch).
+ *
+ * Ported from the base Pro addon's `addons/pro/includes/tools/quiz-management/class-wp-mcp-ai-tool-list-quizzes.php` for the
+ * standalone `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro addon owns the
+ * class in monolith installs — the addon boots nothing when `WP_MCP_AI_PRO_PATH` is defined
+ * (see the plugin entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain `nvoos-content-graph-pro`;
+ * `NVOOS_CONTENT_GRAPH_PRO_*` constant swaps.
+ *
+ * @package NvoosContentGraphPro
+ * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Lists available quizzes.
+ */
+class WP_MCP_AI_Tool_List_Quizzes implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_slug() {
+		return 'list_quizzes';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'List Quizzes', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_description() {
+		return __( 'Lists available quizzes with optional filtering.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_parameters_schema() {
+		return array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'author_id' => array(
+					'type'        => 'integer',
+					'description' => __( 'Filter by quiz author ID.', 'nvoos-content-graph-pro' ),
+					'minimum'     => 1,
+				),
+				'per_page'  => array(
+					'type'        => 'integer',
+					'description' => __( 'Number of quizzes to retrieve per page.', 'nvoos-content-graph-pro' ),
+					'default'     => 10,
+					'minimum'     => 1,
+					'maximum'     => 100,
+				),
+				'page'      => array(
+					'type'        => 'integer',
+					'description' => __( 'Page number for pagination.', 'nvoos-content-graph-pro' ),
+					'default'     => 1,
+					'minimum'     => 1,
+				),
+			),
+			'required'             => array(),
+			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context including user_id.
+	 * @return array|WP_Error Tool results or error.
+	 */
+	public function execute( array $arguments = array(), array $context = array() ) {
+		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+
+		if ( ! $current_user_id || ! user_can( $current_user_id, 'read' ) ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view quizzes.', 'nvoos-content-graph-pro' ) );
+		}
+
+		$author_id = isset( $arguments['author_id'] ) ? absint( $arguments['author_id'] ) : 0;
+		$per_page  = isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 10;
+		$page      = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
+
+		$query_args = array(
+			'post_type'      => 'mcp_ai_quiz',
+			'post_status'    => 'publish',
+			'posts_per_page' => $per_page,
+			'paged'          => $page,
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+		);
+
+		if ( $author_id > 0 ) {
+			$query_args['author'] = $author_id;
+		}
+
+		$query = new WP_Query( $query_args );
+
+		$quizzes = array();
+
+		if ( $query->have_posts() ) {
+			while ( $query->have_posts() ) {
+				$query->the_post();
+				$quiz_id = get_the_ID();
+
+				// Questions are stored as a serialized array; when a quiz has no
+				// questions meta (e.g. created via wp_insert_post directly),
+				// get_post_meta() returns an empty string, which count() would
+				// reject with a TypeError on PHP 8+.
+				$questions = get_post_meta( $quiz_id, '_mcp_ai_quiz_questions', true );
+
+				$quizzes[] = array(
+					'quiz_id'        => $quiz_id,
+					'title'          => get_the_title(),
+					'description'    => get_post_meta( $quiz_id, '_mcp_ai_quiz_description', true ),
+					'time_limit'     => absint( get_post_meta( $quiz_id, '_mcp_ai_quiz_time_limit', true ) ),
+					'question_count' => is_array( $questions ) ? count( $questions ) : 0,
+					'total_points'   => absint( get_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', true ) ),
+					'passing_score'  => absint( get_post_meta( $quiz_id, '_mcp_ai_quiz_passing_score', true ) ),
+					'author_id'      => absint( get_the_author_meta( 'ID' ) ),
+					'created_at'     => get_the_date( 'c' ),
+				);
+			}
+			wp_reset_postdata();
+		}
+
+		return array(
+			'summary'     => sprintf(
+				/* translators: %d: number of quizzes */
+				_n( 'Found %d quiz', 'Found %d quizzes', count( $quizzes ), 'nvoos-content-graph-pro' ),
+				count( $quizzes )
+			),
+			'quizzes'     => $quizzes,
+			'total'       => $query->found_posts,
+			'page'        => $page,
+			'per_page'    => $per_page,
+			'total_pages' => $query->max_num_pages,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'education',
+			'post_type'             => 'mcp_ai_quiz',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'educator', 'student', 'trainer' ),
+			'risk_level'            => 'info',
+		);
+	}
+
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
+	public function get_capability_flags() {
+		return array(
+			'pro',
+			'read-only',
+			'local-only',
+			'requires-capability',
+			'paginated',
+		);
+	}
+}

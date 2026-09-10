@@ -12,8 +12,8 @@
  * addon's `src/` copies; the two admin-page requires are file-gated until the quiz admin slice
  * lands (the research `::init()` and the settings-page `new` fire inside the same gates); NEW
  * standalone-only wiring (deviation, same as the CRM init): a `wp_mcp_ai_pro_tools` filter plus
- * `wp_mcp_ai_pro_register_quiz_ecosystem_tools()` — both start empty and fill as the quiz tool
- * batch lands; full-body `! defined( 'WP_MCP_AI_PATH' )` guard (the global enqueue helper would
+ * `wp_mcp_ai_pro_register_quiz_ecosystem_tools()` — both carry the full twelve-entry monolith map
+ * (the 11 quiz-management tools + the math render-math tool); full-body `! defined( 'WP_MCP_AI_PATH' )` guard (the global enqueue helper would
  * collide compile-time with the base copy in the monorepo test matrix).
  *
  * @package NvoosContentGraphPro
@@ -100,14 +100,27 @@ if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 
 /**
  * Standalone-only tool filter — mirrors the monolith's inline quiz map (the
- * `enable_quiz_system` gate in `mcp-ai-wpoos-pro.php`). The map fills as the
- * quiz tool batch lands.
+ * `enable_quiz_system` gate in `mcp-ai-wpoos-pro.php`). Carries the full
+ * twelve-entry map.
  *
  * @param array $tools Existing tool map.
  * @return array Extended tool map.
  */
 function wp_mcp_ai_pro_register_quiz_tools( $tools ) {
-	$nvoos_content_graph_pro_quiz_tools = array();
+	$nvoos_content_graph_pro_quiz_tools = array(
+		'WP_MCP_AI_Tool_Create_Quiz'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/quiz-management/class-wp-mcp-ai-tool-create-quiz.php',
+		'WP_MCP_AI_Tool_Get_Quiz'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/quiz-management/class-wp-mcp-ai-tool-get-quiz.php',
+		'WP_MCP_AI_Tool_List_Quizzes'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/quiz-management/class-wp-mcp-ai-tool-list-quizzes.php',
+		'WP_MCP_AI_Tool_Update_Quiz'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/quiz-management/class-wp-mcp-ai-tool-update-quiz.php',
+		'WP_MCP_AI_Tool_Delete_Quiz'          => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/quiz-management/class-wp-mcp-ai-tool-delete-quiz.php',
+		'WP_MCP_AI_Tool_Submit_Quiz_Answer'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/quiz-management/class-wp-mcp-ai-tool-submit-quiz-answer.php',
+		'WP_MCP_AI_Tool_Grade_Quiz'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/quiz-management/class-wp-mcp-ai-tool-grade-quiz.php',
+		'WP_MCP_AI_Tool_Get_Quiz_Submissions' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/quiz-management/class-wp-mcp-ai-tool-get-quiz-submissions.php',
+		'WP_MCP_AI_Tool_Get_Quiz_Results'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/quiz-management/class-wp-mcp-ai-tool-get-quiz-results.php',
+		'WP_MCP_AI_Tool_Get_Quiz_Analytics'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/quiz-management/class-wp-mcp-ai-tool-get-quiz-analytics.php',
+		'WP_MCP_AI_Tool_Research_Quiz_Topic'  => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/quiz-management/class-wp-mcp-ai-tool-research-quiz-topic.php',
+		'WP_MCP_AI_Tool_Render_Math_Equation' => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/math/class-wp-mcp-ai-tool-render-math-equation.php',
+	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_quiz_tools );
 }
@@ -116,7 +129,7 @@ function wp_mcp_ai_pro_register_quiz_tools( $tools ) {
  * Standalone-only ecosystem registration — registers the ported quiz tools
  * into the ecosystem graph ToolRegistry and the nvoos/core registry via
  * `WP_MCP_AI_Pro_Tool_Adapter` (same wiring as the image-production inits).
- * The list fills as the quiz tool batch lands.
+ * The list carries the full twelve-entry map.
  *
  * @return void
  */
@@ -129,7 +142,20 @@ function wp_mcp_ai_pro_register_quiz_ecosystem_tools() {
 	}
 
 	foreach (
-		array() as $nvoos_content_graph_pro_tool_class
+		array(
+			'WP_MCP_AI_Tool_Create_Quiz',
+			'WP_MCP_AI_Tool_Get_Quiz',
+			'WP_MCP_AI_Tool_List_Quizzes',
+			'WP_MCP_AI_Tool_Update_Quiz',
+			'WP_MCP_AI_Tool_Delete_Quiz',
+			'WP_MCP_AI_Tool_Submit_Quiz_Answer',
+			'WP_MCP_AI_Tool_Grade_Quiz',
+			'WP_MCP_AI_Tool_Get_Quiz_Submissions',
+			'WP_MCP_AI_Tool_Get_Quiz_Results',
+			'WP_MCP_AI_Tool_Get_Quiz_Analytics',
+			'WP_MCP_AI_Tool_Research_Quiz_Topic',
+			'WP_MCP_AI_Tool_Render_Math_Equation',
+		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
 		try {

@@ -289,6 +289,19 @@
         <severity>0</severity>
     </rule>
 
+    <!--
+        Byte-identical render-math tool: the KaTeX cache key serializes the
+        full argument array and the base copy carries an unreachable
+        trailing return after the deterministic default envelope (both
+        monolith-identical).
+    -->
+    <rule ref="WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize">
+        <severity>0</severity>
+    </rule>
+    <rule ref="Squiz.PHP.NonExecutableCode.Unreachable">
+        <severity>0</severity>
+    </rule>
+
     <file>./nvoos-content-graph-pro.php</file>
     <file>./src/</file>
     <file>./tests/</file>
