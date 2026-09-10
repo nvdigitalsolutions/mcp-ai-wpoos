@@ -967,8 +967,10 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 								<span class="wp-mcp-ai-preset-featured-badge"><?php esc_html_e( '⭐ Featured', 'mcp-ai-wpoos' ); ?></span>
 							<?php endif; ?>
 							<span class="wp-mcp-ai-preset-icon"><?php echo esc_html( $preset['icon'] ); ?></span>
-							<span class="wp-mcp-ai-preset-title"><?php echo esc_html( $preset['label'] ); ?></span>
-							<span class="wp-mcp-ai-preset-desc"><?php echo esc_html( $preset['description'] ); ?></span>
+							<span class="wp-mcp-ai-preset-body">
+								<span class="wp-mcp-ai-preset-title"><?php echo esc_html( $preset['label'] ); ?></span>
+								<span class="wp-mcp-ai-preset-desc"><?php echo esc_html( $preset['description'] ); ?></span>
+							</span>
 							<span class="wp-mcp-ai-preset-tools-count">
 								<?php
 								printf(
@@ -2338,12 +2340,33 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				padding: 0;
 			}
 
-			/* Presets grid — 4 columns for 8 presets */
+			/* Presets grid — featured card spans a full hero row, then 4 columns */
 			.wp-mcp-ai-wizard-presets {
 				display: grid;
 				grid-template-columns: repeat(4, 1fr);
 				gap: 16px;
 				margin-bottom: 24px;
+			}
+			.wp-mcp-ai-preset-body {
+				display: flex;
+				flex-direction: column;
+				gap: 4px;
+			}
+			.wp-mcp-ai-preset-card.is-featured {
+				grid-column: 1 / -1;
+				flex-direction: row;
+				align-items: center;
+				gap: 18px;
+			}
+			.wp-mcp-ai-preset-card.is-featured .wp-mcp-ai-preset-icon {
+				font-size: 2.6em;
+			}
+			.wp-mcp-ai-preset-card.is-featured .wp-mcp-ai-preset-body {
+				flex: 1;
+			}
+			.wp-mcp-ai-preset-card.is-featured .wp-mcp-ai-preset-tools-count {
+				margin-left: auto;
+				white-space: nowrap;
 			}
 
 			/* Responsive */
@@ -2357,6 +2380,14 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				.wp-mcp-ai-wizard-presets,
 				.wp-mcp-ai-next-step-cards {
 					grid-template-columns: 1fr;
+				}
+				.wp-mcp-ai-preset-card.is-featured {
+					flex-direction: column;
+					align-items: flex-start;
+					gap: 8px;
+				}
+				.wp-mcp-ai-preset-card.is-featured .wp-mcp-ai-preset-tools-count {
+					margin-left: 0;
 				}
 				.wp-mcp-ai-wizard-steps {
 					display: none;
