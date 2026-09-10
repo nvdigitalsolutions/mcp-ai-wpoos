@@ -118,6 +118,7 @@ final class Schema {
 			'embeddings_model'         => 'text-embedding-3-small',
 			'excluded_post_types'      => array(),
 			'extra_post_types'         => array(),
+			'excluded_cct_slugs'       => array(),
 			'external_tables'          => array(),
 			'disabled_external_tables' => array(),
 		);

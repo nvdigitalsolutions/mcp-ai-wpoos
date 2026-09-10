@@ -150,6 +150,9 @@ class SettingsPage {
 		if ( class_exists( 'NvoosContentGraph\Admin\Sections\SourcesCptsSection' ) ) {
 			SettingsRegistry::register_section( new \NvoosContentGraph\Admin\Sections\SourcesCptsSection() );
 		}
+		if ( class_exists( 'NvoosContentGraph\Admin\Sections\SourcesCctsSection' ) ) {
+			SettingsRegistry::register_section( new \NvoosContentGraph\Admin\Sections\SourcesCctsSection() );
+		}
 		if ( class_exists( 'NvoosContentGraph\Admin\Sections\SourcesExtSection' ) ) {
 			SettingsRegistry::register_section( new \NvoosContentGraph\Admin\Sections\SourcesExtSection() );
 		}

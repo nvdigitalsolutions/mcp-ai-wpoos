@@ -12,6 +12,7 @@ use function apply_filters;
 use function get_posts;
 use function sanitize_key;
 use function sanitize_text_field;
+use function wp_list_pluck;
 
 /**
  * Content detector for the knowledge graph.
@@ -224,12 +225,18 @@ class Detector {
 	// ─── JetEngine CCT detection ───────────────────────────────
 
 	/**
-	 * Return JetEngine Custom Content Type items that should be indexed.
+	 * Enumerate the JetEngine Custom Content Types registered on the site.
 	 *
-	 * @param string $since Optional ISO-8601 datetime for incremental builds.
-	 * @return array<int,array{type: string, name: string, item: array}>
+	 * CCTs live in dedicated `{prefix}jet_cct_{slug}` tables and are
+	 * invisible to {@see get_post_types()} / {@see get_posts()}, so they
+	 * have to be enumerated through the JetEngine API. Also powers the
+	 * Sources tab checkbox grid, which shares the same enumeration.
+	 *
+	 * Sets {@see self::$lastCctsSkipReason} on every unavailable path.
+	 *
+	 * @return array<int,array{slug: string, name: string, db: object|null}>
 	 */
-	public static function detectCcts( string $since = '' ): array {
+	public static function getCctTypes(): array {
 		self::$lastCctsSkipReason = '';
 
 		if ( ! function_exists( 'jet_engine' ) ) {
@@ -261,35 +268,64 @@ class Detector {
 			return array();
 		}
 
+		$list = array();
+		foreach ( $types as $typeKey => $type ) {
+			$slug = self::resolveCctSlug( $type, $typeKey );
+			if ( '' === $slug ) {
+				continue;
+			}
+			$list[] = array(
+				'slug' => $slug,
+				'name' => self::resolveCctName( $type, $slug ),
+				'db'   => ( is_object( $type ) && ! empty( $type->db ) ) ? $type->db : null,
+			);
+		}
+
+		return $list;
+	}
+
+	/**
+	 * Return JetEngine Custom Content Type items that should be indexed.
+	 *
+	 * Every registered CCT is indexed by default; unchecking a CCT on the
+	 * Sources tab stores its slug in the `excluded_cct_slugs` setting and
+	 * removes it from the allowlist here.
+	 *
+	 * @param string $since Optional ISO-8601 datetime for incremental builds.
+	 * @return array<int,array{type: string, name: string, item: array}>
+	 */
+	public static function detectCcts( string $since = '' ): array {
+		$types = self::getCctTypes();
+		if ( empty( $types ) ) {
+			return array();
+		}
+
 		$perTypeLimit = (int) apply_filters( 'nvoos_content_graph_cct_items_limit', self::DEFAULT_CCT_ITEMS_LIMIT );
 		if ( $perTypeLimit <= 0 ) {
 			$perTypeLimit = self::DEFAULT_CCT_ITEMS_LIMIT;
 		}
 
-		$defaultSlugs = array();
-		foreach ( $types as $typeKey => $type ) {
-			$slug = self::resolveCctSlug( $type, $typeKey );
-			if ( '' !== $slug ) {
-				$defaultSlugs[] = $slug;
-			}
-		}
-		$defaultSlugs = array_values( array_unique( $defaultSlugs ) );
+		$defaultSlugs = array_values( array_unique( wp_list_pluck( $types, 'slug' ) ) );
+
+		$allSettings = Settings::all();
+		$excluded    = isset( $allSettings['excluded_cct_slugs'] ) && is_array( $allSettings['excluded_cct_slugs'] )
+			? $allSettings['excluded_cct_slugs'] : array();
+		$allowed     = array_values( array_diff( $defaultSlugs, array_map( 'sanitize_key', $excluded ) ) );
 
 		/** @var string[] */
-		$indexedSlugs = apply_filters( 'nvoos_content_graph_indexed_cct_slugs', $defaultSlugs );
+		$indexedSlugs = apply_filters( 'nvoos_content_graph_indexed_cct_slugs', $allowed );
 		$indexedSlugs = array_map( 'sanitize_key', (array) $indexedSlugs );
 
 		$rows = array();
 
-		foreach ( $types as $typeKey => $type ) {
-			$slug = self::resolveCctSlug( $type, $typeKey );
+		foreach ( $types as $type ) {
+			$slug = $type['slug'];
 			if ( '' === $slug || ! in_array( $slug, $indexedSlugs, true ) ) {
 				continue;
 			}
 
-			$name = self::resolveCctName( $type, $slug );
-
-			$db = is_object( $type ) && ! empty( $type->db ) ? $type->db : null;
+			$name = $type['name'];
+			$db   = $type['db'];
 			if ( null === $db || ! method_exists( $db, 'query' ) ) {
 				continue;
 			}

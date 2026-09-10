@@ -2,6 +2,14 @@
 
 ## 1.0.7 — Unreleased
 
+### New — JetEngine Custom Content Type sources selection
+
+- **CCT checkbox grid on the Sources tab** — a new "Custom Content Types (JetEngine)" section (between the post-type and external-table grids) lists every JetEngine CCT registered on the site — including the CCTs the NV oOS base+Pro plugin registers — with include/exclude checkboxes, so CCTs are finally selectable sources instead of silently all-in
+- **`excluded_cct_slugs` setting** — every CCT stays indexed by default (unchanged behavior for existing graphs); unchecking a CCT stores its slug in the new setting and the graph `Detector` skips it on the next build. The grid ships a hidden marker field so "uncheck everything" is saved correctly instead of silently keeping the old exclusions; when JetEngine is inactive the saved exclusions are preserved untouched
+- **`Detector::getCctTypes()`** — the JetEngine enumeration (previously private to `detectCcts()`) is now a public helper shared by the detector and the admin grid, with the existing `nvoos_content_graph_indexed_cct_slugs` filter still applied last so integrations keep their override
+- **JetEngine-inactive degradation** — the section renders an explanatory notice when JetEngine is missing or has no CCTs registered
+- Tests: `tests/Unit/Admin/SourcesCctsSectionTest.php` (sanitize contract incl. the hidden-marker semantics + render output) and `tests/Unit/Graph/CctDetectionTest.php` (enumeration, default-include, exclusion honoring, filter override) backed by a new shared JetEngine CCT stub at `tests/helpers/jetengine-cct-stubs.php`
+
 ### New — Checkout consent & legal links
 
 - **Terms of Service consent checkbox in the purchase modal** — the Pay button stays disabled until the buyer ticks agreement to the Terms of Service and the 30-day money-back Refund Policy (links open in a new tab; URLs come from the vendor `/session` response with filterable client-side defaults `nvoos_content_graph/payments/terms_url` / `nvoos_content_graph/payments/refund_policy_url`)

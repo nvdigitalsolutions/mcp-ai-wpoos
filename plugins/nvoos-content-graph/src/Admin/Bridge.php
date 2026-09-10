@@ -9,6 +9,7 @@ use function esc_attr;
 use function esc_html;
 use function get_post_types;
 use function in_array;
+use function sanitize_key;
 
 /**
  * Bridge between the standalone Content Graph admin and WordPress core.
@@ -72,6 +73,69 @@ class Bridge {
 		}
 		echo '</tbody></table>';
 		echo '<p class="description">' . esc_html__( 'Uncheck to exclude a post type; check to include it. Changes take effect on the next graph build.', 'nvoos-content-graph' ) . '</p>';
+	}
+
+	/**
+	 * Render the JetEngine CCT checkbox grid for the Sources tab.
+	 *
+	 * JetEngine Custom Content Types live in dedicated database tables
+	 * and never appear in {@see get_post_types()}, so they get their own
+	 * grid. Every CCT is included by default; unchecking one stores its
+	 * slug in the `excluded_cct_slugs` setting, which the graph Detector
+	 * honors on the next build.
+	 *
+	 * @return void
+	 */
+	public static function renderCctCheckboxes(): void {
+		$settings = \NvoosContentGraph\Settings::all();
+		$excluded = isset( $settings['excluded_cct_slugs'] ) && is_array( $settings['excluded_cct_slugs'] )
+			? $settings['excluded_cct_slugs'] : array();
+
+		if ( ! class_exists( '\NvoosContentGraph\Graph\Detector' ) ) {
+			echo '<p>' . esc_html__( 'No Custom Content Types available.', 'nvoos-content-graph' ) . '</p>';
+			return;
+		}
+
+		$types = \NvoosContentGraph\Graph\Detector::getCctTypes();
+
+		if ( empty( $types ) ) {
+			$reason = \NvoosContentGraph\Graph\Detector::getLastCctsSkipReason();
+			if ( 'jetengine_not_active' === $reason ) {
+				echo '<p>' . esc_html__( 'JetEngine is not active. Custom Content Types become available when the JetEngine plugin is enabled.', 'nvoos-content-graph' ) . '</p>';
+			} else {
+				echo '<p>' . esc_html__( 'No JetEngine Custom Content Types are registered.', 'nvoos-content-graph' ) . '</p>';
+			}
+			return;
+		}
+
+		// Hidden marker so the sanitizer can tell "user unchecked every
+		// CCT" (field present, empty) apart from "grid not rendered"
+		// (field absent — JetEngine inactive). Without it, unchecking all
+		// boxes would submit nothing and silently keep the old exclusions.
+		echo '<input type="hidden" name="' . esc_attr( Schema::OPTION_SETTINGS ) . '[nvoos_cct_include]" value="">';
+
+		echo '<table class="widefat striped" style="max-width:700px">';
+		echo '<thead><tr>';
+		echo '<th>' . esc_html__( 'Content Type', 'nvoos-content-graph' ) . '</th>';
+		echo '<th>' . esc_html__( 'Include', 'nvoos-content-graph' ) . '</th>';
+		echo '<th>' . esc_html__( 'Notes', 'nvoos-content-graph' ) . '</th>';
+		echo '</tr></thead>';
+		echo '<tbody>';
+
+		foreach ( $types as $type ) {
+			$slug = sanitize_key( $type['slug'] );
+			if ( '' === $slug ) {
+				continue;
+			}
+			$checked = ! in_array( $slug, $excluded, true );
+			echo '<tr>';
+			echo '<td><strong>' . esc_html( $type['name'] ) . '</strong> <code style="font-size:11px">' . esc_html( $slug ) . '</code></td>';
+			echo '<td><input type="checkbox" name="' . esc_attr( Schema::OPTION_SETTINGS ) . '[nvoos_cct_include][' . esc_attr( $slug ) . ']" value="1" ' . checked( $checked, true, false ) . '></td>';
+			echo '<td>' . esc_html__( 'Included by default', 'nvoos-content-graph' ) . '</td>';
+			echo '</tr>';
+		}
+		echo '</tbody></table>';
+		echo '<p class="description">' . esc_html__( 'Uncheck to exclude a Custom Content Type; check to include it. Changes take effect on the next graph build.', 'nvoos-content-graph' ) . '</p>';
 	}
 
 	/**
