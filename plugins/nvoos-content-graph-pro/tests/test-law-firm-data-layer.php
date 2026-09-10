@@ -102,10 +102,9 @@ class Test_Law_Firm_Data_Layer extends WP_UnitTestCase {
 
 	/**
 	 * Standalone only: the slim init's file targets must exist, the tool
-	 * filter must carry the fifty-four matter-management + billing-trust +
-	 * intake-management + litigation-support + compliance-ethics +
-	 * document-automation tools (the further law-firm tool batches land with
-	 * the following sub-clusters), and the enqueue helper must load.
+	 * filter must carry the sixty-three law-firm tools (the 62-entry monolith
+	 * map plus the tree-only import-law-firm-blueprint tool), and the enqueue
+	 * helper must load.
 	 */
 	public function test_init_gate_targets_standalone(): void {
 		if ( defined( 'WP_MCP_AI_PATH' ) ) {
@@ -124,7 +123,7 @@ class Test_Law_Firm_Data_Layer extends WP_UnitTestCase {
 
 		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/init.php';
 		add_filter( 'wp_mcp_ai_pro_tools', 'wp_mcp_ai_pro_register_law_firm_tools', 10 );
-		$this->assertCount( 54, apply_filters( 'wp_mcp_ai_pro_tools', array() ) );
+		$this->assertCount( 63, apply_filters( 'wp_mcp_ai_pro_tools', array() ) );
 		$this->assertTrue( function_exists( 'wp_mcp_ai_pro_register_law_firm_ecosystem_tools' ) );
 		$this->assertTrue( function_exists( 'wp_mcp_ai_enqueue_law_firm_toolkit_admin_styles' ) );
 	}

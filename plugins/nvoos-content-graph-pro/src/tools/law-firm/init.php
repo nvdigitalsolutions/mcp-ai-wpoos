@@ -19,7 +19,8 @@
  * matter-management batch-1 tools plus the ten billing-trust tools plus the
  * eight intake-management tools plus the eight litigation-support tools plus
  * the eight compliance-ethics tools plus the ten document-automation tools
- * and fill further as the law-firm tool batches land; local vars
+ * plus the eight research-analytics tools plus the tree-only import-blueprint
+ * tool and fill further as the law-firm tool batches land; local vars
  * prefixed `$nvoos_content_graph_pro_*`; full-body
  * `! defined( 'WP_MCP_AI_PATH' )` guard (the global enqueue helper would
  * collide compile-time with the base copy in the monorepo test matrix).
@@ -190,6 +191,15 @@ function wp_mcp_ai_pro_register_law_firm_tools( $tools ) {
 		'WP_MCP_AI_Tool_LF_Legal_Citation_Checker'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-legal-citation-checker.php',
 		'WP_MCP_AI_Tool_LF_Brief_Outline_Generator'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-brief-outline-generator.php',
 		'WP_MCP_AI_Tool_LF_Document_Template_Manager'      => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-document-template-manager.php',
+		'WP_MCP_AI_Tool_LF_Legal_Research_Assistant'       => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-legal-research-assistant.php',
+		'WP_MCP_AI_Tool_LF_Case_Law_Analyzer'              => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-case-law-analyzer.php',
+		'WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-firm-performance-dashboard.php',
+		'WP_MCP_AI_Tool_LF_Matter_Analytics_Generator'     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-matter-analytics-generator.php',
+		'WP_MCP_AI_Tool_LF_Revenue_Forecaster'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-revenue-forecaster.php',
+		'WP_MCP_AI_Tool_LF_Attorney_Utilization_Tracker'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-attorney-utilization-tracker.php',
+		'WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer'   => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-client-satisfaction-analyzer.php',
+		'WP_MCP_AI_Tool_LF_Competitive_Benchmarker'        => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-competitive-benchmarker.php',
+		'WP_MCP_AI_Tool_Import_Law_Firm_Blueprint'         => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/law-firm/examples/class-wp-mcp-ai-tool-import-law-firm-blueprint.php',
 	);
 
 	return array_merge( $tools, $nvoos_content_graph_pro_law_tools );
@@ -267,6 +277,15 @@ function wp_mcp_ai_pro_register_law_firm_ecosystem_tools() {
 			'WP_MCP_AI_Tool_LF_Legal_Citation_Checker',
 			'WP_MCP_AI_Tool_LF_Brief_Outline_Generator',
 			'WP_MCP_AI_Tool_LF_Document_Template_Manager',
+			'WP_MCP_AI_Tool_LF_Legal_Research_Assistant',
+			'WP_MCP_AI_Tool_LF_Case_Law_Analyzer',
+			'WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard',
+			'WP_MCP_AI_Tool_LF_Matter_Analytics_Generator',
+			'WP_MCP_AI_Tool_LF_Revenue_Forecaster',
+			'WP_MCP_AI_Tool_LF_Attorney_Utilization_Tracker',
+			'WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer',
+			'WP_MCP_AI_Tool_LF_Competitive_Benchmarker',
+			'WP_MCP_AI_Tool_Import_Law_Firm_Blueprint',
 		) as $nvoos_content_graph_pro_tool_class
 	) {
 		$nvoos_content_graph_pro_adapter = new WP_MCP_AI_Pro_Tool_Adapter( new $nvoos_content_graph_pro_tool_class() );
