@@ -154,6 +154,12 @@ new wiring (documented as a deviation every time):
   fine; deterministic either way).
 - Hook assertions on init wiring are first-loader-gated where earlier suites
   require the init in-process.
+- **Admin-slice in-init wiring can't be asserted standalone**: the standalone
+  test matrix boots with `is_admin()` false, so an init's `is_admin()`-gated
+  admin block never fires there. Assert gate targets via `assertFileExists` and
+  wire pages directly via their own `::init()` calls (PM/calendar precedent).
+  Probe the actual state with a scratch test when unsure (`is_admin()`,
+  `function_exists( 'wp_mcp_ai_is_base_version' )`).
 - Local matrix parity: standalone ~1 skip, monolith skips every
   standalone-gated test (hundreds — not failures).
 - Per-matrix commands + Docker one-off runner: see the test-suite skill.
