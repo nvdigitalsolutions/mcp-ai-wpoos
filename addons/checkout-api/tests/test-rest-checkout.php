@@ -161,6 +161,39 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A Stripe 4xx rejection surfaces as a 424 with Stripe's message.
+	 *
+	 * Customer sites treat 424 as a showable rejection (in-modal error)
+	 * instead of checkout-unavailable, so the buyer sees the real reason
+	 * the session could not be created.
+	 *
+	 * @return void
+	 */
+	public function test_session_surfaces_stripe_rejection_with_424(): void {
+		$this->stub_stripe(
+			array(
+				array(
+					'response' => array( 'code' => 400 ),
+					'body'     => wp_json_encode(
+						array(
+							'error' => array(
+								'message' => 'Invalid boolean: 1',
+							),
+						)
+					),
+				),
+			)
+		);
+
+		$response = $this->controller->create_session( $this->session_request() );
+
+		$this->assertWPError( $response );
+		$this->assertSame( 'nvoos_checkout_stripe_http_error', $response->get_error_code() );
+		$this->assertSame( 'Invalid boolean: 1', $response->get_error_message() );
+		$this->assertSame( 424, $response->get_error_data()['status'] );
+	}
+
+	/**
 	 * A valid paid intent issues a license with a signed download URL.
 	 *
 	 * @return void
