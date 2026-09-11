@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: September 10, 2026 (v1.1.76).
+> Last reviewed: September 11, 2026 (v1.1.77).
+>
+> **New in v1.1.77 (no base REST changes):** no base REST surface changed this window — the base+pro gating fix (#6561) is load-time, the onboarding preset (#6570) is admin-settings-level, the model refresh (#6555) is catalog/cost-calculator-level, and the memory CCT slug fix (#6591) is service-level. Sub-project (checkout launch series, #6568/#6573/#6587/#6589/#6590/#6594): the Checkout API addon (**0.1.0 → 0.1.1**) gains a public `GET /health` probe (no Stripe, no rate-limit token, no writes) and a **424/502 error contract** on `/payments/session` (Stripe 4xx → 424 with Stripe's message — clients show it in-modal and never redirect; transport/Stripe 5xx → 502 — clients keep the release-page fallback); the Content Graph plugin (**1.0.6 → 1.0.7**) gains an admin-only `GET /payments/health` diagnostics route that is deliberately not throttled. The `nvoos-content-graph-pro` addon completes the law-firm, cre-debt, quiz, eca, and chat-channels toolkit ports (Wave G) — no new base REST routes beyond the ported toolkit surfaces.
 >
 > **New in v1.1.76 (no base REST changes):** no base REST surface changed this window — the chat-delivery `full` template + per-channel `format` work (#6525) is result-delivery-service/tool-schema-level (`POST /mcp-ai-pro/v1/schedules` documents the new `template`/`format` result-delivery fields; no new routes). The duplicate-summary skip (#6548) is service-level; the Comic Creation settings toggle (#6512) is admin-settings-level. Sub-project: the `nvoos-content-graph-pro` addon completes the comic-creation, dj-management, ai-tool-builder, architect-agent, architectural-design, site-creator, document-generation, regulatory-registration, healthcare, and law-firm toolkit ports as part of Wave F2 (no new REST routes beyond the ported toolkit surfaces).
 >

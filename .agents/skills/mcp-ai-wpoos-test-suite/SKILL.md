@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 40 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 47 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
