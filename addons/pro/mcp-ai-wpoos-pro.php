@@ -1357,7 +1357,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools = array_merge( $pro_tools, $ecommerce_toolkit_tools );
 		}
 
-		// Add FlowHub Inventory Sync Toolkit tools if enabled (Pro feature — FlowHub POS integration).
+		// Add FlowHub Inventory Sync Toolkit tools if enabled (Pro feature â€” FlowHub POS integration).
 		if ( ! empty( $settings['enable_flowhub_toolkit'] ) && class_exists( 'WooCommerce' ) ) {
 			$flowhub_toolkit_tools = array(
 				'WP_MCP_AI_Pro_Tool_FlowHub_Inventory' => WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-inventory.php',
@@ -1967,8 +1967,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		$pro_tools = apply_filters( 'wp_mcp_ai_pro_tools', $pro_tools );
 
 		// Cache the computed map so consumers (e.g. the token-usage service's
-		// unregistered-tools fallback) can enumerate every Pro tool — including
-		// the ones gated off by settings — without rebuilding it.
+		// unregistered-tools fallback) can enumerate every Pro tool â€” including
+		// the ones gated off by settings â€” without rebuilding it.
 		$GLOBALS['wp_mcp_ai_pro_tools_map'] = $pro_tools;
 
 		/**
@@ -2962,7 +2962,7 @@ add_action(
 	100
 );
 
-// Load Media Worker Sidecar Settings Page (eager — registers admin_menu hook).
+// Load Media Worker Sidecar Settings Page (eager â€” registers admin_menu hook).
 $media_worker_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-media-worker-settings.php';
 if ( file_exists( $media_worker_page ) ) {
 	require_once $media_worker_page;
