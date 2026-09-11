@@ -1,13 +1,15 @@
 # NV oOS Documentation Index
 
-**Last Updated:** September 10, 2026
-**Plugin Version:** 1.1.76
+**Last Updated:** September 11, 2026
+**Plugin Version:** 1.1.77
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
+
+> **SEPTEMBER 11, 2026 UPDATE (v1.1.77):** MODEL-REFRESH, BASE+PRO & CHECKOUT-LAUNCH RELEASE. **DEEPSEEK V4.1 FLASH CATALOG REFRESH** (PR #6555) — NEW `deepseek-flash` (VISION, $0.15/$0.60 OFF-PEAK); V4 FLASH + V4 FLASH VISION EXP RETIRED; V4 PRO DEPRECATED (SUNSET 2026-09-14, FALLBACK `deepseek-flash`); MIGRATION MAP REWRITES ALL SIX LEGACY DEEPSEEK IDS; **PEAK/OFF-PEAK PRICING** LANDS IN THE COST CALCULATOR (`PEAK_WINDOWS`, `is_peak_time()`, `calculate_cost_at()` — LEGACY `calculate_cost()` TIME-INDEPENDENT). **KNOWLEDGE GRAPH COMPANION PRESET** (PR #6570) — FEATURED, AUTO-SELECTED WHEN A CONTENT GRAPH IS DETECTED, 20 BASE TOOLS + 14 `graphify_*` TOOLS WHEN ENABLED. **BASE+PRO GATING FIXED** (PR #6561) — PRO TOOLKITS NOW LOAD IN BASE+PRO INSTALLS (ALL 21 INIT GATES + ~550 TOOL GATES); NEW 15-TEST `tests/basepro/` MATRIX + CI JOB. **PRO WP-CLI LOAD-ORDER GUARD** (PR #6585) — NO MORE `WP_MCP_AI_PATH` FATAL WHEN PRO ACTIVATES FIRST. **MEMORY CCT PHANTOM SLUG FIXED** (PR #6591) — GRAPHIFY + RETENTION READ CANONICAL `ai_agent_memories` (SWEEPS, CAPS, PRUNING, HEALTH STATS WORK). **CHECKOUT LAUNCH COMPLETE** (PRs #6568/#6571/#6573/#6587–#6594) — CHECKOUT API **0.1.0 → 0.1.1** (BOOLEAN SERIALIZATION FIX, 424/502 CONTRACT, CONNECTION TEST, `GET /health`); CONTENT GRAPH **1.0.6 → 1.0.7** (CCT SOURCES + STATUS NOTES, TRUST MODAL, STRIPE ELEMENT + RELEASE-TAG FIXES). **SECURITY** — SHARP/NODEMAILER/JOI/POSTCSS-SELECTOR-PARSER BUMPS (#6592); BUILD PUBLISH RACE FIX (#6593). **WAVE G** (PRs #6551–#6584) — LAW-FIRM, CRE-DEBT, QUIZ, ECA, CHAT-CHANNELS COMPLETE; PLACES STARTS. TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.75 BUILD ZIPS REMOVED (30 FILES). UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
 > **SEPTEMBER 10, 2026 UPDATE (v1.1.76):** SCHEDULED-DELIVERY, CHECKOUT-LAUNCH & ECOSYSTEM-PORT RELEASE. **CHAT DELIVERY FULL REPORT + PER-CHANNEL FORMATS** (PR #6525) — ALL CHAT CHANNELS SUPPORT THE `full` TEMPLATE WITH PER-CHANNEL `format` (TELEGRAM `html`/`markdown`/`markdown_v2`/`plain` VIA `send_telegram_message` + BOT API PARSE MODE; WHATSAPP/SLACK/DISCORD/TEAMS `markdown`/`plain`; MESSENGER/GOOGLE CHAT `plain`); **DUPLICATE-SUMMARY FIX** (PR #6548) — `full` TEMPLATES NO LONGER PRINT THE ASSISTANT HEADER TWICE. **COMIC CREATION TOOLKIT TOGGLE REGISTERED** (PR #6512) — THE 12-TOOL TOOLKIT CAN FINALLY BE ENABLED. **CHECKOUT LAUNCH SERIES** (PRs #6507/#6520/#6523/#6550) — REQUIRED TOS/REFUND CONSENT + BUYER EMAIL, EU BILLING-ADDRESS BLOCK (`buyer_country`), STRIPE PRODUCT/PRICE METADATA + STATEMENT DESCRIPTOR, MANUAL-INSTALL-FIRST, AND THE FULL `docs/legal/` SET (PRIVACY, AUP, CLICKWRAP, COMPLIANCE CHECKLIST, UPDATED TOS). **PLAYBOOK SEEDER IDEMPOTENCY** (DIRECT COMMIT) — CONTENT HASH IGNORES THE PER-SECOND `Generated:` HEADER. **SECURITY SWEEPS** (PRs #6515/#6532/#6546) — 11 DEPENDABOT ALERTS CLOSED (TIPTAP, MULTER, CSV-PARSE, REACT-ROUTER-DOM, SVGO CVE-2026-84370, HONO, VITEST) + SCHEDULE-ANYTHING-SPA BUILD UNBLOCKED; DOCS-HUB WP.ORG ZIP STOPS SHIPPING DEV MARKDOWN (#6504). **WAVE F2 COMPLETES TEN `nvoos-content-graph-pro` CLUSTERS** (PRs #6505–#6549) — SITE-CREATOR (33 TOOLS), DOCUMENT-GENERATION, REGULATORY-REGISTRATION, HEALTHCARE (9 BATCHES), LAW-FIRM, IMAGE-PRODUCTION, COMIC-CREATION, DJ-MANAGEMENT, AI-TOOL-BUILDER, ARCHITECT-AGENT, ARCHITECTURAL-DESIGN. **NEW `mcp-ai-wpoos-ecosystem-port` SKILL — CODING-TIME SKILLS 55 → 56.** TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.74 BUILD ZIPS REMOVED (30 FILES). UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
@@ -648,6 +650,21 @@ n#### New Audit & Compliance Docs
 - **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.39 latest updates section, version bump, duplicate section cleanup.
 
 ---
+
+## 🆕 September 2026 — v1.1.77: DeepSeek V4.1 Flash, Base+Pro Gating, Checkout Launch
+
+### New and updated documents (September 11, 2026, v1.1.77)
+
+- **[docs/project/plans/v1.1.77-docs-catch-up.md](project/plans/v1.1.77-docs-catch-up.md)** ⭐ **NEW** — v1.1.77 docs & release catch-up plan (PRs #6551–#6594, full PR-description review + housekeeping). (September 11, 2026)
+- **[docs/reference/models/model-update-process-2026-07.md](reference/models/model-update-process-2026-07.md)** ⭐ **UPDATED** — "This Month's Changes (September 10, 2026)" section records the DeepSeek V4.1 Flash refresh (PR #6555). (September 10, 2026)
+- **[docs/reference/models/keeping-the-model-catalog-up-to-date.md](reference/models/keeping-the-model-catalog-up-to-date.md)** ⭐ **UPDATED** — "Last reviewed" bump (PR #6555). (September 10, 2026)
+- **[plugins/nvoos-content-graph/README.md](../plugins/nvoos-content-graph/README.md)** ⭐ **UPDATED** — v1.0.7: `GET /payments/health` listed in the commerce section (PR #6590). (September 11, 2026)
+- **[plugins/nvoos-content-graph/docs/commerce-vendor-api.md](../plugins/nvoos-content-graph/docs/commerce-vendor-api.md)** ⭐ **UPDATED** — `GET /health` contract, 424/502 error semantics, boolean serialization requirement (PR #6590). (September 11, 2026)
+- **[addons/checkout-api/README.md](../addons/checkout-api/README.md)** ⭐ **UPDATED** — v0.1.1 status + `GET /health` endpoint row + error-status contract + setup self-check step (PR #6590). (September 11, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.77 highlights + latest updates (DeepSeek refresh, base+pro gating, checkout launch, Wave G, ~1,568 tools, 56 skills). (September 11, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.77] section with PR-level detail. (September 11, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.77 + changelog entry. (September 11, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.77 entry. (September 11, 2026)
 
 ## 🆕 September 2026 — v1.1.76: Chat Delivery Formats, Checkout Launch, Security Sweeps, Wave F2 Completions
 
