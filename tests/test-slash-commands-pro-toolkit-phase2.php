@@ -1,27 +1,116 @@
 <?php
 /**
- * Tests for Phase 2 Pro Toolkit Slash Commands
+ * Test Slash Command Tool Adapter (Phase 2)
  *
- * Tests the additional command handlers for ecommerce, social media, and video production.
+ * Unit coverage for WP_MCP_AI_Slash_Command_Tool_Adapter: argument mapping,
+ * defaults, UI-flag stripping, error passthrough, payload normalisation and
+ * render callbacks.
  *
  * @package WP_MCP_AI
  * @subpackage Tests
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- Test stub tool ships alongside its test case.
  */
 
+if ( ! class_exists( 'WP_MCP_AI_Stub_Echo_Tool' ) ) {
+	/**
+	 * Minimal tool stub that echoes its received arguments back.
+	 */
+	class WP_MCP_AI_Stub_Echo_Tool implements WP_MCP_AI_Tool_Interface {
+
+		/**
+		 * Last executed arguments (test inspection hook).
+		 *
+		 * @var array
+		 */
+		public static $last_arguments = array();
+
+		/**
+		 * Result to return from execute().
+		 *
+		 * @var array|WP_Error|null
+		 */
+		public static $result = null;
+
+		/**
+		 * {@inheritdoc}
+		 */
+		public function get_slug() {
+			return 'stub_echo_tool';
+		}
+
+		/**
+		 * {@inheritdoc}
+		 */
+		public function get_name() {
+			return 'Stub Echo Tool';
+		}
+
+		/**
+		 * {@inheritdoc}
+		 */
+		public function get_description() {
+			return 'Test stub that echoes arguments.';
+		}
+
+		/**
+		 * {@inheritdoc}
+		 */
+		public function get_parameters_schema() {
+			return array(
+				'type'       => 'object',
+				'properties' => array(
+					'first'  => array( 'type' => 'string' ),
+					'second' => array( 'type' => 'string' ),
+					'number' => array( 'type' => 'integer' ),
+				),
+			);
+		}
+
+		/**
+		 * {@inheritdoc}
+		 */
+		public function get_required_capability() {
+			return 'edit_posts';
+		}
+
+		/**
+		 * Execute the stub tool.
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Execution context.
+		 * @return array|WP_Error Echoed arguments or canned result.
+		 */
+		public function execute( array $arguments = array(), array $context = array() ) {
+			self::$last_arguments = $arguments;
+
+			if ( null !== self::$result ) {
+				return self::$result;
+			}
+
+			return array(
+				'success' => true,
+				'message' => 'Echoed.',
+				'data'    => $arguments,
+			);
+		}
+	}
+}
+
 /**
- * Phase 2 Pro Toolkit Commands Test Case
+ * Tool Adapter Test Case
  */
 class Test_Slash_Commands_Pro_Toolkit_Phase2 extends WP_UnitTestCase {
 
 	/**
-	 * Toolkit manager instance.
+	 * Editor user ID used as execution context.
 	 *
-	 * @var WP_MCP_AI_Slash_Command_Toolkit_Manager
+	 * @var int
 	 */
-	protected $toolkit_manager;
+	protected $user_id;
 
 	/**
 	 * Set up test.
@@ -29,287 +118,164 @@ class Test_Slash_Commands_Pro_Toolkit_Phase2 extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		// Load required classes.
-		require_once WP_MCP_AI_PATH . 'includes/slash-commands/slash-commands-init.php';
-		require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-handler.php';
-		require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-toolkit-manager.php';
+		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+		require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-tool-adapter.php';
 
-		// Initialize slash commands.
-		wp_mcp_ai_init_slash_commands();
+		WP_MCP_AI_Stub_Echo_Tool::$last_arguments = array();
+		WP_MCP_AI_Stub_Echo_Tool::$result         = null;
 
-		// Get toolkit manager instance.
-		$this->toolkit_manager = WP_MCP_AI_Slash_Command_Toolkit_Manager::get_instance();
+		$this->user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
 
-		// The manager registers toolkit commands on the init hook (priority 25),
-		// which the test harness does not re-fire; register them manually
-		// against the freshly created handler.
-		$this->toolkit_manager->register_toolkit_commands();
+		WP_MCP_AI_Tool_Registry::get_instance()->register_tool( new WP_MCP_AI_Stub_Echo_Tool() );
 	}
 
 	/**
-	 * Test Phase 2 e-commerce commands are registered.
+	 * Tear down test.
 	 */
-	public function test_phase2_ecommerce_commands_registered() {
-		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_commands();
-
-		$this->assertArrayHasKey( 'discount-optimize', $commands );
-		$this->assertArrayHasKey( 'inventory-forecast', $commands );
-		$this->assertArrayHasKey( 'customer-segment', $commands );
+	public function tearDown(): void {
+		WP_MCP_AI_Tool_Registry::get_instance()->unregister_tool( 'stub_echo_tool' );
+		WP_MCP_AI_Stub_Echo_Tool::$result = null;
+		parent::tearDown();
 	}
 
 	/**
-	 * Test Phase 2 social media commands are registered.
+	 * Test named-argument mapping plus defaults.
 	 */
-	public function test_phase2_social_media_commands_registered() {
-		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_commands();
-
-		$this->assertArrayHasKey( 'social-schedule', $commands );
-		$this->assertArrayHasKey( 'content-calendar', $commands );
-		$this->assertArrayHasKey( 'competitor-track', $commands );
-	}
-
-	/**
-	 * Test Phase 2 video production commands are registered.
-	 */
-	public function test_phase2_video_commands_registered() {
-		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_commands();
-
-		$this->assertArrayHasKey( 'video-merge', $commands );
-		$this->assertArrayHasKey( 'video-thumbnail', $commands );
-		$this->assertArrayHasKey( 'video-compress', $commands );
-	}
-
-	/**
-	 * Test social-schedule command validation.
-	 */
-	public function test_social_schedule_validation() {
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		// Test missing required parameters.
-		$args    = array( 'content' => 'Test post' );
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_social_schedule( $args, $context );
-
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'required', strtolower( $result['message'] ) );
-	}
-
-	/**
-	 * Test social-schedule command execution.
-	 */
-	public function test_social_schedule_execution() {
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		$args = array(
-			'content'   => 'Test scheduled post',
-			'platforms' => 'facebook,twitter',
-			'time'      => date( 'Y-m-d H:i', strtotime( '+1 day' ) ),
-		);
-
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_social_schedule( $args, $context );
-
-		$this->assertTrue( $result['success'] );
-		$this->assertArrayHasKey( 'data', $result );
-		$this->assertArrayHasKey( 'post_id', $result['data'] );
-		$this->assertEquals( 'scheduled', $result['data']['status'] );
-	}
-
-	/**
-	 * Test content-calendar command execution.
-	 */
-	public function test_content_calendar_execution() {
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		$args = array(
-			'action' => 'view',
-			'period' => 30,
-		);
-
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_content_calendar( $args, $context );
-
-		$this->assertTrue( $result['success'] );
-		$this->assertArrayHasKey( 'data', $result );
-	}
-
-	/**
-	 * Test competitor-track command validation.
-	 */
-	public function test_competitor_track_validation() {
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		// Without competitor analysis tool, test simplified implementation.
-		$args = array(
-			'competitor' => '@example',
-			'platform'   => 'twitter',
-		);
-
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_competitor_track( $args, $context );
-
-		// Should succeed with mock data.
-		$this->assertTrue( $result['success'] );
-		$this->assertArrayHasKey( 'data', $result );
-		$this->assertEquals( '@example', $result['data']['competitor'] );
-	}
-
-	/**
-	 * Test video-merge command validation.
-	 */
-	public function test_video_merge_validation() {
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		// Test missing required parameter.
-		$args    = array();
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_video_merge( $args, $context );
-
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'required', strtolower( $result['message'] ) );
-	}
-
-	/**
-	 * Test video-merge command execution.
-	 */
-	public function test_video_merge_execution() {
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		$args = array(
-			'videos'      => '123,456,789',
-			'output-name' => 'merged-video',
-			'transitions' => true,
-		);
-
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_video_merge( $args, $context );
-
-		$this->assertTrue( $result['success'] );
-		$this->assertArrayHasKey( 'data', $result );
-		$this->assertArrayHasKey( 'job_id', $result['data'] );
-		$this->assertEquals( 'queued', $result['data']['status'] );
-		$this->assertEquals( 3, $result['data']['video_count'] );
-	}
-
-	/**
-	 * Test video-thumbnail command validation.
-	 */
-	public function test_video_thumbnail_validation() {
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		// Test missing required parameter.
-		$args    = array();
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_video_thumbnail_generate( $args, $context );
-
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'required', strtolower( $result['message'] ) );
-	}
-
-	/**
-	 * Test video-compress command execution.
-	 */
-	public function test_video_compress_execution() {
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		// Create a dummy attachment for testing.
-		$attachment_id = $this->factory->attachment->create_object(
-			'test-video.mp4',
-			0,
+	public function test_named_argument_mapping_and_defaults() {
+		$adapter = new WP_MCP_AI_Slash_Command_Tool_Adapter(
+			'stub_echo_tool',
 			array(
-				'post_mime_type' => 'video/mp4',
-				'post_type'      => 'attachment',
+				'arg_map'  => array(
+					'first-name' => 'first',
+					'count'      => 'number',
+				),
+				'defaults' => array( 'second' => 'fallback' ),
 			)
 		);
 
-		$args = array(
-			'video-id' => $attachment_id,
-			'quality'  => 'high',
-			'format'   => 'mp4',
+		$result = $adapter(
+			array(
+				'first-name' => 'Ada',
+				'count'      => 3,
+			),
+			array(),
+			array( 'user_id' => $this->user_id )
 		);
 
-		$context = array( 'user_id' => $user_id );
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertSame( 'Ada', WP_MCP_AI_Stub_Echo_Tool::$last_arguments['first'] );
+		$this->assertSame( 3, WP_MCP_AI_Stub_Echo_Tool::$last_arguments['number'] );
+		$this->assertSame( 'fallback', WP_MCP_AI_Stub_Echo_Tool::$last_arguments['second'] );
+	}
 
-		$result = $this->toolkit_manager->handle_video_compress( $args, $context );
+	/**
+	 * Test positional argument mapping.
+	 */
+	public function test_positional_argument_mapping() {
+		$adapter = new WP_MCP_AI_Slash_Command_Tool_Adapter(
+			'stub_echo_tool',
+			array(
+				'positional' => array(
+					0 => 'first',
+					1 => 'second',
+				),
+			)
+		);
+
+		$adapter( array( 'alpha', 'beta' ), array(), array( 'user_id' => $this->user_id ) );
+
+		$this->assertSame( 'alpha', WP_MCP_AI_Stub_Echo_Tool::$last_arguments['first'] );
+		$this->assertSame( 'beta', WP_MCP_AI_Stub_Echo_Tool::$last_arguments['second'] );
+	}
+
+	/**
+	 * Test UI flags are never forwarded to the tool.
+	 */
+	public function test_ui_flags_are_stripped() {
+		$adapter = new WP_MCP_AI_Slash_Command_Tool_Adapter( 'stub_echo_tool', array() );
+
+		$adapter(
+			array(
+				'first'  => 'ok',
+				'json'   => true,
+				'format' => 'text',
+			),
+			array(),
+			array( 'user_id' => $this->user_id )
+		);
+
+		$this->assertArrayHasKey( 'first', WP_MCP_AI_Stub_Echo_Tool::$last_arguments );
+		$this->assertArrayNotHasKey( 'json', WP_MCP_AI_Stub_Echo_Tool::$last_arguments );
+		$this->assertArrayNotHasKey( 'format', WP_MCP_AI_Stub_Echo_Tool::$last_arguments );
+	}
+
+	/**
+	 * Test tool WP_Error passthrough.
+	 */
+	public function test_tool_error_passthrough() {
+		WP_MCP_AI_Stub_Echo_Tool::$result = new WP_Error( 'stub_failure', 'Stub exploded.' );
+
+		$adapter = new WP_MCP_AI_Slash_Command_Tool_Adapter( 'stub_echo_tool', array() );
+		$result  = $adapter( array(), array(), array( 'user_id' => $this->user_id ) );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'stub_failure', $result->get_error_code() );
+	}
+
+	/**
+	 * Test raw payloads are normalised to the canonical envelope.
+	 */
+	public function test_raw_payload_normalisation() {
+		WP_MCP_AI_Stub_Echo_Tool::$result = array( 'rows' => array( 1, 2, 3 ) );
+
+		$adapter = new WP_MCP_AI_Slash_Command_Tool_Adapter( 'stub_echo_tool', array() );
+		$result  = $adapter( array(), array(), array( 'user_id' => $this->user_id ) );
 
 		$this->assertTrue( $result['success'] );
-		$this->assertArrayHasKey( 'data', $result );
-		$this->assertArrayHasKey( 'job_id', $result['data'] );
-		$this->assertEquals( 'high', $result['data']['quality'] );
+		$this->assertArrayHasKey( 'message', $result );
+		$this->assertSame( array( 1, 2, 3 ), $result['data']['rows'] );
 	}
 
 	/**
-	 * Test command parameter documentation exists.
+	 * Test unregistered tool yields a WP_Error.
 	 */
-	public function test_phase2_commands_have_documentation() {
-		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_commands();
+	public function test_unregistered_tool_error() {
+		$adapter = new WP_MCP_AI_Slash_Command_Tool_Adapter( 'tool_that_does_not_exist', array() );
+		$result  = $adapter( array(), array(), array() );
 
-		$phase2_commands = array(
-			'discount-optimize',
-			'inventory-forecast',
-			'social-schedule',
-			'content-calendar',
-			'competitor-track',
-			'video-merge',
-			'video-thumbnail',
-			'video-compress',
+		$this->assertWPError( $result );
+		$this->assertSame( 'tool_unavailable', $result->get_error_code() );
+	}
+
+	/**
+	 * Test render callable receives the tool result.
+	 */
+	public function test_render_callable() {
+		$adapter = new WP_MCP_AI_Slash_Command_Tool_Adapter(
+			'stub_echo_tool',
+			array(
+				'render' => function ( $tool_result ) {
+					return array(
+						'success' => true,
+						'message' => 'Rendered: ' . $tool_result['message'],
+						'data'    => array( 'rendered' => true ),
+					);
+				},
+			)
 		);
 
-		foreach ( $phase2_commands as $command_name ) {
-			$this->assertArrayHasKey( $command_name, $commands );
-			$command = $commands[ $command_name ];
+		$result = $adapter( array(), array(), array( 'user_id' => $this->user_id ) );
 
-			// Check for usage documentation.
-			$this->assertArrayHasKey( 'usage', $command );
-			$this->assertNotEmpty( $command['usage'] );
-
-			// Check for parameters documentation.
-			$this->assertArrayHasKey( 'parameters', $command );
-		}
+		$this->assertSame( 'Rendered: Echoed.', $result['message'] );
+		$this->assertTrue( $result['data']['rendered'] );
 	}
 
 	/**
-	 * Test command capability requirements are correct.
+	 * Test the adapter is invocable (handler contract).
 	 */
-	public function test_phase2_command_capabilities() {
-		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_commands();
-
-		// E-commerce commands require manage_woocommerce.
-		$ecommerce_commands = array( 'discount-optimize', 'inventory-forecast' );
-		foreach ( $ecommerce_commands as $cmd ) {
-			$this->assertEquals( 'manage_woocommerce', $commands[ $cmd ]['capability'] );
-		}
-
-		// Social media commands require edit_posts.
-		$social_commands = array( 'social-schedule', 'content-calendar', 'competitor-track' );
-		foreach ( $social_commands as $cmd ) {
-			$this->assertEquals( 'edit_posts', $commands[ $cmd ]['capability'] );
-		}
-
-		// Video commands require upload_files.
-		$video_commands = array( 'video-merge', 'video-thumbnail', 'video-compress' );
-		foreach ( $video_commands as $cmd ) {
-			$this->assertEquals( 'upload_files', $commands[ $cmd ]['capability'] );
-		}
+	public function test_adapter_is_callable() {
+		$adapter = new WP_MCP_AI_Slash_Command_Tool_Adapter( 'stub_echo_tool', array() );
+		$this->assertTrue( is_callable( $adapter ) );
 	}
 }

@@ -1,27 +1,108 @@
 <?php
 /**
- * Tests for Phase 3 Pro Toolkit Slash Commands
+ * Test Slash Command Handler Tool Wiring (Phase 3)
  *
- * Tests the Phase 3 command handlers.
+ * End-to-end coverage of the tool-backed slash-command pipeline: handler
+ * registration via register_tool_command(), parsing, capability gating,
+ * delegation to the tool registry, and audit-safe error shapes.
  *
  * @package WP_MCP_AI
  * @subpackage Tests
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- Test stub tool ships alongside its test case.
  */
+
+if ( ! class_exists( 'WP_MCP_AI_Stub_Echo_Tool' ) ) {
+	/**
+	 * Minimal tool stub that echoes its received arguments back.
+	 */
+	class WP_MCP_AI_Stub_Echo_Tool implements WP_MCP_AI_Tool_Interface {
+
+		/**
+		 * Last executed arguments (test inspection hook).
+		 *
+		 * @var array
+		 */
+		public static $last_arguments = array();
+
+		/**
+		 * Result to return from execute().
+		 *
+		 * @var array|WP_Error|null
+		 */
+		public static $result = null;
+
+		/**
+		 * {@inheritdoc}
+		 */
+		public function get_slug() {
+			return 'stub_echo_tool';
+		}
+
+		/**
+		 * {@inheritdoc}
+		 */
+		public function get_name() {
+			return 'Stub Echo Tool';
+		}
+
+		/**
+		 * {@inheritdoc}
+		 */
+		public function get_description() {
+			return 'Test stub that echoes arguments.';
+		}
+
+		/**
+		 * {@inheritdoc}
+		 */
+		public function get_parameters_schema() {
+			return array(
+				'type'       => 'object',
+				'properties' => array(
+					'first'  => array( 'type' => 'string' ),
+					'second' => array( 'type' => 'string' ),
+				),
+			);
+		}
+
+		/**
+		 * {@inheritdoc}
+		 */
+		public function get_required_capability() {
+			return 'edit_posts';
+		}
+
+		/**
+		 * Execute the stub tool.
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Execution context.
+		 * @return array|WP_Error Echoed arguments or canned result.
+		 */
+		public function execute( array $arguments = array(), array $context = array() ) {
+			self::$last_arguments = $arguments;
+
+			if ( null !== self::$result ) {
+				return self::$result;
+			}
+
+			return array(
+				'success' => true,
+				'message' => 'Echoed.',
+				'data'    => $arguments,
+			);
+		}
+	}
+}
 
 /**
- * Phase 3 Pro Toolkit Commands Test Case
+ * Handler Tool Wiring Test Case
  */
 class Test_Slash_Commands_Pro_Toolkit_Phase3 extends WP_UnitTestCase {
-
-	/**
-	 * Toolkit manager instance.
-	 *
-	 * @var WP_MCP_AI_Slash_Command_Toolkit_Manager
-	 */
-	protected $toolkit_manager;
 
 	/**
 	 * Set up test.
@@ -29,331 +110,120 @@ class Test_Slash_Commands_Pro_Toolkit_Phase3 extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		// Load required classes.
 		require_once WP_MCP_AI_PATH . 'includes/slash-commands/slash-commands-init.php';
 		require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-handler.php';
-		require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-toolkit-manager.php';
+		require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-tool-adapter.php';
 
-		// Initialize slash commands.
 		wp_mcp_ai_init_slash_commands();
 
-		// Get toolkit manager instance.
-		$this->toolkit_manager = WP_MCP_AI_Slash_Command_Toolkit_Manager::get_instance();
+		WP_MCP_AI_Stub_Echo_Tool::$last_arguments = array();
+		WP_MCP_AI_Stub_Echo_Tool::$result         = null;
 
-		// The manager registers toolkit commands on the init hook (priority 25),
-		// which the test harness does not re-fire; register them manually
-		// against the freshly created handler.
-		$this->toolkit_manager->register_toolkit_commands();
-	}
+		WP_MCP_AI_Tool_Registry::get_instance()->register_tool( new WP_MCP_AI_Stub_Echo_Tool() );
 
-	/**
-	 * Test Phase 3 e-commerce commands are registered.
-	 */
-	public function test_phase3_ecommerce_commands_registered() {
-		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_commands();
-
-		$this->assertArrayHasKey( 'bundle-create', $commands );
-		$this->assertArrayHasKey( 'shipping-optimize', $commands );
-		$this->assertArrayHasKey( 'fraud-detect', $commands );
-	}
-
-	/**
-	 * Test Phase 3 social media commands are registered.
-	 */
-	public function test_phase3_social_media_commands_registered() {
-		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_commands();
-
-		$this->assertArrayHasKey( 'post-optimize', $commands );
-		$this->assertArrayHasKey( 'influencer-find', $commands );
-		$this->assertArrayHasKey( 'campaign-create', $commands );
-	}
-
-	/**
-	 * Test Phase 3 video production commands are registered.
-	 */
-	public function test_phase3_video_commands_registered() {
-		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_commands();
-
-		$this->assertArrayHasKey( 'video-trim', $commands );
-		$this->assertArrayHasKey( 'video-voiceover', $commands );
-		$this->assertArrayHasKey( 'video-render', $commands );
-	}
-
-	/**
-	 * Test bundle-create command validation.
-	 */
-	public function test_bundle_create_validation() {
-		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $user_id );
-
-		// Test missing required parameters.
-		$args    = array( 'name' => 'Test Bundle' );
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_bundle_create( $args, $context );
-
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'required', strtolower( $result['message'] ) );
-	}
-
-	/**
-	 * Test bundle-create command execution.
-	 */
-	public function test_bundle_create_execution() {
-		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $user_id );
-
-		$args = array(
-			'name'     => 'Test Bundle',
-			'products' => '123,456,789',
-			'discount' => 15,
-		);
-
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_bundle_create( $args, $context );
-
-		$this->assertTrue( $result['success'] );
-		$this->assertArrayHasKey( 'data', $result );
-		$this->assertArrayHasKey( 'bundle_id', $result['data'] );
-		$this->assertEquals( 3, $result['data']['product_count'] );
-	}
-
-	/**
-	 * Test shipping-optimize command execution.
-	 */
-	public function test_shipping_optimize_execution() {
-		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $user_id );
-
-		$args = array(
-			'zone'          => 'domestic',
-			'analyze-costs' => true,
-		);
-
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_shipping_optimize( $args, $context );
-
-		$this->assertTrue( $result['success'] );
-		$this->assertArrayHasKey( 'data', $result );
-		$this->assertArrayHasKey( 'potential_savings', $result['data'] );
-		$this->assertArrayHasKey( 'recommendations', $result['data'] );
-	}
-
-	/**
-	 * Test fraud-detect command execution.
-	 */
-	public function test_fraud_detect_execution() {
-		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $user_id );
-
-		$args = array(
-			'scan-recent' => true,
-			'threshold'   => 'medium',
-		);
-
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_fraud_detect( $args, $context );
-
-		$this->assertTrue( $result['success'] );
-		$this->assertArrayHasKey( 'data', $result );
-		$this->assertArrayHasKey( 'flagged_count', $result['data'] );
-	}
-
-	/**
-	 * Test post-optimize command validation.
-	 */
-	public function test_post_optimize_validation() {
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		// Test missing required parameter.
-		$args    = array();
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_post_optimize( $args, $context );
-
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'required', strtolower( $result['message'] ) );
-	}
-
-	/**
-	 * Test post-optimize command execution.
-	 */
-	public function test_post_optimize_execution() {
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		$args = array(
-			'content'  => 'Check out our new product!',
-			'platform' => 'twitter',
-			'goal'     => 'engagement',
-		);
-
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_post_optimize( $args, $context );
-
-		$this->assertTrue( $result['success'] );
-		$this->assertArrayHasKey( 'data', $result );
-		$this->assertArrayHasKey( 'optimized', $result['data'] );
-		$this->assertArrayHasKey( 'suggestions', $result['data'] );
-		$this->assertArrayHasKey( 'engagement_score', $result['data'] );
-	}
-
-	/**
-	 * Test influencer-find command execution.
-	 */
-	public function test_influencer_find_execution() {
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		$args = array(
-			'niche'         => 'technology',
-			'platform'      => 'instagram',
-			'min-followers' => 10000,
-		);
-
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_influencer_find( $args, $context );
-
-		$this->assertTrue( $result['success'] );
-		$this->assertArrayHasKey( 'data', $result );
-		$this->assertArrayHasKey( 'influencers', $result['data'] );
-		$this->assertGreaterThan( 0, $result['data']['found_count'] );
-	}
-
-	/**
-	 * Test campaign-create command execution.
-	 */
-	public function test_campaign_create_execution() {
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		$args = array(
-			'name'     => 'Summer Sale Campaign',
-			'goal'     => 'conversions',
-			'duration' => 30,
-			'budget'   => 1000,
-		);
-
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_campaign_create( $args, $context );
-
-		$this->assertTrue( $result['success'] );
-		$this->assertArrayHasKey( 'data', $result );
-		$this->assertArrayHasKey( 'campaign_id', $result['data'] );
-		$this->assertEquals( 'active', $result['data']['status'] );
-	}
-
-	/**
-	 * Test video-trim command validation.
-	 */
-	public function test_video_trim_validation() {
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		// Test missing required parameters.
-		$args    = array( 'video-id' => 123 );
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_video_trim( $args, $context );
-
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'required', strtolower( $result['message'] ) );
-	}
-
-	/**
-	 * Test video-voiceover command execution.
-	 */
-	public function test_video_voiceover_execution() {
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		// Create dummy attachment.
-		$attachment_id = $this->factory->attachment->create_object(
-			'test-video.mp4',
-			0,
+		// Register a tool-backed command through the public handler API.
+		$handler = wp_mcp_ai_get_slash_command_handler();
+		$handler->register_tool_command(
+			'echo-test',
 			array(
-				'post_mime_type' => 'video/mp4',
-				'post_type'      => 'attachment',
+				'tool'        => 'stub_echo_tool',
+				'tool_config' => array(
+					'arg_map' => array( 'first-name' => 'first' ),
+				),
+				'description' => __( 'Test tool-backed command.', 'mcp-ai-wpoos' ),
+				'usage'       => '/echo-test --first-name=Ada',
+				'capability'  => 'edit_posts',
+				'parameters'  => array(),
 			)
 		);
-
-		$args = array(
-			'video-id' => $attachment_id,
-			'script'   => 'This is a test voiceover script.',
-			'voice'    => 'female',
-			'language' => 'en',
-		);
-
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_video_voiceover( $args, $context );
-
-		$this->assertTrue( $result['success'] );
-		$this->assertArrayHasKey( 'data', $result );
-		$this->assertArrayHasKey( 'job_id', $result['data'] );
-		$this->assertEquals( 'processing', $result['data']['status'] );
 	}
 
 	/**
-	 * Test video-render command execution.
+	 * Tear down test.
 	 */
-	public function test_video_render_execution() {
+	public function tearDown(): void {
+		WP_MCP_AI_Tool_Registry::get_instance()->unregister_tool( 'stub_echo_tool' );
+		WP_MCP_AI_Stub_Echo_Tool::$result = null;
+		parent::tearDown();
+	}
+
+	/**
+	 * Test register_tool_command wires a tool adapter as the handler.
+	 */
+	public function test_register_tool_command_wires_adapter() {
+		$handler = wp_mcp_ai_get_slash_command_handler();
+		$command = $handler->get_command( 'echo-test' );
+
+		$this->assertNotFalse( $command );
+		$this->assertInstanceOf( 'WP_MCP_AI_Slash_Command_Tool_Adapter', $command['handler'] );
+		$this->assertSame( 'stub_echo_tool', $command['handler']->get_tool_slug() );
+	}
+
+	/**
+	 * Test end-to-end execution parses input and delegates to the tool.
+	 */
+	public function test_end_to_end_execution() {
 		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
 		wp_set_current_user( $user_id );
 
-		$args = array(
-			'project-id' => 'project_123',
-			'quality'    => 'high',
-			'format'     => 'mp4',
+		$result = wp_mcp_ai_execute_slash_command(
+			'/echo-test --first-name=Ada',
+			array( 'user_id' => $user_id )
 		);
 
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_video_render( $args, $context );
-
+		$this->assertIsArray( $result );
 		$this->assertTrue( $result['success'] );
-		$this->assertArrayHasKey( 'data', $result );
-		$this->assertArrayHasKey( 'job_id', $result['data'] );
-		$this->assertEquals( 'rendering', $result['data']['status'] );
+		$this->assertSame( 'Ada', WP_MCP_AI_Stub_Echo_Tool::$last_arguments['first'] );
 	}
 
 	/**
-	 * Test all Phase 3 commands have documentation.
+	 * Test capability gating refuses execution before the tool runs.
 	 */
-	public function test_phase3_commands_have_documentation() {
-		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_commands();
+	public function test_capability_refusal() {
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
 
-		$phase3_commands = array(
-			'bundle-create',
-			'shipping-optimize',
-			'fraud-detect',
-			'post-optimize',
-			'influencer-find',
-			'campaign-create',
-			'video-trim',
-			'video-voiceover',
-			'video-render',
+		$result = wp_mcp_ai_execute_slash_command(
+			'/echo-test --first-name=Ada',
+			array( 'user_id' => $user_id )
 		);
 
-		foreach ( $phase3_commands as $command_name ) {
-			$this->assertArrayHasKey( $command_name, $commands );
-			$command = $commands[ $command_name ];
+		$this->assertWPError( $result );
+		$this->assertSame( 'insufficient_capability', $result->get_error_code() );
+		$this->assertEmpty( WP_MCP_AI_Stub_Echo_Tool::$last_arguments );
+	}
 
-			$this->assertArrayHasKey( 'usage', $command );
-			$this->assertNotEmpty( $command['usage'] );
+	/**
+	 * Test tool failures surface as WP_Error from the command.
+	 */
+	public function test_tool_failure_surfaces_as_wp_error() {
+		WP_MCP_AI_Stub_Echo_Tool::$result = new WP_Error( 'stub_failure', 'Stub exploded.' );
 
-			$this->assertArrayHasKey( 'parameters', $command );
-		}
+		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $user_id );
+
+		$result = wp_mcp_ai_execute_slash_command(
+			'/echo-test --first-name=Ada',
+			array( 'user_id' => $user_id )
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'stub_failure', $result->get_error_code() );
+	}
+
+	/**
+	 * Test unknown commands still return the standard not-found error.
+	 */
+	public function test_unknown_command_error() {
+		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $user_id );
+
+		$result = wp_mcp_ai_execute_slash_command(
+			'/definitely-not-a-command',
+			array( 'user_id' => $user_id )
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'command_not_found', $result->get_error_code() );
 	}
 }

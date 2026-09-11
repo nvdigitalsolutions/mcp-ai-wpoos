@@ -94,9 +94,9 @@ class Test_Slash_Commands_Pro_Workflows_Phase3 extends WP_UnitTestCase {
 		$steps    = $workflow['steps'];
 
 		// Verify step commands.
-		$this->assertEquals( 'bundle-create', $steps[0]['command'] );
-		$this->assertEquals( 'discount-optimize', $steps[1]['command'] );
-		$this->assertEquals( 'campaign-create', $steps[2]['command'] );
+		$this->assertEquals( 'doc-create', $steps[0]['command'] );
+		$this->assertEquals( 'create-discount-campaign', $steps[1]['command'] );
+		$this->assertEquals( 'social-post', $steps[2]['command'] );
 		$this->assertEquals( 'inventory-forecast', $steps[3]['command'] );
 	}
 
@@ -113,9 +113,9 @@ class Test_Slash_Commands_Pro_Workflows_Phase3 extends WP_UnitTestCase {
 		$steps    = $workflow['steps'];
 
 		// Verify step commands.
-		$this->assertEquals( 'influencer-find', $steps[0]['command'] );
-		$this->assertEquals( 'post-optimize', $steps[1]['command'] );
-		$this->assertEquals( 'campaign-create', $steps[2]['command'] );
+		$this->assertEquals( 'research-query', $steps[0]['command'] );
+		$this->assertEquals( 'social-publish', $steps[1]['command'] );
+		$this->assertEquals( 'content-calendar', $steps[2]['command'] );
 		$this->assertEquals( 'social-schedule', $steps[3]['command'] );
 	}
 
@@ -132,12 +132,12 @@ class Test_Slash_Commands_Pro_Workflows_Phase3 extends WP_UnitTestCase {
 		$steps    = $workflow['steps'];
 
 		// Check for {product_name} placeholder.
-		$this->assertArrayHasKey( 'name', $steps[0]['params'] );
-		$this->assertStringContainsString( '{product_name}', $steps[0]['params']['name'] );
+		$this->assertArrayHasKey( 'title', $steps[0]['params'] );
+		$this->assertStringContainsString( '{product_name}', $steps[0]['params']['title'] );
 
-		// Check for {product_ids} placeholder.
-		$this->assertArrayHasKey( 'products', $steps[0]['params'] );
-		$this->assertEquals( '{product_ids}', $steps[0]['params']['products'] );
+		// Check for {product_ids} placeholder on the discount step.
+		$this->assertArrayHasKey( 'product_ids', $steps[1]['params'] );
+		$this->assertEquals( '{product_ids}', $steps[1]['params']['product_ids'] );
 	}
 
 	/**
@@ -280,9 +280,9 @@ class Test_Slash_Commands_Pro_Workflows_Phase3 extends WP_UnitTestCase {
 		$workflow = $all_workflows['product_launch_complete'];
 		$steps    = $workflow['steps'];
 
-		// Check discount parameter is numeric.
-		$this->assertArrayHasKey( 'discount', $steps[0]['params'] );
-		$this->assertIsNumeric( $steps[0]['params']['discount'] );
+		// Check discount code is set on the discount step.
+		$this->assertArrayHasKey( 'code', $steps[1]['params'] );
+		$this->assertStringContainsString( '{product_name}', $steps[1]['params']['code'] );
 
 		// Check amount parameter is numeric.
 		$this->assertArrayHasKey( 'amount', $steps[1]['params'] );

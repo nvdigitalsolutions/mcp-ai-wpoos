@@ -28,6 +28,12 @@ function wp_mcp_ai_init_slash_commands() {
 	// Load parser.
 	require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-parser.php';
 
+	// Load tool adapter (declarative tool -> slash-command bridge).
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-tool-adapter.php';
+
+	// Load prompts bridge (slash commands as MCP prompt templates).
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-prompts.php';
+
 	// Load handler.
 	require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-handler.php';
 
@@ -886,6 +892,27 @@ function wp_mcp_ai_register_slash_command( $command, $config ) {
 	}
 
 	return $handler->register( $command, $config );
+}
+
+/**
+ * Register a custom slash command backed by an existing MCP tool.
+ *
+ * Helper function for other plugins/themes to register tool-backed commands.
+ *
+ * @since 2.2.0
+ *
+ * @param string $command Command name (without leading slash).
+ * @param array  $config  Command configuration, including 'tool' and 'tool_config'.
+ * @return bool True on success, false on failure.
+ */
+function wp_mcp_ai_register_tool_command( $command, $config ) {
+	$handler = wp_mcp_ai_get_slash_command_handler();
+
+	if ( ! $handler ) {
+		return false;
+	}
+
+	return $handler->register_tool_command( $command, $config );
 }
 
 /**

@@ -4,6 +4,14 @@
 
 Parses, validates, routes, executes, and audits in-chat `/command` invocations (`/help`, `/ship`, `/compact`, `/context`, `/cost`, `/diagnose`, `/jobs`, `/memory`, `/model`, `/preset`, `/session`, `/skills`, `/status`, `/tools`, `/workflow`, …) — and nothing else.
 
+Since v2.2.0, toolkit commands are **declarative wrappers over the MCP
+tool registry**: each entry maps a command name onto a real tool slug and
+delegates execution through `WP_MCP_AI_Slash_Command_Tool_Adapter`,
+so business logic lives in the tool layer only. The same registry feeds
+the MCP prompts bridge (`WP_MCP_AI_Slash_Command_Prompts`), which exposes
+every command as a `prompts/list` entry. Placeholder commands with no
+backing tool were removed.
+
 ## Tier
 
 | | |
@@ -21,6 +29,8 @@ Parses, validates, routes, executes, and audits in-chat `/command` invocations (
 | `WP_MCP_AI_Slash_Command_Parser` | `class-wp-mcp-ai-slash-command-parser.php` | handler (tokenizes `/cmd arg=value …` into a normalized struct) |
 | `WP_MCP_AI_Slash_Command_Validator` | `class-wp-mcp-ai-slash-command-validator.php` | handler (capability + nonce + rate-limit checks) |
 | `WP_MCP_AI_Slash_Command_Audit` | `class-wp-mcp-ai-slash-command-audit.php` | handler (persistent audit table + cron cleanup) |
+| `WP_MCP_AI_Slash_Command_Tool_Adapter` | `class-wp-mcp-ai-slash-command-tool-adapter.php` | declarative tool → command bridge (arg_map, positional, defaults, render) |
+| `WP_MCP_AI_Slash_Command_Prompts` | `class-wp-mcp-ai-slash-command-prompts.php` | MCP prompts bridge — commands as `prompts/list` templates |
 | `WP_MCP_AI_Slash_Command_Workflow_Orchestrator` | `class-wp-mcp-ai-slash-command-workflow-orchestrator.php` | `/workflow` and chained commands |
 | `WP_MCP_AI_Slash_Command_Performance_Optimizer` | `class-wp-mcp-ai-slash-command-performance-optimizer.php` | `/optimize-perf`, performance hints elsewhere |
 | `WP_MCP_AI_Slash_Command_Toolkit_Manager` | `class-wp-mcp-ai-slash-command-toolkit-manager.php` | dynamic toolkit-defined command registration |
@@ -38,10 +48,11 @@ Parses, validates, routes, executes, and audits in-chat `/command` invocations (
 
 ## Conventions
 
-- **Every command class belongs in `commands/`**. The top-level files in this folder are protocol infrastructure (handler, parser, validator, audit, orchestrator, optimizer, toolkit manager) — not individual commands.
+- Every command class belongs in `commands/`. The top-level files in this folder are protocol infrastructure (handler, parser, validator, audit, orchestrator, optimizer, toolkit manager, tool adapter, prompts bridge) — not individual commands.
 - The handler is the **only** entry point. Never invoke a command class directly from REST or JS; route through `wp_mcp_ai_execute_slash_command()` so validation, rate-limiting, and audit logging are uniform.
 - Each command must declare a capability requirement and return a structured payload (`{ "type": "…", "data": …, "render": "…" }`) — never echo HTML directly. The chat UI handles rendering.
 - New commands must register through the `wp_mcp_ai_register_slash_commands` filter or `wp_mcp_ai_register_slash_command()` — do not edit `wp_mcp_ai_load_default_slash_commands()` to bolt one on.
+- Toolkit commands MUST be declarative: a `tool` slug (optionally with `tool_config` arg_map/defaults) rather than a bespoke handler. If no tool exists, the command must not be registered — no placeholder handlers.
 - The audit table is created lazily on activation/upgrade; never assume it exists in tests — gate on `WP_MCP_AI_Slash_Command_Audit::table_exists()` first.
 
 ## Tests
