@@ -34,7 +34,8 @@ sequenceDiagram
 ## What gets installed
 
 The purchased artifact is `nvdigital-open-operator-system-oos-complete-{version}.zip`
-from the monorepo GitHub releases (`release.yml`, built on `v*.*.*` tags).
+from the monorepo GitHub releases (`build-nvdigital-oos-wporg.yml`, built on
+`nvdigital-oos-v*.*.*` tags).
 It extracts to the plugin folder `nvdigital-open-operator-system-oos-complete/`
 (main file `nvdigital-open-operator-system-oos.php`) — a **separate plugin**
 from this one, never bundled inside the `nvoos-content-graph` package.
@@ -243,12 +244,12 @@ In the checkout addon's admin page set:
 2. **ZIP source** — the Complete bundle release pattern:
 
    ```
-   https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/v{VERSION}/nvdigital-open-operator-system-oos-complete-{VERSION}.zip
+   https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/nvdigital-oos-v{VERSION}/nvdigital-open-operator-system-oos-complete-{VERSION}.zip
    ```
 
    (this is the addon's new default; use a private mirror URL or absolute
    server path instead to gate the download behind your own infrastructure).
-3. Publish the corresponding `v*.*.*` tag so the release asset exists (the
+3. Publish the corresponding `nvdigital-oos-v*.*.*` tag so the release asset exists (the
    addon caches the ZIP under `wp-content/uploads/nvoos-checkout/`).
 
 For the full setup guide (Stripe keys, webhook endpoint configuration,

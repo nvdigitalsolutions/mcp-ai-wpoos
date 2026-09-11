@@ -10,6 +10,11 @@
 - **Stripe 4xx rejections stay in-modal** — the vendor now maps Stripe 4xx to status 424 with the real message; the modal shows it inline (with the connection probe) and only redirects to the product-page fallback for genuinely unreachable checkout (404, network failure, 5xx). Contract codified in `scripts/verify-commerce-fallback.js` (424 case: no redirect)
 - Tests: `tests/Unit/Commerce/CommerceTest.php` extended with six health tests (reachable/unreachable/vendor-error paths, health-probe passthrough, health-not-throttled-when-session-bucket-exhausted, unconfigured-build report)
 
+### Fixed — Payment Element failed to mount (checkout redirect loop)
+
+- **Wrong element name** — the purchase modal called `elements.create( 'paymentElement', … )`, which is not a valid Stripe.js element type (the core JS API name is `payment`; `paymentElement` is the React component). Stripe.js threw an `IntegrationError`, the modal's catch-all mislabelled it as "checkout unavailable", and the browser was redirected to the product-page fallback — so every purchase attempt died right after session creation with a silent redirect. The modal now creates the `payment` element
+- **Stripe setup errors stay in-modal** — Stripe element creation/mounting is now wrapped so any setup failure (invalid element name, blocked iframe, extension interference) shows an in-modal error with a reload hint instead of being swallowed by the fetch-rejection catch-all and redirected to the product page
+
 ### Changed — Purchase modal form styling
 
 - **Checkout form fields get real styling** — the email input, country selector, EU billing-address fields, Terms consent row, and the Stripe Payment Element mount point were previously unstyled browser defaults ("wireframe" look); they now use bordered WP-admin-style controls with focus rings, labelled-field spacing, a two-column address grid (street full-width, city + postal side by side), a card-style consent block with an accent-coloured checkbox, and a bordered Stripe element container

@@ -87,7 +87,7 @@ replayed from a different site (site binding) or for a different product.
    secret (`whsec_…`). The `payment_intent.succeeded` event is what issues
    the license when a buyer's browser flow is interrupted after paying —
    their site picks the license up via `/verify` when they return.
-4. Publish the `v*.*.*` tag for the version being sold so the Complete
+4. Publish the `nvdigital-oos-v*.*.*` tag for the version being sold so the Complete
    bundle ZIP source resolves (the addon caches it under
    `wp-content/uploads/nvoos-checkout/` per version).
 5. Verify with Stripe test cards while test mode is on; switch to live keys

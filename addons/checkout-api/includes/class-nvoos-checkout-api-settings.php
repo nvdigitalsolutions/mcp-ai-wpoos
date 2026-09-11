@@ -54,7 +54,7 @@ class NVOOS_Checkout_API_Settings {
 	 * @return string
 	 */
 	public static function default_zip_source(): string {
-		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/v{VERSION}/nvdigital-open-operator-system-oos-complete-{VERSION}.zip';
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/nvdigital-oos-v{VERSION}/nvdigital-open-operator-system-oos-complete-{VERSION}.zip';
 	}
 
 	/**

@@ -173,7 +173,7 @@ class CommerceTest extends WP_UnitTestCase {
 	public function zipUrlTargetsCompleteReleaseAsset(): void {
 		$url = Payments::zipUrl();
 
-		$this->assertStringContainsString( '/releases/download/v', $url );
+		$this->assertStringContainsString( '/releases/download/nvdigital-oos-v', $url );
 		$this->assertStringContainsString( 'nvdigital-open-operator-system-oos-complete-', $url );
 		$this->assertStringEndsWith( '.zip', $url );
 	}
