@@ -1,0 +1,102 @@
+# PHPUnit for the standalone nvoos-content-graph plugin.
+#
+# The plugin is a standalone wp.org plugin with its own test suite
+# (plugins/nvoos-content-graph/tests/) and its own PHPUnit
+# (plugins/nvoos-content-graph/vendor/bin/phpunit, PHPUnit 9.6). Its tests
+# bootstrap is classic-style (WP_TESTS_DIR), so this job pairs the
+# wp-phpunit test suite shipped in the plugin's own vendor (from its
+# composer require-dev) with a downloaded WordPress core — the exact recipe
+# validated locally in Docker (116 tests, 570 assertions green on WP 6.9.4).
+#
+# No svn and no root-vendor dependency: wp-phpunit's bootstrap reads
+# wp-tests-config.php from its own package directory by default, so the job
+# overwrites that throwaway file with the CI database/core settings.
+#
+# The plugin's phpunit.xml.dist runs both suites (Unit + Integration) with
+# failOnRisky/failOnWarning, so a green run here is a hard signal.
+
+name: PHPUnit Content Graph
+
+on:
+  push:
+    branches:
+      - main
+      - alpha-working
+    paths:
+      - 'plugins/nvoos-content-graph/**'
+      - '.github/workflows/phpunit-content-graph.yml'
+  pull_request:
+    paths:
+      - 'plugins/nvoos-content-graph/**'
+      - '.github/workflows/phpunit-content-graph.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_test
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      WP_CORE_DIR: /tmp/wordpress
+      WP_TESTS_DIR: ${{ github.workspace }}/plugins/nvoos-content-graph/vendor/wp-phpunit/wp-phpunit
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, mysqli
+          tools: composer:v2, wp-cli
+
+      - name: Install plugin Composer dependencies
+        working-directory: plugins/nvoos-content-graph
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Download WordPress core
+        run: |
+          wp core download --version=latest --skip-content --path="${WP_CORE_DIR}"
+
+      - name: Configure WordPress test suite
+        # wp-phpunit's includes/bootstrap.php loads wp-tests-config.php from
+        # its own package directory unless WP_TESTS_CONFIG_FILE_PATH is
+        # defined. Overwrite that throwaway file with the CI settings.
+        run: |
+          cat > "${WP_TESTS_DIR}/wp-tests-config.php" <<'PHP'
+          <?php
+          define( 'ABSPATH', '/tmp/wordpress/' );
+          define( 'DB_NAME', 'wordpress_test' );
+          define( 'DB_USER', 'wordpress' );
+          define( 'DB_PASSWORD', 'wordpress' );
+          define( 'DB_HOST', '127.0.0.1' );
+          define( 'DB_CHARSET', 'utf8' );
+          define( 'DB_COLLATE', '' );
+          define( 'WP_TESTS_DOMAIN', 'example.org' );
+          define( 'WP_TESTS_EMAIL', 'admin@example.org' );
+          define( 'WP_TESTS_TITLE', 'Test Blog' );
+          define( 'WP_PHP_BINARY', 'php' );
+          $table_prefix = 'wptests_';
+          PHP
+
+      - name: Run PHPUnit
+        working-directory: plugins/nvoos-content-graph
+        run: |
+          vendor/bin/phpunit -c phpunit.xml.dist --no-coverage

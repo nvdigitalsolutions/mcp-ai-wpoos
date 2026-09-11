@@ -5,7 +5,7 @@ Tags: knowledge graph, content visualization, cytoscape, content strategy, seman
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.6
+Stable tag: 1.0.7
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -43,7 +43,7 @@ Automatic structured data injection for SEO — taxonomy terms as `about` and in
 Appends graph-neighbor posts to your content based on knowledge graph proximity.
 
 = REST API =
-Full programmatic access with 17 endpoints. Read endpoints require the `read` capability (all logged-in users) or a valid guest token (guest tokens are provided by the NV oOS base plugin when installed); write endpoints require `manage_options`.
+Full programmatic access with 18 endpoints. Read endpoints require the `read` capability (all logged-in users) or a valid guest token (guest tokens are provided by the NV oOS base plugin when installed); write endpoints require `manage_options`.
 
 = Extensible Tool System =
 14 built-in tools for graph operations: query, search, traverse, analyze, export. Addon plugins can register their own tools.
@@ -152,7 +152,7 @@ This plugin bundles the following open-source libraries:
 * **layout-base** v2.0.1 — MIT License — https://github.com/iVis-at-Bilkent/layout-base
 * **cose-base** v2.2.0 — MIT License — https://github.com/iVis-at-Bilkent/cose-base
 
-All libraries are served locally from `assets/vendor/` and never loaded from third-party CDNs.
+All libraries are served locally from `assets/vendor/` and never loaded from third-party CDNs. Each library's license text ships alongside it (`assets/vendor/<name>/LICENSE`).
 
 == Screenshots ==
 
@@ -167,8 +167,10 @@ All libraries are served locally from `assets/vendor/` and never loaded from thi
 
 = 1.0.7 — 2026-09-09 =
 * Checkout consent checkbox (Terms of Service + 30-day refund policy) and buyer-email collection with Stripe receipt delivery
+* Buyer country and conditional EU billing address (VAT records) collected in the purchase modal
 * Manual ZIP download offered after purchase alongside the automatic installer; manual install documented as the primary path
-* Updated privacy disclosures (buyer email and Terms consent timestamp sent to the checkout service)
+* Roadmap link in the purchase modal; release-notes link and support email on the purchase success screen
+* Updated privacy disclosures (buyer email, country, EU billing address, and Terms consent timestamp sent to the checkout service)
 
 = 1.0.6 — 2026-09-08 =
 * Checkout now delivers the NV oOS Complete plugin bundle (base + Pro as a separate plugin) instead of the companion AI addon

@@ -136,6 +136,7 @@ jobs:
             --exclude='src/**/README.md' \
             --exclude='vendor.bak-phpunit-conflict/' \
             --exclude='docs/wporg-page-preview.html' \
+            --exclude='docs/checkout-enhancement-plan.md' \
             --exclude='.DS_Store' \
             plugins/nvoos-content-graph/ "dist/${ARTIFACT}/nvoos-content-graph/"
 
@@ -167,12 +168,161 @@ jobs:
           if-no-files-found: error
 
   # ===========================================================================
+  # WordPress.org Plugin Check gate for the content-graph ZIP.
+  #
+  # Runs the official Plugin Check (PCP) against the BUILT distribution ZIP
+  # (the exact tree that ships to wp.org), not the source checkout. The
+  # source tree carries dev files (tests/, phpcs configs, vendor.bak-*,
+  # review notes) that PCP flags and that the packaging step intentionally
+  # excludes — checking the ZIP is what makes the gate meaningful.
+  #
+  # Any ERROR-severity finding fails this job (no allowlisted false
+  # positives: the 1.0.7 ZIP-shaped tree measured 0 errors; the remaining
+  # WARNINGs are the documented PSR-4/DirectDB set that phpcs.xml.dist also
+  # exempts).
+  # ===========================================================================
+  plugin-check:
+    name: Plugin Check (content-graph)
+    needs: build
+    runs-on: ubuntu-latest
+
+    # WordPress cannot boot without a database, and `wp plugin check` (and
+    # `wp plugin install`) load WordPress — so the PCP job needs a real
+    # MySQL. Same service recipe as the phpunit workflows.
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_pluginchk
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      WP_DB_NAME: wordpress_pluginchk
+      WP_DB_USER: wordpress
+      WP_DB_PASSWORD: wordpress
+      WP_DB_HOST: 127.0.0.1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download built ZIP
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build.outputs.artifact }}
+          path: artifacts/
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, mysqli, zip, dom, xml, curl
+          tools: composer:v2, wp-cli
+          coverage: none
+
+      - name: Bootstrap a temporary WordPress install
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/wp
+          wp core download --version=latest --skip-content --path=/tmp/wp
+          wp config create \
+            --dbname="${WP_DB_NAME}" \
+            --dbuser="${WP_DB_USER}" \
+            --dbpass="${WP_DB_PASSWORD}" \
+            --dbhost="${WP_DB_HOST}" \
+            --path=/tmp/wp
+          # Plugin Check runs runtime checks, so WordPress must actually boot.
+          # Install a minimal site against the mysql service container.
+          wp core install \
+            --url="http://127.0.0.1" \
+            --title="Plugin Check QA" \
+            --admin_user="admin" \
+            --admin_password="admin" \
+            --admin_email="admin@example.com" \
+            --skip-email \
+            --path=/tmp/wp
+
+      - name: Install Plugin Check (PCP) plugin
+        run: |
+          set -euo pipefail
+          # Must be ACTIVATED for the wp-cli command to register. (Passing
+          # --require=<plugin-check/plugin.php> loads PCP before WordPress
+          # boots and fatal-errors with undefined plugin_dir_path().)
+          wp plugin install plugin-check --activate --path=/tmp/wp
+
+      - name: Extract built ZIP into wp-content/plugins
+        run: |
+          set -euo pipefail
+          ARTIFACT="${{ needs.build.outputs.artifact }}"
+          mkdir -p /tmp/wp/wp-content/plugins
+          unzip -q -o "artifacts/${ARTIFACT}.zip" -d /tmp/wp/wp-content/plugins/
+          ls /tmp/wp/wp-content/plugins/
+
+      - name: Run wp plugin-check (Errors gate the build)
+        run: |
+          set -euo pipefail
+          cd /tmp/wp
+          wp plugin check nvoos-content-graph \
+            --path=/tmp/wp \
+            --format=json \
+            --severity=5 \
+            > /tmp/pcp-report.json 2>/tmp/pcp-stderr.log || true
+
+          echo "::group::PCP raw stderr"
+          cat /tmp/pcp-stderr.log || true
+          echo "::endgroup::"
+
+          # PCP emits one "FILE: <path>" header plus a JSON array per file
+          # with findings (chunked stream, not a single array). Strip the
+          # headers, then slurp the remaining arrays into one. An empty
+          # report (no findings) slurps to zero via jq; an unparseable
+          # report fails the step under set -e (fail closed).
+          sed -e '/^FILE: /d' /tmp/pcp-report.json > /tmp/pcp-report-parsed.json
+
+          ERRORS=$(jq -s '[.[][] | select(.type=="ERROR")] | length' /tmp/pcp-report-parsed.json)
+          WARNINGS=$(jq -s '[.[][] | select(.type=="WARNING")] | length' /tmp/pcp-report-parsed.json)
+          echo "Plugin Check ERRORS=${ERRORS}, WARNINGS=${WARNINGS}"
+          {
+            echo "## WordPress.org Plugin Check (content-graph)"
+            echo ""
+            echo "- **Errors:** ${ERRORS}"
+            echo "- **Warnings:** ${WARNINGS}"
+            echo ""
+            echo "Full report uploaded as artifact \`pcp-report-content-graph\`."
+          } >> $GITHUB_STEP_SUMMARY
+
+          if [ "${ERRORS}" -gt 0 ]; then
+            echo "::error::Plugin Check reported ${ERRORS} error(s) — content-graph release is blocked."
+            exit 1
+          fi
+
+      - name: Upload Plugin Check report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pcp-report-content-graph
+          path: |
+            /tmp/pcp-report.json
+            /tmp/pcp-stderr.log
+          if-no-files-found: warn
+          retention-days: 30
+
+  # ===========================================================================
   # Publish ZIP to repository build/ directory
   # Only on push to main/alpha-working or tag pushes — not on PRs.
   # ===========================================================================
   publish:
     name: Publish ZIP to Repository
-    needs: build
+    needs: [build, plugin-check]
     runs-on: ubuntu-latest
     if: |
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&

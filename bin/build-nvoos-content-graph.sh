@@ -155,6 +155,7 @@ rsync -a "${PLUGIN_DIR}/" "${TMP_DIR}/${ARTIFACT}/nvoos-content-graph/" \
 	--exclude 'src/**/README.md' \
 	--exclude 'vendor.bak-phpunit-conflict/' \
 	--exclude 'docs/wporg-page-preview.html' \
+	--exclude 'docs/checkout-enhancement-plan.md' \
 	--exclude '.DS_Store'
 
 echo "📁 Plugin directory contents:"
