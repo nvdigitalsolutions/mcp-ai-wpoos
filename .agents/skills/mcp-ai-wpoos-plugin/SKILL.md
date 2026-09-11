@@ -684,6 +684,47 @@ Import external AI conversation exports into the JetEngine
   `mcp-ai-wpoos-ecosystem-port` (skill count 55 → 56).
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
 
+## Checkout Connectivity Diagnostics & Pro CLI Load-Order Guard (v1.1.77+)
+
+- **Checkout API addon `GET /health`** (PR #6573) — public, no Stripe, no
+  rate-limit token, no writes; returns `status`/`service`/`version`/
+  `configured`/`server_time`. Live on nvdigitalsolutions.com:
+  `GET https://nvdigitalsolutions.com/wp-json/nvoos-checkout/v1/health`.
+- **Checkout API admin "REST endpoints" section** (PR #6573) — live
+  per-route registered/missing markers (from `rest_get_server()->get_routes()`
+  endpoint lists) plus a nonce-protected loopback self-check of `GET /health`
+  reporting HTTP status + latency.
+- **Content Graph client diagnostics** (PR #6573) — `Vendor::health()` and
+  the admin-only `GET /payments/health` route (deliberately NOT throttled,
+  so diagnostics cannot trigger the "Too many checkout attempts" lockout);
+  the purchase modal offers a "Test connection" action when session
+  creation fails.
+- **Checkout troubleshooting playbook** — two independent throttles: client
+  (transients `nvoos_content_graph_commerce_{session,verify}_throttle_{uid}`,
+  5 and 15 attempts per 10 min per user) and vendor (per server IP, 20
+  session / 30 verify per 10 min on the checkout-api addon). Diagnose from
+  the client site's server:
+
+  ```bash
+  # Outbound connectivity from the site's server (works even when other
+  # plugins fatal under WP-CLI, see below):
+  wp --skip-plugins eval '$main = glob( WP_PLUGIN_DIR . "/*nvoos-content-graph*/nvoos-content-graph.php" ); if ( empty( $main ) ) { exit; } require_once $main[0]; var_export( ( new \NvoosContentGraph\Commerce\Vendor( \NvoosContentGraph\Commerce\Payments::vendorApiUrl() ) )->health() );'
+
+  # Clear the client throttles. If the remote shell mangles $variables,
+  # ship the PHP base64-encoded instead:
+  wp --skip-plugins eval 'for ( $i = 1; $i <= 200; $i++ ) { delete_transient( "nvoos_content_graph_commerce_session_throttle_" . $i ); delete_transient( "nvoos_content_graph_commerce_verify_throttle_" . $i ); }'
+  ```
+
+  The vendor-side per-IP bucket only clears with time (10 min).
+- **Pro CLI load-order fatal** — when the Pro addon is activated before the
+  base plugin, every `wp` command dies with `Undefined constant
+  "WP_MCP_AI_PATH"` (Pro requires its CLI files at include time under
+  WP_CLI; web requests are unaffected). Site fix: reorder `active_plugins`
+  via `wp --skip-plugins eval` (move the `-pro` entry after the base
+  entry). Code fix: PR #6585 defers the CLI require loop to
+  `plugins_loaded` when the base constant is missing at include time.
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
 ## Calendar Query Fix, Email Formats & Wave F2 PM/Calendar (v1.1.74+)
 
 - **Google Calendar date queries** (PR #6460) — calendar query values are
