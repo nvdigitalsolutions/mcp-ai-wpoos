@@ -130,14 +130,14 @@ class Shortcode {
 		// Handles are prefixed 'nvoos-content-graph-' to avoid collisions with
 		// other plugins that enqueue cytoscape under the bare 'cytoscape' handle.
 		$vendorUrl = NVOOS_CONTENT_GRAPH_URL . 'assets/vendor/';
-		wp_enqueue_script( 'nvoos-content-graph-layout-base', $vendorUrl . 'layout-base/layout-base.js', array(), NVOOS_CONTENT_GRAPH_VERSION, true );
-		wp_enqueue_script( 'nvoos-content-graph-cose-base', $vendorUrl . 'cose-base/cose-base.js', array( 'nvoos-content-graph-layout-base' ), NVOOS_CONTENT_GRAPH_VERSION, true );
-		wp_enqueue_script( 'nvoos-content-graph-cytoscape', $vendorUrl . 'cytoscape/cytoscape.min.js', array(), NVOOS_CONTENT_GRAPH_VERSION, true );
+		wp_enqueue_script( 'nvoos-content-graph-layout-base', $vendorUrl . 'layout-base/layout-base.js', array(), Schema::assetVersion( 'assets/vendor/layout-base/layout-base.js' ), true );
+		wp_enqueue_script( 'nvoos-content-graph-cose-base', $vendorUrl . 'cose-base/cose-base.js', array( 'nvoos-content-graph-layout-base' ), Schema::assetVersion( 'assets/vendor/cose-base/cose-base.js' ), true );
+		wp_enqueue_script( 'nvoos-content-graph-cytoscape', $vendorUrl . 'cytoscape/cytoscape.min.js', array(), Schema::assetVersion( 'assets/vendor/cytoscape/cytoscape.min.js' ), true );
 		wp_enqueue_script(
 			'nvoos-content-graph-cytoscape-fcose',
 			$vendorUrl . 'cytoscape-fcose/cytoscape-fcose.js',
 			array( 'nvoos-content-graph-cytoscape', 'nvoos-content-graph-cose-base' ),
-			NVOOS_CONTENT_GRAPH_VERSION,
+			Schema::assetVersion( 'assets/vendor/cytoscape-fcose/cytoscape-fcose.js' ),
 			true
 		);
 
@@ -146,14 +146,14 @@ class Shortcode {
 			'nvoos-content-graph-icons',
 			NVOOS_CONTENT_GRAPH_URL . 'assets/js/content-graph-icons.js',
 			array(),
-			NVOOS_CONTENT_GRAPH_VERSION,
+			Schema::assetVersion( 'assets/js/content-graph-icons.js' ),
 			true
 		);
 		wp_enqueue_script(
 			'nvoos-content-graph-theme',
 			NVOOS_CONTENT_GRAPH_URL . 'assets/js/content-graph-theme.js',
 			array( 'nvoos-content-graph-icons' ),
-			NVOOS_CONTENT_GRAPH_VERSION,
+			Schema::assetVersion( 'assets/js/content-graph-theme.js' ),
 			true
 		);
 
@@ -161,14 +161,14 @@ class Shortcode {
 			'nvoos-content-graph-frontend',
 			NVOOS_CONTENT_GRAPH_URL . 'assets/js/content-graph-frontend.js',
 			array( 'jquery', 'nvoos-content-graph-cytoscape', 'nvoos-content-graph-cytoscape-fcose', 'nvoos-content-graph-theme' ),
-			NVOOS_CONTENT_GRAPH_VERSION,
+			Schema::assetVersion( 'assets/js/content-graph-frontend.js' ),
 			true
 		);
 		wp_enqueue_style(
 			'nvoos-content-graph-frontend',
 			NVOOS_CONTENT_GRAPH_URL . 'assets/css/content-graph-frontend.css',
 			array(),
-			NVOOS_CONTENT_GRAPH_VERSION
+			Schema::assetVersion( 'assets/css/content-graph-frontend.css' )
 		);
 
 		// Expose the config under the exact global the frontend JS expects:

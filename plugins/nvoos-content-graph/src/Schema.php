@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 namespace NvoosContentGraph;
 
+use function file_exists;
+use function filemtime;
+use function ltrim;
+
 /**
  * Centralized constants for the NV oOS Content Graph plugin.
  *
@@ -86,6 +90,35 @@ final class Schema {
 
 	// ─── Transient prefix ──────────────────────────────────────
 	public const TRANSIENT_PREFIX = 'nvoos_content_graph_';
+
+	/**
+	 * Cache-busting version string for a plugin asset.
+	 *
+	 * Uses the file's modification time so any change to the asset —
+	 * including hotfixes deployed without a version bump — produces a new
+	 * enqueue URL and defeats long-lived browser/CDN caches (see the
+	 * 1.0.7 purchase-modal incident, where the fixed
+	 * `content-graph-commerce.js` stayed cached for up to a year under
+	 * `?ver=1.0.7`). Falls back to the plugin version when the file is
+	 * missing (e.g. in test harnesses that don't ship assets).
+	 *
+	 * @since 1.0.7
+	 *
+	 * @param string $relative Asset path relative to the plugin root
+	 *                          (e.g. 'assets/js/content-graph-commerce.js').
+	 * @return string Version string for the `$ver` enqueue argument.
+	 */
+	public static function assetVersion( string $relative ): string {
+		$file = NVOOS_CONTENT_GRAPH_PATH . ltrim( $relative, '/' );
+		if ( file_exists( $file ) ) {
+			$mtime = filemtime( $file );
+			if ( false !== $mtime && $mtime > 0 ) {
+				return (string) $mtime;
+			}
+		}
+
+		return NVOOS_CONTENT_GRAPH_VERSION;
+	}
 
 	/**
 	 * Return the default settings array.

@@ -453,14 +453,14 @@ class SettingsPage {
 			'nvoos-content-graph-icons',
 			NVOOS_CONTENT_GRAPH_URL . 'assets/js/content-graph-icons.js',
 			array(),
-			NVOOS_CONTENT_GRAPH_VERSION,
+			Schema::assetVersion( 'assets/js/content-graph-icons.js' ),
 			true
 		);
 		\wp_enqueue_script(
 			'nvoos-content-graph-theme',
 			NVOOS_CONTENT_GRAPH_URL . 'assets/js/content-graph-theme.js',
 			array( 'nvoos-content-graph-icons' ),
-			NVOOS_CONTENT_GRAPH_VERSION,
+			Schema::assetVersion( 'assets/js/content-graph-theme.js' ),
 			true
 		);
 
@@ -468,7 +468,7 @@ class SettingsPage {
 			'nvoos-content-graph-admin',
 			NVOOS_CONTENT_GRAPH_URL . 'assets/js/content-graph-admin.js',
 			array( 'jquery', 'nvoos-content-graph-cytoscape', 'nvoos-content-graph-cytoscape-fcose', 'nvoos-content-graph-theme' ),
-			NVOOS_CONTENT_GRAPH_VERSION,
+			Schema::assetVersion( 'assets/js/content-graph-admin.js' ),
 			true
 		);
 
@@ -484,7 +484,7 @@ class SettingsPage {
 			'nvoos-content-graph-commerce',
 			NVOOS_CONTENT_GRAPH_URL . 'assets/js/content-graph-commerce.js',
 			array(),
-			NVOOS_CONTENT_GRAPH_VERSION,
+			Schema::assetVersion( 'assets/js/content-graph-commerce.js' ),
 			true
 		);
 
@@ -492,7 +492,7 @@ class SettingsPage {
 			'nvoos-content-graph-admin',
 			NVOOS_CONTENT_GRAPH_URL . 'assets/css/content-graph-admin.css',
 			array(),
-			NVOOS_CONTENT_GRAPH_VERSION
+			Schema::assetVersion( 'assets/css/content-graph-admin.css' )
 		);
 
 		$settings = Settings::all();
