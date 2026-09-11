@@ -161,7 +161,7 @@ class NVOOS_Checkout_API_Rest_Controller {
 	 * Stripe. The response is deliberately small and stable so the client
 	 * can rely on it as a connectivity contract.
 	 *
-	 * @since 0.1.0
+	 * @since 0.1.1
 	 *
 	 * @return WP_REST_Response
 	 */
