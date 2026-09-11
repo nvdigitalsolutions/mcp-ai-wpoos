@@ -35,6 +35,7 @@
 	var addressRow = null;
 	var busy = false;
 	var verifying = false;
+	var priceLabelEl = null;
 
 	/**
 	 * Build an element with text content, safe from XSS by construction.
@@ -490,7 +491,8 @@
 	 */
 	function renderPriceBlock() {
 		var block = el( 'div', 'nvoos-cg-price-block' );
-		block.appendChild( el( 'p', 'nvoos-cg-price', config.price_label || '' ) );
+		priceLabelEl = el( 'p', 'nvoos-cg-price', config.price_label || '' );
+		block.appendChild( priceLabelEl );
 
 		var oneTime = i18n.price_one_time || '';
 		if ( oneTime ) {
@@ -508,6 +510,47 @@
 		}
 
 		return block;
+	}
+
+	/**
+	 * Format a vendor price (integer cents) for display.
+	 *
+	 * Display-only: the vendor re-verifies the authoritative amount
+	 * server-side, so this label never participates in the payment.
+	 *
+	 * @param  {number} amount   Price in the smallest currency unit.
+	 * @param  {string} currency Three-letter ISO currency code.
+	 * @return {string} Formatted price, e.g. "$79.00".
+	 */
+	function formatPrice( amount, currency ) {
+		var code = String( currency || 'usd' ).toUpperCase();
+		try {
+			return new Intl.NumberFormat( undefined, {
+				style: 'currency',
+				currency: code
+			} ).format( amount / 100 );
+		} catch ( e ) {
+			return '$' + ( amount / 100 ).toFixed( 2 );
+		}
+	}
+
+	/**
+	 * Replace the modal's price label with the vendor session's authoritative
+	 * amount. The locally configured default (shown while the session is
+	 * being created) is kept whenever the session omits a valid price.
+	 *
+	 * @param {Object} data Vendor `/session` response payload.
+	 * @return {void}
+	 */
+	function syncPriceFromSession( data ) {
+		if ( ! priceLabelEl || ! data ) {
+			return;
+		}
+		var amount = parseInt( data.amount, 10 );
+		if ( ! isFinite( amount ) || amount < 50 ) {
+			return;
+		}
+		priceLabelEl.textContent = formatPrice( amount, data.currency );
 	}
 
 	/**
@@ -597,6 +640,7 @@
 		consentCheckbox = null;
 		consentAt = 0;
 		euWithdrawalNote = null;
+		priceLabelEl = null;
 		emailInput = null;
 		countrySelect = null;
 		addressLine1 = null;
@@ -861,6 +905,10 @@
 
 			payBtn.dataset.clientSecret = result.data.client_secret;
 			updatePayState();
+
+			// The vendor's amount is the price that will actually be charged —
+			// align the modal's price block with it (display only).
+			syncPriceFromSession( result.data );
 		} ).catch( function () {
 			// Network-level failure (fetch rejection): the endpoint is
 			// unavailable — fall back to the product page.

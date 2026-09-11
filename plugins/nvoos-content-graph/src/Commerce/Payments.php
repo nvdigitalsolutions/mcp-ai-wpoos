@@ -29,7 +29,7 @@ use function rawurlencode;
 final class Payments {
 
 	/** @var int Default price in the smallest currency unit (USD cents). */
-	public const DEFAULT_PRICE_CENTS = 4900;
+	public const DEFAULT_PRICE_CENTS = 3499;
 
 	/**
 	 * Bundle version pinned for the fallback download URL.
@@ -97,7 +97,7 @@ final class Payments {
 	/**
 	 * Human-readable price label for the UI.
 	 *
-	 * @return string e.g. "$49.00".
+	 * @return string e.g. "$34.99".
 	 */
 	public static function priceLabel(): string {
 		return '$' . number_format( self::priceCents() / 100, 2 );
