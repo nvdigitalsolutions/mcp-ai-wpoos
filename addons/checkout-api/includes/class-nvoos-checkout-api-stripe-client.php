@@ -339,11 +339,26 @@ class NVOOS_Checkout_API_Stripe_Client {
 	/**
 	 * Decode a WP HTTP response into a Stripe object or WP_Error.
 	 *
+	 * Error status mapping contract (mirrored by the customer-side
+	 * Content Graph modal):
+	 *   - Stripe 4xx: the REQUEST was rejected (bad key, invalid
+	 *     parameters, account restrictions) -> WP_Error with status 424
+	 *     and Stripe's own message, so buyers see the real reason
+	 *     instead of a generic gateway failure.
+	 *   - Transport failure or Stripe 5xx: checkout is genuinely
+	 *     unavailable -> status 502, which customer sites may treat as
+	 *     "unreachable" and fall back on.
+	 *
 	 * @param array<mixed>|WP_Error $response Raw response.
 	 * @return array<string,mixed>|WP_Error
 	 */
 	private function parse_response( $response ) {
 		if ( is_wp_error( $response ) ) {
+			// Transport-level failure (this server cannot reach Stripe):
+			// keep the cURL message but pin the status to 502 so customer
+			// sites classify it as checkout-unavailable, never as a Stripe
+			// rejection of the purchase.
+			$response->add_data( array( 'status' => 502 ) );
 			return $response;
 		}
 
@@ -360,10 +375,12 @@ class NVOOS_Checkout_API_Stripe_Client {
 					$code
 				);
 
+			$status = ( $code >= 400 && $code < 500 ) ? 424 : 502;
+
 			return new WP_Error(
 				'nvoos_checkout_stripe_http_error',
 				$message,
-				array( 'status' => 502 )
+				array( 'status' => $status )
 			);
 		}
 

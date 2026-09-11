@@ -3,11 +3,12 @@
  * Standalone verification of the checkout-unavailable fallback (no browser).
  * Run: node scripts/verify-commerce-fallback.js
  *
- * Simulates the three /payments/session failure paths:
+ * Simulates the /payments/session failure paths:
  *   1. 404 response            -> redirect to fallback URL
  *   2. network rejection       -> redirect to fallback URL
  *   3. 429 (throttled)         -> in-modal error, NO redirect
- *   4. empty fallback URL      -> in-modal error, NO redirect
+ *   4. 424 (Stripe rejection)  -> in-modal error, NO redirect
+ *   5. empty fallback URL      -> in-modal error, NO redirect
  */
 
 // ─── Minimal DOM stubs ────────────────────────────────────────
@@ -60,7 +61,7 @@ global.fetch = function () {
 	if ( fetchBehavior === 'reject' ) {
 		return Promise.reject( new Error( 'network' ) );
 	}
-	var status = fetchBehavior === '429' ? 429 : 404;
+	var status = fetchBehavior === '429' ? 429 : fetchBehavior === '424' ? 424 : 404;
 	return Promise.resolve( {
 		ok: status < 400,
 		status: status,
@@ -121,6 +122,7 @@ function runFlow( label, behavior, expectRedirect, expectHref ) {
 	await runFlow( '404 session -> redirect to fallback URL', '404', true, 'https://nvdigitalsolutions.com/plugins/nvoos-content-graph-ai/' );
 	await runFlow( 'network failure -> redirect to fallback URL', 'reject', true, 'https://nvdigitalsolutions.com/plugins/nvoos-content-graph-ai/' );
 	await runFlow( '429 throttle -> no redirect', '429', false, null );
+	await runFlow( '424 stripe rejection -> no redirect', '424', false, null );
 
 	// Empty fallback URL disables the redirect.
 	global.window.nvoosContentGraphCommerce.fallback_url = '';

@@ -91,7 +91,9 @@ class Test_Checkout_Api_Stripe_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Stripe errors surface as WP_Error.
+	 * Stripe 4xx rejections surface as WP_Error with status 424 and the
+	 * real Stripe message (so customer sites show it instead of falling
+	 * back on the product page).
 	 *
 	 * @return void
 	 */
@@ -113,6 +115,81 @@ class Test_Checkout_Api_Stripe_Client extends WP_UnitTestCase {
 
 		$this->assertWPError( $result );
 		$this->assertSame( 'Card declined', $result->get_error_message() );
+		$this->assertSame( 424, $result->get_error_data()['status'] );
+	}
+
+	/**
+	 * An invalid API key surfaces as a 424 with Stripe's message.
+	 *
+	 * @return void
+	 */
+	public function test_create_payment_intent_invalid_key_maps_to_424(): void {
+		add_filter(
+			'pre_http_request',
+			static function () {
+				return array(
+					'response' => array( 'code' => 401 ),
+					'body'     => wp_json_encode( array( 'error' => array( 'message' => 'Invalid API Key provided' ) ) ),
+				);
+			},
+			10,
+			0
+		);
+
+		$client = new NVOOS_Checkout_API_Stripe_Client( 'sk_bad' );
+		$result = $client->create_payment_intent( array( 'amount' => 4900 ) );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'Invalid API Key provided', $result->get_error_message() );
+		$this->assertSame( 424, $result->get_error_data()['status'] );
+	}
+
+	/**
+	 * Stripe 5xx responses map to 502 (checkout unavailable).
+	 *
+	 * @return void
+	 */
+	public function test_create_payment_intent_stripe_5xx_maps_to_502(): void {
+		add_filter(
+			'pre_http_request',
+			static function () {
+				return array(
+					'response' => array( 'code' => 500 ),
+					'body'     => 'upstream exploded',
+				);
+			},
+			10,
+			0
+		);
+
+		$client = new NVOOS_Checkout_API_Stripe_Client( 'sk_test_abc' );
+		$result = $client->create_payment_intent( array( 'amount' => 4900 ) );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 502, $result->get_error_data()['status'] );
+	}
+
+	/**
+	 * Transport failures keep the cURL message but pin status 502.
+	 *
+	 * @return void
+	 */
+	public function test_create_payment_intent_transport_error_maps_to_502(): void {
+		add_filter(
+			'pre_http_request',
+			static function () {
+				return new WP_Error( 'http_request_failed', 'cURL error 28: timeout' );
+			},
+			10,
+			0
+		);
+
+		$client = new NVOOS_Checkout_API_Stripe_Client( 'sk_test_abc' );
+		$result = $client->create_payment_intent( array( 'amount' => 4900 ) );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'cURL error 28: timeout', $result->get_error_message() );
+		$this->assertSame( 502, $result->get_error_data()['status'] );
 	}
 
 	/**

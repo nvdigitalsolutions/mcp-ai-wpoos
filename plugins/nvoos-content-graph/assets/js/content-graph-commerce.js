@@ -766,9 +766,14 @@
 
 		apiPost( '/payments/session' ).then( function ( result ) {
 			if ( ! result.ok ) {
-				// The endpoint is unreachable (route missing or server error):
-				// redirect to the vendor product page. Other client errors
-				// (e.g. session throttling) keep the in-modal error.
+				// Redirect to the product-page fallback only when the
+				// checkout is genuinely unreachable (route missing,
+				// network failure, or a 5xx gateway error). A 424 means
+				// the vendor's Stripe call REJECTED the session (bad key,
+				// invalid params, account restrictions) — show the real
+				// message in the modal instead, with the connection
+				// probe for good measure. Other client errors (e.g. 429
+				// throttling) stay in-modal too.
 				if ( result.status === 404 || result.status >= 500 ) {
 					checkoutUnavailable();
 				} else {

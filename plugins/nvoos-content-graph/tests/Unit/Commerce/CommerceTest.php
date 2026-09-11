@@ -339,6 +339,10 @@ class CommerceTest extends WP_UnitTestCase {
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'nvoos_content_graph_vendor_error', $result->get_error_code() );
 		$this->assertSame( 'Checkout not configured.', $result->get_error_message() );
+
+		// A vendor 4xx rejection (Stripe 424) passes through unchanged so
+		// the modal shows the message instead of redirecting.
+		$this->assertSame( 424, $result->get_error_data()['status'] );
 	}
 
 	/** @test */

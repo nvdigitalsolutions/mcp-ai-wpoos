@@ -7,6 +7,7 @@
 - **`GET /payments/health` admin route** — pings the vendor's new public `GET /health` endpoint and reports reachability, round-trip latency, and the vendor's own status payload; deliberately **not** throttled so admins can diagnose connectivity without consuming the session/verify buckets (the probe can't trigger the "Too many checkout attempts" lockout)
 - **`Vendor::health()`** — thin client for the vendor health endpoint (10s timeout, same error envelopes as the session/verify calls)
 - **"Test connection" action in the purchase modal** — when session creation fails with a client error, the modal offers a one-click connectivity probe that renders the result inline (e.g. `Checkout service is reachable — nvoos-checkout v0.1.0 (123 ms)`)
+- **Stripe 4xx rejections stay in-modal** — the vendor now maps Stripe 4xx to status 424 with the real message; the modal shows it inline (with the connection probe) and only redirects to the product-page fallback for genuinely unreachable checkout (404, network failure, 5xx). Contract codified in `scripts/verify-commerce-fallback.js` (424 case: no redirect)
 - Tests: `tests/Unit/Commerce/CommerceTest.php` extended with six health tests (reachable/unreachable/vendor-error paths, health-probe passthrough, health-not-throttled-when-session-bucket-exhausted, unconfigured-build report)
 
 ### Changed — Purchase modal form styling

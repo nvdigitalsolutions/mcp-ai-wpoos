@@ -1,6 +1,6 @@
 # NV oOS Checkout API — Changelog
 
-## 0.1.0 — Unreleased
+## 0.1.1 — Unreleased
 
 ### New
 
@@ -22,6 +22,8 @@
 ### Fixed
 
 - **Stripe boolean serialization** — request bodies are form-encoded, and PHP's serializer turned booleans into `1`/empty strings, which Stripe rejects (`Invalid boolean: 1` on `automatic_payment_methods[enabled]` — every live PaymentIntent creation failed, surfacing as the client's 502 and the modal's fallback redirect). The Stripe client now stringifies booleans to literal `true`/`false` recursively before sending; regression coverage in `tests/test-stripe-client.php`
+
+- **Stripe error mapping** — Stripe 4xx rejections now surface as status 424 with Stripe's own message (bad key, invalid params, account restrictions) instead of the blanket 502, so customer sites show the real rejection reason in the purchase modal instead of treating checkout as unreachable; transport failures and Stripe 5xx stay 502. Covered in `tests/test-stripe-client.php` and `tests/test-rest-checkout.php`
 
 - Storefront admin settings form no longer nests the Stripe product/price form inside the `options.php` settings form — browsers drop inner `<form>` tags, so the inner `action` input overrode the Settings API `action=update` and every save landed on a blank `options.php`; the action forms are now standalone sections, and the settings form round-trips `product_id`/`price_id` as hidden fields so a save can no longer wipe them
 
