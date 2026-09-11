@@ -22,6 +22,16 @@ if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
 	return;
 }
 
+// The core base command lives in the base plugin and is addressed via
+// WP_MCP_AI_PATH. When the base plugin is absent (or this file is included
+// before it, e.g. an out-of-order active-plugins list), bail cleanly
+// instead of fataling on the undefined constant. The main plugin file
+// defers requiring the CLI files to plugins_loaded for exactly that case,
+// so this guard is defense in depth and normally never triggers.
+if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
+	return;
+}
+
 // Core base command must be available first.
 if ( ! class_exists( 'WP_MCP_AI_CLI_Base_Command' ) ) {
 	$base_file = WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-base-command.php';
