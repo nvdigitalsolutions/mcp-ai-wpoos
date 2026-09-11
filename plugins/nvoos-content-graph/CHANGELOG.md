@@ -1,6 +1,6 @@
 # NV oOS Content Graph — Changelog
 
-## 1.0.7 — Unreleased
+## 1.0.7 — 2026-09-11
 
 ### New — Checkout connectivity diagnostics
 
