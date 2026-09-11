@@ -462,6 +462,7 @@ the changed files is the substantive gate; plan CI waits accordingly.
     Port characterization tests must derive constants from the ported
     source — never from memory or class-name guesses. The Wave F2 comic
     data-layer test asserted `mcp_ai_comic_character`, but the byte-identical
+    test `mcp_ai_comic_character`, but the byte-identical
     source declares `mcp_ai_comic_char` (the comic/panel/script slugs are all
     shorter than the class names suggest). Before running a new port test,
     grep the source's `const POST_TYPE` (and every other asserted constant)
@@ -469,6 +470,58 @@ the changed files is the substantive gate; plan CI waits accordingly.
     red-herring failure. Same discipline for module ordinals: count the
     registry test's own `$expected` list rather than trusting handoff notes
     (the comic handoff said "25th module"; the actual list has 24).
+
+42. **Standalone-plugin vendor shadows the root PHPUnit.** Suites under
+    `plugins/nvoos-content-graph/tests` (and similar standalone plugins)
+    bootstrap through the plugin's own `vendor/autoload.php`, which pins
+    PHPUnit 9 while `wp-phpunit` 7.x needs PHPUnit 10/11. Symptoms: every
+    test errors with `Call to undefined method X::name()` or PHPUnit itself
+    dies with `Cannot instantiate interface PHPUnit\Runner\TestSuiteLoader`
+    (the plugin-vendor autoloader is registered last, so it wins lookups).
+    Fix for local validation: run the suite with the ROOT vendor's phpunit
+    binary (`php /path/to/root/vendor/bin/phpunit -c
+    plugins/nvoos-content-graph/phpunit.xml.dist ...`) and scrub the
+    plugin-vendor's PHPUnit mappings from its disposable vendor volume
+    (`autoload_psr4.php`/`autoload_classmap.php`/`autoload_static.php`
+    lines mentioning `PHPUnit` or `php-invoker`/`php-timer`, then `rm -rf
+    <plugin>/vendor/phpunit`). Never commit the scrubbed vendor.
+43. **`get_routes()` maps each path to a LIST of endpoint objects** (one per
+    registered method), not a single `methods` map. Tests asserting route
+    registration must iterate the list:
+    `isset( $routes[$path] ) && is_array( $routes[$path] )` then check each
+    endpoint's `$endpoint['methods'][$method]`. Asserting
+    `$routes[$path]['methods']` directly silently fails.
+44. **`register_rest_route()` outside `rest_api_init` fires
+    `_doing_it_wrong`**, which wp-phpunit converts into a test failure. To
+    register routes in a test: `add_action( 'rest_api_init', fn() =>
+    $controller->register_routes() )`, then force a fresh server
+    (`$GLOBALS['wp_rest_server'] = null; rest_get_server();`) so
+    `rest_api_init` re-fires and the hook runs on the correct action.
+45. **`rest_url()` in tests uses the `?rest_route=` query form** (plain
+    permalinks), e.g. `http://example.org/index.php?rest_route=/ns/route` —
+    never assert a `/wp-json/` URL shape. Assert
+    `assertStringContainsString( 'ns/route', $url )` to accept both forms.
+46. **Pro CLI include-time fatal on base constants.** The Pro addon main
+    file requires its CLI command files at include time under `WP_CLI`,
+    and `class-wp-mcp-ai-pro-cli-base-command.php` reads `WP_MCP_AI_PATH`
+    (a base-plugin constant) unguarded. When Pro is activated before the
+    base plugin (active_plugins order), every `wp` command dies with
+    `Undefined constant "WP_MCP_AI_PATH"`. Production fix (#6585): defer
+    the CLI require loop to `plugins_loaded` (priority 30) when the
+    constant is missing at include time, and bail cleanly in the CLI base
+    command. Site workaround: `wp --skip-plugins eval '...reorder
+    active_plugins...'` or run evals with `--skip-plugins` + manual
+    `require_once` of the needed plugin file.
+47. **Edit-tool non-ASCII mangling (CP1252 bytes).** The edit tool may write
+    some non-ASCII characters (em-dashes etc.) as single CP1252 bytes
+    (e.g. `0x97` instead of UTF-8 `E2 80 94`), silently corrupting file
+    encoding — `php -l` and phpcs do NOT catch it. After editing files with
+    non-ASCII content, validate with `mb_check_encoding($c, "UTF-8")` and
+    repair byte-level with a PHP script (lone `0x97` -> `E2 80 94` etc.),
+    or write new text in pure ASCII. When scanning for damage, a byte
+    scanner must skip the continuation bytes of valid sequences
+    (`$i += $len - 1` on the VALID branch too), or every continuation byte
+    reports as a false-positive invalid sequence.
 
 ## Production fix vs test fix
 
