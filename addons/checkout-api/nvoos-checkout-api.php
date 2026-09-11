@@ -3,7 +3,7 @@
  * Plugin Name: NV oOS Checkout API
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: Vendor-side checkout service for NV oOS premium addons. Hosts the Stripe payment session/verify endpoints, issues licenses, serves signed ZIP downloads, and processes Stripe webhooks. Runs on the vendor's own server only — never distributed to customers or WordPress.org.
- * Version:     0.1.0
+ * Version:     0.1.1
  * Requires at least: 6.0
  * Requires PHP: 8.1
  * Tested up to: 6.9
@@ -35,7 +35,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'NVOOS_CHECKOUT_API_VERSION', '0.1.0' );
+define( 'NVOOS_CHECKOUT_API_VERSION', '0.1.1' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_CHECKOUT_API_FILE', __FILE__ );
