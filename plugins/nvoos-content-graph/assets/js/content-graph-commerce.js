@@ -784,17 +784,27 @@
 			}
 
 			stripe = window.Stripe( result.data.publishable_key );
-			elements = stripe.elements( {
-				clientSecret: result.data.client_secret,
-				appearance: { theme: 'stripe' }
-			} );
-			// The plugin collects the buyer email, country, and EU billing
-			// address itself (receipt + VAT records); keep the Stripe iframe
-			// from asking for them again.
-			paymentElement = elements.create( 'paymentElement', {
-				fields: { billingDetails: { email: 'never', address: 'never' } }
-			} );
-			paymentElement.mount( payBox );
+
+			// Stripe element setup failures (invalid element name, blocked
+			// iframe, extension interference) must surface in the modal —
+			// letting them hit the catch-all below would mislabel them as
+			// "checkout unavailable" and redirect to the product page.
+			try {
+				elements = stripe.elements( {
+					clientSecret: result.data.client_secret,
+					appearance: { theme: 'stripe' }
+				} );
+				// The plugin collects the buyer email, country, and EU billing
+				// address itself (receipt + VAT records); keep the Stripe iframe
+				// from asking for them again.
+				paymentElement = elements.create( 'payment', {
+					fields: { billingDetails: { email: 'never', address: 'never' } }
+				} );
+				paymentElement.mount( payBox );
+			} catch ( e ) {
+				showError( i18n.stripe_setup_error || 'The payment form could not be started. Please reload the page and try again.' );
+				return;
+			}
 
 			if ( result.data.test_mode ) {
 				var modalBody = dialog.querySelector( '.nvoos-cg-modal-body' );

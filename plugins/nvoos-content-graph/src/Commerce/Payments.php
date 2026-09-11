@@ -130,7 +130,7 @@ final class Payments {
 	public static function zipUrl(): string {
 		$version = self::addonVersion();
 		$default = sprintf(
-			'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/v%s/nvdigital-open-operator-system-oos-complete-%s.zip',
+			'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/nvdigital-oos-v%s/nvdigital-open-operator-system-oos-complete-%s.zip',
 			rawurlencode( $version ),
 			rawurlencode( $version )
 		);
