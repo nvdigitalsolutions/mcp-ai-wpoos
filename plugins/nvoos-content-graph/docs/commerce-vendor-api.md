@@ -92,8 +92,46 @@ Response `200`:
 to the Terms-of-Service consent checkbox in the purchase modal. The plugin
 falls back to its own filterable defaults when a legacy vendor omits them.
 
-Errors: `402` price mismatch, `424` checkout not configured, `429` rate
-limited, `502` Stripe failure. All errors are `{"message": "…"}`.
+Errors: `402` price mismatch, `424` checkout not configured or a Stripe 4xx
+rejection (bad key, invalid params, account restrictions) with Stripe's own
+message, `429` rate limited, `502` transport failure or Stripe 5xx
+(checkout genuinely unavailable). All errors are `{"message": "…"}`.
+
+Status contract: **`424` is showable** — the purchase modal renders the
+message in place (with a "Test connection" probe) and never redirects.
+**`502`, `404`, and network failures mean unreachable** — the modal falls
+back to the filterable product-page URL. Client errors such as `429`
+(throttling) stay in-modal too.
+
+Vendor implementation note: request bodies to Stripe are form-encoded, so
+booleans must be sent as the literal strings `"true"` / `"false"` (PHP's
+form serializer would otherwise emit `1`/empty, which Stripe rejects with
+`Invalid boolean: 1`).
+
+### GET `/health`
+
+Public, unauthenticated status probe. No Stripe call, no rate-limit token,
+no writes — customer sites (and the vendor's own admin) use it to confirm
+the checkout service is reachable and serving before starting a payment
+session.
+
+Response `200`:
+
+```json
+{
+  "status": "ok",
+  "service": "nvoos-checkout",
+  "version": "0.1.1",
+  "configured": true,
+  "server_time": 1789094864
+}
+```
+
+`configured` reflects whether Stripe keys are set (presence, not validity —
+use the vendor admin's "Test connection" for a live key check). The client
+plugin calls this from its admin-only `GET /payments/health` diagnostics
+route, which is deliberately not throttled so connectivity checks can never
+trigger the "Too many checkout attempts" lockout.
 
 ### POST `/verify`
 
@@ -170,8 +208,9 @@ GitHub releases page (`https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releas
 and is filterable (`nvoos_content_graph/payments/fallback_url`); point it
 at the vendor product page, or set an empty value to disable the redirect
 and keep the plain in-modal error. Client errors that mean the endpoint IS
-available (e.g. `429` session-creation throttling) are shown in the modal
-instead of redirecting.
+available (e.g. `429` session-creation throttling, or `424` Stripe
+rejections with the real message) are shown in the modal instead of
+redirecting.
 
 ## Reference implementation (host on your server)
 

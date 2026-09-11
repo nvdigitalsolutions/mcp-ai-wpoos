@@ -223,6 +223,8 @@ class NVOOS_Checkout_API_Admin_Page {
 	 * `GET /health` endpoint over loopback HTTP. Result flags are
 	 * round-tripped through the page URL like the Stripe test above.
 	 *
+	 * @since 0.1.1
+	 *
 	 * @return void
 	 */
 	public static function handle_check_endpoints(): void {
@@ -284,6 +286,8 @@ class NVOOS_Checkout_API_Admin_Page {
 	 * Cheap (no HTTP): reads the REST server's route table, so the admin
 	 * page can render live per-route status on every load.
 	 *
+	 * @since 0.1.1
+	 *
 	 * @return array<string,bool> Route path => registered.
 	 */
 	public static function route_statuses(): array {
@@ -312,6 +316,8 @@ class NVOOS_Checkout_API_Admin_Page {
 
 	/**
 	 * Run the full endpoint self-check: route table + loopback health call.
+	 *
+	 * @since 0.1.1
 	 *
 	 * @return array<string,mixed>
 	 *   array{

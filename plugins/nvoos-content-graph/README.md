@@ -48,7 +48,7 @@ Visual knowledge graph for WordPress — maps your content into an interactive, 
 ## Commerce (NV oOS Complete purchase flow)
 
 - `src/Commerce/` — vendor checkout client, payments config, license record, installer (targets the NV oOS Complete bundle; refuses when another copy of the NV oOS base plugin already exists)
-- `src/Rest/CommerceController.php` — `POST /payments/session` + `POST /payments/verify` (admin-only)
+- `src/Rest/CommerceController.php` — `POST /payments/session`, `POST /payments/verify`, and `GET /payments/health` (admin-only)
 - `assets/js/content-graph-commerce.js` — Stripe Payment Element modal wired to the upsell buttons; requires Terms-of-Service consent and a buyer email before payment (the email is attached to the Stripe intent as `receipt_email` for the receipt and refund matching)
 - **No Stripe keys live in this plugin.** The vendor checkout API (hosted by NV Digital Solutions) creates and verifies payments and issues signed download URLs — see [`docs/commerce-vendor-api.md`](docs/commerce-vendor-api.md)
 - **Manual install is the primary documented path.** After purchase, download the NV oOS Complete ZIP and upload it via Plugins → Add New Plugin → Upload Plugin; the one-click automatic installer is offered as a convenience. The purchase modal always surfaces the manual download link.
