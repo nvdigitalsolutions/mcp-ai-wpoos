@@ -307,6 +307,8 @@
 	 * @return {HTMLElement} The input element.
 	 */
 	function buildField( container, id, labelText ) {
+		var wrapper = el( 'div', 'nvoos-cg-field' );
+
 		var label = el( 'label', 'nvoos-cg-field-label', labelText );
 		label.htmlFor = id;
 
@@ -316,8 +318,9 @@
 		input.className = 'nvoos-cg-field-input';
 		input.addEventListener( 'input', updatePayState );
 
-		container.appendChild( label );
-		container.appendChild( input );
+		wrapper.appendChild( label );
+		wrapper.appendChild( input );
+		container.appendChild( wrapper );
 		return input;
 	}
 
@@ -792,7 +795,49 @@
 			try {
 				elements = stripe.elements( {
 					clientSecret: result.data.client_secret,
-					appearance: { theme: 'stripe' }
+					appearance: {
+						theme: 'stripe',
+						variables: {
+							colorPrimary: '#2271b1',
+							colorText: '#2c3338',
+							colorTextSecondary: '#646970',
+							colorBackground: '#ffffff',
+							colorDanger: '#d63638',
+							fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
+							borderRadius: '6px',
+							spacingUnit: '4px'
+						},
+						rules: {
+							'.Input': {
+								border: '1px solid #c3c4c7',
+								borderRadius: '6px',
+								padding: '10px 12px',
+								boxShadow: 'none',
+								fontSize: '14px'
+							},
+							'.Input:focus': {
+								border: '1px solid #2271b1',
+								boxShadow: '0 0 0 3px rgba( 34, 113, 177, 0.15 )'
+							},
+							'.Input--invalid': {
+								border: '1px solid #d63638',
+								boxShadow: '0 0 0 3px rgba( 214, 54, 56, 0.12 )'
+							},
+							'.Label': {
+								fontSize: '12px',
+								fontWeight: '600',
+								color: '#3c434a'
+							},
+							'.Tab': {
+								border: '1px solid #c3c4c7',
+								borderRadius: '6px'
+							},
+							'.Tab--selected': {
+								border: '1px solid #2271b1',
+								boxShadow: '0 0 0 3px rgba( 34, 113, 177, 0.15 )'
+							}
+						}
+					}
 				} );
 				// The plugin collects the buyer email, country, and EU billing
 				// address itself (receipt + VAT records); keep the Stripe iframe
