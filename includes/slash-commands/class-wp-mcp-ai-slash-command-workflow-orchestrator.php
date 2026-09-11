@@ -87,15 +87,11 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 						'params'  => array( 'topic', 'type', 'tone' ),
 					),
 					array(
-						'command' => 'content-enhance',
-						'params'  => array( 'post_id' => '{previous.post_id}' ),
-					),
-					array(
 						'command' => 'seo-optimize',
 						'params'  => array( 'post_id' => '{previous.post_id}' ),
 					),
 					array(
-						'command' => 'publish-review',
+						'command' => 'meta-generate',
 						'params'  => array( 'post_id' => '{previous.post_id}' ),
 					),
 				),
@@ -105,12 +101,15 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 				'description' => __( 'Create and configure a new AI tool', 'mcp-ai-wpoos' ),
 				'steps'       => array(
 					array(
-						'command' => 'prompt-library',
+						'command' => 'tools',
 						'params'  => array( 'search' => '{search_term}' ),
 					),
 					array(
-						'command' => 'aitool-create',
-						'params'  => array( 'name', 'type', 'description' ),
+						'command' => 'code-analyze',
+						'params'  => array(
+							'language' => 'php',
+							'code'     => '{code_snippet}',
+						),
 					),
 				),
 			),
@@ -120,11 +119,17 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 				'steps'       => array(
 					array(
 						'command' => 'doc-create',
-						'params'  => array( 'template' => 'product-description' ),
+						'params'  => array(
+							'title'       => '{product_name} Product Brief',
+							'description' => 'Product description and launch notes for {product_name}',
+						),
 					),
 					array(
-						'command' => 'product-recommend',
-						'params'  => array( 'product_id' => '{product_id}' ),
+						'command' => 'inventory-forecast',
+						'params'  => array(
+							'product_id'    => '{product_id}',
+							'forecast_type' => 'demand',
+						),
 					),
 					array(
 						'command' => 'social-post',
@@ -146,13 +151,13 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					array(
 						'command' => 'abandoned-recover',
 						'params'  => array(
-							'action'     => 'recover',
-							'send-email' => true,
+							'action'     => 'send_recovery',
+							'send_email' => true,
 						),
 					),
 					array(
-						'command' => 'ecom-analytics',
-						'params'  => array( 'metrics' => 'recovery-rate, revenue' ),
+						'command' => 'abandoned-recover',
+						'params'  => array( 'action' => 'get_analytics' ),
 					),
 				),
 			),
@@ -161,22 +166,23 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 				'description' => __( 'Create and publish content across all social platforms', 'mcp-ai-wpoos' ),
 				'steps'       => array(
 					array(
-						'command' => 'hashtag-suggest',
+						'command' => 'social-publish',
 						'params'  => array(
-							'content' => '{post_content}',
-							'count'   => 10,
+							'content'  => '{post_content}',
+							'platform' => '{platform}',
+							'dry_run'  => true,
 						),
 					),
 					array(
 						'command' => 'social-post',
 						'params'  => array(
-							'content'   => '{post_content}',
-							'platforms' => 'facebook, twitter, instagram, linkedin',
+							'content'  => '{post_content}',
+							'platform' => '{platforms}',
 						),
 					),
 					array(
 						'command' => 'social-analytics',
-						'params'  => array( 'period' => 'today' ),
+						'params'  => array( 'group_by' => 'day' ),
 					),
 				),
 			),
@@ -185,25 +191,25 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 				'description' => __( 'Complete video creation and distribution workflow', 'mcp-ai-wpoos' ),
 				'steps'       => array(
 					array(
-						'command' => 'video-template',
+						'command' => 'video-edit',
 						'params'  => array(
-							'template' => '{template_name}',
-							'input'    => '{video_assets}',
+							'source_video_id' => '{video_id}',
+							'edit_prompt'     => '{edit_prompt}',
 						),
 					),
 					array(
-						'command' => 'video-subtitle',
+						'command' => 'video-thumbnail',
 						'params'  => array(
-							'video-id'      => '{previous.video_id}',
-							'auto-generate' => true,
+							'video_id' => '{previous.video_id}',
+							'count'    => 5,
 						),
 					),
 					array(
 						'command' => 'social-post',
 						'params'  => array(
-							'content'   => '{video_description}',
-							'platforms' => 'youtube, facebook, instagram',
-							'media'     => '{previous.video_id}',
+							'content'    => '{video_description}',
+							'platform'   => 'youtube, facebook, instagram',
+							'media_urls' => '{previous.video_id}',
 						),
 					),
 				),
@@ -213,18 +219,16 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 				'description' => __( 'Analyze and optimize product upsells and cross-sells', 'mcp-ai-wpoos' ),
 				'steps'       => array(
 					array(
-						'command' => 'ecom-analytics',
+						'command' => 'abandoned-recover',
 						'params'  => array(
-							'metrics' => 'top-products',
-							'period'  => 'month',
+							'action' => 'get_analytics',
 						),
 					),
 					array(
-						'command' => 'upsell-suggest',
+						'command' => 'inventory-forecast',
 						'params'  => array(
-							'product-id'          => '{previous.top_product_id}',
-							'recommendation-type' => 'frequently_bought',
-							'limit'               => 10,
+							'product_id'    => '{previous.top_product_id}',
+							'forecast_type' => 'demand',
 						),
 					),
 				),
@@ -236,22 +240,18 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					array(
 						'command' => 'inventory-forecast',
 						'params'  => array(
-							'period'           => 30,
-							'include-seasonal' => true,
+							'forecast_type'        => 'all',
+							'analysis_period_days' => 30,
 						),
 					),
 					array(
-						'command' => 'ecom-analytics',
-						'params'  => array(
-							'metrics' => 'low-stock, stock-out-risk',
-							'format'  => 'json',
-						),
+						'command' => 'abandoned-recover',
+						'params'  => array( 'action' => 'get_analytics' ),
 					),
 					array(
-						'command' => 'customer-segment',
+						'command' => 'inventory-forecast',
 						'params'  => array(
-							'criteria'   => 'rfm',
-							'min-orders' => 3,
+							'forecast_type' => 'stockout_risk',
 						),
 					),
 				),
@@ -261,25 +261,23 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 				'description' => __( 'Strategic social media content planning workflow', 'mcp-ai-wpoos' ),
 				'steps'       => array(
 					array(
-						'command' => 'competitor-track',
+						'command' => 'research-query',
 						'params'  => array(
-							'competitor' => '{competitor_handle}',
-							'platform'   => '{platform}',
+							'topic' => '{competitor_handle} competitor analysis',
 						),
 					),
 					array(
 						'command' => 'content-calendar',
 						'params'  => array(
-							'action' => 'create',
-							'period' => 30,
+							'platform' => '{platform}',
 						),
 					),
 					array(
 						'command' => 'social-schedule',
 						'params'  => array(
-							'content'   => '{post_content}',
-							'platforms' => '{platforms}',
-							'time'      => '{schedule_time}',
+							'content'        => '{post_content}',
+							'platform'       => '{platforms}',
+							'scheduled_time' => '{schedule_time}',
 						),
 					),
 				),
@@ -291,21 +289,21 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					array(
 						'command' => 'video-merge',
 						'params'  => array(
-							'videos'      => '{video_clips}',
-							'transitions' => true,
+							'video_ids'  => '{video_clips}',
+							'transition' => 'fade',
 						),
 					),
 					array(
 						'command' => 'video-thumbnail',
 						'params'  => array(
-							'video-id' => '{previous.video_id}',
+							'video_id' => '{previous.video_id}',
 							'count'    => 5,
 						),
 					),
 					array(
 						'command' => 'video-compress',
 						'params'  => array(
-							'video-id' => '{previous.video_id}',
+							'video_id' => '{previous.video_id}',
 							'quality'  => 'medium',
 						),
 					),
@@ -316,35 +314,33 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 				'description' => __( 'End-to-end product launch automation', 'mcp-ai-wpoos' ),
 				'steps'       => array(
 					array(
-						'command' => 'bundle-create',
+						'command' => 'doc-create',
 						'params'  => array(
-							'name'     => '{product_name} Launch Bundle',
-							'products' => '{product_ids}',
-							'discount' => 15,
+							'title'       => '{product_name} Launch Brief',
+							'description' => 'Launch plan for {product_name}',
 						),
 					),
 					array(
-						'command' => 'discount-optimize',
+						'command' => 'create-discount-campaign',
 						'params'  => array(
-							'campaign-name' => '{product_name} Launch Sale',
-							'discount-type' => 'percentage',
+							'code'          => '{product_name} LAUNCH',
+							'discount_type' => 'percent',
 							'amount'        => 20,
-							'products'      => '{product_ids}',
+							'product_ids'   => '{product_ids}',
 						),
 					),
 					array(
-						'command' => 'campaign-create',
+						'command' => 'social-post',
 						'params'  => array(
-							'name'     => '{product_name} Launch Campaign',
-							'goal'     => 'conversions',
-							'duration' => 14,
+							'content'  => '{product_name} launch announcement',
+							'platform' => 'all',
 						),
 					),
 					array(
 						'command' => 'inventory-forecast',
 						'params'  => array(
-							'product-id' => '{previous.product_id}',
-							'period'     => 30,
+							'product_id'    => '{previous.product_id}',
+							'forecast_type' => 'demand',
 						),
 					),
 				),
@@ -354,34 +350,31 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 				'description' => __( 'Automated social media campaign from planning to execution', 'mcp-ai-wpoos' ),
 				'steps'       => array(
 					array(
-						'command' => 'influencer-find',
+						'command' => 'research-query',
 						'params'  => array(
-							'niche'         => '{campaign_niche}',
-							'min-followers' => 5000,
+							'topic' => '{campaign_niche} influencers and creators',
 						),
 					),
 					array(
-						'command' => 'post-optimize',
+						'command' => 'social-publish',
 						'params'  => array(
 							'content'  => '{campaign_content}',
 							'platform' => '{target_platforms}',
-							'goal'     => 'engagement',
+							'dry_run'  => true,
 						),
 					),
 					array(
-						'command' => 'campaign-create',
+						'command' => 'content-calendar',
 						'params'  => array(
-							'name'     => '{campaign_name}',
-							'goal'     => '{campaign_goal}',
-							'duration' => 30,
+							'platform' => '{target_platforms}',
 						),
 					),
 					array(
 						'command' => 'social-schedule',
 						'params'  => array(
-							'content'   => '{previous.optimized_content}',
-							'platforms' => '{target_platforms}',
-							'time'      => '{schedule_time}',
+							'content'        => '{previous.optimized_content}',
+							'platform'       => '{target_platforms}',
+							'scheduled_time' => '{schedule_time}',
 						),
 					),
 				),
@@ -391,31 +384,36 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 				'description' => __( 'Complete e-commerce automation workflow from analytics to customer engagement', 'mcp-ai-wpoos' ),
 				'steps'       => array(
 					array(
-						'command' => 'ecom-analytics',
+						'command' => 'abandoned-recover',
 						'params'  => array(
-							'period'  => 'month',
-							'metrics' => 'all',
+							'action' => 'get_analytics',
 						),
 					),
 					array(
 						'command' => 'inventory-forecast',
-						'params'  => array( 'period' => 30 ),
-					),
-					array(
-						'command' => 'customer-segment',
-						'params'  => array( 'criteria' => 'rfm' ),
-					),
-					array(
-						'command' => 'discount-optimize',
 						'params'  => array(
-							'campaign-name' => 'Automated Campaign',
-							'discount-type' => 'percentage',
+							'forecast_type'        => 'all',
+							'analysis_period_days' => 30,
+						),
+					),
+					array(
+						'command' => 'create-discount-campaign',
+						'params'  => array(
+							'code'          => 'AUTOMATED15',
+							'discount_type' => 'percent',
 							'amount'        => 15,
 						),
 					),
 					array(
-						'command' => 'upsell-suggest',
-						'params'  => array( 'limit' => 10 ),
+						'command' => 'social-post',
+						'params'  => array(
+							'content'  => '{announcement}',
+							'platform' => 'all',
+						),
+					),
+					array(
+						'command' => 'abandoned-recover',
+						'params'  => array( 'action' => 'identify' ),
 					),
 				),
 			),
@@ -426,53 +424,51 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					array(
 						'command' => 'video-edit',
 						'params'  => array(
-							'video-id'  => '{video_id}',
-							'operation' => 'basic',
+							'source_video_id' => '{video_id}',
+							'edit_prompt'     => '{edit_prompt}',
 						),
 					),
 					array(
 						'command' => 'video-trim',
 						'params'  => array(
-							'video-id' => '{video_id}',
-							'start'    => 0,
-							'duration' => '{target_duration}',
+							'video_id'   => '{video_id}',
+							'start_time' => 0,
+							'end_time'   => '{target_duration}',
 						),
 					),
 					array(
-						'command' => 'video-effect',
+						'command' => 'video-merge',
 						'params'  => array(
-							'video-id' => '{video_id}',
-							'effect'   => '{desired_effect}',
+							'video_ids' => '{video_clips}',
 						),
 					),
 					array(
-						'command' => 'video-music',
+						'command' => 'video-thumbnail',
 						'params'  => array(
-							'video-id' => '{video_id}',
-							'track'    => '{music_track}',
-							'volume'   => 70,
+							'video_id' => '{video_id}',
+							'count'    => 5,
 						),
 					),
 					array(
-						'command' => 'video-subtitle',
+						'command' => 'video-compress',
 						'params'  => array(
-							'video-id'      => '{video_id}',
-							'auto-generate' => true,
+							'video_id' => '{video_id}',
+							'quality'  => 'medium',
 						),
 					),
 					array(
-						'command' => 'video-render',
+						'command' => 'video-transcode',
 						'params'  => array(
-							'project-id' => '{video_id}',
-							'quality'    => 'high',
-							'format'     => 'mp4',
+							'video_id'      => '{video_id}',
+							'output_format' => 'mp4',
 						),
 					),
 					array(
-						'command' => 'video-publish',
+						'command' => 'social-post',
 						'params'  => array(
-							'video-id'  => '{video_id}',
-							'platforms' => '{target_platforms}',
+							'content'    => '{video_description}',
+							'platform'   => '{target_platforms}',
+							'media_urls' => '{video_id}',
 						),
 					),
 				),
@@ -484,30 +480,32 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 				'steps'       => array(
 					array(
 						'command' => 'inventory-forecast',
-						'params'  => array( 'period' => 30 ),
+						'params'  => array(
+							'forecast_type'        => 'reorder_points',
+							'analysis_period_days' => 30,
+						),
 					),
 					array(
-						'command'   => 'supplier-sync',
-						'params'    => array( 'action' => 'check-prices' ),
+						'command'   => 'abandoned-recover',
+						'params'    => array( 'action' => 'get_analytics' ),
 						'condition' => array( 'if_success' => true ),
 					),
 					array(
-						'command'   => 'wholesale-pricing',
+						'command'   => 'inventory-forecast',
 						'params'    => array(
-							'action'   => 'calculate',
-							'quantity' => '{previous.recommended_quantity}',
+							'forecast_type' => 'stockout_risk',
 						),
 						'condition' => array(
 							'field'     => 'stock_level',
 							'less_than' => 50,
 						),
 						'on_error'  => array(
-							'fallback' => 'ecom-analytics',
+							'fallback' => 'abandoned-recover',
 						),
 					),
 					array(
-						'command'   => 'customer-segment',
-						'params'    => array( 'criteria' => 'high-value' ),
+						'command'   => 'inventory-forecast',
+						'params'    => array( 'forecast_type' => 'demand' ),
 						'condition' => array( 'if_success' => true ),
 					),
 				),
@@ -517,17 +515,19 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 				'description' => __( 'Intelligent content publishing with quality checks and fallbacks', 'mcp-ai-wpoos' ),
 				'steps'       => array(
 					array(
-						'command' => 'post-optimize',
+						'command' => 'social-publish',
 						'params'  => array(
-							'content' => '{content}',
-							'goal'    => 'engagement',
+							'content'  => '{content}',
+							'platform' => '{platform}',
+							'dry_run'  => true,
 						),
 					),
 					array(
-						'command'   => 'hashtag-suggest',
+						'command'   => 'social-schedule',
 						'params'    => array(
-							'content' => '{previous.optimized_content}',
-							'count'   => 15,
+							'content'        => '{previous.optimized_content}',
+							'platform'       => '{platforms}',
+							'scheduled_time' => '{schedule_time}',
 						),
 						'condition' => array( 'if_success' => true ),
 					),
@@ -559,34 +559,35 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					array(
 						'command' => 'video-edit',
 						'params'  => array(
-							'video-id'  => '{video_id}',
-							'operation' => 'advanced',
+							'source_video_id' => '{video_id}',
+							'edit_prompt'     => '{edit_prompt}',
 						),
 					),
 					array(
 						'command'   => 'video-compress',
 						'params'    => array(
-							'video-id' => '{video_id}',
+							'video_id' => '{video_id}',
 							'quality'  => 'high',
 						),
 						'condition' => array( 'if_success' => true ),
 						'on_error'  => array(
-							'fallback' => 'video-render',
+							'fallback' => 'video-transcode',
 						),
 					),
 					array(
 						'command'   => 'video-thumbnail',
 						'params'    => array(
-							'video-id' => '{video_id}',
+							'video_id' => '{video_id}',
 							'count'    => 5,
 						),
 						'condition' => array( 'if_success' => true ),
 					),
 					array(
-						'command'   => 'video-publish',
+						'command'   => 'social-post',
 						'params'    => array(
-							'video-id'  => '{video_id}',
-							'platforms' => 'youtube,vimeo',
+							'content'    => '{video_description}',
+							'platform'   => '{target_platforms}',
+							'media_urls' => '{video_id}',
 						),
 						'condition' => array(
 							'field'     => 'video_size_mb',
@@ -594,8 +595,8 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 						),
 					),
 					array(
-						'command'   => 'video-analytics',
-						'params'    => array( 'video-id' => '{video_id}' ),
+						'command'   => 'get-video-metadata',
+						'params'    => array( 'video_id' => '{video_id}' ),
 						'condition' => array( 'if_success' => true ),
 					),
 				),

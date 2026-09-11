@@ -1,8 +1,10 @@
 <?php
 /**
- * Tests for Pro Toolkit Slash Commands
+ * Tests for Pro Toolkit Slash Commands (declarative tool-backed registry)
  *
- * Tests the new command handlers for ecommerce, social media, and video production toolkits.
+ * Verifies the reworked toolkit command registry: commands are declarative
+ * wrappers over the MCP tool registry, placeholder commands are gone, and
+ * documentation/capability metadata survives registration.
  *
  * @package WP_MCP_AI
  * @subpackage Tests
@@ -32,6 +34,7 @@ class Test_Slash_Commands_Pro_Toolkit extends WP_UnitTestCase {
 		// Load required classes.
 		require_once WP_MCP_AI_PATH . 'includes/slash-commands/slash-commands-init.php';
 		require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-handler.php';
+		require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-tool-adapter.php';
 		require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-toolkit-manager.php';
 
 		// Initialize slash commands.
@@ -55,152 +58,58 @@ class Test_Slash_Commands_Pro_Toolkit extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test ecommerce commands are registered.
+	 * Test tool-backed commands are registered.
 	 */
-	public function test_ecommerce_commands_registered() {
-		$handler = wp_mcp_ai_get_slash_command_handler();
-		$this->assertNotNull( $handler );
-
-		// Check if upsell-suggest command is registered.
+	public function test_tool_backed_commands_registered() {
+		$handler  = wp_mcp_ai_get_slash_command_handler();
 		$commands = $handler->get_commands();
-		$this->assertArrayHasKey( 'upsell-suggest', $commands );
-		$this->assertArrayHasKey( 'abandoned-recover', $commands );
-		$this->assertArrayHasKey( 'ecom-analytics', $commands );
+
+		foreach ( array( 'abandoned-recover', 'social-post', 'video-compress', 'lead-add', 'booking-create', 'chart-create' ) as $name ) {
+			$this->assertArrayHasKey( $name, $commands, "Expected /{$name} to be registered." );
+		}
 	}
 
 	/**
-	 * Test social media commands are registered.
+	 * Test placeholder commands were purged.
 	 */
-	public function test_social_media_commands_registered() {
-		$handler = wp_mcp_ai_get_slash_command_handler();
-		$this->assertNotNull( $handler );
-
+	public function test_placeholder_commands_purged() {
+		$handler  = wp_mcp_ai_get_slash_command_handler();
 		$commands = $handler->get_commands();
-		$this->assertArrayHasKey( 'hashtag-suggest', $commands );
-		$this->assertArrayHasKey( 'social-analytics', $commands );
+
+		foreach ( array(
+			'upsell-suggest',
+			'crosssell-suggest',
+			'hashtag-suggest',
+			'video-subtitle',
+			'video-template',
+			'video-analytics',
+			'social-calendar',
+			'wholesale-pricing',
+			'funnel-analyze',
+			'aitool-create',
+			'model-deploy',
+		) as $name ) {
+			$this->assertArrayNotHasKey( $name, $commands, "Placeholder /{$name} should have been removed." );
+		}
 	}
 
 	/**
-	 * Test video production commands are registered.
+	 * Test every registered toolkit command is backed by a tool slug.
 	 */
-	public function test_video_production_commands_registered() {
-		$handler = wp_mcp_ai_get_slash_command_handler();
-		$this->assertNotNull( $handler );
+	public function test_all_toolkit_commands_are_tool_backed() {
+		$handler      = wp_mcp_ai_get_slash_command_handler();
+		$all_commands = $handler->get_commands();
+		$toolkit_defs = $this->toolkit_manager->get_all_commands_by_toolkit();
 
-		$commands = $handler->get_commands();
-		$this->assertArrayHasKey( 'video-subtitle', $commands );
-		$this->assertArrayHasKey( 'video-template', $commands );
-		$this->assertArrayHasKey( 'video-analytics', $commands );
-	}
-
-	/**
-	 * Test hashtag-suggest command execution.
-	 */
-	public function test_hashtag_suggest_command() {
-		// Set up user with proper capability.
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		$args = array(
-			'content' => 'This is a test post about WordPress development and artificial intelligence',
-			'count'   => 5,
-		);
-
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_hashtag_suggest( $args, $context );
-
-		$this->assertTrue( $result['success'] );
-		$this->assertArrayHasKey( 'data', $result );
-		$this->assertArrayHasKey( 'hashtags', $result['data'] );
-		$this->assertNotEmpty( $result['data']['hashtags'] );
-	}
-
-	/**
-	 * Test social-analytics command execution.
-	 */
-	public function test_social_analytics_command() {
-		// Set up user with proper capability.
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		$args = array(
-			'platform' => 'all',
-			'period'   => 'week',
-		);
-
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_social_analytics( $args, $context );
-
-		$this->assertTrue( $result['success'] );
-		$this->assertArrayHasKey( 'data', $result );
-		$this->assertArrayHasKey( 'total_posts', $result['data'] );
-		$this->assertArrayHasKey( 'engagement', $result['data'] );
-	}
-
-	/**
-	 * Test video-subtitle command validation.
-	 */
-	public function test_video_subtitle_command_validation() {
-		// Set up user with proper capability.
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		// Test missing required parameter.
-		$args    = array();
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_video_subtitle( $args, $context );
-
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'required', strtolower( $result['message'] ) );
-	}
-
-	/**
-	 * Test video-template command execution.
-	 */
-	public function test_video_template_command() {
-		// Set up user with proper capability.
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		$args = array(
-			'template' => 'intro-template',
-			'input'    => '123,456',
-		);
-
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_video_template( $args, $context );
-
-		$this->assertTrue( $result['success'] );
-		$this->assertArrayHasKey( 'data', $result );
-		$this->assertArrayHasKey( 'job_id', $result['data'] );
-		$this->assertArrayHasKey( 'status', $result['data'] );
-		$this->assertEquals( 'queued', $result['data']['status'] );
-	}
-
-	/**
-	 * Test video-analytics command execution.
-	 */
-	public function test_video_analytics_command() {
-		// Set up user with proper capability.
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		$args = array(
-			'period' => 'month',
-		);
-
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_video_analytics( $args, $context );
-
-		$this->assertTrue( $result['success'] );
-		$this->assertArrayHasKey( 'data', $result );
-		$this->assertArrayHasKey( 'views', $result['data'] );
-		$this->assertArrayHasKey( 'engagement', $result['data'] );
+		foreach ( $toolkit_defs as $toolkit ) {
+			foreach ( $toolkit['commands'] as $def ) {
+				$name = $def['name'];
+				$this->assertArrayHasKey( $name, $all_commands, "Registered toolkit command /{$name} missing from handler." );
+				$this->assertNotEmpty( $def['config']['tool'], "Command /{$name} must declare a tool slug." );
+				$this->assertArrayHasKey( 'usage', $def['config'], "Command /{$name} must declare usage." );
+				$this->assertArrayHasKey( 'parameters', $def['config'], "Command /{$name} must declare parameters." );
+			}
+		}
 	}
 
 	/**
@@ -210,16 +119,16 @@ class Test_Slash_Commands_Pro_Toolkit extends WP_UnitTestCase {
 		$handler  = wp_mcp_ai_get_slash_command_handler();
 		$commands = $handler->get_commands();
 
-		// Check upsell-suggest has proper documentation.
-		$this->assertArrayHasKey( 'upsell-suggest', $commands );
-		$command = $commands['upsell-suggest'];
+		// social-post has proper documentation.
+		$this->assertArrayHasKey( 'social-post', $commands );
+		$command = $commands['social-post'];
 		$this->assertArrayHasKey( 'usage', $command );
 		$this->assertArrayHasKey( 'parameters', $command );
 		$this->assertNotEmpty( $command['parameters'] );
 
-		// Check video-subtitle has proper documentation.
-		$this->assertArrayHasKey( 'video-subtitle', $commands );
-		$command = $commands['video-subtitle'];
+		// video-compress has proper documentation.
+		$this->assertArrayHasKey( 'video-compress', $commands );
+		$command = $commands['video-compress'];
 		$this->assertArrayHasKey( 'usage', $command );
 		$this->assertArrayHasKey( 'parameters', $command );
 		$this->assertNotEmpty( $command['parameters'] );
@@ -233,41 +142,26 @@ class Test_Slash_Commands_Pro_Toolkit extends WP_UnitTestCase {
 		$commands = $handler->get_commands();
 
 		// E-commerce commands should require manage_woocommerce.
-		$this->assertArrayHasKey( 'upsell-suggest', $commands );
-		$this->assertEquals( 'manage_woocommerce', $commands['upsell-suggest']['capability'] );
+		$this->assertArrayHasKey( 'abandoned-recover', $commands );
+		$this->assertEquals( 'manage_woocommerce', $commands['abandoned-recover']['capability'] );
 
 		// Social media commands should require edit_posts.
-		$this->assertArrayHasKey( 'hashtag-suggest', $commands );
-		$this->assertEquals( 'edit_posts', $commands['hashtag-suggest']['capability'] );
+		$this->assertArrayHasKey( 'social-post', $commands );
+		$this->assertEquals( 'edit_posts', $commands['social-post']['capability'] );
 
 		// Video commands should require upload_files.
-		$this->assertArrayHasKey( 'video-subtitle', $commands );
-		$this->assertEquals( 'upload_files', $commands['video-subtitle']['capability'] );
+		$this->assertArrayHasKey( 'video-compress', $commands );
+		$this->assertEquals( 'upload_files', $commands['video-compress']['capability'] );
 	}
 
 	/**
-	 * Test hashtag suggest content processing.
+	 * Test handler wraps tool-backed commands in the declarative adapter.
 	 */
-	public function test_hashtag_suggest_content_processing() {
-		// Set up user with proper capability.
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
+	public function test_registered_handlers_are_tool_adapters() {
+		$handler  = wp_mcp_ai_get_slash_command_handler();
+		$commands = $handler->get_commands();
 
-		$args = array(
-			'content' => 'Amazing WordPress plugin for artificial intelligence integration',
-			'count'   => 10,
-		);
-
-		$context = array( 'user_id' => $user_id );
-
-		$result = $this->toolkit_manager->handle_hashtag_suggest( $args, $context );
-
-		$this->assertTrue( $result['success'] );
-		$hashtags = $result['data']['hashtags'];
-
-		// Verify hashtags format.
-		foreach ( $hashtags as $hashtag ) {
-			$this->assertStringStartsWith( '#', $hashtag );
-		}
+		$this->assertInstanceOf( 'WP_MCP_AI_Slash_Command_Tool_Adapter', $commands['lead-add']['handler'] );
+		$this->assertSame( 'create_lead', $commands['lead-add']['handler']->get_tool_slug() );
 	}
 }

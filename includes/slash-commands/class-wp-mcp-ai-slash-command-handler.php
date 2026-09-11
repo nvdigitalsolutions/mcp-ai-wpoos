@@ -78,6 +78,11 @@ class WP_MCP_AI_Slash_Command_Handler {
 	 *     Command configuration.
 	 *
 	 *     @type callable $handler       Command handler function.
+	 *     @type string   $tool          Tool slug — when set (and no handler given),
+	 *                                   execution delegates to the tool registry via
+	 *                                   WP_MCP_AI_Slash_Command_Tool_Adapter.
+	 *     @type array    $tool_config   Optional adapter config (arg_map, positional,
+	 *                                   defaults, render).
 	 *     @type string   $description   Command description.
 	 *     @type string   $usage         Usage example.
 	 *     @type string   $capability    Required capability (default: 'edit_posts').
@@ -90,6 +95,18 @@ class WP_MCP_AI_Slash_Command_Handler {
 		// Validate command name.
 		if ( empty( $command ) || ! preg_match( '/^[a-z0-9_-]+$/i', $command ) ) {
 			return false;
+		}
+
+		// Resolve tool-backed commands to the declarative adapter.
+		if ( empty( $config['handler'] ) && ! empty( $config['tool'] ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Slash_Command_Tool_Adapter' ) ) {
+				return false;
+			}
+
+			$config['handler'] = new WP_MCP_AI_Slash_Command_Tool_Adapter(
+				$config['tool'],
+				isset( $config['tool_config'] ) && is_array( $config['tool_config'] ) ? $config['tool_config'] : array()
+			);
 		}
 
 		// Validate handler.
@@ -130,6 +147,32 @@ class WP_MCP_AI_Slash_Command_Handler {
 		do_action( 'wp_mcp_ai_slash_command_registered', $command, $config );
 
 		return true;
+	}
+
+	/**
+	 * Register a slash command backed by an existing MCP tool.
+	 *
+	 * Declarative shortcut for register() with a 'tool' key. The command
+	 * parses and authorises exactly like a native command, then delegates
+	 * execution to the tool registry so business logic lives in one place.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param string $command Command name (without leading /).
+	 * @param array  $config  Command configuration (see register() for the base
+	 *                        keys), plus 'tool' (tool slug to delegate to) and
+	 *                        'tool_config' (adapter config: arg_map, positional,
+	 *                        defaults, render).
+	 * @return bool True on success, false on failure.
+	 */
+	public function register_tool_command( $command, $config ) {
+		if ( empty( $config['tool'] ) ) {
+			return false;
+		}
+
+		$config['handler'] = null;
+
+		return $this->register( $command, $config );
 	}
 
 	/**
@@ -190,7 +233,7 @@ class WP_MCP_AI_Slash_Command_Handler {
 			// passed as the second argument for handlers with a 3-param
 			// ($args, $flags, $context) signature.
 			$merged_args = array_merge( $parsed['flags'], $parsed['args'] );
-			$result = call_user_func(
+			$result      = call_user_func(
 				$config['handler'],
 				$merged_args,
 				$parsed['flags'],
