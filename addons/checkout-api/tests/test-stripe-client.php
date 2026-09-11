@@ -52,6 +52,45 @@ class Test_Checkout_Api_Stripe_Client extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Booleans are sent as literal 'true'/'false', not PHP's "1"/"".
+	 *
+	 * Stripe rejects form-encoded booleans serialized by PHP
+	 * (`automatic_payment_methods[enabled]=1` -> "Invalid boolean: 1"
+	 * observed live). The client must stringify them before sending.
+	 *
+	 * @return void
+	 */
+	public function test_create_payment_intent_stringifies_booleans(): void {
+		$captured_body = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args ) use ( &$captured_body ) {
+				$captured_body = $args['body'];
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array( 'id' => 'pi_ok' ) ),
+				);
+			},
+			10,
+			2
+		);
+
+		$client = new NVOOS_Checkout_API_Stripe_Client( 'sk_test_abc' );
+		$client->create_payment_intent(
+			array(
+				'amount'                    => 4900,
+				'currency'                  => 'usd',
+				'automatic_payment_methods' => array( 'enabled' => true ),
+				'metadata'                  => array( 'flag' => false ),
+			)
+		);
+
+		$this->assertSame( 'true', $captured_body['automatic_payment_methods']['enabled'] );
+		$this->assertSame( 'false', $captured_body['metadata']['flag'] );
+		$this->assertSame( 4900, $captured_body['amount'] );
+	}
+
+	/**
 	 * Stripe errors surface as WP_Error.
 	 *
 	 * @return void

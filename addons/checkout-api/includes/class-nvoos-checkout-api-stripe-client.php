@@ -54,7 +54,7 @@ class NVOOS_Checkout_API_Stripe_Client {
 			array(
 				'timeout' => 30,
 				'headers' => $this->headers(),
-				'body'    => $params,
+				'body'    => self::stringify_booleans( $params ),
 			)
 		);
 
@@ -162,12 +162,14 @@ class NVOOS_Checkout_API_Stripe_Client {
 			array(
 				'timeout' => 30,
 				'headers' => $this->headers(),
-				'body'    => array(
-					'name'        => $name,
-					'type'        => 'service',
-					'metadata'    => array(
-						'source' => 'nvoos-checkout-api',
-					),
+				'body'    => self::stringify_booleans(
+					array(
+						'name'     => $name,
+						'type'     => 'service',
+						'metadata' => array(
+							'source' => 'nvoos-checkout-api',
+						),
+					)
 				),
 			)
 		);
@@ -192,13 +194,15 @@ class NVOOS_Checkout_API_Stripe_Client {
 			array(
 				'timeout' => 30,
 				'headers' => $this->headers(),
-				'body'    => array(
-					'currency'    => $currency,
-					'product'     => $product_id,
-					'unit_amount' => max( 50, $amount_cents ),
-					'metadata'    => array(
-						'source' => 'nvoos-checkout-api',
-					),
+				'body'    => self::stringify_booleans(
+					array(
+						'currency'    => $currency,
+						'product'     => $product_id,
+						'unit_amount' => max( 50, $amount_cents ),
+						'metadata'    => array(
+							'source' => 'nvoos-checkout-api',
+						),
+					)
 				),
 			)
 		);
@@ -307,6 +311,29 @@ class NVOOS_Checkout_API_Stripe_Client {
 			'Stripe-Version' => self::API_VERSION,
 			'Content-Type'   => 'application/x-www-form-urlencoded',
 		);
+	}
+
+	/**
+	 * Convert booleans to the literal strings Stripe expects.
+	 *
+	 * The bodies are sent form-encoded, and PHP's form serialization
+	 * turns `true` into "1" — Stripe rejects that with
+	 * `Invalid boolean: 1` (observed live on `automatic_payment_methods
+	 * [enabled]`). Recursively stringify booleans to 'true'/'false' so
+	 * the serializer passes the literal tokens through.
+	 *
+	 * @param array<string,mixed> $params Request body.
+	 * @return array<string,mixed>
+	 */
+	private static function stringify_booleans( array $params ): array {
+		foreach ( $params as $key => $value ) {
+			if ( is_bool( $value ) ) {
+				$params[ $key ] = $value ? 'true' : 'false';
+			} elseif ( is_array( $value ) ) {
+				$params[ $key ] = self::stringify_booleans( $value );
+			}
+		}
+		return $params;
 	}
 
 	/**
