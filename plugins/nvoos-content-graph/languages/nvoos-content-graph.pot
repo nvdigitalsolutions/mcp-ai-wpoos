@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-3.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: NV oOS Content Graph 1.0.4\n"
+"Project-Id-Version: NV oOS Content Graph 1.0.6\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/nvoos-content-graph\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-05T13:44:12+00:00\n"
+"POT-Creation-Date: 2026-09-11T03:58:08+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: nvoos-content-graph\n"
@@ -47,39 +47,35 @@ msgstr ""
 msgid "Plugin Activation Failed"
 msgstr ""
 
-#: src/Admin/Bridge.php:39
+#: src/Admin/Bridge.php:40
 msgid "Post Type"
 msgstr ""
 
-#: src/Admin/Bridge.php:40
-#: src/Admin/Bridge.php:120
+#: src/Admin/Bridge.php:41
+#: src/Admin/Bridge.php:125
 msgid "Include"
 msgstr ""
 
-#: src/Admin/Bridge.php:41
-#: src/Admin/Bridge.php:121
+#: src/Admin/Bridge.php:42
+#: src/Admin/Bridge.php:126
 msgid "Notes"
 msgstr ""
 
-#: src/Admin/Bridge.php:55
-#: src/Admin/Bridge.php:134
+#: src/Admin/Bridge.php:56
+#: src/Admin/Bridge.php:136
 msgid "Included by default"
 msgstr ""
 
-#: src/Admin/Bridge.php:62
+#: src/Admin/Bridge.php:63
 msgid "Usually excluded"
 msgstr ""
 
-#: src/Admin/Bridge.php:64
+#: src/Admin/Bridge.php:65
 msgid "Opt-in"
 msgstr ""
 
-#: src/Admin/Bridge.php:74
+#: src/Admin/Bridge.php:75
 msgid "Uncheck to exclude a post type; check to include it. Changes take effect on the next graph build."
-msgstr ""
-
-#: src/Admin/Bridge.php:86
-msgid "No external database tables available in the core plugin. The NV oOS Content Graph AI Platform addon adds external table sources."
 msgstr ""
 
 #: src/Admin/Bridge.php:95
@@ -95,16 +91,44 @@ msgstr ""
 msgid "No JetEngine Custom Content Types are registered."
 msgstr ""
 
-#: src/Admin/Bridge.php:119
+#: src/Admin/Bridge.php:124
 msgid "Content Type"
 msgstr ""
 
-#: src/Admin/Bridge.php:138
+#: src/Admin/Bridge.php:141
+msgid "Excluded"
+msgstr ""
+
+#: src/Admin/Bridge.php:144
+msgid "table not created yet"
+msgstr ""
+
+#: src/Admin/Bridge.php:147
+msgid "no items yet"
+msgstr ""
+
+#: src/Admin/Bridge.php:151
+msgid "unavailable"
+msgstr ""
+
+#. translators: %d: number of indexed items.
+#: src/Admin/Bridge.php:156
+#, php-format
+msgid "%d item indexed"
+msgid_plural "%d items indexed"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Admin/Bridge.php:170
 msgid "Uncheck to exclude a Custom Content Type; check to include it. Changes take effect on the next graph build."
 msgstr ""
 
+#: src/Admin/Bridge.php:182
+msgid "No external database tables available in the core plugin. The NV oOS Content Graph AI Platform addon adds external table sources."
+msgstr ""
+
 #: src/Admin/RemoteAdmin.php:92
-#: src/Admin/SettingsPage.php:128
+#: src/Admin/SettingsPage.php:130
 msgid "Remote Sources"
 msgstr ""
 
@@ -172,7 +196,7 @@ msgid "No"
 msgstr ""
 
 #: src/Admin/RemoteAdmin.php:150
-#: src/Admin/SettingsPage.php:222
+#: src/Admin/SettingsPage.php:227
 msgid "Never"
 msgstr ""
 
@@ -213,7 +237,7 @@ msgstr ""
 #: src/Admin/RemoteAdmin.php:374
 #: src/Admin/RemoteAdmin.php:405
 #: src/Admin/RemoteAdmin.php:583
-#: src/Admin/SettingsPage.php:584
+#: src/Admin/SettingsPage.php:635
 #: src/Tools/SyncRemoteSource.php:79
 msgid "Permission denied."
 msgstr ""
@@ -274,7 +298,7 @@ msgid "Save Source"
 msgstr ""
 
 #: src/Admin/RemoteAdmin.php:635
-#: src/Admin/SettingsPage.php:547
+#: src/Admin/SettingsPage.php:560
 msgid "Cancel"
 msgstr ""
 
@@ -377,7 +401,7 @@ msgid "Type"
 msgstr ""
 
 #: src/Admin/Sections/AppearanceSection.php:106
-#: src/Admin/SettingsPage.php:526
+#: src/Admin/SettingsPage.php:531
 msgid "Community"
 msgstr ""
 
@@ -615,13 +639,13 @@ msgid "Unlock AI-powered features"
 msgstr ""
 
 #: src/Admin/Sections/BuildSection.php:132
-msgid "Install the NV oOS Content Graph — AI addon to enable semantic extraction, AI chat, embeddings, and agent memory for your knowledge graph. Supports 13 AI providers with a single API key."
+msgid "Install the NV oOS Complete bundle to enable semantic extraction, AI chat, embeddings, and agent memory for your knowledge graph. Supports 13 AI providers with a single API key."
 msgstr ""
 
 #: src/Admin/Sections/BuildSection.php:136
 #: src/Admin/Sections/EmbeddingsSection.php:128
-#: src/Admin/SettingsPage.php:545
-msgid "Get NV oOS Content Graph — AI"
+#: src/Admin/SettingsPage.php:558
+msgid "Get NV oOS Complete"
 msgstr ""
 
 #: src/Admin/Sections/BuildSection.php:139
@@ -666,7 +690,7 @@ msgid "Maximum nodes to render in the graph explorer. Lower values improve brows
 msgstr ""
 
 #: src/Admin/Sections/EmbeddingsSection.php:33
-#: src/Admin/SettingsPage.php:129
+#: src/Admin/SettingsPage.php:131
 msgid "Embeddings"
 msgstr ""
 
@@ -699,15 +723,15 @@ msgid "text-embedding-ada-002 (legacy)"
 msgstr ""
 
 #: src/Admin/Sections/EmbeddingsSection.php:121
-msgid "Vector embeddings require the AI addon"
+msgid "Vector embeddings require NV oOS Complete"
 msgstr ""
 
 #: src/Admin/Sections/EmbeddingsSection.php:124
-msgid "NV oOS Content Graph — AI adds vector embeddings, semantic search, RAG retrieval, and agent memory to your knowledge graph. Once installed, you can generate embeddings for every node using OpenAI, Google Gemini, or any of the 13 supported providers."
+msgid "NV oOS Complete adds vector embeddings, semantic search, RAG retrieval, and agent memory to your knowledge graph. Once installed, you can generate embeddings for every node using OpenAI, Google Gemini, or any of the 13 supported providers."
 msgstr ""
 
 #: src/Admin/Sections/GeneralSection.php:28
-#: src/Admin/SettingsPage.php:126
+#: src/Admin/SettingsPage.php:128
 msgid "General"
 msgstr ""
 
@@ -747,6 +771,14 @@ msgstr ""
 msgid "Run enrichment in the background via WP-Cron (recommended for large sites)."
 msgstr ""
 
+#: src/Admin/Sections/SourcesCctsSection.php:34
+msgid "Custom Content Types (JetEngine)"
+msgstr ""
+
+#: src/Admin/Sections/SourcesCctsSection.php:55
+msgid "Choose which JetEngine Custom Content Types should be indexed into the knowledge graph."
+msgstr ""
+
 #: src/Admin/Sections/SourcesCptsSection.php:31
 msgid "Custom Post Types"
 msgstr ""
@@ -757,14 +789,6 @@ msgstr ""
 
 #: src/Admin/Sections/SourcesCptsSection.php:76
 msgid "No post types available."
-msgstr ""
-
-#: src/Admin/Sections/SourcesCctsSection.php:34
-msgid "Custom Content Types (JetEngine)"
-msgstr ""
-
-#: src/Admin/Sections/SourcesCctsSection.php:55
-msgid "Choose which JetEngine Custom Content Types should be indexed into the knowledge graph."
 msgstr ""
 
 #: src/Admin/Sections/SourcesExtSection.php:31
@@ -779,375 +803,525 @@ msgstr ""
 msgid "No external tables available."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:101
-#: src/Admin/SettingsPage.php:102
-#: src/Admin/SettingsPage.php:231
+#: src/Admin/SettingsPage.php:103
+#: src/Admin/SettingsPage.php:104
+#: src/Admin/SettingsPage.php:236
 msgid "NV Content Graph"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:127
+#: src/Admin/SettingsPage.php:129
 msgid "Sources (CPT / CCT)"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:130
+#: src/Admin/SettingsPage.php:132
 msgid "Appearance"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:218
+#: src/Admin/SettingsPage.php:223
 msgid "You do not have permission to access this page."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:244
+#: src/Admin/SettingsPage.php:249
 msgid "Unknown"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:250
+#: src/Admin/SettingsPage.php:255
 msgid "Build Error"
 msgstr ""
 
 #. translators: 1: file path, 2: line number
-#: src/Admin/SettingsPage.php:262
+#: src/Admin/SettingsPage.php:267
 #, php-format
 msgid "File: %1$s, line %2$d"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:275
+#: src/Admin/SettingsPage.php:280
 msgid "Graph Overview"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:279
+#: src/Admin/SettingsPage.php:284
 msgid "Nodes"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:283
+#: src/Admin/SettingsPage.php:288
 msgid "Edges"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:287
+#: src/Admin/SettingsPage.php:292
 msgid "Communities"
 msgstr ""
 
 #. translators: 1: build status, 2: last build time
-#: src/Admin/SettingsPage.php:295
+#: src/Admin/SettingsPage.php:300
 #, php-format
 msgid "Status: %1$s — Last build: %2$s"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:303
+#: src/Admin/SettingsPage.php:308
 msgid "Rebuild Graph"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:311
+#: src/Admin/SettingsPage.php:316
 msgid "Graph Explorer"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:313
+#: src/Admin/SettingsPage.php:318
 msgid "Search nodes…"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:315
-#: src/Admin/SettingsPage.php:508
+#: src/Admin/SettingsPage.php:320
+#: src/Admin/SettingsPage.php:513
 msgid "All types"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:317
+#: src/Admin/SettingsPage.php:322
 msgid "Color nodes by — live preview, saved in Appearance settings"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:318
+#: src/Admin/SettingsPage.php:323
 msgid "Color: Type"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:319
+#: src/Admin/SettingsPage.php:324
 msgid "Color: Community"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:320
+#: src/Admin/SettingsPage.php:325
 msgid "Color: Degree"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:321
+#: src/Admin/SettingsPage.php:326
 msgid "Color: Monochrome"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:323
+#: src/Admin/SettingsPage.php:328
 msgid "Layout algorithm"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:324
+#: src/Admin/SettingsPage.php:329
 msgid "Edge style — live preview, saved in Appearance settings"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:325
+#: src/Admin/SettingsPage.php:330
 msgid "Edges: Plain"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:326
+#: src/Admin/SettingsPage.php:331
 msgid "Edges: Arrows"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:327
+#: src/Admin/SettingsPage.php:332
 msgid "Edges: Tapered"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:328
+#: src/Admin/SettingsPage.php:333
 msgid "Edges: Density"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:329
+#: src/Admin/SettingsPage.php:334
 msgid "Edges: Auto"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:331
+#: src/Admin/SettingsPage.php:336
 msgid "Agent ID…"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:332
+#: src/Admin/SettingsPage.php:337
 msgid "Wing…"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:333
+#: src/Admin/SettingsPage.php:338
 msgid "Show only the agent / wing combination above"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:334
+#: src/Admin/SettingsPage.php:339
 msgid "Apply"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:337
+#: src/Admin/SettingsPage.php:342
 msgid "Clear"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:340
-#: src/Admin/SettingsPage.php:514
+#: src/Admin/SettingsPage.php:345
+#: src/Admin/SettingsPage.php:519
 #: src/Frontend/Shortcode.php:194
 msgid "Zoom out"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:342
-#: src/Admin/SettingsPage.php:513
+#: src/Admin/SettingsPage.php:347
+#: src/Admin/SettingsPage.php:518
 #: src/Frontend/Shortcode.php:195
 msgid "Zoom in"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:343
-#: src/Admin/SettingsPage.php:515
+#: src/Admin/SettingsPage.php:348
+#: src/Admin/SettingsPage.php:520
 #: src/Frontend/Shortcode.php:196
 msgid "Fit"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:345
+#: src/Admin/SettingsPage.php:350
 msgid "Export background"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:346
+#: src/Admin/SettingsPage.php:351
 msgid "BG: Theme"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:347
+#: src/Admin/SettingsPage.php:352
 msgid "BG: Transparent"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:348
+#: src/Admin/SettingsPage.php:353
 msgid "BG: White"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:350
+#: src/Admin/SettingsPage.php:355
 msgid "Export scale"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:355
-#: src/Admin/SettingsPage.php:517
+#: src/Admin/SettingsPage.php:360
+#: src/Admin/SettingsPage.php:522
 msgid "Export PNG"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:356
+#: src/Admin/SettingsPage.php:361
 msgid "Toggle fullscreen"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:363
+#: src/Admin/SettingsPage.php:368
 msgid "Knowledge graph explorer"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:509
+#: src/Admin/SettingsPage.php:514
 #: src/Frontend/Shortcode.php:191
 msgid "Loading graph…"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:510
+#: src/Admin/SettingsPage.php:515
 msgid "Failed to load graph data. Ensure the graph has been built."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:511
+#: src/Admin/SettingsPage.php:516
 msgid "Cytoscape.js did not load. Check your network connection."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:512
+#: src/Admin/SettingsPage.php:517
 msgid "Legend"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:516
+#: src/Admin/SettingsPage.php:521
 msgid "Fullscreen"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:518
+#: src/Admin/SettingsPage.php:523
 msgid "Background: theme"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:519
+#: src/Admin/SettingsPage.php:524
 msgid "Background: transparent"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:520
+#: src/Admin/SettingsPage.php:525
 msgid "Background: white"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:521
+#: src/Admin/SettingsPage.php:526
 msgid "Scale"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:522
+#: src/Admin/SettingsPage.php:527
 msgid "Color by"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:523
+#: src/Admin/SettingsPage.php:528
 msgid "Layout"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:524
+#: src/Admin/SettingsPage.php:529
 msgid "Node"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:525
+#: src/Admin/SettingsPage.php:530
 msgid "connections"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:527
+#: src/Admin/SettingsPage.php:532
 msgid "View post ↗"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:528
+#: src/Admin/SettingsPage.php:533
 msgid "Neighbors"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:529
+#: src/Admin/SettingsPage.php:534
 msgid "Graph explorer. Use arrow keys to move between nodes, Enter to open details, Escape to clear, + and - to zoom."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:546
+#: src/Admin/SettingsPage.php:559
 msgid "Pay"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:548
+#: src/Admin/SettingsPage.php:561
 msgid "Close"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:549
+#: src/Admin/SettingsPage.php:562
 msgid "Payments are processed securely by Stripe. Your card never touches this server."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:550
+#: src/Admin/SettingsPage.php:563
+msgid "One-time payment — no subscription"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:564
+msgid "VAT may be added at checkout based on your country."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:565
+msgid "Includes 1 year of updates and email support on this site."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:566
+msgid "Try it risk-free — 30-day money-back guarantee"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:567
+msgid "Instant download and automatic install"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:568
+msgid "Included in NV oOS Complete"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:569
+msgid "The full NV oOS plugin — base + Pro"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:570
+msgid "1 year of updates"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:571
+msgid "Email support directly from the developer"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:572
+msgid "Access to the NV oOS Content Graph ecosystem when it launches — included at no extra cost"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:573
+msgid "Your purchase directly funds the next features. Owners like you shape the roadmap — tell us what to build next."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:574
+msgid "Share your ideas"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:575
+msgid "Delivery starts immediately. By downloading, you acknowledge that you lose your EU right of withdrawal for this digital content."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:576
+msgid "What happens next"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:577
+msgid "A receipt is on its way to your email."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:578
+msgid "NV oOS Complete is installed and activated."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:579
+msgid "Your license key is saved — keep it safe."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:580
+msgid "Watch the changelog for updates — your Content Graph ecosystem access arrives with the launch, at no extra cost."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:581
+msgid "View changelog"
+msgstr ""
+
+#. translators: %s: support email address.
+#: src/Admin/SettingsPage.php:584
+#, php-format
+msgid "Questions? Email %s"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:587
 msgid "Something went wrong. Please try again."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:551
+#: src/Admin/SettingsPage.php:588
 msgid "Stripe failed to load. Check your network connection and try again."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:552
-msgid "Recording your license and installing the addon…"
+#: src/Admin/SettingsPage.php:589
+msgid "Recording your license and installing NV oOS Complete…"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:553
+#: src/Admin/SettingsPage.php:590
 msgid "You’re all set!"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:554
+#: src/Admin/SettingsPage.php:591
 msgid "Reload page"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:555
+#: src/Admin/SettingsPage.php:592
 msgid "License key"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:556
+#: src/Admin/SettingsPage.php:593
 msgid "Test mode — no real payment will be taken."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:557
+#: src/Admin/SettingsPage.php:594
 msgid "Check again"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:558
+#: src/Admin/SettingsPage.php:595
 msgid "Start a new purchase"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:559
+#: src/Admin/SettingsPage.php:596
 msgid "The checkout service is unavailable right now. Redirecting you to the product page to complete your purchase…"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:560
+#: src/Admin/SettingsPage.php:597
 msgid "Verify"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:561
+#: src/Admin/SettingsPage.php:598
 msgid "Payment is still processing. Click Verify once it completes."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:562
+#: src/Admin/SettingsPage.php:599
 msgid "Payment did not complete. Status: "
 msgstr ""
 
-#: src/Admin/SettingsPage.php:563
+#: src/Admin/SettingsPage.php:600
 msgid "Download ZIP manually"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:636
+#: src/Admin/SettingsPage.php:601
+msgid "I have read and agree to the Terms of Service and the Refund Policy, including the 30-day money-back guarantee."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:602
+msgid "Terms of Service"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:603
+msgid "Refund Policy"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:604
+msgid "Please agree to the Terms of Service and Refund Policy to continue."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:605
+msgid "Email for receipt and refunds"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:606
+msgid "you@example.com"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:607
+msgid "Please enter a valid email address for your receipt."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:608
+msgid "Prefer to install manually? Download the ZIP and upload it via Plugins → Add New Plugin → Upload Plugin."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:609
+msgid "Country (for VAT records)"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:610
+msgid "Other / Non-EU"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:611
+msgid "Street address"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:612
+msgid "City"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:613
+msgid "Postal code (optional)"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:614
+msgid "EU purchases require a billing address. Please complete the address fields."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:687
 msgid "Build failed due to an unexpected error. See the error notice on the settings page for details."
 msgstr ""
 
-#: src/Commerce/Installer.php:67
-msgid "NV oOS Content Graph — AI is already installed and active."
+#: src/Commerce/Installer.php:169
+msgid "NV oOS Complete is already installed and active."
 msgstr ""
 
-#. translators: %s: error message.
-#: src/Commerce/Installer.php:84
+#: src/Commerce/Installer.php:178
+msgid "The NV oOS Content Graph — AI addon is already installed and active."
+msgstr ""
+
+#. translators: %s: existing plugin folder.
+#: src/Commerce/Installer.php:188
 #, php-format
-msgid "Could not download the addon package: %s"
+msgid "You already have the NV oOS plugin installed (%s). Installing the Complete bundle alongside it would create a second copy and break both plugins. Update your existing plugin from the Plugins screen instead — your purchase is recorded."
 msgstr ""
 
 #. translators: %s: error message.
-#: src/Commerce/Installer.php:107
+#: src/Commerce/Installer.php:212
 #, php-format
-msgid "Could not install the addon package: %s"
-msgstr ""
-
-#: src/Commerce/Installer.php:121
-msgid "The WordPress upgrader could not install the addon package."
-msgstr ""
-
-#: src/Commerce/Installer.php:133
-msgid "The addon package was installed but its main plugin file is missing. The package may be incomplete."
+msgid "Could not download the NV oOS Complete package: %s"
 msgstr ""
 
 #. translators: %s: error message.
-#: src/Commerce/Installer.php:152
+#: src/Commerce/Installer.php:235
 #, php-format
-msgid "The addon was installed but could not be activated automatically: %s Activate it on the Plugins screen."
+msgid "Could not install the NV oOS Complete package: %s"
 msgstr ""
 
-#: src/Commerce/Installer.php:161
-msgid "NV oOS Content Graph — AI installed and activated."
+#: src/Commerce/Installer.php:249
+msgid "The WordPress upgrader could not install the NV oOS Complete package."
+msgstr ""
+
+#: src/Commerce/Installer.php:261
+msgid "The package was installed but its main plugin file is missing. The package may be incomplete."
 msgstr ""
 
 #. translators: %s: error message.
-#: src/Commerce/Vendor.php:94
+#: src/Commerce/Installer.php:280
+#, php-format
+msgid "NV oOS Complete was installed but could not be activated automatically: %s Activate it on the Plugins screen."
+msgstr ""
+
+#: src/Commerce/Installer.php:289
+msgid "NV oOS Complete installed and activated."
+msgstr ""
+
+#. translators: %s: error message.
+#: src/Commerce/Vendor.php:84
+#: src/Commerce/Vendor.php:162
 #, php-format
 msgid "Could not reach the checkout service: %s"
 msgstr ""
 
 #. translators: %d: HTTP status code.
-#: src/Commerce/Vendor.php:109
+#: src/Commerce/Vendor.php:99
+#: src/Commerce/Vendor.php:177
 #, php-format
 msgid "The checkout service returned an error (HTTP %d)."
 msgstr ""
@@ -1170,7 +1344,7 @@ msgstr ""
 msgid "Consider linking \"%1$s\" to \"%2$s\" — they share a knowledge community."
 msgstr ""
 
-#: src/Graph/Db.php:713
+#: src/Graph/Db.php:731
 msgid "slug and driver are required."
 msgstr ""
 
@@ -1636,42 +1810,43 @@ msgstr ""
 msgid "Circuit breaker open for host: %s"
 msgstr ""
 
-#: src/Rest/CommerceController.php:102
+#: src/Rest/CommerceController.php:150
 #: src/Rest/Controller.php:974
 msgid "Administrator access required."
 msgstr ""
 
-#: src/Rest/CommerceController.php:123
+#: src/Rest/CommerceController.php:171
 msgid "Too many checkout attempts. Please wait a few minutes and try again."
 msgstr ""
 
-#: src/Rest/CommerceController.php:131
-#: src/Rest/CommerceController.php:201
+#: src/Rest/CommerceController.php:179
+#: src/Rest/CommerceController.php:237
+#: src/Rest/CommerceController.php:311
 msgid "Checkout is not available on this build. Please contact the plugin vendor."
 msgstr ""
 
-#: src/Rest/CommerceController.php:146
+#: src/Rest/CommerceController.php:194
 msgid "The checkout service did not return a payment session. Please try again."
-msgstr ""
-
-#: src/Rest/CommerceController.php:179
-msgid "Too many attempts. Please wait a few minutes and try again."
 msgstr ""
 
 #: src/Rest/CommerceController.php:262
 msgid "The checkout service is reachable."
 msgstr ""
 
-#: src/Rest/CommerceController.php:193
-msgid "NV oOS Content Graph — AI is already licensed and active on this site."
+#: src/Rest/CommerceController.php:286
+msgid "Too many attempts. Please wait a few minutes and try again."
 msgstr ""
 
-#: src/Rest/CommerceController.php:216
+#: src/Rest/CommerceController.php:303
+msgid "NV oOS is already licensed and active on this site."
+msgstr ""
+
+#: src/Rest/CommerceController.php:326
 msgid "The checkout service did not issue a license. Please contact support."
 msgstr ""
 
-#: src/Rest/CommerceController.php:266
-msgid "Your license is recorded — you can also download the addon ZIP manually and upload it on the Plugins screen."
+#: src/Rest/CommerceController.php:379
+msgid "Your license is recorded — you can also download the NV oOS Complete ZIP manually and upload it on the Plugins screen."
 msgstr ""
 
 #: src/Rest/Controller.php:510

@@ -22,6 +22,12 @@
 - **JetEngine-inactive degradation** — the section renders an explanatory notice when JetEngine is missing or has no CCTs registered
 - Tests: `tests/Unit/Admin/SourcesCctsSectionTest.php` (sanitize contract incl. the hidden-marker semantics + render output) and `tests/Unit/Graph/CctDetectionTest.php` (enumeration, default-include, exclusion honoring, filter override) backed by a new shared JetEngine CCT stub at `tests/helpers/jetengine-cct-stubs.php`
 
+### Fixed — CCTs checked on the Sources tab but missing from the graph
+
+- **Per-CCT status in the Notes column** — a checked CCT could silently vanish from the graph because JetEngine creates CCT tables lazily: a registered type whose table does not exist yet (or has no rows) was skipped without explanation. The Sources grid now annotates every CCT with its live status ("table not created yet", "no items yet", "N items indexed", "Excluded", "unavailable") using a lightweight `Detector::inspectCctTypes()` snapshot that only checks table existence and row counts — it never pulls rows
+- **`Detector::detectCcts()` per-type report** — the detector now records every registered CCT's status and item count (`Detector::getCctTypeReport()`), surfaced in the build summary as `cct_types`, and stops querying JetEngine tables that do not exist instead of erroring into a silent skip
+- Tests: `CctDetectionTest` extended with per-type report coverage (indexed/empty/table-missing/excluded + `inspectCctTypes()` non-population) and `SourcesCctsSectionTest` with grid-annotation coverage; the shared JetEngine stub learns `is_table_exists()` and `count()`
+
 ### New — Checkout consent & legal links
 
 - **Terms of Service consent checkbox in the purchase modal** — the Pay button stays disabled until the buyer ticks agreement to the Terms of Service and the 30-day money-back Refund Policy (links open in a new tab; URLs come from the vendor `/session` response with filterable client-side defaults `nvoos_content_graph/payments/terms_url` / `nvoos_content_graph/payments/refund_policy_url`)

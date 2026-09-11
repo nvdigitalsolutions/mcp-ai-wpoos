@@ -172,6 +172,13 @@ class Nvoos_CG_Test_Cct_Db {
 	public array $items = array();
 
 	/**
+	 * Whether the physical CCT table exists.
+	 *
+	 * @var bool
+	 */
+	public bool $table_exists = true;
+
+	/**
 	 * Last format flag set via set_format_flag().
 	 *
 	 * @var mixed
@@ -179,10 +186,33 @@ class Nvoos_CG_Test_Cct_Db {
 	public $format_flag = null;
 
 	/**
-	 * @param array<int,array<string,mixed>> $items Rows returned by query().
+	 * @param array<int,array<string,mixed>> $items         Rows returned by query().
+	 * @param bool                           $table_exists  Whether the physical table exists.
 	 */
-	public function __construct( array $items = array() ) {
-		$this->items = $items;
+	public function __construct( array $items = array(), bool $table_exists = true ) {
+		$this->items        = $items;
+		$this->table_exists = $table_exists;
+	}
+
+	/**
+	 * Report whether the physical CCT table exists.
+	 *
+	 * @return bool
+	 */
+	public function is_table_exists(): bool {
+		return $this->table_exists;
+	}
+
+	/**
+	 * Return the number of stubbed rows.
+	 *
+	 * @param array<string,mixed> $args Query args (ignored).
+	 * @param string              $rel  Relation (ignored).
+	 * @return int
+	 */
+	public function count( $args = array(), $rel = 'AND' ): int {
+		unset( $args, $rel );
+		return count( $this->items );
 	}
 
 	/**
@@ -232,14 +262,17 @@ class Nvoos_CG_Test_Jet_Engine {
 /**
  * Install a configured JetEngine CCT stub for the current test.
  *
- * @param array<int,array{slug: string, name: string, rows?: array<int,array<string,mixed>>}> $types CCT specs.
+ * @param array<int,array{slug: string, name: string, rows?: array<int,array<string,mixed>>, table_exists?: bool}> $types CCT specs.
  * @return Nvoos_CG_Test_Jet_Engine The installed engine (tests may mutate it).
  */
 function nvoos_cg_test_install_jetengine_cct( array $types = array() ): Nvoos_CG_Test_Jet_Engine {
 	$manager = new Nvoos_CG_Test_Cct_Manager();
 	$built   = array();
 	foreach ( $types as $spec ) {
-		$db      = new Nvoos_CG_Test_Cct_Db( isset( $spec['rows'] ) && is_array( $spec['rows'] ) ? $spec['rows'] : array() );
+		$db      = new Nvoos_CG_Test_Cct_Db(
+			isset( $spec['rows'] ) && is_array( $spec['rows'] ) ? $spec['rows'] : array(),
+			isset( $spec['table_exists'] ) ? (bool) $spec['table_exists'] : true
+		);
 		$built[] = new Nvoos_CG_Test_Cct_Type( $spec['slug'], $spec['name'], $db );
 	}
 	$manager->set_content_types( $built );

@@ -87,6 +87,7 @@ class Builder {
 			'posts_processed' => $postCount,
 			'posts_detected'  => $postCount,
 			'ccts_detected'   => $cctsDetected,
+			'cct_types'       => Detector::getCctTypeReport(),
 			'terms_detected'  => $termsDetected,
 			'users_detected'  => $usersDetected,
 			'media_detected'  => $mediaDetected,
