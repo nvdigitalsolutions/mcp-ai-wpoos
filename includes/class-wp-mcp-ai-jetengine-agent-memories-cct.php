@@ -54,7 +54,7 @@ class WP_MCP_AI_JetEngine_Agent_Memories_CCT {
 	 * priorities 1–10 (see PR #4816). Registering at priority 0 races
 	 * JetEngine's bootstrap and leaves `get_item_handler()` returning null
 	 * for the rest of the request — which silently empties the
-	 * `ai_chat_agent_memories` CCT.
+	 * `ai_agent_memories` CCT.
 	 *
 	 * `maybe_enable_data_stores` stays at priority 0 because the data-stores
 	 * module must be activated *before* JetEngine's own bootstrap so the
