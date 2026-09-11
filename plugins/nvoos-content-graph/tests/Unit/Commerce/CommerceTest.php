@@ -98,8 +98,8 @@ class CommerceTest extends WP_UnitTestCase {
 	}
 
 	/** @test */
-	public function defaultPriceIs4900Cents(): void {
-		$this->assertSame( 4900, Payments::priceCents() );
+	public function defaultPriceIs3499Cents(): void {
+		$this->assertSame( 3499, Payments::priceCents() );
 	}
 
 	/** @test */

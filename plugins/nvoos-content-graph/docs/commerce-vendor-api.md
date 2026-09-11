@@ -28,6 +28,11 @@ sequenceDiagram
 - The `sk_…` secret key exists only on the vendor server.
 - The `pk_…` publishable key is returned per-session by `/session` (it is
   public by design).
+- The `/session` `amount` is authoritative for the modal's displayed price:
+  the client replaces its local default price label with the session amount
+  as soon as the session is created, so the shown price always matches what
+  the Payment Element charges (the label is display-only — the vendor
+  re-verifies the amount server-side).
 - Because `/verify` returns a **signed, short-lived `download_url`**, the
   payment actually gates the download even though the GitHub repo is public.
 
