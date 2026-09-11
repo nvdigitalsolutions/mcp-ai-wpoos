@@ -45,6 +45,15 @@ on:
 permissions:
   contents: write
 
+# Rapid successive merges to alpha-working each trigger this workflow; the
+# publish job derives its version from the branch tip, which can advance
+# past the triggering commit while the build job runs. Cancel superseded
+# runs so only the newest push publishes (the version hand-off via job
+# outputs below keeps build/publish consistent regardless).
+concurrency:
+  group: content-graph-build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # ===========================================================================
   # Build the standalone content-graph plugin ZIP
@@ -52,6 +61,9 @@ jobs:
   build:
     name: Build Content Graph Plugin
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      artifact: ${{ steps.version.outputs.artifact }}
 
     steps:
       - name: Free disk space
@@ -174,28 +186,15 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set version
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            VERSION="${GITHUB_REF_NAME#content-graph-v}"
-          elif [ -n "${{ inputs.version }}" ]; then
-            VERSION="${{ inputs.version }}"
-          else
-            VERSION=$(grep -E "^\s*\*\s*Version:" plugins/nvoos-content-graph/nvoos-content-graph.php | sed 's/.*Version:\s*//' | tr -d '[:space:]')
-            VERSION="${VERSION:-dev}"
-          fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: nvoos-content-graph-v${{ steps.version.outputs.version }}
+          name: ${{ needs.build.outputs.artifact }}
           path: artifacts/
 
       - name: Copy content-graph ZIP to build directory
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION="${{ needs.build.outputs.version }}"
           ZIP_SRC="artifacts/nvoos-content-graph-v${VERSION}.zip"
 
           mkdir -p build
@@ -217,7 +216,7 @@ jobs:
 
       - name: Commit and push content-graph ZIP
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION="${{ needs.build.outputs.version }}"
           ZIP="build/nvoos-content-graph-v${VERSION}.zip"
 
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
@@ -266,29 +265,19 @@ jobs:
       inputs.create_release == true || startsWith(github.ref, 'refs/tags/content-graph-v')
 
     steps:
-      - name: Set version
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            VERSION="${GITHUB_REF_NAME#content-graph-v}"
-          else
-            VERSION="${{ inputs.version }}"
-          fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: nvoos-content-graph-v${{ steps.version.outputs.version }}
+          name: ${{ needs.build.outputs.artifact }}
           path: artifacts/
 
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: content-graph-v${{ steps.version.outputs.version }}
-          name: "NV oOS Content Graph v${{ steps.version.outputs.version }}"
+          tag_name: content-graph-v${{ needs.build.outputs.version }}
+          name: "NV oOS Content Graph v${{ needs.build.outputs.version }}"
           body: |
-            ## NV oOS Content Graph v${{ steps.version.outputs.version }}
+            ## NV oOS Content Graph v${{ needs.build.outputs.version }}
 
             Visual knowledge graph for WordPress. Maps your content into an interactive, navigable graph. Zero API keys required.
 

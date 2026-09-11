@@ -45,6 +45,13 @@ on:
 permissions:
   contents: write
 
+# Same version-hand-off + superseded-run guard as build-nvoos-content-graph.yml
+# (see that file's comment): the publish job must consume the build job's
+# version instead of re-reading the possibly-advanced branch tip.
+concurrency:
+  group: content-graph-ai-build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # ===========================================================================
   # Build the content-graph-ai plugin ZIP
@@ -52,6 +59,9 @@ jobs:
   build:
     name: Build Content Graph AI Plugin
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      artifact: ${{ steps.version.outputs.artifact }}
 
     steps:
       - name: Free disk space
@@ -164,28 +174,15 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set version
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            VERSION="${GITHUB_REF_NAME#content-graph-ai-v}"
-          elif [ -n "${{ inputs.version }}" ]; then
-            VERSION="${{ inputs.version }}"
-          else
-            VERSION=$(grep -E "^\s*\*\s*Version:" plugins/nvoos-content-graph-ai/nvoos-content-graph-ai.php | sed 's/.*Version:\s*//' | tr -d '[:space:]')
-            VERSION="${VERSION:-dev}"
-          fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: nvoos-content-graph-ai-v${{ steps.version.outputs.version }}
+          name: ${{ needs.build.outputs.artifact }}
           path: artifacts/
 
       - name: Copy content-graph-ai ZIP to build directory
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION="${{ needs.build.outputs.version }}"
           ZIP_SRC="artifacts/nvoos-content-graph-ai-v${VERSION}.zip"
 
           mkdir -p build
@@ -207,7 +204,7 @@ jobs:
 
       - name: Commit and push content-graph-ai ZIP
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION="${{ needs.build.outputs.version }}"
           ZIP="build/nvoos-content-graph-ai-v${VERSION}.zip"
 
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
@@ -256,29 +253,19 @@ jobs:
       inputs.create_release == true || startsWith(github.ref, 'refs/tags/content-graph-ai-v')
 
     steps:
-      - name: Set version
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            VERSION="${GITHUB_REF_NAME#content-graph-ai-v}"
-          else
-            VERSION="${{ inputs.version }}"
-          fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: nvoos-content-graph-ai-v${{ steps.version.outputs.version }}
+          name: ${{ needs.build.outputs.artifact }}
           path: artifacts/
 
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: content-graph-ai-v${{ steps.version.outputs.version }}
-          name: "NV oOS Content Graph AI v${{ steps.version.outputs.version }}"
+          tag_name: content-graph-ai-v${{ needs.build.outputs.version }}
+          name: "NV oOS Content Graph AI v${{ needs.build.outputs.version }}"
           body: |
-            ## NV oOS Content Graph AI v${{ steps.version.outputs.version }}
+            ## NV oOS Content Graph AI v${{ needs.build.outputs.version }}
 
             AI chat assistant addon for NV oOS Content Graph. Adds chat, 13 AI providers, AI tools, embeddings, and agent memory to your knowledge graph. One install, one API key.
 
