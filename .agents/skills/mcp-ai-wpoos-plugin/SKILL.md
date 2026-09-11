@@ -725,6 +725,87 @@ Import external AI conversation exports into the JetEngine
   `plugins_loaded` when the base constant is missing at include time.
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
 
+## Checkout Purchase-Modal Redirect Bug & Release-Tag URL Fix (PR #6594)
+
+Diagnosed live on victory.nvdigital.solutions (client) + nvdigitalsolutions.com
+(vendor) when "the purchase modal says nothing and redirects to the GitHub
+releases page" with everything seemingly configured correctly.
+
+- **The silent-redirect failure mode.** `checkoutUnavailable()` — the only
+  path that redirects to `fallback_url` — fires when the modal's
+  `/payments/session` call returns 404/≥500 **or its `.catch` runs**. The
+  `.catch` wraps the ENTIRE `.then` chain, so ANY throw after the session
+  call (Stripe element setup included) is mislabelled as "checkout
+  unavailable". Status-code errors (424/429/403) stay in-modal with a
+  "Test connection" action; a redirect means the response was 404/5xx,
+  non-JSON, or a post-session throw. The fallback note is shown only 1.2 s
+  — users report it as "says nothing, just redirects".
+- **Root cause found: invalid Stripe element name.** The modal called
+  `elements.create( 'paymentElement', … )` — the core Stripe.js API name is
+  **`payment`** (`paymentElement` is the React component name). Stripe threw
+  `IntegrationError: A valid Element name must be provided … you passed:
+  paymentElement` AFTER a 200 session, and the catch-all redirected. Fix
+  (PR #6594): `create( 'payment' )` plus a try/catch around Stripe element
+  setup that surfaces a new `stripe_setup_error` message in the modal
+  instead of the misleading redirect. The no-browser contract verifier is
+  `node plugins/nvoos-content-graph/scripts/verify-commerce-fallback.js`.
+- **Release-tag convention mismatch (same PR).** GitHub releases moved to
+  `nvdigital-oos-v*.*.*` tags (`build-nvdigital-oos-wporg.yml` is the
+  active path; `release.yml` `v*` tags are the legacy wp.org path). The
+  checkout-api `default_zip_source()` and the client `Payments::zipUrl()`
+  fallback still built `releases/download/v{VERSION}/…` → post-payment
+  downloads 404/502 while payment + license succeed. Symptom: buyer pays,
+  then "Could not fetch the addon package: 404 Not Found" (vendor download
+  server) or a broken fallback URL. Verify: `curl -I …/releases/download/
+  nvdigital-oos-v1.1.76/nvdigital-open-operator-system-oos-complete-
+  1.1.76.zip` (200) vs the `v1.1.76` tag shape (404). Live-site remedy
+  without a release: edit the vendor's **ZIP source** setting to
+  `https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/nvdigital-oos-v{VERSION}/nvdigital-open-operator-system-oos-complete-{VERSION}.zip`
+  (keep **Addon version** as the plain `1.1.76` — the tag prefix belongs in
+  the ZIP source pattern, not the version field).
+- **Browser-side diagnostics that worked** (config lives in
+  `window.nvoosContentGraphCommerce` — `rest_url`, `nonce`, `fallback_url` —
+  only on the content-graph admin page, admin-logged-in):
+  1. Replicate the modal call from the console:
+     `fetch( rest_url + '/payments/session', { POST, credentials 'same-origin', X-WP-Nonce: nonce, body '{}' } )`
+     — 200 + `client_secret` proves vendor/keys/throttles all healthy
+     (each call creates a real live PaymentIntent; cancel it via
+     `POST api.stripe.com/v1/payment_intents/{id}/cancel`).
+  2. Raw-body variant (`r.text()`) to catch **non-JSON** responses (PHP
+     warnings/debug lines, Cloudflare challenge HTML) — those reject
+     `response.json()` and trip the redirect.
+  3. Monkey-patch `window.fetch` to log every `/payments/` request with
+     `r.clone().text()` BEFORE clicking Buy — captures what the modal
+     actually sends/receives regardless of the 1.2 s redirect.
+  4. To isolate a throw, load the REAL `https://js.stripe.com/v3/` first,
+     then wrap the real `window.Stripe` with logging at call → elements →
+     create → mount. **Pitfall: replacing `window.Stripe` with a stub
+     short-circuits `loadStripeJs` (`if ( window.Stripe )`), so the modal
+     never downloads Stripe.js and the stub's undefined return throws — a
+     self-inflicted false positive.**
+  5. DevTools "pause on caught exceptions" first lands on Stripe's internal
+     `ArrayBuffer()` bot-check `try/catch` — harmless noise. Press F8 until
+     the pause is in `content-graph-commerce.js` or carries a non-Stripe
+     message.
+- **Server-side diagnostics from the client site's shell:**
+  `curl -sS -X POST https://nvdigitalsolutions.com/wp-json/nvoos-checkout/v1/session -H 'Content-Type: application/json' -d '{"product":"nvoos-oos-complete","site_url":"https://victory.nvdigital.solutions"}'`
+  tests the exact server→vendor path (outbound firewall/DNS/SSL issues the
+  browser can't see); `wp eval '$v = new \NvoosContentGraph\Commerce\Vendor( \NvoosContentGraph\Commerce\Payments::vendorApiUrl() ); …'`
+  runs the plugin's own `health()`/`createSession()` on the site's server.
+- **Live config facts (verified):** vendor `GET /health` is public;
+  `POST /session` requires `product` ∈ {`nvoos-oos-complete`,
+  `nvoos-content-graph-ai`} + `site_url`; a webhook signature test =
+  HMAC-SHA256 over `{ts}.{payload}` with the dashboard `whsec_` sent as
+  `Stripe-Signature: t={ts},v1={hex}` — a benign `charge.succeeded` event
+  answering `{"received":true}` proves the dashboard secret matches the
+  plugin's stored one; the Stripe webhook endpoint must subscribe
+  `payment_intent.succeeded` + `charge.refunded` (+ optional
+  `charge.dispute.created`); the client's commerce REST routes are
+  **admin-only by design** (anonymous 403/401 is normal); if the base NV oOS
+  plugin is already active on the client site (`mcp-ai/v1` in `/wp-json/`),
+  the post-payment install correctly 409s (conflict guard) with a
+  manual-download link — purchases on such a site need no install.
+
 ## Calendar Query Fix, Email Formats & Wave F2 PM/Calendar (v1.1.74+)
 
 - **Google Calendar date queries** (PR #6460) — calendar query values are

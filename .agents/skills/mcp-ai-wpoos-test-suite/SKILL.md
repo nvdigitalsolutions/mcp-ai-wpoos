@@ -118,6 +118,66 @@ php -d memory_limit=1G vendor/bin/phpunit -c plugins/nvoos-content-graph-pro/php
 # Monolith matrix: same command WITHOUT the env var.
 ```
 
+### Standalone plugin suites (plugins/nvoos-content-graph, -ai, -pro)
+
+`plugins/nvoos-content-graph` ships its **own** composer.json +
+phpunit.xml.dist (PHPUnit 9.6, wp-phpunit 7.0.2, PSR-4-only autoload — no
+Windows classmap hazard, so a host-side `composer install` in the plugin dir
+is safe and works inside the Linux container). **No monorepo CI workflow runs
+its `phpunit.xml.dist`** (phpunit-ai.yml only covers the AI addon's
+`phpunit-ecosystem.xml.dist`), so run it explicitly:
+
+```bash
+# Host: install the plugin's dev deps (creates
+# plugins/nvoos-content-graph/vendor — gitignored):
+cd plugins/nvoos-content-graph && composer install --no-interaction --prefer-dist
+
+# Write the wp-phpunit config the plugin bootstrap expects. Default lookup is
+# vendor/wp-phpunit/wp-phpunit/wp-tests-config.php (dirname of includes/).
+# vendor/ paths are excluded from repo file tools — use the shell:
+cat > vendor/wp-phpunit/wp-phpunit/wp-tests-config.php <<'EOF'
+<?php
+define( 'ABSPATH', '/var/www/html/' );
+define( 'DB_NAME', 'wordpress_test' );
+define( 'DB_USER', 'wordpress' );
+define( 'DB_PASSWORD', 'wordpress' );
+define( 'DB_HOST', 'db' );
+define( 'DB_CHARSET', 'utf8' );
+define( 'DB_COLLATE', '' );
+define( 'WP_TESTS_DOMAIN', 'example.org' );
+define( 'WP_TESTS_EMAIL', 'admin@example.org' );
+define( 'WP_TESTS_TITLE', 'Test Blog' );
+define( 'WP_PHP_BINARY', 'php' );
+$table_prefix = 'wptests_';
+EOF
+
+# Ensure the DB exists (bootstrap auto-runs install.php single-site unless
+# WP_TESTS_SKIP_INSTALL=1):
+docker exec oos-wp-db mysql -uroot -pwordpress -e \
+  "CREATE DATABASE IF NOT EXISTS wordpress_test; GRANT ALL PRIVILEGES ON wordpress_test.* TO 'wordpress'@'%'; FLUSH PRIVILEGES;"
+
+# Run (php:8.2-cli LACKS mysqli — wp_die "missing the MySQL extension"; use
+# wordpress:6.9-php8.2-apache with --entrypoint php, which ships mysqli):
+MSYS_NO_PATHCONV=1 docker run --rm --entrypoint php \
+  -v oos-wp_wp_core:/var/www/html \
+  -v F:/GITHUB/mcp-ai-wpoos:/var/www/html/wp-content/plugins/mcp-ai-wpoos \
+  --network oos-wp_default \
+  -e WP_TESTS_DIR=/var/www/html/wp-content/plugins/mcp-ai-wpoos/plugins/nvoos-content-graph/vendor/wp-phpunit/wp-phpunit \
+  wordpress:6.9-php8.2-apache \
+  /var/www/html/wp-content/plugins/mcp-ai-wpoos/plugins/nvoos-content-graph/vendor/bin/phpunit \
+  -c /var/www/html/wp-content/plugins/mcp-ai-wpoos/plugins/nvoos-content-graph/phpunit.xml.dist --testsuite=Unit
+```
+
+- "Full plugin run" = both suites: `--testsuite=Unit` then
+  `--testsuite=Integration` (integration needs only WP + bundled JetEngine
+  stubs). The no-concurrent-phpunit rule still applies (same DB).
+- JS contract checks need no browser: `node scripts/verify-commerce-fallback.js`
+  (purchase-modal fallback redirect contract) and
+  `node scripts/verify-theme-engine.js` run on the host from the plugin dir.
+- When only the client plugin is in scope this is faster than the root suite
+  (which boots the full base+Pro plugin); the root suite covers
+  `addons/checkout-api/tests` via the root phpunit.xml.dist.
+
 **Shared-DB isolation (cross-worktree clobbering):** every worktree's one-off
 runner hits the SAME `wordpress_test` DB by default — a concurrent worktree's
 `install.php` re-runs wipe your schema mid-suite (mass "Table doesn't exist"
