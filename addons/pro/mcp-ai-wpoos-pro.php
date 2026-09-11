@@ -1357,7 +1357,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools = array_merge( $pro_tools, $ecommerce_toolkit_tools );
 		}
 
-		// Add FlowHub Inventory Sync Toolkit tools if enabled (Pro feature — FlowHub POS integration).
+		// Add FlowHub Inventory Sync Toolkit tools if enabled (Pro feature â€” FlowHub POS integration).
 		if ( ! empty( $settings['enable_flowhub_toolkit'] ) && class_exists( 'WooCommerce' ) ) {
 			$flowhub_toolkit_tools = array(
 				'WP_MCP_AI_Pro_Tool_FlowHub_Inventory' => WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-inventory.php',
@@ -1967,8 +1967,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		$pro_tools = apply_filters( 'wp_mcp_ai_pro_tools', $pro_tools );
 
 		// Cache the computed map so consumers (e.g. the token-usage service's
-		// unregistered-tools fallback) can enumerate every Pro tool — including
-		// the ones gated off by settings — without rebuilding it.
+		// unregistered-tools fallback) can enumerate every Pro tool â€” including
+		// the ones gated off by settings â€” without rebuilding it.
 		$GLOBALS['wp_mcp_ai_pro_tools_map'] = $pro_tools;
 
 		/**
@@ -2760,11 +2760,27 @@ if ( $plugins_loaded_fired ) {
 }
 
 /**
- * Register WP-CLI commands for the Pro addon.
+ * Require and register the Pro WP-CLI command files.
  *
- * Loads and registers all Pro gap-fill CLI command classes when WP-CLI is active.
+ * The Pro CLI commands extend the core base command
+ * (`WP_MCP_AI_CLI_Base_Command`), which lives in the base plugin and
+ * references base constants such as `WP_MCP_AI_PATH`. When this addon is
+ * activated before the base plugin, that constant does not exist yet at
+ * include time â€” requiring the CLI files here would fatal under WP-CLI.
+ * This loader bails cleanly instead, and the call site defers until
+ * `plugins_loaded` when the constant is missing at include time.
+ *
+ * @since 1.1.77
+ *
+ * @return void
  */
-if ( defined( 'WP_CLI' ) && WP_CLI ) {
+function wp_mcp_ai_pro_load_cli_commands(): void {
+	if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
+		// Base plugin absent â€” its CLI base command cannot be loaded, so
+		// none of the Pro commands can register. Skip instead of fataling.
+		return;
+	}
+
 	$wp_mcp_ai_pro_cli_dir = WP_MCP_AI_PRO_PATH . 'includes/cli/';
 
 	$wp_mcp_ai_pro_cli_files = array(
@@ -2787,6 +2803,25 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	}
 
 	unset( $wp_mcp_ai_pro_cli_dir, $wp_mcp_ai_pro_cli_files, $wp_mcp_ai_pro_cli_file, $wp_mcp_ai_pro_cli_path );
+}
+
+/**
+ * Register WP-CLI commands for the Pro addon.
+ *
+ * Loads and registers all Pro gap-fill CLI command classes when WP-CLI is active.
+ */
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	if ( defined( 'WP_MCP_AI_PATH' ) || $plugins_loaded_fired ) {
+		// Base plugin already loaded (correct activation order, or the
+		// combined-plugin scenario) â€” load immediately as before.
+		wp_mcp_ai_pro_load_cli_commands();
+	} else {
+		// This addon was included before the base plugin. Defer until
+		// plugins_loaded, by which point every plugin file has been
+		// included and the base constants exist. Prevents the
+		// "Undefined constant WP_MCP_AI_PATH" fatal under WP-CLI.
+		add_action( 'plugins_loaded', 'wp_mcp_ai_pro_load_cli_commands', 30 );
+	}
 }
 
 /**
@@ -2927,7 +2962,7 @@ add_action(
 	100
 );
 
-// Load Media Worker Sidecar Settings Page (eager — registers admin_menu hook).
+// Load Media Worker Sidecar Settings Page (eager â€” registers admin_menu hook).
 $media_worker_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-media-worker-settings.php';
 if ( file_exists( $media_worker_page ) ) {
 	require_once $media_worker_page;
