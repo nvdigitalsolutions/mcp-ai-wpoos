@@ -20,6 +20,10 @@
 - **Checkout form fields get real styling** — the email input, country selector, EU billing-address fields, Terms consent row, and the Stripe Payment Element mount point were previously unstyled browser defaults ("wireframe" look); they now use bordered WP-admin-style controls with focus rings, labelled-field spacing, a two-column address grid (street full-width, city + postal side by side), a card-style consent block with an accent-coloured checkbox, and a bordered Stripe element container
 - **Layout toggle fix** — the EU address/withdrawal rows now toggle to the stylesheet default ('' instead of inline `display: block`) so the CSS grid owns the layout; the truncated duplicate modal-style block at the end of `content-graph-admin.css` (a partial `.nvoos-cg-modal` rule cut off mid-declaration) was removed
 
+### Fixed — Stale asset caches after hotfix updates
+
+- **`Schema::assetVersion()` cache-busting** — every plugin-owned enqueued asset (admin page JS/CSS, commerce modal JS, remote-admin JS, frontend JS/CSS, and the vendored Cytoscape scripts) now uses the file's modification time as the `$ver` enqueue argument instead of `NVOOS_CONTENT_GRAPH_VERSION`. Any file change — including hotfixes deployed without a version bump — produces a new URL, so year-long browser/CDN caches (`Cache-Control: public, max-age=31536000`) can no longer keep serving a broken asset. Falls back to the plugin version when the file is missing
+
 ### New — JetEngine Custom Content Type sources selection
 
 - **CCT checkbox grid on the Sources tab** — a new "Custom Content Types (JetEngine)" section (between the post-type and external-table grids) lists every JetEngine CCT registered on the site — including the CCTs the NV oOS base+Pro plugin registers — with include/exclude checkboxes, so CCTs are finally selectable sources instead of silently all-in
