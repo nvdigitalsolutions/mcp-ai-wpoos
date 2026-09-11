@@ -159,8 +159,8 @@ You're not logged in, or the WordPress nonce has expired. Try:
 ## Related Functions
 
 - `wpMcpAiLoadSession()` - Load a saved transcript into the chat UI
-- See `docs/rest-api.md` for complete REST API documentation
-- See `docs/tool-reference.md` for chat transcript storage details
+- See `docs/reference/api/rest-api.md` for complete REST API documentation
+- See `docs/reference/tools/tool-reference.md` for chat transcript storage details
 
 ## Technical Details
 

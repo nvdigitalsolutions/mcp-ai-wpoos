@@ -1,4 +1,5 @@
 <?php
+// phpcs:ignoreFile Generic.Files.OneObjectStructurePerFile, Universal.Files.SeparateFunctionsFromOO.Mixed, Generic.CodeAnalysis.UnusedFunctionParameter, Squiz.PHP.CommentedOutCode -- Bootstrap file: mixes the PHPUnit 11 compat shim class with loader functions, mirroring the base plugin's tests/bootstrap.php.
 /**
  * PHPUnit bootstrap for NV oOS Content Graph.
  *
@@ -38,6 +39,39 @@ if ( ! file_exists( $_tests_dir . '/includes/functions.php' ) ) {
 
 // Give access to tests_add_filter() function.
 require_once $_tests_dir . '/includes/functions.php';
+
+// ============================================================
+// PHPUnit 11 Compatibility: parseTestMethodAnnotations() was
+// removed in PHPUnit 10+. The pinned wp-phpunit 7.0.2
+// abstract-testcase.php still calls it via this shim class.
+// Define it here (mirrors the base plugin's tests/bootstrap.php)
+// so the suite runs under both PHPUnit 9 and 11.
+// ============================================================
+if ( ! class_exists( 'WP_MCP_AI_PHPUnit11_Compat' ) ) {
+
+	/**
+	 * PHPUnit 11 compatibility shim.
+	 *
+	 * Provides a stub for the removed parseTestMethodAnnotations()
+	 * method, returning empty arrays.
+	 */
+	class WP_MCP_AI_PHPUnit11_Compat {
+
+		/**
+		 * Stub for removed PHPUnit 9 parseTestMethodAnnotations().
+		 *
+		 * @param string $cn Class name.
+		 * @param string $mn Optional method name.
+		 * @return array<string,array>
+		 */
+		public static function parseTestMethodAnnotations( $cn, $mn = null ) {
+			return array(
+				'class'  => array(),
+				'method' => array(),
+			);
+		}
+	}
+}
 
 /**
  * Manually load the plugin.

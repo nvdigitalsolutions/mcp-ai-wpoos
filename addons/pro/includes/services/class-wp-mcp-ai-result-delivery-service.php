@@ -21,6 +21,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/class-wp-mcp-ai-markdown-converter.php';
+
 if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 	/**
 	 * Result Delivery Service — static methods, no constructor state.
@@ -65,11 +67,44 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		const EMAIL_TEMPLATES = array( 'full', 'summary', 'error', 'response_only' );
 
 		/**
-		 * Valid template modes for chat / SMS delivery.
+		 * Valid presentation formats for email delivery.
+		 *
+		 * - `both`: HTML body rendered from Markdown plus a text/plain Markdown
+		 *   fallback (multipart/alternative — the industry-standard shape).
+		 * - `html`: HTML body only.
+		 * - `markdown`: plain-text Markdown only.
 		 *
 		 * @var string[]
 		 */
-		const CHAT_TEMPLATES = array( 'summary', 'error', 'response_only' );
+		const EMAIL_FORMATS = array( 'both', 'html', 'markdown' );
+
+		/**
+		 * Valid template modes for chat / SMS delivery.
+		 *
+		 * - `summary`: summary line + response excerpt.
+		 * - `error`: error message.
+		 * - `response_only`: the substantive response only.
+		 * - `full`: the complete report — summary, response, and structured
+		 *   data — mirroring the email `full` template.
+		 *
+		 * @var string[]
+		 */
+		const CHAT_TEMPLATES = array( 'summary', 'error', 'response_only', 'full' );
+
+		/**
+		 * Valid presentation formats for chat delivery.
+		 *
+		 * - `html`: Telegram HTML parse mode (<b>bold</b> etc.).
+		 * - `markdown`: *bold* markup — rendered natively by Slack, Discord,
+		 *   Teams, and WhatsApp; sent to Telegram as legacy Markdown parse mode.
+		 * - `markdown_v2`: Telegram MarkdownV2 parse mode (strict escaping).
+		 * - `plain`: no markup and no parse mode.
+		 *
+		 * Availability is per-channel (see {@see resolve_chat_format()}).
+		 *
+		 * @var string[]
+		 */
+		const CHAT_FORMATS = array( 'html', 'markdown', 'markdown_v2', 'plain' );
 
 		/**
 		 * Valid template modes for SMS delivery.
@@ -198,10 +233,10 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				}
 
 				$template = isset( $config['template'] ) ? (string) $config['template'] : 'summary';
-				$payload  = self::format_for_channel( $envelope, $channel, $template, $schedule, $action_log );
+				$payload  = self::format_for_channel( $envelope, $channel, $template, $schedule, $action_log, $config );
 
 				try {
-					$result = self::send_to_channel( $channel, $payload, $config );
+					$result = self::send_to_channel( $channel, $payload, $config, $schedule );
 				} catch ( Throwable $e ) {
 					$result = new WP_Error(
 						'result_delivery_exception',
@@ -267,9 +302,10 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		 * @param string              $template    Template mode (full, summary, short, error).
 		 * @param array               $schedule    Schedule record (for name, tags, etc.).
 		 * @param array<string,mixed> $action_log  Raw action log.
+		 * @param array               $config      Channel config (template, format, destination fields).
 		 * @return array Formatted payload keyed by channel needs (subject, body, html, etc.).
 		 */
-		protected static function format_for_channel( array $envelope, $channel, $template, array $schedule, array $action_log ) {
+		protected static function format_for_channel( array $envelope, $channel, $template, array $schedule, array $action_log, array $config = array() ) {
 			$schedule_name = isset( $schedule['name'] ) ? (string) $schedule['name'] : '';
 			$schedule_type = isset( $schedule['schedule_type'] ) ? (string) $schedule['schedule_type'] : 'task';
 			$summary       = isset( $envelope['summary'] ) ? (string) $envelope['summary'] : '';
@@ -304,19 +340,106 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				case 'webhook':
 					return self::format_webhook( $formatted, $envelope, $schedule, $action_log );
 
-				// Chat channels: slack, telegram, discord, teams, messenger, whatsapp.
+				// Chat channels: slack, telegram, discord, teams, messenger,
+				// whatsapp, google_chat.
 				default:
-					return self::format_chat( $formatted, $template );
+					$format = self::resolve_chat_format( $channel, $config );
+					return self::format_chat( $formatted, $template, $format, $envelope );
 			}
+		}
+
+		/**
+		 * Resolve the presentation format for a chat channel from its config.
+		 *
+		 * Each channel supports a subset of {@see CHAT_FORMATS}. Telegram is the
+		 * only channel with parse modes, so it defaults to `html` (best rendering
+		 * with the escaping already applied); WhatsApp, Slack, Discord, and Teams
+		 * render *bold* Markdown natively and default to `markdown`; Messenger and
+		 * Google Chat do not render markup and default to `plain`. Invalid or
+		 * missing values fall back to the channel default.
+		 *
+		 * @param string $channel Channel slug.
+		 * @param array  $config  Channel config from schedule['result_delivery'].
+		 * @return string Resolved format.
+		 */
+		protected static function resolve_chat_format( $channel, array $config ) {
+			$defaults = array(
+				'telegram'    => 'html',
+				'whatsapp'    => 'markdown',
+				'slack'       => 'markdown',
+				'discord'     => 'markdown',
+				'teams'       => 'markdown',
+				'messenger'   => 'plain',
+				'google_chat' => 'plain',
+			);
+			$allowed  = array(
+				'telegram'    => array( 'html', 'markdown', 'markdown_v2', 'plain' ),
+				'whatsapp'    => array( 'markdown', 'plain' ),
+				'slack'       => array( 'markdown', 'plain' ),
+				'discord'     => array( 'markdown', 'plain' ),
+				'teams'       => array( 'markdown', 'plain' ),
+				'messenger'   => array( 'plain' ),
+				'google_chat' => array( 'plain' ),
+			);
+
+			$default = isset( $defaults[ $channel ] ) ? $defaults[ $channel ] : 'markdown';
+			if ( ! isset( $allowed[ $channel ] ) ) {
+				return $default;
+			}
+
+			$format = isset( $config['format'] ) ? sanitize_key( (string) $config['format'] ) : '';
+			return in_array( $format, $allowed[ $channel ], true ) ? $format : $default;
+		}
+
+		/**
+		 * Map a chat presentation format to a Telegram parse_mode.
+		 *
+		 * @param string $format Chat presentation format.
+		 * @return string Telegram parse_mode, or empty string for plain text.
+		 */
+		protected static function telegram_parse_mode( $format ) {
+			switch ( $format ) {
+				case 'html':
+					return 'HTML';
+				case 'markdown':
+					return 'Markdown';
+				case 'markdown_v2':
+					return 'MarkdownV2';
+				default:
+					return '';
+			}
+		}
+
+		/**
+		 * Escape Telegram MarkdownV2 reserved characters.
+		 *
+		 * MarkdownV2 rejects messages containing unescaped reserved characters
+		 * (`_ * [ ] ( ) ~ ` > # + - = | { } . !`) with a 400 parse error, so
+		 * every content-derived value must be escaped before sending.
+		 *
+		 * @param string $text Raw text.
+		 * @return string Escaped text.
+		 */
+		protected static function escape_markdown_v2( $text ) {
+			$text = (string) $text;
+			foreach ( array( '_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!' ) as $char ) {
+				$text = str_replace( $char, '\\' . $char, $text );
+			}
+			return $text;
 		}
 
 		/**
 		 * Format for email delivery.
 		 *
+		 * The payload carries both a `plain` (Markdown source, used as the
+		 * text/plain multipart alternative) and an `html_body` (Markdown
+		 * rendered to email-safe HTML) so the sender can honour the channel's
+		 * presentation format setting.
+		 *
 		 * @param array  $shared   Common formatted fields.
 		 * @param array  $envelope Full envelope.
 		 * @param string $template Template mode.
-		 * @return array Email payload (subject, plain, html, template_mode).
+		 * @return array Email payload (subject, plain, html_body, template_mode).
 		 */
 		protected static function format_email( array $shared, array $envelope, $template ) {
 			$site_name = get_bloginfo( 'name' );
@@ -339,16 +462,27 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				$body = isset( $shared['response'] ) ? (string) $shared['response'] : $shared['summary'];
 			} elseif ( 'full' === $template && isset( $envelope['data'] ) ) {
 				// Full mode: include the response prominently, then the data structure.
-				$body     = $shared['summary'];
+				// Assistant-run envelopes derive the summary from the response's
+				// first words, so leading with the summary would print the header
+				// twice inside the delivered email.
 				$response = isset( $shared['response'] ) ? (string) $shared['response'] : '';
+				$summary  = (string) $shared['summary'];
+				$body     = '';
+				if ( '' !== $summary && ! self::response_starts_with_summary( $response, $summary ) ) {
+					$body = $summary;
+				}
 				if ( '' !== $response ) {
-					$body .= "\n\n---\n\n";
+					if ( '' !== $body ) {
+						$body .= "\n\n---\n\n";
+					}
 					/* translators: heading for the main result output in emails */
 					$body .= __( 'Results', 'mcp-ai-wpoos-pro' ) . ":\n";
 					$body .= $response;
 				}
 				if ( ! empty( $envelope['data'] ) ) {
-					$body .= "\n\n---\n\n";
+					if ( '' !== $body ) {
+						$body .= "\n\n---\n\n";
+					}
 					$body .= self::envelope_data_to_text( $envelope['data'] );
 				}
 			} else {
@@ -357,9 +491,16 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 
 			$manage_url = admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=orchestration' );
 
+			// Render the Markdown source to email-safe HTML so clients can
+			// display the formatted digest. The Markdown itself is kept as the
+			// multipart text/plain alternative — Markdown reads cleanly as
+			// plain text, satisfying the industry-standard fallback.
+			$html_body = WP_MCP_AI_Markdown_Converter::to_html( $body );
+
 			return array(
 				'subject'       => $subject,
 				'plain'         => $body,
+				'html_body'     => $html_body,
 				'summary'       => $shared['summary'],
 				'is_error'      => $is_error,
 				'template_mode' => $template,
@@ -370,48 +511,149 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		}
 
 		/**
+		 * Determine whether a response already opens with the summary text.
+		 *
+		 * Assistant-run envelopes derive their summary from the response's
+		 * first words via {@see wp_trim_words()}, so the `full` delivery
+		 * templates would otherwise print the header twice — once as the
+		 * summary and again at the top of the response. The comparison
+		 * normalises tags and whitespace (wp_trim_words() joins words with
+		 * single spaces) and ignores the summary's trailing ellipsis, which
+		 * never appears verbatim inside the response.
+		 *
+		 * @param string $response Substantive response text.
+		 * @param string $summary  Summary text.
+		 * @return bool True when the response begins with the summary.
+		 */
+		protected static function response_starts_with_summary( $response, $summary ) {
+			$normalize = static function ( $text ) {
+				$text = wp_strip_all_tags( (string) $text );
+				$text = preg_replace( '/\s+/u', ' ', trim( $text ) );
+				$text = preg_replace( '/…+\s*$/u', '', $text );
+				return trim( $text );
+			};
+
+			$response_norm = $normalize( $response );
+			$summary_norm  = $normalize( $summary );
+
+			if ( '' === $summary_norm || '' === $response_norm ) {
+				return false;
+			}
+
+			if ( 0 !== mb_strpos( $response_norm, $summary_norm ) ) {
+				return false;
+			}
+
+			// The summary must end on a word boundary: the next character in
+			// the response must not continue the word ("Word" must not match
+			// the start of "Wordsmith").
+			$next = mb_substr( $response_norm, mb_strlen( $summary_norm ), 1 );
+			return '' === $next || 1 !== preg_match( '/^[\p{L}\p{N}_]$/u', $next );
+		}
+
+		/**
 		 * Format for chat channel delivery (Slack, Teams, Discord, Telegram, etc.).
+		 *
+		 * Builds the message per presentation format: `html` uses <b> tags,
+		 * `markdown`/`markdown_v2` use *bold* markers, and `plain` adds no markup.
+		 * The `full` template appends the complete response and the structured
+		 * envelope data, mirroring the email `full` template.
 		 *
 		 * @param array  $shared   Common formatted fields.
 		 * @param string $template Template mode.
-		 * @return array Chat payload (message string).
+		 * @param string $format   Presentation format (html, markdown, markdown_v2, plain).
+		 * @param array  $envelope Full result envelope (used by the full template).
+		 * @return array Chat payload (message + Telegram parse_mode).
 		 */
-		protected static function format_chat( array $shared, $template ) {
+		protected static function format_chat( array $shared, $template, $format = 'markdown', array $envelope = array() ) {
 			$is_error = 'error' === $template;
 			$emoji    = $is_error ? "\u{26A0}\u{FE0F}" : "\u{2705}";
 			$site     = get_bloginfo( 'name' );
+			$format   = in_array( $format, self::CHAT_FORMATS, true ) ? $format : 'markdown';
 
-			$message  = $emoji . ' *' . esc_html( $shared['schedule_name'] ) . "*\n";
-			$message .= "\u{1F3E2} " . esc_html( $site ) . '  |  ';
-			$message .= "\u{1F4C5} " . esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $shared['generated_at'] ) ) . "\n";
+			// Escape content per format: plain keeps raw text, MarkdownV2 escapes
+			// Telegram reserved characters, everything else uses HTML escaping
+			// (valid inside both Telegram HTML and *-based Markdown markup).
+			$esc = static function ( $text ) use ( $format ) {
+				$text = (string) $text;
+				if ( 'plain' === $format ) {
+					return wp_strip_all_tags( $text );
+				}
+				if ( 'markdown_v2' === $format ) {
+					return self::escape_markdown_v2( wp_strip_all_tags( $text ) );
+				}
+				return esc_html( $text );
+			};
 
-			if ( 'response_only' === $template ) {
+			// Bold wrapper per format.
+			$bold = static function ( $text ) use ( $format ) {
+				if ( 'html' === $format ) {
+					return '<b>' . $text . '</b>';
+				}
+				if ( 'markdown' === $format || 'markdown_v2' === $format ) {
+					return '*' . $text . '*';
+				}
+				return $text;
+			};
+
+			$message  = $emoji . ' ' . $bold( $esc( $shared['schedule_name'] ) ) . "\n";
+			$message .= "\u{1F3E2} " . $esc( $site ) . '  |  ';
+			$message .= "\u{1F4C5} " . $esc( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $shared['generated_at'] ) ) . "\n";
+
+			if ( 'full' === $template ) {
+				// Full report: complete summary, substantive response, and the
+				// structured envelope data — mirrors the email full template.
+				// Assistant-run summaries are a trim of the response's first
+				// words, so skip the summary when the response already opens
+				// with it (otherwise the header prints twice).
+				$response = isset( $shared['response'] ) ? (string) $shared['response'] : '';
+				$summary  = (string) $shared['summary'];
+				if ( '' === $summary || ! self::response_starts_with_summary( $response, $summary ) ) {
+					$message .= "\n" . $esc( $summary );
+				}
+
+				if ( '' !== $response ) {
+					$message .= "\n\n" . $esc( '---' ) . "\n\n";
+					/* translators: heading for the main result output in chat messages */
+					$message .= $esc( __( 'Results', 'mcp-ai-wpoos-pro' ) ) . ":\n";
+					$message .= $esc( $response );
+				}
+
+				if ( ! empty( $envelope['data'] ) && is_array( $envelope['data'] ) ) {
+					$data_text = self::envelope_data_to_text( $envelope['data'] );
+					if ( '' !== trim( $data_text ) ) {
+						$message .= "\n\n" . $esc( '---' ) . "\n\n";
+						$message .= $esc( $data_text );
+					}
+				}
+			} elseif ( 'response_only' === $template ) {
 				// Deliver only the substantive AI/tool response.
 				$response = isset( $shared['response'] ) ? (string) $shared['response'] : '';
 				if ( '' !== $response ) {
-					$message .= "\n" . esc_html( $response );
+					$message .= "\n" . $esc( $response );
 				} else {
-					$message .= "\n" . esc_html( $shared['summary'] );
+					$message .= "\n" . $esc( $shared['summary'] );
 				}
 			} else {
 				$truncated = wp_trim_words( $shared['summary'], 60, '…' );
-				$message  .= "\n" . esc_html( $truncated );
+				$message  .= "\n" . $esc( $truncated );
 			}
 
-				// Include a response excerpt when available — this is the substantive
-				// output the schedule produced and is what recipients actually want.
-				// Only appended in summary/error modes; response_only already includes
-				// the full response as the main content.
-			if ( 'response_only' !== $template && 'error' !== $template ) {
+			// Include a response excerpt when available — this is the substantive
+			// output the schedule produced and is what recipients actually want.
+			// Only appended in summary/error modes; response_only already includes
+			// the full response and full includes it above.
+			if ( 'full' !== $template && 'response_only' !== $template && 'error' !== $template ) {
 				$response = isset( $shared['response'] ) ? (string) $shared['response'] : '';
 				if ( '' !== $response ) {
 					$excerpt  = wp_trim_words( $response, 80, '…' );
-					$message .= "\n\n\u{1F4CB} " . esc_html( $excerpt );
+					$message .= "\n\n\u{1F4CB} " . $esc( $excerpt );
 				}
 			}
 
 			return array(
-				'message' => $message,
+				'message'    => $message,
+				'parse_mode' => self::telegram_parse_mode( $format ),
 			);
 		}
 
@@ -542,20 +784,28 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		// -------------------------------------------------------------------------
 
 		/**
-		 * Resolve credentials for a delivery channel using a three-tier fallback.
+		 * Resolve credentials for a delivery channel using a four-tier fallback.
 		 *
 		 * Priority:
 		 *   1. connection_id → Remote Sites stored connection
 		 *   2. Inline {channel}_credentials in the channel config
 		 *   3. Chat Channels Toolkit global settings (via filter)
+		 *   4. First enabled Remote Sites connection of this channel's type
+		 *      (preferring one the schedule's assistant is assigned to)
+		 *
+		 * Tier 4 exists so schedules configured without an explicit credential
+		 * reference still deliver — the bot token lives on the Remote Sites
+		 * connection that also powers interactive chat, so reusing it is
+		 * predictable and avoids credential duplication.
 		 *
 		 * @since 1.0.0
 		 *
-		 * @param string $channel Channel slug (slack, telegram, etc.).
-		 * @param array  $config  Channel config from schedule['result_delivery'].
+		 * @param string $channel  Channel slug (slack, telegram, etc.).
+		 * @param array  $config   Channel config from schedule['result_delivery'].
+		 * @param array  $schedule Schedule record (for assistant-scoped preference).
 		 * @return array Empty array if no credentials resolved, or credential map keyed by channel.
 		 */
-		protected static function resolve_channel_credentials( $channel, array $config ) {
+		protected static function resolve_channel_credentials( $channel, array $config, array $schedule = array() ) {
 			// 1. Try Remote Sites connection reference.
 			if ( ! empty( $config['connection_id'] ) ) {
 				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -563,26 +813,110 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 					if ( is_array( $connection ) && ! empty( $connection ) ) {
 						$creds = self::extract_credentials_from_connection( $channel, $connection );
 						if ( ! empty( $creds ) ) {
-							return $creds;
+							$creds = self::merge_channel_destination_fields( $channel, $creds, $config );
+							if ( ! empty( $creds ) ) {
+								return $creds;
+							}
 						}
 					}
 				}
 			}
 
 			// 2. Try inline credentials stored under the canonical key.
-			if ( isset( $config[ $channel . '_credentials' ] ) && is_array( $config[ $channel . '_credentials' ] ) ) {
-				return $config[ $channel . '_credentials' ];
+			if ( isset( $config[ $channel . '_credentials' ] ) ) {
+				$inline = self::normalize_channel_credentials( $config[ $channel . '_credentials' ] );
+				if ( ! empty( $inline ) ) {
+					return $inline;
+				}
 			}
 
 			// 3. Allow integrators to supply global defaults.
-			return apply_filters( 'wp_mcp_ai_delivery_channel_default_credentials', array(), $channel, $config );
+			$defaults = apply_filters( 'wp_mcp_ai_delivery_channel_default_credentials', array(), $channel, $config );
+			if ( ! empty( $defaults ) ) {
+				return $defaults;
+			}
+
+			// 4. Fall back to an enabled Remote Sites connection of this
+			// channel's type. Prefer the connection the schedule's assistant
+			// is assigned to; otherwise use the first enabled match.
+			$conn_type = self::get_channel_connection_type( $channel );
+			if ( '' !== $conn_type && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				$assistant_id   = isset( $schedule['assistant_config']['assistant_id'] ) ? absint( $schedule['assistant_config']['assistant_id'] ) : 0;
+				$fallback_creds = null;
+
+				foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $connection ) {
+					if ( ! is_array( $connection ) || empty( $connection['enabled'] ) ) {
+						continue;
+					}
+
+					$stored_type = isset( $connection['connection_type'] ) ? sanitize_key( (string) $connection['connection_type'] ) : '';
+					if ( $stored_type !== $conn_type ) {
+						continue;
+					}
+
+					$creds = self::extract_credentials_from_connection( $channel, $connection );
+					if ( empty( $creds ) ) {
+						continue;
+					}
+
+					// Prefer the connection the schedule's assistant is assigned to.
+					if ( $assistant_id > 0 && ! empty( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] ) ) {
+						$assigned = array_map( 'absint', $connection['assigned_assistant_ids'] );
+						if ( in_array( $assistant_id, $assigned, true ) ) {
+							return self::merge_channel_destination_fields( $channel, $creds, $config );
+						}
+					}
+
+					if ( null === $fallback_creds ) {
+						$fallback_creds = $creds;
+					}
+				}
+
+				if ( null !== $fallback_creds ) {
+					return self::merge_channel_destination_fields( $channel, $fallback_creds, $config );
+				}
+			}
+
+			return array();
+		}
+
+		/**
+		 * Map a delivery channel slug to its Remote Sites connection type.
+		 *
+		 * Chat channels are stored under slightly different type keys in the
+		 * Remote Site Manager (e.g. messenger → facebook_messenger, teams →
+		 * microsoft_teams), so a single mapping is shared by credential
+		 * resolution and diagnostics.
+		 *
+		 * @since 1.1.75
+		 *
+		 * @param string $channel Delivery channel slug.
+		 * @return string Remote Sites connection type, or empty string when the
+		 *                channel has no Remote Sites equivalent.
+		 */
+		protected static function get_channel_connection_type( $channel ) {
+			$map = array(
+				'telegram'    => 'telegram',
+				'slack'       => 'slack',
+				'discord'     => 'discord',
+				'teams'       => 'microsoft_teams',
+				'messenger'   => 'facebook_messenger',
+				'whatsapp'    => 'whatsapp',
+				'google_chat' => 'google_chat',
+			);
+
+			return isset( $map[ $channel ] ) ? $map[ $channel ] : '';
 		}
 
 		/**
 		 * Extract delivery credentials from a Remote Sites connection record.
 		 *
-		 * Maps the connection-type-agnostic storage to the per-channel shape
-		 * expected by unified_channel_broadcast.
+		 * Maps the real Remote Sites storage schema to the per-channel shape
+		 * expected by unified_channel_broadcast. Tokens are stored encrypted
+		 * under `api_key` (Slack, Discord, Telegram, Messenger, WhatsApp) or
+		 * `token` (Microsoft Teams), so they are decrypted here. Destination
+		 * fields (chat/channel IDs) live on the schedule's channel config and
+		 * are merged in by {@see merge_channel_destination_fields()}.
 		 *
 		 * @since 1.0.0
 		 *
@@ -591,35 +925,35 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		 * @return array Credential map for this channel, or empty array.
 		 */
 		protected static function extract_credentials_from_connection( $channel, array $connection ) {
+			$decrypt = function ( $key ) use ( $connection ) {
+				if ( empty( $connection[ $key ] ) ) {
+					return '';
+				}
+
+				// decrypt_value() returns plaintext values untouched, so this is
+				// safe for both encrypted records and legacy plaintext ones.
+				return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( (string) $connection[ $key ] );
+			};
+
 			$map = array(
-				'slack'       => array(
-					'token'   => isset( $connection['slack_bot_token'] ) ? (string) $connection['slack_bot_token'] : '',
-					'channel' => isset( $connection['slack_default_channel'] ) ? (string) $connection['slack_default_channel'] : '',
+				'slack'     => array(
+					'token' => $decrypt( 'api_key' ),
 				),
-				'telegram'    => array(
-					'token'   => isset( $connection['telegram_bot_token'] ) ? (string) $connection['telegram_bot_token'] : '',
-					'chat_id' => isset( $connection['telegram_chat_id'] ) ? (string) $connection['telegram_chat_id'] : '',
+				'telegram'  => array(
+					'token' => $decrypt( 'api_key' ),
 				),
-				'discord'     => array(
-					'token'      => isset( $connection['discord_bot_token'] ) ? (string) $connection['discord_bot_token'] : '',
-					'channel_id' => isset( $connection['discord_channel_id'] ) ? (string) $connection['discord_channel_id'] : '',
+				'discord'   => array(
+					'token' => $decrypt( 'api_key' ),
 				),
-				'teams'       => array(
-					'token'      => isset( $connection['teams_token'] ) ? (string) $connection['teams_token'] : '',
-					'team_id'    => isset( $connection['teams_team_id'] ) ? (string) $connection['teams_team_id'] : '',
-					'channel_id' => isset( $connection['teams_channel_id'] ) ? (string) $connection['teams_channel_id'] : '',
+				'teams'     => array(
+					'token' => $decrypt( 'token' ),
 				),
-				'messenger'   => array(
-					'access_token' => isset( $connection['messenger_access_token'] ) ? (string) $connection['messenger_access_token'] : '',
-					'recipient_id' => isset( $connection['messenger_recipient_id'] ) ? (string) $connection['messenger_recipient_id'] : '',
+				'messenger' => array(
+					'access_token' => $decrypt( 'api_key' ),
 				),
-				'whatsapp'    => array(
-					'access_token'    => isset( $connection['whatsapp_access_token'] ) ? (string) $connection['whatsapp_access_token'] : '',
-					'phone_number_id' => isset( $connection['whatsapp_phone_number_id'] ) ? (string) $connection['whatsapp_phone_number_id'] : '',
-					'to'              => isset( $connection['whatsapp_to'] ) ? (string) $connection['whatsapp_to'] : '',
-				),
-				'google_chat' => array(
-					'webhook_url' => isset( $connection['google_chat_webhook_url'] ) ? (string) $connection['google_chat_webhook_url'] : '',
+				'whatsapp'  => array(
+					'access_token'    => $decrypt( 'api_key' ),
+					'phone_number_id' => isset( $connection['phone_number_id'] ) ? (string) $connection['phone_number_id'] : '',
 				),
 			);
 
@@ -638,6 +972,44 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			return array();
 		}
 
+		/**
+		 * Merge per-channel destination fields from the channel config into
+		 * credentials resolved from a Remote Sites connection.
+		 *
+		 * Connections store the secret (token) but not the delivery destination,
+		 * which the user supplies per-schedule (e.g. the Telegram `chat_id`
+		 * field in the Schedule Manager edit modal).
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $channel Channel slug.
+		 * @param array  $creds   Credentials resolved from the connection.
+		 * @param array  $config  Channel config from schedule['result_delivery'].
+		 * @return array Merged credential map.
+		 */
+		protected static function merge_channel_destination_fields( $channel, array $creds, array $config ) {
+			$fields = array(
+				'telegram'  => array( 'chat_id' ),
+				'slack'     => array( 'channel' ),
+				'discord'   => array( 'channel_id' ),
+				'teams'     => array( 'team_id', 'channel_id' ),
+				'messenger' => array( 'recipient_id' ),
+				'whatsapp'  => array( 'to' ),
+			);
+
+			if ( ! isset( $fields[ $channel ] ) ) {
+				return $creds;
+			}
+
+			foreach ( $fields[ $channel ] as $field ) {
+				if ( empty( $creds[ $field ] ) && ! empty( $config[ $field ] ) ) {
+					$creds[ $field ] = sanitize_text_field( $config[ $field ] );
+				}
+			}
+
+			return $creds;
+		}
+
 		// -------------------------------------------------------------------------
 		// Senders — payload → channel API
 		// -------------------------------------------------------------------------
@@ -645,12 +1017,13 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		/**
 		 * Send a formatted payload to the appropriate channel backend.
 		 *
-		 * @param string $channel Channel slug.
-		 * @param array  $payload Formatted payload.
-		 * @param array  $config  Channel config from schedule['result_delivery'].
+		 * @param string $channel  Channel slug.
+		 * @param array  $payload  Formatted payload.
+		 * @param array  $config   Channel config from schedule['result_delivery'].
+		 * @param array  $schedule Schedule record (for assistant-scoped credential fallback).
 		 * @return true|WP_Error True on success, WP_Error on failure.
 		 */
-		protected static function send_to_channel( $channel, array $payload, array $config ) {
+		protected static function send_to_channel( $channel, array $payload, array $config, array $schedule = array() ) {
 			switch ( $channel ) {
 				case 'email':
 					return self::send_email( $payload, $config );
@@ -675,7 +1048,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				case 'messenger':
 				case 'whatsapp':
 				case 'google_chat':
-					return self::send_chat( $channel, $payload, $config );
+					return self::send_chat( $channel, $payload, $config, $schedule );
 
 				default:
 					return new WP_Error(
@@ -689,8 +1062,13 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		/**
 		 * Send email via Nodemailer (preferred) or wp_mail fallback.
 		 *
-		 * @param array $payload Formatted email payload.
-		 * @param array $config  Channel config (must contain 'to').
+		 * Honours the channel's `format` setting (EMAIL_FORMATS):
+		 * - `both` (default): HTML body + text/plain Markdown alternative.
+		 * - `html`: HTML body only.
+		 * - `markdown`: text/plain Markdown only.
+		 *
+		 * @param array $payload Formatted email payload (subject, plain, html_body).
+		 * @param array $config  Channel config (must contain 'to'; optional 'format').
 		 * @return true|WP_Error
 		 */
 		protected static function send_email( array $payload, array $config ) {
@@ -699,25 +1077,30 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				return new WP_Error( 'missing_email_recipient', __( 'No email recipient configured.', 'mcp-ai-wpoos-pro' ) );
 			}
 
-			$subject  = isset( $payload['subject'] ) ? (string) $payload['subject'] : __( 'Schedule Result', 'mcp-ai-wpoos-pro' );
-			$plain    = isset( $payload['plain'] ) ? (string) $payload['plain'] : '';
-			$is_error = ! empty( $payload['is_error'] );
+			$subject = isset( $payload['subject'] ) ? (string) $payload['subject'] : __( 'Schedule Result', 'mcp-ai-wpoos-pro' );
+			$plain   = isset( $payload['plain'] ) ? (string) $payload['plain'] : '';
+			$format  = self::resolve_email_format( $config );
 
-			// Build HTML body (MJML when available).
-			$html = self::build_email_html( $payload );
+			// Build the HTML body (MJML when available) for html/both formats.
+			$html = 'markdown' === $format ? '' : self::build_email_html( $payload );
 
-			// Try Nodemailer first.
+			// Try Nodemailer first. Supplying both html and text lets it emit
+			// a multipart/alternative message (the industry-standard shape).
 			if ( class_exists( 'WP_MCP_AI_Nodemailer_Service' ) ) {
 				$nodemailer = new WP_MCP_AI_Nodemailer_Service();
 				if ( $nodemailer->is_available() ) {
-					$result = $nodemailer->send_email(
-						array(
-							'to'      => $to,
-							'subject' => $subject,
-							'html'    => $html,
-							'text'    => $plain,
-						)
+					$email_args = array(
+						'to'      => $to,
+						'subject' => $subject,
 					);
+					if ( 'markdown' !== $format && '' !== $html ) {
+						$email_args['html'] = $html;
+					}
+					if ( 'html' !== $format && '' !== $plain ) {
+						$email_args['text'] = $plain;
+					}
+
+					$result = $nodemailer->send_email( $email_args );
 					if ( ! is_wp_error( $result ) ) {
 						return true;
 					}
@@ -725,51 +1108,134 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				}
 			}
 
-			// wp_mail fallback.
-			$sent = wp_mail(
-				$to,
-				$subject,
-				$html,
-				array( 'Content-Type: text/html; charset=UTF-8' )
-			);
+			// wp_mail fallback. wp_mail has no built-in multipart/alternative
+			// support, so send a single body per the selected format.
+			if ( 'markdown' === $format ) {
+				$sent = wp_mail(
+					$to,
+					$subject,
+					$plain,
+					array( 'Content-Type: text/plain; charset=UTF-8' )
+				);
+			} else {
+				$sent = wp_mail(
+					$to,
+					$subject,
+					$html,
+					array( 'Content-Type: text/html; charset=UTF-8' )
+				);
+			}
 
 			return $sent ? true : new WP_Error( 'wp_mail_failed', __( 'wp_mail() returned false.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		/**
-		 * Send a message to chat channels via unified_channel_broadcast tool.
+		 * Resolve the email presentation format from a channel config.
 		 *
-		 * @param string $channel Channel slug (slack, telegram, etc.).
-		 * @param array  $payload Formatted chat payload (must contain 'message').
-		 * @param array  $config  Channel config.
-		 * @return true|WP_Error
+		 * Defaults to `both` so existing schedules (saved without a format
+		 * field) immediately benefit from properly rendered HTML emails with a
+		 * plain-text fallback.
+		 *
+		 * @param array $config Channel config from schedule['result_delivery'].
+		 * @return string One of self::EMAIL_FORMATS.
 		 */
-		protected static function send_chat( $channel, array $payload, array $config ) {
-			if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
-				return new WP_Error( 'no_tool_registry', __( 'Tool registry not available.', 'mcp-ai-wpoos-pro' ) );
+		protected static function resolve_email_format( array $config ) {
+			return isset( $config['format'] ) && in_array( $config['format'], self::EMAIL_FORMATS, true )
+				? $config['format']
+				: 'both';
+		}
+
+		/**
+		 * Normalize channel credentials into the array shape expected by the
+		 * unified_channel_broadcast tool.
+		 *
+		 * The Schedule Manager edit modal stores inline credentials as raw
+		 * strings (e.g. a JSON literal or a bare bot token). Passing those
+		 * through to the broadcast tool triggers a TypeError because its
+		 * per-channel credentials parameter is type-hinted as an array. This
+		 * helper coerces JSON strings into arrays and rejects any other
+		 * non-array value with an empty array so callers fail gracefully with
+		 * a descriptive error instead of a fatal.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param mixed $raw Raw credentials value from a channel config.
+		 * @return array Credential map, empty when the value is not a valid array.
+		 */
+		protected static function normalize_channel_credentials( $raw ) {
+			if ( is_array( $raw ) ) {
+				return $raw;
 			}
 
-			$tool = WP_MCP_AI_Tool_Registry::get_instance()->get_tool( 'unified_channel_broadcast' );
-			if ( ! $tool ) {
-				return new WP_Error( 'no_broadcast_tool', __( 'Unified channel broadcast tool not available.', 'mcp-ai-wpoos-pro' ) );
+			if ( is_string( $raw ) && '' !== trim( $raw ) ) {
+				$decoded = json_decode( $raw, true );
+				if ( is_array( $decoded ) ) {
+					return $decoded;
+				}
+			}
+
+			return array();
+		}
+
+		/**
+		 * Send a message to chat channels via unified_channel_broadcast tool.
+		 *
+		 * @param string $channel  Channel slug (slack, telegram, etc.).
+		 * @param array  $payload  Formatted chat payload (must contain 'message').
+		 * @param array  $config   Channel config.
+		 * @param array  $schedule Schedule record (for credential fallback and user context).
+		 * @return true|WP_Error
+		 */
+		protected static function send_chat( $channel, array $payload, array $config, array $schedule = array() ) {
+			if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+				return new WP_Error( 'no_tool_registry', __( 'Tool registry not available.', 'mcp-ai-wpoos-pro' ) );
 			}
 
 			$message = isset( $payload['message'] ) ? (string) $payload['message'] : '';
 
 			/*
-			 * Resolve credentials using three-tier fallback:
+			 * Resolve credentials using four-tier fallback:
 			 *   1. connection_id → Remote Sites connection.
 			 *   2. Inline {channel}_credentials in config.
 			 *   3. Chat Channels Toolkit global settings (via filter).
+			 *   4. First enabled Remote Sites connection of this channel's type.
 			 */
 			$credentials = array();
-			$resolved    = self::resolve_channel_credentials( $channel, $config );
+			$resolved    = self::resolve_channel_credentials( $channel, $config, $schedule );
 			if ( ! empty( $resolved ) ) {
-				$credentials[ $channel ] = $resolved;
-			} elseif ( isset( $config['credentials'] ) && is_array( $config['credentials'] ) ) {
-				$credentials[ $channel ] = $config['credentials'];
+				$credentials[ $channel ] = self::normalize_channel_credentials( $resolved );
+			} elseif ( isset( $config['credentials'] ) ) {
+				$credentials[ $channel ] = self::normalize_channel_credentials( $config['credentials'] );
 			} elseif ( isset( $config[ $channel . '_credentials' ] ) ) {
-				$credentials[ $channel ] = $config[ $channel . '_credentials' ];
+				$credentials[ $channel ] = self::normalize_channel_credentials( $config[ $channel . '_credentials' ] );
+			}
+
+			if ( empty( $credentials[ $channel ] ) ) {
+				return new WP_Error(
+					'missing_channel_credentials',
+					sprintf(
+						/* translators: %s: channel name */
+						__( 'No valid credentials found for the %s channel.', 'mcp-ai-wpoos-pro' ),
+						$channel
+					),
+					self::build_credential_diagnostics( $channel, $config )
+				);
+			}
+
+			if ( 'telegram' === $channel ) {
+				$telegram_creds = $credentials[ $channel ];
+				if ( empty( $telegram_creds['token'] ) || empty( $telegram_creds['chat_id'] ) ) {
+					return new WP_Error(
+						'missing_telegram_credentials',
+						__( 'Token and chat_id are required for Telegram delivery.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return self::send_telegram_direct( $payload, $telegram_creds, $schedule );
+			}
+
+			$tool = WP_MCP_AI_Tool_Registry::get_instance()->get_tool( 'unified_channel_broadcast' );
+			if ( ! $tool ) {
+				return new WP_Error( 'no_broadcast_tool', __( 'Unified channel broadcast tool not available.', 'mcp-ai-wpoos-pro' ) );
 			}
 
 			$result = $tool->execute(
@@ -778,7 +1244,10 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 					'channels'    => array( $channel ),
 					'credentials' => $credentials,
 				),
-				array( 'source' => 'pro_schedule_manager_result_delivery' )
+				array(
+					'source'  => 'pro_schedule_manager_result_delivery',
+					'user_id' => isset( $schedule['created_by'] ) ? absint( $schedule['created_by'] ) : 0,
+				)
 			);
 
 			if ( is_wp_error( $result ) ) {
@@ -797,6 +1266,94 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			}
 
 			return true;
+		}
+
+		/**
+		 * Send a Telegram message directly via the dedicated tool.
+		 *
+		 * Keeps the selected parse_mode (HTML / Markdown / MarkdownV2) intact,
+		 * which the unified broadcast path cannot do because it sanitizes
+		 * messages to plain text. Uses the same acting-user context as
+		 * {@see send_chat()} so the capability waiver applies.
+		 *
+		 * @param array $payload Formatted chat payload (message + parse_mode).
+		 * @param array $creds   Resolved Telegram credentials (token + chat_id).
+		 * @param array $schedule Schedule record (for acting-user context).
+		 * @return true|WP_Error
+		 */
+		protected static function send_telegram_direct( array $payload, array $creds, array $schedule = array() ) {
+			if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+				return new WP_Error( 'no_tool_registry', __( 'Tool registry not available.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$tool = WP_MCP_AI_Tool_Registry::get_instance()->get_tool( 'send_telegram_message' );
+			if ( ! $tool ) {
+				return new WP_Error( 'no_telegram_tool', __( 'Telegram message tool not available.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$args = array(
+				'token'   => $creds['token'],
+				'chat_id' => $creds['chat_id'],
+				'text'    => isset( $payload['message'] ) ? (string) $payload['message'] : '',
+			);
+
+			$parse_mode = isset( $payload['parse_mode'] ) ? (string) $payload['parse_mode'] : '';
+			if ( '' !== $parse_mode && in_array( $parse_mode, array( 'HTML', 'Markdown', 'MarkdownV2' ), true ) ) {
+				$args['parse_mode'] = $parse_mode;
+			}
+
+			return $tool->execute(
+				$args,
+				array(
+					'source'  => 'pro_schedule_manager_result_delivery',
+					'user_id' => isset( $schedule['created_by'] ) ? absint( $schedule['created_by'] ) : 0,
+				)
+			);
+		}
+
+		/**
+		 * Build diagnostics describing why a channel's credentials did not resolve.
+		 *
+		 * Attached as WP_Error data so the delivery warning log tells the admin
+		 * exactly which tier failed and whether a usable Remote Sites connection
+		 * exists at all. Never contains secret material.
+		 *
+		 * @since 1.1.75
+		 *
+		 * @param string $channel Channel slug.
+		 * @param array  $config  Channel config from schedule['result_delivery'].
+		 * @return array<string,mixed> Diagnostic map.
+		 */
+		protected static function build_credential_diagnostics( $channel, array $config ) {
+			$diagnostics = array(
+				'channel'                      => $channel,
+				'connection_id'                => isset( $config['connection_id'] ) ? sanitize_text_field( (string) $config['connection_id'] ) : '',
+				'has_inline_credentials'       => ! empty( $config[ $channel . '_credentials' ] ) || ! empty( $config['credentials'] ),
+				'has_destination_field'        => isset( $config['chat_id'] ) ? ! empty( $config['chat_id'] ) : false,
+				'matching_connections'         => 0,
+				'enabled_matching_connections' => 0,
+			);
+
+			$conn_type = self::get_channel_connection_type( $channel );
+			if ( '' !== $conn_type && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $connection ) {
+					if ( ! is_array( $connection ) ) {
+						continue;
+					}
+
+					$stored_type = isset( $connection['connection_type'] ) ? sanitize_key( (string) $connection['connection_type'] ) : '';
+					if ( $stored_type !== $conn_type ) {
+						continue;
+					}
+
+					++$diagnostics['matching_connections'];
+					if ( ! empty( $connection['enabled'] ) && ! empty( $connection['api_key'] ) ) {
+						++$diagnostics['enabled_matching_connections'];
+					}
+				}
+			}
+
+			return $diagnostics;
 		}
 
 		/**
@@ -1025,9 +1582,10 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		protected static function log_delivery( $schedule_id, $channel, $result, $is_success ) {
 			$is_ok  = true === $result || ! is_wp_error( $result );
 			$status = array(
-				'channel' => $channel,
-				'success' => $is_ok,
-				'error'   => is_wp_error( $result ) ? $result->get_error_message() : '',
+				'channel'    => $channel,
+				'success'    => $is_ok,
+				'error'      => is_wp_error( $result ) ? $result->get_error_message() : '',
+				'error_data' => is_wp_error( $result ) ? $result->get_error_data() : null,
 			);
 
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
@@ -1185,7 +1743,13 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			$site_name    = isset( $payload['site_name'] ) ? $payload['site_name'] : get_bloginfo( 'name' );
 			$schedule     = isset( $payload['schedule_name'] ) ? $payload['schedule_name'] : '';
 			$body_text    = isset( $payload['plain'] ) ? $payload['plain'] : '';
-			$manage_url   = isset( $payload['manage_url'] ) ? $payload['manage_url'] : admin_url();
+			// Prefer the pre-rendered Markdown→HTML body; fall back to the
+			// legacy nl2br(esc_html()) rendering for callers that only supply
+			// a plain body.
+			$body_html  = isset( $payload['html_body'] ) && '' !== (string) $payload['html_body']
+				? (string) $payload['html_body']
+				: nl2br( esc_html( $body_text ) );
+			$manage_url = isset( $payload['manage_url'] ) ? $payload['manage_url'] : admin_url();
 
 			// Try MJML first.
 			if ( class_exists( 'WP_MCP_AI_MJML_Service' ) ) {
@@ -1200,7 +1764,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 					$mjml_src .= '</mj-text></mj-column></mj-section>';
 					$mjml_src .= '<mj-section background-color="#ffffff" padding="20px 24px">';
 					$mjml_src .= '<mj-column><mj-text font-size="14px" color="#333">';
-					$mjml_src .= nl2br( esc_html( $body_text ) );
+					$mjml_src .= $body_html;
 					$mjml_src .= '</mj-text></mj-column></mj-section>';
 					$mjml_src .= '<mj-section background-color="#ffffff" padding="0 24px 20px">';
 					$mjml_src .= '<mj-column>';
@@ -1223,7 +1787,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			$html .= '</div>';
 			$html .= '<div style="padding:20px;background:#fff">';
 			$html .= '<p style="font-size:13px;color:#888;margin:0 0 12px">' . esc_html( $site_name ) . '</p>';
-			$html .= '<div style="font-size:14px;line-height:1.6">' . nl2br( esc_html( $body_text ) ) . '</div>';
+			$html .= '<div style="font-size:14px;line-height:1.6">' . $body_html . '</div>';
 			$html .= '</div>';
 			$html .= '<div style="padding:12px 20px;background:#f9f9f9">';
 			$html .= '<a href="' . esc_url( $manage_url ) . '" style="color:#2271b1">' . esc_html__( 'View Dashboard', 'mcp-ai-wpoos-pro' ) . '</a>';
@@ -1373,5 +1937,46 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 
 			return $md;
 		}
+
+		/**
+		 * Relax the chat delivery tool capability checks for scheduled deliveries.
+		 *
+		 * Applies to both unified_channel_broadcast and send_telegram_message
+		 * (used directly when a Telegram parse mode is configured).
+		 *
+		 * Result delivery runs inside WP cron, where no user is logged in, so the
+		 * tools' manage_options gate would otherwise reject every scheduled chat
+		 * delivery. The schedule itself was configured by an administrator
+		 * (manage_options) at creation time and the outgoing message is
+		 * system-generated, so the per-user capability check is waived for this
+		 * internal delivery context only.
+		 *
+		 * @since 1.1.75
+		 *
+		 * @param string|false $required Required capability (manage_options by default).
+		 * @param array        $context  Execution context from the tool call.
+		 * @return string|false
+		 */
+		public static function broadcast_capability_for_scheduled_delivery( $required, $context ) {
+			if ( isset( $context['source'] ) && 'pro_schedule_manager_result_delivery' === $context['source'] ) {
+				return false;
+			}
+
+			return $required;
+		}
 	}
+
+	add_filter(
+		'wp_mcp_ai_unified_channel_broadcast_capability',
+		array( 'WP_MCP_AI_Result_Delivery_Service', 'broadcast_capability_for_scheduled_delivery' ),
+		10,
+		2
+	);
+
+	add_filter(
+		'wp_mcp_ai_send_telegram_message_capability',
+		array( 'WP_MCP_AI_Result_Delivery_Service', 'broadcast_capability_for_scheduled_delivery' ),
+		10,
+		2
+	);
 }

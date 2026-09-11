@@ -1,5 +1,41 @@
 # NV oOS Docs Hub — Changelog
 
+## 0.4.3 — 2026-09-07
+
+WordPress.org submission preparation pass. No runtime behavior changes for
+existing installations.
+
+### Changed
+- **Settings page ships no inline `<script>` blocks.** The rebuild panel,
+  dirty-state tracking, broken-link fix buttons, and JSON export/import
+  scripts moved from inline echoes in `render_page()` to the static
+  `assets/admin/settings-page.js` asset (enqueued + localized on the
+  settings page only), following the wp.org review feedback pattern applied
+  to the base plugin. Side fix: dirty-state tracking now actually binds —
+  the old inline block executed before the `options.php` form existed in
+  the DOM and silently no-oped.
+- **Text-domain consistency.** The cron-status job-source string now uses
+  the plugin's own `nvoos-docs-hub` text domain (was `mcp-ai-wpoos`), so it
+  translates in standalone installs.
+- **Readme tags trimmed** to directory-standard tags (`documentation`,
+  `markdown`, `github`).
+
+### Added
+- **`== External Services ==` readme section** disclosing the two GitHub
+  hosts the plugin contacts (`api.github.com`, `raw.githubusercontent.com`)
+  with Terms-of-Service and Privacy links.
+- **Translation template** `languages/nvoos-docs-hub.pot` generated from
+  the plugin's translatable strings (WP-CLI `i18n make-pot`).
+
+### Build & CI
+- Distribution ZIPs (bin script + CI assemble step) now exclude dev-only
+  paths: `vendor/`, `composer.json`, `composer.lock`, `docs/`,
+  `.wordpress-org/`, and `.distignore` — previous builds could bundle the
+  dev autoload (PHPUnit) with the plugin.
+- New `plugin-check` job in `build-spa-addons.yml` runs the official
+  `wp plugin check` against the built docs-hub ZIP; ERROR-severity findings
+  fail the job (mirrors the base plugin's gate).
+
 ## 0.4.2 — 2026-09-03
 
 ### Fixed

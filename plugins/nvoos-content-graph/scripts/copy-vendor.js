@@ -29,9 +29,30 @@ const vendorMap = [
 	},
 ];
 
+// MIT license texts must accompany the bundled code (readme.txt
+// == Third-Party Libraries == references these copies).
+const licenseMap = [
+	{
+		src:  'node_modules/cytoscape/LICENSE',
+		dest: 'assets/vendor/cytoscape/LICENSE',
+	},
+	{
+		src:  'node_modules/cytoscape-fcose/LICENSE',
+		dest: 'assets/vendor/cytoscape-fcose/LICENSE',
+	},
+	{
+		src:  'node_modules/layout-base/LICENSE',
+		dest: 'assets/vendor/layout-base/LICENSE',
+	},
+	{
+		src:  'node_modules/cose-base/LICENSE',
+		dest: 'assets/vendor/cose-base/LICENSE',
+	},
+];
+
 let errors = 0;
 
-for (const { src, dest } of vendorMap) {
+for (const { src, dest } of [ ...vendorMap, ...licenseMap ]) {
 	const srcPath  = path.join(ROOT, src);
 	const destPath = path.join(ROOT, dest);
 	const destDir  = path.dirname(destPath);

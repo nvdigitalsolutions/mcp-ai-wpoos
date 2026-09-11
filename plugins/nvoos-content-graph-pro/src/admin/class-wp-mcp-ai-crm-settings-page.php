@@ -1,0 +1,1590 @@
+<?php
+/**
+ * CRM & Email Marketing Toolkit Settings Page (ecosystem port — Wave F2, MCP settings-base slice).
+ *
+ * Ported from the base Pro addon's `addons/pro/includes/admin/class-wp-mcp-ai-crm-settings-page.php` for the standalone
+ * `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro
+ * addon owns the class in monolith installs — the addon's autoloader
+ * skips its copy when `WP_MCP_AI_PRO_PATH` is defined (see the plugin
+ * entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain
+ * `nvoos-content-graph-pro`; path refs resolve from
+ * `NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/'`. The remote-site-manager
+ * require is file-gated (F6 forward-reference) and the research-add
+ * probe resolves to the not-yet-ported `src/research-add/` path — both
+ * degrade through the byte-identical `file_exists`/`class_exists`
+ * guards.
+ *
+ * @package NvoosContentGraphPro
+ * @since 1.1.0
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/admin/class-wp-mcp-ai-toolkit-settings-base.php';
+
+/**
+ * CRM & Email Marketing Toolkit Settings Page Class
+ */
+class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
+
+	/**
+	 * Constructor
+	 */
+	public function __construct() {
+		$this->toolkit_slug     = 'crm';
+		$this->toolkit_name     = __( 'CRM & Email Marketing Toolkit', 'nvoos-content-graph-pro' );
+		$this->option_name      = 'wp_mcp_ai_crm_toolkit_settings';
+		$this->page_slug        = 'wp-mcp-ai-crm-toolkit-settings';
+		$this->parent_slug      = WP_MCP_AI_CRM_Admin_Menu::PARENT_SLUG;
+		$this->has_research     = false;
+		$this->has_remote_sites = false;
+		$this->icon             = 'dashicons-email';
+
+		parent::__construct();
+	}
+
+	/**
+	 * Get toolkit slug
+	 *
+	 * @return string
+	 */
+	protected function get_toolkit_slug() {
+		return $this->toolkit_slug;
+	}
+
+	/**
+	 * Get toolkit name
+	 *
+	 * @return string
+	 */
+	protected function get_toolkit_name() {
+		return $this->toolkit_name;
+	}
+
+	/**
+	 * Render overview tab
+	 */
+	protected function render_overview_tab() {
+		// Resolve real toolkit settings for the overview.
+		$settings = array();
+		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			$settings = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+		}
+		?>
+		<div class="toolkit-overview">
+			<h2><?php esc_html_e( 'CRM & Email Marketing Toolkit Overview', 'nvoos-content-graph-pro' ); ?></h2>
+
+			<div class="toolkit-description">
+				<p>
+					<?php esc_html_e( 'Comprehensive customer relationship management toolkit with AI-powered lead scoring, BANT/MEDDIC qualification frameworks, multichannel inbox triage, outreach sequence automation, pipeline analytics, and regulatory compliance (GDPR, CAN-SPAM, TCPA).', 'nvoos-content-graph-pro' ); ?>
+				</p>
+				<p>
+					<strong><?php esc_html_e( 'Architecture:', 'nvoos-content-graph-pro' ); ?></strong>
+					<?php esc_html_e( 'Mirrors the Healthcare Toolkit pattern — shared engine, standards registry, audit ledger, capability map, consent ledger, pipeline stage registry, and classifier. Phases A, B, D, E & F are complete; Phase C has 1 integration stub remaining.', 'nvoos-content-graph-pro' ); ?>
+				</p>
+			</div>
+
+			<!-- Phase A: Current State -->
+			<h3><?php esc_html_e( 'Phase A — Available Now (Shared Engine + 11 Tools)', 'nvoos-content-graph-pro' ); ?></h3>
+			<ul>
+				<li><strong><?php esc_html_e( 'Shared Engine:', 'nvoos-content-graph-pro' ); ?></strong> <?php esc_html_e( 'WP_MCP_AI_CRM_Engine — lead scoring (fit + intent + engagement + recency), lifecycle stage progression (Subscriber → Lead → MQL → SAL → SQL → Opportunity → Customer), weighted pipeline forecasting, round-robin/weighted routing, DNC/suppression enforcement, currency formatting.', 'nvoos-content-graph-pro' ); ?></li>
+				<li><strong><?php esc_html_e( 'Standards Registry:', 'nvoos-content-graph-pro' ); ?></strong> <?php esc_html_e( 'WP_MCP_AI_CRM_Codes — BANT, MEDDIC, & CHAMP qualification frameworks; HubSpot lifecycle stages; Salesforce pipeline stages; GDPR legal bases; intent/sentiment/disposition codes.', 'nvoos-content-graph-pro' ); ?></li>
+				<li><strong><?php esc_html_e( 'Audit Ledger:', 'nvoos-content-graph-pro' ); ?></strong> <?php esc_html_e( 'WP_MCP_AI_CRM_Audit — append-only PII/consent audit log (10 000 entry rolling buffer), forwardable to external SIEM.', 'nvoos-content-graph-pro' ); ?></li>
+				<li><strong><?php esc_html_e( 'Capability Map:', 'nvoos-content-graph-pro' ); ?></strong> <?php esc_html_e( 'WP_MCP_AI_CRM_Capabilities — 8 sales roles (sales_manager, account_executive, sdr, …) mapped to 30+ WordPress capabilities.', 'nvoos-content-graph-pro' ); ?></li>
+				<li><strong><?php esc_html_e( 'Consent Ledger:', 'nvoos-content-graph-pro' ); ?></strong> <?php esc_html_e( 'WP_MCP_AI_CRM_Consent — per-channel consent records, real-time cross-channel revocation (TCPA Apr 2025 FCC rule), automatic DNC propagation.', 'nvoos-content-graph-pro' ); ?></li>
+				<li><strong><?php esc_html_e( 'Pipeline Stages:', 'nvoos-content-graph-pro' ); ?></strong> <?php esc_html_e( 'WP_MCP_AI_CRM_Pipeline_Stages — 10-stage Salesforce pipeline with win-probability weights for forecasting.', 'nvoos-content-graph-pro' ); ?></li>
+				<li><strong><?php esc_html_e( 'Classifier:', 'nvoos-content-graph-pro' ); ?></strong> <?php esc_html_e( 'WP_MCP_AI_CRM_Classifier — heuristic intent/sentiment classification + BANT & MEDDIC field extraction from inbound messages.', 'nvoos-content-graph-pro' ); ?></li>
+			</ul>
+
+			<h3><?php esc_html_e( 'Current Toolkit Settings', 'nvoos-content-graph-pro' ); ?></h3>
+			<table class="widefat fixed striped" style="max-width: 700px;">
+				<tbody>
+					<tr><th><?php esc_html_e( 'Qualification Framework', 'nvoos-content-graph-pro' ); ?></th><td><?php echo esc_html( $settings['qualification_framework'] ?? 'bant' ); ?></td></tr>
+					<tr><th><?php esc_html_e( 'Hot Score Threshold', 'nvoos-content-graph-pro' ); ?></th><td><?php echo esc_html( $settings['hot_score_threshold'] ?? '70' ); ?></td></tr>
+					<tr><th><?php esc_html_e( 'Warm Score Threshold', 'nvoos-content-graph-pro' ); ?></th><td><?php echo esc_html( $settings['warm_score_threshold'] ?? '40' ); ?></td></tr>
+					<tr><th><?php esc_html_e( 'Routing Strategy', 'nvoos-content-graph-pro' ); ?></th><td><?php echo esc_html( $settings['routing']['strategy'] ?? 'round_robin' ); ?></td></tr>
+					<tr><th><?php esc_html_e( 'Consent — Double Opt-In', 'nvoos-content-graph-pro' ); ?></th><td><?php echo ! empty( $settings['consent']['require_double_opt_in'] ) ? esc_html__( 'Yes', 'nvoos-content-graph-pro' ) : esc_html__( 'No', 'nvoos-content-graph-pro' ); ?></td></tr>
+					<tr><th><?php esc_html_e( 'Audit Retention', 'nvoos-content-graph-pro' ); ?></th><td><?php echo esc_html( ( $settings['audit_retention_days'] ?? 365 ) . ' ' . __( 'days', 'nvoos-content-graph-pro' ) ); ?></td></tr>
+				</tbody>
+			</table>
+
+			<!-- Phase roadmap status -->
+			<h3><?php esc_html_e( 'Phased Roadmap Status', 'nvoos-content-graph-pro' ); ?></h3>
+			<table class="widefat fixed striped" style="max-width: 900px;">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Phase', 'nvoos-content-graph-pro' ); ?></th>
+						<th><?php esc_html_e( 'Deliverable', 'nvoos-content-graph-pro' ); ?></th>
+						<th><?php esc_html_e( 'Est. Tools Added', 'nvoos-content-graph-pro' ); ?></th>
+						<th><?php esc_html_e( 'Status', 'nvoos-content-graph-pro' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr style="background-color: #d4edda;">
+						<td><strong><?php esc_html_e( 'Phase A', 'nvoos-content-graph-pro' ); ?></strong></td>
+						<td><?php esc_html_e( 'Shared engine, codes, audit, capabilities, consent, pipeline stages, classifier + is_available() on all tools', 'nvoos-content-graph-pro' ); ?></td>
+						<td>—</td>
+						<td><span style="color: #155724;">✓ <?php esc_html_e( 'Done', 'nvoos-content-graph-pro' ); ?></span></td>
+					</tr>
+					<tr style="background-color: #d4edda;">
+						<td><strong><?php esc_html_e( 'Phase B', 'nvoos-content-graph-pro' ); ?></strong></td>
+						<td><?php esc_html_e( 'Lead CRUD, deal/opportunity CRUD, activity CRUD, pipeline analytics, lead routing', 'nvoos-content-graph-pro' ); ?></td>
+						<td>~22</td>
+						<td><span style="color: #155724;">✓ <?php esc_html_e( 'Done', 'nvoos-content-graph-pro' ); ?></span></td>
+					</tr>
+					<tr style="background-color: #d4edda;">
+						<td><strong><?php esc_html_e( 'Phase C', 'nvoos-content-graph-pro' ); ?></strong></td>
+						<td><?php esc_html_e( 'Inbound triage (email/SMS/WhatsApp), multichannel outbound send, auto-reply, AI draft', 'nvoos-content-graph-pro' ); ?></td>
+						<td>15 tools + 3 listeners (IMAP/SMS/WhatsApp webhooks)</td>
+						<td><span style="color: #155724;">✓ <?php esc_html_e( 'Done — Pure PHP IMAP (no ext-imap), Twilio + notify.lk SMS, Meta WhatsApp API, AI-powered drafts', 'nvoos-content-graph-pro' ); ?></span></td>
+					</tr>
+					<tr style="background-color: #d4edda;">
+						<td><strong><?php esc_html_e( 'Phase D', 'nvoos-content-graph-pro' ); ?></strong></td>
+						<td><?php esc_html_e( 'Outreach sequences, Workflow Command Center unified inbox, workflow rules engine', 'nvoos-content-graph-pro' ); ?></td>
+						<td>13 tools built</td>
+						<td><span style="color: #155724;">✓ <?php esc_html_e( 'Done', 'nvoos-content-graph-pro' ); ?></span></td>
+					</tr>
+					<tr style="background-color: #d4edda;">
+						<td><strong><?php esc_html_e( 'Phase E', 'nvoos-content-graph-pro' ); ?></strong></td>
+						<td><?php esc_html_e( 'Consent/DNC/opt-out tools, CSV import, external CRM sync, 8 assistant blueprints', 'nvoos-content-graph-pro' ); ?></td>
+						<td>8 tools built</td>
+						<td><span style="color: #155724;">✓ <?php esc_html_e( 'Done', 'nvoos-content-graph-pro' ); ?></span></td>
+					</tr>
+				</tbody>
+			</table>
+
+			<h3><?php esc_html_e( 'NPM Packages Integrated', 'nvoos-content-graph-pro' ); ?></h3>
+			<ul>
+				<li><strong>nodemailer</strong> (6M/week): Advanced SMTP email sending</li>
+				<li><strong>validator</strong> (14M/week): Comprehensive input validation</li>
+				<li><strong>csv-parse/stringify</strong> (8M/week): Contact import/export</li>
+				<li><strong>email-validator</strong> (600K/week): Email validation</li>
+				<li><strong>libphonenumber-js</strong> (4M/week): Phone validation</li>
+				<li><strong>mailparser</strong> (1M/week): Email parsing</li>
+				<li><strong>ical-generator</strong> (300K/week): Calendar generation</li>
+			</ul>
+
+			<h3><?php esc_html_e( 'Requirements', 'nvoos-content-graph-pro' ); ?></h3>
+			<ul>
+				<li><strong><?php esc_html_e( 'Node.js:', 'nvoos-content-graph-pro' ); ?></strong> <?php echo $this->check_nodejs_available() ? '<span style="color: green;">✓ Available</span>' : '<span style="color: orange;">⚠ Optional (PHP fallbacks available)</span>'; ?></li>
+				<li><strong><?php esc_html_e( 'JetEngine (Optional):', 'nvoos-content-graph-pro' ); ?></strong> <?php echo function_exists( 'jet_engine' ) ? '<span style="color: green;">✓ Active (CCT storage available)</span>' : '<span style="color: blue;">○ Not installed (CPT storage will be used)</span>'; ?></li>
+			</ul>
+
+			<h3><?php esc_html_e( 'Documentation', 'nvoos-content-graph-pro' ); ?></h3>
+			<ul>
+				<li><code>addons/pro/docs/CRM_TOOLKIT_ENHANCEMENT_PLAN.md</code> — Phases A→E enhancement roadmap</li>
+				<li><code>addons/pro/docs/CRM_EMAIL_MARKETING_GUIDE.md</code> — Comprehensive integration guide</li>
+				<li><code>addons/pro/includes/tools/crm/README.md</code> — Developer architecture reference</li>
+			</ul>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render configuration tab
+	 */
+	protected function render_configuration_tab() {
+		// Read current values from the real toolkit settings option.
+		$settings = array();
+		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			$settings = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+		}
+
+		// Migrate legacy CRM research assistant option into the grouped option.
+		$legacy_assistant = get_option( 'wp_mcp_ai_crm_research_assistant', null );
+		if ( null !== $legacy_assistant && ! isset( $settings['research_assistant'] ) ) {
+			$settings['research_assistant'] = $legacy_assistant;
+			// Persist the change so the engine cache stays current.
+			$stored                       = get_option( $this->option_name, array() );
+			$stored['research_assistant'] = $legacy_assistant;
+			update_option( $this->option_name, $stored );
+			// Update engine cache.
+			if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+				WP_MCP_AI_CRM_Engine::flush_settings_cache();
+			}
+		}
+
+		// Resolve current assistant selection.
+		$current_assistant = isset( $settings['research_assistant'] ) ? $settings['research_assistant'] : 'default';
+		$assistants        = $this->get_available_assistants();
+
+		$option_name = $this->option_name;
+		?>
+		<div class="toolkit-configuration">
+			<h2><?php esc_html_e( 'CRM & Email Marketing Configuration', 'nvoos-content-graph-pro' ); ?></h2>
+
+			<p class="description">
+				<?php esc_html_e( 'These settings control the shared CRM engine used by all CRM tools.  Changes apply immediately to all lead scoring, routing, pipeline, and consent decisions.', 'nvoos-content-graph-pro' ); ?>
+			</p>
+
+			<table class="form-table">
+				<!-- Lead Scoring -->
+				<tr><td colspan="2"><h3><?php esc_html_e( 'Lead Scoring & Qualification', 'nvoos-content-graph-pro' ); ?></h3></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Qualification Framework', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<select name="<?php echo esc_attr( $option_name ); ?>[qualification_framework]">
+							<option value="bant" <?php selected( $settings['qualification_framework'] ?? 'bant', 'bant' ); ?>><?php esc_html_e( 'BANT — Budget · Authority · Need · Timeline', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="meddic" <?php selected( $settings['qualification_framework'] ?? '', 'meddic' ); ?>><?php esc_html_e( 'MEDDIC — Metrics · Economic Buyer · Decision Criteria · Decision Process · Identify Pain · Champion', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="champ" <?php selected( $settings['qualification_framework'] ?? '', 'champ' ); ?>><?php esc_html_e( 'CHAMP — Challenges · Authority · Money · Prioritisation', 'nvoos-content-graph-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Default qualification framework used by qualify_lead_bant / qualify_lead_meddic tools.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Hot Lead Threshold', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[hot_score_threshold]" value="<?php echo esc_attr( $settings['hot_score_threshold'] ?? 70 ); ?>" min="0" max="100" class="small-text" />
+						<p class="description"><?php esc_html_e( 'Score ≥ threshold → hot lead (0–100).', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Warm Lead Threshold', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[warm_score_threshold]" value="<?php echo esc_attr( $settings['warm_score_threshold'] ?? 40 ); ?>" min="0" max="100" class="small-text" />
+						<p class="description"><?php esc_html_e( 'Score ≥ threshold → warm lead (0–100).', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Routing -->
+				<tr><td colspan="2"><h3><?php esc_html_e( 'Lead Routing', 'nvoos-content-graph-pro' ); ?></h3></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Routing Strategy', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<select name="<?php echo esc_attr( $option_name ); ?>[routing][strategy]">
+							<option value="round_robin" <?php selected( $settings['routing']['strategy'] ?? 'round_robin', 'round_robin' ); ?>><?php esc_html_e( 'Round Robin — distribute evenly among pool', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="weighted" <?php selected( $settings['routing']['strategy'] ?? '', 'weighted' ); ?>><?php esc_html_e( 'Weighted — assign to rep with fewest active leads', 'nvoos-content-graph-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'How new leads are automatically distributed to the sales team.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Consent -->
+				<tr><td colspan="2"><h3><?php esc_html_e( 'Consent & Compliance', 'nvoos-content-graph-pro' ); ?></h3></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Require Double Opt-In', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[consent][require_double_opt_in]" value="1" <?php checked( ! empty( $settings['consent']['require_double_opt_in'] ) ); ?> />
+							<?php esc_html_e( 'Require explicit opt-in confirmation before sending outbound email', 'nvoos-content-graph-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'When enabled, email outbound is blocked for contacts without an active consent record (GDPR-compliant default). When disabled, legitimate-interest emails are allowed.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'CAN-SPAM Physical Address', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[consent][physical_address]" value="<?php echo esc_attr( $settings['consent']['physical_address'] ?? '' ); ?>" class="regular-text" />
+						<p class="description"><?php esc_html_e( 'Required by U.S. CAN-SPAM Act.  Inserted into the footer of outbound marketing emails.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Integrations (Phase C) -->
+				<tr><td colspan="2"><h3><?php esc_html_e( 'Channel Integrations', 'nvoos-content-graph-pro' ); ?></h3>
+				<p class="description" style="margin: 4px 0 8px 0;">
+					<?php esc_html_e( 'Gmail and WhatsApp credentials can also be managed via', 'nvoos-content-graph-pro' ); ?>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-pro-remote-sites' ) ); ?>"><?php esc_html_e( 'Remote Sites', 'nvoos-content-graph-pro' ); ?></a>.
+					<?php esc_html_e( 'The CRM tools automatically discover Gmail and WhatsApp connections configured there. Twilio and notify.lk direct entry is provided below until Remote Sites types are added for them.', 'nvoos-content-graph-pro' ); ?>
+				</p></td></tr>
+
+				<!-- Gmail Import Default Query -->
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Gmail Import Query', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[integrations][gmail_default_query]" value="<?php echo esc_attr( $settings['integrations']['gmail_default_query'] ?? '' ); ?>" class="large-text" placeholder="newer_than:7d is:unread -category:promotions -category:social" />
+						<p class="description">
+							<?php esc_html_e( 'Default Gmail search query used by import_gmail_to_crm and crm_email_search_leads when no query is provided. Uses Gmail search syntax.', 'nvoos-content-graph-pro' ); ?><br>
+							<?php esc_html_e( 'Examples:', 'nvoos-content-graph-pro' ); ?>
+							<code>newer_than:7d is:unread</code>,
+							<code>from:client.com newer_than:3d</code>,
+							<code>subject:demo OR subject:pricing is:unread</code>,
+							<code>newer_than:14d -category:promotions -category:social -category:forums</code>
+						</p>
+					</td>
+				</tr>
+
+				<!-- Gmail Scheduled Import -->
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Gmail Poll Interval (seconds)', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[integrations][gmail_poll_interval]" value="<?php echo esc_attr( $settings['integrations']['gmail_poll_interval'] ?? 300 ); ?>" min="60" max="3600" step="60" class="small-text" />
+						<p class="description">
+							<?php esc_html_e( 'How often the Gmail listener polls for new emails (60–3600 seconds). Shorter intervals consume more API quota. Default: 300 (5 minutes).', 'nvoos-content-graph-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Max Emails Per Poll', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[integrations][gmail_max_per_poll]" value="<?php echo esc_attr( $settings['integrations']['gmail_max_per_poll'] ?? 10 ); ?>" min="1" max="25" class="small-text" />
+						<p class="description"><?php esc_html_e( 'Maximum emails to fetch per poll cycle (1–25). Use lower values to reduce API usage.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Incremental Sync (historyId)', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[integrations][gmail_use_history_sync]" value="1" <?php checked( ! empty( $settings['integrations']['gmail_use_history_sync'] ) ); ?> />
+							<?php esc_html_e( 'Use Gmail historyId for incremental sync (only fetch new messages since last poll). When disabled, performs a fresh search each cycle.', 'nvoos-content-graph-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Recommended: enabled. Reduces API quota consumption by up to 90%. Uses Gmail users.history.list() API.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- SMS Provider -->
+				<tr>
+					<th scope="row"><?php esc_html_e( 'SMS Provider', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<select name="<?php echo esc_attr( $option_name ); ?>[integrations][sms_provider]">
+							<option value="twilio" <?php selected( $settings['integrations']['sms_provider'] ?? 'twilio', 'twilio' ); ?>>Twilio</option>
+							<option value="notifylk" <?php selected( $settings['integrations']['sms_provider'] ?? '', 'notifylk' ); ?>>notify.lk (Sri Lanka)</option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Select which SMS gateway to use for outbound SMS and auto-reply.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Twilio -->
+				<tr><td colspan="2"><h4 style="margin: 0; padding-top: 8px;"><?php esc_html_e( 'Twilio (SMS)', 'nvoos-content-graph-pro' ); ?></h4></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Account SID', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[integrations][twilio_account_sid_secret]" value="<?php echo esc_attr( $settings['integrations']['twilio_account_sid_secret'] ?? '' ); ?>" class="regular-text" />
+						<p class="description"><?php esc_html_e( 'Your Twilio Account SID from the Twilio Console dashboard.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Auth Token', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="password" name="<?php echo esc_attr( $option_name ); ?>[integrations][twilio_auth_token_secret]" value="<?php echo esc_attr( $settings['integrations']['twilio_auth_token_secret'] ?? '' ); ?>" class="regular-text" autocomplete="new-password" />
+						<p class="description"><?php esc_html_e( 'Your Twilio Auth Token. Stored securely in the WordPress options table.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'From Number', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[integrations][twilio_from_number]" value="<?php echo esc_attr( $settings['integrations']['twilio_from_number'] ?? '' ); ?>" class="regular-text" placeholder="+1234567890" />
+						<p class="description"><?php esc_html_e( 'Your Twilio phone number in E.164 format (e.g. +1234567890). Used as the sender for outbound SMS.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- WhatsApp -->
+				<tr><td colspan="2"><h4 style="margin: 0; padding-top: 8px;"><?php esc_html_e( 'WhatsApp (Meta Cloud API)', 'nvoos-content-graph-pro' ); ?></h4></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Access Token', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="password" name="<?php echo esc_attr( $option_name ); ?>[integrations][whatsapp_access_token]" value="<?php echo esc_attr( $settings['integrations']['whatsapp_access_token'] ?? '' ); ?>" class="regular-text" autocomplete="new-password" />
+						<p class="description"><?php esc_html_e( 'System User Access Token from Meta Business Suite → Business Settings → System Users. Must have whatsapp_business_messaging permission.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Phone Number ID', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[integrations][whatsapp_phone_number_id]" value="<?php echo esc_attr( $settings['integrations']['whatsapp_phone_number_id'] ?? '' ); ?>" class="regular-text" />
+						<p class="description"><?php esc_html_e( 'WhatsApp Business phone number ID from the WABA settings.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'App Secret', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="password" name="<?php echo esc_attr( $option_name ); ?>[integrations][whatsapp_app_secret]" value="<?php echo esc_attr( $settings['integrations']['whatsapp_app_secret'] ?? '' ); ?>" class="regular-text" autocomplete="new-password" />
+						<p class="description"><?php esc_html_e( 'Meta App Secret for webhook signature validation. Used to verify inbound WhatsApp messages are authentic.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- notify.lk -->
+				<tr><td colspan="2"><h4 style="margin: 0; padding-top: 8px;"><?php esc_html_e( 'notify.lk (Sri Lanka SMS Gateway)', 'nvoos-content-graph-pro' ); ?></h4></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'User ID', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[integrations][notifylk_user_id]" value="<?php echo esc_attr( $settings['integrations']['notifylk_user_id'] ?? '' ); ?>" class="regular-text" />
+						<p class="description"><?php esc_html_e( 'Your notify.lk User ID from the API Keys page at app.notify.lk.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'API Key', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="password" name="<?php echo esc_attr( $option_name ); ?>[integrations][notifylk_api_key]" value="<?php echo esc_attr( $settings['integrations']['notifylk_api_key'] ?? '' ); ?>" class="regular-text" autocomplete="new-password" />
+						<p class="description"><?php esc_html_e( 'Your notify.lk API Key.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Sender ID', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[integrations][notifylk_sender_id]" value="<?php echo esc_attr( $settings['integrations']['notifylk_sender_id'] ?? '' ); ?>" class="regular-text" />
+						<p class="description"><?php esc_html_e( 'Your pre-approved sender ID for outbound SMS (e.g. your business name).', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Storage & Audit -->
+				<tr><td colspan="2"><h3><?php esc_html_e( 'Storage & Auditing', 'nvoos-content-graph-pro' ); ?></h3></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Storage Backend', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<?php
+						$jetengine_active = function_exists( 'jet_engine' );
+						?>
+						<p>
+							<strong><?php esc_html_e( 'WordPress CPT', 'nvoos-content-graph-pro' ); ?></strong>
+							<?php if ( $jetengine_active ) : ?>
+								<br /><span style="color: #856404;">&#9888; <?php esc_html_e( 'JetEngine is active but CRM entities (Company, Lead, Deal, Activity) currently use WordPress CPTs. CCT migration is on the roadmap.', 'nvoos-content-graph-pro' ); ?></span>
+							<?php else : ?>
+								<br /><span style="color: blue;">&#9711; <?php esc_html_e( 'Using WordPress Custom Post Types. Install JetEngine to enable CCT migration in a future release.', 'nvoos-content-graph-pro' ); ?></span>
+							<?php endif; ?>
+						</p>
+						<p class="description"><?php esc_html_e( 'CRM entities (Company, Lead, Deal, Activity) are stored as WordPress custom post types. JetEngine CCT storage for high-performance is planned for a future release.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Audit Retention (days)', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[audit_retention_days]" value="<?php echo esc_attr( $settings['audit_retention_days'] ?? 365 ); ?>" min="30" max="2555" class="small-text" />
+						<p class="description"><?php esc_html_e( 'How long PII/consent audit entries are retained in the rolling buffer.  For long-term storage, use the wp_mcp_ai_crm_after_audit action to forward to an external SIEM.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Email Hygiene -->
+				<tr><td colspan="2"><h3><?php esc_html_e( 'Email Hygiene &amp; List Management', 'nvoos-content-graph-pro' ); ?></h3></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Exclude List', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<?php
+						$hygiene          = class_exists( 'WP_MCP_AI_CRM_Engine' )
+							? WP_MCP_AI_CRM_Engine::get_hygiene_settings()
+							: array();
+						$exclude_list     = isset( $hygiene['exclude_list'] ) ? (array) $hygiene['exclude_list'] : array();
+						$priority_list    = isset( $hygiene['priority_list'] ) ? (array) $hygiene['priority_list'] : array();
+						$spam_domains     = isset( $hygiene['spam_domains'] ) ? (array) $hygiene['spam_domains'] : array();
+						$promo_domains    = isset( $hygiene['promotional_domains'] ) ? (array) $hygiene['promotional_domains'] : array();
+						$priority_domains = isset( $hygiene['priority_domains'] ) ? (array) $hygiene['priority_domains'] : array();
+						$promo_keywords   = isset( $hygiene['promotional_keywords'] ) ? (array) $hygiene['promotional_keywords'] : array();
+						?>
+						<textarea name="<?php echo esc_attr( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION ); ?>[exclude_list]" rows="5" class="large-text code" placeholder="spammer@example.com&#10;@newsletters.spammy.net&#10;@unwanted-domain.com"><?php echo esc_textarea( implode( "\n", $exclude_list ) ); ?></textarea>
+						<p class="description">
+							<?php esc_html_e( 'Email addresses or domains to ALWAYS skip during import. One per line. Use @domain.com to block an entire domain.', 'nvoos-content-graph-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Priority List', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION ); ?>[priority_list]" rows="5" class="large-text code" placeholder="vip@client.com&#10;@important-partner.com"><?php echo esc_textarea( implode( "\n", $priority_list ) ); ?></textarea>
+						<p class="description">
+							<?php esc_html_e( 'Email addresses or domains to ALWAYS fast-track. One per line. Use @domain.com to prioritise an entire domain.', 'nvoos-content-graph-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Spam Domains', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION ); ?>[spam_domains]" rows="3" class="large-text code" placeholder="seo-spam.com&#10;cheap-meds.example"><?php echo esc_textarea( implode( "\n", $spam_domains ) ); ?></textarea>
+						<p class="description">
+							<?php esc_html_e( 'Known spam domains. Any email from these domains is automatically classified as spam. Substring match (e.g. "spam" matches "super-spam.net").', 'nvoos-content-graph-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Promotional Domains', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION ); ?>[promotional_domains]" rows="3" class="large-text code" placeholder="mailchimp.app&#10;sendgrid.net"><?php echo esc_textarea( implode( "\n", $promo_domains ) ); ?></textarea>
+						<p class="description">
+							<?php esc_html_e( 'Domains that send bulk marketing/newsletters. Substring match. Overlaps with exclude list — entries here help the classifier detect promotional content even from new addresses.', 'nvoos-content-graph-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Priority Domains', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION ); ?>[priority_domains]" rows="3" class="large-text code" placeholder="@client-corp.com&#10;@partner.org"><?php echo esc_textarea( implode( "\n", $priority_domains ) ); ?></textarea>
+						<p class="description">
+							<?php esc_html_e( 'Domains that should always be treated as priority. Substring match against sender domain.', 'nvoos-content-graph-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Promotional Keywords', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION ); ?>[promotional_keywords]" rows="3" class="large-text code" placeholder="flash sale&#10;weekly newsletter&#10;limited time offer"><?php echo esc_textarea( implode( "\n", $promo_keywords ) ); ?></textarea>
+						<p class="description">
+							<?php esc_html_e( 'Keywords/phrases that indicate promotional or newsletter content. Case-insensitive substring match. One per line.', 'nvoos-content-graph-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<!-- Freelance Platforms & External Sourcing -->
+				<tr><td colspan="2"><h3><?php esc_html_e( 'Freelance Platforms &amp; External Sourcing', 'nvoos-content-graph-pro' ); ?></h3>
+				<p class="description" style="margin: 4px 0 8px 0;">
+					<?php esc_html_e( 'Configure LinkedIn and Upwork connections for job/project search, import, and pipeline tracking. These credentials are managed via', 'nvoos-content-graph-pro' ); ?>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-pro-remote-sites' ) ); ?>"><?php esc_html_e( 'Remote Sites', 'nvoos-content-graph-pro' ); ?></a>.
+					<?php esc_html_e( 'When a connection is configured, tools use the platform API directly; otherwise they fall back to AI-powered web search.', 'nvoos-content-graph-pro' ); ?>
+				</p></td></tr>
+
+				<!-- Upwork External Sourcing -->
+				<tr><td colspan="2"><h4 style="margin: 0; padding-top: 8px;"><?php esc_html_e( 'Upwork', 'nvoos-content-graph-pro' ); ?></h4></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Connection', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<?php
+						$_upwork_connections = array();
+						if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+							$_all_conns = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+							foreach ( $_all_conns as $_id => $_conn ) {
+								if ( ! empty( $_conn['connection_type'] ) && 'upwork' === $_conn['connection_type'] ) {
+									$_upwork_connections[ $_id ] = isset( $_conn['name'] ) ? $_conn['name'] : $_id;
+								}
+							}
+						}
+						$_current_upwork = $settings['external_sourcing']['upwork']['default_connection_id'] ?? '';
+						?>
+						<?php if ( empty( $_upwork_connections ) ) : ?>
+							<p class="description" style="color: #856404;">
+								&#9888; <?php esc_html_e( 'No Upwork connections found. Add one via Remote Sites to enable API-based job search and contract sync.', 'nvoos-content-graph-pro' ); ?>
+							</p>
+						<?php else : ?>
+							<select name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][default_connection_id]">
+								<option value=""><?php esc_html_e( '— None —', 'nvoos-content-graph-pro' ); ?></option>
+								<?php foreach ( $_upwork_connections as $_id => $_label ) : ?>
+									<option value="<?php echo esc_attr( $_id ); ?>" <?php selected( $_current_upwork, $_id ); ?>><?php echo esc_html( $_label ); ?></option>
+								<?php endforeach; ?>
+							</select>
+						<?php endif; ?>
+						<p class="description"><?php esc_html_e( 'Select which Upwork connection to use as default for CRM tools (search, import, contracts, tasks).', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Auto-Import Jobs As', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<select name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][auto_import_as]">
+							<option value="deal" <?php selected( $settings['external_sourcing']['upwork']['auto_import_as'] ?? 'deal', 'deal' ); ?>><?php esc_html_e( 'Deal (Pipeline Opportunity)', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="project" <?php selected( $settings['external_sourcing']['upwork']['auto_import_as'] ?? '', 'project' ); ?>><?php esc_html_e( 'Project', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="task" <?php selected( $settings['external_sourcing']['upwork']['auto_import_as'] ?? '', 'task' ); ?>><?php esc_html_e( 'Task', 'nvoos-content-graph-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Default CRM entity type when importing Upwork jobs into the pipeline.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Min Score to Auto-Import', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][auto_import_min_score]" value="<?php echo esc_attr( $settings['external_sourcing']['upwork']['auto_import_min_score'] ?? 60 ); ?>" min="0" max="100" class="small-text" />
+						<p class="description"><?php esc_html_e( 'Only auto-import Upwork jobs scoring at or above this threshold (0–100). Set to 0 to import all scored jobs.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Use My Profile for AI Grounding', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][use_profile_context]" value="1" <?php checked( ! empty( $settings['external_sourcing']['upwork']['use_profile_context'] ) ); ?> />
+							<?php esc_html_e( 'Feed my connected Upwork profile (skills, work history, rate) to the AI as grounding context when drafting proposals and scoring jobs. This improves personalisation and accuracy.', 'nvoos-content-graph-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+
+				<!-- Upwork Search Defaults (since 2.12.0) -->
+				<tr><td colspan="2"><h5 style="margin: 4px 0;"><?php esc_html_e( 'Search Defaults', 'nvoos-content-graph-pro' ); ?></h5>
+				<p class="description"><?php esc_html_e( 'These values are used when the search_upwork_jobs tool is called without explicit filter arguments.', 'nvoos-content-graph-pro' ); ?></p></td></tr>
+
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Keywords', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][default_search_keywords]" value="<?php echo esc_attr( $settings['external_sourcing']['upwork']['default_search_keywords'] ?? '' ); ?>" class="large-text" placeholder="<?php esc_attr_e( 'e.g. WordPress developer, React, API integration', 'nvoos-content-graph-pro' ); ?>" />
+						<p class="description"><?php esc_html_e( 'Comma-separated keywords used as defaults when searching Upwork without specifying a query.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Location', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][default_location]" value="<?php echo esc_attr( $settings['external_sourcing']['upwork']['default_location'] ?? '' ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'e.g. Remote, United States', 'nvoos-content-graph-pro' ); ?>" />
+						<p class="description"><?php esc_html_e( 'Default location filter for Upwork job searches. Leave blank for worldwide.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Job Type', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<select name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][default_job_type]">
+							<option value="" <?php selected( $settings['external_sourcing']['upwork']['default_job_type'] ?? '', '' ); ?>><?php esc_html_e( '— Any —', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="hourly" <?php selected( $settings['external_sourcing']['upwork']['default_job_type'] ?? '', 'hourly' ); ?>><?php esc_html_e( 'Hourly', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="fixed" <?php selected( $settings['external_sourcing']['upwork']['default_job_type'] ?? '', 'fixed' ); ?>><?php esc_html_e( 'Fixed-Price', 'nvoos-content-graph-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Default job type filter for Upwork searches.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Experience Level', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<select name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][default_experience_level]">
+							<option value="" <?php selected( $settings['external_sourcing']['upwork']['default_experience_level'] ?? '', '' ); ?>><?php esc_html_e( '— Any —', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="entry" <?php selected( $settings['external_sourcing']['upwork']['default_experience_level'] ?? '', 'entry' ); ?>><?php esc_html_e( 'Entry', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="intermediate" <?php selected( $settings['external_sourcing']['upwork']['default_experience_level'] ?? '', 'intermediate' ); ?>><?php esc_html_e( 'Intermediate', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="expert" <?php selected( $settings['external_sourcing']['upwork']['default_experience_level'] ?? '', 'expert' ); ?>><?php esc_html_e( 'Expert', 'nvoos-content-graph-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Default experience/tier level for Upwork searches.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Categories', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][default_categories]" value="<?php echo esc_attr( $settings['external_sourcing']['upwork']['default_categories'] ?? '' ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'e.g. Web, Mobile &amp; Software Dev', 'nvoos-content-graph-pro' ); ?>" />
+						<p class="description"><?php esc_html_e( 'Comma-separated Upwork category names. Leave blank for all categories.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Upwork Excluded Keywords', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][excluded_keywords]" rows="3" class="large-text code" placeholder="<?php esc_attr_e( 'crypto\nNFT\nadult\ngambling', 'nvoos-content-graph-pro' ); ?>"><?php echo esc_textarea( $settings['external_sourcing']['upwork']['excluded_keywords'] ?? '' ); ?></textarea>
+						<p class="description"><?php esc_html_e( 'Upwork-specific excluded keywords (case-insensitive, one per line). Overrides the shared list for Upwork searches.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Max Results Per Search', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][max_results_per_search]" value="<?php echo esc_attr( $settings['external_sourcing']['upwork']['max_results_per_search'] ?? 20 ); ?>" min="1" max="50" class="small-text" />
+						<p class="description"><?php esc_html_e( 'Maximum results to fetch per search (1–50). Default: 20.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- LinkedIn External Sourcing -->
+				<tr><td colspan="2"><h4 style="margin: 0; padding-top: 8px;"><?php esc_html_e( 'LinkedIn', 'nvoos-content-graph-pro' ); ?></h4></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Connection', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<?php
+						$_linkedin_connections = array();
+						if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+							$_all_conns = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+							foreach ( $_all_conns as $_id => $_conn ) {
+								if ( ! empty( $_conn['connection_type'] ) && 'linkedin' === $_conn['connection_type'] ) {
+									$_linkedin_connections[ $_id ] = isset( $_conn['name'] ) ? $_conn['name'] : $_id;
+								}
+							}
+						}
+						$_current_linkedin = $settings['external_sourcing']['linkedin']['default_connection_id'] ?? '';
+						?>
+						<?php if ( empty( $_linkedin_connections ) ) : ?>
+							<p class="description" style="color: #856404;">
+								&#9888; <?php esc_html_e( 'No LinkedIn connections found. Add one via Remote Sites to enable API-based job search and profile import. Tools will use AI-powered web search as fallback.', 'nvoos-content-graph-pro' ); ?>
+							</p>
+						<?php else : ?>
+							<select name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][default_connection_id]">
+								<option value=""><?php esc_html_e( '— None —', 'nvoos-content-graph-pro' ); ?></option>
+								<?php foreach ( $_linkedin_connections as $_id => $_label ) : ?>
+									<option value="<?php echo esc_attr( $_id ); ?>" <?php selected( $_current_linkedin, $_id ); ?>><?php echo esc_html( $_label ); ?></option>
+								<?php endforeach; ?>
+							</select>
+						<?php endif; ?>
+						<p class="description"><?php esc_html_e( 'Select which LinkedIn connection to use as default for CRM tools (job search, scoring, profile import).', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Use My Profile for AI Grounding', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][use_profile_context]" value="1" <?php checked( ! empty( $settings['external_sourcing']['linkedin']['use_profile_context'] ) ); ?> />
+							<?php esc_html_e( 'Feed my LinkedIn profile (headline, summary, skills, experience) to the AI as grounding context. Helps the AI filter jobs most relevant to your background and craft personalised outreach.', 'nvoos-content-graph-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Location', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][default_location]" value="<?php echo esc_attr( $settings['external_sourcing']['linkedin']['default_location'] ?? '' ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'e.g. Remote, United States, London', 'nvoos-content-graph-pro' ); ?>" />
+						<p class="description"><?php esc_html_e( 'Default location filter for LinkedIn job searches. Leave blank for worldwide.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Search Keywords', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][default_search_keywords]" value="<?php echo esc_attr( $settings['external_sourcing']['linkedin']['default_search_keywords'] ?? '' ); ?>" class="large-text" placeholder="<?php esc_attr_e( 'e.g. WordPress developer, SEO consultant, content writer', 'nvoos-content-graph-pro' ); ?>" />
+						<p class="description"><?php esc_html_e( 'Comma-separated keywords used as defaults when searching LinkedIn jobs without specifying a query.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Auto-Import Jobs As', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<select name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][auto_import_as]">
+							<option value="deal" <?php selected( $settings['external_sourcing']['linkedin']['auto_import_as'] ?? 'deal', 'deal' ); ?>><?php esc_html_e( 'Deal (Pipeline Opportunity)', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="project" <?php selected( $settings['external_sourcing']['linkedin']['auto_import_as'] ?? '', 'project' ); ?>><?php esc_html_e( 'Project', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="task" <?php selected( $settings['external_sourcing']['linkedin']['auto_import_as'] ?? '', 'task' ); ?>><?php esc_html_e( 'Task', 'nvoos-content-graph-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Default CRM entity type when importing LinkedIn jobs into the pipeline.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Min Score to Auto-Import', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][auto_import_min_score]" value="<?php echo esc_attr( $settings['external_sourcing']['linkedin']['auto_import_min_score'] ?? 60 ); ?>" min="0" max="100" class="small-text" />
+						<p class="description"><?php esc_html_e( 'Only auto-import LinkedIn jobs scoring at or above this threshold (0–100). Set to 0 to import all.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- LinkedIn Extended Search Defaults (since 2.12.0) -->
+				<tr><td colspan="2"><h5 style="margin: 4px 0;"><?php esc_html_e( 'Extended Search Defaults', 'nvoos-content-graph-pro' ); ?></h5>
+				<p class="description"><?php esc_html_e( 'These values are used when the search_linkedin_jobs tool is called without explicit filter arguments.', 'nvoos-content-graph-pro' ); ?></p></td></tr>
+
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Job Type', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<select name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][default_job_type]">
+							<option value="" <?php selected( $settings['external_sourcing']['linkedin']['default_job_type'] ?? '', '' ); ?>><?php esc_html_e( '— Any —', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="full_time" <?php selected( $settings['external_sourcing']['linkedin']['default_job_type'] ?? '', 'full_time' ); ?>><?php esc_html_e( 'Full-Time', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="part_time" <?php selected( $settings['external_sourcing']['linkedin']['default_job_type'] ?? '', 'part_time' ); ?>><?php esc_html_e( 'Part-Time', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="contract" <?php selected( $settings['external_sourcing']['linkedin']['default_job_type'] ?? '', 'contract' ); ?>><?php esc_html_e( 'Contract', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="temporary" <?php selected( $settings['external_sourcing']['linkedin']['default_job_type'] ?? '', 'temporary' ); ?>><?php esc_html_e( 'Temporary', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="internship" <?php selected( $settings['external_sourcing']['linkedin']['default_job_type'] ?? '', 'internship' ); ?>><?php esc_html_e( 'Internship', 'nvoos-content-graph-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Default employment type filter for LinkedIn searches.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Experience Level', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<select name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][default_experience_level]">
+							<option value="" <?php selected( $settings['external_sourcing']['linkedin']['default_experience_level'] ?? '', '' ); ?>><?php esc_html_e( '— Any —', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="entry" <?php selected( $settings['external_sourcing']['linkedin']['default_experience_level'] ?? '', 'entry' ); ?>><?php esc_html_e( 'Entry', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="mid_level" <?php selected( $settings['external_sourcing']['linkedin']['default_experience_level'] ?? '', 'mid_level' ); ?>><?php esc_html_e( 'Mid-Level', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="senior" <?php selected( $settings['external_sourcing']['linkedin']['default_experience_level'] ?? '', 'senior' ); ?>><?php esc_html_e( 'Senior', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="executive" <?php selected( $settings['external_sourcing']['linkedin']['default_experience_level'] ?? '', 'executive' ); ?>><?php esc_html_e( 'Executive', 'nvoos-content-graph-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Default experience level filter for LinkedIn searches.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Remote Only', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][default_remote]" value="1" <?php checked( ! empty( $settings['external_sourcing']['linkedin']['default_remote'] ) ); ?> />
+							<?php esc_html_e( 'Filter to remote-only positions by default.', 'nvoos-content-graph-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'LinkedIn Excluded Keywords', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][excluded_keywords]" rows="3" class="large-text code" placeholder="<?php esc_attr_e( 'crypto\nNFT\nadult\ngambling', 'nvoos-content-graph-pro' ); ?>"><?php echo esc_textarea( $settings['external_sourcing']['linkedin']['excluded_keywords'] ?? '' ); ?></textarea>
+						<p class="description"><?php esc_html_e( 'LinkedIn-specific excluded keywords (case-insensitive, one per line). Overrides the shared list for LinkedIn searches.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Max Results Per Search', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][max_results_per_search]" value="<?php echo esc_attr( $settings['external_sourcing']['linkedin']['max_results_per_search'] ?? 20 ); ?>" min="1" max="50" class="small-text" />
+						<p class="description"><?php esc_html_e( 'Maximum results to fetch per search (1–50). Default: 20.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Shared: Ideal Client Profile & Search Filters -->
+				<tr><td colspan="2"><h4 style="margin: 0; padding-top: 8px;"><?php esc_html_e( 'Shared: Ideal Client Profile &amp; Search Filters', 'nvoos-content-graph-pro' ); ?></h4></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Ideal Client Profile', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][ideal_client_profile]" rows="5" class="large-text" placeholder="<?php esc_attr_e( 'Describe your ideal client or project for AI scoring.\\n\\nExample:\\n- Budget: $5k–$20k per project\\n- Industry: SaaS, eCommerce, FinTech\\n- Tech stack: WordPress, WooCommerce, React\\n- Project type: Custom plugin, API integrations', 'nvoos-content-graph-pro' ); ?>"><?php echo esc_textarea( $settings['external_sourcing']['ideal_client_profile'] ?? '' ); ?></textarea>
+						<p class="description"><?php esc_html_e( 'Injected as context into score_upwork_job and score_linkedin_job tools. The AI evaluates each job against this profile. Leave blank for generic scoring.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Budget Range', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][default_budget_min]" value="<?php echo esc_attr( $settings['external_sourcing']['default_budget_min'] ?? '' ); ?>" class="small-text" placeholder="<?php esc_attr_e( 'Min', 'nvoos-content-graph-pro' ); ?>" min="0" step="100" />
+						&nbsp;–&nbsp;
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][default_budget_max]" value="<?php echo esc_attr( $settings['external_sourcing']['default_budget_max'] ?? '' ); ?>" class="small-text" placeholder="<?php esc_attr_e( 'Max', 'nvoos-content-graph-pro' ); ?>" min="0" step="100" />
+						<p class="description"><?php esc_html_e( 'Default budget range (in your CRM currency) for filtering jobs on both platforms. Leave blank to skip budget filtering.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Excluded Keywords', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][excluded_keywords]" rows="3" class="large-text code" placeholder="<?php esc_attr_e( 'crypto\\nNFT\\nadult\\ngambling', 'nvoos-content-graph-pro' ); ?>"><?php echo esc_textarea( $settings['external_sourcing']['excluded_keywords'] ?? '' ); ?></textarea>
+						<p class="description"><?php esc_html_e( 'Jobs containing any of these keywords (case-insensitive) are filtered out of results and never scored. One per line.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Result Format & Notifications (since 2.12.0) -->
+				<tr><td colspan="2"><h4 style="margin: 0; padding-top: 8px;"><?php esc_html_e( 'Result Format &amp; Notifications', 'nvoos-content-graph-pro' ); ?></h4>
+				<p class="description" style="margin: 4px 0 8px 0;">
+					<?php esc_html_e( 'Control which fields are included in search results and how they are formatted. Compact mode strips non-essential fields to save AI tokens.', 'nvoos-content-graph-pro' ); ?>
+				</p></td></tr>
+
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Description Length (words)', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][result_format][description_length]" value="<?php echo esc_attr( $settings['external_sourcing']['result_format']['description_length'] ?? 200 ); ?>" min="0" max="2000" class="small-text" />
+						<p class="description"><?php esc_html_e( 'Number of words for job descriptions in search results. Set to 0 for the full description (may increase token usage). Default: 200.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Include Email in Results', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][result_format][include_email]" value="1" <?php checked( ! empty( $settings['external_sourcing']['result_format']['include_email'] ) ); ?> />
+							<?php esc_html_e( 'Show email addresses in search results when available from the platform.', 'nvoos-content-graph-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Include Client Info', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][result_format][include_client_info]" value="1" <?php checked( ! empty( $settings['external_sourcing']['result_format']['include_client_info'] ) ); ?> />
+							<?php esc_html_e( 'Show client history, feedback, and verification status in results.', 'nvoos-content-graph-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Include Budget', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][result_format][include_budget]" value="1" <?php checked( ! empty( $settings['external_sourcing']['result_format']['include_budget'] ) ); ?> />
+							<?php esc_html_e( 'Show budget and hourly rate information.', 'nvoos-content-graph-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Include Skills', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][result_format][include_skills]" value="1" <?php checked( ! empty( $settings['external_sourcing']['result_format']['include_skills'] ) ); ?> />
+							<?php esc_html_e( 'Show required skills list.', 'nvoos-content-graph-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Include Applicant Count', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][result_format][include_applicants]" value="1" <?php checked( ! empty( $settings['external_sourcing']['result_format']['include_applicants'] ) ); ?> />
+							<?php esc_html_e( 'Show competitor/applicant count for each job.', 'nvoos-content-graph-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Compact Mode', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][result_format][compact_mode]" value="1" <?php checked( ! empty( $settings['external_sourcing']['result_format']['compact_mode'] ) ); ?> />
+							<?php esc_html_e( 'Strip null/empty fields from results to reduce token consumption for AI assistants.', 'nvoos-content-graph-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+
+				<!-- Notification Rules (since 2.12.0) -->
+				<tr><td colspan="2"><h5 style="margin: 4px 0; padding-top: 8px;"><?php esc_html_e( 'Email Notifications', 'nvoos-content-graph-pro' ); ?></h5>
+				<p class="description"><?php esc_html_e( 'Receive email alerts when the auto-import pipeline discovers high-scoring jobs.', 'nvoos-content-graph-pro' ); ?></p></td></tr>
+
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Enable Notifications', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][notification][enabled]" value="1" <?php checked( ! empty( $settings['external_sourcing']['notification']['enabled'] ) ); ?> />
+							<?php esc_html_e( 'Send email alerts when high-scoring jobs are found.', 'nvoos-content-graph-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Notification Email', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="email" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][notification][email]" value="<?php echo esc_attr( $settings['external_sourcing']['notification']['email'] ?? '' ); ?>" class="regular-text" placeholder="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>" />
+						<p class="description"><?php esc_html_e( 'Where to send notifications. Defaults to the site admin email if left blank.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Min Score to Alert', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][notification][min_score_alert]" value="<?php echo esc_attr( $settings['external_sourcing']['notification']['min_score_alert'] ?? 80 ); ?>" min="0" max="100" class="small-text" />
+						<p class="description"><?php esc_html_e( 'Only send alerts for jobs scoring at or above this threshold (0–100). Default: 80.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Max Alerts Per Cycle', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][notification][max_alerts_per_cycle]" value="<?php echo esc_attr( $settings['external_sourcing']['notification']['max_alerts_per_cycle'] ?? 5 ); ?>" min="1" max="50" class="small-text" />
+						<p class="description"><?php esc_html_e( 'Maximum number of notifications per search cycle to avoid flooding your inbox. Default: 5.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Deduplication (since 2.12.0) -->
+				<tr><td colspan="2"><h5 style="margin: 4px 0; padding-top: 8px;"><?php esc_html_e( 'Deduplication', 'nvoos-content-graph-pro' ); ?></h5>
+				<p class="description"><?php esc_html_e( 'Prevent the same job from being imported multiple times across search cycles.', 'nvoos-content-graph-pro' ); ?></p></td></tr>
+
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Enable Deduplication', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][deduplication][enabled]" value="1" <?php checked( ! empty( $settings['external_sourcing']['deduplication']['enabled'] ) ); ?> />
+							<?php esc_html_e( 'Skip jobs that were already imported within the lookback window.', 'nvoos-content-graph-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Dedup Strategy', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<select name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][deduplication][strategy]">
+							<option value="title_url" <?php selected( $settings['external_sourcing']['deduplication']['strategy'] ?? 'title_url', 'title_url' ); ?>><?php esc_html_e( 'Title + URL — match on both title slug and URL', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="url_only" <?php selected( $settings['external_sourcing']['deduplication']['strategy'] ?? '', 'url_only' ); ?>><?php esc_html_e( 'URL Only — match only on job URL', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="none" <?php selected( $settings['external_sourcing']['deduplication']['strategy'] ?? '', 'none' ); ?>><?php esc_html_e( 'None — allow duplicates', 'nvoos-content-graph-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'How to determine if a job is a duplicate.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Lookback Days', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][deduplication][lookback_days]" value="<?php echo esc_attr( $settings['external_sourcing']['deduplication']['lookback_days'] ?? 90 ); ?>" min="1" max="365" class="small-text" />
+						<p class="description"><?php esc_html_e( 'How many days back to check for duplicates (1–365). Default: 90.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Performance Optimization -->
+				<tr><td colspan="2"><h3><?php esc_html_e( 'Performance &amp; Storage', 'nvoos-content-graph-pro' ); ?></h3></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Message Retention (days)', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[optimization][message_retention_days]" value="<?php echo esc_attr( $settings['optimization']['message_retention_days'] ?? 90 ); ?>" min="0" max="730" class="small-text" />
+						<p class="description">
+							<?php esc_html_e( 'Automatically delete CRM messages older than this many days. Set to 0 to keep forever. Default: 90 days. Industry recommendation: 30–365 days.', 'nvoos-content-graph-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Audit Log Max Entries', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[optimization][audit_max_entries]" value="<?php echo esc_attr( $settings['optimization']['audit_max_entries'] ?? 5000 ); ?>" min="1000" max="10000" step="500" class="small-text" />
+						<p class="description">
+							<?php esc_html_e( 'Maximum audit log entries before automatic compaction. Lower values reduce option size but keep less history. Default: 5,000.', 'nvoos-content-graph-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<!-- Research Assistant -->
+				<tr><td colspan="2"><h3><?php esc_html_e( 'AI Integration', 'nvoos-content-graph-pro' ); ?></h3></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Research & Add Assistant', 'nvoos-content-graph-pro' ); ?></th>
+					<td>
+						<select name="<?php echo esc_attr( $option_name ); ?>[research_assistant]" id="crm_research_assistant">
+							<?php foreach ( $assistants as $assistant_id => $assistant_name ) : ?>
+								<option value="<?php echo esc_attr( $assistant_id ); ?>" <?php selected( $current_assistant, $assistant_id ); ?>>
+									<?php echo esc_html( $assistant_name ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Select which AI assistant to use as the default for all Research & Add pages (Company, Lead, Deal, Customer). Each CPT settings page can override this default.', 'nvoos-content-graph-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+			</table>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Get tools list — grouped by phase for the Tools Management tab.
+	 *
+	 * @return array Grouped array: 'group_label' => array( slug => name ).
+	 */
+	protected function get_tools_list() {
+		$tools = array();
+
+		// ---- AVAILABLE NOW (Phase A built + pre-existing) ----
+		$tools[ __( 'Available Now (11 tools)', 'nvoos-content-graph-pro' ) ] = array(
+			// Contact & Company.
+			'manage_crm_contact'              => __( 'Manage CRM Contact', 'nvoos-content-graph-pro' ),
+			'create_company'                  => __( 'Create Company', 'nvoos-content-graph-pro' ),
+			'get_companies'                   => __( 'Get Companies', 'nvoos-content-graph-pro' ),
+			'research_company'                => __( 'Research Company (Web Search)', 'nvoos-content-graph-pro' ),
+			// Email search (with caching + scheduling).
+			'crm_email_search_leads'          => __( 'Email Search: New Leads', 'nvoos-content-graph-pro' ),
+			'crm_email_search_correspondence' => __( 'Email Search: Customer Correspondence', 'nvoos-content-graph-pro' ),
+			'crm_email_search_accounting'     => __( 'Email Search: Accounting & Service', 'nvoos-content-graph-pro' ),
+			// MemPalace.
+			'crm_capture_interaction'         => __( 'Capture CRM Interaction (MemPalace)', 'nvoos-content-graph-pro' ),
+			// Upwork.
+			'draft_upwork_proposal'           => __( 'Draft Upwork Proposal', 'nvoos-content-graph-pro' ),
+			'score_upwork_job'                => __( 'Score Upwork Job', 'nvoos-content-graph-pro' ),
+			'search_upwork_jobs'              => __( 'Search Upwork Jobs', 'nvoos-content-graph-pro' ),
+			'import_upwork_project'           => __( 'Import Upwork Project', 'nvoos-content-graph-pro' ),
+			'list_upwork_contracts'           => __( 'List Upwork Contracts', 'nvoos-content-graph-pro' ),
+			'sync_upwork_tasks'               => __( 'Sync Upwork Tasks', 'nvoos-content-graph-pro' ),
+			// LinkedIn.
+			'search_linkedin_jobs'            => __( 'Search LinkedIn Jobs', 'nvoos-content-graph-pro' ),
+			'score_linkedin_job'              => __( 'Score LinkedIn Job', 'nvoos-content-graph-pro' ),
+			'import_linkedin_profile'         => __( 'Import LinkedIn Profile', 'nvoos-content-graph-pro' ),
+			'save_linkedin_job'               => __( 'Save LinkedIn Job', 'nvoos-content-graph-pro' ),
+		);
+
+		// ---- Phase B: CRUD + Pipeline + Routing (22 tools) ----
+		$tools[ __( 'Phase B — Lead, Deal & Pipeline (22 tools)', 'nvoos-content-graph-pro' ) ] = array(
+			'create_lead'               => __( 'Create Lead', 'nvoos-content-graph-pro' ),
+			'list_leads'                => __( 'List Leads', 'nvoos-content-graph-pro' ),
+			'get_lead'                  => __( 'Get Lead', 'nvoos-content-graph-pro' ),
+			'update_lead'               => __( 'Update Lead', 'nvoos-content-graph-pro' ),
+			'delete_lead'               => __( 'Delete Lead', 'nvoos-content-graph-pro' ),
+			'convert_lead_to_customer'  => __( 'Convert Lead to Customer', 'nvoos-content-graph-pro' ),
+			'create_deal'               => __( 'Create Deal', 'nvoos-content-graph-pro' ),
+			'list_deals'                => __( 'List Deals', 'nvoos-content-graph-pro' ),
+			'get_deal'                  => __( 'Get Deal', 'nvoos-content-graph-pro' ),
+			'update_deal'               => __( 'Update Deal', 'nvoos-content-graph-pro' ),
+			'delete_deal'               => __( 'Delete Deal', 'nvoos-content-graph-pro' ),
+			'move_deal_stage'           => __( 'Move Deal Stage', 'nvoos-content-graph-pro' ),
+			'create_crm_activity'       => __( 'Create CRM Activity', 'nvoos-content-graph-pro' ),
+			'list_crm_activities'       => __( 'List CRM Activities', 'nvoos-content-graph-pro' ),
+			'get_crm_activity'          => __( 'Get CRM Activity', 'nvoos-content-graph-pro' ),
+			'complete_crm_activity'     => __( 'Complete CRM Activity', 'nvoos-content-graph-pro' ),
+			'snooze_crm_activity'       => __( 'Snooze CRM Activity', 'nvoos-content-graph-pro' ),
+			'get_pipeline_view'         => __( 'Pipeline Kanban View', 'nvoos-content-graph-pro' ),
+			'get_conversion_funnel'     => __( 'Conversion Funnel', 'nvoos-content-graph-pro' ),
+			'forecast_pipeline_revenue' => __( 'Forecast Pipeline Revenue', 'nvoos-content-graph-pro' ),
+			'identify_top_customers'    => __( 'Identify Top Customers', 'nvoos-content-graph-pro' ),
+			'identify_top_clients'      => __( 'Identify Top Clients', 'nvoos-content-graph-pro' ),
+			'assign_lead_to_owner'      => __( 'Assign Lead to Owner', 'nvoos-content-graph-pro' ),
+			'rotate_leads'              => __( 'Rotate Leads', 'nvoos-content-graph-pro' ),
+		);
+
+		// ---- Phase C: Inbound Triage + Outbound (15 tools, in progress) ----
+		$tools[ __( 'Phase C — Inbound Triage & Outbound (15 tools, in progress)', 'nvoos-content-graph-pro' ) ] = array(
+			'evaluate_inbound_message'  => __( 'Evaluate Inbound Message', 'nvoos-content-graph-pro' ),
+			'classify_message_intent'   => __( 'Classify Message Intent', 'nvoos-content-graph-pro' ),
+			'extract_lead_from_message' => __( 'Extract Lead from Message', 'nvoos-content-graph-pro' ),
+			'detect_buying_signals'     => __( 'Detect Buying Signals', 'nvoos-content-graph-pro' ),
+			'score_lead'                => __( 'Score Lead (composite)', 'nvoos-content-graph-pro' ),
+			'qualify_lead_bant'         => __( 'Qualify Lead (BANT)', 'nvoos-content-graph-pro' ),
+			'qualify_lead_meddic'       => __( 'Qualify Lead (MEDDIC)', 'nvoos-content-graph-pro' ),
+			'send_lead_email'           => __( 'Send Lead Email', 'nvoos-content-graph-pro' ),
+			'send_lead_sms'             => __( 'Send Lead SMS', 'nvoos-content-graph-pro' ),
+			'send_lead_whatsapp'        => __( 'Send Lead WhatsApp', 'nvoos-content-graph-pro' ),
+			'send_lead_dm'              => __( 'Send Lead DM', 'nvoos-content-graph-pro' ),
+			'log_call_outcome'          => __( 'Log Call Outcome', 'nvoos-content-graph-pro' ),
+			'draft_lead_reply'          => __( 'Draft Lead Reply', 'nvoos-content-graph-pro' ),
+			'auto_reply_inbound'        => __( 'Auto-Reply Inbound', 'nvoos-content-graph-pro' ),
+			'schedule_follow_up'        => __( 'Schedule Follow-Up', 'nvoos-content-graph-pro' ),
+		);
+
+		// ---- Phase D: Sequences + Command Center (13 tools) ----
+		$tools[ __( 'Phase D — Sequences & Command Center (13 tools)', 'nvoos-content-graph-pro' ) ] = array(
+			'create_outreach_sequence'   => __( 'Create Outreach Sequence', 'nvoos-content-graph-pro' ),
+			'update_outreach_sequence'   => __( 'Update Outreach Sequence', 'nvoos-content-graph-pro' ),
+			'delete_outreach_sequence'   => __( 'Delete Outreach Sequence', 'nvoos-content-graph-pro' ),
+			'list_outreach_sequences'    => __( 'List Outreach Sequences', 'nvoos-content-graph-pro' ),
+			'enroll_lead_in_sequence'    => __( 'Enroll Lead in Sequence', 'nvoos-content-graph-pro' ),
+			'manage_sequence_state'      => __( 'Manage Sequence State', 'nvoos-content-graph-pro' ),
+			'get_sequence_performance'   => __( 'Sequence Performance', 'nvoos-content-graph-pro' ),
+			'create_workflow_rule'       => __( 'Create Workflow Rule', 'nvoos-content-graph-pro' ),
+			'manage_workflow_rules'      => __( 'Manage Workflow Rules', 'nvoos-content-graph-pro' ),
+			'simulate_workflow_rule'     => __( 'Simulate Workflow Rule', 'nvoos-content-graph-pro' ),
+			'get_workflow_inbox'         => __( 'Workflow Command Center Inbox', 'nvoos-content-graph-pro' ),
+			'get_owner_workload'         => __( 'Get Owner Workload', 'nvoos-content-graph-pro' ),
+			'auto_route_inbound_message' => __( 'Auto-Route Inbound Message', 'nvoos-content-graph-pro' ),
+		);
+
+		// ---- Phase E: Compliance + Interop (8 tools) ----
+		$tools[ __( 'Phase E — Compliance &amp; Interop (11 tools)', 'nvoos-content-graph-pro' ) ] = array(
+			'record_consent'          => __( 'Record Consent', 'nvoos-content-graph-pro' ),
+			'revoke_consent'          => __( 'Revoke Consent', 'nvoos-content-graph-pro' ),
+			'process_opt_out'         => __( 'Process Opt-Out', 'nvoos-content-graph-pro' ),
+			'check_dnc_status'        => __( 'Check DNC Status', 'nvoos-content-graph-pro' ),
+			'get_consent_audit'       => __( 'Get Consent Audit', 'nvoos-content-graph-pro' ),
+			'import_crm_csv'          => __( 'Import CRM CSV', 'nvoos-content-graph-pro' ),
+			'connect_to_external_crm' => __( 'Connect to External CRM', 'nvoos-content-graph-pro' ),
+			'import_crm_blueprint'    => __( 'Import CRM Blueprint', 'nvoos-content-graph-pro' ),
+			'classify_email_hygiene'  => __( 'Classify Email Hygiene', 'nvoos-content-graph-pro' ),
+			'manage_email_hygiene'    => __( 'Manage Email Hygiene', 'nvoos-content-graph-pro' ),
+			'prune_crm_messages'      => __( 'Prune CRM Messages', 'nvoos-content-graph-pro' ),
+			'repair_crm_data'         => __( 'Repair CRM Data', 'nvoos-content-graph-pro' ),
+			'detect_duplicates'       => __( 'Detect Duplicate Leads', 'nvoos-content-graph-pro' ),
+			'merge_duplicates'        => __( 'Merge Duplicate Leads', 'nvoos-content-graph-pro' ),
+		);
+
+		// ---- Phase F: Support Ticket Management (10 tools) ----
+		$tools[ __( 'Phase F — Support Ticket Management (10 tools)', 'nvoos-content-graph-pro' ) ] = array(
+			'create_support_ticket'   => __( 'Create Support Ticket', 'nvoos-content-graph-pro' ),
+			'get_support_ticket'      => __( 'Get Support Ticket', 'nvoos-content-graph-pro' ),
+			'list_support_tickets'    => __( 'List Support Tickets', 'nvoos-content-graph-pro' ),
+			'update_support_ticket'   => __( 'Update Support Ticket', 'nvoos-content-graph-pro' ),
+			'resolve_support_ticket'  => __( 'Resolve Support Ticket', 'nvoos-content-graph-pro' ),
+			'reopen_support_ticket'   => __( 'Reopen Support Ticket', 'nvoos-content-graph-pro' ),
+			'escalate_support_ticket' => __( 'Escalate Support Ticket', 'nvoos-content-graph-pro' ),
+			'merge_support_tickets'   => __( 'Merge Support Tickets', 'nvoos-content-graph-pro' ),
+			'classify_support_ticket' => __( 'Classify Support Ticket', 'nvoos-content-graph-pro' ),
+			'get_ticket_sla_report'   => __( 'Get Ticket SLA Report', 'nvoos-content-graph-pro' ),
+		);
+
+		// ---- Phase G: ICP (Ideal Customer Profile) Module ----
+		$tools[ __( 'Phase G — ICP &amp; Lead Scoring (2 tools)', 'nvoos-content-graph-pro' ) ] = array(
+			'compute_icp_score'  => __( 'Compute ICP Score', 'nvoos-content-graph-pro' ),
+			'manage_icp_profile' => __( 'Manage ICP Profile', 'nvoos-content-graph-pro' ),
+		);
+
+		return $tools;
+	}
+
+	/**
+	 * Render tools management tab — overrides base class to support
+	 * grouped tools (phase headers).
+	 *
+	 * @since 2.3.0
+	 */
+	protected function render_tools_tab() {
+		$tools = $this->get_tools_list();
+
+		// Count total tools across all groups.
+		$total = 0;
+		foreach ( $tools as $group ) {
+			if ( is_array( $group ) ) {
+				$total += count( $group );
+			}
+		}
+		?>
+		<div class="toolkit-card">
+			<h2><?php esc_html_e( 'Available Tools', 'nvoos-content-graph-pro' ); ?></h2>
+			<p class="description">
+				<?php
+					printf(
+						/* translators: %d: Number of tools listed */
+						esc_html__( 'This toolkit provides %d AI-powered tools. Phases A, B, D & E are complete; Phase C has 1 remaining integration item.', 'nvoos-content-graph-pro' ),
+						esc_html( $total )
+					);
+				?>
+			</p>
+
+			<div class="tools-list" style="margin-top: 20px;">
+				<?php foreach ( $tools as $group_label => $group_tools ) : ?>
+					<h3 style="margin-top: 24px; border-bottom: 1px solid #ccd0d4; padding-bottom: 6px;">
+						<?php echo esc_html( $group_label ); ?>
+					</h3>
+					<?php if ( is_array( $group_tools ) ) : ?>
+						<?php foreach ( $group_tools as $tool_slug => $tool_name ) : ?>
+							<div class="tool-item" style="padding: 4px 0;">
+								<strong><?php echo esc_html( $tool_name ); ?></strong>
+								<code style="margin-left: 10px; font-size: 11px;"><?php echo esc_html( $tool_slug ); ?></code>
+							</div>
+						<?php endforeach; ?>
+					<?php endif; ?>
+				<?php endforeach; ?>
+			</div>
+		</div>
+
+		<div class="toolkit-card">
+			<h2><?php esc_html_e( 'How to Use These Tools', 'nvoos-content-graph-pro' ); ?></h2>
+			<p><?php esc_html_e( 'All tools from this toolkit are automatically available to your AI assistants once the toolkit is enabled.', 'nvoos-content-graph-pro' ); ?></p>
+			<p><?php esc_html_e( 'To enable this toolkit:', 'nvoos-content-graph-pro' ); ?></p>
+			<ol>
+				<li><?php esc_html_e( 'Go to Settings → NV oOS → Tools & Features', 'nvoos-content-graph-pro' ); ?></li>
+				<li>
+					<?php
+					/* translators: %s: Toolkit name */
+					printf( esc_html__( 'Check the "%s" option', 'nvoos-content-graph-pro' ), esc_html( $this->toolkit_name ) );
+					?>
+				</li>
+				<li><?php esc_html_e( 'Save the settings', 'nvoos-content-graph-pro' ); ?></li>
+			</ol>
+			<p>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=features' ) ); ?>" class="button button-primary">
+					<?php esc_html_e( 'Go to Toolkit Settings', 'nvoos-content-graph-pro' ); ?>
+				</a>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Get available assistants for selection
+	 *
+	 * @return array List of assistant_id => name
+	 */
+	private function get_available_assistants() {
+		$assistants = array(
+			'default' => __( 'Default Assistant', 'nvoos-content-graph-pro' ),
+		);
+
+		// Get all published assistants.
+		$query = new WP_Query(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+
+		if ( $query->have_posts() ) {
+			while ( $query->have_posts() ) {
+				$query->the_post();
+				$assistants[ get_the_ID() ] = get_the_title();
+			}
+			wp_reset_postdata();
+		}
+
+		return $assistants;
+	}
+
+	/**
+	 * Sanitize CRM toolkit settings before saving.
+	 *
+	 * Merges submitted form fields into the full stored settings array so that
+	 * nested sub-arrays (pipeline stages, integrations, etc.) are never lost.
+	 *
+	 * @param array $input Submitted settings array keyed by field name.
+	 * @return array Sanitized settings array.
+	 */
+	public function sanitize_settings( $input ) {
+		// Start from the existing full options array to preserve nested defaults.
+		$existing = get_option( $this->option_name, array() );
+		if ( ! is_array( $existing ) ) {
+			$existing = array();
+		}
+
+		// Merge with CRM Engine defaults for any missing keys.
+		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			$defaults = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+		} else {
+			$defaults = array();
+		}
+		$sanitized = array_replace_recursive( $defaults, $existing );
+
+		// --- Lead Scoring & Qualification ---
+		if ( isset( $input['qualification_framework'] ) ) {
+			$valid_frameworks = array( 'bant', 'meddic', 'champ' );
+			if ( in_array( $input['qualification_framework'], $valid_frameworks, true ) ) {
+				$sanitized['qualification_framework'] = $input['qualification_framework'];
+			}
+		}
+
+		if ( isset( $input['hot_score_threshold'] ) ) {
+			$sanitized['hot_score_threshold'] = min( 100, max( 0, absint( $input['hot_score_threshold'] ) ) );
+		}
+
+		if ( isset( $input['warm_score_threshold'] ) ) {
+			$sanitized['warm_score_threshold'] = min( 100, max( 0, absint( $input['warm_score_threshold'] ) ) );
+		}
+
+		// --- Routing ---
+		if ( isset( $input['routing']['strategy'] ) ) {
+			$valid_strategies = array( 'round_robin', 'weighted' );
+			if ( in_array( $input['routing']['strategy'], $valid_strategies, true ) ) {
+				$sanitized['routing']['strategy'] = $input['routing']['strategy'];
+			}
+		}
+
+		// --- Consent & Compliance ---
+		if ( isset( $input['consent']['require_double_opt_in'] ) ) {
+			$sanitized['consent']['require_double_opt_in'] = (bool) $input['consent']['require_double_opt_in'];
+		} else {
+			// Checkbox: if not in POST, it was unchecked.
+			$sanitized['consent']['require_double_opt_in'] = false;
+		}
+
+		if ( isset( $input['consent']['physical_address'] ) ) {
+			$sanitized['consent']['physical_address'] = sanitize_textarea_field( $input['consent']['physical_address'] );
+		}
+
+		// --- Storage & Audit ---
+		if ( isset( $input['audit_retention_days'] ) ) {
+			$sanitized['audit_retention_days'] = min( 2555, max( 30, absint( $input['audit_retention_days'] ) ) );
+		}
+
+		// --- AI Integration ---
+		if ( isset( $input['research_assistant'] ) ) {
+			if ( 'default' === $input['research_assistant'] ) {
+				$sanitized['research_assistant'] = 'default';
+			} else {
+				$sanitized['research_assistant'] = absint( $input['research_assistant'] );
+			}
+		}
+
+		// --- Channel Integrations (Phase C) ---
+		if ( isset( $input['integrations'] ) && is_array( $input['integrations'] ) ) {
+			$integrations = $input['integrations'];
+
+			// SMS provider.
+			if ( isset( $integrations['sms_provider'] ) ) {
+				$valid_providers                           = array( 'twilio', 'notifylk' );
+				$sanitized['integrations']['sms_provider'] = in_array( $integrations['sms_provider'], $valid_providers, true )
+					? $integrations['sms_provider']
+					: 'twilio';
+			}
+
+			// Twilio.
+			if ( isset( $integrations['twilio_account_sid_secret'] ) ) {
+				$sanitized['integrations']['twilio_account_sid_secret'] = sanitize_text_field( $integrations['twilio_account_sid_secret'] );
+			}
+			if ( isset( $integrations['twilio_auth_token_secret'] ) ) {
+				// Auth tokens must not be mangled by sanitize_text_field — trim only.
+				$sanitized['integrations']['twilio_auth_token_secret'] = trim( (string) $integrations['twilio_auth_token_secret'] );
+			}
+			if ( isset( $integrations['twilio_from_number'] ) ) {
+				$sanitized['integrations']['twilio_from_number'] = sanitize_text_field( $integrations['twilio_from_number'] );
+			}
+
+			// WhatsApp.
+			if ( isset( $integrations['whatsapp_access_token'] ) ) {
+				// Access tokens must not be sanitized with sanitize_text_field — trim only.
+				$sanitized['integrations']['whatsapp_access_token'] = trim( (string) $integrations['whatsapp_access_token'] );
+			}
+			if ( isset( $integrations['whatsapp_phone_number_id'] ) ) {
+				$sanitized['integrations']['whatsapp_phone_number_id'] = sanitize_text_field( $integrations['whatsapp_phone_number_id'] );
+			}
+			if ( isset( $integrations['whatsapp_app_secret'] ) ) {
+				$sanitized['integrations']['whatsapp_app_secret'] = trim( (string) $integrations['whatsapp_app_secret'] );
+			}
+
+			// notify.lk.
+			if ( isset( $integrations['notifylk_user_id'] ) ) {
+				$sanitized['integrations']['notifylk_user_id'] = sanitize_text_field( $integrations['notifylk_user_id'] );
+			}
+			if ( isset( $integrations['notifylk_api_key'] ) ) {
+				$sanitized['integrations']['notifylk_api_key'] = trim( (string) $integrations['notifylk_api_key'] );
+			}
+			if ( isset( $integrations['notifylk_sender_id'] ) ) {
+				$sanitized['integrations']['notifylk_sender_id'] = sanitize_text_field( $integrations['notifylk_sender_id'] );
+			}
+
+			// Gmail default import query.
+			if ( isset( $integrations['gmail_default_query'] ) ) {
+				$sanitized['integrations']['gmail_default_query'] = sanitize_text_field( $integrations['gmail_default_query'] );
+			}
+
+			// Gmail scheduled import settings (since 2.9.0).
+			if ( isset( $integrations['gmail_poll_interval'] ) ) {
+				$sanitized['integrations']['gmail_poll_interval'] = max( 60, min( 3600, absint( $integrations['gmail_poll_interval'] ) ) );
+			}
+			if ( isset( $integrations['gmail_max_per_poll'] ) ) {
+				$sanitized['integrations']['gmail_max_per_poll'] = max( 1, min( 25, absint( $integrations['gmail_max_per_poll'] ) ) );
+			}
+			$sanitized['integrations']['gmail_use_history_sync'] = ! empty( $integrations['gmail_use_history_sync'] );
+		}
+
+		// --- Optimization settings (since 2.9.0) ---
+		if ( isset( $input['optimization'] ) && is_array( $input['optimization'] ) ) {
+			if ( isset( $input['optimization']['message_retention_days'] ) ) {
+				$sanitized['optimization']['message_retention_days'] = max( 0, min( 730, absint( $input['optimization']['message_retention_days'] ) ) );
+			}
+			if ( isset( $input['optimization']['audit_max_entries'] ) ) {
+				$sanitized['optimization']['audit_max_entries'] = max( 1000, min( 10000, absint( $input['optimization']['audit_max_entries'] ) ) );
+			}
+		}
+
+		// --- External Sourcing settings (since 2.10.0) ---
+		if ( isset( $input['external_sourcing'] ) && is_array( $input['external_sourcing'] ) ) {
+			$es = $input['external_sourcing'];
+
+			// Upwork.
+			if ( isset( $es['upwork']['default_connection_id'] ) ) {
+				$sanitized['external_sourcing']['upwork']['default_connection_id'] = sanitize_text_field( $es['upwork']['default_connection_id'] );
+			}
+			if ( isset( $es['upwork']['auto_import_as'] ) ) {
+				$valid_as = array( 'deal', 'project', 'task' );
+				$sanitized['external_sourcing']['upwork']['auto_import_as'] = in_array( $es['upwork']['auto_import_as'], $valid_as, true )
+					? $es['upwork']['auto_import_as']
+					: 'deal';
+			}
+			if ( isset( $es['upwork']['auto_import_min_score'] ) ) {
+				$sanitized['external_sourcing']['upwork']['auto_import_min_score'] = min( 100, max( 0, absint( $es['upwork']['auto_import_min_score'] ) ) );
+			}
+			$sanitized['external_sourcing']['upwork']['use_profile_context'] = ! empty( $es['upwork']['use_profile_context'] );
+
+			// LinkedIn.
+			if ( isset( $es['linkedin']['default_connection_id'] ) ) {
+				$sanitized['external_sourcing']['linkedin']['default_connection_id'] = sanitize_text_field( $es['linkedin']['default_connection_id'] );
+			}
+			if ( isset( $es['linkedin']['auto_import_as'] ) ) {
+				$valid_as = array( 'deal', 'project', 'task' );
+				$sanitized['external_sourcing']['linkedin']['auto_import_as'] = in_array( $es['linkedin']['auto_import_as'], $valid_as, true )
+					? $es['linkedin']['auto_import_as']
+					: 'deal';
+			}
+			if ( isset( $es['linkedin']['auto_import_min_score'] ) ) {
+				$sanitized['external_sourcing']['linkedin']['auto_import_min_score'] = min( 100, max( 0, absint( $es['linkedin']['auto_import_min_score'] ) ) );
+			}
+			$sanitized['external_sourcing']['linkedin']['use_profile_context'] = ! empty( $es['linkedin']['use_profile_context'] );
+			if ( isset( $es['linkedin']['default_search_keywords'] ) ) {
+				$sanitized['external_sourcing']['linkedin']['default_search_keywords'] = sanitize_text_field( $es['linkedin']['default_search_keywords'] );
+			}
+			if ( isset( $es['linkedin']['default_location'] ) ) {
+				$sanitized['external_sourcing']['linkedin']['default_location'] = sanitize_text_field( $es['linkedin']['default_location'] );
+			}
+
+			// Upwork extended fields (since 2.12.0).
+			if ( isset( $es['upwork']['default_search_keywords'] ) ) {
+				$sanitized['external_sourcing']['upwork']['default_search_keywords'] = sanitize_text_field( $es['upwork']['default_search_keywords'] );
+			}
+			if ( isset( $es['upwork']['default_location'] ) ) {
+				$sanitized['external_sourcing']['upwork']['default_location'] = sanitize_text_field( $es['upwork']['default_location'] );
+			}
+			if ( isset( $es['upwork']['default_job_type'] ) ) {
+				$valid_uw_types = array( '', 'hourly', 'fixed' );
+				$sanitized['external_sourcing']['upwork']['default_job_type'] = in_array( $es['upwork']['default_job_type'], $valid_uw_types, true )
+					? $es['upwork']['default_job_type']
+					: '';
+			}
+			if ( isset( $es['upwork']['default_experience_level'] ) ) {
+				$valid_uw_exp = array( '', 'entry', 'intermediate', 'expert' );
+				$sanitized['external_sourcing']['upwork']['default_experience_level'] = in_array( $es['upwork']['default_experience_level'], $valid_uw_exp, true )
+					? $es['upwork']['default_experience_level']
+					: '';
+			}
+			if ( isset( $es['upwork']['default_categories'] ) ) {
+				$sanitized['external_sourcing']['upwork']['default_categories'] = sanitize_text_field( $es['upwork']['default_categories'] );
+			}
+			if ( isset( $es['upwork']['max_results_per_search'] ) ) {
+				$sanitized['external_sourcing']['upwork']['max_results_per_search'] = min( 50, max( 1, absint( $es['upwork']['max_results_per_search'] ) ) );
+			}
+			if ( isset( $es['upwork']['excluded_keywords'] ) ) {
+				$sanitized['external_sourcing']['upwork']['excluded_keywords'] = sanitize_textarea_field( $es['upwork']['excluded_keywords'] );
+			}
+
+			// LinkedIn extended fields (since 2.12.0).
+			if ( isset( $es['linkedin']['default_job_type'] ) ) {
+				$valid_li_types = array( '', 'full_time', 'part_time', 'contract', 'temporary', 'internship' );
+				$sanitized['external_sourcing']['linkedin']['default_job_type'] = in_array( $es['linkedin']['default_job_type'], $valid_li_types, true )
+					? $es['linkedin']['default_job_type']
+					: '';
+			}
+			if ( isset( $es['linkedin']['default_experience_level'] ) ) {
+				$valid_li_exp = array( '', 'entry', 'mid_level', 'senior', 'executive' );
+				$sanitized['external_sourcing']['linkedin']['default_experience_level'] = in_array( $es['linkedin']['default_experience_level'], $valid_li_exp, true )
+					? $es['linkedin']['default_experience_level']
+					: '';
+			}
+			$sanitized['external_sourcing']['linkedin']['default_remote'] = ! empty( $es['linkedin']['default_remote'] );
+			if ( isset( $es['linkedin']['max_results_per_search'] ) ) {
+				$sanitized['external_sourcing']['linkedin']['max_results_per_search'] = min( 50, max( 1, absint( $es['linkedin']['max_results_per_search'] ) ) );
+			}
+			if ( isset( $es['linkedin']['excluded_keywords'] ) ) {
+				$sanitized['external_sourcing']['linkedin']['excluded_keywords'] = sanitize_textarea_field( $es['linkedin']['excluded_keywords'] );
+			}
+
+			// Shared fields.
+			if ( isset( $es['ideal_client_profile'] ) ) {
+				$sanitized['external_sourcing']['ideal_client_profile'] = sanitize_textarea_field( $es['ideal_client_profile'] );
+			}
+			if ( isset( $es['default_budget_min'] ) && '' !== $es['default_budget_min'] ) {
+				$sanitized['external_sourcing']['default_budget_min'] = absint( $es['default_budget_min'] );
+			}
+			if ( isset( $es['default_budget_max'] ) && '' !== $es['default_budget_max'] ) {
+				$sanitized['external_sourcing']['default_budget_max'] = absint( $es['default_budget_max'] );
+			}
+			if ( isset( $es['excluded_keywords'] ) ) {
+				$sanitized['external_sourcing']['excluded_keywords'] = sanitize_textarea_field( $es['excluded_keywords'] );
+			}
+
+			// Result format (since 2.12.0).
+			if ( isset( $es['result_format'] ) && is_array( $es['result_format'] ) ) {
+				$rf = $es['result_format'];
+				if ( isset( $rf['description_length'] ) ) {
+					$sanitized['external_sourcing']['result_format']['description_length'] = min( 2000, max( 0, absint( $rf['description_length'] ) ) );
+				}
+				$sanitized['external_sourcing']['result_format']['include_email']       = ! empty( $rf['include_email'] );
+				$sanitized['external_sourcing']['result_format']['include_client_info'] = ! empty( $rf['include_client_info'] );
+				$sanitized['external_sourcing']['result_format']['include_budget']      = ! empty( $rf['include_budget'] );
+				$sanitized['external_sourcing']['result_format']['include_skills']      = ! empty( $rf['include_skills'] );
+				$sanitized['external_sourcing']['result_format']['include_applicants']  = ! empty( $rf['include_applicants'] );
+				$sanitized['external_sourcing']['result_format']['compact_mode']        = ! empty( $rf['compact_mode'] );
+			}
+
+			// Notification (since 2.12.0).
+			if ( isset( $es['notification'] ) && is_array( $es['notification'] ) ) {
+				$n = $es['notification'];
+				$sanitized['external_sourcing']['notification']['enabled'] = ! empty( $n['enabled'] );
+				if ( isset( $n['email'] ) ) {
+					$sanitized['external_sourcing']['notification']['email'] = sanitize_email( $n['email'] );
+				}
+				if ( isset( $n['min_score_alert'] ) ) {
+					$sanitized['external_sourcing']['notification']['min_score_alert'] = min( 100, max( 0, absint( $n['min_score_alert'] ) ) );
+				}
+				if ( isset( $n['max_alerts_per_cycle'] ) ) {
+					$sanitized['external_sourcing']['notification']['max_alerts_per_cycle'] = min( 50, max( 1, absint( $n['max_alerts_per_cycle'] ) ) );
+				}
+			}
+
+			// Deduplication (since 2.12.0).
+			if ( isset( $es['deduplication'] ) && is_array( $es['deduplication'] ) ) {
+				$d = $es['deduplication'];
+				$sanitized['external_sourcing']['deduplication']['enabled'] = ! empty( $d['enabled'] );
+				if ( isset( $d['strategy'] ) ) {
+					$valid_strategies = array( 'title_url', 'url_only', 'none' );
+					$sanitized['external_sourcing']['deduplication']['strategy'] = in_array( $d['strategy'], $valid_strategies, true )
+						? $d['strategy']
+						: 'title_url';
+				}
+				if ( isset( $d['lookback_days'] ) ) {
+					$sanitized['external_sourcing']['deduplication']['lookback_days'] = min( 365, max( 1, absint( $d['lookback_days'] ) ) );
+				}
+			}
+		}
+
+		// Clear engine static cache so next read picks up the new values.
+		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			WP_MCP_AI_CRM_Engine::flush_settings_cache();
+		}
+
+		// --- Email Hygiene Settings ---
+		// These are posted under their own option key and sanitised separately.
+		$hygiene_key = WP_MCP_AI_CRM_Engine::HYGIENE_OPTION;
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by WordPress settings API.
+		if ( isset( $_POST[ $hygiene_key ] ) && is_array( $_POST[ $hygiene_key ] ) ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.NonceVerification.Missing
+			$hygiene_input     = wp_unslash( $_POST[ $hygiene_key ] );
+			$hygiene_sanitized = array();
+
+			// List-type fields (textarea → array via newline split).
+			$list_fields = array( 'exclude_list', 'priority_list', 'spam_domains', 'promotional_domains', 'priority_domains', 'promotional_keywords' );
+			foreach ( $list_fields as $field ) {
+				if ( isset( $hygiene_input[ $field ] ) ) {
+					$raw = is_array( $hygiene_input[ $field ] )
+						? implode( "\n", $hygiene_input[ $field ] )
+						: (string) $hygiene_input[ $field ];
+
+					// Split on newlines, trim, filter empty.
+					$lines = explode( "\n", $raw );
+					$lines = array_map( 'sanitize_text_field', $lines );
+					$lines = array_map( 'trim', $lines );
+					$lines = array_filter(
+						$lines,
+						function ( $l ) {
+							return '' !== $l;
+						}
+					);
+					$lines = array_values( $lines );
+
+					$hygiene_sanitized[ $field ] = $lines;
+				}
+			}
+
+			// Boolean fields.
+			$bool_fields = array( 'auto_prune_spam', 'auto_prune_excluded' );
+			foreach ( $bool_fields as $field ) {
+				$hygiene_sanitized[ $field ] = ! empty( $hygiene_input[ $field ] );
+			}
+
+			// Numeric fields.
+			if ( isset( $hygiene_input['auto_prune_stale_days'] ) ) {
+				$hygiene_sanitized['auto_prune_stale_days'] = absint( $hygiene_input['auto_prune_stale_days'] );
+			}
+
+			update_option( $hygiene_key, $hygiene_sanitized, false );
+		}
+
+		return $sanitized;
+	}
+
+	/**
+	 * Check if Node.js is available
+	 *
+	 * @return bool
+	 */
+	private function check_nodejs_available() {
+		// Check if nodemailer package exists.
+		$nodemailer = NVOOS_CONTENT_GRAPH_PRO_PATH . 'node_modules/nodemailer';
+		return file_exists( $nodemailer );
+	}
+}
+
+// Initialize settings page (guard prevents duplicate registration if loaded more than once).
+if ( is_admin() && ! isset( $GLOBALS['wp_mcp_ai_crm_settings_page_initialized'] ) ) {
+	$GLOBALS['wp_mcp_ai_crm_settings_page_initialized'] = true;
+	new WP_MCP_AI_CRM_Settings_Page();
+}

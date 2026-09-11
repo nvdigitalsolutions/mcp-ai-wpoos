@@ -9,6 +9,7 @@ import { Transform } from "stream";
 import { is_object } from "./utils/is_object.js";
 import { transform } from "./api/index.js";
 import { CsvError } from "./api/CsvError.js";
+import { normalize_options } from "./api/normalize_options.js";
 
 class Parser extends Transform {
   constructor(opts = {}) {
@@ -100,14 +101,21 @@ const parse = function () {
   const parser = new Parser(options);
   if (callback) {
     const records =
-      options === undefined || options.objname === undefined ? [] : {};
+      options === undefined || options.objname === undefined
+        ? []
+        : Object.create(null);
     parser.on("readable", function () {
       let record;
       while ((record = this.read()) !== null) {
         if (options === undefined || options.objname === undefined) {
           records.push(record);
         } else {
-          records[record[0]] = record[1];
+          Object.assign(records, {
+            [record[0]]: record[1],
+            // writable: true,
+            // enumerable: true,
+            // configurable: true
+          });
         }
       }
     });
@@ -123,7 +131,7 @@ const parse = function () {
       parser.write(data);
       parser.end();
     };
-    // Support Deno, Rollup doesnt provide a shim for setImmediate
+    // Support Deno, Rollup doesn't provide a shim for setImmediate
     if (typeof setImmediate === "function") {
       setImmediate(writer);
     } else {
@@ -133,5 +141,4 @@ const parse = function () {
   return parser;
 };
 
-// export default parse
-export { parse, Parser, CsvError };
+export { CsvError, parse, Parser, normalize_options };

@@ -1,0 +1,1348 @@
+<?php
+/**
+ * Image tool base class (ecosystem port - Wave F2, image-production D8-compat slice).
+ *
+ * Ported from the base plugin's `includes/` directory for the standalone `nvoos-content-graph-pro`
+ * addon (D8-compat copy - same pattern as the tool-interface/chat-response/envelope copies). Kept
+ * byte-identical. The base plugin owns the symbol in monolith installs - the addon boots nothing when
+ * `WP_MCP_AI_PRO_PATH` is defined (see the plugin entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain `nvoos-content-graph-pro`; the
+ * base-owned `WP_MCP_AI_PATH` trait requires gain exists-check seams resolving from the addon's
+ * D8-compat `src/` copies and the `WP_MCP_AI_PATH` runtime refs swap to `NVOOS_CONTENT_GRAPH_PRO_PATH`.
+ *
+ * Abstract base class for image manipulation tools.
+ *
+ * Provides common functionality for all image editing tools including:
+ * - Loading images from various sources (attachment ID, URL, base64)
+ * - Saving edited images as WordPress attachments
+ * - WordPress image editor integration
+ * - Common sanitization and validation
+ *
+ * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
+ */
+
+declare(strict_types=1);
+
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+if ( ! trait_exists( 'WP_MCP_AI_Attachment_File_Resolver' ) ) {
+	$nvoos_content_graph_pro_attachmentfile = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
+	if ( file_exists( $nvoos_content_graph_pro_attachmentfile ) ) {
+		require_once $nvoos_content_graph_pro_attachmentfile;
+	}
+}
+if ( ! trait_exists( 'WP_MCP_AI_NodeJS_Subprocess' ) ) {
+	$nvoos_content_graph_pro_nodejs = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
+	if ( file_exists( $nvoos_content_graph_pro_nodejs ) ) {
+		require_once $nvoos_content_graph_pro_nodejs;
+	}
+}
+if ( ! trait_exists( 'WP_MCP_AI_SVG_Vectorizer' ) ) {
+	$nvoos_content_graph_pro_svg = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/traits/trait-wp-mcp-ai-svg-vectorizer.php';
+	if ( file_exists( $nvoos_content_graph_pro_svg ) ) {
+		require_once $nvoos_content_graph_pro_svg;
+	}
+}
+if ( ! trait_exists( 'WP_MCP_AI_Tool_Chat_Response' ) ) {
+	$nvoos_content_graph_pro_chat = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/trait-wp-mcp-ai-tool-chat-response.php';
+	if ( file_exists( $nvoos_content_graph_pro_chat ) ) {
+		require_once $nvoos_content_graph_pro_chat;
+	}
+}
+if ( ! trait_exists( 'WP_MCP_AI_Tool_Image_Response' ) ) {
+	$nvoos_content_graph_pro_image = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/trait-wp-mcp-ai-tool-image-response.php';
+	if ( file_exists( $nvoos_content_graph_pro_image ) ) {
+		require_once $nvoos_content_graph_pro_image;
+	}
+}
+
+/**
+ * Abstract base class for image manipulation tools.
+ */
+abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Attachment_File_Resolver;
+	use WP_MCP_AI_NodeJS_Subprocess;
+	use WP_MCP_AI_SVG_Vectorizer;
+	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Image_Response;
+
+	/**
+	 * Get allowed image MIME types.
+	 *
+	 * @return array
+	 */
+	protected function get_allowed_mime_types() {
+		return array(
+			'image/jpeg'    => 'jpg',
+			'image/jpg'     => 'jpg',
+			'image/png'     => 'png',
+			'image/webp'    => 'webp',
+			'image/gif'     => 'gif',
+			'image/svg+xml' => 'svg',
+		);
+	}
+
+	/**
+	 * Enrich arguments with metadata from context messages.
+	 *
+	 * When OpenAI processes messages, it strips custom metadata fields (attachment_id,
+	 * file_name, mime_type, bytes) from image segments, only preserving the URL.
+	 * This method extracts that metadata from the original user messages in the context
+	 * to restore it for agentic workflows.
+	 *
+	 * @param array $arguments Tool arguments from OpenAI.
+	 * @param array $context   Execution context including messages.
+	 * @return array Enriched arguments with metadata.
+	 */
+	protected function enrich_arguments_from_messages( array $arguments, array $context ) {
+		// If attachment_id is already provided, no need to enrich.
+		if ( ! empty( $arguments['attachment_id'] ) ) {
+			return $arguments;
+		}
+
+		// If no messages in context, can't enrich.
+		if ( empty( $context['messages'] ) || ! is_array( $context['messages'] ) ) {
+			return $arguments;
+		}
+
+		// Look for URL in arguments to match against messages.
+		$target_url = '';
+		if ( ! empty( $arguments['url'] ) ) {
+			$target_url = $arguments['url'];
+		} elseif ( ! empty( $arguments['image_url'] ) ) {
+			$target_url = $arguments['image_url'];
+		}
+
+		if ( '' === $target_url ) {
+			return $arguments;
+		}
+
+		// Normalize URL for comparison (strip query strings and fragments).
+		$target_url_normalized = strtok( $target_url, '?' );
+		$target_url_normalized = strtok( $target_url_normalized, '#' );
+
+		// Collect all image attachments found in messages as fallback.
+		// Stored in reverse order (most recent first).
+		$found_images = array();
+
+		// Search through messages for matching image attachment.
+		foreach ( $context['messages'] as $message ) {
+			// Only check user messages (where attachments originate).
+			if ( ! isset( $message['role'] ) || 'user' !== $message['role'] ) {
+				continue;
+			}
+
+			// Check if message has content array with segments.
+			if ( ! isset( $message['content'] ) || ! is_array( $message['content'] ) ) {
+				continue;
+			}
+
+			foreach ( $message['content'] as $segment ) {
+				if ( ! is_array( $segment ) ) {
+					continue;
+				}
+
+				// Check for image segments (input_image or image_url type).
+				$type = isset( $segment['type'] ) ? $segment['type'] : '';
+				if ( ! in_array( $type, array( 'input_image', 'image_url' ), true ) ) {
+					continue;
+				}
+
+				// Extract URL from segment.
+				$segment_url = '';
+				if ( isset( $segment['url'] ) ) {
+					$segment_url = $segment['url'];
+				} elseif ( isset( $segment['image_url']['url'] ) ) {
+					$segment_url = $segment['image_url']['url'];
+				} elseif ( isset( $segment['image_url'] ) && is_string( $segment['image_url'] ) ) {
+					$segment_url = $segment['image_url'];
+				}
+
+				if ( '' === $segment_url ) {
+					continue;
+				}
+
+				// Normalize segment URL for comparison.
+				$segment_url_normalized = strtok( $segment_url, '?' );
+				$segment_url_normalized = strtok( $segment_url_normalized, '#' );
+
+				// Check if URLs match.
+				if ( $segment_url_normalized === $target_url_normalized ) {
+					// Found matching image! Extract metadata.
+					if ( isset( $segment['attachment_id'] ) && $segment['attachment_id'] > 0 ) {
+						$arguments['attachment_id'] = absint( $segment['attachment_id'] );
+					}
+
+					if ( isset( $segment['file_name'] ) && '' !== $segment['file_name'] ) {
+						$arguments['file_name'] = sanitize_text_field( $segment['file_name'] );
+					}
+
+					if ( isset( $segment['mime_type'] ) && '' !== $segment['mime_type'] ) {
+						$arguments['source_mime_type'] = sanitize_text_field( $segment['mime_type'] );
+					}
+
+					if ( isset( $segment['bytes'] ) && $segment['bytes'] > 0 ) {
+						$arguments['bytes'] = absint( $segment['bytes'] );
+					}
+
+					// Found the match, no need to continue searching.
+					return $arguments;
+				}
+
+				// Store this image as a potential fallback.
+				// We store images in order found (which typically means most recent first in the messages array).
+				$found_images[] = array(
+					'url'            => $segment_url,
+					'url_normalized' => $segment_url_normalized,
+					'attachment_id'  => isset( $segment['attachment_id'] ) ? absint( $segment['attachment_id'] ) : 0,
+					'file_name'      => isset( $segment['file_name'] ) ? sanitize_text_field( $segment['file_name'] ) : '',
+					'mime_type'      => isset( $segment['mime_type'] ) ? sanitize_text_field( $segment['mime_type'] ) : '',
+					'bytes'          => isset( $segment['bytes'] ) ? absint( $segment['bytes'] ) : 0,
+				);
+			}
+		}
+
+		// No exact match found.
+		// If we found any images in messages and the provided URL domain doesn't match any of them,
+		// it's likely a hallucinated/incorrect URL. Use the most recent image instead.
+		if ( ! empty( $found_images ) ) {
+			// Check if the target URL domain matches any found image domains.
+			$target_domain         = $this->extract_domain_from_url( $target_url );
+			$found_matching_domain = false;
+
+			foreach ( $found_images as $image ) {
+				$image_domain = $this->extract_domain_from_url( $image['url'] );
+				if ( $target_domain === $image_domain ) {
+					$found_matching_domain = true;
+					break;
+				}
+			}
+
+			// If the target URL domain doesn't match any images from messages,
+			// it's likely incorrect. Use the most recent (first) image instead.
+			if ( ! $found_matching_domain ) {
+				$fallback_image = $found_images[0];
+
+				// Replace URL with the correct one from messages.
+				if ( ! empty( $arguments['url'] ) ) {
+					$arguments['url'] = $fallback_image['url'];
+				}
+				if ( ! empty( $arguments['image_url'] ) ) {
+					$arguments['image_url'] = $fallback_image['url'];
+				}
+
+				// Add metadata from the fallback image.
+				if ( $fallback_image['attachment_id'] > 0 ) {
+					$arguments['attachment_id'] = $fallback_image['attachment_id'];
+				}
+				if ( '' !== $fallback_image['file_name'] ) {
+					$arguments['file_name'] = $fallback_image['file_name'];
+				}
+				if ( '' !== $fallback_image['mime_type'] ) {
+					$arguments['source_mime_type'] = $fallback_image['mime_type'];
+				}
+				if ( $fallback_image['bytes'] > 0 ) {
+					$arguments['bytes'] = $fallback_image['bytes'];
+				}
+
+				// Log the URL correction for debugging.
+				if ( function_exists( 'wp_mcp_ai_log_activity' ) ) {
+					wp_mcp_ai_log_activity(
+						'image_url_corrected',
+						sprintf(
+							'Corrected incorrect image URL from %s to %s',
+							$target_url,
+							$fallback_image['url']
+						)
+					);
+				}
+			}
+		}
+
+		return $arguments;
+	}
+
+	/**
+	 * Load source image from various input formats.
+	 *
+	 * Supports:
+	 * - attachment_id: WordPress attachment ID
+	 * - file_id: OpenAI/Gemini file identifier (converted to attachment_id)
+	 * - url: URL to image file
+	 * - image_url: URL to image file (legacy parameter)
+	 * - image_data: Base64-encoded image data
+	 *
+	 * @param array $arguments Tool arguments containing image source.
+	 * @param int   $user_id   Current user ID for permission checks.
+	 * @return WP_Image_Editor|WP_Error Image editor instance or error.
+	 */
+	protected function load_source_image( array $arguments, $user_id = 0 ) {
+		// Try to resolve from attachment_id, file_id, or url first.
+		if ( ! empty( $arguments['attachment_id'] ) || ! empty( $arguments['file_id'] ) || ! empty( $arguments['url'] ) ) {
+			$resolved = $this->resolve_attachment_id( $arguments );
+
+			// Handle remote URL case.
+			if ( is_array( $resolved ) && isset( $resolved['url'] ) ) {
+				// Fall through to URL handling below.
+				$image_url = $resolved['url'];
+			} elseif ( is_wp_error( $resolved ) ) {
+				return $resolved;
+			} elseif ( $resolved > 0 ) {
+				$attachment_id = $resolved;
+			}
+		}
+
+		// Initialize variables if not set by above.
+		if ( ! isset( $attachment_id ) ) {
+			$attachment_id = 0;
+		}
+		if ( ! isset( $image_url ) ) {
+			$image_url = isset( $arguments['image_url'] ) ? esc_url_raw( $arguments['image_url'] ) : '';
+		}
+		$image_data = isset( $arguments['image_data'] ) ? $arguments['image_data'] : '';
+
+		$file_path     = '';
+		$is_local_file = false;
+
+		if ( $attachment_id > 0 ) {
+			// Load from WordPress attachment.
+			$file_path = get_attached_file( $attachment_id );
+
+			if ( ! $file_path || ! file_exists( $file_path ) ) {
+				return new WP_Error( 'wp_mcp_ai_invalid_attachment', __( 'The specified attachment does not exist.', 'nvoos-content-graph-pro' ), array( 'status' => 404 ) );
+			}
+
+			// Check permissions against the acting user, not the global
+			// current user — the tool executes under $context['user_id'] and
+			// the global state may not reflect that user (e.g. cron, CLI, or
+			// token-authenticated executions).
+			if ( $user_id && ! user_can( $user_id, 'read_post', $attachment_id ) ) {
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to access this attachment.', 'nvoos-content-graph-pro' ), array( 'status' => 403 ) );
+			}
+		} elseif ( '' !== $image_url ) {
+			// Try to resolve URL to attachment ID first.
+			// This handles cases where the URL is a WordPress media URL that might have.
+			// different scheme (http vs https) or other variations that prevent direct.
+			// filesystem access but still refers to a valid local attachment.
+			$file_path              = null;
+			$resolved_attachment_id = $this->resolve_attachment_id_from_url( $image_url );
+
+			if ( $resolved_attachment_id > 0 ) {
+				$resolved_file_path = get_attached_file( $resolved_attachment_id );
+
+				if ( $resolved_file_path && file_exists( $resolved_file_path ) && is_readable( $resolved_file_path ) ) {
+					$file_path     = $resolved_file_path;
+					$is_local_file = true;
+				}
+			}
+
+			// Try to use local file path first to avoid HTTP auth issues.
+			if ( null === $file_path && $this->is_local_wordpress_url( $image_url ) ) {
+				$local_file_path = $this->get_file_path_from_local_url( $image_url );
+
+				if ( $local_file_path && file_exists( $local_file_path ) && is_readable( $local_file_path ) ) {
+					$file_path     = $local_file_path;
+					$is_local_file = true;
+				}
+			}
+
+			// If no local file path, download via HTTP.
+			if ( null === $file_path ) {
+				// Validate URL before making HTTP request.
+				if ( ! wp_http_validate_url( $image_url ) ) {
+					return new WP_Error( 'wp_mcp_ai_invalid_url', __( 'The provided image URL is not valid.', 'nvoos-content-graph-pro' ), array( 'status' => 400 ) );
+				}
+
+				$response = wp_safe_remote_get( $image_url, array( 'timeout' => 30 ) );
+
+				if ( is_wp_error( $response ) ) {
+					return new WP_Error( 'wp_mcp_ai_download_error', __( 'Failed to download the source image.', 'nvoos-content-graph-pro' ), array( 'error' => $response->get_error_message() ) );
+				}
+
+				$status_code = wp_remote_retrieve_response_code( $response );
+				if ( $status_code < 200 || $status_code >= 300 ) {
+					/* translators: %d: HTTP status code */
+					return new WP_Error( 'wp_mcp_ai_download_error', sprintf( __( 'Failed to download image. HTTP %d', 'nvoos-content-graph-pro' ), $status_code ), array( 'status' => $status_code ) );
+				}
+
+				$image_contents = wp_remote_retrieve_body( $response );
+				if ( '' === $image_contents ) {
+					return new WP_Error( 'wp_mcp_ai_download_error', __( 'Downloaded image is empty.', 'nvoos-content-graph-pro' ) );
+				}
+
+				// Create temporary file from downloaded content.
+				$file_path = $this->create_temp_file( $image_contents, $image_url );
+				if ( is_wp_error( $file_path ) ) {
+					return $file_path;
+				}
+			}
+		} elseif ( '' !== $image_data ) {
+			// Use base64-encoded data.
+			$decoded_data = base64_decode( $image_data, true );
+
+			if ( false === $decoded_data || '' === $decoded_data ) {
+				return new WP_Error( 'wp_mcp_ai_invalid_image_data', __( 'The provided image data is not valid base64.', 'nvoos-content-graph-pro' ), array( 'status' => 400 ) );
+			}
+
+			// Create temporary file.
+			$file_path = $this->create_temp_file( $decoded_data );
+			if ( is_wp_error( $file_path ) ) {
+				return $file_path;
+			}
+		} else {
+			return new WP_Error( 'wp_mcp_ai_missing_source', __( 'Either attachment_id, image_url, or image_data must be provided.', 'nvoos-content-graph-pro' ), array( 'status' => 400 ) );
+		}
+
+		// Load image with WordPress image editor.
+		$image_editor = wp_get_image_editor( $file_path );
+
+		if ( is_wp_error( $image_editor ) ) {
+			// Clean up temp file if we created one.
+			// Don't delete if it's an attachment or a local file from the uploads directory.
+			if ( ! $attachment_id && ! $is_local_file ) {
+				$this->delete_temp_file( $file_path );
+			}
+			return $image_editor;
+		}
+
+		// Stash the on-disk path on the editor so tools can read the actual
+		// source file. The core file property is protected and
+		// generate_filename() returns a size-suffixed path that may not exist.
+		$image_editor->source_file_path = $file_path;
+
+		// Store whether this is a temp file for cleanup later.
+		// Don't mark local upload files as temp - only mark truly temporary files.
+		if ( ! $attachment_id && ! $is_local_file ) {
+			$image_editor->temp_file = $file_path;
+		}
+
+		return $image_editor;
+	}
+
+	/**
+	 * Create a temporary file from image data.
+	 *
+	 * @param string $data     Image binary data.
+	 * @param string $filename Optional filename for extension detection.
+	 * @return string|WP_Error Temporary file path or error.
+	 */
+	protected function create_temp_file( $data, $filename = '' ) {
+		if ( ! function_exists( 'wp_tempnam' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		$temp_file = wp_tempnam( $filename );
+
+		if ( false === file_put_contents( $temp_file, $data ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
+			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to create temporary image file.', 'nvoos-content-graph-pro' ) );
+		}
+
+		return $temp_file;
+	}
+
+	/**
+	 * Delete a temporary file safely.
+	 *
+	 * @param string $file_path Path to temporary file.
+	 */
+	protected function delete_temp_file( $file_path ) {
+		if ( file_exists( $file_path ) ) {
+			wp_delete_file( $file_path );
+		}
+	}
+
+	/**
+	 * Clean up a temporary source image after processing.
+	 *
+	 * The load_source_image() method marks editor instances created from
+	 * downloaded or base64 input with a `temp_file` property; only those files
+	 * are deleted. Attachment and uploads-local files are never touched.
+	 *
+	 * @param WP_Image_Editor $source_image Source image editor instance.
+	 * @param array           $arguments    Original tool arguments (kept for
+	 *                                      backward compatibility with callers).
+	 * @return void
+	 */
+	protected function cleanup_source_image( $source_image, $arguments = array() ) {
+		unset( $arguments );
+
+		if ( is_object( $source_image ) && isset( $source_image->temp_file ) && is_string( $source_image->temp_file ) ) {
+			$this->delete_temp_file( $source_image->temp_file );
+		}
+	}
+
+	/**
+	 * Check if a URL is a local WordPress URL.
+	 *
+	 * @param string $url URL to check.
+	 * @return bool True if the URL belongs to this WordPress installation.
+	 */
+	protected function is_local_wordpress_url( $url ) {
+		if ( '' === $url ) {
+			return false;
+		}
+
+		$url = esc_url_raw( $url );
+		if ( '' === $url ) {
+			return false;
+		}
+
+		// Normalize URL to remove scheme differences (http vs https).
+		$normalized_url = $this->normalize_url_for_comparison( $url );
+
+		// Get the WordPress upload directory URL.
+		$upload_dir = wp_upload_dir();
+		$base_url   = isset( $upload_dir['baseurl'] ) ? $upload_dir['baseurl'] : '';
+
+		if ( '' !== $base_url ) {
+			$normalized_base = $this->normalize_url_for_comparison( $base_url );
+			if ( 0 === strpos( $normalized_url, $normalized_base ) ) {
+				return true;
+			}
+		}
+
+		// Also check against home_url and site_url as fallback.
+		$home_url            = home_url();
+		$site_url            = site_url();
+		$normalized_home_url = $this->normalize_url_for_comparison( $home_url );
+		$normalized_site_url = $this->normalize_url_for_comparison( $site_url );
+
+		if ( 0 === strpos( $normalized_url, $normalized_home_url ) || 0 === strpos( $normalized_url, $normalized_site_url ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Normalize a URL for comparison by removing the scheme.
+	 *
+	 * This helps match URLs that differ only in http vs https.
+	 *
+	 * @param string $url URL to normalize.
+	 * @return string Normalized URL without scheme.
+	 */
+	protected function normalize_url_for_comparison( $url ) {
+		if ( '' === $url ) {
+			return '';
+		}
+
+		// Remove http:// or https:// prefix for comparison.
+		$url = preg_replace( '#^https?://#i', '', $url );
+
+		return $url;
+	}
+
+	/**
+	 * Convert a local WordPress URL to a file path.
+	 *
+	 * @param string $url Local WordPress URL.
+	 * @return string|false File path on success, false on failure.
+	 */
+	protected function get_file_path_from_local_url( $url ) {
+		if ( '' === $url ) {
+			return false;
+		}
+
+		// Get the WordPress upload directory information.
+		$upload_dir = wp_upload_dir();
+		$base_url   = isset( $upload_dir['baseurl'] ) ? $upload_dir['baseurl'] : '';
+		$base_dir   = isset( $upload_dir['basedir'] ) ? $upload_dir['basedir'] : '';
+
+		if ( '' === $base_url || '' === $base_dir ) {
+			return false;
+		}
+
+		// Normalize URLs to handle scheme differences (http vs https).
+		$normalized_url      = $this->normalize_url_for_comparison( $url );
+		$normalized_base_url = $this->normalize_url_for_comparison( $base_url );
+
+		// Check if URL starts with the upload base URL (using normalized comparison).
+		if ( 0 === strpos( $normalized_url, $normalized_base_url ) ) {
+			// Extract the relative path after the base URL.
+			$relative_path = substr( $normalized_url, strlen( $normalized_base_url ) );
+
+			// Security: Decode URL-encoding before checking for traversal sequences so
+			// that encoded variants like %2e%2e cannot bypass the check.
+			$decoded_relative = urldecode( $relative_path );
+			if ( false !== strpos( $decoded_relative, '..' ) ) {
+				return false;
+			}
+
+			// Build the file path.
+			$file_path = $base_dir . $relative_path;
+
+			// Normalize path separators.
+			$file_path = wp_normalize_path( $file_path );
+
+			// Security: Verify the resolved path stays within the uploads directory.
+			$resolved = realpath( $file_path );
+			if ( false === $resolved ) {
+				return false;
+			}
+			$uploads_base = wp_normalize_path( trailingslashit( $base_dir ) );
+			if ( 0 !== strpos( wp_normalize_path( $resolved ), $uploads_base ) ) {
+				return false;
+			}
+			return $resolved;
+		}
+
+		// Try using WordPress built-in function as fallback.
+		// This handles cases where URL might be in a different format.
+		$attachment_id = attachment_url_to_postid( $url );
+		if ( $attachment_id > 0 ) {
+			return get_attached_file( $attachment_id );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Resolve an attachment ID from a URL with scheme-agnostic matching.
+	 *
+	 * WordPress's attachment_url_to_postid() function is scheme-sensitive and will
+	 * fail if the URL scheme (http vs https) doesn't match what's stored in the
+	 * database. This method provides a fallback that tries both schemes.
+	 *
+	 * This is particularly important for the agentic workflow where the LLM may
+	 * receive URLs with a different scheme than WordPress is configured with.
+	 *
+	 * @param string $url URL to resolve.
+	 * @return int Attachment ID on success, 0 if not found.
+	 */
+	protected function resolve_attachment_id_from_url( $url ) {
+		if ( '' === $url ) {
+			return 0;
+		}
+
+		// First, try the URL as-is.
+		$attachment_id = attachment_url_to_postid( $url );
+		if ( $attachment_id > 0 ) {
+			return $attachment_id;
+		}
+
+		// If that failed, try with the opposite scheme.
+		// This handles cases where the LLM passes a URL with http but WordPress.
+		// is configured with https (or vice versa).
+		$alternate_url = '';
+
+		if ( 0 === strpos( $url, 'https://' ) ) {
+			// Try http instead.
+			$alternate_url = 'http://' . substr( $url, 8 );
+		} elseif ( 0 === strpos( $url, 'http://' ) ) {
+			// Try https instead.
+			$alternate_url = 'https://' . substr( $url, 7 );
+		}
+
+		if ( '' !== $alternate_url ) {
+			$attachment_id = attachment_url_to_postid( $alternate_url );
+			if ( $attachment_id > 0 ) {
+				return $attachment_id;
+			}
+		}
+
+		return 0;
+	}
+
+	/**
+	 * Extract domain from URL for comparison.
+	 *
+	 * @param string $url URL to extract domain from.
+	 * @return string Domain (e.g., 'example.com') or empty string on failure.
+	 */
+	protected function extract_domain_from_url( $url ) {
+		if ( '' === $url ) {
+			return '';
+		}
+
+		$parsed = wp_parse_url( $url );
+		if ( ! isset( $parsed['host'] ) ) {
+			return '';
+		}
+
+		// Return the host without www prefix for better matching.
+		$host = strtolower( $parsed['host'] );
+		$host = preg_replace( '/^www\./i', '', $host );
+
+		return $host;
+	}
+
+	/**
+	 * Save image editor contents as WordPress attachment.
+	 *
+	 * @param WP_Image_Editor $image_editor Image editor instance.
+	 * @param array           $arguments    Tool arguments for naming/metadata.
+	 * @param int             $user_id      User ID for attachment author.
+	 * @param string          $operation    Operation name for title generation.
+	 * @return array|WP_Error Attachment data or error.
+	 */
+	protected function save_as_attachment( WP_Image_Editor $image_editor, array $arguments, $user_id, $operation ) {
+		// Get file name from arguments or generate one.
+		$file_name = isset( $arguments['file_name'] ) ? sanitize_file_name( $arguments['file_name'] ) : '';
+		if ( '' === $file_name ) {
+			$source_id = isset( $arguments['attachment_id'] ) ? absint( $arguments['attachment_id'] ) : 0;
+			if ( $source_id ) {
+				$source_file = get_attached_file( $source_id );
+				if ( $source_file ) {
+					$pathinfo  = pathinfo( $source_file );
+					$file_name = isset( $pathinfo['filename'] ) ? $pathinfo['filename'] : 'image';
+				}
+			}
+			if ( '' === $file_name ) {
+				$file_name = 'image';
+			}
+		}
+
+		// Generate unique filename.
+		// WP_Image_Editor::get_mime_type() is protected; derive the extension from the
+		// filename that generate_filename() computes (which preserves the source extension).
+		// If the generated path has no extension (uncommon), fall back to get_extension_from_mime_type()
+		// using the MIME type resolved from the source arguments.
+		$generated_name = $image_editor->generate_filename();
+		$extension      = pathinfo( $generated_name, PATHINFO_EXTENSION );
+		if ( '' === $extension ) {
+			$extension = $this->get_extension_from_mime_type( $this->resolve_source_mime_type( $arguments ) );
+		}
+		$file_name = sprintf( '%s-%s-%s.%s', sanitize_title( $file_name ), sanitize_title( $operation ), gmdate( 'Ymd-His' ), $extension );
+
+		// Save to uploads directory.
+		if ( ! function_exists( 'wp_upload_bits' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		$saved = $image_editor->save();
+
+		if ( is_wp_error( $saved ) ) {
+			return $saved;
+		}
+
+		// Capture the MIME type from the save result.
+		// WP_Image_Editor::save() returns 'mime-type' in its result array, avoiding
+		// the need to call the protected WP_Image_Editor::get_mime_type() method.
+		$saved_mime_type = isset( $saved['mime-type'] ) ? $saved['mime-type'] : '';
+
+		$file_path = isset( $saved['path'] ) ? $saved['path'] : '';
+
+		if ( '' === $file_path || ! file_exists( $file_path ) ) {
+			return new WP_Error( 'wp_mcp_ai_save_error', __( 'Failed to save edited image.', 'nvoos-content-graph-pro' ) );
+		}
+
+		// Read file contents to re-upload with proper name.
+		$image_data = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
+		if ( false === $image_data ) {
+			wp_delete_file( $file_path );
+			return new WP_Error( 'wp_mcp_ai_read_error', __( 'Failed to read saved image file.', 'nvoos-content-graph-pro' ) );
+		}
+
+		// Upload with proper filename.
+		$upload = wp_upload_bits( $file_name, null, $image_data );
+
+		// Delete the temporary saved file.
+		wp_delete_file( $file_path );
+
+		if ( ! empty( $upload['error'] ) ) {
+			return new WP_Error( 'wp_mcp_ai_upload_error', $upload['error'] );
+		}
+
+		$final_file_path = isset( $upload['file'] ) ? $upload['file'] : '';
+
+		if ( '' === $final_file_path || ! file_exists( $final_file_path ) ) {
+			return new WP_Error( 'wp_mcp_ai_upload_error', __( 'Failed to upload edited image.', 'nvoos-content-graph-pro' ) );
+		}
+
+		// Create attachment.
+		$title = $this->generate_attachment_title( $operation, $arguments );
+
+		$attachment = array(
+			'post_mime_type' => $saved_mime_type,
+			'post_title'     => $title,
+			'post_content'   => '',
+			'post_status'    => 'inherit',
+		);
+
+		if ( $user_id ) {
+			$attachment['post_author'] = $user_id;
+		}
+
+		$attachment_id = wp_insert_attachment( $attachment, $final_file_path );
+
+		if ( is_wp_error( $attachment_id ) ) {
+			wp_delete_file( $final_file_path );
+			return new WP_Error( 'wp_mcp_ai_attachment_error', __( 'Failed to create attachment.', 'nvoos-content-graph-pro' ), array( 'error' => $attachment_id ) );
+		}
+
+		// Generate attachment metadata.
+		if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+		}
+
+		$metadata = wp_generate_attachment_metadata( $attachment_id, $final_file_path );
+		if ( is_array( $metadata ) && ! empty( $metadata ) ) {
+			wp_update_attachment_metadata( $attachment_id, $metadata );
+		}
+
+		$bytes = file_exists( $final_file_path ) ? filesize( $final_file_path ) : 0;
+
+		return array(
+			'attachment_id' => (int) $attachment_id,
+			'file'          => $final_file_path,
+			'file_name'     => wp_basename( $final_file_path ),
+			'url'           => isset( $upload['url'] ) ? $upload['url'] : wp_get_attachment_url( $attachment_id ),
+			'mime_type'     => $saved_mime_type,
+			'bytes'         => $bytes ? (int) $bytes : 0,
+			'title'         => $title,
+			'size'          => $image_editor->get_size(),
+		);
+	}
+
+	/**
+	 * Format image attachment response with rendered HTML.
+	 *
+	 * Wraps save_as_attachment result and adds rendered IMG tag to the response.
+	 * Child classes should call this after save_as_attachment to ensure images
+	 * are displayed inline in chat UI.
+	 *
+	 * @param array|WP_Error $save_result Result from save_as_attachment.
+	 * @param array          $arguments   Tool arguments (may contain prompt for alt text).
+	 * @return array|WP_Error Formatted response with rendered HTML or error.
+	 */
+	protected function format_image_response( $save_result, array $arguments = array() ) {
+		if ( is_wp_error( $save_result ) ) {
+			return $save_result;
+		}
+
+		// Add text field for LLM if not present.
+		if ( empty( $save_result['text'] ) ) {
+			$operation           = isset( $arguments['operation'] ) ? sanitize_text_field( $arguments['operation'] ) : 'processed';
+			$save_result['text'] = sprintf(
+				/* translators: %s: operation name */
+				__( 'Successfully %s image.', 'nvoos-content-graph-pro' ),
+				$operation
+			);
+		}
+
+		// Add prompt field for alt text if present in arguments.
+		if ( ! empty( $arguments['prompt'] ) && empty( $save_result['prompt'] ) ) {
+			$save_result['prompt'] = $arguments['prompt'];
+		}
+
+		// Use image response trait to add rendered IMG tag.
+		return $this->add_image_html_to_response( $save_result );
+	}
+
+	/**
+	 * Generate attachment title based on operation.
+	 *
+	 * @param string $operation Operation name.
+	 * @param array  $arguments Tool arguments.
+	 * @return string
+	 */
+	protected function generate_attachment_title( $operation, array $arguments ) {
+		$source_id = isset( $arguments['attachment_id'] ) ? absint( $arguments['attachment_id'] ) : 0;
+
+		if ( $source_id ) {
+			$source_title = get_the_title( $source_id );
+			if ( $source_title ) {
+				/* translators: 1: operation name, 2: source title */
+				return sprintf( __( '%1$s: %2$s', 'nvoos-content-graph-pro' ), ucfirst( $operation ), $source_title );
+			}
+		}
+
+		/* translators: %s: operation name */
+		return sprintf( __( '%s Image', 'nvoos-content-graph-pro' ), ucfirst( $operation ) );
+	}
+
+	/**
+	 * Format attachment response with rendered image HTML.
+	 *
+	 * Takes an attachment ID and formats it as a complete response with rendered IMG tag.
+	 * This is a convenience method for pro tools that use a simpler save flow.
+	 *
+	 * @param int   $attachment_id Attachment ID.
+	 * @param array $arguments     Optional. Tool arguments (may contain prompt for alt text).
+	 * @return array Formatted response with rendered HTML.
+	 */
+	protected function format_attachment_response( $attachment_id, array $arguments = array() ) {
+		$url        = wp_get_attachment_url( $attachment_id );
+		$attachment = get_post( $attachment_id );
+
+		$result = array(
+			'attachment_id' => (int) $attachment_id,
+			'url'           => $url,
+			'title'         => $attachment ? $attachment->post_title : '',
+			'text'          => __( 'Image processed successfully.', 'nvoos-content-graph-pro' ),
+		);
+
+		// Add prompt for alt text if provided.
+		if ( ! empty( $arguments['prompt'] ) ) {
+			$result['prompt'] = $arguments['prompt'];
+		}
+
+		// Use image response trait to add rendered IMG tag.
+		return $this->add_image_html_to_response( $result );
+	}
+
+	/**
+	 * Get file extension from MIME type.
+	 *
+	 * @param string $mime_type MIME type.
+	 * @return string
+	 */
+	protected function get_extension_from_mime_type( $mime_type ) {
+		$allowed = $this->get_allowed_mime_types();
+		return isset( $allowed[ $mime_type ] ) ? $allowed[ $mime_type ] : 'jpg';
+	}
+
+	/**
+	 * Resolve the MIME type of the source image from tool arguments.
+	 *
+	 * WP_Image_Editor::get_mime_type() is a protected method and cannot be called
+	 * from outside the class hierarchy. This helper determines the source MIME type
+	 * from the information available in the arguments array, without touching the
+	 * image editor instance.
+	 *
+	 * @param array $arguments Enriched tool arguments (attachment_id, url, image_url, file_id).
+	 * @return string MIME type string (e.g. 'image/jpeg'), or empty string if undetectable.
+	 */
+	protected function resolve_source_mime_type( array $arguments ) {
+		// Prefer attachment ID — most reliable and avoids filesystem calls.
+		if ( ! empty( $arguments['attachment_id'] ) ) {
+			$mime = get_post_mime_type( absint( $arguments['attachment_id'] ) );
+			if ( $mime ) {
+				return $mime;
+			}
+		}
+
+		if ( ! empty( $arguments['file_id'] ) ) {
+			$mime = get_post_mime_type( absint( $arguments['file_id'] ) );
+			if ( $mime ) {
+				return $mime;
+			}
+		}
+
+		// Try to resolve MIME type from URL via attachment ID lookup.
+		$url = '';
+		if ( ! empty( $arguments['url'] ) ) {
+			$url = $arguments['url'];
+		} elseif ( ! empty( $arguments['image_url'] ) ) {
+			$url = $arguments['image_url'];
+		}
+
+		if ( '' !== $url ) {
+			$resolved_id = $this->resolve_attachment_id_from_url( $url );
+			if ( $resolved_id > 0 ) {
+				$mime = get_post_mime_type( $resolved_id );
+				if ( $mime ) {
+					return $mime;
+				}
+			}
+
+			// Fall back to checking the file extension from the URL basename.
+			$type_info = wp_check_filetype( wp_basename( $url ) );
+			if ( ! empty( $type_info['type'] ) ) {
+				return $type_info['type'];
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Build inline content payload for chat display.
+	 *
+	 * @param array $storage Stored attachment data.
+	 * @return array
+	 */
+	protected function build_inline_content_payload( array $storage ) {
+		$file_path = isset( $storage['file'] ) ? $storage['file'] : '';
+
+		if ( '' === $file_path || ! is_readable( $file_path ) ) {
+			return array();
+		}
+
+		$file_contents = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
+
+		if ( false === $file_contents || '' === $file_contents ) {
+			return array();
+		}
+
+		$encoded = base64_encode( $file_contents );
+
+		if ( '' === $encoded ) {
+			return array();
+		}
+
+		$mime_type = isset( $storage['mime_type'] ) ? $storage['mime_type'] : '';
+
+		$content = array(
+			'encoding' => 'base64',
+			'data'     => $encoded,
+		);
+
+		if ( '' !== $mime_type ) {
+			$content['mime_type'] = $mime_type;
+			$content['data_url']  = sprintf( 'data:%s;base64,%s', $mime_type, $encoded );
+		}
+
+		if ( isset( $storage['file_name'] ) && '' !== $storage['file_name'] ) {
+			$content['file_name'] = $storage['file_name'];
+		}
+
+		if ( isset( $storage['bytes'] ) && $storage['bytes'] ) {
+			$content['bytes'] = (int) $storage['bytes'];
+		}
+
+		return $content;
+	}
+
+	/**
+	 * Sanitize tool result for LLM consumption.
+	 *
+	 * Strips large base64 data to prevent context bloat.
+	 *
+	 * @param mixed $result Tool execution result.
+	 * @return mixed
+	 */
+	public function sanitize_for_llm( $result ) {
+		if ( ! is_array( $result ) ) {
+			return $result;
+		}
+
+		// Strip base64 content.
+		if ( isset( $result['content'] ) && is_array( $result['content'] ) ) {
+			unset( $result['content']['data'] );
+			unset( $result['content']['data_url'] );
+
+			if ( empty( $result['content'] ) ) {
+				unset( $result['content'] );
+			}
+		}
+
+		return $result;
+	}
+
+
+	/**
+
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+
+		return array(
+
+			'name'                  => $this->get_name(),
+
+			'description'           => $this->get_description(),
+
+			'toolkit'               => 'media_processing',
+
+			'pattern_compatibility' => array( 'sequential' ),
+
+			'profession_tags'       => array( 'graphic_designer', 'web_developer' ),
+
+			'risk_level'            => 'info',
+
+		);
+	}
+
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'upload_files';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'requires-capability',  // Requires user capabilities.
+			'write',                // Creates/modifies media files.
+			'external-api',         // May download images from external URLs.
+		);
+	}
+
+	/**
+	 * Common parameter schema elements for image source.
+	 *
+	 * @return array
+	 */
+	protected function get_source_parameters_schema() {
+		return array(
+			'attachment_id' => array(
+				'type'        => 'integer',
+				'description' => __( 'WordPress attachment ID of the image to process.', 'nvoos-content-graph-pro' ),
+			),
+			'file_id'       => $this->get_file_id_parameter_schema(),
+			'url'           => $this->get_url_parameter_schema( 'image' ),
+			'image_url'     => array(
+				'type'        => 'string',
+				'description' => __( 'URL of the image to process (alternative to attachment_id). Legacy parameter, use url instead.', 'nvoos-content-graph-pro' ),
+			),
+			'image_data'    => array(
+				'type'        => 'string',
+				'description' => __( 'Base64-encoded image data to process (alternative to attachment_id, file_id, or url).', 'nvoos-content-graph-pro' ),
+			),
+			'file_name'     => array(
+				'type'        => 'string',
+				'description' => __( 'Optional base file name for the saved image attachment.', 'nvoos-content-graph-pro' ),
+			),
+		);
+	}
+
+	/**
+	 * Get output format parameter schema.
+	 *
+	 * @return array
+	 */
+	protected function get_output_format_parameter_schema() {
+		return array(
+			'output_format' => array(
+				'type'        => 'string',
+				'description' => __( 'Output format for the processed image. Use "svg" to vectorize the result. Default is the same as source format.', 'nvoos-content-graph-pro' ),
+				'enum'        => array( 'default', 'svg' ),
+				'default'     => 'default',
+			),
+		);
+	}
+
+	/**
+	 * Convert a raster image to SVG format using vectorization.
+	 *
+	 * @param WP_Image_Editor $image_editor Image editor instance with processed raster image.
+	 * @param array           $arguments    Tool arguments for naming/metadata.
+	 * @param int             $user_id      User ID for attachment author.
+	 * @return array|WP_Error Attachment data with SVG or error.
+	 */
+	protected function convert_to_svg( WP_Image_Editor $image_editor, array $arguments, $user_id ) {
+		// Check if Node.js is available (or the Media Worker sidecar).
+		if ( ! $this->is_nodejs_available() && ! $this->is_sidecar_upload_supported() ) {
+			return new WP_Error(
+				'wp_mcp_ai_nodejs_required',
+				__( 'Node.js is required for SVG vectorization but was not found on the system. Configure the Media Worker sidecar or install Node.js.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Save the processed raster image to a temporary file.
+		$temp_input = wp_tempnam( 'svg-convert-input-' );
+		if ( ! $temp_input ) {
+			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to create temporary file for SVG conversion.', 'nvoos-content-graph-pro' ) );
+		}
+
+		$result = $image_editor->save( $temp_input );
+		if ( is_wp_error( $result ) ) {
+			wp_delete_file( $temp_input );
+			return $result;
+		}
+
+		// Use the actual saved path from the result array.
+		$saved_path = isset( $result['path'] ) ? $result['path'] : $temp_input;
+
+		// Verify the file was saved.
+		if ( ! file_exists( $saved_path ) ) {
+			wp_delete_file( $temp_input );
+			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to save temporary file for SVG conversion.', 'nvoos-content-graph-pro' ) );
+		}
+
+		// Prepare SVG output file.
+		$temp_output = wp_tempnam( 'svg-convert-output-' );
+		if ( ! $temp_output ) {
+			wp_delete_file( $saved_path );
+			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to create temporary SVG output file.', 'nvoos-content-graph-pro' ) );
+		}
+
+		// Add .svg extension.
+		$temp_output_svg = $temp_output . '.svg';
+		rename( $temp_output, $temp_output_svg ); // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
+		$temp_output = $temp_output_svg;
+
+		// Prepare vectorization options - use sensible defaults for image tool output.
+		$vectorization_options = array(
+			'colorMode'      => 'color',
+			'colorPrecision' => isset( $arguments['color_precision'] ) ? absint( $arguments['color_precision'] ) : 6,
+			'filterSpeckle'  => isset( $arguments['filter_speckle'] ) ? absint( $arguments['filter_speckle'] ) : 4,
+			'mode'           => isset( $arguments['mode'] ) ? sanitize_text_field( $arguments['mode'] ) : 'spline',
+			'hierarchical'   => isset( $arguments['hierarchical'] ) ? sanitize_text_field( $arguments['hierarchical'] ) : 'stacked',
+		);
+
+		// Try the Media Worker sidecar first (opt-in routing — fails fast
+		// when no sidecar URL is configured or the health check fails). The
+		// string options mirror the local bin/vectorize-image.js contract;
+		// the worker maps them to the numeric v0.0.5 config enums.
+		$vectorize_result = null;
+		if ( $this->is_sidecar_upload_supported() ) {
+			$sidecar = $this->sidecar_upload(
+				'/api/image/vectorize',
+				$saved_path,
+				array( 'options' => wp_json_encode( $vectorization_options ) ),
+				120
+			);
+			if ( ! is_wp_error( $sidecar ) && ! empty( $sidecar['svg'] ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing the worker-returned SVG into the temp output file consumed by the shared save flow.
+				if ( false !== file_put_contents( $temp_output, $sidecar['svg'] ) ) {
+					$vectorize_result = array( 'success' => true );
+				}
+			}
+		}
+
+		// Fall back to the local vectorization script.
+		if ( null === $vectorize_result ) {
+			$script_path = NVOOS_CONTENT_GRAPH_PRO_PATH . 'bin/vectorize-image.js';
+			$script_args = array(
+				$saved_path,
+				$temp_output,
+				wp_json_encode( $vectorization_options ),
+			);
+
+			$vectorize_result = $this->execute_nodejs_script(
+				$script_path,
+				$script_args,
+				array(
+					'timeout'    => 60,
+					'parse_json' => true,
+				)
+			);
+		}
+
+		// Cleanup temporary input file.
+		wp_delete_file( $saved_path );
+
+		if ( is_wp_error( $vectorize_result ) ) {
+			wp_delete_file( $temp_output );
+			return $vectorize_result;
+		}
+
+		if ( ! isset( $vectorize_result['success'] ) || ! $vectorize_result['success'] ) {
+			wp_delete_file( $temp_output );
+			return new WP_Error(
+				'wp_mcp_ai_vectorization_failed',
+				isset( $vectorize_result['error'] ) ? $vectorize_result['error'] : __( 'SVG vectorization failed.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Read SVG file.
+		$svg_data = file_get_contents( $temp_output ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
+		if ( false === $svg_data || '' === $svg_data ) {
+			wp_delete_file( $temp_output );
+			return new WP_Error( 'wp_mcp_ai_read_error', __( 'Failed to read vectorized SVG file.', 'nvoos-content-graph-pro' ) );
+		}
+
+		// Cleanup temporary output file.
+		wp_delete_file( $temp_output );
+
+		// Save as WordPress attachment.
+		$storage = $this->save_svg_as_attachment( $svg_data, $arguments, $user_id );
+		if ( is_wp_error( $storage ) ) {
+			return $storage;
+		}
+
+		// Add vectorization metadata to storage result.
+		$storage['vectorized']  = true;
+		$storage['svg_size']    = isset( $vectorize_result['output_size'] ) ? $vectorize_result['output_size'] : $storage['bytes'];
+		$storage['source_size'] = isset( $vectorize_result['input_size'] ) ? $vectorize_result['input_size'] : 0;
+		$storage['duration_ms'] = isset( $vectorize_result['duration_ms'] ) ? $vectorize_result['duration_ms'] : 0;
+
+		return $storage;
+	}
+
+	/**
+	 * Save SVG data as WordPress attachment.
+	 *
+	 * @param string $svg_data  SVG file content.
+	 * @param array  $arguments Original tool arguments.
+	 * @param int    $user_id   User ID.
+	 * @return array|WP_Error Attachment data or WP_Error on failure.
+	 */
+	protected function save_svg_as_attachment( $svg_data, array $arguments, $user_id = 0 ) {
+		// Generate file name.
+		$base_name = isset( $arguments['file_name'] ) ? sanitize_file_name( $arguments['file_name'] ) : 'image';
+		if ( empty( $base_name ) ) {
+			$base_name = 'image';
+		}
+
+		// Remove extension if present.
+		$base_name = preg_replace( '/\.(png|jpg|jpeg|gif|webp)$/i', '', $base_name );
+		$file_name = $base_name . '-svg-' . gmdate( 'Ymd-His' ) . '.svg';
+
+		// Upload SVG file. WordPress rejects image/svg+xml by default (an
+		// XSS surface for arbitrary uploads), so allow it for this single
+		// call only — producing an SVG attachment is the entire purpose
+		// of this helper. The filter is removed immediately after.
+		if ( ! function_exists( 'wp_upload_bits' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		$allow_svg_mime = static function ( $mimes ) {
+			if ( ! is_array( $mimes ) ) {
+				$mimes = array();
+			}
+			$mimes['svg'] = 'image/svg+xml';
+			return $mimes;
+		};
+		add_filter( 'upload_mimes', $allow_svg_mime );
+		$upload = wp_upload_bits( $file_name, null, $svg_data );
+		remove_filter( 'upload_mimes', $allow_svg_mime );
+
+		if ( ! empty( $upload['error'] ) ) {
+			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to save SVG file.', 'nvoos-content-graph-pro' ), array( 'error' => $upload['error'] ) );
+		}
+
+		$file_path = isset( $upload['file'] ) ? $upload['file'] : '';
+
+		if ( '' === $file_path || ! file_exists( $file_path ) ) {
+			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to write SVG file to disk.', 'nvoos-content-graph-pro' ) );
+		}
+
+		// Create attachment.
+		$attachment = array(
+			'post_mime_type' => 'image/svg+xml',
+			'post_title'     => sanitize_text_field( __( 'SVG Image', 'nvoos-content-graph-pro' ) ),
+			'post_content'   => '',
+			'post_status'    => 'inherit',
+		);
+
+		if ( $user_id ) {
+			$attachment['post_author'] = $user_id;
+		}
+
+		$attachment_id = wp_insert_attachment( $attachment, $file_path );
+
+		if ( is_wp_error( $attachment_id ) ) {
+			wp_delete_file( $file_path );
+			return new WP_Error( 'wp_mcp_ai_attachment_error', __( 'Failed to register SVG as an attachment.', 'nvoos-content-graph-pro' ), array( 'error' => $attachment_id ) );
+		}
+
+		$bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;
+
+		// Get attachment URL.
+		$attachment_url = wp_get_attachment_url( $attachment_id );
+		if ( false === $attachment_url ) {
+			// Use a fallback URL if possible.
+			$upload_dir     = wp_upload_dir();
+			$attachment_url = str_replace( $upload_dir['basedir'], $upload_dir['baseurl'], $file_path );
+		}
+
+		return array(
+			'attachment_id' => (int) $attachment_id,
+			'file'          => $file_path,
+			'file_name'     => wp_basename( $file_path ),
+			'url'           => $attachment_url,
+			'mime_type'     => 'image/svg+xml',
+			'bytes'         => $bytes ? (int) $bytes : 0,
+			'title'         => get_the_title( $attachment_id ),
+		);
+	}
+}

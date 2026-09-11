@@ -1,0 +1,587 @@
+<?php
+/**
+ * Image-production tool batch (ecosystem port - Wave F2, image-production toolkit).
+ *
+ * Ported from the base Pro addon's `addons/pro/includes/tools/image-production/` directory for the
+ * standalone `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro addon owns the class in
+ * monolith installs - the addon boots nothing when `WP_MCP_AI_PRO_PATH` is defined (see the plugin entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain `nvoos-content-graph-pro`; the
+ * base-owned `WP_MCP_AI_PATH` interface/image-base/trait requires gain exists-check seams resolving from
+ * the addon's D8-compat `src/` copies; the import tool's `NVOOS_CONTENT_GRAPH_PRO_PATH` refs swap to
+ * `NVOOS_CONTENT_GRAPH_PRO_PATH` with the `src/` root.
+ *
+ * Tool for optimizing images using Sharp.
+ *
+ * @package WP_MCP_AI
+ * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+declare(strict_types=1);
+
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+if ( ! trait_exists( 'WP_MCP_AI_NodeJS_Subprocess' ) ) {
+	$nvoos_content_graph_pro_nodejs_subprocess = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
+	if ( file_exists( $nvoos_content_graph_pro_nodejs_subprocess ) ) {
+		require_once $nvoos_content_graph_pro_nodejs_subprocess;
+	}
+}
+
+/**
+ * Optimize images using Sharp for high-performance processing.
+ *
+ * This tool leverages Sharp (via Node.js) to provide:
+ * - High-performance image resizing and optimization
+ * - Modern format conversion (WebP, AVIF)
+ * - Advanced image operations (blur, sharpen, rotate)
+ * - Batch optimization capabilities
+ * - Compression without quality loss
+ *
+ * Sharp is pre-packaged with Linux x64 binaries in addons/pro/assets/vendor/sharp/
+ * for immediate use on most production servers. Other platforms require running
+ * "npm install sharp --include=optional" in the addons/pro directory.
+ *
+ * @since 1.1.0
+ */
+class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_NodeJS_Subprocess;
+	use WP_MCP_AI_Media_Worker_Client;
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_slug() {
+		return 'optimize_image_sharp';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Optimize Image with Sharp', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_description() {
+		return __( 'High-performance image optimization using Sharp. Supports resizing, format conversion (WebP, AVIF), compression, and advanced operations like blur, sharpen, and rotate. Significantly faster than ImageMagick/GraphicsMagick for batch processing.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_parameters_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'attachment_id'   => array(
+					'type'        => 'integer',
+					'description' => __( 'WordPress attachment ID of the image to optimize', 'nvoos-content-graph-pro' ),
+					'minimum'     => 1,
+				),
+				'operation'       => array(
+					'type'        => 'string',
+					'enum'        => array( 'optimize', 'resize', 'convert', 'enhance' ),
+					'description' => __( 'Operation: optimize (compress), resize (dimensions), convert (format), enhance (sharpen/blur)', 'nvoos-content-graph-pro' ),
+					'default'     => 'optimize',
+				),
+				'width'           => array(
+					'type'        => 'integer',
+					'description' => __( 'Target width in pixels (for resize operation)', 'nvoos-content-graph-pro' ),
+					'minimum'     => 1,
+					'maximum'     => 10000,
+				),
+				'height'          => array(
+					'type'        => 'integer',
+					'description' => __( 'Target height in pixels (for resize operation)', 'nvoos-content-graph-pro' ),
+					'minimum'     => 1,
+					'maximum'     => 10000,
+				),
+				'format'          => array(
+					'type'        => 'string',
+					'enum'        => array( 'webp', 'avif', 'jpeg', 'png' ),
+					'description' => __( 'Target format for conversion. WebP and AVIF offer superior compression.', 'nvoos-content-graph-pro' ),
+				),
+				'quality'         => array(
+					'type'        => 'integer',
+					'description' => __( 'Output quality (1-100). Default: 80 for lossy, 100 for lossless.', 'nvoos-content-graph-pro' ),
+					'minimum'     => 1,
+					'maximum'     => 100,
+					'default'     => 80,
+				),
+				'sharpen'         => array(
+					'type'        => 'boolean',
+					'description' => __( 'Apply sharpening filter (for enhance operation)', 'nvoos-content-graph-pro' ),
+					'default'     => false,
+				),
+				'blur'            => array(
+					'type'        => 'number',
+					'description' => __( 'Blur sigma value (0.3-1000). Higher = more blur (for enhance operation)', 'nvoos-content-graph-pro' ),
+					'minimum'     => 0.3,
+					'maximum'     => 1000,
+				),
+				'rotate'          => array(
+					'type'        => 'integer',
+					'description' => __( 'Rotation angle in degrees (0, 90, 180, 270)', 'nvoos-content-graph-pro' ),
+					'enum'        => array( 0, 90, 180, 270 ),
+				),
+				'maintain_aspect' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Maintain aspect ratio when resizing', 'nvoos-content-graph-pro' ),
+					'default'     => true,
+				),
+				'upload_result'   => array(
+					'type'        => 'boolean',
+					'description' => __( 'Upload optimized image to media library as new attachment', 'nvoos-content-graph-pro' ),
+					'default'     => true,
+				),
+			),
+			'required'   => array( 'attachment_id' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'upload_files';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function requires_base_pro() {
+		return true;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'pro',                  // Pro tier tool.
+			'write',                // Creates new files.
+			'requires-capability',  // Requires upload_files capability.
+			'state-changing',       // Modifies media library.
+			'external-dependency',  // Requires Sharp (Node.js).
+			'performance-impact',   // Large images may temporarily affect performance.
+			'idempotent',           // Can be called multiple times safely.
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 */
+	public function execute( array $arguments = array(), array $context = array() ) {
+		// Check if media toolkit is enabled.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_media_toolkit'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_media_toolkit_disabled',
+				__( 'Media Toolkit is not enabled. Please enable it in settings.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Validate attachment exists and is an image.
+		$attachment_id = absint( $arguments['attachment_id'] );
+		if ( ! $attachment_id || ! wp_attachment_is_image( $attachment_id ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_attachment',
+				__( 'Invalid attachment ID or not an image.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Get source file path.
+		$source_path = get_attached_file( $attachment_id );
+		if ( ! $source_path || ! file_exists( $source_path ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_image_not_found',
+				__( 'Image file not found.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Check if Sharp is available (Node.js package). Without local Sharp,
+		// the Media Worker sidecar can still optimize via /api/image/optimize.
+		$sharp_available = $this->check_sharp_availability();
+		if ( ! $sharp_available && ! $this->is_sidecar_upload_supported() ) {
+			return new WP_Error(
+				'wp_mcp_ai_sharp_unavailable',
+				__( 'Sharp is not fully installed and no Media Worker sidecar is configured. Sharp requires Node.js, platform-specific binaries (libvips), and its dependencies (detect-libc, color, semver). To install: (1) Navigate to addons/pro directory, (2) Run "npm install --include=optional" to install Sharp with platform binaries, (3) Run "npm run build" to copy to vendor directory. Alternatively, configure the Media Worker sidecar in Settings → Media Worker to optimize via the worker. See docs/BUILD_AND_DISTRIBUTION.md for details.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Build operation parameters.
+		$operation = isset( $arguments['operation'] ) ? sanitize_text_field( $arguments['operation'] ) : 'optimize';
+		$params    = array(
+			'source'          => $source_path,
+			'operation'       => $operation,
+			'quality'         => isset( $arguments['quality'] ) ? absint( $arguments['quality'] ) : 80,
+			'maintain_aspect' => isset( $arguments['maintain_aspect'] ) ? (bool) $arguments['maintain_aspect'] : true,
+		);
+
+		// Add operation-specific parameters.
+		switch ( $operation ) {
+			case 'resize':
+				if ( isset( $arguments['width'] ) ) {
+					$params['width'] = absint( $arguments['width'] );
+				}
+				if ( isset( $arguments['height'] ) ) {
+					$params['height'] = absint( $arguments['height'] );
+				}
+				break;
+
+			case 'convert':
+				if ( isset( $arguments['format'] ) ) {
+					$params['format'] = sanitize_text_field( $arguments['format'] );
+				}
+				break;
+
+			case 'enhance':
+				if ( isset( $arguments['sharpen'] ) && $arguments['sharpen'] ) {
+					$params['sharpen'] = true;
+				}
+				if ( isset( $arguments['blur'] ) ) {
+					$params['blur'] = floatval( $arguments['blur'] );
+				}
+				break;
+		}
+
+		if ( isset( $arguments['rotate'] ) ) {
+			$params['rotate'] = absint( $arguments['rotate'] );
+		}
+
+		// Process image: local Sharp subprocess when available, otherwise the
+		// Media Worker sidecar (multipart /api/image/optimize).
+		$result = $sharp_available
+			? $this->process_with_sharp( $params )
+			: $this->optimize_via_sidecar( $params );
+
+		if ( ! $result || isset( $result['error'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_sharp_process_failed',
+				isset( $result['error'] ) ? $result['error'] : __( 'Image processing failed.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Upload result to media library if requested.
+		$upload_result = isset( $arguments['upload_result'] ) ? (bool) $arguments['upload_result'] : true;
+		if ( $upload_result && isset( $result['output_path'] ) ) {
+			$new_attachment_id = $this->upload_processed_image( $result['output_path'], $attachment_id );
+
+			if ( $new_attachment_id ) {
+				$result['attachment_id'] = $new_attachment_id;
+				$result['url']           = wp_get_attachment_url( $new_attachment_id );
+			}
+		}
+
+		return array(
+			'success'           => true,
+			'message'           => __( 'Image optimized successfully with Sharp.', 'nvoos-content-graph-pro' ),
+			'attachment_id'     => isset( $result['attachment_id'] ) ? $result['attachment_id'] : null,
+			'url'               => isset( $result['url'] ) ? $result['url'] : null,
+			'original_size'     => isset( $result['original_size'] ) ? $result['original_size'] : null,
+			'optimized_size'    => isset( $result['optimized_size'] ) ? $result['optimized_size'] : null,
+			'reduction_percent' => isset( $result['reduction_percent'] ) ? $result['reduction_percent'] : null,
+			'dimensions'        => isset( $result['dimensions'] ) ? $result['dimensions'] : null,
+		);
+	}
+
+	/**
+	 * Check if Sharp is available.
+	 *
+	 * @return bool True if Sharp is available.
+	 */
+	private function check_sharp_availability() {
+		// Check if package exists in vendor directory (production) or node_modules (development).
+		$vendor_path       = NVOOS_CONTENT_GRAPH_PRO_PATH . 'assets/vendor/sharp/lib/index.js';
+		$node_modules_path = NVOOS_CONTENT_GRAPH_PRO_PATH . 'node_modules/sharp/lib/index.js';
+
+		$sharp_exists = file_exists( $vendor_path ) || file_exists( $node_modules_path );
+		if ( ! $sharp_exists ) {
+			return false;
+		}
+
+		// Check if required dependencies exist (detect-libc, color, semver).
+		// These should be in Sharp's node_modules subdirectory.
+		$base_dir = file_exists( $vendor_path ) ? NVOOS_CONTENT_GRAPH_PRO_PATH . 'assets/vendor/sharp/' : NVOOS_CONTENT_GRAPH_PRO_PATH . 'node_modules/sharp/';
+
+		$required_deps = array( 'detect-libc', 'color', 'semver' );
+		foreach ( $required_deps as $dep ) {
+			$dep_path = $base_dir . 'node_modules/' . $dep;
+			if ( ! is_dir( $dep_path ) ) {
+				// Dependency missing - Sharp won't work.
+				return false;
+			}
+		}
+
+		// Check if platform-specific binaries exist.
+		// At least one platform binary should exist for Sharp to function.
+		$platform_binaries_path = $base_dir . 'node_modules/@img';
+		if ( ! is_dir( $platform_binaries_path ) ) {
+			return false;
+		}
+
+		// Use Process Service to check for Node.js availability.
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+		return $process_service->is_command_available( 'node' );
+	}
+
+	/**
+	 * Process image with Sharp via Node.js subprocess.
+	 *
+	 * The bundled script addons/pro/bin/sharp-process.js is invoked with the
+	 * processing parameters serialised to a temporary JSON file.  An optional
+	 * WordPress filter `wp_mcp_ai_sharp_process_image` lets site owners
+	 * short-circuit the built-in implementation with a custom one.
+	 *
+	 * @param array $params Processing parameters.
+	 * @return array|false Processing result array or false/error array on failure.
+	 */
+	private function process_with_sharp( $params ) {
+		/**
+		 * Filter to allow a custom Sharp processing implementation.
+		 *
+		 * Return a non-false value to bypass the built-in Node.js subprocess call.
+		 *
+		 * @param array|false $result Processing result or false to use built-in.
+		 * @param array       $params Processing parameters.
+		 */
+		$custom_result = apply_filters( 'wp_mcp_ai_sharp_process_image', false, $params );
+		if ( false !== $custom_result ) {
+			return $custom_result;
+		}
+
+		// Determine the path to the processing script.
+		$script_path = NVOOS_CONTENT_GRAPH_PRO_PATH . 'bin/sharp-process.js';
+		if ( ! file_exists( $script_path ) ) {
+			return array(
+				'error' => __( 'Sharp processing script not found. Please reinstall the plugin.', 'nvoos-content-graph-pro' ),
+			);
+		}
+
+		// Write params to a temporary JSON file.
+		if ( ! function_exists( 'wp_tempnam' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		$params_file = wp_tempnam( 'sharp-params-' );
+		if ( ! $params_file ) {
+			return array(
+				'error' => sprintf(
+					/* translators: %s: system temp directory path */
+					__( 'Failed to create temporary file for Sharp processing. Check write permissions on %s.', 'nvoos-content-graph-pro' ),
+					get_temp_dir()
+				),
+			);
+		}
+
+		// Determine the output file extension. Sanitize to alphanumeric only.
+		$source_ext = isset( $params['format'] ) ? $params['format'] : pathinfo( $params['source'], PATHINFO_EXTENSION );
+		$source_ext = preg_replace( '/[^a-zA-Z0-9]/', '', $source_ext );
+		if ( '' === $source_ext ) {
+			$source_ext = 'jpg';
+		}
+
+		// Create a uniquely-named output path with the correct extension.
+		// wp_tempnam() creates a placeholder file to reserve the path; we delete it.
+		// immediately so Sharp can write to the extension-appended path without conflict.
+		$output_base = wp_tempnam( 'sharp-output-' );
+		$output_file = $output_base . '.' . $source_ext;
+		wp_delete_file( $output_base ); // Remove placeholder; Sharp creates the ext-versioned file.
+
+		if ( false === file_put_contents( $params_file, wp_json_encode( $params ) ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct filesystem operation; WP_Filesystem unavailable here.
+			wp_delete_file( $params_file );
+			return array( 'error' => __( 'Failed to write Sharp processing parameters.', 'nvoos-content-graph-pro' ) );
+		}
+
+		// Execute the Node.js script.
+		$result = $this->execute_nodejs_script(
+			$script_path,
+			array( $params_file, $output_file ),
+			array(
+				'timeout'    => 120,
+				'parse_json' => true,
+			)
+		);
+
+		// Clean up the params temp file.
+		wp_delete_file( $params_file );
+
+		if ( is_wp_error( $result ) ) {
+			wp_delete_file( $output_file );
+			return array( 'error' => $result->get_error_message() );
+		}
+
+		if ( empty( $result['success'] ) ) {
+			wp_delete_file( $output_file );
+			return array(
+				'error' => isset( $result['error'] ) ? $result['error'] : __( 'Sharp processing failed with an unknown error.', 'nvoos-content-graph-pro' ),
+			);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Optimize an image via the Media Worker sidecar (/api/image/optimize).
+	 *
+	 * Fallback for sidecar-only sites without a local Sharp installation.
+	 * The worker route supports width scaling, format conversion, and
+	 * quality; operations it cannot do (enhance, rotate, height-only
+	 * resize) return an error so the caller surfaces it honestly.
+	 *
+	 * @param array $params Processing parameters (same shape as process_with_sharp).
+	 * @return array Result array matching the local Sharp subprocess shape
+	 *               (output_path, original_size, optimized_size,
+	 *               reduction_percent, dimensions), or array with 'error'.
+	 */
+	private function optimize_via_sidecar( $params ) {
+		$source_path = isset( $params['source'] ) ? $params['source'] : '';
+		$operation   = isset( $params['operation'] ) ? $params['operation'] : 'optimize';
+
+		$fields = array(
+			'quality' => isset( $params['quality'] ) ? absint( $params['quality'] ) : 80,
+		);
+
+		switch ( $operation ) {
+			case 'resize':
+				if ( ! empty( $params['height'] ) && empty( $params['width'] ) ) {
+					return array( 'error' => __( 'The worker resize supports width-based scaling only — install local Sharp for height-based resizes.', 'nvoos-content-graph-pro' ) );
+				}
+				if ( ! empty( $params['width'] ) ) {
+					$fields['width'] = absint( $params['width'] );
+				}
+				break;
+
+			case 'convert':
+				$format           = isset( $params['format'] ) ? sanitize_text_field( $params['format'] ) : 'webp';
+				$format           = preg_replace( '/[^a-zA-Z0-9]/', '', $format );
+				$fields['format'] = $format ? $format : 'webp';
+				break;
+
+			case 'enhance':
+			case 'rotate':
+				return array( 'error' => __( 'The worker image API does not support the requested operation (enhance/rotate) — install local Sharp to use it.', 'nvoos-content-graph-pro' ) );
+
+			case 'optimize':
+			default:
+				break;
+		}
+
+		$sidecar = $this->sidecar_upload( '/api/image/optimize', $source_path, $fields, 120 );
+
+		if ( is_wp_error( $sidecar ) ) {
+			return array( 'error' => $sidecar->get_error_message() );
+		}
+		if ( empty( $sidecar['b64'] ) ) {
+			return array( 'error' => isset( $sidecar['error'] ) ? $sidecar['error'] : __( 'Worker image optimization returned no image data.', 'nvoos-content-graph-pro' ) );
+		}
+
+		// Decode the worker bytes and write them to a local temp file, so the
+		// result matches the local Sharp subprocess shape and the rest of
+		// execute() (media upload, response fields) is unchanged.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding worker-returned image bytes is the transport contract, not obfuscation.
+		$bytes = base64_decode( $sidecar['b64'], true );
+		if ( false === $bytes || '' === $bytes ) {
+			return array( 'error' => __( 'Worker returned invalid image data.', 'nvoos-content-graph-pro' ) );
+		}
+
+		$format = isset( $fields['format'] ) ? $fields['format'] : 'webp';
+		if ( ! function_exists( 'wp_tempnam' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		$base = wp_tempnam( 'sharp-sidecar-' );
+		if ( ! $base ) {
+			return array(
+				'error' => sprintf(
+					/* translators: %s: system temp directory path */
+					__( 'Failed to create temporary file for optimized image. Check write permissions on %s.', 'nvoos-content-graph-pro' ),
+					get_temp_dir()
+				),
+			);
+		}
+		$final_path = $base . '.' . $format;
+		wp_delete_file( $base ); // Remove placeholder; write the ext-versioned path.
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing optimized image bytes to a site temp file.
+		if ( false === file_put_contents( $final_path, $bytes ) ) {
+			return array( 'error' => __( 'Failed to write optimized image file.', 'nvoos-content-graph-pro' ) );
+		}
+
+		$reduction = null;
+		if ( isset( $sidecar['savings_percent'] ) ) {
+			$reduction = (float) rtrim( (string) $sidecar['savings_percent'], '%' );
+		}
+
+		return array(
+			'output_path'       => $final_path,
+			'original_size'     => isset( $sidecar['original_size'] ) ? (int) $sidecar['original_size'] : filesize( $source_path ),
+			'optimized_size'    => (int) $sidecar['optimized_size'],
+			'reduction_percent' => $reduction,
+			'dimensions'        => isset( $sidecar['width'] ) ? array(
+				'width'  => (int) $sidecar['width'],
+				'height' => null,
+			) : null,
+		);
+	}
+
+	/**
+	 * Upload processed image to media library.
+	 *
+	 * @param string $file_path Path to processed image file.
+	 * @param int    $parent_id Parent attachment ID.
+	 * @return int|false New attachment ID or false on failure.
+	 */
+	private function upload_processed_image( $file_path, $parent_id = 0 ) {
+		if ( ! file_exists( $file_path ) ) {
+			return false;
+		}
+
+		// Get file info.
+		$file_name = basename( $file_path );
+		$file_type = wp_check_filetype( $file_name );
+
+		// Prepare upload.
+		$upload_dir  = wp_upload_dir();
+		$target_path = $upload_dir['path'] . '/' . $file_name;
+
+		// Copy file to uploads directory.
+		if ( ! copy( $file_path, $target_path ) ) {
+			return false;
+		}
+
+		// Prepare attachment data.
+		$attachment_data = array(
+			'post_mime_type' => $file_type['type'],
+			'post_title'     => preg_replace( '/\.[^.]+$/', '', $file_name ),
+			'post_content'   => '',
+			'post_status'    => 'inherit',
+			'post_parent'    => $parent_id,
+		);
+
+		// Insert attachment.
+		$attachment_id = wp_insert_attachment( $attachment_data, $target_path, $parent_id );
+
+		if ( ! is_wp_error( $attachment_id ) ) {
+			// Generate metadata.
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+			$attachment_metadata = wp_generate_attachment_metadata( $attachment_id, $target_path );
+			wp_update_attachment_metadata( $attachment_id, $attachment_metadata );
+
+			return $attachment_id;
+		}
+
+		return false;
+	}
+}

@@ -242,6 +242,155 @@ class WP_MCP_AI_Onboarding_Wizard_Test extends WP_UnitTestCase {
 	}
 
 	// -------------------------------------------------------------------------
+	// Knowledge Graph Companion preset
+	// -------------------------------------------------------------------------
+
+	/**
+	 * The companion is hidden entirely when no knowledge graph is detected.
+	 */
+	public function test_knowledge_graph_preset_hidden_without_graph() {
+		add_filter( 'wp_mcp_ai_onboarding_graph_detected', '__return_false' );
+		$presets = $this->wizard->get_presets();
+		remove_filter( 'wp_mcp_ai_onboarding_graph_detected', '__return_false' );
+
+		$this->assertArrayNotHasKey( 'knowledge_graph', $presets );
+	}
+
+	/**
+	 * The Knowledge Graph Companion should be the first, featured preset when detected.
+	 */
+	public function test_knowledge_graph_preset_is_featured_and_first() {
+		add_filter( 'wp_mcp_ai_onboarding_graph_detected', '__return_true' );
+		$presets = $this->wizard->get_presets();
+		remove_filter( 'wp_mcp_ai_onboarding_graph_detected', '__return_true' );
+
+		$this->assertArrayHasKey( 'knowledge_graph', $presets );
+		$this->assertSame( 'knowledge_graph', array_key_first( $presets ) );
+		$this->assertNotEmpty( $presets['knowledge_graph']['featured'] );
+		$this->assertSame( 'Knowledge Graph Companion', $presets['knowledge_graph']['assistant'] );
+		$this->assertSame( 0.3, $presets['knowledge_graph']['temperature'] );
+	}
+
+	/**
+	 * The companion always ships the graph-aware base tools.
+	 */
+	public function test_knowledge_graph_preset_has_graph_aware_base_tools() {
+		add_filter( 'wp_mcp_ai_onboarding_graph_detected', '__return_true' );
+		$tools = $this->wizard->get_presets()['knowledge_graph']['tools'];
+		remove_filter( 'wp_mcp_ai_onboarding_graph_detected', '__return_true' );
+
+		$expected = array(
+			'search_content',
+			'semantic_content_search',
+			'get_site_summary',
+			'wake_up_context',
+			'retrieve_agent_memory',
+			'okf_search',
+			'okf_read_concept',
+			'web_search',
+			'create_chart',
+		);
+
+		foreach ( $expected as $slug ) {
+			$this->assertContains( $slug, $tools, sprintf( 'Companion should include the "%s" tool.', $slug ) );
+		}
+	}
+
+	/**
+	 * Graphify tools are appended when the graph-tools detection filter is true.
+	 */
+	public function test_knowledge_graph_preset_adds_graphify_tools_when_active() {
+		add_filter( 'wp_mcp_ai_onboarding_graph_detected', '__return_true' );
+		add_filter( 'wp_mcp_ai_onboarding_graph_tools_active', '__return_true' );
+		$tools = $this->wizard->get_presets()['knowledge_graph']['tools'];
+		remove_filter( 'wp_mcp_ai_onboarding_graph_tools_active', '__return_true' );
+		remove_filter( 'wp_mcp_ai_onboarding_graph_detected', '__return_true' );
+
+		foreach ( array( 'graphify_build_graph', 'graphify_graph_stats', 'graphify_query_graph', 'graphify_retrieve_context' ) as $slug ) {
+			$this->assertContains( $slug, $tools, sprintf( 'Companion should include the "%s" tool when graph tools are active.', $slug ) );
+		}
+	}
+
+	/**
+	 * Graphify tools are omitted when the graph-tools detection filter is false.
+	 */
+	public function test_knowledge_graph_preset_omits_graphify_tools_when_inactive() {
+		add_filter( 'wp_mcp_ai_onboarding_graph_detected', '__return_true' );
+		add_filter( 'wp_mcp_ai_onboarding_graph_tools_active', '__return_false' );
+		$tools = $this->wizard->get_presets()['knowledge_graph']['tools'];
+		remove_filter( 'wp_mcp_ai_onboarding_graph_tools_active', '__return_false' );
+		remove_filter( 'wp_mcp_ai_onboarding_graph_detected', '__return_true' );
+
+		$this->assertNotContains( 'graphify_build_graph', $tools );
+		$this->assertNotContains( 'graphify_graph_stats', $tools );
+	}
+
+	/**
+	 * The companion system prompt should teach and reason over the graph.
+	 */
+	public function test_knowledge_graph_prompt_teaches_and_reasons_over_graph() {
+		add_filter( 'wp_mcp_ai_onboarding_graph_detected', '__return_true' );
+		$prompt = $this->wizard->get_presets()['knowledge_graph']['system_prompt'];
+		remove_filter( 'wp_mcp_ai_onboarding_graph_detected', '__return_true' );
+
+		$this->assertStringContainsString( 'nodes', strtolower( $prompt ) );
+		$this->assertStringContainsString( 'graph', strtolower( $prompt ) );
+		$this->assertStringContainsString( 'Never invent', $prompt );
+		$this->assertStringContainsString( 'progressive disclosure', strtolower( $prompt ) );
+	}
+
+	// -------------------------------------------------------------------------
+	// Effective preset selection (featured auto-select)
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Get the private effective-selection helper.
+	 *
+	 * @return array
+	 */
+	private function get_effective_selection() {
+		$method = new ReflectionMethod( $this->wizard, 'get_effective_preset_selection' );
+		$method->setAccessible( true );
+		return $method->invoke( $this->wizard );
+	}
+
+	/**
+	 * With nothing saved and a graph detected, the featured companion is pre-selected.
+	 */
+	public function test_effective_selection_auto_selects_featured_when_graph_detected() {
+		delete_option( 'wp_mcp_ai_onboarding_presets' );
+		add_filter( 'wp_mcp_ai_onboarding_graph_detected', '__return_true' );
+		$selection = $this->get_effective_selection();
+		remove_filter( 'wp_mcp_ai_onboarding_graph_detected', '__return_true' );
+
+		$this->assertSame( array( 'knowledge_graph' ), $selection );
+	}
+
+	/**
+	 * With nothing saved and no graph detected, nothing is pre-selected.
+	 */
+	public function test_effective_selection_is_empty_without_graph() {
+		delete_option( 'wp_mcp_ai_onboarding_presets' );
+		add_filter( 'wp_mcp_ai_onboarding_graph_detected', '__return_false' );
+		$selection = $this->get_effective_selection();
+		remove_filter( 'wp_mcp_ai_onboarding_graph_detected', '__return_false' );
+
+		$this->assertSame( array(), $selection );
+	}
+
+	/**
+	 * A previously saved selection always wins over the auto-select default.
+	 */
+	public function test_effective_selection_respects_saved_selection() {
+		update_option( 'wp_mcp_ai_onboarding_presets', array( 'developer' ) );
+		add_filter( 'wp_mcp_ai_onboarding_graph_detected', '__return_true' );
+		$selection = $this->get_effective_selection();
+		remove_filter( 'wp_mcp_ai_onboarding_graph_detected', '__return_true' );
+
+		$this->assertSame( array( 'developer' ), $selection );
+	}
+
+	// -------------------------------------------------------------------------
 	// Wizard not completed on step 4 render
 	// -------------------------------------------------------------------------
 

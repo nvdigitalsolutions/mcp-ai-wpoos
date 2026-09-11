@@ -299,12 +299,20 @@ class WP_MCP_AI_Memory_Retention {
 	private static function get_memories_table() {
 		global $wpdb;
 
-		$table = $wpdb->prefix . 'jet_cct_ai_chat_agent_memories';
+		// The CCT registers as `ai_agent_memories`; keep the legacy
+		// `ai_chat_agent_memories` table as a fallback for sites that still
+		// carry it, so retention sweeps and health stats never miss data.
+		foreach ( array( 'jet_cct_ai_agent_memories', 'jet_cct_ai_chat_agent_memories' ) as $table_suffix ) {
+			$table = $wpdb->prefix . $table_suffix;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
-		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
+			$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			if ( $exists ) {
+				return $table;
+			}
+		}
 
-		return $exists ? $table : '';
+		return '';
 	}
 
 	/**

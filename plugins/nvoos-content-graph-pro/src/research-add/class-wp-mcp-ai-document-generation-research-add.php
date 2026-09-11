@@ -1,0 +1,315 @@
+<?php
+/**
+ * WP_MCP_AI_Document_Generation_Research_Add (ecosystem port - Wave F2, document-generation QMS/admin slice).
+ *
+ * Ported from the base Pro addon's `addons/pro/includes/research-add/class-wp-mcp-ai-document-generation-research-add.php` for the standalone
+ * `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro addon owns the
+ * class in monolith installs - the addon boots nothing when `WP_MCP_AI_PRO_PATH` is
+ * defined (see the plugin entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain
+ * `nvoos-content-graph-pro`; the research-add-base require resolves from `src/admin/`.
+ *
+ * @package WP_MCP_AI_Pro
+ * @subpackage Document_Generation
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+declare(strict_types=1);
+
+
+
+
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/admin/class-wp-mcp-ai-research-add-base.php';
+
+/**
+ * Document Generation Research & Add implementation.
+ */
+class WP_MCP_AI_Document_Generation_Research_Add extends WP_MCP_AI_Research_Add_Base {
+
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		parent::__construct( 'document_generation' );
+
+		// Register field schemas.
+		add_filter( 'wp_mcp_ai_toolkit_cpt_field_schema', array( $this, 'filter_cpt_field_schema' ), 10, 3 );
+		add_filter( 'wp_mcp_ai_toolkit_cct_field_schema', array( $this, 'filter_cct_field_schema' ), 10, 3 );
+	}
+
+	/**
+	 * Get entity types for document generation toolkit.
+	 *
+	 * @return array Entity types.
+	 */
+	protected function get_entity_types() {
+		return array(
+			'templates' => __( 'Document Templates', 'nvoos-content-graph-pro' ),
+			'documents' => __( 'Generated Documents', 'nvoos-content-graph-pro' ),
+		);
+	}
+
+	/**
+	 * Filter CPT field schema.
+	 *
+	 * @param array  $schema       Field schema.
+	 * @param string $toolkit_slug Toolkit slug.
+	 * @param string $entity_type  Entity type.
+	 * @return array Filtered schema.
+	 */
+	public function filter_cpt_field_schema( $schema, $toolkit_slug, $entity_type ) {
+		if ( 'document_generation' !== $toolkit_slug ) {
+			return $schema;
+		}
+
+		switch ( $entity_type ) {
+			case 'templates':
+				return $this->get_templates_schema();
+			case 'documents':
+				return $this->get_documents_schema();
+		}
+
+		return $schema;
+	}
+
+	/**
+	 * Filter CCT field schema.
+	 *
+	 * @param array  $schema       Field schema.
+	 * @param string $toolkit_slug Toolkit slug.
+	 * @param string $entity_type  Entity type.
+	 * @return array Filtered schema.
+	 */
+	public function filter_cct_field_schema( $schema, $toolkit_slug, $entity_type ) {
+		// Use same schema for both CPT and CCT.
+		return $this->filter_cpt_field_schema( $schema, $toolkit_slug, $entity_type );
+	}
+
+	/**
+	 * Get document templates field schema.
+	 *
+	 * @return array Field definitions.
+	 */
+	private function get_templates_schema() {
+		return array(
+			'template_name'        => array(
+				'title'       => __( 'Template Name', 'nvoos-content-graph-pro' ),
+				'type'        => 'text',
+				'width'       => '100%',
+				'is_required' => true,
+			),
+			'template_type'        => array(
+				'title'       => __( 'Template Type', 'nvoos-content-graph-pro' ),
+				'type'        => 'select',
+				'width'       => '50%',
+				'is_required' => true,
+			),
+			'format'               => array(
+				'title' => __( 'Output Format', 'nvoos-content-graph-pro' ),
+				'type'  => 'select',
+				'width' => '50%',
+			),
+			'description'          => array(
+				'title' => __( 'Description', 'nvoos-content-graph-pro' ),
+				'type'  => 'textarea',
+				'width' => '100%',
+			),
+			'content_template'     => array(
+				'title' => __( 'Content Template', 'nvoos-content-graph-pro' ),
+				'type'  => 'textarea',
+				'width' => '100%',
+			),
+			'variables'            => array(
+				'title' => __( 'Template Variables (JSON)', 'nvoos-content-graph-pro' ),
+				'type'  => 'textarea',
+				'width' => '100%',
+			),
+			'page_size'            => array(
+				'title' => __( 'Page Size', 'nvoos-content-graph-pro' ),
+				'type'  => 'text',
+				'width' => '50%',
+			),
+			'font_family'          => array(
+				'title' => __( 'Font Family', 'nvoos-content-graph-pro' ),
+				'type'  => 'text',
+				'width' => '50%',
+			),
+			'header_content'       => array(
+				'title' => __( 'Header Content', 'nvoos-content-graph-pro' ),
+				'type'  => 'textarea',
+				'width' => '100%',
+			),
+			'footer_content'       => array(
+				'title' => __( 'Footer Content', 'nvoos-content-graph-pro' ),
+				'type'  => 'textarea',
+				'width' => '100%',
+			),
+			'created_by_assistant' => array(
+				'title' => __( 'Created by Assistant', 'nvoos-content-graph-pro' ),
+				'type'  => 'text',
+				'width' => '50%',
+			),
+		);
+	}
+
+	/**
+	 * Get generated documents field schema.
+	 *
+	 * @return array Field definitions.
+	 */
+	private function get_documents_schema() {
+		return array(
+			'document_name'        => array(
+				'title'       => __( 'Document Name', 'nvoos-content-graph-pro' ),
+				'type'        => 'text',
+				'width'       => '100%',
+				'is_required' => true,
+			),
+			'document_type'        => array(
+				'title' => __( 'Document Type', 'nvoos-content-graph-pro' ),
+				'type'  => 'text',
+				'width' => '50%',
+			),
+			'format'               => array(
+				'title' => __( 'Format', 'nvoos-content-graph-pro' ),
+				'type'  => 'select',
+				'width' => '50%',
+			),
+			'file_path'            => array(
+				'title' => __( 'File Path', 'nvoos-content-graph-pro' ),
+				'type'  => 'text',
+				'width' => '100%',
+			),
+			'file_url'             => array(
+				'title' => __( 'File URL', 'nvoos-content-graph-pro' ),
+				'type'  => 'text',
+				'width' => '100%',
+			),
+			'file_size'            => array(
+				'title' => __( 'File Size (bytes)', 'nvoos-content-graph-pro' ),
+				'type'  => 'number',
+				'width' => '50%',
+			),
+			'page_count'           => array(
+				'title' => __( 'Page Count', 'nvoos-content-graph-pro' ),
+				'type'  => 'number',
+				'width' => '50%',
+			),
+			'template_id'          => array(
+				'title' => __( 'Template ID', 'nvoos-content-graph-pro' ),
+				'type'  => 'number',
+				'width' => '50%',
+			),
+			'status'               => array(
+				'title' => __( 'Status', 'nvoos-content-graph-pro' ),
+				'type'  => 'select',
+				'width' => '50%',
+			),
+			'created_by_assistant' => array(
+				'title' => __( 'Created by Assistant', 'nvoos-content-graph-pro' ),
+				'type'  => 'text',
+				'width' => '50%',
+			),
+		);
+	}
+
+	/**
+	 * Render table headers for current entity.
+	 */
+	protected function render_table_headers() {
+		switch ( $this->current_entity ) {
+			case 'templates':
+				?>
+				<th><?php esc_html_e( 'ID', 'nvoos-content-graph-pro' ); ?></th>
+				<th><?php esc_html_e( 'Template Name', 'nvoos-content-graph-pro' ); ?></th>
+				<th><?php esc_html_e( 'Type', 'nvoos-content-graph-pro' ); ?></th>
+				<th><?php esc_html_e( 'Format', 'nvoos-content-graph-pro' ); ?></th>
+				<th><?php esc_html_e( 'Page Size', 'nvoos-content-graph-pro' ); ?></th>
+				<th><?php esc_html_e( 'Actions', 'nvoos-content-graph-pro' ); ?></th>
+				<?php
+				break;
+
+			case 'documents':
+				?>
+				<th><?php esc_html_e( 'ID', 'nvoos-content-graph-pro' ); ?></th>
+				<th><?php esc_html_e( 'Document Name', 'nvoos-content-graph-pro' ); ?></th>
+				<th><?php esc_html_e( 'Format', 'nvoos-content-graph-pro' ); ?></th>
+				<th><?php esc_html_e( 'Size', 'nvoos-content-graph-pro' ); ?></th>
+				<th><?php esc_html_e( 'Status', 'nvoos-content-graph-pro' ); ?></th>
+				<th><?php esc_html_e( 'Actions', 'nvoos-content-graph-pro' ); ?></th>
+				<?php
+				break;
+
+			default:
+				parent::render_table_headers();
+		}
+	}
+
+	/**
+	 * Render table row for current entity.
+	 *
+	 * @param array $item Item data.
+	 */
+	protected function render_table_row( $item ) {
+		$edit_url   = add_query_arg(
+			array(
+				'action' => 'edit',
+				'id'     => $item['id'],
+			)
+		);
+		$delete_url = wp_nonce_url(
+			add_query_arg(
+				array(
+					'action' => 'delete',
+					'id'     => $item['id'],
+				)
+			),
+			'delete_item_' . $item['id']
+		);
+
+		switch ( $this->current_entity ) {
+			case 'templates':
+				?>
+				<td><?php echo esc_html( $item['id'] ); ?></td>
+				<td><?php echo esc_html( $item['template_name'] ?? __( '(No name)', 'nvoos-content-graph-pro' ) ); ?></td>
+				<td><?php echo esc_html( $item['template_type'] ?? '-' ); ?></td>
+				<td><?php echo esc_html( strtoupper( $item['format'] ?? 'PDF' ) ); ?></td>
+				<td><?php echo esc_html( $item['page_size'] ?? 'Letter' ); ?></td>
+				<td class="item-actions">
+					<a href="<?php echo esc_url( $edit_url ); ?>"><?php esc_html_e( 'Edit', 'nvoos-content-graph-pro' ); ?></a>
+					<a href="<?php echo esc_url( $delete_url ); ?>" onclick="return confirm('<?php esc_attr_e( 'Are you sure?', 'nvoos-content-graph-pro' ); ?>');"><?php esc_html_e( 'Delete', 'nvoos-content-graph-pro' ); ?></a>
+				</td>
+				<?php
+				break;
+
+			case 'documents':
+				$file_size_formatted = isset( $item['file_size'] ) ? size_format( (int) $item['file_size'] ) : '-';
+				?>
+				<td><?php echo esc_html( $item['id'] ); ?></td>
+				<td><?php echo esc_html( $item['document_name'] ?? __( '(No name)', 'nvoos-content-graph-pro' ) ); ?></td>
+				<td><?php echo esc_html( strtoupper( $item['format'] ?? 'PDF' ) ); ?></td>
+				<td><?php echo esc_html( $file_size_formatted ); ?></td>
+				<td><?php echo esc_html( $item['status'] ?? 'Generated' ); ?></td>
+				<td class="item-actions">
+					<?php if ( ! empty( $item['file_url'] ) ) : ?>
+						<a href="<?php echo esc_url( $item['file_url'] ); ?>" target="_blank"><?php esc_html_e( 'Download', 'nvoos-content-graph-pro' ); ?></a>
+					<?php endif; ?>
+					<a href="<?php echo esc_url( $edit_url ); ?>"><?php esc_html_e( 'Edit', 'nvoos-content-graph-pro' ); ?></a>
+					<a href="<?php echo esc_url( $delete_url ); ?>" onclick="return confirm('<?php esc_attr_e( 'Are you sure?', 'nvoos-content-graph-pro' ); ?>');"><?php esc_html_e( 'Delete', 'nvoos-content-graph-pro' ); ?></a>
+				</td>
+				<?php
+				break;
+
+			default:
+				parent::render_table_row( $item );
+		}
+	}
+}

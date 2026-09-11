@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 40 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 47 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -103,6 +103,113 @@ Clean up afterwards: `rm -rf docker-tmp-wp71` and `docker volume rm <worktree>-v
 — never stage either artifact. The no-concurrent-phpunit rule applies to
 one-off runners too (same shared DB).
 
+### Pro addon dual-matrix runs (nvoos-content-graph-pro)
+
+The `PHPUnit Pro Addon` CI workflow runs the addon suite twice (monolith +
+standalone) — mirror it locally with the same one-off runner:
+
+```bash
+# Standalone matrix (base plugin skipped; add the env var):
+-e WP_MCP_AI_PRO_STANDALONE=1 \
+# Config: the addon's own phpunit config (bootstrap loads the ecosystem
+# plugins + honours the env var):
+php -d memory_limit=1G vendor/bin/phpunit -c plugins/nvoos-content-graph-pro/phpunit.xml.dist <paths> --no-coverage
+
+# Monolith matrix: same command WITHOUT the env var.
+```
+
+### Standalone plugin suites (plugins/nvoos-content-graph, -ai, -pro)
+
+`plugins/nvoos-content-graph` ships its **own** composer.json +
+phpunit.xml.dist (PHPUnit 9.6, wp-phpunit 7.0.2, PSR-4-only autoload — no
+Windows classmap hazard, so a host-side `composer install` in the plugin dir
+is safe and works inside the Linux container). **No monorepo CI workflow runs
+its `phpunit.xml.dist`** (phpunit-ai.yml only covers the AI addon's
+`phpunit-ecosystem.xml.dist`), so run it explicitly:
+
+```bash
+# Host: install the plugin's dev deps (creates
+# plugins/nvoos-content-graph/vendor — gitignored):
+cd plugins/nvoos-content-graph && composer install --no-interaction --prefer-dist
+
+# Write the wp-phpunit config the plugin bootstrap expects. Default lookup is
+# vendor/wp-phpunit/wp-phpunit/wp-tests-config.php (dirname of includes/).
+# vendor/ paths are excluded from repo file tools — use the shell:
+cat > vendor/wp-phpunit/wp-phpunit/wp-tests-config.php <<'EOF'
+<?php
+define( 'ABSPATH', '/var/www/html/' );
+define( 'DB_NAME', 'wordpress_test' );
+define( 'DB_USER', 'wordpress' );
+define( 'DB_PASSWORD', 'wordpress' );
+define( 'DB_HOST', 'db' );
+define( 'DB_CHARSET', 'utf8' );
+define( 'DB_COLLATE', '' );
+define( 'WP_TESTS_DOMAIN', 'example.org' );
+define( 'WP_TESTS_EMAIL', 'admin@example.org' );
+define( 'WP_TESTS_TITLE', 'Test Blog' );
+define( 'WP_PHP_BINARY', 'php' );
+$table_prefix = 'wptests_';
+EOF
+
+# Ensure the DB exists (bootstrap auto-runs install.php single-site unless
+# WP_TESTS_SKIP_INSTALL=1):
+docker exec oos-wp-db mysql -uroot -pwordpress -e \
+  "CREATE DATABASE IF NOT EXISTS wordpress_test; GRANT ALL PRIVILEGES ON wordpress_test.* TO 'wordpress'@'%'; FLUSH PRIVILEGES;"
+
+# Run (php:8.2-cli LACKS mysqli — wp_die "missing the MySQL extension"; use
+# wordpress:6.9-php8.2-apache with --entrypoint php, which ships mysqli):
+MSYS_NO_PATHCONV=1 docker run --rm --entrypoint php \
+  -v oos-wp_wp_core:/var/www/html \
+  -v F:/GITHUB/mcp-ai-wpoos:/var/www/html/wp-content/plugins/mcp-ai-wpoos \
+  --network oos-wp_default \
+  -e WP_TESTS_DIR=/var/www/html/wp-content/plugins/mcp-ai-wpoos/plugins/nvoos-content-graph/vendor/wp-phpunit/wp-phpunit \
+  wordpress:6.9-php8.2-apache \
+  /var/www/html/wp-content/plugins/mcp-ai-wpoos/plugins/nvoos-content-graph/vendor/bin/phpunit \
+  -c /var/www/html/wp-content/plugins/mcp-ai-wpoos/plugins/nvoos-content-graph/phpunit.xml.dist --testsuite=Unit
+```
+
+- "Full plugin run" = both suites: `--testsuite=Unit` then
+  `--testsuite=Integration` (integration needs only WP + bundled JetEngine
+  stubs). The no-concurrent-phpunit rule still applies (same DB).
+- JS contract checks need no browser: `node scripts/verify-commerce-fallback.js`
+  (purchase-modal fallback redirect contract) and
+  `node scripts/verify-theme-engine.js` run on the host from the plugin dir.
+- When only the client plugin is in scope this is faster than the root suite
+  (which boots the full base+Pro plugin); the root suite covers
+  `addons/checkout-api/tests` via the root phpunit.xml.dist.
+
+**Shared-DB isolation (cross-worktree clobbering):** every worktree's one-off
+runner hits the SAME `wordpress_test` DB by default — a concurrent worktree's
+`install.php` re-runs wipe your schema mid-suite (mass "Table doesn't exist"
+failures). Isolate per worktree with a dedicated DB:
+
+```bash
+# One-time: create the isolated DB (db container name from docker ps; creds
+# in docker-compose.yml — oos-wp-db / wordpress:wordpress by default):
+docker exec oos-wp-db mysql -uroot -pwordpress -e \
+  "CREATE DATABASE IF NOT EXISTS wordpress_test_pearl; GRANT ALL PRIVILEGES ON wordpress_test_pearl.* TO 'wordpress'@'%'; FLUSH PRIVILEGES;"
+
+# Then point BOTH the schema install and every phpunit run at it:
+-e WP_DB_NAME=wordpress_test_pearl \
+# Schema install (once, or after the DB gets dropped):
+php vendor/wp-phpunit/wp-phpunit/includes/install.php tests/wp-tests-config.php
+```
+
+The env var overrides `DB_NAME` in `tests/wp-tests-config.php` (which reads
+`getenv( 'WP_DB_NAME' )`) — never edit the tracked config file.
+
+- Run `--filter Test_X` first, then the full suite — the full run is ~10-20
+  min locally.
+- Sequential monolith + standalone runs may reuse `wordpress_test`; keep the
+  no-concurrent rule.
+- The `<worktree>-vendor` volume is reusable across clusters: re-run the
+  composer step (a no-op when current).
+- Expected skips: standalone ~1 skip; monolith skips every standalone-gated
+test (hundreds — not failures). A summary of "OK, but there were issues"
+with only warnings/deprecations/skips is a pass.
+- phpcs for the addon: `--standard=plugins/nvoos-content-graph-pro/phpcs.xml.dist`
+(phpcbf exit 1 = fixed files, not an error; re-run phpcs to confirm exit 0).
+
 ## Cluster → PR workflow
 
 1. `git fetch origin alpha-working` (auto-gc may make this time out — verify
@@ -117,6 +224,16 @@ one-off runners too (same shared DB).
    `nul` file in the repo — delete stray artifacts before staging.
 5. Commit with imperative subject ≤ 50 chars; PR base is `alpha-working`.
 6. The user merges manually; move to the next candidate regardless.
+
+### Watching CI checks
+
+- Check-run viewers may return empty statuses while jobs run; the reliable
+  watcher is `gh pr checks <n> --repo nvdigitalsolutions/mcp-ai-wpoos` from
+  the terminal.
+- The `PHPUnit Pro Addon` matrix jobs finish in ~3 min, but the `PHP Linting`
+  workflow (WPCS 3.0 + PHP Compatibility Check) is repo-wide and routinely
+  takes 20–30 min — it finishes long after the matrix checks. Local phpcs on
+the changed files is the substantive gate; plan CI waits accordingly.
 
 ## CI log triage (`logs_*.zip`)
 
@@ -401,6 +518,70 @@ one-off runners too (same shared DB).
     idea for provider-connectivity assertions: isolate the provider key under
     test — `unset` the other provider keys before asserting `good`, or a
     leftover invalid key downgrades the status to `recommended`.
+41. **Ported-constant drift in ecosystem-port characterization tests.**
+    Port characterization tests must derive constants from the ported
+    source — never from memory or class-name guesses. The Wave F2 comic
+    data-layer test asserted `mcp_ai_comic_character`, but the byte-identical
+    test `mcp_ai_comic_character`, but the byte-identical
+    source declares `mcp_ai_comic_char` (the comic/panel/script slugs are all
+    shorter than the class names suggest). Before running a new port test,
+    grep the source's `const POST_TYPE` (and every other asserted constant)
+    and align the test — a wrong slug turns a byte-identical port into a
+    red-herring failure. Same discipline for module ordinals: count the
+    registry test's own `$expected` list rather than trusting handoff notes
+    (the comic handoff said "25th module"; the actual list has 24).
+
+42. **Standalone-plugin vendor shadows the root PHPUnit.** Suites under
+    `plugins/nvoos-content-graph/tests` (and similar standalone plugins)
+    bootstrap through the plugin's own `vendor/autoload.php`, which pins
+    PHPUnit 9 while `wp-phpunit` 7.x needs PHPUnit 10/11. Symptoms: every
+    test errors with `Call to undefined method X::name()` or PHPUnit itself
+    dies with `Cannot instantiate interface PHPUnit\Runner\TestSuiteLoader`
+    (the plugin-vendor autoloader is registered last, so it wins lookups).
+    Fix for local validation: run the suite with the ROOT vendor's phpunit
+    binary (`php /path/to/root/vendor/bin/phpunit -c
+    plugins/nvoos-content-graph/phpunit.xml.dist ...`) and scrub the
+    plugin-vendor's PHPUnit mappings from its disposable vendor volume
+    (`autoload_psr4.php`/`autoload_classmap.php`/`autoload_static.php`
+    lines mentioning `PHPUnit` or `php-invoker`/`php-timer`, then `rm -rf
+    <plugin>/vendor/phpunit`). Never commit the scrubbed vendor.
+43. **`get_routes()` maps each path to a LIST of endpoint objects** (one per
+    registered method), not a single `methods` map. Tests asserting route
+    registration must iterate the list:
+    `isset( $routes[$path] ) && is_array( $routes[$path] )` then check each
+    endpoint's `$endpoint['methods'][$method]`. Asserting
+    `$routes[$path]['methods']` directly silently fails.
+44. **`register_rest_route()` outside `rest_api_init` fires
+    `_doing_it_wrong`**, which wp-phpunit converts into a test failure. To
+    register routes in a test: `add_action( 'rest_api_init', fn() =>
+    $controller->register_routes() )`, then force a fresh server
+    (`$GLOBALS['wp_rest_server'] = null; rest_get_server();`) so
+    `rest_api_init` re-fires and the hook runs on the correct action.
+45. **`rest_url()` in tests uses the `?rest_route=` query form** (plain
+    permalinks), e.g. `http://example.org/index.php?rest_route=/ns/route` —
+    never assert a `/wp-json/` URL shape. Assert
+    `assertStringContainsString( 'ns/route', $url )` to accept both forms.
+46. **Pro CLI include-time fatal on base constants.** The Pro addon main
+    file requires its CLI command files at include time under `WP_CLI`,
+    and `class-wp-mcp-ai-pro-cli-base-command.php` reads `WP_MCP_AI_PATH`
+    (a base-plugin constant) unguarded. When Pro is activated before the
+    base plugin (active_plugins order), every `wp` command dies with
+    `Undefined constant "WP_MCP_AI_PATH"`. Production fix (#6585): defer
+    the CLI require loop to `plugins_loaded` (priority 30) when the
+    constant is missing at include time, and bail cleanly in the CLI base
+    command. Site workaround: `wp --skip-plugins eval '...reorder
+    active_plugins...'` or run evals with `--skip-plugins` + manual
+    `require_once` of the needed plugin file.
+47. **Edit-tool non-ASCII mangling (CP1252 bytes).** The edit tool may write
+    some non-ASCII characters (em-dashes etc.) as single CP1252 bytes
+    (e.g. `0x97` instead of UTF-8 `E2 80 94`), silently corrupting file
+    encoding — `php -l` and phpcs do NOT catch it. After editing files with
+    non-ASCII content, validate with `mb_check_encoding($c, "UTF-8")` and
+    repair byte-level with a PHP script (lone `0x97` -> `E2 80 94` etc.),
+    or write new text in pure ASCII. When scanning for damage, a byte
+    scanner must skip the continuation bytes of valid sequences
+    (`$i += $len - 1` on the VALID branch too), or every continuation byte
+    reports as a false-positive invalid sequence.
 
 ## Production fix vs test fix
 

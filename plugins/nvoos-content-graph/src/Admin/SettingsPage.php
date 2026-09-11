@@ -30,6 +30,7 @@ use function get_transient;
 use function number_format_i18n;
 use function register_setting;
 use function rest_url;
+use function sanitize_email;
 use function sanitize_key;
 use function set_transient;
 use function settings_errors;
@@ -40,6 +41,7 @@ use function wp_date;
 use function wp_die;
 use function wp_enqueue_script;
 use function wp_enqueue_style;
+use function wp_get_current_user;
 use function wp_localize_script;
 use function wp_parse_str;
 use function wp_parse_url;
@@ -147,6 +149,9 @@ class SettingsPage {
 		}
 		if ( class_exists( 'NvoosContentGraph\Admin\Sections\SourcesCptsSection' ) ) {
 			SettingsRegistry::register_section( new \NvoosContentGraph\Admin\Sections\SourcesCptsSection() );
+		}
+		if ( class_exists( 'NvoosContentGraph\Admin\Sections\SourcesCctsSection' ) ) {
+			SettingsRegistry::register_section( new \NvoosContentGraph\Admin\Sections\SourcesCctsSection() );
 		}
 		if ( class_exists( 'NvoosContentGraph\Admin\Sections\SourcesExtSection' ) ) {
 			SettingsRegistry::register_section( new \NvoosContentGraph\Admin\Sections\SourcesExtSection() );
@@ -448,14 +453,14 @@ class SettingsPage {
 			'nvoos-content-graph-icons',
 			NVOOS_CONTENT_GRAPH_URL . 'assets/js/content-graph-icons.js',
 			array(),
-			NVOOS_CONTENT_GRAPH_VERSION,
+			Schema::assetVersion( 'assets/js/content-graph-icons.js' ),
 			true
 		);
 		\wp_enqueue_script(
 			'nvoos-content-graph-theme',
 			NVOOS_CONTENT_GRAPH_URL . 'assets/js/content-graph-theme.js',
 			array( 'nvoos-content-graph-icons' ),
-			NVOOS_CONTENT_GRAPH_VERSION,
+			Schema::assetVersion( 'assets/js/content-graph-theme.js' ),
 			true
 		);
 
@@ -463,7 +468,7 @@ class SettingsPage {
 			'nvoos-content-graph-admin',
 			NVOOS_CONTENT_GRAPH_URL . 'assets/js/content-graph-admin.js',
 			array( 'jquery', 'nvoos-content-graph-cytoscape', 'nvoos-content-graph-cytoscape-fcose', 'nvoos-content-graph-theme' ),
-			NVOOS_CONTENT_GRAPH_VERSION,
+			Schema::assetVersion( 'assets/js/content-graph-admin.js' ),
 			true
 		);
 
@@ -479,7 +484,7 @@ class SettingsPage {
 			'nvoos-content-graph-commerce',
 			NVOOS_CONTENT_GRAPH_URL . 'assets/js/content-graph-commerce.js',
 			array(),
-			NVOOS_CONTENT_GRAPH_VERSION,
+			Schema::assetVersion( 'assets/js/content-graph-commerce.js' ),
 			true
 		);
 
@@ -487,7 +492,7 @@ class SettingsPage {
 			'nvoos-content-graph-admin',
 			NVOOS_CONTENT_GRAPH_URL . 'assets/css/content-graph-admin.css',
 			array(),
-			NVOOS_CONTENT_GRAPH_VERSION
+			Schema::assetVersion( 'assets/css/content-graph-admin.css' )
 		);
 
 		$settings = Settings::all();
@@ -532,35 +537,82 @@ class SettingsPage {
 		);
 
 		// Commerce config. No Stripe keys live in this plugin — the publishable
-		// key is returned per-session by the vendor checkout API.
+		// key is returned per-session by the vendor checkout API. The vendor's
+		// session response may also override the legal-document URLs; these
+		// are the client-side defaults that keep the consent links present.
 		\wp_localize_script(
 			'nvoos-content-graph-commerce',
 			'nvoosContentGraphCommerce',
 			array(
-				'rest_url'     => esc_url_raw( rest_url( Schema::REST_NAMESPACE ) ),
-				'nonce'        => wp_create_nonce( 'wp_rest' ),
-				'price_label'  => \NvoosContentGraph\Commerce\Payments::priceLabel(),
-				'fallback_url' => esc_url_raw( \NvoosContentGraph\Commerce\Payments::fallbackProductUrl() ),
-				'i18n'         => array(
-					'title'              => __( 'Get NV oOS Content Graph — AI', 'nvoos-content-graph' ),
-					'pay'                => __( 'Pay', 'nvoos-content-graph' ),
-					'cancel'             => __( 'Cancel', 'nvoos-content-graph' ),
-					'close'              => __( 'Close', 'nvoos-content-graph' ),
-					'secure_note'        => __( 'Payments are processed securely by Stripe. Your card never touches this server.', 'nvoos-content-graph' ),
-					'generic_error'      => __( 'Something went wrong. Please try again.', 'nvoos-content-graph' ),
-					'stripe_load_error'  => __( 'Stripe failed to load. Check your network connection and try again.', 'nvoos-content-graph' ),
-					'installing'         => __( 'Recording your license and installing the addon…', 'nvoos-content-graph' ),
-					'success_title'      => __( 'You’re all set!', 'nvoos-content-graph' ),
-					'refresh'            => __( 'Reload page', 'nvoos-content-graph' ),
-					'license_label'      => __( 'License key', 'nvoos-content-graph' ),
-					'test_mode'          => __( 'Test mode — no real payment will be taken.', 'nvoos-content-graph' ),
-					'pending_retry'      => __( 'Check again', 'nvoos-content-graph' ),
-					'pending_new'        => __( 'Start a new purchase', 'nvoos-content-graph' ),
-					'fallback_note'      => __( 'The checkout service is unavailable right now. Redirecting you to the product page to complete your purchase…', 'nvoos-content-graph' ),
-					'verify'             => __( 'Verify', 'nvoos-content-graph' ),
-					'payment_processing' => __( 'Payment is still processing. Click Verify once it completes.', 'nvoos-content-graph' ),
-					'payment_incomplete' => __( 'Payment did not complete. Status: ', 'nvoos-content-graph' ),
-					'download_zip'       => __( 'Download ZIP manually', 'nvoos-content-graph' ),
+				'rest_url'          => esc_url_raw( rest_url( Schema::REST_NAMESPACE ) ),
+				'nonce'             => wp_create_nonce( 'wp_rest' ),
+				'price_label'       => \NvoosContentGraph\Commerce\Payments::priceLabel(),
+				'fallback_url'      => esc_url_raw( \NvoosContentGraph\Commerce\Payments::fallbackProductUrl() ),
+				'terms_url'         => esc_url_raw( \NvoosContentGraph\Commerce\Payments::termsUrl() ),
+				'refund_policy_url' => esc_url_raw( \NvoosContentGraph\Commerce\Payments::refundPolicyUrl() ),
+				'roadmap_url'       => esc_url_raw( \NvoosContentGraph\Commerce\Payments::roadmapUrl() ),
+				'changelog_url'     => esc_url_raw( \NvoosContentGraph\Commerce\Payments::changelogUrl() ),
+				'buyer_email'       => sanitize_email( (string) wp_get_current_user()->user_email ),
+				'eu_countries'      => \NvoosContentGraph\Commerce\Payments::euCountryCodes(),
+				'i18n'              => array(
+					'title'                  => __( 'Get NV oOS Complete', 'nvoos-content-graph' ),
+					'pay'                    => __( 'Pay', 'nvoos-content-graph' ),
+					'cancel'                 => __( 'Cancel', 'nvoos-content-graph' ),
+					'close'                  => __( 'Close', 'nvoos-content-graph' ),
+					'secure_note'            => __( 'Payments are processed securely by Stripe. Your card never touches this server.', 'nvoos-content-graph' ),
+					'stripe_setup_error'     => __( 'The payment form could not be started. Please reload the page and try again.', 'nvoos-content-graph' ),
+					'price_one_time'         => __( 'One-time payment — no subscription', 'nvoos-content-graph' ),
+					'price_vat_note'         => __( 'VAT may be added at checkout based on your country.', 'nvoos-content-graph' ),
+					'price_license_scope'    => __( 'Includes 1 year of updates and email support on this site.', 'nvoos-content-graph' ),
+					'trust_guarantee'        => __( 'Try it risk-free — 30-day money-back guarantee', 'nvoos-content-graph' ),
+					'trust_instant'          => __( 'Instant download and automatic install', 'nvoos-content-graph' ),
+					'includes_title'         => __( 'Included in NV oOS Complete', 'nvoos-content-graph' ),
+					'includes_full'          => __( 'The full NV oOS plugin — base + Pro', 'nvoos-content-graph' ),
+					'includes_updates'       => __( '1 year of updates', 'nvoos-content-graph' ),
+					'includes_support'       => __( 'Email support directly from the developer', 'nvoos-content-graph' ),
+					'includes_roadmap'       => __( 'Access to the NV oOS Content Graph ecosystem when it launches — included at no extra cost', 'nvoos-content-graph' ),
+					'roadmap_funded'         => __( 'Your purchase directly funds the next features. Owners like you shape the roadmap — tell us what to build next.', 'nvoos-content-graph' ),
+					'roadmap_link_label'     => __( 'Share your ideas', 'nvoos-content-graph' ),
+					'terms_eu_withdrawal'    => __( 'Delivery starts immediately. By downloading, you acknowledge that you lose your EU right of withdrawal for this digital content.', 'nvoos-content-graph' ),
+					'success_steps_title'    => __( 'What happens next', 'nvoos-content-graph' ),
+					'success_step_receipt'   => __( 'A receipt is on its way to your email.', 'nvoos-content-graph' ),
+					'success_step_installed' => __( 'NV oOS Complete is installed and activated.', 'nvoos-content-graph' ),
+					'success_step_license'   => __( 'Your license key is saved — keep it safe.', 'nvoos-content-graph' ),
+					'success_step_roadmap'   => __( 'Watch the changelog for updates — your Content Graph ecosystem access arrives with the launch, at no extra cost.', 'nvoos-content-graph' ),
+					'changelog_link'         => __( 'View changelog', 'nvoos-content-graph' ),
+					'support_line'           => sprintf(
+						/* translators: %s: support email address. */
+						__( 'Questions? Email %s', 'nvoos-content-graph' ),
+						\NvoosContentGraph\Commerce\Payments::supportEmail()
+					),
+					'generic_error'          => __( 'Something went wrong. Please try again.', 'nvoos-content-graph' ),
+					'stripe_load_error'      => __( 'Stripe failed to load. Check your network connection and try again.', 'nvoos-content-graph' ),
+					'installing'             => __( 'Recording your license and installing NV oOS Complete…', 'nvoos-content-graph' ),
+					'success_title'          => __( 'You’re all set!', 'nvoos-content-graph' ),
+					'refresh'                => __( 'Reload page', 'nvoos-content-graph' ),
+					'license_label'          => __( 'License key', 'nvoos-content-graph' ),
+					'test_mode'              => __( 'Test mode — no real payment will be taken.', 'nvoos-content-graph' ),
+					'pending_retry'          => __( 'Check again', 'nvoos-content-graph' ),
+					'pending_new'            => __( 'Start a new purchase', 'nvoos-content-graph' ),
+					'fallback_note'          => __( 'The checkout service is unavailable right now. Redirecting you to the product page to complete your purchase…', 'nvoos-content-graph' ),
+					'verify'                 => __( 'Verify', 'nvoos-content-graph' ),
+					'payment_processing'     => __( 'Payment is still processing. Click Verify once it completes.', 'nvoos-content-graph' ),
+					'payment_incomplete'     => __( 'Payment did not complete. Status: ', 'nvoos-content-graph' ),
+					'download_zip'           => __( 'Download ZIP manually', 'nvoos-content-graph' ),
+					'terms_consent'          => __( 'I have read and agree to the Terms of Service and the Refund Policy, including the 30-day money-back guarantee.', 'nvoos-content-graph' ),
+					'terms_link'             => __( 'Terms of Service', 'nvoos-content-graph' ),
+					'refund_link'            => __( 'Refund Policy', 'nvoos-content-graph' ),
+					'terms_required'         => __( 'Please agree to the Terms of Service and Refund Policy to continue.', 'nvoos-content-graph' ),
+					'email_label'            => __( 'Email for receipt and refunds', 'nvoos-content-graph' ),
+					'email_placeholder'      => __( 'you@example.com', 'nvoos-content-graph' ),
+					'email_invalid'          => __( 'Please enter a valid email address for your receipt.', 'nvoos-content-graph' ),
+					'manual_install_note'    => __( 'Prefer to install manually? Download the ZIP and upload it via Plugins → Add New Plugin → Upload Plugin.', 'nvoos-content-graph' ),
+					'country_label'          => __( 'Country (for VAT records)', 'nvoos-content-graph' ),
+					'country_other'          => __( 'Other / Non-EU', 'nvoos-content-graph' ),
+					'address_line1_label'    => __( 'Street address', 'nvoos-content-graph' ),
+					'address_city_label'     => __( 'City', 'nvoos-content-graph' ),
+					'address_postal_label'   => __( 'Postal code (optional)', 'nvoos-content-graph' ),
+					'address_required'       => __( 'EU purchases require a billing address. Please complete the address fields.', 'nvoos-content-graph' ),
 				),
 			)
 		);

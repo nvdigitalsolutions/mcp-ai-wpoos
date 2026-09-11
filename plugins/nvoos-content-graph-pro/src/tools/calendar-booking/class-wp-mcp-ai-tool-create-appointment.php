@@ -1,0 +1,637 @@
+<?php
+/**
+ * Calendar appointment/slot tool (ecosystem port — Wave F2, calendar extras batch).
+ *
+ * Ported from the base Pro addon's `addons/pro/includes/tools/calendar-booking/class-wp-mcp-ai-tool-create-appointment.php` for the standalone
+ * `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro
+ * addon owns the class in monolith installs — the addon's autoloader
+ * skips its copy when `NVOOS_CONTENT_GRAPH_PRO_PATH` is defined (see the plugin
+ * entry).
+ *
+ * Tree-only: the base tree ships this file but the monolith's inline
+ * tool map never registers it — the standalone filter/ecosystem
+ * registrations below are the standalone registrations (CRM CC-extras
+ * precedent).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain
+ * `nvoos-content-graph-pro`; no path constants — no path swaps.
+ *
+ * @package NvoosContentGraphPro
+ * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+declare(strict_types=1);
+
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Tool for creating new appointments.
+ *
+ * Features:
+ * - Client information management
+ * - Time slot validation
+ * - Appointment type selection
+ * - Custom metadata support
+ * - Automatic conflict detection
+ * - Email notifications
+ *
+ * @since 2.6.0
+ */
+class WP_MCP_AI_Tool_Create_Appointment implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Check if this tool is available.
+	 *
+	 * @since 2.6.0
+	 *
+	 * @return bool True if calendar booking toolkit is enabled.
+	 */
+	public static function is_available() {
+		// Check if base version.
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+			return false;
+		}
+
+		// Check if calendar booking toolkit is enabled.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $settings['enable_calendar_booking_toolkit'] );
+	}
+
+	/**
+	 * Get the reason why this tool is unavailable.
+	 *
+	 * @since 2.6.0
+	 *
+	 * @return string Reason message.
+	 */
+	public static function get_unavailable_reason() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_calendar_booking_toolkit'] ) ) {
+			return __( 'Calendar Booking toolkit is not enabled. Please enable it in plugin settings.', 'nvoos-content-graph-pro' );
+		}
+
+		return __( 'Create appointment tool is not available.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'create_appointment';
+	}
+
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'Create Appointment', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Create a new appointment or update an existing appointment. If appointment_id is provided, updates the existing appointment instead of creating a new one. Supports client details, time slots, booking information, conflict detection and automatic notifications. Use this tool for both creating new appointments and updating existing ones.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
+	public function get_parameters_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'appointment_id'    => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional appointment ID. If provided, updates the existing appointment instead of creating a new one.', 'nvoos-content-graph-pro' ),
+				),
+				'client_name'       => array(
+					'type'        => 'string',
+					'description' => __( 'Client full name (required)', 'nvoos-content-graph-pro' ),
+				),
+				'client_email'      => array(
+					'type'        => 'string',
+					'description' => __( 'Client email address (required)', 'nvoos-content-graph-pro' ),
+					'format'      => 'email',
+				),
+				'client_phone'      => array(
+					'type'        => 'string',
+					'description' => __( 'Client phone number', 'nvoos-content-graph-pro' ),
+				),
+				'appointment_type'  => array(
+					'type'        => 'string',
+					'description' => __( 'Type of appointment (consultation, meeting, service, etc.)', 'nvoos-content-graph-pro' ),
+				),
+				'start_time'        => array(
+					'type'        => 'string',
+					'description' => __( 'Appointment start time (Y-m-d H:i:s format)', 'nvoos-content-graph-pro' ),
+				),
+				'end_time'          => array(
+					'type'        => 'string',
+					'description' => __( 'Appointment end time (Y-m-d H:i:s format)', 'nvoos-content-graph-pro' ),
+				),
+				'duration_minutes'  => array(
+					'type'        => 'integer',
+					'description' => __( 'Duration in minutes (alternative to end_time)', 'nvoos-content-graph-pro' ),
+					'minimum'     => 15,
+					'maximum'     => 480,
+				),
+				'location'          => array(
+					'type'        => 'string',
+					'description' => __( 'Appointment location or virtual meeting link', 'nvoos-content-graph-pro' ),
+				),
+				'notes'             => array(
+					'type'        => 'string',
+					'description' => __( 'Additional notes or special requests', 'nvoos-content-graph-pro' ),
+				),
+				'send_notification' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Send confirmation email to client', 'nvoos-content-graph-pro' ),
+					'default'     => true,
+				),
+				'check_conflicts'   => array(
+					'type'        => 'boolean',
+					'description' => __( 'Check for scheduling conflicts', 'nvoos-content-graph-pro' ),
+					'default'     => true,
+				),
+				'metadata'          => array(
+					'type'        => 'object',
+					'description' => __( 'Additional custom metadata', 'nvoos-content-graph-pro' ),
+				),
+				'target_system'     => array(
+					'type'        => 'string',
+					'description' => __( 'Which booking system to create the appointment in. Default: nvoos.', 'nvoos-content-graph-pro' ),
+					'enum'        => array( 'nvoos', 'jetappointment', 'jetbooking' ),
+					'default'     => 'nvoos',
+				),
+				'provider_id'       => array(
+					'type'        => 'integer',
+					'description' => __( 'Provider ID (required when target_system is jetappointment).', 'nvoos-content-graph-pro' ),
+				),
+				'service_id'        => array(
+					'type'        => 'integer',
+					'description' => __( 'Service ID (required when target_system is jetappointment).', 'nvoos-content-graph-pro' ),
+				),
+				'instance_id'       => array(
+					'type'        => 'integer',
+					'description' => __( 'Booking instance ID (required when target_system is jetbooking).', 'nvoos-content-graph-pro' ),
+				),
+				'unit_id'           => array(
+					'type'        => 'integer',
+					'description' => __( 'Unit ID for JetBooking.', 'nvoos-content-graph-pro' ),
+				),
+				'sync_to_external'  => array(
+					'type'        => 'boolean',
+					'description' => __( 'If creating in NV oOS, also sync to available external systems.', 'nvoos-content-graph-pro' ),
+					'default'     => false,
+				),
+			),
+			'required'   => array( 'client_name', 'client_email', 'start_time' ),
+		);
+	}
+
+	/**
+	 * Get capability flags.
+	 *
+	 * @return array<string>
+	 */
+	public function get_capability_flags() {
+		return array(
+			'pro',
+			'database-write',
+			'phase-2.6',
+		);
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
+	public function execute( array $arguments = array(), array $context = array() ) {
+		// Check permissions.
+		$current_user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+
+		if ( ! $current_user_id || ! user_can( $current_user_id, 'manage_options' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_forbidden',
+				__( 'You do not have permission to create appointments.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// --- External system routing (v1.5.0) ---
+		$target_system = isset( $arguments['target_system'] ) ? sanitize_key( $arguments['target_system'] ) : 'nvoos';
+
+		if ( 'jetappointment' === $target_system && class_exists( 'WP_MCP_AI_Booking_Adapter_Factory' ) && WP_MCP_AI_Booking_Adapter_Factory::has_jetappointment() ) {
+			$adapter    = WP_MCP_AI_Booking_Adapter_Factory::get_jetappointment();
+			$start_time = sanitize_text_field( $arguments['start_time'] );
+			$end_time   = ! empty( $arguments['end_time'] ) ? sanitize_text_field( $arguments['end_time'] ) : '';
+			$start_ts   = strtotime( $start_time );
+			$end_ts     = $end_time ? strtotime( $end_time ) : ( $start_ts + 3600 );
+
+			$ja_data = array(
+				'service'            => absint( $arguments['service_id'] ?? 0 ),
+				'provider'           => absint( $arguments['provider_id'] ?? 0 ),
+				'date'               => $start_ts ? gmdate( 'd/m/Y', $start_ts ) : '',
+				'date_timestamp'     => (string) $start_ts,
+				'slot'               => $start_ts ? gmdate( 'H:i', $start_ts ) : '',
+				'slot_end'           => $end_ts ? gmdate( 'H:i', $end_ts ) : '',
+				'slot_timestamp'     => (string) $start_ts,
+				'slot_end_timestamp' => (string) $end_ts,
+				'status'             => 'pending',
+				'user_email'         => sanitize_email( $arguments['client_email'] ),
+			);
+
+			$result = $adapter->create_booking( $ja_data );
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			return array(
+				'success'        => true,
+				'message'        => __( 'Appointment created in JetAppointment.', 'nvoos-content-graph-pro' ),
+				'appointment_id' => $result['booking_id'],
+				'target_system'  => 'jetappointment',
+				'appointment'    => $result['booking'],
+			);
+		}
+
+		if ( 'jetbooking' === $target_system && class_exists( 'WP_MCP_AI_Booking_Adapter_Factory' ) && WP_MCP_AI_Booking_Adapter_Factory::has_jetbooking() ) {
+			$adapter    = WP_MCP_AI_Booking_Adapter_Factory::get_jetbooking();
+			$start_time = sanitize_text_field( $arguments['start_time'] );
+			$end_time   = ! empty( $arguments['end_time'] ) ? sanitize_text_field( $arguments['end_time'] ) : '';
+
+			$jb_data = array(
+				'instance_id'    => absint( $arguments['instance_id'] ?? 0 ),
+				'unit_id'        => absint( $arguments['unit_id'] ?? 0 ),
+				'check_in_date'  => gmdate( 'Y-m-d', strtotime( $start_time ) ),
+				'check_out_date' => $end_time ? gmdate( 'Y-m-d', strtotime( $end_time ) ) : gmdate( 'Y-m-d', strtotime( '+1 day', strtotime( $start_time ) ) ),
+				'status'         => 'on-hold',
+				'email'          => sanitize_email( $arguments['client_email'] ),
+			);
+
+			$result = $adapter->create_booking( $jb_data );
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			return array(
+				'success'        => true,
+				'message'        => __( 'Booking created in JetBooking.', 'nvoos-content-graph-pro' ),
+				'appointment_id' => $result['booking_id'],
+				'target_system'  => 'jetbooking',
+				'appointment'    => $result['booking'],
+			);
+		}
+
+		// Fall through to native NV oOS creation.
+
+		// Check if toolkit is available.
+		if ( ! self::is_available() ) {
+			return new WP_Error(
+				'toolkit_not_available',
+				self::get_unavailable_reason()
+			);
+		}
+
+		// Check if this is an update operation.
+		$appointment_id       = isset( $arguments['appointment_id'] ) ? absint( $arguments['appointment_id'] ) : 0;
+		$is_update            = false;
+		$existing_appointment = null;
+
+		if ( $appointment_id ) {
+			// Verify appointment exists and user has permission to update it.
+			$existing_appointment = get_post( $appointment_id );
+
+			if ( ! $existing_appointment || 'mcp_appointment' !== $existing_appointment->post_type ) {
+				return new WP_Error( 'wp_mcp_ai_appointment_not_found', __( 'Appointment not found.', 'nvoos-content-graph-pro' ) );
+			}
+
+			// Check permissions: must be author or have manage_options capability.
+			$is_author  = absint( $existing_appointment->post_author ) === $current_user_id;
+			$can_manage = user_can( $current_user_id, 'manage_options' );
+
+			if ( ! $is_author && ! $can_manage ) {
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update this appointment.', 'nvoos-content-graph-pro' ) );
+			}
+
+			$is_update = true;
+		}
+
+		// Validate required fields.
+		if ( empty( $arguments['client_name'] ) ) {
+			return new WP_Error(
+				'missing_client_name',
+				__( 'Client name is required.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		if ( empty( $arguments['client_email'] ) || ! is_email( $arguments['client_email'] ) ) {
+			return new WP_Error(
+				'invalid_email',
+				__( 'Valid client email address is required.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		if ( empty( $arguments['start_time'] ) ) {
+			return new WP_Error(
+				'missing_start_time',
+				__( 'Appointment start time is required.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Sanitize inputs.
+		$client_name  = sanitize_text_field( $arguments['client_name'] );
+		$client_email = sanitize_email( $arguments['client_email'] );
+		$client_phone = ! empty( $arguments['client_phone'] ) ? sanitize_text_field( $arguments['client_phone'] ) : '';
+		$start_time   = sanitize_text_field( $arguments['start_time'] );
+
+		// Calculate end time.
+		$end_time = '';
+		if ( ! empty( $arguments['end_time'] ) ) {
+			$end_time = sanitize_text_field( $arguments['end_time'] );
+		} elseif ( ! empty( $arguments['duration_minutes'] ) ) {
+			$duration = absint( $arguments['duration_minutes'] );
+			$start_dt = new DateTime( $start_time );
+			$start_dt->modify( "+{$duration} minutes" );
+			$end_time = $start_dt->format( 'Y-m-d H:i:s' );
+		} else {
+			// Default to 60 minutes.
+			$start_dt = new DateTime( $start_time );
+			$start_dt->modify( '+60 minutes' );
+			$end_time = $start_dt->format( 'Y-m-d H:i:s' );
+		}
+
+		// Validate time format.
+		if ( ! strtotime( $start_time ) || ! strtotime( $end_time ) ) {
+			return new WP_Error(
+				'invalid_time_format',
+				__( 'Invalid time format. Use Y-m-d H:i:s format.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Check for conflicts if requested.
+		if ( ! empty( $arguments['check_conflicts'] ) ) {
+			$conflicts = $this->check_time_slot_conflicts( $start_time, $end_time, $appointment_id );
+			if ( ! empty( $conflicts ) ) {
+				return new WP_Error(
+					'scheduling_conflict',
+					sprintf(
+						/* translators: %d: Number of conflicting appointments */
+						__( 'Scheduling conflict detected. %d existing appointment(s) overlap with this time slot.', 'nvoos-content-graph-pro' ),
+						count( $conflicts )
+					),
+					array( 'conflicts' => $conflicts )
+				);
+			}
+		}
+
+		if ( $is_update ) {
+			// Update existing appointment.
+			$appointment_data = array(
+				'ID'           => $appointment_id,
+				'post_title'   => sprintf(
+					/* translators: 1: Client name, 2: Start time */
+					__( 'Appointment: %1$s - %2$s', 'nvoos-content-graph-pro' ),
+					$client_name,
+					$start_time
+				),
+				'post_content' => ! empty( $arguments['notes'] ) ? sanitize_textarea_field( $arguments['notes'] ) : '',
+			);
+
+			$result = wp_update_post( $appointment_data, true );
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			// Update appointment metadata.
+			update_post_meta( $appointment_id, '_client_name', $client_name );
+			update_post_meta( $appointment_id, '_client_email', $client_email );
+			update_post_meta( $appointment_id, '_client_phone', $client_phone );
+			update_post_meta( $appointment_id, '_appointment_type', ! empty( $arguments['appointment_type'] ) ? sanitize_text_field( $arguments['appointment_type'] ) : 'general' );
+			update_post_meta( $appointment_id, '_start_time', $start_time );
+			update_post_meta( $appointment_id, '_end_time', $end_time );
+			update_post_meta( $appointment_id, '_location', ! empty( $arguments['location'] ) ? sanitize_text_field( $arguments['location'] ) : '' );
+
+			// Store custom metadata if provided.
+			if ( ! empty( $arguments['metadata'] ) && is_array( $arguments['metadata'] ) ) {
+				foreach ( $arguments['metadata'] as $key => $value ) {
+					$meta_key = '_custom_' . sanitize_key( $key );
+					update_post_meta( $appointment_id, $meta_key, sanitize_text_field( $value ) );
+				}
+			}
+
+			// Send notification if requested.
+			$notification_sent = false;
+			if ( ! empty( $arguments['send_notification'] ) ) {
+				$notification_sent = $this->send_confirmation_email(
+					$appointment_id,
+					$client_email,
+					$client_name,
+					$start_time,
+					$end_time
+				);
+			}
+
+			return array(
+				'success'           => true,
+				'appointment_id'    => $appointment_id,
+				'appointment_title' => get_the_title( $appointment_id ),
+				'client_name'       => $client_name,
+				'start_time'        => $start_time,
+				'end_time'          => $end_time,
+				'status'            => 'confirmed',
+				'notification_sent' => $notification_sent,
+				'updated'           => true,
+				'message'           => __( 'Appointment updated successfully.', 'nvoos-content-graph-pro' ),
+			);
+		}
+
+		// Create appointment post.
+		$appointment_data = array(
+			'post_type'    => 'mcp_appointment',
+			'post_title'   => sprintf(
+				/* translators: 1: Client name, 2: Start time */
+				__( 'Appointment: %1$s - %2$s', 'nvoos-content-graph-pro' ),
+				$client_name,
+				$start_time
+			),
+			'post_content' => ! empty( $arguments['notes'] ) ? sanitize_textarea_field( $arguments['notes'] ) : '',
+			'post_status'  => 'publish',
+			'meta_input'   => array(
+				'_client_name'      => $client_name,
+				'_client_email'     => $client_email,
+				'_client_phone'     => $client_phone,
+				'_appointment_type' => ! empty( $arguments['appointment_type'] ) ? sanitize_text_field( $arguments['appointment_type'] ) : 'general',
+				'_start_time'       => $start_time,
+				'_end_time'         => $end_time,
+				'_location'         => ! empty( $arguments['location'] ) ? sanitize_text_field( $arguments['location'] ) : '',
+				'_status'           => 'confirmed',
+				'_created_by'       => $current_user_id,
+				'_created_at'       => current_time( 'mysql' ),
+			),
+		);
+
+		$appointment_id = wp_insert_post( $appointment_data, true );
+
+		if ( is_wp_error( $appointment_id ) ) {
+			return $appointment_id;
+		}
+
+		// Store custom metadata if provided.
+		if ( ! empty( $arguments['metadata'] ) && is_array( $arguments['metadata'] ) ) {
+			foreach ( $arguments['metadata'] as $key => $value ) {
+				$meta_key = '_custom_' . sanitize_key( $key );
+				update_post_meta( $appointment_id, $meta_key, sanitize_text_field( $value ) );
+			}
+		}
+
+		// Send notification if requested.
+		$notification_sent = false;
+		if ( ! empty( $arguments['send_notification'] ) ) {
+			$notification_sent = $this->send_confirmation_email(
+				$appointment_id,
+				$client_email,
+				$client_name,
+				$start_time,
+				$end_time
+			);
+		}
+
+		return array(
+			'success'           => true,
+			'appointment_id'    => $appointment_id,
+			'appointment_title' => get_the_title( $appointment_id ),
+			'client_name'       => $client_name,
+			'start_time'        => $start_time,
+			'end_time'          => $end_time,
+			'status'            => 'confirmed',
+			'notification_sent' => $notification_sent,
+			'updated'           => false,
+			'message'           => __( 'Appointment created successfully.', 'nvoos-content-graph-pro' ),
+		);
+	}
+
+	/**
+	 * Check for time slot conflicts.
+	 *
+	 * @param string $start_time     Start time.
+	 * @param string $end_time       End time.
+	 * @param int    $exclude_post_id Optional post ID to exclude from conflict check (for updates).
+	 * @return array Array of conflicting appointment IDs.
+	 */
+	private function check_time_slot_conflicts( $start_time, $end_time, $exclude_post_id = 0 ) {
+		$conflicts = array();
+
+		$args = array(
+			'post_type'      => 'mcp_appointment',
+			'post_status'    => 'publish',
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'create_appointment', 0, 500 ) : 500,
+			'meta_query'     => array(
+				'relation' => 'AND',
+				array(
+					'key'     => '_status',
+					'value'   => array( 'confirmed', 'pending' ),
+					'compare' => 'IN',
+				),
+				array(
+					'relation' => 'OR',
+					array(
+						'relation' => 'AND',
+						array(
+							'key'     => '_start_time',
+							'value'   => $start_time,
+							'compare' => '<=',
+							'type'    => 'DATETIME',
+						),
+						array(
+							'key'     => '_end_time',
+							'value'   => $start_time,
+							'compare' => '>',
+							'type'    => 'DATETIME',
+						),
+					),
+					array(
+						'relation' => 'AND',
+						array(
+							'key'     => '_start_time',
+							'value'   => $end_time,
+							'compare' => '<',
+							'type'    => 'DATETIME',
+						),
+						array(
+							'key'     => '_end_time',
+							'value'   => $end_time,
+							'compare' => '>=',
+							'type'    => 'DATETIME',
+						),
+					),
+				),
+			),
+		);
+
+		$query = new WP_Query( $args );
+
+		if ( $query->have_posts() ) {
+			while ( $query->have_posts() ) {
+				$query->the_post();
+				$conflicts[] = get_the_ID();
+			}
+			wp_reset_postdata();
+		}
+
+		return $conflicts;
+	}
+
+	/**
+	 * Send confirmation email.
+	 *
+	 * @param int    $appointment_id Appointment ID.
+	 * @param string $email          Client email.
+	 * @param string $name           Client name.
+	 * @param string $start_time     Start time.
+	 * @param string $end_time       End time.
+	 * @return bool Whether email was sent successfully.
+	 */
+	private function send_confirmation_email( $appointment_id, $email, $name, $start_time, $end_time ) {
+		$subject = sprintf(
+			/* translators: %d: Appointment ID */
+			__( 'Appointment Confirmation #%d', 'nvoos-content-graph-pro' ),
+			$appointment_id
+		);
+
+		$message = sprintf(
+			/* translators: 1: Client name, 2: Start time, 3: End time */
+			__( "Hello %1\$s,\n\nYour appointment has been confirmed.\n\nDate/Time: %2\$s to %3\$s\n\nThank you!", 'nvoos-content-graph-pro' ),
+			$name,
+			$start_time,
+			$end_time
+		);
+
+		return wp_mail( $email, $subject, $message );
+	}
+}

@@ -520,6 +520,32 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				// Allow updating the broadcast message / channels in update_schedule.
 				$updated['broadcast_config'] = $data['broadcast_config'];
 			}
+			if ( isset( $data['assistant_config'] ) && is_array( $data['assistant_config'] ) ) {
+				// Merge with the stored config so fields not exposed in the edit modal
+				// (context, max_agentic_iterations) survive partial updates.
+				$stored_config    = isset( $existing['assistant_config'] ) && is_array( $existing['assistant_config'] )
+					? $existing['assistant_config']
+					: array();
+				$assistant_config = array_merge( $stored_config, $data['assistant_config'] );
+
+				if ( empty( $assistant_config['assistant_id'] ) ) {
+					return new WP_Error( 'missing_assistant_id', __( 'An assistant_id is required for assistant_run-type schedules.', 'mcp-ai-wpoos-pro' ) );
+				}
+				if ( empty( $assistant_config['message'] ) ) {
+					return new WP_Error( 'missing_assistant_message', __( 'A message is required for assistant_run-type schedules.', 'mcp-ai-wpoos-pro' ) );
+				}
+
+				$updated['assistant_config'] = array(
+					'assistant_id'           => max( 0, absint( $assistant_config['assistant_id'] ) ),
+					'message'                => sanitize_textarea_field( $assistant_config['message'] ),
+					'context'                => isset( $assistant_config['context'] ) && is_array( $assistant_config['context'] )
+						? $assistant_config['context']
+						: array(),
+					'max_agentic_iterations' => isset( $assistant_config['max_agentic_iterations'] )
+						? max( 0, absint( $assistant_config['max_agentic_iterations'] ) )
+						: 0,
+				);
+			}
 			if ( isset( $data['max_retries'] ) ) {
 				$updated['max_retries'] = max( 0, min( 5, (int) $data['max_retries'] ) );
 			}
@@ -3185,7 +3211,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		protected static function sanitize_delivery_channels( array $channels ) {
 			$allowed         = array( 'email', 'slack', 'telegram', 'discord', 'teams', 'messenger', 'whatsapp', 'google_chat', 'sms', 'paper_store', 'webhook', 'wordpress' );
 			$email_templates = array( 'full', 'summary', 'error', 'response_only' );
-			$chat_templates  = array( 'summary', 'error', 'response_only' );
+			$chat_templates  = array( 'summary', 'error', 'response_only', 'full' );
+			$chat_formats    = array(
+				'telegram'    => array( 'html', 'markdown', 'markdown_v2', 'plain' ),
+				'whatsapp'    => array( 'markdown', 'plain' ),
+				'slack'       => array( 'markdown', 'plain' ),
+				'discord'     => array( 'markdown', 'plain' ),
+				'teams'       => array( 'markdown', 'plain' ),
+				'messenger'   => array( 'plain' ),
+				'google_chat' => array( 'plain' ),
+			);
 
 			$sanitized = array();
 			foreach ( $channels as $channel => $config ) {
@@ -3212,6 +3247,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				if ( 'email' === $channel && isset( $config['to'] ) ) {
 					$entry['to'] = sanitize_email( $config['to'] );
 				}
+				if ( 'email' === $channel ) {
+					// Presentation format: both (HTML + plain-text Markdown fallback),
+					// html only, or markdown only. Defaults to 'both' so pre-existing
+					// schedules gain properly formatted HTML emails without migration.
+					$entry['format'] = isset( $config['format'] ) && in_array( $config['format'], array( 'both', 'html', 'markdown' ), true )
+						? $config['format']
+						: 'both';
+				}
 				if ( 'sms' === $channel && isset( $config['to'] ) ) {
 					$entry['to'] = sanitize_text_field( $config['to'] );
 				}
@@ -3221,8 +3264,19 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 						$entry['connection_id'] = sanitize_text_field( $config['connection_id'] );
 					}
 					// Inline credentials (fallback when no connection is configured).
+					// Tolerate JSON-encoded strings saved by older edit-modal builds
+					// and coerce them into a sanitized credential array.
 					if ( isset( $config[ $channel . '_credentials' ] ) ) {
-						$entry[ $channel . '_credentials' ] = $config[ $channel . '_credentials' ];
+						$creds = $config[ $channel . '_credentials' ];
+						if ( is_string( $creds ) && '' !== trim( $creds ) ) {
+							$decoded = json_decode( $creds, true );
+							if ( is_array( $decoded ) ) {
+								$creds = $decoded;
+							}
+						}
+						if ( is_array( $creds ) ) {
+							$entry[ $channel . '_credentials' ] = array_map( 'sanitize_text_field', $creds );
+						}
 					}
 					if ( isset( $config['channel'] ) ) {
 						$entry['channel'] = sanitize_text_field( $config['channel'] );
@@ -3250,6 +3304,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					}
 					if ( 'google_chat' === $channel && isset( $config['space_id'] ) ) {
 						$entry['space_id'] = sanitize_text_field( $config['space_id'] );
+					}
+					// Chat presentation format (Telegram parse mode / markup style).
+					if ( isset( $chat_formats[ $channel ] ) && isset( $config['format'] ) && in_array( $config['format'], $chat_formats[ $channel ], true ) ) {
+						$entry['format'] = $config['format'];
 					}
 				}
 				if ( 'paper_store' === $channel ) {

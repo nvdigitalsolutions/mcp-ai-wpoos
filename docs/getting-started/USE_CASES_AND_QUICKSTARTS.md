@@ -1,9 +1,9 @@
 # NV oOS Use Cases & Quickstart Guides
 
-**Doc revision:** 2.0  
-**Tested against plugin version:** 1.1.19 (May 18, 2026)  
-**Last updated:** May 17, 2026  
-**Estimated reading time:** 35 minutes
+**Doc revision:** 3.0  
+**Tested against plugin version:** 1.1.72 (September 7, 2026)  
+**Last updated:** September 8, 2026  
+**Estimated reading time:** 40 minutes
 
 > Counts in this document are point-in-time. `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative for the tools exposed on a live site.
 
@@ -39,32 +39,35 @@
 
 ## Overview
 
-NV oOS (Open Operator System) is a WordPress AI assistant framework integrating OpenAI GPT models, Anthropic Claude, Google/Gemini, DeepSeek, Kimi/Moonshot, DigitalOcean Serverless Inference, Cloudflare Workers AI, Ollama, LM Studio, WebLLM, embedded MLC, and MCP-compatible tools.
+NV oOS (Open Operator System) is a WordPress AI assistant framework integrating OpenAI GPT models, Anthropic Claude, Google/Gemini, DeepSeek, Kimi/Moonshot, DigitalOcean Serverless Inference, Cloudflare Workers AI, Azure, NVIDIA, OpenRouter, Hugging Face, Baseten, Ollama, LM Studio, WebLLM, embedded MLC, and MCP-compatible tools.
 
-The current reconciled inventory is **~830 tools (~195 base + ~635 Pro)**. The live registry exposed by `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative because optional plugins, Pro addons, provider configuration, and site capabilities can change runtime availability.
+The current reconciled inventory is **~1,568 tools (~303 base + ~1,265 Pro)**. The live registry exposed by `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative because optional plugins, Pro addons, provider configuration, and site capabilities can change runtime availability.
 
 This guide focuses on practical use cases, setup paths, and operator checks. For inventory details behind this revision, see `docs/getting-started/_USE_CASES_FACT_SHEET.md`.
 
-### What's New Since the Previous Doc Revision (Jan 2026 → May 2026)
+### What's New Since the Previous Doc Revision (May 2026 → September 2026)
 
-- **DigitalOcean Serverless Inference provider** — OpenAI-compatible endpoint support, model discovery, provider diagnostics, native embeddings, and zeroed catalog pricing that operators must adjust from Gradient Platform billing.
-- **Unix Theory P0–P6 tool hardening** — canonical return envelopes, sanitize-at-entry / escape-at-exit rules, and PHPCS sniffs for new and existing tools.
-- **Async Chat Continuation and Jobs / Tasks Drawer** — longer-running interactions can continue without blocking the primary chat request.
-- **Toolkit MCP Servers Phase 7 UI** — Pro toolkits can expose scoped MCP endpoints with per-toolkit credentials.
-- **Inline-async-tick pattern** — shipped across eight background subsystems so first work ticks can run even when WP-Cron loopbacks are disabled or delayed.
-- **Scheduled Result widget** — Pro scheduled results can be rendered as cards, lists, tables, metrics, timelines, or raw output through shortcode/block/widget surfaces.
-- **UI/UX Pro Max skill pack** — bundled design-system knowledge, framework guidelines, component heuristics, and authoring patterns.
-- **WordPress.org compliance hardening** — documentation and code paths aligned with current WordPress.org expectations.
-- **Chat SPA addon** — modern front-end chat delivery with tool-call cards, transcripts, memory drawer, HITL approvals, file attachments, regenerate/edit flows, and a legacy-JS gate.
-- **Docs Hub addon** — in-dashboard documentation viewer with remote repo rebuilds, chunked indexing, syntax highlighting, sitemap support, SSRF hardening, and accessibility improvements.
-- **Toolkit SPA Blueprint Phases 5–12** and **Orchestration Reference consolidation** — Pro toolkit UI and orchestration docs were normalized for operators and implementers.
+This revision covers the 53-release window from plugin 1.1.19 to 1.1.72. Highlights, themed by capability:
+
+- **September 2026 model catalog** (`2026.09.05`, 228 models) — gpt-5.6 family, `gpt-6-astra`, `gpt-image-2`, `claude-opus-5`, gemini-3.6/3.7/3.8-flash, `kimi-k3`; DeepSeek `chat/reasoner/coder` retired with migration to `deepseek-v4-pro`; new defaults `gemini-3.6-flash`, `gpt-image-2`, `kimi-k3`.
+- **Content Graph ecosystem** — four standalone plugins (`nvoos-content-graph`, `-ai`, `-ai-platform`, `-pro`) now carry the visual knowledge graph, chat runtime, admin UI, queue stack, and toolkit MCP-server core outside the base plugin.
+- **Google Workspace tools** — shared `includes/google/` foundation, Google Calendar connection + tools, Gmail/Drive read tools (destructive-ops gated).
+- **Vision Analysis toolkit** — `analyze_image_objects` object detection and counting with annotated output (off by default, SSRF-guarded).
+- **Workflow Builder + Pro Schedule Manager** — visual DAG builder (9 preset categories, 10 node types) plus 7 scheduler MCP tools on top of the scheduled-result widgets.
+- **Pro SPA v2** — `[nvoos_pro_spa]` embeds the Pro chat surface on the front end (threads, drawers, tool shortcuts, OKF drawer, guest mode).
+- **Chat SPA 0.7.0** — Phase 8 message actions (copy/save/feedback/delete) and native JSON/chart/video/image rendering.
+- **Docs Hub 0.4.3** — local-link hash routing, github-slugger-exact TOC anchors, link-fixer engine, and a WordPress.org submission pass.
+- **Security & operations** — fixed-window REST rate limiter with Command Center "Restrictions → Lift", session-nonce self-heal, destructive-ops gate, security posture scoring (21 signals), and credential redaction in logs.
+- **Provider & platform behavior** — fresh installs disable cloud providers by default (the onboarding wizard auto-enables the provider whose key you enter); OpenAI reasoning-model parameter stripping; circuit breakers on all provider clients.
+- **Toolchain** — Tool Presets, OKF v0.2 engine + 6 MCP tools, self-hosted OCR, Abilities API, Backup & Restore (11 export providers), GitHub-based Plugin Updater, OAuth 2.0 (PKCE) MCP authentication, JSON-RPC HTTP-200 SDK compatibility, and 33 toolkit MCP servers.
+- **Media Worker v3.2.0** — multi-tenant worker with per-site tokens/keys and an optional full-Crawl4AI proxy.
 
 ### Prerequisites
 
 1. WordPress 6.0+ and PHP 7.4+ installed.
 2. NV oOS plugin installed and activated.
 3. At least one AI provider configured in Settings → NV oOS → Providers.
-4. Optional Pro addon activated for Pro-only toolkits, Chat SPA, Docs Hub, scheduled widgets, and vertical toolkit features.
+4. Optional Pro addon activated for Pro-only toolkits, Chat SPA, Docs Hub, scheduled widgets, and vertical toolkit features. Standalone Content Graph ecosystem plugins (`nvoos-content-graph`, `-ai`, `-ai-platform`, `-pro`) are optional add-ons for graph, chat-runtime, and platform workloads.
 5. Administrative access for testing assistants, issuing credentials, and reviewing logs.
 
 ### Quick Reference
@@ -73,10 +76,14 @@ This guide focuses on practical use cases, setup paths, and operator checks. For
 |---|---:|---:|---|---|
 | Content Writing | 3-5 min | $0.01-0.10 | Easy | Content Writer, Technical Writer |
 | E-Commerce | 5-10 min | $0.05-0.20 | Medium | Marketing Consultant, E-commerce toolkit |
+| Google Workspace | 10-15 min | $0.01-0.05 | Medium | Google Calendar connection, Gmail/Drive tools |
 | Media Generation | 3-5 min | $0.02-0.50 | Easy | Graphic Designer, image/video tools |
+| Vision Analysis | 10-15 min | Varies | Medium | Vision Analysis toolkit (`analyze_image_objects`) |
 | Business Operations | 8-15 min | $0.10-0.30 | Medium | Business Consultant, Project Manager |
 | Scheduled Results | 10-15 min | Varies | Medium | Shortcode, Gutenberg block, Elementor widget |
+| Workflow Builder | 15-30 min | Varies | Advanced | Visual DAG builder, Pro Schedule Manager |
 | Research & Data | 3-5 min | $0.01-0.05 | Easy | Research Scientist, Data Scientist |
+| Deep Research | 10-20 min | $0.05-0.20 | Medium | 9 Pro research tools, Paper Store |
 | Developer Integration | 20-30 min | Varies | Advanced | Software Developer, Systems Admin, MCP endpoints |
 | Memory Mining | 10-20 min | Varies | Advanced | Transcript memory jobs |
 | Education | 5-10 min | $0.05-0.15 | Medium | IGCSE and tutoring templates |
@@ -84,6 +91,7 @@ This guide focuses on practical use cases, setup paths, and operator checks. For
 | Video Production | 5-10 min | $0.10-0.30 | Medium | Video Editor, Pro media toolkits |
 | Site Building | 15-25 min | $0.15-0.40 | Advanced | Web Developer, Site Creator toolkit |
 | Front-End Chat SPA | 10-20 min | Varies | Medium | `[nvoos_chat_spa]` |
+| Pro SPA | 10-20 min | Varies | Medium | `[nvoos_pro_spa]` |
 | Docs Hub | 10-20 min | Varies | Medium | Admin documentation viewer |
 
 🔒 Pro-only items require the Pro addon and may also require provider/API credentials.
@@ -139,7 +147,7 @@ Pre-built team patterns include Engineering, Pharmaceutical Development, Researc
 1. Navigate to Professions → Add New.
 2. Add title, description, category, role description, and disclaimers.
 3. Add profession-specific knowledge and references.
-4. Browse the **~195 base tools** and any additional active Pro toolkit tools.
+4. Browse the **~303 base tools** and any additional active Pro toolkit tools.
 5. Select default tools, provider, model, and temperature.
 6. Publish and test the custom profession in the admin.
 
@@ -179,6 +187,23 @@ Pre-built team patterns include Engineering, Pharmaceutical Development, Researc
 
 **Best fit workflows:** product description drafts, variant summaries, FAQ generation, support triage, and merchandising reports.
 
+> **Since Rev 2.0:** the WooCommerce data layer, product, order, customer/inventory, marketing, and shipping tools have been ported to a standalone E-commerce addon (September 2026 ecosystem ports). The SPA-manifested E-commerce toolkit and the new `update_woo_product_price` / `update_woo_product_qty` tools (all product types) remain available with the Pro addon.
+
+### 2.5 Google Workspace Automation
+
+**Required Tools:** `google_calendar` connection (Settings → Integrations or Pro Remote Sites), Google Workspace tools (`list_google_calendars`, `list_google_calendar_events`, `update_google_calendar_event`, `delete_google_calendar_event`, `check_google_calendar_availability`, `quick_add_google_calendar_event`, `create_google_calendar_event`, `sync_google_calendar`), Gmail read tools (`get_gmail_message`, `get_gmail_thread`, `list_gmail_connections`, `modify_gmail_message`), Drive read tools (`get_drive_file`, `list_drive_connections`).
+
+**Quickstart Guide (12 minutes)**
+
+1. Create a `google_calendar` connection on either connection surface and complete the OAuth flow.
+2. Grant the assistant calendar tools plus only the Gmail/Drive read tools it actually needs — Gmail and Drive writes are destructive-ops gated.
+3. Start read-only: list calendars and free-busy availability before scheduling any writes.
+4. Test `quick_add_google_calendar_event` with a low-stakes event and verify the event appears in Google Calendar.
+5. Set up `sync_google_calendar` on a schedule for availability mirrors rather than ad-hoc pulls.
+6. For Gmail/Drive, begin with search-and-summarize workflows; keep drafts and replies human-approved.
+
+**Operator checks:** scope OAuth grants tightly, review the granted-scopes list (scopes are space-encoded correctly in current releases), and route any destructive Gmail action through the destructive-ops gate.
+
 ---
 
 ## 3. Media Generation & Processing
@@ -196,6 +221,21 @@ Pre-built team patterns include Engineering, Pharmaceutical Development, Researc
 5. Use human review before assigning assets to public posts or products.
 
 **Cost note:** image and video tools may use provider-specific billing. See [Cost Considerations](#cost-considerations).
+
+### 3.5 Vision Analysis
+
+**Required Tools:** `analyze_image_objects` (Pro Vision Analysis toolkit), object-detection backend (HuggingFace OWLv2 or Ollama `detection`) or a vision-capable LLM (`vlm` mode).
+
+**Quickstart Guide (10 minutes)**
+
+1. Enable the toolkit at Settings → NV oOS → Vision Analysis (`enable_vision_analysis_toolkit`, off by default).
+2. Choose a mode: `detection` (OWLv2/Ollama object detection) or `vlm` (JSON-enforced vision-language model).
+3. Attach the tool to a Graphic Designer, Marketing, or inventory assistant.
+4. Ask the assistant to count objects per category in a product photo.
+5. For verification, request `annotate=true` — the tool returns a labeled bounding-box copy as a Media Library attachment.
+6. Review the hybrid label normalization output before using counts in reports or product data.
+
+**Operator checks:** the toolkit is SSRF-guarded and off by default; detection backends require their own provider credentials; generated annotations are model output and need human review.
 
 ---
 
@@ -333,6 +373,23 @@ These are not public front-end APIs, but they matter for operators debugging sch
 - **Result is stale:** inspect the Schedule Manager run history, provider errors, WP-Cron, and the inline-async-tick troubleshooting entry below.
 - **HTML appears stripped in raw mode:** unauthenticated viewers do not get HTML-safe raw rendering; authenticated output still runs through WordPress escaping/kses rules.
 
+### 4.6 Workflow Builder + Pro Schedule Manager
+
+**Required Surfaces:** Pro Workflow Builder (visual ReactFlow DAG editor), Pro Schedule Manager, the 7 scheduler MCP tools, Workflow Builder MCP tools.
+
+**Quickstart Guide (20 minutes)**
+
+1. Open the Pro Workflow Builder and choose a preset from the 9 categories (or start from a blank canvas).
+2. Chain nodes into a directed acyclic graph: tool-call, agent-run, action, and condition nodes with `{{variable}}` template placeholders.
+3. Dry-run the workflow with the built-in dry-run tool and verify node ordering (Kahn's-algorithm execution honors dependencies).
+4. Convert a validated workflow into a Pro Schedule via the Schedule Manager's plan-from-workflow tools (`create`, `update`, `delete`, `list`, `dry_run`, `run_history`, `plan_from_workflows`).
+5. Point the schedule at a run cadence and pair it with the scheduled-result widget (§4.5) to surface the latest output.
+6. Monitor run history from the Schedule Manager and subscribe to `wp_mcp_ai_pro_workflow_builder_completed` for downstream automation.
+
+**Operator checks:** keep irreversible actions behind approval nodes; use capability-scoped assistant nodes; test with a dry-run before enabling recurrence; prefer schedules over ad-hoc chaining once a workflow is proven.
+
+See also: the `design-pro-workflow-builder` and `design-pro-schedule-manager` coding-time skills, and `docs/toolkits/` for vertical toolkit references.
+
 ---
 
 ## 5. Research & Data Analysis
@@ -349,6 +406,21 @@ These are not public front-end APIs, but they matter for operators debugging sch
 4. Ask for a short hypothesis, analysis plan, and confidence notes before the final brief.
 5. Save validated findings to posts, docs, or team memory only after review.
 
+### 5.5 Deep Research with Citations
+
+**Required Tools:** the 9 Pro research tools (multi-source web research with per-provider fallback routing), Paper Store, `create_post_from_research`, crawl tools.
+
+**Quickstart Guide (15 minutes)**
+
+1. Create a Research Scientist assistant and attach the deep-research tools plus Paper Store.
+2. State the research question, source-quality rules, and required citation format up front.
+3. Run the research pass — the tools aggregate multiple sources with citations rather than a single search.
+4. Persist findings to Paper Store for review, deduplication, and reuse.
+5. Convert approved research into a WordPress draft with `create_post_from_research` (Research → Paper Store → Draft pipeline).
+6. Have a second pass verify claims, sources, and conflicts of interest before publishing.
+
+**Operator checks:** provider fallback routing respects enabled + credentialed providers only; review Paper Store records before they seed posts; keep the publication step capability-gated.
+
 ---
 
 ## 6. Developer & Technical Integration
@@ -357,7 +429,7 @@ These are not public front-end APIs, but they matter for operators debugging sch
 
 **Required Tools / surfaces:** Pro toolkit MCP server framework, per-toolkit bearer tokens, MCP-compatible JSON-RPC 2.0 client, `/.well-known/mcp` discovery endpoint.
 
-Toolkit MCP Servers let an operator expose a narrow, vertical-specific tool surface rather than the whole site registry. Each Pro toolkit can register as an independent MCP server with its own credentials, rate limits, audit trail, and scoped endpoint. External MCP clients, vendor integrations, or internal operators see only that toolkit's tools, resources, and prompts.
+Toolkit MCP Servers let an operator expose a narrow, vertical-specific tool surface rather than the whole site registry. Each Pro toolkit can register as an independent MCP server with its own credentials, rate limits, audit trail, and scoped endpoint. External MCP clients, vendor integrations, or internal operators see only that toolkit's tools, resources, and prompts. The framework currently registers **33 toolkit servers** (Phase 8 additions in v1.1.40: Pro Scheduler, FlowHub, Shopify Sync, and EZuite).
 
 #### Architecture
 
@@ -367,6 +439,9 @@ Toolkit MCP Servers let an operator expose a narrow, vertical-specific tool surf
 4. `WP_MCP_AI_Pro_Well_Known_MCP` serves the `/.well-known/mcp` discovery document via a WordPress rewrite rule.
 5. `WP_MCP_AI_Toolkit_MCP_Audit_Log` records cross-mount reads and tool calls in a 200-entry ring buffer.
 6. `WP_MCP_AI_Pro_Toolkit_Server_Token` manages per-server bearer tokens (format: `mcptk_{prefix}.{secret}`, max 10 per server).
+7. The MCP core follows the 2026-07-28 stateless protocol revision (v1.1.43).
+
+> **Ecosystem note (v1.1.72):** the toolkit MCP-server core (`OAuth server`, `OAuth REST`, token manager, audit log, REST controller, server base/registry/interface) has been ported to the standalone `nvoos-content-graph-pro` plugin, so the same scoped-server model is available outside the base plugin.
 
 #### REST routes (namespace `mcp-ai-pro/v1`)
 
@@ -395,12 +470,13 @@ Toolkit MCP Servers let an operator expose a narrow, vertical-specific tool surf
 
 #### Authentication
 
-Two paths for `POST /mcp/{slug}`:
+Three paths for `POST /mcp/{slug}`:
 
 1. **Per-server bearer token** — `Authorization: Bearer mcptk_{prefix}.{secret}`. The token hash is validated by `WP_MCP_AI_Pro_Toolkit_Server_Token::validate()`.
 2. **WordPress session** — `is_user_logged_in()` with `current_user_can( 'read' )`.
+3. **OAuth 2.0 MCP authentication** (v1.1.40) — PKCE flow with hierarchical scopes, browser-based login, and a token-management UI; ideal for external clients that should not hold site credentials.
 
-Token management and audit routes require `manage_options`.
+Token management and audit routes require `manage_options`. Credential-token requests are exempt from the tool rate limiter.
 
 #### Discovery
 
@@ -417,6 +493,14 @@ Per-server configurable via admin or option `wp_mcp_ai_toolkit_mcp_server_{slug}
 | `max_iterations` | 0 (inherit global) | — |
 
 Probe methods (`initialize`, `ping`) bypass rate limiting.
+
+#### Transport and client compatibility (v1.1.55)
+
+- JSON-RPC errors return HTTP 200 with error envelopes, matching SDK client expectations.
+- A legacy HTTP+SSE transport with a credential-bound session store is available for older clients.
+- MCP protocol version negotiation supports Zed, Claude Desktop, and Cursor clients (v1.1.52).
+- Async tool responses are bounded at ~45 s of polling; `tools/call` correctly awaits async results (v1.1.54).
+- `GET` and `HEAD` are exempt from the general REST request quota.
 
 #### Admin UI (Phase 7)
 
@@ -458,7 +542,7 @@ Registered as `wp mcp-ai mcp-server`:
 
 1. Activate the Pro addon and confirm the toolkit whose MCP server you want to expose is enabled.
 2. Navigate to the Toolkit MCP Servers admin page and verify the server appears in the Servers tab.
-3. Open the Detail tab for the target server. Generate a bearer token and copy it securely.
+3. Open the Detail tab for the target server. Generate a bearer token and copy it securely (or configure OAuth 2.0 for external clients that should not hold site credentials).
 4. Configure the external MCP client with the server's JSON-RPC endpoint (`/wp-json/mcp-ai-pro/v1/mcp/{slug}`) and the bearer token.
 5. Send an `initialize` request from the client to confirm the connection and protocol version.
 6. Call `tools/list` to verify the client sees only that toolkit's tools.
@@ -472,7 +556,7 @@ Registered as `wp mcp-ai mcp-server`:
 - **Independent rate limiting:** each toolkit can have its own request and payload caps.
 - **Cross-mount audit trail:** every cross-toolkit resource or prompt read is logged.
 
-See also: `docs/ADR_002_toolkit_mcp_servers.md`, `docs/features/toolkit-mcp-servers.md`, `docs/mcp-servers.md`.
+See also: `docs/features/toolkit-mcp-servers.md`, `docs/developer/implementation-plan-mcp-agent-compat.md`, `docs/developer/legacy-sse-transport-plan.md`.
 
 ### 6.1 REST API and Webhook Integrations
 
@@ -485,14 +569,21 @@ See also: `docs/ADR_002_toolkit_mcp_servers.md`, `docs/features/toolkit-mcp-serv
 3. Start with read-only endpoints and short prompts.
 4. Add rate limits and retries in the caller.
 5. Log request IDs and tool results for auditability.
+6. For front-end integrations behind full-page caching, mint a fresh nonce via `GET /mcp-ai/v1/session/nonce` (no-cache) when the caller hits "Cookie check failed" 403s.
+
+**Rate-limit behavior (v1.1.71):** the general REST limiter uses fixed-window accounting and returns honest `retry_after` values. Users blocked by it appear in the Command Center "Restrictions" tab with a Lift button; guest IP-keyed blocks expire on their own. `GET`/`HEAD` are exempt from the request quota, and credential-token requests are exempt from the tool rate limiter.
 
 ### 6.2 Provider Routing and Local Models
 
 Use provider settings and the model catalog to route workloads to hosted or local models. Local providers such as Ollama, LM Studio, WebLLM, and embedded MLC have API-price `$0` in the catalog but still require hardware, hosting, and operational support.
 
+> **Since v1.1.68:** fresh installs disable cloud providers by default — provider dropdowns list only enabled + credentialed providers. The onboarding wizard auto-enables the provider whose API key you enter, and the Settings → Providers screen re-enables any provider explicitly. Run provider diagnostics from Settings → Connectors (now correctly routed to `options-connectors.php`) when a provider shows no models.
+
 ### 6.3 Custom Tool Development
 
 **Unix Theory P0–P6 call-out:** custom tools must return the canonical envelope: a success array on success or `WP_Error` on failure. They must not return `array( 'success' => false, ... )`. Sanitize every `$arguments[...]` value at entry, then escape every value at exit. The two PHPCS sniffs enforcing this pattern are `WPMCPAI.Tools.CanonicalReturnEnvelope` and `WPMCPAI.Tools.SanitizeAtEntry`.
+
+**Newer guarantees to adopt:** tools can declare non-loggable result fields via `WP_MCP_AI_Tool_Sensitive_Result_Interface`; credential-bearing URL query params are redacted from every logged string; argument-less tools must emit `properties: {}` (never `[]`) or DeepSeek-family providers will reject the payload.
 
 **Quickstart Guide (30 minutes)**
 
@@ -583,7 +674,23 @@ When the admin polls `GET /mcp-ai/v1/transcript-mining/jobs/{id}` and the job ha
 - Use `wp_mcp_ai_mine_transcripts_sessions` to exclude specific sessions or time ranges.
 - Use `wp_mcp_ai_mine_transcripts_session_messages` to redact sensitive messages before mining.
 
-See also: `docs/architecture/inline-async-tick-pattern.md`, `docs/features/memory/transcript-mining.md`.
+See also: `docs/developer/architecture/inline-async-tick-pattern.md`, `docs/features/memory/transcript-mining.md`.
+
+### 6.5 Content Graph Ecosystem (Standalone Plugins)
+
+**Required Surfaces:** the four standalone Content Graph plugins — `nvoos-content-graph` (visual knowledge graph), `nvoos-content-graph-ai` (chat runtime, providers, assistant admin), `nvoos-content-graph-ai-platform` (queues, HITL approvals, workflows, tenant isolation), and `nvoos-content-graph-pro` (Pro ecosystem ports, including the toolkit MCP-server core).
+
+**Quickstart Guide (20 minutes)**
+
+1. Install the standalone plugin(s) that match the workload: `nvoos-content-graph` alone for graph visualization; `-ai` for chat + graph context; `-ai-platform` for workflow/queue orchestration.
+2. Build the graph from content, posts, or products and review the explorer (theme engine, minimap, legend, layout presets, WCAG-checked type colors).
+3. Attach graph context to an assistant so answers draw on the knowledge graph (keyword-search fallback works without an embeddings index).
+4. For platform workloads, verify the queue stack (`AsyncJobQueue` → `QueueManager` → `JobQueueManager` → `DeadLetterQueue`) with a small job before scaling.
+5. Keep base-plugin and standalone-plugin data separated per tenant; the platform addon enforces tenant isolation.
+
+**Operator checks:** the ecosystem plugins maintain their own release tracks and mirrored model data; check the ecosystem port tracker for parity status; `addons/graphify/` remains the legacy in-monorepo addon.
+
+See also: `docs/project/ecosystem-port-tracker.md`, `docs/project/plans/content-graph-platform-extraction-plan.md`.
 
 ---
 
@@ -603,7 +710,7 @@ See also: `docs/architecture/inline-async-tick-pattern.md`, `docs/features/memor
 
 ### 7.4 Bundled Skill Packs (UI/UX Pro Max)
 
-The UI/UX Pro Max skill pack bundles design-system guidance for colors, typography, icons, UI components, UX heuristics, and stack-specific guidance for common front-end frameworks.
+The plugin ships **74 base + 41 Pro bundled skills** (September 2026 count), including the UI/UX Pro Max skill pack: design-system guidance for colors, typography, icons, UI components, UX heuristics, and stack-specific guidance for common front-end frameworks.
 
 **Quickstart Guide (12 minutes)**
 
@@ -619,7 +726,7 @@ The UI/UX Pro Max skill pack bundles design-system guidance for colors, typograp
 
 ### Use Case: Role-Based Research Team
 
-**Required Tools:** orchestration features, team templates, provider routing, optional `docs/ORCHESTRATION_REFERENCE.md` guidance.
+**Required Tools:** orchestration features, team templates, provider routing, multi-agent delegation, optional workflow-builder guidance.
 
 **Quickstart Guide (20 minutes)**
 
@@ -697,7 +804,7 @@ The UI/UX Pro Max skill pack bundles design-system guidance for colors, typograp
 
 ## 13. Front-End Chat Delivery (Chat SPA)
 
-**Required Surface:** `[nvoos_chat_spa]` shortcode (or `nvoos/chat-spa` Gutenberg block), Chat SPA addon (`addons/chat-spa/`, v0.6.0), base plugin REST endpoints for chat, transcripts, memory, and approvals.
+**Required Surface:** `[nvoos_chat_spa]` shortcode (or `nvoos/chat-spa` Gutenberg block), Chat SPA addon (`addons/chat-spa/`, v0.7.0), base plugin REST endpoints for chat, transcripts, memory, and approvals.
 
 The Chat SPA addon is a React-based replacement for the legacy `[mcp_ai_chat]` shortcode. Built on Vercel AI SDK (`@ai-sdk/react`) with a custom SSE-to-Data-Stream adapter, it delivers tool-call cards, transcript management, memory controls, HITL approval flows, file attachments, and regenerate/edit capabilities in a modern single-page chat experience.
 
@@ -714,7 +821,7 @@ Set `define( 'WP_MCP_AI_LEGACY_CHAT_JS', false );` in `wp-config.php` to disable
 | `height` | `''` | CSS height (e.g. `600px`) |
 | `guest` | `0` | `1` enables guest-token auth and disables sidebar + memory drawer |
 
-### Phases 1–7
+### Phases 1–8
 
 | Phase | Feature | Key components |
 |---|---|---|
@@ -725,6 +832,7 @@ Set `define( 'WP_MCP_AI_LEGACY_CHAT_JS', false );` in `wp-config.php` to disable
 | 5 | HITL approval bar | Polls `mcp-ai/v1/approvals` every 6 s during streaming; approve/deny buttons; `manage_options` only |
 | 6 | File attachments + regenerate/edit | `useAttachments` hook (5 MB/file, 10 MB total, 10 files max); `↺` regenerate via `reload()`; `✏` edit via `setMessages` truncation |
 | 7 | Legacy gate | `WP_MCP_AI_LEGACY_CHAT_JS` constant gates the legacy shortcode; migration guide |
+| 8 | Message actions & content enrichment | Copy/save/feedback/delete toolbar per message bubble; native JSON/truncated/chart/video/image rendering; Copy buttons in code blocks; `useCopyToClipboard` + `useSavedMessages` hooks |
 
 ### SSE frame mapping
 
@@ -785,6 +893,7 @@ The addon also registers its own routes under `nvoos-chat-spa/v1`:
    - HITL approval bar appears for admin users during streaming (Phase 5).
    - File attachments show thumbnails and respect size limits (Phase 6).
    - Regenerate and edit/branch work on the last assistant or any user message (Phase 6).
+   - Message action buttons (copy, save, feedback, delete) appear on each bubble, and JSON/chart/video/image payloads render natively (Phase 8).
 7. Confirm transcripts, memory controls, and approval flows do not expose private data across users.
 
 ### Operational notes
@@ -793,15 +902,33 @@ The addon also registers its own routes under `nvoos-chat-spa/v1`:
 - File attachments must observe upload/MIME validation rules on both client and server.
 - Transcript retention should match your privacy policy and site settings.
 - The admin embed page (Tools → NV oOS Chat, `manage_options`) renders the same shortcode for backend testing.
-- Bundle size is approximately 81.3 KB gzip.
+- The primary JS bundle is approximately 390 KB raw (≈120 KB gzip); sizes are also published via the addon `/config` route.
+- Stale-nonce "Cookie check failed" 403s under full-page caching are self-healed by `GET /mcp-ai/v1/session/nonce`.
+
+### 13.5 Pro SPA v2
+
+**Required Surface:** `[nvoos_pro_spa]` shortcode (Pro addon, v1.1.68+).
+
+**Quickstart Guide (10 minutes)**
+
+1. Activate the Pro addon and confirm the Pro SPA v2 surface is enabled.
+2. Add `[nvoos_pro_spa assistant_id="123"]` to the target page.
+3. Choose embedded chat-first mode (threads, drawers, tool shortcuts, OKF drawer) — the surface is router-free.
+4. For public pages, enable guest mode behind the guest-token machinery and disable sensitive drawers.
+5. Test as guest, subscriber, and administrator; verify threads, tool shortcuts, and the OKF drawer behave per role.
+6. Review the same stale-nonce and rate-limit notes as the Chat SPA section.
+
+See also: `docs/project/proposals/033-pro-spa-v2-shortcode-proposal.md`.
 
 ---
 
 ## 14. In-WP Documentation Viewer (Docs Hub)
 
-**Required Surface:** Docs Hub addon (`addons/docs-hub/`, v0.3.9), optional remote repository configuration, optional WP-CLI for large rebuilds.
+**Required Surface:** Docs Hub addon (`addons/docs-hub/`, v0.4.3), optional remote repository configuration, optional WP-CLI for large rebuilds.
 
 Docs Hub provides a GitBook-style documentation browser inside WordPress. It discovers, indexes, and renders Markdown documentation from the base plugin, addons, and remote GitHub repositories in a React SPA with full-text search, syntax highlighting, sitemap support, and accessibility features.
+
+> **0.4.x highlights (since Rev 2.0):** internal links on local pages resolve to in-app hash routes, TOC anchors match github-slugger exactly, the broken-link fixer engine computes directory-relative fixes with skip reasons, sync failures are surfaced instead of silently reported as success, and 0.4.3 completed the WordPress.org submission pass (no inline settings-page scripts, `External Services` readme disclosure, translation template, and a plugin-check CI gate).
 
 ### Architecture
 
@@ -905,10 +1032,11 @@ Registered as `wp nvoos-docs`:
 4. For remote repositories, use the admin repo picker to select a GitHub repository, branch, and path prefix. Configure allowed hosts if using a non-GitHub source.
 5. Run a small rebuild first: click Rebuild or use `wp nvoos-docs rebuild --sync` via CLI.
 6. Review the built documentation at the shortcode or block surface.
-7. Check syntax highlighting, table rendering, internal links, and accessibility (skip-link, ARIA landmarks, RTL support, `prefers-reduced-motion`).
-8. Enable sitemap output if documentation pages should be discoverable by search engines.
-9. For large documentation sets (hundreds of files), use `wp nvoos-docs rebuild` (async) or the admin async rebuild to process in chunks without timing out.
-10. Use the edit-on-GitHub footer (`PageFooter` component) to route corrections back to the source repository.
+7. Check syntax highlighting, table rendering, internal links (they should stay in-app as hash routes), and accessibility (skip-link, ARIA landmarks, RTL support, `prefers-reduced-motion`).
+8. Run the broken-link fixer from the settings page and review skip reasons before accepting suggestions.
+9. Enable sitemap output if documentation pages should be discoverable by search engines.
+10. For large documentation sets (hundreds of files), use `wp nvoos-docs rebuild` (async) or the admin async rebuild to process in chunks without timing out.
+11. Use the edit-on-GitHub footer (`PageFooter` component) to route corrections back to the source repository.
 
 ### Operator checks
 
@@ -921,7 +1049,7 @@ Registered as `wp nvoos-docs`:
 
 ## Pro Features & Toolkits
 
-The Pro addon adds specialized vertical toolkits and SPA toolkit interfaces on top of the base plugin. Rev 2.0 distinguishes between **10 GA SPA-manifested toolkits** and the broader set of Pro settings-page modules.
+The Pro addon adds specialized vertical toolkits and SPA toolkit interfaces on top of the base plugin. Rev 3.0 distinguishes between **10 GA SPA-manifested toolkits** and the broader set of Pro settings-page modules.
 
 ### GA SPA-Manifested Toolkits
 
@@ -938,56 +1066,68 @@ The Pro addon adds specialized vertical toolkits and SPA toolkit interfaces on t
 | Regulatory Registrations | Regulated product registration workflows |
 | Social Media | Social planning, posting support, and analytics |
 
-Additional Pro settings pages cover architectural verticals, document generation, image/media/video production, project management, site creator, and other modules. Runtime availability depends on the installed addon package, dependencies, and configured credentials. Do not use hardcoded total-tool claims here; use the live registry.
+Additional Pro settings pages cover architectural verticals, document generation, image/media/video production, project management, site creator, and other modules. The Pro addon currently ships **31 toolkits**; verticals added since Rev 2.0 include Google Workspace (Calendar/Gmail/Drive), Vision Analysis, Composio Connect, FlowHub / Shopify Sync / EZuite inventory sync, self-hosted OCR, and Page Agent. Runtime availability depends on the installed addon package, dependencies, and configured credentials. Do not use hardcoded total-tool claims here; use the live registry.
+
+> **Ecosystem ports (September 2026):** the WooCommerce data layer and product/order/customer/marketing/shipping tool groups, the CRM command-center/extras/engagement/customer/import/hygiene/consent/workflow/sequence/Upwork/core-email tools, and the MCP toolkit-server core have been ported to standalone addons while remaining available through the Pro addon.
 
 ---
 
 ## Cost Considerations
 
-All prices in this section are seeded from `includes/data/model-catalog.json` version `2026.05.04`. They are not a billing guarantee. Providers change prices, and site operators can override the catalog in Settings → Models or through filters. Always verify current pricing against provider billing dashboards before committing production workloads.
+All prices in this section are seeded from `includes/data/model-catalog.json` version `2026.09.05` (228 models; 15 shipping providers). They are not a billing guarantee. Providers change prices, and site operators can override the catalog in Settings → Models or through filters. Always verify current pricing against provider billing dashboards before committing production workloads.
 
 ### OpenAI
 
 | Model | Input $/1K tokens | Output $/1K tokens | Notes |
 |---|---:|---:|---|
-| `gpt-5-nano` | 0.00005 | 0.0004 | Lowest-cost GPT-5 family entry |
+| `gpt-5.6-luna` | 0.0002 | 0.0012 | Lowest-cost current generation |
+| `gpt-5-nano` | 0.00005 | 0.0003 | Lowest-cost GPT-5 family entry |
 | `gpt-5-mini` | 0.00025 | 0.002 | Routine chat and support |
-| `gpt-5` | 0.00125 | 0.010 | General production reasoning |
-| `gpt-5.1` | 0.00125 | 0.010 | Current GPT-5.1 line |
+| `gpt-5` / `gpt-5.1` | 0.00125 | 0.010 | General production reasoning |
 | `gpt-5.2` | 0.00175 | 0.014 | Higher-cost newer line |
-| `gpt-5-pro` | 0.021 | 0.168 | Expensive; reserve for high-value work |
-| `gpt-4.1-nano` | 0.0004 | 0.0012 | Lightweight GPT-4.1 family |
-| `gpt-4.1-mini` | 0.0015 | 0.0045 | Balanced GPT-4.1 family |
-| `gpt-4.1` | 0.006 | 0.018 | Higher-cost GPT-4.1 family |
-| `gpt-4o-mini` | 0.00015 | 0.0006 | Cheap legacy-compatible option |
+| `gpt-5.6-terra` | 0.002 | 0.012 | Balanced current-generation tier |
+| `gpt-5.6-sol` | 0.004 | 0.02 | Flagship current generation |
+| `gpt-5-pro` | 0.015 | 0.12 | Expensive; reserve for high-value work |
+| `gpt-4.1-nano` | 0.0001 | 0.0004 | Lightweight GPT-4.1 family |
+| `gpt-4.1-mini` | 0.0004 | 0.0016 | Balanced GPT-4.1 family |
+| `gpt-4.1` | 0.002 | 0.008 | Higher-cost GPT-4.1 family |
+| `gpt-4o` / `gpt-4o-mini` | 0.0025 / 0.00015 | 0.01 / 0.0006 | Legacy-compatible pins; kept active for user-pinned fallbacks |
+
+> `gpt-6-astra` (September 3 limited preview, 0.01/0.05) is in the catalog but not recommended for production defaults yet.
 
 ### Anthropic
 
 | Model | Input $/1K tokens | Output $/1K tokens | Notes |
 |---|---:|---:|---|
 | `claude-haiku-4-5` | 0.001 | 0.005 | Fast Claude tier |
-| `claude-sonnet-4-6` | 0.003 | 0.012 | Recommended production balance |
+| `claude-sonnet-4-6` | 0.003 | 0.015 | Recommended production balance |
 | `claude-opus-4-6` | 0.005 | 0.025 | Flagship, large context |
 | `claude-opus-4-7` | 0.005 | 0.025 | Flagship successor line |
+| `claude-opus-5` | 0.005 | 0.025 | Current flagship (July 24) |
+| `claude-fable-5.1` / `claude-mythos-5` | 0.01 | 0.05 | Specialized preview tiers |
 
 ### DeepSeek
 
 | Model | Input $/1K tokens | Output $/1K tokens | Notes |
 |---|---:|---:|---|
-| `deepseek-chat` | 0.00027 | 0.00110 | General chat alias |
-| `deepseek-reasoner` | 0.00055 | 0.00219 | Reasoning workflows |
-| `deepseek-coder` | 0.00027 | 0.00110 | Coding workflows |
+| `deepseek-v4-flash` | 0.00014 | 0.00028 | Low-cost v4 tier |
+| `deepseek-v4-pro` | 0.000435 | 0.00087 | Current default; successor to retired `deepseek-chat` / `-reasoner` / `-coder` (API retired 2026-07-24; the migration map rewrites stored references) |
 
-### Google Provider and Gemini Provider
+### Gemini (Google)
 
-| Provider | Model | Input $/1K tokens | Output $/1K tokens | Notes |
-|---|---|---:|---:|---|
-| Google | `gemini-2.5-flash-lite` | 0.0001 | 0.0004 | Low-cost Google 2.5 line |
-| Google | `gemini-2.5-flash` | 0.0003 | 0.0025 | Balanced Google 2.5 line |
-| Google | `gemini-2.5-pro` | 0.00125 | 0.010 | Higher-capability Google 2.5 line |
-| Gemini | `gemini-3.1-flash-lite` | 0.000015 | 0.00006 | Low-cost Gemini 3.1 line |
-| Gemini | `gemini-3.1-flash` | 0.000075 | 0.0003 | Fast Gemini 3.1 line |
-| Gemini | `gemini-3.1-pro` | 0.00125 | 0.005 | Pro Gemini 3.1 line |
+| Model | Input $/1K tokens | Output $/1K tokens | Notes |
+|---|---:|---:|---|
+| `gemini-2.5-flash-lite` | 0.0001 | 0.0004 | Low-cost 2.5 line |
+| `gemini-2.5-flash` | 0.0003 | 0.0025 | Balanced 2.5 line |
+| `gemini-2.5-pro` | 0.00125 | 0.010 | Higher-capability 2.5 line |
+| `gemini-3.1-flash-lite` | 0.00025 | 0.0015 | Low-cost 3.1 line |
+| `gemini-3.1-pro` | 0.002 | 0.012 | Pro 3.1 line |
+| `gemini-3.5-flash` | 0.0015 | 0.009 | Fast 3.5 line |
+| `gemini-3.6-flash` | 0.00075 | 0.00375 | Current default Gemini model |
+| `gemini-3.7-flash` | 0.00075 | 0.00375 | Current flash line |
+| `gemini-3.8-flash` | 0.00075 | 0.00375 | Current flash line (intro pricing — re-check after 2026-12-31) |
+
+> `gemini-3.1-flash` was sunset 2026-09-01 and is removed from the catalog; `imagen-4` shut down 2026-08-17.
 
 ### DigitalOcean Serverless Inference
 
@@ -1005,10 +1145,11 @@ DigitalOcean pricing fields are intentionally zeroed in the seed catalog. Operat
 
 | Model | Input $/1K tokens | Output $/1K tokens | Notes |
 |---|---:|---:|---|
-| `kimi-k2.6` | 0 | 0 | Catalog seed placeholder |
-| `kimi-k2.5` | 0 | 0 | Catalog seed placeholder |
-| `kimi-k2` | 0 | 0 | Catalog seed placeholder |
-| `kimi-k2-thinking` | 0 | 0 | Catalog seed placeholder |
+| `kimi-k3` | 0.003 | 0.015 | Current default Kimi model |
+| `kimi-k2.7-code` | 0.00095 | 0.004 | Coding tier |
+| `kimi-k2.6` | 0.00095 | 0.004 | Fast tier |
+| `kimi-k2.5` | 0.0006 | 0.003 | Lightweight tier |
+| `kimi-k2` / `kimi-k2-thinking` | 0.0006 | 0.0025 | Entry tiers |
 | `moonshot-v1-8k` | 0.012 | 0.012 | 8k context line |
 | `moonshot-v1-32k` | 0.024 | 0.024 | 32k context line |
 | `moonshot-v1-128k` | 0.060 | 0.060 | 128k context line |
@@ -1033,8 +1174,11 @@ Ollama (29 active catalog models), LM Studio (20), WebLLM (5), and embedded MLC 
 
 | Provider | Model | Input $/1K tokens | Output $/1K tokens | Notes |
 |---|---|---:|---:|---|
-| Gemini | `imagen-4` | 0 | 0 | Catalog placeholder; verify provider billing |
-| Google | `gemini-2.5-flash-image` | 0 | 0.030 | $30/M output tokens equivalent seed |
+| OpenAI | `gpt-image-2` | 0.005 | 0.03 | Current OpenAI image default |
+| Gemini | `gemini-3.1-flash-image` | 0 | 0.06 | Image generation; verify provider billing |
+| Gemini | `gemini-3.1-flash-image-preview` | 0.0005 | 0.06 | Preview tier with input pricing |
+
+> `gemini-2.5-flash-image` is deprecated (sunset 2026-10-02) and `imagen-4` is shut down — do not reference them in new configurations.
 
 ### Cost Control Guidance
 
@@ -1042,6 +1186,7 @@ Ollama (29 active catalog models), LM Studio (20), WebLLM (5), and embedded MLC 
 - Use caching and result persistence, but measure savings on your own traffic rather than relying on universal percentage claims.
 - Prefer local providers for privacy or predictable hardware costs when latency and hardware are acceptable.
 - Put hard limits around image/video generation and external write tools.
+- Re-check promotional pricing on the next catalog refresh — several current-generation models (e.g. `gemini-3.8-flash`) carry intro rates with published expiry dates.
 
 ---
 
@@ -1051,9 +1196,10 @@ This guide no longer includes unbacked percentage claims for HIPAA, ISO, or SOC 
 
 Current posture references:
 
-- `docs/HIPAA_POSTURE.md`
-- `docs/03-wp-org-compliance.md`
-- `docs/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`
+- `docs/operations/security/SECURITY_POSTURE.md` — security-posture scoring (21 signals), destructive-ops gate, request guard, and hardening findings
+- `docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_19.md` — WordPress.org compliance status
+- `docs/developer/dicom-phi-handling.md` — DICOM/PHI handling guidance
+- `docs/operations/compliance/` — compliance doc directory
 
 Operational baseline:
 
@@ -1080,14 +1226,22 @@ Operational baseline:
 2. Poll the job status route once from the admin UI.
 3. Check recent activity/error logs for inline-kick completion or failure events.
 4. If the job remains queued, verify object-cache/transient behavior and hosting timeouts.
-5. Review `docs/architecture/inline-async-tick-pattern.md` for subsystem-specific details.
+5. Review `docs/developer/architecture/inline-async-tick-pattern.md` for subsystem-specific details.
 
 ### Provider returns no models or zero prices
 
 1. Check provider credentials.
-2. Run provider diagnostics when available.
-3. Refresh model discovery.
-4. For DigitalOcean, populate price fields from Gradient Platform billing because seed prices are zeroed.
+2. Remember that fresh installs disable cloud providers by default — enable the provider in Settings → Providers (or re-enter a key in the onboarding wizard, which auto-enables it).
+3. Run provider diagnostics when available (Settings → Connectors now routes to `options-connectors.php`).
+4. Refresh model discovery.
+5. For DigitalOcean, populate price fields from Gradient Platform billing because seed prices are zeroed.
+
+### REST requests blocked by rate limiting
+
+1. A blocked authenticated user appears in Command Center → Restrictions with a Lift button — lifting also clears the request window for an immediate fresh start.
+2. The limiter uses fixed-window accounting: `retry_after` reports the true remaining time (no sliding-window lock-in).
+3. Guest blocks are IP-keyed and expire on their own; they are not attached to a user record.
+4. `GET`/`HEAD` are exempt from the request quota; credential-token requests are exempt from the tool rate limiter.
 
 ### Chat SPA does not render
 
@@ -1095,6 +1249,7 @@ Operational baseline:
 2. Confirm the page uses `[nvoos_chat_spa]`.
 3. Check whether `WP_MCP_AI_LEGACY_CHAT_JS` is forcing the older delivery path.
 4. Inspect browser console and REST authentication errors.
+5. For "Cookie check failed" 403s under full-page caching or after session-token rotation, mint a fresh nonce via `GET /mcp-ai/v1/session/nonce` (the surface self-heals on the next request).
 
 ---
 
@@ -1136,17 +1291,28 @@ Use explicit budgets, moderation, and human review for media generation. Keep ge
 
 Keep regulated and irreversible actions human-approved. Store credentials in appropriate secret stores and audit token use.
 
+### 10. Ecosystem & addon selection
+
+Start with the base plugin and enable Pro toolkits or standalone Content Graph plugins only for workloads that need them. Standalone ecosystem plugins keep their own release tracks — check `docs/project/ecosystem-port-tracker.md` before relying on a ported surface.
+
+### 11. Provider defaults
+
+Fresh installs disable cloud providers by default. Re-enable deliberately, use the onboarding wizard to auto-enable the provider you key in, and verify credentials with provider diagnostics before routing production traffic.
+
 ---
 
 ## Next Steps
 
 - Live tool inventory: inspect `WP_MCP_AI_Tool_Registry::get_tools()` on the target site.
 - Fact sheet for this guide: `docs/getting-started/_USE_CASES_FACT_SHEET.md`.
-- Orchestration reference: `docs/ORCHESTRATION_REFERENCE.md`.
-- Inline async architecture: `docs/architecture/inline-async-tick-pattern.md`.
-- SaaS Controller setup remains in `docs/SAAS_SETUP_GUIDE.md`.
+- Inline async architecture: `docs/developer/architecture/inline-async-tick-pattern.md`.
+- SaaS Controller setup: `docs/operations/deployment/saas-controller.md`.
 - DigitalOcean provider docs: `docs/features/ai-providers/digitalocean.md`.
-- Compliance posture: `docs/HIPAA_POSTURE.md`, `docs/03-wp-org-compliance.md`, `docs/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`.
+- Google Calendar integration: `docs/developer/architecture/integrations/google-calendar-connection.md`.
+- Composio Connect: `docs/composio-connect.md`.
+- Vision Analysis: `docs/toolkits/vision-analysis-toolkit.md`.
+- Ecosystem ports: `docs/project/ecosystem-port-tracker.md`.
+- Compliance posture: `docs/operations/security/SECURITY_POSTURE.md`, `docs/operations/compliance/`.
 
 ---
 
@@ -1156,7 +1322,7 @@ Keep regulated and irreversible actions human-approved. Store credentials in app
 
 ### AI Tool Builder
 
-The AI Tool Builder was previously framed as a main use case. Rev 2.0 moves it here because the live settings page banner says **Coming Soon - Phase 2.9** and notes that tools and features are subject to change. The planned meta-toolkit is described as custom AI-tool creation support for scaffolding, code generation, testing, and documentation. When it graduates, update the fact sheet first, verify tool registration, then add a proper use case with current screenshots, permissions, and tests.
+The AI Tool Builder was previously framed as a main use case. Rev 2.0 moved it here, and Rev 3.0 keeps it here after re-verifying the live settings-page banner still says **Coming Soon - Phase 2.9** (checked 2026-09-08). The planned meta-toolkit is described as custom AI-tool creation support for scaffolding, code generation, testing, and documentation. When it graduates, update the fact sheet first, verify tool registration, then add a proper use case with current screenshots, permissions, and tests.
 
 ### Reserved / specialised Pro slots
 
@@ -1168,5 +1334,6 @@ The Pro settings-page inventory includes reserved or specialised verticals such 
 
 | Revision | Date | Notes |
 |---|---|---|
+| 3.0 | September 8, 2026 | Independent doc revision. Tested against plugin 1.1.72. Refreshed counts (~303 base + ~1,265 Pro ≈ ~1,568), rebuilt costs from model catalog `2026.09.05`, added Google Workspace / Vision Analysis / Workflow Builder + Pro Schedule Manager / Deep Research / Pro SPA v2 / Content Graph ecosystem sections, updated Chat SPA (0.7.0, Phase 8) and Docs Hub (0.4.3), refreshed Toolkit MCP Servers (33 servers, OAuth 2.0), added rate-limit and nonce troubleshooting, fixed all post-reorg links, and updated the fact sheet to Rev 3.0. |
 | 2.0 | May 17, 2026 | Independent doc revision. Tested against plugin 1.1.18. Refreshed counts, added fact sheet, moved AI Tool Builder to roadmap, added Scheduled Results / Toolkit MCP Servers / Memory Mining / Skill Packs / Chat SPA / Docs Hub, rewrote costs from model catalog `2026.05.04`, removed unsupported compliance percentage claims, fixed stale links, regenerated TOC, and added inline-async troubleshooting. |
 | 1.3.0 | Jan 31, 2026 | Superseded by 2.0 — counts and version references in that revision were already stale at publish. |

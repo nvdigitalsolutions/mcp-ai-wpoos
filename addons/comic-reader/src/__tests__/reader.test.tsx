@@ -5,40 +5,50 @@
  * @since   0.1.0
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { PageViewer } from '../components/PageViewer';
+import {
+	loadPrefs,
+	savePrefs,
+	DEFAULT_PREFS,
+	backgroundToColor,
+} from '../types/reader-prefs';
+import {
+	saveLocalProgress,
+	readLocalProgress,
+	readAllLocalProgress,
+	progressPercent,
+} from '../types/progress';
+import { HelpDialog } from '../components/HelpDialog';
+import { ReaderSettings } from '../components/ReaderSettings';
+import { parseComicInfo } from '../api/archive-worker';
+
+const mockPage = {
+	index: 0,
+	name: 'page_001.jpg',
+	url: 'blob:test-url',
+};
+
+const baseProps = {
+	leftPage: mockPage,
+	rightPage: null,
+	zoomLevel: 1,
+	scale: 'fit-width' as const,
+	direction: 'ltr' as const,
+	background: 'gray' as const,
+	transition: 'none' as const,
+	spreadKey: '1-s-ltr',
+};
 
 describe('PageViewer', () => {
-	const mockPage = {
-		index: 0,
-		name: 'page_001.jpg',
-		url: 'blob:test-url',
-	};
-
 	it('renders empty state when no pages provided', () => {
-		render(
-			<PageViewer
-				leftPage={null}
-				rightPage={null}
-				zoomLevel={1}
-				fitMode="width"
-				direction="ltr"
-			/>
-		);
+		render(<PageViewer {...baseProps} leftPage={null} />);
 		expect(screen.getByText('No pages to display.')).toBeInTheDocument();
 	});
 
 	it('renders a single page', () => {
-		render(
-			<PageViewer
-				leftPage={mockPage}
-				rightPage={null}
-				zoomLevel={1}
-				fitMode="width"
-				direction="ltr"
-			/>
-		);
+		render(<PageViewer {...baseProps} />);
 		const img = screen.getByAltText('Page 1');
 		expect(img).toBeInTheDocument();
 		expect(img).toHaveAttribute('src', 'blob:test-url');
@@ -46,31 +56,151 @@ describe('PageViewer', () => {
 
 	it('renders a double-page spread', () => {
 		const rightPage = { ...mockPage, index: 1, name: 'page_002.jpg' };
-		render(
-			<PageViewer
-				leftPage={mockPage}
-				rightPage={rightPage}
-				zoomLevel={1}
-				fitMode="width"
-				direction="ltr"
-			/>
-		);
+		render(<PageViewer {...baseProps} rightPage={rightPage} />);
 		expect(screen.getByAltText('Page 1')).toBeInTheDocument();
 		expect(screen.getByAltText('Page 2')).toBeInTheDocument();
 	});
 
-	it('applies zoom transform style', () => {
-		render(
-			<PageViewer
-				leftPage={mockPage}
-				rightPage={null}
-				zoomLevel={1.5}
-				fitMode="none"
-				direction="ltr"
-			/>
-		);
+	it('applies zoom transform style when scale is none', () => {
+		render(<PageViewer {...baseProps} scale="none" zoomLevel={1.5} />);
 		const img = screen.getByAltText('Page 1');
 		expect(img.style.transform).toBe('scale(1.5)');
+	});
+
+	it('reports natural page dimensions on load', () => {
+		const onPageLoad = vi.fn();
+		render(<PageViewer {...baseProps} onPageLoad={onPageLoad} />);
+		const img = screen.getByAltText('Page 1');
+		Object.defineProperty(img, 'naturalWidth', { value: 200 });
+		Object.defineProperty(img, 'naturalHeight', { value: 300 });
+		fireEvent.load(img);
+		expect(onPageLoad).toHaveBeenCalledWith(0, 200, 300);
+	});
+});
+
+describe('reader prefs', () => {
+	beforeEach(() => {
+		localStorage.clear();
+	});
+
+	it('returns defaults when nothing is stored', () => {
+		expect(loadPrefs()).toEqual(DEFAULT_PREFS);
+	});
+
+	it('persists and reloads global prefs', () => {
+		savePrefs({ ...DEFAULT_PREFS, direction: 'rtl', background: 'black' });
+		const loaded = loadPrefs();
+		expect(loaded.direction).toBe('rtl');
+		expect(loaded.background).toBe('black');
+		expect(loaded.scale).toBe('fit-width');
+	});
+
+	it('applies per-comic overrides over global prefs', () => {
+		savePrefs({ ...DEFAULT_PREFS, background: 'black' });
+		savePrefs({ ...DEFAULT_PREFS, background: 'white' }, 42);
+		expect(loadPrefs(42).background).toBe('white');
+		expect(loadPrefs(7).background).toBe('black');
+	});
+
+	it('maps backgrounds to colors', () => {
+		expect(backgroundToColor('white')).toBe('#f5f5f5');
+		expect(backgroundToColor('gray')).toBe('#333333');
+		expect(backgroundToColor('black')).toBe('#000000');
+	});
+});
+
+describe('reading progress', () => {
+	beforeEach(() => {
+		localStorage.clear();
+	});
+
+	it('round-trips a progress record', () => {
+		saveLocalProgress(42, { page: 12, total: 60, completed: false, ts: 123 });
+		expect(readLocalProgress(42)).toEqual({
+			page: 12,
+			total: 60,
+			completed: false,
+			ts: 123,
+		});
+	});
+
+	it('reads the legacy bare-page format', () => {
+		localStorage.setItem('nvoos_cr_progress_9', '7');
+		expect(readLocalProgress(9)?.page).toBe(7);
+	});
+
+	it('scans all stored records', () => {
+		saveLocalProgress(1, { page: 2, total: 10, completed: false, ts: 1 });
+		saveLocalProgress(2, { page: 10, total: 10, completed: true, ts: 2 });
+		const all = readAllLocalProgress();
+		expect(all.size).toBe(2);
+		expect(all.get(2)?.completed).toBe(true);
+	});
+
+	it('computes read percentages', () => {
+		expect(progressPercent({ page: 5, total: 10, completed: false, ts: 0 })).toBe(50);
+		expect(progressPercent({ page: 10, total: 10, completed: true, ts: 0 })).toBe(100);
+		expect(progressPercent({ page: 3, total: 0, completed: false, ts: 0 })).toBe(0);
+	});
+});
+
+describe('HelpDialog', () => {
+	it('renders shortcut rows', () => {
+		render(<HelpDialog onClose={vi.fn()} />);
+		expect(screen.getByText('Fit width')).toBeInTheDocument();
+		expect(screen.getByText('Double page')).toBeInTheDocument();
+	});
+});
+
+describe('ReaderSettings', () => {
+	it('updates prefs when the reading mode changes', () => {
+		const onChange = vi.fn();
+		render(
+			<ReaderSettings
+				prefs={DEFAULT_PREFS}
+				onChange={onChange}
+				onClose={vi.fn()}
+			/>
+		);
+		fireEvent.change(screen.getByLabelText('Reading mode'), {
+			target: { value: 'webtoon' },
+		});
+		expect(onChange).toHaveBeenCalledWith(
+			expect.objectContaining({ readingMode: 'webtoon' })
+		);
+	});
+});
+
+describe('ComicInfo parsing', () => {
+	it('extracts standard ComicInfo.xml fields', () => {
+		const xml = `<?xml version="1.0"?>
+<ComicInfo>
+  <Title>Scott Pilgrim</Title>
+  <Series>Scott Pilgrim</Series>
+  <Number>1</Number>
+  <Writer>Bryan Lee O&apos;Malley</Writer>
+  <Publisher>Oni Press</Publisher>
+  <PageCount>168</PageCount>
+  <Manga>No</Manga>
+</ComicInfo>`;
+		const meta = parseComicInfo(xml);
+		expect(meta.title).toBe('Scott Pilgrim');
+		expect(meta.series).toBe('Scott Pilgrim');
+		expect(meta.number).toBe('1');
+		expect(meta.writer).toBe("Bryan Lee O'Malley");
+		expect(meta.publisher).toBe('Oni Press');
+		expect(meta.page_count).toBe('168');
+	});
+
+	it('maps RightToLeft to the rtl flag', () => {
+		const xml = '<ComicInfo><RightToLeft>Yes</RightToLeft><Manga>Yes</Manga></ComicInfo>';
+		const meta = parseComicInfo(xml);
+		expect(meta.rtl).toBe('Yes');
+		expect(meta.manga).toBe('Yes');
+	});
+
+	it('returns an empty object for non-ComicInfo content', () => {
+		expect(parseComicInfo('<html><body>nope</body></html>')).toEqual({});
 	});
 });
 

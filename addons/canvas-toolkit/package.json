@@ -30,14 +30,14 @@
     "@types/react": "19.1.4",
     "@types/react-dom": "19.1.4",
     "@typescript-eslint/parser": "^8.32.0",
-    "@vitest/coverage-v8": "^4.1.5",
+    "@vitest/coverage-v8": "^4.1.11",
     "@wordpress/i18n": "^5.12.0",
     "esbuild": "^0.28.1",
     "eslint": "^9.27.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "jsdom": "^29.1.1",
     "typescript": "5.8.3",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.11"
   },
   "overrides": {
   	      "vite": ">=8.0.16",
@@ -46,15 +46,15 @@
   	      "brace-expansion@^5": ">=5.0.8",
   	      "dompurify": ">=3.4.12",
 		          "undici": "^7.28.0",
-      "@tiptap/core": "3.30.4",
-      "@tiptap/pm": "3.30.4",
-      "@tiptap/react": "3.30.4",
-      "@tiptap/starter-kit": "3.30.4",
-      "@tiptap/extensions": "3.30.4",
-      "@tiptap/extension-bubble-menu": "3.30.4",
-      "@tiptap/extension-code": "3.30.4",
-      "@tiptap/extension-floating-menu": "3.30.4",
-      "@tiptap/extension-highlight": "3.30.4"
+      "@tiptap/core": "3.30.5",
+      "@tiptap/pm": "3.30.5",
+      "@tiptap/react": "3.30.5",
+      "@tiptap/starter-kit": "3.30.5",
+      "@tiptap/extensions": "3.30.5",
+      "@tiptap/extension-bubble-menu": "3.30.5",
+      "@tiptap/extension-code": "3.30.5",
+      "@tiptap/extension-floating-menu": "3.30.5",
+      "@tiptap/extension-highlight": "3.30.5"
     },
   "type": "module"
 }

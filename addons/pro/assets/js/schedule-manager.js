@@ -994,18 +994,34 @@
 		 * and any extra configuration fields needed for the edit modal.
 		 */
 		CHANNEL_DEFS: {
-			email:       { label: 'Email',           fields: ['to'],                         templates: ['full','summary','error'], group: 'direct' },
-			slack:       { label: 'Slack',           fields: ['channel'],                    templates: ['summary','error'],       group: 'chat' },
-			telegram:    { label: 'Telegram',        fields: ['chat_id'],                    templates: ['summary','error'],       group: 'chat' },
-			discord:     { label: 'Discord',         fields: ['channel_id'],                 templates: ['summary','error'],       group: 'chat' },
-			teams:       { label: 'Microsoft Teams', fields: ['team_id','channel_id'],       templates: ['summary','error'],       group: 'chat' },
-			messenger:   { label: 'Messenger',       fields: ['recipient_id'],               templates: ['summary','error'],       group: 'chat' },
-			whatsapp:    { label: 'WhatsApp',        fields: ['to'],                         templates: ['summary','error'],       group: 'chat' },
-			google_chat: { label: 'Google Chat',     fields: ['space_id'],                   templates: ['summary','error'],       group: 'chat' },
+			email:       { label: 'Email',           fields: ['to'],                         templates: ['full','summary','error','response_only'], formats: ['both','html','markdown'], group: 'direct' },
+			slack:       { label: 'Slack',           fields: ['channel'],                    templates: ['summary','full','error','response_only'], formats: ['markdown','plain'], group: 'chat' },
+			telegram:    { label: 'Telegram',        fields: ['chat_id'],                    templates: ['summary','full','error','response_only'], formats: ['html','markdown','markdown_v2','plain'], group: 'chat' },
+			discord:     { label: 'Discord',         fields: ['channel_id'],                 templates: ['summary','full','error','response_only'], formats: ['markdown','plain'], group: 'chat' },
+			teams:       { label: 'Microsoft Teams', fields: ['team_id','channel_id'],       templates: ['summary','full','error','response_only'], formats: ['markdown','plain'], group: 'chat' },
+			messenger:   { label: 'Messenger',       fields: ['recipient_id'],               templates: ['summary','full','error','response_only'], formats: ['plain'], group: 'chat' },
+			whatsapp:    { label: 'WhatsApp',        fields: ['to'],                         templates: ['summary','full','error','response_only'], formats: ['markdown','plain'], group: 'chat' },
+			google_chat: { label: 'Google Chat',     fields: ['space_id'],                   templates: ['summary','full','error','response_only'], formats: ['plain'], group: 'chat' },
 			sms:         { label: 'SMS',             fields: ['to'],                         templates: ['summary','error'],       group: 'direct' },
 			webhook:     { label: 'Webhook',         fields: ['url'],                        templates: [],                        group: 'automation' },
 			paper_store: { label: 'Paper Store',     fields: ['collection'],                 templates: [],                        group: 'automation', extra: ['driver','retention'] },
 			wordpress:   { label: 'WordPress Post',  fields: [],                             templates: [],                        group: 'automation', extra: ['post_type','post_status','category','skip_if_ai_posted'] },
+		},
+
+		/**
+		 * Maps delivery channel slugs to Remote Sites connection types.
+		 *
+		 * Used by the edit modal to offer the right connection dropdown per
+		 * channel (Remote Sites stores messenger/teams under different keys).
+		 */
+		CONN_TYPE_MAP: {
+			telegram:    'telegram',
+			slack:       'slack',
+			discord:     'discord',
+			teams:       'microsoft_teams',
+			messenger:   'facebook_messenger',
+			whatsapp:    'whatsapp',
+			google_chat: 'google_chat',
 		},
 
 		/**
@@ -1017,20 +1033,20 @@
 		 * @return {string} HTML table row.
 		 */
 		editChannelRow: function ( channelSlug, config, prefix ) {
-			var def      = this.CHANNEL_DEFS[ channelSlug ];
-			var cfg      = config || {};
-			var label    = def.label;
-			var html     = '';
-			var fieldHtml = '';
-			var i;
+			const def       = this.CHANNEL_DEFS[ channelSlug ];
+			const cfg       = config || {};
+			const label     = def.label;
+			let html        = '';
+			let fieldHtml  = '';
+			let i;
 
 			// Checkbox + label.
 			html += '<label><input type="checkbox" id="' + prefix + channelSlug + '" ' + ( cfg.enabled ? 'checked' : '' ) + '> ' + this.esc( label ) + '</label>';
 
 			// Target identifier fields per channel type.
 			for ( i = 0; i < def.fields.length; i++ ) {
-				var f = def.fields[ i ];
-				var placeholder = '';
+				const f           = def.fields[ i ];
+				let placeholder   = '';
 				switch ( f ) {
 					case 'to':          placeholder = channelSlug === 'email' ? 'team@example.com' : '+15551234567'; break;
 					case 'channel':     placeholder = '#research'; break;
@@ -1048,24 +1064,42 @@
 
 			// Template selector (where applicable).
 			if ( def.templates.length > 0 ) {
-				var tplSel = cfg.template || def.templates[ 0 ];
+				const tplSel = cfg.template || def.templates[ 0 ];
 				html += ' <select id="' + prefix + channelSlug + '-template">';
 				for ( i = 0; i < def.templates.length; i++ ) {
-					var t = def.templates[ i ];
+					const t = def.templates[ i ];
 					html += '<option value="' + t + '"' + ( t === tplSel ? ' selected' : '' ) + '>' + t.charAt( 0 ).toUpperCase() + t.slice( 1 ) + '</option>';
+				}
+				html += '</select>';
+			}
+
+			// Presentation format selector (email & chat channels).
+			if ( def.formats && def.formats.length > 1 ) {
+				const fmtSel    = cfg.format || def.formats[ 0 ];
+				const fmtLabels = {
+					both:        'HTML + Plain Text',
+					html:        'HTML',
+					markdown:    'Markdown',
+					markdown_v2: 'MarkdownV2',
+					plain:       'Plain text',
+				};
+				html += ' <select id="' + prefix + channelSlug + '-format" title="' + ( 'email' === channelSlug ? 'Email presentation format' : 'Message format' ) + '">';
+				for ( i = 0; i < def.formats.length; i++ ) {
+					const fmt = def.formats[ i ];
+					html += '<option value="' + fmt + '"' + ( fmt === fmtSel ? ' selected' : '' ) + '>' + ( fmtLabels[ fmt ] || fmt ) + '</option>';
 				}
 				html += '</select>';
 			}
 
 			// Extra fields for paper_store and wordpress (dropdowns, checkboxes).
 			if ( def.extra && def.extra.length > 0 && channelSlug === 'paper_store' ) {
-				var driverVal = cfg.driver || 'json';
+				const driverVal = cfg.driver || 'json';
 				html += ' <select id="' + prefix + channelSlug + '-driver"><option value="json"' + ( driverVal === 'json' ? ' selected' : '' ) + '>JSON</option><option value="markdown_yaml"' + ( driverVal === 'markdown_yaml' ? ' selected' : '' ) + '>Markdown + YAML</option></select>';
 				html += ' <input type="number" id="' + prefix + channelSlug + '-retention" class="small-text" value="' + ( parseInt( cfg.retention, 10 ) || 30 ) + '" min="0" max="100" style="width:60px"> runs';
 			}
 			if ( def.extra && def.extra.length > 0 && channelSlug === 'wordpress' ) {
-				var wpPostType = cfg.post_type || 'post';
-				var wpStatus = cfg.post_status || 'draft';
+				const wpPostType = cfg.post_type || 'post';
+				const wpStatus   = cfg.post_status || 'draft';
 				html += '<br><span class="description">When the AI already calls create_post during the run, this channel is automatically skipped to avoid duplicate posts.</span>';
 				html += '<br><label style="margin-top:4px;display:inline-block"><input type="checkbox" id="' + prefix + channelSlug + '-skip-if-ai" ' + ( false !== cfg.skip_if_ai_posted ? 'checked' : '' ) + '> Skip if AI already created posts</label>';
 				html += '<br><select id="' + prefix + channelSlug + '-post-type" style="margin-top:4px"><option value="post"' + ( wpPostType === 'post' ? ' selected' : '' ) + '>Post</option><option value="page"' + ( wpPostType === 'page' ? ' selected' : '' ) + '>Page</option></select>';
@@ -1074,7 +1108,37 @@
 			}
 
 			// Credential reference (connection_id or inline).
-			html += ' <input type="text" id="' + prefix + channelSlug + '-creds" class="regular-text" value="' + this.esc( cfg.connection_id || cfg[ channelSlug + '_credentials' ] || '' ) + '" placeholder="Connection ID or token" style="max-width:200px">';
+			let credsValue = cfg.connection_id || cfg[ channelSlug + '_credentials' ] || '';
+			if ( credsValue && typeof credsValue === 'object' ) {
+				credsValue = JSON.stringify( credsValue );
+			}
+
+			const connType    = this.CONN_TYPE_MAP[ channelSlug ] || '';
+			const connections = ( wpMcpAiScheduleManager.connections || [] ).filter( function ( c ) {
+				return c.type === connType;
+			} );
+
+			if ( connType && connections.length > 0 ) {
+				// Dropdown of Remote Sites connections, plus a custom option for
+				// inline JSON credentials or a manual connection ID.
+				let connOpts = '<option value="">' + this.esc( '— No connection (site default) —' ) + '</option>';
+				let matched  = false;
+				for ( i = 0; i < connections.length; i++ ) {
+					const c     = connections[ i ];
+					const isSel = c.id === credsValue;
+					if ( isSel ) {
+						matched = true;
+					}
+					connOpts += '<option value="' + this.esc( c.id ) + '"' + ( isSel ? ' selected' : '' ) + '>' +
+						this.esc( c.name + ' (' + c.id + ')' + ( c.enabled ? '' : ' — disabled' ) ) + '</option>';
+				}
+				const useCustom = ! matched && credsValue;
+				connOpts += '<option value="__custom__"' + ( useCustom ? ' selected' : '' ) + '>' + this.esc( 'Custom credentials…' ) + '</option>';
+				html += ' <select id="' + prefix + channelSlug + '-conn" class="wp-mcp-ai-sm-conn-select" style="max-width:240px">' + connOpts + '</select>';
+				html += ' <input type="text" id="' + prefix + channelSlug + '-creds" class="regular-text" value="' + this.esc( credsValue ) + '" placeholder="Connection ID or JSON credentials" style="max-width:200px;' + ( useCustom ? '' : ' display:none;' ) + '">';
+			} else {
+				html += ' <input type="text" id="' + prefix + channelSlug + '-creds" class="regular-text" value="' + this.esc( credsValue ) + '" placeholder="Connection ID or JSON credentials" style="max-width:200px">';
+			}
 
 			return this.editRow( label, html );
 		},
@@ -1092,13 +1156,13 @@
 	 * @return {object} Sanitized channel config.
 	 */
 		collectChannelConfig: function ( channelSlug, prefix, def ) {
-			var cfg = {
+			const cfg = {
 				enabled:  $( '#' + prefix + channelSlug ).is( ':checked' ),
 				template: $( '#' + prefix + channelSlug + '-template' ).val() || def.templates[ 0 ] || 'summary',
 			};
 
 			// Target identifier fields.
-			var i, f, val;
+			let i, f, val;
 			for ( i = 0; i < def.fields.length; i++ ) {
 				f = def.fields[ i ];
 				val = $( '#' + prefix + channelSlug + '-' + f ).val();
@@ -1122,15 +1186,47 @@
 				}
 			}
 
-			// Credential reference.
-			var credsRaw = $( '#' + prefix + channelSlug + '-creds' ).val().trim();
-			if ( credsRaw ) {
-				// If it looks like a UUID or numeric ID, treat as connection_id.
-				if ( /^[a-f0-9\-]{20,}$/i.test( credsRaw ) || /^\d+$/.test( credsRaw ) ) {
+			// Presentation format (email: both/html/markdown; chat: html/markdown/markdown_v2/plain).
+			if ( def.formats && def.formats.length > 0 ) {
+				val = $( '#' + prefix + channelSlug + '-format' ).val();
+				if ( val ) {
+					cfg.format = val;
+				}
+			}
+
+			// Credential reference: dropdown (Remote Sites connection) or custom text.
+			const applyCustomCreds = function ( credsRaw ) {
+				if ( ! credsRaw ) {
+					return;
+				}
+				// If it looks like a Remote Sites connection ID, a UUID, or a
+				// numeric ID, treat as connection_id.
+				if ( /^[a-f0-9\-]{20,}$/i.test( credsRaw ) || /^\d+$/.test( credsRaw ) || /^conn_[a-z0-9]+$/i.test( credsRaw ) ) {
 					cfg.connection_id = credsRaw;
+				} else if ( credsRaw.charAt( 0 ) === '{' ) {
+					// JSON credentials object — parse and store as an object so the
+					// result delivery service receives the expected array shape.
+					try {
+						const parsed = JSON.parse( credsRaw );
+						cfg[ channelSlug + '_credentials' ] = ( parsed && typeof parsed === 'object' ) ? parsed : credsRaw;
+					} catch ( e ) {
+						cfg[ channelSlug + '_credentials' ] = credsRaw;
+					}
 				} else {
 					cfg[ channelSlug + '_credentials' ] = credsRaw;
 				}
+			};
+
+			const connSel = $( '#' + prefix + channelSlug + '-conn' );
+			if ( connSel.length ) {
+				const connVal = connSel.val() || '';
+				if ( '__custom__' === connVal ) {
+					applyCustomCreds( $( '#' + prefix + channelSlug + '-creds' ).val().trim() );
+				} else if ( connVal ) {
+					cfg.connection_id = connVal;
+				}
+			} else {
+				applyCustomCreds( $( '#' + prefix + channelSlug + '-creds' ).val().trim() );
 			}
 
 			return cfg;
@@ -1195,6 +1291,29 @@
 				);
 			}
 
+			// Assistant run config (if assistant_run type).
+			if ( 'assistant_run' === type ) {
+				const astCfg    = schedule.assistant_config || {};
+				const astList   = s.assistants || [];
+				const currentId = parseInt( astCfg.assistant_id, 10 ) || 0;
+				let astOpts     = '<option value="">— Select assistant —</option>';
+				let hasCurrent  = false;
+				astList.forEach( function ( ast ) {
+					const astId = parseInt( ast.id, 10 );
+					const sel   = astId === currentId ? ' selected' : '';
+					if ( sel ) {
+						hasCurrent = true;
+					}
+					astOpts += '<option value="' + this.esc( astId ) + '"' + sel + '>' + this.esc( ast.title ) + '</option>';
+				}.bind( this ) );
+				// Keep a stored assistant selectable even if it was deleted from the site.
+				if ( currentId && ! hasCurrent ) {
+					astOpts += '<option value="' + this.esc( currentId ) + '" selected>ID ' + this.esc( currentId ) + ' (missing)</option>';
+				}
+				html += this.editRow( 'Assistant', '<select id="edit-assistant-id">' + astOpts + '</select>' );
+				html += this.editRow( 'Message', '<textarea id="edit-assistant-message" class="large-text" rows="3">' + this.esc( astCfg.message || '' ) + '</textarea>' );
+			}
+
 			// Result capture / display settings.
 			const disp    = schedule.display || {};
 			const dWd     = disp.widget_defaults || {};
@@ -1225,10 +1344,10 @@
 			html += this.editRow( 'Widget auto-refresh (s)', '<input type="number" id="edit-widget-refresh-interval" class="small-text" min="0" max="3600" value="' + ( parseInt( dWd.refresh_interval, 10 ) || 0 ) + '"><br><span class="description">0 = off</span>' );
 
 			// Result Delivery section — all supported channels.
-			var rd = schedule.result_delivery || {};
-			var rdSuccess = ( rd.on_success || {} ).channels || {};
-			var rdFailure = ( rd.on_failure || {} ).channels || {};
-			var self = this;
+			const rd        = schedule.result_delivery || {};
+			const rdSuccess = ( rd.on_success || {} ).channels || {};
+			const rdFailure = ( rd.on_failure || {} ).channels || {};
+			const self      = this;
 			html += '<tr><td colspan="2"><hr><strong>Result Delivery</strong><br><span class="description">Configure where results are sent. Credentials can reference a Remote Sites connection ID.</span></td></tr>';
 
 			// On Success — all channels.
@@ -1249,6 +1368,18 @@
 			html += '</table>';
 
 			$body.html( html );
+
+			// Toggle the custom credentials input when the connection dropdown changes.
+			$body.find( '.wp-mcp-ai-sm-conn-select' ).on( 'change', function () {
+				const $sel   = $( this );
+				const credsId = $sel.attr( 'id' ).replace( /-conn$/, '-creds' );
+				const custom = '__custom__' === ( $sel.val() || '' );
+				$( '#' + credsId ).toggle( custom );
+				if ( ! custom ) {
+					$( '#' + credsId ).val( '' );
+				}
+			} );
+
 			$modal.fadeIn( 200 );
 		},
 
@@ -1292,6 +1423,18 @@
 				data.workflow_steps = steps;
 			}
 
+			// Assistant run config (mirrors create-form validation).
+			if ( $( '#edit-assistant-id' ).length ) {
+				const assistantId  = parseInt( $( '#edit-assistant-id' ).val(), 10 );
+				const assistantMsg = $( '#edit-assistant-message' ).val().trim();
+				if ( ! assistantId || ! assistantMsg ) {
+					$btn.prop( 'disabled', false ).text( 'Save Changes' );
+					alert( 'Assistant and message are required.' );
+					return;
+				}
+				data.assistant_config = { assistant_id: assistantId, message: assistantMsg };
+			}
+
 			// Result capture / display settings.
 			data.display = {
 				result_capture:   $( '#edit-result-capture' ).val() || 'summary',
@@ -1306,18 +1449,18 @@
 
 			// Result delivery config.
 			data.result_delivery = (function() {
-				var rdSuccessChannels = {};
-				var rdFailureChannels = {};
-				var chDefs = self.CHANNEL_DEFS;
+				const rdSuccessChannels = {};
+				const rdFailureChannels = {};
+				const chDefs = self.CHANNEL_DEFS;
 
 				Object.keys( chDefs ).forEach( function ( ch ) {
-					var def = chDefs[ ch ];
-					var sc  = self.collectChannelConfig( ch, 'edit-rd-success-', def );
+					const def = chDefs[ ch ];
+					const sc  = self.collectChannelConfig( ch, 'edit-rd-success-', def );
 					if ( sc.enabled ) {
 						rdSuccessChannels[ ch ] = sc;
 					}
 					if ( ch !== 'paper_store' && ch !== 'wordpress' ) {
-						var fc = self.collectChannelConfig( ch, 'edit-rd-failure-', def );
+						const fc = self.collectChannelConfig( ch, 'edit-rd-failure-', def );
 						if ( fc.enabled ) {
 							rdFailureChannels[ ch ] = fc;
 						}

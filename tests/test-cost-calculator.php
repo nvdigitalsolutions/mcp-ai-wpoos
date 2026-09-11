@@ -615,38 +615,134 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test cost calculation for DeepSeek deepseek-v4-flash model.
+	 * Test cost calculation for DeepSeek deepseek-v4-flash (retired alias).
+	 *
+	 * The id now serves V4.1 Flash and bills at Flash prices: $0.15/1M input,
+	 * $0.60/1M output (off-peak, cache miss).
 	 */
 	public function test_calculate_cost_deepseek_v4_flash() {
-		// deepseek-v4-flash: $0.14/1M input, $0.28/1M output.
 		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'deepseek', 'deepseek-v4-flash', 1000000, 1000000 );
 
-		// Expected: (1M / 1M) * 0.14 + (1M / 1M) * 0.28 = $0.42.
-		$this->assertEqualsWithDelta( 0.42, $cost, 0.000001, 'DeepSeek deepseek-v4-flash cost calculation incorrect' );
+		// Expected: (1M / 1M) * 0.15 + (1M / 1M) * 0.60 = $0.75.
+		$this->assertEqualsWithDelta( 0.75, $cost, 0.000001, 'DeepSeek deepseek-v4-flash cost calculation incorrect' );
 	}
 
 	/**
 	 * Test cost calculation for DeepSeek deepseek-v4-pro model.
+	 *
+	 * Current pricing (2026-09-10): $0.66/1M input, $1.98/1M output (off-peak).
 	 */
 	public function test_calculate_cost_deepseek_v4_pro() {
-		// deepseek-v4-pro: $0.435/1M input, $0.87/1M output.
 		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'deepseek', 'deepseek-v4-pro', 2000000, 500000 );
 
-		// Expected: (2M / 1M) * 0.435 + (500K / 1M) * 0.87 = 0.87 + 0.435 = $1.305.
-		$expected = ( 2000000 / 1000000 ) * 0.435 + ( 500000 / 1000000 ) * 0.87;
+		// Expected: (2M / 1M) * 0.66 + (500K / 1M) * 1.98 = 1.32 + 0.99 = $2.31.
+		$expected = ( 2000000 / 1000000 ) * 0.66 + ( 500000 / 1000000 ) * 1.98;
 		$this->assertEquals( $expected, $cost, 'DeepSeek deepseek-v4-pro cost calculation incorrect', 0.0001 );
+	}
+
+	/**
+	 * Test cost calculation for the DeepSeek V4.1 Flash flagship.
+	 *
+	 * $0.15/1M input, $0.60/1M output (off-peak, cache miss).
+	 */
+	public function test_calculate_cost_deepseek_flash() {
+		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'deepseek', 'deepseek-flash', 1000000, 500000 );
+
+		// Expected: (1M / 1M) * 0.15 + (500K / 1M) * 0.60 = 0.15 + 0.30 = $0.45.
+		$this->assertEqualsWithDelta( 0.45, $cost, 0.000001, 'DeepSeek deepseek-flash cost calculation incorrect' );
 	}
 
 	/**
 	 * Test get_model_pricing for DeepSeek models.
 	 */
 	public function test_get_model_pricing_deepseek() {
-		$pricing = WP_MCP_AI_Cost_Calculator::get_model_pricing( 'deepseek', 'deepseek-v4-flash' );
+		$pricing = WP_MCP_AI_Cost_Calculator::get_model_pricing( 'deepseek', 'deepseek-flash' );
 
 		$this->assertIsArray( $pricing );
 		$this->assertArrayHasKey( 'input', $pricing );
 		$this->assertArrayHasKey( 'output', $pricing );
-		$this->assertEquals( 0.14, $pricing['input'] );
-		$this->assertEquals( 0.28, $pricing['output'] );
+		$this->assertEquals( 0.15, $pricing['input'] );
+		$this->assertEquals( 0.60, $pricing['output'] );
+	}
+
+	/**
+	 * Peak/off-peak schedule resolution (DeepSeek, 2026-09-10 pricing page).
+	 *
+	 * Peak: Mon–Fri 01:00–04:00 and 06:00–10:00 UTC; all other hours off-peak.
+	 */
+	public function test_is_peak_time_deepseek_schedule() {
+		// Wednesday 2026-09-09 — a weekday.
+		$this->assertTrue( WP_MCP_AI_Cost_Calculator::is_peak_time( 'deepseek', gmmktime( 1, 0, 0, 9, 9, 2026 ) ), 'Window start is inclusive.' );
+		$this->assertTrue( WP_MCP_AI_Cost_Calculator::is_peak_time( 'deepseek', gmmktime( 2, 0, 0, 9, 9, 2026 ) ) );
+		$this->assertTrue( WP_MCP_AI_Cost_Calculator::is_peak_time( 'deepseek', gmmktime( 7, 30, 0, 9, 9, 2026 ) ), 'Second peak window.' );
+		$this->assertFalse( WP_MCP_AI_Cost_Calculator::is_peak_time( 'deepseek', gmmktime( 4, 0, 0, 9, 9, 2026 ) ), 'Window end is exclusive.' );
+		$this->assertFalse( WP_MCP_AI_Cost_Calculator::is_peak_time( 'deepseek', gmmktime( 5, 0, 0, 9, 9, 2026 ) ), 'Between-window gap is off-peak.' );
+		$this->assertFalse( WP_MCP_AI_Cost_Calculator::is_peak_time( 'deepseek', gmmktime( 10, 0, 0, 9, 9, 2026 ) ) );
+		$this->assertFalse( WP_MCP_AI_Cost_Calculator::is_peak_time( 'deepseek', gmmktime( 12, 0, 0, 9, 9, 2026 ) ) );
+		// Saturday 2026-09-12 and Sunday 2026-09-13 — weekend hours are off-peak.
+		$this->assertFalse( WP_MCP_AI_Cost_Calculator::is_peak_time( 'deepseek', gmmktime( 2, 0, 0, 9, 12, 2026 ) ) );
+		$this->assertFalse( WP_MCP_AI_Cost_Calculator::is_peak_time( 'deepseek', gmmktime( 7, 0, 0, 9, 13, 2026 ) ) );
+	}
+
+	/**
+	 * Providers without a declared peak schedule never report peak time.
+	 */
+	public function test_is_peak_time_unknown_provider() {
+		$this->assertFalse( WP_MCP_AI_Cost_Calculator::is_peak_time( 'openai', gmmktime( 2, 0, 0, 9, 9, 2026 ) ) );
+		$this->assertFalse( WP_MCP_AI_Cost_Calculator::is_peak_time( 'nonexistent', gmmktime( 2, 0, 0, 9, 9, 2026 ) ) );
+	}
+
+	/**
+	 * Resolves peak rates via get_model_pricing_at() and tags the rate class.
+	 */
+	public function test_get_model_pricing_at_deepseek_peak_and_off_peak() {
+		$peak     = WP_MCP_AI_Cost_Calculator::get_model_pricing_at( 'deepseek', 'deepseek-flash', gmmktime( 2, 0, 0, 9, 9, 2026 ) );
+		$off_peak = WP_MCP_AI_Cost_Calculator::get_model_pricing_at( 'deepseek', 'deepseek-flash', gmmktime( 12, 0, 0, 9, 9, 2026 ) );
+
+		$this->assertSame( 0.30, $peak['input'] );
+		$this->assertSame( 1.20, $peak['output'] );
+		$this->assertSame( 'peak', $peak['rate_class'] );
+
+		$this->assertSame( 0.15, $off_peak['input'] );
+		$this->assertSame( 0.60, $off_peak['output'] );
+		$this->assertSame( 'off-peak', $off_peak['rate_class'] );
+	}
+
+	/**
+	 * Models without peak keys are returned unchanged (no rate_class key).
+	 */
+	public function test_get_model_pricing_at_ignores_models_without_peak_keys() {
+		$pricing = WP_MCP_AI_Cost_Calculator::get_model_pricing_at( 'openai', 'gpt-4o', gmmktime( 2, 0, 0, 9, 9, 2026 ) );
+
+		$this->assertIsArray( $pricing );
+		$this->assertSame( WP_MCP_AI_Cost_Calculator::get_model_pricing( 'openai', 'gpt-4o' ), $pricing );
+		$this->assertArrayNotHasKey( 'rate_class', $pricing );
+	}
+
+	/**
+	 * Calculates peak-resolved costs via calculate_cost_at(); the legacy
+	 * calculate_cost() stays time-independent on the canonical (off-peak) rates.
+	 */
+	public function test_calculate_cost_at_deepseek_peak_vs_legacy() {
+		// 1M input + 1M output during peak: 0.30 + 1.20 = 1.50.
+		$this->assertEqualsWithDelta(
+			1.50,
+			WP_MCP_AI_Cost_Calculator::calculate_cost_at( 'deepseek', 'deepseek-flash', 1000000, 1000000, gmmktime( 2, 0, 0, 9, 9, 2026 ) ),
+			0.000001
+		);
+
+		// Same usage off-peak: 0.15 + 0.60 = 0.75.
+		$this->assertEqualsWithDelta(
+			0.75,
+			WP_MCP_AI_Cost_Calculator::calculate_cost_at( 'deepseek', 'deepseek-flash', 1000000, 1000000, gmmktime( 12, 0, 0, 9, 9, 2026 ) ),
+			0.000001
+		);
+
+		// Legacy calculate_cost() always uses the canonical off-peak rates.
+		$this->assertEqualsWithDelta(
+			0.75,
+			WP_MCP_AI_Cost_Calculator::calculate_cost( 'deepseek', 'deepseek-flash', 1000000, 1000000 ),
+			0.000001
+		);
 	}
 }

@@ -82,4 +82,94 @@ class Test_Checkout_Api_License_Store extends WP_UnitTestCase {
 	public function test_unknown_key_returns_null(): void {
 		$this->assertNull( NVOOS_Checkout_API_License_Store::get_by_key( 'does-not-exist' ) );
 	}
+
+	/**
+	 * The buyer email starts empty and can be recorded exactly once.
+	 *
+	 * @return void
+	 */
+	public function test_buyer_email_defaults_empty_and_is_set_once(): void {
+		NVOOS_Checkout_API_License_Store::create(
+			array(
+				'license_key'           => 'test-key-email',
+				'product'               => 'nvoos-content-graph-ai',
+				'site_url'              => 'https://customer.example',
+				'stripe_payment_intent' => 'pi_test_email',
+				'amount'                => 4900,
+			)
+		);
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_key( 'test-key-email' );
+		$this->assertSame( '', $license['buyer_email'] );
+
+		$this->assertTrue( NVOOS_Checkout_API_License_Store::set_buyer_email( 'test-key-email', 'buyer@example.com' ) );
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_key( 'test-key-email' );
+		$this->assertSame( 'buyer@example.com', $license['buyer_email'] );
+
+		// A second write targets zero rows (WHERE excludes filled values).
+		NVOOS_Checkout_API_License_Store::set_buyer_email( 'test-key-email', 'other@example.com' );
+		$license = NVOOS_Checkout_API_License_Store::get_by_key( 'test-key-email' );
+		$this->assertSame( 'buyer@example.com', $license['buyer_email'] );
+	}
+
+	/**
+	 * The buyer country starts empty and can be recorded exactly once.
+	 *
+	 * @return void
+	 */
+	public function test_buyer_country_defaults_empty_and_is_set_once(): void {
+		NVOOS_Checkout_API_License_Store::create(
+			array(
+				'license_key'           => 'test-key-country',
+				'product'               => 'nvoos-content-graph-ai',
+				'site_url'              => 'https://customer.example',
+				'stripe_payment_intent' => 'pi_test_country',
+				'amount'                => 4900,
+			)
+		);
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_key( 'test-key-country' );
+		$this->assertSame( '', $license['buyer_country'] );
+
+		$this->assertTrue( NVOOS_Checkout_API_License_Store::set_buyer_country( 'test-key-country', 'DE' ) );
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_key( 'test-key-country' );
+		$this->assertSame( 'DE', $license['buyer_country'] );
+
+		// A second write targets zero rows (WHERE excludes filled values).
+		NVOOS_Checkout_API_License_Store::set_buyer_country( 'test-key-country', 'FR' );
+		$license = NVOOS_Checkout_API_License_Store::get_by_key( 'test-key-country' );
+		$this->assertSame( 'DE', $license['buyer_country'] );
+	}
+
+	/**
+	 * Consent starts empty (NULL) and can be recorded exactly once.
+	 *
+	 * @return void
+	 */
+	public function test_terms_consent_defaults_null_and_is_set_once(): void {
+		NVOOS_Checkout_API_License_Store::create(
+			array(
+				'license_key'           => 'test-key-consent',
+				'product'               => 'nvoos-content-graph-ai',
+				'site_url'              => 'https://customer.example',
+				'stripe_payment_intent' => 'pi_test_consent',
+				'amount'                => 4900,
+			)
+		);
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_key( 'test-key-consent' );
+		$this->assertNull( $license['terms_agreed_at'] );
+
+		$this->assertTrue( NVOOS_Checkout_API_License_Store::set_terms_agreed( 'test-key-consent', '2026-09-09 12:00:00' ) );
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_key( 'test-key-consent' );
+		$this->assertSame( '2026-09-09 12:00:00', $license['terms_agreed_at'] );
+
+		// A second write targets zero rows (WHERE excludes filled values).
+		NVOOS_Checkout_API_License_Store::set_terms_agreed( 'test-key-consent', '2026-09-09 13:00:00' );
+		$license = NVOOS_Checkout_API_License_Store::get_by_key( 'test-key-consent' );
+		$this->assertSame( '2026-09-09 12:00:00', $license['terms_agreed_at'] );
+	}
 }

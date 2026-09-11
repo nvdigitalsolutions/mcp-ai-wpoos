@@ -112,7 +112,7 @@ class NV_oOS_Docs_Hub_Rebuild_Job_Source implements Interface_WP_MCP_AI_Cron_Sta
 				'progress'     => $progress,
 				'message'      => sprintf(
 					/* translators: %s: current rebuild phase name */
-					__( 'Docs Hub rebuild: %s', 'mcp-ai-wpoos' ),
+					__( 'Docs Hub rebuild: %s', 'nvoos-docs-hub' ),
 					$phase
 				),
 				'cancellable'  => false,

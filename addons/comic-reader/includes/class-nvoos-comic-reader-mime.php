@@ -34,6 +34,23 @@ class NV_oOS_Comic_Reader_Mime {
 	);
 
 	/**
+	 * Known magic-byte signatures for the supported archive formats.
+	 *
+	 * TAR is handled separately: it has no leading magic bytes and must be
+	 * detected by the `ustar` marker at offset 257.
+	 *
+	 * @var string[]
+	 */
+	const ARCHIVE_SIGNATURES = array(
+		"Rar!\x1A\x07\x00",     // RAR4 signature.
+		"Rar!\x1A\x07\x01\x00", // RAR5 signature.
+		"PK\x03\x04",           // ZIP local file header.
+		"PK\x05\x06",           // ZIP empty archive (EOCD).
+		"PK\x07\x08",           // ZIP spanned archive.
+		"7z\xBC\xAF\x27\x1C",   // 7-Zip signature.
+	);
+
+	/**
 	 * Register WordPress hooks.
 	 *
 	 * @return void
@@ -74,14 +91,14 @@ class NV_oOS_Comic_Reader_Mime {
 	 *
 	 * @since 0.2.0
 	 *
-	 * @param array  $data     Filetype data.
-	 * @param string $file     Full path to the file.
-	 * @param string $filename The name of the file.
-	 * @param array  $mimes    Allowed MIME types.
-	 * @param string $real_mime Real MIME type from finfo.
+	 * @param array  $data      Filetype data.
+	 * @param string $_file     Full path to the file (unused).
+	 * @param string $filename  The name of the file.
+	 * @param array  $_mimes    Allowed MIME types (unused).
+	 * @param string $_real_mime Real MIME type from finfo (unused).
 	 * @return array Modified filetype data.
 	 */
-	public static function fix_comic_filetype( $data, $file, $filename, $mimes, $real_mime ) {
+	public static function fix_comic_filetype( $data, $_file, $filename, $_mimes, $_real_mime ) {
 		$ext = strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) );
 
 		if ( ! isset( self::COMIC_MIME_MAP[ $ext ] ) ) {
@@ -120,5 +137,47 @@ class NV_oOS_Comic_Reader_Mime {
 	 */
 	public static function get_supported_extensions() {
 		return array_keys( self::COMIC_MIME_MAP );
+	}
+
+	/**
+	 * Validate that a file on disk is a real comic archive by inspecting its
+	 * magic bytes (not just its extension).
+	 *
+	 * @since 0.2.1
+	 *
+	 * @param string $path Absolute path to the uploaded file.
+	 * @return bool True when the file starts with a known archive signature
+	 *              (or a TAR `ustar` marker), false otherwise.
+	 */
+	public static function has_valid_archive_signature( $path ) {
+		if ( ! is_string( $path ) || '' === $path || ! is_readable( $path ) ) {
+			return false;
+		}
+
+		$handle = fopen( $path, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+		if ( ! $handle ) {
+			return false;
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+		$head = fread( $handle, 512 );
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+
+		if ( false === $head || '' === $head ) {
+			return false;
+		}
+
+		// TAR: `ustar` magic lives at offset 257 of the 512-byte header block.
+		if ( strlen( $head ) >= 262 && 'ustar' === substr( $head, 257, 5 ) ) {
+			return true;
+		}
+
+		foreach ( self::ARCHIVE_SIGNATURES as $signature ) {
+			if ( 0 === strncmp( $head, $signature, strlen( $signature ) ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }

@@ -7,9 +7,11 @@ use WP_Error;
 
 use function is_wp_error;
 use function json_decode;
+use function sanitize_email;
 use function sanitize_text_field;
 use function trailingslashit;
 use function wp_json_encode;
+use function wp_remote_get;
 use function wp_remote_post;
 use function wp_remote_retrieve_body;
 use function wp_remote_retrieve_response_code;
@@ -48,10 +50,63 @@ class Vendor {
 	 * @since 1.0.4
 	 *
 	 * @return array<string,mixed>|WP_Error
-	 *   array{client_secret: string, publishable_key: string, amount: int, currency: string, test_mode: bool}
+	 *   array{client_secret: string, publishable_key: string, amount: int, currency: string, test_mode: bool, terms_url: string, refund_policy_url: string}
 	 */
 	public function createSession() {
 		return $this->post( 'session', Payments::purchasePayload() );
+	}
+
+	/**
+	 * Ping the vendor's public health endpoint.
+	 *
+	 * Cheap connectivity probe used by the diagnostics route
+	 * (`GET /payments/health`): it never creates a Stripe intent and
+	 * never consumes a session/verify throttle token on either side, so
+	 * admins can poll it while debugging without triggering the
+	 * "Too many checkout attempts" lockout.
+	 *
+	 * @since 1.0.7
+	 *
+	 * @return array<string,mixed>|WP_Error
+	 *   array{status: string, service: string, version: string, configured: bool, server_time: int}
+	 */
+	public function health() {
+		$response = wp_remote_get(
+			$this->baseUrl . 'health',
+			array( 'timeout' => 10 )
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'nvoos_content_graph_vendor_unreachable',
+				sprintf(
+					/* translators: %s: error message. */
+					__( 'Could not reach the checkout service: %s', 'nvoos-content-graph' ),
+					$response->get_error_message()
+				),
+				array( 'status' => 502 )
+			);
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( $code < 200 || $code >= 300 || ! is_array( $data ) ) {
+			return new WP_Error(
+				'nvoos_content_graph_vendor_error',
+				sprintf(
+					/* translators: %d: HTTP status code. */
+					__( 'The checkout service returned an error (HTTP %d).', 'nvoos-content-graph' ),
+					$code
+				),
+				array(
+					'status' => $code >= 400 && $code < 500 ? $code : 502,
+					'vendor' => true,
+				)
+			);
+		}
+
+		return $data;
 	}
 
 	/**
@@ -60,12 +115,25 @@ class Vendor {
 	 * @since 1.0.4
 	 *
 	 * @param string $paymentIntentId Stripe PaymentIntent ID (pi_…).
+	 * @param int    $termsAgreedAt   Unix timestamp of the buyer's consent
+	 *                                to the Terms of Service (0 = absent).
+	 * @param string $buyerEmail      Buyer's receipt/refund email ('' = absent).
+	 * @param string $buyerCountry    Buyer's ISO country code ('' = absent).
 	 * @return array<string,mixed>|WP_Error
 	 *   array{license_key: string, download_url: string, addon_version: string, amount: int, currency: string}
 	 */
-	public function verify( string $paymentIntentId ) {
+	public function verify( string $paymentIntentId, int $termsAgreedAt = 0, string $buyerEmail = '', string $buyerCountry = '' ) {
 		$payload                   = Payments::purchasePayload();
 		$payload['payment_intent'] = $paymentIntentId;
+		if ( $termsAgreedAt > 0 ) {
+			$payload['terms_agreed_at'] = $termsAgreedAt;
+		}
+		if ( '' !== $buyerEmail ) {
+			$payload['buyer_email'] = sanitize_email( $buyerEmail );
+		}
+		if ( '' !== $buyerCountry ) {
+			$payload['buyer_country'] = strtoupper( sanitize_text_field( $buyerCountry ) );
+		}
 		return $this->post( 'verify', $payload );
 	}
 

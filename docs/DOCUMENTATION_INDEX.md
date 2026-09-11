@@ -1,13 +1,25 @@
 # NV oOS Documentation Index
 
-**Last Updated:** September 5, 2026
-**Plugin Version:** 1.1.71
+**Last Updated:** September 11, 2026
+**Plugin Version:** 1.1.77
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
+
+> **SEPTEMBER 11, 2026 UPDATE (v1.1.77):** MODEL-REFRESH, BASE+PRO & CHECKOUT-LAUNCH RELEASE. **DEEPSEEK V4.1 FLASH CATALOG REFRESH** (PR #6555) — NEW `deepseek-flash` (VISION, $0.15/$0.60 OFF-PEAK); V4 FLASH + V4 FLASH VISION EXP RETIRED; V4 PRO DEPRECATED (SUNSET 2026-09-14, FALLBACK `deepseek-flash`); MIGRATION MAP REWRITES ALL SIX LEGACY DEEPSEEK IDS; **PEAK/OFF-PEAK PRICING** LANDS IN THE COST CALCULATOR (`PEAK_WINDOWS`, `is_peak_time()`, `calculate_cost_at()` — LEGACY `calculate_cost()` TIME-INDEPENDENT). **KNOWLEDGE GRAPH COMPANION PRESET** (PR #6570) — FEATURED, AUTO-SELECTED WHEN A CONTENT GRAPH IS DETECTED, 20 BASE TOOLS + 14 `graphify_*` TOOLS WHEN ENABLED. **BASE+PRO GATING FIXED** (PR #6561) — PRO TOOLKITS NOW LOAD IN BASE+PRO INSTALLS (ALL 21 INIT GATES + ~550 TOOL GATES); NEW 15-TEST `tests/basepro/` MATRIX + CI JOB. **PRO WP-CLI LOAD-ORDER GUARD** (PR #6585) — NO MORE `WP_MCP_AI_PATH` FATAL WHEN PRO ACTIVATES FIRST. **MEMORY CCT PHANTOM SLUG FIXED** (PR #6591) — GRAPHIFY + RETENTION READ CANONICAL `ai_agent_memories` (SWEEPS, CAPS, PRUNING, HEALTH STATS WORK). **CHECKOUT LAUNCH COMPLETE** (PRs #6568/#6571/#6573/#6587–#6594) — CHECKOUT API **0.1.0 → 0.1.1** (BOOLEAN SERIALIZATION FIX, 424/502 CONTRACT, CONNECTION TEST, `GET /health`); CONTENT GRAPH **1.0.6 → 1.0.7** (CCT SOURCES + STATUS NOTES, TRUST MODAL, STRIPE ELEMENT + RELEASE-TAG FIXES). **SECURITY** — SHARP/NODEMAILER/JOI/POSTCSS-SELECTOR-PARSER BUMPS (#6592); BUILD PUBLISH RACE FIX (#6593). **WAVE G** (PRs #6551–#6584) — LAW-FIRM, CRE-DEBT, QUIZ, ECA, CHAT-CHANNELS COMPLETE; PLACES STARTS. TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.75 BUILD ZIPS REMOVED (30 FILES). UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
+
+> **SEPTEMBER 10, 2026 UPDATE (v1.1.76):** SCHEDULED-DELIVERY, CHECKOUT-LAUNCH & ECOSYSTEM-PORT RELEASE. **CHAT DELIVERY FULL REPORT + PER-CHANNEL FORMATS** (PR #6525) — ALL CHAT CHANNELS SUPPORT THE `full` TEMPLATE WITH PER-CHANNEL `format` (TELEGRAM `html`/`markdown`/`markdown_v2`/`plain` VIA `send_telegram_message` + BOT API PARSE MODE; WHATSAPP/SLACK/DISCORD/TEAMS `markdown`/`plain`; MESSENGER/GOOGLE CHAT `plain`); **DUPLICATE-SUMMARY FIX** (PR #6548) — `full` TEMPLATES NO LONGER PRINT THE ASSISTANT HEADER TWICE. **COMIC CREATION TOOLKIT TOGGLE REGISTERED** (PR #6512) — THE 12-TOOL TOOLKIT CAN FINALLY BE ENABLED. **CHECKOUT LAUNCH SERIES** (PRs #6507/#6520/#6523/#6550) — REQUIRED TOS/REFUND CONSENT + BUYER EMAIL, EU BILLING-ADDRESS BLOCK (`buyer_country`), STRIPE PRODUCT/PRICE METADATA + STATEMENT DESCRIPTOR, MANUAL-INSTALL-FIRST, AND THE FULL `docs/legal/` SET (PRIVACY, AUP, CLICKWRAP, COMPLIANCE CHECKLIST, UPDATED TOS). **PLAYBOOK SEEDER IDEMPOTENCY** (DIRECT COMMIT) — CONTENT HASH IGNORES THE PER-SECOND `Generated:` HEADER. **SECURITY SWEEPS** (PRs #6515/#6532/#6546) — 11 DEPENDABOT ALERTS CLOSED (TIPTAP, MULTER, CSV-PARSE, REACT-ROUTER-DOM, SVGO CVE-2026-84370, HONO, VITEST) + SCHEDULE-ANYTHING-SPA BUILD UNBLOCKED; DOCS-HUB WP.ORG ZIP STOPS SHIPPING DEV MARKDOWN (#6504). **WAVE F2 COMPLETES TEN `nvoos-content-graph-pro` CLUSTERS** (PRs #6505–#6549) — SITE-CREATOR (33 TOOLS), DOCUMENT-GENERATION, REGULATORY-REGISTRATION, HEALTHCARE (9 BATCHES), LAW-FIRM, IMAGE-PRODUCTION, COMIC-CREATION, DJ-MANAGEMENT, AI-TOOL-BUILDER, ARCHITECT-AGENT, ARCHITECTURAL-DESIGN. **NEW `mcp-ai-wpoos-ecosystem-port` SKILL — CODING-TIME SKILLS 55 → 56.** TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.74 BUILD ZIPS REMOVED (30 FILES). UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
+
+> **SEPTEMBER 9, 2026 UPDATE (v1.1.75):** SCHEDULED-DELIVERY & ECOSYSTEM-PORT RELEASE. **TELEGRAM BROADCAST CREDENTIALS FIX** (PR #6482) — INLINE CREDENTIALS STORED AS JSON STRINGS NO LONGER FATAL THE ARRAY-TYPED BROADCAST TOOL (`normalize_channel_credentials()` DECODES/REJECTS; PER-CHANNEL `failures` REPAIR SAVED SCHEDULES; REAL REMOTE SITES SCHEMA MAPPING WITH DECRYPTED `api_key`/`token`). **SCHEDULED DELIVERY CREDENTIAL FALLBACK** (PR #6488) — NEW TIER-4 FALLBACK RESOLVES THE FIRST ENABLED REMOTE SITES CONNECTION OF THE CHANNEL TYPE (ASSISTANT-ASSIGNED PREFERRED); BROADCAST CAPABILITY WAIVED FOR THE INTERNAL `pro_schedule_manager_result_delivery` CONTEXT ONLY; `create_pro_schedule`/`update_pro_schedule` + `POST /mcp-ai-pro/v1/schedules` ACCEPT `result_delivery`; DIAGNOSTICS NEVER CARRY SECRETS. **CONTENT GRAPH MEMORY BRIDGE + NV OOS COMPLETE CHECKOUT** (PR #6486) — MEMORIES PROJECT INTO THE STANDALONE GRAPH BEHIND A NEW `wp_mcp_ai_wake_up_context_graph_retriever` FILTER SEAM; THE CHECKOUT SELLS THE COMPLETE BUNDLE (BASE + PRO) WITH A CONFLICT GUARD; NVOOS-CONTENT-GRAPH **1.0.4 → 1.0.6**. **WAVE F2 COMPLETES THE FINANCIAL-PLANNING, SOCIAL-MEDIA, AND MCP-SERVERS TOOLKIT PORTS** IN `nvoos-content-graph-pro` (16 + 32 TOOLS, ALL 33 MCP SERVERS) PLUS REMOTE-SITES/VIDEO-PRODUCTION/ANALYTICS/MULTILINGUAL/CLOUDWAYS/DJ-MANAGEMENT/IMAGE-PRODUCTION SLICES (PRs #6476–#6502). TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.73 + CONTENT-GRAPH 1.0.4 BUILD ZIPS REMOVED. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
+
+> **SEPTEMBER 8, 2026 UPDATE (v1.1.74):** CALENDAR, SCHEDULING & ECOSYSTEM-PORT RELEASE. **GOOGLE CALENDAR DATE-QUERY FIX** (PR #6460) — EVERY QUERY VALUE IS `rawurlencode()`D BEFORE `add_query_arg()` (THE RAW `+` IN RFC3339 OFFSETS WAS DECODED AS A SPACE, 400-ING ALL `time_min`/`time_max` QUERIES); `calendar.freebusy` JOINS THE STANDARD SCOPE PROFILE (NEW GRANTS ONLY). **RESULT DELIVERY EMAIL FORMATS** (PR #6465) — NEW `WP_MCP_AI_Markdown_Converter` (ESCAPED + `wp_kses`-ALLOWLISTED + PROTOCOL-ALLOWLISTED LINKS; RAW ASSISTANT HTML NEUTRALIZED) + PER-CHANNEL `format` SETTING (`both` DEFAULT | `html` | `markdown`), NODEMAILER MULTIPART + `wp_mail` FALLBACK. **SCHEDULE MANAGER ASSISTANT-PROMPT EDITING** (PR #6469) — EDIT MODAL SHOWS/UPDATES THE PROMPT FOR `assistant_run` SCHEDULES; `update_pro_schedule` ACCEPTS `assistant_config` VIA MCP. **WAVE F2 COMPLETES THE PM + CALENDAR-BOOKING TOOLKIT PORTS** IN `nvoos-content-graph-pro` (PRs #6450–#6472). **TEST/CI** — PERF-SUITE MCP-ABILITIES FAILURE FIXED PROCESS-WIDE IN `tests/bootstrap.php` (#6470, SUPERSEDES #6464); CONTENT-GRAPH-PRO EXCLUDED FROM THE ROOT WPCS GATE (#6457). TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.72 BUILD ZIPS REMOVED. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
+
+> **SEPTEMBER 8, 2026 UPDATE (v1.1.73):** WOO TOOL UPGRADES & ECOSYSTEM-PORT RELEASE. **`bulk_update_products` VARIABLE-SCOPE EXPANSION** (PR #6447) — NEW `scope` ARG (`all` DEFAULT | `product` LEGACY) EXPANDS PRICE/STOCK FIELDS FROM VARIABLE PARENTS TO VARIATIONS AND GROUPED PARENTS TO CHILDREN VIA `resolve_update_targets()`, RE-SYNCS VARIABLE PARENTS, AND REPORTS `targets[]` PER INPUT ID (+ `scope`/`updated_targets` KEYS; STATUS/FEATURED/CATEGORY/TAG ALWAYS APPLY TO THE SELECTED PRODUCT). **`update_woo_product_qty` `notify` FLAG** (PR #6448) — DEFAULT `true`; `false` SUPPRESSES LOW/NO-STOCK EMAILS FOR THE WRITE VIA `finally`-SCOPED `woocommerce_should_send_*` FILTERS (THE `woocommerce_*_stock` ACTIONS STILL FIRE). **ASYNC JOB QUEUE TABLE BOOTSTRAP FIX** (PR #6423) — THE QUEUE CLASS NOW BOOTS IN TIME TO CREATE ITS TABLE (ACTIVATION + FIRST-LOAD SELF-HEAL; `get_queue_stats()` FAILS SOFT), ENDING THE MISSING-TABLE SQL FLOODS. **COMIC READER 0.2.0 → 0.5.0** KOMPA-PARITY UPGRADE (PR #6402). **ECOSYSTEM WAVE F2** (PRs #6397–#6445, #6449) — NEW `nvoos-content-graph-pro` STANDALONE ADDON (V1.0.0) WITH BYTE-IDENTICAL PRO CRM + E-COMMERCE PORTS (43 E-COMMERCE TOOLS); **DOCS HUB 0.4.3** WP.ORG PREP. **DOCS/TOOLING** — NEW `mcp-ai-wpoos-wporg-submission` SKILL (SKILLS → 55) + PLUGIN-CHECK GATE REPAIR (#6418); USE-CASES REV 3.0 (#6443); BROKEN-LINK FIXES (#6446); SYNC WORKFLOWS (#6439). TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE COMIC-READER 0.2.0 + DOCS-HUB 0.4.2 BUILD ZIPS REMOVED. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
+
+> **SEPTEMBER 7, 2026 UPDATE (v1.1.72):** E-COMMERCE & ECOSYSTEM-PORT RELEASE. **TWO NEW WOO TOOLS** (PR #6388) — `update_woo_product_price` (REGULAR/SALE, ALL PRODUCT TYPES) + `update_woo_product_qty` (STOCK + MANAGEMENT) ON A SHARED `WP_MCP_AI_Woo_Price_Qty_Updater` TRAIT (ALSO USED BY `bulk_update_products`). **SCHEDULED SYNC FIX** (PR #6386) — EZuite/FlowHub SCHEDULED SYNCs DELIVER THEIR ASSIGNED CONNECTION ID (THE SCHEDULED ACTION WAS DROPPING IT). **PRO UPDATE VENDOR INTEGRITY** (PR #6338) — "Update Pro Now" VERIFIES THE PRO PACKAGE'S `vendor/` BEFORE/AFTER UPDATING (NO WHITE-SCREENS). **CONTAINER BINDING FIX** (PR #6339) — `tool_registry` RESOLVES THE LIVE SINGLETON ON EVERY `get()`. **DEPENDENCY SECURITY** (PR #6365) — `browserslist` + `qs` PATCHED ACROSS ALL SEVEN LOCKFILES (12 DEPENDABOT ALERTS). **GPT-IMAGE-2 EVERYWHERE** (PR #6332) — OPENAI IMAGE DEFAULT ALIGNED ACROSS ALL THREE SETTINGS LAYERS. **ECOSYSTEM PORT WAVES** (PRs #6330–#6387) — WAVE D8 CLOSES THE STANDALONE TOOL-EXECUTION GAP IN CONTENT GRAPH AI; WAVE E6 PORTS SHADOW/MARKUP/PAPER STORE/OKF/CRAWLER/OOS-BRIDGE INTO THE AI ADDON; THE PLATFORM ADDON CLOSES WAVES E2/E3/E5/E1/E4 + E-UI-1/2/3 ADMIN SCREENS; `nvoos-content-graph` HARDENED FOR WP.ORG. TOOL COUNT: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.70 + 1.1.71 BUILD ZIPS REMOVED. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
 > **SEPTEMBER 5, 2026 UPDATE (v1.1.71):** RATE-LIMIT, MODEL-CATALOG & ECOSYSTEM. **REST RATE-LIMIT UNLOCK** (PR #6322) — `check_rate_limit()` NOW USES FIXED-WINDOW ACCOUNTING (HONEST REMAINING-TIME `retry_after`, NO INFINITE SLIDE; LEGACY TRANSIENTS NORMALIZED) AND FIRES `wp_mcp_ai_rest_request_rate_limit_exceeded` SO THE RESTRICTION REGISTRY FLAGS BLOCKED USERS INTO THE RESTRICTIONS TAB + TOKEN MANAGER WITH THE LIFT BUTTON (LIFT CLEARS THE REQUEST WINDOW; GUEST IP-KEYED BLOCKS EXPIRE ON THEIR OWN). **MEMPALACE WING-SCOPE ENFORCEMENT** (PR #6327) — `matches_wake_filters()` APPLIES `wing`/`room` EXCLUSIONS (GRAPHIFY ANCHORS ONLY BOOST, NEVER EXCLUDE). **CHECKOUT API INTO THE PIPELINE** (PR #6315) — ADDON BUILD ZIP + MAIN-SUITE TESTS; TOKEN/CRYPTO CLASSES USE `wp_salt()` (NO RAW SALT CONSTANTS). **CONNECTORS LINKS** → `options-connectors.php` (PR #6314). **SEPTEMBER 2026 MODEL CATALOG** (PR #6328) — 228 MODELS (GPT-5.6 FAMILY, GPT-6-ASTRA, GPT-IMAGE-2, CLAUDE-OPUS-5, GEMINI-3.6/3.7/3.8-FLASH, KIMI-K3), RETIRED DEEPSEEK/GEMINI-3.1-FLASH/IMAGEN-4 IDs WITH MIGRATION-MAP SUCCESSORS, PRICING DRIFT FIXES, NEW DEFAULTS (`gemini-3.6-flash`, `gpt-image-2`, `kimi-k3`). **CONTENT GRAPH ECOSYSTEM** — STANDALONE PLUGIN 1.0.4 VISUAL EXPERIENCE (THEME ENGINE, APPEARANCE TAB, SVG GLYPHS, EXPLORER CHROME, EDGES ROUTE, EXPORT, CHECKOUT FALLBACK, PR #6318); CONTENT GRAPH AI ASSISTANT-BUILDER BLOCKS + SETTINGS SHELL (PRs #6316/#6317); PLATFORM WAVE E2 QUEUE LAYER (ASYNCJOBQUEUE → QUEUEMANAGER → JOBQUEUEMANAGER → DEADLETTERQUEUE, PRs #6319–#6321/#6325). **NEW `mcp-ai-wpoos-updates` SKILL** — CODING-TIME SKILLS 53 → 54 (PRs #6323/#6324). TEST-SUITE SKILL → 40 PATTERNS. STALE 1.1.68 + 1.1.69 BUILD ZIPS REMOVED. TOOL COUNT UNCHANGED: ~303 BASE + ~1,263 PRO (~1,566 TOTAL). UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 >
@@ -167,6 +179,8 @@ This document provides a comprehensive index of all documentation available for 
 > - **Phase 7c — Session Replay tab + route** — `GET /mcp-ai/v1/chat-memory/sessions/{session_id}` endpoint + drawer integration.
 > - **Coverage** — REST + JS tests for session replay route, service, and drawer behavior.
 > - **Versioning** — bumped to 1.1.20 across all manifests.
+
+> **📌 SEPTEMBER 8, 2026 DOCUMENTATION REFRESH (v1.1.72):** `docs/getting-started/USE_CASES_AND_QUICKSTARTS.md` refreshed to independent doc revision 3.0 with `docs/getting-started/_USE_CASES_FACT_SHEET.md` (Rev 3.0) as the companion source for point-in-time counts. Current public framing: ~1,568 tools (~303 base + ~1,265 Pro), ~190 profession templates, 10 GA SPA-manifested Pro toolkits, 31 Pro toolkits, 33 toolkit MCP servers, 74 base + 41 Pro bundled skills, 15 shipping providers, and model catalog `2026.09.05` (228 models); the live registry remains authoritative. New coverage: Google Workspace, Vision Analysis, Workflow Builder + Pro Schedule Manager, Deep Research, Pro SPA v2, Content Graph ecosystem, Chat SPA 0.7.0 (Phase 8), Docs Hub 0.4.3.
 
 > **📌 MAY 17, 2026 DOCUMENTATION REFRESH:** `docs/getting-started/USE_CASES_AND_QUICKSTARTS.md` was refreshed to independent doc revision 2.0 and now cites `docs/getting-started/_USE_CASES_FACT_SHEET.md` as the companion source for point-in-time counts. Current public framing is ~830 tools (~195 base + ~635 Pro), ~190 profession templates, 10 GA SPA-manifested Pro toolkits, and model catalog `2026.05.04`; the live registry remains authoritative.
 
@@ -636,6 +650,77 @@ n#### New Audit & Compliance Docs
 - **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.39 latest updates section, version bump, duplicate section cleanup.
 
 ---
+
+## 🆕 September 2026 — v1.1.77: DeepSeek V4.1 Flash, Base+Pro Gating, Checkout Launch
+
+### New and updated documents (September 11, 2026, v1.1.77)
+
+- **[docs/project/plans/v1.1.77-docs-catch-up.md](project/plans/v1.1.77-docs-catch-up.md)** ⭐ **NEW** — v1.1.77 docs & release catch-up plan (PRs #6551–#6594, full PR-description review + housekeeping). (September 11, 2026)
+- **[docs/reference/models/model-update-process-2026-07.md](reference/models/model-update-process-2026-07.md)** ⭐ **UPDATED** — "This Month's Changes (September 10, 2026)" section records the DeepSeek V4.1 Flash refresh (PR #6555). (September 10, 2026)
+- **[docs/reference/models/keeping-the-model-catalog-up-to-date.md](reference/models/keeping-the-model-catalog-up-to-date.md)** ⭐ **UPDATED** — "Last reviewed" bump (PR #6555). (September 10, 2026)
+- **[plugins/nvoos-content-graph/README.md](../plugins/nvoos-content-graph/README.md)** ⭐ **UPDATED** — v1.0.7: `GET /payments/health` listed in the commerce section (PR #6590). (September 11, 2026)
+- **[plugins/nvoos-content-graph/docs/commerce-vendor-api.md](../plugins/nvoos-content-graph/docs/commerce-vendor-api.md)** ⭐ **UPDATED** — `GET /health` contract, 424/502 error semantics, boolean serialization requirement (PR #6590). (September 11, 2026)
+- **[addons/checkout-api/README.md](../addons/checkout-api/README.md)** ⭐ **UPDATED** — v0.1.1 status + `GET /health` endpoint row + error-status contract + setup self-check step (PR #6590). (September 11, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.77 highlights + latest updates (DeepSeek refresh, base+pro gating, checkout launch, Wave G, ~1,568 tools, 56 skills). (September 11, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.77] section with PR-level detail. (September 11, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.77 + changelog entry. (September 11, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.77 entry. (September 11, 2026)
+
+## 🆕 September 2026 — v1.1.76: Chat Delivery Formats, Checkout Launch, Security Sweeps, Wave F2 Completions
+
+### New and updated documents (September 10, 2026, v1.1.76)
+
+- **[docs/project/plans/v1.1.76-docs-catch-up.md](project/plans/v1.1.76-docs-catch-up.md)** ⭐ **NEW** — v1.1.76 docs & release catch-up plan (PRs #6504–#6550, full PR-description review + skill bookkeeping + housekeeping). (September 10, 2026)
+- **[docs/legal/PRIVACY-POLICY.md](legal/PRIVACY-POLICY.md)** ⭐ **NEW** — US-focused (CCPA/CPRA + GDPR-aware) privacy policy with the "What We Do Not Collect" self-hosted section. (September 10, 2026)
+- **[docs/legal/ACCEPTABLE-USE-POLICY.md](legal/ACCEPTABLE-USE-POLICY.md)** ⭐ **NEW** — AI-specific acceptable-use policy (high-risk prohibitions, FTC disclosure duties). (September 10, 2026)
+- **[docs/legal/CLICKWRAP-IMPLEMENTATION.md](legal/CLICKWRAP-IMPLEMENTATION.md)** ⭐ **NEW** — Clickwrap enforcement guide (WooCommerce checkout, order-meta consent mu-plugin, policy versioning). (September 10, 2026)
+- **[docs/legal/COMPLIANCE-CHECKLIST.md](legal/COMPLIANCE-CHECKLIST.md)** ⭐ **NEW** — Pre-launch compliance tracker (Florida LLC: FDUTPA/FIPA, ISO generative-AI exclusions, recurring calendar). (September 10, 2026)
+- **[docs/legal/TERMS-OF-SERVICE.md](legal/TERMS-OF-SERVICE.md)** ⭐ **UPDATED** — §8.4 AI-output disclaimer, Florida governing law, AUP/privacy incorporation. (September 10, 2026)
+- **[docs/legal/REFUND-POLICY.md](legal/REFUND-POLICY.md)** ⭐ **NEW** — 30-day money-back guarantee with processing, refund-effects, abuse, and chargeback sections. (September 9, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.76 highlights + latest updates (delivery formats, checkout launch, security sweeps, Wave F2 completions, ~1,568 tools, 56 skills). (September 10, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.76] section with PR-level detail. (September 10, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.76 + changelog entry. (September 10, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.76 entry. (September 10, 2026)
+
+## 🆕 September 2026 — v1.1.75: Telegram Delivery Fixes, Memory Bridge + Complete Checkout, Wave F2 Toolkit Completions
+
+### New and updated documents (September 9, 2026, v1.1.75)
+
+- **[docs/project/plans/v1.1.75-docs-catch-up.md](project/plans/v1.1.75-docs-catch-up.md)** ⭐ **NEW** — v1.1.75 docs & release catch-up plan (PRs #6476–#6502, full PR-description review + housekeeping). (September 9, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.75 highlights + latest updates (delivery credential fixes, memory bridge + Complete checkout, Wave F2 toolkit completions, ~1,568 tools). (September 9, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.75] section with PR-level detail. (September 9, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.75 + changelog entry. (September 9, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.75 entry. (September 9, 2026)
+
+## 🆕 September 2026 — v1.1.74: Calendar Query Fix, Email Formats, Assistant-Prompt Editing, PM + Calendar Ports
+
+### New and updated documents (September 8, 2026, v1.1.74)
+
+- **[docs/project/plans/v1.1.74-docs-catch-up.md](project/plans/v1.1.74-docs-catch-up.md)** ⭐ **NEW** — v1.1.74 docs & release catch-up plan (PRs #6450–#6472, full PR-description review + housekeeping). (September 8, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.74 highlights + latest updates (calendar query fix, email formats, assistant-prompt editing, PM + calendar ports, ~1,568 tools). (September 8, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.74] section with PR-level detail. (September 8, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.74 + changelog entry. (September 8, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.74 entry. (September 8, 2026)
+
+## 🆕 September 2026 — v1.1.73: Woo Tool Upgrades, Queue Bootstrap Fix, Wave F2 + Content Graph Pro
+
+### New and updated documents (September 8, 2026, v1.1.73)
+
+- **[docs/project/plans/v1.1.73-docs-catch-up.md](project/plans/v1.1.73-docs-catch-up.md)** ⭐ **NEW** — v1.1.73 docs & release catch-up plan (PRs #6397–#6449, full PR-description review + housekeeping). (September 8, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.73 highlights + latest updates (Woo tool upgrades, queue bootstrap fix, Wave F2 + content-graph-pro, ~1,568 tools). (September 8, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.73] section with PR-level detail. (September 8, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.73 + changelog entry. (September 8, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.73 entry. (September 8, 2026)
+
+## 🆕 September 2026 — v1.1.72: Woo Price/Qty Tools, Scheduled-Sync Fix, Ecosystem Port Waves
+
+### New and updated documents (September 7, 2026, v1.1.72)
+
+- **[docs/project/plans/v1.1.72-docs-catch-up.md](project/plans/v1.1.72-docs-catch-up.md)** ⭐ **NEW** — v1.1.72 docs & release catch-up plan (PRs #6330–#6388, full PR-description review + housekeeping). (September 7, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.72 highlights + latest updates (Woo tools, sync fix, ecosystem port waves, ~1,568 tools). (September 7, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.72] section with PR-level detail. (September 7, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.72 + changelog entry. (September 7, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.72 entry. (September 7, 2026)
 
 ## 🆕 September 2026 — v1.1.71: Rate-Limit Unlock, September Model Catalog, Content Graph 1.0.4, Wave E2 Queue Layer
 
@@ -1704,11 +1789,11 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [README.md](../README.md) | Main plugin documentation with features, installation, and usage | Everyone |
-| [USE_CASES_AND_QUICKSTARTS.md](getting-started/USE_CASES_AND_QUICKSTARTS.md) | **NEW:** Comprehensive use cases and quickstart guides covering 7 major categories (41KB) | Everyone |
+| [USE_CASES_AND_QUICKSTARTS.md](getting-started/USE_CASES_AND_QUICKSTARTS.md) | Comprehensive use cases and quickstart guides — 14+ categories including Google Workspace, Vision Analysis, Workflow Builder, Deep Research, Chat SPA, and Pro SPA (Rev 3.0) | Everyone |
 | [QUICK_START_5_MINUTES.md](getting-started/QUICK_START_5_MINUTES.md) | 5-minute quick start guide from zero to first chat | Beginners |
 | [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) | Complete setup checklist for new installations | Admins |
 | [BEST_PRACTICES.md](developer/best-practices/BEST_PRACTICES.md) | Recommended practices for using NV oOS | All Users |
-| **Onboarding Wizard** (built-in) | ⭐ **NEW:** 4-step Getting Started wizard at `/wp-admin/admin.php?page=wp-mcp-ai-getting-started`. 8 use-case presets seed fully-configured assistants with tools, system prompts, and temperatures. WCAG 2.1 accessible. See [README.md](../README.md#-installation). | Everyone |
+| **Onboarding Wizard** (built-in) | ⭐ **NEW:** 4-step Getting Started wizard at `/wp-admin/admin.php?page=wp-mcp-ai-getting-started`. 8 use-case presets seed fully-configured assistants with tools, system prompts, and temperatures. When the NV oOS Content Graph (or the bundled Graphify addon) is detected, a featured **Knowledge Graph Companion** is also offered — shown first and auto-selected. WCAG 2.1 accessible. See [README.md](../README.md#-installation). | Everyone |
 
 ### Architecture & Design
 

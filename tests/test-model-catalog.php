@@ -165,6 +165,8 @@ class Test_Model_Catalog extends WP_UnitTestCase {
 			'gemini-3-pro-preview',
 			'claude-3-opus-20240229',
 			'claude-mythos-preview',
+			'deepseek-v4-flash',
+			'deepseek-v4-flash-vision-exp',
 		);
 
 		foreach ( $removed as $id ) {
@@ -275,9 +277,7 @@ class Test_Model_Catalog extends WP_UnitTestCase {
 			'gemini-2.5-pro',
 			'gemini-2.5-flash',
 			// DeepSeek fallback list.
-			'deepseek-v4-flash',
-			'deepseek-v4-pro',
-			'deepseek-v4-flash-vision-exp',
+			'deepseek-flash',
 			// Kimi fallback list.
 			'kimi-k3',
 			'kimi-k2.7-code',

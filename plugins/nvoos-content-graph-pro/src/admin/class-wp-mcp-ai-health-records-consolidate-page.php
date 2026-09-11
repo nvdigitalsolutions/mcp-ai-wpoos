@@ -1,0 +1,1885 @@
+<?php
+/**
+ * class-wp-mcp-ai-health-records-consolidate-page.php (ecosystem port — Wave F4, healthcare admin slice).
+ *
+ * Ported from the base Pro addon's `addons/pro/includes/admin/class-wp-mcp-ai-health-records-consolidate-page.php` for the
+ * standalone `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro addon owns the
+ * class in monolith installs — the addon boots nothing when `WP_MCP_AI_PRO_PATH` is defined
+ * (see the plugin entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain `nvoos-content-graph-pro`;
+ * `NVOOS_CONTENT_GRAPH_PRO_*` constant swaps (incl. the `defined( 'WP_MCP_AI_PRO_VERSION' )`
+ * base-mode gates — the addon constant is always defined standalone, so the ternary yields
+ * the addon version); the base-owned `__DIR__` trait requires and the
+ * cpt-settings-base/research-add-base requires resolve from the addon's already-ported
+ * `src/admin/` copies.
+ *
+ * @package NvoosContentGraphPro
+ * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Health Records Consolidation Admin Page
+ */
+class WP_MCP_AI_Health_Records_Consolidate_Page {
+
+	/**
+	 * Page slug.
+	 *
+	 * @var string
+	 */
+	const PAGE_SLUG = 'health-records-consolidate';
+
+	/**
+	 * Default tools for health consolidation chat interface.
+	 *
+	 * Covers all USCDI data classes and full CPT CRUD for data entry.
+	 *
+	 * @var array
+	 */
+	const CHAT_TOOLS = array(
+		// Member management (USCDI: Patient Demographics).
+		'create_member',
+		'get_member',
+		'list_members',
+		'update_member',
+		'delete_member',
+		'get_member_health_summary',
+		// Policy/insurance management (USCDI: Insurance Coverage — FHIR Coverage).
+		'create_policy',
+		'get_policy',
+		'list_policies',
+		'update_policy',
+		'delete_policy',
+		'search_policies',
+		'research_policy',
+		// Medical records (USCDI: Problems/Conditions — FHIR Condition/ICD-10).
+		'create_medical_record',
+		'get_medical_record',
+		'list_medical_records',
+		'update_medical_record',
+		'delete_medical_record',
+		'search_medical_records',
+		// Checkups (USCDI: Encounters — FHIR Encounter).
+		'create_checkup',
+		'get_checkup',
+		'list_checkups',
+		'update_checkup',
+		'delete_checkup',
+		'get_upcoming_checkups',
+		// Prescriptions (USCDI: Medications — FHIR MedicationStatement/NDC/RxNorm).
+		'create_prescription',
+		'get_prescription',
+		'list_prescriptions',
+		'update_prescription',
+		'delete_prescription',
+		'search_prescriptions',
+		// Allergies (USCDI: Allergies & Intolerances — FHIR AllergyIntolerance).
+		'create_allergy',
+		'get_allergy',
+		'list_allergies',
+		'update_allergy',
+		'delete_allergy',
+		// Vital signs (USCDI: Vital Signs — FHIR Observation/LOINC CCT storage).
+		'log_vital_signs',
+		'import_vitals',
+		// Immunizations (USCDI: Immunizations — FHIR Immunization).
+		'track_vaccinations',
+		// Specialized health tools.
+		'get_medication_schedule',
+		'create_health_reminder',
+		'log_health_metrics',
+		'generate_health_chart',
+		'analyze_loop_health',
+		// Data operations & interoperability.
+		'export_fhir_data',
+		'manage_care_plan',
+		'compile_health_research_data',
+		// AI-assisted data entry (agentic flow — USCDI-aligned completeness).
+		'guide_health_record_creation',
+		'parse_health_information',
+		// Document processing tools (from Document Generation toolkit).
+		'extract_pdf_text',          // Extract text from medical documents.
+		'pro_pdf_document',          // Generate professional health reports as PDFs.
+		'pro_word_document',         // Generate medical documents in Word format.
+		'pro_excel_document',        // Export health data to Excel for analysis.
+		'generate_pdf',              // Quick PDF generation for prescriptions/reports.
+		'generate_word',             // Quick Word document generation.
+		'generate_excel',            // Quick Excel generation for health data.
+		'html_to_pdf',               // Convert health records from HTML to PDF.
+		'merge_pdfs',                // Combine multiple medical documents.
+		'add_watermark_to_pdf',      // Add confidentiality watermarks.
+		'excel_data_import',         // Import health data from spreadsheets.
+		'excel_data_export',         // Export consolidated health data.
+		'generate_invoice_pdf',      // Generate medical billing invoices.
+		// Research tools.
+		'web_search',
+		'search_content',
+		'semantic_content_search',
+	);
+
+	/**
+	 * Initialize the page.
+	 */
+	public static function init() {
+		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 25 );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_get_member_records_preview', array( __CLASS__, 'handle_get_member_preview' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_check_record_completeness', array( __CLASS__, 'handle_check_completeness' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_bulk_import_health_info', array( __CLASS__, 'handle_bulk_import' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_upload_health_document', array( __CLASS__, 'handle_document_upload' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_get_member_vitals_preview', array( __CLASS__, 'handle_get_member_vitals_preview' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_import_vitals_to_cct', array( __CLASS__, 'handle_import_vitals_to_cct' ) );
+	}
+
+	/**
+	 * Add submenu page under Health & Wellness menu.
+	 */
+	public static function add_menu_page() {
+		add_submenu_page(
+			'edit.php?post_type=mcp_ai_member',
+			__( 'Consolidate & Add Records', 'nvoos-content-graph-pro' ),
+			__( 'Consolidate & Add', 'nvoos-content-graph-pro' ),
+			'edit_posts',
+			self::PAGE_SLUG,
+			array( __CLASS__, 'render_page' )
+		);
+	}
+
+	/**
+	 * Enqueue assets for the consolidation page.
+	 *
+	 * @param string $hook Current admin page hook.
+	 */
+	public static function enqueue_assets( $hook ) {
+		// Only load on our consolidation page.
+		if ( 'mcp_ai_member_page_' . self::PAGE_SLUG !== $hook ) {
+			return;
+		}
+
+		// Enqueue chat assets.
+		if ( class_exists( 'WP_MCP_AI_Shortcode' ) ) {
+			$shortcode_instance = new WP_MCP_AI_Shortcode();
+			$shortcode_instance->register_assets();
+			wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
+			wp_enqueue_script( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
+		}
+
+		// Enqueue the shared research-page stylesheet so .wp-mcp-ai-research-chat is styled.
+		wp_enqueue_style(
+			'wp-mcp-ai-enhanced-research-page',
+			WP_MCP_AI_URL . 'assets/css/enhanced-research-page.css',
+			array(),
+			WP_MCP_AI_VERSION
+		);
+
+		// Enqueue consolidation page specific styles.
+		wp_enqueue_style(
+			'wp-mcp-ai-health-consolidate',
+			NVOOS_CONTENT_GRAPH_PRO_URL . 'assets/css/health-consolidate.css',
+			array(),
+			NVOOS_CONTENT_GRAPH_PRO_VERSION
+		);
+
+		// Enqueue consolidation page script.
+		wp_enqueue_script(
+			'wp-mcp-ai-health-consolidate',
+			NVOOS_CONTENT_GRAPH_PRO_URL . 'assets/js/health-consolidate.js',
+			array( 'jquery' ),
+			NVOOS_CONTENT_GRAPH_PRO_VERSION,
+			true
+		);
+
+		// Localize script.
+		wp_localize_script(
+			'wp-mcp-ai-health-consolidate',
+			'wpMcpAiHealthConsolidate',
+			array(
+				'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
+				'nonce'         => wp_create_nonce( 'wp_mcp_ai_health_consolidate' ),
+				'membersUrl'    => admin_url( 'edit.php?post_type=mcp_ai_member' ),
+				'addMemberUrl'  => admin_url( 'post-new.php?post_type=mcp_ai_member' ),
+				'addRecordUrl'  => admin_url( 'post-new.php?post_type=mcp_ai_med_record' ),
+				'addCheckupUrl' => admin_url( 'post-new.php?post_type=mcp_ai_checkup' ),
+				'addPrescUrl'   => admin_url( 'post-new.php?post_type=mcp_ai_prescription' ),
+				'addAllergyUrl' => admin_url( 'post-new.php?post_type=mcp_ai_allergy' ),
+				'addPolicyUrl'  => admin_url( 'post-new.php?post_type=mcp_ai_policy' ),
+				'hasCct'        => class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) && WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists(),
+				'strings'       => array(
+					'loading'             => __( 'Loading member data...', 'nvoos-content-graph-pro' ),
+					'loadMember'          => __( 'Load Member Records', 'nvoos-content-graph-pro' ),
+					'error'               => __( 'An error occurred. Please try again.', 'nvoos-content-graph-pro' ),
+					'selectMember'        => __( 'Select a member to view their health records.', 'nvoos-content-graph-pro' ),
+					'noRecords'           => __( 'No records found for this member.', 'nvoos-content-graph-pro' ),
+					'analyzing'           => __( 'Analyzing record completeness...', 'nvoos-content-graph-pro' ),
+					'aiAssisting'         => __( 'AI is guiding you through record creation...', 'nvoos-content-graph-pro' ),
+					'enterHealthInfo'     => __( 'Please enter health information to import.', 'nvoos-content-graph-pro' ),
+					'loadingVitals'       => __( 'Loading vitals from CCT...', 'nvoos-content-graph-pro' ),
+					'importingVitals'     => __( 'Importing vitals to CCT...', 'nvoos-content-graph-pro' ),
+					'vitalsImported'      => __( 'Vital signs successfully saved to CCT.', 'nvoos-content-graph-pro' ),
+					'noVitalsData'        => __( 'Please enter at least one vital sign measurement.', 'nvoos-content-graph-pro' ),
+					'confirmVitalsImport' => __( 'Import these vitals to the CCT?', 'nvoos-content-graph-pro' ),
+					'noCctAvailable'      => __( 'JetEngine CCT is not active. Activate JetEngine to enable structured vitals storage.', 'nvoos-content-graph-pro' ),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Render the consolidation page.
+	 */
+	public static function render_page() {
+		// Get assistant from settings.
+		$settings     = get_option( 'wp_mcp_ai_member_settings', array() );
+		$assistant_id = isset( $settings['assistant_id'] ) ? absint( $settings['assistant_id'] ) : 0;
+
+		// If no assistant configured or invalid, get the first available assistant.
+		if ( ! $assistant_id || 'publish' !== get_post_status( $assistant_id ) ) {
+			$assistants = get_posts(
+				array(
+					'post_type'      => 'mcp_ai_assistant',
+					'post_status'    => 'publish',
+					'posts_per_page' => 1,
+					'orderby'        => 'date',
+					'order'          => 'DESC',
+				)
+			);
+
+			$assistant_id = ! empty( $assistants ) ? $assistants[0]->ID : 0;
+		}
+
+		// Get all members for the dropdown.
+		$members = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_member',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+
+		?>
+		<div class="wrap wp-mcp-ai-health-consolidate-page">
+			<h1 class="wp-heading-inline">
+				<?php esc_html_e( 'Consolidate & Add Health Records', 'nvoos-content-graph-pro' ); ?>
+			</h1>
+
+			<hr class="wp-header-end">
+
+			<div class="wp-mcp-ai-consolidate-container">
+				<div class="wp-mcp-ai-consolidate-sidebar">
+					<div class="wp-mcp-ai-consolidate-intro">
+						<h2><?php esc_html_e( 'How It Works', 'nvoos-content-graph-pro' ); ?></h2>
+						<ol>
+							<li><?php esc_html_e( 'Select a member to view their complete health profile', 'nvoos-content-graph-pro' ); ?></li>
+							<li><?php esc_html_e( 'Review the consolidated view of all health records', 'nvoos-content-graph-pro' ); ?></li>
+							<li><?php esc_html_e( 'AI identifies missing or incomplete records', 'nvoos-content-graph-pro' ); ?></li>
+							<li><?php esc_html_e( 'Follow the guided flow to add necessary records', 'nvoos-content-graph-pro' ); ?></li>
+							<li><?php esc_html_e( 'Maintain a thorough dataset for each member', 'nvoos-content-graph-pro' ); ?></li>
+						</ol>
+					</div>
+
+					<div class="wp-mcp-ai-member-selector">
+						<h3><?php esc_html_e( 'Select Member', 'nvoos-content-graph-pro' ); ?></h3>
+						<?php if ( ! empty( $members ) ) : ?>
+							<select id="wp-mcp-ai-member-select" class="widefat">
+								<option value=""><?php esc_html_e( '-- Select a Member --', 'nvoos-content-graph-pro' ); ?></option>
+								<?php foreach ( $members as $member ) : ?>
+									<?php
+									$member_types = wp_get_object_terms( $member->ID, 'mcp_ai_member_type', array( 'fields' => 'names' ) );
+									$member_type  = ! empty( $member_types ) && ! is_wp_error( $member_types ) ? $member_types[0] : '';
+									?>
+									<option value="<?php echo esc_attr( $member->ID ); ?>">
+										<?php
+										echo esc_html( $member->post_title );
+										if ( $member_type ) {
+											echo ' (' . esc_html( ucfirst( $member_type ) ) . ')';
+										}
+										?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+							<p>
+								<button type="button" id="wp-mcp-ai-load-member-btn" class="button button-primary">
+									<?php esc_html_e( 'Load Member Records', 'nvoos-content-graph-pro' ); ?>
+								</button>
+							</p>
+						<?php else : ?>
+							<p class="description">
+								<?php
+								echo wp_kses_post(
+									sprintf(
+										/* translators: %s: Link to add member */
+										__( 'No members found. <a href="%s">Create a member</a> first.', 'nvoos-content-graph-pro' ),
+										admin_url( 'post-new.php?post_type=mcp_ai_member' )
+									)
+								);
+								?>
+							</p>
+						<?php endif; ?>
+					</div>
+
+					<div class="wp-mcp-ai-consolidate-tips">
+						<h3><?php esc_html_e( 'Consolidation Tips', 'nvoos-content-graph-pro' ); ?></h3>
+						<ul>
+							<li><strong><?php esc_html_e( 'Complete profiles:', 'nvoos-content-graph-pro' ); ?></strong> <?php esc_html_e( 'Ensure each member has all critical health information', 'nvoos-content-graph-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Regular updates:', 'nvoos-content-graph-pro' ); ?></strong> <?php esc_html_e( 'Add new medical records, checkups, and prescriptions as they occur', 'nvoos-content-graph-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'AI guidance:', 'nvoos-content-graph-pro' ); ?></strong> <?php esc_html_e( 'Let the AI assistant help identify gaps and guide record creation', 'nvoos-content-graph-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Track allergies:', 'nvoos-content-graph-pro' ); ?></strong> <?php esc_html_e( 'Always document all known allergies and reactions', 'nvoos-content-graph-pro' ); ?></li>
+						</ul>
+					</div>
+
+					<div class="wp-mcp-ai-document-tools-info">
+						<h3><?php esc_html_e( '📄 Document Processing Tools', 'nvoos-content-graph-pro' ); ?></h3>
+						<p><strong><?php esc_html_e( 'The AI assistant now has access to 13 document tools:', 'nvoos-content-graph-pro' ); ?></strong></p>
+						<ul>
+							<li><?php esc_html_e( 'Extract text from PDFs (lab reports, prescriptions)', 'nvoos-content-graph-pro' ); ?></li>
+							<li><?php esc_html_e( 'Generate health reports (PDF, Word, Excel)', 'nvoos-content-graph-pro' ); ?></li>
+							<li><?php esc_html_e( 'Import/export health data from spreadsheets', 'nvoos-content-graph-pro' ); ?></li>
+							<li><?php esc_html_e( 'Merge multiple medical documents', 'nvoos-content-graph-pro' ); ?></li>
+							<li><?php esc_html_e( 'Add confidentiality watermarks', 'nvoos-content-graph-pro' ); ?></li>
+							<li><?php esc_html_e( 'Generate medical billing invoices', 'nvoos-content-graph-pro' ); ?></li>
+						</ul>
+						<p>
+							<em><?php esc_html_e( 'Try: "Extract text from this lab report PDF" or "Generate a health summary for this member"', 'nvoos-content-graph-pro' ); ?></em>
+						</p>
+					</div>
+
+					<div class="wp-mcp-ai-consolidate-actions">
+						<h3><?php esc_html_e( 'Quick Actions', 'nvoos-content-graph-pro' ); ?></h3>
+						<p>
+							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_member' ) ); ?>" class="button">
+								<?php esc_html_e( 'View All Members', 'nvoos-content-graph-pro' ); ?>
+							</a>
+						</p>
+						<p>
+							<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_member' ) ); ?>" class="button">
+								<?php esc_html_e( 'Add New Member', 'nvoos-content-graph-pro' ); ?>
+							</a>
+						</p>
+					</div>
+				</div>
+
+				<div class="wp-mcp-ai-consolidate-main">
+					<!-- Workflow Mode Selector -->
+					<div class="wp-mcp-ai-workflow-selector">
+						<h2><?php esc_html_e( 'Choose Your Workflow', 'nvoos-content-graph-pro' ); ?></h2>
+						<div class="workflow-options">
+							<button type="button" class="workflow-option active" data-workflow="ai">
+								<span class="dashicons dashicons-format-chat"></span>
+								<strong><?php esc_html_e( 'AI Research', 'nvoos-content-graph-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Research and manage records with AI assistance', 'nvoos-content-graph-pro' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="bulk">
+								<span class="dashicons dashicons-upload"></span>
+								<strong><?php esc_html_e( 'Quick Import', 'nvoos-content-graph-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Dump everything - AI organizes it', 'nvoos-content-graph-pro' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="guided">
+								<span class="dashicons dashicons-list-view"></span>
+								<strong><?php esc_html_e( 'Guided Entry', 'nvoos-content-graph-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Step-by-step with AI assistance', 'nvoos-content-graph-pro' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="review">
+								<span class="dashicons dashicons-visibility"></span>
+								<strong><?php esc_html_e( 'Review & Consolidate', 'nvoos-content-graph-pro' ); ?></strong>
+								<p><?php esc_html_e( 'View and manage existing records', 'nvoos-content-graph-pro' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="vitals">
+								<span class="dashicons dashicons-heart"></span>
+								<strong><?php esc_html_e( 'Vital Signs', 'nvoos-content-graph-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Track &amp; import vitals to CCT', 'nvoos-content-graph-pro' ); ?></p>
+							</button>
+						</div>
+					</div>
+
+					<!-- AI Research Mode (default) -->
+					<div id="workflow-ai" class="workflow-content active">
+						<div class="wp-mcp-ai-research-chat">
+							<?php if ( $assistant_id > 0 ) : ?>
+								<?php
+								// Render chat interface with all H&W tools, matching the quiz research page pattern.
+								// Tools cover the full USCDI data model: members, records, checkups,
+								// prescriptions, allergies, vital signs, immunizations, and more.
+								$hw_tools = self::CHAT_TOOLS;
+								echo do_shortcode(
+									'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $hw_tools ) ) . '"]'
+								);
+								?>
+							<?php else : ?>
+								<div class="notice notice-error inline">
+									<p>
+										<?php
+										echo wp_kses_post(
+											sprintf(
+												/* translators: %s: Link to create assistant */
+												__( 'No AI assistant found. Please <a href="%s">create an assistant</a> first to enable AI-guided record management.', 'nvoos-content-graph-pro' ),
+												admin_url( 'post-new.php?post_type=mcp_ai_assistant' )
+											)
+										);
+										?>
+									</p>
+								</div>
+							<?php endif; ?>
+						</div>
+					</div>
+
+					<!-- Quick Import Mode -->
+					<div id="workflow-bulk" class="workflow-content">
+						<div class="wp-mcp-ai-bulk-import-section">
+							<h2><?php esc_html_e( 'Quick Import - Dump Everything Here', 'nvoos-content-graph-pro' ); ?></h2>
+							<p class="description">
+								<?php esc_html_e( 'Paste or type all your health information below, or upload documents (PDFs, images, scans). The AI will automatically parse, categorize, and organize it into structured records. Original files are preserved in the media library for future validation and auditing.', 'nvoos-content-graph-pro' ); ?>
+							</p>
+							
+							<div class="bulk-import-tips">
+								<h4><?php esc_html_e( 'Tips for better results:', 'nvoos-content-graph-pro' ); ?></h4>
+								<ul>
+									<li><?php esc_html_e( '✓ Include dates when available (e.g., "diagnosed 3/15/2024")', 'nvoos-content-graph-pro' ); ?></li>
+									<li><?php esc_html_e( '✓ Mention record type keywords: allergy, prescription, checkup, diagnosis, policy', 'nvoos-content-graph-pro' ); ?></li>
+									<li><?php esc_html_e( '✓ Add doctor/provider names when known (e.g., "Dr. Smith")', 'nvoos-content-graph-pro' ); ?></li>
+									<li><?php esc_html_e( '✓ Separate different items with blank lines', 'nvoos-content-graph-pro' ); ?></li>
+									<li><?php esc_html_e( '✓ Upload original documents - they will be kept as attachments', 'nvoos-content-graph-pro' ); ?></li>
+								</ul>
+							</div>
+
+							<div class="bulk-import-form">
+								<!-- File Upload Section -->
+								<div class="bulk-import-file-section">
+									<h3><?php esc_html_e( 'Upload Documents (Optional)', 'nvoos-content-graph-pro' ); ?></h3>
+									<p class="description">
+										<?php esc_html_e( 'Upload medical records, test results, prescription images, insurance cards, etc. Original files are preserved in your media library for compliance and future reference.', 'nvoos-content-graph-pro' ); ?>
+									</p>
+									<div class="file-upload-area">
+										<input type="file" id="wp-mcp-ai-file-upload" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.txt" style="display: none;">
+										<button type="button" id="wp-mcp-ai-file-upload-btn" class="button">
+											<span class="dashicons dashicons-upload"></span>
+											<?php esc_html_e( 'Choose Files to Upload', 'nvoos-content-graph-pro' ); ?>
+										</button>
+										<span class="file-upload-note"><?php esc_html_e( 'Accepted: PDF, JPG, PNG, DOC, DOCX, TXT', 'nvoos-content-graph-pro' ); ?></span>
+									</div>
+									<div id="wp-mcp-ai-file-list" class="file-upload-list" style="display: none;">
+										<h4><?php esc_html_e( 'Files to Upload:', 'nvoos-content-graph-pro' ); ?></h4>
+										<ul id="wp-mcp-ai-file-items"></ul>
+									</div>
+								</div>
+
+								<hr class="form-section-divider">
+
+								<!-- Text Import Section -->
+								<h3><?php esc_html_e( 'Or Paste/Type Health Information', 'nvoos-content-graph-pro' ); ?></h3>
+								<textarea 
+									id="wp-mcp-ai-bulk-import-text" 
+									class="widefat" 
+									rows="12" 
+									placeholder="<?php esc_attr_e( 'Example:\nAllergy: Peanuts - severe reaction, causes anaphylaxis\n\nPrescription: Lisinopril 10mg daily for blood pressure\nStarted 1/10/2024, Dr. Johnson\n\nCheckup: Annual physical scheduled for 3/15/2024 with Dr. Smith at Main Street Clinic\n\nDiagnosis: Hypertension diagnosed 1/10/2024\nTreatment: medication and lifestyle changes\n\nInsurance: Blue Cross PPO policy #12345\nProvider: Blue Cross Blue Shield', 'nvoos-content-graph-pro' ); ?>"
+								></textarea>
+								
+								<div class="bulk-import-options">
+									<label>
+										<input type="checkbox" id="wp-mcp-ai-bulk-auto-create" checked>
+										<?php esc_html_e( 'Automatically create records (recommended)', 'nvoos-content-graph-pro' ); ?>
+									</label>
+									<label>
+										<input type="checkbox" id="wp-mcp-ai-bulk-require-confirmation">
+										<?php esc_html_e( 'Review before creating (for meticulous users)', 'nvoos-content-graph-pro' ); ?>
+									</label>
+								</div>
+
+								<p>
+									<button type="button" id="wp-mcp-ai-bulk-import-btn" class="button button-primary button-large">
+										<span class="dashicons dashicons-update"></span>
+										<?php esc_html_e( 'Import & Organize with AI', 'nvoos-content-graph-pro' ); ?>
+									</button>
+									<button type="button" id="wp-mcp-ai-bulk-clear-btn" class="button button-secondary">
+										<?php esc_html_e( 'Clear', 'nvoos-content-graph-pro' ); ?>
+									</button>
+								</p>
+								<div id="wp-mcp-ai-bulk-import-result" class="bulk-import-result" style="display: none;"></div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Guided Entry Mode -->
+					<div id="workflow-guided" class="workflow-content" style="display: none;">
+						<div class="wp-mcp-ai-guided-section">
+							<h2><?php esc_html_e( 'Guided Record Entry', 'nvoos-content-graph-pro' ); ?></h2>
+							<p class="description">
+								<?php esc_html_e( 'Follow the step-by-step process to add health records. The AI will guide you through each field and ensure all necessary information is captured.', 'nvoos-content-graph-pro' ); ?>
+							</p>
+
+							<div class="guided-steps">
+								<div class="step-selector">
+									<h3><?php esc_html_e( 'What would you like to add?', 'nvoos-content-graph-pro' ); ?></h3>
+									<div class="record-type-buttons">
+										<button type="button" class="record-type-btn" data-type="medical_record">
+											<span class="dashicons dashicons-clipboard"></span>
+											<?php esc_html_e( 'Medical Record', 'nvoos-content-graph-pro' ); ?>
+										</button>
+										<button type="button" class="record-type-btn" data-type="checkup">
+											<span class="dashicons dashicons-calendar-alt"></span>
+											<?php esc_html_e( 'Checkup/Appointment', 'nvoos-content-graph-pro' ); ?>
+										</button>
+										<button type="button" class="record-type-btn" data-type="prescription">
+											<span class="dashicons dashicons-media-document"></span>
+											<?php esc_html_e( 'Prescription', 'nvoos-content-graph-pro' ); ?>
+										</button>
+										<button type="button" class="record-type-btn" data-type="policy">
+											<span class="dashicons dashicons-shield"></span>
+											<?php esc_html_e( 'Insurance Policy', 'nvoos-content-graph-pro' ); ?>
+										</button>
+										<button type="button" class="record-type-btn" data-type="allergy">
+											<span class="dashicons dashicons-warning"></span>
+											<?php esc_html_e( 'Allergy', 'nvoos-content-graph-pro' ); ?>
+										</button>
+									</div>
+								</div>
+
+								<div id="guided-form-container" class="guided-form-container" style="display: none;">
+									<!-- Dynamic form will be loaded here -->
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Review & Consolidate Mode -->
+					<div id="workflow-review" class="workflow-content" style="display: none;">
+
+						<div id="wp-mcp-ai-records-preview" class="wp-mcp-ai-records-preview" style="display: none;">
+							<!-- Member preview will be loaded here via AJAX -->
+						</div>
+
+						<div id="wp-mcp-ai-no-selection" class="notice notice-info inline">
+							<p><?php esc_html_e( 'Select a member from the sidebar to view their consolidated health records.', 'nvoos-content-graph-pro' ); ?></p>
+						</div>
+					</div>
+
+
+					<!-- Vital Signs Mode -->
+					<div id="workflow-vitals" class="workflow-content" style="display: none;">
+						<div class="wp-mcp-ai-vitals-section">
+							<h2><?php esc_html_e( 'Vital Signs — Consolidate &amp; Import to CCT', 'nvoos-content-graph-pro' ); ?></h2>
+							<p class="description">
+								<?php esc_html_e( 'View, preview, and import vital sign measurements for the selected member into the JetEngine CCT. Use the AI assistant below to extract vitals from uploaded documents or your knowledge base, then save them directly to structured CCT storage.', 'nvoos-content-graph-pro' ); ?>
+							</p>
+
+							<!-- CCT availability notice (shown by JS when CCT absent) -->
+							<div id="wp-mcp-ai-vitals-no-cct" class="notice notice-warning inline" style="display: none;">
+								<p>
+									<span class="dashicons dashicons-warning"></span>
+									<?php esc_html_e( 'JetEngine is not active. Install and activate JetEngine to enable structured CCT vital sign storage.', 'nvoos-content-graph-pro' ); ?>
+								</p>
+							</div>
+
+							<!-- Existing CCT vitals preview -->
+							<div class="vitals-cct-header">
+								<h3>
+									<span class="dashicons dashicons-chart-line"></span>
+									<?php esc_html_e( 'Existing Vital Sign Readings (CCT)', 'nvoos-content-graph-pro' ); ?>
+								</h3>
+								<button type="button" id="wp-mcp-ai-load-vitals-btn" class="button button-secondary">
+									<span class="dashicons dashicons-update"></span>
+									<?php esc_html_e( 'Load Existing Vitals', 'nvoos-content-graph-pro' ); ?>
+								</button>
+							</div>
+							<div id="wp-mcp-ai-vitals-cct-container">
+								<p class="description"><?php esc_html_e( 'Select a member and click "Load Existing Vitals" to view stored CCT readings.', 'nvoos-content-graph-pro' ); ?></p>
+							</div>
+
+							<hr class="vitals-section-divider">
+
+							<!-- Manual entry form -->
+							<div class="vitals-entry-form">
+								<h3>
+									<span class="dashicons dashicons-plus-alt"></span>
+									<?php esc_html_e( 'Add New Vital Reading', 'nvoos-content-graph-pro' ); ?>
+								</h3>
+								<p class="description"><?php esc_html_e( 'Enter vital sign measurements below. All fields are optional — only fill in what is available. Click Preview to review before importing.', 'nvoos-content-graph-pro' ); ?></p>
+
+								<div class="vitals-form-grid">
+
+									<!-- Date / Time / Source -->
+									<div class="vitals-field-group vitals-meta-group">
+										<h4><?php esc_html_e( 'Measurement Info', 'nvoos-content-graph-pro' ); ?></h4>
+										<div class="vitals-form-row">
+											<label>
+												<?php esc_html_e( 'Date', 'nvoos-content-graph-pro' ); ?>
+												<input type="date" id="vitals-measurement-date" class="regular-text vitals-input" />
+											</label>
+											<label>
+												<?php esc_html_e( 'Time', 'nvoos-content-graph-pro' ); ?>
+												<input type="time" id="vitals-measurement-time" class="regular-text vitals-input" />
+											</label>
+											<label>
+												<?php esc_html_e( 'Source', 'nvoos-content-graph-pro' ); ?>
+												<select id="vitals-source" class="vitals-input">
+													<option value="manual"><?php esc_html_e( 'Manual', 'nvoos-content-graph-pro' ); ?></option>
+													<option value="import"><?php esc_html_e( 'Import', 'nvoos-content-graph-pro' ); ?></option>
+													<option value="tma"><?php esc_html_e( 'TMA', 'nvoos-content-graph-pro' ); ?></option>
+													<option value="api"><?php esc_html_e( 'API', 'nvoos-content-graph-pro' ); ?></option>
+												</select>
+											</label>
+										</div>
+									</div>
+
+									<!-- Blood Pressure -->
+									<div class="vitals-field-group">
+										<h4><?php esc_html_e( '🩸 Blood Pressure', 'nvoos-content-graph-pro' ); ?></h4>
+										<div class="vitals-form-row">
+											<label>
+												<?php esc_html_e( 'Systolic (mmHg)', 'nvoos-content-graph-pro' ); ?>
+												<input type="number" id="vitals-bp-systolic" class="small-text vitals-input" min="50" max="300" />
+											</label>
+											<label>
+												<?php esc_html_e( 'Diastolic (mmHg)', 'nvoos-content-graph-pro' ); ?>
+												<input type="number" id="vitals-bp-diastolic" class="small-text vitals-input" min="30" max="200" />
+											</label>
+										</div>
+									</div>
+
+									<!-- Heart Rate -->
+									<div class="vitals-field-group">
+										<h4><?php esc_html_e( '💗 Heart Rate', 'nvoos-content-graph-pro' ); ?></h4>
+										<label>
+											<?php esc_html_e( 'Heart Rate (bpm)', 'nvoos-content-graph-pro' ); ?>
+											<input type="number" id="vitals-heart-rate" class="small-text vitals-input" min="30" max="250" />
+										</label>
+									</div>
+
+									<!-- Temperature -->
+									<div class="vitals-field-group">
+										<h4><?php esc_html_e( '🌡️ Temperature', 'nvoos-content-graph-pro' ); ?></h4>
+										<div class="vitals-form-row">
+											<label>
+												<?php esc_html_e( 'Temperature', 'nvoos-content-graph-pro' ); ?>
+												<input type="number" id="vitals-temperature" class="small-text vitals-input" step="0.1" />
+											</label>
+											<label>
+												<?php esc_html_e( 'Unit', 'nvoos-content-graph-pro' ); ?>
+												<select id="vitals-temperature-unit" class="vitals-input">
+													<option value="F"><?php esc_html_e( '°F', 'nvoos-content-graph-pro' ); ?></option>
+													<option value="C"><?php esc_html_e( '°C', 'nvoos-content-graph-pro' ); ?></option>
+												</select>
+											</label>
+										</div>
+									</div>
+
+									<!-- Weight & BMI -->
+									<div class="vitals-field-group">
+										<h4><?php esc_html_e( '⚖️ Weight &amp; BMI', 'nvoos-content-graph-pro' ); ?></h4>
+										<div class="vitals-form-row">
+											<label>
+												<?php esc_html_e( 'Weight', 'nvoos-content-graph-pro' ); ?>
+												<input type="number" id="vitals-weight" class="small-text vitals-input" step="0.1" min="0" />
+											</label>
+											<label>
+												<?php esc_html_e( 'Unit', 'nvoos-content-graph-pro' ); ?>
+												<select id="vitals-weight-unit" class="vitals-input">
+													<option value="lbs"><?php esc_html_e( 'lbs', 'nvoos-content-graph-pro' ); ?></option>
+													<option value="kg"><?php esc_html_e( 'kg', 'nvoos-content-graph-pro' ); ?></option>
+												</select>
+											</label>
+											<label>
+												<?php esc_html_e( 'BMI', 'nvoos-content-graph-pro' ); ?>
+												<input type="number" id="vitals-bmi" class="small-text vitals-input" step="0.1" min="0" />
+											</label>
+										</div>
+									</div>
+
+									<!-- Blood Glucose -->
+									<div class="vitals-field-group">
+										<h4><?php esc_html_e( '🩸 Blood Glucose', 'nvoos-content-graph-pro' ); ?></h4>
+										<label>
+											<?php esc_html_e( 'Blood Glucose (mg/dL)', 'nvoos-content-graph-pro' ); ?>
+											<input type="number" id="vitals-blood-glucose" class="small-text vitals-input" min="20" max="600" />
+										</label>
+									</div>
+
+									<!-- Oxygen Saturation -->
+									<div class="vitals-field-group">
+										<h4><?php esc_html_e( '💨 Oxygen Saturation (SpO2)', 'nvoos-content-graph-pro' ); ?></h4>
+										<label>
+											<?php esc_html_e( 'SpO2 (%)', 'nvoos-content-graph-pro' ); ?>
+											<input type="number" id="vitals-oxygen-saturation" class="small-text vitals-input" min="80" max="100" />
+										</label>
+									</div>
+
+									<!-- Respiratory Rate -->
+									<div class="vitals-field-group">
+										<h4><?php esc_html_e( '🫁 Respiratory Rate', 'nvoos-content-graph-pro' ); ?></h4>
+										<label>
+											<?php esc_html_e( 'Respiratory Rate (breaths/min)', 'nvoos-content-graph-pro' ); ?>
+											<input type="number" id="vitals-respiratory-rate" class="small-text vitals-input" min="8" max="50" />
+										</label>
+									</div>
+
+									<!-- Kidney Health Indicators -->
+									<div class="vitals-field-group vitals-kidney-group">
+										<h4><?php esc_html_e( '🔬 Kidney Health Indicators', 'nvoos-content-graph-pro' ); ?></h4>
+										<div class="vitals-form-row">
+											<label>
+												<?php esc_html_e( 'eGFR (mL/min/1.73m²)', 'nvoos-content-graph-pro' ); ?>
+												<input type="number" id="vitals-egfr" class="small-text vitals-input" step="0.1" min="0" />
+											</label>
+											<label>
+												<?php esc_html_e( 'Creatinine (mg/dL)', 'nvoos-content-graph-pro' ); ?>
+												<input type="number" id="vitals-creatinine" class="small-text vitals-input" step="0.01" min="0" />
+											</label>
+											<label>
+												<?php esc_html_e( 'BUN (mg/dL)', 'nvoos-content-graph-pro' ); ?>
+												<input type="number" id="vitals-bun" class="small-text vitals-input" min="0" />
+											</label>
+										</div>
+										<div class="vitals-form-row">
+											<label>
+												<?php esc_html_e( 'K⁺ (mEq/L)', 'nvoos-content-graph-pro' ); ?>
+												<input type="number" id="vitals-potassium" class="small-text vitals-input" step="0.1" min="0" />
+											</label>
+											<label>
+												<?php esc_html_e( 'Na⁺ — dietary target (mg/day)', 'nvoos-content-graph-pro' ); ?>
+												<input type="number" id="vitals-sodium" class="small-text vitals-input" min="0" />
+											</label>
+											<label>
+												<?php esc_html_e( 'Phosphorus (mg/dL)', 'nvoos-content-graph-pro' ); ?>
+												<input type="number" id="vitals-phosphorus" class="small-text vitals-input" step="0.1" min="0" />
+											</label>
+											<label>
+												<?php esc_html_e( 'Albumin (g/dL)', 'nvoos-content-graph-pro' ); ?>
+												<input type="number" id="vitals-albumin" class="small-text vitals-input" step="0.1" min="0" />
+											</label>
+										</div>
+									</div>
+
+									<!-- Notes -->
+									<div class="vitals-field-group vitals-notes-group">
+										<h4><?php esc_html_e( '📝 Notes', 'nvoos-content-graph-pro' ); ?></h4>
+										<textarea id="vitals-notes" class="widefat vitals-notes-input" rows="3" placeholder="<?php esc_attr_e( 'Optional notes about this measurement (e.g., fasting, post-meal, activity level)...', 'nvoos-content-graph-pro' ); ?>"></textarea>
+									</div>
+
+								</div><!-- .vitals-form-grid -->
+
+								<!-- Preview card (populated by JS) -->
+								<div id="wp-mcp-ai-vitals-preview-card" class="vitals-preview-card" style="display: none;">
+									<h4>
+										<span class="dashicons dashicons-clipboard"></span>
+										<?php esc_html_e( 'Vitals Preview — Review Before Importing', 'nvoos-content-graph-pro' ); ?>
+									</h4>
+									<div id="wp-mcp-ai-vitals-preview-content"></div>
+								</div>
+
+								<div class="vitals-actions">
+									<button type="button" id="wp-mcp-ai-vitals-preview-btn" class="button button-secondary">
+										<span class="dashicons dashicons-visibility"></span>
+										<?php esc_html_e( 'Preview', 'nvoos-content-graph-pro' ); ?>
+									</button>
+									<button type="button" id="wp-mcp-ai-vitals-import-btn" class="button button-primary">
+										<span class="dashicons dashicons-database-import"></span>
+										<?php esc_html_e( 'Import to CCT', 'nvoos-content-graph-pro' ); ?>
+									</button>
+									<button type="button" id="wp-mcp-ai-vitals-clear-btn" class="button button-link-delete">
+										<?php esc_html_e( 'Clear Form', 'nvoos-content-graph-pro' ); ?>
+									</button>
+								</div>
+								<div id="wp-mcp-ai-vitals-result" style="display: none; margin-top: 12px;"></div>
+							</div><!-- .vitals-entry-form -->
+
+							<!-- AI assistant tip -->
+							<div class="vitals-ai-tip">
+								<h3>
+									<span class="dashicons dashicons-lightbulb"></span>
+									<?php esc_html_e( 'AI-Assisted Vitals via Vector Storage', 'nvoos-content-graph-pro' ); ?>
+								</h3>
+								<p><?php esc_html_e( 'Use the AI assistant below to extract and log vitals from documents or your knowledge base:', 'nvoos-content-graph-pro' ); ?></p>
+								<ul>
+									<li><em>"<?php esc_html_e( 'Search knowledge base for blood pressure readings for [member name]', 'nvoos-content-graph-pro' ); ?>"</em></li>
+									<li><em>"<?php esc_html_e( 'Extract vital signs from the uploaded lab report and log them for member ID [X]', 'nvoos-content-graph-pro' ); ?>"</em></li>
+									<li><em>"<?php esc_html_e( 'Log today\'s vitals for [member]: BP 120/80, HR 72, Temp 98.6\xb0F, SpO2 98%', 'nvoos-content-graph-pro' ); ?>"</em></li>
+									<li><em>"<?php esc_html_e( 'Show vital sign history for [member] for the last 30 days', 'nvoos-content-graph-pro' ); ?>"</em></li>
+									<li><em>"<?php esc_html_e( 'Analyze kidney health trends (eGFR, creatinine) for [member]', 'nvoos-content-graph-pro' ); ?>"</em></li>
+								</ul>
+							</div>
+
+						</div><!-- .wp-mcp-ai-vitals-section -->
+					</div><!-- #workflow-vitals -->
+
+				</div>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Handle AJAX request to get member records preview.
+	 */
+	public static function handle_get_member_preview() {
+		// Verify nonce.
+		check_ajax_referer( 'wp_mcp_ai_health_consolidate', 'nonce' );
+
+		// Check user capability.
+		if ( ! current_user_can( 'read' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to view member records.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		// Get member ID.
+		$member_id = isset( $_POST['member_id'] ) ? absint( $_POST['member_id'] ) : 0;
+
+		if ( ! $member_id ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid member ID.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		// Use the get_member_health_summary tool to get comprehensive data.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Get_Member_Health_Summary' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Health summary tool not available.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		$tool   = new WP_MCP_AI_Tool_Get_Member_Health_Summary();
+		$result = $tool->execute(
+			array(
+				'member_id'       => $member_id,
+				'include_records' => true,
+			),
+			array( 'user_id' => get_current_user_id() )
+		);
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		// Get associated policy information.
+		$policies_query = new WP_Query(
+			array(
+				'post_type'      => 'mcp_ai_policy',
+				'post_status'    => 'publish',
+				'meta_key'       => '_policy_member_id',
+				'meta_value'     => $member_id,
+				'posts_per_page' => -1,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+
+		$policies = array();
+		if ( $policies_query->have_posts() ) {
+			while ( $policies_query->have_posts() ) {
+				$policies_query->the_post();
+				$policy_id    = get_the_ID();
+				$policy_types = wp_get_object_terms( $policy_id, 'mcp_ai_policy_type', array( 'fields' => 'names' ) );
+				$policies[]   = array(
+					'id'            => $policy_id,
+					'name'          => get_the_title(),
+					'type'          => ! empty( $policy_types ) && ! is_wp_error( $policy_types ) ? $policy_types[0] : '',
+					'provider'      => get_post_meta( $policy_id, '_policy_provider', true ),
+					'policy_number' => get_post_meta( $policy_id, '_policy_number', true ),
+					'status'        => get_post_meta( $policy_id, '_policy_status', true ),
+				);
+			}
+			wp_reset_postdata();
+		}
+
+		$result['policies'] = $policies;
+
+		// Render the preview HTML.
+		ob_start();
+		self::render_member_preview( $result );
+		$html = ob_get_clean();
+
+		wp_send_json_success(
+			array(
+				'html'        => $html,
+				'member_data' => $result,
+			)
+		);
+	}
+
+	/**
+	 * Render member health records preview.
+	 *
+	 * @param array $data Member health data from get_member_health_summary.
+	 */
+	private static function render_member_preview( $data ) {
+		$member = $data['member'];
+		?>
+		<div class="wp-mcp-ai-member-preview-header">
+			<h2>
+				<?php echo esc_html( $member['name'] ); ?>
+				<span class="member-type-badge"><?php echo esc_html( ucfirst( $member['type'] ) ); ?></span>
+			</h2>
+			<div class="member-demographics">
+				<?php if ( ! empty( $member['date_of_birth'] ) ) : ?>
+					<div class="demo-item">
+						<strong><?php esc_html_e( 'DOB:', 'nvoos-content-graph-pro' ); ?></strong>
+						<?php echo esc_html( $member['date_of_birth'] ); ?>
+					</div>
+				<?php endif; ?>
+				<?php if ( ! empty( $member['gender'] ) ) : ?>
+					<div class="demo-item">
+						<strong><?php esc_html_e( 'Gender:', 'nvoos-content-graph-pro' ); ?></strong>
+						<?php echo esc_html( $member['gender'] ); ?>
+					</div>
+				<?php endif; ?>
+				<?php if ( ! empty( $member['blood_type'] ) ) : ?>
+					<div class="demo-item">
+						<strong><?php esc_html_e( 'Blood Type:', 'nvoos-content-graph-pro' ); ?></strong>
+						<?php echo esc_html( $member['blood_type'] ); ?>
+					</div>
+				<?php endif; ?>
+				<?php if ( 'pet' === $member['type'] ) : ?>
+					<?php if ( ! empty( $member['species'] ) ) : ?>
+						<div class="demo-item">
+							<strong><?php esc_html_e( 'Species:', 'nvoos-content-graph-pro' ); ?></strong>
+							<?php echo esc_html( $member['species'] ); ?>
+						</div>
+					<?php endif; ?>
+					<?php if ( ! empty( $member['breed'] ) ) : ?>
+						<div class="demo-item">
+							<strong><?php esc_html_e( 'Breed:', 'nvoos-content-graph-pro' ); ?></strong>
+							<?php echo esc_html( $member['breed'] ); ?>
+						</div>
+					<?php endif; ?>
+				<?php endif; ?>
+			</div>
+		</div>
+
+		<div class="wp-mcp-ai-records-grid">
+			<!-- Policies Section -->
+			<div class="record-section">
+				<h3>
+					<span class="dashicons dashicons-shield"></span>
+					<?php esc_html_e( 'Insurance Policies', 'nvoos-content-graph-pro' ); ?>
+					<span class="count-badge"><?php echo esc_html( count( $data['policies'] ) ); ?></span>
+				</h3>
+				<?php if ( ! empty( $data['policies'] ) ) : ?>
+					<ul class="record-list">
+						<?php foreach ( $data['policies'] as $policy ) : ?>
+							<li>
+								<a href="<?php echo esc_url( admin_url( 'post.php?post=' . $policy['id'] . '&action=edit' ) ); ?>">
+									<?php echo esc_html( $policy['name'] ); ?>
+								</a>
+								<?php if ( $policy['type'] ) : ?>
+									<span class="record-type">(<?php echo esc_html( $policy['type'] ); ?>)</span>
+								<?php endif; ?>
+								<?php if ( $policy['status'] ) : ?>
+									<span class="status-badge status-<?php echo esc_attr( sanitize_title( $policy['status'] ) ); ?>">
+										<?php echo esc_html( $policy['status'] ); ?>
+									</span>
+								<?php endif; ?>
+							</li>
+						<?php endforeach; ?>
+					</ul>
+				<?php else : ?>
+					<p class="no-records">
+						<?php esc_html_e( 'No policies found.', 'nvoos-content-graph-pro' ); ?>
+						<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_policy' ) ); ?>" class="add-record-link">
+							<?php esc_html_e( 'Add Policy', 'nvoos-content-graph-pro' ); ?>
+						</a>
+					</p>
+				<?php endif; ?>
+			</div>
+
+			<!-- Allergies Section -->
+			<div class="record-section">
+				<h3>
+					<span class="dashicons dashicons-warning"></span>
+					<?php esc_html_e( 'Allergies', 'nvoos-content-graph-pro' ); ?>
+					<span class="count-badge"><?php echo esc_html( count( $data['allergies'] ) ); ?></span>
+				</h3>
+				<?php if ( ! empty( $data['allergies'] ) ) : ?>
+					<ul class="record-list">
+						<?php foreach ( $data['allergies'] as $allergy ) : ?>
+							<li>
+								<a href="<?php echo esc_url( admin_url( 'post.php?post=' . $allergy['id'] . '&action=edit' ) ); ?>">
+									<?php echo esc_html( $allergy['allergen'] ); ?>
+								</a>
+								<?php if ( $allergy['severity'] ) : ?>
+									<span class="severity-badge severity-<?php echo esc_attr( sanitize_title( $allergy['severity'] ) ); ?>">
+										<?php echo esc_html( $allergy['severity'] ); ?>
+									</span>
+								<?php endif; ?>
+							</li>
+						<?php endforeach; ?>
+					</ul>
+				<?php else : ?>
+					<p class="no-records">
+						<?php esc_html_e( 'No allergies recorded.', 'nvoos-content-graph-pro' ); ?>
+						<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_allergy' ) ); ?>" class="add-record-link">
+							<?php esc_html_e( 'Add Allergy', 'nvoos-content-graph-pro' ); ?>
+						</a>
+					</p>
+				<?php endif; ?>
+			</div>
+
+			<!-- Active Prescriptions Section -->
+			<div class="record-section">
+				<h3>
+					<span class="dashicons dashicons-media-document"></span>
+					<?php esc_html_e( 'Active Prescriptions', 'nvoos-content-graph-pro' ); ?>
+					<span class="count-badge"><?php echo esc_html( count( $data['active_prescriptions'] ) ); ?></span>
+				</h3>
+				<?php if ( ! empty( $data['active_prescriptions'] ) ) : ?>
+					<ul class="record-list">
+						<?php foreach ( $data['active_prescriptions'] as $prescription ) : ?>
+							<li>
+								<a href="<?php echo esc_url( admin_url( 'post.php?post=' . $prescription['id'] . '&action=edit' ) ); ?>">
+									<?php echo esc_html( $prescription['medication'] ); ?>
+								</a>
+								<?php if ( $prescription['dosage'] ) : ?>
+									<span class="record-detail"><?php echo esc_html( $prescription['dosage'] ); ?></span>
+								<?php endif; ?>
+								<?php if ( $prescription['frequency'] ) : ?>
+									<span class="record-detail"><?php echo esc_html( $prescription['frequency'] ); ?></span>
+								<?php endif; ?>
+							</li>
+						<?php endforeach; ?>
+					</ul>
+				<?php else : ?>
+					<p class="no-records">
+						<?php esc_html_e( 'No active prescriptions.', 'nvoos-content-graph-pro' ); ?>
+						<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_prescription' ) ); ?>" class="add-record-link">
+							<?php esc_html_e( 'Add Prescription', 'nvoos-content-graph-pro' ); ?>
+						</a>
+					</p>
+				<?php endif; ?>
+			</div>
+
+			<!-- Upcoming Checkups Section -->
+			<div class="record-section">
+				<h3>
+					<span class="dashicons dashicons-calendar-alt"></span>
+					<?php esc_html_e( 'Upcoming Checkups', 'nvoos-content-graph-pro' ); ?>
+					<span class="count-badge"><?php echo esc_html( count( $data['upcoming_checkups'] ) ); ?></span>
+				</h3>
+				<?php if ( ! empty( $data['upcoming_checkups'] ) ) : ?>
+					<ul class="record-list">
+						<?php foreach ( $data['upcoming_checkups'] as $checkup ) : ?>
+							<li>
+								<a href="<?php echo esc_url( admin_url( 'post.php?post=' . $checkup['id'] . '&action=edit' ) ); ?>">
+									<?php echo esc_html( $checkup['title'] ); ?>
+								</a>
+								<?php if ( $checkup['date'] ) : ?>
+									<span class="record-detail"><?php echo esc_html( gmdate( 'M j, Y', strtotime( $checkup['date'] ) ) ); ?></span>
+								<?php endif; ?>
+								<?php if ( $checkup['provider'] ) : ?>
+									<span class="record-detail"><?php echo esc_html( $checkup['provider'] ); ?></span>
+								<?php endif; ?>
+							</li>
+						<?php endforeach; ?>
+					</ul>
+				<?php else : ?>
+					<p class="no-records">
+						<?php esc_html_e( 'No upcoming checkups scheduled.', 'nvoos-content-graph-pro' ); ?>
+						<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_checkup' ) ); ?>" class="add-record-link">
+							<?php esc_html_e( 'Schedule Checkup', 'nvoos-content-graph-pro' ); ?>
+						</a>
+					</p>
+				<?php endif; ?>
+			</div>
+
+			<!-- Recent Medical Records Section -->
+			<?php if ( ! empty( $data['recent_medical_records'] ) ) : ?>
+				<div class="record-section wide">
+					<h3>
+						<span class="dashicons dashicons-clipboard"></span>
+						<?php esc_html_e( 'Recent Medical Records', 'nvoos-content-graph-pro' ); ?>
+						<span class="count-badge"><?php echo esc_html( count( $data['recent_medical_records'] ) ); ?></span>
+					</h3>
+					<ul class="record-list">
+						<?php foreach ( $data['recent_medical_records'] as $record ) : ?>
+							<li>
+								<a href="<?php echo esc_url( admin_url( 'post.php?post=' . $record['id'] . '&action=edit' ) ); ?>">
+									<?php echo esc_html( $record['title'] ); ?>
+								</a>
+								<?php if ( $record['type'] ) : ?>
+									<span class="record-type"><?php echo esc_html( $record['type'] ); ?></span>
+								<?php endif; ?>
+								<?php if ( $record['date'] ) : ?>
+									<span class="record-detail"><?php echo esc_html( gmdate( 'M j, Y', strtotime( $record['date'] ) ) ); ?></span>
+								<?php endif; ?>
+								<?php if ( $record['description'] ) : ?>
+									<p class="record-description"><?php echo esc_html( $record['description'] ); ?></p>
+								<?php endif; ?>
+							</li>
+						<?php endforeach; ?>
+					</ul>
+				</div>
+			<?php else : ?>
+				<div class="record-section wide">
+					<h3>
+						<span class="dashicons dashicons-clipboard"></span>
+						<?php esc_html_e( 'Medical Records', 'nvoos-content-graph-pro' ); ?>
+						<span class="count-badge">0</span>
+					</h3>
+					<p class="no-records">
+						<?php esc_html_e( 'No medical records found.', 'nvoos-content-graph-pro' ); ?>
+						<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_med_record' ) ); ?>" class="add-record-link">
+							<?php esc_html_e( 'Add Medical Record', 'nvoos-content-graph-pro' ); ?>
+						</a>
+					</p>
+				</div>
+			<?php endif; ?>
+		</div>
+
+		<div class="wp-mcp-ai-completeness-indicator">
+			<h3><?php esc_html_e( 'Profile Completeness', 'nvoos-content-graph-pro' ); ?></h3>
+			<div class="completeness-bar">
+				<?php
+				// Calculate completeness based on actual sections.
+				$sections = array(
+					'policies'               => ! empty( $data['policies'] ),
+					'allergies'              => ! empty( $data['allergies'] ),
+					'active_prescriptions'   => ! empty( $data['active_prescriptions'] ),
+					'upcoming_checkups'      => ! empty( $data['upcoming_checkups'] ),
+					'recent_medical_records' => ! empty( $data['recent_medical_records'] ),
+					'demographics'           => ( ! empty( $member['date_of_birth'] ) && ! empty( $member['gender'] ) ),
+				);
+
+				$filled_sections         = count( array_filter( $sections ) );
+				$total_sections          = count( $sections );
+				$completeness_percentage = ( $filled_sections / $total_sections ) * 100;
+				?>
+				<div class="completeness-progress" style="width: <?php echo esc_attr( $completeness_percentage ); ?>%;"></div>
+			</div>
+			<p class="completeness-text">
+				<?php
+				/* translators: %d: Completeness percentage */
+				echo esc_html( sprintf( __( '%d%% Complete', 'nvoos-content-graph-pro' ), round( $completeness_percentage ) ) );
+				?>
+			</p>
+			<?php if ( $completeness_percentage < 100 ) : ?>
+				<p class="completeness-suggestion">
+					<?php esc_html_e( 'Use the AI assistant below to help complete this member\'s health profile.', 'nvoos-content-graph-pro' ); ?>
+				</p>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Handle AJAX request to check record completeness and suggest next steps.
+	 */
+	public static function handle_check_completeness() {
+		// Verify nonce.
+		check_ajax_referer( 'wp_mcp_ai_health_consolidate', 'nonce' );
+
+		// Check user capability.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to check record completeness.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		// Get member ID.
+		$member_id = isset( $_POST['member_id'] ) ? absint( $_POST['member_id'] ) : 0;
+
+		if ( ! $member_id ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid member ID.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		// Analyze what's missing.
+		$suggestions = array();
+		$member      = get_post( $member_id );
+
+		if ( ! $member ) {
+			wp_send_json_error( array( 'message' => __( 'Member not found.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		// Check demographics.
+		if ( empty( get_post_meta( $member_id, '_member_date_of_birth', true ) ) ) {
+			$suggestions[] = __( 'Add date of birth to member profile', 'nvoos-content-graph-pro' );
+		}
+		if ( empty( get_post_meta( $member_id, '_member_gender', true ) ) ) {
+			$suggestions[] = __( 'Add gender to member profile', 'nvoos-content-graph-pro' );
+		}
+		if ( empty( get_post_meta( $member_id, '_member_emergency_contact', true ) ) ) {
+			$suggestions[] = __( 'Add emergency contact information', 'nvoos-content-graph-pro' );
+		}
+
+		// Check for policies.
+		$policies = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_policy',
+				'meta_key'       => '_policy_member_id',
+				'meta_value'     => $member_id,
+				'posts_per_page' => 1,
+			)
+		);
+		if ( empty( $policies ) ) {
+			$suggestions[] = __( 'Add insurance policy information', 'nvoos-content-graph-pro' );
+		}
+
+		// Check for allergies.
+		$allergies = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_allergy',
+				'meta_key'       => '_allergy_member_id',
+				'meta_value'     => $member_id,
+				'posts_per_page' => 1,
+			)
+		);
+		if ( empty( $allergies ) ) {
+			$suggestions[] = __( 'Document any known allergies (or note "None known")', 'nvoos-content-graph-pro' );
+		}
+
+		// Check for medical records.
+		$records = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_med_record',
+				'meta_key'       => '_record_member_id',
+				'meta_value'     => $member_id,
+				'posts_per_page' => 1,
+			)
+		);
+		if ( empty( $records ) ) {
+			$suggestions[] = __( 'Add medical history and records', 'nvoos-content-graph-pro' );
+		}
+
+		// Check for upcoming checkups.
+		$checkups = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_checkup',
+				'meta_key'       => '_checkup_member_id',
+				'meta_value'     => $member_id,
+				'posts_per_page' => 1,
+			)
+		);
+		if ( empty( $checkups ) ) {
+			$suggestions[] = __( 'Schedule upcoming health checkups', 'nvoos-content-graph-pro' );
+		}
+
+		wp_send_json_success(
+			array(
+				'suggestions'          => $suggestions,
+				'completeness_message' => count( $suggestions ) === 0
+					? __( 'This member\'s health profile is complete!', 'nvoos-content-graph-pro' )
+					: sprintf(
+						/* translators: %d: Number of suggestions */
+						__( '%d areas need attention to complete this health profile.', 'nvoos-content-graph-pro' ),
+						count( $suggestions )
+					),
+			)
+		);
+	}
+
+	/**
+	 * Handle AJAX request for bulk import of health information.
+	 */
+	public static function handle_bulk_import() {
+		// Verify nonce.
+		check_ajax_referer( 'wp_mcp_ai_health_consolidate', 'nonce' );
+
+		// Check user capability.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to import health records.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		// Get parameters.
+		$member_id             = isset( $_POST['member_id'] ) ? absint( $_POST['member_id'] ) : 0;
+		$raw_information       = isset( $_POST['raw_information'] ) ? wp_kses_post( wp_unslash( $_POST['raw_information'] ) ) : '';
+		$auto_create           = isset( $_POST['auto_create'] ) ? (bool) $_POST['auto_create'] : true;
+		$confirmation_required = isset( $_POST['require_confirmation'] ) ? (bool) $_POST['require_confirmation'] : false;
+		$attachment_ids        = isset( $_POST['attachment_ids'] ) ? array_map( 'absint', (array) $_POST['attachment_ids'] ) : array();
+
+		if ( ! $member_id ) {
+			wp_send_json_error( array( 'message' => __( 'Please select a member first.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		if ( empty( $raw_information ) && empty( $attachment_ids ) ) {
+			wp_send_json_error( array( 'message' => __( 'Please provide health information or upload documents to import.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		// Use the parse_health_information tool.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Parse_Health_Information' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Health information parsing tool not available.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		$tool   = new WP_MCP_AI_Tool_Parse_Health_Information();
+		$result = $tool->execute(
+			array(
+				'member_id'             => $member_id,
+				'raw_information'       => $raw_information,
+				'auto_create_records'   => $auto_create,
+				'confirmation_required' => $confirmation_required,
+				'attachment_ids'        => $attachment_ids,
+			),
+			array( 'user_id' => get_current_user_id() )
+		);
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		// Generate HTML summary.
+		ob_start();
+		self::render_import_summary( $result );
+		$summary_html = ob_get_clean();
+
+		wp_send_json_success(
+			array(
+				'message'      => __( 'Health information parsed successfully!', 'nvoos-content-graph-pro' ),
+				'summary_html' => $summary_html,
+				'result'       => $result,
+			)
+		);
+	}
+
+	/**
+	 * Render import summary HTML.
+	 *
+	 * @param array $result Import result data.
+	 */
+	private static function render_import_summary( $result ) {
+		?>
+		<div class="import-summary-container">
+			<h3><?php esc_html_e( 'Import Complete!', 'nvoos-content-graph-pro' ); ?></h3>
+			
+			<div class="import-stats">
+				<h4><?php esc_html_e( 'What was imported:', 'nvoos-content-graph-pro' ); ?></h4>
+				<ul class="import-stats-list">
+					<?php if ( ! empty( $result['parsed_data']['medical_records'] ) ) : ?>
+						<li>
+							<span class="dashicons dashicons-clipboard"></span>
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: %d: number of records */
+									_n( '%d Medical Record', '%d Medical Records', count( $result['parsed_data']['medical_records'] ), 'nvoos-content-graph-pro' ),
+									count( $result['parsed_data']['medical_records'] )
+								)
+							);
+							?>
+						</li>
+					<?php endif; ?>
+
+					<?php if ( ! empty( $result['parsed_data']['checkups'] ) ) : ?>
+						<li>
+							<span class="dashicons dashicons-calendar-alt"></span>
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: %d: number of checkups */
+									_n( '%d Checkup', '%d Checkups', count( $result['parsed_data']['checkups'] ), 'nvoos-content-graph-pro' ),
+									count( $result['parsed_data']['checkups'] )
+								)
+							);
+							?>
+						</li>
+					<?php endif; ?>
+
+					<?php if ( ! empty( $result['parsed_data']['prescriptions'] ) ) : ?>
+						<li>
+							<span class="dashicons dashicons-media-document"></span>
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: %d: number of prescriptions */
+									_n( '%d Prescription', '%d Prescriptions', count( $result['parsed_data']['prescriptions'] ), 'nvoos-content-graph-pro' ),
+									count( $result['parsed_data']['prescriptions'] )
+								)
+							);
+							?>
+						</li>
+					<?php endif; ?>
+
+					<?php if ( ! empty( $result['parsed_data']['policies'] ) ) : ?>
+						<li>
+							<span class="dashicons dashicons-shield"></span>
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: %d: number of policies */
+									_n( '%d Insurance Policy', '%d Insurance Policies', count( $result['parsed_data']['policies'] ), 'nvoos-content-graph-pro' ),
+									count( $result['parsed_data']['policies'] )
+								)
+							);
+							?>
+						</li>
+					<?php endif; ?>
+
+					<?php if ( ! empty( $result['parsed_data']['allergies'] ) ) : ?>
+						<li>
+							<span class="dashicons dashicons-warning"></span>
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: %d: number of allergies */
+									_n( '%d Allergy', '%d Allergies', count( $result['parsed_data']['allergies'] ), 'nvoos-content-graph-pro' ),
+									count( $result['parsed_data']['allergies'] )
+								)
+							);
+							?>
+						</li>
+					<?php endif; ?>
+				</ul>
+			</div>
+
+			<?php if ( $result['records_created'] && ! empty( $result['created_records'] ) ) : ?>
+				<div class="import-created">
+					<h4><?php esc_html_e( 'Records created in system:', 'nvoos-content-graph-pro' ); ?></h4>
+					<?php
+					$total_created = array_sum( array_map( 'count', $result['created_records'] ) );
+					?>
+					<p class="success-message">
+						<span class="dashicons dashicons-yes-alt"></span>
+						<?php
+						echo esc_html(
+							sprintf(
+								/* translators: %d: number of records */
+								_n( '%d record successfully created!', '%d records successfully created!', $total_created, 'nvoos-content-graph-pro' ),
+								$total_created
+							)
+						);
+						?>
+					</p>
+					<p>
+						<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_member' ) ); ?>" class="button">
+							<?php esc_html_e( 'View All Records', 'nvoos-content-graph-pro' ); ?>
+						</a>
+					</p>
+				</div>
+			<?php elseif ( $result['confirmation_required'] ) : ?>
+				<div class="import-confirmation-needed">
+					<p class="description">
+						<?php esc_html_e( 'Review the parsed data above and confirm to create these records.', 'nvoos-content-graph-pro' ); ?>
+					</p>
+					<p>
+						<button type="button" class="button button-primary" id="wp-mcp-ai-confirm-import">
+							<?php esc_html_e( 'Confirm & Create Records', 'nvoos-content-graph-pro' ); ?>
+						</button>
+						<button type="button" class="button button-secondary" id="wp-mcp-ai-cancel-import">
+							<?php esc_html_e( 'Cancel', 'nvoos-content-graph-pro' ); ?>
+						</button>
+					</p>
+				</div>
+			<?php endif; ?>
+
+			<div class="import-summary-text">
+				<h4><?php esc_html_e( 'AI Analysis:', 'nvoos-content-graph-pro' ); ?></h4>
+				<pre><?php echo esc_html( $result['parsing_summary'] ); ?></pre>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Handle AJAX request to upload health documents.
+	 *
+	 * Uploads files to WordPress media library and stores metadata about
+	 * the original source for compliance and audit trail purposes.
+	 */
+	public static function handle_document_upload() {
+		// Verify nonce.
+		check_ajax_referer( 'wp_mcp_ai_health_consolidate', 'nonce' );
+
+		// Check user capability.
+		if ( ! current_user_can( 'upload_files' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to upload files.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		// Get member ID.
+		$member_id = isset( $_POST['member_id'] ) ? absint( $_POST['member_id'] ) : 0;
+
+		if ( ! $member_id ) {
+			wp_send_json_error( array( 'message' => __( 'Please select a member first.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		// Verify member exists.
+		$member = get_post( $member_id );
+		if ( ! $member || 'mcp_ai_member' !== $member->post_type ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid member.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		// Check if file was uploaded.
+		if ( empty( $_FILES['file'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'No file was uploaded.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		// Validate file type.
+		$allowed_types = array(
+			'application/pdf',
+			'image/jpeg',
+			'image/jpg',
+			'image/png',
+			'application/msword',
+			'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+			'text/plain',
+		);
+
+		if ( ! isset( $_FILES['file']['type'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid file upload.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		$file_type = sanitize_text_field( wp_unslash( $_FILES['file']['type'] ) );
+		if ( ! in_array( $file_type, $allowed_types, true ) ) {
+			wp_send_json_error( array( 'message' => __( 'File type not allowed. Please upload PDF, JPG, PNG, DOC, DOCX, or TXT files.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		// Handle the upload using WordPress functions.
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+
+		$attachment_id = media_handle_upload( 'file', 0 );
+
+		if ( is_wp_error( $attachment_id ) ) {
+			wp_send_json_error( array( 'message' => $attachment_id->get_error_message() ) );
+		}
+
+		// Add metadata to track this as a health document source.
+		update_post_meta( $attachment_id, '_wp_mcp_ai_health_document', true );
+		update_post_meta( $attachment_id, '_wp_mcp_ai_member_id', $member_id );
+		update_post_meta( $attachment_id, '_wp_mcp_ai_upload_date', current_time( 'mysql' ) );
+		update_post_meta( $attachment_id, '_wp_mcp_ai_upload_user', get_current_user_id() );
+
+		// Get file details.
+		$attachment = get_post( $attachment_id );
+		$file_url   = wp_get_attachment_url( $attachment_id );
+		$file_name  = basename( get_attached_file( $attachment_id ) );
+
+		wp_send_json_success(
+			array(
+				'message'       => __( 'File uploaded successfully!', 'nvoos-content-graph-pro' ),
+				'attachment_id' => $attachment_id,
+				'file_name'     => $file_name,
+				'file_url'      => $file_url,
+				'file_type'     => $file_type,
+			)
+		);
+	}
+
+	/**
+	 * Handle AJAX: load existing vitals from the JetEngine CCT for a member.
+	 */
+	public static function handle_get_member_vitals_preview() {
+		check_ajax_referer( 'wp_mcp_ai_health_consolidate', 'nonce' );
+
+		if ( ! current_user_can( 'read' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to view vitals.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		$member_id = isset( $_POST['member_id'] ) ? absint( $_POST['member_id'] ) : 0;
+		if ( ! $member_id ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid member ID.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		$has_cct = class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) && WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists();
+		$vitals  = $has_cct ? WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_for_member( $member_id, '', 30 ) : array();
+
+		ob_start();
+		self::render_vitals_cct_preview( $vitals, $has_cct );
+		$html = ob_get_clean();
+
+		wp_send_json_success(
+			array(
+				'html'    => $html,
+				'count'   => count( $vitals ),
+				'has_cct' => $has_cct,
+			)
+		);
+	}
+
+	/**
+	 * Handle AJAX: import a set of vitals into the JetEngine CCT.
+	 */
+	public static function handle_import_vitals_to_cct() {
+		check_ajax_referer( 'wp_mcp_ai_health_consolidate', 'nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to import vitals.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		$member_id = isset( $_POST['member_id'] ) ? absint( $_POST['member_id'] ) : 0;
+		if ( ! $member_id ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid member ID.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) || ! WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists() ) {
+			wp_send_json_error( array( 'message' => __( 'JetEngine Vitals Log CCT is not available. Please ensure JetEngine is installed and active.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized inside helper.
+		$data = self::sanitize_vitals_post_data( $_POST );
+
+		// Require at least one numeric vital sign measurement (server-side defence).
+		if ( ! self::has_numeric_vitals( $data ) ) {
+			wp_send_json_error( array( 'message' => __( 'No vital sign data provided. Please fill in at least one measurement.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		// Ensure measurement date/time are always populated.
+		if ( empty( $data['measurement_date'] ) ) {
+			$data['measurement_date'] = current_time( 'Y-m-d' );
+		}
+		if ( empty( $data['measurement_time'] ) ) {
+			$data['measurement_time'] = current_time( 'H:i' );
+		}
+
+		// Validate source against the CCT allowed option list.
+		$allowed_sources = array( 'manual', 'tma', 'api', 'import' );
+		$raw_source      = isset( $_POST['source'] ) ? sanitize_key( wp_unslash( $_POST['source'] ) ) : 'manual';
+		$data['source']  = in_array( $raw_source, $allowed_sources, true ) ? $raw_source : 'manual';
+
+		// Stamp the entry with an audit trail — these mirror what log_vital_signs tool sets.
+		$data['logged_at'] = current_time( 'mysql' );
+		$data['logged_by'] = get_current_user_id();
+		$data['entry_id']  = 'vs_' . time() . '_' . wp_rand( 1000, 9999 );
+
+		$item_id = WP_MCP_AI_JetEngine_Vitals_Log_CCT::upsert( $member_id, $data );
+
+		if ( ! $item_id ) {
+			wp_send_json_error( array( 'message' => __( 'Failed to save vitals to CCT. Please try again.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => sprintf(
+					/* translators: %d: CCT item ID */
+					__( 'Vital signs successfully saved to CCT (ID: %d).', 'nvoos-content-graph-pro' ),
+					$item_id
+				),
+				'item_id' => $item_id,
+			)
+		);
+	}
+
+	/**
+	 * Return true when $data contains at least one numeric vital sign field.
+	 *
+	 * Meta-only payloads (date, time, units, notes, source) must not be saved
+	 * as empty vitals entries.
+	 *
+	 * @param array $data Sanitized POST data.
+	 * @return bool
+	 */
+	private static function has_numeric_vitals( array $data ) {
+		// Delegate to the CCT class for the authoritative field list so that
+		// adding a new vital field only requires a change in one place.
+		$numeric_fields = class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' )
+			? WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_numeric_vital_fields()
+			: array(
+				'bp_systolic',
+				'bp_diastolic',
+				'heart_rate',
+				'temperature',
+				'weight',
+				'bmi',
+				'blood_glucose',
+				'oxygen_saturation',
+				'respiratory_rate',
+				'egfr',
+				'creatinine',
+				'bun',
+				'potassium',
+				'sodium',
+				'phosphorus',
+				'albumin',
+			);
+
+		foreach ( $numeric_fields as $field ) {
+			if ( isset( $data[ $field ] ) && '' !== (string) $data[ $field ] ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Sanitize vitals data from a POST payload.
+	 *
+	 * @param array $post Raw POST data.
+	 * @return array      Sanitized key/value pairs matching the CCT schema.
+	 */
+	private static function sanitize_vitals_post_data( array $post ) {
+		// Delegate to the CCT class for the authoritative field list so that
+		// adding a new vital field only requires a change in one place.
+		$numeric_fields = class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' )
+			? WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_numeric_vital_fields()
+			: array(
+				'bp_systolic',
+				'bp_diastolic',
+				'heart_rate',
+				'temperature',
+				'weight',
+				'bmi',
+				'blood_glucose',
+				'oxygen_saturation',
+				'respiratory_rate',
+				'egfr',
+				'creatinine',
+				'bun',
+				'potassium',
+				'sodium',
+				'phosphorus',
+				'albumin',
+			);
+
+		$data = array();
+
+		foreach ( $numeric_fields as $field ) {
+			if ( isset( $post[ $field ] ) && '' !== $post[ $field ] ) {
+				$data[ $field ] = floatval( $post[ $field ] );
+			}
+		}
+
+		if ( isset( $post['measurement_date'] ) && '' !== $post['measurement_date'] ) {
+			$data['measurement_date'] = sanitize_text_field( wp_unslash( $post['measurement_date'] ) );
+		}
+
+		if ( isset( $post['measurement_time'] ) && '' !== $post['measurement_time'] ) {
+			$data['measurement_time'] = sanitize_text_field( wp_unslash( $post['measurement_time'] ) );
+		}
+
+		if ( isset( $post['temperature_unit'] ) && in_array( $post['temperature_unit'], array( 'F', 'C' ), true ) ) {
+			$data['temperature_unit'] = $post['temperature_unit'];
+		}
+
+		if ( isset( $post['weight_unit'] ) && in_array( $post['weight_unit'], array( 'lbs', 'kg' ), true ) ) {
+			$data['weight_unit'] = $post['weight_unit'];
+		}
+
+		if ( isset( $post['notes'] ) && '' !== $post['notes'] ) {
+			$data['notes'] = sanitize_textarea_field( wp_unslash( $post['notes'] ) );
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Render a status-badged preview table of vitals from the CCT.
+	 *
+	 * @param array $vitals  Array of CCT row objects (newest first).
+	 * @param bool  $has_cct Whether the CCT table is available.
+	 */
+	private static function render_vitals_cct_preview( array $vitals, $has_cct ) {
+		if ( ! $has_cct ) {
+			?>
+			<div class="notice notice-warning inline">
+				<p><?php esc_html_e( 'JetEngine Custom Content Type (CCT) is not available. Install and activate JetEngine to enable structured vital sign storage.', 'nvoos-content-graph-pro' ); ?></p>
+			</div>
+			<?php
+			return;
+		}
+
+		if ( empty( $vitals ) ) {
+			?>
+			<div class="notice notice-info inline">
+				<p><?php esc_html_e( 'No vital sign readings found for this member in the CCT.', 'nvoos-content-graph-pro' ); ?></p>
+			</div>
+			<?php
+			return;
+		}
+
+		?>
+		<div class="vitals-cct-table-wrap">
+			<table class="wp-list-table widefat fixed striped vitals-cct-table">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Date', 'nvoos-content-graph-pro' ); ?></th>
+						<th><?php esc_html_e( 'BP (mmHg)', 'nvoos-content-graph-pro' ); ?></th>
+						<th><?php esc_html_e( 'HR (bpm)', 'nvoos-content-graph-pro' ); ?></th>
+						<th><?php esc_html_e( 'Temp', 'nvoos-content-graph-pro' ); ?></th>
+						<th><?php esc_html_e( 'SpO2', 'nvoos-content-graph-pro' ); ?></th>
+						<th><?php esc_html_e( 'Glucose', 'nvoos-content-graph-pro' ); ?></th>
+						<th><?php esc_html_e( 'eGFR', 'nvoos-content-graph-pro' ); ?></th>
+						<th><?php esc_html_e( 'Source', 'nvoos-content-graph-pro' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $vitals as $row ) : ?>
+						<tr>
+							<td><?php echo esc_html( $row->measurement_date ?? '' ); ?></td>
+							<td>
+								<?php
+								if ( ! empty( $row->bp_systolic ) && ! empty( $row->bp_diastolic ) ) {
+									$bp_status = ! empty( $row->bp_status ) ? $row->bp_status : 'normal';
+									printf(
+										'<span class="vitals-badge vitals-badge-%s">%s/%s</span>',
+										esc_attr( $bp_status ),
+										esc_html( $row->bp_systolic ),
+										esc_html( $row->bp_diastolic )
+									);
+								} else {
+									echo '—';
+								}
+								?>
+							</td>
+							<td>
+								<?php
+								if ( ! empty( $row->heart_rate ) ) {
+									$hr_status = ! empty( $row->heart_rate_status ) ? $row->heart_rate_status : 'normal';
+									printf(
+										'<span class="vitals-badge vitals-badge-%s">%s</span>',
+										esc_attr( $hr_status ),
+										esc_html( $row->heart_rate )
+									);
+								} else {
+									echo '—';
+								}
+								?>
+							</td>
+							<td>
+								<?php echo ! empty( $row->temperature ) ? esc_html( $row->temperature ) . '°' . esc_html( $row->temperature_unit ?? 'F' ) : '—'; ?>
+							</td>
+							<td>
+								<?php
+								if ( ! empty( $row->oxygen_saturation ) ) {
+									$spo2_status = ! empty( $row->oxygen_saturation_status ) ? $row->oxygen_saturation_status : 'normal';
+									printf(
+										'<span class="vitals-badge vitals-badge-%s">%s%%</span>',
+										esc_attr( $spo2_status ),
+										esc_html( $row->oxygen_saturation )
+									);
+								} else {
+									echo '—';
+								}
+								?>
+							</td>
+							<td>
+								<?php
+								if ( ! empty( $row->blood_glucose ) ) {
+									$glucose_status = ! empty( $row->blood_glucose_status ) ? $row->blood_glucose_status : 'normal';
+									printf(
+										'<span class="vitals-badge vitals-badge-%s">%s</span>',
+										esc_attr( $glucose_status ),
+										esc_html( $row->blood_glucose )
+									);
+								} else {
+									echo '—';
+								}
+								?>
+							</td>
+							<td><?php echo ! empty( $row->egfr ) ? esc_html( $row->egfr ) : '—'; ?></td>
+							<td><?php echo esc_html( ucfirst( $row->source ?? 'manual' ) ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+			<p class="description">
+				<?php
+				printf(
+					esc_html(
+						/* translators: %d: number of vital readings */
+						_n(
+							'Showing %d vital reading (most recent first).',
+							'Showing %d vital readings (most recent first).',
+							count( $vitals ),
+							'nvoos-content-graph-pro'
+						)
+					),
+					count( $vitals )
+				);
+				?>
+			</p>
+		</div>
+		<?php
+	}
+}
+
+// Initialize.
+WP_MCP_AI_Health_Records_Consolidate_Page::init();

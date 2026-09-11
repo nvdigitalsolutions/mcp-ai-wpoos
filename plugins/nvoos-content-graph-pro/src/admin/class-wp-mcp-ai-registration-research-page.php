@@ -1,0 +1,692 @@
+<?php
+/**
+ * class-wp-mcp-ai-registration-research-page.php (ecosystem port — Wave F2, regulatory-registration admin slice).
+ *
+ * Ported from the base Pro addon's `addons/pro/includes/admin/class-wp-mcp-ai-registration-research-page.php` for the
+ * standalone `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro addon owns the
+ * class in monolith installs — the addon boots nothing when `WP_MCP_AI_PRO_PATH` is defined
+ * (see the plugin entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain `nvoos-content-graph-pro`;
+ * `NVOOS_CONTENT_GRAPH_PRO_*` constant swaps (the base-owned `WP_MCP_AI_URL`/`WP_MCP_AI_VERSION`
+ * enqueue refs and the `class_exists`-guarded shortcode/tool seams stay byte-identical); the
+ * `__DIR__` trait requires and the `cpt-settings-page-base` require resolve from the addon's
+ * already-ported `src/admin/` copies.
+ *
+ * @package NvoosContentGraphPro
+ * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+require_once __DIR__ . '/trait-wp-mcp-ai-research-page-featured-image.php';
+require_once __DIR__ . '/trait-wp-mcp-ai-research-page-enhancements.php';
+
+/**
+ * Registration Research Page class.
+ */
+class WP_MCP_AI_Registration_Research_Page {
+	use WP_MCP_AI_Research_Page_Featured_Image;
+	use WP_MCP_AI_Research_Page_Import_Handler;
+	use WP_MCP_AI_Research_Page_Consolidation;
+	use WP_MCP_AI_Research_Page_Data_Validation;
+	use WP_MCP_AI_Research_Page_Mode_Tabs;
+
+	/**
+	 * Page slug.
+	 *
+	 * @var string
+	 */
+	const PAGE_SLUG = 'wp-mcp-ai-registration-research';
+
+	/**
+	 * Initialize the class.
+	 */
+	public static function init() {
+		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 21 );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_create_registration_from_research', array( __CLASS__, 'handle_create_from_research' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_import_registration', array( __CLASS__, 'ajax_handle_import' ) );
+		add_action( 'admin_init', array( __CLASS__, 'handle_assistant_update' ) );
+	}
+
+	/**
+	 * Handle assistant update form submission.
+	 */
+	public static function handle_assistant_update() {
+		// Check if this is our form submission.
+		if ( ! isset( $_POST['action'] ) || 'update_registration_assistant' !== $_POST['action'] ) {
+			return;
+		}
+
+		// Verify nonce.
+		if ( ! isset( $_POST['wp_mcp_ai_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_nonce'] ) ), 'wp_mcp_ai_registration_research_assistant' ) ) {
+			return;
+		}
+
+		// Check user capability.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return;
+		}
+
+		// Get and validate assistant ID.
+		$assistant_id = isset( $_POST['registration_assistant_id'] ) ? absint( $_POST['registration_assistant_id'] ) : 0;
+
+		if ( $assistant_id > 0 && 'publish' === get_post_status( $assistant_id ) ) {
+			// Update settings with new assistant ID.
+			$settings                 = get_option( 'wp_mcp_ai_registration_settings', array() );
+			$settings['assistant_id'] = $assistant_id;
+			update_option( 'wp_mcp_ai_registration_settings', $settings );
+
+			// Redirect back to the research page with success message.
+			wp_safe_redirect( add_query_arg( 'assistant_updated', '1', wp_get_referer() ) );
+			exit;
+		}
+	}
+
+	/**
+	 * Add menu page.
+	 */
+	public static function add_menu_page() {
+		add_submenu_page(
+			'edit.php?post_type=mcp_ai_registration',
+			__( 'Research & Add Registrations', 'nvoos-content-graph-pro' ),
+			__( 'Research & Add', 'nvoos-content-graph-pro' ),
+			'edit_posts',
+			self::PAGE_SLUG,
+			array( __CLASS__, 'render_page' )
+		);
+	}
+
+	/**
+	 * Enqueue assets for the research page.
+	 *
+	 * @param string $hook Current admin page hook.
+	 */
+	public static function enqueue_assets( $hook ) {
+		// Only load on our research page.
+		if ( 'mcp_ai_registration_page_' . self::PAGE_SLUG !== $hook ) {
+			return;
+		}
+
+		// Enqueue chat assets.
+		if ( class_exists( 'WP_MCP_AI_Shortcode' ) ) {
+			$shortcode_instance = new WP_MCP_AI_Shortcode();
+			$shortcode_instance->register_assets();
+			wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
+			wp_enqueue_script( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
+		}
+
+		// Enqueue enhanced research page styles.
+		wp_enqueue_style(
+			'wp-mcp-ai-enhanced-research-page',
+			WP_MCP_AI_URL . 'assets/css/enhanced-research-page.css',
+			array(),
+			WP_MCP_AI_VERSION
+		);
+
+		// Enqueue enhanced research page script.
+		wp_enqueue_script(
+			'wp-mcp-ai-enhanced-research-page',
+			WP_MCP_AI_URL . 'assets/js/enhanced-research-page.js',
+			array( 'jquery' ),
+			WP_MCP_AI_VERSION,
+			true
+		);
+
+		// Localize script.
+		wp_localize_script(
+			'wp-mcp-ai-enhanced-research-page',
+			'wpMcpAiResearchPage',
+			array(
+				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
+				'nonce'      => wp_create_nonce( 'wp_mcp_ai_research_registration' ),
+				'entityType' => 'registration',
+			)
+		);
+	}
+
+	/**
+	 * Render the research page.
+	 */
+	public static function render_page() {
+		// Get assistant from settings.
+		$settings     = get_option( 'wp_mcp_ai_registration_settings', array() );
+		$assistant_id = isset( $settings['assistant_id'] ) ? absint( $settings['assistant_id'] ) : 0;
+
+		// If no assistant configured or invalid, get the first available assistant.
+		if ( ! $assistant_id || 'publish' !== get_post_status( $assistant_id ) ) {
+			$assistants = get_posts(
+				array(
+					'post_type'      => 'mcp_ai_assistant',
+					'post_status'    => 'publish',
+					'posts_per_page' => 1,
+					'orderby'        => 'date',
+					'order'          => 'DESC',
+				)
+			);
+
+			$assistant_id = ! empty( $assistants ) ? $assistants[0]->ID : 0;
+		}
+
+		?>
+		<div class="wrap wp-mcp-ai-research-page">
+			<h1 class="wp-heading-inline">
+				<?php esc_html_e( 'Research & Add Registration', 'nvoos-content-graph-pro' ); ?>
+			</h1>
+
+			<hr class="wp-header-end">
+
+			<?php
+			// Display success message if assistant was updated.
+			if ( isset( $_GET['assistant_updated'] ) && '1' === $_GET['assistant_updated'] ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				?>
+				<div class="notice notice-success is-dismissible">
+					<p><?php esc_html_e( 'AI Assistant updated successfully!', 'nvoos-content-graph-pro' ); ?></p>
+				</div>
+				<?php
+			endif;
+			?>
+
+			<?php self::render_chat_interface( $assistant_id ); ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the chat interface.
+	 *
+	 * @param int $assistant_id Assistant ID.
+	 */
+	protected static function render_chat_interface( $assistant_id ) {
+		// Get all available assistants for the dropdown.
+		$assistants = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+
+		?>
+			<div class="wrap-mcp-ai-research-container">
+				<div class="wp-mcp-ai-research-sidebar">
+					<!-- Assistant Selector Section -->
+					<div class="wp-mcp-ai-assistant-selector">
+						<h3><?php esc_html_e( 'Select AI Assistant', 'nvoos-content-graph-pro' ); ?></h3>
+						<?php if ( ! empty( $assistants ) ) : ?>
+							<form method="post" action="" id="wp-mcp-ai-assistant-form">
+								<?php wp_nonce_field( 'wp_mcp_ai_registration_research_assistant', 'wp_mcp_ai_nonce' ); ?>
+								<input type="hidden" name="action" value="update_registration_assistant" />
+								<select name="registration_assistant_id" id="registration-assistant-select" class="widefat">
+									<?php foreach ( $assistants as $asst ) : ?>
+										<option value="<?php echo esc_attr( $asst->ID ); ?>" <?php selected( $asst->ID, $assistant_id ); ?>>
+											<?php echo esc_html( $asst->post_title ); ?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+								<p>
+									<button type="submit" class="button button-primary">
+										<?php esc_html_e( 'Update Assistant', 'nvoos-content-graph-pro' ); ?>
+									</button>
+								</p>
+								<p class="description">
+									<?php esc_html_e( 'Select the AI assistant to use for registration research. You can also configure the default assistant in', 'nvoos-content-graph-pro' ); ?>
+									<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_registration&page=registration-settings' ) ); ?>">
+										<?php esc_html_e( 'Settings', 'nvoos-content-graph-pro' ); ?>
+									</a>.
+								</p>
+							</form>
+						<?php else : ?>
+							<p class="description">
+								<?php
+								echo wp_kses_post(
+									sprintf(
+										/* translators: %s: Link to create assistant */
+										__( 'No assistants found. <a href="%s">Create an assistant</a> first.', 'nvoos-content-graph-pro' ),
+										admin_url( 'post-new.php?post_type=mcp_ai_assistant' )
+									)
+								);
+								?>
+							</p>
+						<?php endif; ?>
+					</div>
+
+					<div class="wp-mcp-ai-research-intro">
+						<h2><?php esc_html_e( 'How It Works', 'nvoos-content-graph-pro' ); ?></h2>
+						<ol>
+							<li><?php esc_html_e( 'Select an AI assistant above', 'nvoos-content-graph-pro' ); ?></li>
+							<li><?php esc_html_e( 'Search existing registrations or research country requirements', 'nvoos-content-graph-pro' ); ?></li>
+							<li><?php esc_html_e( 'Review submission timelines and document checklists', 'nvoos-content-graph-pro' ); ?></li>
+							<li><?php esc_html_e( 'Create registrations linked to products and countries', 'nvoos-content-graph-pro' ); ?></li>
+							<li><?php esc_html_e( 'Track approval status and expiry dates', 'nvoos-content-graph-pro' ); ?></li>
+						</ol>
+					</div>
+
+					<div class="wp-mcp-ai-research-tips">
+						<h3><?php esc_html_e( 'Research Tips', 'nvoos-content-graph-pro' ); ?></h3>
+						<ul>
+							<li><strong><?php esc_html_e( 'Search first:', 'nvoos-content-graph-pro' ); ?></strong> <?php esc_html_e( 'Check for existing registrations', 'nvoos-content-graph-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Country requirements:', 'nvoos-content-graph-pro' ); ?></strong> <?php esc_html_e( 'Research specific regulatory frameworks', 'nvoos-content-graph-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Document checklist:', 'nvoos-content-graph-pro' ); ?></strong> <?php esc_html_e( 'Verify all required documents', 'nvoos-content-graph-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Timeline planning:', 'nvoos-content-graph-pro' ); ?></strong> <?php esc_html_e( 'Factor in 4-6 month approval times', 'nvoos-content-graph-pro' ); ?></li>
+						</ul>
+					</div>
+
+					<div class="wp-mcp-ai-research-examples">
+						<h3><?php esc_html_e( 'Example Queries', 'nvoos-content-graph-pro' ); ?></h3>
+						<ul class="wp-mcp-ai-example-list">
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research registering a cosmetic product in Sri Lanka NMRA including timeline, fees, and required documents">
+								<?php esc_html_e( '"Research registering a product in Sri Lanka..."', 'nvoos-content-graph-pro' ); ?>
+							</button></li>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Find information about UAE cosmetic registration requirements for MOHAP and Dubai Municipality">
+								<?php esc_html_e( '"Find UAE registration requirements..."', 'nvoos-content-graph-pro' ); ?>
+							</button></li>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research multi-country registration strategy for GCC region with mutual recognition">
+								<?php esc_html_e( '"Research multi-country GCC strategy..."', 'nvoos-content-graph-pro' ); ?>
+							</button></li>
+						</ul>
+					</div>
+
+					<div class="wp-mcp-ai-research-actions">
+						<h3><?php esc_html_e( 'Quick Actions', 'nvoos-content-graph-pro' ); ?></h3>
+						<p>
+							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_registration' ) ); ?>" class="button">
+								<?php esc_html_e( 'View All Registrations', 'nvoos-content-graph-pro' ); ?>
+							</a>
+						</p>
+						<p>
+							<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_registration' ) ); ?>" class="button">
+								<?php esc_html_e( 'Add Registration Manually', 'nvoos-content-graph-pro' ); ?>
+							</a>
+						</p>
+						<p>
+							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_registration&page=wp-mcp-ai-registration-dashboard' ) ); ?>" class="button">
+								<?php esc_html_e( 'View Dashboard', 'nvoos-content-graph-pro' ); ?>
+							</a>
+						</p>
+					</div>
+				</div>
+
+				<div class="wp-mcp-ai-research-main">
+					<!-- Workflow Mode Selector -->
+					<div class="wp-mcp-ai-workflow-selector">
+						<h2><?php esc_html_e( 'Choose Your Workflow', 'nvoos-content-graph-pro' ); ?></h2>
+						<div class="workflow-options">
+							<button type="button" class="workflow-option active" data-workflow="research">
+								<span class="dashicons dashicons-format-chat"></span>
+								<strong><?php esc_html_e( 'AI Research', 'nvoos-content-graph-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Research and create registrations with AI assistance', 'nvoos-content-graph-pro' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="import">
+								<span class="dashicons dashicons-upload"></span>
+								<strong><?php esc_html_e( 'Import Data', 'nvoos-content-graph-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Bulk import registration data', 'nvoos-content-graph-pro' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="review">
+								<span class="dashicons dashicons-analytics"></span>
+								<strong><?php esc_html_e( 'Review & Status', 'nvoos-content-graph-pro' ); ?></strong>
+								<p><?php esc_html_e( 'View registration status and expiry dates', 'nvoos-content-graph-pro' ); ?></p>
+							</button>
+						</div>
+					</div>
+
+					<!-- AI Research Workflow (Default) -->
+					<div id="workflow-research" class="workflow-content active">
+					<?php if ( $assistant_id > 0 ) : ?>
+						<div class="wp-mcp-ai-research-chat">
+							<?php
+							// Render chat interface with comprehensive regulatory registration tools.
+							// Include all regulatory registration toolkit tools to enable full management capabilities.
+							$reg_tools = array(
+								// Core product management.
+								'create_reg_product',
+								'update_reg_product',
+								'delete_reg_product',
+								'duplicate_reg_product',
+								'get_reg_product',
+								'list_reg_products',
+								'search_reg_products',
+								'validate_reg_product',
+								// Registration management.
+								'create_registration',
+								'get_registration',
+								'list_registrations',
+								'list_registrations_by_country',
+								'list_expiring_registrations',
+								'update_registration_status',
+								'approve_registration',
+								'submit_registration',
+								'renew_registration',
+								'get_registration_timeline',
+								'submit_to_authority',
+								// Document management.
+								'upload_reg_document',
+								'get_reg_document',
+								'update_reg_document',
+								'list_reg_documents',
+								'validate_document_checklist',
+								'track_document_version',
+								'check_document_expiry',
+								// Excel import/export.
+								'import_products_from_excel',
+								'export_products_to_excel',
+								'validate_excel_import',
+								'import_registrations_from_excel',
+								'export_registrations_to_excel',
+								// Compliance & validation.
+								'check_product_compliance',
+								'validate_inci_ingredients',
+								'check_hs_code',
+								'get_regulatory_requirements',
+								'get_regulatory_updates',
+								'add_regulatory_requirement',
+								'check_authority_status',
+								// Reports & analytics.
+								'generate_compliance_report',
+								'generate_compliance_certificate',
+								'generate_cost_analysis',
+								'generate_country_performance',
+								'generate_expiry_forecast',
+								'generate_pipeline_report',
+								'generate_pdf_dossier',
+								'generate_submission_pack',
+								'generate_cover_letter',
+								// Notifications.
+								'configure_email_notifications',
+								'send_expiry_alerts',
+								'send_status_change_notification',
+								'get_notification_history',
+								// Workflow automation.
+								'create_workflow_rule',
+								'update_workflow_rule',
+								'delete_workflow_rule',
+								'list_workflow_rules',
+								'test_workflow_rule',
+								'get_workflow_execution_log',
+								// Authority integrations.
+								'sync_with_mohap',
+								'sync_with_nmra',
+								// Research → Paper Store pipeline.
+								'generate_research_report',
+								'create_post_from_research',
+								// General research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
+							echo do_shortcode(
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $reg_tools ) ) . '"]'
+							);
+							?>
+						</div>
+
+					<?php else : ?>
+						<div class="notice notice-error">
+							<p>
+								<?php
+								echo wp_kses_post(
+									sprintf(
+										/* translators: %s: Link to create assistant */
+										__( 'No AI assistant found. Please <a href="%s">create an assistant</a> first.', 'nvoos-content-graph-pro' ),
+										admin_url( 'post-new.php?post_type=mcp_ai_assistant' )
+									)
+								);
+								?>
+							</p>
+						</div>
+					<?php endif; ?>
+					</div>
+
+					<!-- Import Data Workflow -->
+					<div id="workflow-import" class="workflow-content">
+						<?php self::render_import_workflow(); ?>
+					</div>
+
+					<!-- Review & Quality Workflow -->
+					<div id="workflow-review" class="workflow-content">
+						<?php self::render_review_workflow(); ?>
+					</div>
+				</div>
+			</div>
+		<?php
+	}
+
+	/**
+	 * Render import workflow section.
+	 */
+	protected static function render_import_workflow() {
+		self::render_import_section();
+	}
+
+	/**
+	 * Render review workflow section.
+	 */
+	protected static function render_review_workflow() {
+		self::render_consolidation_dashboard();
+	}
+
+	/**
+	 * Handle AJAX request to create registration from research.
+	 */
+	public static function handle_create_from_research() {
+		// Verify nonce.
+		check_ajax_referer( 'wp_mcp_ai_research_registration', 'nonce' );
+
+		// Check user capability.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to create registrations.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		// Get research data from request.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Data is sanitized by tool execute method.
+		$research_data_raw = isset( $_POST['research_data'] ) ? wp_unslash( $_POST['research_data'] ) : '';
+
+		if ( empty( $research_data_raw ) ) {
+			wp_send_json_error( array( 'message' => __( 'No research data provided.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		$research_data = json_decode( $research_data_raw, true );
+
+		// Validate JSON decoding.
+		if ( null === $research_data || JSON_ERROR_NONE !== json_last_error() ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid JSON data format.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		if ( empty( $research_data['product_id'] ) && empty( $research_data['title'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'Product ID or registration title is required.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		// Use the create_registration tool to create the registration.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Registration' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Create Registration tool not available.', 'nvoos-content-graph-pro' ) ) );
+		}
+
+		$tool   = new WP_MCP_AI_Tool_Create_Registration();
+		$result = $tool->execute(
+			$research_data,
+			array( 'user_id' => get_current_user_id() )
+		);
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		// Return success with registration ID and edit URL.
+		$registration_id = isset( $result['registration_id'] ) ? $result['registration_id'] : 0;
+		$edit_url        = $registration_id > 0 ? admin_url( 'post.php?post=' . $registration_id . '&action=edit' ) : '';
+
+		wp_send_json_success(
+			array(
+				'message'         => __( 'Registration created successfully!', 'nvoos-content-graph-pro' ),
+				'registration_id' => $registration_id,
+				'edit_url'        => $edit_url,
+			)
+		);
+	}
+
+	/**
+	 * Get supported import formats.
+	 *
+	 * @return array Import formats.
+	 */
+	protected static function get_import_formats() {
+		return array(
+			'csv'  => 'CSV',
+			'xlsx' => 'Excel',
+			'json' => 'JSON',
+		);
+	}
+
+	/**
+	 * Process imported data.
+	 *
+	 * @param string $data   Import data.
+	 * @param string $format Data format.
+	 * @return array|WP_Error Result or error.
+	 */
+	protected static function process_import_data( $data, $format ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundBeforeLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Required by trait interface.
+		// This would integrate with the import_registrations_from_excel tool.
+		return new WP_Error( 'not_implemented', __( 'Registration import will be handled through Excel import page.', 'nvoos-content-graph-pro' ) );
+	}
+
+	/**
+	 * Calculate completeness.
+	 *
+	 * @return array Completeness data.
+	 */
+	protected static function calculate_completeness() {
+		$registrations = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_registration',
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+			)
+		);
+
+		$total         = count( $registrations );
+		$complete      = 0;
+		$missing_items = array();
+
+		foreach ( $registrations as $registration ) {
+			$meta           = get_post_meta( $registration->ID );
+			$has_product    = ! empty( $meta['product_id'][0] ?? '' );
+			$has_country    = ! empty( $meta['country'][0] ?? '' );
+			$has_submission = ! empty( $meta['submission_date'][0] ?? '' );
+
+			if ( $has_product && $has_country && $has_submission ) {
+				++$complete;
+			} else {
+				if ( ! $has_product ) {
+					$missing_items[] = sprintf( '%s: Missing product link', $registration->post_title );
+				}
+				if ( ! $has_country ) {
+					$missing_items[] = sprintf( '%s: Missing country', $registration->post_title );
+				}
+				if ( ! $has_submission ) {
+					$missing_items[] = sprintf( '%s: Missing submission date', $registration->post_title );
+				}
+			}
+		}
+
+		$percentage = $total > 0 ? round( ( $complete / $total ) * 100 ) : 0;
+
+		return array(
+			'percentage'  => $percentage,
+			'missing'     => array_slice( $missing_items, 0, 10 ),
+			'suggestions' => array(
+				__( 'Link all registrations to products', 'nvoos-content-graph-pro' ),
+				__( 'Add country and regulatory authority', 'nvoos-content-graph-pro' ),
+				__( 'Update submission and approval dates', 'nvoos-content-graph-pro' ),
+			),
+		);
+	}
+
+	/**
+	 * Get items for review.
+	 *
+	 * @return array Items.
+	 */
+	protected static function get_items_for_review() {
+		$registrations = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_registration',
+				'post_status'    => 'any',
+				'posts_per_page' => 20,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+			)
+		);
+
+		$items = array();
+		foreach ( $registrations as $registration ) {
+			$items[] = array(
+				'id'    => $registration->ID,
+				'title' => $registration->post_title,
+				'meta'  => get_post_meta( $registration->ID ),
+			);
+		}
+
+		return $items;
+	}
+
+	/**
+	 * Calculate quality score for item.
+	 *
+	 * @param array $item Item data.
+	 * @return array Quality data.
+	 */
+	protected static function calculate_quality_score( $item ) {
+		$score  = 0;
+		$issues = array();
+		$meta   = $item['meta'] ?? array();
+
+		// Check required fields (20 points each).
+		$required_fields = array(
+			'product_id'      => __( 'Product Link', 'nvoos-content-graph-pro' ),
+			'country'         => __( 'Country', 'nvoos-content-graph-pro' ),
+			'submission_date' => __( 'Submission Date', 'nvoos-content-graph-pro' ),
+			'approval_date'   => __( 'Approval Date', 'nvoos-content-graph-pro' ),
+			'expiry_date'     => __( 'Expiry Date', 'nvoos-content-graph-pro' ),
+		);
+
+		foreach ( $required_fields as $field => $label ) {
+			if ( ! empty( $meta[ $field ][0] ?? '' ) ) {
+				$score += 20;
+			} else {
+				$issues[] = sprintf(
+					/* translators: %s: Field label */
+					__( 'Missing %s', 'nvoos-content-graph-pro' ),
+					$label
+				);
+			}
+		}
+
+		// Determine quality level.
+		if ( $score >= 90 ) {
+			$level = 'high';
+		} elseif ( $score >= 60 ) {
+			$level = 'medium';
+		} else {
+			$level = 'low';
+		}
+
+		return array(
+			'score'  => $score,
+			'level'  => $level,
+			'status' => $score >= 90 ? __( 'Complete', 'nvoos-content-graph-pro' ) : __( 'Incomplete', 'nvoos-content-graph-pro' ),
+			'issues' => $issues,
+		);
+	}
+}
+
+WP_MCP_AI_Registration_Research_Page::init();

@@ -175,7 +175,7 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public static function is_available() {
 		// Project management is a Pro feature.
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return false;
 		}
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
@@ -762,7 +762,7 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 				return $model;
 
 			case 'deepseek':
-				return ! empty( $settings['deepseek_model'] ) ? $settings['deepseek_model'] : 'deepseek-v4-flash';
+				return ! empty( $settings['deepseek_model'] ) ? $settings['deepseek_model'] : 'deepseek-flash';
 
 			case 'cloudflare':
 				return ! empty( $settings['cloudflare_model'] ) ? $settings['cloudflare_model'] : '@cf/meta/llama-4-scout-17b-16e-instruct';

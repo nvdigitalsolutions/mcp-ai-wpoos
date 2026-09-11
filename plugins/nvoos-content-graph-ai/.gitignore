@@ -1,3 +1,9 @@
 /vendor/
 /.phpunit.cache
 /.phpunit.result.cache
+
+# Keep vendored 3rd-party libraries (Konva) required by the markup subsystem.
+# MIT-licensed npm release bundled locally for WordPress.org compliance
+# (no CDN loads). See assets/js/vendor/konva/README.md.
+!assets/js/vendor/**/*.min.js
+!assets/js/vendor/**/*.js

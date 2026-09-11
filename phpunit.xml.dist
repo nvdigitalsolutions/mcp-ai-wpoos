@@ -18,6 +18,10 @@
             <exclude>tests/bootstrap.php</exclude>
             <exclude>tests/fixtures</exclude>
             <exclude>tests/regression</exclude>
+            <!-- The base+pro matrix runs this suite under phpunit-basepro.xml.dist
+                 with WP_MCP_AI_BASE_VERSION=true; the monolith suite boots with the
+                 full-version constant and must not pick these tests up. -->
+            <exclude>tests/basepro</exclude>
             <exclude>tests/wp-cli-smoke.php</exclude>
             <exclude>tests/wp-tests-config.php</exclude>
             <exclude>tests/helpers</exclude>

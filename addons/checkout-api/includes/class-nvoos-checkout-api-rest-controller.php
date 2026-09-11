@@ -32,9 +32,13 @@ class NVOOS_Checkout_API_Rest_Controller {
 	/**
 	 * Products this checkout sells.
 	 *
+	 * `nvoos-oos-complete` is the current product (the NV oOS Complete
+	 * bundle); `nvoos-content-graph-ai` stays accepted for legacy
+	 * purchases issued before the Complete bundle replaced the AI addon.
+	 *
 	 * @var string[]
 	 */
-	public const PRODUCTS = array( 'nvoos-content-graph-ai' );
+	public const PRODUCTS = array( 'nvoos-oos-complete', 'nvoos-content-graph-ai' );
 
 	/**
 	 * Register routes.
@@ -80,7 +84,7 @@ class NVOOS_Checkout_API_Rest_Controller {
 				'callback'            => array( $this, 'verify_payment' ),
 				'permission_callback' => '__return_true', // Public by design — see class docblock.
 				'args'                => array(
-					'product'        => array(
+					'product'         => array(
 						'required'          => true,
 						'type'              => 'string',
 						'validate_callback' => function ( $value ) {
@@ -88,19 +92,40 @@ class NVOOS_Checkout_API_Rest_Controller {
 						},
 						'sanitize_callback' => 'sanitize_text_field',
 					),
-					'site_url'       => array(
+					'site_url'        => array(
 						'required'          => true,
 						'type'              => 'string',
 						'validate_callback' => array( $this, 'validate_site_url' ),
 						'sanitize_callback' => array( $this, 'sanitize_site_url' ),
 					),
-					'payment_intent' => array(
+					'payment_intent'  => array(
 						'required'          => true,
 						'type'              => 'string',
 						'validate_callback' => function ( $value ) {
 							return is_string( $value ) && 1 === preg_match( '/^pi_[A-Za-z0-9]{8,}$/', $value );
 						},
 						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'terms_agreed_at' => array(
+						'type'              => 'integer',
+						'validate_callback' => array( $this, 'validate_terms_agreed_at' ),
+						'sanitize_callback' => 'absint',
+					),
+					'buyer_email'     => array(
+						'type'              => 'string',
+						'validate_callback' => function ( $value ) {
+							return is_string( $value ) && ( '' === $value || false !== is_email( $value ) );
+						},
+						'sanitize_callback' => 'sanitize_email',
+					),
+					'buyer_country'   => array(
+						'type'              => 'string',
+						'validate_callback' => function ( $value ) {
+							return is_string( $value ) && ( '' === $value || 1 === preg_match( '/^[A-Z]{2}$/', $value ) );
+						},
+						'sanitize_callback' => function ( $value ) {
+							return strtoupper( sanitize_text_field( $value ) );
+						},
 					),
 				),
 			)
@@ -113,6 +138,41 @@ class NVOOS_Checkout_API_Rest_Controller {
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'handle_webhook' ),
 				'permission_callback' => '__return_true', // Signature-gated inside the handler.
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/health',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'health' ),
+				'permission_callback' => '__return_true', // Public status probe — no secrets, no Stripe, no writes.
+			)
+		);
+	}
+
+	/**
+	 * GET /health — cheap public status probe.
+	 *
+	 * Lets customer sites (the free Content Graph plugin) verify that the
+	 * checkout endpoint is reachable and serving before they start a
+	 * payment session — without spending a rate-limit token or touching
+	 * Stripe. The response is deliberately small and stable so the client
+	 * can rely on it as a connectivity contract.
+	 *
+	 * @since 0.1.1
+	 *
+	 * @return WP_REST_Response
+	 */
+	public function health() {
+		return rest_ensure_response(
+			array(
+				'status'      => 'ok',
+				'service'     => 'nvoos-checkout',
+				'version'     => defined( 'NVOOS_CHECKOUT_API_VERSION' ) ? (string) NVOOS_CHECKOUT_API_VERSION : '0.1.0',
+				'configured'  => NVOOS_Checkout_API_Settings::is_configured(),
+				'server_time' => time(),
 			)
 		);
 	}
@@ -134,19 +194,34 @@ class NVOOS_Checkout_API_Rest_Controller {
 
 		$client = new NVOOS_Checkout_API_Stripe_Client( NVOOS_Checkout_API_Settings::stripe_secret_key() );
 
-		$intent = $client->create_payment_intent(
-			array(
-				'amount'                    => NVOOS_Checkout_API_Settings::price_cents(),
-				'currency'                  => NVOOS_Checkout_API_Settings::currency(),
-				'description'               => 'NV oOS ' . $request['product'] . ' license',
-				'automatic_payment_methods' => array( 'enabled' => true ),
-				'metadata'                  => array(
-					'product'       => (string) $request['product'],
-					'site_url'      => (string) $request['site_url'],
-					'addon_version' => (string) ( $request['addon_version'] ?? '' ),
-				),
-			)
+		$intent_params = array(
+			'amount'                    => NVOOS_Checkout_API_Settings::price_cents(),
+			'currency'                  => NVOOS_Checkout_API_Settings::currency(),
+			'description'               => 'NV oOS ' . $request['product'] . ' license',
+			'automatic_payment_methods' => array( 'enabled' => true ),
+			'metadata'                  => array(
+				'product'       => (string) $request['product'],
+				'site_url'      => (string) $request['site_url'],
+				'addon_version' => (string) ( $request['addon_version'] ?? '' ),
+			),
 		);
+
+		// Reporting/tax metadata — the Stripe Product/Price are created from
+		// the storefront admin and never change how the charge works.
+		if ( '' !== NVOOS_Checkout_API_Settings::product_id() ) {
+			$intent_params['metadata']['stripe_product_id'] = NVOOS_Checkout_API_Settings::product_id();
+		}
+		if ( '' !== NVOOS_Checkout_API_Settings::price_id() ) {
+			$intent_params['metadata']['stripe_price_id'] = NVOOS_Checkout_API_Settings::price_id();
+		}
+
+		// Card statement descriptor (omitted when unset/invalid so Stripe's
+		// default applies).
+		if ( '' !== NVOOS_Checkout_API_Settings::statement_descriptor() ) {
+			$intent_params['statement_descriptor'] = NVOOS_Checkout_API_Settings::statement_descriptor();
+		}
+
+		$intent = $client->create_payment_intent( $intent_params );
 
 		if ( is_wp_error( $intent ) ) {
 			return $intent;
@@ -158,11 +233,13 @@ class NVOOS_Checkout_API_Rest_Controller {
 
 		return rest_ensure_response(
 			array(
-				'client_secret'   => sanitize_text_field( (string) $intent['client_secret'] ),
-				'publishable_key' => NVOOS_Checkout_API_Settings::stripe_publishable_key(),
-				'amount'          => NVOOS_Checkout_API_Settings::price_cents(),
-				'currency'        => NVOOS_Checkout_API_Settings::currency(),
-				'test_mode'       => NVOOS_Checkout_API_Settings::is_test_mode(),
+				'client_secret'     => sanitize_text_field( (string) $intent['client_secret'] ),
+				'publishable_key'   => NVOOS_Checkout_API_Settings::stripe_publishable_key(),
+				'amount'            => NVOOS_Checkout_API_Settings::price_cents(),
+				'currency'          => NVOOS_Checkout_API_Settings::currency(),
+				'test_mode'         => NVOOS_Checkout_API_Settings::is_test_mode(),
+				'terms_url'         => NVOOS_Checkout_API_Settings::terms_url(),
+				'refund_policy_url' => NVOOS_Checkout_API_Settings::refund_policy_url(),
 			)
 		);
 	}
@@ -225,11 +302,37 @@ class NVOOS_Checkout_API_Rest_Controller {
 		}
 
 		// ─── Idempotent license issuance ────────────────────────────
+		$terms_agreed_at = $this->terms_agreed_mysql( $request );
+		// The intent's receipt_email (set by Stripe from the modal's
+		// confirmParams.receipt_email) is authoritative; the request param
+		// is the fallback for clients whose intent has no email.
+		$buyer_email = sanitize_email( (string) ( $intent['receipt_email'] ?? $request['buyer_email'] ?? '' ) );
+		// VAT records: the buyer-declared country code from the purchase
+		// modal (EU buyers are required to provide an address there).
+		$buyer_country = strtoupper( sanitize_text_field( (string) $request['buyer_country'] ) );
+
 		$existing = NVOOS_Checkout_API_License_Store::get_by_payment_intent( (string) $request['payment_intent'] );
 		if ( null !== $existing ) {
 			if ( NVOOS_Checkout_API_License_Store::STATUS_ACTIVE !== ( $existing['status'] ?? '' ) ) {
 				return new WP_Error( 'nvoos_checkout_license_revoked', __( 'This license has been revoked. Please contact support.', 'nvoos-checkout-api' ), array( 'status' => 402 ) );
 			}
+
+			// The webhook usually issues the license before the browser's
+			// /verify arrives — attach the buyer's consent timestamp, email,
+			// and country to that existing row (never overwrites).
+			if ( '' !== $terms_agreed_at && empty( $existing['terms_agreed_at'] ) ) {
+				NVOOS_Checkout_API_License_Store::set_terms_agreed( (string) $existing['license_key'], $terms_agreed_at );
+				$existing['terms_agreed_at'] = $terms_agreed_at;
+			}
+			if ( '' !== $buyer_email && empty( $existing['buyer_email'] ) ) {
+				NVOOS_Checkout_API_License_Store::set_buyer_email( (string) $existing['license_key'], $buyer_email );
+				$existing['buyer_email'] = $buyer_email;
+			}
+			if ( '' !== $buyer_country && empty( $existing['buyer_country'] ) ) {
+				NVOOS_Checkout_API_License_Store::set_buyer_country( (string) $existing['license_key'], $buyer_country );
+				$existing['buyer_country'] = $buyer_country;
+			}
+
 			return rest_ensure_response( $this->license_response( $existing ) );
 		}
 
@@ -243,6 +346,9 @@ class NVOOS_Checkout_API_Rest_Controller {
 				'amount'                => (int) $intent['amount_received'],
 				'currency'              => NVOOS_Checkout_API_Settings::currency(),
 				'addon_version'         => NVOOS_Checkout_API_Settings::addon_version(),
+				'buyer_email'           => $buyer_email,
+				'buyer_country'         => $buyer_country,
+				'terms_agreed_at'       => $terms_agreed_at,
 			)
 		);
 
@@ -365,6 +471,7 @@ class NVOOS_Checkout_API_Rest_Controller {
 				'amount'                => (int) $intent['amount_received'],
 				'currency'              => NVOOS_Checkout_API_Settings::currency(),
 				'addon_version'         => NVOOS_Checkout_API_Settings::addon_version(),
+				'buyer_email'           => sanitize_email( (string) ( $intent['receipt_email'] ?? '' ) ),
 			)
 		);
 
@@ -402,6 +509,38 @@ class NVOOS_Checkout_API_Rest_Controller {
 			return false;
 		}
 		return true;
+	}
+
+	/**
+	 * Validate a Terms-of-Service consent timestamp.
+	 *
+	 * Must be a plausible Unix timestamp: no older than seven days (covers
+	 * the checkout flow plus browser clock drift) and no more than ten
+	 * minutes in the future.
+	 *
+	 * @param mixed $value Candidate Unix timestamp.
+	 * @return bool
+	 */
+	public function validate_terms_agreed_at( $value ): bool {
+		if ( ! is_numeric( $value ) ) {
+			return false;
+		}
+
+		$ts = (int) $value;
+		return $ts > 0
+			&& $ts >= time() - 7 * DAY_IN_SECONDS
+			&& $ts <= time() + 10 * MINUTE_IN_SECONDS;
+	}
+
+	/**
+	 * The request's consent timestamp as a GMT MySQL datetime ('' when absent).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return string
+	 */
+	private function terms_agreed_mysql( WP_REST_Request $request ): string {
+		$ts = (int) $request->get_param( 'terms_agreed_at' );
+		return $ts > 0 ? gmdate( 'Y-m-d H:i:s', $ts ) : '';
 	}
 
 	/**

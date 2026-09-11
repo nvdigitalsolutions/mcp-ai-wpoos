@@ -60,10 +60,10 @@ class WP_MCP_AI_Site_Template_CPT {
 			return;
 		}
 
-		// Check if we're in base version mode.
+		// Check if we're in base version mode without the Pro addon.
 		$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
 
-		if ( $is_base ) {
+		if ( $is_base && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			?>
 			<div class="notice notice-warning is-dismissible">
 				<p>

@@ -525,6 +525,13 @@ WP_MCP_AI_Async_Scheduler_Bridge::register_hooks();
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php';
 }
+// Side-effect file: registers the plugins_loaded init hook that creates the
+// job queue table and schedules its cron jobs. Must be required at boot (not
+// lazily autoloaded) — if the class is only autoloaded mid-request, the
+// plugins_loaded action has already fired, init() never runs, the table is
+// never created, and WP_MCP_AI_Load_Guard spams "table doesn't exist" SQL
+// errors on every REST dispatch.
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-async-job-queue.php';
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-sla-manager.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-sla-manager.php';
 }

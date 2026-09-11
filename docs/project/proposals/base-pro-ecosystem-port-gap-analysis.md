@@ -114,7 +114,7 @@ A2A, ACP, Agents (role system), Federation + Mesh, Teams, Professions, Skills, S
 - **D1** — Ownership discriminator: **resolved by D-NOBASE** — keep the existing `! defined('WP_MCP_AI_PATH')` pattern (it already works without touching the base); an optional ecosystem-side helper may generalize it. No meta-plugin mode in the base.
 - **D2** — Assistant CPT + builder/test UI home: **resolved by D-NOCORE → `content-graph-ai`**.
 - **D3** — Elementor/Woo/JetEngine/RankMath/WPCode: dedicated `extensions` addon (roadmap) vs distribute to owning plugins. Recommendation: distribute to owning plugins (a dedicated addon is still possible later; either way no base/core change).
-- **D4** — Engine pieces (OOS/markup/paper-store/OKF/crawler): separate `engine` addon (roadmap) vs fold into `content-graph-ai` (your two-plugin constraint). Recommendation: fold into CG-AI under an `Engine\` namespace.
+- **D4** — Engine pieces (OOS/markup/paper-store/OKF/crawler): **resolved 2026-09-06 → fold into `content-graph-ai` under an `Engine\` namespace** (decision owner confirmed; Wave E6 underway — see the tracker). A separate `engine` addon is ruled out.
 - **D5** — Pro packaging: 10 addons immediately (roadmap) vs one consolidated `nvoos-content-graph-pro` addon first, split later. Recommendation: consolidated first.
 - **D6** — Open-source distribution mapping: which ecosystem plugins constitute the wp.org "Base" tier (~303 tools, no third-party APIs). Docs/distribution only.
 - **D7** — Base-copy deletion window: **resolved by D-NOBASE → never; legacy copies retained permanently**.

@@ -49,6 +49,7 @@ class CommerceTest extends WP_UnitTestCase {
 	 */
 	protected function tearDown(): void {
 		remove_all_filters( 'pre_http_request' );
+		remove_all_filters( 'nvoos_content_graph/commerce/skip_base_plugin_detection' );
 		delete_option( Schema::OPTION_LICENSE );
 		delete_option( Schema::OPTION_SETTINGS );
 		parent::tearDown();
@@ -84,11 +85,13 @@ class CommerceTest extends WP_UnitTestCase {
 			'response' => array( 'code' => 200 ),
 			'body'     => wp_json_encode(
 				array(
-					'client_secret'   => 'pi_test_secret_abc',
-					'publishable_key' => 'pk_test_abc',
-					'amount'          => 4900,
-					'currency'        => 'usd',
-					'test_mode'       => true,
+					'client_secret'     => 'pi_test_secret_abc',
+					'publishable_key'   => 'pk_test_abc',
+					'amount'            => 4900,
+					'currency'          => 'usd',
+					'test_mode'         => true,
+					'terms_url'         => 'https://vendor.example/terms',
+					'refund_policy_url' => 'https://vendor.example/refunds',
 				)
 			),
 		);
@@ -118,9 +121,9 @@ class CommerceTest extends WP_UnitTestCase {
 	}
 
 	/** @test */
-	public function fallbackProductUrlDefaultsToVendorPage(): void {
+	public function fallbackProductUrlDefaultsToReleasesPage(): void {
 		$this->assertSame(
-			'https://nvdigitalsolutions.com/plugins/nvoos-content-graph-ai/',
+			'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases',
 			Payments::fallbackProductUrl()
 		);
 	}
@@ -152,6 +155,96 @@ class CommerceTest extends WP_UnitTestCase {
 	public function installerReportsInstalledState(): void {
 		$this->assertIsBool( Installer::isInstalled() );
 		$this->assertIsBool( Installer::isActive() );
+		$this->assertIsBool( Installer::isBundleInstalled() );
+		$this->assertIsBool( Installer::isBundleActive() );
+	}
+
+	/** @test */
+	public function purchasePayloadUsesCompleteProduct(): void {
+		$payload = Payments::purchasePayload();
+
+		$this->assertSame( Schema::PRODUCT_COMPLETE, $payload['product'] );
+		$this->assertSame( 'nvoos-oos-complete', $payload['product'] );
+		$this->assertSame( home_url( '' ), $payload['site_url'] );
+		$this->assertSame( Payments::addonVersion(), $payload['addon_version'] );
+	}
+
+	/** @test */
+	public function zipUrlTargetsCompleteReleaseAsset(): void {
+		$url = Payments::zipUrl();
+
+		$this->assertStringContainsString( '/releases/download/nvdigital-oos-v', $url );
+		$this->assertStringContainsString( 'nvdigital-open-operator-system-oos-complete-', $url );
+		$this->assertStringEndsWith( '.zip', $url );
+	}
+
+	/** @test */
+	public function installerDetectsExistingBasePlugin(): void {
+		// A known NV oOS distribution folder present on disk must be detected.
+		$fakeDir  = WP_PLUGIN_DIR . '/nvdigital-open-operator-system-oos';
+		$fakeFile = $fakeDir . '/nvdigital-open-operator-system-oos.php';
+
+		// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_mkdir, WordPress.WP.AlternativeFunctions.file_system_operations_touch, WordPress.WP.AlternativeFunctions.unlink_unlink, WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Test fixture plugin folder; native ops are the test seam.
+		if ( ! is_dir( $fakeDir ) ) {
+			mkdir( $fakeDir, 0777, true );
+		}
+		touch( $fakeFile );
+
+		try {
+			$detected = Installer::detectExistingBasePlugin();
+			$this->assertNotSame( '', $detected );
+			$this->assertContains( $detected, Installer::KNOWN_BASE_PLUGINS );
+		} finally {
+			unlink( $fakeFile );
+			rmdir( $fakeDir );
+		}
+		// phpcs:enable WordPress.WP.AlternativeFunctions.file_system_operations_mkdir, WordPress.WP.AlternativeFunctions.file_system_operations_touch, WordPress.WP.AlternativeFunctions.unlink_unlink, WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
+	}
+
+	/** @test */
+	public function installAbortsWhenBasePluginAlreadyInstalled(): void {
+		// The test environment must contain some known base-plugin folder;
+		// create one when the mount is absent.
+		$fakeDir  = WP_PLUGIN_DIR . '/nvdigital-open-operator-system-oos';
+		$fakeFile = $fakeDir . '/nvdigital-open-operator-system-oos.php';
+		$created  = ! is_dir( $fakeDir );
+		// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_mkdir, WordPress.WP.AlternativeFunctions.file_system_operations_touch, WordPress.WP.AlternativeFunctions.unlink_unlink, WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Test fixture plugin folder; native ops are the test seam.
+		if ( $created ) {
+			mkdir( $fakeDir, 0777, true );
+			touch( $fakeFile );
+		}
+
+		// Any HTTP attempt would mean the guard failed — count them.
+		$http_calls = 0;
+		add_filter(
+			'pre_http_request',
+			static function () use ( &$http_calls ) {
+				$http_calls++;
+				return array(
+					'response' => array( 'code' => 404 ),
+					'body'     => '',
+				);
+			},
+			10,
+			0
+		);
+
+		try {
+			$result = Installer::install( 'https://vendor.example/download/complete.zip' );
+
+			$this->assertInstanceOf( WP_Error::class, $result );
+			$this->assertSame( 'nvoos_content_graph_base_plugin_exists', $result->get_error_code() );
+			$data = $result->get_error_data();
+			$this->assertTrue( $data['manual'] );
+			$this->assertSame( 'https://vendor.example/download/complete.zip', $data['zip_url'] );
+			$this->assertSame( 0, $http_calls, 'The installer must not download when a base plugin exists.' );
+		} finally {
+			if ( $created ) {
+				unlink( $fakeFile );
+				rmdir( $fakeDir );
+			}
+		}
+		// phpcs:enable WordPress.WP.AlternativeFunctions.file_system_operations_mkdir, WordPress.WP.AlternativeFunctions.file_system_operations_touch, WordPress.WP.AlternativeFunctions.unlink_unlink, WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
 	}
 
 	/** @test */
@@ -166,6 +259,67 @@ class CommerceTest extends WP_UnitTestCase {
 		$this->assertSame( 'pi_test_secret_abc', $data['client_secret'] );
 		$this->assertSame( 'pk_test_abc', $data['publishable_key'] );
 		$this->assertTrue( $data['test_mode'] );
+		$this->assertSame( 'https://vendor.example/terms', $data['terms_url'] );
+		$this->assertSame( 'https://vendor.example/refunds', $data['refund_policy_url'] );
+	}
+
+	/** @test */
+	public function sessionFallsBackToDefaultLegalUrls(): void {
+		$this->stubVendor(
+			array(
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'client_secret'   => 'pi_test_secret_abc',
+							'publishable_key' => 'pk_test_abc',
+							'amount'          => 4900,
+							'currency'        => 'usd',
+							'test_mode'       => true,
+							// No terms/refund URLs — a legacy vendor.
+						)
+					),
+				),
+			)
+		);
+
+		$controller = new CommerceController();
+		$response   = $controller->createSession( new \WP_REST_Request() );
+
+		$this->assertNotInstanceOf( WP_Error::class, $response );
+		$data = $response->get_data();
+		$this->assertSame( esc_url_raw( Payments::termsUrl() ), $data['terms_url'] );
+		$this->assertSame( esc_url_raw( Payments::refundPolicyUrl() ), $data['refund_policy_url'] );
+	}
+
+	/** @test */
+	public function sessionRejectsNonHttpLegalUrls(): void {
+		$this->stubVendor(
+			array(
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'client_secret'     => 'pi_test_secret_abc',
+							'publishable_key'   => 'pk_test_abc',
+							'amount'            => 4900,
+							'currency'          => 'usd',
+							'test_mode'         => true,
+							'terms_url'         => 'javascript:alert(1)',
+							'refund_policy_url' => 'ftp://vendor.example/refunds',
+						)
+					),
+				),
+			)
+		);
+
+		$controller = new CommerceController();
+		$response   = $controller->createSession( new \WP_REST_Request() );
+
+		$this->assertNotInstanceOf( WP_Error::class, $response );
+		$data = $response->get_data();
+		$this->assertSame( esc_url_raw( Payments::termsUrl() ), $data['terms_url'] );
+		$this->assertSame( esc_url_raw( Payments::refundPolicyUrl() ), $data['refund_policy_url'] );
 	}
 
 	/** @test */
@@ -185,6 +339,10 @@ class CommerceTest extends WP_UnitTestCase {
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'nvoos_content_graph_vendor_error', $result->get_error_code() );
 		$this->assertSame( 'Checkout not configured.', $result->get_error_message() );
+
+		// A vendor 4xx rejection (Stripe 424) passes through unchanged so
+		// the modal shows the message instead of redirecting.
+		$this->assertSame( 424, $result->get_error_data()['status'] );
 	}
 
 	/** @test */
@@ -281,6 +439,10 @@ class CommerceTest extends WP_UnitTestCase {
 
 	/** @test */
 	public function verifyRecordsLicenseAndAttemptsInstall(): void {
+		// The test environment may itself live inside a folder the base-plugin
+		// guard detects — skip detection so the download path is exercised.
+		add_filter( 'nvoos_content_graph/commerce/skip_base_plugin_detection', '__return_true' );
+
 		$this->stubVendor(
 			array(
 				// 1. Vendor /verify → license + signed download URL.
@@ -325,6 +487,10 @@ class CommerceTest extends WP_UnitTestCase {
 
 	/** @test */
 	public function verifyFallsBackWhenVendorOmitsDownloadUrl(): void {
+		// See verifyRecordsLicenseAndAttemptsInstall: skip the base-plugin
+		// guard so the fallback download path is exercised.
+		add_filter( 'nvoos_content_graph/commerce/skip_base_plugin_detection', '__return_true' );
+
 		$this->stubVendor(
 			array(
 				array(
@@ -358,5 +524,492 @@ class CommerceTest extends WP_UnitTestCase {
 		$this->assertTrue( License::isLicensed() );
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( Payments::zipUrl(), $result->get_error_data()['zip_url'] );
+	}
+
+	/** @test */
+	public function vendorVerifyForwardsConsentTimestamp(): void {
+		$captured = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args ) use ( &$captured ) {
+				$captured = json_decode( (string) $args['body'], true );
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array() ),
+				);
+			},
+			10,
+			2
+		);
+
+		$consentAt = time();
+
+		$vendor = new Vendor( 'https://vendor.example/api' );
+		$vendor->verify( 'pi_test_consent', $consentAt );
+
+		$this->assertIsArray( $captured );
+		$this->assertSame( $consentAt, $captured['terms_agreed_at'] );
+		$this->assertSame( 'pi_test_consent', $captured['payment_intent'] );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/** @test */
+	public function vendorVerifyOmitsConsentTimestampWhenAbsent(): void {
+		$captured = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args ) use ( &$captured ) {
+				$captured = json_decode( (string) $args['body'], true );
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array() ),
+				);
+			},
+			10,
+			2
+		);
+
+		$vendor = new Vendor( 'https://vendor.example/api' );
+		$vendor->verify( 'pi_test_no_consent' );
+
+		$this->assertIsArray( $captured );
+		$this->assertArrayNotHasKey( 'terms_agreed_at', $captured );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/** @test */
+	public function verifyRecordsConsentInLicenseRecord(): void {
+		add_filter( 'nvoos_content_graph/commerce/skip_base_plugin_detection', '__return_true' );
+
+		$this->stubVendor(
+			array(
+				// 1. Vendor /verify → license + signed download URL.
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'license_key'   => 'consent123',
+							'download_url'  => 'https://vendor.example/download/addon.zip',
+							'addon_version' => '1.0.4',
+							'amount'        => 4900,
+							'currency'      => 'usd',
+						)
+					),
+				),
+				// 2. Download of the signed URL → 404.
+				array(
+					'response' => array(
+						'code'    => 404,
+						'message' => 'Not Found',
+					),
+					'body'     => 'not found',
+				),
+			)
+		);
+
+		$consentAt = time();
+
+		$request = new \WP_REST_Request();
+		$request->set_param( 'payment_intent', 'pi_test_consent_paid' );
+		$request->set_param( 'terms_agreed_at', $consentAt );
+
+		$controller = new CommerceController();
+		$controller->verifyPayment( $request );
+
+		$this->assertTrue( License::isLicensed() );
+		$this->assertSame( $consentAt, License::get()['terms_agreed_at'] );
+	}
+
+	/** @test */
+	public function vendorVerifyForwardsBuyerEmail(): void {
+		$captured = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args ) use ( &$captured ) {
+				$captured = json_decode( (string) $args['body'], true );
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array() ),
+				);
+			},
+			10,
+			2
+		);
+
+		$vendor = new Vendor( 'https://vendor.example/api' );
+		$vendor->verify( 'pi_test_email', 0, ' buyer@example.com ' );
+
+		$this->assertIsArray( $captured );
+		$this->assertSame( 'buyer@example.com', $captured['buyer_email'] );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/** @test */
+	public function vendorVerifyOmitsBuyerEmailWhenAbsent(): void {
+		$captured = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args ) use ( &$captured ) {
+				$captured = json_decode( (string) $args['body'], true );
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array() ),
+				);
+			},
+			10,
+			2
+		);
+
+		$vendor = new Vendor( 'https://vendor.example/api' );
+		$vendor->verify( 'pi_test_no_email' );
+
+		$this->assertIsArray( $captured );
+		$this->assertArrayNotHasKey( 'buyer_email', $captured );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/** @test */
+	public function verifyRecordsBuyerEmailInLicenseRecord(): void {
+		add_filter( 'nvoos_content_graph/commerce/skip_base_plugin_detection', '__return_true' );
+
+		$this->stubVendor(
+			array(
+				// 1. Vendor /verify → license + signed download URL.
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'license_key'   => 'email123',
+							'download_url'  => 'https://vendor.example/download/addon.zip',
+							'addon_version' => '1.0.4',
+							'amount'        => 4900,
+							'currency'      => 'usd',
+						)
+					),
+				),
+				// 2. Download of the signed URL → 404.
+				array(
+					'response' => array(
+						'code'    => 404,
+						'message' => 'Not Found',
+					),
+					'body'     => 'not found',
+				),
+			)
+		);
+
+		$request = new \WP_REST_Request();
+		$request->set_param( 'payment_intent', 'pi_test_email_paid' );
+		$request->set_param( 'buyer_email', 'buyer@example.com' );
+
+		$controller = new CommerceController();
+		$controller->verifyPayment( $request );
+
+		$this->assertTrue( License::isLicensed() );
+		$this->assertSame( 'buyer@example.com', License::get()['buyer_email'] );
+	}
+
+	/** @test */
+	public function vendorVerifyForwardsBuyerCountry(): void {
+		$captured = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args ) use ( &$captured ) {
+				$captured = json_decode( (string) $args['body'], true );
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array() ),
+				);
+			},
+			10,
+			2
+		);
+
+		$vendor = new Vendor( 'https://vendor.example/api' );
+		$vendor->verify( 'pi_test_country', 0, '', 'de' );
+
+		$this->assertIsArray( $captured );
+		$this->assertSame( 'DE', $captured['buyer_country'] );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/** @test */
+	public function vendorVerifyOmitsBuyerCountryWhenAbsent(): void {
+		$captured = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args ) use ( &$captured ) {
+				$captured = json_decode( (string) $args['body'], true );
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array() ),
+				);
+			},
+			10,
+			2
+		);
+
+		$vendor = new Vendor( 'https://vendor.example/api' );
+		$vendor->verify( 'pi_test_no_country' );
+
+		$this->assertIsArray( $captured );
+		$this->assertArrayNotHasKey( 'buyer_country', $captured );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/** @test */
+	public function euCountryCodesDefaultsAndIsFilterable(): void {
+		$codes = Payments::euCountryCodes();
+
+		$this->assertCount( 27, $codes );
+		$this->assertContains( 'DE', $codes );
+		$this->assertContains( 'FR', $codes );
+		$this->assertNotContains( 'GB', $codes );
+		$this->assertNotContains( 'US', $codes );
+
+		add_filter( Schema::FILTER_EU_COUNTRIES, static fn() => array( 'DE', 'not-a-code', 'FR' ) );
+		$filtered = Payments::euCountryCodes();
+		$this->assertSame( array( 'DE', 'FR' ), $filtered );
+		remove_all_filters( Schema::FILTER_EU_COUNTRIES );
+	}
+
+	/** @test */
+	public function verifyRecordsBuyerCountryInLicenseRecord(): void {
+		add_filter( 'nvoos_content_graph/commerce/skip_base_plugin_detection', '__return_true' );
+
+		$this->stubVendor(
+			array(
+				// 1. Vendor /verify → license + signed download URL.
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'license_key'   => 'country123',
+							'download_url'  => 'https://vendor.example/download/addon.zip',
+							'addon_version' => '1.0.4',
+							'amount'        => 4900,
+							'currency'      => 'usd',
+						)
+					),
+				),
+				// 2. Download of the signed URL → 404.
+				array(
+					'response' => array(
+						'code'    => 404,
+						'message' => 'Not Found',
+					),
+					'body'     => 'not found',
+				),
+			)
+		);
+
+		$request = new \WP_REST_Request();
+		$request->set_param( 'payment_intent', 'pi_test_country_paid' );
+		$request->set_param( 'buyer_country', 'IE' );
+
+		$controller = new CommerceController();
+		$controller->verifyPayment( $request );
+
+		$this->assertTrue( License::isLicensed() );
+		$this->assertSame( 'IE', License::get()['buyer_country'] );
+	}
+
+	/** @test */
+	public function roadmapUrlDefaultsToDiscussions(): void {
+		$this->assertSame(
+			'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/discussions',
+			Payments::roadmapUrl()
+		);
+	}
+
+	/** @test */
+	public function roadmapUrlIsFilterable(): void {
+		add_filter( Schema::FILTER_ROADMAP_URL, static fn() => 'https://example.com/roadmap' );
+		$this->assertSame( 'https://example.com/roadmap', Payments::roadmapUrl() );
+		remove_all_filters( Schema::FILTER_ROADMAP_URL );
+	}
+
+	/** @test */
+	public function changelogUrlDefaultsToReleases(): void {
+		$this->assertSame(
+			'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases',
+			Payments::changelogUrl()
+		);
+	}
+
+	/** @test */
+	public function changelogUrlIsFilterable(): void {
+		add_filter( Schema::FILTER_CHANGELOG_URL, static fn() => 'https://example.com/changelog' );
+		$this->assertSame( 'https://example.com/changelog', Payments::changelogUrl() );
+		remove_all_filters( Schema::FILTER_CHANGELOG_URL );
+	}
+
+	/** @test */
+	public function supportEmailDefaultsToVendorAddress(): void {
+		$this->assertSame( 'support@nvdigitalsolutions.com', Payments::supportEmail() );
+	}
+
+	/** @test */
+	public function supportEmailIsFilterable(): void {
+		add_filter( Schema::FILTER_SUPPORT_EMAIL, static fn() => 'help@example.com' );
+		$this->assertSame( 'help@example.com', Payments::supportEmail() );
+		remove_all_filters( Schema::FILTER_SUPPORT_EMAIL );
+	}
+
+	/** @test */
+	public function vendorHealthReportsReachableService(): void {
+		$this->stubVendor(
+			array(
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'status'      => 'ok',
+							'service'     => 'nvoos-checkout',
+							'version'     => '0.1.1',
+							'configured'  => true,
+							'server_time' => time(),
+						)
+					),
+				),
+			)
+		);
+
+		$vendor = new Vendor( 'https://vendor.example/api' );
+		$health = $vendor->health();
+
+		$this->assertIsArray( $health );
+		$this->assertSame( 'ok', $health['status'] );
+		$this->assertSame( 'nvoos-checkout', $health['service'] );
+	}
+
+	/** @test */
+	public function vendorHealthReportsTransportFailure(): void {
+		add_filter(
+			'pre_http_request',
+			static fn() => new WP_Error( 'http_request_failed', 'cURL error 28: Operation timed out' ),
+			10,
+			0
+		);
+
+		$vendor = new Vendor( 'https://vendor.example/api' );
+		$health = $vendor->health();
+
+		$this->assertInstanceOf( WP_Error::class, $health );
+		$this->assertSame( 'nvoos_content_graph_vendor_unreachable', $health->get_error_code() );
+		$this->assertStringContainsString( 'cURL error 28', $health->get_error_message() );
+	}
+
+	/** @test */
+	public function vendorHealthSurfacesVendorError(): void {
+		$this->stubVendor(
+			array(
+				array(
+					'response' => array( 'code' => 500 ),
+					'body'     => 'boom',
+				),
+			)
+		);
+
+		$vendor = new Vendor( 'https://vendor.example/api' );
+		$health = $vendor->health();
+
+		$this->assertInstanceOf( WP_Error::class, $health );
+		$this->assertSame( 'nvoos_content_graph_vendor_error', $health->get_error_code() );
+	}
+
+	/** @test */
+	public function healthCheckReportsReachableVendor(): void {
+		$this->stubVendor(
+			array(
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'status'      => 'ok',
+							'service'     => 'nvoos-checkout',
+							'version'     => '0.1.1',
+							'configured'  => true,
+							'server_time' => time(),
+						)
+					),
+				),
+			)
+		);
+
+		$controller = new CommerceController();
+		$response   = $controller->checkHealth();
+
+		$this->assertNotInstanceOf( WP_Error::class, $response );
+		$data = $response->get_data();
+		$this->assertTrue( $data['reachable'] );
+		$this->assertTrue( $data['configured'] );
+		$this->assertIsInt( $data['latency_ms'] );
+		$this->assertSame( 'nvoos-checkout', $data['vendor']['service'] );
+	}
+
+	/** @test */
+	public function healthCheckIsNotThrottledWhenSessionBucketExhausted(): void {
+		$this->stubVendor(
+			array(
+				// The session bucket exhausts before the vendor is called.
+				$this->sessionResponse(),
+				$this->sessionResponse(),
+				$this->sessionResponse(),
+				$this->sessionResponse(),
+				$this->sessionResponse(),
+				// The health probe must still reach the vendor afterwards.
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'status'      => 'ok',
+							'service'     => 'nvoos-checkout',
+							'version'     => '0.1.1',
+							'configured'  => true,
+							'server_time' => time(),
+						)
+					),
+				),
+			)
+		);
+
+		$controller = new CommerceController();
+
+		for ( $i = 0; $i < 5; $i++ ) {
+			$controller->createSession( new \WP_REST_Request() );
+		}
+
+		// The 6th session request would be throttled…
+		$throttled = $controller->createSession( new \WP_REST_Request() );
+		$this->assertInstanceOf( WP_Error::class, $throttled );
+		$this->assertSame( 'nvoos_content_graph_rate_limited', $throttled->get_error_code() );
+
+		// …but the diagnostic probe is not, so admins can still find out
+		// whether the vendor is reachable while locked out.
+		$response = $controller->checkHealth();
+		$this->assertNotInstanceOf( WP_Error::class, $response );
+		$this->assertTrue( $response->get_data()['reachable'] );
+	}
+
+	/** @test */
+	public function healthCheckReportsUnconfiguredBuild(): void {
+		add_filter( Schema::FILTER_VENDOR_API_URL, static fn() => '' );
+
+		$controller = new CommerceController();
+		$response   = $controller->checkHealth();
+
+		$this->assertNotInstanceOf( WP_Error::class, $response );
+		$data = $response->get_data();
+		$this->assertFalse( $data['reachable'] );
+		$this->assertFalse( $data['configured'] );
+
+		remove_all_filters( Schema::FILTER_VENDOR_API_URL );
 	}
 }

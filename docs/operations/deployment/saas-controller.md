@@ -133,6 +133,6 @@ The repo-wide `bin/build-addon-zips.sh` orchestrates this for releases and emits
 
 - [`addons/saas-controller/README.md`](../addons/saas-controller/README.md) — full implementation reference (class index, npm bucket table, build instructions)
 - [`addons/cloud-worker/README.md`](../addons/cloud-worker/README.md) — the deployed Cloudflare Worker counterpart
-- [`docs/SAAS_SETUP_GUIDE.md`](SAAS_SETUP_GUIDE.md) — end-user install/setup guide (prerequisites, account provisioning, connect tokens, billing, runbook)
+- This document supersedes `docs/SAAS_SETUP_GUIDE.md` — end-user install/setup guidance (prerequisites, account provisioning, connect tokens, billing, runbook) now lives here.
 - [`docs/features/nv-cloud.md`](features/nv-cloud.md) — NV oOS Cloud feature spec (plugin contract, hooks, constants)
 - [`addons/saas-controller/THIRD_PARTY_NOTICES.md`](../addons/saas-controller/THIRD_PARTY_NOTICES.md) — bundled npm licenses

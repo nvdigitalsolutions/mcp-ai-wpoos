@@ -52,6 +52,8 @@ final class Plugin {
 		$this->registerTenant();
 		$this->registerIntegrations();
 		$this->registerGoogleCalendar();
+		$this->registerContentAssistant();
+		$this->registerConversationImport();
 	}
 
 	private function registerAdmin(): void {
@@ -66,6 +68,133 @@ final class Plugin {
 		// 3. (Optional) Keep Content Graph tab-injection as courtesy.
 		if ( class_exists( __NAMESPACE__ . '\Admin\PlatformSettings' ) ) {
 			( new \NvoosContentGraphAiPlatform\Admin\PlatformSettings() )->register();
+		}
+
+		// 4. Operator dashboards (Wave E-UI-1) — standalone-only; the base
+		//    admin owns the same pages under the base settings menu monolith.
+		$this->registerDashboards();
+
+		// 5. Operator managers (Wave E-UI-2) — standalone-only; the base
+		//    admin owns the same pages under the base settings menu monolith.
+		$this->registerManagers();
+
+		// 6. Integrations screens (Wave E-UI-3) — standalone-only; the base
+		//    admin owns the same pages monolith.
+		$this->registerIntegrationsScreens();
+	}
+
+	/**
+	 * Register the E-UI-2 operator managers (standalone-only).
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return void
+	 */
+	private function registerManagers(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Managers\ApprovalsManager' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Managers\ApprovalsManager() )->register();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Managers\TokenManager' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Managers\TokenManager() )->register();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Managers\CronManagerPage' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Managers\CronManagerPage() )->register();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Managers\DagBuilder' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Managers\DagBuilder() )->register();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Managers\DlqManager' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Managers\DlqManager() )->register();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Managers\MediaLibraryColumns' ) ) {
+			\NvoosContentGraphAiPlatform\Admin\Managers\MediaLibraryColumns::init();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Managers\AssetInventoryPage' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Managers\AssetInventoryPage() )->register();
+		}
+	}
+
+	/**
+	 * Register the E-UI-3 integrations screens (standalone-only).
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return void
+	 */
+	private function registerIntegrationsScreens(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Integrations\ProfessionResearchPage' ) ) {
+			\NvoosContentGraphAiPlatform\Admin\Integrations\ProfessionResearchPage::init();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Integrations\ProfessionSettings' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Integrations\ProfessionSettings() )->register();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Integrations\TeamResearchPage' ) ) {
+			\NvoosContentGraphAiPlatform\Admin\Integrations\TeamResearchPage::init();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Integrations\TeamSettings' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Integrations\TeamSettings() )->register();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Integrations\ElementorIntegration' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Integrations\ElementorIntegration() )->register();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Integrations\WooCommerceIntegration' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Integrations\WooCommerceIntegration() )->register();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Integrations\JetEngineIntegration' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Integrations\JetEngineIntegration() )->register();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Integrations\PluginsIntegration' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Integrations\PluginsIntegration() )->register();
+		}
+	}
+
+	/**
+	 * Register the E-UI-1 operator dashboards (standalone-only).
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return void
+	 */
+	private function registerDashboards(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Dashboards\MultiAgentDashboard' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Dashboards\MultiAgentDashboard() )->register();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Dashboards\OrchestrationDashboard' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Dashboards\OrchestrationDashboard() )->register();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Dashboards\SlashCommandsDashboard' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Dashboards\SlashCommandsDashboard() )->register();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Dashboards\RunTimelineDashboard' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Dashboards\RunTimelineDashboard() )->register();
 		}
 	}
 
@@ -543,6 +672,56 @@ final class Plugin {
 
 		if ( class_exists( __NAMESPACE__ . '\Google\GoogleCalendarBootstrap' ) ) {
 			add_action( 'init', array( \NvoosContentGraphAiPlatform\Google\GoogleCalendarBootstrap::class, 'register' ) );
+		}
+	}
+
+	/**
+	 * Register the AI Content Assistant metabox (Wave E4, sub-cluster 4).
+	 *
+	 * Standalone-only: the base loader's `content-assistant-init.php` owns
+	 * the same `admin_init` wiring in monolith installs; double
+	 * registration would double-add the metabox to every post edit
+	 * screen.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return void
+	 */
+	private function registerContentAssistant(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\ContentAssistant\ContentAssistantBootstrap' ) ) {
+			add_action( 'admin_init', array( \NvoosContentGraphAiPlatform\ContentAssistant\ContentAssistantBootstrap::class, 'register' ) );
+		}
+	}
+
+	/**
+	 * Register the conversation import subsystem (Wave E4, sub-cluster 6).
+	 *
+	 * Standalone-only: the base loader requires all sixteen
+	 * conversation-import files unconditionally and owns the
+	 * self-bootstrapping hooks (privacy exporter/eraser, memory-mining
+	 * defaults) in monolith installs. The ported classes are PSR-4
+	 * autoloaded passive libraries, so only the two self-bootstrapping
+	 * classes need explicit standalone wiring.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return void
+	 */
+	private function registerConversationImport(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\ConversationImport\Privacy' ) ) {
+			\NvoosContentGraphAiPlatform\ConversationImport\Privacy::bootstrap();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\ConversationImport\MemoryMiner' ) ) {
+			\NvoosContentGraphAiPlatform\ConversationImport\MemoryMiner::bootstrap();
 		}
 	}
 

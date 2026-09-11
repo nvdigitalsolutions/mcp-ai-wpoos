@@ -1,7 +1,8 @@
 # Commerce Vendor API — Contract
 
 The base plugin (`nvoos-content-graph`) deliberately contains **no Stripe keys
-and no Stripe API calls**. Selling the `nvoos-content-graph-ai` addon works
+and no Stripe API calls**. Selling the **NV oOS Complete** bundle (the full
+NV oOS plugin: base + Pro, distributed as a separate WordPress plugin) works
 like this:
 
 ```mermaid
@@ -9,18 +10,18 @@ sequenceDiagram
     participant WP as Customer's WordPress (base plugin)
     participant V as Vendor checkout API (your server, holds sk_live_…)
     participant S as Stripe
-    participant G as Addon ZIP (GitHub release, proxied by vendor)
+    participant G as Complete bundle ZIP (GitHub release, proxied by vendor)
 
     WP->>V: POST /session {product, site_url, addon_version}
     V->>S: Create PaymentIntent (server-side amount + metadata)
     S-->>V: client_secret
-    V-->>WP: {client_secret, publishable_key, amount, currency, test_mode}
-    Note over WP,S: Payment Element iframe — card data goes to Stripe only
-    WP->>V: POST /verify {product, site_url, payment_intent}
+    V-->>WP: {client_secret, publishable_key, amount, currency, test_mode, terms_url, refund_policy_url}
+    Note over WP,S: Payment Element iframe — card data goes to Stripe only; buyer ticks the Terms of Service consent checkbox
+    WP->>V: POST /verify {product, site_url, payment_intent, terms_agreed_at, buyer_email}
     V->>S: Retrieve intent, verify status/amount/product/site binding
     V-->>WP: {license_key, download_url (signed, short-lived), addon_version}
     WP->>G: download_url() the signed ZIP
-    WP->>WP: Plugin_Upgrader installs + activates the addon
+    WP->>WP: Plugin_Upgrader installs + activates the Complete bundle
 ```
 
 - The customer never needs Stripe keys; they simply pay with their card.
@@ -29,6 +30,32 @@ sequenceDiagram
   public by design).
 - Because `/verify` returns a **signed, short-lived `download_url`**, the
   payment actually gates the download even though the GitHub repo is public.
+
+## What gets installed
+
+The purchased artifact is `nvdigital-open-operator-system-oos-complete-{version}.zip`
+from the monorepo GitHub releases (`build-nvdigital-oos-wporg.yml`, built on
+`nvdigital-oos-v*.*.*` tags).
+It extracts to the plugin folder `nvdigital-open-operator-system-oos-complete/`
+(main file `nvdigital-open-operator-system-oos.php`) — a **separate plugin**
+from this one, never bundled inside the `nvoos-content-graph` package.
+
+Before installing, the plugin refuses when another copy of the NV oOS base
+plugin already exists on the site (`mcp-ai-wpoos/`, the wp.org slug, or an
+already-active base plugin) — installing a second copy would redeclare the
+same constants/classes and break both plugins. In that case the customer is
+told to update their existing plugin from the Plugins screen; the purchase
+license is still recorded.
+
+### Manual install is the primary path
+
+Manual installation is the documented, recommended path: after a successful
+purchase the modal shows the signed `download_url`, and the buyer downloads
+the ZIP and uploads it via **Plugins → Add New Plugin → Upload Plugin**.
+The one-click automatic installer (which streams the same signed URL through
+`download_url()` + `Plugin_Upgrader`) is offered as a convenience and runs
+only after the buyer's explicit purchase and confirmation. Both paths use
+the same vendor-issued, expiring, download-capped URL.
 
 ## Endpoints
 
@@ -42,9 +69,9 @@ Request JSON:
 
 ```json
 {
-  "product": "nvoos-content-graph-ai",
+  "product": "nvoos-oos-complete",
   "site_url": "https://customer-site.example",
-  "addon_version": "1.0.4"
+  "addon_version": "1.1.74"
 }
 ```
 
@@ -56,12 +83,56 @@ Response `200`:
   "publishable_key": "pk_live_…",
   "amount": 4900,
   "currency": "usd",
-  "test_mode": false
+  "test_mode": false,
+  "terms_url": "https://nvdigitalsolutions.com/terms-of-service",
+  "refund_policy_url": "https://nvdigitalsolutions.com/refund-policy"
 }
 ```
 
-Errors: `402` price mismatch, `424` checkout not configured, `429` rate
-limited, `502` Stripe failure. All errors are `{"message": "…"}`.
+`terms_url` and `refund_policy_url` are the authoritative links rendered next
+to the Terms-of-Service consent checkbox in the purchase modal. The plugin
+falls back to its own filterable defaults when a legacy vendor omits them.
+
+Errors: `402` price mismatch, `424` checkout not configured or a Stripe 4xx
+rejection (bad key, invalid params, account restrictions) with Stripe's own
+message, `429` rate limited, `502` transport failure or Stripe 5xx
+(checkout genuinely unavailable). All errors are `{"message": "…"}`.
+
+Status contract: **`424` is showable** — the purchase modal renders the
+message in place (with a "Test connection" probe) and never redirects.
+**`502`, `404`, and network failures mean unreachable** — the modal falls
+back to the filterable product-page URL. Client errors such as `429`
+(throttling) stay in-modal too.
+
+Vendor implementation note: request bodies to Stripe are form-encoded, so
+booleans must be sent as the literal strings `"true"` / `"false"` (PHP's
+form serializer would otherwise emit `1`/empty, which Stripe rejects with
+`Invalid boolean: 1`).
+
+### GET `/health`
+
+Public, unauthenticated status probe. No Stripe call, no rate-limit token,
+no writes — customer sites (and the vendor's own admin) use it to confirm
+the checkout service is reachable and serving before starting a payment
+session.
+
+Response `200`:
+
+```json
+{
+  "status": "ok",
+  "service": "nvoos-checkout",
+  "version": "0.1.1",
+  "configured": true,
+  "server_time": 1789094864
+}
+```
+
+`configured` reflects whether Stripe keys are set (presence, not validity —
+use the vendor admin's "Test connection" for a live key check). The client
+plugin calls this from its admin-only `GET /payments/health` diagnostics
+route, which is deliberately not throttled so connectivity checks can never
+trigger the "Too many checkout attempts" lockout.
 
 ### POST `/verify`
 
@@ -69,11 +140,39 @@ Request JSON:
 
 ```json
 {
-  "product": "nvoos-content-graph-ai",
+  "product": "nvoos-oos-complete",
   "site_url": "https://customer-site.example",
-  "payment_intent": "pi_…"
+  "payment_intent": "pi_…",
+  "terms_agreed_at": 1757400000,
+  "buyer_email": "buyer@example.com",
+  "buyer_country": "DE"
 }
 ```
+
+`terms_agreed_at` is an **optional** Unix timestamp of the buyer's consent to
+the Terms of Service, captured by the consent checkbox in the purchase modal
+(absent on webhook-issued licenses, which have no browser). When present and
+plausible (within the last 7 days, not more than 10 minutes in the future),
+it is recorded on the license row — filling an empty value, never
+overwriting an existing one — as proof of acceptance at purchase time.
+
+`buyer_email` is an **optional** buyer receipt/refund address collected by
+the purchase modal (prefilled with the logged-in admin's email). The client
+also attaches it to the PaymentIntent via `confirmParams.receipt_email` so
+Stripe emails the payment receipt; on verification the vendor prefers the
+intent's `receipt_email` (authoritative) over the request param and stores
+the result in the license row's `buyer_email` column (fill-once, never
+overwritten).
+
+`buyer_country` is an **optional** ISO 3166-1 alpha-2 code of the buyer's
+declared country (the purchase modal collects it for VAT records — EU
+buyers are required to provide a billing address, which is attached to the
+payment as `billing_details`). Stored in the license row's `buyer_country`
+column, fill-once.
+
+The vendor also attaches optional `statement_descriptor` and
+`stripe_product_id` / `stripe_price_id` metadata to the PaymentIntent at
+`/session` time (reporting/tax tooling; configured on the storefront admin).
 
 Server-side checks before issuing anything:
 
@@ -88,29 +187,31 @@ Response `200`:
 ```json
 {
   "license_key": "hex-or-opaque-key",
-  "download_url": "https://your-server.example/download/ai-addon?token=…&expires=…",
-  "addon_version": "1.0.4",
+  "download_url": "https://your-server.example/download/complete?token=…&expires=…",
+  "addon_version": "1.1.74",
   "amount": 4900,
   "currency": "usd"
 }
 ```
 
-The `download_url` serves the addon ZIP (fetched from the GitHub release
-and cached, or proxied) only while the token is valid. Errors mirror the
-`/session` codes; `402` means the payment did not complete or the amount
+The `download_url` serves the Complete bundle ZIP (fetched from the GitHub
+release and cached, or proxied) only while the token is valid. Errors mirror
+the `/session` codes; `402` means the payment did not complete or the amount
 is wrong — the plugin surfaces the message verbatim in the modal.
 
 ### Checkout-unavailable fallback
 
 When the plugin cannot reach the vendor `/session` endpoint — network
 failure, `404` (route missing), or a server error (`5xx`) — the purchase
-modal shows a short notice and redirects the user to the vendor product
-page so the purchase can still complete. The target URL defaults to
-<https://nvdigitalsolutions.com/plugins/nvoos-content-graph-ai/> and is
-filterable (`nvoos_content_graph/payments/fallback_url`); an empty value
-disables the redirect and keeps the plain in-modal error. Client errors
-that mean the endpoint IS available (e.g. `429` session-creation
-throttling) are shown in the modal instead of redirecting.
+modal shows a short notice and redirects the user to the product page so
+the purchase can still complete. The target URL defaults to the public
+GitHub releases page (`https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases`)
+and is filterable (`nvoos_content_graph/payments/fallback_url`); point it
+at the vendor product page, or set an empty value to disable the redirect
+and keep the plain in-modal error. Client errors that mean the endpoint IS
+available (e.g. `429` session-creation throttling, or `424` Stripe
+rejections with the real message) are shown in the modal instead of
+redirecting.
 
 ## Reference implementation (host on your server)
 
@@ -118,13 +219,15 @@ The contract above is implemented by the **NV oOS Checkout API** addon in
 this repository: [`addons/checkout-api/`](../../../addons/checkout-api/).
 Install it on the vendor's own WordPress (e.g. nvdigitalsolutions.com) —
 never on customer sites and never on WordPress.org — and configure the
-Stripe keys, price, addon version, and ZIP source on its admin page
+Stripe keys, price, version, and ZIP source on its admin page
 (**NV oOS Checkout** in WP-Admin).
 
 What the addon provides:
 
 - `POST /session` + `POST /verify` under `/wp-json/nvoos-checkout/v1/`
   (public, per-IP rate-limited; Stripe-side verification is the gate).
+  The `nvoos-oos-complete` product id is accepted alongside the legacy
+  `nvoos-content-graph-ai` id.
 - License issuance into a custom table, idempotent per payment intent.
 - Signed, expiring download URLs of the shape
   `/?nvoos_checkout_download=1&license=…&expires=…&token=…` — the addon
@@ -132,6 +235,22 @@ What the addon provides:
   and streams it after verifying the HMAC token.
 - A Stripe webhook receiver (`POST /webhooks/stripe`) that revokes licenses
   on `charge.refunded` / `charge.dispute.created`.
+
+### Vendor-side configuration for the Complete bundle
+
+In the checkout addon's admin page set:
+
+1. **Addon version** — the NV oOS release version being sold (e.g. `1.1.74`).
+2. **ZIP source** — the Complete bundle release pattern:
+
+   ```
+   https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/nvdigital-oos-v{VERSION}/nvdigital-open-operator-system-oos-complete-{VERSION}.zip
+   ```
+
+   (this is the addon's new default; use a private mirror URL or absolute
+   server path instead to gate the download behind your own infrastructure).
+3. Publish the corresponding `nvdigital-oos-v*.*.*` tag so the release asset exists (the
+   addon caches the ZIP under `wp-content/uploads/nvoos-checkout/`).
 
 For the full setup guide (Stripe keys, webhook endpoint configuration,
 release publishing) see `addons/checkout-api/README.md`.
@@ -142,6 +261,8 @@ release publishing) see `addons/checkout-api/README.md`.
 |---|---|
 | `nvoos_content_graph/payments/vendor_api_url` | Point at your checkout API |
 | `nvoos_content_graph/payments/price_cents` | Display price (vendor sets the authoritative amount) |
-| `nvoos_content_graph/payments/addon_version` | Version pinned in payloads + fallback URL |
+| `nvoos_content_graph/payments/addon_version` | Version pinned in payloads + fallback URL (NV oOS release version) |
 | `nvoos_content_graph/payments/addon_zip_url` | Fallback ZIP URL when the vendor returns no `download_url` |
-| `nvoos_content_graph/payments/fallback_url` | Product-page redirect target when the checkout endpoint is unreachable (default: the nvdigitalsolutions.com AI addon page; empty = disabled) |
+| `nvoos_content_graph/payments/fallback_url` | Product-page redirect target when the checkout endpoint is unreachable (default: the GitHub releases page; empty = disabled) |
+| `nvoos_content_graph/payments/terms_url` | Client-side Terms of Service URL fallback (vendor session response is authoritative) |
+| `nvoos_content_graph/payments/refund_policy_url` | Client-side Refund Policy URL fallback (vendor session response is authoritative) |

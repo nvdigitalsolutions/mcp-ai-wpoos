@@ -1200,6 +1200,8 @@ wp-mcp-ai-tool-update-registration-status
 wp-mcp-ai-tool-update-student
 wp-mcp-ai-tool-update-support-ticket
 wp-mcp-ai-tool-update-task
+wp-mcp-ai-tool-update-woo-product-price
+wp-mcp-ai-tool-update-woo-product-qty
 wp-mcp-ai-tool-update-workflow-rule
 wp-mcp-ai-tool-upload-reg-document
 wp-mcp-ai-tool-upload-video-batch

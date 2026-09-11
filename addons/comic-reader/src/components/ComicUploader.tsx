@@ -9,6 +9,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { uploadComic } from '../api/comic-api';
+import { t } from '../utils/i18n';
 
 interface ComicUploaderProps {
 	onComplete: () => void;
@@ -28,9 +29,6 @@ export function ComicUploader({ onComplete, onCancel }: ComicUploaderProps) {
 	const [error, setError] = useState<string | null>(null);
 	const [progress, setProgress] = useState('');
 	const inputRef = useRef<HTMLInputElement>(null);
-
-	const t = (key: string): string =>
-		window.NVOOS_COMIC_READER?.i18n?.[key] || key;
 
 	const handleUpload = useCallback(
 		async (file: File) => {
@@ -141,7 +139,7 @@ export function ComicUploader({ onComplete, onCancel }: ComicUploaderProps) {
 					onClick={onCancel}
 					disabled={uploading}
 				>
-					Cancel
+					{t('cancel')}
 				</button>
 			</div>
 		</div>

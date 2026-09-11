@@ -662,7 +662,7 @@ class RemoteAdmin {
 			'nvoos-content-graph-remote-admin',
 			NVOOS_CONTENT_GRAPH_URL . 'assets/js/content-graph-remote-admin.js',
 			array( 'jquery' ),
-			NVOOS_CONTENT_GRAPH_VERSION,
+			\NvoosContentGraph\Schema::assetVersion( 'assets/js/content-graph-remote-admin.js' ),
 			true
 		);
 

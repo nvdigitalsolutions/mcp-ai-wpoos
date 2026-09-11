@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Pro plugin constants.
 if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-	define( 'WP_MCP_AI_PRO_VERSION', '1.1.71' );
+	define( 'WP_MCP_AI_PRO_VERSION', '1.1.77' );
 }
 if ( ! defined( 'WP_MCP_AI_PRO_FILE' ) ) {
 	define( 'WP_MCP_AI_PRO_FILE', __FILE__ );
@@ -1308,10 +1308,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 
 		// Add E-commerce Toolkit tools if enabled (Phase 2 - New Pro Toolkits).
 		if ( ! empty( $settings['enable_ecommerce_toolkit'] ) ) {
+			// Load the shared WooCommerce price/quantity updater trait before any
+			// tool that consumes it (load-order independence, mirrors the Shopify trait).
+			if ( ! trait_exists( 'WP_MCP_AI_Woo_Price_Qty_Updater' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/trait-wp-mcp-ai-woo-price-qty-updater.php';
+			}
+
 			$ecommerce_toolkit_tools = array(
 				// Product Management tools.
 				'WP_MCP_AI_Tool_Create_Product_Advanced'  => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-create-product-advanced.php',
 				'WP_MCP_AI_Tool_Bulk_Update_Products'     => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-bulk-update-products.php',
+				'WP_MCP_AI_Tool_Update_Woo_Product_Price' => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-update-woo-product-price.php',
+				'WP_MCP_AI_Tool_Update_Woo_Product_Qty'   => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-update-woo-product-qty.php',
 				'WP_MCP_AI_Tool_Import_Products_CSV'      => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-import-products-csv.php',
 				'WP_MCP_AI_Tool_Export_Products_Report'   => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-export-products-report.php',
 				'WP_MCP_AI_Tool_Sync_Product_Inventory'   => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-sync-product-inventory.php',
@@ -1349,7 +1357,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools = array_merge( $pro_tools, $ecommerce_toolkit_tools );
 		}
 
-		// Add FlowHub Inventory Sync Toolkit tools if enabled (Pro feature — FlowHub POS integration).
+		// Add FlowHub Inventory Sync Toolkit tools if enabled (Pro feature â€” FlowHub POS integration).
 		if ( ! empty( $settings['enable_flowhub_toolkit'] ) && class_exists( 'WooCommerce' ) ) {
 			$flowhub_toolkit_tools = array(
 				'WP_MCP_AI_Pro_Tool_FlowHub_Inventory' => WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-inventory.php',
@@ -1959,8 +1967,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		$pro_tools = apply_filters( 'wp_mcp_ai_pro_tools', $pro_tools );
 
 		// Cache the computed map so consumers (e.g. the token-usage service's
-		// unregistered-tools fallback) can enumerate every Pro tool — including
-		// the ones gated off by settings — without rebuilding it.
+		// unregistered-tools fallback) can enumerate every Pro tool â€” including
+		// the ones gated off by settings â€” without rebuilding it.
 		$GLOBALS['wp_mcp_ai_pro_tools_map'] = $pro_tools;
 
 		/**
@@ -2208,6 +2216,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'woo_orders'                         => 'wordpress-plugins',
 			'woo_customers'                      => 'wordpress-plugins',
 			'woo_coupons'                        => 'wordpress-plugins',
+			'update_woo_product_price'           => 'wordpress-plugins',
+			'update_woo_product_qty'             => 'wordpress-plugins',
 			// JetEngine tools - Require JetEngine plugin.
 			'jetengine'                          => 'wordpress-plugins',
 			'jetengine_mcp'                      => 'wordpress-plugins',
@@ -2690,6 +2700,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_categories' ) ) {
 			$categories['medium_resource']['tools'][] = 'woo_orders';
 			$categories['medium_resource']['tools'][] = 'woo_customers';
 			$categories['medium_resource']['tools'][] = 'woo_coupons';
+			$categories['medium_resource']['tools'][] = 'update_woo_product_price';
+			$categories['medium_resource']['tools'][] = 'update_woo_product_qty';
 			$categories['medium_resource']['tools'][] = 'jetengine';
 			$categories['medium_resource']['tools'][] = 'jetengine_mcp';
 			$categories['medium_resource']['tools'][] = 'jetengine_create_post_type';
@@ -2748,11 +2760,27 @@ if ( $plugins_loaded_fired ) {
 }
 
 /**
- * Register WP-CLI commands for the Pro addon.
+ * Require and register the Pro WP-CLI command files.
  *
- * Loads and registers all Pro gap-fill CLI command classes when WP-CLI is active.
+ * The Pro CLI commands extend the core base command
+ * (`WP_MCP_AI_CLI_Base_Command`), which lives in the base plugin and
+ * references base constants such as `WP_MCP_AI_PATH`. When this addon is
+ * activated before the base plugin, that constant does not exist yet at
+ * include time â€” requiring the CLI files here would fatal under WP-CLI.
+ * This loader bails cleanly instead, and the call site defers until
+ * `plugins_loaded` when the constant is missing at include time.
+ *
+ * @since 1.1.77
+ *
+ * @return void
  */
-if ( defined( 'WP_CLI' ) && WP_CLI ) {
+function wp_mcp_ai_pro_load_cli_commands(): void {
+	if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
+		// Base plugin absent â€” its CLI base command cannot be loaded, so
+		// none of the Pro commands can register. Skip instead of fataling.
+		return;
+	}
+
 	$wp_mcp_ai_pro_cli_dir = WP_MCP_AI_PRO_PATH . 'includes/cli/';
 
 	$wp_mcp_ai_pro_cli_files = array(
@@ -2775,6 +2803,25 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	}
 
 	unset( $wp_mcp_ai_pro_cli_dir, $wp_mcp_ai_pro_cli_files, $wp_mcp_ai_pro_cli_file, $wp_mcp_ai_pro_cli_path );
+}
+
+/**
+ * Register WP-CLI commands for the Pro addon.
+ *
+ * Loads and registers all Pro gap-fill CLI command classes when WP-CLI is active.
+ */
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	if ( defined( 'WP_MCP_AI_PATH' ) || $plugins_loaded_fired ) {
+		// Base plugin already loaded (correct activation order, or the
+		// combined-plugin scenario) â€” load immediately as before.
+		wp_mcp_ai_pro_load_cli_commands();
+	} else {
+		// This addon was included before the base plugin. Defer until
+		// plugins_loaded, by which point every plugin file has been
+		// included and the base constants exist. Prevents the
+		// "Undefined constant WP_MCP_AI_PATH" fatal under WP-CLI.
+		add_action( 'plugins_loaded', 'wp_mcp_ai_pro_load_cli_commands', 30 );
+	}
 }
 
 /**
@@ -2915,7 +2962,7 @@ add_action(
 	100
 );
 
-// Load Media Worker Sidecar Settings Page (eager — registers admin_menu hook).
+// Load Media Worker Sidecar Settings Page (eager â€” registers admin_menu hook).
 $media_worker_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-media-worker-settings.php';
 if ( file_exists( $media_worker_page ) ) {
 	require_once $media_worker_page;

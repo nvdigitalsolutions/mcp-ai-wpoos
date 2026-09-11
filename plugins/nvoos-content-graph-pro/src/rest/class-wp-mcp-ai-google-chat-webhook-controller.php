@@ -1,0 +1,2483 @@
+<?php
+/**
+ * rest/class-wp-mcp-ai-google-chat-webhook-controller.php (ecosystem port — Wave F5, chat-channels REST slice A).
+ *
+ * Ported from the base Pro addon's `addons/pro/includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php` for the
+ * standalone `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro addon owns the
+ * class in monolith installs — the addon boots nothing when `WP_MCP_AI_PRO_PATH` is defined
+ * (see the plugin entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain `nvoos-content-graph-pro`;
+ * `NVOOS_CONTENT_GRAPH_PRO_*` constant swaps; the base-owned logger require gains the exists-check
+ * seam resolving from the addon's D8-compat copy.
+ *
+ * @package NvoosContentGraphPro
+ * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+// Standalone seam (documented deviation): the base-owned logger require gains an
+// exists-check seam resolving from the addon's D8-compat copy.
+if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
+	$nvoos_content_graph_pro_logger = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-logger.php';
+	if ( file_exists( $nvoos_content_graph_pro_logger ) ) {
+		require_once $nvoos_content_graph_pro_logger;
+	}
+}
+require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/chat-channels/class-wp-mcp-ai-pro-google-service-account.php';
+
+// Load channel CCT helpers when available.
+$_cc_messages_file = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-channel-messages-cct.php';
+$_cc_contacts_file = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-channel-contacts-cct.php';
+if ( file_exists( $_cc_messages_file ) && ! class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+	require_once $_cc_messages_file;
+}
+if ( file_exists( $_cc_contacts_file ) && ! class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+	require_once $_cc_contacts_file;
+}
+unset( $_cc_messages_file, $_cc_contacts_file );
+
+/**
+ * Google Chat webhook REST controller.
+ */
+class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
+
+	/**
+	 * REST API namespace.
+	 *
+	 * @var string
+	 */
+	protected $namespace = 'mcp-ai/v1';
+
+	/**
+	 * REST API endpoint base.
+	 *
+	 * @var string
+	 */
+	protected $rest_base = 'webhooks/google-chat';
+
+	/**
+	 * Cron hook for dispatching AI replies to incoming Google Chat messages.
+	 */
+	const REPLY_CRON_HOOK = 'wp_mcp_ai_google_chat_send_ai_reply';
+
+	/**
+	 * TTL in seconds for the deduplication transient.
+	 */
+	const DEDUP_TRANSIENT_TTL = 60;
+
+	/**
+	 * TTL in seconds for per-user conversation history transients (24 hours).
+	 */
+	const CONVERSATION_HISTORY_TTL = 86400;
+
+	/**
+	 * Google Chat API base URL.
+	 */
+	const CHAT_API_BASE = 'https://chat.googleapis.com/v1';
+
+	/**
+	 * Pattern for validating Google Chat incoming webhook URLs.
+	 *
+	 * Incoming webhooks are created in Google Chat space settings and embed the
+	 * authentication key and token directly in the URL, allowing messages to be
+	 * posted to a specific space without OAuth 2.0 credentials.
+	 *
+	 * @see https://developers.google.com/workspace/chat/quickstart/webhooks
+	 */
+	const WEBHOOK_URL_PATTERN = '#^https://chat\.googleapis\.com/v1/spaces/[a-zA-Z0-9_-]+/messages\?#';
+
+	/**
+	 * Expected OIDC token issuer for Google Chat HTTP-endpoint apps.
+	 *
+	 * Google Chat signs webhook OIDC tokens with the service account
+	 * chat@system.gserviceaccount.com. Workspace Add-ons may additionally
+	 * use accounts.google.com — both are accepted in validate_google_oidc_token().
+	 *
+	 * @see https://developers.google.com/workspace/chat/authenticate-authorize-chat-app
+	 */
+	const GOOGLE_OIDC_ISSUER = 'chat@system.gserviceaccount.com';
+
+	/**
+	 * Google Chat API scope for bot operations.
+	 */
+	const CHAT_BOT_SCOPE = 'https://www.googleapis.com/auth/chat.bot';
+
+	/**
+	 * Google tokeninfo endpoint for OIDC token validation.
+	 */
+	const GOOGLE_TOKENINFO_URL = 'https://oauth2.googleapis.com/tokeninfo';
+
+	/**
+	 * WordPress option key for the webhook receipt diagnostic log.
+	 */
+	const WEBHOOK_LOG_OPTION = 'wp_mcp_ai_gc_webhook_log';
+
+	/**
+	 * Maximum number of webhook log entries to retain.
+	 */
+	const WEBHOOK_LOG_MAX_ENTRIES = 25;
+
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+		add_action( self::REPLY_CRON_HOOK, array( $this, 'handle_google_chat_reply_job' ) );
+		add_action( 'wp_mcp_ai_google_chat_send_welcome_message', array( $this, 'handle_welcome_message_job' ) );
+		add_filter( 'wp_mcp_ai_chat_channels_send_reply', array( $this, 'handle_channel_send_reply' ), 10, 6 );
+
+		// WordPress Application Passwords (WP 5.6+) and JWT auth plugins intercept
+		// the Authorization: Bearer header and can set a WP_Error in
+		// rest_authentication_errors before our permission_callback runs, causing a
+		// 401/403 that Google Chat immediately reports as "not responding".
+		// Clear that error for requests to our webhook endpoints so that our own
+		// validate_google_oidc_token() callback handles authentication.
+		// Priority 99999 ensures we run after third-party JWT plugins (commonly 100–999)
+		// and WordPress Application Passwords (priority 100) that may re-set the error
+		// after a lower-priority filter has already cleared it.
+		add_filter( 'rest_authentication_errors', array( $this, 'allow_google_oidc_auth' ), 99999 );
+
+		// Register an admin-ajax.php fallback endpoint for sites where Cloudflare
+		// WAF, Bot Fight Mode, or other proxies block POST requests to /wp-json/.
+		// Google Chat can be configured with the admin-ajax URL instead.
+		add_action( 'wp_ajax_nopriv_wp_mcp_ai_google_chat_webhook', array( $this, 'handle_ajax_webhook' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_google_chat_webhook', array( $this, 'handle_ajax_webhook' ) );
+	}
+
+	/**
+	 * Allow Google OIDC-authenticated webhook requests to reach our permission callback.
+	 *
+	 * WordPress Application Passwords (WP 5.6+) and third-party JWT auth plugins
+	 * listen on the `determine_current_user` filter and set a WP_Error in
+	 * `rest_authentication_errors` when they cannot parse the Authorization header.
+	 * Because WordPress evaluates that filter before calling our permission_callback,
+	 * any such error causes a 401/403 response that Google Chat immediately surfaces
+	 * as "not responding" — our validate_google_oidc_token() never even runs.
+	 *
+	 * For requests targeting our webhook endpoints we clear the authentication error
+	 * (return null) so WordPress proceeds to call validate_google_oidc_token(), which
+	 * is the correct authority on whether the Google OIDC Bearer token is valid.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_Error|null $error Existing authentication error or null.
+	 * @return WP_Error|null Null for our webhook routes; unchanged value for all others.
+	 */
+	public function allow_google_oidc_auth( $error ) {
+		// Only intervene when another plugin already set an error — if there is no
+		// error we have nothing to clear.
+		if ( ! is_wp_error( $error ) ) {
+			return $error;
+		}
+
+		// Check whether this request targets one of our webhook routes.
+		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+		if ( false !== strpos( $request_uri, '/' . $this->rest_base ) ) {
+			// Clear the error so our permission_callback handles auth instead.
+			return null;
+		}
+
+		return $error;
+	}
+
+	/**
+	 * Handle a Google Chat webhook event via the WordPress admin-ajax endpoint.
+	 *
+	 * Provides a Cloudflare-compatible alternative to the REST API webhook URL.
+	 * When Cloudflare WAF, Bot Fight Mode, or other proxies block POST requests
+	 * to /wp-json/ endpoints, configure Google Chat to use the admin-ajax URL
+	 * instead (shown in the plugin's Google Chat connection settings).
+	 *
+	 * Security is identical to the REST endpoint: the Google OIDC Bearer token
+	 * sent by Google Chat is validated by validate_google_oidc_token() before
+	 * any event processing occurs. No WordPress nonce is required here because
+	 * the OIDC token is the authentication mechanism.
+	 *
+	 * AJAX URL format:
+	 *   /wp-admin/admin-ajax.php?action=wp_mcp_ai_google_chat_webhook
+	 *   /wp-admin/admin-ajax.php?action=wp_mcp_ai_google_chat_webhook&connection_id={id}
+	 *
+	 * @since 1.0.0
+	 */
+	public function handle_ajax_webhook() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OIDC token is the auth mechanism.
+		$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+
+		// Build a synthetic REST request so validate_google_oidc_token() and
+		// handle_webhook() can be reused without duplicating logic.
+		$route        = '/mcp-ai/v1/webhooks/google-chat' . ( '' !== $connection_id ? '/' . $connection_id : '' );
+		$rest_request = new WP_REST_Request( 'POST', $route );
+
+		// Forward the Authorization header. Some server stacks (Apache + FastCGI)
+		// expose it only via REDIRECT_HTTP_AUTHORIZATION.
+		$auth = '';
+		if ( ! empty( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
+			$auth = sanitize_text_field( wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) );
+		} elseif ( ! empty( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ) {
+			$auth = sanitize_text_field( wp_unslash( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) );
+		}
+
+		if ( '' !== $auth ) {
+			$rest_request->set_header( 'authorization', $auth );
+		}
+
+		if ( '' !== $connection_id ) {
+			$rest_request->set_param( 'connection_id', $connection_id );
+		}
+
+		// Validate the Google OIDC Bearer token before processing any payload.
+		if ( ! $this->validate_google_oidc_token( $rest_request ) ) {
+			wp_send_json( array( 'error' => 'Invalid or missing Authorization Bearer token.' ), 401 );
+			return;
+		}
+
+		// Read the raw JSON body sent by Google Chat and pass it to the handler.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		$raw_body = file_get_contents( 'php://input' );
+		$rest_request->set_header( 'Content-Type', 'application/json' );
+		$rest_request->set_body( is_string( $raw_body ) ? $raw_body : '{}' );
+
+		// Process the event via the existing REST handler.
+		$response = $this->handle_webhook( $rest_request );
+		$data     = $response instanceof WP_REST_Response ? $response->get_data() : new stdClass();
+		$status   = $response instanceof WP_REST_Response ? $response->get_status() : 200;
+
+		wp_send_json( $data, $status );
+	}
+
+	/**
+	 * Register REST routes for Google Chat webhooks.
+	 *
+	 * @since 1.0.0
+	 */
+	public function register_routes() {
+		$route_args = array(
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => array( $this, 'handle_webhook' ),
+			'permission_callback' => array( $this, 'validate_google_oidc_token' ),
+		);
+
+		// Generic webhook URL — handles all Google Chat connections.
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base,
+			$route_args
+		);
+
+		// Connection-specific webhook URL (e.g. /webhooks/google-chat/{connection_id}).
+		// The admin UI exposes this URL so each Google Cloud project can route events
+		// to its own dedicated endpoint. Without this registration those URLs return 404
+		// and Google Chat events are silently dropped.
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/(?P<connection_id>[a-zA-Z0-9_-]+)',
+			$route_args
+		);
+	}
+
+	/**
+	 * Decode a base64url-encoded string (RFC 4648 §5).
+	 *
+	 * JWT segments use base64url encoding (URL-safe alphabet, no padding).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $input Base64url-encoded string.
+	 * @return string|false Decoded bytes or false on failure.
+	 */
+	protected function base64url_decode( $input ) {
+		$padded = str_pad(
+			strtr( $input, '-_', '+/' ),
+			strlen( $input ) % 4 === 0 ? strlen( $input ) : strlen( $input ) + 4 - ( strlen( $input ) % 4 ),
+			'=',
+			STR_PAD_RIGHT
+		);
+		return base64_decode( $padded ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+	}
+
+	/**
+	 * Validate a Google Chat space resource name.
+	 *
+	 * Google Chat space names must follow the pattern "spaces/<ID>" where <ID>
+	 * contains only alphanumeric characters, underscores, and hyphens. This
+	 * matches the format returned by the Google Chat API and documented at
+	 * https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.
+	 * Validating before URL construction prevents URL-injection attacks where a
+	 * crafted space name could redirect outbound API calls (including the Bearer
+	 * token) to an attacker-controlled server.
+	 *
+	 * The regex is intentionally restrictive. Should Google ever introduce
+	 * space IDs with additional characters (e.g., dots), the pattern here should
+	 * be updated accordingly after verifying the new format is safe to embed in URLs.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $space_name The space resource name to validate.
+	 * @return bool True when the name is safe to use in a URL path, false otherwise.
+	 */
+	protected function is_valid_space_name( $space_name ) {
+		return (bool) preg_match( '/^spaces\/[A-Za-z0-9_-]+$/', $space_name );
+	}
+
+	/**
+	 * Validate the Google OIDC Bearer token sent by Google Chat.
+	 *
+	 * Google Chat signs each request with a Google OIDC token in the
+	 * Authorization header (Bearer scheme). The token is validated by sending
+	 * it to Google's tokeninfo endpoint, which performs full RS256 signature
+	 * verification server-side. This prevents forged tokens from being
+	 * accepted — local JWT decoding without signature verification is
+	 * insufficient because any caller could craft a payload with valid-looking
+	 * claims.
+	 *
+	 * When `disable_oidc_verification` is enabled on the connection, all OIDC
+	 * token checks are bypassed and any POST request is accepted. This mirrors
+	 * Telegram's behavior when no secret token is configured, and is useful for
+	 * environments where the Authorization header is stripped by a proxy or WAF.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return bool True if the token is acceptable, false to reject.
+	 */
+	public function validate_google_oidc_token( $request ) {
+		// Load the connection first so we can check disable_oidc_verification
+		// before doing any token validation.
+		$url_connection_id = $request->get_param( 'connection_id' );
+		if ( ! empty( $url_connection_id ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-pro-remote-site-manager.php';
+			}
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( sanitize_key( $url_connection_id ) );
+		} else {
+			// When using the generic webhook URL (no connection_id in the URL),
+			// extract the space name from the request body so we can find a
+			// space-specific connection and correctly check its
+			// disable_oidc_verification flag. Without this, connections that have
+			// google_chat_space set are never found by get_active_google_chat_connection()
+			// (which only returns generic / no-space connections when called without an
+			// argument), so the disable_oidc_verification bypass never takes effect even
+			// when the admin has checked "Disable OIDC Verification" in the settings.
+			$body = $request->get_json_params();
+			if ( ! is_array( $body ) ) {
+				$body = array();
+			}
+			// Normalize Workspace Add-on wrapper so the space name can be read.
+			if (
+				isset( $body['type'] ) && 'GOOGLE_CHAT' === $body['type'] &&
+				isset( $body['google'] ) && is_array( $body['google'] ) &&
+				isset( $body['google']['chat'] ) && is_array( $body['google']['chat'] )
+			) {
+				$body = $body['google']['chat'];
+			}
+			$space_name_for_lookup = isset( $body['space']['name'] )
+				? sanitize_text_field( $body['space']['name'] )
+				: '';
+			$connection            = $this->get_active_google_chat_connection( $space_name_for_lookup );
+		}
+
+		// When OIDC verification is disabled for this connection, require a
+		// shared-secret verification token (mirrors Telegram's bot token model).
+		// Without this, an attacker who knows the webhook URL can inject
+		// messages. The verification token must be configured in the connection
+		// settings and passed via ?token= URL parameter or X-Google-Chat-Token
+		// header.
+		//
+		// If no verification token is configured AND OIDC is disabled, the
+		// request is rejected — a completely unauthenticated endpoint is never
+		// acceptable in production.
+		if ( $connection && ! empty( $connection['disable_oidc_verification'] ) ) {
+			$verification_token = isset( $connection['verification_token'] )
+				? trim( (string) $connection['verification_token'] )
+				: '';
+
+			if ( '' === $verification_token ) {
+				WP_MCP_AI_Logger::log_error(
+					'google_chat_webhook_oidc_bypass_no_token',
+					'Google Chat webhook: OIDC verification is disabled but no verification token is configured. Request rejected. Configure a verification token in the connection settings.'
+				);
+				$this->store_webhook_log_entry(
+					array(
+						'status' => 'rejected',
+						'reason' => 'OIDC verification disabled but no verification token configured.',
+					)
+				);
+				return false;
+			}
+
+			// Check for the verification token in the URL query or a custom header.
+			$provided_token = $request->get_param( 'token' );
+			if ( empty( $provided_token ) ) {
+				$provided_token = $request->get_header( 'X-Google-Chat-Token' );
+			}
+
+			if ( ! empty( $provided_token ) && hash_equals( $verification_token, (string) $provided_token ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'google_chat_webhook_oidc_bypass_token',
+					'Google Chat webhook: OIDC verification disabled, request authenticated via verification token.',
+					array()
+				);
+				return true;
+			}
+
+			WP_MCP_AI_Logger::log_error(
+				'google_chat_webhook_oidc_bypass_bad_token',
+				'Google Chat webhook: OIDC verification disabled but verification token missing or mismatched.'
+			);
+			$this->store_webhook_log_entry(
+				array(
+					'status' => 'rejected',
+					'reason' => 'OIDC verification disabled — verification token missing or mismatched.',
+				)
+			);
+			return false;
+		}
+
+		// Accept WordPress nonce authentication for administrator users.
+		// This allows logged-in admins to trigger or test the webhook endpoint
+		// from wp-admin or other WordPress code without a Google OIDC Bearer token.
+		// The standard WordPress REST API nonce (X-WP-Nonce header with action
+		// 'wp_rest') is required, and the caller must have the manage_options
+		// capability so that ordinary subscribers cannot authenticate this way.
+		$wp_nonce = $request->get_header( 'X-WP-Nonce' );
+		if (
+			! empty( $wp_nonce ) &&
+			is_user_logged_in() &&
+			current_user_can( 'manage_options' ) &&
+			wp_verify_nonce( $wp_nonce, 'wp_rest' )
+		) {
+			WP_MCP_AI_Logger::log_event(
+				'google_chat_webhook_nonce_auth',
+				'Google Chat webhook: request authenticated via WordPress nonce.',
+				array()
+			);
+			return true;
+		}
+
+		$auth_header = $request->get_header( 'authorization' );
+
+		// Fallback: some server configurations (Apache + FastCGI / PHP-FPM) do not
+		// populate $_SERVER['HTTP_AUTHORIZATION'], so WordPress's get_header() returns
+		// empty. Check the two common alternative server variables before giving up.
+		if ( empty( $auth_header ) && ! empty( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
+			$auth_header = sanitize_text_field( wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) );
+		}
+
+		if ( empty( $auth_header ) && ! empty( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ) {
+			$auth_header = sanitize_text_field( wp_unslash( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) );
+		}
+
+		if ( empty( $auth_header ) || 0 !== strncasecmp( $auth_header, 'Bearer ', 7 ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat webhook rejected: missing or malformed Authorization Bearer header.'
+			);
+			$this->store_webhook_log_entry(
+				array(
+					'status' => 'rejected',
+					'reason' => 'Missing or malformed Authorization Bearer header — Google Chat cannot reach this endpoint or the header is being stripped by a proxy/WAF.',
+				)
+			);
+			return false;
+		}
+
+		$token = substr( $auth_header, 7 );
+
+		if ( empty( $token ) ) {
+			WP_MCP_AI_Logger::log_error( 'Google Chat webhook rejected: empty Bearer token.' );
+			$this->store_webhook_log_entry(
+				array(
+					'status' => 'rejected',
+					'reason' => 'Authorization Bearer header present but token value is empty.',
+				)
+			);
+			return false;
+		}
+
+		$audience = '';
+
+		if ( $connection && ! empty( $connection['verify_token'] ) ) {
+			$audience = $connection['verify_token'];
+		}
+
+		if ( empty( $audience ) ) {
+			// No audience URL configured — the OIDC token will still be cryptographically
+			// verified against Google's tokeninfo endpoint and its issuer will be validated,
+			// but the audience (aud) claim will NOT be checked. This matches the documented
+			// "Leave blank to skip audience verification (less secure)" setting behavior.
+			// Configure the Audience URL in the connection settings for stricter security.
+			WP_MCP_AI_Logger::log_event(
+				'google_chat_webhook_oidc_no_audience',
+				'Google Chat webhook: no Audience URL configured — audience claim will not be verified. Set the Audience URL to your webhook URL in the connection settings for stricter OIDC security.',
+				array()
+			);
+		}
+
+		// Validate the OIDC token via Google's tokeninfo endpoint.
+		//
+		// Sending the token to Google performs full RS256 signature verification
+		// server-side, which prevents forged tokens with valid-looking claims
+		// from being accepted. Local JWT decoding without signature verification
+		// is not sufficient — any caller can craft a base64-encoded payload with
+		// arbitrary iss/aud/exp values.
+		//
+		// The tokeninfo endpoint returns HTTP 200 with the decoded claims on
+		// success, or HTTP 400 when the token is expired, has an invalid
+		// signature, or is otherwise malformed.
+		//
+		// Note: Google's tokeninfo API is designed as a GET endpoint and requires
+		// the id_token as a query parameter — this is Google's documented interface
+		// (https://developers.google.com/identity/sign-in/web/backend-auth#verify-the-integrity-of-the-id-token).
+		// The JWT is already a public bearer credential; its exposure in server logs
+		// is mitigated by its short expiry (typically 1 hour for OIDC tokens).
+		$tokeninfo_url = add_query_arg( 'id_token', rawurlencode( $token ), self::GOOGLE_TOKENINFO_URL );
+
+		$response = wp_remote_get(
+			$tokeninfo_url,
+			array(
+				'timeout'    => 10,
+				'user-agent' => 'WP-MCP-AI/' . NVOOS_CONTENT_GRAPH_PRO_VERSION . ' (WordPress/' . get_bloginfo( 'version' ) . ')',
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat webhook rejected: tokeninfo API call failed.',
+				array( 'error' => $response->get_error_message() )
+			);
+			$this->store_webhook_log_entry(
+				array(
+					'status' => 'rejected',
+					'reason' => 'OIDC tokeninfo API call failed: ' . $response->get_error_message(),
+				)
+			);
+			return false;
+		}
+
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+
+		if ( 200 !== $status_code ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat webhook rejected: tokeninfo API returned non-200 status.',
+				array( 'status' => $status_code )
+			);
+			$this->store_webhook_log_entry(
+				array(
+					'status' => 'rejected',
+					'reason' => 'OIDC tokeninfo API returned HTTP ' . $status_code . ' — token may be expired or invalid.',
+				)
+			);
+			return false;
+		}
+
+		$info = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( ! is_array( $info ) ) {
+			WP_MCP_AI_Logger::log_error( 'Google Chat webhook rejected: tokeninfo response is not valid JSON.' );
+			$this->store_webhook_log_entry(
+				array(
+					'status' => 'rejected',
+					'reason' => 'OIDC tokeninfo response was not valid JSON.',
+				)
+			);
+			return false;
+		}
+
+		// Validate issuer — must be a recognised Google issuer.
+		$token_iss     = isset( $info['iss'] ) ? (string) $info['iss'] : '';
+		$valid_issuers = array(
+			self::GOOGLE_OIDC_ISSUER,          // chat@system.gserviceaccount.com.
+			'accounts.google.com',             // Workspace Add-ons / OAuth-based tokens.
+			'https://accounts.google.com',     // Alternative HTTPS form sometimes seen.
+		);
+
+		if ( ! in_array( $token_iss, $valid_issuers, true ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat webhook rejected: OIDC token issuer is not a recognised Google issuer.',
+				array( 'iss' => '' !== $token_iss ? substr( $token_iss, 0, 40 ) : '(empty)' )
+			);
+			$this->store_webhook_log_entry(
+				array(
+					'status' => 'rejected',
+					'reason' => 'OIDC token issuer not recognised: ' . ( '' !== $token_iss ? substr( $token_iss, 0, 40 ) : '(empty)' ),
+				)
+			);
+			return false;
+		}
+
+		// Validate audience claim against the configured audience URL only when one
+		// has been provided. When left blank (skip audience verification mode) the
+		// token's issuer has already been verified above, which is sufficient to
+		// confirm it is a legitimate Google-signed token.
+		// The JWT spec (RFC 7519 §4.1.3) allows 'aud' to be either a single string
+		// or an array of strings. Handle both forms to avoid incorrectly rejecting
+		// legitimate Google Chat OIDC tokens.
+		if ( ! empty( $audience ) ) {
+			$token_aud = isset( $info['aud'] ) ? $info['aud'] : '';
+
+			if ( is_array( $token_aud ) ) {
+				if ( ! in_array( $audience, $token_aud, true ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'Google Chat webhook rejected: OIDC token audience array does not contain the expected audience.',
+						array( 'expected' => $audience )
+					);
+					$this->store_webhook_log_entry(
+						array(
+							'status' => 'rejected',
+							'reason' => 'OIDC audience mismatch — token audience array does not contain the configured Audience URL. Check the Audience URL field on this connection.',
+						)
+					);
+					return false;
+				}
+			} elseif ( $token_aud !== $audience ) {
+				WP_MCP_AI_Logger::log_error(
+					'Google Chat webhook rejected: OIDC token audience mismatch.',
+					array(
+						'expected' => $audience,
+						'received' => is_string( $token_aud ) ? substr( $token_aud, 0, 20 ) . '***' : gettype( $token_aud ),
+					)
+				);
+				$this->store_webhook_log_entry(
+					array(
+						'status' => 'rejected',
+						'reason' => 'OIDC audience mismatch — token aud does not match the configured Audience URL. Check the Audience URL field on this connection.',
+					)
+				);
+				return false;
+			}
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'google_chat_webhook_oidc_verified',
+			'Google Chat webhook: OIDC token cryptographically verified via tokeninfo endpoint.',
+			array()
+		);
+
+		return true;
+	}
+
+	/**
+	 * Handle an incoming Google Chat bot event.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response Response acknowledged to Google Chat.
+	 */
+	public function handle_webhook( $request ) {
+		$payload = $request->get_json_params();
+
+		if ( empty( $payload ) || ! is_array( $payload ) ) {
+			WP_MCP_AI_Logger::log_error( 'Google Chat webhook: empty or invalid JSON payload.' );
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		// Normalise Workspace Add-ons wrapper format to standard Chat event format.
+		$payload = $this->normalize_payload( $payload );
+
+		$event_type = isset( $payload['type'] ) ? sanitize_text_field( $payload['type'] ) : '';
+		$message_id = isset( $payload['message']['name'] ) ? sanitize_text_field( $payload['message']['name'] ) : '';
+
+		WP_MCP_AI_Logger::log_event(
+			'google_chat_webhook_received',
+			'Google Chat webhook event received.',
+			array(
+				'event_type' => $event_type,
+				'message_id' => $message_id,
+			)
+		);
+
+		// Handle ADDED_TO_SPACE: send a welcome message via cron.
+		if ( 'ADDED_TO_SPACE' === $event_type ) {
+			return $this->handle_added_to_space( $payload, $request );
+		}
+
+		// Handle APP_COMMAND events (slash commands configured in Google Cloud Console).
+		// Google Chat sends APP_COMMAND instead of MESSAGE when a user invokes a
+		// configured slash command. Without this branch the event is silently dropped
+		// and Google Chat immediately shows "not responding".
+		if ( 'APP_COMMAND' === $event_type ) {
+			return $this->handle_app_command( $payload, $request );
+		}
+
+		// Only process MESSAGE events (not REMOVED_FROM_SPACE, CARD_CLICKED, etc.).
+		if ( 'MESSAGE' !== $event_type ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		// Deduplicate by message name.
+		if ( $message_id && $this->is_duplicate_message( $message_id ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'google_chat_webhook_duplicate',
+				'Google Chat message already processed; skipping.',
+				array( 'message_id' => $message_id )
+			);
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		if ( $message_id ) {
+			set_transient( 'wp_mcp_ai_gc_dedup_' . md5( $message_id ), 1, self::DEDUP_TRANSIENT_TTL );
+		}
+
+		// Extract message text (plain text from the message body).
+		$message_text = $this->extract_message_text( $payload );
+
+		if ( '' === $message_text ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		// Extract space name, space type, thread name, and sender for routing.
+		$space_name   = isset( $payload['space']['name'] ) ? sanitize_text_field( $payload['space']['name'] ) : '';
+		$space_type   = $this->get_space_type( $payload );
+		$sender_name  = isset( $payload['message']['sender']['name'] ) ? sanitize_text_field( $payload['message']['sender']['name'] ) : '';
+		$thread_name  = isset( $payload['message']['thread']['name'] ) ? sanitize_text_field( $payload['message']['thread']['name'] ) : '';
+		$gc_conv_type = ( 'DIRECT_MESSAGE' === $space_type ) ? 'dm' : ( ( 'ROOM' === $space_type || 'SPACE' === $space_type ) ? 'channel' : 'group' );
+
+		if ( '' === $space_name ) {
+			WP_MCP_AI_Logger::log_error( 'Google Chat webhook: unable to determine space name.' );
+			$this->store_webhook_log_entry(
+				array(
+					'status'     => 'rejected',
+					'reason'     => 'Unable to determine space name from payload.',
+					'event_type' => $event_type,
+				)
+			);
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		// Resolve connection: prefer the connection_id from the URL route (connection-specific
+		// webhook endpoint), then fall back to space-name-based matching.
+		$url_connection_id = $request->get_param( 'connection_id' );
+		if ( ! empty( $url_connection_id ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-pro-remote-site-manager.php';
+			}
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( sanitize_key( $url_connection_id ) );
+			if ( ! $connection || empty( $connection['enabled'] ) ) {
+				$connection = null;
+			}
+		} else {
+			$connection = $this->get_active_google_chat_connection( $space_name );
+		}
+
+		if ( ! $connection ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat webhook: no active Google Chat connection found.'
+			);
+			$this->store_webhook_log_entry(
+				array(
+					'status'     => 'rejected',
+					'reason'     => 'No active Google Chat connection found for this space. Check that a connection is saved and enabled, and that the Space Name field (if set) matches this space.',
+					'event_type' => $event_type,
+					'space'      => $space_name,
+				)
+			);
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		$this->store_webhook_log_entry(
+			array(
+				'status'     => 'accepted',
+				'reason'     => 'Message received and queued for AI reply.',
+				'event_type' => $event_type,
+				'space'      => $space_name,
+			)
+		);
+
+		$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
+			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
+			: array();
+
+		// --- Automation rules: fall back to global default assistant ---
+		$automation_rules = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
+		if ( empty( $assigned_assistant_ids ) && ! empty( $automation_rules['default_assistant_id'] ) ) {
+			$assigned_assistant_ids = array( absint( $automation_rules['default_assistant_id'] ) );
+		}
+
+		// --- Final fallback: use any published assistant so all messages get a reply ---
+		if ( empty( $assigned_assistant_ids ) ) {
+			$any_id = $this->get_any_assistant_id();
+			if ( $any_id ) {
+				$assigned_assistant_ids = array( $any_id );
+			}
+		}
+
+		/**
+		 * Filter whether to auto-reply to Google Chat messages.
+		 *
+		 * Defaults to true when the connection has one or more assigned AI assistants
+		 * or a global default assistant is configured in the automation rules.
+		 *
+		 * Note: Google Chat already enforces mention/routing rules at the platform
+		 * level — MESSAGE events in spaces are only delivered to the bot when it is
+		 *
+		 * @mentioned, and every message in a DIRECT_MESSAGE space is directed at the
+		 * bot. No additional require_mention filtering is needed here.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param bool  $auto_reply       Whether to auto-reply.
+		 * @param array $payload          Google Chat event payload.
+		 * @param array $automation_rules Saved automation rule settings.
+		 */
+		$should_reply = apply_filters( 'wp_mcp_ai_google_chat_should_auto_reply', ! empty( $assigned_assistant_ids ), $payload, $automation_rules );
+
+		if ( ! $should_reply ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		// Enforce per-contact rate limiting when the global setting is enabled.
+		// Uses a transient-based sliding window; see wp_mcp_ai_chat_channel_is_rate_limited().
+		if ( function_exists( 'wp_mcp_ai_chat_channel_is_rate_limited' ) &&
+			wp_mcp_ai_chat_channel_is_rate_limited( 'google_chat', $sender_name ) ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
+
+		if ( '' === $connection_id ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		do_action( 'wp_mcp_ai_google_chat_auto_reply', $payload, $automation_rules, $assigned_assistant_ids );
+
+		// Find or create the contact in the Channel Contacts CCT.
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+				'google_chat',
+				$sender_name,
+				array(
+					'display_name'      => $sender_name,
+					'connection_id'     => $connection_id,
+					'conversation_type' => $gc_conv_type,
+				)
+			);
+			if ( $contact_row_id ) {
+				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
+			}
+		}
+
+		// Persist inbound message to Channel Messages CCT.
+		if ( class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+			WP_MCP_AI_Channel_Messages_CCT::insert(
+				array(
+					'channel'            => 'google_chat',
+					'channel_contact_id' => $sender_name,
+					'direction'          => 'inbound',
+					'message_id'         => $message_id,
+					'message_type'       => 'text',
+					'content'            => $message_text,
+					'status'             => 'received',
+					'connection_id'      => $connection_id,
+					'phone_number_id'    => $space_name,
+					'timestamp'          => time(),
+					'reply_sent'         => 0,
+					'assigned_agent'     => (string) $assigned_assistant_ids[0],
+					'conversation_type'  => $gc_conv_type,
+				)
+			);
+		}
+
+		// Trigger auto-reply with human takeover / automation keyword checks,
+		// mirroring the WhatsApp auto-reply dispatch pattern.
+		$this->maybe_auto_reply(
+			$message_text,
+			$sender_name,
+			$space_name,
+			$connection_id,
+			$thread_name,
+			$assigned_assistant_ids,
+			$automation_rules,
+			$space_type
+		);
+
+		// Return empty response — Google Chat accepts 200 with an empty JSON body
+		// or a message payload to reply synchronously. Using async cron avoids timeouts.
+		return rest_ensure_response( $this->empty_response() );
+	}
+
+	/**
+	 * Decide whether to auto-reply to an incoming Google Chat message.
+	 *
+	 * Mirrors the WhatsApp maybe_auto_reply() pattern: applies automation keyword
+	 * checks (human takeover / AI resume) and the human takeover gate before
+	 * dispatching an async AI reply via WordPress cron.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $message_text           Plain-text message from the sender.
+	 * @param string $sender_name            Google Chat sender resource name (e.g. users/12345).
+	 * @param string $space_name             Google Chat space resource name (e.g. spaces/AAAA).
+	 * @param string $connection_id          Remote connection ID.
+	 * @param string $thread_name            Thread resource name (may be empty for new threads).
+	 * @param int[]  $assigned_assistant_ids Assistant post IDs assigned to this connection.
+	 * @param array  $automation_rules       Global chat channels automation rule settings.
+	 * @param string $space_type             Space type (SPACE, GROUP_CHAT, DIRECT_MESSAGE).
+	 */
+	protected function maybe_auto_reply( $message_text, $sender_name, $space_name, $connection_id, $thread_name, array $assigned_assistant_ids, array $automation_rules, $space_type = '' ) {
+		// Nothing to do for empty messages — dispatch_google_chat_ai_reply() would
+		// reject them too, but checking early avoids unnecessary keyword iterations.
+		if ( '' === $message_text ) {
+			return;
+		}
+
+		$message_text_lower = strtolower( $message_text );
+
+		// --- Human takeover keyword check ---
+		// When a message contains a configured human-takeover keyword, flag the
+		// contact for human takeover and skip the AI auto-reply so a human agent
+		// can respond instead.
+		if ( ! empty( $automation_rules['human_takeover_keywords'] ) ) {
+			$takeover_kws = array_map( 'trim', explode( ',', strtolower( $automation_rules['human_takeover_keywords'] ) ) );
+			foreach ( $takeover_kws as $kw ) {
+				if ( '' !== $kw && false !== strpos( $message_text_lower, $kw ) ) {
+					if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+						$contact_id = $this->get_channel_contact_id( 'google_chat', $sender_name );
+						if ( $contact_id ) {
+							WP_MCP_AI_Channel_Contacts_CCT::set_human_takeover( $contact_id, true );
+						}
+					}
+					WP_MCP_AI_Logger::log_event(
+						'google_chat_human_takeover_triggered',
+						'Human takeover triggered by keyword.',
+						array(
+							'sender_name' => $sender_name,
+							'keyword'     => $kw,
+						)
+					);
+					return; // Do not auto-reply; human agent will respond.
+				}
+			}
+		}
+
+		// --- AI resume keyword check ---
+		// When a message contains a configured AI-resume keyword, clear the human
+		// takeover flag so AI auto-replies resume for this contact.
+		if ( ! empty( $automation_rules['ai_resume_keywords'] ) ) {
+			$resume_kws = array_map( 'trim', explode( ',', strtolower( $automation_rules['ai_resume_keywords'] ) ) );
+			foreach ( $resume_kws as $kw ) {
+				if ( '' !== $kw && false !== strpos( $message_text_lower, $kw ) ) {
+					if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+						$contact_id = $this->get_channel_contact_id( 'google_chat', $sender_name );
+						if ( $contact_id ) {
+							WP_MCP_AI_Channel_Contacts_CCT::set_human_takeover( $contact_id, false );
+						}
+					}
+					WP_MCP_AI_Logger::log_event(
+						'google_chat_ai_resumed',
+						'AI auto-reply resumed by keyword.',
+						array(
+							'sender_name' => $sender_name,
+							'keyword'     => $kw,
+						)
+					);
+					break; // Continue and allow AI to reply.
+				}
+			}
+		}
+
+		// --- Human takeover gate ---
+		// Skip AI auto-reply when a human agent is actively handling this contact.
+		if ( ! empty( $sender_name ) && class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+			if ( WP_MCP_AI_Channel_Contacts_CCT::is_human_takeover_active( 'google_chat', $sender_name, $connection_id ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'google_chat_auto_reply_skipped_human_takeover',
+					'Auto-reply skipped: human takeover is active for this contact.',
+					array( 'sender_name' => $sender_name )
+				);
+				return;
+			}
+		}
+
+		// Dispatch an AI-generated reply asynchronously via WordPress cron.
+		$this->dispatch_google_chat_ai_reply(
+			$message_text,
+			$sender_name,
+			$space_name,
+			$connection_id,
+			$thread_name,
+			$assigned_assistant_ids,
+			$space_type
+		);
+	}
+
+	/**
+	 * Schedule an asynchronous cron job to generate and send a Google Chat AI reply.
+	 *
+	 * Mirrors the WhatsApp dispatch_whatsapp_ai_reply() pattern. Scheduling
+	 * slightly in the future (time() + 1) ensures the webhook response is
+	 * returned to Google Chat before the cron job begins, preventing timeouts.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $message_text           Plain-text message from the sender.
+	 * @param string $sender_name            Google Chat sender resource name.
+	 * @param string $space_name             Google Chat space resource name.
+	 * @param string $connection_id          Remote connection ID.
+	 * @param string $thread_name            Thread resource name (may be empty).
+	 * @param int[]  $assigned_assistant_ids Assistant post IDs for this connection.
+	 * @param string $space_type             Space type (SPACE, GROUP_CHAT, DIRECT_MESSAGE).
+	 */
+	protected function dispatch_google_chat_ai_reply( $message_text, $sender_name, $space_name, $connection_id, $thread_name, array $assigned_assistant_ids, $space_type = '' ) {
+		if ( '' === $message_text || '' === $space_name || '' === $connection_id || empty( $assigned_assistant_ids ) ) {
+			return;
+		}
+
+		$job_args = array(
+			array(
+				'assistant_id'  => $assigned_assistant_ids[0],
+				'message_text'  => $message_text,
+				'space_name'    => $space_name,
+				'sender_name'   => $sender_name,
+				'connection_id' => $connection_id,
+				'thread_name'   => $thread_name,
+				'space_type'    => $space_type,
+			),
+		);
+
+		// Schedule slightly in the future so the current request can complete first.
+		wp_schedule_single_event( time() + 1, self::REPLY_CRON_HOOK, $job_args );
+		spawn_cron();
+	}
+
+	/**
+	 * Retrieve the Channel Contacts CCT row ID for a Google Chat sender.
+	 *
+	 * Used by maybe_auto_reply() to set or clear human takeover flags, mirroring
+	 * the equivalent helper in WP_MCP_AI_WhatsApp_Webhook_Controller.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $channel            Channel slug (e.g. 'google_chat').
+	 * @param string $channel_contact_id Platform-side contact identifier (sender resource name).
+	 * @return int|null CCT row ID, or null if not found or CCT is unavailable.
+	 */
+	protected function get_channel_contact_id( $channel, $channel_contact_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) || ! WP_MCP_AI_Channel_Contacts_CCT::table_exists() ) {
+			return null;
+		}
+
+		global $wpdb;
+		$table = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$id = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
+				sanitize_key( $channel ),
+				sanitize_text_field( $channel_contact_id )
+			)
+		);
+
+		return $id ? (int) $id : null;
+	}
+
+	/**
+	 * Handle an ADDED_TO_SPACE event by sending a welcome message.
+	 *
+	 * When a bot is added to a space, Google Chat sends an ADDED_TO_SPACE event.
+	 * This method schedules an async welcome message reply via cron.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array           $payload Google Chat event payload.
+	 * @param WP_REST_Request $request Original REST request (used to read connection_id param).
+	 * @return WP_REST_Response Empty acknowledgement response.
+	 */
+	protected function handle_added_to_space( array $payload, WP_REST_Request $request = null ) {
+		$space_name  = isset( $payload['space']['name'] ) ? sanitize_text_field( $payload['space']['name'] ) : '';
+		$space_type  = $this->get_space_type( $payload );
+		$sender_name = isset( $payload['user']['name'] ) ? sanitize_text_field( $payload['user']['name'] ) : '';
+
+		if ( '' === $space_name ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		// Resolve connection: prefer the connection_id from the URL route so that
+		// per-connection webhook URLs work correctly for ADDED_TO_SPACE events too.
+		$url_connection_id = $request ? $request->get_param( 'connection_id' ) : '';
+		if ( ! empty( $url_connection_id ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-pro-remote-site-manager.php';
+			}
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( sanitize_key( $url_connection_id ) );
+			if ( ! $connection || empty( $connection['enabled'] ) ) {
+				$connection = null;
+			}
+		}
+
+		if ( empty( $connection ) ) {
+			$connection = $this->get_active_google_chat_connection( $space_name );
+		}
+
+		$has_credentials = $connection && (
+			! empty( $connection['api_key'] ) ||
+			( ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] ) && ! empty( $connection['refresh_token'] ) )
+		);
+
+		$has_reply_webhook = $connection && ! empty( $connection['reply_webhook_url'] )
+			&& preg_match( self::WEBHOOK_URL_PATTERN, $connection['reply_webhook_url'] );
+
+		// A valid connection must have either OAuth/Service-Account credentials or
+		// an incoming webhook URL to send replies. Connections that only have a
+		// Google Chat space configured (but no send capability) are skipped.
+		if ( ! $has_credentials && ! $has_reply_webhook ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
+
+		if ( '' === $connection_id ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		// When the bot is added to a DIRECT_MESSAGE space, Google Chat includes the
+		// user's first message in the ADDED_TO_SPACE event payload. Process it as an
+		// AI reply so the user's question is answered rather than ignored.
+		if ( 'DIRECT_MESSAGE' === $space_type ) {
+			$initial_message_text = $this->extract_message_text( $payload );
+
+			if ( '' !== $initial_message_text ) {
+				$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
+					? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
+					: array();
+
+				$automation_rules = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
+				if ( empty( $assigned_assistant_ids ) && ! empty( $automation_rules['default_assistant_id'] ) ) {
+					$assigned_assistant_ids = array( absint( $automation_rules['default_assistant_id'] ) );
+				}
+
+				// Final fallback: use any published assistant.
+				if ( empty( $assigned_assistant_ids ) ) {
+					$any_id = $this->get_any_assistant_id();
+					if ( $any_id ) {
+						$assigned_assistant_ids = array( $any_id );
+					}
+				}
+
+				if ( ! empty( $assigned_assistant_ids ) ) {
+					$thread_name = isset( $payload['message']['thread']['name'] ) ? sanitize_text_field( $payload['message']['thread']['name'] ) : '';
+
+					$job_args = array(
+						array(
+							'assistant_id'  => $assigned_assistant_ids[0],
+							'message_text'  => $initial_message_text,
+							'space_name'    => $space_name,
+							'sender_name'   => $sender_name,
+							'connection_id' => $connection_id,
+							'thread_name'   => $thread_name,
+						),
+					);
+
+					wp_schedule_single_event( time() + 1, self::REPLY_CRON_HOOK, $job_args );
+					spawn_cron();
+
+					WP_MCP_AI_Logger::log_event(
+						'google_chat_added_to_space',
+						'Bot added to Google Chat DM; AI reply scheduled for initial message.',
+						array(
+							'space_name' => $space_name,
+							'space_type' => $space_type,
+						)
+					);
+
+					return rest_ensure_response( $this->empty_response() );
+				}
+			}
+		}
+
+		/**
+		 * Filters the welcome message sent when the bot is added to a Google Chat space.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $message     Default welcome message.
+		 * @param string $space_name  Space resource name.
+		 * @param string $space_type  Space type (SPACE, GROUP_CHAT, DIRECT_MESSAGE).
+		 * @param string $sender_name Resource name of the user who added the bot.
+		 */
+		$welcome_message = apply_filters(
+			'wp_mcp_ai_google_chat_welcome_message',
+			__( 'Hello! I\'m your AI assistant. How can I help you today?', 'nvoos-content-graph-pro' ),
+			$space_name,
+			$space_type,
+			$sender_name
+		);
+
+		if ( '' === $welcome_message ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		$job_args = array(
+			array(
+				'space_name'    => $space_name,
+				'message_text'  => $welcome_message,
+				'connection_id' => $connection_id,
+			),
+		);
+
+		wp_schedule_single_event( time() + 1, 'wp_mcp_ai_google_chat_send_welcome_message', $job_args );
+		spawn_cron();
+
+		WP_MCP_AI_Logger::log_event(
+			'google_chat_added_to_space',
+			'Bot added to Google Chat space; welcome message scheduled.',
+			array(
+				'space_name' => $space_name,
+				'space_type' => $space_type,
+			)
+		);
+
+		return rest_ensure_response( $this->empty_response() );
+	}
+
+	/**
+	 * Handle an APP_COMMAND event (slash command configured in Google Cloud Console).
+	 *
+	 * Google Chat sends APP_COMMAND instead of MESSAGE when a user invokes a
+	 * configured slash command. The text argument entered after the command name
+	 * is available in appCommandPayload.commandText. When no argument text is
+	 * provided (e.g. the user typed just "/help"), a generic prompt is used so
+	 * the AI still returns a useful reply.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array           $payload Normalised Google Chat event payload.
+	 * @param WP_REST_Request $request Original REST request (used to read connection_id param).
+	 * @return WP_REST_Response Empty acknowledgement response.
+	 */
+	protected function handle_app_command( array $payload, WP_REST_Request $request ) {
+		$space_name  = isset( $payload['space']['name'] ) ? sanitize_text_field( $payload['space']['name'] ) : '';
+		$space_type  = $this->get_space_type( $payload );
+		$sender_name = isset( $payload['user']['name'] ) ? sanitize_text_field( $payload['user']['name'] ) : '';
+
+		if ( '' === $space_name ) {
+			WP_MCP_AI_Logger::log_error( 'Google Chat webhook: APP_COMMAND missing space name.' );
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		$message_text = $this->extract_app_command_text( $payload );
+
+		// Resolve connection: prefer the connection_id from the URL route.
+		$url_connection_id = $request->get_param( 'connection_id' );
+		if ( ! empty( $url_connection_id ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-pro-remote-site-manager.php';
+			}
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( sanitize_key( $url_connection_id ) );
+			if ( ! $connection || empty( $connection['enabled'] ) ) {
+				$connection = null;
+			}
+		} else {
+			$connection = $this->get_active_google_chat_connection( $space_name );
+		}
+
+		if ( ! $connection ) {
+			WP_MCP_AI_Logger::log_error( 'Google Chat webhook: APP_COMMAND — no active connection found.' );
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
+			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
+			: array();
+
+		$automation_rules = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
+		if ( empty( $assigned_assistant_ids ) && ! empty( $automation_rules['default_assistant_id'] ) ) {
+			$assigned_assistant_ids = array( absint( $automation_rules['default_assistant_id'] ) );
+		}
+
+		// Final fallback: use any published assistant so slash commands always get a reply.
+		if ( empty( $assigned_assistant_ids ) ) {
+			$any_id = $this->get_any_assistant_id();
+			if ( $any_id ) {
+				$assigned_assistant_ids = array( $any_id );
+			}
+		}
+
+		if ( empty( $assigned_assistant_ids ) ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
+
+		if ( '' === $connection_id ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		$job_args = array(
+			array(
+				'assistant_id'  => $assigned_assistant_ids[0],
+				'message_text'  => $message_text,
+				'space_name'    => $space_name,
+				'sender_name'   => $sender_name,
+				'connection_id' => $connection_id,
+				'thread_name'   => '',
+			),
+		);
+
+		wp_schedule_single_event( time() + 1, self::REPLY_CRON_HOOK, $job_args );
+		spawn_cron();
+
+		WP_MCP_AI_Logger::log_event(
+			'google_chat_app_command',
+			'Google Chat APP_COMMAND received; AI reply scheduled.',
+			array(
+				'space_name'  => $space_name,
+				'space_type'  => $space_type,
+				'sender_name' => $sender_name,
+			)
+		);
+
+		return rest_ensure_response( $this->empty_response() );
+	}
+
+	/**
+	 * Cron callback: generate an AI reply and post it to the Google Chat space.
+	 *
+	 * Implements per-user conversation history following the same pattern as the
+	 * WhatsApp auto-reply handler, respecting the global max_history_messages
+	 * setting and the wp_mcp_ai_google_chat_max_history_messages filter.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $args Job arguments set by handle_webhook().
+	 */
+	public function handle_google_chat_reply_job( $args ) {
+		if ( ! is_array( $args ) ) {
+			return;
+		}
+
+		$assistant_id  = isset( $args['assistant_id'] ) ? absint( $args['assistant_id'] ) : 0;
+		$message_text  = isset( $args['message_text'] ) ? (string) $args['message_text'] : '';
+		$space_name    = isset( $args['space_name'] ) ? sanitize_text_field( (string) $args['space_name'] ) : '';
+		$sender_name   = isset( $args['sender_name'] ) ? sanitize_text_field( (string) $args['sender_name'] ) : '';
+		$connection_id = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
+		$thread_name   = isset( $args['thread_name'] ) ? sanitize_text_field( (string) $args['thread_name'] ) : '';
+		$space_type    = isset( $args['space_type'] ) ? sanitize_text_field( (string) $args['space_type'] ) : '';
+		$gc_conv_type  = ( 'DIRECT_MESSAGE' === $space_type ) ? 'dm' : ( ( 'ROOM' === $space_type || 'SPACE' === $space_type ) ? 'channel' : 'group' );
+
+		if ( ! $assistant_id || '' === $message_text || '' === $space_name || '' === $connection_id ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		$has_reply_webhook = $connection && ! empty( $connection['reply_webhook_url'] )
+			&& preg_match( self::WEBHOOK_URL_PATTERN, $connection['reply_webhook_url'] );
+
+		$has_credentials = $connection && (
+			! empty( $connection['api_key'] ) ||
+			( ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] ) && ! empty( $connection['refresh_token'] ) )
+		);
+
+		if ( ! $has_credentials && ! $has_reply_webhook ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat AI reply: connection not found or access token missing.',
+				array( 'connection_id' => $connection_id )
+			);
+			return;
+		}
+
+		// Obtain access token only when OAuth/Service Account credentials are available.
+		$access_token = '';
+		if ( $has_credentials ) {
+			$access_token = $this->get_connection_access_token( $connection, $connection_id, 'Google Chat AI reply' );
+		}
+
+		if ( '' === $access_token && ! $has_reply_webhook ) {
+			return;
+		}
+
+		// --- Per-user conversation history (mirrors WhatsApp auto-reply pattern) ---
+		$history_key = $this->get_conversation_history_key( $sender_name, $space_name, $connection_id );
+		$history     = get_transient( $history_key );
+		$history     = is_array( $history ) ? $history : array();
+
+		$max_history = 8;
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			$settings    = WP_MCP_AI_Admin_Settings::get_settings();
+			$max_history = isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : $max_history;
+		}
+
+		/**
+		 * Filters the maximum number of messages kept in a Google Chat conversation history.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param int   $max_history Maximum message count.
+		 * @param array $args        Current job arguments.
+		 */
+		$max_history = (int) apply_filters( 'wp_mcp_ai_google_chat_max_history_messages', $max_history, $args );
+		$max_history = max( 1, $max_history );
+
+		// When the transient cache is empty (e.g. after expiry or a cache flush),
+		// hydrate the conversation context from the Channel Messages CCT so that
+		// prior exchanges are never silently dropped. The CCT is the persistent
+		// source of truth; the transient is a fast in-memory cache on top of it.
+		if ( empty( $history ) && $max_history > 1 && class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+			$history = WP_MCP_AI_Channel_Messages_CCT::get_recent_messages(
+				'google_chat',
+				$sender_name,
+				$connection_id,
+				$max_history - 1
+			);
+		}
+
+		$history = WP_MCP_AI_Webhook_Context_Manager::trim_history( $history, $max_history, 'google_chat', 1 );
+
+		$messages = array_merge(
+			$history,
+			array(
+				array(
+					'role'    => 'user',
+					'content' => $message_text,
+				),
+			)
+		);
+		// --- End conversation history ---
+
+		// Call the internal chat REST endpoint.
+		$rest_request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+		$rest_request->set_body_params(
+			array(
+				'assistant_id' => $assistant_id,
+				'messages'     => $messages,
+				'stream'       => false,
+			)
+		);
+
+		$original_user_id = get_current_user_id();
+		$admin_users      = get_users(
+			array(
+				'role'   => 'administrator',
+				'number' => 1,
+				'fields' => 'ID',
+			)
+		);
+
+		if ( ! empty( $admin_users ) ) {
+			wp_set_current_user( $admin_users[0] );
+			$rest_request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		} else {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat AI reply: no administrator user found; internal chat request may fail.',
+				array( 'assistant_id' => $assistant_id )
+			);
+		}
+
+		$response = rest_do_request( $rest_request );
+		wp_set_current_user( $original_user_id );
+
+		if ( $response->is_error() ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat AI reply: internal chat request failed.',
+				array( 'assistant_id' => $assistant_id )
+			);
+			return;
+		}
+
+		$content = $this->extract_content_from_chat_response( $response->get_data() );
+
+		if ( '' === $content ) {
+			WP_MCP_AI_Logger::log_error( 'Google Chat AI reply: empty content from assistant.' );
+			return;
+		}
+
+		// Post the reply via Google Chat API or incoming webhook URL.
+		// When the original message belongs to a thread, reply in that thread so the
+		// response appears inline rather than as a new top-level message in the space.
+		// The messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD query parameter
+		// instructs the API to create a new thread when the provided thread no longer
+		// exists (e.g. race conditions or deleted threads).
+		//
+		// Priority: OAuth/Service Account API → incoming webhook URL (fallback).
+		// Incoming webhooks (https://developers.google.com/workspace/chat/quickstart/webhooks)
+		// do not support threading, so thread_name is ignored on that path.
+
+		if ( '' !== $access_token ) {
+			// --- OAuth / Service Account path ---
+			// Validate space_name format before embedding it in the URL.
+			// sanitize_text_field() does not strip URL-special characters; an
+			// attacker-controlled space name could redirect the authenticated API
+			// call to a different host and exfiltrate the Bearer token.
+			if ( ! $this->is_valid_space_name( $space_name ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Google Chat AI reply: invalid space name format, skipping.',
+					array( 'space_name_prefix' => substr( $space_name, 0, 20 ) )
+				);
+				return;
+			}
+			$endpoint = self::CHAT_API_BASE . '/' . $space_name . '/messages';
+
+			if ( '' !== $thread_name ) {
+				$endpoint = add_query_arg( 'messageReplyOption', 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD', $endpoint );
+			}
+
+			$payload = array(
+				'text' => $content,
+			);
+
+			if ( '' !== $thread_name ) {
+				$payload['thread'] = array( 'name' => $thread_name );
+			}
+
+			$body = wp_json_encode( $payload );
+
+			if ( false === $body ) {
+				WP_MCP_AI_Logger::log_error( 'Google Chat AI reply: failed to JSON-encode payload.' );
+				return;
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'google_chat_ai_reply_sending',
+				'Sending Google Chat AI reply.',
+				array(
+					'assistant_id' => $assistant_id,
+					'space_name'   => $space_name,
+					'thread_name'  => $thread_name,
+				)
+			);
+
+			$result = wp_remote_post(
+				$endpoint,
+				array(
+					'headers' => array(
+						'Content-Type'  => 'application/json',
+						'Authorization' => 'Bearer ' . $access_token,
+					),
+					'timeout' => 20,
+					'body'    => $body,
+				)
+			);
+		} else {
+			// --- Incoming webhook URL path (no OAuth needed) ---
+			$webhook_url = $connection['reply_webhook_url'];
+
+			$body = wp_json_encode( array( 'text' => $content ) );
+
+			if ( false === $body ) {
+				WP_MCP_AI_Logger::log_error( 'Google Chat AI reply: failed to JSON-encode webhook payload.' );
+				return;
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'google_chat_ai_reply_sending',
+				'Sending Google Chat AI reply via incoming webhook URL.',
+				array(
+					'assistant_id' => $assistant_id,
+					'space_name'   => $space_name,
+				)
+			);
+
+			$result = wp_remote_post(
+				$webhook_url,
+				array(
+					'headers' => array( 'Content-Type' => 'application/json' ),
+					'timeout' => 20,
+					'body'    => $body,
+				)
+			);
+		}
+
+		if ( is_wp_error( $result ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat AI reply: HTTP request to Chat API failed.',
+				array( 'error' => $result->get_error_message() )
+			);
+			return;
+		}
+
+		$http_code = (int) wp_remote_retrieve_response_code( $result );
+
+		if ( 200 !== $http_code ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat AI reply: Chat API returned non-200 status.',
+				array(
+					'http_code'  => $http_code,
+					'space_name' => $space_name,
+				)
+			);
+			return;
+		}
+
+		// Persist updated conversation history.
+		$history[] = array(
+			'role'    => 'user',
+			'content' => $message_text,
+		);
+		$history[] = array(
+			'role'    => 'assistant',
+			'content' => $content,
+		);
+		$history   = WP_MCP_AI_Webhook_Context_Manager::trim_history_after_response( $history, $max_history, 'google_chat' );
+		set_transient( $history_key, $history, self::CONVERSATION_HISTORY_TTL );
+
+		WP_MCP_AI_Logger::log_event(
+			'google_chat_ai_reply_sent',
+			'Google Chat AI reply sent successfully.',
+			array(
+				'assistant_id' => $assistant_id,
+				'space_name'   => $space_name,
+			)
+		);
+
+		// Persist the outbound AI reply to the Channel Messages CCT.
+		if ( class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+			WP_MCP_AI_Channel_Messages_CCT::insert(
+				array(
+					'channel'            => 'google_chat',
+					'channel_contact_id' => $sender_name,
+					'direction'          => 'outbound',
+					'message_type'       => 'text',
+					'content'            => $content,
+					'status'             => 'sent',
+					'connection_id'      => $connection_id,
+					'phone_number_id'    => $space_name,
+					'timestamp'          => time(),
+					'reply_sent'         => 1,
+					'assigned_agent'     => (string) $assistant_id,
+					'conversation_type'  => $gc_conv_type,
+				)
+			);
+		}
+
+		// Touch the contact record to update last_message_at.
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+			$gc_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+				'google_chat',
+				$sender_name,
+				array(
+					'connection_id'     => $connection_id,
+					'conversation_type' => $gc_conv_type,
+				)
+			);
+			if ( $gc_contact_row_id ) {
+				WP_MCP_AI_Channel_Contacts_CCT::touch( $gc_contact_row_id );
+			}
+		}
+	}
+
+	/**
+	 * Cron callback: send a welcome message when the bot is added to a space.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $args Job arguments set by handle_added_to_space().
+	 */
+	public function handle_welcome_message_job( $args ) {
+		if ( ! is_array( $args ) ) {
+			return;
+		}
+
+		$space_name    = isset( $args['space_name'] ) ? sanitize_text_field( (string) $args['space_name'] ) : '';
+		$message_text  = isset( $args['message_text'] ) ? (string) $args['message_text'] : '';
+		$connection_id = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
+
+		if ( '' === $space_name || '' === $message_text || '' === $connection_id ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		$has_credentials = $connection && (
+			! empty( $connection['api_key'] ) ||
+			( ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] ) && ! empty( $connection['refresh_token'] ) )
+		);
+
+		if ( ! $has_credentials ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat welcome message: connection not found or access token missing.',
+				array( 'connection_id' => $connection_id )
+			);
+			return;
+		}
+
+		$access_token = $this->get_connection_access_token( $connection, $connection_id, 'Google Chat welcome message' );
+
+		if ( '' === $access_token ) {
+			return;
+		}
+
+		// Validate space_name format before embedding it in the URL to prevent
+		// URL-injection attacks that could redirect the authenticated API call.
+		if ( ! $this->is_valid_space_name( $space_name ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat welcome message: invalid space name format, skipping.',
+				array( 'space_name_prefix' => substr( $space_name, 0, 20 ) )
+			);
+			return;
+		}
+
+		$endpoint = self::CHAT_API_BASE . '/' . $space_name . '/messages';
+
+		$payload = array(
+			'text' => $message_text,
+		);
+
+		$body = wp_json_encode( $payload );
+
+		if ( false === $body ) {
+			return;
+		}
+
+		$result = wp_remote_post(
+			$endpoint,
+			array(
+				'headers' => array(
+					'Content-Type'  => 'application/json',
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+				'timeout' => 20,
+				'body'    => $body,
+			)
+		);
+
+		if ( is_wp_error( $result ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat welcome message: HTTP request to Chat API failed.',
+				array( 'error' => $result->get_error_message() )
+			);
+			return;
+		}
+
+		$http_code = (int) wp_remote_retrieve_response_code( $result );
+
+		if ( 200 !== $http_code ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat welcome message: Chat API returned non-200 status.',
+				array(
+					'http_code'  => $http_code,
+					'space_name' => $space_name,
+				)
+			);
+			return;
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'google_chat_welcome_message_sent',
+			'Google Chat welcome message sent successfully.',
+			array( 'space_name' => $space_name )
+		);
+	}
+
+	/**
+	 * Return the transient key for a Google Chat sender/space conversation history.
+	 *
+	 * The key is hashed to avoid PII in option names and to remain within
+	 * WordPress's 172-character transient key limit.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $sender_name   Google Chat sender resource name (e.g. users/12345).
+	 * @param string $space_name    Google Chat space resource name (e.g. spaces/AAAA).
+	 * @param string $connection_id Remote connection ID.
+	 * @return string Transient key.
+	 */
+	protected function get_conversation_history_key( $sender_name, $space_name, $connection_id ) {
+		return 'wp_mcp_ai_gc_conv_' . md5( $sender_name . '_' . $space_name . '_' . $connection_id );
+	}
+
+	/**
+	 * Check whether a Google Chat message has already been processed.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $message_id Google Chat message resource name.
+	 * @return bool True if already processed.
+	 */
+	protected function is_duplicate_message( $message_id ) {
+		return (bool) get_transient( 'wp_mcp_ai_gc_dedup_' . md5( $message_id ) );
+	}
+
+	/**
+	 * Normalize a Google Chat event payload to the standard format.
+	 *
+	 * Google Chat delivers events in two formats depending on how the app
+	 * is registered:
+	 *
+	 *  1. Direct Chat app (HTTP endpoint via Google Cloud Console):
+	 *       {"type":"MESSAGE","message":{...},"space":{...},"user":{...}}
+	 *
+	 *  2. Google Workspace Add-ons framework (registered via Workspace Add-ons):
+	 *       {"type":"GOOGLE_CHAT","google":{"chat":{"type":"MESSAGE","message":{...},...}}}
+	 *
+	 * When the Workspace Add-ons wrapper is detected the inner `google.chat`
+	 * object is returned so that all downstream logic handles both formats
+	 * identically.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $payload Raw event payload from Google Chat.
+	 * @return array Normalised event payload.
+	 */
+	protected function normalize_payload( array $payload ) {
+		if (
+			isset( $payload['type'] ) && 'GOOGLE_CHAT' === $payload['type'] &&
+			isset( $payload['google']['chat'] ) && is_array( $payload['google']['chat'] )
+		) {
+			return $payload['google']['chat'];
+		}
+
+		return $payload;
+	}
+
+	/**
+	 * Extract and normalise the space type from a Google Chat event payload.
+	 *
+	 * Google Chat is migrating from the deprecated `space.type` field (values:
+	 * DM, ROOM) to the newer `space.spaceType` field (values: DIRECT_MESSAGE,
+	 * SPACE, GROUP_CHAT). This helper reads `spaceType` first and falls back
+	 * to the legacy `type` field, mapping old values to their canonical
+	 * equivalents so downstream logic only needs to handle the modern names.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $payload Google Chat event payload (already normalised).
+	 * @return string Normalised space type (e.g. DIRECT_MESSAGE, SPACE, GROUP_CHAT).
+	 */
+	protected function get_space_type( array $payload ) {
+		// Prefer the current spaceType field (introduced alongside Chat API v1 deprecations).
+		if ( ! empty( $payload['space']['spaceType'] ) ) {
+			return sanitize_text_field( $payload['space']['spaceType'] );
+		}
+
+		// Map deprecated type field values to their modern equivalents.
+		$legacy_type = isset( $payload['space']['type'] ) ? sanitize_text_field( $payload['space']['type'] ) : '';
+
+		$type_map = array(
+			'DM'   => 'DIRECT_MESSAGE',
+			'ROOM' => 'SPACE',
+		);
+
+		return isset( $type_map[ $legacy_type ] ) ? $type_map[ $legacy_type ] : $legacy_type;
+	}
+
+	/**
+	 * Extract the plain-text message from a Google Chat webhook payload.
+	 *
+	 * Google Chat provides the text in `message.text` (plain text) or
+	 * `message.argumentText` (text with the bot mention stripped). This
+	 * helper prefers `argumentText` when present to avoid echoing the
+	 * bot @-mention back to the assistant.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $payload Google Chat event payload.
+	 * @return string Plain-text message or empty string.
+	 */
+	protected function extract_message_text( array $payload ) {
+		// argumentText strips the bot @-mention (populated when bot is mentioned in a space).
+		if ( isset( $payload['message']['argumentText'] ) && '' !== trim( $payload['message']['argumentText'] ) ) {
+			return sanitize_textarea_field( trim( $payload['message']['argumentText'] ) );
+		}
+
+		if ( isset( $payload['message']['text'] ) && '' !== trim( $payload['message']['text'] ) ) {
+			return sanitize_textarea_field( trim( $payload['message']['text'] ) );
+		}
+
+		return '';
+	}
+
+	/**
+	 * Extract the plain-text content from a Google Chat APP_COMMAND event payload.
+	 *
+	 * For slash commands, Google Chat populates appCommandPayload.commandText with
+	 * the text the user typed after the command name. When the command is invoked
+	 * with no argument (e.g. "/help" with nothing after it) commandText is empty;
+	 * in that case a generic prompt is returned so the AI still provides a reply
+	 * instead of treating it as a no-op.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $payload Normalised Google Chat APP_COMMAND event payload.
+	 * @return string Non-empty plain-text string to send to the AI.
+	 */
+	protected function extract_app_command_text( array $payload ) {
+		$command_text = isset( $payload['appCommandPayload']['commandText'] )
+			? trim( $payload['appCommandPayload']['commandText'] )
+			: '';
+
+		if ( '' !== $command_text ) {
+			return sanitize_textarea_field( $command_text );
+		}
+
+		// No argument text was supplied — use a generic prompt so the AI responds.
+		/* translators: Fallback prompt sent to the AI when a slash command is invoked with no argument text. */
+		return __( 'What can you do?', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * Find the best active Google Chat connection for the given space.
+	 *
+	 * Priority order:
+	 *  1. Space-specific connection whose `google_chat_space` matches $space_name.
+	 *  2. Generic connection (no `google_chat_space` configured).
+	 *  3. Last-resort: any enabled Google Chat connection.
+	 *
+	 * The last-resort fallback handles Direct Messages (DMs) and @mentions in
+	 * spaces that are not explicitly mapped to a connection. Each DM between a
+	 * user and the bot is delivered through a unique space ID (e.g.
+	 * spaces/dm-XXXXXXXX) that will never match a workspace-space-specific
+	 * connection, so without this fallback every DM is silently dropped.
+	 *
+	 * Note: the AI reply is always sent back to the *incoming* space, so even
+	 * when a space-specific connection is used as last resort the reply reaches
+	 * the correct DM or space rather than the connection's configured space.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $space_name Optional Google Chat space resource name for per-space routing.
+	 * @return array|null Connection array or null if none found.
+	 */
+	protected function get_active_google_chat_connection( $space_name = '' ) {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		$connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+
+		if ( ! is_array( $connections ) ) {
+			return null;
+		}
+
+		$fallback    = null; // First generic (no specific space) connection.
+		$last_resort = null; // First enabled google_chat connection of any kind.
+
+		foreach ( $connections as $connection ) {
+			if ( ! isset( $connection['connection_type'] ) || 'google_chat' !== $connection['connection_type'] ) {
+				continue;
+			}
+
+			if ( empty( $connection['enabled'] ) ) {
+				continue;
+			}
+
+			// Keep the first enabled google_chat connection as an absolute last resort
+			// so DMs and messages from unregistered spaces always get a response.
+			if ( null === $last_resort ) {
+				$last_resort = $connection;
+			}
+
+			// Check for a space-specific match first.
+			if ( '' !== $space_name && ! empty( $connection['google_chat_space'] ) ) {
+				$conn_space = sanitize_text_field( $connection['google_chat_space'] );
+				if ( $conn_space === $space_name ) {
+					return $connection;
+				}
+				// This connection targets a different space — skip it for the generic
+				// fallback so it does not shadow the correct connection in multi-connection
+				// setups, but keep it tracked in $last_resort for DM routing.
+				continue;
+			}
+
+			// Keep the first generic (no specific space) connection as fallback.
+			if ( null === $fallback && empty( $connection['google_chat_space'] ) ) {
+				$fallback = $connection;
+			}
+		}
+
+		// Return the generic connection if available, otherwise any enabled connection.
+		return null !== $fallback ? $fallback : $last_resort;
+	}
+
+	/**
+	 * Extract the plain-text reply from the internal /mcp-ai/v1/chat response.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $data Response data from the internal chat endpoint.
+	 * @return string Plain-text content or empty string.
+	 */
+	protected function extract_content_from_chat_response( $data ) {
+		if ( ! is_array( $data ) ) {
+			return '';
+		}
+
+		$choices = isset( $data['data']['choices'] ) ? $data['data']['choices']
+			: ( isset( $data['choices'] ) ? $data['choices'] : array() );
+
+		if ( ! is_array( $choices ) || empty( $choices ) ) {
+			return '';
+		}
+
+		$first = reset( $choices );
+
+		if ( isset( $first['message']['content'] ) && is_string( $first['message']['content'] ) ) {
+			return trim( $first['message']['content'] );
+		}
+
+		return '';
+	}
+
+	/**
+	 * Return a Google Chat-compatible acknowledgement response body.
+	 *
+	 * Google Chat requires the synchronous HTTP response to include a card-shaped
+	 * JSON object with at minimum a `header` (containing a `title`) and a `sections`
+	 * array. Returning a bare empty object (`{}`) causes Google Chat to consider the
+	 * response invalid and display an alert in the space. The empty-sections card
+	 * satisfies the validation requirement without rendering any visible card content
+	 * to the user — the actual AI reply is sent asynchronously via the cron job.
+	 *
+	 * The response is always delivered with a `Content-Type: application/json` header
+	 * (set automatically by the WordPress REST API and by `wp_send_json()` on the
+	 * admin-ajax fallback path).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return array Google Chat card acknowledgement with empty sections.
+	 */
+	protected function empty_response() {
+		return array(
+			'header'   => array( 'title' => '' ),
+			'sections' => array(),
+		);
+	}
+
+	/**
+	 * Check whether any assigned assistant is mentioned by @slug in the message text.
+	 *
+	 * Available as a hook target for integrations that want custom mention routing.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $message_text  The incoming message text.
+	 * @param int[]  $assistant_ids Array of assigned assistant post IDs.
+	 * @return bool True if any assistant slug is found as @slug in the text.
+	 */
+	protected function message_mentions_assistant( $message_text, array $assistant_ids ) {
+		if ( '' === $message_text ) {
+			return false;
+		}
+		foreach ( $assistant_ids as $assistant_id ) {
+			$slug = get_post_field( 'post_name', absint( $assistant_id ) );
+			if ( is_string( $slug ) && '' !== $slug && preg_match( '/@' . preg_quote( $slug, '/' ) . '(?:[^a-zA-Z0-9-]|$)/i', $message_text ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Retrieve an OAuth 2.0 access token from a connection's stored credentials.
+	 *
+	 * Supports Service Account JSON keys (automatically exchanges for a fresh access
+	 * token), OAuth 2.0 refresh tokens (exchanges for a new access token using the
+	 * stored client_id and client_secret), and legacy raw access tokens in api_key.
+	 *
+	 * @param array  $connection    Connection configuration array.
+	 * @param string $connection_id Connection ID (used for log context).
+	 * @param string $log_context   Human-readable context string for log messages.
+	 * @return string Access token, or empty string on failure.
+	 */
+	protected function get_connection_access_token( array $connection, $connection_id, $log_context ) {
+		// Try OAuth refresh token flow first if client_id, client_secret, and refresh_token are all present.
+		$client_id         = isset( $connection['client_id'] ) ? (string) $connection['client_id'] : '';
+		$raw_client_secret = isset( $connection['client_secret'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] ) : '';
+		$raw_refresh_token = isset( $connection['refresh_token'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['refresh_token'] ) : '';
+
+		if ( '' !== $client_id && '' !== $raw_client_secret && '' !== $raw_refresh_token ) {
+			$token = $this->get_access_token_from_refresh_token( $client_id, $raw_client_secret, $raw_refresh_token, $connection_id, $log_context );
+			if ( '' !== $token ) {
+				return $token;
+			}
+		}
+
+		$raw_key = isset( $connection['api_key'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] ) : '';
+
+		if ( '' === $raw_key ) {
+			WP_MCP_AI_Logger::log_error(
+				$log_context . ': no valid credentials found (no OAuth refresh token or service account key).',
+				array( 'connection_id' => $connection_id )
+			);
+			return '';
+		}
+
+		// Detect Service Account JSON key (starts with '{').
+		if ( strlen( $raw_key ) > 0 && '{' === $raw_key[0] ) {
+			$token = WP_MCP_AI_Pro_Google_Service_Account::get_access_token_from_key( $raw_key, self::CHAT_BOT_SCOPE );
+
+			if ( is_wp_error( $token ) ) {
+				WP_MCP_AI_Logger::log_error(
+					$log_context . ': failed to obtain access token from service account key.',
+					array(
+						'connection_id' => $connection_id,
+						'error'         => $token->get_error_message(),
+					)
+				);
+				return '';
+			}
+
+			return (string) $token;
+		}
+
+		// Legacy: raw access token stored directly.
+		return $raw_key;
+	}
+
+	/**
+	 * Exchange an OAuth 2.0 refresh token for a fresh access token.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $client_id     OAuth client ID.
+	 * @param string $client_secret OAuth client secret (decrypted).
+	 * @param string $refresh_token OAuth refresh token (decrypted).
+	 * @param string $connection_id Connection ID (used for log context).
+	 * @param string $log_context   Human-readable context string for log messages.
+	 * @return string Fresh access token, or empty string on failure.
+	 */
+	protected function get_access_token_from_refresh_token( $client_id, $client_secret, $refresh_token, $connection_id, $log_context ) {
+		$cache_key    = 'wp_mcp_ai_gc_oauth_token_' . md5( $client_id . '|' . $refresh_token );
+		$cached_token = get_transient( $cache_key );
+
+		if ( is_string( $cached_token ) && '' !== $cached_token ) {
+			return $cached_token;
+		}
+
+		$response = wp_remote_post(
+			'https://oauth2.googleapis.com/token',
+			array(
+				'timeout' => 15,
+				'body'    => array(
+					'client_id'     => $client_id,
+					'client_secret' => $client_secret,
+					'refresh_token' => $refresh_token,
+					'grant_type'    => 'refresh_token',
+				),
+				'headers' => array(
+					'Accept' => 'application/json',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			WP_MCP_AI_Logger::log_error(
+				$log_context . ': failed to exchange refresh token for access token.',
+				array(
+					'connection_id' => $connection_id,
+					'error'         => $response->get_error_message(),
+				)
+			);
+			return '';
+		}
+
+		if ( 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+			WP_MCP_AI_Logger::log_error(
+				$log_context . ': refresh token exchange returned non-200 status.',
+				array(
+					'connection_id' => $connection_id,
+					'status'        => wp_remote_retrieve_response_code( $response ),
+				)
+			);
+			return '';
+		}
+
+		$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( ! is_array( $decoded ) || empty( $decoded['access_token'] ) ) {
+			WP_MCP_AI_Logger::log_error(
+				$log_context . ': invalid response from refresh token exchange.',
+				array( 'connection_id' => $connection_id )
+			);
+			return '';
+		}
+
+		$access_token = (string) $decoded['access_token'];
+		$expires_in   = isset( $decoded['expires_in'] ) ? max( 60, (int) $decoded['expires_in'] - 60 ) : 3540;
+
+		// Cache access token for slightly less than its expiry time.
+		set_transient( $cache_key, $access_token, $expires_in );
+
+		return $access_token;
+	}
+
+	/**
+	 * Handle the wp_mcp_ai_chat_channels_send_reply filter for Google Chat.
+	 *
+	 * Sends a manual reply from the admin inbox to the originating Google Chat
+	 * space. Called via the `wp_mcp_ai_chat_channels_send_reply` filter fired
+	 * by WP_MCP_AI_Chat_Channels_REST_Controller::send_reply().
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param bool|WP_Error $result             Current filter result.
+	 * @param string        $channel            Channel slug.
+	 * @param string        $channel_contact_id Platform-side contact ID (sender resource name).
+	 * @param string        $message_text       Message text to send.
+	 * @param string        $connection_id      Connection ID.
+	 * @param array         $contact            Full contact row from the contacts CCT.
+	 * @return bool|WP_Error True on success, WP_Error on failure, or $result unchanged for other channels.
+	 */
+	public function handle_channel_send_reply( $result, $channel, $channel_contact_id, $message_text, $connection_id, $contact ) {
+		if ( 'google_chat' !== $channel ) {
+			return $result;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		// Try to resolve the explicit connection first; fall back to any active Google Chat connection.
+		$connection = '' !== $connection_id ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
+
+		if ( ! $connection ) {
+			$connection = $this->get_active_google_chat_connection();
+		}
+
+		if ( ! $connection ) {
+			return new WP_Error(
+				'google_chat_no_connection',
+				__( 'No active Google Chat connection found.', 'nvoos-content-graph-pro' ),
+				array( 'status' => 503 )
+			);
+		}
+
+		$resolved_connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : $connection_id;
+
+		// Determine the target space for this contact.
+		$space_name = $this->resolve_google_chat_space_for_contact( $channel_contact_id, $connection );
+
+		if ( '' === $space_name ) {
+			return new WP_Error(
+				'google_chat_no_space',
+				__( 'Unable to determine the Google Chat space for this contact. Ensure messages have been received and a space is configured on the connection.', 'nvoos-content-graph-pro' ),
+				array( 'status' => 422 )
+			);
+		}
+
+		$access_token = $this->get_connection_access_token( $connection, $resolved_connection_id, 'Google Chat inbox reply' );
+
+		// Fall back to the incoming webhook URL when no OAuth/service-account credentials
+		// are available. This mirrors the AI auto-reply path in handle_google_chat_reply_job()
+		// and makes manual inbox replies work even without full OAuth setup.
+		$has_reply_webhook = ! empty( $connection['reply_webhook_url'] )
+			&& preg_match( self::WEBHOOK_URL_PATTERN, $connection['reply_webhook_url'] );
+
+		if ( '' === $access_token && ! $has_reply_webhook ) {
+			return new WP_Error(
+				'google_chat_token_error',
+				__( 'Failed to obtain a Google Chat access token. Check the connection credentials or configure an Incoming Webhook URL.', 'nvoos-content-graph-pro' ),
+				array( 'status' => 503 )
+			);
+		}
+
+		$body = wp_json_encode( array( 'text' => $message_text ) );
+
+		if ( false === $body ) {
+			return new WP_Error(
+				'google_chat_encode_error',
+				__( 'Failed to encode the Google Chat message payload.', 'nvoos-content-graph-pro' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		if ( '' !== $access_token ) {
+			// --- OAuth / Service Account path ---
+			// Validate space_name format before embedding it in the URL to prevent
+			// URL-injection attacks that could redirect the authenticated API call.
+			if ( ! $this->is_valid_space_name( $space_name ) ) {
+				return new WP_Error(
+					'google_chat_invalid_space',
+					__( 'Invalid Google Chat space name format.', 'nvoos-content-graph-pro' ),
+					array( 'status' => 400 )
+				);
+			}
+			$endpoint = self::CHAT_API_BASE . '/' . $space_name . '/messages';
+			$response = wp_remote_post(
+				$endpoint,
+				array(
+					'headers' => array(
+						'Content-Type'  => 'application/json',
+						'Authorization' => 'Bearer ' . $access_token,
+					),
+					'timeout' => 20,
+					'body'    => $body,
+				)
+			);
+		} else {
+			// --- Incoming webhook URL path (no OAuth needed) ---
+			$response = wp_remote_post(
+				$connection['reply_webhook_url'],
+				array(
+					'headers' => array( 'Content-Type' => 'application/json' ),
+					'timeout' => 20,
+					'body'    => $body,
+				)
+			);
+		}
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'google_chat_send_failed',
+				$response->get_error_message(),
+				array( 'status' => 502 )
+			);
+		}
+
+		$http_code = (int) wp_remote_retrieve_response_code( $response );
+
+		if ( 200 !== $http_code ) {
+			$body_data = json_decode( wp_remote_retrieve_body( $response ), true );
+			$error_msg = isset( $body_data['error']['message'] )
+				? $body_data['error']['message']
+				: __( 'Google Chat API error.', 'nvoos-content-graph-pro' );
+			return new WP_Error( 'google_chat_api_error', $error_msg, array( 'status' => 502 ) );
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'google_chat_inbox_reply_sent',
+			'Google Chat inbox reply sent successfully.',
+			array(
+				'space_name'         => $space_name,
+				'channel_contact_id' => $channel_contact_id,
+			)
+		);
+
+		return true;
+	}
+
+	/**
+	 * Resolve the Google Chat space resource name for a given contact.
+	 *
+	 * Queries the Channel Messages CCT for the most recent message from the
+	 * contact (phone_number_id stores the space name for Google Chat messages).
+	 * Falls back to the connection's configured google_chat_space.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $channel_contact_id Sender resource name (e.g. users/12345).
+	 * @param array  $connection         Google Chat connection array.
+	 * @return string Space resource name (e.g. spaces/AAAA) or empty string.
+	 */
+	protected function resolve_google_chat_space_for_contact( $channel_contact_id, array $connection ) {
+		if ( class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) && WP_MCP_AI_Channel_Messages_CCT::table_exists() ) {
+			global $wpdb;
+			$messages_table = WP_MCP_AI_Channel_Messages_CCT::get_table_name();
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$space_name = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT phone_number_id FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s AND phone_number_id != '' ORDER BY message_timestamp DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
+					'google_chat',
+					$channel_contact_id
+				)
+			);
+
+			if ( ! empty( $space_name ) ) {
+				return sanitize_text_field( $space_name );
+			}
+		}
+
+		// Fall back to the connection's configured space.
+		if ( ! empty( $connection['google_chat_space'] ) ) {
+			return sanitize_text_field( $connection['google_chat_space'] );
+		}
+
+		return '';
+	}
+
+	/**
+	 * Append a diagnostic entry to the webhook receipt log.
+	 *
+	 * Stores up to WEBHOOK_LOG_MAX_ENTRIES entries (newest first) in the
+	 * wp_mcp_ai_gc_webhook_log option so admins can inspect recent activity
+	 * from the connection settings page without enabling full debug logging.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $entry {
+	 *     Fields for the log entry.
+	 *
+	 *     @type string $status     'accepted', 'rejected', or 'processed'.
+	 *     @type string $reason     Human-readable status detail or rejection reason.
+	 *     @type string $event_type Google Chat event type (MESSAGE, ADDED_TO_SPACE, …).
+	 *     @type string $space      Space resource name (spaces/XXXXXXX).
+	 * }
+	 */
+	protected function store_webhook_log_entry( array $entry ) {
+		$log = get_option( self::WEBHOOK_LOG_OPTION, array() );
+		if ( ! is_array( $log ) ) {
+			$log = array();
+		}
+
+		$client_ip = '';
+		$raw_ip    = isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) : ( isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '' );
+		$raw_ip    = explode( ',', $raw_ip );
+		$raw_ip    = trim( reset( $raw_ip ) );
+		if ( filter_var( $raw_ip, FILTER_VALIDATE_IP ) ) {
+			// Mask the last octet (IPv4) or last segment (IPv6) for privacy.
+			$parts = explode( '.', $raw_ip );
+			if ( count( $parts ) === 4 ) {
+				$parts[3]  = 'xxx';
+				$client_ip = implode( '.', $parts );
+			} else {
+				$colon_pos = strrpos( $raw_ip, ':' );
+				$client_ip = ( false !== $colon_pos ) ? substr( $raw_ip, 0, $colon_pos + 1 ) . 'xxxx' : $raw_ip;
+			}
+		}
+
+		$log_entry = array(
+			'ts'         => current_time( 'mysql', true ),
+			'status'     => isset( $entry['status'] ) ? sanitize_text_field( $entry['status'] ) : 'unknown',
+			'reason'     => isset( $entry['reason'] ) ? sanitize_text_field( $entry['reason'] ) : '',
+			'event_type' => isset( $entry['event_type'] ) ? sanitize_text_field( $entry['event_type'] ) : '',
+			'space'      => isset( $entry['space'] ) ? sanitize_text_field( $entry['space'] ) : '',
+			'ip'         => $client_ip,
+		);
+
+		array_unshift( $log, $log_entry );
+
+		if ( count( $log ) > self::WEBHOOK_LOG_MAX_ENTRIES ) {
+			$log = array_slice( $log, 0, self::WEBHOOK_LOG_MAX_ENTRIES );
+		}
+
+		update_option( self::WEBHOOK_LOG_OPTION, $log, false );
+	}
+
+	/**
+	 * Return the ID of any published AI assistant as a last-resort fallback.
+	 *
+	 * When no assistant is explicitly assigned to a connection and no global
+	 * default_assistant_id is configured in the automation rules, this helper
+	 * queries for the first published mcp_ai_assistant post so that incoming
+	 * messages always receive a reply rather than being silently dropped.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return int Assistant post ID, or 0 if none exist.
+	 */
+	protected function get_any_assistant_id() {
+		$posts = get_posts(
+			array(
+				'post_type'              => 'mcp_ai_assistant',
+				'post_status'            => 'publish',
+				'numberposts'            => 1,
+				'fields'                 => 'ids',
+				'orderby'                => 'date',
+				'order'                  => 'ASC',
+				'no_found_rows'          => true,
+				'update_post_meta_cache' => false,
+				'update_post_term_cache' => false,
+			)
+		);
+
+		return ! empty( $posts ) ? (int) $posts[0] : 0;
+	}
+}
+
+new WP_MCP_AI_Google_Chat_Webhook_Controller();

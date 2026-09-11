@@ -266,6 +266,8 @@ class WP_MCP_AI_Product_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 			'research_product'             => __( 'Research Product', 'mcp-ai-wpoos-pro' ),
 			'lookup_product_price'         => __( 'Lookup Product Price', 'mcp-ai-wpoos-pro' ),
 			'bulk_update_products'         => __( 'Bulk Update Products', 'mcp-ai-wpoos-pro' ),
+			'update_woo_product_price'     => __( 'Update Product Price (All Types)', 'mcp-ai-wpoos-pro' ),
+			'update_woo_product_qty'       => __( 'Update Product Quantity (All Types)', 'mcp-ai-wpoos-pro' ),
 			'import_products_csv'          => __( 'Import Products (CSV)', 'mcp-ai-wpoos-pro' ),
 			'create_product_advanced'      => __( 'Create Product (Advanced)', 'mcp-ai-wpoos-pro' ),
 		);

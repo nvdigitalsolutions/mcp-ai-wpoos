@@ -138,7 +138,7 @@ Use the built-in test script to verify everything works:
 
 ## Need More Help?
 
-- **Full setup guide**: [docs/remote-client-setup.md](../installation-setup/remote-client-setup.md)
+- **Full setup guide**: [docs/getting-started/installation-setup/remote-client-setup.md](../installation-setup/remote-client-setup.md)
 - **LM Studio setup**: See the [LM Studio section](../installation-setup/remote-client-setup.md#lm-studio-setup)
 - **ChatGPT connector**: See the [ChatGPT section](../installation-setup/remote-client-setup.md#chatgpt-connector-setup) (requires Auth0)
 - **Troubleshooting**: [Detailed troubleshooting guide](../installation-setup/remote-client-setup.md#troubleshooting)

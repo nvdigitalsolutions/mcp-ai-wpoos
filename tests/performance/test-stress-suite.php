@@ -26,6 +26,12 @@ class WP_MCP_AI_Stress_Suite_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// Third-party MCP servers — WooCommerce's MCP Adapter default server
+		// and Rank Math's bundled mcp-oauth transport — are neutralised
+		// process-wide in tests/bootstrap.php. Without that guard, their
+		// shared mcp-adapter/* ability lookups raise incorrect-usage notices
+		// on the first REST request here, after the abilities suites run.
+
 		// Chat requests require a configured provider key before dispatch.
 		// The mocked HTTP layer below intercepts the network call, so the
 		// value only needs to be non-empty.

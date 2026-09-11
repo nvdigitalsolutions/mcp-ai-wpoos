@@ -20,6 +20,45 @@ export interface ComicItem {
 	date: string;
 	modified: string;
 	mime_type: string;
+	series: string[];
+	metadata: ComicMetadata;
+	progress: ProgressRecord | null;
+	reading_direction: 'ltr' | 'rtl';
+}
+
+export interface ComicMetadata {
+	title?: string;
+	series?: string;
+	number?: string;
+	volume?: string;
+	writer?: string;
+	penciller?: string;
+	publisher?: string;
+	genre?: string;
+	page_count?: string;
+	rtl?: string;
+	manga?: string;
+	reading_direction?: string;
+	[key: string]: string | undefined;
+}
+
+export interface ProgressRecord {
+	page: number;
+	total: number;
+	completed: boolean;
+	ts: number;
+}
+
+export interface ComicSeries {
+	id: number;
+	name: string;
+	count: number;
+}
+
+export interface ComicCollection {
+	id: number;
+	name: string;
+	items: number[];
 }
 
 export interface ComicListResponse {
@@ -72,14 +111,18 @@ async function apiFetch<T>(url: string, options: RequestInit = {}): Promise<T> {
 export async function fetchComics(
 	page = 1,
 	perPage = 20,
-	search = ''
+	search = '',
+	series = '',
+	orderby = 'date'
 ): Promise<ComicListResponse> {
 	const config = getConfig();
 	const params = new URLSearchParams({
 		page: String(page),
 		per_page: String(perPage),
+		orderby,
 	});
 	if (search) params.set('search', search);
+	if (series) params.set('series', series);
 
 	return apiFetch<ComicListResponse>(`${config.apiUrl}/comics?${params}`);
 }
@@ -130,6 +173,154 @@ export function formatFileSize(bytes: number): string {
 	const units = ['B', 'KB', 'MB', 'GB'];
 	const i = Math.floor(Math.log(bytes) / Math.log(1024));
 	return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${units[i]}`;
+}
+
+// ─── Progress & Metadata API ─────────────────────────────────
+
+export async function fetchProgressMap(): Promise<
+	Record<string, ProgressRecord>
+> {
+	const config = getConfig();
+	const data = await apiFetch<{ progress: Record<string, ProgressRecord> }>(
+		`${config.apiUrl}/comics/progress`
+	);
+	return data.progress || {};
+}
+
+export async function fetchComicProgress(
+	id: number
+): Promise<ProgressRecord | null> {
+	const config = getConfig();
+	const data = await apiFetch<{ progress: ProgressRecord | null }>(
+		`${config.apiUrl}/comics/${id}/progress`
+	);
+	return data.progress ?? null;
+}
+
+export async function saveComicProgress(
+	id: number,
+	record: Omit<ProgressRecord, 'ts'>
+): Promise<void> {
+	const config = getConfig();
+	await fetch(`${config.apiUrl}/comics/${id}/progress`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'X-WP-Nonce': config.nonce,
+		},
+		body: JSON.stringify(record),
+	});
+}
+
+/** Send client-parsed ComicInfo.xml metadata to the server (best-effort). */
+export async function saveComicMetadata(
+	id: number,
+	metadata: ComicMetadata
+): Promise<void> {
+	const config = getConfig();
+	try {
+		await fetch(`${config.apiUrl}/comics/${id}/metadata`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-WP-Nonce': config.nonce,
+			},
+			body: JSON.stringify(metadata),
+		});
+	} catch {
+		// Read-only users cannot persist metadata; never block reading on it.
+	}
+}
+
+export interface ComicDetailsUpdate {
+	title?: string;
+	series?: string;
+	number?: string;
+	volume?: string;
+	writer?: string;
+	publisher?: string;
+	reading_direction?: 'ltr' | 'rtl';
+}
+
+export async function updateComicDetails(
+	id: number,
+	details: ComicDetailsUpdate
+): Promise<ComicItem> {
+	const config = getConfig();
+	const response = await fetch(`${config.apiUrl}/comics/${id}`, {
+		method: 'PUT',
+		headers: {
+			'Content-Type': 'application/json',
+			'X-WP-Nonce': config.nonce,
+		},
+		body: JSON.stringify(details),
+	});
+	if (!response.ok) {
+		const body = await response.json().catch(() => ({}));
+		throw new Error(body.message || `HTTP ${response.status}`);
+	}
+	return response.json();
+}
+
+// ─── Series & Collections API ─────────────────────────────────
+
+export async function fetchSeries(): Promise<ComicSeries[]> {
+	const config = getConfig();
+	const data = await apiFetch<{ series: ComicSeries[] }>(
+		`${config.apiUrl}/series`
+	);
+	return data.series || [];
+}
+
+export async function fetchCollections(): Promise<ComicCollection[]> {
+	const config = getConfig();
+	const data = await apiFetch<{ collections: ComicCollection[] }>(
+		`${config.apiUrl}/collections`
+	);
+	return data.collections || [];
+}
+
+export async function createCollection(name: string): Promise<ComicCollection> {
+	const config = getConfig();
+	const response = await fetch(`${config.apiUrl}/collections`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'X-WP-Nonce': config.nonce,
+		},
+		body: JSON.stringify({ name }),
+	});
+	if (!response.ok) {
+		const body = await response.json().catch(() => ({}));
+		throw new Error(body.message || `HTTP ${response.status}`);
+	}
+	return response.json();
+}
+
+export async function addToCollection(
+	collectionId: number,
+	comicId: number
+): Promise<void> {
+	const config = getConfig();
+	await fetch(`${config.apiUrl}/collections/${collectionId}/items`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'X-WP-Nonce': config.nonce,
+		},
+		body: JSON.stringify({ comic_id: comicId }),
+	});
+}
+
+export async function removeFromCollection(
+	collectionId: number,
+	comicId: number
+): Promise<void> {
+	const config = getConfig();
+	await fetch(`${config.apiUrl}/collections/${collectionId}/items/${comicId}`, {
+		method: 'DELETE',
+		headers: { 'X-WP-Nonce': config.nonce },
+	});
 }
 
 // ─── Creator Types ────────────────────────────────────────────

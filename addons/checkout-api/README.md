@@ -2,8 +2,9 @@
 
 **Vendor-side checkout service for NV oOS premium addons.**
 
-> **Status:** v0.1.0 — initial release (Stripe sessions + verification, license
-> issuance, signed ZIP downloads, Stripe webhook receiver, storefront admin).
+> **Status:** v0.1.1 — Stripe sessions + verification, license issuance, signed
+> ZIP downloads, Stripe webhook receiver, storefront admin, public health probe,
+> and an endpoint self-check on the admin page.
 
 Runs on the vendor's own server (e.g. nvdigitalsolutions.com). It is the
 server half of the purchase flow built into the free
@@ -40,10 +41,26 @@ sequenceDiagram
 
 | Route | Auth | Purpose |
 |---|---|---|
+| `GET /wp-json/nvoos-checkout/v1/health` | Public, no rate limit | Cheap status probe (`status`, `service`, `version`, `configured`, `server_time`) for connectivity checks |
 | `POST /wp-json/nvoos-checkout/v1/session` | Public, IP rate-limited | Create a Stripe PaymentIntent |
 | `POST /wp-json/nvoos-checkout/v1/verify` | Public, IP rate-limited | Verify payment, issue license + signed download URL |
 | `POST /wp-json/nvoos-checkout/v1/webhooks/stripe` | Stripe signature | `payment_intent.succeeded` issues the license server-side (interrupted-browser recovery); refunds/disputes revoke |
 | `GET /?nvoos_checkout_download=1&license=…&expires=…&token=…` | Signed HMAC token | Stream the addon ZIP |
+
+### Error-status contract
+
+Customer sites (the `nvoos-content-graph` plugin) branch on these statuses:
+
+- **`424`** — a Stripe 4xx rejection (bad key, invalid params, account
+  restrictions) with Stripe's own message. Showable: the purchase modal
+  renders it inline; never a redirect.
+- **`502`** — transport failure or Stripe 5xx: checkout genuinely
+  unavailable. The modal falls back to the product-page URL.
+- **`429`** — per-IP rate limiting; shown inline.
+
+Stripe request bodies are form-encoded, so booleans are sent as the literal
+strings `"true"` / `"false"` (PHP's serializer would emit `1`, which Stripe
+rejects with `Invalid boolean: 1`).
 
 ### Why the session/verify routes are public
 
@@ -59,19 +76,29 @@ replayed from a different site (site binding) or for a different product.
 1. Install this addon **on your own site only**. Never distribute it to
    customers, never submit it to WordPress.org.
 2. Create a Stripe account (or a test key set) and fill in **NV oOS Checkout**
-   in WP-Admin: secret key, publishable key, price, currency, addon version,
-   ZIP source (defaults to the GitHub release pattern; set a private mirror
-   URL or absolute path if you want the download gated behind your CDN).
+   in WP-Admin: secret key, publishable key, price, currency, version, and
+   ZIP source. The defaults target the **NV oOS Complete** bundle
+   (`nvdigital-open-operator-system-oos-complete-{VERSION}.zip` from the
+   monorepo GitHub releases; set a private mirror URL or absolute path if
+   you want the download gated behind your CDN).
 3. In the Stripe dashboard, add a webhook endpoint pointing at the URL shown
    on the settings screen, with events `payment_intent.succeeded`,
    `charge.refunded`, and `charge.dispute.created`, and paste the signing
    secret (`whsec_…`). The `payment_intent.succeeded` event is what issues
    the license when a buyer's browser flow is interrupted after paying —
    their site picks the license up via `/verify` when they return.
-4. Publish the first addon release so the ZIP source resolves (the addon
-   caches it under `wp-content/uploads/nvoos-checkout/` per version).
+4. Publish the `nvdigital-oos-v*.*.*` tag for the version being sold so the Complete
+   bundle ZIP source resolves (the addon caches it under
+   `wp-content/uploads/nvoos-checkout/` per version).
 5. Verify with Stripe test cards while test mode is on; switch to live keys
    when ready.
+6. Check the **REST endpoints** section on the admin page after deploying:
+   it lists every route with a live registered/missing marker, and the
+   "Check endpoints" action fetches `GET /health` over loopback HTTP — the
+   same call customer sites make — reporting status and latency.
+
+Accepted product ids: `nvoos-oos-complete` (current — the Complete bundle)
+and `nvoos-content-graph-ai` (legacy, pre-1.0.6 purchases).
 
 ## Data stored
 

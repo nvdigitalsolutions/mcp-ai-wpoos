@@ -1,0 +1,325 @@
+<?xml version="1.0"?>
+<ruleset name="NvoosContentGraphPro">
+    <description>NV oOS Content Graph — Pro WordPress Coding Standards</description>
+
+    <!-- Use WordPress-Extra as the baseline. -->
+    <rule ref="WordPress-Extra">
+        <!-- Short ternaries are perfectly fine in modern PHP. -->
+        <exclude name="Universal.Operators.DisallowShortTernary.Found"/>
+        <!--
+            Mixed file conventions: the namespaced composition root and
+            test seams use PSR-4-style file names (Plugin.php), while the
+            ported Pro classes keep the base addon's WP_MCP_AI_* names
+            inside class-wp-mcp-ai-*.php files (byte-identical surface).
+            Same exclusion as the platform/AI addons.
+        -->
+        <exclude name="WordPress.Files.FileName"/>
+    </rule>
+
+    <!-- Require strict types. -->
+    <rule ref="Generic.PHP.RequireStrictTypes"/>
+
+    <!--
+        Extraction transition: ported subsystems intentionally keep the
+        base Pro addon's global WP_MCP_AI_* class and wp_mcp_ai_* hook
+        names so the public surface stays byte-identical (see the plugin
+        README §Porting rules). Remove once the base Pro copies are gone.
+    -->
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+        <properties>
+            <property name="prefixes" type="array">
+                <element value="NvoosContentGraphPro"/>
+                <element value="nvoos_content_graph_pro"/>
+                <element value="NVOOS_CONTENT_GRAPH_PRO"/>
+                <element value="wp_mcp_ai"/>
+                <element value="WP_MCP_AI"/>
+            </property>
+        </properties>
+    </rule>
+
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array">
+                <element value="nvoos-content-graph-pro"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!--
+        Reserved keyword parameter names ($namespace, $default, $class) are
+        idiomatic in PHP 8.1+ and byte-identical with the monolith copies.
+    -->
+    <rule ref="Universal.NamingConventions.NoReservedKeywordParameterNames">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        Byte-identical base query shapes in the e-commerce analytics tools
+        build the placeholder-less SQL strings inline (the base owns the
+        same pattern monolith), so the prepare() replacement-count check
+        is disabled for those copies.
+    -->
+    <rule ref="WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        The regulatory-registration country-config page builds its
+        IN($placeholders) query with a phpcs:enable/disable pair and a
+        spread of the same count (byte-identical base pattern), so the
+        unfinished-prepare check is disabled for that copy.
+    -->
+    <rule ref="WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        Vault CPT custom capabilities: the item/folder CPT registrations
+        map them via capability_type, so the Capabilities sniff must not
+        flag them as unknown/typoed capabilities.
+    -->
+    <rule ref="WordPress.WP.Capabilities">
+        <properties>
+            			<property name="custom_capabilities" type="array">
+            				<element value="edit_own_vault_items"/>
+            				<element value="edit_others_vault_items"/>
+            				<element value="edit_own_vault_folders"/>
+            				<element value="edit_others_vault_folders"/>
+				<element value="edit_products"/>
+				<element value="edit_shop_orders"/>
+				<element value="view_order"/>
+				<element value="manage_woocommerce"/>
+				<element value="publish_products"/>
+				<element value="delete_products"/>
+				<element value="manage_product_terms"/>
+				<element value="edit_product_terms"/>
+				<element value="read_shop_order"/>
+				<element value="edit_shop_order"/>
+				<element value="view_medical_imaging"/>
+				<element value="upload_medical_imaging"/>
+				<element value="delete_medical_imaging"/>
+				<element value="manage_medical_imaging"/>
+            			</property>
+        </properties>
+    </rule>
+
+    <!--
+        The ported vault encryption service encodes ciphertext/IV/auth-tag
+        payloads with base64 — byte-identical with the monolith (the
+        obfuscation sniff is a code-obfuscation heuristic, not a
+        crypto-encoding ban).
+    -->
+    <rule ref="WordPress.PHP.DiscouragedPHPFunctions">
+        <exclude name="WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode"/>
+        <exclude name="WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode"/>
+    </rule>
+
+    <!--
+        Ported analytics tools query full CRM pipelines with high
+        posts_per_page limits (500-1000) — byte-identical with the
+        monolith copies.
+    -->
+    <rule ref="WordPress.WP.PostsPerPage">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        Byte-identical ported signatures keep unused handler parameters
+        (ICP scorer dimension hooks, REST handler callbacks) — the
+        monolith copies carry the same signatures.
+    -->
+    <rule ref="Generic.CodeAnalysis.UnusedFunctionParameter">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        The byte-identical ICP admin page delegates its nonce checks to
+        the action handlers (check_admin_referer inside handle_save/
+        handle_delete/handle_set_default) — the dispatch reads in
+        render_page() are guarded by those handlers.
+    -->
+    <rule ref="WordPress.Security.NonceVerification">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        The byte-identical ICP profile store omits translators comments
+        on sprintf+__ error strings (same as the monolith copies).
+    -->
+    <rule ref="WordPress.WP.I18n.MissingTranslatorsComment">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        The byte-identical ICP admin page uses urlencode() for its
+        redirect query strings (same as the monolith copy).
+    -->
+    <rule ref="WordPress.PHP.DiscouragedPHPFunctions">
+        <exclude name="WordPress.PHP.DiscouragedPHPFunctions.urlencode_urlencode"/>
+    </rule>
+
+    <!--
+        Byte-identical e-commerce extras: the quickbooks-report tool keeps
+        the monolith's error_log() diagnostic (dev-only guard) and the
+        product-actualization tool fetches image bytes with
+        file_get_contents() for GD-based compositing — the monolith copies
+        carry the same calls.
+    -->
+    <rule ref="WordPress.PHP.DevelopmentFunctions.error_log_error_log">
+        <severity>0</severity>
+    </rule>
+    <rule ref="WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        Byte-identical booking-adapter factory keeps the monolith's
+        commented-out adapter-registration snippet (54% code heuristic).
+    -->
+    <rule ref="Squiz.PHP.CommentedOutCode">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        Byte-identical financial-account CPT self-boot block reads the
+        settings option into a file-scope `$settings` variable (the
+        monolith copy carries the same global).
+    -->
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        Byte-identical architectural codes registry declares the global
+        esc_xml_safe() helper (the monolith copy carries the same function).
+    -->
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        Byte-identical financial tax-loss tracker stamps records with
+        current_time( 'timestamp' ) (the monolith copy carries the same
+        call).
+    -->
+    <rule ref="WordPress.DateTime.CurrentTimeTimestamp.Requested">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        Byte-identical social generate-post-ideas tool calls count() in a
+        FOR loop test part (the monolith copy carries the same loop).
+    -->
+    <rule ref="Generic.CodeAnalysis.ForLoopWithTestFunctionCall.NotAllowed">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        Byte-identical ai-tool-builder generate-tool-documentation keeps the
+        monolith's strip_tags() usage.
+    -->
+    <rule ref="WordPress.WP.AlternativeFunctions.strip_tags_strip_tags">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        Byte-identical architect-agent proc helpers (D8-compat copy from the
+        base bootstrap helpers) use proc_open + stream reads directly — the
+        monolith copies carry the same calls.
+    -->
+    <rule ref="WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open">
+        <severity>0</severity>
+    </rule>
+    <rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_fread">
+        <severity>0</severity>
+    </rule>
+    <!--
+        Byte-identical architectural drawing tool renames its temp output files
+        with rename() (the monolith copy carries the same call).
+    -->
+    <rule ref="WordPress.WP.AlternativeFunctions.rename_rename">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        Byte-identical document-generation pro-batch-ocr/pro-unlimited-ocr
+        descriptions concatenate string literals inside __() (the monolith
+        copies carry the same concatenations).
+    -->
+    <rule ref="WordPress.WP.I18n.NonSingularStringLiteralText">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        Byte-identical import-services file handling: the base copy uses
+        fopen/fclose/fwrite/file_put_contents + @unlink for its CSV import
+        temp files, with the same silenced-error and while-assignment
+        patterns.
+    -->
+    <rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_fopen">
+        <severity>0</severity>
+    </rule>
+    <rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_fclose">
+        <severity>0</severity>
+    </rule>
+    <rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_fwrite">
+        <severity>0</severity>
+    </rule>
+    <rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents">
+        <severity>0</severity>
+    </rule>
+    <!--
+        Byte-identical video exec-service tools create/remove their temp
+        frame directories with mkdir/rmdir (the monolith copies carry the
+        same calls).
+    -->
+    <rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_mkdir">
+        <severity>0</severity>
+    </rule>
+    <rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_rmdir">
+        <severity>0</severity>
+    </rule>
+    <rule ref="WordPress.WP.AlternativeFunctions.unlink_unlink">
+        <severity>0</severity>
+    </rule>
+    <rule ref="WordPress.PHP.NoSilencedErrors">
+        <severity>0</severity>
+    </rule>
+    <rule ref="Generic.CodeAnalysis.AssignmentInCondition">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        Byte-identical render-math tool: the KaTeX cache key serializes the
+        full argument array and the base copy carries an unreachable
+        trailing return after the deterministic default envelope (both
+        monolith-identical).
+    -->
+    <rule ref="WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize">
+        <severity>0</severity>
+    </rule>
+    <rule ref="Squiz.PHP.NonExecutableCode.Unreachable">
+        <severity>0</severity>
+    </rule>
+    <!--
+        Byte-identical eca-management update-eca tool: the source carries a
+        loose `!=` comparison in its meta-diff probe (monolith-identical).
+    -->
+    <rule ref="Universal.Operators.StrictComparisons">
+        <severity>0</severity>
+    </rule>
+
+    <file>./nvoos-content-graph-pro.php</file>
+    <file>./src/</file>
+    <file>./tests/</file>
+
+    <exclude-pattern>/vendor/*</exclude-pattern>
+    <exclude-pattern>/node_modules/*</exclude-pattern>
+    <exclude-pattern>/assets/*</exclude-pattern>
+    <!-- Byte-identical Node.js worker scripts copied from the base addon
+         (generate-excel.js etc.) are not PHP/JS linted. -->
+    <exclude-pattern>/scripts/*</exclude-pattern>
+
+    <config name="minimum_supported_wp_version" value="6.5"/>
+    <config name="testVersion" value="8.1-"/>
+</ruleset>

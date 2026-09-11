@@ -5,7 +5,7 @@ Tags: knowledge graph, content visualization, cytoscape, content strategy, seman
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.4
+Stable tag: 1.0.7
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -43,7 +43,7 @@ Automatic structured data injection for SEO — taxonomy terms as `about` and in
 Appends graph-neighbor posts to your content based on knowledge graph proximity.
 
 = REST API =
-Full programmatic access with 17 endpoints. Read endpoints require the `read` capability (all logged-in users) or a valid guest token (guest tokens are provided by the NV oOS base plugin when installed); write endpoints require `manage_options`.
+Full programmatic access with 18 endpoints. Read endpoints require the `read` capability (all logged-in users) or a valid guest token (guest tokens are provided by the NV oOS base plugin when installed); write endpoints require `manage_options`.
 
 = Extensible Tool System =
 14 built-in tools for graph operations: query, search, traverse, analyze, export. Addon plugins can register their own tools.
@@ -84,9 +84,17 @@ Yes. The graph explorer, shortcode, related content widget, and schema.org injec
 
 Yes. Any public post type (including JetEngine CPTs) is automatically detected. You can configure which post types to index in Settings.
 
+= Does it work with JetEngine Custom Content Types (CCTs)? =
+
+Yes. JetEngine CCTs are detected and indexed by default, and the Settings → Sources tab lists every registered CCT with include/exclude checkboxes (including CCTs registered by the NV oOS base+Pro plugin). Uncheck a CCT to exclude it from the next graph build.
+
 = Does the plugin connect to external services? =
 
 The core graph engine runs entirely on your server. The optional "Resolve External Entity" tool queries Wikidata (wikidata.org) when you explicitly ask it to look up a QID. Remote source drivers connect to user-configured endpoints (REST APIs, RSS feeds, SPARQL, etc.) only when you set them up in Settings. See the External services section below for full details.
+
+= Do I have to pay for the NV oOS Complete bundle? =
+
+No. This plugin is complete and fully functional for free. The NV oOS Complete bundle (the full NV oOS plugin, base + Pro) is an optional, separately installed paid product, sold off-directory by NV Digital Solutions. Purchases are covered by a 30-day money-back guarantee; see the vendor's Terms of Service and Refund Policy linked in the checkout.
 
 = Does it work on multisite? =
 
@@ -127,13 +135,13 @@ When you configure a remote source driver (REST API, RSS/Sitemap feed, SPARQL en
 
 **Stripe payments (opt-in only)**
 
-The "Get NV oOS Content Graph — AI" buttons on the plugin's settings page open an optional checkout for the companion addon. Card and payment details are entered directly on Stripe's servers (`js.stripe.com` iframe); the plugin never stores or transmits card data. Stripe.js is loaded only when the purchase modal is opened — merely visiting the settings page contacts no third party. The checkout is created and verified by the vendor's own server (NV Digital Solutions); this plugin only sends the product name, your site URL, and the Stripe payment ID to that service. A local purchase record (license key, payment ID, price paid, and the purchasing administrator's email address) is stored after the vendor confirms the payment. Payment is entirely optional — the core plugin is fully functional without it.
+The "Get NV oOS Complete" buttons on the plugin's settings page open an optional checkout for the NV oOS Complete plugin bundle — the full NV oOS plugin (base + Pro) installed as a separate plugin. Card and payment details are entered directly on Stripe's servers (`js.stripe.com` iframe); the plugin never stores or transmits card data. Stripe.js is loaded only when the purchase modal is opened — merely visiting the settings page contacts no third party. The checkout is created and verified by the vendor's own server (NV Digital Solutions); this plugin only sends the product name, your site URL, the Stripe payment ID, the purchasing administrator's email address, the buyer's declared country, and a timestamp recording your agreement to the Terms of Service to that service. For buyers in the EU, a billing address (street, city, optional postal code) is collected in the modal, attached to the payment for VAT records, and shown to the vendor on the license. A local purchase record (license key, payment ID, price paid, the purchasing administrator's email address, country, and the consent timestamp) is stored after the vendor confirms the payment. Payment is entirely optional — the core plugin is fully functional without it.
 
 - **Service provider:** Stripe, Inc. — Privacy Policy: https://stripe.com/privacy
 
-**GitHub download (opt-in only)**
+**Installing the NV oOS Complete bundle (manual install is the primary path)**
 
-After a successful purchase, the plugin downloads the addon ZIP from a URL provided by the vendor's checkout service (which serves the package from the project's GitHub release page, `github.com`). No data is sent to GitHub.
+After a successful purchase you can download the NV oOS Complete ZIP and install it manually via **Plugins → Add New Plugin → Upload Plugin** — this is the recommended, fully transparent path. The plugin also offers an optional automatic installation (a convenience that downloads the ZIP and runs WordPress' built-in installer for you). Either way, the ZIP comes from a signed, short-lived URL provided by the vendor's checkout service (which serves the package from the project's GitHub release page, `github.com`). No data is sent to GitHub.
 
 == Third-Party Libraries ==
 
@@ -144,7 +152,7 @@ This plugin bundles the following open-source libraries:
 * **layout-base** v2.0.1 — MIT License — https://github.com/iVis-at-Bilkent/layout-base
 * **cose-base** v2.2.0 — MIT License — https://github.com/iVis-at-Bilkent/cose-base
 
-All libraries are served locally from `assets/vendor/` and never loaded from third-party CDNs.
+All libraries are served locally from `assets/vendor/` and never loaded from third-party CDNs. Each library's license text ships alongside it (`assets/vendor/<name>/LICENSE`).
 
 == Screenshots ==
 
@@ -156,6 +164,23 @@ All libraries are served locally from `assets/vendor/` and never loaded from thi
 6. Graph Explorer — interactive Cytoscape.js visualization with search and node details
 
 == Changelog ==
+
+= 1.0.7 — 2026-09-09 =
+* Checkout consent checkbox (Terms of Service + 30-day refund policy) and buyer-email collection with Stripe receipt delivery
+* Buyer country and conditional EU billing address (VAT records) collected in the purchase modal
+* Manual ZIP download offered after purchase alongside the automatic installer; manual install documented as the primary path
+* Roadmap link in the purchase modal; release-notes link and support email on the purchase success screen
+* Updated privacy disclosures (buyer email, country, EU billing address, and Terms consent timestamp sent to the checkout service)
+
+= 1.0.6 — 2026-09-08 =
+* Checkout now delivers the NV oOS Complete plugin bundle (base + Pro as a separate plugin) instead of the companion AI addon
+* The installer refuses to create a second copy of NV oOS when the base plugin is already installed on the site
+* Updated privacy disclosures for the checkout flow
+
+= 1.0.5 — 2026-09-08 =
+* Agent Memory Bridge: memories stored by the NV oOS base+Pro plugin (`wp_mcp_ai_memory_stored`) are now projected into the knowledge graph as `memory:*` nodes with agent/wing/room edges
+* Graph-ranked memory retrieval seam for the NV oOS `wake_up_context` tool (`wp_mcp_ai_wake_up_context_graph_retriever` filter)
+* New `Db::tablesInstalled()` schema probe; PHPUnit coverage for the bridge and its schema-absent degradation
 
 = 1.0.4 — 2026-09-05 =
 * New Appearance tab: themes (dark/light/auto/admin), per-type color and icon overrides, WCAG contrast report, and one-click style presets

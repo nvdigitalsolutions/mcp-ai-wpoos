@@ -158,8 +158,13 @@ define( 'WP_TESTS_CONFIG_FILE_PATH', $tests_config );
 
 // Enable full version for tests to load all integration classes.
 // Individual tests can use the wp_mcp_ai_base_version filter to test base version behavior.
+// The base+pro matrix (phpunit-basepro.xml.dist) sets WP_MCP_AI_TEST_BASE_VERSION=1,
+// which flips this constant to true so the suite boots as a base build with the
+// Pro addon active — the real base+pro deployment shape.
 if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
-	define( 'WP_MCP_AI_BASE_VERSION', false );
+	$wp_mcp_ai_test_base_version = getenv( 'WP_MCP_AI_TEST_BASE_VERSION' );
+	define( 'WP_MCP_AI_BASE_VERSION', in_array( $wp_mcp_ai_test_base_version, array( '1', 'true' ), true ) );
+	unset( $wp_mcp_ai_test_base_version );
 }
 
 // Marker consumed by production code at sites that must terminate a request
@@ -371,6 +376,39 @@ tests_add_filter( 'wp_die_jsonp_handler', 'wp_mcp_ai_tests_die_handler_filter', 
 	}
 
 tests_add_filter( 'wp_doing_ajax', 'wp_mcp_ai_tests_wp_doing_ajax_filter', 10 );
+
+/**
+ * Neutralise third-party MCP servers for the whole test run.
+ *
+ * WooCommerce bundles the WordPress MCP Adapter and Rank Math >= 1.0.278
+ * bundles wp-media/mcp-oauth. Both integrate with the WordPress Abilities
+ * API, whose persistent registry fires `wp_abilities_api_init` exactly once
+ * per process (lazily, on first use). The adapter only attaches its
+ * `register_default_abilities` hook from the first `rest_api_init`
+ * (priority 15) — too late once an earlier suite has already initialised the
+ * registry — and the OAuth registrar only registers the shared
+ * `mcp-adapter/*` abilities itself when the adapter's default server is
+ * disabled. The result is that the three shared abilities are never
+ * registered, and the first MCP server build (a REST request in the
+ * performance suites) calls `wp_get_ability()` on them, raising
+ * `_doing_it_wrong()` notices that fail the suite.
+ *
+ * Registering both kill-switch filters process-wide, before any test runs:
+ *
+ * 1. Disables the adapter's default MCP server and Rank Math's OAuth MCP
+ *    transport server, so no third-party server build ever resolves the
+ *    shared abilities against the registry.
+ * 2. Makes the OAuth registrar register the shared abilities itself when
+ *    `wp_abilities_api_init` fires, so any consumer that still looks them up
+ *    finds them instead of raising an incorrect-usage notice.
+ *
+ * Both plugins are present on every CI run (`bin/install-test-plugins.sh`
+ * installs WooCommerce and Rank Math from wp.org "latest stable"), and this
+ * ordering hazard is independent of the suites' own `setUp()` guards, so it
+ * is neutralised once, here, at bootstrap.
+ */
+tests_add_filter( 'mcp_adapter_create_default_server', '__return_false' );
+tests_add_filter( 'wpmedia_mcp_oauth_server_enabled', '__return_false' );
 
 /**
  * Test-safe override of the pluggable check_ajax_referer().
@@ -666,6 +704,26 @@ if ( '1' !== getenv( 'WP_MCP_AI_SKIP_BASE_PLUGIN' ) ) {
 	tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_manually_load_plugin' );
 }
 
+// Base+pro matrix seeding (phpunit-basepro.xml.dist): enable the CRM and
+// Project Management toolkits BEFORE the plugin boots so the Pro module
+// registry loads their inits at boot through the base+pro gates — the
+// end-to-end deployment shape the regression pins cover. Gated on the same
+// env var that flips WP_MCP_AI_BASE_VERSION above; the monolith matrix is
+// untouched.
+if ( in_array( getenv( 'WP_MCP_AI_TEST_BASE_VERSION' ), array( '1', 'true' ), true ) ) {
+	tests_add_filter(
+		'muplugins_loaded',
+		static function () {
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+			$settings = is_array( $settings ) ? $settings : array();
+			$settings['enable_crm_toolkit']        = 1;
+			$settings['enable_project_management'] = 1;
+			update_option( 'wp_mcp_ai_settings', $settings );
+		},
+		1
+	);
+}
+
 /**
  * Report whether a prefixed database table exists.
  *
@@ -899,4 +957,10 @@ require_once __DIR__ . '/paper-store/trait-paper-store-test-helpers.php';
 // it is safe to load into the shared suite.
 if ( file_exists( __DIR__ . '/../addons/checkout-api/tests/bootstrap.php' ) ) {
 	require_once __DIR__ . '/../addons/checkout-api/tests/bootstrap.php';
+}
+
+// Comic Reader addon tests (addons/comic-reader). Same self-guarding
+// constants + class-requires pattern as the Checkout API addon above.
+if ( file_exists( __DIR__ . '/../addons/comic-reader/tests/bootstrap.php' ) ) {
+	require_once __DIR__ . '/../addons/comic-reader/tests/bootstrap.php';
 }

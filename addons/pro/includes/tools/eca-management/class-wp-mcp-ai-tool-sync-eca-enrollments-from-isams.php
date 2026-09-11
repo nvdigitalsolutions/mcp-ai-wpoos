@@ -111,7 +111,7 @@ class WP_MCP_AI_Tool_Sync_ECA_Enrollments_From_ISAMS implements WP_MCP_AI_Tool_I
 	 */
 	public static function is_available() {
 		// ECA enrollment sync is a Pro feature.
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return false;
 		}
 

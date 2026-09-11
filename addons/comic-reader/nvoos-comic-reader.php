@@ -3,7 +3,7 @@
  * Plugin Name: NV oOS Comic Reader
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: A modern comic book reader & creator addon for the NV oOS platform. Supports CBR, CBZ, CB7, and CBT formats with a React-based reading interface featuring single/double-page viewing, zoom, library management, and AI-powered comic creation tools.
- * Version:     0.2.0
+ * Version:     0.5.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: NV Digital Solutions
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version — must match package.json. */
-define( 'NVOOS_COMIC_READER_VERSION', '0.2.0' );
+define( 'NVOOS_COMIC_READER_VERSION', '0.5.0' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_COMIC_READER_FILE', __FILE__ );
@@ -34,6 +34,8 @@ define( 'NVOOS_COMIC_READER_URL', plugin_dir_url( __FILE__ ) );
 
 require_once NVOOS_COMIC_READER_PATH . 'includes/class-nvoos-comic-reader-plugin.php';
 require_once NVOOS_COMIC_READER_PATH . 'includes/class-nvoos-comic-reader-mime.php';
+require_once NVOOS_COMIC_READER_PATH . 'includes/class-nvoos-comic-reader-taxonomy.php';
+require_once NVOOS_COMIC_READER_PATH . 'includes/admin/class-nvoos-comic-reader-settings.php';
 require_once NVOOS_COMIC_READER_PATH . 'includes/rest/class-nvoos-comic-reader-rest.php';
 require_once NVOOS_COMIC_READER_PATH . 'includes/shortcode/class-nvoos-comic-reader-shortcode.php';
 require_once NVOOS_COMIC_READER_PATH . 'includes/block/class-nvoos-comic-reader-block.php';

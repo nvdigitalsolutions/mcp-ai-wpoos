@@ -3,8 +3,8 @@
  */
 
 import { useState } from 'react';
-import { useSchedules, useScheduleHistory, type Schedule } from '@/hooks/useSchedules';
-import { formatDistanceToNow, format } from 'date-fns';
+import { useSchedules, useScheduleHistory } from '@/hooks/useSchedules';
+import { format } from 'date-fns';
 
 export function HistoryPage() {
   const { data: schedulesData } = useSchedules();

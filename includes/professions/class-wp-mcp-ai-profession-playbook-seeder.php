@@ -171,8 +171,11 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 			);
 		}
 
-		// Calculate content hash.
-		$content_hash = hash( 'sha256', $content );
+		// Calculate content hash over the deterministic body only. The
+		// playbook stamps a "Generated: <date> UTC" header whose value
+		// changes every second; hashing it would make every sync look like
+		// a content change and churn attachments forever.
+		$content_hash = self::hash_playbook_content( $content );
 
 		// Check if attachment already exists.
 		$existing_attachment = self::find_existing_playbook_attachment( $profession->ID );
@@ -562,6 +565,22 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		update_post_meta( $attachment_id, '_wp_mcp_ai_playbook_hash', $content_hash );
 
 		return $attachment_id;
+	}
+
+	/**
+	 * Hash the deterministic parts of a playbook's content.
+	 *
+	 * The playbook loader prepends a "Generated: <date> UTC" header that
+	 * changes every second. Stripping it before hashing keeps the stored
+	 * hash stable across sync runs, so an unchanged playbook is recognized
+	 * as unchanged instead of triggering a delete-and-recreate cycle.
+	 *
+	 * @param string $content Full playbook content.
+	 * @return string SHA256 hex hash of the deterministic body.
+	 */
+	protected static function hash_playbook_content( $content ) {
+		$deterministic = preg_replace( '/^Generated: .* UTC$/m', '', $content );
+		return hash( 'sha256', $deterministic );
 	}
 
 	/**

@@ -21,7 +21,7 @@
 		"chart.js": "^4.4.0",
 		"cheerio": "^1.0.0",
 		"cors": "^2.8.5",
-		"csv-parse": "^5.6.0",
+		"csv-parse": "^7.0.2",
 		"csv-stringify": "^6.5.2",
 		"currency.js": "^2.0.4",
 		"docx": "^9.5.1",
@@ -45,8 +45,8 @@
 		"marked": "^9.1.6",
 		"mathjs": "^15.2.0",
 		"mjml": "^5.0.0",
-		"multer": "^2.2.0",
-		"nodemailer": "^9.0.5",
+		"multer": "^2.3.0",
+		"nodemailer": "^9.1.1",
 		"openai": "^4.52.0",
 		"pdf-lib": "^1.17.1",
 		"pdf-parse": "^1.1.4",
@@ -56,7 +56,7 @@
 		"puppeteer": "^25.7.0",
 		"qrcode": "^1.5.4",
 		"regression": "^2.0.1",
-		"sharp": "^0.35.3",
+		"sharp": "^0.35.4",
 		"subtitle": "^3.0.0",
 		"tesseract.js": "^5.1.1",
 		"turndown": "^7.2.0",
@@ -68,7 +68,12 @@
 		"rate-limit-redis": "^4.2.0"
 	},
 	"overrides": {
+		"qs": ">=6.16.0",
 		"uuid": "^11.1.1",
-		"deepmerge-ts": "^8.0.0"
+		"deepmerge-ts": "^8.0.0",
+		"svgo": ">=4.1.0",
+		"mailparser": {
+			"nodemailer": ">=9.1.1"
+		}
 	}
 }

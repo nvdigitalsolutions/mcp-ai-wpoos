@@ -1,6 +1,7 @@
 import { normalize_columns_array } from "./normalize_columns_array.js";
 import { CsvError } from "./CsvError.js";
 import { underscore } from "../utils/underscore.js";
+import { is_object } from "../utils/is_object.js";
 
 const normalize_options = function (opts) {
   const options = {};
@@ -95,7 +96,7 @@ const normalize_options = function (opts) {
     );
   }
   // Normalize option `columns`
-  options.cast_first_line_to_header = null;
+  options.cast_first_line_to_header = undefined;
   if (options.columns === true) {
     // Fields in the first line are converted as-is to columns
     options.cast_first_line_to_header = undefined;
@@ -190,25 +191,95 @@ const normalize_options = function (opts) {
       options,
     );
   }
-  // Normalize option `delimiter`
-  const delimiter_json = JSON.stringify(options.delimiter);
-  if (!Array.isArray(options.delimiter))
-    options.delimiter = [options.delimiter];
-  if (options.delimiter.length === 0) {
+  // Normalize option `delimiter_auto`
+  if (
+    options.delimiter_auto === undefined ||
+    options.delimiter_auto === null ||
+    options.delimiter_auto === false
+  ) {
+    options.delimiter_auto = false;
+  } else if (options.delimiter_auto === true) {
+    options.delimiter_auto = {};
+  } else if (!is_object(options.delimiter_auto)) {
     throw new CsvError(
-      "CSV_INVALID_OPTION_DELIMITER",
+      "CSV_INVALID_OPTION_DELIMITER_AUTO",
       [
-        "Invalid option delimiter:",
-        "delimiter must be a non empty string or buffer or array of string|buffer,",
-        `got ${delimiter_json}`,
+        "Invalid option delimiter_auto:",
+        "delimiter_auto must be a boolean or a configuration object,",
+        `got ${JSON.stringify(options.delimiter_auto)}`,
       ],
       options,
     );
   }
-  options.delimiter = options.delimiter.map(function (delimiter) {
-    if (delimiter === undefined || delimiter === null || delimiter === false) {
-      return Buffer.from(",", options.encoding);
+  if (options.delimiter_auto) {
+    if (options.delimiter_auto.preferred === undefined)
+      options.delimiter_auto.preferred = {
+        [",".charCodeAt(0)]: 1.8,
+        ["\t".charCodeAt(0)]: 1.8,
+        [";".charCodeAt(0)]: 1.6,
+        [" ".charCodeAt(0)]: 1.6,
+        [":".charCodeAt(0)]: 1.5,
+        [".".charCodeAt(0)]: 1.4,
+        ["/".charCodeAt(0)]: 1.4,
+      };
+    else if (!is_object(options.delimiter_auto.preferred)) {
+      throw new CsvError(
+        "CSV_INVALID_OPTION_DELIMITER_AUTO",
+        [
+          "Invalid option delimiter_auto:",
+          "preferred must be an object,",
+          `got ${JSON.stringify(options.delimiter_auto.preferred)}`,
+        ],
+        options,
+      );
     }
+    if (options.delimiter_auto.score === undefined)
+      options.delimiter_auto.score = (info, options) => {
+        return (
+          (info.total - info.std) * (options.preferred[info.char_code] || 1)
+        );
+      };
+    else if (typeof options.delimiter_auto.score !== "function") {
+      throw new CsvError(
+        "CSV_INVALID_OPTION_DELIMITER_AUTO",
+        [
+          "Invalid option delimiter_auto:",
+          "score must be a function,",
+          `got ${JSON.stringify(options.delimiter_auto.score)}`,
+        ],
+        options,
+      );
+    }
+    if (options.delimiter_auto.size === undefined)
+      options.delimiter_auto.size = 2048;
+    else if (typeof options.delimiter_auto.size !== "number") {
+      throw new CsvError(
+        "CSV_INVALID_OPTION_DELIMITER_AUTO",
+        [
+          "Invalid option delimiter_auto:",
+          "size must be a number,",
+          `got ${JSON.stringify(options.delimiter_auto.size)}`,
+        ],
+        options,
+      );
+    }
+  }
+  // Normalize option `delimiter`
+  const delimiter_json = JSON.stringify(options.delimiter);
+  if (options.delimiter_auto !== false) {
+    options.delimiter = [];
+  }
+  if (!Array.isArray(options.delimiter)) {
+    if (
+      options.delimiter === undefined ||
+      options.delimiter === null ||
+      options.delimiter === false
+    ) {
+      options.delimiter = Buffer.from(",", options.encoding);
+    }
+    options.delimiter = [options.delimiter];
+  }
+  options.delimiter = options.delimiter.map(function (delimiter) {
     if (typeof delimiter === "string") {
       delimiter = Buffer.from(delimiter, options.encoding);
     }
@@ -650,7 +721,7 @@ const normalize_options = function (opts) {
   // Normalize option `to`
   if (options.to === undefined || options.to === null) {
     options.to = -1;
-  } else {
+  } else if (options.to !== -1) {
     if (typeof options.to === "string" && /\d+/.test(options.to)) {
       options.to = parseInt(options.to);
     }
@@ -669,7 +740,7 @@ const normalize_options = function (opts) {
   // Normalize option `to_line`
   if (options.to_line === undefined || options.to_line === null) {
     options.to_line = -1;
-  } else {
+  } else if (options.to_line !== -1) {
     if (typeof options.to_line === "string" && /\d+/.test(options.to_line)) {
       options.to_line = parseInt(options.to_line);
     }

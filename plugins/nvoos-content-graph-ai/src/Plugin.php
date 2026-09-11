@@ -206,6 +206,64 @@ final class Plugin {
 		if ( class_exists( 'NvoosContentGraphAi\Elementor\ElementorHub' ) ) {
 			( new \NvoosContentGraphAi\Elementor\ElementorHub() )->register();
 		}
+
+		// Engine pieces (Wave E6, sub-cluster 1 — OOS shadow runner +
+		// suppression). Standalone-only (see registerEngine()).
+		$this->registerEngine();
+	}
+
+	/**
+	 * Register the engine pieces (Wave E6).
+	 *
+	 * Standalone-only: the base plugin's bridge/init files own the same
+	 * shadow-runner subscriber, suppression waterfall, markup wiring,
+	 * Paper Store tool registration, OKF tool registration + generator
+	 * hooks, and Crawl4AI cron-hook registration in monolith installs;
+	 * double registration would double-record shadow runs,
+	 * double-short-circuit write-class tools, and double-register tools
+	 * and cron handlers. Dormant until a standalone surface emits the
+	 * respective hooks (byte-identical dormancy).
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return void
+	 */
+	private function registerEngine(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( 'NvoosContentGraphAi\Engine\OosShadowRunner' ) ) {
+			\NvoosContentGraphAi\Engine\OosShadowRunner::register();
+		}
+
+		if ( class_exists( 'NvoosContentGraphAi\Engine\OosShadowSuppression' ) ) {
+			\NvoosContentGraphAi\Engine\OosShadowSuppression::register();
+		}
+
+		// Markup elicitation subsystem (Wave E6, sub-cluster 2) — the base
+		// `markup-init.php` owns the same hooks monolith.
+		if ( class_exists( 'NvoosContentGraphAi\Engine\Markup\MarkupBootstrap' ) ) {
+			\NvoosContentGraphAi\Engine\Markup\MarkupBootstrap::register();
+		}
+
+		// Paper Store engine (Wave E6, sub-cluster 3) — the base
+		// `paper-store-init.php` owns the same tool registration monolith.
+		if ( class_exists( 'NvoosContentGraphAi\Engine\PaperStore\PaperStoreBootstrap' ) ) {
+			\NvoosContentGraphAi\Engine\PaperStore\PaperStoreBootstrap::register();
+		}
+
+		// OKF engine (Wave E6, sub-cluster 4) — the base `okf-init.php`
+		// owns the same tool registration + generator hooks monolith.
+		if ( class_exists( 'NvoosContentGraphAi\Engine\Okf\OkfBootstrap' ) ) {
+			\NvoosContentGraphAi\Engine\Okf\OkfBootstrap::register();
+		}
+
+		// Crawl4AI coordinator (Wave E6, sub-cluster 5) — the base plugin
+		// bootstrap owns the same cron-hook registration monolith.
+		if ( class_exists( 'NvoosContentGraphAi\Engine\Crawler\Crawler' ) ) {
+			\NvoosContentGraphAi\Engine\Crawler\Crawler::init();
+		}
 	}
 
 	/**

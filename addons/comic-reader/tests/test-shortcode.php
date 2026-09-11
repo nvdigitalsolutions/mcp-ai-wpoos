@@ -62,8 +62,9 @@ class Test_Comic_Reader_Shortcode extends WP_UnitTestCase {
 	 */
 	public function test_shortcode_with_comic_id() {
 		$output = do_shortcode( '[nvoos_comic_reader id="42"]' );
+		// The config JSON is HTML-escaped by esc_attr() in the container.
 		$this->assertStringContainsString(
-			'"comicId":42',
+			'&quot;comicId&quot;:42',
 			$output,
 			'Shortcode should pass comic ID in config.'
 		);
@@ -77,7 +78,7 @@ class Test_Comic_Reader_Shortcode extends WP_UnitTestCase {
 	public function test_shortcode_sanitizes_direction() {
 		$output = do_shortcode( '[nvoos_comic_reader direction="rtl"]' );
 		$this->assertStringContainsString(
-			'"direction":"rtl"',
+			'&quot;direction&quot;:&quot;rtl&quot;',
 			$output,
 			'Shortcode should accept valid direction values.'
 		);
@@ -91,7 +92,7 @@ class Test_Comic_Reader_Shortcode extends WP_UnitTestCase {
 	public function test_shortcode_rejects_invalid_direction() {
 		$output = do_shortcode( '[nvoos_comic_reader direction="invalid"]' );
 		$this->assertStringContainsString(
-			'"direction":"ltr"',
+			'&quot;direction&quot;:&quot;ltr&quot;',
 			$output,
 			'Shortcode should fall back to default direction for invalid values.'
 		);

@@ -165,9 +165,10 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Calendar_Scopes' ) ) {
 				),
 				self::PROFILE_STANDARD => array(
 					'label'                 => __( 'Standard — read/write events on your calendars (Google review required)', 'mcp-ai-wpoos' ),
-					'description'           => __( 'NV oOS can create, read, update, and delete events on your existing calendars. Uses sensitive scopes, so a published Google Cloud project must pass OAuth app verification (typically 3-5 business days).', 'mcp-ai-wpoos' ),
+					'description'           => __( 'NV oOS can create, read, update, and delete events on your existing calendars and check your free/busy availability. Uses sensitive scopes, so a published Google Cloud project must pass OAuth app verification (typically 3-5 business days).', 'mcp-ai-wpoos' ),
 					'scopes'                => array(
 						self::SCOPE_EVENTS,
+						self::SCOPE_FREEBUSY,
 						self::SCOPE_CALENDARLIST_READONLY,
 					),
 					'requires_verification' => true,

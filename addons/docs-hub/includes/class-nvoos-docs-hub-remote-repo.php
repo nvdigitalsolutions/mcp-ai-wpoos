@@ -774,7 +774,7 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 			}
 			$key  = $this->local_cache_key( $owner, $repo, $resolved_ref, $rel );
 			$path = $this->local_cache_path( $key );
-			if ( file_exists( $path ) && is_file( $path ) && @unlink( $path ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			if ( file_exists( $path ) && is_file( $path ) && wp_delete_file( $path ) ) {
 				++$deleted;
 			}
 		}
@@ -870,6 +870,7 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 		$resolve_entry = $host . ':' . $port . ':' . ( $is_ipv6 ? '[' . $resolved_ip . ']' : $resolved_ip );
 		$curl_pin      = static function ( $handle ) use ( $resolve_entry ) {
 			if ( is_resource( $handle ) || ( is_object( $handle ) && $handle instanceof \CurlHandle ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt -- wp_remote_get() cannot pin DNS; CURLOPT_RESOLVE is the DNS-rebind defence.
 				curl_setopt( $handle, CURLOPT_RESOLVE, array( $resolve_entry ) );
 			}
 		};

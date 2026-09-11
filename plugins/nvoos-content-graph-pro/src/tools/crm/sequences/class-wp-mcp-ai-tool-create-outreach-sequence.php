@@ -1,0 +1,180 @@
+<?php
+/**
+ * Create Outreach Sequence Tool (ecosystem port — Wave F2, CRM sequences
+ * batch).
+ *
+ * Ported from the base Pro addon's
+ * `addons/pro/includes/tools/crm/sequences/class-wp-mcp-ai-tool-create-outreach-sequence.php`
+ * for the standalone `nvoos-content-graph-pro` addon. Kept
+ * byte-identical. The base Pro addon owns the class in monolith
+ * installs — the addon's autoloader skips its copy when
+ * `WP_MCP_AI_PRO_PATH` is defined (see the plugin entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain
+ * `nvoos-content-graph-pro`.
+ *
+ * @package NvoosContentGraphPro
+ * @since 2.3.0
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Create Outreach Sequence tool.
+ *
+ * @since 2.3.0
+ */
+class WP_MCP_AI_Tool_Create_Outreach_Sequence implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public static function is_available() {
+		$s = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $s['enable_crm_toolkit'] );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public static function get_unavailable_reason() {
+		return __( 'CRM Toolkit required.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_slug() {
+		return 'create_outreach_sequence';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Create Outreach Sequence', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_description() {
+		return __( 'Define a multi-step outreach cadence with channel, timing, and branching rules.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_parameters_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'name'        => array( 'type' => 'string' ),
+				'description' => array( 'type' => 'string' ),
+				'steps'       => array(
+					'type'  => 'array',
+					'items' => array(
+						'type'       => 'object',
+						'properties' => array(
+							'channel'         => array(
+								'type' => 'string',
+								'enum' => WP_MCP_AI_CRM_Codes::CHANNELS,
+							),
+							'template_id'     => array( 'type' => 'string' ),
+							'wait_hours'      => array(
+								'type'    => 'integer',
+								'default' => 24,
+							),
+							'branch_on_reply' => array(
+								'type'    => 'boolean',
+								'default' => true,
+							),
+						),
+					),
+				),
+			),
+			'required'   => array( 'name', 'steps' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function requires_base_pro() {
+		return true;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array( 'pro', 'database-write', 'requires-capability' );
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context including user_id.
+	 * @return array|WP_Error
+	 */
+	public function execute( array $arguments = array(), array $context = array() ) {
+		if ( ! self::is_available() ) {
+			return new WP_Error( 'unavailable', self::get_unavailable_reason() );
+		}
+		$uid = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {
+			return new WP_Error( 'forbidden', __( 'Permission denied.', 'nvoos-content-graph-pro' ) );
+		}
+		$name  = sanitize_text_field( $arguments['name'] );
+		$steps = $arguments['steps'] ?? array();
+		if ( empty( $steps ) ) {
+			return new WP_Error( 'no_steps', __( 'At least one step is required.', 'nvoos-content-graph-pro' ) );
+		}
+		// Sanitise steps.
+		$clean = array();
+		foreach ( $steps as $i => $s ) {
+			$clean[] = array(
+				'order'           => $i + 1,
+				'channel'         => sanitize_key( $s['channel'] ?? 'email' ),
+				'template_id'     => sanitize_key( $s['template_id'] ?? '' ),
+				'wait_hours'      => absint( $s['wait_hours'] ?? 24 ),
+				'branch_on_reply' => ! empty( $s['branch_on_reply'] ),
+			);
+		}
+		$seq_id = wp_insert_post(
+			array(
+				'post_type'    => 'mcp_ai_sequence',
+				'post_title'   => $name,
+				'post_content' => sanitize_textarea_field( $arguments['description'] ?? '' ),
+				'post_status'  => 'publish',
+			),
+			true
+		);
+		if ( is_wp_error( $seq_id ) ) {
+			return $seq_id;
+		}
+		update_post_meta( $seq_id, 'steps', $clean );
+		update_post_meta( $seq_id, 'step_count', count( $clean ) );
+		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
+			WP_MCP_AI_CRM_Audit::record( 'sequence_created', 'sequence', $seq_id );
+		}
+		return array(
+			'success'     => true,
+			'message'     => __( 'Sequence created.', 'nvoos-content-graph-pro' ),
+			'sequence_id' => $seq_id,
+			'step_count'  => count( $clean ),
+		);
+	}
+}

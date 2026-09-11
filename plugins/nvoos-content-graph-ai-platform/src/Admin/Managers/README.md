@@ -1,0 +1,247 @@
+# Managers
+
+## Purpose
+
+Wave E-UI-2 port surface. Holds the base operator **manager pages** as
+they land — approvals UI, token manager, cron manager, DAG builder,
+DLQ manager, media-library columns, asset inventory — each an aligned
+port of the matching `WP_MCP_AI_Admin_*` class in the base plugin's
+`includes/admin/`. Sub-cluster 1 (`ApprovalsManager`) is the aligned
+port of `WP_MCP_AI_Admin_Approvals`: byte-identical page slug
+(`mcp-ai-approvals`) with the pending-count awaiting-mod badge menu
+title, the two AJAX actions (`wp_mcp_ai_list_approvals`,
+`wp_mcp_ai_resolve_approval`), the `wpMcpAiApprovals` localized
+config envelope (nine-string i18n block), the toolbar + assistant
+filter + seven-column table render surface, the pending-count probe,
+and the list/resolve AJAX flows (requester display-name + date
+enrichment, approve/deny transitions with notes). Sub-cluster 2
+(`TokenManager`) is the aligned port of
+`WP_MCP_AI_Admin_Token_Manager`: byte-identical page slug
+(`wp-mcp-ai-token-manager`), the two `admin_post_*` handlers
+(revoke/delete with per-token nonces), the inline-stylesheet enqueue
++ `restrictions-admin.js` asset with the `wpMcpAiRestrictionsAdmin`
+envelope, the intro / restricted-users panel / action notices /
+statistics cards / credentials table / empty state / security-note
+render surface, the credentials listing (newest-first via
+`_sort_timestamp`), the statistics shape
+(total/active/revoked/assistants), the user display-name helper, and
+the revoke/delete redirect flows. Its credentials store resolves per
+mode via the `credentials_class()` seam (base `WP_MCP_AI_Credentials`
+monolith / null standalone — documented empty-state + `action=error`
+redirect degradation); the restrictions panel probe is boot-gated.
+Sub-cluster 3 (`CronManagerPage`) is the aligned port of
+`WP_MCP_AI_Admin_Cron_Manager`: byte-identical page slug
+(`wp-mcp-ai-cron-manager`) and nonce action
+(`wp_mcp_ai_cron_manager`), the `admin_post_wp_mcp_ai_delete_cron`
+delete handler with per-job nonces, the
+`wp_ajax_wp_mcp_ai_get_cron_manager_stats` stats handler, the
+inline-stylesheet + shared monitor stylesheet + `admin-cron-manager.js`
+asset enqueues with the `wpMcpAiCronManager` localized envelope, the
+auto-refresh controls, the retention-period intro, the updated/error
+notices, the statistics cards, the eight-column jobs table (status
+pill, next-run human time, schedule-type pill, pretty-printed args,
+creator, created-at, per-row delete form), the empty state, the
+DLQ/SLA job-queue-health section (incl. the tier table + tuning
+recommendations), the job-store section, and the delete/redirect
+flow. Its collaborators resolve per mode: the runtime cron manager
+(base `WP_MCP_AI_Cron_Manager` monolith / platform
+`Queues\CronManager` standalone), the DLQ stats (base
+`WP_MCP_AI_Dead_Letter_Queue` / platform `Queues\DeadLetterQueue`),
+the SLA stats (base `WP_MCP_AI_SLA_Manager` / platform
+`Queues\SlaManager`), the job store (base `WP_MCP_AI_Job_Store`
+monolith / null standalone — section hidden, documented), and the
+retention period (base `WP_MCP_AI_Settings_Registry` monolith / the
+`wp_mcp_ai_settings` option standalone). Sub-cluster 4 (`DagBuilder`)
+is the aligned port of `WP_MCP_AI_Admin_DAG_Builder`: byte-identical
+page slug (`wp-mcp-ai-dag-builder`), the `mcpAiDagBuilder` localized
+envelope (ajaxUrl/restUrl/wp_rest nonce/workflowId/version), the
+workflow list sidebar (New Workflow button, version badges, Edit/Run
+actions, empty state), the canvas root with the resolved workflow id,
+and the query-string workflow-id resolution with CPT ownership check
+(deduplicated into the `resolve_workflow_id()` helper — additive). Its
+workflow CPT resolves per mode (base `WP_MCP_AI_Workflow_CPT`
+monolith / platform `Workflows\WorkflowCpt` standalone — byte-identical
+`CPT`/`META_VERSION` constants, the E1 port; null → `workflow_id`
+degrades to 0, documented guard). Sub-cluster 5 (`DlqManager`) is the
+aligned port of `WP_MCP_AI_Admin_DLQ_Manager`: byte-identical page slug
+(`wp-mcp-ai-dlq-manager`), the `admin_post_wp_mcp_ai_dlq_bulk_action`
+and `admin_post_wp_mcp_ai_dlq_single_action` handlers with their nonce
+actions, the inline-stylesheet enqueue (`wp-mcp-ai-dlq-inline`), the
+intro / notices / statistics cards / filter form / seven-column items
+table (type badge, identifier, failure reason, retry count, human-time
+added, per-row retry/dismiss/delete links) / empty state render
+surface, the bulk-action processed/errors redirect envelope, the
+single-action success/error redirect envelopes, the type-badge and
+item-action helpers, and the page-URL builder. Its dead-letter queue
+resolves per mode (base `WP_MCP_AI_Dead_Letter_Queue` monolith /
+platform `Queues\DeadLetterQueue` standalone — byte-compatible static
+`get_all()`/`get_stats()`/`retry()`/`dismiss()`/`remove()` contract,
+the E2 port; null → empty listing + zeroed stats, documented guard).
+Sub-cluster 6 (`MediaLibraryColumns`) is the aligned port of
+`WP_MCP_AI_Admin_Media_Library_Columns`: byte-identical singleton
+contract (`get_instance()`/`init()`), `_wp_mcp_ai_usage` meta key, the
+`wp_mcp_ai_usage` AI Usage column, the no-usage dash and the
+tokens/cost/operations badge render surface, the token-count and cost
+formatters, the attachment-usage reader, the per-attachment usage
+tracker (`wp_mcp_ai_after_tool_execution`, image-tool allowlist,
+argument/result attachment-id extraction, accumulation with per-tool
+counts, provider/model stamps), and the media-page-only inline
+stylesheet. The cost calculator is base-owned (monolith-only —
+standalone cost stays 0.0, documented); the constructor wiring is
+extracted into a protected `wire_hooks()` (additive — wp-phpunit hook
+snapshot restore, documented); wiring invoked standalone-only via
+`Plugin::registerManagers()` (the base loader owns the same integration
+monolith). Sub-cluster 7 (`AssetInventoryPage`, final) is the aligned
+port of `WP_MCP_AI_Asset_Inventory_Admin`: byte-identical page slug
+(`nvoos-asset-inventory`), the `wpMcpAiAssetInventory` localized
+envelope (wp_rest nonce, `mcp-ai/v1/assets` REST apiUrl, four-string
+i18n block), the Discover Assets action, the stats grid, the
+classification/type filter selects, the six-column assets table
+(classification badges, data-* attributes), the empty state, and the
+ISO 27001 A.5.9 about section. Its collaborators resolve per mode
+(base `WP_MCP_AI_Asset_Inventory` monolith / null standalone — the
+engine is not yet ported, empty-state degradation documented; the
+fleet capability via the base helper monolith / an inline replication
+of the same default + filter standalone).
+
+## Tier
+
+| | |
+|---|---|
+| **Distribution** | Platform addon (`nvoos-content-graph-ai-platform`) — proprietary |
+| **PHP target** | 8.1+ |
+| **License** | Proprietary (commercial license required) |
+| **Loaded by** | `NvoosContentGraphAiPlatform\Plugin::registerManagers()` — standalone-only (`! defined('WP_MCP_AI_PATH')`) |
+| **Optional dependencies** | None (approval posts + postmeta) |
+
+## Public Surface
+
+| Symbol | File | Used by |
+|---|---|---|
+| `NvoosContentGraphAiPlatform\Admin\Managers\ApprovalsManager` | `ApprovalsManager.php` | `Plugin::registerManagers()` — standalone menu/enqueue/AJAX wiring |
+| `NvoosContentGraphAiPlatform\Admin\Managers\TokenManager` | `TokenManager.php` | `Plugin::registerManagers()` — standalone menu/enqueue/admin-post wiring |
+| `NvoosContentGraphAiPlatform\Admin\Managers\CronManagerPage` | `CronManagerPage.php` | `Plugin::registerManagers()` — standalone menu/enqueue/admin-post/AJAX wiring |
+| `NvoosContentGraphAiPlatform\Admin\Managers\DagBuilder` | `DagBuilder.php` | `Plugin::registerManagers()` — standalone menu/enqueue wiring |
+| `NvoosContentGraphAiPlatform\Admin\Managers\DlqManager` | `DlqManager.php` | `Plugin::registerManagers()` — standalone menu/enqueue/admin-post wiring |
+| `NvoosContentGraphAiPlatform\Admin\Managers\MediaLibraryColumns` | `MediaLibraryColumns.php` | `Plugin::registerManagers()` — standalone media-column/tracking/style wiring (singleton `init()`) |
+| `NvoosContentGraphAiPlatform\Admin\Managers\AssetInventoryPage` | `AssetInventoryPage.php` | `Plugin::registerManagers()` — standalone menu/enqueue wiring |
+
+## Inputs / Outputs / Neighbors
+
+- **Reads from:** the per-mode approval queue
+  (`Approvals\ApprovalQueue` — the E3 port), assistant posts for the
+  filter dropdown, the current user (requester display names), the
+  per-mode cron manager / DLQ / SLA / job-store collaborators
+  (sub-cluster 3), WP-Cron scheduling state, the `wp_mcp_ai_settings`
+  option (standalone retention + SLA tuning)
+- **Writes to:** approval transitions (approve/deny via the resolved
+  queue), cron-job removals (delete handler — option store + WP-Cron
+  unscheduling), AJAX JSON envelopes (list/resolve/stats)
+- **Upstream callers:** `Plugin::registerManagers()` (standalone menu
+  mounting under `PlatformDashboard::PAGE_SLUG`), admin `wp_ajax_*`
+  requests
+- **Downstream consumers:** the base admin loader owns the same page
+  monolith (the ported class stays unwired there)
+
+## Conventions
+
+- Per-mode discriminator is always `defined( 'WP_MCP_AI_PATH' )` —
+  never bare `class_exists()` for base-owned classes. Collaborators
+  resolve through `protected static` seams (the approval queue is the
+  first: base `WP_MCP_AI_Approval_Queue` monolith / platform
+  `Approvals\ApprovalQueue` standalone).
+- These are the operational **manager** pages (approvals, token,
+  cron, DAG, DLQ…), distinct from the E-UI-1 **dashboards** — same
+  submenu-mounting discipline, one ported page per sub-cluster.
+- Own assets live in the platform `assets/` tree (byte-identical
+  copies of the base files).
+
+## Tests
+
+- `tests/test-approvals-manager.php` — characterization suite
+  covering the byte-identical slug/nonce/action names, per-mode menu
+  registration (incl. the pending-count badge), register idempotence,
+  the per-mode approval-queue seam, the pending-count probe (real
+  enqueued posts), the render output + capability gate, the AJAX
+  nonce/capability gates, the list payload enrichment, the
+  the approve/deny/invalid envelopes, and the per-mode asset enqueues.
+  Runs in both matrices.
+- `tests/test-token-manager.php` — characterization suite covering
+  the byte-identical page slug + admin_post action names, per-mode
+  menu registration, register idempotence, the credentials-store
+  seam, the credentials listing (monolith seeded via the base store;
+  standalone empty), the statistics shape, the display-name helper,
+  the render surface per mode (restrictions panel + table vs empty
+  state), the silent non-manager render, the revoke/delete capability
+  + missing-identifier gates, the per-mode redirect envelopes
+  (intercepted via the `wp_redirect` filter), and the per-mode asset
+  enqueues. Runs in both matrices.
+- `tests/test-cron-manager-page.php` — characterization suite
+  covering the byte-identical page slug + nonce action, per-mode menu
+  registration, register idempotence, the per-mode
+  cron/DLQ/SLA/job-store/retention seams, the byte-identical DLQ
+  cross-link, the statistics shape (mixed scheduled/unscheduled
+  jobs), the render surface per mode (auto-refresh + intro + health
+  section + empty state vs seeded jobs table), the silent
+  non-manager render, the updated-notice surfaces, the delete
+  capability/missing-id/nonce gates, the per-mode delete redirect
+  envelopes (success + unknown-job, intercepted via the `wp_redirect`
+  filter), the AJAX nonce/capability gates, the AJAX success payload
+  (stats/jobs/dlq/job-store shape), and the per-mode asset enqueues.
+  Runs in both matrices.
+- `tests/test-dag-builder.php` — characterization suite covering the
+  byte-identical page slug, per-mode menu registration, register
+  idempotence (hook-registry dedup delta), the per-mode workflow-CPT
+  seam, the query-string workflow-id resolution (default/reject/
+  accept), the non-manager render gate (wp_die), the empty + seeded
+  render surface (sidebar, version badges, is-active marker, canvas
+  root attribute, version fallback), and the per-mode asset enqueues
+  with the `mcpAiDagBuilder` envelope (incl. per-workflow version
+  resolution). Runs in both matrices.
+- `tests/test-dlq-manager.php` — characterization suite covering the
+  byte-identical page slug + admin_post action names, per-mode menu
+  registration, register idempotence, the per-mode dead-letter-queue
+  seam, the page-URL builder, the type-badge and item-action helpers
+  (incl. the dismissed-item link suppression), the non-manager render
+  gate (silent), the empty + seeded render surface, the notices/
+  statistics/filters sub-renders, the bulk-action capability/nonce/
+  missing-params gates and the dismiss/delete/retry redirect
+  envelopes (processed+errors counts), the single-action
+  capability/missing-params/nonce gates and the dismiss/delete
+  success + retry error-code envelopes, and the inline-stylesheet
+  enqueue. Runs in both matrices against the real DLQ table (E2
+  DDL-suspension pattern).
+- `tests/test-media-library-columns.php` — characterization suite
+  covering the byte-identical meta key, the singleton contract, the
+  AI Usage column, the no-usage dash + badge render surface, the
+  token-count and cost formatters, the attachment-usage reader (null
+  degradations), the usage tracker (allowlist, argument/result id
+  extraction, accumulation, provider/model stamps, per-mode cost),
+  the admin-context hook wiring (exposer re-arm against the
+  wp-phpunit hook-snapshot restore), and the media-page-only
+  stylesheet enqueue. Runs in both matrices.
+- `tests/test-asset-inventory-page.php` — characterization suite
+  covering the byte-identical page slug, per-mode menu registration
+  (fleet capability), register idempotence (hook-registry dedup
+  delta), the per-mode engine/capability seams, the inventory
+  resolution shape per mode, the render surface (Discover Assets,
+  empty state both modes, seeded table monolith — stats grid,
+  badges, data-* attributes, filters, last-updated), and the
+  per-mode asset enqueues with the `wpMcpAiAssetInventory` envelope
+  (incl. the base hook-suffix gate). Runs in both matrices.
+
+## Also Load
+
+- [`../Dashboards/README.md`](../Dashboards/README.md) — the E-UI-1
+  dashboard family (same submenu-mounting discipline)
+- [`../../Approvals/README.md`](../Approvals/README.md) — the
+  approval queue these pages manage
+- [`../../Plugin.php`](../Plugin.php) — `registerManagers()` wiring
+- [`../../../../.context/conventions.md`](../../../../.context/conventions.md) — naming + style
+- [`../../../../.context/security-checklist.md`](../../../../.context/security-checklist.md) — escaping + capability checks
+
+## See Also
+
+- Base originals: `includes/admin/class-wp-mcp-ai-admin-approvals.php` (sub-cluster 1), `class-wp-mcp-ai-admin-token-manager.php`, `class-wp-mcp-ai-admin-cron-manager.php`, `class-wp-mcp-ai-admin-dag-builder.php`, `class-wp-mcp-ai-admin-dlq-manager.php`, `class-wp-mcp-ai-admin-media-library-columns.php`, `class-wp-mcp-ai-asset-inventory-admin.php`
+- [`docs/project/plans/ecosystem-port-cluster-loop.md`](../../../../docs/project/plans/ecosystem-port-cluster-loop.md) — cluster ordering + pipeline
+- [`docs/project/ecosystem-port-tracker.md`](../../../../docs/project/ecosystem-port-tracker.md) — E-UI-2 row status

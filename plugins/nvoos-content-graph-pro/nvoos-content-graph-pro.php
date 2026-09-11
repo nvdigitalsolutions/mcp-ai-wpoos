@@ -1,0 +1,272 @@
+<?php
+/**
+ * Plugin Name:  NV oOS Content Graph — Pro
+ * Plugin URI:   https://github.com/nvdigitalsolutions/nvoos-content-graph-pro
+ * Description:  Pro toolkit layer for NV oOS Content Graph. Adds the Pro module registry, password vault, vector storage, skills manager, toolkit data-store factory, and privacy APIs on top of the AI Platform addon.
+ * Version:      1.0.0
+ * Requires at least: 6.5
+ * Requires PHP: 8.1
+ * Requires Plugins: nvoos-content-graph, nvoos-content-graph-ai, nvoos-content-graph-ai-platform
+ * Author:       NV Digital Solutions
+ * Author URI:   https://nvdigitalsolutions.com
+ * License:      Proprietary
+ * License URI:  https://nvdigitalsolutions.com/license
+ * Text Domain:  nvoos-content-graph-pro
+ * Domain Path:  /languages
+ *
+ * @package NvoosContentGraphPro
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+define( 'NVOOS_CONTENT_GRAPH_PRO_VERSION', '1.0.0' );
+define( 'NVOOS_CONTENT_GRAPH_PRO_FILE', __FILE__ );
+define( 'NVOOS_CONTENT_GRAPH_PRO_PATH', plugin_dir_path( __FILE__ ) );
+define( 'NVOOS_CONTENT_GRAPH_PRO_URL', plugin_dir_url( __FILE__ ) );
+
+// Autoloader — Composer primary, spl fallback.
+$nvoos_content_graph_pro_autoload = NVOOS_CONTENT_GRAPH_PRO_PATH . 'vendor/autoload.php';
+if ( file_exists( $nvoos_content_graph_pro_autoload ) ) {
+	require_once $nvoos_content_graph_pro_autoload;
+}
+
+spl_autoload_register(
+	static function ( string $fqcn ): void {
+		// Namespaced composition root.
+		$nvoos_content_graph_pro_ns = 'NvoosContentGraphPro\\';
+		if ( 0 === strpos( $fqcn, $nvoos_content_graph_pro_ns ) ) {
+			$nvoos_content_graph_pro_relative = substr( $fqcn, strlen( $nvoos_content_graph_pro_ns ) );
+			$nvoos_content_graph_pro_file     = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/' . str_replace( '\\', '/', $nvoos_content_graph_pro_relative ) . '.php';
+			if ( file_exists( $nvoos_content_graph_pro_file ) ) {
+				require_once $nvoos_content_graph_pro_file;
+			}
+			return;
+		}
+
+		// Ported Pro classes keep their global WP_MCP_AI_* names so the
+		// public surface stays byte-identical with the base Pro addon
+		// (which owns the same classes in monolith installs — see
+		// plugins/nvoos-content-graph-pro/README.md §Modes).
+		if ( 0 !== strpos( $fqcn, 'WP_MCP_AI_' ) ) {
+			return;
+		}
+		if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			// Monolith mode: the base Pro addon owns these classes.
+			return;
+		}
+
+		// Ported files mirror the base addon's includes/ layout; scan the
+		// known subtree roots (extend this list as new waves land). `class-`,
+		// `interface-`, and `trait-` file prefixes are probed. Interface and
+		// trait files drop the `_Interface`/`_Trait` FQCN suffix (the
+		// prefix carries it in the filename, e.g.
+		// `interface-wp-mcp-ai-toolkit-server.php`).
+		$nvoos_content_graph_pro_file_name = strtolower( str_replace( '_', '-', preg_replace( '/_(Interface|Trait)$/', '', $fqcn ) ) ) . '.php';
+		$nvoos_content_graph_pro_subdirs   = array(
+			'src/',
+			'src/adapters/',
+			'src/admin/',
+			'src/admin/remote-capabilities/',
+			'src/calendar-booking/',
+			'src/data-stores/',
+			'src/interfaces/',
+			'src/mcp-servers/',
+			'src/mcp-servers/servers/',
+			'src/metaboxes/',
+			'src/para/',
+			'src/research-add/',
+			'src/rest/',
+			'src/services/',
+			'src/tools/',
+			'src/tools/calendar-booking/',
+			'src/tools/capture/',
+			'src/tools/crm/',
+			'src/tools/crm/activities/',
+			'src/tools/crm/analytics/',
+			'src/tools/crm/command-center/',
+			'src/tools/crm/compliance/',
+			'src/tools/crm/customers/',
+			'src/tools/crm/deals/',
+			'src/tools/crm/examples/',
+			'src/tools/crm/icp/',
+			'src/tools/crm/inbound/',
+			'src/tools/crm/leads/',
+			'src/tools/crm/linkedin/',
+			'src/tools/crm/outbound/',
+			'src/tools/crm/routing/',
+			'src/tools/crm/sequences/',
+			'src/tools/crm/upwork/',
+			'src/tools/ecommerce/',
+			'src/tools/project-management/',
+			'src/tools/project-management/analytics/',
+			'src/tools/project-management/command-center/',
+			'src/tools/project-management/examples/',
+			'src/tools/project-management/reports/',
+			'src/tools/project-management/risk/',
+			'src/tools/project-management/sprints/',
+			'src/tools/project-management/templates/',
+			'src/tools/project-management/workflow/',
+			'src/tools/remote-connections/',
+			'src/tools/video-production/',
+			'src/tools/video-production/examples/',
+			'src/tools/analytics/',
+			'src/tools/analytics/examples/',
+			'src/tools/multilingual/',
+			'src/tools/multilingual/examples/',
+			'src/cloudways/',
+			'src/tools/cloudways/',
+			'src/tools/dj-management/',
+			'src/tools/dj-management/examples/',
+			'src/tools/image-production/',
+			'src/tools/image-production/examples/',
+			'src/tools/image-production/harmonization/',
+			'src/tools/comic-creation/',
+			'src/tools/comic-creation/examples/',
+			'src/tools/ai-tool-builder/',
+			'src/tools/ai-tool-builder/examples/',
+			'src/tools/architect-agent/',
+			'src/tools/architectural-design/',
+			'src/tools/architectural-design/analysis-compliance/',
+			'src/tools/architectural-design/documentation/',
+			'src/tools/architectural-design/estimation-scheduling/',
+			'src/tools/architectural-design/examples/',
+			'src/tools/architectural-design/floor-planning/',
+			'src/tools/architectural-design/interoperability/',
+			'src/tools/architectural-design/precedents/',
+			'src/tools/architectural-design/project-delivery/',
+			'src/tools/architectural-design/regional-compliance/',
+			'src/tools/architectural-design/sustainability/',
+			'src/tools/architectural-design/visualization/',
+			'src/tools/site-creator-toolkit/',
+			'src/tools/site-creator-toolkit/examples/',
+			'src/site-creator-toolkit/',
+			'src/tools/document-generation/',
+			'src/tools/document-generation/examples/',
+			'src/tools/regulatory-registration/',
+			'src/tools/regulatory-registration/examples/',
+			'src/tools/healthcare/',
+			'src/tools/healthcare/wellness/',
+			'src/tools/healthcare/wellness/allergies/',
+			'src/tools/healthcare/wellness/checkups/',
+			'src/tools/healthcare/wellness/medical-records/',
+			'src/tools/healthcare/wellness/members/',
+			'src/tools/healthcare/wellness/policies/',
+			'src/tools/healthcare/wellness/prescriptions/',
+			'src/tools/healthcare/wellness/reminders-research/',
+			'src/tools/healthcare/vitals/',
+			'src/tools/healthcare/imaging/',
+			'src/tools/healthcare/interop/',
+			'src/tools/healthcare/examples/',
+			'src/tools/law-firm/',
+			'src/tools/law-firm/billing-trust/',
+			'src/tools/law-firm/compliance-ethics/',
+			'src/tools/law-firm/document-automation/',
+			'src/tools/law-firm/examples/',
+			'src/tools/law-firm/intake-management/',
+			'src/tools/law-firm/litigation-support/',
+			'src/tools/law-firm/matter-management/',
+			'src/tools/law-firm/research-analytics/',
+			'src/tools/cre-debt/',
+			'src/tools/cre-debt/asset-management/',
+			'src/tools/cre-debt/cmbs/',
+			'src/tools/cre-debt/debt-fund/',
+			'src/tools/cre-debt/examples/',
+			'src/tools/cre-debt/originations/',
+			'src/tools/cre-debt/underwriting/',
+			'src/tools/quiz-management/',
+			'src/tools/math/',
+			'src/eca/',
+			'src/tools/eca-management/',
+			'src/tools/eca-management/examples/',
+			'src/ChatChannels/',
+			'src/tools/chat-channels/',
+			'src/tools/chat-channels/examples/',
+			'src/metaboxes/places/',
+			'src/tools/places/',
+			'src/migrations/',
+			'src/qms/',
+			'src/helpers/',
+			'src/tools/orchestration/',
+			'src/tools/financial-planning/',
+			'src/tools/financial-planning/examples/',
+			'src/tools/social-media/',
+			'src/tools/vault/',
+			'src/tools/vector-storage/',
+			'src/traits/',
+			'src/vault/',
+		);
+		foreach ( $nvoos_content_graph_pro_subdirs as $nvoos_content_graph_pro_subdir ) {
+			foreach ( array( 'class-', 'interface-', 'trait-' ) as $nvoos_content_graph_pro_prefix ) {
+				$nvoos_content_graph_pro_file = NVOOS_CONTENT_GRAPH_PRO_PATH . $nvoos_content_graph_pro_subdir . $nvoos_content_graph_pro_prefix . $nvoos_content_graph_pro_file_name;
+				if ( file_exists( $nvoos_content_graph_pro_file ) ) {
+					require_once $nvoos_content_graph_pro_file;
+					return;
+				}
+			}
+		}
+	}
+);
+
+// ─── Boot — runs after the AI addon (priority 5) and Platform addon (priority 10).
+add_action(
+	'plugins_loaded',
+	static function (): void {
+		// Monolith mode: the base plugin's Pro addon (addons/pro) owns every
+		// Pro subsystem — booting this addon too would redeclare the same
+		// classes and double-run CPT/REST/tool wiring.
+		if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			return;
+		}
+
+		// Activation guard: nvoos-content-graph must be active.
+		if ( ! function_exists( 'nvoos_content_graph_is_enabled' ) ) {
+			add_action(
+				'admin_notices',
+				static function (): void {
+					printf(
+						'<div class="notice notice-error"><p>%s</p></div>',
+						esc_html__( 'NV oOS Content Graph — Pro requires the NV oOS Content Graph core plugin to be installed and activated.', 'nvoos-content-graph-pro' )
+					);
+				}
+			);
+			return;
+		}
+
+		// Activation guard: nvoos-content-graph-ai must be active.
+		if ( ! class_exists( 'NvoosContentGraphAi\\Plugin' ) ) {
+			add_action(
+				'admin_notices',
+				static function (): void {
+					printf(
+						'<div class="notice notice-error"><p>%s</p></div>',
+						esc_html__( 'NV oOS Content Graph — Pro requires the NV oOS Content Graph — AI addon to be installed and activated.', 'nvoos-content-graph-pro' )
+					);
+				}
+			);
+			return;
+		}
+
+		// Activation guard: nvoos-content-graph-ai-platform must be active.
+		if ( ! class_exists( 'NvoosContentGraphAiPlatform\\Plugin' ) ) {
+			add_action(
+				'admin_notices',
+				static function (): void {
+					printf(
+						'<div class="notice notice-error"><p>%s</p></div>',
+						esc_html__( 'NV oOS Content Graph — Pro requires the NV oOS Content Graph — Platform addon to be installed and activated.', 'nvoos-content-graph-pro' )
+					);
+				}
+			);
+			return;
+		}
+
+		if ( class_exists( 'NvoosContentGraphPro\\Plugin' ) ) {
+			\NvoosContentGraphPro\Plugin::instance()->register();
+		}
+	},
+	15
+);

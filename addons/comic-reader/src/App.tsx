@@ -16,6 +16,8 @@ import { PanelGenerator } from './components/creator/PanelGenerator';
 import { ExportPanel } from './components/creator/ExportPanel';
 import { createCreatorComic } from './api/comic-api';
 import type { ComicItem } from './api/comic-api';
+import type { ReaderPrefs } from './types/reader-prefs';
+import { t } from './utils/i18n';
 
 interface AppProps {
 	initialConfig: {
@@ -23,6 +25,8 @@ interface AppProps {
 		mode: 'library' | 'reader';
 		height: string;
 		direction: 'ltr' | 'rtl';
+		defaults?: Partial<ReaderPrefs>;
+		serverProgress?: boolean;
 	};
 }
 
@@ -40,10 +44,9 @@ type CreatorStep = (typeof CREATOR_STEPS)[number]['key'];
 
 export function App({ initialConfig }: AppProps) {
 	const [viewMode, setViewMode] = useState<ViewMode>(
-		initialConfig.comicId ? 'reader' : initialConfig.mode
+			initialConfig.comicId ? 'reader' : initialConfig.mode
 	);
 	const [activeComic, setActiveComic] = useState<ComicItem | null>(null);
-	const [direction, setDirection] = useState<'ltr' | 'rtl'>(initialConfig.direction);
 	const [refreshKey, setRefreshKey] = useState(0);
 
 	// ─── Creator State ─────────────────────────────────────────
@@ -68,10 +71,6 @@ export function App({ initialConfig }: AppProps) {
 	const handleUploadComplete = useCallback(() => {
 		setViewMode('library');
 		setRefreshKey((k) => k + 1);
-	}, []);
-
-	const handleToggleDirection = useCallback(() => {
-		setDirection((d) => (d === 'ltr' ? 'rtl' : 'ltr'));
 	}, []);
 
 	// ─── Creator Handlers ──────────────────────────────────────
@@ -108,11 +107,6 @@ export function App({ initialConfig }: AppProps) {
 			setCreatorStep(step);
 		}
 	}, [creatorStep]);
-
-	const t = (key: string): string => {
-		const i18n = window.NVOOS_COMIC_READER?.i18n || {};
-		return i18n[key] || key;
-	};
 
 	const renderCreatorStep = () => {
 		if (!activeComicId) {
@@ -154,7 +148,7 @@ export function App({ initialConfig }: AppProps) {
 		<div
 			className="nvoos-cr-app"
 			style={initialConfig.height ? { minHeight: initialConfig.height } : undefined}
-			dir={direction}
+			dir={initialConfig.direction}
 		>
 			<header className="nvoos-cr-toolbar">
 				<h1 className="nvoos-cr-title">{t('library')}</h1>
@@ -166,15 +160,6 @@ export function App({ initialConfig }: AppProps) {
 							aria-label={t('library')}
 						>
 							← {t('library')}
-						</button>
-					)}
-					{viewMode === 'reader' && (
-						<button
-							className="nvoos-cr-btn"
-							onClick={handleToggleDirection}
-							aria-label={direction === 'ltr' ? t('readingRtl') : t('readingLtr')}
-						>
-							{direction === 'ltr' ? t('readingRtl') : t('readingLtr')}
 						</button>
 					)}
 					{viewMode === 'creator' && (
@@ -193,14 +178,14 @@ export function App({ initialConfig }: AppProps) {
 						onClick={handleEnterCreator}
 						aria-label={t('create')}
 					>
-						+ Create
+						+ {t('create')}
 					</button>
 					<button
 						className="nvoos-cr-btn nvoos-cr-btn-primary"
 						onClick={() => setViewMode('upload')}
-						aria-label={t('dropHint')}
+						aria-label={t('upload')}
 					>
-						+ Upload
+						+ {t('upload')}
 					</button>
 				</div>
 			</header>
@@ -318,7 +303,14 @@ export function App({ initialConfig }: AppProps) {
 					/>
 				)}
 				{viewMode === 'reader' && activeComic && (
-					<ComixReader comic={activeComic} direction={direction} />
+					<ComixReader
+						comic={activeComic}
+						initialDirection={initialConfig.direction}
+						siteDefaults={initialConfig.defaults}
+						serverProgressEnabled={
+							initialConfig.serverProgress !== false
+						}
+					/>
 				)}
 				{viewMode === 'upload' && (
 					<ComicUploader

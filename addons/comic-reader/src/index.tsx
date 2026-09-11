@@ -9,6 +9,7 @@
 
 import { createRoot, Root } from 'react-dom/client';
 import { App } from './App';
+import type { ReaderPrefs } from './types/reader-prefs';
 import './styles/main.css';
 
 // TypeScript: declare process.env for esbuild define replacement.
@@ -33,6 +34,8 @@ interface ComicReaderConfig {
 	mode: 'library' | 'reader';
 	height: string;
 	direction: 'ltr' | 'rtl';
+	defaults?: Partial<ReaderPrefs>;
+	serverProgress?: boolean;
 }
 
 interface ComicReaderGlobal {

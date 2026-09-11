@@ -115,9 +115,9 @@ class BuildSection extends Section {
 	}
 
 	/**
-	 * Render an upsell card for the AI addon.
+	 * Render an upsell card for the NV oOS Complete bundle.
 	 *
-	 * Shown at the bottom of the Build section when the AI addon
+	 * Shown at the bottom of the Build section when the Complete bundle
 	 * is not active, pointing users to the features they're missing.
 	 *
 	 * @return void
@@ -129,13 +129,13 @@ class BuildSection extends Section {
 				<strong><?php esc_html_e( 'Unlock AI-powered features', 'nvoos-content-graph' ); ?></strong>
 			</p>
 			<p style="margin:0 0 8px;">
-				<?php esc_html_e( 'Install the NV oOS Content Graph — AI addon to enable semantic extraction, AI chat, embeddings, and agent memory for your knowledge graph. Supports 13 AI providers with a single API key.', 'nvoos-content-graph' ); ?>
+				<?php esc_html_e( 'Install the NV oOS Complete bundle to enable semantic extraction, AI chat, embeddings, and agent memory for your knowledge graph. Supports 13 AI providers with a single API key.', 'nvoos-content-graph' ); ?>
 			</p>
 			<p style="margin:0;">
 				<button type="button" class="button button-primary nvoos-content-graph-buy-ai">
-					<?php esc_html_e( 'Get NV oOS Content Graph — AI', 'nvoos-content-graph' ); ?>
+					<?php esc_html_e( 'Get NV oOS Complete', 'nvoos-content-graph' ); ?>
 				</button>
-				<a href="https://github.com/nvdigitalsolutions/nvoos-content-graph-ai" class="button button-link" target="_blank" rel="noopener">
+				<a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos" class="button button-link" target="_blank" rel="noopener">
 					<?php esc_html_e( 'Learn more', 'nvoos-content-graph' ); ?>
 				</a>
 			</p>

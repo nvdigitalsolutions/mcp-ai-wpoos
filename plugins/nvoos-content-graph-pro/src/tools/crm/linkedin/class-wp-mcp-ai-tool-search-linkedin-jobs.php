@@ -1,0 +1,447 @@
+<?php
+/**
+ * Tool for searching LinkedIn job postings via the LinkedIn REST API. (ecosystem port — Wave F2, CRM CC-page extras).
+ *
+ * Ported from the base Pro addon's `addons/pro/includes/tools/crm/linkedin/class-wp-mcp-ai-tool-search-linkedin-jobs.php` for the standalone
+ * `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro
+ * addon owns the class in monolith installs — the addon's autoloader
+ * skips its copy when `WP_MCP_AI_PRO_PATH` is defined (see the plugin
+ * entry).
+ *
+ * Documented deviations: `declare(strict_types=1)` added; text domain
+ * `nvoos-content-graph-pro`; tool-file requires resolve from
+ * `NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/'`.
+ *
+ * @package NvoosContentGraphPro
+ * @since 2.10.0
+ */
+
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Searches LinkedIn for job postings matching specified criteria.
+ *
+ * @since 2.10.0
+ */
+class WP_MCP_AI_Tool_Search_LinkedIn_Jobs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * Determine whether CRM toolkit is enabled.
+	 *
+	 * @since 2.10.0
+	 * @return bool
+	 */
+	public static function is_available() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $settings['enable_crm_toolkit'] ) && class_exists( 'WP_MCP_AI_LinkedIn_Client' );
+	}
+
+	/**
+	 * Message explaining why the tool is unavailable.
+	 *
+	 * @since 2.10.0
+	 * @return string
+	 */
+	public static function get_unavailable_reason() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_crm_toolkit'] ) ) {
+			return __( 'The Search LinkedIn Jobs tool requires the CRM Toolkit to be enabled in plugin settings.', 'nvoos-content-graph-pro' );
+		}
+		return __( 'The Search LinkedIn Jobs tool requires the LinkedIn client integration to be configured.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_slug() {
+		return 'search_linkedin_jobs';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Search LinkedIn Jobs', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_description() {
+		return __( 'Search LinkedIn for job postings matching specified criteria.  Supports keyword, location, and experience-level filters.  Falls back to AI-powered web search when no LinkedIn connection is configured.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_parameters_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'query'            => array(
+					'type'        => 'string',
+					'description' => __( 'Keywords or job title to search for.', 'nvoos-content-graph-pro' ),
+				),
+				'location'         => array(
+					'type'        => 'string',
+					'description' => __( 'Location filter (city, state, country, or "Remote").', 'nvoos-content-graph-pro' ),
+				),
+				'keywords'         => array(
+					'type'        => 'string',
+					'description' => __( 'Additional comma-separated keywords to filter results.', 'nvoos-content-graph-pro' ),
+				),
+				'experience_level' => array(
+					'type'        => 'string',
+					'description' => __( 'Experience level filter.', 'nvoos-content-graph-pro' ),
+					'enum'        => array( 'entry', 'mid_level', 'senior', 'executive' ),
+				),
+				'job_type'         => array(
+					'type'        => 'string',
+					'description' => __( 'Type of employment.', 'nvoos-content-graph-pro' ),
+					'enum'        => array( 'full_time', 'part_time', 'contract', 'temporary', 'volunteer', 'internship' ),
+				),
+				'remote'           => array(
+					'type'        => 'boolean',
+					'description' => __( 'Filter to remote-only positions.', 'nvoos-content-graph-pro' ),
+				),
+				'connection_id'    => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Remote Sites LinkedIn connection ID.  If omitted, the default LinkedIn connection from CRM settings is used.', 'nvoos-content-graph-pro' ),
+				),
+				'limit'            => array(
+					'type'        => 'integer',
+					'description' => __( 'Maximum number of results to return (1–50).', 'nvoos-content-graph-pro' ),
+					'minimum'     => 1,
+					'maximum'     => 50,
+					'default'     => 10,
+				),
+			),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function requires_base_pro() {
+		return true;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'pro',
+			'read-only',
+			'requires-capability',
+			'external-api',
+		);
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context including user_id.
+	 * @return array|WP_Error Tool results or WP_Error on failure.
+	 */
+	public function execute( array $arguments = array(), array $context = array() ) {
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+
+		if ( ! $user_id || ! user_can( $user_id, $this->get_required_capability() ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_forbidden',
+				__( 'You do not have permission to search LinkedIn jobs.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Resolve defaults from CRM toolkit settings when arguments are omitted.
+		$arguments = $this->apply_defaults( $arguments );
+
+		// Determine whether the LinkedIn API is available.
+		$use_api = $this->has_valid_connection( $arguments );
+
+		// Fall back to web search when the LinkedIn connection is not configured.
+		if ( ! $use_api ) {
+			return $this->execute_fallback( $arguments, $context );
+		}
+
+		$connection_id = sanitize_text_field( $arguments['connection_id'] );
+
+		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-linkedin-client.php';
+		$client = new WP_MCP_AI_LinkedIn_Client( $connection_id );
+
+		$filters = array();
+
+		if ( ! empty( $arguments['query'] ) ) {
+			$filters['keywords'] = sanitize_text_field( $arguments['query'] );
+		}
+
+		if ( ! empty( $arguments['location'] ) ) {
+			$filters['location'] = sanitize_text_field( $arguments['location'] );
+		}
+
+		$limit            = isset( $arguments['limit'] ) ? min( 50, max( 1, absint( $arguments['limit'] ) ) ) : 10;
+		$filters['count'] = $limit;
+
+		$result = $client->search_jobs( $filters );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		$elements = isset( $result['elements'] ) ? $result['elements'] : array();
+		$jobs     = array();
+
+		foreach ( $elements as $element ) {
+			$jobs[] = array(
+				'id'          => isset( $element['entityUrn'] ) ? $element['entityUrn'] : '',
+				'title'       => isset( $element['title'] ) ? $element['title'] : '',
+				'company'     => isset( $element['companyDetails']['com.linkedin.common.CompanyAttribution']['company'] )
+					? $element['companyDetails']['com.linkedin.common.CompanyAttribution']['company'] : '',
+				'location'    => isset( $element['formattedLocation'] ) ? $element['formattedLocation'] : '',
+				'posted'      => isset( $element['listedAt'] ) ? $element['listedAt'] : '',
+				'description' => isset( $element['description']['text'] ) ? wp_trim_words( $element['description']['text'], 60 ) : '',
+				'url'         => isset( $element['applyMethod']['com.linkedin.vjobs.CommonExternalJobPosting']['url'] )
+					? $element['applyMethod']['com.linkedin.vjobs.CommonExternalJobPosting']['url'] : '',
+			);
+		}
+
+		$jobs = $this->apply_result_format( $jobs );
+
+		return array(
+			'success' => true,
+			'mode'    => 'api',
+			'count'   => count( $jobs ),
+			'jobs'    => $jobs,
+			'total'   => isset( $result['paging']['total'] ) ? (int) $result['paging']['total'] : count( $jobs ),
+		);
+	}
+
+	/**
+	 * Fill missing search arguments from CRM toolkit settings.
+	 *
+	 * @since 2.12.0
+	 * @param array $arguments Tool arguments.
+	 * @return array Arguments with defaults applied.
+	 */
+	private function apply_defaults( array $arguments ) {
+		if ( ! class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			return $arguments;
+		}
+
+		$crm_settings = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+		$linkedin_cfg = isset( $crm_settings['external_sourcing']['linkedin'] )
+			? $crm_settings['external_sourcing']['linkedin']
+			: array();
+
+		// Resolve the connection_id from defaults if not provided.
+		if ( empty( $arguments['connection_id'] ) && ! empty( $linkedin_cfg['default_connection_id'] ) ) {
+			$arguments['connection_id'] = $linkedin_cfg['default_connection_id'];
+		}
+
+		// Search keywords.
+		if ( empty( $arguments['query'] ) && ! empty( $linkedin_cfg['default_search_keywords'] ) ) {
+			$arguments['query'] = $linkedin_cfg['default_search_keywords'];
+		}
+
+		// Location.
+		if ( empty( $arguments['location'] ) && ! empty( $linkedin_cfg['default_location'] ) ) {
+			$arguments['location'] = $linkedin_cfg['default_location'];
+		}
+
+		// Job type.
+		if ( empty( $arguments['job_type'] ) && ! empty( $linkedin_cfg['default_job_type'] ) ) {
+			$arguments['job_type'] = $linkedin_cfg['default_job_type'];
+		}
+
+		// Experience level.
+		if ( empty( $arguments['experience_level'] ) && ! empty( $linkedin_cfg['default_experience_level'] ) ) {
+			$arguments['experience_level'] = $linkedin_cfg['default_experience_level'];
+		}
+
+		// Remote filter.
+		if ( empty( $arguments['remote'] ) && ! empty( $linkedin_cfg['default_remote'] ) ) {
+			$arguments['remote'] = true;
+		}
+
+		// Max results.
+		if ( empty( $arguments['limit'] ) && ! empty( $linkedin_cfg['max_results_per_search'] ) ) {
+			$arguments['limit'] = (int) $linkedin_cfg['max_results_per_search'];
+		}
+
+		return $arguments;
+	}
+
+	/**
+	 * Apply result format settings to search results.
+	 *
+	 * @since 2.12.0
+	 * @param array $jobs Array of job result arrays.
+	 * @return array Filtered jobs.
+	 */
+	private function apply_result_format( array $jobs ) {
+		if ( ! class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			return $jobs;
+		}
+
+		$crm_settings = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+		$fmt          = isset( $crm_settings['external_sourcing']['result_format'] )
+			? $crm_settings['external_sourcing']['result_format']
+			: array();
+
+		if ( empty( $fmt ) ) {
+			return $jobs;
+		}
+
+		$trim_length = isset( $fmt['description_length'] ) ? (int) $fmt['description_length'] : 200;
+
+		foreach ( $jobs as &$job ) {
+			if ( $trim_length > 0 && ! empty( $job['description'] ) ) {
+				$job['description'] = wp_trim_words( $job['description'], $trim_length );
+			}
+
+			if ( empty( $fmt['include_email'] ) ) {
+				unset( $job['email'] );
+			}
+			if ( empty( $fmt['include_client_info'] ) ) {
+				unset( $job['client'] );
+			}
+			if ( empty( $fmt['include_budget'] ) ) {
+				unset( $job['budget'] );
+			}
+			if ( empty( $fmt['include_skills'] ) ) {
+				unset( $job['skills'] );
+			}
+			if ( empty( $fmt['include_applicants'] ) ) {
+				unset( $job['applicants'] );
+			}
+
+			if ( ! empty( $fmt['compact_mode'] ) ) {
+				$job = array_filter(
+					$job,
+					function ( $v ) {
+						if ( is_array( $v ) ) {
+							return ! empty( $v );
+						}
+						return null !== $v && '' !== $v;
+					}
+				);
+			}
+		}
+		unset( $job );
+
+		return $jobs;
+	}
+
+	/**
+	 * Check whether the arguments include a valid, enabled LinkedIn connection.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return bool True when the LinkedIn API can be used.
+	 */
+	protected function has_valid_connection( $arguments ) {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			return false;
+		}
+
+		// Use explicit connection_id from arguments, or the CRM toolkit default.
+		$connection_id = '';
+		if ( ! empty( $arguments['connection_id'] ) ) {
+			$connection_id = sanitize_text_field( $arguments['connection_id'] );
+		} elseif ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			$settings      = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+			$connection_id = isset( $settings['external_sourcing']['linkedin']['default_connection_id'] )
+				? $settings['external_sourcing']['linkedin']['default_connection_id']
+				: '';
+		}
+
+		if ( empty( $connection_id ) ) {
+			return false;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		return ! empty( $connection ) && ! empty( $connection['refresh_token'] );
+	}
+
+	/**
+	 * Fallback: AI-powered web search for LinkedIn job postings.
+	 *
+	 * Used when no LinkedIn API connection is configured.  Constructs a
+	 * web-search query that targets LinkedIn job listings.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error Structured job results.
+	 */
+	protected function execute_fallback( array $arguments, array $context ) {
+		// Build a search query targeting LinkedIn job listings.
+		$query_parts = array( 'site:linkedin.com/jobs' );
+
+		if ( ! empty( $arguments['query'] ) ) {
+			$query_parts[] = sanitize_text_field( $arguments['query'] );
+		}
+		if ( ! empty( $arguments['keywords'] ) ) {
+			$query_parts[] = sanitize_text_field( $arguments['keywords'] );
+		}
+		if ( ! empty( $arguments['location'] ) ) {
+			$query_parts[] = sanitize_text_field( $arguments['location'] );
+		}
+		if ( ! empty( $arguments['remote'] ) ) {
+			$query_parts[] = 'remote';
+		}
+		if ( ! empty( $arguments['job_type'] ) ) {
+			$query_parts[] = sanitize_text_field( $arguments['job_type'] );
+		}
+
+		$search_query = implode( ' ', $query_parts );
+
+		// Use the plugin's web search tool if available.
+		if ( class_exists( 'WP_MCP_AI_Tool_Web_Search' ) ) {
+			$web_search = new WP_MCP_AI_Tool_Web_Search();
+			$result     = $web_search->execute(
+				array(
+					'query' => $search_query,
+					'limit' => isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10,
+				),
+				$context
+			);
+
+			if ( ! is_wp_error( $result ) && ! empty( $result['results'] ) ) {
+				return array(
+					'success' => true,
+					'mode'    => 'fallback',
+					'query'   => $search_query,
+					'count'   => count( $result['results'] ),
+					'jobs'    => $result['results'],
+					'message' => __( 'Results obtained via web search. Connect a LinkedIn account for richer API results.', 'nvoos-content-graph-pro' ),
+				);
+			}
+		}
+
+		return array(
+			'success' => true,
+			'mode'    => 'fallback',
+			'query'   => $search_query,
+			'count'   => 0,
+			'jobs'    => array(),
+			'message' => sprintf(
+				/* translators: %s: search query */
+				__( 'No results found for "%s". Try adjusting your search terms or connect a LinkedIn account for direct API access.', 'nvoos-content-graph-pro' ),
+				$search_query
+			),
+		);
+	}
+}

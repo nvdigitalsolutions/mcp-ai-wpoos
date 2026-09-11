@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 namespace NvoosContentGraph;
 
+use function file_exists;
+use function filemtime;
+use function ltrim;
+
 /**
  * Centralized constants for the NV oOS Content Graph plugin.
  *
@@ -43,6 +47,12 @@ final class Schema {
 	public const FILTER_ADDON_ZIP_URL      = 'nvoos_content_graph/payments/addon_zip_url';
 	public const FILTER_VENDOR_API_URL     = 'nvoos_content_graph/payments/vendor_api_url';
 	public const FILTER_FALLBACK_URL       = 'nvoos_content_graph/payments/fallback_url';
+	public const FILTER_TERMS_URL          = 'nvoos_content_graph/payments/terms_url';
+	public const FILTER_REFUND_POLICY_URL  = 'nvoos_content_graph/payments/refund_policy_url';
+	public const FILTER_EU_COUNTRIES       = 'nvoos_content_graph/payments/eu_countries';
+	public const FILTER_ROADMAP_URL        = 'nvoos_content_graph/payments/roadmap_url';
+	public const FILTER_CHANGELOG_URL      = 'nvoos_content_graph/payments/changelog_url';
+	public const FILTER_SUPPORT_EMAIL      = 'nvoos_content_graph/payments/support_email';
 
 	// ─── Visual filters (see NvoosContentGraph\Visual\Tokens) ──
 	public const FILTER_TYPE_PALETTE  = 'nvoos_content_graph/type_palette';
@@ -51,6 +61,18 @@ final class Schema {
 
 	// ─── Commerce ─────────────────────────────────────────────
 	public const PRODUCT_AI_ADDON = 'nvoos-content-graph-ai';
+
+	/**
+	 * Product id for the NV oOS Complete bundle sold through the checkout.
+	 *
+	 * The vendor checkout API validates this value (see
+	 * addons/checkout-api NVOOS_Checkout_API_Rest_Controller::PRODUCTS).
+	 * The legacy AI-addon product id stays listed for purchases made
+	 * before the Complete bundle replaced it.
+	 *
+	 * @since 1.0.6
+	 */
+	public const PRODUCT_COMPLETE = 'nvoos-oos-complete';
 
 	// ─── Cron hooks ────────────────────────────────────────────
 	public const CRON_BUILD  = 'nvoos_content_graph/cron_build';
@@ -68,6 +90,35 @@ final class Schema {
 
 	// ─── Transient prefix ──────────────────────────────────────
 	public const TRANSIENT_PREFIX = 'nvoos_content_graph_';
+
+	/**
+	 * Cache-busting version string for a plugin asset.
+	 *
+	 * Uses the file's modification time so any change to the asset —
+	 * including hotfixes deployed without a version bump — produces a new
+	 * enqueue URL and defeats long-lived browser/CDN caches (see the
+	 * 1.0.7 purchase-modal incident, where the fixed
+	 * `content-graph-commerce.js` stayed cached for up to a year under
+	 * `?ver=1.0.7`). Falls back to the plugin version when the file is
+	 * missing (e.g. in test harnesses that don't ship assets).
+	 *
+	 * @since 1.0.7
+	 *
+	 * @param string $relative Asset path relative to the plugin root
+	 *                          (e.g. 'assets/js/content-graph-commerce.js').
+	 * @return string Version string for the `$ver` enqueue argument.
+	 */
+	public static function assetVersion( string $relative ): string {
+		$file = NVOOS_CONTENT_GRAPH_PATH . ltrim( $relative, '/' );
+		if ( file_exists( $file ) ) {
+			$mtime = filemtime( $file );
+			if ( false !== $mtime && $mtime > 0 ) {
+				return (string) $mtime;
+			}
+		}
+
+		return NVOOS_CONTENT_GRAPH_VERSION;
+	}
 
 	/**
 	 * Return the default settings array.
@@ -103,6 +154,7 @@ final class Schema {
 			'embeddings_model'         => 'text-embedding-3-small',
 			'excluded_post_types'      => array(),
 			'extra_post_types'         => array(),
+			'excluded_cct_slugs'       => array(),
 			'external_tables'          => array(),
 			'disabled_external_tables' => array(),
 		);

@@ -690,7 +690,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							<tr>
 								<th><?php esc_html_e( 'Selected Model', 'mcp-ai-wpoos' ); ?></th>
 								<td>
-									<code><?php echo esc_html( isset( $settings['deepseek_model'] ) && '' !== $settings['deepseek_model'] ? $settings['deepseek_model'] : 'deepseek-v4-flash' ); ?></code>
+									<code><?php echo esc_html( isset( $settings['deepseek_model'] ) && '' !== $settings['deepseek_model'] ? $settings['deepseek_model'] : 'deepseek-flash' ); ?></code>
 								</td>
 							</tr>
 							<tr>
@@ -726,7 +726,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						</p>
 					<?php else : ?>
 						<p class="description" style="margin-top: 10px;">
-							<?php esc_html_e( 'DeepSeek provides fast, cost-effective AI models with OpenAI-compatible API. deepseek-v4-flash (1M ctx) supports tool calling and thinking modes; deepseek-v4-pro offers enhanced reasoning for complex agentic workflows.', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'DeepSeek provides fast, cost-effective AI models with OpenAI-compatible API. deepseek-flash (V4.1 Flash: 1M ctx, native vision) supports tool calling and thinking modes; deepseek-v4-pro is retiring on September 14, 2026 and routes to V4.1 Flash.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					<?php endif; ?>
 				</div>
@@ -2521,7 +2521,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 			try {
 				$client = new WP_MCP_AI_DeepSeek_Client();
-				$model  = isset( $settings['deepseek_model'] ) && '' !== $settings['deepseek_model'] ? $settings['deepseek_model'] : 'deepseek-v4-flash';
+				$model  = isset( $settings['deepseek_model'] ) && '' !== $settings['deepseek_model'] ? $settings['deepseek_model'] : 'deepseek-flash';
 
 				$base_url = isset( $settings['deepseek_base_url'] ) && '' !== trim( $settings['deepseek_base_url'] )
 					? untrailingslashit( esc_url_raw( $settings['deepseek_base_url'] ) )

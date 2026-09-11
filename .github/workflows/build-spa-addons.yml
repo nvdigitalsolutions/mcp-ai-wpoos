@@ -220,19 +220,34 @@ jobs:
           mkdir -p "dist/${ARTIFACT}/nvoos-${ADDON}"
 
           # Copy plugin source (exclude dev files)
-          rsync -a \
-            --exclude='node_modules/' \
-            --exclude='src/' \
-            --exclude='tests/' \
-            --exclude='package.json' \
-            --exclude='package-lock.json' \
-            --exclude='tsconfig.json' \
-            --exclude='esbuild.config.cjs' \
-            --exclude='esbuild.config.js' \
-            --exclude='eslint.config.js' \
-            --exclude='vitest.config.ts' \
-            --exclude='.gitignore' \
-            --exclude='.DS_Store' \
+          EXCLUDES=(
+            --exclude='node_modules/'
+            --exclude='src/'
+            --exclude='tests/'
+            --exclude='package.json'
+            --exclude='package-lock.json'
+            --exclude='tsconfig.json'
+            --exclude='esbuild.config.cjs'
+            --exclude='esbuild.config.js'
+            --exclude='eslint.config.js'
+            --exclude='vitest.config.ts'
+            --exclude='.gitignore'
+            --exclude='.distignore'
+            --exclude='.DS_Store'
+            --exclude='vendor/'
+            --exclude='composer.json'
+            --exclude='composer.lock'
+            --exclude='docs/'
+            --exclude='.wordpress-org/'
+          )
+
+          # WordPress.org zip: docs-hub ships only readme.txt — strip all
+          # Markdown (root README.md / CHANGELOG.md are dev-only docs).
+          if [ "${ADDON}" = "docs-hub" ]; then
+            EXCLUDES+=(--exclude='*.md')
+          fi
+
+          rsync -a "${EXCLUDES[@]}" \
             "addons/${ADDON}/" "dist/${ARTIFACT}/nvoos-${ADDON}/"
 
           echo "📁 Plugin directory contents:"
@@ -261,6 +276,182 @@ jobs:
             ${{ steps.version.outputs.artifact }}.zip
             ${{ steps.version.outputs.artifact }}.sha256
           if-no-files-found: error
+
+  # ===========================================================================
+  # WordPress.org Plugin Check for the docs-hub ZIP.
+  #
+  # docs-hub is the only addon in this matrix that ships as a standalone
+  # wp.org plugin (own readme.txt/slug), so its ZIP gets the same
+  # `wp plugin check` gate the base plugin gets in release.yml (R-T-04).
+  # Any ERROR-severity finding fails this job; warnings are surfaced for
+  # triage. Runs whenever docs-hub is part of the build matrix (tag push,
+  # path push, PR, or manual dispatch).
+  # ===========================================================================
+  plugin-check:
+    name: Plugin Check (docs-hub)
+    needs: [matrix-prep, build]
+    runs-on: ubuntu-latest
+    if: contains(fromJSON(needs.matrix-prep.outputs.addons).*.slug, 'docs-hub')
+
+    # WordPress cannot boot without a database, and `wp plugin check` (and
+    # `wp plugin install`) load WordPress — so the PCP job needs a real
+    # MySQL. Same service recipe as the phpunit workflow.
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_pluginchk
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      WP_DB_NAME: wordpress_pluginchk
+      WP_DB_USER: wordpress
+      WP_DB_PASSWORD: wordpress
+      WP_DB_HOST: 127.0.0.1
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set version
+        id: version
+        run: |
+          ADDON="docs-hub"
+          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="$GITHUB_REF_NAME"
+            VERSION="${TAG#${ADDON}-v}"
+          else
+            # Read version from plugin header.
+            VERSION=$(grep -E "^\s*\*\s*Version:" "addons/${ADDON}/nvoos-${ADDON}.php" | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+            VERSION="${VERSION:-dev}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "artifact=nvoos-${ADDON}-v${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Download built ZIP
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.version.outputs.artifact }}
+          path: artifacts/
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, mysqli, zip, dom, xml, curl
+          tools: composer:v2, wp-cli
+          coverage: none
+
+      - name: Bootstrap a temporary WordPress install
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/wp
+          cd /tmp/wp
+          wp core download --version=latest --skip-content --path=/tmp/wp
+          wp config create \
+            --dbname="${WP_DB_NAME}" \
+            --dbuser="${WP_DB_USER}" \
+            --dbpass="${WP_DB_PASSWORD}" \
+            --dbhost="${WP_DB_HOST}" \
+            --path=/tmp/wp
+          # Plugin Check runs runtime checks, so WordPress must actually boot.
+          # Install a minimal site against the mysql service container.
+          wp core install \
+            --url="http://127.0.0.1" \
+            --title="Plugin Check QA" \
+            --admin_user="admin" \
+            --admin_password="admin" \
+            --admin_email="admin@example.com" \
+            --skip-email \
+            --path=/tmp/wp
+
+      - name: Install Plugin Check (PCP) plugin
+        run: |
+          set -euo pipefail
+          # Must be ACTIVATED for the wp-cli command to register. (Passing
+          # --require=<plugin-check/plugin.php> loads PCP before WordPress
+          # boots and fatal-errors with undefined plugin_dir_path().)
+          wp plugin install plugin-check --activate --path=/tmp/wp
+
+      - name: Extract built ZIP into wp-content/plugins
+        run: |
+          set -euo pipefail
+          ARTIFACT="${{ steps.version.outputs.artifact }}"
+          mkdir -p /tmp/wp/wp-content/plugins
+          unzip -q -o "artifacts/${ARTIFACT}.zip" -d /tmp/wp/wp-content/plugins/
+          ls /tmp/wp/wp-content/plugins/
+
+      - name: Run wp plugin-check (Errors gate the build)
+        id: pcp
+        run: |
+          set -euo pipefail
+          cd /tmp/wp
+          wp plugin check nvoos-docs-hub \
+            --path=/tmp/wp \
+            --format=json \
+            --severity=5 \
+            > /tmp/pcp-report.json 2>/tmp/pcp-stderr.log || PCP_EXIT=$?
+          PCP_EXIT="${PCP_EXIT:-0}"
+          echo "pcp_exit=${PCP_EXIT}" >> $GITHUB_OUTPUT
+
+          echo "::group::PCP raw stderr"
+          cat /tmp/pcp-stderr.log || true
+          echo "::endgroup::"
+
+          echo "::group::PCP raw report"
+          cat /tmp/pcp-report.json || true
+          echo "::endgroup::"
+
+          # Count Errors vs Warnings. The report is chunked per file, so
+          # slurp it into one array. OffloadedContent is a known false
+          # positive: it flags the literal raw.githubusercontent.com host
+          # strings used by the SSRF-hardened, host-allowlisted remote-docs
+          # fetcher (disclosed in readme.txt == External Services ==).
+          # Everything else gates.
+          #
+          # Known non-blocking WARNING: PrefixAllGlobals.NonPrefixedTraitFound
+          # on the WP_MCP_AI_Inline_Async_Tick_Trait stub in
+          # includes/jobs/class-nvoos-docs-hub-rebuild-pipeline.php. The stub
+          # deliberately carries the BASE plugin's trait name so the real
+          # trait can replace it when NV oOS is active (the pipeline class
+          # `use`s the trait unconditionally); the name cannot be prefixed
+          # without breaking that swap.
+          ERRORS=$(jq -s '[.[][] | select(.type=="ERROR" and .code!="PluginCheck.CodeAnalysis.Offloading.OffloadedContent")] | length' /tmp/pcp-report.json 2>/dev/null || echo 0)
+          WARNINGS=$(jq -s '[.[][] | select(.type=="WARNING")] | length' /tmp/pcp-report.json 2>/dev/null || echo 0)
+          echo "Plugin Check ERRORS=${ERRORS}, WARNINGS=${WARNINGS}"
+          {
+            echo "## WordPress.org Plugin Check (docs-hub)"
+            echo ""
+            echo "- **Errors:** ${ERRORS}"
+            echo "- **Warnings:** ${WARNINGS}"
+            echo ""
+            echo "Full report uploaded as artifact \`pcp-report-docs-hub\`."
+          } >> $GITHUB_STEP_SUMMARY
+
+          if [ "${ERRORS}" -gt 0 ]; then
+            echo "::error::Plugin Check reported ${ERRORS} error(s) — docs-hub release is blocked."
+            exit 1
+          fi
+
+      - name: Upload Plugin Check report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pcp-report-docs-hub
+          path: |
+            /tmp/pcp-report.json
+            /tmp/pcp-stderr.log
+          if-no-files-found: warn
+          retention-days: 30
 
   # ===========================================================================
   # Publish ZIPs to repository build/ directory

@@ -356,6 +356,91 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 		$this->assertSame( 'not_found', $result->get_error_code() );
 	}
 
+	/**
+	 * Test updating an assistant_run schedule's message via assistant_config.
+	 */
+	public function test_update_assistant_run_schedule_changes_message() {
+		$assistant_id = self::factory()->post->create( array( 'post_type' => 'post' ) );
+
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type'    => 'assistant_run',
+				'name'             => 'Weekly Summary',
+				'schedule'         => 'single',
+				'timestamp'        => time() + 120,
+				'assistant_config' => array(
+					'assistant_id'           => $assistant_id,
+					'message'                => 'Original prompt.',
+					'context'                => array( 'source' => 'test' ),
+					'max_agentic_iterations' => 7,
+				),
+			),
+			$this->admin_id
+		);
+
+		$this->assertNotWPError( $id );
+
+		$result = WP_MCP_AI_Pro_Schedule_Manager::update_schedule(
+			$id,
+			array(
+				'assistant_config' => array(
+					'assistant_id' => $assistant_id,
+					'message'      => 'Updated prompt.',
+				),
+			),
+			$this->admin_id
+		);
+
+		$this->assertNotWPError( $result );
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertSame( 'Updated prompt.', $schedule['assistant_config']['message'] );
+		// Fields not included in the partial update are preserved.
+		$this->assertSame( array( 'source' => 'test' ), $schedule['assistant_config']['context'] );
+		$this->assertSame( 7, $schedule['assistant_config']['max_agentic_iterations'] );
+	}
+
+	/**
+	 * Test that updating an assistant_run schedule with an empty message returns an error.
+	 */
+	public function test_update_assistant_run_schedule_missing_message_returns_error() {
+		$assistant_id = self::factory()->post->create( array( 'post_type' => 'post' ) );
+
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type'    => 'assistant_run',
+				'name'             => 'Weekly Summary',
+				'schedule'         => 'single',
+				'timestamp'        => time() + 120,
+				'assistant_config' => array(
+					'assistant_id' => $assistant_id,
+					'message'      => 'Original prompt.',
+				),
+			),
+			$this->admin_id
+		);
+
+		$this->assertNotWPError( $id );
+
+		$result = WP_MCP_AI_Pro_Schedule_Manager::update_schedule(
+			$id,
+			array(
+				'assistant_config' => array(
+					'assistant_id' => $assistant_id,
+					'message'      => '',
+				),
+			),
+			$this->admin_id
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'missing_assistant_message', $result->get_error_code() );
+
+		// The stored message is left untouched.
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertSame( 'Original prompt.', $schedule['assistant_config']['message'] );
+	}
+
 	// -------------------------------------------------------------------------
 	// Toggle
 	// -------------------------------------------------------------------------

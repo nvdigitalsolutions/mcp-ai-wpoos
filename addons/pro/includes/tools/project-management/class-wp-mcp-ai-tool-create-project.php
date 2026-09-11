@@ -133,7 +133,7 @@ class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public static function is_available() {
 		// Project management is a Pro feature.
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return false;
 		}
 		$settings = get_option( 'wp_mcp_ai_settings', array() );

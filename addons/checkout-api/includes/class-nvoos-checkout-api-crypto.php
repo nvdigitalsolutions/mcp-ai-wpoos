@@ -54,7 +54,7 @@ class NVOOS_Checkout_API_Crypto {
 			return self::PREFIX . 'plain:' . base64_encode( $plaintext ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- value is encrypted in transit at rest when OpenSSL exists; fallback is flagged for auditability.
 		}
 
-		$iv = openssl_random_pseudo_bytes( 16 );
+		$iv = random_bytes( 16 );
 		$ct = openssl_encrypt( $plaintext, 'aes-256-cbc', self::key(), OPENSSL_RAW_DATA, $iv );
 
 		if ( false === $ct ) {

@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<!--
+	Base+Pro regression matrix.
+
+	Boots the monolith test environment with WP_MCP_AI_BASE_VERSION=true
+	(the base entry-point shape) while the Pro addon is still loaded by the
+	loader (WP_MCP_AI_PRO_VERSION defined) — mirroring the real base+pro
+	deployment. Only tests/basepro/ runs here; the full suite stays on
+	phpunit.xml.dist with the full-version constant.
+
+	Run: composer run test:basepro
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         colors="true"
+         backupGlobals="false">
+    <php>
+        <!-- Flip the base-version constant before the plugin boots. -->
+        <env name="WP_MCP_AI_TEST_BASE_VERSION" value="1" force="true"/>
+        <!-- Admin context: exercise the is_admin() branches of the Pro init
+             files (admin menus, settings pages) the same way a dashboard
+             request would. -->
+        <const name="WP_ADMIN" value="true"/>
+    </php>
+    <testsuites>
+        <testsuite name="Base+Pro Regression Suite">
+            <directory suffix=".php">tests/basepro</directory>
+            <exclude>tests/basepro/helpers</exclude>
+        </testsuite>
+    </testsuites>
+    <groups>
+        <exclude>
+            <group>external-http</group>
+        </exclude>
+    </groups>
+</phpunit>

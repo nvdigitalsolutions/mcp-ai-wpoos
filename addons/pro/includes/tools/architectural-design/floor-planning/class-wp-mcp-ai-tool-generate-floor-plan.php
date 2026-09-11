@@ -35,7 +35,7 @@ class WP_MCP_AI_Tool_Generate_Floor_Plan implements WP_MCP_AI_Tool_Interface, WP
 	 *              and the host plugin is not running in base mode.
 	 */
 	public static function is_available() {
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return false;
 		}
 		$settings = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : get_option( 'wp_mcp_ai_settings', array() );

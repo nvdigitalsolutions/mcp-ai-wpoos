@@ -44,6 +44,7 @@ class WP_MCP_AI_Pro_CLI_Toolkit_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 		'enable_financial_planner_toolkit'       => 'Financial Planner Toolkit',
 		'enable_dj_management_toolkit'           => 'DJ Management Toolkit',
 		'enable_image_production_toolkit'        => 'Image Production Toolkit',
+		'enable_comic_creation_toolkit'          => 'Comic Creation Toolkit',
 		'enable_ai_tool_builder_toolkit'         => 'AI Tool Builder Toolkit',
 		'enable_architect_agent_toolkit'         => 'Architect Agent Toolkit',
 		'enable_architectural_design_toolkit'    => 'Architectural Design Toolkit',

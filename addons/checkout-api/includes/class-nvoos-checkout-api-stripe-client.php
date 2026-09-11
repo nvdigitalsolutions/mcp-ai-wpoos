@@ -54,7 +54,7 @@ class NVOOS_Checkout_API_Stripe_Client {
 			array(
 				'timeout' => 30,
 				'headers' => $this->headers(),
-				'body'    => $params,
+				'body'    => self::stringify_booleans( $params ),
 			)
 		);
 
@@ -73,6 +73,137 @@ class NVOOS_Checkout_API_Stripe_Client {
 			array(
 				'timeout' => 30,
 				'headers' => $this->headers(),
+			)
+		);
+
+		return $this->parse_response( $response );
+	}
+
+	/**
+	 * Test the secret key against the Stripe API.
+	 *
+	 * Reads the account balance — the cheapest authenticated read that works
+	 * for both live and test keys, and mutates nothing. Used by the admin
+	 * page's "Test connection" button.
+	 *
+	 * @return array{ok: bool, livemode: bool, balance_cents: int, balance_currency: string, message: string}
+	 */
+	public function test_connection(): array {
+		$response = wp_remote_get(
+			self::API_BASE . '/balance',
+			array(
+				'timeout' => 15,
+				'headers' => $this->headers(),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return array(
+				'ok'               => false,
+				'livemode'         => false,
+				'balance_cents'    => 0,
+				'balance_currency' => '',
+				'message'          => $response->get_error_message(),
+			);
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( $code < 200 || $code >= 300 || ! is_array( $data ) ) {
+			$message = is_array( $data ) && isset( $data['error']['message'] )
+				? sanitize_text_field( (string) $data['error']['message'] )
+				: sprintf(
+					/* translators: %d: HTTP status code. */
+					__( 'Stripe request failed (HTTP %d).', 'nvoos-checkout-api' ),
+					$code
+				);
+
+			return array(
+				'ok'               => false,
+				'livemode'         => false,
+				'balance_cents'    => 0,
+				'balance_currency' => '',
+				'message'          => $message,
+			);
+		}
+
+		$balance_cents    = 0;
+		$balance_currency = '';
+		foreach ( (array) ( $data['available'] ?? array() ) as $entry ) {
+			if ( is_array( $entry ) && isset( $entry['amount'], $entry['currency'] ) && is_numeric( $entry['amount'] ) ) {
+				$balance_cents    = (int) $entry['amount'];
+				$balance_currency = strtolower( (string) $entry['currency'] );
+				break;
+			}
+		}
+
+		return array(
+			'ok'               => true,
+			'livemode'         => ! empty( $data['livemode'] ),
+			'balance_cents'    => $balance_cents,
+			'balance_currency' => $balance_currency,
+			'message'          => '',
+		);
+	}
+
+	/**
+	 * Create a Stripe Product (type: service) for reporting/tax metadata.
+	 *
+	 * The product is referenced by the Price below and recorded on payment
+	 * intents as metadata — it does not change how payments are charged.
+	 *
+	 * @param string $name Product display name.
+	 * @return array<string,mixed>|WP_Error
+	 */
+	public function create_product( string $name ) {
+		$response = wp_remote_post(
+			self::API_BASE . '/products',
+			array(
+				'timeout' => 30,
+				'headers' => $this->headers(),
+				'body'    => self::stringify_booleans(
+					array(
+						'name'     => $name,
+						'type'     => 'service',
+						'metadata' => array(
+							'source' => 'nvoos-checkout-api',
+						),
+					)
+				),
+			)
+		);
+
+		return $this->parse_response( $response );
+	}
+
+	/**
+	 * Create a one-time Stripe Price for a product.
+	 *
+	 * Mirrors the storefront's configured price/currency so reporting and
+	 * tax tooling line up with what buyers actually pay.
+	 *
+	 * @param string $product_id Stripe Product ID.
+	 * @param int    $amount_cents Amount in the smallest currency unit.
+	 * @param string $currency Three-letter ISO currency code.
+	 * @return array<string,mixed>|WP_Error
+	 */
+	public function create_price( string $product_id, int $amount_cents, string $currency ) {
+		$response = wp_remote_post(
+			self::API_BASE . '/prices',
+			array(
+				'timeout' => 30,
+				'headers' => $this->headers(),
+				'body'    => self::stringify_booleans(
+					array(
+						'currency'    => $currency,
+						'product'     => $product_id,
+						'unit_amount' => max( 50, $amount_cents ),
+						'metadata'    => array(
+							'source' => 'nvoos-checkout-api',
+						),
+					)
+				),
 			)
 		);
 
@@ -183,13 +314,51 @@ class NVOOS_Checkout_API_Stripe_Client {
 	}
 
 	/**
+	 * Convert booleans to the literal strings Stripe expects.
+	 *
+	 * The bodies are sent form-encoded, and PHP's form serialization
+	 * turns `true` into "1" — Stripe rejects that with
+	 * `Invalid boolean: 1` (observed live on `automatic_payment_methods
+	 * [enabled]`). Recursively stringify booleans to 'true'/'false' so
+	 * the serializer passes the literal tokens through.
+	 *
+	 * @param array<string,mixed> $params Request body.
+	 * @return array<string,mixed>
+	 */
+	private static function stringify_booleans( array $params ): array {
+		foreach ( $params as $key => $value ) {
+			if ( is_bool( $value ) ) {
+				$params[ $key ] = $value ? 'true' : 'false';
+			} elseif ( is_array( $value ) ) {
+				$params[ $key ] = self::stringify_booleans( $value );
+			}
+		}
+		return $params;
+	}
+
+	/**
 	 * Decode a WP HTTP response into a Stripe object or WP_Error.
+	 *
+	 * Error status mapping contract (mirrored by the customer-side
+	 * Content Graph modal):
+	 *   - Stripe 4xx: the REQUEST was rejected (bad key, invalid
+	 *     parameters, account restrictions) -> WP_Error with status 424
+	 *     and Stripe's own message, so buyers see the real reason
+	 *     instead of a generic gateway failure.
+	 *   - Transport failure or Stripe 5xx: checkout is genuinely
+	 *     unavailable -> status 502, which customer sites may treat as
+	 *     "unreachable" and fall back on.
 	 *
 	 * @param array<mixed>|WP_Error $response Raw response.
 	 * @return array<string,mixed>|WP_Error
 	 */
 	private function parse_response( $response ) {
 		if ( is_wp_error( $response ) ) {
+			// Transport-level failure (this server cannot reach Stripe):
+			// keep the cURL message but pin the status to 502 so customer
+			// sites classify it as checkout-unavailable, never as a Stripe
+			// rejection of the purchase.
+			$response->add_data( array( 'status' => 502 ) );
 			return $response;
 		}
 
@@ -206,10 +375,12 @@ class NVOOS_Checkout_API_Stripe_Client {
 					$code
 				);
 
+			$status = ( $code >= 400 && $code < 500 ) ? 424 : 502;
+
 			return new WP_Error(
 				'nvoos_checkout_stripe_http_error',
 				$message,
-				array( 'status' => 502 )
+				array( 'status' => $status )
 			);
 		}
 

@@ -63,6 +63,7 @@ jobs:
             plugins/nvoos-content-graph/**
             plugins/nvoos-content-graph-ai/**
             plugins/nvoos-content-graph-ai-platform/**
+            plugins/nvoos-content-graph-pro/**
 
       - name: Run WPCS on changed files
         if: github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true'
@@ -209,6 +210,7 @@ jobs:
             plugins/nvoos-content-graph/**
             plugins/nvoos-content-graph-ai/**
             plugins/nvoos-content-graph-ai-platform/**
+            plugins/nvoos-content-graph-pro/**
 
       - name: Run PHP Compatibility Check on changed files
         if: github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true'

@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.71"
-  plugin-version-tested: "1.1.71"
-  last-updated: "2026-09-05"
+  plugin-version: "1.1.77"
+  plugin-version-tested: "1.1.77"
+  last-updated: "2026-09-11"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -27,6 +27,10 @@ auto-detection, and tool assignment.
 - API keys not being picked up from Docker environment variables
 - Troubleshooting 0 tools returned from `tools/list`
 - Configuring the plugin for IGCSE study (which tools to assign)
+- WordPress.org submission prep — Plugin Check (PCP) runs, wp.org listing
+  screenshots, packaging exclusions, and the compliance checklist are covered
+  by the `.agents/skills/mcp-ai-wpoos-wporg-submission` skill instead of this
+  one (see that skill for Docker PCP recipes and the CI gate anatomy)
 
 ## Architecture
 
@@ -43,7 +47,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~303 base / ~1,566 full tools
+     │  Tool Registry     │  ~303 base / ~1,568 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -624,6 +628,266 @@ Import external AI conversation exports into the JetEngine
   registration; CSV list args accept `"1,2"` and `"1, 2"`;
   assistant-builder and Pro toolkit blocks register idempotently
   (WP 7.1 notices).
+
+## Telegram Delivery Fixes, Memory Bridge & Wave F2 Toolkit Completions (v1.1.75+)
+
+- **Telegram broadcast credentials** (PR #6482) — inline credentials stored as
+  JSON strings no longer fatal the array-typed broadcast tool;
+  `normalize_channel_credentials()` decodes/rejects, and the Remote Sites
+  schema mapping decrypts `api_key`/`token` for the real storage keys.
+- **Scheduled delivery credential fallback** (PR #6488) — tier-4 fallback
+  resolves the first enabled Remote Sites connection of the channel type for
+  cron delivery; `create_pro_schedule`/`update_pro_schedule` and the schedules
+  REST endpoint accept `result_delivery`; diagnostics never carry secrets.
+- **Content Graph memory bridge + NV oOS Complete checkout** (PR #6486) —
+  new `wp_mcp_ai_wake_up_context_graph_retriever` filter seam on
+  `wake_up_context`; the checkout sells the Complete bundle (base + Pro) with
+  a conflict guard; nvoos-content-graph **1.0.4 → 1.0.6**.
+- **Wave F2 port completions** (PRs #6476–#6501) — `nvoos-content-graph-pro`
+  (1.0.0) completes the financial-planning, social-media, and mcp-servers
+  toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
+  dj-management/image-production slices.
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## DeepSeek V4.1 Flash, Base+Pro Gating & Memory CCT Slug (v1.1.77)
+
+- **DeepSeek V4.1 Flash refresh** (PR #6555) — the catalog's DeepSeek lineup
+  is now `deepseek-flash` (active, vision) + `deepseek-v4-pro` (deprecated,
+  sunset 2026-09-14); V4 Flash + Vision Exp retired; stored references
+  migrate on the catalog-version bump. Cost calculator gains peak/off-peak
+  (`calculate_cost_at()` with a record timestamp; legacy `calculate_cost()`
+  stays time-independent).
+- **Base+pro gating** (PR #6561) — Pro toolkits now load in base+pro
+  installs (gate escape `! $is_base || defined( 'WP_MCP_AI_PRO_VERSION' )`);
+  new `tests/basepro/` matrix + `composer run test:basepro` pins it.
+- **Pro WP-CLI load-order guard** (PR #6585) — no more
+  `Undefined constant WP_MCP_AI_PATH` when Pro activates before the base
+  plugin; the CLI loader defers to `plugins_loaded` 30.
+- **Memory CCT canonical slug** (PR #6591) — Graphify bridge + Pro memory
+  retention read `ai_agent_memories` (canonical) with a legacy-table
+  fallback; dormancy sweeps, per-user caps, expiry pruning, and Memory
+  Health stats start working.
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Delivery Formats, Checkout Legal Series & Wave F2 Completions (v1.1.76+)
+
+- **Chat delivery full report + per-channel formats** (PR #6525) — chat
+  channels support the `full` template (summary + substantive response +
+  envelope data); per-channel `format` allowlists (Telegram
+  `html`/`markdown`/`markdown_v2`/`plain`; WhatsApp/Slack/Discord/Teams
+  `markdown`/`plain`; Messenger/Google Chat `plain`); Telegram delivery
+  routes through `send_telegram_message` directly so `parse_mode` works;
+  `MarkdownV2` reserved-char escaping; group-mention skips log
+  `telegram_group_mention_required_ignored` instead of silently dropping.
+- **Duplicate-summary skip** (PR #6548) — assistant-run delivery skips the
+  derived summary when the response already opens with it
+  (`response_starts_with_summary()` normalizes tags/whitespace + strips
+  the trailing ellipsis).
+- **Comic Creation toolkit toggle + playbook seeder idempotency** (#6512,
+  direct commit) — the `enable_comic_creation_toolkit` toggle is now
+  registered (Tools section, Pro Features subtab, memory estimator,
+  WP-CLI maps); `hash_playbook_content()` strips the `Generated:`
+  timestamp so playbook syncs no longer recreate attachments.
+- **Checkout launch-complete series** (#6507/#6520/#6523/#6550) — required
+  ToS consent + buyer email, EU country selector + billing-address block,
+  Stripe product/price metadata, license DB v3 (`dbDelta`), manual install
+  as primary path (`/verify` returns `download_url`), commercial legal
+  docs (`docs/legal/`). Checkout API stays **0.1.0**.
+- **Security sweeps** (#6515/#6532/#6546/#6504) — 9 Dependabot alerts,
+  SVGO CVE-2026-84370 `>=4.1.0`, svgo/hono/vitest bumps, docs-hub ZIP
+  excludes `*.md` (keep `readme.txt`).
+- **Wave F2 port completions + new port skill** (PRs #6505–#6549) —
+  `nvoos-content-graph-pro` (1.0.0) completes ten toolkit ports
+  (comic-creation, dj-management, ai-tool-builder, architect-agent,
+  architectural-design, site-creator, document-generation,
+  regulatory-registration, healthcare, law-firm); new coding-time skill
+  `mcp-ai-wpoos-ecosystem-port` (skill count 55 → 56).
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Checkout Connectivity Diagnostics & Pro CLI Load-Order Guard (v1.1.77+)
+
+- **Checkout API addon `GET /health`** (PR #6573) — public, no Stripe, no
+  rate-limit token, no writes; returns `status`/`service`/`version`/
+  `configured`/`server_time`. Live on nvdigitalsolutions.com:
+  `GET https://nvdigitalsolutions.com/wp-json/nvoos-checkout/v1/health`.
+- **Checkout API admin "REST endpoints" section** (PR #6573) — live
+  per-route registered/missing markers (from `rest_get_server()->get_routes()`
+  endpoint lists) plus a nonce-protected loopback self-check of `GET /health`
+  reporting HTTP status + latency.
+- **Content Graph client diagnostics** (PR #6573) — `Vendor::health()` and
+  the admin-only `GET /payments/health` route (deliberately NOT throttled,
+  so diagnostics cannot trigger the "Too many checkout attempts" lockout);
+  the purchase modal offers a "Test connection" action when session
+  creation fails.
+- **Checkout troubleshooting playbook** — two independent throttles: client
+  (transients `nvoos_content_graph_commerce_{session,verify}_throttle_{uid}`,
+  5 and 15 attempts per 10 min per user) and vendor (per server IP, 20
+  session / 30 verify per 10 min on the checkout-api addon). Diagnose from
+  the client site's server:
+
+  ```bash
+  # Outbound connectivity from the site's server (works even when other
+  # plugins fatal under WP-CLI, see below):
+  wp --skip-plugins eval '$main = glob( WP_PLUGIN_DIR . "/*nvoos-content-graph*/nvoos-content-graph.php" ); if ( empty( $main ) ) { exit; } require_once $main[0]; var_export( ( new \NvoosContentGraph\Commerce\Vendor( \NvoosContentGraph\Commerce\Payments::vendorApiUrl() ) )->health() );'
+
+  # Clear the client throttles. If the remote shell mangles $variables,
+  # ship the PHP base64-encoded instead:
+  wp --skip-plugins eval 'for ( $i = 1; $i <= 200; $i++ ) { delete_transient( "nvoos_content_graph_commerce_session_throttle_" . $i ); delete_transient( "nvoos_content_graph_commerce_verify_throttle_" . $i ); }'
+  ```
+
+  The vendor-side per-IP bucket only clears with time (10 min).
+- **Pro CLI load-order fatal** — when the Pro addon is activated before the
+  base plugin, every `wp` command dies with `Undefined constant
+  "WP_MCP_AI_PATH"` (Pro requires its CLI files at include time under
+  WP_CLI; web requests are unaffected). Site fix: reorder `active_plugins`
+  via `wp --skip-plugins eval` (move the `-pro` entry after the base
+  entry). Code fix: PR #6585 defers the CLI require loop to
+  `plugins_loaded` when the base constant is missing at include time.
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Checkout Purchase-Modal Redirect Bug & Release-Tag URL Fix (PR #6594)
+
+Diagnosed live on victory.nvdigital.solutions (client) + nvdigitalsolutions.com
+(vendor) when "the purchase modal says nothing and redirects to the GitHub
+releases page" with everything seemingly configured correctly.
+
+- **The silent-redirect failure mode.** `checkoutUnavailable()` — the only
+  path that redirects to `fallback_url` — fires when the modal's
+  `/payments/session` call returns 404/≥500 **or its `.catch` runs**. The
+  `.catch` wraps the ENTIRE `.then` chain, so ANY throw after the session
+  call (Stripe element setup included) is mislabelled as "checkout
+  unavailable". Status-code errors (424/429/403) stay in-modal with a
+  "Test connection" action; a redirect means the response was 404/5xx,
+  non-JSON, or a post-session throw. The fallback note is shown only 1.2 s
+  — users report it as "says nothing, just redirects".
+- **Root cause found: invalid Stripe element name.** The modal called
+  `elements.create( 'paymentElement', … )` — the core Stripe.js API name is
+  **`payment`** (`paymentElement` is the React component name). Stripe threw
+  `IntegrationError: A valid Element name must be provided … you passed:
+  paymentElement` AFTER a 200 session, and the catch-all redirected. Fix
+  (PR #6594): `create( 'payment' )` plus a try/catch around Stripe element
+  setup that surfaces a new `stripe_setup_error` message in the modal
+  instead of the misleading redirect. The no-browser contract verifier is
+  `node plugins/nvoos-content-graph/scripts/verify-commerce-fallback.js`.
+- **Release-tag convention mismatch (same PR).** GitHub releases moved to
+  `nvdigital-oos-v*.*.*` tags (`build-nvdigital-oos-wporg.yml` is the
+  active path; `release.yml` `v*` tags are the legacy wp.org path). The
+  checkout-api `default_zip_source()` and the client `Payments::zipUrl()`
+  fallback still built `releases/download/v{VERSION}/…` → post-payment
+  downloads 404/502 while payment + license succeed. Symptom: buyer pays,
+  then "Could not fetch the addon package: 404 Not Found" (vendor download
+  server) or a broken fallback URL. Verify: `curl -I …/releases/download/
+  nvdigital-oos-v1.1.76/nvdigital-open-operator-system-oos-complete-
+  1.1.76.zip` (200) vs the `v1.1.76` tag shape (404). Live-site remedy
+  without a release: edit the vendor's **ZIP source** setting to
+  `https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/nvdigital-oos-v{VERSION}/nvdigital-open-operator-system-oos-complete-{VERSION}.zip`
+  (keep **Addon version** as the plain `1.1.76` — the tag prefix belongs in
+  the ZIP source pattern, not the version field).
+- **Browser-side diagnostics that worked** (config lives in
+  `window.nvoosContentGraphCommerce` — `rest_url`, `nonce`, `fallback_url` —
+  only on the content-graph admin page, admin-logged-in):
+  1. Replicate the modal call from the console:
+     `fetch( rest_url + '/payments/session', { POST, credentials 'same-origin', X-WP-Nonce: nonce, body '{}' } )`
+     — 200 + `client_secret` proves vendor/keys/throttles all healthy
+     (each call creates a real live PaymentIntent; cancel it via
+     `POST api.stripe.com/v1/payment_intents/{id}/cancel`).
+  2. Raw-body variant (`r.text()`) to catch **non-JSON** responses (PHP
+     warnings/debug lines, Cloudflare challenge HTML) — those reject
+     `response.json()` and trip the redirect.
+  3. Monkey-patch `window.fetch` to log every `/payments/` request with
+     `r.clone().text()` BEFORE clicking Buy — captures what the modal
+     actually sends/receives regardless of the 1.2 s redirect.
+  4. To isolate a throw, load the REAL `https://js.stripe.com/v3/` first,
+     then wrap the real `window.Stripe` with logging at call → elements →
+     create → mount. **Pitfall: replacing `window.Stripe` with a stub
+     short-circuits `loadStripeJs` (`if ( window.Stripe )`), so the modal
+     never downloads Stripe.js and the stub's undefined return throws — a
+     self-inflicted false positive.**
+  5. DevTools "pause on caught exceptions" first lands on Stripe's internal
+     `ArrayBuffer()` bot-check `try/catch` — harmless noise. Press F8 until
+     the pause is in `content-graph-commerce.js` or carries a non-Stripe
+     message.
+- **Server-side diagnostics from the client site's shell:**
+  `curl -sS -X POST https://nvdigitalsolutions.com/wp-json/nvoos-checkout/v1/session -H 'Content-Type: application/json' -d '{"product":"nvoos-oos-complete","site_url":"https://victory.nvdigital.solutions"}'`
+  tests the exact server→vendor path (outbound firewall/DNS/SSL issues the
+  browser can't see); `wp eval '$v = new \NvoosContentGraph\Commerce\Vendor( \NvoosContentGraph\Commerce\Payments::vendorApiUrl() ); …'`
+  runs the plugin's own `health()`/`createSession()` on the site's server.
+- **Live config facts (verified):** vendor `GET /health` is public;
+  `POST /session` requires `product` ∈ {`nvoos-oos-complete`,
+  `nvoos-content-graph-ai`} + `site_url`; a webhook signature test =
+  HMAC-SHA256 over `{ts}.{payload}` with the dashboard `whsec_` sent as
+  `Stripe-Signature: t={ts},v1={hex}` — a benign `charge.succeeded` event
+  answering `{"received":true}` proves the dashboard secret matches the
+  plugin's stored one; the Stripe webhook endpoint must subscribe
+  `payment_intent.succeeded` + `charge.refunded` (+ optional
+  `charge.dispute.created`); the client's commerce REST routes are
+  **admin-only by design** (anonymous 403/401 is normal); if the base NV oOS
+  plugin is already active on the client site (`mcp-ai/v1` in `/wp-json/`),
+  the post-payment install correctly 409s (conflict guard) with a
+  manual-download link — purchases on such a site need no install.
+
+## Calendar Query Fix, Email Formats & Wave F2 PM/Calendar (v1.1.74+)
+
+- **Google Calendar date queries** (PR #6460) — calendar query values are
+  now `rawurlencode()`d before `add_query_arg()` (the raw `+` in RFC3339
+  offsets decoded as a space → 400); `calendar.freebusy` in the Standard
+  scope profile (new grants only).
+- **Result Delivery email formats** (PR #6465) — new
+  `WP_MCP_AI_Markdown_Converter` (escaped + `wp_kses` allowlist +
+  protocol-allowlisted links) + per-channel `format` setting (`both`
+  default | `html` | `markdown`).
+- **Schedule Manager assistant prompts** (PR #6469) — the edit modal shows
+  and updates `assistant_run` prompts; `update_pro_schedule` accepts
+  `assistant_config` via MCP.
+- **Wave F2 PM + calendar-booking ports** (PRs #6450–#6472) —
+  `nvoos-content-graph-pro` (1.0.0) completes both toolkit ports;
+  perf-suite MCP-abilities fix process-wide in `tests/bootstrap.php`
+  (#6470); content-graph-pro excluded from the root WPCS gate (#6457).
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Woo Tool Upgrades, Queue Bootstrap Fix & Wave F2 (v1.1.73+)
+
+- **`bulk_update_products` variable scope** (PR #6447) — new `scope`
+  argument (`all` default, `product` legacy) expands price/stock fields
+  from variable parents to variations and grouped parents to children
+  (`resolve_update_targets()` + `WC_Product_Variable::sync()`); the
+  response reports `targets[]` per input ID + `scope`/`updated_targets`
+  keys (acknowledged shape change).
+- **`update_woo_product_qty` notify flag** (PR #6448) — `notify` (default
+  `true`) suppresses low/no-stock emails for the write via scoped
+  `woocommerce_should_send_*` filters removed in a `finally`;
+  `woocommerce_*_stock` actions still fire.
+- **Async job queue table bootstrap fix** (PR #6423) — the queue class now
+  boots in time to create its table (activation + first-load self-heal;
+  `get_queue_stats()` fails soft) — no more missing-table SQL floods.
+- **Comic Reader 0.5.0** (PR #6402) — Komga-parity upgrade; **Docs Hub
+  0.4.3** (PRs #6397/#6403) — wp.org prep; **Wave F2** (PRs #6397–#6445,
+  #6449) — new `nvoos-content-graph-pro` v1.0.0 standalone addon (Pro CRM
+  + e-commerce ports, 43 e-commerce tools).
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Woo Price/Qty Tools & Ecosystem Port Waves (v1.1.72+)
+
+- **WooCommerce price & quantity tools** (PR #6388) —
+  `update_woo_product_price` (regular/sale, all product types) and
+  `update_woo_product_qty` (stock + management) share the new
+  `WP_MCP_AI_Woo_Price_Qty_Updater` trait; `bulk_update_products` uses it;
+  tool presets register the new slugs.
+- **Scheduled sync connection ID** (PR #6386) — EZuite/FlowHub scheduled
+  syncs deliver the assigned connection ID (the scheduled action was
+  dropping it).
+- **Pro update vendor integrity** (PR #6338) — "Update Pro Now" verifies the
+  Pro package's `vendor/` before and after updating.
+- **Container binding** (PR #6339) — `tool_registry` is registered
+  `transient`; every `get()` resolves the live singleton (test-swap safe).
+- **Deps + defaults** (PRs #6365, #6332) — browserslist/qs patched (12
+  Dependabot alerts); `gpt-image-2` aligned across all three settings
+  layers.
+- **Ecosystem ports** (PRs #6330–#6387) — Wave D8 closes the standalone
+  tool-execution gap in Content Graph AI; Wave E6 engine pieces fold into
+  the AI addon; the platform addon closes Waves E2/E3/E5/E1/E4 +
+  E-UI-1/2/3. Sub-project versions unchanged (1.0.4 / 1.0.4 / 2.0.0).
+- **Tool count** — +2 Pro: ~303 base + ~1,265 Pro (~1,568 total).
 
 ## Rate-Limit Unlock, Model Catalog & Ecosystem (v1.1.71+)
 

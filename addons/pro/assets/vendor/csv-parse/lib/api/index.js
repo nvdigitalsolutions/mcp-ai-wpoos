@@ -2,6 +2,7 @@ import { normalize_columns_array } from "./normalize_columns_array.js";
 import { init_state } from "./init_state.js";
 import { normalize_options } from "./normalize_options.js";
 import { CsvError } from "./CsvError.js";
+import { delimiter_discover } from "../utils/delimiter_discover.js";
 
 const isRecordEmpty = function (record) {
   return record.every(
@@ -28,6 +29,7 @@ const boms = {
 const transform = function (original_options = {}) {
   const info = {
     bytes: 0,
+    bytes_records: 0,
     comment_lines: 0,
     empty_lines: 0,
     invalid_field_length: 0,
@@ -69,6 +71,7 @@ const transform = function (original_options = {}) {
       const {
         bom,
         comment_no_infix,
+        delimiter_auto,
         encoding,
         from_line,
         ltrim,
@@ -81,7 +84,45 @@ const transform = function (original_options = {}) {
         to_line,
       } = this.options;
       let { comment, escape, quote, record_delimiter } = this.options;
-      const { bomSkipped, previousBuf, rawBuffer, escapeIsQuote } = this.state;
+      const {
+        bomSkipped,
+        delimiterDiscovered,
+        delimiterBufPrevious,
+        rawBuffer,
+        escapeIsQuote,
+      } = this.state;
+      // Automatic delimiter discovery
+      if (!delimiterDiscovered && delimiter_auto) {
+        let delimiterBuf;
+        if (delimiterBufPrevious === undefined) {
+          delimiterBuf = nextBuf;
+        } else if (
+          delimiterBufPrevious !== undefined &&
+          nextBuf === undefined
+        ) {
+          delimiterBuf = delimiterBufPrevious;
+        } else {
+          delimiterBuf = Buffer.concat([delimiterBufPrevious, nextBuf]);
+        }
+        // Ensure that nextBuf is not concatenated a second time during buffer reconciliation
+        nextBuf = undefined;
+        // this.delimiterBufPrevious = delimiterBuf;
+        if (end || delimiterBuf.length > delimiter_auto.size) {
+          this.options.delimiter = [
+            Buffer.from(
+              delimiter_discover(delimiterBuf, this.options.delimiter_auto),
+            ),
+          ];
+          this.state.previousBuf = delimiterBuf;
+          this.state.delimiterBufPrevious = undefined;
+          this.state.delimiterDiscovered = true;
+        } else {
+          this.state.delimiterBufPrevious = delimiterBuf;
+          return;
+        }
+      }
+      // Previous buffers reconciliation
+      const { previousBuf } = this.state;
       let buf;
       if (previousBuf === undefined) {
         if (nextBuf === undefined) {
@@ -115,10 +156,14 @@ const transform = function (original_options = {}) {
               this.state.bufBytesStart += bomLength;
               buf = buf.slice(bomLength);
               // Renormalize original options with the new encoding
-              this.options = normalize_options({
+              const options = normalize_options({
                 ...this.original_options,
                 encoding: encoding,
               });
+              // Properties are merged with the existing options instance
+              for (const key in options) {
+                this.options[key] = options[key];
+              }
               // Options will re-evaluate the Buffer with the new encoding
               ({ comment, escape, quote } = this.options);
               break;
@@ -301,7 +346,7 @@ const transform = function (original_options = {}) {
                 this.info.comment_lines++;
                 // Skip full comment line
               } else {
-                // Activate records emition if above from_line
+                // Activate records emission if above from_line
                 if (
                   this.state.enabled === false &&
                   this.info.lines +
@@ -552,7 +597,7 @@ const transform = function (original_options = {}) {
             // Turn duplicate columns into an array
             if (
               group_columns_by_name === true &&
-              obj[columns[i].name] !== undefined
+              Object.hasOwn(obj, columns[i].name)
             ) {
               if (Array.isArray(obj[columns[i].name])) {
                 obj[columns[i].name] = obj[columns[i].name].concat(record[i]);
@@ -560,7 +605,12 @@ const transform = function (original_options = {}) {
                 obj[columns[i].name] = [obj[columns[i].name], record[i]];
               }
             } else {
-              obj[columns[i].name] = record[i];
+              Object.defineProperty(obj, columns[i].name, {
+                value: record[i],
+                enumerable: true,
+                writable: true,
+                configurable: true,
+              });
             }
           }
           // Without objname (default)
@@ -699,6 +749,7 @@ const transform = function (original_options = {}) {
           return;
         }
       }
+      this.info.bytes_records += this.info.bytes;
       push(record);
     },
     // Return a tuple with the error and the casted value
@@ -731,30 +782,6 @@ const transform = function (original_options = {}) {
       }
       return [undefined, field];
     },
-    // Helper to test if a character is a space or a line delimiter
-    __isCharTrimable: function (buf, pos) {
-      const isTrim = (buf, pos) => {
-        const { timchars } = this.state;
-        loop1: for (let i = 0; i < timchars.length; i++) {
-          const timchar = timchars[i];
-          for (let j = 0; j < timchar.length; j++) {
-            if (timchar[j] !== buf[pos + j]) continue loop1;
-          }
-          return timchar.length;
-        }
-        return 0;
-      };
-      return isTrim(buf, pos);
-    },
-    // Keep it in case we implement the `cast_int` option
-    // __isInt(value){
-    //   // return Number.isInteger(parseInt(value))
-    //   // return !isNaN( parseInt( obj ) );
-    //   return /^(\-|\+)?[1-9][0-9]*$/.test(value)
-    // }
-    __isFloat: function (value) {
-      return value - parseFloat(value) + 1 >= 0; // Borrowed from jquery
-    },
     __compareBytes: function (sourceBuf, targetBuf, targetPos, firstByte) {
       if (sourceBuf[0] !== firstByte) return 0;
       const sourceLength = sourceBuf.length;
@@ -762,6 +789,22 @@ const transform = function (original_options = {}) {
         if (sourceBuf[i] !== targetBuf[targetPos + i]) return 0;
       }
       return sourceLength;
+    },
+    // Helper to test if a character is trimable
+    __isCharTrimable: function (buf, pos) {
+      const { timchars, timcharFirstBytes } = this.state;
+      // Fast bail-out: non-whitespace bytes (the common case) are rejected
+      // without scanning the full timchar list.
+      const first = buf[pos];
+      if (first === undefined || timcharFirstBytes[first] === 0) return 0;
+      loop1: for (let i = 0; i < timchars.length; i++) {
+        const timchar = timchars[i];
+        for (let j = 0; j < timchar.length; j++) {
+          if (timchar[j] !== buf[pos + j]) continue loop1;
+        }
+        return timchar.length;
+      }
+      return 0;
     },
     __isDelimiter: function (buf, pos, chr) {
       const { delimiter, ignore_last_delimiters } = this.options;
@@ -788,6 +831,40 @@ const transform = function (original_options = {}) {
       }
       return 0;
     },
+    __isEscape: function (buf, pos, chr) {
+      const { escape } = this.options;
+      if (escape === null) return false;
+      const l = escape.length;
+      if (escape[0] === chr) {
+        for (let i = 0; i < l; i++) {
+          if (escape[i] !== buf[pos + i]) {
+            return false;
+          }
+        }
+        return true;
+      }
+      return false;
+    },
+    __isFloat: function (value) {
+      return value - parseFloat(value) + 1 >= 0; // Borrowed from jquery
+    },
+    // Keep it in case we implement the `cast_int` option
+    // __isInt(value){
+    //   // return Number.isInteger(parseInt(value))
+    //   // return !isNaN( parseInt( obj ) );
+    //   return /^(\-|\+)?[1-9][0-9]*$/.test(value)
+    // }
+    __isQuote: function (buf, pos) {
+      const { quote } = this.options;
+      if (quote === null) return false;
+      const l = quote.length;
+      for (let i = 0; i < l; i++) {
+        if (quote[i] !== buf[pos + i]) {
+          return false;
+        }
+      }
+      return true;
+    },
     __isRecordDelimiter: function (chr, buf, pos) {
       const { record_delimiter } = this.options;
       const recordDelimiterLength = record_delimiter.length;
@@ -805,31 +882,6 @@ const transform = function (original_options = {}) {
         return rd.length;
       }
       return 0;
-    },
-    __isEscape: function (buf, pos, chr) {
-      const { escape } = this.options;
-      if (escape === null) return false;
-      const l = escape.length;
-      if (escape[0] === chr) {
-        for (let i = 0; i < l; i++) {
-          if (escape[i] !== buf[pos + i]) {
-            return false;
-          }
-        }
-        return true;
-      }
-      return false;
-    },
-    __isQuote: function (buf, pos) {
-      const { quote } = this.options;
-      if (quote === null) return false;
-      const l = quote.length;
-      for (let i = 0; i < l; i++) {
-        if (quote[i] !== buf[pos + i]) {
-          return false;
-        }
-      }
-      return true;
     },
     __autoDiscoverRecordDelimiter: function (buf, pos) {
       const { encoding } = this.options;
@@ -861,10 +913,14 @@ const transform = function (original_options = {}) {
       if (skip_records_with_error) {
         this.state.recordHasError = true;
         if (this.options.on_skip !== undefined) {
-          this.options.on_skip(
-            err,
-            raw ? this.state.rawBuffer.toString(encoding) : undefined,
-          );
+          try {
+            this.options.on_skip(
+              err,
+              raw ? this.state.rawBuffer.toString(encoding) : undefined,
+            );
+          } catch (err) {
+            return err;
+          }
         }
         // this.emit('skip', err, raw ? this.state.rawBuffer.toString(encoding) : undefined);
         return undefined;
@@ -882,6 +938,7 @@ const transform = function (original_options = {}) {
       const { columns, raw, encoding } = this.options;
       return {
         ...this.__infoDataSet(),
+        bytes_records: this.info.bytes,
         error: this.state.error,
         header: columns === true,
         index: this.state.record.length,
@@ -891,8 +948,11 @@ const transform = function (original_options = {}) {
     __infoField: function () {
       const { columns } = this.options;
       const isColumns = Array.isArray(columns);
+      // Bytes records are only incremented when all records'fields are parsed
+      const bytes_records = this.info.bytes_records;
       return {
         ...this.__infoRecord(),
+        bytes_records: bytes_records,
         column:
           isColumns === true
             ? columns.length > this.state.record.length

@@ -92,6 +92,29 @@ A fourth guard runs in the SVN-deploy job: `grep -E '^\s*addons\s*$'
 .distignore` must succeed before `10up/action-wordpress-plugin-deploy`
 is allowed to push.
 
+## Commercial model (paid NV oOS Complete bundle)
+
+The base plugin submission contains **no commerce code** — no checkout, no
+upsell UI, no installer, no license checks. The paid offering works like
+this:
+
+1. The **NV oOS Complete** bundle (base + Pro as a separate plugin) is sold
+   **off-directory** by NV Digital Solutions through its own Stripe-based
+   checkout server. The bundle itself, its license keys, and its revocation
+   lifecycle are not part of any wp.org submission.
+2. The opt-in purchase flow lives in the standalone **NV oOS Content Graph**
+   plugin (`plugins/nvoos-content-graph/` in this monorepo): a click-triggered
+   checkout modal (Stripe Payment Element, no Stripe keys in the plugin), a
+   vendor-side checkout API, and an optional one-click installer for the
+   purchased bundle. Manual ZIP install is the documented primary path.
+3. That plugin's `readme.txt` carries the `== External Services ==`
+   disclosures for Stripe, the vendor checkout server, and the GitHub-served
+   download, plus the data-sent list (product name, site URL, payment ID,
+   buyer email, Terms consent timestamp). Reviewer-facing notes live in
+   `plugins/nvoos-content-graph/WPORG-REVIEW-COMMERCE-NOTES.md`.
+
+Nothing in the paid flow ships inside this base submission ZIP.
+
 ## What this means for review findings
 
 If the reviewer sees an issue path that starts with `addons/` (for

@@ -13,15 +13,23 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
 
+use function absint;
 use function current_user_can;
 use function do_action;
 use function esc_url_raw;
 use function get_current_user_id;
 use function get_transient;
 use function home_url;
+use function in_array;
+use function is_array;
+use function is_email;
+use function is_numeric;
 use function is_wp_error;
+use function microtime;
 use function register_rest_route;
 use function rest_ensure_response;
+use function round;
+use function sanitize_email;
 use function sanitize_text_field;
 use function set_transient;
 use function time;
@@ -31,9 +39,9 @@ use function wp_parse_url;
 /**
  * REST controller for the addon purchase flow.
  *
- * Routes (all admin-only, cookie auth + X-WP-Nonce):
- *   POST /payments/session — start a checkout session via the vendor API.
- *   POST /payments/verify  — verify the paid intent, record the license, install the addon.
+	 * Routes (all admin-only, cookie auth + X-WP-Nonce):
+	 *   POST /payments/session — start a checkout session via the vendor API.
+	 *   POST /payments/verify  — verify the paid intent, record the license, install the NV oOS Complete bundle.
  *
  * All Stripe communication (PaymentIntent creation, secret keys,
  * server-side verification) happens on the vendor's server — see
@@ -73,7 +81,7 @@ class CommerceController {
 				'callback'            => array( $this, 'verifyPayment' ),
 				'permission_callback' => array( $this, 'checkPermission' ),
 				'args'                => array(
-					'payment_intent' => array(
+					'payment_intent'  => array(
 						'required'          => true,
 						'type'              => 'string',
 						'validate_callback' => static function ( $value ) {
@@ -81,7 +89,47 @@ class CommerceController {
 						},
 						'sanitize_callback' => 'sanitize_text_field',
 					),
+					'terms_agreed_at' => array(
+						'type'              => 'integer',
+						'validate_callback' => static function ( $value ) {
+							if ( ! is_numeric( $value ) ) {
+								return false;
+							}
+
+							$ts = (int) $value;
+							return $ts > 0
+								&& $ts >= time() - 7 * DAY_IN_SECONDS
+								&& $ts <= time() + 10 * MINUTE_IN_SECONDS;
+						},
+						'sanitize_callback' => 'absint',
+					),
+					'buyer_email'     => array(
+						'type'              => 'string',
+						'validate_callback' => static function ( $value ) {
+							return is_string( $value ) && ( '' === $value || false !== is_email( $value ) );
+						},
+						'sanitize_callback' => 'sanitize_email',
+					),
+					'buyer_country'   => array(
+						'type'              => 'string',
+						'validate_callback' => static function ( $value ) {
+							return is_string( $value ) && ( '' === $value || 1 === preg_match( '/^[A-Z]{2}$/', $value ) );
+						},
+						'sanitize_callback' => static function ( $value ) {
+							return strtoupper( sanitize_text_field( $value ) );
+						},
+					),
 				),
+			)
+		);
+
+		register_rest_route(
+			Schema::REST_NAMESPACE,
+			'/payments/health',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'checkHealth' ),
+				'permission_callback' => array( $this, 'checkPermission' ),
 			)
 		);
 	}
@@ -150,17 +198,76 @@ class CommerceController {
 
 		return rest_ensure_response(
 			array(
-				'client_secret'   => sanitize_text_field( (string) $session['client_secret'] ),
-				'publishable_key' => sanitize_text_field( (string) $session['publishable_key'] ),
-				'amount'          => (int) ( $session['amount'] ?? Payments::priceCents() ),
-				'currency'        => sanitize_text_field( (string) ( $session['currency'] ?? Payments::currency() ) ),
-				'test_mode'       => (bool) ( $session['test_mode'] ?? false ),
+				'client_secret'     => sanitize_text_field( (string) $session['client_secret'] ),
+				'publishable_key'   => sanitize_text_field( (string) $session['publishable_key'] ),
+				'amount'            => (int) ( $session['amount'] ?? Payments::priceCents() ),
+				'currency'          => sanitize_text_field( (string) ( $session['currency'] ?? Payments::currency() ) ),
+				'test_mode'         => (bool) ( $session['test_mode'] ?? false ),
+				'terms_url'         => self::sanitizeLegalUrl( (string) ( $session['terms_url'] ?? '' ), Payments::termsUrl(), 'https://nvdigitalsolutions.com/terms-of-service' ),
+				'refund_policy_url' => self::sanitizeLegalUrl( (string) ( $session['refund_policy_url'] ?? '' ), Payments::refundPolicyUrl(), 'https://nvdigitalsolutions.com/refund-policy' ),
 			)
 		);
 	}
 
 	/**
-	 * Verify a completed payment, record the license, and install the addon.
+	 * Connectivity probe: can this site reach the vendor checkout API?
+	 *
+	 * Calls the vendor's public `GET /health` endpoint and reports
+	 * reachability, round-trip latency, and the vendor's own status
+	 * payload. Deliberately **not** throttled: the session/verify buckets
+	 * exist to protect the purchase flow, and a diagnostic probe that
+	 * consumed them would make the "Too many checkout attempts" lockout
+	 * even harder to debug.
+	 *
+	 * @since 1.0.7
+	 *
+	 * @return WP_REST_Response
+	 */
+	public function checkHealth() {
+		$configured = Payments::isConfigured();
+		$base       = array(
+			'configured'     => $configured,
+			'vendor_api_url' => Payments::vendorApiUrl(),
+		);
+
+		if ( ! $configured ) {
+			return rest_ensure_response(
+				$base + array(
+					'reachable' => false,
+					'message'   => __( 'Checkout is not available on this build. Please contact the plugin vendor.', 'nvoos-content-graph' ),
+				)
+			);
+		}
+
+		$started = microtime( true );
+		$vendor  = new Vendor( Payments::vendorApiUrl() );
+		$health  = $vendor->health();
+		$latency = (int) round( ( microtime( true ) - $started ) * 1000 );
+
+		if ( is_wp_error( $health ) ) {
+			$data = $health->get_error_data();
+			return rest_ensure_response(
+				$base + array(
+					'reachable'  => false,
+					'status'     => is_array( $data ) && isset( $data['status'] ) ? (int) $data['status'] : 502,
+					'message'    => $health->get_error_message(),
+					'latency_ms' => $latency,
+				)
+			);
+		}
+
+		return rest_ensure_response(
+			$base + array(
+				'reachable'  => true,
+				'message'    => __( 'The checkout service is reachable.', 'nvoos-content-graph' ),
+				'vendor'     => $health,
+				'latency_ms' => $latency,
+			)
+		);
+	}
+
+	/**
+	 * Verify a completed payment, record the license, and install the Complete bundle.
 	 *
 	 * The vendor re-verifies the PaymentIntent server-side (status, amount,
 	 * product, site binding) and returns a license key plus a signed
@@ -181,7 +288,10 @@ class CommerceController {
 			);
 		}
 
-		$intentId = (string) $request->get_param( 'payment_intent' );
+		$intentId      = (string) $request->get_param( 'payment_intent' );
+		$termsAgreedAt = (int) $request->get_param( 'terms_agreed_at' );
+		$buyerEmail    = (string) $request->get_param( 'buyer_email' );
+		$buyerCountry  = (string) $request->get_param( 'buyer_country' );
 
 		if ( License::isLicensed() && Installer::isActive() ) {
 			return rest_ensure_response(
@@ -190,7 +300,7 @@ class CommerceController {
 					'installed'   => true,
 					'activated'   => true,
 					'license_key' => License::licenseKey(),
-					'message'     => __( 'NV oOS Content Graph — AI is already licensed and active on this site.', 'nvoos-content-graph' ),
+					'message'     => __( 'NV oOS is already licensed and active on this site.', 'nvoos-content-graph' ),
 				)
 			);
 		}
@@ -204,7 +314,7 @@ class CommerceController {
 		}
 
 		$vendor = new Vendor( Payments::vendorApiUrl() );
-		$result = $vendor->verify( $intentId );
+		$result = $vendor->verify( $intentId, $termsAgreedAt, $buyerEmail, $buyerCountry );
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -231,6 +341,9 @@ class CommerceController {
 			'purchaser_id'          => get_current_user_id(),
 			'purchaser_email'       => sanitize_text_field( (string) $user->user_email ),
 			'purchased_at'          => time(),
+			'terms_agreed_at'       => $termsAgreedAt,
+			'buyer_email'           => '' !== $buyerEmail ? sanitize_email( $buyerEmail ) : sanitize_email( (string) $user->user_email ),
+			'buyer_country'         => '' !== $buyerCountry && 1 === preg_match( '/^[A-Z]{2}$/', $buyerCountry ) ? strtoupper( $buyerCountry ) : '',
 		);
 
 		License::save( $record );
@@ -247,7 +360,7 @@ class CommerceController {
 		 */
 		do_action( 'nvoos_content_graph/payments/purchase_recorded', $record );
 
-		// ─── Install the addon ──────────────────────────────────────
+		// ─── Install the NV oOS Complete bundle ────────────────────
 		$zipUrl = self::sanitizeZipUrl(
 			(string) ( $result['download_url'] ?? '' )
 		);
@@ -263,7 +376,7 @@ class CommerceController {
 				$install->get_error_code(),
 				$install->get_error_message()
 					. ' '
-					. __( 'Your license is recorded — you can also download the addon ZIP manually and upload it on the Plugins screen.', 'nvoos-content-graph' ),
+					. __( 'Your license is recorded — you can also download the NV oOS Complete ZIP manually and upload it on the Plugins screen.', 'nvoos-content-graph' ),
 				array(
 					'status'   => 500,
 					'zip_url'  => is_array( $data ) && isset( $data['zip_url'] ) ? $data['zip_url'] : $zipUrl,
@@ -274,11 +387,15 @@ class CommerceController {
 
 		return rest_ensure_response(
 			array(
-				'licensed'    => true,
-				'installed'   => (bool) $install['installed'],
-				'activated'   => (bool) $install['activated'],
-				'license_key' => $record['license_key'],
-				'message'     => (string) $install['message'],
+				'licensed'     => true,
+				'installed'    => (bool) $install['installed'],
+				'activated'    => (bool) $install['activated'],
+				'license_key'  => $record['license_key'],
+				// Manual install is the primary documented path — always
+				// surface the signed download URL alongside the auto-install
+				// result so the buyer can upload the ZIP themselves.
+				'download_url' => $zipUrl,
+				'message'      => (string) $install['message'],
 			)
 		);
 	}
@@ -301,6 +418,31 @@ class CommerceController {
 			return '';
 		}
 		return esc_url_raw( $url );
+	}
+
+	/**
+	 * Escape a legal-document URL, falling back to a client-side default.
+	 *
+	 * The vendor's session response carries the authoritative Terms of
+	 * Service and Refund Policy URLs; when the vendor omits them (or
+	 * returns something that is not an http(s) URL), the plugin's own
+	 * filterable defaults keep the consent links present.
+	 *
+	 * @since 1.0.4
+	 *
+	 * @param string $url          Candidate URL from the vendor response.
+	 * @param string $fallback     Client-side fallback URL.
+	 * @param string $hardFallback Last-resort URL for this link.
+	 * @return string An http(s) URL, never empty.
+	 */
+	private static function sanitizeLegalUrl( string $url, string $fallback, string $hardFallback ): string {
+		$parts = wp_parse_url( $url );
+		if ( is_array( $parts ) && in_array( $parts['scheme'] ?? '', array( 'http', 'https' ), true ) && ! empty( $parts['host'] ) ) {
+			return esc_url_raw( $url );
+		}
+
+		$fallback = esc_url_raw( $fallback );
+		return '' !== $fallback ? $fallback : $hardFallback;
 	}
 
 	/**

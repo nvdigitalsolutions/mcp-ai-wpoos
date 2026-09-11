@@ -4,12 +4,15 @@ This directory contains all tools for the E-commerce Pro Toolkit.
 
 - `init.php` — toolkit bootstrap; loads admin pages and optimization only when the toolkit is enabled.
 - `class-wp-mcp-ai-ecommerce-helpers.php` — side-effect-free helpers (e.g. `wp_mcp_ai_is_ecommerce_toolkit_enabled()`).
+- `trait-wp-mcp-ai-woo-price-qty-updater.php` — shared price/quantity update helpers used by `update_woo_product_price`, `update_woo_product_qty`, `woo_products`, and `bulk_update_products` (all-types target resolution, sale validation, canonical stock notifications with per-call `notify` suppression, variable-parent sync, transient cleanup).
 
 ## Tool Categories
 
-### Product Management (5 tools)
+### Product Management (7 tools)
 - [x] create_product_advanced - Create product with all WooCommerce meta
-- [x] bulk_update_products - Update multiple products at once
+- [x] bulk_update_products - Update multiple products at once (scope "all" expands variable/grouped parents to their variations/children with parent re-sync)
+- [x] update_woo_product_price - Update price for all product types (simple, variable/variations, grouped, external)
+- [x] update_woo_product_qty - Update stock quantity for all stock-managed types (set/increase/decrease, notify flag for suppressing low/no-stock emails)
 - [x] import_products_csv - Import products from CSV/Excel
 - [x] export_products_report - Export product catalog with analytics
 - [x] sync_product_inventory - Sync inventory across warehouses
@@ -41,13 +44,13 @@ This directory contains all tools for the E-commerce Pro Toolkit.
 
 ## Implementation Status
 
-**Phase 1 (Foundation)**: ✅ Directory created  
-**Phase 2 (Tools)**: ✅ Complete (22/22 tools complete - 100%)
+**Phase 1 (Foundation)**: ✅ Directory created
+**Phase 2 (Tools)**: ✅ Complete (24/24 tools complete - 100%)
 
 ## Completed Features
 
-All 22 E-commerce toolkit tools are now implemented:
-- ✅ Product Management: All 5 tools complete
+All 24 E-commerce toolkit tools are now implemented:
+- ✅ Product Management: All 7 tools complete
 - ✅ Order Management: All 5 tools complete
 - ✅ Customer Management: All 3 tools complete
 - ✅ Inventory & Stock: All 3 tools complete

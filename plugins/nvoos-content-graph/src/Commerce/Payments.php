@@ -18,6 +18,9 @@ use function rawurlencode;
  * URLs — is delegated to the vendor checkout API (run by NV Digital
  * Solutions on its own server, where the Stripe secret key lives).
  *
+ * The purchased artifact is the **NV oOS Complete** bundle (the full
+ * NV oOS plugin: base + Pro, distributed as a separate WordPress plugin).
+ *
  * The browser is never trusted with an amount: the price shown here is
  * for display only, and the vendor re-verifies everything server-side.
  *
@@ -28,8 +31,16 @@ final class Payments {
 	/** @var int Default price in the smallest currency unit (USD cents). */
 	public const DEFAULT_PRICE_CENTS = 4900;
 
-	/** @var string Addon version pinned for the fallback download URL. */
-	public const DEFAULT_ADDON_VERSION = '1.0.4';
+	/**
+	 * Bundle version pinned for the fallback download URL.
+	 *
+	 * Mirrors the base-plugin release (`nvdigital-open-operator-system-oos-complete-{version}.zip`)
+	 * published on the monorepo GitHub releases. The vendor's `/verify`
+	 * response is authoritative when it returns an `addon_version`.
+	 *
+	 * @var string
+	 */
+	public const DEFAULT_ADDON_VERSION = '1.1.74';
 
 	/**
 	 * Base URL of the vendor checkout API.
@@ -93,9 +104,9 @@ final class Payments {
 	}
 
 	/**
-	 * The addon version targeted by the installer.
+	 * The bundle version targeted by the installer.
 	 *
-	 * Bump this (or filter it) in lockstep with new addon releases.
+	 * Bump this (or filter it) in lockstep with new NV oOS releases.
 	 *
 	 * @since 1.0.4
 	 *
@@ -106,11 +117,11 @@ final class Payments {
 	}
 
 	/**
-	 * Fallback download URL of the addon ZIP.
+	 * Fallback download URL of the NV oOS Complete ZIP.
 	 *
 	 * Only used when the vendor does not return a signed `download_url`
 	 * in the verify response. Defaults to the monorepo GitHub release
-	 * asset built by `.github/workflows/build-nvoos-content-graph-ai.yml`.
+	 * asset built by `.github/workflows/release.yml`.
 	 *
 	 * @since 1.0.4
 	 *
@@ -119,7 +130,7 @@ final class Payments {
 	public static function zipUrl(): string {
 		$version = self::addonVersion();
 		$default = sprintf(
-			'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/content-graph-ai-v%s/nvoos-content-graph-ai-v%s.zip',
+			'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/nvdigital-oos-v%s/nvdigital-open-operator-system-oos-complete-%s.zip',
 			rawurlencode( $version ),
 			rawurlencode( $version )
 		);
@@ -130,9 +141,10 @@ final class Payments {
 	 * Fallback product page URL.
 	 *
 	 * Shown (and redirected to) when the vendor checkout endpoint is not
-	 * available, so users can still purchase the AI addon from the vendor
-	 * site. Override via the `nvoos_content_graph/payments/fallback_url`
-	 * filter; an empty value disables the redirect fallback.
+	 * available, so users can still obtain the NV oOS Complete bundle.
+	 * Defaults to the public GitHub releases page; point it at the vendor
+	 * product page via the `nvoos_content_graph/payments/fallback_url`
+	 * filter. An empty value disables the redirect fallback.
 	 *
 	 * @since 1.0.4
 	 *
@@ -141,7 +153,145 @@ final class Payments {
 	public static function fallbackProductUrl(): string {
 		return (string) apply_filters(
 			Schema::FILTER_FALLBACK_URL,
-			'https://nvdigitalsolutions.com/plugins/nvoos-content-graph-ai/'
+			'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases'
+		);
+	}
+
+	/**
+	 * The Terms of Service URL linked from the purchase modal.
+	 *
+	 * The vendor's /session response is authoritative when it carries a
+	 * terms URL; this client-side default is the fallback so the consent
+	 * link is always present. Filterable via
+	 * `nvoos_content_graph/payments/terms_url`.
+	 *
+	 * @since 1.0.4
+	 *
+	 * @return string
+	 */
+	public static function termsUrl(): string {
+		return (string) apply_filters(
+			Schema::FILTER_TERMS_URL,
+			'https://nvdigitalsolutions.com/terms-of-service'
+		);
+	}
+
+	/**
+	 * The Refund Policy URL linked from the purchase modal.
+	 *
+	 * Same fallback semantics as {@see termsUrl()}. Filterable via
+	 * `nvoos_content_graph/payments/refund_policy_url`.
+	 *
+	 * @since 1.0.4
+	 *
+	 * @return string
+	 */
+	public static function refundPolicyUrl(): string {
+		return (string) apply_filters(
+			Schema::FILTER_REFUND_POLICY_URL,
+			'https://nvdigitalsolutions.com/refund-policy'
+		);
+	}
+
+	/**
+	 * The roadmap / feature-feedback URL shown in the purchase modal.
+	 *
+	 * The modal renders the "funded by owners" line only when this URL is
+	 * non-empty — an empty value hides the promise entirely. Filterable via
+	 * `nvoos_content_graph/payments/roadmap_url`.
+	 *
+	 * @since 1.0.7
+	 *
+	 * @return string
+	 */
+	public static function roadmapUrl(): string {
+		return (string) apply_filters(
+			Schema::FILTER_ROADMAP_URL,
+			'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/discussions'
+		);
+	}
+
+	/**
+	 * The changelog/releases URL shown on the purchase success screen.
+	 *
+	 * Filterable via `nvoos_content_graph/payments/changelog_url`.
+	 *
+	 * @since 1.0.7
+	 *
+	 * @return string
+	 */
+	public static function changelogUrl(): string {
+		return (string) apply_filters(
+			Schema::FILTER_CHANGELOG_URL,
+			'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases'
+		);
+	}
+
+	/**
+	 * The support email shown on the purchase success screen.
+	 *
+	 * Filterable via `nvoos_content_graph/payments/support_email`.
+	 *
+	 * @since 1.0.7
+	 *
+	 * @return string
+	 */
+	public static function supportEmail(): string {
+		return (string) apply_filters(
+			Schema::FILTER_SUPPORT_EMAIL,
+			'support@nvdigitalsolutions.com'
+		);
+	}
+
+	/**
+	 * ISO 3166-1 alpha-2 codes for EU member states (EU-27).
+	 *
+	 * Buyers selecting one of these in the purchase modal are required to
+	 * provide a billing address (VAT records for digital services); the
+	 * code is forwarded to the vendor and stored on the license. Filterable
+	 * via `nvoos_content_graph/payments/eu_countries`.
+	 *
+	 * @since 1.0.7
+	 *
+	 * @return array<int,string>
+	 */
+	public static function euCountryCodes(): array {
+		$eu = array(
+			'AT',
+			'BE',
+			'BG',
+			'HR',
+			'CY',
+			'CZ',
+			'DK',
+			'EE',
+			'FI',
+			'FR',
+			'DE',
+			'GR',
+			'HU',
+			'IE',
+			'IT',
+			'LV',
+			'LT',
+			'LU',
+			'MT',
+			'NL',
+			'PL',
+			'PT',
+			'RO',
+			'SK',
+			'SI',
+			'ES',
+			'SE',
+		);
+
+		$filtered = apply_filters( Schema::FILTER_EU_COUNTRIES, $eu );
+		return array_values(
+			array_filter(
+				is_array( $filtered ) ? $filtered : $eu,
+				static fn( $code ) => is_string( $code ) && 1 === preg_match( '/^[A-Z]{2}$/', $code )
+			)
 		);
 	}
 
@@ -155,7 +305,7 @@ final class Payments {
 	 */
 	public static function purchasePayload(): array {
 		return array(
-			'product'       => Schema::PRODUCT_AI_ADDON,
+			'product'       => Schema::PRODUCT_COMPLETE,
 			'site_url'      => home_url( '' ),
 			'addon_version' => self::addonVersion(),
 		);

@@ -480,3 +480,406 @@
 		font-size: 1rem;
 	}
 }
+
+/* ==========================================================================
+   Reader (v0.3.0): backgrounds, transitions, hidden UI, touch
+   ========================================================================== */
+
+.nvoos-cr-reader {
+	touch-action: pan-y;
+}
+
+.nvoos-cr-page-viewer {
+	transition: background 0.2s ease;
+}
+
+.nvoos-cr-page-spread--fade {
+	animation: nvoos-cr-fade-in 0.18s ease-out;
+}
+
+.nvoos-cr-page-spread--slide {
+	animation: nvoos-cr-slide-in 0.18s ease-out;
+}
+
+@keyframes nvoos-cr-fade-in {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+@keyframes nvoos-cr-slide-in {
+	from { opacity: 0; transform: translateY(6px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+
+.nvoos-cr-reader--hide-ui .nvoos-cr-controls {
+	display: none;
+}
+
+/* ==========================================================================
+   Scroll / Webtoon viewer
+   ========================================================================== */
+
+.nvoos-cr-scroll-viewer {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px 0;
+	-webkit-overflow-scrolling: touch;
+}
+
+.nvoos-cr-scroll-viewer--webtoon {
+	padding: 0;
+}
+
+.nvoos-cr-scroll-page {
+	display: flex;
+	justify-content: center;
+	padding: 12px 0;
+}
+
+.nvoos-cr-scroll-viewer--webtoon .nvoos-cr-scroll-page {
+	padding: 0;
+}
+
+.nvoos-cr-scroll-page img {
+	max-width: 100%;
+	height: auto;
+	display: block;
+}
+
+.nvoos-cr-scroll-viewer--webtoon .nvoos-cr-scroll-page img {
+	max-width: 100%;
+	width: 100%;
+}
+
+/* ==========================================================================
+   Overlays (settings, thumbnails, help)
+   ========================================================================== */
+
+.nvoos-cr-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 100000;
+	background: rgba(10, 10, 30, 0.82);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 5vh 16px;
+	box-sizing: border-box;
+}
+
+.nvoos-cr-overlay-header {
+	width: 100%;
+	max-width: 560px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.nvoos-cr-overlay-title {
+	margin: 0;
+	font-size: 1.1rem;
+	color: var(--cr-text);
+}
+
+.nvoos-cr-settings,
+.nvoos-cr-help {
+	width: 100%;
+	max-width: 560px;
+	background: var(--cr-surface);
+	border: 1px solid var(--cr-border);
+	border-radius: var(--cr-radius);
+	padding: 20px;
+	box-sizing: border-box;
+	outline: none;
+	overflow-y: auto;
+}
+
+.nvoos-cr-settings-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 10px 0;
+	border-bottom: 1px solid var(--cr-border);
+}
+
+.nvoos-cr-settings-label {
+	font-size: 0.875rem;
+	color: var(--cr-text);
+}
+
+.nvoos-cr-settings-select {
+	background: var(--cr-bg);
+	color: var(--cr-text);
+	border: 1px solid var(--cr-border);
+	border-radius: var(--cr-radius);
+	padding: 6px 10px;
+	font-size: 0.875rem;
+	max-width: 60%;
+}
+
+.nvoos-cr-settings-row input[type='checkbox'] {
+	width: 18px;
+	height: 18px;
+	accent-color: var(--cr-accent);
+}
+
+.nvoos-cr-help-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 8px 0;
+	border-bottom: 1px solid var(--cr-border);
+	font-size: 0.875rem;
+}
+
+.nvoos-cr-help-row:last-child,
+.nvoos-cr-settings-row:last-child {
+	border-bottom: none;
+}
+
+.nvoos-cr-help-keys {
+	background: var(--cr-bg);
+	border: 1px solid var(--cr-border);
+	border-radius: 4px;
+	padding: 3px 8px;
+	font-size: 0.8rem;
+	color: var(--cr-accent);
+}
+
+.nvoos-cr-thumbnails {
+	width: 100%;
+	max-width: 760px;
+	background: var(--cr-surface);
+	border: 1px solid var(--cr-border);
+	border-radius: var(--cr-radius);
+	padding: 16px;
+	box-sizing: border-box;
+	overflow-y: auto;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+	gap: 10px;
+	outline: none;
+}
+
+.nvoos-cr-thumb {
+	position: relative;
+	border: 2px solid transparent;
+	border-radius: 4px;
+	padding: 0;
+	background: var(--cr-bg);
+	cursor: pointer;
+	overflow: hidden;
+}
+
+.nvoos-cr-thumb img {
+	width: 100%;
+	display: block;
+	aspect-ratio: 2 / 3;
+	object-fit: cover;
+}
+
+.nvoos-cr-thumb-index {
+	position: absolute;
+	bottom: 2px;
+	left: 2px;
+	background: rgba(0, 0, 0, 0.7);
+	color: #fff;
+	font-size: 0.7rem;
+	padding: 1px 6px;
+	border-radius: 3px;
+}
+
+.nvoos-cr-thumb--active {
+	border-color: var(--cr-accent);
+}
+
+/* ==========================================================================
+   Library: sections + progress badges
+   ========================================================================== */
+
+.nvoos-cr-library-section {
+	margin-bottom: 24px;
+}
+
+.nvoos-cr-library-heading {
+	margin: 0 0 12px;
+	font-size: 1rem;
+	font-weight: 600;
+	color: var(--cr-text);
+}
+
+.nvoos-cr-card-progress {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 4px;
+	background: rgba(0, 0, 0, 0.5);
+}
+
+.nvoos-cr-card-progress-fill {
+	height: 100%;
+	background: var(--cr-accent);
+}
+
+.nvoos-cr-card-completed {
+	position: absolute;
+	top: 4px;
+	left: 4px;
+	background: rgba(0, 0, 0, 0.7);
+	color: #fff;
+	font-size: 0.7rem;
+	padding: 2px 8px;
+	border-radius: 10px;
+}
+
+/* ==========================================================================
+   Library: toolbar, search, series chips, pagination (v0.4.0)
+   ========================================================================== */
+
+.nvoos-cr-library-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 16px;
+	flex-wrap: wrap;
+}
+
+.nvoos-cr-search {
+	flex: 1;
+	min-width: 200px;
+	max-width: 420px;
+	background: var(--cr-surface);
+	color: var(--cr-text);
+	border: 1px solid var(--cr-border);
+	border-radius: var(--cr-radius);
+	padding: 8px 12px;
+	font-size: 0.875rem;
+}
+
+.nvoos-cr-sort {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.nvoos-cr-sort-label {
+	font-size: 0.8rem;
+	color: var(--cr-text-muted);
+}
+
+.nvoos-cr-series-filters {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-bottom: 16px;
+}
+
+.nvoos-cr-chip {
+	background: var(--cr-surface);
+	color: var(--cr-text);
+	border: 1px solid var(--cr-border);
+	border-radius: 999px;
+	padding: 4px 12px;
+	font-size: 0.8rem;
+	cursor: pointer;
+	transition: background 0.15s, border-color 0.15s;
+}
+
+.nvoos-cr-chip:hover {
+	background: var(--cr-surface-hover);
+}
+
+.nvoos-cr-chip--active {
+	border-color: var(--cr-accent);
+	color: var(--cr-accent);
+}
+
+.nvoos-cr-pagination {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	padding: 16px 0 8px;
+}
+
+.nvoos-cr-card-series {
+	color: var(--cr-accent);
+}
+
+.nvoos-cr-card-edit {
+	position: absolute;
+	bottom: 56px;
+	right: 4px;
+	width: 24px;
+	height: 24px;
+	border: none;
+	border-radius: 50%;
+	background: rgba(0, 0, 0, 0.6);
+	color: #fff;
+	font-size: 0.85rem;
+	line-height: 1;
+	cursor: pointer;
+	opacity: 0;
+	transition: opacity 0.15s;
+}
+
+.nvoos-cr-card-collect {
+	position: absolute;
+	bottom: 28px;
+	right: 4px;
+	width: 24px;
+	height: 24px;
+	border: none;
+	border-radius: 50%;
+	background: rgba(0, 0, 0, 0.6);
+	color: #fff;
+	font-size: 0.85rem;
+	line-height: 1;
+	cursor: pointer;
+	opacity: 0;
+	transition: opacity 0.15s;
+}
+
+.nvoos-cr-card:hover .nvoos-cr-card-edit,
+.nvoos-cr-card:hover .nvoos-cr-card-collect {
+	opacity: 1;
+}
+
+.nvoos-cr-card-edit:hover,
+.nvoos-cr-card-collect:hover {
+	background: var(--cr-accent);
+}
+
+.nvoos-cr-new-collection {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	max-width: 60%;
+}
+
+.nvoos-cr-settings-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	padding-top: 16px;
+}
+
+/* ==========================================================================
+   Reduced motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+	.nvoos-cr-page-spread--fade,
+	.nvoos-cr-page-spread--slide {
+		animation: none;
+	}
+
+	.nvoos-cr-page img {
+		transition: none;
+	}
+}
