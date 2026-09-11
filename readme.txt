@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.76
+Stable tag: 1.1.77
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.77 - September 11, 2026 =
+
+Model-refresh, base+pro, and checkout-launch release. Added: the DeepSeek catalog refreshes to V4.1 Flash (new deepseek-flash with vision; V4 Flash and V4 Flash Vision Exp retired; V4 Pro deprecated with a 2026-09-14 sunset and deepseek-flash fallback — the migration map rewrites all six legacy DeepSeek ids) and the cost calculator gains peak/off-peak pricing (DeepSeek's Mon-Fri 01:00-04:00 + 06:00-10:00 UTC schedule; legacy calculate_cost stays time-independent); a new featured Knowledge Graph Companion onboarding preset ships (listed first, pre-checked when the standalone Content Graph plugin, Graphify addon, or any graph memory-bridge retriever is detected — saved selections win; 20 graph-aware base tools plus all 14 graphify tools when Graphify is enabled); a new base+pro PHPUnit regression matrix (15 contract tests, dedicated CI job, composer run test:basepro) pins the gating contracts. Fixed: Pro toolkits silently failed to load in base+pro installs (load gates treated the base constant as "no Pro" even with the Pro addon active — all 21 toolkit init gates, the module registry, Telegram Mini App media listing, AI CPT management, site templates, embedded webchat, and ~550 Pro tool availability gates now use the Regulatory Registration escape pattern); the Pro addon no longer fatals under WP-CLI when activated before the base plugin (CLI loader defers to plugins_loaded, undefined WP_MCP_AI_PATH guarded); and the agent-memory CCT phantom slug is fixed (Graphify bridge and Pro memory retention read the canonical ai_agent_memories table instead of a table nothing registers, with a legacy-table fallback — dormancy sweeps, per-user caps, expiry pruning, and Memory Health stats all start working). Security: sharp 0.35.4, nodemailer 9.1.1, joi 18.2.8, and postcss-selector-parser 6.1.3/7.1.6 bumps clear open Dependabot alerts. The NV oOS Complete checkout launch series completes: Checkout API bumps 0.1.0 to 0.1.1 (settings-form redirect fixed, Stripe connection test, public GET /health, Stripe boolean serialization fixed so PaymentIntents succeed, and a 424/502 error contract that surfaces Stripe rejections in the purchase modal instead of redirecting) and Content Graph bumps 1.0.6 to 1.0.7 (JetEngine CCT source selection with per-CCT status notes, trust/value/post-purchase modal content with 1-year updates, health diagnostics, and the Stripe element and release-tag URL fixes). The ecosystem Wave G continues in nvoos-content-graph-pro (still v1.0.0): law-firm, cre-debt, quiz, eca, and chat-channels toolkits complete, and the places data layer lands. Stale 1.1.75 build ZIPs removed (30 files). Tool count unchanged: ~303 base + ~1,265 Pro (~1,568 total; live registry authoritative).
 
 = 1.1.76 - September 10, 2026 =
 

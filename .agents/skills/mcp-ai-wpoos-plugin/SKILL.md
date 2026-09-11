@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.76"
-  plugin-version-tested: "1.1.76"
-  last-updated: "2026-09-10"
+  plugin-version: "1.1.77"
+  plugin-version-tested: "1.1.77"
+  last-updated: "2026-09-11"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -647,6 +647,26 @@ Import external AI conversation exports into the JetEngine
   (1.0.0) completes the financial-planning, social-media, and mcp-servers
   toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
   dj-management/image-production slices.
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## DeepSeek V4.1 Flash, Base+Pro Gating & Memory CCT Slug (v1.1.77)
+
+- **DeepSeek V4.1 Flash refresh** (PR #6555) — the catalog's DeepSeek lineup
+  is now `deepseek-flash` (active, vision) + `deepseek-v4-pro` (deprecated,
+  sunset 2026-09-14); V4 Flash + Vision Exp retired; stored references
+  migrate on the catalog-version bump. Cost calculator gains peak/off-peak
+  (`calculate_cost_at()` with a record timestamp; legacy `calculate_cost()`
+  stays time-independent).
+- **Base+pro gating** (PR #6561) — Pro toolkits now load in base+pro
+  installs (gate escape `! $is_base || defined( 'WP_MCP_AI_PRO_VERSION' )`);
+  new `tests/basepro/` matrix + `composer run test:basepro` pins it.
+- **Pro WP-CLI load-order guard** (PR #6585) — no more
+  `Undefined constant WP_MCP_AI_PATH` when Pro activates before the base
+  plugin; the CLI loader defers to `plugins_loaded` 30.
+- **Memory CCT canonical slug** (PR #6591) — Graphify bridge + Pro memory
+  retention read `ai_agent_memories` (canonical) with a legacy-table
+  fallback; dormancy sweeps, per-user caps, expiry pruning, and Memory
+  Health stats start working.
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
 
 ## Delivery Formats, Checkout Legal Series & Wave F2 Completions (v1.1.76+)

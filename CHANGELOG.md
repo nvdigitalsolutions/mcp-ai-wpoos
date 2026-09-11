@@ -1,5 +1,51 @@
 # oOS – Changelog
 
+## [1.1.77] - 2026-09-11
+
+### Added — DeepSeek V4.1 Flash Catalog Refresh + Peak/Off-Peak Pricing (PR #6555)
+
+- DeepSeek released **V4.1 Flash** (canonical id `deepseek-flash`, vision, $0.15/$0.60 off-peak) and retired V4 Flash + V4 Flash Vision Exp; **V4 Pro is deprecated** (sunset 2026-09-14, fallback `deepseek-flash`) with the migration map rewriting all six legacy DeepSeek ids. Defaults, fallbacks, cost tables, usage-tracker pricing, model-service dropdowns, provider diagnostics, deep-research fallbacks, and 10 Pro research/orchestration tools all point at the new lineup; catalog version bumps 2026.09.05 → **2026.09.10**. The cost calculator gains **peak/off-peak pricing** (`PEAK_WINDOWS` const for DeepSeek's Mon–Fri 01:00–04:00 + 06:00–10:00 UTC schedule; `is_peak_time()`, `get_model_pricing_at()`, `calculate_cost_at()` with injectable timestamps — legacy `calculate_cost()`/`get_model_pricing()` untouched and time-independent).
+
+### Added — Knowledge Graph Companion Onboarding Preset (PR #6570)
+
+- New featured **Knowledge Graph Companion (🧠)** preset (listed first, pre-checked when the standalone `nvoos-content-graph` plugin, the bundled Graphify addon, or any graph memory-bridge retriever is detected — a previously saved selection always wins): temperature 0.3, graph-teaching system prompt (GraphRAG reasoning, node/edge/community teaching, progressive disclosure, never-invent-graph-data honesty rule), 20 graph-aware base tools always included, and all 14 `graphify_*` tools appended when the Graphify addon is loaded and enabled (`wp_mcp_ai_onboarding_graph_tools_active` filter seam). The presets grid balances with a full-width featured card (`⭐ Featured` badge).
+
+### Added — Base+Pro Regression Matrix (PR #6561)
+
+- New `phpunit-basepro.xml.dist` + `tests/basepro/` (15 contract tests) booting the real base+pro shape (`WP_MCP_AI_BASE_VERSION=true` + Pro loaded), a new `base-pro` CI job, and `composer run test:basepro` — the permanent pin for base+pro gating regressions.
+
+### Fixed — Pro Toolkits Silently Failed to Load in Base+Pro Installs (PR #6561)
+
+- The toolkit load gates treated the base constant as "no Pro" even with `WP_MCP_AI_PRO_VERSION` defined, so Pro toolkits never loaded in base+pro installs (the complete build worked because the base constant is undefined there). All 21 toolkit `init.php` gates, the module registry's WooCommerce product-pages gate, the Telegram Mini App media listing, AI CPT management, site-template notices, and the embedded webchat gates now use the same escape as the Regulatory Registration toolkit: `if ( $is_enabled && ( ! $is_base || defined( 'WP_MCP_AI_PRO_VERSION' ) ) )`. ~550 Pro tool files gain the identical escape in `is_available()`/`get_unavailable_reason()`, and the CG Pro ported copies stay byte-identical.
+
+### Fixed — Pro WP-CLI Fatal on Activation Order (PR #6585)
+
+- The Pro addon fataled under WP-CLI with `Undefined constant WP_MCP_AI_PATH` when activated before the base plugin (observed live on victory.nvdigital.solutions — every `wp` command died): the CLI require loop now lives in a named `wp_mcp_ai_pro_load_cli_commands()` loader that defers to `plugins_loaded` (priority 30) unless the base constant already exists, with a defense-in-depth guard in the CLI base command.
+
+### Fixed — Agent-Memory CCT Phantom Slug (PR #6591)
+
+- The Graphify bridge keyed its label/content maps, MemPalace edge guard, and slug guesser on `ai_chat_agent_memories`, but the CCT registers as `ai_agent_memories` — so graph builds never mapped memory titles/content/summaries and never emitted wing/room/agent edges, and Pro memory retention's dormancy sweep, per-user cap, expiry pruning, and Memory Health stats silently saw "no table". All consumers now use the canonical `ai_agent_memories`; retention checks the canonical table first and keeps the legacy table as a fallback.
+
+### Security — NPM Dependency Bumps (PR #6592)
+
+- Four packages patched across root + addon lockfiles: `sharp` 0.35.3→0.35.4, `nodemailer` →9.1.1, `joi` →18.2.8 (17.13.7 in pro/assets/spa), `postcss-selector-parser` →6.1.3/7.1.6 — all same-major, no breaking changes. The `@ai-sdk/provider-utils` cross-major bump (AI SDK v1 → v5) is intentionally deferred to a separate PR.
+
+### Changed — Content Graph Build Pipeline Race Fix (PR #6593)
+
+- The "Publish ZIP to Repository" job failed on three consecutive pushes (build and publish derived the plugin version from different checkouts; merges to `alpha-working` outpace the ~16-minute build). All three content-graph workflows now hand the version/artifact through job outputs and guard concurrency per-ref with cancel-in-progress.
+
+### Changed — Checkout Launch Series Complete (PRs #6568, #6571, #6573, #6587, #6588, #6589, #6590, #6594)
+
+- The NV oOS Complete purchase path now works end-to-end. **Checkout API v0.1.0 → 0.1.1**: admin settings form redirect fixed (browsers silently drop nested forms), Stripe product/price IDs survive saves, a nonce-protected "Test connection" balance probe, public `GET /health`, **Stripe boolean serialization fixed** (PHP form encoding turned `true` into `"1"` — every live PaymentIntent had been failing), and a **424/502 error contract** (Stripe 4xx → 424 with Stripe's message shown in-modal, no redirect; transport/5xx → 502 → release-page fallback). **Content Graph 1.0.6 → 1.0.7**: JetEngine CCT source selection (`excluded_cct_slugs`) with per-CCT status notes, checkout modal trust/value/post-purchase content (1-year updates + email support, 30-day guarantee, EU withdrawal waiver), vendor/client health diagnostics (`GET /health` + `GET /payments/health`), and the **Stripe element fix** (`paymentElement` → `payment`) + release-tag URL convention (`nvdigital-oos-v{VERSION}`) that killed every live purchase. Sub-project docs catch-up landed in #6590.
+
+### Changed — Content Graph Ecosystem Port Wave G (PRs #6551–#6584)
+
+- **Law-firm completes** (intake-management, litigation-support, compliance-ethics, document-automation, research-analytics, admin slice — #6551/#6552/#6554/#6556/#6558/#6559), **cre-debt completes** (data layer → originations/underwriting/cmbs/debt-fund/asset-management + admin slice, 7 batches — #6560/#6562–#6567), **quiz completes** (#6569/#6572/#6574), **eca completes** (#6575–#6578), **chat-channels completes** (data layer, tool batch, REST slices A/B, admin — #6579–#6583), and **places starts** (data layer — #6584). All byte-identical into `nvoos-content-graph-pro` (v1.0.0 unchanged) with per-PR `tests/` suites.
+
+### Versioning
+
+- Bumped to 1.1.77 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.77. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.6 → 1.0.7** (bumped in-window). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — wave slices land without a bump). Checkout API: **v0.1.0 → 0.1.1** (bumped in-window). Docs Hub addon: **0.4.3** (unchanged). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.09.10** (DeepSeek V4.1 Flash refresh). Tool count: ~303 base + ~1,265 Pro (~1,568 total; live registry authoritative — unchanged this window; no new slugs). Providers: 15. Addons: 27. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: **56** (unchanged; the `mcp-ai-wpoos-plugin` + `mcp-ai-wpoos-test-suite` skills gained checkout-diagnostics + Pro-CLI lessons in-window — test-suite patterns 40 → 47). Stale 1.1.75 build ZIPs removed (30 files).
+
 ## [1.1.76] - 2026-09-10
 
 ### Added — Full Report + Per-Channel Formats for Chat Result Delivery (PR #6525)
