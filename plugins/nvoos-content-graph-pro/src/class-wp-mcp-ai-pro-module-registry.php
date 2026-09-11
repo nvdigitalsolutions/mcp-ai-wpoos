@@ -1007,6 +1007,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 																									require_once $p . 'tools/chat-channels/init.php';
 																								}
 																							);
+
+																							// Standalone-only module (the base registry registers
+																							// `toolkit_places` with the `jetengine_meta_helper`
+																							// dependency — dormant standalone; healthcare
+																							// precedent). Boots the slim places init standalone.
+																							$this->add_module(
+																								'toolkit_places',
+																								'Places Toolkit',
+																								array(),
+																								array(
+																									'files' => array( $p . 'tools/places/init.php' ),
+																								),
+																								function () use ( $p ) {
+																									require_once $p . 'tools/places/init.php';
+																								}
+																							);
 		}
 	}
 }
