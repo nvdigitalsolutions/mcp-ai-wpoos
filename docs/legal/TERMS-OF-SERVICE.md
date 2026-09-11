@@ -1,22 +1,35 @@
-# Terms of Service — NV oOS Paid Products
+# Terms of Service
 
-**Effective date:** September 9, 2026  
-**Last updated:** September 10, 2026
+**Effective date:** September 9, 2026
+**Last updated:** September 11, 2026
+
+> Part A (the Products) is effective as of September 9, 2026. Part B (the
+> Services) incorporates and supersedes the prior website Terms of Service
+> last updated September 10, 2025.
 
 These Terms of Service ("Terms") are a binding agreement between **NV Digital
-Solutions** ("NV Digital", "we", "us", "our") and the person or organisation
-that purchases a paid NV oOS product ("Customer", "you", "your"). They govern
-your purchase and use of the **NV oOS Complete** bundle and any other paid
-add-ons, bundles, or license keys sold through our checkout service
-(collectively, the "Products").
+Solutions** ("NV Digital", "we", "us", "our") and:
+
+- **Customers** — any person or organisation that purchases a paid NV oOS
+  product. Part A of these Terms governs the purchase and use of the
+  **NV oOS Complete** bundle and any other paid add-ons, bundles, or license
+  keys sold through our checkout service (collectively, the "Products").
+- **Users** — any visitor or user of our website, digital services,
+  consulting, training programs, or the **NV Digital Unlocked** marketplace.
+  Part B of these Terms governs use of those offerings (collectively, the
+  "Services").
 
 By completing a purchase — including ticking the consent checkbox at checkout
 that references these Terms and our Refund Policy — you confirm that you have
-read, understood, and agreed to these Terms. If you are purchasing on behalf
-of a company or other legal entity, you confirm that you are authorised to
-bind that entity.
+read, understood, and agreed to these Terms. By using our website, Services,
+or marketplace, you agree to these Terms. If you are purchasing or using on
+behalf of a company or other legal entity, you confirm that you are
+authorised to bind that entity. If you are both a Customer and a User, both
+parts of these Terms apply to you.
 
 ---
+
+# Part A — NV oOS Paid Products
 
 ## 1. The Products
 
@@ -260,6 +273,81 @@ provisions remain in full force and effect.
   [support@nvdigitalsolutions.com](mailto:support@nvdigitalsolutions.com)
 - **Security reports:**
   [security@nvdigitalsolutions.com](mailto:security@nvdigitalsolutions.com)
+
+---
+
+# Part B — Website, Services, and Marketplace
+
+Part B governs your use of our website, digital services, consulting,
+training programs, and the NV Digital Unlocked marketplace (the "Services").
+Part A governs the paid NV oOS Products. Nothing in Part B limits or
+modifies Part A.
+
+## 17. Scope of Services
+
+17.1. **NV Digital Solutions** provides digital services, consulting,
+training, and a platform for vendors to showcase products. Service
+descriptions on our website, in proposals, and in program materials form
+part of the scope of each engagement.
+
+17.2. **NV Digital Unlocked** is a marketplace where independent vendors
+sell merchandise, powered by Printful fulfillment. NV Digital provides the
+platform only and does not manufacture, fulfil, or ship the merchandise
+listed by vendors.
+
+## 18. Marketplace Vendor Responsibilities
+
+Vendors on the NV Digital Unlocked marketplace:
+
+- remain the **merchant of record** for their products;
+- are responsible for taxes, duties, compliance, product quality, shipping,
+  and returns for their products;
+- are charged a **5% service fee** by NV Digital Solutions for showcasing
+  products.
+
+## 19. Marketplace Customer Responsibilities
+
+19.1. Customers purchasing products through the marketplace acknowledge
+that **NV Digital Solutions is not the seller of record** for physical
+products.
+
+19.2. Questions, issues, or disputes regarding physical products (quality,
+delivery, refunds) should be directed to the vendor (e.g., NV Digital
+Unlocked or other listed vendors).
+
+## 20. Programs and Consulting
+
+20.1. All training programs (e.g., AI Learner, CX Essentials) and consulting
+services are delivered by NV Digital Solutions founders.
+
+20.2. Payments for programs and consulting services are **non-refundable**
+unless otherwise stated in the program materials for the specific program or
+engagement. This does not affect the 30-day money-back guarantee that
+applies to the paid Products under Section 6.
+
+## 21. Intellectual Property
+
+21.1. All digital resources — including templates, toolkits, courses, and
+program materials — remain the property of NV Digital Solutions. You may not
+resell, distribute, or copy them without written consent.
+
+21.2. Your license rights in the paid Products are governed by Section 4.
+This Section 21 applies to all other digital resources and Services content.
+
+## 22. Liability, Disclaimers, and Modifications (Services)
+
+22.1. NV Digital Solutions is not responsible for vendor products,
+third-party tools, or service interruptions caused by external providers
+(including Printful and other fulfilment, payment, or hosting services).
+
+22.2. To the maximum extent permitted by applicable law, our liability
+relating to the Services is limited to the amount paid for the Services
+giving rise to the claim. Sections 10 and 11 of Part A apply to the
+Services to the extent applicable.
+
+22.3. We may update these Terms of Service at any time. Continued use of our
+site and Services constitutes acceptance of any changes, except where
+applicable law requires otherwise.
 
 ---
 
