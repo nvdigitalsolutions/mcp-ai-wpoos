@@ -114,6 +114,11 @@ class Bridge {
 		// boxes would submit nothing and silently keep the old exclusions.
 		echo '<input type="hidden" name="' . esc_attr( Schema::OPTION_SETTINGS ) . '[nvoos_cct_include]" value="">';
 
+		// Per-type snapshot: distinguishes CCTs that are ready to index from
+		// those whose JetEngine table is missing or empty — both are silently
+		// invisible in the graph, so the grid must say so explicitly.
+		$statuses = \NvoosContentGraph\Graph\Detector::inspectCctTypes();
+
 		echo '<table class="widefat striped" style="max-width:700px">';
 		echo '<thead><tr>';
 		echo '<th>' . esc_html__( 'Content Type', 'nvoos-content-graph' ) . '</th>';
@@ -128,10 +133,37 @@ class Bridge {
 				continue;
 			}
 			$checked = ! in_array( $slug, $excluded, true );
+			$note    = __( 'Included by default', 'nvoos-content-graph' );
+
+			if ( isset( $statuses[ $slug ] ) ) {
+				switch ( $statuses[ $slug ]['status'] ) {
+					case \NvoosContentGraph\Graph\Detector::CCT_STATUS_EXCLUDED:
+						$note = __( 'Excluded', 'nvoos-content-graph' );
+						break;
+					case \NvoosContentGraph\Graph\Detector::CCT_STATUS_TABLE_MISSING:
+						$note .= ' — ' . __( 'table not created yet', 'nvoos-content-graph' );
+						break;
+					case \NvoosContentGraph\Graph\Detector::CCT_STATUS_EMPTY:
+						$note .= ' — ' . __( 'no items yet', 'nvoos-content-graph' );
+						break;
+					case \NvoosContentGraph\Graph\Detector::CCT_STATUS_DB_UNAVAILABLE:
+					case \NvoosContentGraph\Graph\Detector::CCT_STATUS_QUERY_FAILED:
+						$note .= ' — ' . __( 'unavailable', 'nvoos-content-graph' );
+						break;
+					case \NvoosContentGraph\Graph\Detector::CCT_STATUS_INDEXED:
+						$note .= ' — ' . sprintf(
+							/* translators: %d: number of indexed items. */
+							_n( '%d item indexed', '%d items indexed', $statuses[ $slug ]['items'], 'nvoos-content-graph' ),
+							$statuses[ $slug ]['items']
+						);
+						break;
+				}
+			}
+
 			echo '<tr>';
 			echo '<td><strong>' . esc_html( $type['name'] ) . '</strong> <code style="font-size:11px">' . esc_html( $slug ) . '</code></td>';
 			echo '<td><input type="checkbox" name="' . esc_attr( Schema::OPTION_SETTINGS ) . '[nvoos_cct_include][' . esc_attr( $slug ) . ']" value="1" ' . checked( $checked, true, false ) . '></td>';
-			echo '<td>' . esc_html__( 'Included by default', 'nvoos-content-graph' ) . '</td>';
+			echo '<td>' . esc_html( $note ) . '</td>';
 			echo '</tr>';
 		}
 		echo '</tbody></table>';

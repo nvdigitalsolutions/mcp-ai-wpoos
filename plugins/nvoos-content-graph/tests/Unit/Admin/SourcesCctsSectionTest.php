@@ -182,6 +182,36 @@ class SourcesCctsSectionTest extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'ai_chat_transcripts', $html );
 		$this->assertStringContainsString( 'nvoos_cct_include', $html );
 		$this->assertStringContainsString( "checked='checked'", $html );
+		$this->assertStringContainsString( 'Included by default', $html );
+	}
+
+	/**
+	 * The grid annotates CCTs whose JetEngine table is missing or empty, so
+	 * site owners can tell why a checked CCT is not yet in the graph.
+	 *
+	 * @return void
+	 */
+	public function test_render_annotates_unavailable_ccts(): void {
+		nvoos_cg_test_install_jetengine_cct(
+			array(
+				array(
+					'slug' => 'ai_chat_transcripts',
+					'name' => 'Chat Transcripts',
+				),
+				array(
+					'slug'         => 'ghost_type',
+					'name'         => 'Ghost Type',
+					'table_exists' => false,
+				),
+			)
+		);
+
+		ob_start();
+		$this->section->render();
+		$html = (string) ob_get_clean();
+
+		$this->assertStringContainsString( 'no items yet', $html );
+		$this->assertStringContainsString( 'table not created yet', $html );
 	}
 
 	/**

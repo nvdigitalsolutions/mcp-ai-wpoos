@@ -188,4 +188,142 @@ class CctDetectionTest extends WP_UnitTestCase {
 
 		$this->assertCount( 3, Detector::detectCcts() );
 	}
+
+	/**
+	 * detectCcts() records a per-slug report of what happened to each type.
+	 *
+	 * @return void
+	 */
+	public function test_detect_ccts_reports_per_type_status(): void {
+		Detector::detectCcts();
+
+		$report = Detector::getCctTypeReport();
+
+		$this->assertSame(
+			array(
+				'status' => Detector::CCT_STATUS_INDEXED,
+				'items'  => 2,
+			),
+			$report['ai_chat_transcripts']
+		);
+		$this->assertSame(
+			array(
+				'status' => Detector::CCT_STATUS_INDEXED,
+				'items'  => 1,
+			),
+			$report['ai_chat_agent_memories']
+		);
+	}
+
+	/**
+	 * A type with no table is reported (not queried), and an empty type is
+	 * reported as empty — both are silently invisible in the graph otherwise.
+	 *
+	 * @return void
+	 */
+	public function test_detect_ccts_reports_empty_and_missing_table_types(): void {
+		nvoos_cg_test_install_jetengine_cct(
+			array(
+				array(
+					'slug' => 'ai_chat_transcripts',
+					'name' => 'Chat Transcripts',
+					'rows' => $this->transcripts,
+				),
+				array(
+					'slug' => 'ai_chat_agent_memories',
+					'name' => 'Agent Memories',
+					'rows' => $this->memories,
+				),
+				array(
+					'slug' => 'no_rows_yet',
+					'name' => 'No Rows Yet',
+				),
+				array(
+					'slug'         => 'ghost_type',
+					'name'         => 'Ghost Type',
+					'table_exists' => false,
+				),
+			)
+		);
+
+		$rows   = Detector::detectCcts();
+		$report = Detector::getCctTypeReport();
+
+		$this->assertCount( 3, $rows );
+		$this->assertSame( Detector::CCT_STATUS_EMPTY, $report['no_rows_yet']['status'] );
+		$this->assertSame( 0, $report['no_rows_yet']['items'] );
+		$this->assertSame( Detector::CCT_STATUS_TABLE_MISSING, $report['ghost_type']['status'] );
+		$this->assertSame( 0, $report['ghost_type']['items'] );
+	}
+
+	/**
+	 * Excluded types are reported as excluded rather than silently dropped.
+	 *
+	 * @return void
+	 */
+	public function test_detect_ccts_reports_excluded_types(): void {
+		update_option(
+			'nvoos_content_graph_settings',
+			array( 'excluded_cct_slugs' => array( 'ai_chat_agent_memories' ) )
+		);
+
+		Detector::detectCcts();
+		$report = Detector::getCctTypeReport();
+
+		$this->assertSame( Detector::CCT_STATUS_EXCLUDED, $report['ai_chat_agent_memories']['status'] );
+		$this->assertSame( Detector::CCT_STATUS_INDEXED, $report['ai_chat_transcripts']['status'] );
+	}
+
+	/**
+	 * inspectCctTypes() returns a lightweight snapshot without pulling rows.
+	 *
+	 * @return void
+	 */
+	public function test_inspect_cct_types_returns_status_snapshot(): void {
+		nvoos_cg_test_install_jetengine_cct(
+			array(
+				array(
+					'slug' => 'ai_chat_transcripts',
+					'name' => 'Chat Transcripts',
+					'rows' => $this->transcripts,
+				),
+				array(
+					'slug' => 'ai_chat_agent_memories',
+					'name' => 'Agent Memories',
+					'rows' => $this->memories,
+				),
+				array(
+					'slug'         => 'ghost_type',
+					'name'         => 'Ghost Type',
+					'table_exists' => false,
+				),
+			)
+		);
+
+		// Reset the detection report so earlier detectCcts() tests cannot leak
+		// state into the "inspectCctTypes() must not populate it" assertion.
+		$report_prop = new \ReflectionProperty( Detector::class, 'cctTypeReport' );
+		$report_prop->setValue( null, array() );
+
+		$report = Detector::inspectCctTypes();
+
+		$this->assertSame(
+			array(
+				'status' => Detector::CCT_STATUS_INDEXED,
+				'items'  => 2,
+			),
+			$report['ai_chat_transcripts']
+		);
+		$this->assertSame(
+			array(
+				'status' => Detector::CCT_STATUS_INDEXED,
+				'items'  => 1,
+			),
+			$report['ai_chat_agent_memories']
+		);
+		$this->assertSame( Detector::CCT_STATUS_TABLE_MISSING, $report['ghost_type']['status'] );
+
+		// The snapshot must not have populated the detection report.
+		$this->assertSame( array(), Detector::getCctTypeReport() );
+	}
 }
