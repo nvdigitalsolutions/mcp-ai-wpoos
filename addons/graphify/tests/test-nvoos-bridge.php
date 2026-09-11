@@ -4,7 +4,7 @@
  *
  * Tests for the NV oOS ↔ Graphify bridge covering:
  *   - Transcript CCT label/content synthesis (JSON envelope decoding)
- *   - MemPalace wing/room/agent edge emission for ai_chat_agent_memories rows
+ *   - MemPalace wing/room/agent edge emission for ai_agent_memories rows
  *   - Private CPT inclusion via nvoos_graphify_indexed_post_types
  *   - External table node ID generation
  *
@@ -70,7 +70,7 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 			'title' => 'My Memory',
 		);
 
-		$result = NV_oOS_Graphify_NV_oOS_Bridge::resolve_transcript_label( 'unchanged', 'ai_chat_agent_memories', $item );
+		$result = NV_oOS_Graphify_NV_oOS_Bridge::resolve_transcript_label( 'unchanged', 'ai_agent_memories', $item );
 
 		$this->assertSame( 'unchanged', $result );
 	}
@@ -183,8 +183,8 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 			'content'     => 'The Alpha project started in Q1.',
 		);
 
-		$node_id = 'cct_ai_chat_agent_memories_10';
-		$edges   = NV_oOS_Graphify_NV_oOS_Bridge::emit_memory_palace_edges( array(), 'ai_chat_agent_memories', $item, $node_id );
+		$node_id = 'cct_ai_agent_memories_10';
+		$edges   = NV_oOS_Graphify_NV_oOS_Bridge::emit_memory_palace_edges( array(), 'ai_agent_memories', $item, $node_id );
 
 		$relations = array_column( $edges, 'relation' );
 
@@ -202,7 +202,7 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 			'_ID'   => 11,
 			'title' => 'Bare memory',
 		);
-		$edges = NV_oOS_Graphify_NV_oOS_Bridge::emit_memory_palace_edges( array(), 'ai_chat_agent_memories', $item, 'cct_ai_chat_agent_memories_11' );
+		$edges = NV_oOS_Graphify_NV_oOS_Bridge::emit_memory_palace_edges( array(), 'ai_agent_memories', $item, 'cct_ai_agent_memories_11' );
 		$this->assertEmpty( $edges );
 	}
 

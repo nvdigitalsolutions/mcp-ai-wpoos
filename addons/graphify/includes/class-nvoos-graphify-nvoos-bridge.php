@@ -12,7 +12,7 @@
  *    handles types whose content lives inside JSON envelopes (transcripts).
  *
  * 2. **MemPalace wing/room/agent edges** — during batch CCT builds the
- *    `ai_chat_agent_memories` CCT rows carry `wing`, `room`, and `agent_id`
+ *    `ai_agent_memories` CCT rows carry `wing`, `room`, and `agent_id`
  *    columns. This bridge fires `nvoos_graphify_emit_cct_edges` (action) per
  *    row so the structural extractor can emit the same hierarchy edges the
  *    real-time Memory Bridge emits on `wp_mcp_ai_memory_stored`.
@@ -66,22 +66,22 @@ class NV_oOS_Graphify_NV_oOS_Bridge {
 	 * @var array<string,string[]>
 	 */
 	const CCT_LABEL_FIELDS = array(
-		'ai_chat_agent_memories' => array( 'title', 'context_id' ),
-		'ai_chat_transcripts'    => array( 'session_key', '_ID' ),
-		'ai_peers'               => array( 'peer_label', 'name', 'peer_id' ),
-		'usage_logs'             => array( 'assistant_id', '_ID' ),
-		'submissions'            => array( 'form_title', 'submission_id', '_ID' ),
-		'model_rate_limits'      => array( 'model_id', '_ID' ),
-		'assistants'             => array( 'name', 'assistant_name', '_ID' ),
-		'webchat_messages'       => array( 'from_name', '_ID' ),
-		'channel_messages'       => array( 'from_name', '_ID' ),
-		'channel_contacts'       => array( 'display_name', 'name', 'email', '_ID' ),
-		'vitals_log'             => array( 'measurement_type', 'recorded_at', '_ID' ),
-		'task_templates'         => array( 'name', 'title', '_ID' ),
-		'task_plans'             => array( 'name', 'title', '_ID' ),
-		'execution_history'      => array( 'workflow_id', 'status', '_ID' ),
-		'autonomous_sessions'    => array( 'session_id', 'goal', '_ID' ),
-		'quizzes'                => array( 'title', 'name', '_ID' ),
+		'ai_agent_memories'   => array( 'title', 'context_id' ),
+		'ai_chat_transcripts' => array( 'session_key', '_ID' ),
+		'ai_peers'            => array( 'peer_label', 'name', 'peer_id' ),
+		'usage_logs'          => array( 'assistant_id', '_ID' ),
+		'submissions'         => array( 'form_title', 'submission_id', '_ID' ),
+		'model_rate_limits'   => array( 'model_id', '_ID' ),
+		'assistants'          => array( 'name', 'assistant_name', '_ID' ),
+		'webchat_messages'    => array( 'from_name', '_ID' ),
+		'channel_messages'    => array( 'from_name', '_ID' ),
+		'channel_contacts'    => array( 'display_name', 'name', 'email', '_ID' ),
+		'vitals_log'          => array( 'measurement_type', 'recorded_at', '_ID' ),
+		'task_templates'      => array( 'name', 'title', '_ID' ),
+		'task_plans'          => array( 'name', 'title', '_ID' ),
+		'execution_history'   => array( 'workflow_id', 'status', '_ID' ),
+		'autonomous_sessions' => array( 'session_id', 'goal', '_ID' ),
+		'quizzes'             => array( 'title', 'name', '_ID' ),
 	);
 
 	/**
@@ -91,21 +91,21 @@ class NV_oOS_Graphify_NV_oOS_Bridge {
 	 * @var array<string,string[]>
 	 */
 	const CCT_CONTENT_FIELDS = array(
-		'ai_chat_agent_memories' => array( 'content', 'summary' ),
-		'ai_peers'               => array( 'description', 'capabilities', 'system_prompt' ),
-		'usage_logs'             => array( 'details', 'summary' ),
-		'submissions'            => array( 'content', 'form_data', 'message' ),
-		'model_rate_limits'      => array( 'notes', 'description' ),
-		'assistants'             => array( 'description', 'system_prompt', 'instructions' ),
-		'webchat_messages'       => array( 'body', 'message', 'content', 'text' ),
-		'channel_messages'       => array( 'body', 'message', 'content', 'text' ),
-		'channel_contacts'       => array( 'notes', 'bio', 'description' ),
-		'vitals_log'             => array( 'value', 'notes', 'raw_value' ),
-		'task_templates'         => array( 'description', 'steps', 'content' ),
-		'task_plans'             => array( 'description', 'goal', 'content' ),
-		'execution_history'      => array( 'result_summary', 'output', 'error_message' ),
-		'autonomous_sessions'    => array( 'goal', 'summary', 'context' ),
-		'quizzes'                => array( 'description', 'questions', 'content' ),
+		'ai_agent_memories'   => array( 'content', 'summary' ),
+		'ai_peers'            => array( 'description', 'capabilities', 'system_prompt' ),
+		'usage_logs'          => array( 'details', 'summary' ),
+		'submissions'         => array( 'content', 'form_data', 'message' ),
+		'model_rate_limits'   => array( 'notes', 'description' ),
+		'assistants'          => array( 'description', 'system_prompt', 'instructions' ),
+		'webchat_messages'    => array( 'body', 'message', 'content', 'text' ),
+		'channel_messages'    => array( 'body', 'message', 'content', 'text' ),
+		'channel_contacts'    => array( 'notes', 'bio', 'description' ),
+		'vitals_log'          => array( 'value', 'notes', 'raw_value' ),
+		'task_templates'      => array( 'description', 'steps', 'content' ),
+		'task_plans'          => array( 'description', 'goal', 'content' ),
+		'execution_history'   => array( 'result_summary', 'output', 'error_message' ),
+		'autonomous_sessions' => array( 'goal', 'summary', 'context' ),
+		'quizzes'             => array( 'description', 'questions', 'content' ),
 	);
 
 	// -------------------------------------------------------------------------
@@ -733,7 +733,7 @@ class NV_oOS_Graphify_NV_oOS_Bridge {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Emit MemPalace hierarchy edges for `ai_chat_agent_memories` CCT rows.
+	 * Emit MemPalace hierarchy edges for `ai_agent_memories` CCT rows.
 	 *
 	 * Hooked on `nvoos_graphify_emit_cct_edges` (fired by the structural
 	 * extractor for every CCT row). Returns edges that should be upserted
@@ -748,11 +748,11 @@ class NV_oOS_Graphify_NV_oOS_Bridge {
 	 * @param array  $edges_out Accumulator array to append edges to.
 	 * @param string $slug      CCT slug.
 	 * @param array  $item      CCT row (associative array).
-	 * @param string $node_id   Node ID for this CCT item (e.g. `cct_ai_chat_agent_memories_42`).
+	 * @param string $node_id   Node ID for this CCT item (e.g. `cct_ai_agent_memories_42`).
 	 * @return array Updated edges accumulator.
 	 */
 	public static function emit_memory_palace_edges( $edges_out, $slug, array $item, $node_id ) {
-		if ( 'ai_chat_agent_memories' !== sanitize_key( $slug ) ) {
+		if ( 'ai_agent_memories' !== sanitize_key( $slug ) ) {
 			return $edges_out;
 		}
 
@@ -1192,7 +1192,7 @@ class NV_oOS_Graphify_NV_oOS_Bridge {
 			return 'ai_chat_transcripts';
 		}
 		if ( array_key_exists( 'context_id', $item ) && array_key_exists( 'memory_tier', $item ) ) {
-			return 'ai_chat_agent_memories';
+			return 'ai_agent_memories';
 		}
 		if ( array_key_exists( 'from_name', $item ) && array_key_exists( 'channel_id', $item ) ) {
 			return 'channel_messages';
