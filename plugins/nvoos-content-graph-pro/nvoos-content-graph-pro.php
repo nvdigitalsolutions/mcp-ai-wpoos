@@ -185,6 +185,8 @@ spl_autoload_register(
 			'src/ChatChannels/',
 			'src/tools/chat-channels/',
 			'src/tools/chat-channels/examples/',
+			'src/metaboxes/places/',
+			'src/tools/places/',
 			'src/migrations/',
 			'src/qms/',
 			'src/helpers/',
