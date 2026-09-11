@@ -33,8 +33,10 @@
 /*.sublime-*
 
 # Docs — keep the two markdown guides referenced from readme.txt
-# (visual-theming.md, commerce-vendor-api.md); drop the page preview.
+# (visual-theming.md, commerce-vendor-api.md); drop the page preview
+# and the internal checkout enhancement plan.
 /docs/wporg-page-preview.html
+/docs/checkout-enhancement-plan.md
 /README.md
 /WPORG-REVIEW-*.md
 /CONTRIBUTING.md
