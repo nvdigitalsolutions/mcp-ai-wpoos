@@ -469,4 +469,93 @@ class Test_Docs_Hub_REST_Manifest extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'total', $data );
 		$this->assertArrayHasKey( 'query', $data );
 	}
+
+	/**
+	 * Seed the search index with a normal and a context entry.
+	 *
+	 * @return void
+	 */
+	private function seed_search_index_with_context_entry() {
+		$cache = new NV_oOS_Docs_Hub_Cache();
+		$cache->set_search_index(
+			array(
+				array(
+					'slug'        => 'public-page',
+					'title'       => 'Public installation guide',
+					'excerpt'     => 'How to install the plugin on any site.',
+					'plugin_name' => 'Core',
+					'source'      => 'base',
+				),
+				array(
+					'slug'        => 'context-private',
+					'title'       => 'Private context notes',
+					'excerpt'     => 'Secret internal notes about the infrastructure.',
+					'plugin_name' => 'Context',
+					'source'      => 'context',
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that search excludes context-source entries for non-admin users.
+	 *
+	 * @return void
+	 */
+	public function test_search_excludes_context_entries_for_non_admin() {
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$this->seed_search_index_with_context_entry();
+
+		$request = new WP_REST_Request( 'GET', '/nvoos-docs/v1/search' );
+		$request->set_param( 'q', 'context' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data    = $response->get_data();
+		$slugs   = array_column( $data['results'], 'slug' );
+		$sources = array_column( $data['results'], 'source' );
+
+		$this->assertNotContains( 'context-private', $slugs, 'Context entries must be excluded from search for non-admins' );
+		$this->assertNotContains( 'context', $sources, 'No context-source results may reach non-admins' );
+
+		// The public entry must still be searchable.
+		$request = new WP_REST_Request( 'GET', '/nvoos-docs/v1/search' );
+		$request->set_param( 'q', 'installation' );
+		$response = $this->server->dispatch( $request );
+
+		$data  = $response->get_data();
+		$slugs = array_column( $data['results'], 'slug' );
+		$this->assertContains( 'public-page', $slugs, 'Non-context entries must remain searchable for non-admins' );
+
+		$cache = new NV_oOS_Docs_Hub_Cache();
+		$cache->clear();
+	}
+
+	/**
+	 * Test that search still includes context-source entries for admins.
+	 *
+	 * @return void
+	 */
+	public function test_search_includes_context_entries_for_admin() {
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$this->seed_search_index_with_context_entry();
+
+		$request = new WP_REST_Request( 'GET', '/nvoos-docs/v1/search' );
+		$request->set_param( 'q', 'context' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data  = $response->get_data();
+		$slugs = array_column( $data['results'], 'slug' );
+		$this->assertContains( 'context-private', $slugs, 'Admins must be able to search context entries' );
+
+		$cache = new NV_oOS_Docs_Hub_Cache();
+		$cache->clear();
+	}
 }

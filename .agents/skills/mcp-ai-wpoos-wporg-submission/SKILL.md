@@ -1,24 +1,28 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-wporg-submission
-description: "Operational guide for WordPress.org submission readiness of NV oOS standalone plugins (nvoos-docs-hub today; base plugin and future standalone addons). Covers the 18 official wp.org guidelines with repo-specific verification mapping, the official Plugin Check (PCP) gate in CI and Docker (MySQL service bootstrap, activate-not---require, jq error gate with allowlisted false positives), triaging PCP findings (OffloadedContent false positive, TextDomainMismatch/slug backlog, trait-prefix stubs), packaging exclusion tri-sync, readme.txt wp.org standards (External Services, Screenshots), .wordpress-org asset layout and Playwright screenshot capture with QA verification. Use when preparing a wp.org submission, fixing the plugin-check CI job, generating listing screenshots/banners, triaging PCP findings, or reviewing the compliance checklist."
+description: "Operational guide for WordPress.org submission readiness of NV oOS standalone plugins (nvoos-docs-hub today). Covers the 18 wp.org guidelines, the Plugin Check (PCP) gate in CI and Docker, PCP finding triage, the reviewer-reply loop (findings taxonomy from the real 0.4.3 review, related-issue sweep checklist, reply-email template), packaging exclusion tri-sync, readme.txt standards, and .wordpress-org listing assets. Use when preparing a wp.org submission, responding to a reviewer email, fixing the plugin-check CI job, or triaging PCP findings."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.71"
   plugin-version-tested: "1.1.71"
-  last-updated: "2026-09-07"
+  last-updated: "2026-09-12"
 ---
 
 # NV oOS WordPress.org Submission — Readiness Playbook
 
-Playbook distilled from the executed Docs Hub 0.4.3 submission-readiness pass
-(PR #6403) and the base-plugin gate repair. Covers everything between "this
-plugin should ship to wp.org" and "the listing assets are in SVN".
+Playbook distilled from two executed passes: the Docs Hub 0.4.3
+submission-readiness pass (PR #6403), the base-plugin gate repair, and the
+first real reviewer-reply pass (0.4.3 → 0.4.4, PR #6606 — all findings fixed
+plus a related-issue sweep). Covers everything between "this plugin should
+ship to wp.org" and "the reviewer approves it".
 
 ## When to use this skill
 
 - "Prepare <plugin> for wp.org submission" / "run the 18-point checklist"
+- **A reviewer reply email arrives** (the submission is pended) — fix the
+  findings and upload a new version (see "The reviewer reply pass" below)
 - The `plugin-check` CI job fails (any workflow) or a release gate is red
 - "Capture the wp.org listing screenshots" / "refresh the .wordpress-org assets"
 - Triaging `wp plugin check` findings (ERROR vs WARNING, false positives)
@@ -126,6 +130,54 @@ Hard rules learned the expensive way:
 8. **The `--help` trap:** `wp plugin check --help` fatal-errors (PCP's
    mu-plugin hook runs without a plugin arg). Don't use it; read the source
    under `wp-content/plugins/plugin-check/includes/`.
+9. **The report is ephemeral.** `/tmp/pcp-report.json` lives in the one-off
+   container's filesystem and is gone when the run exits — a second `docker
+   run` to inspect it finds nothing. Compute the jq gate (and copy the
+   report to a mounted host dir) INSIDE the same `sh -c` that ran the check.
+
+For small plugin trees (docs-hub scale) a fully isolated variant avoids the
+QA volume entirely — build the stage tree on the host with the CI's exact
+`tar --exclude` list, mount it read-only, download WP core into the
+container, and `cp -r` the plugin in:
+
+```bash
+# Host: stage the ZIP-shaped tree (mirrors build-spa-addons.yml EXCLUDES +
+# docs-hub's `--exclude='*.md'`).
+mkdir -p /f/GITHUB/tmp-dh-pcp/nvoos-docs-hub
+tar -C addons/docs-hub -cf - --exclude='./node_modules' --exclude='./src' \
+  --exclude='./tests' --exclude='./vendor' --exclude='./docs' \
+  --exclude='./.wordpress-org' --exclude='*.md' \
+  --exclude='./composer.json' --exclude='./composer.lock' \
+  --exclude='./package.json' --exclude='./package-lock.json' \
+  --exclude='./tsconfig.json' --exclude='./esbuild.config.js' \
+  --exclude='./eslint.config.js' --exclude='./vitest.config.ts' \
+  --exclude='./.gitignore' --exclude='./.distignore' . | \
+  tar -C /f/GITHUB/tmp-dh-pcp/nvoos-docs-hub -xf -
+
+# Container: bootstrap → activate PCP → cp plugin → check → gate, all in one
+# run (pitfall 9). No --user needed (nothing written to the wp_core volume).
+MSYS_NO_PATHCONV=1 docker run --rm --network oos-wp_default \
+  -v F:/GITHUB/tmp-dh-pcp:/plugin-src \
+  -e WORDPRESS_DB_HOST=oos-wp-db -e WORDPRESS_DB_NAME=wordpress_pluginchk \
+  -e WORDPRESS_DB_USER=wordpress -e WORDPRESS_DB_PASSWORD=wordpress \
+  wordpress:cli-php8.2 sh -c 'set -e; \
+    php -d memory_limit=512M /usr/local/bin/wp core download --version=latest --skip-content --path=/tmp/wp --quiet; \
+    php -d memory_limit=512M /usr/local/bin/wp config create --dbname=wordpress_pluginchk --dbuser=wordpress --dbpass=wordpress --dbhost=oos-wp-db --path=/tmp/wp --quiet; \
+    php -d memory_limit=512M /usr/local/bin/wp core install --url=http://127.0.0.1 --title=PCP --admin_user=admin --admin_password=admin --admin_email=a@a.com --path=/tmp/wp --quiet 2>/dev/null || true; \
+    php -d memory_limit=512M /usr/local/bin/wp plugin install plugin-check --activate --path=/tmp/wp --quiet; \
+    cp -r /plugin-src/nvoos-docs-hub /tmp/wp/wp-content/plugins/nvoos-docs-hub; \
+    php -d memory_limit=1G /usr/local/bin/wp plugin check nvoos-docs-hub --path=/tmp/wp --format=json --severity=5 > /tmp/pcp-report.json 2>/tmp/pcp-stderr.log; \
+    echo PCP_EXIT:$?; \
+    ERRORS=$(cat /tmp/pcp-report.json | jq -s "[.[][] | select(.type==\"ERROR\" and .code!=\"PluginCheck.CodeAnalysis.Offloading.OffloadedContent\")] | length"); \
+    echo BLOCKING_ERRORS:$ERRORS; cat /tmp/pcp-report.json; \
+    cp /tmp/pcp-report.json /plugin-src/pcp-report.json'
+```
+
+Notes: `wp core install` prints a sendmail warning (no MTA in the container)
+— harmless, and `|| true` covers the idempotent re-run case. Expected healthy
+output: `PCP_EXIT:0`, `BLOCKING_ERRORS:0`, with only the two allowlisted
+`OffloadedContent` rows and the `NonPrefixedTraitFound` warning in the
+report.
 
 ## The CI gate
 
@@ -178,6 +230,133 @@ submission track, NOT something to allowlist. The docs-hub ZIP is clean
 | `WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedTraitFound` | Intentional (docs-hub) | Warning only — the `WP_MCP_AI_Inline_Async_Tick_Trait` stub must carry the BASE plugin's trait name so the real trait replaces it when NV oOS is active |
 | `WordPress.WP.I18n.TextDomainMismatch` | Real blocker (base) | Text domain must equal the wp.org slug/dir name; the repo domain is `mcp-ai-wpoos`. Needs the slug migration track — do not allowlist |
 | `no_plugin_readme` | Real or mount artifact | readme.txt must sit at the ZIP root. If it does and PCP still fires, suspect the bind-mount truncation (pitfall 5) |
+
+## The reviewer reply pass (0.4.3 → 0.4.4, PR #6606)
+
+The first real wp.org review pended the docs-hub submission. Below is the
+findings taxonomy (reviewer + AI flags), the fix applied, and the
+related-issue sweep that found two more leaks. Reuse this map whenever the
+next reviewer email lands — the same categories recur across plugins.
+
+### Findings taxonomy → fixes applied
+
+| Review finding | Root cause | Fix pattern (docs-hub) |
+|---|---|---|
+| "Add yourself to Contributors" — the listed name must be a **wp.org username**, not the GitHub org | `Contributors: nvdigitalsolutions` but the account is `vsamtani` | `Contributors: vsamtani` — only real wp.org usernames; drop org names with no account |
+| Minified `assets/dist/docs-hub.js` has no bundled source and no repo link (Guideline 4) | `src/` is excluded from the ZIP; no readme disclosure | Add `== Source Code ==` readme section (public repo URL + `npm install && npm run build` steps + where dev files live), AND make the bundle self-describing: esbuild `banner: { js: …, css: … }` with `/*!`-style source/build/license header. Do **both** JS and CSS banners — the CSS bundle is generated too |
+| `permission_callback` — `/search` is public but leaks `source: "context"` excerpts to non-admins | Named public permission callback is fine; the *data* was the leak — `get_manifest()` and `get_page()` filtered context but `search()` did not | In every public endpoint, filter `source === 'context'` for `! current_user_can('manage_options')`. Verify **all** context surfaces: manifest, pages, search, **and the sitemap** (docs-hub's sitemap provider was exposing context slugs — caught by the sweep, not the review) |
+| `load_plugin_textdomain()` unnecessary (WP ≥ 4.6) | Redundant since plugin requires 6.0; wp.org loads translations automatically | Remove the call; keep the `Text Domain`/`Domain Path` header. (Keep only if the plugin supports WP < 4.6.) |
+| "Plugins should not hijack the admin dashboard" (Guideline 11) | Site-wide `admin_notices` warning rendered on every admin page | Scope notices to the plugin's own screen via `get_current_screen()` (docs-hub: `settings_page_nvoos-docs-hub`). Action-result notices (rebuild success/fail) that fire once after a form POST on the settings page are contextual and fine |
+| Staging transients: `set_transient` on page write (L168) + live transient read (L149) break staging isolation | `get_manifest`/`get_search_index` honoured the staging toggle; `get_page`/`set_page` did not | Mirror the manifest pattern: skip transient read when `$this->staging`, only set transient when `! $this->staging` |
+| `uninstall.php` recursive delete follows symlinks | `rm_rf` recursed via `is_dir()` without link checks or containment | Check `is_link()` **before** `is_dir()` (delete the link, never the target), and verify `realpath()` stays inside the cache root before recursing. Apply to **every** recursive delete in the codebase — `Cache::rm_rf()` had the same bug |
+
+### Related-issue sweep checklist (always run after fixing the flagged items)
+
+Each review item is a category — grep the whole plugin for siblings:
+
+1. **Context/sensitive-data leaks** — every surface that serves indexed
+   content to guests: REST endpoints, sitemap providers, feeds, shortcode
+   data attributes. docs-hub sweep caught the **sitemap** leaking context
+   slugs (fixed alongside search).
+2. **Transient staleness around staging** — after promotion, md5-keyed page
+   transients can still serve stale (or deleted) pages until TTL. Fix:
+   `promote_staging()` deletes page transients for every swapped slug
+   (+ best-effort orphan slugs via `--`→`/` reversal — lossy but a wrong-key
+   delete is a harmless miss), and `clear()`/`uninstall.php` wildcard-clean
+   `_transient_<prefix>p_*` rows with `$wpdb->prepare` + `esc_like`.
+3. **Symlink traversal in deletion** — grep `rmdir|unlink|RecursiveDirectoryIterator|
+   rm_rf`. Every recursive delete needs the is_link + realpath-containment
+   guard (see fixes above).
+4. **Secrets in localized/admin output** — grep `wp_localize_script` and
+   form renders for settings blobs. docs-hub localized the FULL settings
+   (including GitHub PATs in `remote_repos[].token`) into the page DOM; the
+   JS only stripped tokens at export time. Fix: strip server-side before
+   localizing (`settings_without_tokens()`). The PHP form was already safe
+   (password input, value never echoed — "(saved — enter new value to
+   change)" placeholder).
+5. **Remote host disclosure (Guidelines 6/7)** — every `wp_remote_*`/curl
+   call must match the `== External Services ==` readme section exactly.
+   docs-hub: allowlist is exactly `api.github.com` +
+   `raw.githubusercontent.com` — matches the readme.
+6. **Frontend data paths** — verify the SPA only hits the permission-checked
+   endpoints (docs-hub: `manifest` + `pages/{slug}` + `search` only;
+   FlexSearch fallback indexes the already-filtered manifest).
+7. **Other notice/admin-surface scans** — grep `admin_notices` and confirm
+   each render is either on-page (settings screen) or a one-shot
+   action-result; grep `$_GET/$_POST/$_REQUEST` and confirm cap + nonce +
+   sanitize on every handler.
+
+### Reviewer reply email (template)
+
+Keep it brief, factual, no filler (the review explicitly asks for this).
+Reply to the thread, list each finding as resolved, state the new version,
+and confirm validation. State the permalink only if changing it.
+
+```text
+Hi,
+
+Thanks for the detailed review. All reported issues are fixed and version
+0.4.4 has been uploaded:
+
+- Added my username (vsamtani) to Contributors.
+- The plugin's public repository is https://github.com/nvdigitalsolutions/nvoos-docs-hub;
+  the readme now documents the source location and build steps, and the
+  bundled assets carry source banners.
+- /search no longer returns .context/ content to non-admin users (manifest,
+  pages, and sitemap were already filtered — sitemap now also skips context pages).
+- Removed load_plugin_textdomain().
+- The base-plugin notice is now shown only on the Docs Hub settings page.
+- Staged rebuilds no longer read or write live transients; page transients
+  are invalidated on promotion/clear.
+- Recursive cache deletion is symlink-safe (is_link checks + realpath
+  containment) in both the cache class and uninstall.php.
+- GitHub tokens are no longer localized into settings-page scripts.
+
+wp plugin check reports 0 errors and the PHPUnit suite passes.
+
+Keeping the permalink nvoos-docs-hub.
+
+Thanks,
+[Your name]
+```
+
+Process notes from the pass:
+
+- **Version bump is mandatory per release** (Guideline 15): header `Version`,
+  `NVOOS_DOCS_HUB_VERSION`, readme `Stable tag`, changelog, upgrade notice,
+  POT `Project-Id-Version`, `.wordpress-org/README.md` example versions.
+- **One review round = one commit cluster**; PR against `alpha-working`
+  (`fix/docs-hub-wporg-review-044` → PR #6606). CI runs the docs-hub
+  plugin-check job on PRs touching `addons/docs-hub/**`; tagging
+  `docs-hub-vX.Y.Z` after merge builds the ZIP; `sync-nvoos-docs-hub.yml`
+  mirrors the addon to the standalone public repo.
+- **Unrelated working-tree changes** (e.g. stale `vendor/composer/*` from a
+  `composer install`) stay unstaged — commit only the addon paths.
+- After merge: upload the ZIP, then reply to the same email thread.
+
+### Running the docs-hub PHPUnit tests
+
+Docs-hub tests are NOT in the root `phpunit.xml.dist` testsuite — passing the
+`addons/docs-hub/tests` directory to phpunit runs nothing. Pass the files
+explicitly:
+
+```bash
+vendor/bin/phpunit -c phpunit.xml.dist --no-coverage \
+  addons/docs-hub/tests/test-cache-staging.php \
+  addons/docs-hub/tests/test-rest-manifest.php \
+  addons/docs-hub/tests/test-rebuild-chunked.php \
+  addons/docs-hub/tests/test-rebuild-job.php \
+  addons/docs-hub/tests/test-rebuild-pipeline-inline-kick.php \
+  # … (all files except test-fnmatch-polyfill.php)
+```
+
+- `test-fnmatch-polyfill.php` is a **standalone script**, not PHPUnit —
+  passing it errors with "Class test-fnmatch-polyfill cannot be found".
+- Known pre-existing **Windows-only failure**:
+  `Test_Docs_Hub_Scanner::test_path_traversal_prevented` (realpath behavior
+  differs on Windows; passes on Linux CI). Don't chase it in local runs.
+- The suite boots the full base plugin, so expect `wp_is_block_theme`
+  notices and Pro module warnings in the output — cosmetic.
 
 ## Packaging exclusions (tri-sync)
 
@@ -245,8 +424,19 @@ Capture pitfalls (all hit in practice):
 
 ## readme.txt standards
 
+- `Contributors:` is a case-sensitive, comma-separated list of **wp.org
+  usernames** — not GitHub orgs (the review flagged `nvdigitalsolutions`
+  because the account is `vsamtani`). Only list accounts that exist; drop
+  org names with no wp.org account.
 - `== External Services ==` section: every third-party host contacted,
-  server-side-only wording, data-sent statement, Terms + Privacy URLs.
+  server-side-only wording, data-sent statement, Terms + Privacy URLs. The
+  host list must match the code's allowlist exactly (docs-hub: `api.github.com`
+  + `raw.githubusercontent.com`).
+- `== Source Code ==` section (Guideline 4): public repo URL, where the
+  frontend source lives (`src/`), the exact build steps (`npm install &&
+  npm run build`), and where dev-only files live. The bundled dist files
+  should be self-describing too: esbuild `banner: { js, css }` with a
+  `/*!`-style header (source URL + build command + license).
 - `== Screenshots ==` section with `1. Alt text` lines matching
   `screenshot-{N}.png` in SVN assets; add when the PNGs land.
 - `Stable tag` must equal the plugin header `Version`; `Tested up to` latest WP.

@@ -473,6 +473,20 @@ class NV_oOS_Docs_Hub_REST {
 			);
 		}
 
+		// Context-source entries hold protected .context/ content excerpts
+		// and must never be searchable by users without manage_options
+		// (mirrors the context filtering in get_manifest() and get_page()).
+		if ( ! current_user_can( 'manage_options' ) ) {
+			$search_index = array_values(
+				array_filter(
+					$search_index,
+					static function ( $entry ) {
+						return 'context' !== ( $entry['source'] ?? '' );
+					}
+				)
+			);
+		}
+
 		$results = self::run_search( $q, $limit, $search_index );
 
 		$response = rest_ensure_response(

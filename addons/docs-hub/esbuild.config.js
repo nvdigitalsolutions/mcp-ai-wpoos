@@ -57,6 +57,26 @@ const buildOptions = {
 	sourcemap:   ! isProd,
 	treeShaking: true,
 
+	// wp.org Guideline 4: the shipped minified bundles must document where
+	// their human-readable source lives and how they were built. The banners
+	// are preserved in the minified output so the files are self-describing.
+	banner:      {
+		js: [
+			'/*! NV oOS Docs Hub — bundled frontend (React documentation SPA).',
+			' * This file is generated — do not edit directly.',
+			' * Source: https://github.com/nvdigitalsolutions/nvoos-docs-hub/tree/main/src',
+			' * Build:  npm install && npm run build (node esbuild.config.js --prod)',
+			' * License: GPLv3 or later (https://www.gnu.org/licenses/gpl-3.0.html). */',
+		].join( '\n' ),
+		css: [
+			'/*! NV oOS Docs Hub — bundled frontend styles.',
+			' * This file is generated — do not edit directly.',
+			' * Source: https://github.com/nvdigitalsolutions/nvoos-docs-hub/tree/main/src/styles',
+			' * Build:  npm install && npm run build (node esbuild.config.js --prod)',
+			' * License: GPLv3 or later (https://www.gnu.org/licenses/gpl-3.0.html). */',
+		].join( '\n' ),
+	},
+
 	plugins: [
 		{
 			name: 'css-extract',

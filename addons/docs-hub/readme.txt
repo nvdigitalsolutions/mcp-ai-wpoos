@@ -1,10 +1,10 @@
 === NV oOS Docs Hub ===
-Contributors: nvdigitalsolutions
+Contributors: vsamtani
 Tags: documentation, markdown, github
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.4.3
+Stable tag: 0.4.4
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -117,6 +117,24 @@ rebuilds when the installed plugin versions no longer match the cached index.
 You can also rebuild manually from the settings page, via WP-CLI, or via the
 REST API (requires `manage_options`).
 
+== Source Code ==
+
+The complete, human-readable source code for this plugin — including the
+TypeScript/React source for the bundled `assets/dist/docs-hub.js` bundle — is
+publicly available in the plugin's GitHub repository:
+
+https://github.com/nvdigitalsolutions/nvoos-docs-hub
+
+The frontend bundle is generated from the `src/` directory with esbuild:
+
+1. `npm install` — installs the frontend dependencies (React, esbuild, etc.).
+2. `npm run build` — runs `node esbuild.config.js --prod` and writes the
+   minified `assets/dist/docs-hub.js` and `assets/dist/docs-hub.css`.
+
+The repository also contains the WordPress.org packaging and CI pipeline
+(`.github/workflows/`, `bin/`), the PHPUnit test suite (`tests/`), and the
+`.wordpress-org/` listing assets.
+
 == Screenshots ==
 
 1. Settings — documentation index status and rebuild panel.
@@ -146,6 +164,13 @@ public repository content exactly as GitHub serves it.
   Privacy: https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement
 
 == Changelog ==
+
+= 0.4.4 =
+* Security: search results and the WordPress sitemap no longer expose context-source (`.context/`) content to non-admin users.
+* Security: GitHub personal access tokens are no longer localized into the settings-page scripts (they were stripped only on export before).
+* Security: staged rebuilds no longer read or write live page transients, page transients are invalidated when the cache is promoted or cleared, and recursive cache deletion is hardened against symlink traversal.
+* Changed: the base-plugin notice is scoped to the Docs Hub settings page, and the redundant `load_plugin_textdomain()` call was removed.
+* Changed: readme now documents the public source repository and the frontend build steps; the bundled `docs-hub.js` and `docs-hub.css` carry source banners.
 
 = 0.4.3 =
 * Added: WordPress.org listing screenshots and a Playwright capture script (`bin/capture-nvoos-docs-hub-screenshots.js`).
@@ -215,6 +240,9 @@ public repository content exactly as GitHub serves it.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 0.4.4 =
+Security hardening release — context-source content can no longer leak through search or the sitemap. Recommended for all users.
 
 = 0.4.3 =
 WordPress.org submission hardening — no functional changes for existing sites. Recommended for all users.
