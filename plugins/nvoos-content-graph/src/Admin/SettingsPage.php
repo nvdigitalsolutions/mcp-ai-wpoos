@@ -562,6 +562,7 @@ class SettingsPage {
 					'secure_note'            => __( 'Payments are processed securely by Stripe. Your card never touches this server.', 'nvoos-content-graph' ),
 					'stripe_setup_error'     => __( 'The payment form could not be started. Please reload the page and try again.', 'nvoos-content-graph' ),
 					'price_one_time'         => __( 'One-time payment — no subscription', 'nvoos-content-graph' ),
+					'price_subject_change'   => __( 'Introductory price — prices are subject to change.', 'nvoos-content-graph' ),
 					'price_vat_note'         => __( 'VAT may be added at checkout based on your country.', 'nvoos-content-graph' ),
 					'price_license_scope'    => __( 'Includes 1 year of updates and email support on this site.', 'nvoos-content-graph' ),
 					'trust_guarantee'        => __( 'Try it risk-free — 30-day money-back guarantee', 'nvoos-content-graph' ),
