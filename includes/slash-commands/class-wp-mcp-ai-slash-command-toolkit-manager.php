@@ -262,7 +262,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	/**
 	 * Build a declarative tool-backed command entry.
 	 *
-	 * @since 2.2.0
+	 * @since 1.1.78
 	 *
 	 * @param string $name        Command name.
 	 * @param string $tool        Tool slug.
@@ -540,7 +540,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	/**
 	 * Get Calendar & Booking toolkit commands.
 	 *
-	 * @since 2.2.0
+	 * @since 1.1.78
 	 *
 	 * @return array Command definitions.
 	 */

@@ -1,8 +1,8 @@
 # Docs & Release Catch-Up — Standing Open-Items Tracker
 
 > **Purpose:** Single registry of every open item identified (and parked or deferred) by the docs & release catch-up runs, so future passes carry from this file instead of re-copying items between plans.
-> **Last reviewed:** 2026-09-11 (v1.1.77 pass)
-> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.77-docs-catch-up.md`](v1.1.77-docs-catch-up.md).
+> **Last reviewed:** 2026-09-12 (v1.1.78 pass)
+> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.78-docs-catch-up.md`](v1.1.78-docs-catch-up.md).
 > **Rule for future passes:** read this file first; a catch-up plan's "Open items" section should point here and only add new items it introduces.
 
 ---
@@ -41,7 +41,7 @@
 - **Status:** 🔒 Parked by user decision. Counts stay delta-derived in catch-up passes.
 - **Issue:** [#5967 — Re-derive live tool counts on a fully provisioned environment](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5967)
 - **What:** run `WP_MCP_AI_Tool_Registry::get_tools()` on a fully provisioned environment (seeded toolkits + optional plugins) and replace the delta-based figure.
-- **Current figure (v1.1.77):** ~303 base + ~1,265 Pro (~1,568 total), live-registry caveat retained on every count surface. (Delta-derived: +2 Woo price/qty tools, PR #6388; unchanged since — #6447/#6448 upgrade existing tools, #6469 extends a schema, #6488 extends the schedule-tool schemas with `result_delivery`, #6525 extends the delivery schemas with `template: full` + per-channel `format`, #6512 registers the existing Comic Creation toolkit's toggle, #6561 flips existing gates, #6570 adds an onboarding preset referencing existing slugs — no new slugs.)
+- **Current figure (v1.1.78):** ~303 base + ~1,265 Pro (~1,568 total), live-registry caveat retained on every count surface. (Delta-derived: +2 Woo price/qty tools, PR #6388; unchanged since — #6447/#6448 upgrade existing tools, #6469 extends a schema, #6488 extends the schedule-tool schemas with `result_delivery`, #6525 extends the delivery schemas with `template: full` + per-channel `format`, #6512 registers the existing Comic Creation toolkit's toggle, #6561 flips existing gates, #6570 adds an onboarding preset referencing existing slugs, #6604 re-wires slash commands to existing tool slugs — no new slugs.)
 - **Known attempt:** QA container (`oos-qa-wp`) returns 363 tools because its DB is unprovisioned — not usable as source of truth.
 - **First noted in:** v1.1.59 plan; carried every pass since.
 
@@ -102,6 +102,7 @@ Open items recorded in docs **outside** the catch-up plans (audits, TODO files, 
 | Stale `.context/testing.md` "March 2026" stamp | v1.1.63 pass drift | v1.1.63 pass | stamped + sweep/exit-trap notes |
 | Stale `.context/settings-storage.md` "July 2026" stamp | v1.1.64 pass drift | v1.1.64 pass | stamped + log-buffer compaction note |
 | [#5973](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5973) Ralph Wiggum CCT Orchestration — decide implement or defer | filed 2026-08-26 | closed 2026-08-26 | **Implemented** (shipped v1.1.29): 13 orchestration tools, 4 Ralph CCT schemas, PM-toolkit native integration. Decision recorded in `proposals-retirement-log.md` entry #6 + `PROPOSALS_COMPLETION_STATUS.md` |
+| `@since 2.2.0` ×11 (`includes/slash-commands/` 5 files) + "Since v2.2.0" ×2 (slash-command READMEs) | v1.1.78 plan (OI-1 group 16) | v1.1.78 pass | **Fixed in-pass at user request** — all 13 occurrences corrected to `1.1.78` before shipping (group 16 never became history; no tracker row kept). |
 
 ---
 

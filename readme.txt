@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.77
+Stable tag: 1.1.78
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.78 - September 12, 2026 =
+
+Slash-command, DeepSeek, checkout-hardening, and legal-consolidation release. Changed: the slash-command layer is reworked as declarative tool wrappers (the ~76 "implementation coming soon" placeholders are purged and 36 commands across 15 toolkits now map to verified real tool slugs; execution delegates to the tool registry through a new tool adapter so capability gates, validation, and sanitisation live in the tool layer, and a new prompts bridge exposes every command as an MCP prompt template (`slash.*` via prompts/list and prompts/get) wired into the per-toolkit MCP servers; all 19 built-in orchestrator workflows now chain registered, tool-backed commands). Added: DeepSeek V4 Pro support is restored across all tracks (DeepSeek's changelog confirms V4 Pro continues past September 14 — the model is active again at $0.66/$1.98 off-peak with the migration map left unmapped; the Content Graph AI mirror catches up to catalog v2026.09.10 and its stale V4 Pro pricing is corrected; lib/core mirrors align). Fixed: Content Graph assets are now cache-busted by file mtime (the 1.0.7 purchase-modal hotfix had stayed invisible behind a year-long cache), the purchase modal syncs its price from the vendor session with a new $34.99 fallback default, the checkout modal is restyled, and Docs Hub bumps to 0.4.4 fixing every wp.org review finding (search context-source filtering for non-managers, source-code disclosure section, symlink-safe deletion, staging-transient isolation, sitemap slug-leak fix, notice scoping). Docs: the Terms of Service consolidate site and product terms, api-licenses aligns with the new legal set, the two-entity seller model lands (NV Digital Unlocked LLC sells the Products and operates the marketplace; NV Digital Solutions develops and supports), and Content Graph 1.0.7 ships with its wp.org 18-point sign-off. Stale 1.1.76 build ZIPs removed (30 files). Tool count unchanged: ~303 base + ~1,265 Pro (~1,568 total; live registry authoritative).
 
 = 1.1.77 - September 11, 2026 =
 

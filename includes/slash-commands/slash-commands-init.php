@@ -899,7 +899,7 @@ function wp_mcp_ai_register_slash_command( $command, $config ) {
  *
  * Helper function for other plugins/themes to register tool-backed commands.
  *
- * @since 2.2.0
+ * @since 1.1.78
  *
  * @param string $command Command name (without leading slash).
  * @param array  $config  Command configuration, including 'tool' and 'tool_config'.

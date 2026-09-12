@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: September 11, 2026 (v1.1.77).
+> Last reviewed: September 12, 2026 (v1.1.78).
+>
+> **New in v1.1.78 (no base REST changes):** no base REST surface changed this window — the slash-command rework (#6604) is handler/registry/prompt-level (the MCP `prompts/list`/`prompts/get` surfaces gain `slash.*` templates, not new routes), the DeepSeek restoration (#6608) is catalog-level, and the legal consolidation (#6599/#6605/#6607) is docs-only. Sub-project: Docs Hub (**0.4.3 → 0.4.4**, #6606) fixes the `/search` context-source leak (users without `manage_options` no longer see `source = "context"` entries) and removes context slugs from the public WordPress sitemap; Content Graph checkout (#6603) reads the vendor price from the existing `/session` endpoint (display-only, no new route).
 >
 > **New in v1.1.77 (no base REST changes):** no base REST surface changed this window — the base+pro gating fix (#6561) is load-time, the onboarding preset (#6570) is admin-settings-level, the model refresh (#6555) is catalog/cost-calculator-level, and the memory CCT slug fix (#6591) is service-level. Sub-project (checkout launch series, #6568/#6573/#6587/#6589/#6590/#6594): the Checkout API addon (**0.1.0 → 0.1.1**) gains a public `GET /health` probe (no Stripe, no rate-limit token, no writes) and a **424/502 error contract** on `/payments/session` (Stripe 4xx → 424 with Stripe's message — clients show it in-modal and never redirect; transport/Stripe 5xx → 502 — clients keep the release-page fallback); the Content Graph plugin (**1.0.6 → 1.0.7**) gains an admin-only `GET /payments/health` diagnostics route that is deliberately not throttled. The `nvoos-content-graph-pro` addon completes the law-firm, cre-debt, quiz, eca, and chat-channels toolkit ports (Wave G) — no new base REST routes beyond the ported toolkit surfaces.
 >

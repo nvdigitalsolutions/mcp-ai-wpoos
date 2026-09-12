@@ -1,7 +1,7 @@
 # Addon Inventory
 
 > **Purpose:** One-stop reference for every addon in this monorepo — its status, version, license, dependencies, and whether it's production-ready.
-> **Last Updated:** September 11, 2026 (v1.1.77)
+> **Last Updated:** September 12, 2026 (v1.1.78)
 
 ---
 
@@ -42,7 +42,7 @@
 |---|---|---|---|---|---|---|---|
 | 3 | **Graphify** | `addons/graphify/` | 0.6.0 | ✅ Production | Proprietary | Base plugin | Knowledge graph builder. Extracts entities and relationships from content, builds navigable graphs, exposes via tools and REST API. Includes WooCommerce, Wikidata, RSS/Sitemap, SPARQL, CSV, and Federation drivers. |
 | 4 | **Chat SPA** | `addons/chat-spa/` | 0.7.0 | ✅ Production | GPL-3.0 | Base plugin | React-based chat surface using Vercel AI SDK. Drop-in shortcode + Gutenberg block. Connects to existing NV oOS REST endpoints. |
-| 5 | **Docs Hub** | `addons/docs-hub/` | 0.4.3 | ✅ Production | GPL-3.0 | Base plugin | React SPA documentation browser. Discovers and renders Markdown from all installed plugins/addons in a GitBook-style interface. 0.4.3: wp.org submission prep — External Services readme section, settings-page scripts moved to a static asset (no inline `<script>`), text-domain fix, dev-file packaging excludes, CI plugin-check gate, translation template (.pot). 0.4.2: local-page link resolution, github-slugger-exact anchors, directory-relative "Accept fix", `../` validation + skip reasons, sync-failure surfacing, emoji-loader crash fix. |
+| 5 | **Docs Hub** | `addons/docs-hub/` | 0.4.4 | ✅ Production | GPL-3.0 | Base plugin | React SPA documentation browser. Discovers and renders Markdown from all installed plugins/addons in a GitBook-style interface. 0.4.4: wp.org review-findings release — contributors list, Source Code readme section + self-describing source banner in the built JS, `/search` context-source filtering behind `manage_options`, `load_plugin_textdomain()` removed, admin-notice scoping, staging-transient isolation, symlink-safe recursive deletion (resolved-path containment), sitemap context-slug leak fix, stale page-transient invalidation; official Plugin Check 0 blocking errors. 0.4.3: wp.org submission prep — External Services readme section, settings-page scripts moved to a static asset (no inline `<script>`), text-domain fix, dev-file packaging excludes, CI plugin-check gate, translation template (.pot). 0.4.2: local-page link resolution, github-slugger-exact anchors, directory-relative "Accept fix", `../` validation + skip reasons, sync-failure surfacing, emoji-loader crash fix. |
 | 6 | **Algorave** | `addons/algorave/` | 1.0.7 | ✅ Production | AGPL-3.0 | Base plugin | Live-coding music extension. AI-powered pattern generation, browser-based audio synthesis (Tone.js/Strudel), MIDI export, audio visualization. F-AI-01 accepted with rationale (raw-eval gated behind `WP_MCP_AI_ALLOW_TONEJS_EVAL` + `edit_posts`; Strudel safe default; warning UI). |
 | 7 | **Fantasy Football** | `addons/fantasy-football/` | 0.1.0 | ✅ Production | Proprietary | Base plugin | ESPN and Yahoo Fantasy Sports API integration. Team management, player research, trade analysis, league reports, AI logo generation. |
 | 8 | **Embedded** | `addons/embedded/` | 0.2.0 | ✅ Production | Proprietary | Base plugin | Server-side LLM inference (llama.cpp GGUF), client-side browser inference (WebLLM/WebGPU), P2P WebChat rooms (WebRTC). Voice tool calling, OpenMed healthcare tools, and MCP abilities (v0.2.0). |

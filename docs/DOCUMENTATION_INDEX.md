@@ -1,13 +1,15 @@
 # NV oOS Documentation Index
 
-**Last Updated:** September 11, 2026
-**Plugin Version:** 1.1.77
+**Last Updated:** September 12, 2026
+**Plugin Version:** 1.1.78
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
+
+> **SEPTEMBER 12, 2026 UPDATE (v1.1.78):** SLASH-COMMAND, MODEL-RESTORATION, CHECKOUT-HARDENING & LEGAL-CONSOLIDATION RELEASE. **SLASH COMMANDS REWORKED AS DECLARATIVE TOOL WRAPPERS** (PR #6604) — ~76 PLACEHOLDER COMMANDS PURGED; 36 COMMANDS ACROSS 15 TOOLKITS EXECUTE THROUGH THE REAL TOOL REGISTRY VIA A NEW TOOL ADAPTER (CAPABILITY GATES, VALIDATION, SANITISATION, CANONICAL ENVELOPE LIVE IN THE TOOL LAYER) + NEW `slash.*` MCP PROMPT BRIDGE (`prompts/list`/`prompts/get`) WIRED INTO THE PER-TOOLKIT MCP SERVERS; ALL 19 BUILT-IN WORKFLOWS RE-CHAINED. **DEEPSEEK V4 PRO RESTORED** (PR #6608) — ACTIVE AGAIN ACROSS ALL TRACKS ($0.66/$1.98 OFF-PEAK; MIGRATION MAP UNMAPPED); CONTENT GRAPH AI MIRROR → CATALOG V2026.09.10 WITH CORRECTED USAGETRACKER PRICING; LIB/CORE MIRRORS ALIGNED. **CHECKOUT HARDENING** (PRs #6597/#6598/#6603) — ASSET CACHE-BUSTING BY FILE MTIME (`Schema::assetVersion()`; FIXES THE INVISIBLE 1.0.7 HOTFIX), VENDOR-SESSION PRICE SYNC WITH A $34.99 FALLBACK DEFAULT, MINIMALIST MODAL RESTYLE. **DOCS HUB 0.4.3 → 0.4.4** (PR #6606) — ALL WP.ORG REVIEW FINDINGS FIXED (SEARCH CONTEXT-SOURCE FILTERING, SOURCE-CODE SECTION, SYMLINK-SAFE DELETION, STAGING-TRANSIENT ISOLATION, SITEMAP SLUG LEAK), 0 BLOCKING PCP ERRORS. **LEGAL CONSOLIDATION** (PRs #6599/#6605/#6607) — UNIFIED TOS, ALIGNED API-LICENSES, TWO-ENTITY SELLER MODEL (NV DIGITAL UNLOCKED LLC SELLS + RUNS THE MARKETPLACE; NV DIGITAL SOLUTIONS DEVELOPS/OWNS IP/SERVICES). **CONTENT GRAPH 1.0.7 RELEASED** WITH WP.ORG 18-POINT SIGN-OFF. TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.76 BUILD ZIPS REMOVED (30 FILES). UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
 > **SEPTEMBER 11, 2026 UPDATE (v1.1.77):** MODEL-REFRESH, BASE+PRO & CHECKOUT-LAUNCH RELEASE. **DEEPSEEK V4.1 FLASH CATALOG REFRESH** (PR #6555) — NEW `deepseek-flash` (VISION, $0.15/$0.60 OFF-PEAK); V4 FLASH + V4 FLASH VISION EXP RETIRED; V4 PRO DEPRECATED (SUNSET 2026-09-14, FALLBACK `deepseek-flash`); MIGRATION MAP REWRITES ALL SIX LEGACY DEEPSEEK IDS; **PEAK/OFF-PEAK PRICING** LANDS IN THE COST CALCULATOR (`PEAK_WINDOWS`, `is_peak_time()`, `calculate_cost_at()` — LEGACY `calculate_cost()` TIME-INDEPENDENT). **KNOWLEDGE GRAPH COMPANION PRESET** (PR #6570) — FEATURED, AUTO-SELECTED WHEN A CONTENT GRAPH IS DETECTED, 20 BASE TOOLS + 14 `graphify_*` TOOLS WHEN ENABLED. **BASE+PRO GATING FIXED** (PR #6561) — PRO TOOLKITS NOW LOAD IN BASE+PRO INSTALLS (ALL 21 INIT GATES + ~550 TOOL GATES); NEW 15-TEST `tests/basepro/` MATRIX + CI JOB. **PRO WP-CLI LOAD-ORDER GUARD** (PR #6585) — NO MORE `WP_MCP_AI_PATH` FATAL WHEN PRO ACTIVATES FIRST. **MEMORY CCT PHANTOM SLUG FIXED** (PR #6591) — GRAPHIFY + RETENTION READ CANONICAL `ai_agent_memories` (SWEEPS, CAPS, PRUNING, HEALTH STATS WORK). **CHECKOUT LAUNCH COMPLETE** (PRs #6568/#6571/#6573/#6587–#6594) — CHECKOUT API **0.1.0 → 0.1.1** (BOOLEAN SERIALIZATION FIX, 424/502 CONTRACT, CONNECTION TEST, `GET /health`); CONTENT GRAPH **1.0.6 → 1.0.7** (CCT SOURCES + STATUS NOTES, TRUST MODAL, STRIPE ELEMENT + RELEASE-TAG FIXES). **SECURITY** — SHARP/NODEMAILER/JOI/POSTCSS-SELECTOR-PARSER BUMPS (#6592); BUILD PUBLISH RACE FIX (#6593). **WAVE G** (PRs #6551–#6584) — LAW-FIRM, CRE-DEBT, QUIZ, ECA, CHAT-CHANNELS COMPLETE; PLACES STARTS. TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.75 BUILD ZIPS REMOVED (30 FILES). UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
@@ -650,6 +652,23 @@ n#### New Audit & Compliance Docs
 - **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.39 latest updates section, version bump, duplicate section cleanup.
 
 ---
+
+## 🆕 September 2026 — v1.1.78: Slash-Command Rework, DeepSeek V4 Pro Restoration, Checkout Hardening, Legal Consolidation
+
+### New and updated documents (September 12, 2026, v1.1.78)
+
+- **[docs/project/plans/v1.1.78-docs-catch-up.md](project/plans/v1.1.78-docs-catch-up.md)** ⭐ **NEW** — v1.1.78 docs & release catch-up plan (PRs #6597–#6608, full PR-description review + housekeeping). (September 12, 2026)
+- **[docs/legal/TERMS-OF-SERVICE.md](legal/TERMS-OF-SERVICE.md)** ⭐ **UPDATED** — consolidated Part A (Products) + Part B (Website/Services/Marketplace), then restructured into three parts for the two-entity seller model (PRs #6599/#6607). (September 11–12, 2026)
+- **[docs/legal/API-LICENSES.md](legal/API-LICENSES.md)** ⭐ **NEW** — License & Usage Terms aligned with the consolidated legal set + publishable HTML (PR #6605). (September 11, 2026)
+- **[docs/legal/PRIVACY-POLICY.md](legal/PRIVACY-POLICY.md)** ⭐ **UPDATED** — dual-controller rewrite (Unlocked: checkout/licensing/refund/marketplace data; Solutions: website/services data) (PR #6607). (September 12, 2026)
+- **[docs/reference/slash-commands/README.md](reference/slash-commands/README.md)** ⭐ **UPDATED** — declarative command registry, tool adapter, and MCP prompts bridge (PR #6604). (September 11, 2026)
+- **[includes/slash-commands/README.md](../includes/slash-commands/README.md)** ⭐ **UPDATED** — same rework documented at the source (PR #6604). (September 11, 2026)
+- **[plugins/nvoos-content-graph/WPORG-REVIEW-18POINT-SIGNOFF.md](../plugins/nvoos-content-graph/WPORG-REVIEW-18POINT-SIGNOFF.md)** ⭐ **NEW** — wp.org 18-point sign-off for the Content Graph 1.0.7 submission (direct commit `fda3e99c04`). (September 11, 2026)
+- **[addons/docs-hub/readme.txt](../addons/docs-hub/readme.txt)** ⭐ **UPDATED** — v0.4.4 contributors, Source Code section, and changelog (PR #6606). (September 12, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.78 highlights + latest updates (slash rework, DeepSeek restoration, checkout hardening, docs-hub 0.4.4, legal consolidation, ~1,568 tools, 56 skills). (September 12, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.78] section with PR-level detail. (September 12, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.78 + changelog entry. (September 12, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.78 entry. (September 12, 2026)
 
 ## 🆕 September 2026 — v1.1.77: DeepSeek V4.1 Flash, Base+Pro Gating, Checkout Launch
 

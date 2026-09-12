@@ -15,7 +15,7 @@
  *
  * @package WP_MCP_AI
  * @subpackage Slash_Commands
- * @since 2.2.0
+ * @since 1.1.78
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Class WP_MCP_AI_Slash_Command_Prompts
  *
- * @since 2.2.0
+ * @since 1.1.78
  */
 class WP_MCP_AI_Slash_Command_Prompts {
 
@@ -42,7 +42,7 @@ class WP_MCP_AI_Slash_Command_Prompts {
 	/**
 	 * Build prompts/list entries for every registered slash command.
 	 *
-	 * @since 2.2.0
+	 * @since 1.1.78
 	 *
 	 * @return array<int,array<string,mixed>>
 	 */
@@ -67,7 +67,7 @@ class WP_MCP_AI_Slash_Command_Prompts {
 	 * toolkit manager ('video_production') and the per-toolkit MCP servers
 	 * ('video-production') can address the same commands.
 	 *
-	 * @since 2.2.0
+	 * @since 1.1.78
 	 *
 	 * @param string $toolkit_slug Toolkit slug.
 	 * @return array<int,array<string,mixed>>
@@ -101,7 +101,7 @@ class WP_MCP_AI_Slash_Command_Prompts {
 	 * through the chat slash-command surface otherwise. Parameters passed by
 	 * the client are substituted into the invocation line.
 	 *
-	 * @since 2.2.0
+	 * @since 1.1.78
 	 *
 	 * @param string $prompt_name Full prompt name (with self::PREFIX).
 	 * @param array  $arguments   Client-supplied prompt arguments.

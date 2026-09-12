@@ -9,7 +9,7 @@
  *
  * @package WP_MCP_AI
  * @subpackage Slash_Commands
- * @since 2.2.0
+ * @since 1.1.78
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
@@ -33,7 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   4. Return the tool's canonical envelope (success array or WP_Error)
  *      unchanged, optionally transformed by a render callable.
  *
- * @since 2.2.0
+ * @since 1.1.78
  */
 class WP_MCP_AI_Slash_Command_Tool_Adapter {
 
