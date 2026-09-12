@@ -178,6 +178,29 @@ class NVOOS_Checkout_API_Stripe_Client {
 	}
 
 	/**
+	 * Retrieve a Stripe Product by ID.
+	 *
+	 * Used by the admin page to verify that a stored Product ID still
+	 * exists in the account identified by the current secret key — after
+	 * the storefront switches Stripe accounts, stored IDs belong to the
+	 * previous account and Stripe answers 404 (`resource_missing`).
+	 *
+	 * @param string $product_id Stripe Product ID (prod_…).
+	 * @return array<string,mixed>|WP_Error
+	 */
+	public function retrieve_product( string $product_id ) {
+		$response = wp_remote_get(
+			self::API_BASE . '/products/' . rawurlencode( $product_id ),
+			array(
+				'timeout' => 30,
+				'headers' => $this->headers(),
+			)
+		);
+
+		return $this->parse_response( $response );
+	}
+
+	/**
 	 * Create a one-time Stripe Price for a product.
 	 *
 	 * Mirrors the storefront's configured price/currency so reporting and
@@ -204,6 +227,28 @@ class NVOOS_Checkout_API_Stripe_Client {
 						),
 					)
 				),
+			)
+		);
+
+		return $this->parse_response( $response );
+	}
+
+	/**
+	 * Retrieve a Stripe Price by ID.
+	 *
+	 * Mirrors retrieve_product(): after an account switch, a stored Price
+	 * ID resolves to 404 in the current account (or belongs to a different
+	 * Product), so the admin page can detect it and recreate.
+	 *
+	 * @param string $price_id Stripe Price ID (price_…).
+	 * @return array<string,mixed>|WP_Error
+	 */
+	public function retrieve_price( string $price_id ) {
+		$response = wp_remote_get(
+			self::API_BASE . '/prices/' . rawurlencode( $price_id ),
+			array(
+				'timeout' => 30,
+				'headers' => $this->headers(),
 			)
 		);
 
@@ -375,12 +420,19 @@ class NVOOS_Checkout_API_Stripe_Client {
 					$code
 				);
 
-			$status = ( $code >= 400 && $code < 500 ) ? 424 : 502;
+			$status      = ( $code >= 400 && $code < 500 ) ? 424 : 502;
+			$stripe_code = is_array( $data ) && isset( $data['error']['code'] )
+				? (string) $data['error']['code']
+				: '';
 
 			return new WP_Error(
 				'nvoos_checkout_stripe_http_error',
 				$message,
-				array( 'status' => $status )
+				array(
+					'status'      => $status,
+					'http_status' => $code,
+					'stripe_code' => $stripe_code,
+				)
 			);
 		}
 
