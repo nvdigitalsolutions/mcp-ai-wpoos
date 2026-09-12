@@ -385,9 +385,10 @@ class WP_MCP_AI_Pro_Privacy {
 				$upload_dir   = wp_upload_dir();
 				$real_uploads = isset( $upload_dir['basedir'] ) ? realpath( $upload_dir['basedir'] ) : false;
 
-				// Only delete if the resolved path is within the uploads directory.
+				// Only delete if the resolved path is inside the uploads directory
+				// (directory-boundary match, so ".../uploads-evil" cannot pass).
 				// This prevents path traversal attacks via manipulated post meta.
-				if ( $real_storage && $real_uploads && 0 === strpos( $real_storage, $real_uploads ) ) {
+				if ( $real_storage && $real_uploads && ( $real_storage === $real_uploads || 0 === strpos( $real_storage, $real_uploads . DIRECTORY_SEPARATOR ) ) ) {
 					self::delete_directory_recursively( $real_storage );
 				} else {
 					$messages[] = sprintf(
@@ -466,6 +467,18 @@ class WP_MCP_AI_Pro_Privacy {
 				continue;
 			}
 			$path = $dir . DIRECTORY_SEPARATOR . $item;
+
+			// Never follow a symlink: remove the link itself. is_dir() follows
+			// links, so this check must come first.
+			if ( is_link( $path ) ) {
+				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.unlink_unlink
+				if ( ! @unlink( $path ) && '\\' === DIRECTORY_SEPARATOR ) {
+					// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
+					@rmdir( $path );
+				}
+				continue;
+			}
+
 			if ( is_dir( $path ) ) {
 				self::delete_directory_recursively( $path );
 			} else {
