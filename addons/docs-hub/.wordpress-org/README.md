@@ -65,10 +65,10 @@ cd /tmp/nvoos-docs-hub-svn
 rm -rf assets
 cp -r /path/to/mcp-ai-wpoos/addons/docs-hub/.wordpress-org/assets assets
 svn add --force assets
-svn ci -m "Add plugin listing assets (icons, banners, screenshots) for v0.4.5"
+svn ci -m "Add plugin listing assets (icons, banners, screenshots) for v0.4.6"
 
 # The plugin code itself goes into trunk/ (built from the distribution ZIP):
-# unzip nvoos-docs-hub-v0.4.5.zip -d trunk/
+# unzip nvoos-docs-hub-v0.4.6.zip -d trunk/
 ```
 
 Note: `svn` and wp.org SVN credentials are required — these are never
