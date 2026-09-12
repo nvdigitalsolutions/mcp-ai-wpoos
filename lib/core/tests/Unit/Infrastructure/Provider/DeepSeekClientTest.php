@@ -71,7 +71,7 @@ final class DeepSeekClientTest extends TestCase {
 
 		$client = new DeepSeekClient( $settings, $this->httpClient, $this->errorFactory );
 
-		$result = $client->chat( array(), array( 'model' => 'deepseek-chat' ) );
+		$result = $client->chat( array(), array( 'model' => 'deepseek-flash' ) );
 
 		$this->assertSame( $expectedError, $result );
 	}
@@ -80,7 +80,7 @@ final class DeepSeekClientTest extends TestCase {
 		$response = new HttpResponse( 200, json_encode( array(
 			'id'      => 'chatcmpl-123',
 			'object'  => 'chat.completion',
-			'model'   => 'deepseek-chat',
+			'model'   => 'deepseek-flash',
 			'choices' => array(
 				array(
 					'index'         => 0,
@@ -107,12 +107,12 @@ final class DeepSeekClientTest extends TestCase {
 			array(
 				array( 'role' => 'user', 'content' => 'Hello' ),
 			),
-			array( 'model' => 'deepseek-chat' ),
+			array( 'model' => 'deepseek-flash' ),
 		);
 
 		// OpenAiCompatibleClient returns the raw decoded JSON body.
 		$this->assertIsArray( $result );
-		$this->assertSame( 'deepseek-chat', $result['model'] );
+		$this->assertSame( 'deepseek-flash', $result['model'] );
 		$this->assertSame( 'chat.completion', $result['object'] );
 		$this->assertArrayHasKey( 'choices', $result );
 		$this->assertSame( 'assistant', $result['choices'][0]['message']['role'] );

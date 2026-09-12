@@ -1022,9 +1022,10 @@ class WP_MCP_AI_Model_Service {
 
 		$models = array();
 
-		// DeepSeek current lineup: V4.1 Flash flagship; V4 Pro retiring Sep 14.
+		// DeepSeek current lineup: V4.1 Flash flagship; V4 Pro stays servable
+		// (DeepSeek continues it past 2026-09-14, billing unchanged).
 		$models['deepseek-flash'] = 'DeepSeek V4.1 Flash (1M Context, Vision)';
-		$models['deepseek-v4-pro'] = 'DeepSeek V4 Pro (Retiring Sep 14)';
+		$models['deepseek-v4-pro'] = 'DeepSeek V4 Pro (Reasoning, 1M Context)';
 
 		return $models;
 	}

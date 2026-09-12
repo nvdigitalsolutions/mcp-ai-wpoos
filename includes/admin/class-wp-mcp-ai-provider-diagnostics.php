@@ -726,7 +726,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						</p>
 					<?php else : ?>
 						<p class="description" style="margin-top: 10px;">
-							<?php esc_html_e( 'DeepSeek provides fast, cost-effective AI models with OpenAI-compatible API. deepseek-flash (V4.1 Flash: 1M ctx, native vision) supports tool calling and thinking modes; deepseek-v4-pro is retiring on September 14, 2026 and routes to V4.1 Flash.', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'DeepSeek provides fast, cost-effective AI models with OpenAI-compatible API. deepseek-flash (V4.1 Flash: 1M ctx, native vision) supports tool calling and thinking modes; deepseek-v4-pro stays available — DeepSeek continues V4 Pro service past September 14, 2026 with unchanged billing until further notice.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					<?php endif; ?>
 				</div>

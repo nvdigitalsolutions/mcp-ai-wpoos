@@ -17,7 +17,7 @@ class SuggestBestModelTool extends AbstractTool {
 		'coding'      => array(
 			'quality' => 'claude-sonnet-4-6',
 			'speed'   => 'gpt-4o-mini',
-			'cost'    => 'deepseek-chat',
+			'cost'    => 'deepseek-flash',
 		),
 		'writing'     => array(
 			'quality' => 'claude-opus-4-6',
@@ -36,8 +36,8 @@ class SuggestBestModelTool extends AbstractTool {
 		),
 		'math'        => array(
 			'quality' => 'o4-mini',
-			'speed'   => 'deepseek-chat',
-			'cost'    => 'deepseek-chat',
+			'speed'   => 'deepseek-flash',
+			'cost'    => 'deepseek-flash',
 		),
 		'translation' => array(
 			'quality' => 'claude-sonnet-4-6',
