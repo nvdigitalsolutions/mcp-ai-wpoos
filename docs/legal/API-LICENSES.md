@@ -1,15 +1,19 @@
 # License & Usage Terms — NV Digital Solutions
 
 **Effective date:** September 9, 2026
-**Last updated:** September 11, 2026
+**Last updated:** September 12, 2026
 
 > This page supersedes the License & Usage Terms last updated April 2, 2026.
+> Updated September 12, 2026 to designate NV Digital Unlocked LLC as the
+> seller of paid NV oOS products.
 
 ## 1. Overview
 
 This License & Usage Terms page governs access to and use of software, APIs,
-plugins, and digital services provided by NV Digital Solutions ("NV Digital",
-"we", "our", "us"), including the licensing API endpoint:
+plugins, and digital services provided in connection with paid NV oOS
+products sold by **NV Digital Unlocked LLC** ("NV Digital Unlocked", "we",
+"our", "us") under license from NV Digital Solutions, including the
+licensing API endpoint:
 
 `https://nvdigitalsolutions.com/api/licenses`
 
@@ -18,8 +22,8 @@ It summarises the license terms for paid NV oOS products — including the
 keys sold through our checkout service (collectively, the "Products"). It
 forms part of, and is subject to, the
 [Terms of Service](TERMS-OF-SERVICE.md), which is the binding agreement
-between you and NV Digital Solutions. If there is any conflict between this
-page and the Terms of Service, the Terms of Service prevail.
+between you and NV Digital Unlocked LLC. If there is any conflict between
+this page and the Terms of Service, the Terms of Service prevail.
 
 ## 2. The NV oOS License
 
@@ -185,4 +189,5 @@ requires otherwise.
 
 *These terms are published at `https://nvdigitalsolutions.com/api-licenses`.*
 
-Copyright © 2025–2026 NV Digital Solutions. All rights reserved.
+Copyright © 2025–2026 NV Digital Solutions. All rights reserved. NV oOS
+software is licensed to NV Digital Unlocked LLC for sale.
