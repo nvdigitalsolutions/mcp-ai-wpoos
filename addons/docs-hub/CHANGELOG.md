@@ -1,5 +1,23 @@
 # NV oOS Docs Hub — Changelog
 
+## 0.4.5 — 2026-09-12
+
+### Security
+
+- **A symlinked cache directory can no longer redirect deletion.** The
+  uninstall helper checks `is_link()` on the top-level cache directory
+  before recursing and removes only the link when it is one, so the
+  external target is never touched. `NV_oOS_Docs_Hub_Cache` gained the
+  same guard in `rm_rf()`, and `get_live_dir()` replaces a symlinked cache
+  directory with a real one before writing cache files.
+
+### Changed
+
+- readme `External Services` rewritten to describe the
+  documentation-import service, the exact servers contacted, and that no
+  account is required for public repositories (an optional GitHub token
+  only raises API rate limits).
+
 ## 0.4.4 — 2026-09-12
 
 WordPress.org review response pass. Security and guideline-compliance

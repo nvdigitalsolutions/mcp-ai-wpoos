@@ -12,11 +12,13 @@ metadata:
 
 # NV oOS WordPress.org Submission — Readiness Playbook
 
-Playbook distilled from two executed passes: the Docs Hub 0.4.3
-submission-readiness pass (PR #6403), the base-plugin gate repair, and the
-first real reviewer-reply pass (0.4.3 → 0.4.4, PR #6606 — all findings fixed
-plus a related-issue sweep). Covers everything between "this plugin should
-ship to wp.org" and "the reviewer approves it".
+Playbook distilled from three executed passes: the Docs Hub 0.4.3
+submission-readiness pass (PR #6403), the base-plugin gate repair, the first
+real reviewer-reply pass (0.4.3 → 0.4.4, PR #6606 — all findings fixed plus
+a related-issue sweep), and the second reviewer-reply pass (0.4.4 → 0.4.5 —
+remote-call service framing + the initial-dir symlink residual). Covers
+everything between "this plugin should ship to wp.org" and "the reviewer
+approves it".
 
 ## When to use this skill
 
@@ -250,6 +252,16 @@ next reviewer email lands — the same categories recur across plugins.
 | Staging transients: `set_transient` on page write (L168) + live transient read (L149) break staging isolation | `get_manifest`/`get_search_index` honoured the staging toggle; `get_page`/`set_page` did not | Mirror the manifest pattern: skip transient read when `$this->staging`, only set transient when `! $this->staging` |
 | `uninstall.php` recursive delete follows symlinks | `rm_rf` recursed via `is_dir()` without link checks or containment | Check `is_link()` **before** `is_dir()` (delete the link, never the target), and verify `realpath()` stays inside the cache root before recursing. Apply to **every** recursive delete in the codebase — `Cache::rm_rf()` had the same bug |
 
+### Second reviewer pass (0.4.4 → 0.4.5, review P0TDX367696HGN)
+
+The 0.4.4 fixes passed except two residuals — one a *category* the reviewer
+wanted re-framed, one an AI-flagged corner of the previous symlink fix:
+
+| Review finding | Root cause | Fix pattern (docs-hub) |
+|---|---|---|
+| "Calling files remotely" — flagged `raw.githubusercontent.com` in `class-nvoos-docs-hub-remote-repo.php` (ALLOWED_HOSTS + raw URL build) | The remote fetcher IS the plugin's service (like Akismet/oEmbed) — server-side only, host-allowlisted, admin-triggered — but the readme didn't say so in reviewer terms | Do **not** rip out the service. Rewrite `== External Services ==` to state it is a *documentation-import service*: what it does, the servers called (`api.github.com`, `raw.githubusercontent.com`), that **no account is required** (optional token only raises rate limits), that fetches are server-side/cached, and that rendered pages may contain content-authored links/images to github.com domains loaded by the *browser*, not the server. Reply explaining the service exception (Guideline 6) |
+| "The initial cache directory can itself be a symlink: realpath() treats its external target as the containment root" (uninstall.php:112) | The 0.4.4 containment guard resolves the root *from the path being deleted* — when the top-level cache dir is a symlink, target == root and the guard passes trivially | `is_link()`-check the **top-level** cache dir before recursing and delete only the link. Same class of bug in `Cache::get_live_dir()`: a symlinked cache dir would receive `.htaccess`/`index.php`/`pages/` writes and make `clear()`'s `glob()` deletes touch external files — unlink the link and recreate a real dir there. Keep `is_link()`-first guards at every recursion entry. Regression tests: symlink the cache dir → `Cache::clear()` and `require uninstall.php` must leave the external target's sentinel file intact |
+
 ### Related-issue sweep checklist (always run after fixing the flagged items)
 
 Each review item is a category — grep the whole plugin for siblings:
@@ -266,7 +278,12 @@ Each review item is a category — grep the whole plugin for siblings:
    `_transient_<prefix>p_*` rows with `$wpdb->prepare` + `esc_like`.
 3. **Symlink traversal in deletion** — grep `rmdir|unlink|RecursiveDirectoryIterator|
    rm_rf`. Every recursive delete needs the is_link + realpath-containment
-   guard (see fixes above).
+   guard (see fixes above). **Also guard the containment root itself**: when
+   the root being deleted IS the containment root (uninstall's cache dir),
+   `is_link()`-check it first or the external target becomes the root (the
+   0.4.4 → 0.4.5 finding). Sweep `glob(`+`wp_delete_file` cleanup and
+   `wp_mkdir_p`+guard-file writes too — those follow a symlinked cache dir
+   into external targets as well (`get_live_dir()` fix).
 4. **Secrets in localized/admin output** — grep `wp_localize_script` and
    form renders for settings blobs. docs-hub localized the FULL settings
    (including GitHub PATs in `remote_repos[].token`) into the page DOM; the

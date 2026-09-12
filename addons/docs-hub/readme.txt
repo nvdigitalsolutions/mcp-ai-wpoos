@@ -4,7 +4,7 @@ Tags: documentation, markdown, github
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.4.4
+Stable tag: 0.4.5
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -144,26 +144,48 @@ The repository also contains the WordPress.org packaging and CI pipeline
 
 == External Services ==
 
-When you configure a remote documentation repository, this plugin contacts
-GitHub's public API — **server-side only, over HTTPS**, and only the hosts
-listed below. Every request is restricted to these hosts (all others are
-rejected, including private and reserved IP addresses), carries a bounded
-timeout and response-size cap, and only happens after an administrator
-configures a repository and triggers a rebuild (or the nightly cron runs).
-No requests are made if no remote repository is configured, and the plugin
-does not send any personal data to these services — it only fetches the
-public repository content exactly as GitHub serves it.
+This plugin provides a **documentation-import service**: when an
+administrator configures a remote repository, the plugin fetches Markdown
+files from that public GitHub repository, stores them locally in the
+uploads cache, and renders them in the documentation browser. Fetched
+content is cached on your server, so visitors are served from the local
+cache, not from GitHub.
 
-* `api.github.com` — repository tree metadata used by the file/folder
+All requests are made **server-side only, over HTTPS**, and only to the two
+hosts listed below. Every request is restricted to these hosts (all other
+hosts are rejected, including private and reserved IP addresses), carries a
+bounded timeout and a 4 MB response-size cap, and only happens after an
+administrator has configured a repository and triggered a rebuild (or the
+nightly cron runs). No requests are made if no remote repository is
+configured.
+
+**No account is required** for public repositories. An optional GitHub
+personal access token can be saved in the settings to raise GitHub's API
+rate limits; it is stored server-side and sent only to the two hosts below.
+
+* `api.github.com` — repository and tree metadata used by the file/folder
   picker and the indexer.
-  Terms: https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
-  Privacy: https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement
 * `raw.githubusercontent.com` — raw Markdown file content fetched during
   index rebuilds.
-  Terms: https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
-  Privacy: https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement
+
+The plugin does not send any personal data to these services — it only
+fetches the public repository content exactly as GitHub serves it. Rendered
+documentation pages display the repository content as authored, which may
+include links and images pointing at `github.com`,
+`raw.githubusercontent.com`, or `user-images.githubusercontent.com`; those
+are loaded by the visitor's browser directly from the source repository,
+not through the plugin or your server.
+
+GitHub Terms of Service:
+https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
+GitHub Privacy Statement:
+https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement
 
 == Changelog ==
+
+= 0.4.5 =
+* Security: a symlinked cache directory can no longer redirect deletion — the uninstall routine removes only the link and leaves the external target untouched, and the cache class replaces a symlinked cache directory with a real one before writing.
+* Changed: the External Services section now explains the documentation-import service, the servers it contacts, and that no account is required for public repositories.
 
 = 0.4.4 =
 * Security: search results and the WordPress sitemap no longer expose context-source (`.context/`) content to non-admin users.
@@ -240,6 +262,9 @@ public repository content exactly as GitHub serves it.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 0.4.5 =
+Security hardening release — uninstall and cache cleanup are symlink-safe. Recommended for all users.
 
 = 0.4.4 =
 Security hardening release — context-source content can no longer leak through search or the sitemap. Recommended for all users.

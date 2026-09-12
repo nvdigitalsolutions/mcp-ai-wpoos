@@ -395,6 +395,14 @@ class NV_oOS_Docs_Hub_Cache {
 		$base        = $upload_info['basedir'];
 		$dir         = $base . DIRECTORY_SEPARATOR . self::CACHE_DIR;
 
+		// The cache directory itself must never be a symlink: a link here
+		// would redirect cache writes and deletes into an external target.
+		// Remove only the link (its target is left untouched) and let
+		// wp_mkdir_p() recreate a real directory.
+		if ( is_link( $dir ) ) {
+			wp_delete_file( $dir );
+		}
+
 		if ( ! wp_mkdir_p( $dir ) ) {
 			return false;
 		}
@@ -593,7 +601,12 @@ class NV_oOS_Docs_Hub_Cache {
 	 * @return void
 	 */
 	private function rm_rf( $dir ) {
-		if ( ! is_dir( $dir ) && ! is_link( $dir ) ) {
+		if ( is_link( $dir ) ) {
+			// Delete the link itself — never follow it into its target.
+			wp_delete_file( $dir );
+			return;
+		}
+		if ( ! is_dir( $dir ) ) {
 			return;
 		}
 
