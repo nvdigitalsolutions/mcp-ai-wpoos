@@ -1,6 +1,18 @@
 # NV oOS Checkout API — Changelog
 
-## 0.1.1 — Unreleased
+## 0.1.2 — 2026-09-12
+
+### Changed
+
+- **Default price $34.99** — `DEFAULT_PRICE_CENTS` moves from 4900 to **3499** for fresh vendor installs, mirroring the content-graph client's new fallback default. The `/session` `amount` stays authoritative for what the buyer is actually charged, and the client now renders that amount in the purchase modal instead of its local default (#6603)
+
+### Fixed
+
+- **Card statement descriptor rejected by Stripe** — Stripe no longer accepts the full `statement_descriptor` parameter for card charges created with `automatic_payment_methods`, so every live PaymentIntent creation failed with a Stripe 424 rejection. `/session` now sends the stored value as `statement_descriptor_suffix` (appended to the account's statement descriptor prefix; 2–22 characters, at least one letter — invalid values drop out so Stripe's default applies), and the settings sanitizer enforces the suffix rules. Covered in `tests/test-rest-checkout.php`
+
+- **Create product does nothing after switching Stripe accounts** — the admin action was idempotent on the stored `product_id`/`price_id`, so after changing the secret key the old account's IDs still matched and both creations were skipped (the new account never received a product/price, while a success notice claimed they were created). The action now verifies the stored IDs against the current key first: a 404 `resource_missing` (the signature of a switched account) clears the stale IDs and recreates both objects in the current account, a price attached to a different product is recreated too, and any other failure (invalid key, transport) aborts without touching the stored IDs. Distinct admin notices (`recreated` success, `verify` error) and an updated button hint explain the behavior. Covered by `ensure_product_and_price()` tests in `tests/test-admin-page.php` plus `retrieve_product()`/`retrieve_price()` client tests
+
+## 0.1.1 — 2026-09-11
 
 ### New
 
@@ -20,10 +32,6 @@
 - Download streaming is chunked (1 MB reads) instead of buffering the whole ZIP in memory — the Complete bundle can be tens of MB
 
 ### Fixed
-
-- **Card statement descriptor rejected by Stripe** — Stripe no longer accepts the full `statement_descriptor` parameter for card charges created with `automatic_payment_methods`, so every live PaymentIntent creation failed with a Stripe 424 rejection. `/session` now sends the stored value as `statement_descriptor_suffix` (appended to the account's statement descriptor prefix; 2–22 characters, at least one letter — invalid values drop out so Stripe's default applies), and the settings sanitizer enforces the suffix rules. Covered in `tests/test-rest-checkout.php`
-
-- **Create product does nothing after switching Stripe accounts** — the admin action was idempotent on the stored `product_id`/`price_id`, so after changing the secret key the old account's IDs still matched and both creations were skipped (the new account never received a product/price, while a success notice claimed they were created). The action now verifies the stored IDs against the current key first: a 404 `resource_missing` (the signature of a switched account) clears the stale IDs and recreates both objects in the current account, a price attached to a different product is recreated too, and any other failure (invalid key, transport) aborts without touching the stored IDs. Distinct admin notices (`recreated` success, `verify` error) and an updated button hint explain the behavior. Covered by `ensure_product_and_price()` tests in `tests/test-admin-page.php` plus `retrieve_product()`/`retrieve_price()` client tests
 
 - **Stripe boolean serialization** — request bodies are form-encoded, and PHP's serializer turned booleans into `1`/empty strings, which Stripe rejects (`Invalid boolean: 1` on `automatic_payment_methods[enabled]` — every live PaymentIntent creation failed, surfacing as the client's 502 and the modal's fallback redirect). The Stripe client now stringifies booleans to literal `true`/`false` recursively before sending; regression coverage in `tests/test-stripe-client.php`
 

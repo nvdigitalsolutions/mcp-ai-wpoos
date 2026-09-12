@@ -5,7 +5,7 @@ Tags: knowledge graph, content visualization, cytoscape, content strategy, seman
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.7
+Stable tag: 1.0.8
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -164,6 +164,11 @@ All libraries are served locally from `assets/vendor/` and never loaded from thi
 6. Graph Explorer — interactive Cytoscape.js visualization with search and node details
 
 == Changelog ==
+
+= 1.0.8 — 2026-09-12 =
+* Purchase modal price now syncs from the vendor checkout session, so the displayed price always matches what Stripe charges
+* Default price updated to $34.99 with an "introductory price — subject to change" note in the purchase modal
+* Checkout disclosures name NV Digital Unlocked LLC as the seller of record (NV Digital Solutions remains developer and IP owner)
 
 = 1.0.7 — 2026-09-09 =
 * Checkout consent checkbox (Terms of Service + 30-day refund policy) and buyer-email collection with Stripe receipt delivery

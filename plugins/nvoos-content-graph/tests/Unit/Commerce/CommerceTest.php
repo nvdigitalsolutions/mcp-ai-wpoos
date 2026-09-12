@@ -872,7 +872,7 @@ class CommerceTest extends WP_UnitTestCase {
 						array(
 							'status'      => 'ok',
 							'service'     => 'nvoos-checkout',
-							'version'     => '0.1.1',
+							'version'     => '0.1.2',
 							'configured'  => true,
 							'server_time' => time(),
 						)
@@ -934,7 +934,7 @@ class CommerceTest extends WP_UnitTestCase {
 						array(
 							'status'      => 'ok',
 							'service'     => 'nvoos-checkout',
-							'version'     => '0.1.1',
+							'version'     => '0.1.2',
 							'configured'  => true,
 							'server_time' => time(),
 						)
@@ -971,7 +971,7 @@ class CommerceTest extends WP_UnitTestCase {
 						array(
 							'status'      => 'ok',
 							'service'     => 'nvoos-checkout',
-							'version'     => '0.1.1',
+							'version'     => '0.1.2',
 							'configured'  => true,
 							'server_time' => time(),
 						)

@@ -1,10 +1,14 @@
 # NV oOS Content Graph — Changelog
 
-## Unreleased
+## 1.0.8 — 2026-09-12
 
 ### Changed — Purchase modal price note
 
 - **Price-subject-to-change note** — the modal's price block now renders "Introductory price — prices are subject to change." under the one-time label (`price_subject_change` i18n key → `nvoos-cg-price-change` in `content-graph-commerce.js`) while the owner settles final pricing. Deliberately phrased without a fake "limited time" claim per the hard rules in `docs/checkout-enhancement-plan.md` §6 (EU UCPD / FTC dark-pattern rules, wp.org guideline 9)
+
+### Changed — Checkout copy names NV Digital Unlocked as seller
+
+- **Seller of record** — checkout disclosures (`src/Commerce/Payments.php` docblock, the readme.txt FAQ + Stripe payments privacy section, and the wp.org commerce review notes) now name **NV Digital Unlocked LLC** as the seller of record for the NV oOS Complete bundle, with NV Digital Solutions as developer and IP owner — aligned with the 2026-09-12 legal docs (#6609)
 
 ### Fixed — Purchase modal showed a stale price after vendor-side changes
 

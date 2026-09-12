@@ -2,9 +2,10 @@
 
 **Vendor-side checkout service for NV oOS premium addons.**
 
-> **Status:** v0.1.1 — Stripe sessions + verification, license issuance, signed
+> **Status:** v0.1.2 — Stripe sessions + verification, license issuance, signed
 > ZIP downloads, Stripe webhook receiver, storefront admin, public health probe,
-> and an endpoint self-check on the admin page.
+> endpoint self-check on the admin page, `statement_descriptor_suffix` for card
+> charges, and account-switch-safe Product/Price creation.
 
 Runs on the vendor's own server (e.g. nvdigitalsolutions.com). It is the
 server half of the purchase flow built into the free
