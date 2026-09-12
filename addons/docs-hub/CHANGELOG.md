@@ -23,6 +23,11 @@ fixes; no functional changes for existing installations.
   swap (including best-effort orphan slugs), and `clear()` / the uninstaller
   now wildcard-clean page transients — cleared or deleted pages can never be
   served from the transient fast-path until their TTL expires.
+- **GitHub tokens no longer localized into the page DOM.** The settings-page
+  script config previously received the full settings blob including
+  `remote_repos[].token` via `wp_localize_script` (the JS stripped them only
+  at export time). Tokens are now removed server-side before localization;
+  the export flow is unaffected.
 - **Recursive cache deletion is symlink-safe.** `Cache::rm_rf()` and the
   uninstall helper check `is_link()` before recursing and verify that every
   resolved path stays inside the plugin cache directory, so a symlinked
@@ -39,12 +44,13 @@ fixes; no functional changes for existing installations.
   section links the public repository
   (https://github.com/nvdigitalsolutions/nvoos-docs-hub) and the esbuild
   steps that regenerate `assets/dist/docs-hub.js`; `Contributors` now lists
-  `vsamtani` alongside `nvdigitalsolutions`.
+  the author's WordPress.org username `vsamtani`.
 
 ### Build
-- `esbuild.config.js` prepends a banner to `assets/dist/docs-hub.js`
-  recording the source location, build command, and license, so the
-  minified bundle is self-describing (wp.org Guideline 4).
+- `esbuild.config.js` prepends a banner to `assets/dist/docs-hub.js` and
+  `assets/dist/docs-hub.css` recording the source location, build command,
+  and license, so the minified bundles are self-describing (wp.org
+  Guideline 4).
 
 ## 0.4.3 — 2026-09-07
 

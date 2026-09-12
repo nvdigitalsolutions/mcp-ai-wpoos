@@ -1,5 +1,5 @@
 === NV oOS Docs Hub ===
-Contributors: nvdigitalsolutions, vsamtani
+Contributors: vsamtani
 Tags: documentation, markdown, github
 Requires at least: 6.0
 Tested up to: 7.1
@@ -167,9 +167,10 @@ public repository content exactly as GitHub serves it.
 
 = 0.4.4 =
 * Security: search results and the WordPress sitemap no longer expose context-source (`.context/`) content to non-admin users.
+* Security: GitHub personal access tokens are no longer localized into the settings-page scripts (they were stripped only on export before).
 * Security: staged rebuilds no longer read or write live page transients, page transients are invalidated when the cache is promoted or cleared, and recursive cache deletion is hardened against symlink traversal.
 * Changed: the base-plugin notice is scoped to the Docs Hub settings page, and the redundant `load_plugin_textdomain()` call was removed.
-* Changed: readme now documents the public source repository and the frontend build steps; the bundled `docs-hub.js` carries a source banner.
+* Changed: readme now documents the public source repository and the frontend build steps; the bundled `docs-hub.js` and `docs-hub.css` carry source banners.
 
 = 0.4.3 =
 * Added: WordPress.org listing screenshots and a Playwright capture script (`bin/capture-nvoos-docs-hub-screenshots.js`).
