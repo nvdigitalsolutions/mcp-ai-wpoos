@@ -4,7 +4,7 @@ Tags: documentation, markdown, github
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.4.5
+Stable tag: 0.4.6
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -183,6 +183,9 @@ https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-s
 
 == Changelog ==
 
+= 0.4.6 =
+* Added: bundled GPLv3 license file (LICENSE) at the plugin root.
+
 = 0.4.5 =
 * Security: a symlinked cache directory can no longer redirect deletion — the uninstall routine removes only the link and leaves the external target untouched, and the cache class replaces a symlinked cache directory with a real one before writing.
 * Changed: the External Services section now explains the documentation-import service, the servers it contacts, and that no account is required for public repositories.
@@ -262,6 +265,9 @@ https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-s
 * Initial release.
 
 == Upgrade Notice ==
+
+= 0.4.6 =
+Packaging-only release — bundles the GPLv3 license file. No functional changes.
 
 = 0.4.5 =
 Security hardening release — uninstall and cache cleanup are symlink-safe. Recommended for all users.

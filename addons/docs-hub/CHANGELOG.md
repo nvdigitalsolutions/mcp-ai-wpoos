@@ -1,5 +1,12 @@
 # NV oOS Docs Hub — Changelog
 
+## 0.4.6 — 2026-09-13
+
+Packaging-only release — no functional changes.
+
+- Bundled the GPLv3 license file (`LICENSE`) at the plugin root so the
+  distribution ZIP carries the license text alongside the plugin code.
+
 ## 0.4.5 — 2026-09-12
 
 ### Security
