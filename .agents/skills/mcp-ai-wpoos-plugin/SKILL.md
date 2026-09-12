@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.77"
-  plugin-version-tested: "1.1.77"
-  last-updated: "2026-09-11"
+  plugin-version: "1.1.78"
+  plugin-version-tested: "1.1.78"
+  last-updated: "2026-09-12"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -647,6 +647,37 @@ Import external AI conversation exports into the JetEngine
   (1.0.0) completes the financial-planning, social-media, and mcp-servers
   toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
   dj-management/image-production slices.
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Slash-Command Rework, DeepSeek V4 Pro Restoration & Checkout Hardening (v1.1.78)
+
+- **Slash commands reworked as declarative tool wrappers** (PR #6604) — the
+  toolkit manager is now ~1,000 declarative lines: 36 commands across 15
+  toolkits, each mapped to a verified real tool slug; execution delegates to
+  `WP_MCP_AI_Tool_Registry::execute_tool()` via the new tool adapter
+  (`register_tool_command()`), and every command is exposed as a `slash.*`
+  MCP prompt template (`prompts/list` / `prompts/get`). ~76 placeholder
+  commands purged; removed outcomes stay reachable via plain chat. The
+  Content Graph platform port still ships the old placeholder system —
+  owned by the ecosystem-port loop.
+- **DeepSeek V4 Pro restored across all tracks** (PR #6608) — DeepSeek's
+  2026-09-10 changelog continues V4 Pro past Sep 14: `deepseek-v4-pro` is
+  **active** again ($0.66/$1.98 off-peak; migration map deliberately
+  unmapped). The Content Graph AI mirror bumps its catalog to v2026.09.10
+  and its v4-pro pricing is corrected; `lib/core` mirrors align.
+- **Checkout hardening** (PRs #6597/#6598/#6603) — Content Graph assets
+  cache-bust by file mtime (`Schema::assetVersion()`; fixes the invisible
+  1.0.7 purchase-modal hotfix — year-long `Cache-Control` on
+  `?ver=1.0.7`); the purchase modal syncs its price from the vendor
+  `/session` response (display-only, vendor re-verifies) with
+  `DEFAULT_PRICE_CENTS` **4900 → 3499**; minimalist modal restyle.
+- **Docs Hub 0.4.4** (PR #6606) — all wp.org review findings fixed (search
+  context filtering, source-code disclosure, symlink-safe deletion,
+  staging-transient isolation, sitemap slug leak); PCP gate 0 blocking
+  errors.
+- **Legal consolidation** (PRs #6599/#6605/#6607) — unified ToS, aligned
+  API-LICENSES, two-entity seller model (NV Digital Unlocked LLC sells;
+  NV Digital Solutions develops).
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
 
 ## DeepSeek V4.1 Flash, Base+Pro Gating & Memory CCT Slug (v1.1.77)
