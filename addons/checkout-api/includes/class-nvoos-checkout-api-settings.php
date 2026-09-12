@@ -229,10 +229,14 @@ class NVOOS_Checkout_API_Settings {
 	}
 
 	/**
-	 * The card statement descriptor, or '' to use Stripe's default.
+	 * The card statement descriptor suffix, or '' to use Stripe's default.
 	 *
-	 * Stripe requires 5–22 characters of a restricted alphabet for card
-	 * charges; invalid values are dropped so the default descriptor applies.
+	 * Stripe rejects the full `statement_descriptor` parameter for card
+	 * charges created with automatic payment methods, so the stored value
+	 * is sent as `statement_descriptor_suffix` instead: 2–22 characters
+	 * containing at least one letter, appended to the account's statement
+	 * descriptor prefix. Invalid values are dropped so Stripe's default
+	 * applies.
 	 *
 	 * @return string
 	 */
@@ -240,7 +244,10 @@ class NVOOS_Checkout_API_Settings {
 		$descriptor = strtoupper( (string) self::get( 'statement_descriptor', '' ) );
 		$descriptor = preg_replace( '/[^A-Z0-9 ._+*,-]/', '', $descriptor ) ?? '';
 		$descriptor = trim( $descriptor );
-		return strlen( $descriptor ) >= 5 && strlen( $descriptor ) <= 22 ? $descriptor : '';
+		if ( strlen( $descriptor ) < 2 || strlen( $descriptor ) > 22 ) {
+			return '';
+		}
+		return 1 === preg_match( '/[A-Z]/', $descriptor ) ? $descriptor : '';
 	}
 
 	/**
@@ -369,13 +376,15 @@ class NVOOS_Checkout_API_Settings {
 			}
 		}
 
-		// Statement descriptor: sanitized strictly; invalid lengths are
-		// dropped (empty) so Stripe's default descriptor applies.
+		// Statement descriptor suffix: sanitized strictly; values that are
+		// shorter than 2 or longer than 22 characters, or contain no letter,
+		// are dropped (empty) so Stripe's default descriptor applies.
 		if ( isset( $raw['statement_descriptor'] ) ) {
 			$descriptor                        = strtoupper( (string) $raw['statement_descriptor'] );
 			$descriptor                        = preg_replace( '/[^A-Z0-9 ._+*,-]/', '', $descriptor ) ?? '';
 			$descriptor                        = trim( $descriptor );
-			$sanitized['statement_descriptor'] = ( strlen( $descriptor ) >= 5 && strlen( $descriptor ) <= 22 ) ? $descriptor : '';
+			$valid                             = strlen( $descriptor ) >= 2 && strlen( $descriptor ) <= 22 && 1 === preg_match( '/[A-Z]/', $descriptor );
+			$sanitized['statement_descriptor'] = $valid ? $descriptor : '';
 		}
 
 		if ( isset( $raw['product_name'] ) ) {
