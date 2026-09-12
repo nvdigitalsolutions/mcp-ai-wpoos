@@ -52,8 +52,15 @@ function nvoos_docs_hub_uninstall() {
 		)
 	);
 
-	// Note: page transients use md5 hashes so we cannot enumerate them here.
-	// They will expire naturally or be cleaned by WP transient maintenance.
+	// Clear page transients (md5-keyed — wildcard cleanup).
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	$wpdb->query(
+		$wpdb->prepare(
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+			$wpdb->esc_like( '_transient_nvoos_dh_p_' ) . '%',
+			$wpdb->esc_like( '_transient_timeout_nvoos_dh_p_' ) . '%'
+		)
+	);
 
 	// Unschedule all rebuild-related cron events.
 	wp_clear_scheduled_hook( 'nvoos_docs_hub_rebuild_cron' );
@@ -64,23 +71,40 @@ function nvoos_docs_hub_uninstall() {
 	$nvoos_docs_hub_cache_dir   = $nvoos_docs_hub_upload_info['basedir'] . DIRECTORY_SEPARATOR . 'nvoos-docs-hub';
 
 	if ( is_dir( $nvoos_docs_hub_cache_dir ) ) {
-		// Helper: recursively delete a directory.
+		// Helper: recursively delete a directory. Symlink-aware and
+		// containment-checked so a symlinked sub-directory can never
+		// redirect deletion outside the plugin cache tree.
 		$nvoos_docs_hub_rm_rf = null;
-		$nvoos_docs_hub_rm_rf = static function ( $nvoos_docs_hub_dir ) use ( &$nvoos_docs_hub_rm_rf ) {
-			if ( ! is_dir( $nvoos_docs_hub_dir ) ) {
+		$nvoos_docs_hub_rm_rf = static function ( $nvoos_docs_hub_dir ) use ( &$nvoos_docs_hub_rm_rf, $nvoos_docs_hub_cache_dir ) {
+			if ( ! is_dir( $nvoos_docs_hub_dir ) && ! is_link( $nvoos_docs_hub_dir ) ) {
 				return;
 			}
-			$nvoos_docs_hub_entries = array_diff( scandir( $nvoos_docs_hub_dir ), array( '.', '..' ) );
+
+			// Containment guard: every target must resolve inside the
+			// plugin cache directory.
+			$nvoos_docs_hub_root = realpath( $nvoos_docs_hub_cache_dir );
+			$nvoos_docs_hub_real = realpath( $nvoos_docs_hub_dir );
+			if ( false === $nvoos_docs_hub_root || false === $nvoos_docs_hub_real ) {
+				return;
+			}
+			if ( $nvoos_docs_hub_real !== $nvoos_docs_hub_root && 0 !== strpos( $nvoos_docs_hub_real, $nvoos_docs_hub_root . DIRECTORY_SEPARATOR ) ) {
+				return;
+			}
+
+			$nvoos_docs_hub_entries = array_diff( scandir( $nvoos_docs_hub_real ), array( '.', '..' ) );
 			foreach ( $nvoos_docs_hub_entries as $nvoos_docs_hub_entry ) {
-				$nvoos_docs_hub_path = $nvoos_docs_hub_dir . DIRECTORY_SEPARATOR . $nvoos_docs_hub_entry;
-				if ( is_dir( $nvoos_docs_hub_path ) ) {
+				$nvoos_docs_hub_path = $nvoos_docs_hub_real . DIRECTORY_SEPARATOR . $nvoos_docs_hub_entry;
+				if ( is_link( $nvoos_docs_hub_path ) ) {
+					// Delete the link itself — never follow it into its target.
+					wp_delete_file( $nvoos_docs_hub_path );
+				} elseif ( is_dir( $nvoos_docs_hub_path ) ) {
 					$nvoos_docs_hub_rm_rf( $nvoos_docs_hub_path );
 				} else {
 					wp_delete_file( $nvoos_docs_hub_path );
 				}
 			}
 			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- no WP API for rmdir; suppressed, non-empty dirs fall through.
-			@rmdir( $nvoos_docs_hub_dir );
+			@rmdir( $nvoos_docs_hub_real );
 		};
 
 		// Delete the entire cache directory tree (includes pages/, remote/, _staging/,

@@ -67,17 +67,15 @@ class NV_oOS_Docs_Hub_Plugin {
 	/**
 	 * Fired on plugins_loaded.
 	 *
+	 * Translations are loaded automatically by WordPress core (4.6+) from
+	 * the `languages/` directory declared in the plugin header — no
+	 * load_plugin_textdomain() call is needed for wp.org-hosted plugins.
+	 *
 	 * @since 1.0.0
 	 *
 	 * @return void
 	 */
 	public static function on_plugins_loaded() {
-		load_plugin_textdomain(
-			'nvoos-docs-hub',
-			false,
-			dirname( plugin_basename( NVOOS_DOCS_HUB_FILE ) ) . '/languages'
-		);
-
 		NV_oOS_Docs_Hub_Rebuild_Job::schedule();
 	}
 
@@ -311,6 +309,9 @@ class NV_oOS_Docs_Hub_Plugin {
 	/**
 	 * Display admin notices about addon status.
 	 *
+	 * Notices are scoped to the plugin's own settings screen (Guideline 11 —
+	 * notices must be contextual and must not pollute every admin page).
+	 *
 	 * @since 1.0.0
 	 *
 	 * @return void
@@ -320,10 +321,32 @@ class NV_oOS_Docs_Hub_Plugin {
 			return;
 		}
 
+		if ( ! self::is_settings_screen() ) {
+			return;
+		}
+
 		if ( ! nvoos_docs_hub_is_base_active() ) {
 			echo '<div class="notice notice-warning is-dismissible"><p>';
 			esc_html_e( 'NV oOS Docs Hub: the NV oOS base plugin is not active. Documentation discovery from the base plugin will be skipped.', 'nvoos-docs-hub' );
 			echo '</p></div>';
 		}
+	}
+
+	/**
+	 * Whether the current admin screen is the plugin's settings page.
+	 *
+	 * @since 0.4.4
+	 *
+	 * @return bool
+	 */
+	private static function is_settings_screen() {
+		if ( ! function_exists( 'get_current_screen' ) ) {
+			return false;
+		}
+		$screen = get_current_screen();
+		if ( ! $screen ) {
+			return false;
+		}
+		return 'settings_page_nvoos-docs-hub' === $screen->id;
 	}
 }

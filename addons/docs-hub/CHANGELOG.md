@@ -1,5 +1,51 @@
 # NV oOS Docs Hub — Changelog
 
+## 0.4.4 — 2026-09-12
+
+WordPress.org review response pass. Security and guideline-compliance
+fixes; no functional changes for existing installations.
+
+### Security
+- **Context-source content no longer leaks through search.** `GET /search`
+  filters search-index entries with `source = "context"` for users without
+  `manage_options`, mirroring the existing manifest/page filtering —
+  protected `.context/` excerpts are no longer disclosed to guests.
+- **Context slugs no longer leak through the sitemap.** The WordPress
+  sitemap provider skips context-source pages, keeping admin-only slugs out
+  of the public sitemap index.
+- **Staging rebuilds are fully transient-isolated.** `get_page()`/
+  `set_page()` previously read/wrote the live page transient even in staging
+  mode, so a staged rebuild could serve (or populate) live cache data before
+  promotion. Both methods now honour the staging toggle like the
+  manifest/search-index methods.
+- **Page transients can no longer outlive the cache.** `promote_staging()`
+  invalidates the md5-keyed page transients for every slug touched by the
+  swap (including best-effort orphan slugs), and `clear()` / the uninstaller
+  now wildcard-clean page transients — cleared or deleted pages can never be
+  served from the transient fast-path until their TTL expires.
+- **Recursive cache deletion is symlink-safe.** `Cache::rm_rf()` and the
+  uninstall helper check `is_link()` before recursing and verify that every
+  resolved path stays inside the plugin cache directory, so a symlinked
+  sub-directory can no longer redirect deletion outside the cache tree.
+
+### Changed
+- **Admin notice scoped (Guideline 11).** The “NV oOS base plugin is not
+  active” notice now renders only on the Docs Hub settings screen instead of
+  every admin page.
+- **`load_plugin_textdomain()` removed.** WordPress 4.6+ (and wp.org
+  hosting) loads translations automatically from the header `Text Domain` /
+  `Domain Path`; the manual call was redundant.
+- **Readme documents the source and build.** New `== Source Code ==`
+  section links the public repository
+  (https://github.com/nvdigitalsolutions/nvoos-docs-hub) and the esbuild
+  steps that regenerate `assets/dist/docs-hub.js`; `Contributors` now lists
+  `vsamtani` alongside `nvdigitalsolutions`.
+
+### Build
+- `esbuild.config.js` prepends a banner to `assets/dist/docs-hub.js`
+  recording the source location, build command, and license, so the
+  minified bundle is self-describing (wp.org Guideline 4).
+
 ## 0.4.3 — 2026-09-07
 
 WordPress.org submission preparation pass. No runtime behavior changes for

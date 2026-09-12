@@ -137,15 +137,21 @@ class NV_oOS_Docs_Hub_Cache {
 	 * @return array|false
 	 */
 	public function get_page( $slug ) {
+		// In staging mode, never hit the live transient — always read
+		// directly from the staging filesystem so the async rebuild
+		// pipeline operates on its own copy (same contract as
+		// get_manifest()/get_search_index()).
 		$transient_key = self::TRANSIENT_PREFIX . 'p_' . md5( $slug );
-		$cached        = get_transient( $transient_key );
-		if ( false !== $cached ) {
-			return $cached;
+		if ( ! $this->staging ) {
+			$cached = get_transient( $transient_key );
+			if ( false !== $cached ) {
+				return $cached;
+			}
 		}
 
 		$filename = 'pages/' . $this->slug_to_filename( $slug ) . '.json';
 		$data     = $this->read_json( $filename );
-		if ( false !== $data ) {
+		if ( false !== $data && ! $this->staging ) {
 			set_transient( $transient_key, $data, self::TRANSIENT_TTL );
 		}
 		return $data;
@@ -163,7 +169,11 @@ class NV_oOS_Docs_Hub_Cache {
 	public function set_page( $slug, $payload ) {
 		$filename = 'pages/' . $this->slug_to_filename( $slug ) . '.json';
 		$result   = $this->write_json( $filename, $payload );
-		if ( $result ) {
+		// Only set the live transient when writing to the live cache.
+		// Staging writes must not pollute the live transient, otherwise
+		// live page reads would serve incomplete staged payloads before
+		// the staging cache is promoted.
+		if ( $result && ! $this->staging ) {
 			$transient_key = self::TRANSIENT_PREFIX . 'p_' . md5( $slug );
 			set_transient( $transient_key, $payload, self::TRANSIENT_TTL );
 		}
@@ -266,8 +276,19 @@ class NV_oOS_Docs_Hub_Cache {
 		delete_transient( self::TRANSIENT_PREFIX . 'manifest' );
 		delete_transient( self::TRANSIENT_PREFIX . 'search' );
 
-		// Note: page transients use md5 keys so we cannot enumerate them easily.
-		// They expire naturally via TTL.
+		// Page transients are md5-keyed and cannot be enumerated with
+		// delete_transient() — wildcard-clean them via the options table so
+		// cleared (or deleted) pages can never be served from the transient
+		// fast-path until their TTL expires.
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+				$wpdb->esc_like( '_transient_' . self::TRANSIENT_PREFIX . 'p_' ) . '%',
+				$wpdb->esc_like( '_transient_timeout_' . self::TRANSIENT_PREFIX . 'p_' ) . '%'
+			)
+		);
 	}
 
 	/**
@@ -506,6 +527,28 @@ class NV_oOS_Docs_Hub_Cache {
 			}
 		}
 
+		// 4b. Invalidate page transients for every slug touched by the swap.
+		// Page transients are md5-keyed and would otherwise keep serving
+		// stale payloads — or payloads for pages that no longer exist —
+		// until their TTL expires. Promoted slugs are known exactly; orphaned
+		// filenames are reversed best-effort (the slug<->filename mapping is
+		// lossy in reverse, but a wrong-key delete is a harmless cache miss).
+		if ( isset( $manifest['slug_map'] ) && is_array( $manifest['slug_map'] ) ) {
+			foreach ( array_keys( $manifest['slug_map'] ) as $slug ) {
+				delete_transient( self::TRANSIENT_PREFIX . 'p_' . md5( (string) $slug ) );
+			}
+		}
+		if ( ! empty( $existing ) ) {
+			foreach ( $existing as $file ) {
+				$basename = basename( $file );
+				if ( ! empty( $valid_filenames[ $basename ] ) ) {
+					continue;
+				}
+				$orphan_slug = preg_replace( '/\.json$/', '', $basename );
+				delete_transient( self::TRANSIENT_PREFIX . 'p_' . md5( str_replace( '--', '/', (string) $orphan_slug ) ) );
+			}
+		}
+
 		// 5. Write manifest + search-index into live (and refresh transients).
 		$this->write_json( 'manifest.json', $manifest );
 		set_transient( self::TRANSIENT_PREFIX . 'manifest', $manifest, self::TRANSIENT_TTL );
@@ -550,20 +593,36 @@ class NV_oOS_Docs_Hub_Cache {
 	 * @return void
 	 */
 	private function rm_rf( $dir ) {
-		if ( ! is_dir( $dir ) ) {
+		if ( ! is_dir( $dir ) && ! is_link( $dir ) ) {
 			return;
 		}
-		$entries = array_diff( scandir( $dir ), array( '.', '..' ) );
+
+		// Containment guard: resolve the path and refuse to recurse into
+		// anything outside the plugin cache directory. A symlinked
+		// sub-directory must not redirect deletion elsewhere on disk.
+		$cache_root = realpath( $this->get_live_dir() );
+		$real_dir   = realpath( $dir );
+		if ( false === $cache_root || false === $real_dir ) {
+			return;
+		}
+		if ( $real_dir !== $cache_root && 0 !== strpos( $real_dir, $cache_root . DIRECTORY_SEPARATOR ) ) {
+			return;
+		}
+
+		$entries = array_diff( scandir( $real_dir ), array( '.', '..' ) );
 		foreach ( $entries as $entry ) {
-			$path = $dir . DIRECTORY_SEPARATOR . $entry;
-			if ( is_dir( $path ) ) {
+			$path = $real_dir . DIRECTORY_SEPARATOR . $entry;
+			if ( is_link( $path ) ) {
+				// Delete the link itself — never follow it into its target.
+				wp_delete_file( $path );
+			} elseif ( is_dir( $path ) ) {
 				$this->rm_rf( $path );
 			} else {
 				wp_delete_file( $path );
 			}
 		}
 		// rmdir is intentionally suppressed — non-empty corner cases shouldn't fatal.
-		@rmdir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- no WP API for rmdir; suppressed, non-empty dirs fall through.
+		@rmdir( $real_dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- no WP API for rmdir; suppressed, non-empty dirs fall through.
 	}
 
 	/**

@@ -145,6 +145,12 @@ class NV_oOS_Docs_Hub_Sitemap_Provider extends WP_Sitemaps_Provider {
 			}
 			foreach ( (array) $group['pages'] as $page ) {
 				if ( is_array( $page ) && ! empty( $page['slug'] ) ) {
+					// Context-source pages are admin-only (never served to
+					// non-admin visitors) — keep their slugs out of the
+					// public sitemap.
+					if ( 'context' === ( $page['source'] ?? '' ) ) {
+						continue;
+					}
 					$entries[] = $page;
 				}
 			}
