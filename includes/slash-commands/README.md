@@ -4,7 +4,7 @@
 
 Parses, validates, routes, executes, and audits in-chat `/command` invocations (`/help`, `/ship`, `/compact`, `/context`, `/cost`, `/diagnose`, `/jobs`, `/memory`, `/model`, `/preset`, `/session`, `/skills`, `/status`, `/tools`, `/workflow`, …) — and nothing else.
 
-Since v2.2.0, toolkit commands are **declarative wrappers over the MCP
+Since 1.1.78, toolkit commands are **declarative wrappers over the MCP
 tool registry**: each entry maps a command name onto a real tool slug and
 delegates execution through `WP_MCP_AI_Slash_Command_Tool_Adapter`,
 so business logic lives in the tool layer only. The same registry feeds

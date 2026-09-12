@@ -32,7 +32,6 @@
 | 13 | `@since 1.0.0` | `addons/pro/includes/services/class-wp-mcp-ai-result-delivery-service.php` — `merge_channel_destination_fields()` + `normalize_channel_credentials()`, 2 instances (PRs #6482/#6488) | 1.1.75 | v1.1.75 plan |
 | 14 | *missing* | `addons/pro/includes/services/class-wp-mcp-ai-result-delivery-service.php` — `resolve_chat_format()`, `telegram_parse_mode()`, `escape_markdown_v2()`, `send_telegram_direct()`, `response_starts_with_summary()`, 5 instances (PRs #6525/#6548) + `includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php` — `hash_playbook_content()` (direct commit `fe4d0ee880`) | 1.1.76 | v1.1.76 plan |
 | 15 | `@since 1.1.76` | `includes/admin/class-wp-mcp-ai-onboarding-wizard.php` — `is_graph_tools_active()`, `is_content_graph_detected()`, `get_graphify_tool_slugs()`, `get_knowledge_graph_preset_tools()`, `get_effective_preset_selection()`, 7 instances (PR #6570) + `includes/class-wp-mcp-ai-cost-calculator.php` — `is_peak_time()`, `get_model_pricing_at()`, `calculate_cost_at()`, 4 instances (PR #6555) | 1.1.77 | v1.1.77 plan |
-| 16 | `@since 2.2.0` | `includes/slash-commands/` — `class-wp-mcp-ai-slash-command-handler.php` (1), `class-wp-mcp-ai-slash-command-prompts.php` (5), `class-wp-mcp-ai-slash-command-tool-adapter.php` (2), `class-wp-mcp-ai-slash-command-toolkit-manager.php` (2), `slash-commands-init.php` (1), 11 instances (PR #6604) | 1.1.78 | v1.1.78 plan |
 
 - **Blocked on:** version-jump decision — does the next release stay on 1.1.x or jump to 1.2.0?
 - **Broader drift (new finding, 2026-08-26):** non-1.1.x tags are repo-wide (`@since 1.0.0` ×1,928 · `1.2.0` ×1,707 · `1.1.0` ×1,269 · `1.3.0` ×795 · `1.9.0` ×734, PHP source ex vendor). Many are legitimate history. A full-tree audit is a scripted-sweep project needing explicit sign-off — tracked inside issue #5968, not a catch-up-pass task.
@@ -103,6 +102,7 @@ Open items recorded in docs **outside** the catch-up plans (audits, TODO files, 
 | Stale `.context/testing.md` "March 2026" stamp | v1.1.63 pass drift | v1.1.63 pass | stamped + sweep/exit-trap notes |
 | Stale `.context/settings-storage.md` "July 2026" stamp | v1.1.64 pass drift | v1.1.64 pass | stamped + log-buffer compaction note |
 | [#5973](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5973) Ralph Wiggum CCT Orchestration — decide implement or defer | filed 2026-08-26 | closed 2026-08-26 | **Implemented** (shipped v1.1.29): 13 orchestration tools, 4 Ralph CCT schemas, PM-toolkit native integration. Decision recorded in `proposals-retirement-log.md` entry #6 + `PROPOSALS_COMPLETION_STATUS.md` |
+| `@since 2.2.0` ×11 (`includes/slash-commands/` 5 files) + "Since v2.2.0" ×2 (slash-command READMEs) | v1.1.78 plan (OI-1 group 16) | v1.1.78 pass | **Fixed in-pass at user request** — all 13 occurrences corrected to `1.1.78` before shipping (group 16 never became history; no tracker row kept). |
 
 ---
 

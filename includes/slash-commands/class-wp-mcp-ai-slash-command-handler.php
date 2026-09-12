@@ -156,7 +156,7 @@ class WP_MCP_AI_Slash_Command_Handler {
 	 * parses and authorises exactly like a native command, then delegates
 	 * execution to the tool registry so business logic lives in one place.
 	 *
-	 * @since 2.2.0
+	 * @since 1.1.78
 	 *
 	 * @param string $command Command name (without leading /).
 	 * @param array  $config  Command configuration (see register() for the base
