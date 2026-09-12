@@ -707,10 +707,10 @@ class NVOOS_Checkout_API_Admin_Page {
 							</td>
 						</tr>
 						<tr>
-							<th scope="row"><label for="nvoos-checkout-descriptor"><?php esc_html_e( 'Statement descriptor', 'nvoos-checkout-api' ); ?></label></th>
+							<th scope="row"><label for="nvoos-checkout-descriptor"><?php esc_html_e( 'Card statement suffix', 'nvoos-checkout-api' ); ?></label></th>
 							<td>
 								<input type="text" id="nvoos-checkout-descriptor" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[statement_descriptor]" value="<?php echo esc_attr( $settings['statement_descriptor'] ); ?>" class="regular-text" maxlength="22">
-								<p class="description"><?php esc_html_e( 'Appears on buyers\' card statements (5–22 characters, e.g. NV OOS COMPLETE). Leave blank for the Stripe default.', 'nvoos-checkout-api' ); ?></p>
+								<p class="description"><?php esc_html_e( 'Appended to your account\'s statement descriptor prefix on buyers\' card statements (2–22 characters, at least one letter, e.g. NV OOS COMPLETE). Leave blank for the Stripe default.', 'nvoos-checkout-api' ); ?></p>
 							</td>
 						</tr>
 						<tr>

@@ -344,7 +344,8 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Statement descriptors are sanitized strictly; invalid lengths drop out.
+	 * Statement descriptor suffixes are sanitized strictly; values that are
+	 * too short, too long, or contain no letter drop out.
 	 *
 	 * @return void
 	 */
@@ -352,8 +353,11 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 		$clean = NVOOS_Checkout_API_Settings::sanitize( array( 'statement_descriptor' => '  nv oos* complete!! ' ) );
 		$this->assertSame( 'NV OOS* COMPLETE', $clean['statement_descriptor'] );
 
-		$short = NVOOS_Checkout_API_Settings::sanitize( array( 'statement_descriptor' => 'ABC' ) );
+		$short = NVOOS_Checkout_API_Settings::sanitize( array( 'statement_descriptor' => 'A' ) );
 		$this->assertSame( '', $short['statement_descriptor'] );
+
+		$numbers = NVOOS_Checkout_API_Settings::sanitize( array( 'statement_descriptor' => '12345' ) );
+		$this->assertSame( '', $numbers['statement_descriptor'] );
 
 		$long = NVOOS_Checkout_API_Settings::sanitize( array( 'statement_descriptor' => str_repeat( 'A', 30 ) ) );
 		$this->assertSame( '', $long['statement_descriptor'] );
@@ -400,7 +404,8 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 
 		$this->assertNotWPError( $response );
 		$this->assertIsArray( $captured );
-		$this->assertSame( 'NV OOS COMPLETE', $captured['statement_descriptor'] );
+		$this->assertSame( 'NV OOS COMPLETE', $captured['statement_descriptor_suffix'] );
+		$this->assertArrayNotHasKey( 'statement_descriptor', $captured );
 		$this->assertSame( 'prod_test_1', $captured['metadata']['stripe_product_id'] );
 		$this->assertSame( 'price_test_1', $captured['metadata']['stripe_price_id'] );
 	}

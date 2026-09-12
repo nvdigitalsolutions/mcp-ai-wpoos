@@ -215,10 +215,13 @@ class NVOOS_Checkout_API_Rest_Controller {
 			$intent_params['metadata']['stripe_price_id'] = NVOOS_Checkout_API_Settings::price_id();
 		}
 
-		// Card statement descriptor (omitted when unset/invalid so Stripe's
-		// default applies).
+		// Card statement descriptor suffix (omitted when unset/invalid so
+		// Stripe's default applies). Stripe rejects the full
+		// `statement_descriptor` parameter for card charges created with
+		// automatic payment methods; the suffix is appended to the
+		// account's statement descriptor prefix instead.
 		if ( '' !== NVOOS_Checkout_API_Settings::statement_descriptor() ) {
-			$intent_params['statement_descriptor'] = NVOOS_Checkout_API_Settings::statement_descriptor();
+			$intent_params['statement_descriptor_suffix'] = NVOOS_Checkout_API_Settings::statement_descriptor();
 		}
 
 		$intent = $client->create_payment_intent( $intent_params );
