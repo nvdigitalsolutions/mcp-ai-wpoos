@@ -651,12 +651,13 @@ Import external AI conversation exports into the JetEngine
 
 ## DeepSeek V4.1 Flash, Base+Pro Gating & Memory CCT Slug (v1.1.77)
 
-- **DeepSeek V4.1 Flash refresh** (PR #6555) — the catalog's DeepSeek lineup
-  is now `deepseek-flash` (active, vision) + `deepseek-v4-pro` (deprecated,
-  sunset 2026-09-14); V4 Flash + Vision Exp retired; stored references
-  migrate on the catalog-version bump. Cost calculator gains peak/off-peak
-  (`calculate_cost_at()` with a record timestamp; legacy `calculate_cost()`
-  stays time-independent).
+- **DeepSeek V4.1 Flash refresh** (PR #6555, corrected 2026-09-12) — the
+  catalog's DeepSeek lineup is now `deepseek-flash` (active, vision) +
+  `deepseek-v4-pro` (active — DeepSeek announced it continues V4 Pro service
+  past 2026-09-14 with unchanged billing; no new sunset date); V4 Flash +
+  Vision Exp retired; stored references migrate on the catalog-version bump.
+  Cost calculator gains peak/off-peak (`calculate_cost_at()` with a record
+  timestamp; legacy `calculate_cost()` stays time-independent).
 - **Base+pro gating** (PR #6561) — Pro toolkits now load in base+pro
   installs (gate escape `! $is_base || defined( 'WP_MCP_AI_PRO_VERSION' )`);
   new `tests/basepro/` matrix + `composer run test:basepro` pins it.

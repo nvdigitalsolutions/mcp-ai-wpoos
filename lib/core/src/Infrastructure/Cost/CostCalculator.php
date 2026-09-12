@@ -21,7 +21,7 @@ class CostCalculator {
 	 * Pricing per million tokens: [prompt_price, completion_price].
 	 *
 	 * Prices in USD per 1M tokens. Source: official provider pricing pages
-	 * as of May 2026. Update when providers change pricing.
+	 * as of September 2026. Update when providers change pricing.
 	 *
 	 * @var array<string, array<string, array{float, float}>>
 	 */
@@ -55,9 +55,11 @@ class CostCalculator {
 			'default'               => array( 0.15, 0.60 ),
 		),
 		'deepseek'     => array(
-			'deepseek-chat'     => array( 0.27, 1.10 ),
-			'deepseek-reasoner' => array( 0.55, 2.19 ),
-			'default'           => array( 0.27, 1.10 ),
+			'deepseek-flash'               => array( 0.15, 0.60 ),   // V4.1 Flash (off-peak cache miss).
+			'deepseek-v4-pro'              => array( 0.66, 1.98 ),   // V4 Pro (off-peak cache miss).
+			'deepseek-v4-flash'            => array( 0.15, 0.60 ),   // Retired 2026-09-10 — bills at V4.1 Flash prices.
+			'deepseek-v4-flash-vision-exp' => array( 0.15, 0.60 ),   // Retired 2026-09-10 — bills at V4.1 Flash prices.
+			'default'                      => array( 0.15, 0.60 ),
 		),
 		'openrouter'   => array(
 			'default' => array( 2.00, 8.00 ),   // Varies wildly by model

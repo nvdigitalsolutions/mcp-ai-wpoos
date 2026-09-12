@@ -353,8 +353,9 @@ class WP_MCP_AI_Cost_Calculator {
 				'cached_input'      => 0.003, // Cache hit, off-peak.
 				'peak_cached_input' => 0.006, // Cache hit, peak.
 			),
-			// DeepSeek-V4-Pro — routed to V4.1 Flash from 2026-09-14 (12:00 Beijing)
-			// until V4.1 Pro ships. Off-peak: $0.66/$1.98 per 1M (cache miss).
+			// DeepSeek-V4-Pro — stays servable past 2026-09-14 (DeepSeek announced
+			// continuation with unchanged billing on 2026-09-10; further notice
+			// before any change). Off-peak: $0.66/$1.98 per 1M (cache miss).
 			// Peak 2×. Cache hit: $0.022 off-peak / $0.044 peak.
 			'deepseek-v4-pro'              => array(
 				'input'             => 0.66,  // $0.66 per 1M input tokens (cache miss, off-peak).
