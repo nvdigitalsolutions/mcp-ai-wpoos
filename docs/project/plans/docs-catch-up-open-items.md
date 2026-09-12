@@ -1,8 +1,8 @@
 # Docs & Release Catch-Up — Standing Open-Items Tracker
 
 > **Purpose:** Single registry of every open item identified (and parked or deferred) by the docs & release catch-up runs, so future passes carry from this file instead of re-copying items between plans.
-> **Last reviewed:** 2026-09-11 (v1.1.77 pass)
-> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.77-docs-catch-up.md`](v1.1.77-docs-catch-up.md).
+> **Last reviewed:** 2026-09-12 (v1.1.78 pass)
+> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.78-docs-catch-up.md`](v1.1.78-docs-catch-up.md).
 > **Rule for future passes:** read this file first; a catch-up plan's "Open items" section should point here and only add new items it introduces.
 
 ---
@@ -32,6 +32,7 @@
 | 13 | `@since 1.0.0` | `addons/pro/includes/services/class-wp-mcp-ai-result-delivery-service.php` — `merge_channel_destination_fields()` + `normalize_channel_credentials()`, 2 instances (PRs #6482/#6488) | 1.1.75 | v1.1.75 plan |
 | 14 | *missing* | `addons/pro/includes/services/class-wp-mcp-ai-result-delivery-service.php` — `resolve_chat_format()`, `telegram_parse_mode()`, `escape_markdown_v2()`, `send_telegram_direct()`, `response_starts_with_summary()`, 5 instances (PRs #6525/#6548) + `includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php` — `hash_playbook_content()` (direct commit `fe4d0ee880`) | 1.1.76 | v1.1.76 plan |
 | 15 | `@since 1.1.76` | `includes/admin/class-wp-mcp-ai-onboarding-wizard.php` — `is_graph_tools_active()`, `is_content_graph_detected()`, `get_graphify_tool_slugs()`, `get_knowledge_graph_preset_tools()`, `get_effective_preset_selection()`, 7 instances (PR #6570) + `includes/class-wp-mcp-ai-cost-calculator.php` — `is_peak_time()`, `get_model_pricing_at()`, `calculate_cost_at()`, 4 instances (PR #6555) | 1.1.77 | v1.1.77 plan |
+| 16 | `@since 2.2.0` | `includes/slash-commands/` — `class-wp-mcp-ai-slash-command-handler.php` (1), `class-wp-mcp-ai-slash-command-prompts.php` (5), `class-wp-mcp-ai-slash-command-tool-adapter.php` (2), `class-wp-mcp-ai-slash-command-toolkit-manager.php` (2), `slash-commands-init.php` (1), 11 instances (PR #6604) | 1.1.78 | v1.1.78 plan |
 
 - **Blocked on:** version-jump decision — does the next release stay on 1.1.x or jump to 1.2.0?
 - **Broader drift (new finding, 2026-08-26):** non-1.1.x tags are repo-wide (`@since 1.0.0` ×1,928 · `1.2.0` ×1,707 · `1.1.0` ×1,269 · `1.3.0` ×795 · `1.9.0` ×734, PHP source ex vendor). Many are legitimate history. A full-tree audit is a scripted-sweep project needing explicit sign-off — tracked inside issue #5968, not a catch-up-pass task.
@@ -41,7 +42,7 @@
 - **Status:** 🔒 Parked by user decision. Counts stay delta-derived in catch-up passes.
 - **Issue:** [#5967 — Re-derive live tool counts on a fully provisioned environment](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5967)
 - **What:** run `WP_MCP_AI_Tool_Registry::get_tools()` on a fully provisioned environment (seeded toolkits + optional plugins) and replace the delta-based figure.
-- **Current figure (v1.1.77):** ~303 base + ~1,265 Pro (~1,568 total), live-registry caveat retained on every count surface. (Delta-derived: +2 Woo price/qty tools, PR #6388; unchanged since — #6447/#6448 upgrade existing tools, #6469 extends a schema, #6488 extends the schedule-tool schemas with `result_delivery`, #6525 extends the delivery schemas with `template: full` + per-channel `format`, #6512 registers the existing Comic Creation toolkit's toggle, #6561 flips existing gates, #6570 adds an onboarding preset referencing existing slugs — no new slugs.)
+- **Current figure (v1.1.78):** ~303 base + ~1,265 Pro (~1,568 total), live-registry caveat retained on every count surface. (Delta-derived: +2 Woo price/qty tools, PR #6388; unchanged since — #6447/#6448 upgrade existing tools, #6469 extends a schema, #6488 extends the schedule-tool schemas with `result_delivery`, #6525 extends the delivery schemas with `template: full` + per-channel `format`, #6512 registers the existing Comic Creation toolkit's toggle, #6561 flips existing gates, #6570 adds an onboarding preset referencing existing slugs, #6604 re-wires slash commands to existing tool slugs — no new slugs.)
 - **Known attempt:** QA container (`oos-qa-wp`) returns 363 tools because its DB is unprovisioned — not usable as source of truth.
 - **First noted in:** v1.1.59 plan; carried every pass since.
 
