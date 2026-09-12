@@ -2,6 +2,7 @@
 
 **NV Digital Open Operator System (NV oOS)**  
 Maintained by [NV Digital Solutions](https://nvdigitalsolutions.com)  
+Sold by NV Digital Unlocked LLC under license from NV Digital Solutions.  
 Copyright © 2025–2026 NV Digital Solutions. All rights reserved.
 
 ---
@@ -28,7 +29,7 @@ Despite these efforts, **no software system can be guaranteed to be 100% secure 
 
 **THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.**
 
-**IN NO EVENT SHALL NV DIGITAL SOLUTIONS, ITS CONTRIBUTORS, OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING BUT NOT LIMITED TO PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; BUSINESS INTERRUPTION; OR LOSS OF CONTENT) ARISING FROM OR IN CONNECTION WITH THE SOFTWARE OR ITS USE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.**
+**IN NO EVENT SHALL NV DIGITAL SOLUTIONS, NV DIGITAL UNLOCKED LLC, THEIR CONTRIBUTORS, OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING BUT NOT LIMITED TO PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; BUSINESS INTERRUPTION; OR LOSS OF CONTENT) ARISING FROM OR IN CONNECTION WITH THE SOFTWARE OR ITS USE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.**
 
 This disclaimer applies to the extent permitted by applicable law in your jurisdiction.
 
@@ -50,7 +51,7 @@ This disclaimer applies to the extent permitted by applicable law in your jurisd
 | **Cron and scheduling tools** | Creation of recurring background tasks that run indefinitely |
 | **Federation and A2A tools** | Outbound connections to remote AI agents that may themselves perform destructive actions |
 
-**These risks exist by design.** An AI orchestration layer powerful enough to automate real work is also powerful enough to cause damage when misconfigured. NV Digital Solutions cannot be held responsible for data loss, service disruption, or financial charges resulting from the use of these tools.
+**These risks exist by design.** An AI orchestration layer powerful enough to automate real work is also powerful enough to cause damage when misconfigured. NV Digital Solutions and NV Digital Unlocked LLC cannot be held responsible for data loss, service disruption, or financial charges resulting from the use of these tools.
 
 ### Mitigation Recommendations
 
@@ -78,7 +79,7 @@ NV oOS makes calls to external AI APIs, generates media, runs background tasks, 
 | **WordPress cron** | Background task scheduling can pile up if tasks are not completing (e.g., due to a slow AI provider response) |
 | **Storage** | Generated media assets, transcript storage, and audit logs accumulate over time |
 
-**NV Digital Solutions is not responsible for hosting charges, API overage fees, or performance degradation** resulting from plugin usage, including misconfiguration or unexpectedly high traffic.
+**NV Digital Solutions and NV Digital Unlocked LLC are not responsible for hosting charges, API overage fees, or performance degradation** resulting from plugin usage, including misconfiguration or unexpectedly high traffic.
 
 ### Resource Management Recommendations
 
@@ -130,4 +131,4 @@ This notice is informed by the following industry standards and best practices:
 ---
 
 *This notice is maintained by NV Digital Solutions.*  
-*Last updated: April 2026*
+*Last updated: September 2026*
