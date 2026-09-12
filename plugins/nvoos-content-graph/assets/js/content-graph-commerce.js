@@ -499,6 +499,11 @@
 			block.appendChild( el( 'p', 'nvoos-cg-price-sub', oneTime ) );
 		}
 
+		var priceChange = i18n.price_subject_change || '';
+		if ( priceChange ) {
+			block.appendChild( el( 'p', 'nvoos-cg-price-change', priceChange ) );
+		}
+
 		var scope = i18n.price_license_scope || '';
 		if ( scope ) {
 			block.appendChild( el( 'p', 'nvoos-cg-price-scope', scope ) );

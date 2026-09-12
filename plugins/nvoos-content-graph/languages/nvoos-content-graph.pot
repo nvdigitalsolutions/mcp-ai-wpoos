@@ -1070,15 +1070,19 @@ msgstr ""
 msgid "Payments are processed securely by Stripe. Your card never touches this server."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:563
+#: src/Admin/SettingsPage.php:564
 msgid "One-time payment — no subscription"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:564
+#: src/Admin/SettingsPage.php:565
+msgid "Introductory price — prices are subject to change."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:566
 msgid "VAT may be added at checkout based on your country."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:565
+#: src/Admin/SettingsPage.php:567
 msgid "Includes 1 year of updates and email support on this site."
 msgstr ""
 

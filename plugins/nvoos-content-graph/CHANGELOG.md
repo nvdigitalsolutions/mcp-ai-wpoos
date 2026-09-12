@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed — Purchase modal price note
+
+- **Price-subject-to-change note** — the modal's price block now renders "Introductory price — prices are subject to change." under the one-time label (`price_subject_change` i18n key → `nvoos-cg-price-change` in `content-graph-commerce.js`) while the owner settles final pricing. Deliberately phrased without a fake "limited time" claim per the hard rules in `docs/checkout-enhancement-plan.md` §6 (EU UCPD / FTC dark-pattern rules, wp.org guideline 9)
+
 ### Fixed — Purchase modal showed a stale price after vendor-side changes
 
 - **Vendor-authoritative price display** — the modal's price block used a hardcoded client-side default (`$49.00`) and never picked up the vendor's configured price, so changing the price in Stripe + the checkout-api left the modal showing the old amount while the Payment Element charged the new one. The modal now syncs its price label from the vendor `/session` response (`amount` + `currency`, formatted via `Intl.NumberFormat` with a plain-USD fallback) as soon as the session is created; the local default remains only as the pre-session/fallback label
