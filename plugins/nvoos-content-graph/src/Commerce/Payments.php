@@ -15,8 +15,9 @@ use function rawurlencode;
  *
  * This plugin never handles Stripe API keys. All payment processing —
  * PaymentIntent creation, server-side verification, and signed download
- * URLs — is delegated to the vendor checkout API (run by NV Digital
- * Solutions on its own server, where the Stripe secret key lives).
+ * URLs — is delegated to the vendor checkout API (operated by NV Digital
+ * Solutions on behalf of NV Digital Unlocked LLC, the seller of record,
+ * on its own server, where the Stripe secret key lives).
  *
  * The purchased artifact is the **NV oOS Complete** bundle (the full
  * NV oOS plugin: base + Pro, distributed as a separate WordPress plugin).
