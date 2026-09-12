@@ -1,6 +1,35 @@
 # oOS – Changelog
 
-## [1.1.77] - 2026-09-11
+## [1.1.78] - 2026-09-12
+
+### Changed — Slash Commands Reworked as Declarative Tool Wrappers (PR #6604)
+
+- The slash-command layer no longer maintains ~76 "implementation coming soon" placeholder commands: the toolkit manager shrinks from ~10,400 to ~1,000 declarative lines — **36 commands across 15 toolkits**, each mapped to a verified real tool slug. Parsing, auth, rate-limiting, and audit stay in the handler while execution delegates to the tool registry through a new `WP_MCP_AI_Slash_Command_Tool_Adapter` (`register_tool_command()` / `wp_mcp_ai_register_tool_command()`), so capability gates, validation, sanitisation, and the canonical envelope all live in the tool layer. A new `WP_MCP_AI_Slash_Command_Prompts` bridge exposes every command as an MCP prompt template (`slash.<command>` via `prompts/list` / `prompts/get`) wired into the per-toolkit MCP servers, and all 19 built-in orchestrator workflows now chain only registered, tool-backed commands. Native chat commands (`/help`, `/session`, `/model`, `/persona`, `/compact`, `/ship`) are untouched; removed commands' outcomes stay reachable through plain chat.
+
+### Added — DeepSeek V4 Pro Restored Across All Tracks (PR #6608)
+
+- DeepSeek's official 2026-09-10 changelog announces the V4 Pro API continues after September 14, 2026 with unchanged billing — so the 1.1.77 deprecation is reversed: `deepseek-v4-pro` is back to **active** ($0.66/$1.98 off-peak, `sunset_date`/`fallback_model` cleared) and the migration map deliberately leaves it unmapped (stored references untouched). The `nvoos-content-graph-ai` mirror (deferred by the V4.1 Flash refresh) catches up to catalog **v2026.09.10** with its `deepseek-flash` lineup and fixes its UsageTracker's stale $1.74/$3.48 v4-pro pricing to $0.66/$1.98; the `lib/core` mirrors (CostCalculator, TokenBudgetManager, CountTokensTool, SuggestBestModelTool) align. The base catalog version intentionally stays **v2026.09.10** (migration bookkeeping unchanged).
+
+### Fixed — Content Graph Checkout Hardening (PRs #6597, #6598, #6603)
+
+- **Asset cache-busting by file mtime (#6598).** The 1.0.7 purchase-modal hotfix stayed invisible because assets were enqueued as `?ver=1.0.7` with a year-long `Cache-Control` — browsers and Cloudflare served the broken JS. New `Schema::assetVersion()` versions every plugin-owned enqueue by the asset file's mtime (falling back to the plugin version when the file is missing): any future hotfix produces a new URL automatically, unchanged files keep long-term caching.
+- **Vendor-authoritative price display + $34.99 default (#6603).** The purchase modal now syncs its price label from the vendor `/session` response (`Intl.NumberFormat`, display-only — the vendor still re-verifies the amount server-side), and `DEFAULT_PRICE_CENTS` moves 4900 → 3499 in both the content-graph plugin and the checkout-api fresh-install default.
+- **Purchase-modal restyle (#6597).** Unified 40px field spec with soft focus ring, custom SVG select chevron, fixed address-grid layout, Stripe `appearance`-harmonized Payment Element, and a custom minimalist terms-consent checkbox.
+
+### Fixed — Docs Hub wp.org Review Findings (PR #6606, Docs Hub 0.4.4)
+
+- Docs Hub bumps **0.4.3 → 0.4.4** fixing every wp.org review finding: contributors list (`vsamtani`), a `== Source Code ==` readme section + rebuilt JS with a self-describing source banner, `/search` context-source filtering for users without `manage_options`, `load_plugin_textdomain()` removal, admin-notice scoping to the Docs Hub settings screen, staging-transient isolation, and symlink-safe recursive deletion (resolved-path containment). Sweep fixes: context-source slugs no longer leak into the public WordPress sitemap, and stale page transients are invalidated on promote/clear/uninstall. Official Plugin Check gate: **0 blocking errors**.
+
+### Docs — Legal Consolidation & Content Graph 1.0.7 Release
+
+- **Terms of Service consolidated (#6599)** into one document — Part A (NV oOS Paid Products, verbatim) + Part B (Website, Services, and Marketplace) — closing the gap between the live site terms and the checkout product terms.
+- **api-licenses aligned (#6605)** — new `docs/legal/API-LICENSES.md` + publishable HTML match the consolidated terms (one-license-one-site, 1-year updates, 30-day guarantee, GPLv3 clarification, Florida governing law).
+- **Two-entity seller model (#6607)** — NV Digital Unlocked LLC is now the seller of the paid Products and marketplace operator; NV Digital Solutions remains developer, IP owner, and services provider. ToS restructured into three parts with per-part definitions, dual-controller Privacy Policy, and the full legal set + `docs/legal/publish/*.html` regenerated.
+- **Content Graph 1.0.7 released** (direct commits) — changelog marked released (tag `content-graph-v1.0.7`) and a wp.org 18-point sign-off document added.
+
+### Versioning
+
+- Bumped to 1.1.78 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.78. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.7** (released in-window). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — no port waves in-window). Checkout API: **0.1.1** (unchanged). Docs Hub addon: **0.4.3 → 0.4.4** (bumped in-window). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.09.10** (unchanged — V4 Pro restoration deliberately leaves it; content-graph-ai mirror bumps to v2026.09.10 on its own track). Tool count: ~303 base + ~1,265 Pro (~1,568 total; live registry authoritative — unchanged this window; no new slugs). Providers: 15. Addons: 27. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: **56** (unchanged). Stale 1.1.76 build ZIPs removed (30 files).
 
 ### Added — DeepSeek V4.1 Flash Catalog Refresh + Peak/Off-Peak Pricing (PR #6555)
 
