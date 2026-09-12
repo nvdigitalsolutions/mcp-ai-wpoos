@@ -70,18 +70,31 @@ function nvoos_docs_hub_uninstall() {
 	$nvoos_docs_hub_upload_info = wp_upload_dir();
 	$nvoos_docs_hub_cache_dir   = $nvoos_docs_hub_upload_info['basedir'] . DIRECTORY_SEPARATOR . 'nvoos-docs-hub';
 
-	if ( is_dir( $nvoos_docs_hub_cache_dir ) ) {
+	if ( is_link( $nvoos_docs_hub_cache_dir ) ) {
+		// The cache directory itself is a symlink. Never follow it: remove
+		// only the link so its external target is left untouched. realpath()
+		// would otherwise resolve the external target as the containment
+		// root, letting deletion escape the plugin cache tree.
+		wp_delete_file( $nvoos_docs_hub_cache_dir );
+	} elseif ( is_dir( $nvoos_docs_hub_cache_dir ) ) {
 		// Helper: recursively delete a directory. Symlink-aware and
-		// containment-checked so a symlinked sub-directory can never
+		// containment-checked so a symlinked directory can never
 		// redirect deletion outside the plugin cache tree.
-		$nvoos_docs_hub_rm_rf = null;
 		$nvoos_docs_hub_rm_rf = static function ( $nvoos_docs_hub_dir ) use ( &$nvoos_docs_hub_rm_rf, $nvoos_docs_hub_cache_dir ) {
-			if ( ! is_dir( $nvoos_docs_hub_dir ) && ! is_link( $nvoos_docs_hub_dir ) ) {
+			if ( is_link( $nvoos_docs_hub_dir ) ) {
+				// Delete the link itself — never follow it into its target.
+				wp_delete_file( $nvoos_docs_hub_dir );
+				return;
+			}
+			if ( ! is_dir( $nvoos_docs_hub_dir ) ) {
 				return;
 			}
 
 			// Containment guard: every target must resolve inside the
-			// plugin cache directory.
+			// plugin cache directory. The root is resolved from the
+			// top-level cache path, which the is_link() checks above
+			// guarantee is a real directory, so an external target can
+			// never be promoted to the containment root.
 			$nvoos_docs_hub_root = realpath( $nvoos_docs_hub_cache_dir );
 			$nvoos_docs_hub_real = realpath( $nvoos_docs_hub_dir );
 			if ( false === $nvoos_docs_hub_root || false === $nvoos_docs_hub_real ) {
