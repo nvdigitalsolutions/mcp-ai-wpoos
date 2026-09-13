@@ -1,6 +1,12 @@
 # NV oOS Checkout API — Changelog
 
-## 0.1.1 — Unreleased
+## 0.1.2 — Unreleased
+
+### New
+
+- **Vendor-side license email** — when a payment completes, the buyer now receives a confirmation email with their license key, product, licensed site, and amount paid (sent once per license from both the webhook and `/verify` issuance paths; `email_sent_at` column on the license row is the idempotency guard, so retries and webhook redeliveries can never double-send). Enabled by default with storefront settings for subject, From name/address, and a kill switch; the admin license table shows when each email was sent. Covered by `tests/test-mailer.php` plus `test_verify_sends_license_email_once`
+
+## 0.1.1 — 2026-09-11
 
 ### New
 

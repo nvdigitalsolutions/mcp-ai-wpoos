@@ -2,9 +2,10 @@
 
 **Vendor-side checkout service for NV oOS premium addons.**
 
-> **Status:** v0.1.1 — Stripe sessions + verification, license issuance, signed
+> **Status:** v0.1.2 — Stripe sessions + verification, license issuance, signed
 > ZIP downloads, Stripe webhook receiver, storefront admin, public health probe,
-> and an endpoint self-check on the admin page.
+> an endpoint self-check on the admin page, and buyer license emails (once per
+> license, configurable in the storefront).
 
 Runs on the vendor's own server (e.g. nvdigitalsolutions.com). It is the
 server half of the purchase flow built into the free
@@ -81,18 +82,22 @@ replayed from a different site (site binding) or for a different product.
    (`nvdigital-open-operator-system-oos-complete-{VERSION}.zip` from the
    monorepo GitHub releases; set a private mirror URL or absolute path if
    you want the download gated behind your CDN).
-3. In the Stripe dashboard, add a webhook endpoint pointing at the URL shown
+3. Configure the **license email** (subject, From name/address) on the same
+   screen — enabled by default, buyers are emailed their license key once
+   per license. Set the From address to one your mail setup can send from
+   (an SMTP plugin on the vendor site is recommended).
+4. In the Stripe dashboard, add a webhook endpoint pointing at the URL shown
    on the settings screen, with events `payment_intent.succeeded`,
    `charge.refunded`, and `charge.dispute.created`, and paste the signing
    secret (`whsec_…`). The `payment_intent.succeeded` event is what issues
    the license when a buyer's browser flow is interrupted after paying —
    their site picks the license up via `/verify` when they return.
-4. Publish the `nvdigital-oos-v*.*.*` tag for the version being sold so the Complete
+5. Publish the `nvdigital-oos-v*.*.*` tag for the version being sold so the Complete
    bundle ZIP source resolves (the addon caches it under
    `wp-content/uploads/nvoos-checkout/` per version).
-5. Verify with Stripe test cards while test mode is on; switch to live keys
+6. Verify with Stripe test cards while test mode is on; switch to live keys
    when ready.
-6. Check the **REST endpoints** section on the admin page after deploying:
+7. Check the **REST endpoints** section on the admin page after deploying:
    it lists every route with a live registered/missing marker, and the
    "Check endpoints" action fetches `GET /health` over loopback HTTP — the
    same call customer sites make — reporting status and latency.
