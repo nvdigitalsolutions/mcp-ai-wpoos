@@ -720,6 +720,36 @@ class NVOOS_Checkout_API_Admin_Page {
 								<p class="description"><?php esc_html_e( 'Used when creating the Stripe product below (type: service).', 'nvoos-checkout-api' ); ?></p>
 							</td>
 						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'License email', 'nvoos-checkout-api' ); ?></th>
+							<td>
+								<label>
+									<input type="checkbox" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[license_email_enabled]" value="1" <?php checked( (bool) $settings['license_email_enabled'] ); ?>>
+									<?php esc_html_e( 'Email the buyer their license key when a payment completes (sent once per license).', 'nvoos-checkout-api' ); ?>
+								</label>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="nvoos-checkout-mailsubject"><?php esc_html_e( 'Email subject', 'nvoos-checkout-api' ); ?></label></th>
+							<td>
+								<input type="text" id="nvoos-checkout-mailsubject" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[license_email_subject]" value="<?php echo esc_attr( $settings['license_email_subject'] ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'Your NV oOS Complete license', 'nvoos-checkout-api' ); ?>">
+								<p class="description"><?php esc_html_e( 'Leave blank for the default: “Your {product} license”.', 'nvoos-checkout-api' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="nvoos-checkout-mailfromname"><?php esc_html_e( 'From name', 'nvoos-checkout-api' ); ?></label></th>
+							<td>
+								<input type="text" id="nvoos-checkout-mailfromname" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[license_email_from_name]" value="<?php echo esc_attr( $settings['license_email_from_name'] ); ?>" class="regular-text" placeholder="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
+								<p class="description"><?php esc_html_e( 'Leave blank for the site name.', 'nvoos-checkout-api' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="nvoos-checkout-mailfrom"><?php esc_html_e( 'From email', 'nvoos-checkout-api' ); ?></label></th>
+							<td>
+								<input type="email" id="nvoos-checkout-mailfrom" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[license_email_from]" value="<?php echo esc_attr( $settings['license_email_from'] ); ?>" class="regular-text" placeholder="<?php echo esc_attr( (string) get_option( 'admin_email', '' ) ); ?>">
+								<p class="description"><?php esc_html_e( 'Sender and Reply-To address. Use an address your mail setup is allowed to send from. Leave blank for the WordPress default sender.', 'nvoos-checkout-api' ); ?></p>
+							</td>
+						</tr>
 					</tbody>
 				</table>
 				<?php
@@ -803,6 +833,7 @@ class NVOOS_Checkout_API_Admin_Page {
 		echo '<th>' . esc_html__( 'Product', 'nvoos-checkout-api' ) . '</th>';
 		echo '<th>' . esc_html__( 'Site', 'nvoos-checkout-api' ) . '</th>';
 		echo '<th>' . esc_html__( 'Buyer email', 'nvoos-checkout-api' ) . '</th>';
+		echo '<th>' . esc_html__( 'Emailed', 'nvoos-checkout-api' ) . '</th>';
 		echo '<th>' . esc_html__( 'Country', 'nvoos-checkout-api' ) . '</th>';
 		echo '<th>' . esc_html__( 'Amount', 'nvoos-checkout-api' ) . '</th>';
 		echo '<th>' . esc_html__( 'Status', 'nvoos-checkout-api' ) . '</th>';
@@ -818,6 +849,7 @@ class NVOOS_Checkout_API_Admin_Page {
 			echo '<td>' . esc_html( $row['product'] ) . '</td>';
 			echo '<td>' . esc_html( $row['site_url'] ) . '</td>';
 			echo '<td>' . ( empty( $row['buyer_email'] ) ? '—' : esc_html( $row['buyer_email'] ) ) . '</td>';
+			echo '<td>' . ( empty( $row['email_sent_at'] ) ? '—' : esc_html( $row['email_sent_at'] ) ) . '</td>';
 			echo '<td>' . ( empty( $row['buyer_country'] ) ? '—' : esc_html( $row['buyer_country'] ) ) . '</td>';
 			echo '<td>' . esc_html( number_format( (int) $row['amount'] / 100, 2 ) . ' ' . strtoupper( (string) $row['currency'] ) ) . '</td>';
 			echo '<td>' . esc_html( $row['status'] ) . '</td>';

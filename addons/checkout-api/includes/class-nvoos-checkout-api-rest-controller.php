@@ -336,6 +336,10 @@ class NVOOS_Checkout_API_Rest_Controller {
 				$existing['buyer_country'] = $buyer_country;
 			}
 
+			// Email the license record once (no-op when already sent or when
+			// the row has no buyer email yet).
+			NVOOS_Checkout_API_Mailer::maybe_send( $existing );
+
 			return rest_ensure_response( $this->license_response( $existing ) );
 		}
 
@@ -358,6 +362,10 @@ class NVOOS_Checkout_API_Rest_Controller {
 		if ( is_wp_error( $license ) ) {
 			return new WP_Error( 'nvoos_checkout_license_failed', __( 'Could not issue a license. Please contact support.', 'nvoos-checkout-api' ), array( 'status' => 500 ) );
 		}
+
+		// Email the license record once (silently skipped when disabled or
+		// when the row has no buyer email).
+		NVOOS_Checkout_API_Mailer::maybe_send( $license );
 
 		return rest_ensure_response( $this->license_response( $license ) );
 	}
@@ -478,7 +486,15 @@ class NVOOS_Checkout_API_Rest_Controller {
 			)
 		);
 
-		return is_wp_error( $created ) ? 'insert_failed' : 'issued';
+		if ( is_wp_error( $created ) ) {
+			return 'insert_failed';
+		}
+
+		// Email the license record once — the webhook path is the fastest
+		// reliable trigger (fires the moment Stripe confirms the payment).
+		NVOOS_Checkout_API_Mailer::maybe_send( $created );
+
+		return 'issued';
 	}
 
 	/**

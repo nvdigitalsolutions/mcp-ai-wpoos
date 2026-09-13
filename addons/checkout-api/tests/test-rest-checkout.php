@@ -28,6 +28,10 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 		$this->controller = new NVOOS_Checkout_API_Rest_Controller();
 		NVOOS_Checkout_API_License_Store::install_table();
 
+		// No mail transport exists in the test env — short-circuit wp_mail
+		// so license-email sends can never attempt a real delivery.
+		add_filter( 'pre_wp_mail', '__return_true' );
+
 		update_option(
 			NVOOS_Checkout_API_Settings::OPTION,
 			array(
@@ -48,6 +52,7 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 	 */
 	public function tearDown(): void {
 		remove_all_filters( 'pre_http_request' );
+		remove_all_filters( 'pre_wp_mail' );
 		delete_option( NVOOS_Checkout_API_Settings::OPTION );
 		parent::tearDown();
 	}
@@ -234,6 +239,51 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 
 		$license = NVOOS_Checkout_API_License_Store::get_by_key( $data['license_key'] );
 		$this->assertNotNull( $license );
+	}
+
+	/**
+	 * Verify emails the buyer once and marks the send on the license row.
+	 *
+	 * @return void
+	 */
+	public function test_verify_sends_license_email_once(): void {
+		$this->stub_stripe(
+			array(
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'id'              => 'pi_mail',
+							'status'          => 'succeeded',
+							'amount_received' => 4900,
+							'currency'        => 'usd',
+							'receipt_email'   => 'buyer@example.com',
+							'metadata'        => array(
+								'product'  => 'nvoos-oos-complete',
+								'site_url' => 'https://customer.example',
+							),
+						)
+					),
+				),
+			)
+		);
+
+		$request = new WP_REST_Request( 'POST', '/nvoos-checkout/v1/verify' );
+		$request->set_param( 'product', 'nvoos-oos-complete' );
+		$request->set_param( 'site_url', 'https://customer.example' );
+		$request->set_param( 'payment_intent', 'pi_mail' );
+
+		$response = $this->controller->verify_payment( $request );
+		$this->assertNotWPError( $response );
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_payment_intent( 'pi_mail' );
+		$this->assertNotNull( $license );
+		$this->assertNotEmpty( $license['email_sent_at'], 'The license email must be recorded as sent after verify.' );
+
+		// Re-verification is idempotent: the send timestamp never moves.
+		$this->controller->verify_payment( $request );
+		$rechecked = NVOOS_Checkout_API_License_Store::get_by_payment_intent( 'pi_mail' );
+		$this->assertSame( $license['email_sent_at'], $rechecked['email_sent_at'] );
 	}
 
 	/**
