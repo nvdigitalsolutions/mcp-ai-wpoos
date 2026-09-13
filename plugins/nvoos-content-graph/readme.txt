@@ -165,12 +165,15 @@ All libraries are served locally from `assets/vendor/` and never loaded from thi
 
 == Changelog ==
 
-= 1.0.7 — 2026-09-09 =
+= 1.0.7 — 2026-09-12 =
 * Checkout consent checkbox (Terms of Service + 30-day refund policy) and buyer-email collection with Stripe receipt delivery
 * Buyer country and conditional EU billing address (VAT records) collected in the purchase modal
 * Manual ZIP download offered after purchase alongside the automatic installer; manual install documented as the primary path
 * Roadmap link in the purchase modal; release-notes link and support email on the purchase success screen
 * Updated privacy disclosures (buyer email, country, EU billing address, and Terms consent timestamp sent to the checkout service)
+* Purchase modal price now syncs from the vendor's configured price (fallback default $34.99)
+* NV Digital Unlocked LLC named as the seller of record in checkout copy and disclosures
+* "Introductory price — prices are subject to change" note added to the purchase modal
 
 = 1.0.6 — 2026-09-08 =
 * Checkout now delivers the NV oOS Complete plugin bundle (base + Pro as a separate plugin) instead of the companion AI addon

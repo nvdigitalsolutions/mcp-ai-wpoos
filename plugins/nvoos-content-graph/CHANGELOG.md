@@ -1,6 +1,6 @@
 # NV oOS Content Graph — Changelog
 
-## Unreleased
+## 1.0.7 — 2026-09-12
 
 ### Changed — Purchase modal price note
 
@@ -11,8 +11,6 @@
 - **Vendor-authoritative price display** — the modal's price block used a hardcoded client-side default (`$49.00`) and never picked up the vendor's configured price, so changing the price in Stripe + the checkout-api left the modal showing the old amount while the Payment Element charged the new one. The modal now syncs its price label from the vendor `/session` response (`amount` + `currency`, formatted via `Intl.NumberFormat` with a plain-USD fallback) as soon as the session is created; the local default remains only as the pre-session/fallback label
 - **Price bump** — the client-side fallback default (`Payments::DEFAULT_PRICE_CENTS`, mirrored by the checkout-api's `DEFAULT_PRICE_CENTS` for fresh vendor installs) moves to **$34.99** (3499 cents); `CommerceTest::defaultPriceIs3499Cents` pins the new default
 - **Test bootstrap hardening** — `tests/bootstrap.php` now prefers the plugin's own pristine vendored wp-phpunit test lib when `WP_TESTS_DIR` is unset (temp-dir fallback kept). The monorepo root bootstrap patches its vendor copy of `abstract-testcase.php` for PHPUnit 11 and persists the patch on disk; wp-phpunit can copy that patched file into the shared temp-dir lib, which breaks this plugin's PHPUnit 9.6 runs with `Call to undefined method ::name()`. A fresh clone of the plugin is now self-contained for local test runs
-
-## 1.0.7 — 2026-09-11
 
 ### New — Checkout connectivity diagnostics
 

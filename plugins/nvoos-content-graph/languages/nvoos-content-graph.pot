@@ -2,7 +2,7 @@
 # This file is distributed under the GPL-3.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: NV oOS Content Graph 1.0.6\n"
+"Project-Id-Version: NV oOS Content Graph 1.0.7\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/nvoos-content-graph\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
