@@ -64,20 +64,24 @@ class NVOOS_Checkout_API_Settings {
 	 */
 	public static function all(): array {
 		$defaults = array(
-			'stripe_secret_key'      => '',
-			'stripe_publishable_key' => '',
-			'stripe_webhook_secret'  => '',
-			'price_cents'            => self::DEFAULT_PRICE_CENTS,
-			'currency'               => 'usd',
-			'test_mode'              => true,
-			'addon_version'          => self::DEFAULT_ADDON_VERSION,
-			'zip_source'             => self::default_zip_source(),
-			'terms_url'              => self::DEFAULT_TERMS_URL,
-			'refund_policy_url'      => self::DEFAULT_REFUND_POLICY_URL,
-			'statement_descriptor'   => '',
-			'product_name'           => self::DEFAULT_PRODUCT_NAME,
-			'product_id'             => '',
-			'price_id'               => '',
+			'stripe_secret_key'       => '',
+			'stripe_publishable_key'  => '',
+			'stripe_webhook_secret'   => '',
+			'price_cents'             => self::DEFAULT_PRICE_CENTS,
+			'currency'                => 'usd',
+			'test_mode'               => true,
+			'addon_version'           => self::DEFAULT_ADDON_VERSION,
+			'zip_source'              => self::default_zip_source(),
+			'terms_url'               => self::DEFAULT_TERMS_URL,
+			'refund_policy_url'       => self::DEFAULT_REFUND_POLICY_URL,
+			'statement_descriptor'    => '',
+			'product_name'            => self::DEFAULT_PRODUCT_NAME,
+			'product_id'              => '',
+			'price_id'                => '',
+			'license_email_enabled'   => true,
+			'license_email_subject'   => '',
+			'license_email_from_name' => '',
+			'license_email_from'      => '',
 		);
 
 		$stored = get_option( self::OPTION, array() );
@@ -279,6 +283,51 @@ class NVOOS_Checkout_API_Settings {
 	}
 
 	/**
+	 * Whether the license email is enabled.
+	 *
+	 * @since 0.1.2
+	 *
+	 * @return bool
+	 */
+	public static function license_email_enabled(): bool {
+		return (bool) self::get( 'license_email_enabled', true );
+	}
+
+	/**
+	 * Custom license email subject (empty = the per-product default).
+	 *
+	 * @since 0.1.2
+	 *
+	 * @return string
+	 */
+	public static function license_email_subject(): string {
+		return sanitize_text_field( (string) self::get( 'license_email_subject', '' ) );
+	}
+
+	/**
+	 * Custom From name for the license email (empty = WordPress default).
+	 *
+	 * @since 0.1.2
+	 *
+	 * @return string
+	 */
+	public static function license_email_from_name(): string {
+		return sanitize_text_field( (string) self::get( 'license_email_from_name', '' ) );
+	}
+
+	/**
+	 * Custom From address for the license email (empty = WordPress default).
+	 *
+	 * @since 0.1.2
+	 *
+	 * @return string
+	 */
+	public static function license_email_from(): string {
+		$email = sanitize_email( (string) self::get( 'license_email_from', '' ) );
+		return false !== is_email( $email ) ? $email : '';
+	}
+
+	/**
 	 * Update a single non-secret settings field, bypassing the Settings API.
 	 *
 	 * Used by the admin-post handlers (e.g. auto-creating the Stripe
@@ -396,6 +445,21 @@ class NVOOS_Checkout_API_Settings {
 				$value             = (string) $raw[ $key ];
 				$sanitized[ $key ] = preg_match( '/^[A-Za-z0-9_]+$/', $value ) ? $value : '';
 			}
+		}
+
+		// License email (vendor → buyer confirmation with the license key).
+		$sanitized['license_email_enabled'] = ! empty( $raw['license_email_enabled'] ) ? 1 : 0;
+
+		if ( isset( $raw['license_email_subject'] ) ) {
+			$sanitized['license_email_subject'] = sanitize_text_field( (string) $raw['license_email_subject'] );
+		}
+
+		if ( isset( $raw['license_email_from_name'] ) ) {
+			$sanitized['license_email_from_name'] = sanitize_text_field( (string) $raw['license_email_from_name'] );
+		}
+
+		if ( isset( $raw['license_email_from'] ) ) {
+			$sanitized['license_email_from'] = sanitize_email( (string) $raw['license_email_from'] );
 		}
 
 		return $sanitized;

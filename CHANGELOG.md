@@ -1,5 +1,35 @@
 # oOS – Changelog
 
+## [1.1.79] - 2026-09-13
+
+### Fixed — Imaging Study Deletion Hardened Against Symlink Traversal (PR #6616)
+
+- Both recursive study-deletion paths now handle symlinks **link-first** — a link is removed as a link and never followed, so a symlinked directory can no longer cause its target's contents to be deleted (the privacy eraser) or block study removal. Every iterator entry is additionally `realpath()`-verified against the storage root before `unlink`/`rmdir`, `is_path_within_storage()` now requires a directory-boundary match (sibling-prefix directories no longer pass), and new audit events (`study_delete_link_failed`, `study_delete_outside_storage_blocked`) record blocked removals. The `nvoos-content-graph-pro` port patches the same two files byte-identically per the Wave F port rules.
+
+### Fixed — Content Graph Checkout: Non-EU Payments & Duplicate Charges (in-session, Content Graph 1.0.8)
+
+- **Non-EU Stripe checkout fixed** — the Payment Element was created with billing-address collection set to `never`, which makes Stripe require `billing_details.address.country` on every `confirmPayment()`; the modal only attached an address for EU buyers, so every non-EU purchase died client-side with `IntegrationError` before the payment was attempted. The element now uses `auto` (EU buyers still pass their full address via `payment_method_data`).
+- **Already-licensed sites can no longer be charged twice** — `/payments/session` refuses to create a chargeable session when the site is already licensed and active, returning an `already_licensed` payload the modal renders as the recorded license (bundle-aware messaging via a `bundle_active` flag).
+
+### Added — Vendor-Side Buyer License Emails (in-session, Checkout API 0.1.2)
+
+- When a payment completes, the checkout API now emails the buyer their license key, product, licensed site, and amount — once per license, from both the webhook and `/verify` issuance paths, guarded by a new `email_sent_at` column (license table v4 → v5 via `dbDelta`). Storefront settings add an enable switch plus subject / From name / From address (sender + Reply-To); the admin license table gains an "Emailed" column.
+
+### Fixed — Checkout Hardening Tail (PRs #6611, #6613, Checkout API)
+
+- **Stripe statement descriptor (vendor-side, #6613)** — Stripe rejects the full `statement_descriptor` for card charges created with `automatic_payment_methods`, so every live `/session` call failed with a 424 rejection; the stored value now ships as `statement_descriptor_suffix` (2–22 chars, ≥1 letter, appended to the account's prefix; invalid values drop out so Stripe's default applies).
+- **Create-product after Stripe account switch (vendor-side, #6611)** — the admin action was idempotent on stored Stripe IDs that still pointed at the old account, so the button appeared to do nothing; stored IDs are now verified against the current key first and stale IDs are cleared + recreated on a 404 `resource_missing` (distinct `recreated`/`verify` notices).
+
+### Docs & Sub-Projects
+
+- **Docs Hub 0.4.5 → 0.4.6** (#6615, #6617) — the second wp.org reviewer pass fixes the external-services disclosure and the symlinked cache-dir uninstall guard, and a full 18-guideline pass bundles the GPLv3 license and sweeps all seven version locations (PCP 0 blocking errors) ahead of the directory re-upload.
+- **Content Graph 1.0.7 wp.org readiness** (#6609, #6612, #6619) — seller-of-record copy (NV Digital Unlocked LLC), the price-subject-to-change note in the purchase modal, the packaging tri-sync fix (`node_modules` exclude in the build script + workflow), and the final pre-upload pass.
+- **Toolkit slash-command test repair (test-only, #6618)** — `tests/test-toolkit-slash-commands.php` now asserts the declarative adapter contract from #6604.
+
+### Versioning
+
+- Bumped to 1.1.79 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.79. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.8** (bumped in-window — Stripe non-EU fix + already-licensed gate). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — byte-identical port patch only). Checkout API: **0.1.2** (bumped in-window — license emails). Docs Hub addon: **0.4.5 → 0.4.6** (bumped in-window). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.09.10** (unchanged — no model PRs in-window). Tool count: ~303 base + ~1,265 Pro (~1,568 total; live registry authoritative — unchanged this window; no new slugs). Providers: 15. Addons: 27. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: **56** (unchanged). Stale 1.1.77 build ZIPs removed.
+
 ## [1.1.78] - 2026-09-12
 
 ### Changed — Slash Commands Reworked as Declarative Tool Wrappers (PR #6604)

@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: September 12, 2026 (v1.1.78).
+> Last reviewed: September 13, 2026 (v1.1.79).
+>
+> **New in v1.1.79 (no base REST changes):** no base REST surface changed this window — #6616 hardens the existing Pro imaging study-deletion endpoint (link-first symlink removal + realpath containment; same route contract), #6618 is test-only, and #6609/#6612/#6619 are sub-project docs/packaging. Sub-project: Content Graph **1.0.8** — `/payments/session` now returns `already_licensed` instead of a chargeable session when the site is already licensed + active (route semantics tightened, shape unchanged; the modal renders the recorded license); Checkout API **0.1.2** — vendor-side `statement_descriptor_suffix` (PR #6613) and once-per-license buyer emails (same `/session` + webhook + `/verify` contract; emailing is vendor-side).
 >
 > **New in v1.1.78 (no base REST changes):** no base REST surface changed this window — the slash-command rework (#6604) is handler/registry/prompt-level (the MCP `prompts/list`/`prompts/get` surfaces gain `slash.*` templates, not new routes), the DeepSeek restoration (#6608) is catalog-level, and the legal consolidation (#6599/#6605/#6607) is docs-only. Sub-project: Docs Hub (**0.4.3 → 0.4.4**, #6606) fixes the `/search` context-source leak (users without `manage_options` no longer see `source = "context"` entries) and removes context slugs from the public WordPress sitemap; Content Graph checkout (#6603) reads the vendor price from the existing `/session` endpoint (display-only, no new route).
 >

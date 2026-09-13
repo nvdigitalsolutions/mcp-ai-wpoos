@@ -11,12 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.78
-**Release Date:** 2026-09-12
+**Version:** 1.1.79
+**Release Date:** 2026-09-13
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
-**🆕 v1.1.78 Highlights:** A slash-command, model-restoration, checkout-hardening & legal-consolidation release. **Slash commands become declarative tool wrappers** — ~76 placeholder commands are purged and the surviving 36 commands across 15 toolkits now execute through the real tool registry (capability gates, validation, and the canonical envelope live in the tool layer), plus a new **MCP prompts bridge** exposes every command as a `slash.*` prompt template. **DeepSeek V4 Pro is back** — DeepSeek's changelog confirms V4 Pro continues past September 14, so it's restored to active across the base catalog, the Content Graph AI mirror (catalog v2026.09.10 + corrected pricing), and the lib/core mirrors. **Content Graph checkout hardens** — assets cache-bust by file mtime (the 1.0.7 hotfix had stayed invisible behind a year-long cache), the modal syncs its price from the vendor session, and the fallback price drops to **$34.99**. **Docs Hub ships 0.4.4** fixing every wp.org review finding (0 blocking Plugin Check errors). **The legal set consolidates** — unified ToS, aligned api-licenses, and the two-entity seller model (NV Digital Unlocked LLC sells; NV Digital Solutions develops). **Content Graph 1.0.7 releases** with its wp.org 18-point sign-off. Tool count unchanged: ~303 base + ~1,265 Pro (~1,568 total). Stale 1.1.76 build ZIPs removed (30 files).
+**🆕 v1.1.79 Highlights:** A security, checkout, and sub-project release. **Imaging study deletion is hardened against symlink traversal** — links are removed as links and never followed, every entry is realpath-verified against the storage root, and blocked removals are audit-logged (the Content Graph Pro port ships the same patch byte-identically). **Content Graph 1.0.8 fixes checkout for everyone** — non-EU buyers no longer hit a Stripe IntegrationError, and already-licensed sites can no longer be charged twice (the modal shows the recorded license instead of a payment form). **The vendor checkout API gains buyer license emails** (once per license, from both issuance paths) and fixes two live-checkout bugs: the statement-descriptor rejection that failed every `/session` call, and product/price creation after switching Stripe accounts. **Docs Hub ships 0.4.6** for its wp.org re-upload (PCP 0 blocking errors). Tool count unchanged: ~303 base + ~1,265 Pro (~1,568 total). Stale 1.1.77 build ZIPs removed.
 
 **MCP Specification:** 2026-07-28 (Stateless Core, Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
@@ -150,6 +150,16 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit / Harness for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, Hugging Face, and Flowhub.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.79)
+
+- 🔒 **Imaging Study Deletion Symlink Hardening (PR #6616).** Both recursive study-deletion paths now remove symlinks link-first and never follow them — a planted link can no longer cause its target's contents to be deleted (privacy eraser) or block study removal. Every iterator entry is `realpath()`-verified against the storage root, `is_path_within_storage()` requires a directory-boundary match, and new audit events (`study_delete_link_failed`, `study_delete_outside_storage_blocked`) record blocked removals. The `nvoos-content-graph-pro` port ships the same two files byte-identically. Suites: 52/52 monolith imaging + 14/14 Pro dual-matrix privacy.
+- 🛒 **Content Graph 1.0.8 — Checkout Fixed for Non-EU Buyers & No Double Charges.** The Payment Element used billing-address `never`, which forces Stripe to require `billing_details.address.country` on every `confirmPayment()` — non-EU purchases died client-side with `IntegrationError`. The element now uses `auto`. Additionally `/payments/session` refuses to create a chargeable session when the site is already licensed + active (`already_licensed` payload → the modal renders the recorded license), closing the double-charge path; verify/success messaging is bundle-aware. Unit 100/524 + Integration 18/57 green.
+- ✉️ **Checkout API 0.1.2 — Buyer License Emails.** On payment completion the vendor emails the buyer their license key, product, site, and amount — once per license from both the webhook and `/verify` paths, guarded by a new `email_sent_at` column (DB v4 → v5). Storefront settings: enable switch, subject, From name/address; license table gains an "Emailed" column. 7 new tests; suite 83/349 green.
+- 🛒 **Checkout API — Statement Descriptor + Account-Switch Fixes (PRs #6613, #6611).** Stripe rejects the full `statement_descriptor` with `automatic_payment_methods` — every live `/session` failed with a 424; the value now ships as `statement_descriptor_suffix`. The create-product action now verifies stored Stripe IDs against the current key and recreates them on an account switch (404 `resource_missing`).
+- 📚 **Docs Hub 0.4.5 → 0.4.6 (PRs #6615, #6617).** Second wp.org reviewer pass (external-services disclosure, symlinked cache-dir uninstall guard) + full 18-guideline pass (bundled GPLv3 license, seven-location version sweep) — PCP 0 blocking errors, ready for re-upload.
+- 🚀 **Content Graph 1.0.7 wp.org Readiness (PRs #6609, #6612, #6619).** Seller-of-record copy (NV Digital Unlocked LLC), the price-subject-to-change note (deliberately avoiding fake limited-time claims), the packaging tri-sync fix (`node_modules` exclude), and the final pre-upload pass.
+- 🧪 **Toolkit Slash Test Repair (test-only, PR #6618).** `test-toolkit-slash-commands.php` now asserts the declarative adapter contract from the #6604 rework (12/12; all 41 slash suites 400/400).
 
 ### ✨ What's New at a Glance (v1.1.78)
 
@@ -849,6 +859,17 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
+
+## 🆕 Latest Updates (v1.1.79 — September 2026)
+
+### September 13, 2026 — Imaging Symlink Hardening, Checkout Fixes, Docs Hub 0.4.6
+
+- 🔒 **Imaging Study Deletion Symlink Hardening — PR #6616 (2 files, byte-identical CG Pro port).** `delete_study()` and the privacy eraser now check `isLink()` first and remove the link itself (never its target), with defense-in-depth `realpath()` containment per iterator entry, a stricter directory-boundary `is_path_within_storage()`, and two new audit events for blocked removals. Regression tests skip gracefully where symlinks are unavailable.
+- 🛒 **Content Graph 1.0.8 — Stripe Checkout Fixes.** Payment Element `billingDetails.address` moves `never` → `auto` (non-EU buyers were blocked by Stripe's required `billing_details.address.country`); `/payments/session` gains an already-licensed gate so a charged-again site shows its recorded license instead of a new payment form. Full details: [`plugins/nvoos-content-graph/CHANGELOG.md`](plugins/nvoos-content-graph/CHANGELOG.md).
+- ✉️ **Checkout API 0.1.2 — License Emails + Statement-Descriptor Fix.** Buyers receive their license key by email once per license; `/session` ships `statement_descriptor_suffix` (the 424 class of failure is fixed); product/price creation survives Stripe account switches. Full details: [`addons/checkout-api/CHANGELOG.md`](addons/checkout-api/CHANGELOG.md).
+- 📚 **Docs Hub 0.4.6 — wp.org Re-upload Ready.** Second reviewer pass + full 18-guideline pass land 0.4.5 → 0.4.6 (external-services disclosure, symlink-safe cache/uninstall, bundled GPLv3 license). PCP: 0 blocking errors.
+- 🧪 **Toolkit Slash Test Repair (test-only, PR #6618).** Suite updated to the declarative adapter contract (12/12 on WP 6.9 + 7.1; 41-suite invocation 400/400).
+- 📦 **Versioning** — bumped to **1.1.79** across all version-bearing files. Pro addon: 1.1.79. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.8** (in-window). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — byte-identical port patch only). Checkout API: **0.1.2** (in-window). Docs Hub addon: **0.4.5 → 0.4.6** (in-window). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.09.10** (unchanged — no model PRs in-window). Tool count: ~303 base + ~1,265 Pro (~1,568 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative — unchanged; no new slugs). Provider count: **15**. Addon count: **27**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **56** (unchanged). Stale 1.1.77 build ZIPs removed.
 
 ## 🆕 Latest Updates (v1.1.78 — September 2026)
 

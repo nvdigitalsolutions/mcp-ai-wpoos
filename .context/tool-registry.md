@@ -1,7 +1,9 @@
 # NV oOS Tool Registry Context
 
 > **GSD Context File** — Load this when working on tool implementations, toolkits, MCP servers, or OKF tools.
-> Last reviewed: September 12, 2026 (v1.1.78).
+> Last reviewed: September 13, 2026 (v1.1.79).
+>
+> **New in v1.1.79 (counts unchanged — ~303 base + ~1,265 Pro, ~1,568 total):** no tools added or removed. #6616 hardens the existing imaging study-deletion paths (link-first symlink removal, per-entry realpath containment, tightened `is_path_within_storage()` boundary, new `study_delete_link_failed` / `study_delete_outside_storage_blocked` audit events) — no new slugs. #6618 is test-only (toolkit slash suites). #6611/#6613/#6609/#6612/#6619 and the in-session content-graph 1.0.8 (Stripe billing-address `never` → `auto` + already-licensed gate) / checkout-api 0.1.2 (license emails) are sub-project. Every count surface stays ~1,568.
 >
 > **New in v1.1.78 (no base REST changes):** no base REST surface changed this window — the slash-command rework (#6604) is handler/registry/prompt-level (the MCP `prompts/list`/`prompts/get` surfaces gain `slash.*` templates, not new routes), the DeepSeek restoration (#6608) is catalog-level, and the legal consolidation (#6599/#6605/#6607) is docs-only. Sub-project: Docs Hub (**0.4.3 → 0.4.4**, #6606) fixes the `/search` context-source leak (users without `manage_options` no longer see `source = "context"` entries) and removes context slugs from the public WordPress sitemap; Content Graph checkout (#6603) reads the vendor price from the existing `/session` endpoint (display-only, no new route).
 >

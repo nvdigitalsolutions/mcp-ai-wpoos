@@ -5,7 +5,7 @@ Tags: knowledge graph, content visualization, cytoscape, content strategy, seman
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.7
+Stable tag: 1.0.8
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -164,6 +164,10 @@ All libraries are served locally from `assets/vendor/` and never loaded from thi
 6. Graph Explorer — interactive Cytoscape.js visualization with search and node details
 
 == Changelog ==
+
+= 1.0.8 — 2026-09-13 =
+* Fixed Stripe checkout failing for non-EU buyers: the Payment Element no longer requires a billing-address country that the modal only collects from EU buyers
+* Already-licensed sites can no longer start a new payment: the purchase modal shows the existing license instead of a chargeable Stripe form
 
 = 1.0.7 — 2026-09-12 =
 * Checkout consent checkbox (Terms of Service + 30-day refund policy) and buyer-email collection with Stripe receipt delivery

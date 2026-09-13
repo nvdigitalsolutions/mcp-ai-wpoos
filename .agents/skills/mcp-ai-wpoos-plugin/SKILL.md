@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.78"
-  plugin-version-tested: "1.1.78"
-  last-updated: "2026-09-12"
+  plugin-version: "1.1.79"
+  plugin-version-tested: "1.1.79"
+  last-updated: "2026-09-13"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -647,6 +647,37 @@ Import external AI conversation exports into the JetEngine
   (1.0.0) completes the financial-planning, social-media, and mcp-servers
   toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
   dj-management/image-production slices.
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Imaging Symlink Hardening, Checkout Hardening Tail & Sub-Project Bumps (v1.1.79)
+
+- **Imaging study deletion hardened against symlink traversal** (PR #6616) —
+  both recursive study-deletion paths now remove links as links and never
+  follow them; every iterator entry is realpath-verified against the
+  storage root; new `study_delete_link_failed` /
+  `study_delete_outside_storage_blocked` audit events; the
+  `nvoos-content-graph-pro` port ships the same two files byte-identically.
+- **Checkout hardening tail** (PRs #6611/#6613, vendor-side) — the Stripe
+  statement descriptor now ships as `statement_descriptor_suffix` (fixes the
+  424 that failed every live session); product/price creation verifies
+  stored Stripe IDs against the current key and recreates them after an
+  account switch.
+- **Content Graph 1.0.8** (in-session) — Stripe Payment Element
+  billing-address mode `never` → `auto` (non-EU purchases no longer die
+  client-side with `IntegrationError`); `/payments/session` refuses
+  chargeable sessions when the site is already licensed (no double
+  charges).
+- **Checkout API 0.1.2** (in-session) — buyers are emailed their license
+  once per license from both the webhook and `/verify` paths
+  (`email_sent_at` DB v4 → v5).
+- **Docs Hub 0.4.5 → 0.4.6** (PRs #6615/#6617) — second wp.org reviewer
+  pass (external-services disclosure, symlinked cache-dir uninstall guard)
+  + full 18-guideline pass (bundled GPLv3 license); PCP 0 blocking errors.
+- **Content-graph wp.org readiness** (PRs #6609/#6612/#6619) —
+  seller-of-record copy, price-subject-to-change note, packaging tri-sync
+  (`node_modules` exclude).
+- **Toolkit slash test repair** (test-only, PR #6618) — suite updated to the
+  declarative adapter contract from #6604.
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
 
 ## Slash-Command Rework, DeepSeek V4 Pro Restoration & Checkout Hardening (v1.1.78)

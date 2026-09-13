@@ -1,5 +1,34 @@
 # NV oOS Content Graph — Changelog
 
+## 1.0.8 — 2026-09-13
+
+### Fixed — Stripe checkout failed for non-EU buyers
+
+- **Payment Element billing address** — the element was created with
+  `fields.billingDetails.address: 'never'`, which makes Stripe require
+  `billing_details.address.country` on every `confirmPayment()` call. The
+  modal only attaches an address for EU buyers, so every non-EU purchase
+  died client-side with `IntegrationError` before the payment was ever
+  attempted. The element now uses `'auto'`: Stripe collects the address
+  only when a payment method (or Stripe tax) genuinely requires it, and EU
+  buyers still pass their full billing address via `payment_method_data`
+
+### Fixed — Already-licensed sites could be charged again
+
+- **Pre-purchase license gate** — `/payments/session` now refuses to create
+  a chargeable session when the site is already licensed and the Complete
+  bundle (or the legacy AI addon) is active, returning an `already_licensed`
+  payload; the purchase modal renders the recorded license (key +
+  bundle-aware message) instead of the payment form, so a second charge is
+  impossible from this screen
+- **Bundle-aware messaging** — the `/payments/verify` short-circuit and the
+  success screen now name the artifact actually active (Complete bundle vs
+  legacy AI addon) via a `bundle_active` flag and an addon-specific
+  checklist line (`success_step_installed_addon` i18n key)
+- Tests: `CommerceTest` gains `sessionReturnsAlreadyLicensedWhenBundleActive`
+  and `verifyShortCircuitsWhenLicensedAndAddonActive` (both assert zero
+  vendor HTTP calls)
+
 ## 1.0.7 — 2026-09-12
 
 ### Changed — Purchase modal price note

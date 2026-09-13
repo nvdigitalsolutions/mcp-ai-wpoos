@@ -2,7 +2,7 @@
 # This file is distributed under the GPL-3.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: NV oOS Content Graph 1.0.7\n"
+"Project-Id-Version: NV oOS Content Graph 1.0.8\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/nvoos-content-graph\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1136,6 +1136,10 @@ msgstr ""
 
 #: src/Admin/SettingsPage.php:578
 msgid "NV oOS Complete is installed and activated."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:581
+msgid "Your NV oOS Content Graph — AI addon is installed and activated."
 msgstr ""
 
 #: src/Admin/SettingsPage.php:579

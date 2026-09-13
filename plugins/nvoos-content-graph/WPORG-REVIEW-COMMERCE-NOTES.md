@@ -76,6 +76,9 @@ feature-locked.**
 - v1.0.7 (later): buyer country + conditional EU billing address (VAT
   records); vendor records country on the license; Stripe statement
   descriptor and product/price metadata configurable on the vendor storefront.
+- v1.0.8: Stripe Payment Element billing-address fix (non-EU checkout no
+  longer fails); already-licensed sites show their existing license instead
+  of a chargeable payment form. No new data collected or sent.
 
 ## Review-team questions, pre-answered
 

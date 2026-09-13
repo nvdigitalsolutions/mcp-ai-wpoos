@@ -362,6 +362,43 @@ class CommerceTest extends WP_UnitTestCase {
 	}
 
 	/** @test */
+	public function sessionReturnsAlreadyLicensedWhenBundleActive(): void {
+		License::save( array( 'license_key' => 'test-license-key' ) );
+
+		// Simulate the Complete bundle being the active artifact.
+		add_filter( 'option_active_plugins', static fn() => array( Installer::BUNDLE_BASENAME ) );
+
+		// Any HTTP attempt would mean the gate failed — count them.
+		$http_calls = 0;
+		add_filter(
+			'pre_http_request',
+			static function () use ( &$http_calls ) {
+				$http_calls++;
+				return array(
+					'response' => array( 'code' => 404 ),
+					'body'     => '',
+				);
+			},
+			10,
+			0
+		);
+
+		try {
+			$controller = new CommerceController();
+			$response   = $controller->createSession( new \WP_REST_Request() );
+
+			$this->assertNotInstanceOf( WP_Error::class, $response );
+			$data = $response->get_data();
+			$this->assertTrue( $data['already_licensed'] );
+			$this->assertTrue( $data['bundle_active'] );
+			$this->assertSame( 'test-license-key', $data['license_key'] );
+			$this->assertSame( 0, $http_calls, 'The session endpoint must not contact the vendor for an already-licensed site.' );
+		} finally {
+			remove_all_filters( 'option_active_plugins' );
+		}
+	}
+
+	/** @test */
 	public function verifyIsRateLimited(): void {
 		$this->stubVendor(
 			array(
@@ -383,6 +420,46 @@ class CommerceTest extends WP_UnitTestCase {
 		$result = $controller->verifyPayment( $request );
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'nvoos_content_graph_rate_limited', $result->get_error_code() );
+	}
+
+	/** @test */
+	public function verifyShortCircuitsWhenLicensedAndAddonActive(): void {
+		License::save( array( 'license_key' => 'test-license-key' ) );
+
+		// Simulate the legacy AI addon being the active artifact.
+		add_filter( 'option_active_plugins', static fn() => array( Installer::ADDON_BASENAME ) );
+
+		// Any HTTP attempt would mean the short-circuit failed — count them.
+		$http_calls = 0;
+		add_filter(
+			'pre_http_request',
+			static function () use ( &$http_calls ) {
+				$http_calls++;
+				return array(
+					'response' => array( 'code' => 404 ),
+					'body'     => '',
+				);
+			},
+			10,
+			0
+		);
+
+		try {
+			$controller = new CommerceController();
+			$request    = new \WP_REST_Request();
+			$request->set_param( 'payment_intent', 'pi_1234567890' );
+			$response = $controller->verifyPayment( $request );
+
+			$this->assertNotInstanceOf( WP_Error::class, $response );
+			$data = $response->get_data();
+			$this->assertTrue( $data['licensed'] );
+			$this->assertFalse( $data['bundle_active'], 'The legacy AI addon is not the Complete bundle.' );
+			$this->assertSame( 'test-license-key', $data['license_key'] );
+			$this->assertStringContainsString( 'AI addon', $data['message'] );
+			$this->assertSame( 0, $http_calls, 'The verify endpoint must not contact the vendor when the site is already licensed and active.' );
+		} finally {
+			remove_all_filters( 'option_active_plugins' );
+		}
 	}
 
 	/** @test */
