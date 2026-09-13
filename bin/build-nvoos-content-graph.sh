@@ -140,6 +140,7 @@ rsync -a "${PLUGIN_DIR}/" "${TMP_DIR}/${ARTIFACT}/nvoos-content-graph/" \
 	--exclude '.github/' \
 	--exclude '.distignore' \
 	--exclude '.wordpress-org/' \
+	--exclude 'node_modules/' \
 	--exclude 'tests/' \
 	--exclude 'phpcs.xml.dist' \
 	--exclude 'phpunit.xml.dist' \
