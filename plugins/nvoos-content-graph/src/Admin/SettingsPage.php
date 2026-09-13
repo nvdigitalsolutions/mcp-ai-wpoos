@@ -578,6 +578,7 @@ class SettingsPage {
 					'success_steps_title'    => __( 'What happens next', 'nvoos-content-graph' ),
 					'success_step_receipt'   => __( 'A receipt is on its way to your email.', 'nvoos-content-graph' ),
 					'success_step_installed' => __( 'NV oOS Complete is installed and activated.', 'nvoos-content-graph' ),
+					'success_step_installed_addon' => __( 'Your NV oOS Content Graph — AI addon is installed and activated.', 'nvoos-content-graph' ),
 					'success_step_license'   => __( 'Your license key is saved — keep it safe.', 'nvoos-content-graph' ),
 					'success_step_roadmap'   => __( 'Watch the changelog for updates — your Content Graph ecosystem access arrives with the launch, at no extra cost.', 'nvoos-content-graph' ),
 					'changelog_link'         => __( 'View changelog', 'nvoos-content-graph' ),

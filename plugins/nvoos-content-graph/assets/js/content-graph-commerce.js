@@ -835,6 +835,21 @@
 				return;
 			}
 
+			// Already-licensed site: render the recorded license instead
+			// of a fresh payment form — a second charge must never be
+			// possible from this screen.
+			if ( result.data && result.data.already_licensed ) {
+				renderSuccess( {
+					license_key: result.data.license_key,
+					message: result.data.message,
+					bundle_active: result.data.bundle_active,
+					installed: true,
+					activated: true,
+					skip_steps: true
+				} );
+				return;
+			}
+
 			stripe = window.Stripe( result.data.publishable_key );
 
 			// Stripe element setup failures (invalid element name, blocked
@@ -890,9 +905,14 @@
 				} );
 				// The plugin collects the buyer email, country, and EU billing
 				// address itself (receipt + VAT records); keep the Stripe iframe
-				// from asking for them again.
+				// from asking for them again. The address uses 'auto' rather
+				// than 'never': Stripe demands a country in confirmPayment()
+				// whenever 'never' is used, but this plugin only knows the
+				// country for EU buyers. With 'auto' the element collects the
+				// address only when a payment method (or Stripe tax) needs it,
+				// and EU buyers still pass theirs via payment_method_data.
 				paymentElement = elements.create( 'payment', {
-					fields: { billingDetails: { email: 'never', address: 'never' } }
+					fields: { billingDetails: { email: 'never', address: 'auto' } }
 				} );
 				paymentElement.mount( payBox );
 			} catch ( e ) {
@@ -1125,36 +1145,44 @@
 
 		// "What happens next" checklist — post-purchase clarity sets
 		// expectations (receipt, install, license, roadmap) and reduces
-		// buyer's-remorse support contacts.
-		var steps = el( 'div', 'nvoos-cg-success-steps' );
-		var stepsTitle = i18n.success_steps_title || '';
-		if ( stepsTitle ) {
-			steps.appendChild( el( 'h4', 'nvoos-cg-success-steps-title', stepsTitle ) );
-		}
-		var stepsList = el( 'ol', 'nvoos-cg-success-steps-list' );
-		var stepItems = [
-			i18n.success_step_receipt || '',
-			i18n.success_step_installed || '',
-			i18n.success_step_license || ''
-		];
-		for ( var i = 0; i < stepItems.length; i++ ) {
-			if ( ! stepItems[ i ] ) {
-				continue;
+		// buyer's-remorse support contacts. Skipped for the
+		// already-licensed state, where nothing is happening next.
+		if ( data.skip_steps !== true ) {
+			var steps = el( 'div', 'nvoos-cg-success-steps' );
+			var stepsTitle = i18n.success_steps_title || '';
+			if ( stepsTitle ) {
+				steps.appendChild( el( 'h4', 'nvoos-cg-success-steps-title', stepsTitle ) );
 			}
-			stepsList.appendChild( el( 'li', '', stepItems[ i ] ) );
-		}
-		var roadmapStep = i18n.success_step_roadmap || '';
-		var changelogUrl = String( config.changelog_url || '' ).trim();
-		if ( roadmapStep || ( changelogUrl && /^https?:\/\//i.test( changelogUrl ) ) ) {
-			var last = el( 'li', '', roadmapStep );
-			if ( changelogUrl && /^https?:\/\//i.test( changelogUrl ) ) {
-				last.appendChild( document.createTextNode( ' ' ) );
-				last.appendChild( linkEl( 'nvoos-cg-changelog-link', i18n.changelog_link || 'View changelog', changelogUrl ) );
+			var stepsList = el( 'ol', 'nvoos-cg-success-steps-list' );
+			// The "installed" step names the artifact that is actually
+			// active: the Complete bundle, or the legacy AI addon.
+			var installedStep = data.bundle_active === false
+				? ( i18n.success_step_installed_addon || '' )
+				: ( i18n.success_step_installed || '' );
+			var stepItems = [
+				i18n.success_step_receipt || '',
+				installedStep,
+				i18n.success_step_license || ''
+			];
+			for ( var i = 0; i < stepItems.length; i++ ) {
+				if ( ! stepItems[ i ] ) {
+					continue;
+				}
+				stepsList.appendChild( el( 'li', '', stepItems[ i ] ) );
 			}
-			stepsList.appendChild( last );
+			var roadmapStep = i18n.success_step_roadmap || '';
+			var changelogUrl = String( config.changelog_url || '' ).trim();
+			if ( roadmapStep || ( changelogUrl && /^https?:\/\//i.test( changelogUrl ) ) ) {
+				var last = el( 'li', '', roadmapStep );
+				if ( changelogUrl && /^https?:\/\//i.test( changelogUrl ) ) {
+					last.appendChild( document.createTextNode( ' ' ) );
+					last.appendChild( linkEl( 'nvoos-cg-changelog-link', i18n.changelog_link || 'View changelog', changelogUrl ) );
+				}
+				stepsList.appendChild( last );
+			}
+			steps.appendChild( stepsList );
+			payBox.appendChild( steps );
 		}
-		steps.appendChild( stepsList );
-		payBox.appendChild( steps );
 
 		var support = i18n.support_line || '';
 		if ( support ) {
