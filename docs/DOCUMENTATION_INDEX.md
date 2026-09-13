@@ -1,13 +1,15 @@
 # NV oOS Documentation Index
 
-**Last Updated:** September 12, 2026
-**Plugin Version:** 1.1.78
+**Last Updated:** September 13, 2026
+**Plugin Version:** 1.1.79
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
+
+> **SEPTEMBER 13, 2026 UPDATE (v1.1.79):** CHECKOUT-HARDENING-TAIL & SECURITY RELEASE. **IMAGING SYMLINK HARDENING** (PR #6616) — STUDY DELETION REMOVES LINKS AS LINKS AND NEVER FOLLOWS THEM; REALPATH CONTAINMENT PER ENTRY; NEW `study_delete_link_failed` / `study_delete_outside_storage_blocked` AUDIT EVENTS (BASE+PRO + BYTE-IDENTICAL CG PRO PORT). **CONTENT GRAPH 1.0.8** — STRIPE PAYMENT ELEMENT BILLING-ADDRESS MODE `never` → `auto` (NON-EU PURCHASES NO LONGER DIE WITH `IntegrationError`); `/payments/session` REFUSES CHARGEABLE SESSIONS WHEN ALREADY LICENSED (NO DOUBLE CHARGES). **CHECKOUT API 0.1.2** — VENDOR-SIDE BUYER LICENSE EMAILS FROM THE WEBHOOK + `/verify` PATHS (`email_sent_at` DB v4 → v5); STATEMENT-DESCRIPTOR 424 FIXED VIA `statement_descriptor_suffix` (PR #6613); STRIPE ACCOUNT-SWITCH CREATE-PRODUCT FIX (PR #6611). **DOCS HUB 0.4.5 → 0.4.6** (PRs #6615/#6617) — SECOND WP.ORG REVIEWER PASS + FULL 18-GUIDELINE PASS, 0 BLOCKING PCP ERRORS. **CONTENT-GRAPH WP.ORG READINESS** (PRs #6609/#6612/#6619) — SELLER-OF-RECORD COPY, PRICE NOTE, PACKAGING TRI-SYNC. **TOOLKIT SLASH TEST REPAIR** (PR #6618). TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.77 BUILD ZIPS REMOVED. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
 > **SEPTEMBER 12, 2026 UPDATE (v1.1.78):** SLASH-COMMAND, MODEL-RESTORATION, CHECKOUT-HARDENING & LEGAL-CONSOLIDATION RELEASE. **SLASH COMMANDS REWORKED AS DECLARATIVE TOOL WRAPPERS** (PR #6604) — ~76 PLACEHOLDER COMMANDS PURGED; 36 COMMANDS ACROSS 15 TOOLKITS EXECUTE THROUGH THE REAL TOOL REGISTRY VIA A NEW TOOL ADAPTER (CAPABILITY GATES, VALIDATION, SANITISATION, CANONICAL ENVELOPE LIVE IN THE TOOL LAYER) + NEW `slash.*` MCP PROMPT BRIDGE (`prompts/list`/`prompts/get`) WIRED INTO THE PER-TOOLKIT MCP SERVERS; ALL 19 BUILT-IN WORKFLOWS RE-CHAINED. **DEEPSEEK V4 PRO RESTORED** (PR #6608) — ACTIVE AGAIN ACROSS ALL TRACKS ($0.66/$1.98 OFF-PEAK; MIGRATION MAP UNMAPPED); CONTENT GRAPH AI MIRROR → CATALOG V2026.09.10 WITH CORRECTED USAGETRACKER PRICING; LIB/CORE MIRRORS ALIGNED. **CHECKOUT HARDENING** (PRs #6597/#6598/#6603) — ASSET CACHE-BUSTING BY FILE MTIME (`Schema::assetVersion()`; FIXES THE INVISIBLE 1.0.7 HOTFIX), VENDOR-SESSION PRICE SYNC WITH A $34.99 FALLBACK DEFAULT, MINIMALIST MODAL RESTYLE. **DOCS HUB 0.4.3 → 0.4.4** (PR #6606) — ALL WP.ORG REVIEW FINDINGS FIXED (SEARCH CONTEXT-SOURCE FILTERING, SOURCE-CODE SECTION, SYMLINK-SAFE DELETION, STAGING-TRANSIENT ISOLATION, SITEMAP SLUG LEAK), 0 BLOCKING PCP ERRORS. **LEGAL CONSOLIDATION** (PRs #6599/#6605/#6607) — UNIFIED TOS, ALIGNED API-LICENSES, TWO-ENTITY SELLER MODEL (NV DIGITAL UNLOCKED LLC SELLS + RUNS THE MARKETPLACE; NV DIGITAL SOLUTIONS DEVELOPS/OWNS IP/SERVICES). **CONTENT GRAPH 1.0.7 RELEASED** WITH WP.ORG 18-POINT SIGN-OFF. TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.76 BUILD ZIPS REMOVED (30 FILES). UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
@@ -652,6 +654,19 @@ n#### New Audit & Compliance Docs
 - **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.39 latest updates section, version bump, duplicate section cleanup.
 
 ---
+
+## 🆕 September 2026 — v1.1.79: Imaging Symlink Hardening, Checkout Hardening Tail, Content Graph 1.0.8, Checkout API 0.1.2
+
+### New and updated documents (September 13, 2026, v1.1.79)
+
+- **[docs/project/plans/v1.1.79-docs-catch-up.md](project/plans/v1.1.79-docs-catch-up.md)** ⭐ **NEW** — v1.1.79 docs & release catch-up plan (PRs #6609–#6619 + in-session content-graph 1.0.8 / checkout-api 0.1.2 work, full PR-description review + housekeeping). (September 13, 2026)
+- **[plugins/nvoos-content-graph/CHANGELOG.md](../plugins/nvoos-content-graph/CHANGELOG.md)** ⭐ **UPDATED** — v1.0.8: non-EU Stripe checkout fix + already-licensed pre-purchase gate. (September 13, 2026)
+- **[addons/checkout-api/CHANGELOG.md](../addons/checkout-api/CHANGELOG.md)** ⭐ **UPDATED** — v0.1.2: vendor-side buyer license emails. (September 13, 2026)
+- **[addons/docs-hub/readme.txt](../addons/docs-hub/readme.txt)** ⭐ **UPDATED** — v0.4.5/v0.4.6 wp.org review rounds (PRs #6615/#6617). (September 13, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.79 highlights + latest updates (symlink hardening, checkout hardening tail, content-graph 1.0.8, checkout-api 0.1.2, docs-hub 0.4.6, ~1,568 tools, 56 skills). (September 13, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.79] section with PR-level detail. (September 13, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.79 + changelog entry. (September 13, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.79 entry. (September 13, 2026)
 
 ## 🆕 September 2026 — v1.1.78: Slash-Command Rework, DeepSeek V4 Pro Restoration, Checkout Hardening, Legal Consolidation
 

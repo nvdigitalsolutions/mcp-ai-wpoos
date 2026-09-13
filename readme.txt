@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.78
+Stable tag: 1.1.79
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.79 - September 13, 2026 =
+
+Security, checkout, and sub-project release. Fixed: the imaging study-deletion paths are hardened against symlink traversal (links are removed as links and never followed, every entry is realpath-verified against the storage root, and blocked removals are audit-logged), Content Graph checkout no longer fails for non-EU buyers (Stripe Payment Element billing-address requirement) and already-licensed sites can no longer be charged twice (the purchase modal shows the recorded license instead of a payment form), and the vendor checkout API fixes the statement-descriptor rejection that was failing every live session and repairs product/price creation after switching Stripe accounts. Added: the vendor checkout API now emails buyers their license key once per license from both issuance paths. Docs Hub bumps 0.4.5 to 0.4.6 for its wp.org re-upload, and Content Graph ships 1.0.8 with the checkout fixes. Tool count unchanged: ~303 base + ~1,265 Pro (~1,568 total; live registry authoritative). Stale 1.1.77 build ZIPs removed.
 
 = 1.1.78 - September 12, 2026 =
 

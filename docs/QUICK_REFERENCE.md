@@ -1,11 +1,13 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.78
-**Last Updated:** September 12, 2026
+**Version:** 1.1.79
+**Last Updated:** September 13, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
 ## Recent Updates (September 2026)
+
+- **v1.1.79** (September 13): Checkout-hardening-tail & security release. **Content Graph 1.0.8** — Stripe Payment Element billing-address mode switched from `never` to `auto`, so non-EU purchases no longer die client-side with `IntegrationError`; `/payments/session` refuses chargeable sessions when the site is already licensed (double charges impossible). **Checkout API 0.1.2** — buyers now receive their license by email (key/product/site/amount) from both the webhook and `/verify` paths, guarded by an `email_sent_at` column (DB v4 → v5); statement-descriptor 424 fixed via `statement_descriptor_suffix` (#6613); Stripe account-switch create-product fix (#6611). **Imaging symlink hardening** — study deletion removes links as links and never follows them, with realpath containment per entry and new audit events (#6616). **Docs Hub 0.4.5 → 0.4.6** — second wp.org reviewer pass + full 18-guideline pass, 0 blocking PCP errors (#6615/#6617). **Content-graph wp.org readiness** — seller-of-record copy, price note, packaging tri-sync (#6609/#6612/#6619). **Toolkit slash test repair** (#6618). Tool count unchanged: ~303 base + ~1,265 Pro (~1,568 total). Stale 1.1.77 build ZIPs removed. See `docs/project/plans/v1.1.79-docs-catch-up.md`.
 
 - **v1.1.78** (September 12): Slash-command, model-restoration, checkout-hardening & legal-consolidation release. **Slash commands reworked as declarative tool wrappers** — ~76 placeholders purged, 36 commands across 15 toolkits execute through the real tool registry via a new tool adapter (capability gates + canonical envelope live in the tool layer) and a new prompts bridge exposes every command as a `slash.*` MCP prompt template; all 19 built-in workflows re-chained (#6604). **DeepSeek V4 Pro restored** — active again across all tracks ($0.66/$1.98, migration map unmapped); Content Graph AI mirror bumps to catalog v2026.09.10 with corrected v4-pro pricing (#6608). **Checkout hardening** — assets cache-bust by file mtime (`Schema::assetVersion()`, #6598); modal price syncs from the vendor session with a $34.99 fallback default (#6603); minimalist modal restyle (#6597). **Docs Hub 0.4.3 → 0.4.4** — all wp.org review findings fixed, 0 blocking PCP errors (#6606). **Legal consolidation** — unified ToS (#6599), aligned API-LICENSES (#6605), two-entity seller model (NV Digital Unlocked LLC sells; NV Digital Solutions develops, #6607). **Content Graph 1.0.7 released** with wp.org 18-point sign-off (direct commits). Tool count unchanged: ~303 base + ~1,265 Pro (~1,568 total). Stale 1.1.76 build ZIPs removed (30 files). See `docs/project/plans/v1.1.78-docs-catch-up.md`.
 
