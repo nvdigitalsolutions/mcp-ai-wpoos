@@ -202,8 +202,16 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 					<tr>
 						<th><?php esc_html_e( 'JetEngine', 'mcp-ai-wpoos-pro' ); ?></th>
 						<td>
-							<?php if ( function_exists( 'jet_engine' ) ) : ?>
+							<?php
+							// Use the same gate as the sync pipeline so this status can
+							// never contradict the Dry Run / Sync checks.
+							$jetengine_ready = class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' )
+								&& WP_MCP_AI_Shopify_Sync_CCT_Manager::is_jetengine_active();
+							if ( $jetengine_ready ) :
+								?>
 								<span style="color: green;">&#10004; <?php esc_html_e( 'Active', 'mcp-ai-wpoos-pro' ); ?></span>
+							<?php elseif ( function_exists( 'jet_engine' ) ) : ?>
+								<span style="color: orange;">&#9888; <?php esc_html_e( 'Loaded, but version undetectable — update JetEngine so the CCT cache gate can pass.', 'mcp-ai-wpoos-pro' ); ?></span>
 							<?php else : ?>
 								<span style="color: orange;">&#9888; <?php esc_html_e( 'Not Installed — CCT cache requires JetEngine for storage.', 'mcp-ai-wpoos-pro' ); ?></span>
 							<?php endif; ?>
