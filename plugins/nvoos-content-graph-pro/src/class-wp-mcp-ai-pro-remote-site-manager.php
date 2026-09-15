@@ -3393,7 +3393,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 					);
 				}
 			}
-			if ( in_array( $shopify_api_mode, array( 'storefront_catalog', 'global_catalog' ), true ) && ! empty( $connection['shopify_ucp_agent_profile'] ) && ! wp_http_validate_url( $connection['shopify_ucp_agent_profile'] ) ) {
+			// Syntax-check the profile URL only. wp_http_validate_url() also
+			// resolves the host and rejects loopback/private addresses unless the
+			// base plugin's http_request_host_is_external filter is loaded, which
+			// is absent in the standalone addon and makes the check
+			// environment-dependent. Public-reachability policy lives in
+			// sanitize_connection_data() via is_public_https_url().
+			if ( in_array( $shopify_api_mode, array( 'storefront_catalog', 'global_catalog' ), true ) && ! empty( $connection['shopify_ucp_agent_profile'] ) && false === filter_var( $connection['shopify_ucp_agent_profile'], FILTER_VALIDATE_URL ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_invalid_ucp_agent_profile',
 					__( 'The UCP agent profile must be a valid HTTPS URL.', 'nvoos-content-graph-pro' )
