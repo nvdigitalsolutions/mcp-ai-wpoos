@@ -7,7 +7,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.79"
   plugin-version-tested: "1.1.79"
-  last-updated: "2026-09-13"
+  last-updated: "2026-09-15"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -71,6 +71,26 @@ wsl docker compose logs -f wp-plugin-seed
 
 WordPress is at `http://localhost:8000`, admin at `/wp-admin`
 (**admin / password**).
+
+### Design Stack deployment (F:\GITHUB\design-stack)
+
+The environment actually operated day-to-day uses different ports and
+credentials than this repo's dev compose (verified on the live stack,
+2026-09 session):
+
+| Service | Address |
+|---|---|
+| WordPress | `http://localhost:8092` — admin at `/wp-admin` (**admin / design_admin_2026**) |
+| Media worker | `http://localhost:3100` |
+| MySQL | `localhost:3308` |
+
+- The stack mounts the plugin from `design-stack/plugins/mcp-ai-wpoos` — an
+  NTFS junction to the plugin repo — so code edits land in this repo.
+- `design-stack/.agents/skills/design-*` and `mcp-ai-wpoos-plugin` are
+  junctions into this repo's `.agents/skills/` (creation script:
+  `bin/create-skill-junctions.ps1`), so skill edits ship in the same PR as
+  plugin code.
+- `wp` inside the Design Stack WP container requires `--allow-root`.
 
 ### 2. API Key Auto-Detection (v1.1.47+)
 
@@ -225,6 +245,46 @@ echo "Token: $token\n";
 **Key insight:** If `_wp_mcp_ai_tools` post meta is empty, the MCP `tools/list`
 returns `[]` even though hundreds of tools are registered at the system level.
 Always assign tools after creating an assistant.
+
+### WP-CLI provisioning (preferred — verified end-to-end)
+
+The PHP path above works, but the WP-CLI path is shorter and idempotent.
+Verified on the Design Stack (2026-09):
+
+```bash
+# 0. In the Design Stack WP container, wp requires --allow-root.
+#    (In this repo's own compose: docker compose run --rm wp-cli ...)
+
+# 1. Discover valid tool slugs before assigning.
+wp mcp-ai tool list               # base registry: slug + enabled + capability
+wp mcp-ai toolkit list            # Pro toolkit settings keys
+
+# 2. Create the assistant record.
+wp mcp-ai assistant create --title="Brand Assistant" --status=publish --porcelain
+# → prints the new assistant ID
+
+# 3. Set runtime meta. NOTE: assistant create/update --model / --system-prompt
+#    write legacy mcp_ai_model / mcp_ai_system_prompt keys that the runtime
+#    does NOT read. The runtime reads _wp_mcp_ai_* — set those explicitly.
+wp post meta update <id> _wp_mcp_ai_provider openai
+wp post meta update <id> _wp_mcp_ai_model gpt-4o-mini
+wp post meta update <id> _wp_mcp_ai_temperature 0.7
+wp post meta update <id> _wp_mcp_ai_system_prompt "$(cat assistant-system-prompt.md)"
+wp post meta update <id> _wp_mcp_ai_classification internal
+wp post meta update <id> mcp_ai_required_capability manage_options
+# Tools is a serialized PHP array; wp post meta update would store a string,
+# so use wp eval for that one key:
+wp eval 'update_post_meta(<id>, "_wp_mcp_ai_tools", array("web_search", "deep_research", "create_post"));'
+
+# 4. Issue the credential (prints cred_xxxxx.SECRET exactly once).
+wp mcp-ai credential issue <id> --porcelain
+
+# 5. Smoke test (chat REST is the reliable verification path).
+curl -s -X POST http://localhost:8092/wp-json/mcp-ai/v1/chat \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"assistant_id": <id>, "messages": [{"role":"user","content":"Reply with exactly: OK"}]}'
+```
 
 ---
 
@@ -1187,6 +1247,15 @@ releases page" with everything seemingly configured correctly.
 |----------|------|---------|
 | `_wp_mcp_ai_tools` | `array` of strings | Tool slugs assigned to the assistant |
 | `_wp_mcp_ai_credentials` | `array` of credential records | Issued tokens (hashed) with creation/expiry metadata |
+| `_wp_mcp_ai_provider` | `string` | Provider slug (`openai`, `gemini`, `anthropic`, `deepseek`, `ollama`, …) |
+| `_wp_mcp_ai_model` | `string` | Model identifier (`gpt-4o-mini`, `gemini-2.5-flash`, …) |
+| `_wp_mcp_ai_system_prompt` | `string` | Assistant persona / system prompt |
+| `_wp_mcp_ai_temperature` | `float` | Sampling temperature |
+| `_wp_mcp_ai_classification` | `string` | Information label; defaults to `internal` |
+| `mcp_ai_required_capability` | `string` | Capability gate for tool calls — **no `_wp_` prefix** (`manage_options`, `edit_posts`) |
+| `_wp_mcp_ai_vector_store_id` | `string` | OpenAI vector store for RAG |
+| `_wp_mcp_ai_memory_files` | `array` | Memory file attachment IDs |
+| `_wp_mcp_ai_harness_profile` | `array` (JSON) | Agent-harness profile (memory summary etc.) |
 
 ### Toolkit Categories (12 Built-In)
 
@@ -1360,6 +1429,30 @@ errors instead of resets.
 Python `urllib`); long synchronous tool calls exceed the ~100s proxy cutoff.
 **Fix:** use curl/browser-like user agents for probes, and prefer v1.1.55+
 where long tools are bounded or delivered out-of-band (SSE message queue).
+
+### `wp mcp-ai provider list` / `wp mcp-ai chat` fatal (PHP 8, fixed in #6625)
+
+Both commands fataled with a PHP 8 error on builds before the CLI fix:
+`provider list` goes through `WP_MCP_AI_CLI_Base_Command::format_output()`,
+which passed an inline array literal to `WP_CLI\Formatter`'s by-reference
+constructor (a fatal on every command using the base class), and `chat`
+constructed the language model router with zero arguments. **Fixed in #6625**
+(merged to alpha-working; ships after v1.1.79). On older builds:
+
+- Provider config status → NV oOS settings page; connectivity →
+  `wp mcp-ai provider test <slug>`.
+- Chat → the REST smoke test instead:
+  `POST /wp-json/mcp-ai/v1/chat` with `assistant_id` + `messages`
+  (see the provisioning recipe above).
+
+### `wp mcp-ai assistant create --model=…` has no runtime effect
+
+`assistant create|update --model` / `--system-prompt` write legacy
+`mcp_ai_model` / `mcp_ai_system_prompt` meta keys, while the chat runtime
+reads `_wp_mcp_ai_model` / `_wp_mcp_ai_system_prompt` — the flags are
+currently cosmetic. Set the `_wp_mcp_ai_*` keys via `wp post meta update`
+(or `wp eval` for the tools array) after creation. `assistant list|get`
+read the legacy keys too, so treat their model column as unreliable.
 
 ---
 
