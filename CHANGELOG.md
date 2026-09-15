@@ -2,6 +2,15 @@
 
 ## [1.1.79] - 2026-09-13
 
+### Fixed — WP-CLI Formatter By-Reference Fatal & Chat Router Construction
+
+- **`wp mcp-ai provider list` (and every command using the base `format_output()`) no longer fatals on PHP 8+** — the shared formatter passed an inline array literal to `WP_CLI\Formatter::__construct()`, whose first parameter is by-reference, which PHP 8 rejects with a fatal `Argument #1 ($assoc_args) could not be passed by reference`. The base command now uses the by-value `WP_CLI\Utils\format_items()` helper already used across the CLI surface, and derives display fields from the first row when a command does not pass an explicit field list (matching the legacy Formatter default-field behaviour).
+- **`wp mcp-ai chat` no longer fatals on router construction** — the command instantiated `WP_MCP_AI_Language_Model_Router` with zero arguments while its constructor requires at least the OpenAI and Gemini clients. A new `get_model_router()` resolver prefers the DI container's `router` service and falls back to direct construction with the three minimum clients (the same pattern as the REST controller fallback).
+
+### Changed — `wp mcp-ai chat --stream` Now Streams (same PR)
+
+- The `--stream` flag now actually streams instead of printing one buffered blob. When cURL is available and the resolved provider implements the raw-cURL SSE path (openai, deepseek, openrouter, lm_studio, digitalocean, kimi, baseten, nvidia, huggingface), tokens are forwarded to the terminal as they arrive via a `stream_callback`. Otherwise the response is printed in simulated 50-character chunks with a 10ms pause — the same fallback the legacy browser chat uses. Both paths respect the shared `wp_mcp_ai_disable_native_streaming` / `wp_mcp_ai_native_streaming_providers` filters, and `stream: true` is only sent when the real-time callback is active (provider clients buffer SSE bodies through `wp_remote_post()`, whose JSON parsers cannot decode a streamed payload).
+
 ### Fixed — Imaging Study Deletion Hardened Against Symlink Traversal (PR #6616)
 
 - Both recursive study-deletion paths now handle symlinks **link-first** — a link is removed as a link and never followed, so a symlinked directory can no longer cause its target's contents to be deleted (the privacy eraser) or block study removal. Every iterator entry is additionally `realpath()`-verified against the storage root before `unlink`/`rmdir`, `is_path_within_storage()` now requires a directory-boundary match (sibling-prefix directories no longer pass), and new audit events (`study_delete_link_failed`, `study_delete_outside_storage_blocked`) record blocked removals. The `nvoos-content-graph-pro` port patches the same two files byte-identically per the Wave F port rules.
