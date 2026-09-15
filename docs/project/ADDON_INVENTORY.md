@@ -1,7 +1,7 @@
 # Addon Inventory
 
 > **Purpose:** One-stop reference for every addon in this monorepo — its status, version, license, dependencies, and whether it's production-ready.
-> **Last Updated:** September 13, 2026 (v1.1.79)
+> **Last Updated:** September 15, 2026 (v1.1.80)
 
 ---
 
