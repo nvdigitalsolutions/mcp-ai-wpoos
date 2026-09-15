@@ -395,9 +395,10 @@ abstract class WP_MCP_AI_CLI_Base_Command extends WP_CLI_Command {
 	/**
 	 * Format data for output.
 	 *
-	 * @param mixed  $data   Data to format.
+	 * @param mixed  $data   Data to format (a list of associative rows).
 	 * @param string $format Output format (table, json, yaml, csv).
-	 * @param array  $fields Fields to include in output.
+	 * @param array  $fields Fields to include in output. When empty, fields
+	 *                       are derived from the first row's keys.
 	 * @return void
 	 */
 	protected function format_output( $data, $format = 'table', $fields = array() ) {
@@ -406,14 +407,16 @@ abstract class WP_MCP_AI_CLI_Base_Command extends WP_CLI_Command {
 			return;
 		}
 
-		$formatter = new WP_CLI\Formatter(
-			array(
-				'format' => $format,
-				'fields' => $fields,
-			)
-		);
+		// Derive display fields from the first row when none were requested,
+		// matching the legacy WP_CLI\Formatter default-field behaviour.
+		if ( empty( $fields ) ) {
+			$first = is_array( $data ) ? reset( $data ) : null;
+			if ( is_array( $first ) ) {
+				$fields = array_keys( $first );
+			}
+		}
 
-		$formatter->display_items( $data );
+		WP_CLI\Utils\format_items( $format, $data, $fields );
 	}
 
 	/**

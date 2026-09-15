@@ -128,7 +128,7 @@ class WP_MCP_AI_CLI_Chat_Command extends WP_MCP_AI_CLI_Base_Command {
 			$this->error( __( 'Language model router not available.', 'mcp-ai-wpoos' ) );
 		}
 
-		$router = new WP_MCP_AI_Language_Model_Router();
+		$router = $this->get_model_router();
 
 		WP_CLI::log(
 			sprintf(
@@ -297,6 +297,29 @@ class WP_MCP_AI_CLI_Chat_Command extends WP_MCP_AI_CLI_Base_Command {
 
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		return absint( $settings['default_assistant'] ?? 0 );
+	}
+
+	/**
+	 * Get the language model router.
+	 *
+	 * Prefers the DI container; falls back to direct construction with the
+	 * minimum required clients (same pattern as the REST fallback).
+	 *
+	 * @return WP_MCP_AI_Language_Model_Router
+	 */
+	private function get_model_router() {
+		if ( function_exists( 'wp_mcp_ai_container' ) ) {
+			$container = wp_mcp_ai_container();
+			if ( $container && $container->has( 'router' ) ) {
+				return $container->get( 'router' );
+			}
+		}
+
+		return new WP_MCP_AI_Language_Model_Router(
+			new WP_MCP_AI_OpenAI_Client(),
+			new WP_MCP_AI_Gemini_Client(),
+			new WP_MCP_AI_Ollama_Client()
+		);
 	}
 }
 
