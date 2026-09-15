@@ -11,10 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.79
-**Release Date:** 2026-09-13
+**Version:** 1.1.80
+**Release Date:** 2026-09-15
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
+
+**🆕 v1.1.80 Highlights:** A portability, Shopify-catalog, and security-operations release. **Assistants are now portable** — export/import a versioned `nvoos-assistant` JSON bundle from WP-CLI, REST, the admin Import/Export page, or AI tools (`export_assistant`/`import_assistant`/`duplicate_assistant`, plus the Pro `export_assistant_blueprint`), with credential hashes never exported and stripped from imports. **Shopify's deprecated REST Catalog is replaced** by two keyless UCP modes — Storefront and Global Catalog — on both the Pro addon and Content Graph Pro. **The Security Center gains a Usage Monitor sub-tab** with a severity-tiered violation triage log, editable monitor config, and REST clear actions, and the admin notice now deep-links to it. **WP-CLI is repaired and streams** — `provider list`/`chat` no longer fatal on PHP 8+, and `chat --stream` streams token-by-token. **Shopify Catalog 401s and the JetEngine sync gate are fixed**, and **the OKF editor keeps its context on save**. Tool count: ~306 base + ~1,266 Pro (~1,572 total). Stale 1.1.78 build ZIPs removed.
 
 **🆕 v1.1.79 Highlights:** A security, checkout, and sub-project release. **Imaging study deletion is hardened against symlink traversal** — links are removed as links and never followed, every entry is realpath-verified against the storage root, and blocked removals are audit-logged (the Content Graph Pro port ships the same patch byte-identically). **Content Graph 1.0.8 fixes checkout for everyone** — non-EU buyers no longer hit a Stripe IntegrationError, and already-licensed sites can no longer be charged twice (the modal shows the recorded license instead of a payment form). **The vendor checkout API gains buyer license emails** (once per license, from both issuance paths) and fixes two live-checkout bugs: the statement-descriptor rejection that failed every `/session` call, and product/price creation after switching Stripe accounts. **Docs Hub ships 0.4.6** for its wp.org re-upload (PCP 0 blocking errors). Tool count unchanged: ~303 base + ~1,265 Pro (~1,568 total). Stale 1.1.77 build ZIPs removed.
 
@@ -126,7 +128,7 @@
 | `lib/core/` | Framework-agnostic AI orchestration engine (nvoos/core): 32 domain contracts, 21 WordPress adapters, ChatOrchestrator, ProviderRouter, ToolRegistry, SkillRegistry — PHP 8.1+ |
 | `addons/` | 27 installable addons (Pro, Chat SPA, Docs Hub, SaaS Controller, Cloud Worker, Cloudways Dashboard, Toolkit Shell, Canvas, Canvas Toolkit, Document Editor, Media Studio, Media Worker, Graphify, Comic Reader, Funiq Bridge, Fleet Operator, Algorave, Cornerstone3D, Crocoblock DS, Embedded, Fantasy Football, LibreChat, Schedule Anything Platform, Schedule Anything SPA, Tenant Router, Page Agent, Checkout API) |
 | `assets/` | Frontend JS/CSS, images, CSV templates, examples |
-| `.agents/skills/` | 56 coding-time agent skills for Zed editor (20 wp-* WordPress plugin development patterns + 31 design-* skills + mcp-ai-wpoos-plugin operational guide + mcp-ai-wpoos-test-suite repair guide + mcp-ai-wpoos-updates maintenance guide + mcp-ai-wpoos-wporg-submission wp.org readiness guide + mcp-ai-wpoos-ecosystem-port port-loop guide) |
+| `.agents/skills/` | 58 coding-time agent skills for Zed editor (20 wp-* WordPress plugin development patterns + 32 design-* skills + mcp-ai-wpoos-plugin operational guide + mcp-ai-wpoos-test-suite repair guide + mcp-ai-wpoos-updates maintenance guide + mcp-ai-wpoos-wporg-submission wp.org readiness guide + mcp-ai-wpoos-ecosystem-port port-loop guide + mcp-ai-wpoos-assistant-portability export/import guide) |
 | `.bmad/` | 6 BMAD workflow agent YAML definitions + team composition config |
 | `.context/` | Subsystem context files (10 topics + 5 templates) for agent session loading |
 | `plugins/` | Standalone plugins: NVOOS Content Graph, NVOOS Content Graph AI, NVOOS Content Graph AI Platform |
@@ -150,6 +152,15 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit / Harness for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, Hugging Face, and Flowhub.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.80)
+
+- 📦 **Assistant Export/Import Across All Surfaces (PR #6628).** A canonical `WP_MCP_AI_Assistant_Portability` engine powers a versioned `nvoos-assistant` JSON bundle (format_version 1) from every interface: WP-CLI `assistant export|import` (rewritten; legacy files still import, and the old export's loss of `_wp_mcp_ai_*` config is fixed), REST `POST /mcp-ai/v1/assistants/export|import` (admin-only, schema-validated, 2 MB cap, dry-run), admin row/bulk actions + Import/Export page (skip/overwrite/duplicate), and **3 new base tools** (`export_assistant`, `import_assistant`, `duplicate_assistant`) + a **Pro blueprint export tool**. Credential hashes are never exported and stripped from imports (the backup provider now shares the same denylist — previously it included credential hashes). 34 new tests + 105 regression tests green on WP 6.9/7.1.
+- 🛡️ **Security Center Usage Monitor Sub-Tab (PR #6632).** The cryptic violation notice deep-links to a new `usage_monitor` sub-tab rendering the severity-tiered triage log (latest 50 of 100), monitor status cards, emergency-shutdown recovery, and editable monitor config. Clear actions run over new REST routes (`POST /mcp-ai/v1/security/clear-violations` + `/clear-shutdown`, `manage_options` + nonce). Bug fixes: unrelated settings saves no longer silently disable the monitor, and malformed admin-edited patterns are dropped/skipped instead of warning. 80 tests / 435 assertions green.
+- 🛍️ **Shopify Storefront & Global Catalog UCP Modes (PRs #6624, #6630).** Two keyless UCP MCP connection modes replace the deprecated REST Catalog API: per-merchant Storefront Catalog and cross-merchant Global Catalog (`catalog.shopify.com`), both with `tools/list` handshakes, CCT-sync rejection, and a public `/wp-json/mcp-ai/v1/ucp/agent-profile` capability route. CG Pro parity restored (Shop Domain input fix + the Catalog 401 cluster) — byte-identical ports. Catalog 401s themselves are fixed in #6623 (60-min token cap, scope validation, 401 purge-and-retry) along with the JetEngine sync-gate mismatch in System Status.
+- 💻 **WP-CLI Repaired & Streaming (PRs #6625, #6626).** `wp mcp-ai provider list` and every base-class command no longer fatal on PHP 8+ (by-reference Formatter constructor → by-value `format_items()`), `wp mcp-ai chat` no longer fatals on router construction, and `--stream` now streams token-by-token (native cURL SSE for the nine raw-SSE providers, simulated chunking elsewhere, both honoring the shared streaming filters).
+- 🟢 **WhatsApp Webhook Self-Tests + OKF Editor Context (PRs #6622, #6631).** Remote Sites connections gain three webhook checks (verification replay, HMAC-SHA256 signature validation, `subscribed_apps` shadow-delivery check), CG Pro re-synced byte-identical. The OKF Bundle Manager editor keeps its tab/bundle/concept context on save instead of bouncing to the Bundles tab.
+- 📚 **Skills & Docs (PRs #6621, #6627, #6629).** Docs Hub code-block/heading-anchor color fixes (0.4.6 track, no bump); `design-ai-assistant-admin` rewritten to the code-verified surface plus the new `design-brand-assistant-provisioning` skill; the brand-provisioning template's 67 WPCS violations fixed.
 
 ### ✨ What's New at a Glance (v1.1.79)
 
@@ -666,9 +677,9 @@ Real-time AI Orchestration Toolkit / Harness for Wordpress - **NV oOS** is a mod
 
 See the complete [External Services Reference](docs/reference/EXTERNAL_SERVICES.md) for all 20 services.  
 
-The plugin works standalone with **~303 base tools** and optionally extends through the **Pro addon**, which adds **~1,265 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services — including Google Calendar and the new Gmail/Drive read tools — Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization, Cloudways server management, CRM lead/deal/customer lifecycle, support ticket management, multichannel inbound/outbound messaging, Composio Connect, vision analysis object counting) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **~1,568 built-in tools** (~303 base + ~1,265 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+The plugin works standalone with **~306 base tools** and optionally extends through the **Pro addon**, which adds **~1,266 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services — including Google Calendar and the new Gmail/Drive read tools — Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization, Cloudways server management, CRM lead/deal/customer lifecycle, support ticket management, multichannel inbound/outbound messaging, Composio Connect, vision analysis object counting) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **~1,572 built-in tools** (~306 base + ~1,266 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
 
-> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (~303 tools) works standalone. The full version requires the Pro addon and provides ~1,568 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, Cloudways infrastructure management, CRM lead/deal/customer lifecycle + support tickets + multichannel, MCP Apps, Composio Connect, vision analysis, and more. Live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative.
+> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (~306 tools) works standalone. The full version requires the Pro addon and provides ~1,572 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, Cloudways infrastructure management, CRM lead/deal/customer lifecycle + support tickets + multichannel, MCP Apps, Composio Connect, vision analysis, and more. Live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative.
 
 **Addon Ecosystem:** NV oOS ships a growing family of 27 installable addons: **Pro** (`addons/pro/` — ~1,247 additional tools), **Chat SPA** (`addons/chat-spa/` — React chat replacement), **Docs Hub** (`addons/docs-hub/` — in-site documentation SPA), **SaaS Controller** + **Cloud Worker** (`addons/saas-controller/` + `addons/cloud-worker/` — NV oOS Cloud control plane), **Cloudways Dashboard** (`addons/cloudways-dashboard/` — Cloudways server management), **Toolkit Shell / Canvas / Canvas Toolkit / Document Editor / Media Studio** (`addons/toolkit-shell/` etc. — Toolkit SPA Blueprint Tier A–D), **Media Worker** (`addons/media-worker/` — Docker-based Node.js media sidecar, v3.2.0: multi-tenant shared worker mode, per-site provider keys, worker routing with local fallbacks, native `/api/crawl/*` endpoints + Crawl4AI facade), **Graphify** (`addons/graphify/` — knowledge graph), **Comic Reader** (`addons/comic-reader/` — CBR/CBZ/CB7/CBT reader), **Funiq Bridge** (`addons/funiq-bridge/` — Payload-to-WordPress bridge with React SPA), **Fleet Operator** (`addons/fleet-operator/` — scoped `op_` operator credentials for MCP/A2A supervisor agents like Hermes), **LibreChat** (`addons/librechat/` — code interpreter, speech, web search reranker), **Schedule Anything Platform + SPA** (`addons/schedule-anything-platform/` + `addons/schedule-anything-spa/` — SaaS booking with Stripe), **Tenant Router** (`addons/tenant-router/` — multi-tenant routing), **Page Agent** (`addons/page-agent/` — AI-powered browser page control copilot), **Checkout API** (`addons/checkout-api/` — vendor-side Stripe checkout/licensing service for premium addons), **Algorave**, **Cornerstone3D**, **Crocoblock DS**, **Embedded**, **Fantasy Football**. Separate standalone plugins: **NVOOS Content Graph** (`plugins/nvoos-content-graph/` — visual knowledge graph), **NVOOS Content Graph AI** (`plugins/nvoos-content-graph-ai/` — AI providers + chat + RAG), **NVOOS Content Graph AI Platform** (`plugins/nvoos-content-graph-ai-platform/` — agents, A2A, blueprints, skills). See [`docs/developer/addons/toolkit-spa-blueprint.md`](docs/developer/addons/toolkit-spa-blueprint.md) for the blueprint all SPA addons follow.
 
@@ -738,7 +749,7 @@ The orchestration layer makes NV oOS unique in the WordPress ecosystem by solvin
 NV oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
 
 - **15 language-model providers** — OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, Hugging Face, Flowhub
-- **~1,568 tool classes** (~303 base + ~1,265 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) registered through a singleton Tool Registry
+- **~1,572 tool classes** (~306 base + ~1,266 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) registered through a singleton Tool Registry
 - **36 REST controllers** (16 base + 20 pro) under the `mcp-ai/v1` namespace
 - **64 service classes** powering orchestration, budgets, and workflows
 - **5 authentication methods** — WordPress nonce, assistant credentials, mesh keys, Auth0 JWT, guest tokens
@@ -859,6 +870,18 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
+
+## 🆕 Latest Updates (v1.1.80 — September 2026)
+
+### September 15, 2026 — Assistant Portability, Shopify UCP Catalog, Security Usage Monitor, WP-CLI Repair
+
+- 📦 **Assistant Export/Import Everywhere — PR #6628.** One engine, every surface: WP-CLI (`export|import`, legacy-compatible), REST (`POST /mcp-ai/v1/assistants/export|import`), an admin Import/Export page, and tools (`export_assistant`, `import_assistant`, `duplicate_assistant`, Pro `export_assistant_blueprint`). Credential hashes never leave the site and are stripped on import. Bundle spec: [`docs/assistant-import-export.md`](docs/assistant-import-export.md); skill: `.agents/skills/mcp-ai-wpoos-assistant-portability/`.
+- 🛡️ **Security Center Usage Monitor — PR #6632.** New `usage_monitor` sub-tab: triage log, status cards, shutdown recovery, editable config, REST clear routes; the admin notice deep-links and shows the latest violation. Monitor sanitize-clobber bug fixed; malformed patterns hardened.
+- 🛍️ **Shopify Catalog Trilogy — PRs #6623, #6624, #6630.** REST Catalog 401s fixed (60-min token cap, scope validation, purge-and-retry) and the JetEngine sync gate unified with System Status; two keyless UCP modes (Storefront + Global Catalog) replace the deprecated REST API on Pro and CG Pro, with the public UCP agent-profile route and byte-identical ports.
+- 💻 **WP-CLI Repairs + Streaming — PRs #6625, #6626.** PHP 8+ fatals gone from `provider list`/`chat` and every base-class command; `chat --stream` streams natively (cURL SSE) or simulates chunks, honoring the shared streaming filters. Live-validated in the Design Stack.
+- 🟢 **Remote Sites & OKF — PRs #6622, #6631.** WhatsApp webhook self-tests (verification/signature/subscription) on the connection edit form; OKF editor saves keep their bundle/concept context.
+- 📚 **Skills — PRs #6621, #6627, #6629.** Docs Hub syntax/anchor color fixes; agent skills corrected to the verified plugin surface; new `design-brand-assistant-provisioning` skill; brand template phpcs-clean.
+- 📦 **Versioning** — bumped to **1.1.80** across all version-bearing files. Pro addon: 1.1.80. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.8** (unchanged). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — byte-identical port patches only). Checkout API: **0.1.2** (unchanged). Docs Hub addon: **0.4.6** (unchanged — CSS fix, no bump). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.09.10** (unchanged — no model PRs in-window). Tool count: **~306 base + ~1,266 Pro (~1,572 total)**; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative — +3 base +1 Pro from #6628). Provider count: **15**. Addon count: **27**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **58** (new `design-brand-assistant-provisioning` + `mcp-ai-wpoos-assistant-portability`). Stale 1.1.78 build ZIPs removed (30 files).
 
 ## 🆕 Latest Updates (v1.1.79 — September 2026)
 
@@ -2125,11 +2148,11 @@ The script mirrors the exclusion list in `.distignore` (used for the WordPress.o
 #### Final Steps
 
 1. Activate **Open Operator System Complete (NV oOS)** from WordPress admin
-2. You now have the **complete version** with all ~1,568 tools (~303 base + ~1,265 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+2. You now have the **complete version** with all ~1,572 tools (~306 base + ~1,266 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 **What you get from the repository clone:**
 
-- ✅ The full codebase — all ~1,568 built-in tools ready to use (~303 base + ~1,265 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- ✅ The full codebase — all ~1,572 built-in tools ready to use (~306 base + ~1,266 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - ✅ Single plugin activation (not separate base + pro)
 - ✅ Pro features automatically available (no separate Pro plugin to install)
 
@@ -2358,12 +2381,12 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 ### 📖 Documentation Hub
 - **[Documentation Hub](docs/README.md)** ⭐ **Start here** - Central navigation with organized categories
 - **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 1,600+ documentation files
-- **[Architecture Overview](docs/developer/architecture/ARCHITECTURE.md)** - System architecture (15 providers, ~1,568 tool classes, 36 REST controllers)
+- **[Architecture Overview](docs/developer/architecture/ARCHITECTURE.md)** - System architecture (15 providers, ~1,572 tool classes, 36 REST controllers)
 - **[Request Flow Walkthrough](docs/developer/architecture/REQUEST-FLOW-WALKTHROUGH.md)** - End-to-end chat request lifecycle trace
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
 
 ### Essential References
-- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~1,568 tools documented (~303 base + ~1,265 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~1,572 tools documented (~306 base + ~1,266 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **[REST API Documentation](docs/reference/api/rest-api.md)** - Complete API reference with examples
 - **[Testing & Quality Report](docs/developer/testing-docs/TESTING_AND_QUALITY_REPORT.md)** - Test results and code quality analysis
 

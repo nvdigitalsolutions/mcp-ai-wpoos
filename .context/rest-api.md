@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: September 13, 2026 (v1.1.79).
+> Last reviewed: September 15, 2026 (v1.1.80).
+>
+> **New in v1.1.80:** four new base REST routes and one new Pro route. Base: `POST /mcp-ai/v1/assistants/export` + `POST /mcp-ai/v1/assistants/import` (PR #6628 — admin-only, nonce/bearer auth, schema-validated args, 2 MB payload cap, dry-run preview; the canonical `nvoos-assistant` bundle engine powers them) and `POST /mcp-ai/v1/security/clear-violations` + `POST /mcp-ai/v1/security/clear-shutdown` (PR #6632 — `manage_options` + cookie-auth nonce, matching the Security Center controller patterns; legacy `admin_post` handlers remain as fallbacks). Pro: `GET /wp-json/mcp-ai/v1/ucp/agent-profile` (PRs #6624/#6630 — public by design, serves the site's UCP platform profile, no secrets; booted from the Pro main file monolith and `Plugin::register()` standalone).
 >
 > **New in v1.1.79 (no base REST changes):** no base REST surface changed this window — #6616 hardens the existing Pro imaging study-deletion endpoint (link-first symlink removal + realpath containment; same route contract), #6618 is test-only, and #6609/#6612/#6619 are sub-project docs/packaging. Sub-project: Content Graph **1.0.8** — `/payments/session` now returns `already_licensed` instead of a chargeable session when the site is already licensed + active (route semantics tightened, shape unchanged; the modal renders the recorded license); Checkout API **0.1.2** — vendor-side `statement_descriptor_suffix` (PR #6613) and once-per-license buyer emails (same `/session` + webhook + `/verify` contract; emailing is vendor-side).
 >

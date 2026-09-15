@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > This file is loaded every turn by Claude Code. Keep it focused and actionable.
-> Last reviewed: **September 13, 2026** · Version: **2.32**
+> Last reviewed: **September 15, 2026** · Version: **2.33**
 
 ### Related Files
 
@@ -17,7 +17,7 @@
 
 ## What This Is
 
-NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,568 tools (~303 base + ~1,265 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), **33 per-toolkit MCP JSON-RPC servers** (including Phase 8: Pro Scheduler, FlowHub, Shopify Sync, EZuite), **OAuth 2.0 MCP authentication** (PKCE, hierarchical scopes, browser-based login), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, Layer J Necessity Gate (irreversibility-weighted safety profiles), and Server-Sent Events streaming.
+NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,572 tools (~306 base + ~1,266 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), **33 per-toolkit MCP JSON-RPC servers** (including Phase 8: Pro Scheduler, FlowHub, Shopify Sync, EZuite), **OAuth 2.0 MCP authentication** (PKCE, hierarchical scopes, browser-based login), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, Layer J Necessity Gate (irreversibility-weighted safety profiles), and Server-Sent Events streaming.
 
 ## PHP Compatibility — Critical
 
@@ -50,11 +50,11 @@ includes/
 ├── bootstrap/                          ← Boot: constants → autoload → hooks → loader
 ├── class-wp-mcp-ai-plugin.php          ← Main singleton + DI container
 ├── class-wp-mcp-ai-rest.php            ← Core REST API + agentic loop
-├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,568 tools total; live count is authoritative)
+├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,572 tools total; live count is authoritative)
 ├── class-wp-mcp-ai-transcript-retention.php ← Chat transcript retention (base)
 ├── rest/                                ← REST controllers incl. class-wp-mcp-ai-sse-session-store.php (legacy MCP HTTP+SSE session store, v1.1.55)
 ├── security/                           ← Security infrastructure (7 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store)
-├── tools/                              ← base tool implementations (~303 classes; live count is authoritative)
+├── tools/                              ← base tool implementations (~306 classes; live count is authoritative)
 │   ├── okf/                            ← OKF knowledge tools (10 tools)
 ├── services/                           ← 30+ service classes
 ├── admin/                              ← WordPress admin UI
@@ -186,7 +186,7 @@ The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WP
 
 - **Base:** Core WordPress functionality, no third-party APIs, useful to any site
 - **Pro:** Paid APIs (Shopify, Upwork), optional plugins (JetEngine, WooCommerce), healthcare, enterprise
-- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~303 base tool classes) or `false` (~1,568 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~306 base tool classes) or `false` (~1,572 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **Guard:** `if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) { /* pro code */ }`
 
 ## Key Architecture Patterns
@@ -452,6 +452,11 @@ Seven security infrastructure classes in `includes/security/` that operate acros
 - **Rate limiter + chat hooks** (v1.1.69, PR #6265) — `check_rate_limit()` classifies internal dispatches by their real HTTP verb; the nefarious monitor keeps its own namespaced counter; `wp_mcp_ai_before_chat_request` subscribers tolerate the legacy 2-arg emitter shape.
 - **Misc production fixes** (v1.1.69) — shortcut-task `Throwable` containment on the assistant edit screen (#6271); model-catalog fixes: `gpt-4o` 128k, `gemini-2.0-flash` video-capable, `claude-sonnet-4-6`/`gpt-4o` active, two Qwen entries (#6274); settings save restores cache-addition suspension correctly (read state before suspending — WP 7.1 inline-async tick locks, #6277).
 - **Fourth PHPUnit repair wave** (v1.1.69, PRs #6260/#6262–#6276) — ~9 test-only PRs; the `mcp-ai-wpoos-test-suite` skill grew to **37** patterns (#6265).
+- **Assistant export/import across all surfaces** (v1.1.80, PR #6628) — canonical `WP_MCP_AI_Assistant_Portability` engine (`includes/assistants/`) with a versioned `nvoos-assistant` JSON bundle (format_version 1): WP-CLI `assistant export|import` rewritten (legacy files still import; old export lost `_wp_mcp_ai_*` config — fixed), REST `POST /mcp-ai/v1/assistants/export|import` (admin-only, schema-validated, 2 MB cap, dry-run), admin row/bulk actions + Import/Export page, and 3 new base tools (`export_assistant`, `import_assistant`, `duplicate_assistant`) + Pro `export_assistant_blueprint`. Credential hashes never exported, stripped from imports (filterable denylist); the backup export provider now shares the denylist (previously included credential hashes). Import matching slug-first then title; overwrite replaces plugin-owned meta only. Tool counts **+3 base, +1 Pro → ~306 base + ~1,266 Pro, ~1,572 total**. New skill `mcp-ai-wpoos-assistant-portability`; CG port cluster = tracker row D-UI-7.
+- **Security Center Usage Monitor sub-tab** (v1.1.80, PR #6632) — sixth Security sub-tab (`usage_monitor`) renders the severity-tiered violation triage log (latest 50 of 100), status cards, shutdown recovery, and editable monitor config; the admin notice deep-links to it and shows the latest violation type/message; `POST /mcp-ai/v1/security/clear-violations` + `/clear-shutdown` (`manage_options` + nonce); `sanitize_monitor_settings()` now updates submitted keys only (unrelated saves no longer disable the monitor); malformed patterns dropped at sanitize + skipped at scan. Shared `get_violation_type_label()`/`get_violation_severity()` helpers.
+- **Shopify UCP modes + catalog fixes** (v1.1.80, PRs #6623/#6624/#6630) — keyless Storefront + Global Catalog UCP connection modes replace the deprecated REST Catalog API on Pro + CG Pro (byte-identical ports; `tools/list` handshake, CCT sync rejected, public `/ucp/agent-profile` route); REST catalog 401s fixed (60-min token TTL cap, scope validation, 401 purge-and-retry, save-handler invalidation); `is_jetengine_active()` unifies the sync gate and the System Status row. WhatsApp webhook self-tests on Remote Sites (#6622, CG Pro re-sync).
+- **WP-CLI repairs + streaming** (v1.1.80, PRs #6625/#6626) — `format_output()` no longer passes an inline array to the by-reference `Formatter` constructor (PHP 8 fatal on every base-class command); `chat` uses a new `get_model_router()` resolver; `--stream` streams natively (cURL SSE for the nine raw-SSE providers) or simulates chunks, honoring the shared streaming filters. OKF editor keeps its bundle/concept context on save (#6631).
+- **Skills** (v1.1.80, PRs #6627/#6629) — `design-ai-assistant-admin` rewritten to the code-verified surface; new `design-brand-assistant-provisioning` skill; brand template WPCS-clean; docs-hub syntax/anchor color fixes (#6621). Coding-time skill count **57 → 58** (bookkeeping folded in this release).
 - **Imaging study-deletion symlink hardening** (v1.1.79, PR #6616) — both recursive deletion paths (`delete_study()` + the privacy eraser) remove symlinks **link-first** and never follow them, so a planted link can no longer cause its target's contents to be deleted or block study removal; every iterator entry is `realpath()`-verified against the storage root, `is_path_within_storage()` requires a directory-boundary match, and blocked removals fire `study_delete_link_failed` / `study_delete_outside_storage_blocked` audit events. `nvoos-content-graph-pro` ships the same two files byte-identically (Wave F port rules).
 - **Checkout hardening tail + sub-project bumps** (v1.1.79, PRs #6609–#6619 + in-session) — checkout-api `statement_descriptor_suffix` fixes the 424 that failed every live `/session` (#6613) and the create-product action verifies stored Stripe IDs against the current key (account-switch fix, #6611); **Content Graph 1.0.8** moves the Payment Element billing-address mode `never` → `auto` (non-EU purchases no longer die with `IntegrationError`) and `/payments/session` returns `already_licensed` instead of a chargeable session for licensed sites (no double charges); **Checkout API 0.1.2** emails buyers their license once per license from both issuance paths (`email_sent_at` DB v4 → v5). **Docs Hub 0.4.5 → 0.4.6** (#6615/#6617) — second wp.org reviewer pass (external-services disclosure, symlinked cache-dir uninstall guard) + full 18-guideline pass (bundled GPLv3 license), PCP 0 blocking errors. Content-graph wp.org readiness copy + packaging tri-sync (#6609/#6612/#6619). Toolkit slash test repair (test-only, #6618). Tool counts unchanged (~303 base + ~1,265 Pro, ~1,568 total).
 - **Slash commands reworked as declarative tool wrappers** (v1.1.78, PR #6604) — `class-wp-mcp-ai-slash-command-toolkit-manager.php` shrinks ~10,400 → ~1,000 lines (36 commands across 15 toolkits, ~76 placeholders purged); new `WP_MCP_AI_Slash_Command_Tool_Adapter` + `register_tool_command()` / `wp_mcp_ai_register_tool_command()` delegate execution to `WP_MCP_AI_Tool_Registry::execute_tool()` (capability gates, validation, sanitisation, canonical envelope in the tool layer; parsing/auth/rate-limiting/audit stay in the handler); new `WP_MCP_AI_Slash_Command_Prompts` exposes `slash.*` prompt templates via `prompts/list`/`prompts/get` wired into the per-toolkit MCP servers; all 19 built-in workflows re-chained. Native chat commands untouched. The CG platform port still ships the old placeholder system (owned by the ecosystem-port loop).

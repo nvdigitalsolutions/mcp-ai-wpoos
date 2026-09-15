@@ -1,7 +1,9 @@
 # NV oOS Tool Registry Context
 
 > **GSD Context File** — Load this when working on tool implementations, toolkits, MCP servers, or OKF tools.
-> Last reviewed: September 13, 2026 (v1.1.79).
+> Last reviewed: September 15, 2026 (v1.1.80).
+>
+> **New in v1.1.80 (+3 base tools, +1 Pro tool — ~306 base + ~1,266 Pro, ~1,572 total):** PR #6628 registers three base tools — `export_assistant` (canonical `nvoos-assistant` JSON bundle v1 via the new `WP_MCP_AI_Assistant_Portability` engine), `import_assistant` (schema-validated, skip/overwrite/duplicate, credential hashes stripped), `duplicate_assistant` (credential-free clone) — and one Pro tool `export_assistant_blueprint` (Blueprint Installer dialect). They are registered in the tool registry, toolkit-metadata mapping, and recommendations; the same PR rewrites the WP-CLI assistant export/import commands onto the engine and adds REST `POST /mcp-ai/v1/assistants/export|import`. Every count surface moves to ~1,572. #6625/#6626 (WP-CLI formatter/chat + streaming), #6631 (OKF editor JS), #6632 (usage-monitor sub-tab + 2 REST clear routes), #6622/#6623/#6624/#6630 (Pro Shopify/WhatsApp) add no new tool slugs.
 >
 > **New in v1.1.79 (counts unchanged — ~303 base + ~1,265 Pro, ~1,568 total):** no tools added or removed. #6616 hardens the existing imaging study-deletion paths (link-first symlink removal, per-entry realpath containment, tightened `is_path_within_storage()` boundary, new `study_delete_link_failed` / `study_delete_outside_storage_blocked` audit events) — no new slugs. #6618 is test-only (toolkit slash suites). #6611/#6613/#6609/#6612/#6619 and the in-session content-graph 1.0.8 (Stripe billing-address `never` → `auto` + already-licensed gate) / checkout-api 0.1.2 (license emails) are sub-project. Every count surface stays ~1,568.
 >
@@ -28,7 +30,7 @@ Tools are the core extensibility unit of NV oOS. Each tool:
 - Implements `execute( $arguments, $context )`
 - Is registered in `includes/tools-init.php` (base) or `addons/pro/mcp-ai-wpoos-pro.php` (pro)
 
-**Total tools:** ~1,568 (~303 base + ~1,265 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,572 (~306 base + ~1,266 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 **New in v1.1.69:** +1 Pro tool — `analyze_image_objects` (Vision Analysis toolkit, `addons/pro/includes/tools/vision-analysis/`, PR #6267): detects and counts objects per category via HuggingFace OWLv2 / Ollama (`detection`), chat-VLM counting (`vlm`), or hybrid label normalization; `annotate=true` returns a GD box-annotated attachment. Gated by `enable_vision_analysis_toolkit` in the Pro module registry's conditional-toolkit map (off by default; the tool is only registered when enabled). Schema-contract sweep: every argument-less tool now emits `properties: {}` (never `[]`) — DeepSeek rejects empty-array properties with a 400 — across 29 files (`list_gmail_connections`, `list_drive_connections`, Cloudways ×4, DietPi ×7, `wait_for_user`, `okf_list_bundles`, WebChat `get_webchat_status`, graphify `content_gaps`/`graph_stats`, embedded ability `input_schema`s, `ProfessionStatsTool`, content-graph tools); `LegacyToolAdapter` preserves object maps and upgrades empty arrays to `stdClass` instead of normalizing objects back to arrays; the AI Tool Builder scaffold emits `new stdClass()` for parameterless tools (#6272). Model-catalog fixes: `gpt-4o` context limit 128000 in `WP_MCP_AI_Token_Budget_Manager::$model_limits` (prefix match no longer returns 8192), `gemini-2.0-flash` restored to the video-capable list (duplicate `gemini-2.5-flash` typo), `claude-sonnet-4-6`/`gpt-4o` restored to `active`, and two Qwen Hugging Face entries added to `includes/data/model-catalog.json` (#6274). SiteKit tools return string capability-flag arrays instead of the non-existent `CAPABILITY_CAN_USE_IF_ADMIN` constant (metabox crash, #6278).
 

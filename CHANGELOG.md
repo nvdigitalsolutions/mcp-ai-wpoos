@@ -1,29 +1,60 @@
 # oOS – Changelog
 
-## [Unreleased]
+## [1.1.80] - 2026-09-15
 
-### Added — Security Center Usage Monitor Sub-Tab & Triage Violation Log
+### Added — Assistant Export/Import Across All Surfaces (PR #6628)
 
-- **The "Security Violations Detected" admin notice now deep-links to a real detail view** — a new `usage_monitor` sub-tab under Settings → Security renders the nefarious-usage violation triage log (severity tier, timestamp, type, message, matched patterns, user, IP), monitor status cards, and the emergency-shutdown recovery panel. The notice itself also shows the most recent violation type and message, so admins see the "why" without clicking through.
-- **Clear actions are now wired to REST** — `POST /mcp-ai/v1/security/clear-violations` and `POST /mcp-ai/v1/security/clear-shutdown` (both `manage_options`-gated, cookie-auth nonce) power the log/shutdown clear buttons; the legacy `admin_post` handlers remain as fallbacks.
-- **Monitor configuration is finally editable in the UI** — enable/auto-shutdown toggles, per-minute request limit, hourly tool limit, shutdown threshold, and the suspicious-pattern regex list (one per line) save through the standard settings pipeline into the monitor's own option.
+- **Portable assistant bundles with a single canonical engine** — `WP_MCP_AI_Assistant_Portability` (`includes/assistants/`) emits and consumes a versioned `nvoos-assistant` JSON bundle (format_version 1) from every surface: WP-CLI (`wp mcp-ai assistant export|import`, rewritten onto the engine; legacy CLI files still import, and the old export's loss of `_wp_mcp_ai_*` config — tools, provider, model, system prompt, roles, skills, memory files — is fixed), REST (`POST /mcp-ai/v1/assistants/export|import`, admin-only, schema-validated, 2 MB cap, dry-run preview), admin UI (row + bulk actions and an Import/Export page with skip/overwrite/duplicate modes), and AI tools — **3 new base tools** (`export_assistant`, `import_assistant`, `duplicate_assistant`) plus a **new Pro tool** (`export_assistant_blueprint`, the Blueprint Installer dialect).
+- **Credential hashes are never exported** and are stripped from any import payload (filterable denylist); the backup export provider now shares the engine denylist — previously its assistants export included credential hashes. Imports auto-detect canonical v1, legacy CLI, and blueprint payloads; matching is slug-first then exact title; overwrite replaces only plugin-owned meta (target credentials survive).
+- Bundle spec in `docs/assistant-import-export.md`; new coding-time skill `mcp-ai-wpoos-assistant-portability`; Content Graph port cluster recorded as ecosystem tracker row D-UI-7.
 
-### Fixed — Security Monitor Sanitization Clobbering & Malformed Patterns
+### Added — Security Center Usage Monitor Sub-Tab & Violation Triage Log (PR #6632)
+
+- The "Security Violations Detected" admin notice now deep-links to a real detail view — a new `usage_monitor` sub-tab under Settings → Security renders the nefarious-usage violation triage log (severity tier, timestamp, type, message, matched patterns, user, IP; latest 50 of 100 stored), monitor status cards, the emergency-shutdown recovery panel, and the full editable monitor config (enable/auto-shutdown toggles, per-minute request + hourly tool limits, shutdown threshold, suspicious-pattern regex list). The notice itself also shows the most recent violation type and message.
+- Clear actions are wired to REST — `POST /mcp-ai/v1/security/clear-violations` and `POST /mcp-ai/v1/security/clear-shutdown` (both `manage_options`-gated, cookie-auth nonce); the legacy `admin_post` handlers remain as fallbacks.
+
+### Added — Shopify Storefront & Global Catalog UCP Modes (PRs #6624, #6630; Pro + CG Pro)
+
+- Shopify deprecated the REST Catalog API and no longer grants its scope to new keys, so two keyless UCP MCP connection modes now replace it: **Storefront Catalog** (`storefront_catalog`, per-merchant UCP search, #6624) and **Global Catalog** (`global_catalog`, cross-merchant search at `catalog.shopify.com`, #6630). Both modes validate keyless connections with a `tools/list` handshake, reject CCT sync (UCP usage guidelines prohibit caching catalog results), and advertise their capabilities through the new public `GET /wp-json/mcp-ai/v1/ucp/agent-profile` route (no secrets). The deprecated REST `catalog_api` mode carries a deprecation notice in the connection UI, and the UCP profile field pre-fills with the site's own endpoint only when it is publicly reachable (no more `profile_unreachable` 422s from local URLs). Both modes are ported byte-identically to `nvoos-content-graph-pro`.
+
+### Added — WhatsApp Webhook Self-Tests (PR #6622)
+
+- The Remote Sites connection edit form gains a Webhook Tests row with three industry-standard checks: verification-handshake replay, positive/negative HMAC-SHA256 signature validation, and the Graph API `subscribed_apps` subscription check (shadow-delivery detection). The CG Pro port re-syncs byte-identical (the WhatsApp webhook REST controller stays base-owned, so the signature self-tests degrade with a `rest_no_route` message standalone).
+
+### Changed — `wp mcp-ai chat --stream` Now Streams (PR #6626)
+
+- The `--stream` flag now actually streams instead of printing one buffered blob: native cURL SSE forwarding for the nine raw-SSE providers (openai, deepseek, openrouter, lm_studio, digitalocean, kimi, baseten, nvidia, huggingface) with a simulated 50-char/10ms fallback elsewhere; both paths honor the `wp_mcp_ai_disable_native_streaming` / `wp_mcp_ai_native_streaming_providers` filters, `stream: true` is only sent when the real-time callback is active, and Gemini-style content part arrays are flattened to text.
+
+### Fixed — WP-CLI Fatals in Provider List & Chat (PR #6625)
+
+- **`wp mcp-ai provider list` (and every base-class command, incl. all Pro CLI) no longer fatals on PHP 8+** — the shared formatter passed an inline array literal to `WP_CLI\Formatter::__construct()`, whose first parameter is by-reference; output now goes through the by-value `WP_CLI\Utils\format_items()` helper with display fields derived from the first row (matching legacy Formatter behavior, including on WP-CLI 2.12).
+- **`wp mcp-ai chat` no longer fatals on router construction** — a new `get_model_router()` resolver prefers the DI container's `router` service and falls back to direct construction with the three minimum clients (the same pattern as the REST controller fallback).
+
+### Fixed — Shopify Catalog 401s & JetEngine Sync Gate (PR #6623)
+
+- **Catalog API "bearer token may have expired" fixed** — Shopify can advertise a day-long `expires_in` while the JWT dies after 60 minutes, so a stale token was replayed for up to a day. The transient is now capped at 60 minutes (with the 60-second safety buffer), the `read_global_api_catalog_search` scope is validated from the token response, a 401 purges the cached token and retries once with a fresh one, and saving a connection purges cached tokens for both the new and previous client IDs.
+- **System Status no longer lies about JetEngine** — the sync gate required the `JET_ENGINE_VERSION` constant while the status row only checked `function_exists('jet_engine')`, so the UI could show green while the dry-run rejected the environment. Both now share `is_jetengine_active()` (constant **or** `jet_engine()->get_version()` for older/bundled builds), with a distinct "Loaded, but version undetectable" warning state.
+
+### Fixed — Security Monitor Sanitization Clobbering & Malformed Patterns (PR #6632)
 
 - **Unrelated settings saves no longer silently disable the monitor** — `sanitize_monitor_settings()` only updates keys actually present in the submission; previously any save from another tab/sub-tab flipped `enabled` and `auto_shutdown_enabled` off.
 - **Malformed admin-edited patterns are dropped at sanitize time and skipped at scan time** instead of emitting `preg_match()` warnings or breaking the scan loop; an empty pattern list restores the defaults.
 
+### Fixed — OKF Editor Preserves Context on Save (PR #6631)
+
+- Saving a concept in the OKF Bundle Manager editor tab bounced the user back to the Bundles tab — the inline `okfReload()` helper navigated to the bare page URL, dropping the `tab`/`bundle`/`concept` query args. It now reloads the current URL, and concept deletion returns to the bundle's Browser tab (the concept file no longer exists after archiving).
+
+### Docs & Sub-Projects
+
+- **Docs Hub frontend color fixes (#6621)** — code-block strings render white on the dark code background and heading-anchor `#` matches the heading color (0.4.6 track unchanged, no version bump).
+- **Agent-skill verification + new brand-provisioning skill (#6627)** — `design-ai-assistant-admin` rewritten to the code-verified surface (real `_wp_mcp_ai_*` / `_wp_mcp_ai_peer_*` meta keys, real CLI commands, the `toolkit_cpt` caveat, the legacy `mcp_ai_model` quirk), the `mcp-ai-wpoos-plugin` skill gains Design Stack deployment facts + a WP-CLI provisioning recipe, and a new `design-brand-assistant-provisioning` skill codifies the verified Aerlinn brand-intake pattern.
+- **Brand-provisioning template WPCS clean (#6629)** — the skill template's 67 WPCS violations fixed (0 errors / 0 warnings); template semantics unchanged.
+
+### Versioning
+
+- Bumped to 1.1.80 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.80. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.8** (unchanged). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — byte-identical port patches only). Checkout API: **0.1.2** (unchanged). Docs Hub addon: **0.4.6** (unchanged — #6621 is a CSS fix without a bump). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.09.10** (unchanged — no model PRs in-window). Tool count: **~306 base + ~1,266 Pro (~1,572 total)** — +3 base (`export_assistant`, `import_assistant`, `duplicate_assistant`) and +1 Pro (`export_assistant_blueprint`), PR #6628; live registry authoritative. Providers: 15. Addons: 27. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: **58** (new `design-brand-assistant-provisioning` + `mcp-ai-wpoos-assistant-portability`). Stale 1.1.78 build ZIPs removed (30 files).
+
 ## [1.1.79] - 2026-09-13
-
-### Fixed — WP-CLI Formatter By-Reference Fatal & Chat Router Construction
-
-- **`wp mcp-ai provider list` (and every command using the base `format_output()`) no longer fatals on PHP 8+** — the shared formatter passed an inline array literal to `WP_CLI\Formatter::__construct()`, whose first parameter is by-reference, which PHP 8 rejects with a fatal `Argument #1 ($assoc_args) could not be passed by reference`. The base command now uses the by-value `WP_CLI\Utils\format_items()` helper already used across the CLI surface, and derives display fields from the first row when a command does not pass an explicit field list (matching the legacy Formatter default-field behaviour).
-- **`wp mcp-ai chat` no longer fatals on router construction** — the command instantiated `WP_MCP_AI_Language_Model_Router` with zero arguments while its constructor requires at least the OpenAI and Gemini clients. A new `get_model_router()` resolver prefers the DI container's `router` service and falls back to direct construction with the three minimum clients (the same pattern as the REST controller fallback).
-
-### Changed — `wp mcp-ai chat --stream` Now Streams (same PR)
-
-- The `--stream` flag now actually streams instead of printing one buffered blob. When cURL is available and the resolved provider implements the raw-cURL SSE path (openai, deepseek, openrouter, lm_studio, digitalocean, kimi, baseten, nvidia, huggingface), tokens are forwarded to the terminal as they arrive via a `stream_callback`. Otherwise the response is printed in simulated 50-character chunks with a 10ms pause — the same fallback the legacy browser chat uses. Both paths respect the shared `wp_mcp_ai_disable_native_streaming` / `wp_mcp_ai_native_streaming_providers` filters, and `stream: true` is only sent when the real-time callback is active (provider clients buffer SSE bodies through `wp_remote_post()`, whose JSON parsers cannot decode a streamed payload).
-
 ### Fixed — Imaging Study Deletion Hardened Against Symlink Traversal (PR #6616)
 
 - Both recursive study-deletion paths now handle symlinks **link-first** — a link is removed as a link and never followed, so a symlinked directory can no longer cause its target's contents to be deleted (the privacy eraser) or block study removal. Every iterator entry is additionally `realpath()`-verified against the storage root before `unlink`/`rmdir`, `is_path_within_storage()` now requires a directory-boundary match (sibling-prefix directories no longer pass), and new audit events (`study_delete_link_failed`, `study_delete_outside_storage_blocked`) record blocked removals. The `nvoos-content-graph-pro` port patches the same two files byte-identically per the Wave F port rules.
