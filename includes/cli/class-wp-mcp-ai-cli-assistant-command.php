@@ -355,115 +355,175 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 	}
 
 	/**
-	 * Export an assistant's configuration as JSON.
+	 * Export assistant configuration as a portable JSON bundle.
+	 *
+	 * Produces the canonical `nvoos-assistant` bundle (format_version 1)
+	 * containing full post data, plugin meta, and — by default — an A2A
+	 * agent card per assistant. Credential hashes are never exported.
 	 *
 	 * ## OPTIONS
 	 *
-	 * <id>
-	 * : The assistant post ID.
+	 * [<id>]
+	 * : The assistant post ID. Omit (or pass "all") to export every assistant.
 	 *
 	 * [--file=<filename>]
 	 * : Write the export to a file inside the plugin-specific uploads directory
 	 * (wp-content/uploads/mcp-ai/exports/) instead of stdout. Only a filename
 	 * is accepted; path separators are stripped for security.
 	 *
+	 * [--format=<format>]
+	 * : Output format.
+	 * ---
+	 * default: json
+	 * options:
+	 *   - json
+	 *   - a2a
+	 * ---
+	 *
+	 * [--include-a2a=<bool>]
+	 * : Embed an A2A agent card per assistant in the JSON bundle. Default true.
+	 *
+	 * [--porcelain]
+	 * : Output only the written file path. Requires --file.
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     # Print assistant config to stdout.
 	 *     $ wp mcp-ai assistant export 42
 	 *
-	 *     # Write config to a file in uploads/mcp-ai/exports/.
+	 *     # Write the full bundle to a file in uploads/mcp-ai/exports/.
 	 *     $ wp mcp-ai assistant export 42 --file=assistant-42.json
+	 *
+	 *     # Export every assistant.
+	 *     $ wp mcp-ai assistant export all --file=all-assistants.json
+	 *
+	 *     # Emit a pure A2A agent card for assistant 42.
+	 *     $ wp mcp-ai assistant export 42 --format=a2a
 	 *
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 * @when after_wp_load
 	 */
 	public function export( $args, $assoc_args ) {
-		$id   = isset( $args[0] ) ? absint( $args[0] ) : 0;
-		$file = \WP_CLI\Utils\get_flag_value( $assoc_args, 'file', '' );
+		$id          = isset( $args[0] ) ? $args[0] : 'all';
+		$file        = \WP_CLI\Utils\get_flag_value( $assoc_args, 'file', '' );
+		$format      = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'json' );
+		$include_a2a = \WP_CLI\Utils\get_flag_value( $assoc_args, 'include-a2a', true );
+		$porcelain   = \WP_CLI\Utils\get_flag_value( $assoc_args, 'porcelain', false );
 
-		if ( ! $id ) {
-			WP_CLI::error( __( 'Please provide a valid assistant ID.', 'mcp-ai-wpoos' ) );
+		if ( ! class_exists( 'WP_MCP_AI_Assistant_Portability' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/assistants/class-wp-mcp-ai-assistant-portability.php';
 		}
 
-		$post = get_post( $id );
-
-		if ( ! $post || 'mcp_ai_assistant' !== $post->post_type ) {
-			/* translators: %d: assistant ID */
-			WP_CLI::error( sprintf( __( 'Assistant %d not found.', 'mcp-ai-wpoos' ), $id ) );
+		if ( 'all' !== $id && 0 === absint( $id ) ) {
+			WP_CLI::error( __( 'Please provide a valid assistant ID or "all".', 'mcp-ai-wpoos' ) );
 		}
 
-		$all_meta = get_post_meta( $id );
-		$meta     = array();
-		foreach ( $all_meta as $key => $values ) {
-			if ( 0 === strpos( $key, 'mcp_ai_' ) ) {
-				$clean_key          = substr( $key, strlen( 'mcp_ai_' ) );
-				$meta[ $clean_key ] = $values[0] ?? '';
+		$format = in_array( $format, array( 'json', 'a2a' ), true ) ? $format : 'json';
+
+		if ( 'a2a' === $format ) {
+			if ( 'all' === $id ) {
+				WP_CLI::error( __( 'The a2a format exports a single assistant only.', 'mcp-ai-wpoos' ) );
+			}
+			$export = WP_MCP_AI_Assistant_Portability::export_a2a_card( absint( $id ) );
+			if ( is_wp_error( $export ) ) {
+				WP_CLI::error( $export->get_error_message() );
+			}
+		} else {
+			$ids    = 'all' === $id ? 'all' : array( absint( $id ) );
+			$export = WP_MCP_AI_Assistant_Portability::export_assistants(
+				$ids,
+				array( 'include_a2a' => (bool) $include_a2a )
+			);
+			if ( is_wp_error( $export ) ) {
+				WP_CLI::error( $export->get_error_message() );
 			}
 		}
-
-		// Exclude credential hashes from the export.
-		unset( $meta['credentials'] );
-
-		$export = array(
-			'version'   => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : '1.0.0',
-			'exported'  => gmdate( 'c' ),
-			'assistant' => array(
-				'title'   => $post->post_title,
-				'status'  => $post->post_status,
-				'content' => $post->post_content,
-				'meta'    => $meta,
-			),
-		);
 
 		$json = wp_json_encode( $export, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
 
 		if ( $file ) {
-			// WordPress.org compliance: ALL file writes are restricted to the
-			// plugin-specific uploads subdirectory wp-content/uploads/mcp-ai/exports/.
-			// Only the basename of the user-supplied --file argument is used as the
-			// filename; directory traversal is impossible because sanitize_file_name()
-			// strips path separators and basename() removes any leading path.
-			$upload_dir = wp_upload_dir();
-			$export_dir = wp_normalize_path( trailingslashit( $upload_dir['basedir'] ) ) . 'mcp-ai/exports/';
-
-			// Strip any path separators from the user-supplied filename for security.
-			$safe_filename = sanitize_file_name( basename( $file ) );
-
-			if ( empty( $safe_filename ) ) {
-				WP_CLI::error( __( 'Invalid filename provided.', 'mcp-ai-wpoos' ) );
+			$file = self::write_export_file( $file, $json );
+			if ( is_wp_error( $file ) ) {
+				WP_CLI::error( $file->get_error_message() );
 			}
 
-			// Create the export directory if it doesn't exist and protect it from direct web access.
-			if ( ! is_dir( $export_dir ) ) {
-				wp_mkdir_p( $export_dir );
-			}
-			// Prevent direct HTTP access to exported files.
-			$htaccess_file = $export_dir . '.htaccess';
-			if ( ! file_exists( $htaccess_file ) ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- CLI-only code writing web-server deny rule to plugin uploads subdirectory.
-				file_put_contents( $htaccess_file, "Deny from all\n" );
-			}
-			$index_file = $export_dir . 'index.php';
-			if ( ! file_exists( $index_file ) ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- CLI-only code writing directory listing guard to plugin uploads subdirectory.
-				file_put_contents( $index_file, "<?php\n// Silence is golden.\n" );
+			if ( $porcelain ) {
+				WP_CLI::line( $file );
+				return;
 			}
 
-			$file = $export_dir . $safe_filename;
-
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- CLI command writing to restricted uploads path.
-			if ( false === file_put_contents( $file, $json ) ) {
-				/* translators: %s: file path */
-				WP_CLI::error( sprintf( __( 'Could not write to file: %s', 'mcp-ai-wpoos' ), $file ) );
-			}
-			/* translators: 1: assistant title, 2: file path */
-			WP_CLI::success( sprintf( __( 'Exported assistant "%1$s" to %2$s.', 'mcp-ai-wpoos' ), $post->post_title, $file ) );
+			$count = isset( $export['assistants'] ) ? count( $export['assistants'] ) : 1;
+			/* translators: 1: number of assistants, 2: file path */
+			WP_CLI::success( sprintf( __( 'Exported %1$d assistant(s) to %2$s.', 'mcp-ai-wpoos' ), $count, $file ) );
 			return;
 		}
 
+		if ( $porcelain ) {
+			WP_CLI::error( __( '--porcelain requires --file.', 'mcp-ai-wpoos' ) );
+		}
+
 		WP_CLI::line( $json );
+	}
+
+	/**
+	 * Write export JSON into the plugin exports directory.
+	 *
+	 * WordPress.org compliance: ALL file writes are restricted to the
+	 * plugin-specific uploads subdirectory wp-content/uploads/mcp-ai/exports/.
+	 * Only the basename of the user-supplied filename is used; directory
+	 * traversal is impossible because sanitize_file_name() strips path
+	 * separators and basename() removes any leading path.
+	 *
+	 * @since 1.1.80
+	 *
+	 * @param string $file Requested filename.
+	 * @param string $json Serialised export payload.
+	 * @return string|WP_Error Absolute file path or WP_Error.
+	 */
+	protected static function write_export_file( $file, $json ) {
+		$upload_dir = wp_upload_dir();
+		$export_dir = wp_normalize_path( trailingslashit( $upload_dir['basedir'] ) ) . 'mcp-ai/exports/';
+
+		// Strip any path separators from the user-supplied filename for security.
+		$safe_filename = sanitize_file_name( basename( $file ) );
+
+		if ( empty( $safe_filename ) ) {
+			return new WP_Error( 'wp_mcp_ai_invalid_filename', __( 'Invalid filename provided.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Create the export directory if it doesn't exist and protect it from direct web access.
+		if ( ! is_dir( $export_dir ) ) {
+			wp_mkdir_p( $export_dir );
+		}
+
+		// Prevent direct HTTP access to exported files.
+		$htaccess_file = $export_dir . '.htaccess';
+		if ( ! file_exists( $htaccess_file ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- CLI-only code writing web-server deny rule to plugin uploads subdirectory.
+			file_put_contents( $htaccess_file, "Deny from all\n" );
+		}
+		$index_file = $export_dir . 'index.php';
+		if ( ! file_exists( $index_file ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- CLI-only code writing directory listing guard to plugin uploads subdirectory.
+			file_put_contents( $index_file, "<?php\n// Silence is golden.\n" );
+		}
+
+		$file = $export_dir . $safe_filename;
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- CLI command writing to restricted uploads path.
+		if ( false === file_put_contents( $file, $json ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_export_write_failed',
+				sprintf(
+					/* translators: %s: file path */
+					__( 'Could not write to file: %s', 'mcp-ai-wpoos' ),
+					$file
+				)
+			);
+		}
+
+		return $file;
 	}
 
 	/**
@@ -572,7 +632,11 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 	}
 
 	/**
-	 * Import an assistant from a JSON file or stdin.
+	 * Import assistants from a JSON bundle, file, or stdin.
+	 *
+	 * Accepts canonical `nvoos-assistant` bundles, legacy CLI export files,
+	 * and blueprint JSON (both healthcare-style and CRM-style). Credential
+	 * hashes are stripped from any payload.
 	 *
 	 * ## OPTIONS
 	 *
@@ -584,8 +648,26 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 	 * [--stdin]
 	 * : Read JSON from standard input. Mutually exclusive with --file.
 	 *
+	 * [--overwrite]
+	 * : Update an existing assistant matched by slug or title instead of skipping it.
+	 *
+	 * [--duplicate]
+	 * : Always create new posts, even when a matching assistant exists.
+	 *
+	 * [--dry-run]
+	 * : Validate the payload and report what would happen without writing.
+	 *
+	 * [--status=<status>]
+	 * : Force the imported post status.
+	 * ---
+	 * options:
+	 *   - draft
+	 *   - publish
+	 *   - private
+	 * ---
+	 *
 	 * [--porcelain]
-	 * : Output only the created assistant ID.
+	 * : Output only the created/updated assistant IDs.
 	 *
 	 * ## EXAMPLES
 	 *
@@ -595,6 +677,12 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *     # Import from stdin.
 	 *     $ wp mcp-ai assistant import --stdin < assistant.json
 	 *
+	 *     # Preview a bundle without writing.
+	 *     $ wp mcp-ai assistant import --file=bundle.json --dry-run
+	 *
+	 *     # Overwrite the existing assistant with the same title.
+	 *     $ wp mcp-ai assistant import --file=assistant-42.json --overwrite
+	 *
 	 *     # Import and get only the new ID.
 	 *     $ wp mcp-ai assistant import --file=assistant-42.json --porcelain
 	 *
@@ -603,9 +691,17 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 	 * @when after_wp_load
 	 */
 	public function import( $args, $assoc_args ) {
-		$file      = \WP_CLI\Utils\get_flag_value( $assoc_args, 'file', '' );
-		$use_stdin = \WP_CLI\Utils\get_flag_value( $assoc_args, 'stdin', false );
-		$porcelain = \WP_CLI\Utils\get_flag_value( $assoc_args, 'porcelain', false );
+		$file            = \WP_CLI\Utils\get_flag_value( $assoc_args, 'file', '' );
+		$use_stdin       = \WP_CLI\Utils\get_flag_value( $assoc_args, 'stdin', false );
+		$overwrite       = \WP_CLI\Utils\get_flag_value( $assoc_args, 'overwrite', false );
+		$duplicate       = \WP_CLI\Utils\get_flag_value( $assoc_args, 'duplicate', false );
+		$dry_run         = \WP_CLI\Utils\get_flag_value( $assoc_args, 'dry-run', false );
+		$status_override = \WP_CLI\Utils\get_flag_value( $assoc_args, 'status', '' );
+		$porcelain       = \WP_CLI\Utils\get_flag_value( $assoc_args, 'porcelain', false );
+
+		if ( ! class_exists( 'WP_MCP_AI_Assistant_Portability' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/assistants/class-wp-mcp-ai-assistant-portability.php';
+		}
 
 		if ( $file && $use_stdin ) {
 			WP_CLI::error( __( 'Please provide either --file or --stdin, not both.', 'mcp-ai-wpoos' ) );
@@ -613,6 +709,10 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 
 		if ( ! $file && ! $use_stdin ) {
 			WP_CLI::error( __( 'Please provide --file=<filename> or --stdin.', 'mcp-ai-wpoos' ) );
+		}
+
+		if ( $overwrite && $duplicate ) {
+			WP_CLI::error( __( '--overwrite and --duplicate are mutually exclusive.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( $file ) {
@@ -650,68 +750,65 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 			}
 		}
 
-		// Decode and validate the JSON.
-		$data = json_decode( $json, true );
+		$bundle = WP_MCP_AI_Assistant_Portability::parse_import( $json );
 
-		if ( null === $data || ! is_array( $data ) ) {
-			WP_CLI::error( __( 'Invalid JSON provided. Could not decode.', 'mcp-ai-wpoos' ) );
+		if ( is_wp_error( $bundle ) ) {
+			WP_CLI::error( $bundle->get_error_message() );
 		}
 
-		// Validate the expected export structure.
-		if ( ! isset( $data['assistant'] ) || ! is_array( $data['assistant'] ) ) {
-			WP_CLI::error( __( 'Invalid export format: missing "assistant" key.', 'mcp-ai-wpoos' ) );
+		$mode = 'skip';
+		if ( $overwrite ) {
+			$mode = 'overwrite';
+		} elseif ( $duplicate ) {
+			$mode = 'duplicate';
 		}
 
-		$assistant_data = $data['assistant'];
-
-		if ( ! isset( $assistant_data['title'] ) || '' === trim( (string) $assistant_data['title'] ) ) {
-			WP_CLI::error( __( 'Invalid export format: assistant title is required.', 'mcp-ai-wpoos' ) );
-		}
-
-		$title   = sanitize_text_field( $assistant_data['title'] );
-		$status  = isset( $assistant_data['status'] ) ? sanitize_key( $assistant_data['status'] ) : 'draft';
-		$content = isset( $assistant_data['content'] ) ? wp_kses_post( $assistant_data['content'] ) : '';
-
-		$status = in_array( $status, array( 'draft', 'publish' ), true ) ? $status : 'draft';
-
-		$post_data = array(
-			'post_type'    => 'mcp_ai_assistant',
-			'post_title'   => $title,
-			'post_status'  => $status,
-			'post_content' => $content,
+		$report = WP_MCP_AI_Assistant_Portability::import_bundle(
+			$bundle,
+			array(
+				'mode'            => $mode,
+				'dry_run'         => (bool) $dry_run,
+				'status_override' => '' !== $status_override ? $status_override : '',
+			)
 		);
 
-		$new_id = wp_insert_post( $post_data, true );
-
-		if ( is_wp_error( $new_id ) ) {
-			WP_CLI::error( $new_id->get_error_message() );
-		}
-
-		// Import meta fields, excluding credentials (just like export skips them).
-		if ( isset( $assistant_data['meta'] ) && is_array( $assistant_data['meta'] ) ) {
-			foreach ( $assistant_data['meta'] as $meta_key => $meta_value ) {
-				$meta_key = sanitize_key( $meta_key );
-
-				// Skip credential hashes.
-				if ( 'credentials' === $meta_key ) {
-					continue;
-				}
-
-				if ( '' !== $meta_key ) {
-					// Meta keys are stored without the mcp_ai_ prefix in the export;
-					// add it back when saving.
-					update_post_meta( $new_id, 'mcp_ai_' . $meta_key, sanitize_text_field( $meta_value ) );
-				}
-			}
+		if ( is_wp_error( $report ) ) {
+			WP_CLI::error( $report->get_error_message() );
 		}
 
 		if ( $porcelain ) {
-			WP_CLI::line( $new_id );
+			foreach ( $report['items'] as $item ) {
+				if ( ! empty( $item['assistant_id'] ) ) {
+					WP_CLI::line( $item['assistant_id'] );
+				}
+			}
 			return;
 		}
 
-		/* translators: 1: assistant title, 2: assistant post ID */
-		WP_CLI::success( sprintf( __( 'Imported assistant "%1$s" (ID: %2$d).', 'mcp-ai-wpoos' ), $title, $new_id ) );
+		if ( $dry_run ) {
+			WP_CLI::log(
+				sprintf(
+					/* translators: 1: would-be creates, 2: would-be updates, 3: skips, 4: errors */
+					__( 'Dry run: %1$d to create, %2$d to update, %3$d skipped, %4$d errors.', 'mcp-ai-wpoos' ),
+					$report['created'],
+					$report['updated'],
+					$report['skipped'],
+					$report['errors']
+				)
+			);
+			return;
+		}
+
+		WP_CLI::success(
+			sprintf(
+				/* translators: 1: created count, 2: updated count, 3: skipped count, 4: error count */
+				__( 'Imported assistants: %1$d created, %2$d updated, %3$d skipped, %4$d errors.', 'mcp-ai-wpoos' ),
+				$report['created'],
+				$report['updated'],
+				$report['skipped'],
+				$report['errors']
+			)
+		);
 	}
 }
 

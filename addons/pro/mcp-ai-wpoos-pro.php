@@ -637,6 +637,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Verify_Information'        => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-verify-information.php',
 			// Research → Paper Store pipeline (Phase 3 - Post creation).
 			'WP_MCP_AI_Pro_Tool_Create_Post_From_Research' => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-create-post-from-research.php',
+			// Assistant portability (blueprint exporter closes the blueprint-installer loop).
+			'WP_MCP_AI_Tool_Export_Assistant_Blueprint'    => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-tool-export-assistant-blueprint.php',
 			// Template Management tools (Ralph pattern - Phase 3).
 			'WP_MCP_AI_Pro_Tool_Create_Template'           => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-create-template.php',
 			'WP_MCP_AI_Pro_Tool_Instantiate_Template'      => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-instantiate-template.php',
