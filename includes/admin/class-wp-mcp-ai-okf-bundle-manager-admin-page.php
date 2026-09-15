@@ -145,7 +145,8 @@ class WP_MCP_AI_OKF_Bundle_Manager_Admin_Page {
 				}
 
 				function okfReload() {
-					window.location.href = config.pageUrl;
+					// Stay on the current tab (and bundle/concept context) after an action.
+					window.location.reload();
 				}
 
 				function okfFail( res ) {
@@ -238,10 +239,15 @@ class WP_MCP_AI_OKF_Bundle_Manager_Admin_Page {
 					if ( deleteButton ) {
 						deleteButton.addEventListener( 'click', function () {
 							if ( ! window.confirm( deleteButton.getAttribute( 'data-okf-prompt' ) ) ) { return; }
+							var bundle = deleteButton.getAttribute( 'data-okf-bundle' );
 							okfPost( 'wp_mcp_ai_okf_bundle_delete_concept', {
-								bundle: deleteButton.getAttribute( 'data-okf-bundle' ),
+								bundle: bundle,
 								concept_id: deleteButton.getAttribute( 'data-okf-concept' )
-							} ).then( function ( res ) { res.success ? okfReload() : okfFail( res ); } );
+							} ).then( function ( res ) {
+								if ( ! res.success ) { okfFail( res ); return; }
+								// The concept no longer exists; return to the bundle's browser view.
+								window.location.href = config.pageUrl + '&tab=browser&bundle=' + encodeURIComponent( bundle );
+							} );
 						} );
 					}
 				}
