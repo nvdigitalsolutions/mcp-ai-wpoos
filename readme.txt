@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.79
+Stable tag: 1.1.80
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.80 - September 15, 2026 =
+
+Portability, Shopify catalog, and security-operations release. Added: assistant export/import across all surfaces (WP-CLI, REST /mcp-ai/v1/assistants/export|import, admin row/bulk actions + Import/Export page, and 3 new base tools — export_assistant, import_assistant, duplicate_assistant — plus a Pro export_assistant_blueprint tool) with credential hashes never exported and stripped from imports; a Security Center Usage Monitor sub-tab with the violation triage log, editable monitor config, and REST clear endpoints; keyless Shopify Storefront and Global Catalog UCP connection modes replacing the deprecated REST Catalog API (public /ucp/agent-profile route, CCT sync rejected per UCP guidelines); and WhatsApp webhook self-tests on the Remote Sites edit form. Fixed: WP-CLI provider list and chat no longer fatal on PHP 8+ and `--stream` now streams token-by-token; Shopify Catalog 401s (token capped at 60 minutes, scope validation, 401 purge-and-retry) and the JetEngine sync gate (System Status and the gate now share one check); unrelated settings saves no longer silently disable the security monitor, malformed patterns are dropped/skipped instead of warning; and the OKF editor keeps its bundle/concept context on save. Tool count: ~306 base + ~1,266 Pro (~1,572 total; live registry authoritative). Stale 1.1.78 build ZIPs removed (29 files).
 
 = 1.1.79 - September 13, 2026 =
 

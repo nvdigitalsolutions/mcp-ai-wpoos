@@ -1,13 +1,15 @@
 # NV oOS Documentation Index
 
-**Last Updated:** September 13, 2026
-**Plugin Version:** 1.1.79
+**Last Updated:** September 15, 2026
+**Plugin Version:** 1.1.80
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
+
+> **SEPTEMBER 15, 2026 UPDATE (v1.1.80):** PORTABILITY, SHOPIFY-CATALOG & SECURITY-OPERATIONS RELEASE. **ASSISTANT EXPORT/IMPORT ACROSS ALL SURFACES** (PR #6628) — ONE CANONICAL ENGINE, `nvoos-assistant` JSON BUNDLES (FORMAT_VERSION 1) FROM WP-CLI, REST (`POST /mcp-ai/v1/assistants/export|import`), ADMIN IMPORT/EXPORT PAGE + 3 NEW BASE TOOLS (`export_assistant`, `import_assistant`, `duplicate_assistant`) + PRO `export_assistant_blueprint`; CREDENTIAL HASHES NEVER EXPORTED, STRIPPED FROM IMPORTS; BACKUP PROVIDER NOW SHARES THE DENYLIST. **SECURITY CENTER USAGE MONITOR SUB-TAB** (PR #6632) — SEVERITY-TIERED VIOLATION TRIAGE LOG, MONITOR STATUS CARDS, SHUTDOWN RECOVERY, EDITABLE CONFIG, REST CLEAR ROUTES (`/security/clear-violations`, `/security/clear-shutdown`); NOTICE DEEP-LINKS + SHOWS LATEST VIOLATION; SANITIZE-CLOBBER BUG + MALFORMED-PATTERN HARDENING FIXED. **SHOPIFY UCP MODES** (PRs #6624/#6630) — KEYLESS STOREFRONT + GLOBAL CATALOG MODES REPLACE THE DEPRECATED REST CATALOG API (PUBLIC `/ucp/agent-profile` ROUTE, CCT SYNC REJECTED) ON PRO + CG PRO (BYTE-IDENTICAL PORTS); **REST CATALOG 401s FIXED** + JETENGINE SYNC GATE UNIFIED WITH SYSTEM STATUS (PR #6623). **WP-CLI REPAIRED + STREAMING** (PRs #6625/#6626) — `provider list`/`chat` NO LONGER FATAL ON PHP 8+; `chat --stream` STREAMS TOKEN-BY-TOKEN. **WHATSAPP WEBHOOK SELF-TESTS** (PR #6622) — VERIFICATION/SIGNATURE/SUBSCRIPTION CHECKS ON REMOTE SITES. **OKF EDITOR CONTEXT PRESERVED ON SAVE** (PR #6631). **SKILLS** (PRs #6627/#6629) — AGENT SKILLS VERIFIED AGAINST THE REAL PLUGIN SURFACE + NEW `design-brand-assistant-provisioning` SKILL; TEMPLATE WPCS CLEAN. **DOCS HUB COLORS** (PR #6621). TOOL COUNT: ~306 BASE + ~1,266 PRO (~1,572 TOTAL; +3 BASE +1 PRO). STALE 1.1.78 BUILD ZIPS REMOVED (29 FILES). UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
 > **SEPTEMBER 13, 2026 UPDATE (v1.1.79):** CHECKOUT-HARDENING-TAIL & SECURITY RELEASE. **IMAGING SYMLINK HARDENING** (PR #6616) — STUDY DELETION REMOVES LINKS AS LINKS AND NEVER FOLLOWS THEM; REALPATH CONTAINMENT PER ENTRY; NEW `study_delete_link_failed` / `study_delete_outside_storage_blocked` AUDIT EVENTS (BASE+PRO + BYTE-IDENTICAL CG PRO PORT). **CONTENT GRAPH 1.0.8** — STRIPE PAYMENT ELEMENT BILLING-ADDRESS MODE `never` → `auto` (NON-EU PURCHASES NO LONGER DIE WITH `IntegrationError`); `/payments/session` REFUSES CHARGEABLE SESSIONS WHEN ALREADY LICENSED (NO DOUBLE CHARGES). **CHECKOUT API 0.1.2** — VENDOR-SIDE BUYER LICENSE EMAILS FROM THE WEBHOOK + `/verify` PATHS (`email_sent_at` DB v4 → v5); STATEMENT-DESCRIPTOR 424 FIXED VIA `statement_descriptor_suffix` (PR #6613); STRIPE ACCOUNT-SWITCH CREATE-PRODUCT FIX (PR #6611). **DOCS HUB 0.4.5 → 0.4.6** (PRs #6615/#6617) — SECOND WP.ORG REVIEWER PASS + FULL 18-GUIDELINE PASS, 0 BLOCKING PCP ERRORS. **CONTENT-GRAPH WP.ORG READINESS** (PRs #6609/#6612/#6619) — SELLER-OF-RECORD COPY, PRICE NOTE, PACKAGING TRI-SYNC. **TOOLKIT SLASH TEST REPAIR** (PR #6618). TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.77 BUILD ZIPS REMOVED. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
@@ -652,6 +654,21 @@ n#### New Audit & Compliance Docs
 - **[docs/ROADMAP.md](ROADMAP.md)** ⭐ **UPDATED** — v1.1.39 released section with capability snapshot update.
 - **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — v1.1.39 section with full PR-level detail across 7 categories.
 - **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.39 latest updates section, version bump, duplicate section cleanup.
+
+---
+
+## 🆕 September 2026 — v1.1.80: Assistant Portability, Shopify UCP Catalog, Security Usage Monitor, WP-CLI Repair
+
+### New and updated documents (September 15, 2026, v1.1.80)
+
+- **[docs/project/plans/v1.1.80-docs-catch-up.md](project/plans/v1.1.80-docs-catch-up.md)** ⭐ **NEW** — v1.1.80 docs & release catch-up plan (PRs #6621–#6632, full PR-description review + count sweep + stale-ZIP housekeeping). (September 15, 2026)
+- **[docs/assistant-import-export.md](assistant-import-export.md)** ⭐ **NEW** — `nvoos-assistant` bundle format spec (v1), credential-redaction policy, surface reference, hooks, examples (PR #6628). (September 15, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.80 highlights + latest updates (assistant portability, Shopify UCP modes, security usage monitor, WP-CLI repairs, ~1,572 tools, 58 skills). (September 15, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.80] section with PR-level detail; the #6625/#6626 WP-CLI entries moved up from the released [1.1.79] block (they merged after the 1.1.79 packages were built). (September 15, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.80 + changelog entry. (September 15, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — version + v1.1.80 recent-updates entry. (September 15, 2026)
+- **[includes/assistants/README.md](../includes/assistants/README.md)** ⭐ **UPDATED** — portability engine added to the folder surface (PR #6628). (September 15, 2026)
+- **[docs/operations/security/PROMPT_INJECTION_TESTING.md](operations/security/PROMPT_INJECTION_TESTING.md)** ⭐ **UPDATED** — corrected nav path to the new Security Center Usage Monitor sub-tab (PR #6632). (September 15, 2026)
 
 ---
 
