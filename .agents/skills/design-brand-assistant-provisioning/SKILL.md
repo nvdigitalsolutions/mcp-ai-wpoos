@@ -78,8 +78,8 @@ Gotchas (all verified on the Aerlinn assistant):
   sanitization** between storage and the model (observed: "AERLINN —
   <tagline>." arrived as "AERLINN — ."). Use parentheses: `(tagline)`.
 - Keep **one source of truth**: `assistant-system-prompt.md` is the
-  human-readable copy; `create-assistant.php` embeds the same text in a PHP
-  nowdoc. Header comments in both files say they must stay in sync.
+  human-readable copy; `create-assistant.php` embeds the same text in the
+  PHP prompt string. Header comments in both files say they must stay in sync.
 - Prompt size is cost: the Aerlinn prompt is ~34K prompt tokens per call
   (~$0.02 on `gemini-2.5-flash`). Move long archives (research, past
   captions) to the Paper Store (collection `<brand>-content`) and reference
@@ -107,7 +107,7 @@ Gotchas (all verified on the Aerlinn assistant):
 ## Step 4 — Provision
 
 1. Copy `templates/create-assistant.php` into the brand folder.
-2. Fill the three placeholders: title, prompt (nowdoc), tools.
+2. Fill the three placeholders: title, prompt string, tools.
 3. Run from the Design Stack repo root (Windows):
 
    ```bash
@@ -160,7 +160,7 @@ Settings → AI → MCP Servers → Add Remote Server (or `context_servers` in
 ## Maintenance
 
 - **Prompt/campaign change** — edit `assistant-system-prompt.md` AND the
-  nowdoc in `create-assistant.php`, re-run the script (idempotent).
+  prompt string in `create-assistant.php`, re-run the script (idempotent).
 - **New brand, same shape** — copy the Aerlinn folder, swap the intake docs
   and prompt, re-run.
 - **Token rotation** — `wp mcp-ai credential revoke <id> <cred-id>`, then

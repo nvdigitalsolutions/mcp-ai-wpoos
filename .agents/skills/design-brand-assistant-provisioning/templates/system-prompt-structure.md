@@ -1,6 +1,6 @@
 # System Prompt Structure — Brand Assistant
 
-Skeleton for `assistant-system-prompt.md` / the PHP nowdoc. Replace
+Skeleton for `assistant-system-prompt.md` / the PHP prompt string. Replace
 `{{PLACEHOLDERS}}`. Keep the copy lean; the prompt is charged per call.
 Do NOT use angle-bracket placeholders (`<tagline>`) — sanitization strips
 them. Use parentheses.
