@@ -256,6 +256,29 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 			}
 		}
 
+		// Global Catalog MCP mode — route read-only operations to the keyless
+		// UCP Global Catalog endpoint and reject unsupported write operations.
+		if ( 'global_catalog' === $api_mode ) {
+			switch ( $action ) {
+				case 'list':
+				case 'search':
+					return $this->handle_global_catalog_list( $client, $arguments, $connection );
+
+				case 'get':
+					return $this->handle_global_catalog_get( $client, $arguments );
+
+				case 'create':
+				case 'update':
+					return new WP_Error(
+						'wp_mcp_ai_shopify_global_catalog_read_only',
+						__( 'Product creation and updates are not supported in global_catalog mode. Switch to an admin_api connection for write operations.', 'nvoos-content-graph-pro' )
+					);
+
+				default:
+					return new WP_Error( 'wp_mcp_ai_shopify_invalid_action', __( 'Invalid action specified.', 'nvoos-content-graph-pro' ) );
+			}
+		}
+
 		switch ( $action ) {
 			case 'list':
 			case 'search':
@@ -759,6 +782,255 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 			'success' => true,
 			'product' => $product,
 			'message' => __( 'Product retrieved successfully.', 'nvoos-content-graph-pro' ),
+		);
+	}
+
+	/**
+	 * Handle list/search for Global Catalog MCP (UCP) mode connections.
+	 *
+	 * The UCP Global Catalog returns products in the structuredContent
+	 * envelope. UCP usage guidelines prohibit caching, so every call is
+	 * live; smart-search decomposition still applies at runtime.
+	 *
+	 * @param WP_MCP_AI_Shopify_Client $client     Shopify client.
+	 * @param array                    $arguments  Tool arguments.
+	 * @param array                    $connection Connection data array.
+	 * @return array|WP_Error
+	 */
+	protected function handle_global_catalog_list( $client, array $arguments, array $connection ) {
+		$limit = isset( $arguments['first'] )
+			? max( 1, min( 50, absint( $arguments['first'] ) ) )
+			: 10;
+
+		$query = isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '';
+
+		// The Global Catalog has no wildcard browse; derive a browse-friendly default.
+		if ( empty( $query ) || '*' === $query ) {
+			$query = $this->build_catalog_browse_query( $connection );
+		}
+
+		$response = $client->global_catalog_search( $query, $limit );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$raw_products = $this->extract_ucp_products( $response );
+		$products     = array_map( array( $this, 'normalize_ucp_product' ), $raw_products );
+
+		// --- Progressive relaxation: decompose when no results and query is present. ---
+		$smart_search = ! isset( $arguments['smart_search'] ) || ! empty( $arguments['smart_search'] );
+		$decomposed   = false;
+
+		if ( empty( $products ) && ! empty( $query ) && $smart_search && $this->should_decompose_query( $query ) ) {
+			$tokens      = $this->extract_search_tokens( $query );
+			$sub_queries = $this->generate_sub_queries( $tokens, $query );
+
+			if ( ! empty( $sub_queries ) ) {
+				$result_sets = array();
+
+				foreach ( $sub_queries as $sub_query ) {
+					$sub_response = $client->global_catalog_search( $sub_query, $limit );
+
+					if ( is_wp_error( $sub_response ) ) {
+						continue;
+					}
+
+					$sub_products = array_map(
+						array( $this, 'normalize_ucp_product' ),
+						$this->extract_ucp_products( $sub_response )
+					);
+					if ( ! empty( $sub_products ) ) {
+						$result_sets[] = $sub_products;
+					}
+				}
+
+				if ( ! empty( $result_sets ) ) {
+					$products   = $this->merge_and_rank_products(
+						$result_sets,
+						function ( $product ) {
+							return isset( $product['id'] ) ? $product['id'] : '';
+						},
+						$limit
+					);
+					$decomposed = true;
+				}
+			}
+		}
+
+		$cards_message = $this->format_product_cards( $products, 'shopify' );
+
+		$result = array(
+			'success'  => true,
+			'message'  => ! empty( $cards_message ) ? $cards_message : sprintf(
+				/* translators: %d: number of products */
+				__( 'Retrieved %d product(s) from the Shopify Global Catalog', 'nvoos-content-graph-pro' ),
+				count( $products )
+			),
+			'products' => $products,
+			'count'    => count( $products ),
+			'raw'      => $raw_products,
+		);
+
+		if ( $decomposed ) {
+			$result['smart_search'] = true;
+			$result['note']         = sprintf(
+				/* translators: %1$d: number of results, %2$s: original query */
+				__( 'The original query "%2$s" returned 0 results. Smart search decomposed the query into smaller keywords and found %1$d product(s).', 'nvoos-content-graph-pro' ),
+				count( $products ),
+				$query
+			);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Handle single product lookup for Global Catalog MCP (UCP) mode.
+	 *
+	 * Accepts a product or variant identifier via product_id or upid.
+	 *
+	 * @param WP_MCP_AI_Shopify_Client $client    Shopify client.
+	 * @param array                    $arguments Tool arguments.
+	 * @return array|WP_Error
+	 */
+	protected function handle_global_catalog_get( $client, array $arguments ) {
+		$id = '';
+		if ( isset( $arguments['product_id'] ) ) {
+			$id = sanitize_text_field( $arguments['product_id'] );
+		} elseif ( isset( $arguments['upid'] ) ) {
+			$id = sanitize_text_field( $arguments['upid'] );
+		}
+
+		if ( empty( $id ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_shopify_missing_product_id',
+				__( 'product_id is required for the get action in global_catalog mode.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		$response = $client->global_catalog_lookup( array( $id ) );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$products = $this->extract_ucp_products( $response );
+		$product  = ! empty( $products ) ? $this->normalize_ucp_product( $products[0] ) : array();
+
+		if ( empty( $product ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_shopify_product_not_found',
+				__( 'The requested product was not found in the Shopify Global Catalog.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		return array(
+			'success' => true,
+			'product' => $product,
+			'message' => __( 'Product retrieved successfully.', 'nvoos-content-graph-pro' ),
+		);
+	}
+
+	/**
+	 * Extract the product list from a UCP MCP tool response.
+	 *
+	 * UCP results wrap products inside result.structuredContent.products.
+	 *
+	 * @param array $response Decoded UCP MCP result.
+	 * @return array Product items.
+	 */
+	protected function extract_ucp_products( $response ) {
+		if ( ! is_array( $response ) ) {
+			return array();
+		}
+		$content  = isset( $response['structuredContent'] ) ? $response['structuredContent'] : $response;
+		$products = isset( $content['products'] ) ? $content['products'] : array();
+		return is_array( $products ) ? $products : array();
+	}
+
+	/**
+	 * Normalize a UCP catalog product into the tool's canonical shape.
+	 *
+	 * UCP products carry camelCase keys with price ranges and variant
+	 * prices in minor units; the output mirrors the Admin/Catalog API
+	 * normalizers so chat cards and TMA renderers work unchanged.
+	 *
+	 * @param array $item Raw UCP product object.
+	 * @return array Normalized product array.
+	 */
+	protected function normalize_ucp_product( array $item ) {
+		$title = isset( $item['title'] ) ? sanitize_text_field( $item['title'] ) : '';
+
+		$images = array();
+		if ( isset( $item['media'] ) && is_array( $item['media'] ) ) {
+			foreach ( $item['media'] as $media ) {
+				$url = isset( $media['url'] ) ? $media['url'] : '';
+				if ( $url ) {
+					$images[] = array( 'url' => $url );
+				}
+			}
+		}
+
+		$price_range = array();
+		if ( isset( $item['price_range'] ) && is_array( $item['price_range'] ) ) {
+			if ( isset( $item['price_range']['min'] ) && is_array( $item['price_range']['min'] ) ) {
+				$price_range['minVariantPrice'] = array(
+					'amount'       => isset( $item['price_range']['min']['amount'] ) ? ( (float) $item['price_range']['min']['amount'] / 100 ) : 0,
+					'currencyCode' => isset( $item['price_range']['min']['currency'] ) ? $item['price_range']['min']['currency'] : 'USD',
+				);
+			}
+			if ( isset( $item['price_range']['max'] ) && is_array( $item['price_range']['max'] ) ) {
+				$price_range['maxVariantPrice'] = array(
+					'amount'       => isset( $item['price_range']['max']['amount'] ) ? ( (float) $item['price_range']['max']['amount'] / 100 ) : 0,
+					'currencyCode' => isset( $item['price_range']['max']['currency'] ) ? $item['price_range']['max']['currency'] : 'USD',
+				);
+			}
+		}
+
+		$variants = array();
+		if ( isset( $item['variants'] ) && is_array( $item['variants'] ) ) {
+			foreach ( $item['variants'] as $variant ) {
+				$variants[] = array(
+					'id'           => isset( $variant['id'] ) ? $variant['id'] : '',
+					'title'        => isset( $variant['title'] ) ? $variant['title'] : '',
+					'price'        => isset( $variant['price'], $variant['price']['amount'] ) ? ( (float) $variant['price']['amount'] / 100 ) : 0,
+					'currency'     => isset( $variant['price'], $variant['price']['currency'] ) ? $variant['price']['currency'] : 'USD',
+					'available'    => isset( $variant['availability'], $variant['availability']['available'] ) ? (bool) $variant['availability']['available'] : true,
+					'checkout_url' => isset( $variant['checkout_url'] ) ? $variant['checkout_url'] : '',
+					'seller'       => isset( $variant['seller'], $variant['seller']['domain'] ) ? $variant['seller']['domain'] : '',
+					'sku'          => isset( $variant['sku'] ) ? $variant['sku'] : '',
+				);
+			}
+		}
+
+		$description = '';
+		if ( isset( $item['description'] ) && is_array( $item['description'] ) ) {
+			$description = isset( $item['description']['plain'] )
+				? $item['description']['plain']
+				: ( isset( $item['description']['html'] ) ? wp_strip_all_tags( $item['description']['html'] ) : '' );
+		}
+
+		return array(
+			'id'               => isset( $item['id'] ) ? sanitize_text_field( $item['id'] ) : '',
+			'title'            => $title,
+			'handle'           => '',
+			'status'           => 'ACTIVE',
+			'vendor'           => '',
+			'product_type'     => '',
+			'tags'             => isset( $item['tags'] ) ? $item['tags'] : array(),
+			'created_at'       => '',
+			'updated_at'       => '',
+			'price_range'      => $price_range,
+			'total_inventory'  => 0,
+			'variants'         => $variants,
+			'images'           => $images,
+			'availableforsale' => true,
+			'lookupurl'        => isset( $item['url'] ) ? $item['url'] : '',
+			'displayname'      => $title,
+			'description'      => $description,
+			'media'            => isset( $item['media'] ) ? $item['media'] : array(),
+			'pricerange'       => isset( $item['price_range'] ) ? $item['price_range'] : array(),
 		);
 	}
 

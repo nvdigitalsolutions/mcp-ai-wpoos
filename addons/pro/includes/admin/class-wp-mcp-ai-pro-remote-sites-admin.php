@@ -570,15 +570,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					break;
 				case 'shopify':
 					$shopify_api_mode = isset( $_POST['shopify_api_mode'] ) ? sanitize_key( wp_unslash( $_POST['shopify_api_mode'] ) ) : 'admin_api';
-					if ( ! in_array( $shopify_api_mode, array( 'admin_api', 'catalog_api', 'storefront_catalog' ), true ) ) {
+					if ( ! in_array( $shopify_api_mode, array( 'admin_api', 'catalog_api', 'storefront_catalog', 'global_catalog' ), true ) ) {
 						$shopify_api_mode = 'admin_api';
 					}
 					if ( 'catalog_api' === $shopify_api_mode ) {
 						$api_key    = isset( $_POST['shopify_catalog_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['shopify_catalog_client_id'] ) ) : '';
 						$api_secret = isset( $_POST['shopify_catalog_client_secret'] ) ? wp_unslash( $_POST['shopify_catalog_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- client secret must not be sanitized.
-					} elseif ( 'storefront_catalog' !== $shopify_api_mode ) {
-						// Admin API credentials. Storefront Catalog is keyless — no
-						// credentials to capture, only the domain and agent profile.
+					} elseif ( ! in_array( $shopify_api_mode, array( 'storefront_catalog', 'global_catalog' ), true ) ) {
+						// Admin API credentials. The UCP catalog modes are keyless —
+						// no credentials to capture, only the agent profile.
 						$api_key    = isset( $_POST['shopify_access_token'] ) ? wp_unslash( $_POST['shopify_access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- access token must not be sanitized.
 						$api_secret = isset( $_POST['shopify_storefront_token'] ) ? wp_unslash( $_POST['shopify_storefront_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- storefront token must not be sanitized.
 					}
@@ -732,9 +732,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$shopify_api_mode = 'admin_api';
 				}
 				if ( 'catalog_api' === $shopify_api_mode ) {
-					// Catalog API is global — no store domain needed.
+					// Catalog API (REST, deprecated) is global — no store domain needed.
 					$url       = 'https://discover.shopifyapps.com';
 					$auth_type = 'none'; // Catalog API uses a JWT bearer obtained dynamically.
+				} elseif ( 'global_catalog' === $shopify_api_mode ) {
+					// Global Catalog MCP is keyless and served by Shopify on a fixed origin.
+					$url       = 'https://catalog.shopify.com';
+					$auth_type = 'none';
 				} else {
 					$shop_domain = isset( $_POST['shopify_shop_domain'] ) ? sanitize_text_field( wp_unslash( $_POST['shopify_shop_domain'] ) ) : '';
 					// Strip scheme prefix and trailing slash if user included them.
@@ -798,6 +802,24 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						);
 					}
 				}
+			}
+
+			// UCP agent profile for keyless Storefront Catalog connections.
+			// Shopify fetches this URL from its own servers, so only publicly
+			// reachable HTTPS URLs are stored (the manager drops the rest and
+			// the client falls back to Shopify's hosted example profile).
+			$shopify_ucp_profile = 'shopify' === $connection_type && isset( $_POST['shopify_ucp_agent_profile'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+				? esc_url_raw( wp_unslash( $_POST['shopify_ucp_agent_profile'] ) )
+				: '';
+			$ucp_profile_warning = false;
+			if (
+				'shopify' === $connection_type
+				&& in_array( ( isset( $shopify_api_mode ) ? $shopify_api_mode : '' ), array( 'storefront_catalog', 'global_catalog' ), true )
+				&& '' !== $shopify_ucp_profile
+				&& ! WP_MCP_AI_Pro_Remote_Site_Manager::is_public_https_url( $shopify_ucp_profile )
+			) {
+				$shopify_ucp_profile = '';
+				$ucp_profile_warning = true;
 			}
 
 			$connection_data = array(
@@ -966,9 +988,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					? sanitize_text_field( wp_unslash( $_POST['shopify_catalog_shop_id'] ) )
 					: '',
 				// HTTPS-only UCP agent profile URL for keyless Storefront Catalog connections.
-				'shopify_ucp_agent_profile'      => 'shopify' === $connection_type && isset( $_POST['shopify_ucp_agent_profile'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
-					? esc_url_raw( wp_unslash( $_POST['shopify_ucp_agent_profile'] ) )
-					: '',
+				// The manager stores it only when publicly reachable; localhost/private URLs are dropped.
+				'shopify_ucp_agent_profile'      => $shopify_ucp_profile,
 				// ShipEngine-specific fields.
 				'shipengine_carrier_id'          => 'shipengine' === $connection_type && isset( $_POST['shipengine_carrier_id'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
 					? sanitize_text_field( wp_unslash( $_POST['shipengine_carrier_id'] ) )
@@ -1047,11 +1068,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				// Redirect back to the edit page so the user can verify the saved data.
 				$saved_connection_id = is_string( $result ) ? $result : ( isset( $connection_data['id'] ) ? $connection_data['id'] : '' );
+				$redirect_args       = array(
+					'page'  => 'wp-mcp-ai-remote-sites',
+					'saved' => '1',
+				);
 				if ( $saved_connection_id ) {
-					$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . rawurlencode( $saved_connection_id ) . '&saved=1' ) );
-				} else {
-					$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&saved=1' ) );
+					$redirect_args['edit'] = $saved_connection_id;
 				}
+				if ( $ucp_profile_warning ) {
+					$redirect_args['ucp_profile_warning'] = '1';
+				}
+				$this->redirect_and_exit( add_query_arg( $redirect_args, admin_url( 'admin.php' ) ) );
 			}
 		}
 	}
@@ -1512,6 +1539,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			<?php if ( isset( $_GET['saved'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only redirect flag. ?>
 				<div class="notice notice-success is-dismissible">
 					<p><?php esc_html_e( 'Connection saved successfully.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</div>
+			<?php endif; ?>
+
+			<?php if ( isset( $_GET['ucp_profile_warning'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only redirect flag. ?>
+				<div class="notice notice-warning is-dismissible">
+					<p><?php esc_html_e( 'The UCP Agent Profile URL was not saved: Shopify fetches it from its own servers, so it must be a publicly reachable HTTPS URL. This connection will use Shopify\'s hosted example profile until a public profile URL is set.', 'mcp-ai-wpoos-pro' ); ?></p>
 				</div>
 			<?php endif; ?>
 
@@ -2686,10 +2719,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						?>
 						<select name="shopify_api_mode" id="shopify_api_mode" onchange="toggleShopifyApiMode(this.value)">
 							<option value="admin_api" <?php selected( $saved_shopify_mode, 'admin_api' ); ?>><?php esc_html_e( 'Admin API — store management (shpat_ / shpca_)', 'mcp-ai-wpoos-pro' ); ?></option>
-							<option value="catalog_api" <?php selected( $saved_shopify_mode, 'catalog_api' ); ?>><?php esc_html_e( 'Catalog API — global product search for agents (shpss_)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="catalog_api" <?php selected( $saved_shopify_mode, 'catalog_api' ); ?>><?php esc_html_e( 'Catalog API (REST) — deprecated by Shopify (shpss_)', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="storefront_catalog" <?php selected( $saved_shopify_mode, 'storefront_catalog' ); ?>><?php esc_html_e( 'Storefront Catalog MCP — single-store agent catalog (UCP, keyless)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="global_catalog" <?php selected( $saved_shopify_mode, 'global_catalog' ); ?>><?php esc_html_e( 'Global Catalog MCP — cross-store product search (UCP, keyless)', 'mcp-ai-wpoos-pro' ); ?></option>
 						</select>
-						<p class="description"><?php esc_html_e( 'Admin API connects to a specific store. Catalog API queries the global Shopify product catalog. Storefront Catalog MCP queries one store via the keyless Universal Commerce Protocol (UCP) — no API key required, just the store domain and an agent profile.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Admin API connects to a specific store. Storefront Catalog MCP queries one store via the keyless Universal Commerce Protocol (UCP) — no API key required, just the store domain and an agent profile. Global Catalog MCP searches products across all Shopify merchants via the same keyless UCP mechanism. The old REST Catalog API (discover.shopifyapps.com) is deprecated by Shopify and no longer issues the read_global_api_catalog_search scope for new API keys; existing keys that still grant it keep working.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -2699,15 +2733,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<label for="shopify_shop_domain"><?php esc_html_e( 'Shop Domain', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
-						<input type="text" name="shopify_shop_domain" id="shopify_shop_domain" class="regular-text"
-							value="
-							<?php
-							$is_shopify_edit = $is_edit && 'shopify' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' );
-							$is_catalog_edit = $is_shopify_edit && isset( $connection['shopify_api_mode'] ) && 'catalog_api' === $connection['shopify_api_mode'];
-							echo $is_shopify_edit && ! $is_catalog_edit ? esc_attr( preg_replace( '#^https?://#i', '', rtrim( $connection['url'], '/' ) ) ) : '';
-							?>
-							"
-							autocomplete="off" placeholder="mystore.myshopify.com">
+						<?php
+						$is_shopify_edit           = $is_edit && 'shopify' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' );
+						$is_catalog_edit           = $is_shopify_edit && isset( $connection['shopify_api_mode'] ) && 'catalog_api' === $connection['shopify_api_mode'];
+						$shopify_shop_domain_value = $is_shopify_edit && ! $is_catalog_edit
+							? preg_replace( '#^https?://#i', '', rtrim( $connection['url'], '/' ) )
+							: '';
+						?>
+						<input type="text" name="shopify_shop_domain" id="shopify_shop_domain" class="regular-text" value="<?php echo esc_attr( $shopify_shop_domain_value ); ?>" autocomplete="off" placeholder="mystore.myshopify.com">
 						<p class="description"><?php esc_html_e( 'Your Shopify store domain, e.g. mystore.myshopify.com. You can also enter just the store name and .myshopify.com will be appended automatically. Storefront Catalog MCP is served by the store at this domain (/api/ucp/mcp).', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
@@ -2819,21 +2852,27 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
-				<!-- Storefront Catalog (UCP MCP) sub-fields -->
+				<!-- Storefront Catalog (UCP MCP) sub-fields (the UCP agent profile is shared with the Global Catalog mode) -->
 				<tr class="shopify-only-field shopify-storefront-catalog-field" style="display: none;">
 					<th scope="row">
 						<label for="shopify_ucp_agent_profile"><?php esc_html_e( 'UCP Agent Profile URL', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<?php
+						// Pre-fill with this site's own profile endpoint only when
+						// Shopify's servers could actually fetch it; a local or
+						// private site would submit a URL the manager drops (with
+						// a warning), so leave the field empty and let the client
+						// fall back to Shopify's hosted example profile.
 						$ucp_profile_default = rest_url( 'mcp-ai/v1/ucp/agent-profile' );
+						$ucp_profile_default = WP_MCP_AI_Pro_Remote_Site_Manager::is_public_https_url( $ucp_profile_default ) ? $ucp_profile_default : '';
 						$ucp_profile_saved   = $is_shopify_edit && ! empty( $connection['shopify_ucp_agent_profile'] ) ? $connection['shopify_ucp_agent_profile'] : '';
 						$ucp_profile_value   = ! empty( $ucp_profile_saved ) ? $ucp_profile_saved : $ucp_profile_default;
 						?>
 						<input type="url" name="shopify_ucp_agent_profile" id="shopify_ucp_agent_profile" class="regular-text"
 							value="<?php echo esc_attr( $ucp_profile_value ); ?>"
 							autocomplete="off" placeholder="https://your-site.com/wp-json/mcp-ai/v1/ucp/agent-profile">
-						<p class="description"><?php esc_html_e( 'HTTPS URL of your agent\'s UCP platform profile. Defaults to this site\'s own profile endpoint (recommended). Shopify fetches it server-side and negotiates catalog capabilities from it — no API key is involved.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'HTTPS URL of your agent\'s UCP platform profile. When this site is publicly reachable, the field pre-fills with the site\'s own profile endpoint (recommended). Shopify fetches it server-side and negotiates catalog capabilities from it — no API key is involved. The URL must be publicly reachable over HTTPS; leave the field empty to use Shopify\'s hosted example profile.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -2854,7 +2893,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</div>
 							<!-- Catalog API guide -->
 							<div class="shopify-catalog-api-guide" style="display: none;">
-								<p style="margin: 0 0 8px;"><strong><?php esc_html_e( 'Catalog API — How to create Dev Dashboard credentials:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+								<p style="margin: 0 0 8px;"><strong><?php esc_html_e( 'Catalog API (REST) — deprecated by Shopify:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+								<p style="margin: 0 0 8px;"><?php esc_html_e( 'Shopify has deprecated the REST Catalog API in favor of the keyless Global Catalog MCP and Storefront Catalog MCP interfaces. New API keys are no longer granted the read_global_api_catalog_search scope, which is why the Dev Dashboard has no Catalog API access option. Prefer the Storefront Catalog MCP mode above for single-store agents, or Shopify\'s Global Catalog MCP (https://catalog.shopify.com/api/ucp/mcp) for cross-store search — both are keyless and use the same agent-profile negotiation.', 'mcp-ai-wpoos-pro' ); ?></p>
 								<ol style="margin: 0 0 16px; padding-left: 20px; line-height: 1.8;">
 									<li><?php esc_html_e( 'Go to the Shopify Dev Dashboard at dev.shopify.com and sign in.', 'mcp-ai-wpoos-pro' ); ?></li>
 									<li><?php esc_html_e( 'Create a new API key (app) and copy the Client ID and Client Secret (shpss_…).', 'mcp-ai-wpoos-pro' ); ?></li>
@@ -2869,6 +2909,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									<li><?php esc_html_e( 'Enter your store domain above. The store serves the UCP MCP endpoint at https://{store}/api/ucp/mcp.', 'mcp-ai-wpoos-pro' ); ?></li>
 									<li><?php esc_html_e( 'Leave the UCP Agent Profile URL at the default — this site serves its own profile (search_catalog, lookup_catalog, get_product).', 'mcp-ai-wpoos-pro' ); ?></li>
 									<li><?php esc_html_e( 'No API key is required: Shopify authenticates the agent profile and negotiates capabilities server-side.', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( 'Note: UCP catalog results and images must not be cached or stored — this mode is for live agent queries, not CCT sync.', 'mcp-ai-wpoos-pro' ); ?></li>
+								</ol>
+							</div>
+							<!-- Global Catalog guide -->
+							<div class="shopify-global-catalog-guide" style="display: none;">
+								<p style="margin: 0 0 8px;"><strong><?php esc_html_e( 'Global Catalog MCP — How it works:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+								<ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
+									<li><?php esc_html_e( 'No store domain and no API key are needed — Shopify serves the Global Catalog MCP endpoint at https://catalog.shopify.com/api/ucp/mcp.', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( 'Leave the UCP Agent Profile URL at the default — this site serves its own profile, which advertises the dev.shopify.catalog.global capability.', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( 'Search returns products from all eligible Shopify merchants, clustered by Universal Product ID (UPID).', 'mcp-ai-wpoos-pro' ); ?></li>
 									<li><?php esc_html_e( 'Note: UCP catalog results and images must not be cached or stored — this mode is for live agent queries, not CCT sync.', 'mcp-ai-wpoos-pro' ); ?></li>
 								</ol>
 							</div>
@@ -2943,14 +2993,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<label for="shipengine_carrier_id"><?php esc_html_e( 'Carrier ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
-						<input type="text" name="shipengine_carrier_id" id="shipengine_carrier_id" class="regular-text"
-							value="
-							<?php
-							$is_shipengine_edit = $is_edit && 'shipengine' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' );
-							echo $is_shipengine_edit && ! empty( $connection['shipengine_carrier_id'] ) ? esc_attr( $connection['shipengine_carrier_id'] ) : '';
-							?>
-							"
-							autocomplete="off" placeholder="se-123456">
+						<?php
+						$is_shipengine_edit          = $is_edit && 'shipengine' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' );
+						$shipengine_carrier_id_value = $is_shipengine_edit && ! empty( $connection['shipengine_carrier_id'] ) ? $connection['shipengine_carrier_id'] : '';
+						?>
+						<input type="text" name="shipengine_carrier_id" id="shipengine_carrier_id" class="regular-text" value="<?php echo esc_attr( $shipengine_carrier_id_value ); ?>" autocomplete="off" placeholder="se-123456">
 						<p class="description"><?php esc_html_e( 'The ShipEngine carrier ID for USPS (e.g. "se-123456"). Find this under Carriers in your ShipEngine dashboard.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
@@ -3021,14 +3068,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<label for="shipstation_carrier_code"><?php esc_html_e( 'Carrier Code', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
-						<input type="text" name="shipstation_carrier_code" id="shipstation_carrier_code" class="regular-text"
-							value="
-							<?php
-							$is_shipstation_edit = $is_edit && 'shipstation' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' );
-							echo $is_shipstation_edit && ! empty( $connection['shipstation_carrier_code'] ) ? esc_attr( $connection['shipstation_carrier_code'] ) : 'stamps_com';
-							?>
-							"
-							autocomplete="off" placeholder="stamps_com">
+						<?php
+						$is_shipstation_edit            = $is_edit && 'shipstation' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' );
+						$shipstation_carrier_code_value = $is_shipstation_edit && ! empty( $connection['shipstation_carrier_code'] ) ? $connection['shipstation_carrier_code'] : 'stamps_com';
+						?>
+						<input type="text" name="shipstation_carrier_code" id="shipstation_carrier_code" class="regular-text" value="<?php echo esc_attr( $shipstation_carrier_code_value ); ?>" autocomplete="off" placeholder="stamps_com">
 						<p class="description"><?php esc_html_e( 'Carrier code in ShipStation (default: "stamps_com" for USPS). Other options: "fedex", "ups", etc.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
@@ -6488,19 +6532,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									<span class="dashicons dashicons-shield" style="color: #f9a825;"></span>
 									<?php esc_html_e( 'Cloudflare / Proxy Fallback URL:', 'mcp-ai-wpoos-pro' ); ?>
 								</p>
-								<input type="text" readonly="readonly" value="
 								<?php
-								echo esc_url(
-									add_query_arg(
-										array(
-											'action' => 'wp_mcp_ai_google_chat_webhook',
-											'connection_id' => $connection['id'],
-										),
-										admin_url( 'admin-ajax.php' )
-									)
+								$google_chat_fallback_url = add_query_arg(
+									array(
+										'action'        => 'wp_mcp_ai_google_chat_webhook',
+										'connection_id' => $connection['id'],
+									),
+									admin_url( 'admin-ajax.php' )
 								);
 								?>
-																				" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; margin-bottom: 4px;">
+								<input type="text" readonly="readonly" value="<?php echo esc_url( $google_chat_fallback_url ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; margin-bottom: 4px;">
 								<p class="description"><?php esc_html_e( 'Use this URL instead if Cloudflare, a WAF, or another proxy is blocking the standard /wp-json/ endpoint above. This alternative route bypasses REST API restrictions while applying the same Google OIDC token security.', 'mcp-ai-wpoos-pro' ); ?></p>
 							</div>
 						<?php else : ?>
@@ -7944,10 +7985,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		/**
-		 * Show/hide Shopify Admin API vs Catalog API vs Storefront Catalog
-		 * sub-fields based on the selected mode.
+		 * Show/hide Shopify Admin API vs Catalog API vs Storefront Catalog vs
+		 * Global Catalog sub-fields based on the selected mode.
 		 *
-		 * @param {string} mode 'admin_api', 'catalog_api', or 'storefront_catalog'
+		 * @param {string} mode 'admin_api', 'catalog_api', 'storefront_catalog', or 'global_catalog'
 		 */
 		function toggleShopifyApiMode(mode) {
 			var adminFields      = document.querySelectorAll('.shopify-admin-api-field');
@@ -7957,6 +7998,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var adminGuide       = document.querySelector('.shopify-admin-api-guide');
 			var catalogGuide     = document.querySelector('.shopify-catalog-api-guide');
 			var storefrontGuide  = document.querySelector('.shopify-storefront-catalog-guide');
+			var globalGuide      = document.querySelector('.shopify-global-catalog-guide');
 			var urlField         = document.getElementById('url');
 			var shopDomainField  = document.getElementById('shopify_shop_domain');
 
@@ -7978,6 +8020,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				if (adminGuide)      { adminGuide.style.display      = 'none'; }
 				if (catalogGuide)    { catalogGuide.style.display    = 'block'; }
 				if (storefrontGuide) { storefrontGuide.style.display = 'none'; }
+				if (globalGuide)     { globalGuide.style.display     = 'none'; }
 				// Catalog API always uses a fixed URL.
 				if (urlField) { urlField.value = 'https://discover.shopifyapps.com'; }
 			} else if (mode === 'storefront_catalog') {
@@ -7988,8 +8031,21 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				if (adminGuide)      { adminGuide.style.display      = 'none'; }
 				if (catalogGuide)    { catalogGuide.style.display    = 'none'; }
 				if (storefrontGuide) { storefrontGuide.style.display = 'block'; }
+				if (globalGuide)     { globalGuide.style.display     = 'none'; }
 				// Storefront Catalog is served by the store's own domain.
 				applyShopDomain();
+			} else if (mode === 'global_catalog') {
+				adminFields.forEach(function(f) { f.style.display = 'none'; });
+				catalogFields.forEach(function(f) { f.style.display = 'none'; });
+				// The UCP agent profile row is shared by both UCP catalog modes.
+				storefrontFields.forEach(function(f) { f.style.display = 'table-row'; });
+				domainFields.forEach(function(f) { f.style.display = 'none'; });
+				if (adminGuide)      { adminGuide.style.display      = 'none'; }
+				if (catalogGuide)    { catalogGuide.style.display    = 'none'; }
+				if (storefrontGuide) { storefrontGuide.style.display = 'none'; }
+				if (globalGuide)     { globalGuide.style.display     = 'block'; }
+				// Global Catalog is served by Shopify on a fixed origin.
+				if (urlField) { urlField.value = 'https://catalog.shopify.com'; }
 			} else {
 				adminFields.forEach(function(f) { f.style.display = 'table-row'; });
 				catalogFields.forEach(function(f) { f.style.display = 'none'; });
@@ -7998,6 +8054,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				if (adminGuide)      { adminGuide.style.display      = 'block'; }
 				if (catalogGuide)    { catalogGuide.style.display    = 'none'; }
 				if (storefrontGuide) { storefrontGuide.style.display = 'none'; }
+				if (globalGuide)     { globalGuide.style.display     = 'none'; }
 				// Admin API URL is derived from shop domain.
 				applyShopDomain();
 			}

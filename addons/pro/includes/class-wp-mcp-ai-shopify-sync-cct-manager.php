@@ -1734,13 +1734,13 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				return $this->sync_from_catalog_api( $client, $dry_run, $run_id );
 			}
 
-				// Storefront Catalog (UCP MCP) is a keyless live agent-query
-				// mode — UCP usage guidelines prohibit caching catalog
-				// results, so the CCT cache is never fed from it.
-			if ( 'storefront_catalog' === $client->get_api_mode() ) {
+				// The UCP catalog modes (Storefront/Global) are keyless live
+				// agent-query modes — UCP usage guidelines prohibit caching
+				// catalog results, so the CCT cache is never fed from them.
+			if ( in_array( $client->get_api_mode(), array( 'storefront_catalog', 'global_catalog' ), true ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_shopify_ucp_no_cct_sync',
-					__( 'This connection is configured for Shopify Storefront Catalog (UCP MCP), which is a live agent-query mode. UCP usage guidelines prohibit caching catalog results, so CCT sync is disabled for this connection. Use the catalog search tools for live queries instead.', 'mcp-ai-wpoos-pro' )
+					__( 'This connection is configured for a Shopify UCP Catalog mode (Storefront/Global Catalog MCP), which is a live agent-query mode. UCP usage guidelines prohibit caching catalog results, so CCT sync is disabled for this connection. Use the catalog search tools for live queries instead.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
@@ -1913,10 +1913,10 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				);
 			}
 
-			if ( 'storefront_catalog' === $client->get_api_mode() ) {
+			if ( in_array( $client->get_api_mode(), array( 'storefront_catalog', 'global_catalog' ), true ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_shopify_ucp_no_cct_sync',
-					__( 'This connection is configured for Shopify Storefront Catalog (UCP MCP), which is a live agent-query mode. UCP usage guidelines prohibit caching catalog results, so CCT sync is disabled for this connection.', 'mcp-ai-wpoos-pro' )
+					__( 'This connection is configured for a Shopify UCP Catalog mode (Storefront/Global Catalog MCP), which is a live agent-query mode. UCP usage guidelines prohibit caching catalog results, so CCT sync is disabled for this connection.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
