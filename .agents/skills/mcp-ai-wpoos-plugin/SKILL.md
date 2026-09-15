@@ -5,8 +5,8 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.79"
-  plugin-version-tested: "1.1.79"
+  plugin-version: "1.1.80"
+  plugin-version-tested: "1.1.80"
   last-updated: "2026-09-15"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
@@ -708,6 +708,37 @@ Import external AI conversation exports into the JetEngine
   toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
   dj-management/image-production slices.
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Assistant Portability, Shopify UCP Modes, Security Usage Monitor & WP-CLI Repairs (v1.1.80)
+
+- **Assistant export/import across all surfaces** (PR #6628) — canonical
+  `WP_MCP_AI_Assistant_Portability` engine with `nvoos-assistant` JSON
+  bundles (format_version 1): `wp mcp-ai assistant export|import` rewritten
+  (legacy files still import; old export lost `_wp_mcp_ai_*` config — fixed),
+  REST `POST /mcp-ai/v1/assistants/export|import` (admin-only, nonce/bearer,
+  schema-validated, 2 MB cap, dry-run), admin Import/Export page + row/bulk
+  actions, and 3 new base tools (`export_assistant`, `import_assistant`,
+  `duplicate_assistant`) + Pro `export_assistant_blueprint`. Credential hashes
+  never exported, stripped from imports; the backup provider now shares the
+  denylist (previously it exported credential hashes).
+- **Security Center Usage Monitor sub-tab** (PR #6632) — new `usage_monitor`
+  sub-tab (violation triage log, status cards, shutdown recovery, editable
+  config); the admin notice deep-links to it and shows the latest violation;
+  `POST /mcp-ai/v1/security/clear-violations` + `/clear-shutdown`
+  (`manage_options` + nonce); monitor sanitize-clobber bug fixed (submitted
+  keys only); malformed patterns dropped/skipped.
+- **Shopify UCP modes** (PRs #6624/#6630) — keyless Storefront + Global
+  Catalog modes replace the deprecated REST Catalog API on Pro + CG Pro
+  (byte-identical ports; public `/ucp/agent-profile` route); REST catalog
+  401s fixed with a 60-min token cap, scope validation, and purge-and-retry
+  (PR #6623); JetEngine sync gate unified with the System Status row.
+- **WP-CLI repaired + streaming** (PRs #6625/#6626) — `provider list` and
+  every base-class command no longer fatal on PHP 8+ (by-reference Formatter
+  constructor → by-value `format_items()`); `chat` uses `get_model_router()`;
+  `chat --stream` streams natively (cURL SSE) or simulates chunks, honoring
+  the shared streaming filters. OKF editor keeps context on save (#6631).
+  WhatsApp webhook self-tests on Remote Sites (#6622).
+- **Tool count** — +3 base +1 Pro: ~306 base + ~1,266 Pro (~1,572 total).
 
 ## Imaging Symlink Hardening, Checkout Hardening Tail & Sub-Project Bumps (v1.1.79)
 
