@@ -25,7 +25,7 @@ External callers interact with sections through the `WP_MCP_AI_Settings_Registry
 | Symbol | File | Notes |
 |---|---|---|
 | `WP_MCP_AI_Settings_Section` (abstract) | `abstract-wp-mcp-ai-settings-section.php` | Base; referenced from tests and Pro sections |
-| `WP_MCP_AI_Section_Security` | `class-wp-mcp-ai-section-security.php` | Security Center — five sub-tabs (overview, access, network, ai_safety, audit). Renders posture score card, IP dry-run, header preview, capability fence table, snapshot/restore, self-test. |
+| `WP_MCP_AI_Section_Security` | `class-wp-mcp-ai-section-security.php` | Security Center — six sub-tabs (overview, access, network, ai_safety, audit, usage_monitor). Renders posture score card, IP dry-run, header preview, capability fence table, snapshot/restore, self-test, and the nefarious-usage violation triage log with monitor configuration. |
 
 All other `class-wp-mcp-ai-section-*.php` files are internal.
 
@@ -35,7 +35,12 @@ Sections that need sub-tabs implement `get_subtab_groups()` and
 `get_active_subtab()` (inherited helpers exist in the abstract base).
 The security section overrides `render_wrapper()` to give the `overview`
 sub-tab a posture-only layout (no form save) while standard sub-tabs use the
-normal `<table class="form-table">` flow.
+normal `<table class="form-table">` flow. The `usage_monitor` sub-tab is a
+hybrid: its config inputs post through the standard `wp_mcp_ai_settings`
+form and are bridged to the monitor's own option by
+`WP_MCP_AI_Security_Monitor_Admin::sanitize_monitor_settings()`, while its
+clear actions call the Security Center REST routes
+(`/mcp-ai/v1/security/clear-violations`, `/clear-shutdown`).
 
 See `class-wp-mcp-ai-section-providers.php` for another example of the
 sub-tab pattern.

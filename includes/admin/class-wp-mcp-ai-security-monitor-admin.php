@@ -56,24 +56,87 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 		public static function sanitize_monitor_settings( $settings, $input ) {
 			$monitor = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
 
-			// Update monitor settings from form input.
-			$monitor_settings = array(
-				'enabled'                 => ! empty( $input['wp_mcp_ai_security_monitor_enabled'] ),
-				'auto_shutdown_enabled'   => ! empty( $input['wp_mcp_ai_security_monitor_auto_shutdown'] ),
-				'max_requests_per_minute' => isset( $input['wp_mcp_ai_security_monitor_max_requests_per_minute'] ) ?
-					absint( $input['wp_mcp_ai_security_monitor_max_requests_per_minute'] ) :
-					WP_MCP_AI_Nefarious_Usage_Monitor::DEFAULT_MAX_REQUESTS_PER_MINUTE,
-				'max_tools_per_hour'      => isset( $input['wp_mcp_ai_security_monitor_max_tools_per_hour'] ) ?
-					absint( $input['wp_mcp_ai_security_monitor_max_tools_per_hour'] ) :
-					WP_MCP_AI_Nefarious_Usage_Monitor::DEFAULT_MAX_TOOLS_PER_HOUR,
-				'violation_threshold'     => isset( $input['wp_mcp_ai_security_monitor_violation_threshold'] ) ?
-					absint( $input['wp_mcp_ai_security_monitor_violation_threshold'] ) :
-					5,
-			);
+			// Only update keys that were actually submitted. Saves from other
+			// sub-tabs (or other sections) do not include these fields, and a
+			// naive merge would silently flip 'enabled' to false on every
+			// unrelated settings save.
+			$monitor_settings = array();
 
-			$monitor->update_settings( $monitor_settings );
+			if ( isset( $input['wp_mcp_ai_security_monitor_enabled'] ) ) {
+				$monitor_settings['enabled'] = ! empty( $input['wp_mcp_ai_security_monitor_enabled'] );
+			}
+
+			if ( isset( $input['wp_mcp_ai_security_monitor_auto_shutdown'] ) ) {
+				$monitor_settings['auto_shutdown_enabled'] = ! empty( $input['wp_mcp_ai_security_monitor_auto_shutdown'] );
+			}
+
+			if ( isset( $input['wp_mcp_ai_security_monitor_max_requests_per_minute'] ) ) {
+				$max_requests                                = absint( $input['wp_mcp_ai_security_monitor_max_requests_per_minute'] );
+				$monitor_settings['max_requests_per_minute'] = $max_requests > 0 ?
+					$max_requests :
+					WP_MCP_AI_Nefarious_Usage_Monitor::DEFAULT_MAX_REQUESTS_PER_MINUTE;
+			}
+
+			if ( isset( $input['wp_mcp_ai_security_monitor_max_tools_per_hour'] ) ) {
+				$max_tools                              = absint( $input['wp_mcp_ai_security_monitor_max_tools_per_hour'] );
+				$monitor_settings['max_tools_per_hour'] = $max_tools > 0 ?
+					$max_tools :
+					WP_MCP_AI_Nefarious_Usage_Monitor::DEFAULT_MAX_TOOLS_PER_HOUR;
+			}
+
+			if ( isset( $input['wp_mcp_ai_security_monitor_violation_threshold'] ) ) {
+				$threshold                               = absint( $input['wp_mcp_ai_security_monitor_violation_threshold'] );
+				$monitor_settings['violation_threshold'] = $threshold > 0 ? $threshold : 5;
+			}
+
+			if ( isset( $input['wp_mcp_ai_security_monitor_patterns'] ) ) {
+				$monitor_settings['suspicious_patterns'] = self::sanitize_pattern_lines( $input['wp_mcp_ai_security_monitor_patterns'] );
+			}
+
+			if ( ! empty( $monitor_settings ) ) {
+				$monitor->update_settings( $monitor_settings );
+			}
 
 			return $settings;
+		}
+
+		/**
+		 * Sanitize a newline-separated list of regex patterns.
+		 *
+		 * Invalid regexes are dropped rather than stored, because a malformed
+		 * pattern would later be interpolated into the scan loop. An empty
+		 * result falls back to the default pattern set.
+		 *
+		 * @param string $raw Raw textarea value (one pattern per line).
+		 * @return array Valid patterns, or defaults when none survive.
+		 */
+		public static function sanitize_pattern_lines( $raw ) {
+			$monitor  = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
+			$defaults = $monitor->get_default_suspicious_patterns();
+
+			if ( ! is_string( $raw ) ) {
+				return $defaults;
+			}
+
+			$lines = preg_split( '/\r\n|\r|\n/', $raw );
+			$clean = array();
+
+			foreach ( (array) $lines as $line ) {
+				$line = trim( str_replace( "\0", '', (string) $line ) );
+				if ( '' === $line ) {
+					continue;
+				}
+
+				// Probe with the same delimiter the scan loop uses. Returns
+				// false for malformed patterns, which must never be stored.
+				if ( false === @preg_match( '/' . $line . '/', '' ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Validation probe: result ignored, malformed patterns skipped.
+					continue;
+				}
+
+				$clean[] = $line;
+			}
+
+			return ! empty( $clean ) ? $clean : $defaults;
 		}
 
 		/**

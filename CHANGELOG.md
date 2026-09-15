@@ -1,5 +1,18 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Added — Security Center Usage Monitor Sub-Tab & Triage Violation Log
+
+- **The "Security Violations Detected" admin notice now deep-links to a real detail view** — a new `usage_monitor` sub-tab under Settings → Security renders the nefarious-usage violation triage log (severity tier, timestamp, type, message, matched patterns, user, IP), monitor status cards, and the emergency-shutdown recovery panel. The notice itself also shows the most recent violation type and message, so admins see the "why" without clicking through.
+- **Clear actions are now wired to REST** — `POST /mcp-ai/v1/security/clear-violations` and `POST /mcp-ai/v1/security/clear-shutdown` (both `manage_options`-gated, cookie-auth nonce) power the log/shutdown clear buttons; the legacy `admin_post` handlers remain as fallbacks.
+- **Monitor configuration is finally editable in the UI** — enable/auto-shutdown toggles, per-minute request limit, hourly tool limit, shutdown threshold, and the suspicious-pattern regex list (one per line) save through the standard settings pipeline into the monitor's own option.
+
+### Fixed — Security Monitor Sanitization Clobbering & Malformed Patterns
+
+- **Unrelated settings saves no longer silently disable the monitor** — `sanitize_monitor_settings()` only updates keys actually present in the submission; previously any save from another tab/sub-tab flipped `enabled` and `auto_shutdown_enabled` off.
+- **Malformed admin-edited patterns are dropped at sanitize time and skipped at scan time** instead of emitting `preg_match()` warnings or breaking the scan loop; an empty pattern list restores the defaults.
+
 ## [1.1.79] - 2026-09-13
 
 ### Fixed — WP-CLI Formatter By-Reference Fatal & Chat Router Construction

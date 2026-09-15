@@ -421,11 +421,69 @@ class Test_Security_Center extends WP_UnitTestCase {
 			'/mcp-ai/v1/security/restore',
 			'/mcp-ai/v1/security/self-test',
 			'/mcp-ai/v1/security/compliance-report',
+			'/mcp-ai/v1/security/clear-violations',
+			'/mcp-ai/v1/security/clear-shutdown',
 		);
 
 		foreach ( $expected as $route ) {
 			$this->assertArrayHasKey( $route, $routes, "Route '{$route}' not registered" );
 		}
+	}
+
+	/**
+	 * Clears the stored violation log via the REST endpoint.
+	 */
+	public function test_clear_violations_endpoint() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+
+		// Seed a fake violation.
+		update_option(
+			WP_MCP_AI_Nefarious_Usage_Monitor::VIOLATIONS_OPTION,
+			array(
+				array(
+					'type'      => 'suspicious_content',
+					'message'   => 'Test violation',
+					'timestamp' => current_time( 'mysql', true ),
+					'user_id'   => get_current_user_id(),
+					'ip'        => '127.0.0.1',
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_REST_Security_Center_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/security/clear-violations' );
+
+		$response = $controller->clear_violations( $request );
+		$data     = $response->get_data();
+
+		$this->assertTrue( $data['success'] );
+		$this->assertSame( 0, $data['remaining'] );
+		$this->assertEmpty( get_option( WP_MCP_AI_Nefarious_Usage_Monitor::VIOLATIONS_OPTION, array() ) );
+	}
+
+	/**
+	 * Clears the emergency shutdown state via the REST endpoint.
+	 */
+	public function test_clear_shutdown_endpoint() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+
+		update_option(
+			WP_MCP_AI_Nefarious_Usage_Monitor::SHUTDOWN_OPTION,
+			array(
+				'active'       => true,
+				'triggered_at' => current_time( 'mysql', true ),
+			)
+		);
+
+		$controller = new WP_MCP_AI_REST_Security_Center_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/security/clear-shutdown' );
+
+		$response = $controller->clear_shutdown( $request );
+		$data     = $response->get_data();
+
+		$this->assertTrue( $data['success'] );
+		$this->assertFalse( $data['shutdown'] );
+		$this->assertFalse( WP_MCP_AI_Nefarious_Usage_Monitor::get_instance()->is_emergency_shutdown_active() );
 	}
 
 	/**

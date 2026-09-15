@@ -17,6 +17,9 @@
  *   GET  /mcp-ai/v1/security/snapshots         – list available snapshots
  *   POST /mcp-ai/v1/security/restore           – restore from a snapshot
  *   POST /mcp-ai/v1/security/self-test         – fire synthetic security events
+ *   POST /mcp-ai/v1/security/compliance-report – build a compliance CSV evidence pack
+ *   POST /mcp-ai/v1/security/clear-violations  – clear the nefarious-usage violation log
+ *   POST /mcp-ai/v1/security/clear-shutdown    – clear the emergency shutdown state
  *
  * @package WP_MCP_AI
  * @since   1.5.0
@@ -188,6 +191,32 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 							'enum'              => array( 'owasp', 'gdpr', 'soc2', 'hipaa' ),
 						),
 					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/security/clear-violations',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'clear_violations' ),
+					'permission_callback' => $manage,
+					'args'                => array(),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
+			'/security/clear-shutdown',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'clear_shutdown' ),
+					'permission_callback' => $manage,
+					'args'                => array(),
 				),
 			)
 		);
@@ -583,6 +612,63 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 				'posture_grade' => esc_html( $posture_data['grade'] ),
 				'control_count' => count( $controls ),
 				'csv'           => $csv,
+			)
+		);
+	}
+
+	/**
+	 * POST /security/clear-violations
+	 *
+	 * Clear the nefarious-usage monitor violation log.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function clear_violations( $request ) {
+		if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
+			return new WP_Error(
+				'monitor_unavailable',
+				__( 'The usage monitor is not available.', 'mcp-ai-wpoos' ),
+				array( 'status' => 503 )
+			);
+		}
+
+		$monitor = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
+		$monitor->clear_violations();
+
+		return rest_ensure_response(
+			array(
+				'success'   => true,
+				'remaining' => 0,
+			)
+		);
+	}
+
+	/**
+	 * POST /security/clear-shutdown
+	 *
+	 * Clear the emergency shutdown state so the AI Assistant can run again.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function clear_shutdown( $request ) {
+		if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
+			return new WP_Error(
+				'monitor_unavailable',
+				__( 'The usage monitor is not available.', 'mcp-ai-wpoos' ),
+				array( 'status' => 503 )
+			);
+		}
+
+		$monitor = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
+		$monitor->clear_emergency_shutdown();
+
+		return rest_ensure_response(
+			array(
+				'success'    => true,
+				'shutdown'   => $monitor->is_emergency_shutdown_active(),
+				're_enabled' => ! $monitor->is_emergency_shutdown_active(),
 			)
 		);
 	}
