@@ -53,7 +53,9 @@ class WP_MCP_AI_CLI_Chat_Command extends WP_MCP_AI_CLI_Base_Command {
 	 * : Maximum output tokens.
 	 *
 	 * [--stream]
-	 * : Stream the response token-by-token.
+	 * : Stream the response token-by-token. Uses native provider streaming when
+	 * cURL is available and the provider supports it; otherwise simulates
+	 * streaming in small chunks.
 	 *
 	 * [--format=<format>]
 	 * : Output format for non-streaming mode (text, json).
@@ -148,28 +150,168 @@ class WP_MCP_AI_CLI_Chat_Command extends WP_MCP_AI_CLI_Base_Command {
 	/**
 	 * Stream the response token-by-token.
 	 *
+	 * Uses native provider streaming (raw cURL, real-time token delivery)
+	 * when the resolved provider supports it; otherwise falls back to
+	 * simulated chunked output, matching the legacy browser chat behaviour.
+	 *
 	 * @param object $router    Language model router.
 	 * @param array  $messages  Chat messages.
 	 * @param array  $options   Model options.
 	 * @param array  $assistant Assistant config.
 	 */
 	private function stream_response( $router, $messages, $options, $assistant ) {
-		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $assistant used for context
-		$options['stream'] = true;
+		$printed_chars = 0;
+
+		if ( $this->native_streaming_available( $options, $assistant ) ) {
+			$options['stream']          = true;
+			$options['stream_callback'] = function ( $chunk ) use ( &$printed_chars ) {
+				$delta = isset( $chunk['choices'][0]['delta']['content'] ) ? $chunk['choices'][0]['delta']['content'] : '';
+				if ( is_string( $delta ) && '' !== $delta ) {
+					$this->write_stream_chunk( $delta );
+					$printed_chars += strlen( $delta );
+				}
+			};
+		} else {
+			// Never send stream:true without a real-time callback: the provider
+			// clients buffer SSE bodies through wp_remote_post(), whose JSON
+			// response parsers cannot decode a streamed payload.
+			unset( $options['stream'] );
+		}
 
 		$result = $router->create_chat_completion( $messages, $options );
 		if ( is_wp_error( $result ) ) {
 			$this->error( $result->get_error_message() );
 		}
 
-		// If the result has a stream callback, use it.
-		if ( isset( $result['choices'][0]['message']['content'] ) ) {
-			WP_CLI::log( $result['choices'][0]['message']['content'] );
-		} elseif ( isset( $result['content'] ) ) {
-			WP_CLI::log( $result['content'] );
-		} else {
-			$this->warning( __( 'No content in response.', 'mcp-ai-wpoos' ) );
+		if ( $printed_chars > 0 ) {
+			// Native streaming already printed the tokens; close the line.
+			$this->write_stream_chunk( PHP_EOL );
+			return;
 		}
+
+		// Fallback: simulate streaming over the buffered response.
+		$content = $this->extract_response_content( $result );
+		if ( '' === $content ) {
+			$this->warning( __( 'No content in response.', 'mcp-ai-wpoos' ) );
+			return;
+		}
+
+		$this->simulate_stream_output( $content );
+	}
+
+	/**
+	 * Whether native provider streaming is available for this request.
+	 *
+	 * Mirrors the REST chat gating: real-time streaming requires cURL plus a
+	 * provider whose client implements the raw-cURL SSE path, and respects the
+	 * shared wp_mcp_ai_disable_native_streaming and
+	 * wp_mcp_ai_native_streaming_providers filters (including the Disable
+	 * Native Streaming admin setting).
+	 *
+	 * @param array $options   Model options.
+	 * @param array $assistant Assistant config.
+	 * @return bool
+	 */
+	private function native_streaming_available( array $options, array $assistant ) {
+		if ( ! function_exists( 'curl_init' ) || (bool) apply_filters( 'wp_mcp_ai_disable_native_streaming', false ) ) {
+			return false;
+		}
+
+		$native_providers = apply_filters(
+			'wp_mcp_ai_native_streaming_providers',
+			array( 'lm_studio', 'deepseek', 'openai', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'nvidia', 'huggingface' )
+		);
+
+		$provider = isset( $options['provider'] ) && '' !== $options['provider'] ? $options['provider'] : ( isset( $assistant['provider'] ) ? $assistant['provider'] : '' );
+		$provider = sanitize_key( $provider );
+
+		return '' !== $provider && in_array( $provider, $native_providers, true );
+	}
+
+	/**
+	 * Extract the text content from a chat completion result.
+	 *
+	 * Handles both the OpenAI-style string content and provider content that
+	 * arrives as an array of text parts (e.g. Gemini's normalized envelope).
+	 *
+	 * @param array $result Chat completion result.
+	 * @return string
+	 */
+	private function extract_response_content( array $result ) {
+		$content = isset( $result['choices'][0]['message']['content'] ) ? $result['choices'][0]['message']['content'] : null;
+
+		if ( is_string( $content ) ) {
+			return $content;
+		}
+
+		if ( is_array( $content ) ) {
+			$texts = array();
+			foreach ( $content as $part ) {
+				if ( isset( $part['text'] ) && is_string( $part['text'] ) ) {
+					$texts[] = $part['text'];
+				}
+			}
+			if ( ! empty( $texts ) ) {
+				return implode( '', $texts );
+			}
+		}
+
+		if ( isset( $result['content'][0]['text'] ) && is_string( $result['content'][0]['text'] ) ) {
+			return $result['content'][0]['text'];
+		}
+
+		if ( isset( $result['content'] ) && is_string( $result['content'] ) ) {
+			return $result['content'];
+		}
+
+		return '';
+	}
+
+	/**
+	 * Write a raw chunk to STDOUT without a trailing newline.
+	 *
+	 * @param string $text Text chunk.
+	 */
+	private function write_stream_chunk( $text ) {
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Raw CLI stream output; HTML escaping does not apply to terminal output.
+		fwrite( STDOUT, $text ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Direct STDOUT write required for token streaming; WP_Filesystem does not apply to CLI streams.
+
+		if ( function_exists( 'fflush' ) ) {
+			fflush( STDOUT );
+		}
+	}
+
+	/**
+	 * Simulate token streaming by printing buffered text in small chunks.
+	 *
+	 * Mirrors the legacy browser chat fallback (50 characters per chunk with a
+	 * 10ms pause between chunks, as defined by the REST handler constants).
+	 *
+	 * @param string $text Full response text.
+	 */
+	private function simulate_stream_output( $text ) {
+		$chunk_size = 50;
+		$delay_us   = 10000;
+		$can_sleep  = function_exists( 'usleep' );
+
+		if ( function_exists( 'mb_strlen' ) && function_exists( 'mb_substr' ) ) {
+			$len = mb_strlen( $text );
+			for ( $i = 0; $i < $len; $i += $chunk_size ) {
+				$this->write_stream_chunk( mb_substr( $text, $i, $chunk_size ) );
+				if ( $can_sleep ) {
+					usleep( $delay_us );
+				}
+			}
+		} else {
+			foreach ( str_split( $text, $chunk_size ) as $chunk ) {
+				$this->write_stream_chunk( $chunk );
+				if ( $can_sleep ) {
+					usleep( $delay_us );
+				}
+			}
+		}
+
+		$this->write_stream_chunk( PHP_EOL );
 	}
 
 	/**
