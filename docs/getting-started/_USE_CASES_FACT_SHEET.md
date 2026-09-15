@@ -37,23 +37,23 @@ Sub-project versions (release-note ground truth, v1.1.72):
 
 | Measure | Value | Source / methodology |
 |---|---:|---|
-| Reconciled base tools | ~303 | `CHANGELOG.md` v1.1.72 release note; live registry authoritative |
-| Reconciled Pro tools | ~1,265 | `CHANGELOG.md` v1.1.72 release note; live registry authoritative |
-| Reconciled total tools | ~1,568 | `CHANGELOG.md` v1.1.72 release note; live registry authoritative |
-| Base tool class files | 273 | `find includes/tools -name "class-wp-mcp-ai-tool-*.php"` sanity check |
-| Pro tool class files | 985 | `find addons/pro -name "class-wp-mcp-ai-tool-*.php"` sanity check |
+| Reconciled base tools | ~306 | `CHANGELOG.md` v1.1.80 release note; live registry authoritative |
+| Reconciled Pro tools | ~1,266 | `CHANGELOG.md` v1.1.80 release note; live registry authoritative |
+| Reconciled total tools | ~1,572 | `CHANGELOG.md` v1.1.80 release note; live registry authoritative |
+| Base tool class files | 276 | `find includes/tools -name "class-wp-mcp-ai-tool-*.php"` sanity check |
+| Pro tool class files | 986 | `find addons/pro -name "class-wp-mcp-ai-tool-*.php"` sanity check |
 | Profession knowledge documents | 190 | `find includes/knowledge-base/profession-documents -name "*.txt"` |
 | GA SPA-manifested Pro toolkits | 10 | `addons/pro/config/spa-manifests/*.json` |
 | Pro toolkit settings pages | 53 | `addons/pro/includes/admin/class-wp-mcp-ai-*-settings-page.php` |
 | Toolkit MCP servers | 33 | v1.1.40 Phase 8 release note (4 new: Pro Scheduler, FlowHub, Shopify Sync, EZuite) |
 | Pro addon toolkits | 31 | `docs/project/ADDON_INVENTORY.md` (Pro row) |
 | Bundled skills | 74 base + 41 Pro | v1.1.72 release note |
-| Coding-time agent skills | 55 | `.agents/skills/` directory count |
+| Coding-time agent skills | 58 | `.agents/skills/` directory count |
 | Addons in monorepo | 27 | `addons/*/` directory count |
 
 ### Count interpretation
 
-- Use `~303 base`, `~1,265 Pro`, and `~1,568 total` in prose.
+- Use `~306 base`, `~1,266 Pro`, and `~1,572 total` in prose (refreshed v1.1.80: +3 base +1 Pro, PR #6628).
 - Do not use old values such as `~195`, `~635`, `~830`, `207`, `127`, `70+`, `175+`, `182`, `193`, or `13 toolkits` in the Rev 3.0 guide.
 - File counts are sanity checks only. File counts can be higher than runtime registry counts because some classes are abstract, optional-integration gated, helper-oriented, or available only when Pro/third-party dependencies are active.
 - Profession templates should be described as `~190 pre-built profession templates` or `~190 professions across 12 categories`.
