@@ -613,6 +613,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$threads_controller = new WP_MCP_AI_REST_Threads_Controller( $this );
 			$threads_controller->register_routes();
 
+			// Delegate assistant export/import to the portability controller.
+			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-assistant-portability-controller.php';
+			$portability_controller = new WP_MCP_AI_REST_Assistant_Portability_Controller();
+			$portability_controller->register_routes();
+
 			// Note: /mcp route now handled by MCP Controller (Phase 3.3).
 		}
 
@@ -3287,7 +3292,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Guardrail pre-screening only inspects plain-text content;
 					// array content (multi-part segments with attachments) is
 					// skipped rather than coerced with a lossy string cast.
-					$content = isset( $messages[ $i ]['content'] ) ? $messages[ $i ]['content'] : '';
+					$content           = isset( $messages[ $i ]['content'] ) ? $messages[ $i ]['content'] : '';
 					$last_user_message = is_string( $content ) ? $content : '';
 					break;
 				}

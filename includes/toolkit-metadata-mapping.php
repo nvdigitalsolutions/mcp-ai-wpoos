@@ -882,6 +882,24 @@ return array(
 		'profession_tags'       => array( 'ai_researcher', 'systems_administrator' ),
 		'risk_level'            => 'standard',
 	),
+	'export_assistant'                   => array(
+		'toolkit'               => 'ai_model_management',
+		'pattern_compatibility' => array( 'orchestrator', 'peer_to_peer' ),
+		'profession_tags'       => array( 'ai_researcher', 'systems_administrator' ),
+		'risk_level'            => 'info',
+	),
+	'import_assistant'                   => array(
+		'toolkit'               => 'ai_model_management',
+		'pattern_compatibility' => array( 'orchestrator' ),
+		'profession_tags'       => array( 'ai_researcher', 'systems_administrator' ),
+		'risk_level'            => 'standard',
+	),
+	'duplicate_assistant'                => array(
+		'toolkit'               => 'ai_model_management',
+		'pattern_compatibility' => array( 'orchestrator' ),
+		'profession_tags'       => array( 'ai_researcher', 'systems_administrator' ),
+		'risk_level'            => 'standard',
+	),
 	'create_term'                        => array(
 		'toolkit'               => 'content_publishing',
 		'pattern_compatibility' => array( 'orchestrator' ),

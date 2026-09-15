@@ -136,21 +136,30 @@ class WP_MCP_AI_Export_Provider_Assistants extends WP_MCP_AI_Export_Provider_Bas
 				'post_status'  => $post->post_status,
 			);
 
-			// Collect post meta, filtering out internal WordPress meta.
-			$all_meta  = get_post_meta( $post->ID );
-			$post_meta = array();
+			// Collect post meta through the shared portability engine so the
+			// same denylist (credentials etc.) guards every export surface.
+			if ( class_exists( 'WP_MCP_AI_Assistant_Portability' ) ) {
+				$post_meta = WP_MCP_AI_Assistant_Portability::get_export_meta( $post->ID );
+			} else {
+				// Fallback: replicate the original filtering inline.
+				$post_meta = array();
 
-			foreach ( $all_meta as $meta_key => $meta_values ) {
-				// Skip internal WordPress meta keys starting with underscore,
-				// unless they begin with _wp_mcp_ai.
-				if ( '_' === $meta_key[0] && 0 !== strpos( $meta_key, '_wp_mcp_ai' ) ) {
-					continue;
+				foreach ( $all_meta as $meta_key => $meta_values ) {
+					// Skip internal WordPress meta keys starting with underscore,
+					// unless they begin with _wp_mcp_ai.
+					if ( '_' === $meta_key[0] && 0 !== strpos( $meta_key, '_wp_mcp_ai' ) ) {
+						continue;
+					}
+
+					if ( '_wp_mcp_ai_credentials' === $meta_key ) {
+						continue;
+					}
+
+					// Unwrap single-value arrays.
+					$post_meta[ $meta_key ] = count( $meta_values ) === 1
+						? maybe_unserialize( $meta_values[0] )
+						: array_map( 'maybe_unserialize', $meta_values );
 				}
-
-				// Unwrap single-value arrays.
-				$post_meta[ $meta_key ] = count( $meta_values ) === 1
-					? maybe_unserialize( $meta_values[0] )
-					: array_map( 'maybe_unserialize', $meta_values );
 			}
 
 			$post_data['meta'] = $post_meta;
@@ -268,6 +277,12 @@ class WP_MCP_AI_Export_Provider_Assistants extends WP_MCP_AI_Export_Provider_Bas
 			}
 
 			foreach ( $meta as $meta_key => $meta_value ) {
+				// Defence in depth: never import credential hashes or other
+				// denylisted keys, even if a hand-edited file contains them.
+				if ( '_wp_mcp_ai_credentials' === $meta_key ) {
+					continue;
+				}
+
 				if ( is_array( $meta_value ) ) {
 					foreach ( $meta_value as $single_value ) {
 						add_post_meta( $post_id, $meta_key, $single_value );
