@@ -137,6 +137,18 @@ if ( ! class_exists( 'WP_MCP_AI_UCP_Agent_Profile_Controller' ) ) {
 								),
 							),
 						),
+						// Cross-merchant Global Catalog extension. Shopify intersects
+						// it with the agent profile to settle the negotiated set.
+						'dev.shopify.catalog.global'      => array(
+							array(
+								'version' => self::UCP_VERSION,
+								'spec'    => 'https://shopify.dev/docs/agents/catalog/global-catalog',
+								'extends' => array(
+									'dev.ucp.shopping.catalog.lookup',
+									'dev.ucp.shopping.catalog.search',
+								),
+							),
+						),
 					),
 					'payment_handlers' => array(),
 				),
