@@ -152,11 +152,48 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 		}
 
 		/**
+		 * Map a violation type to a human-readable label.
+		 *
+		 * Used by the admin notice and the Security Center Usage Monitor
+		 * sub-tab so the two surfaces never drift.
+		 *
+		 * @param string $type Violation type slug.
+		 * @return string Human-readable label (falls back to the raw slug).
+		 */
+		public static function get_violation_type_label( $type ) {
+			$labels = array(
+				'suspicious_content'        => __( 'Suspicious tool arguments', 'mcp-ai-wpoos' ),
+				'suspicious_chat_content'   => __( 'Suspicious chat content', 'mcp-ai-wpoos' ),
+				'rate_limit_exceeded'       => __( 'Rate limit exceeded', 'mcp-ai-wpoos' ),
+				'messaging_abuse'           => __( 'Messaging tool abuse', 'mcp-ai-wpoos' ),
+				'tool_usage_limit_exceeded' => __( 'Hourly tool limit exceeded', 'mcp-ai-wpoos' ),
+			);
+
+			return isset( $labels[ $type ] ) ? $labels[ $type ] : (string) $type;
+		}
+
+		/**
+		 * Map a violation type to a triage severity tier.
+		 *
+		 * Content-detection violations are high severity (possible attack
+		 * payloads); rate/messaging limit violations are medium (abuse or
+		 * misconfiguration).
+		 *
+		 * @param string $type Violation type slug.
+		 * @return string 'high' or 'medium'.
+		 */
+		public static function get_violation_severity( $type ) {
+			$high = array( 'suspicious_content', 'suspicious_chat_content' );
+
+			return in_array( $type, $high, true ) ? 'high' : 'medium';
+		}
+
+		/**
 		 * Get default suspicious content patterns.
 		 *
 		 * @return array
 		 */
-		private function get_default_suspicious_patterns() {
+		public function get_default_suspicious_patterns() {
 			return array(
 				// Phishing patterns.
 				'verify.*account.*immediately',
@@ -372,9 +409,19 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 				return $matched_patterns;
 			}
 
-			// Check against patterns.
+			// Check against patterns. Malformed regexes (patterns are
+			// admin-editable) are skipped instead of emitting warnings.
 			foreach ( $patterns as $pattern ) {
-				if ( preg_match( '/' . $pattern . '/i', $text ) ) {
+				if ( ! is_string( $pattern ) || '' === trim( $pattern ) ) {
+					continue;
+				}
+
+				$regex = '/' . $pattern . '/i';
+				if ( false === @preg_match( $regex, '' ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Validation probe: result ignored, malformed patterns skipped.
+					continue;
+				}
+
+				if ( preg_match( $regex, $text ) ) {
 					$matched_patterns[] = $pattern;
 				}
 			}
@@ -656,7 +703,7 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 								__( 'The AI Assistant has been automatically disabled due to suspicious activity. %s', 'mcp-ai-wpoos' ),
 								array( 'a' => array( 'href' => array() ) )
 							),
-							'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=security' ) ) . '">' . esc_html__( 'Review and clear shutdown', 'mcp-ai-wpoos' ) . '</a>'
+							'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=security&subtab=usage_monitor' ) ) . '">' . esc_html__( 'Review and clear shutdown', 'mcp-ai-wpoos' ) . '</a>'
 						);
 						?>
 					</p>
@@ -671,6 +718,8 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 				// Show warning for recent violations.
 				$recent_violations = $this->count_recent_violations( HOUR_IN_SECONDS );
 				if ( $recent_violations > 0 ) {
+					$violations = $this->get_violations();
+					$latest     = is_array( $violations ) ? end( $violations ) : false;
 					?>
 					<div class="notice notice-warning is-dismissible">
 						<p>
@@ -680,15 +729,29 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 							<?php
 							printf(
 								wp_kses(
-									/* translators: 1: Number of violations, 2: Link to settings page. */
+									/* translators: 1: Number of violations, 2: Link to details page. */
 									_n( '%1$d security violation detected in the past hour. %2$s', '%1$d security violations detected in the past hour. %2$s', $recent_violations, 'mcp-ai-wpoos' ),
 									array( 'a' => array( 'href' => array() ) )
 								),
 								absint( $recent_violations ),
-								'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=security' ) ) . '">' . esc_html__( 'View details', 'mcp-ai-wpoos' ) . '</a>'
+								'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=security&subtab=usage_monitor' ) ) . '">' . esc_html__( 'View details', 'mcp-ai-wpoos' ) . '</a>'
 							);
 							?>
 						</p>
+						<?php if ( ! empty( $latest['type'] ) ) : ?>
+							<p>
+								<em>
+									<?php
+									printf(
+										/* translators: 1: Violation type label, 2: Violation message. */
+										esc_html__( 'Most recent: %1$s — %2$s', 'mcp-ai-wpoos' ),
+										esc_html( self::get_violation_type_label( $latest['type'] ) ),
+										esc_html( ! empty( $latest['message'] ) ? $latest['message'] : '—' )
+									);
+									?>
+								</em>
+							</p>
+						<?php endif; ?>
 					</div>
 					<?php
 				}

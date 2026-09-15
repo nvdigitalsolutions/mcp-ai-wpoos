@@ -98,13 +98,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 		 */
 		protected function get_subtab_groups() {
 			return array(
-				'overview'     => array(
+				'overview'      => array(
 					'id'     => 'overview',
 					'label'  => __( '🔍 Overview', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-shield',
 					'fields' => array(), // Read-only — nothing saved.
 				),
-				'access'       => array(
+				'access'        => array(
 					'id'     => 'access',
 					'label'  => __( '🔑 Access & Identity', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-users',
@@ -140,7 +140,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						'enable_loopback_private_network_requests',
 					),
 				),
-				'network'      => array(
+				'network'       => array(
 					'id'     => 'network',
 					'label'  => __( '🌐 Network & Headers', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-networking',
@@ -184,7 +184,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						'cors_allow_origin',
 					),
 				),
-				'ai_safety'    => array(
+				'ai_safety'     => array(
 					'id'     => 'ai_safety',
 					'label'  => __( '🤖 AI Safety', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-warning',
@@ -205,7 +205,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						'ai_monthly_budget_usd',
 					),
 				),
-				'audit'        => array(
+				'audit'         => array(
 					'id'     => 'audit',
 					'label'  => __( '📋 Audit & Compliance', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-clipboard',
@@ -226,7 +226,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 					),
 				),
 				// ── Transparency & Compliance (Proposal 017) ──
-				'transparency' => array(
+				'transparency'  => array(
 					'id'     => 'transparency',
 					'label'  => __( '🏷️ AI Transparency', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-visibility',
@@ -240,6 +240,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						'enable_generation_logging',
 						'generation_log_retention_days',
 					),
+				),
+				// ── Nefarious Usage Monitor (read-only log + config) ──
+				// The config inputs are rendered by render_usage_monitor_subtab()
+				// and bridged to the monitor's own option by
+				// WP_MCP_AI_Security_Monitor_Admin::sanitize_monitor_settings(),
+				// so this group intentionally declares no section fields.
+				'usage_monitor' => array(
+					'id'     => 'usage_monitor',
+					'label'  => __( '🛡️ Usage Monitor', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-warning',
+					'fields' => array(),
 				),
 			);
 		}
@@ -1068,11 +1079,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 		}
 
 		/**
-		 * Override render_wrapper to support the five-subtab Security Center layout.
+		 * Override render_wrapper to support the six-subtab Security Center layout.
 		 *
 		 * For the 'overview' subtab this renders the posture score card instead of a
-		 * form table.  For all other subtabs it falls back to the standard form-table
-		 * flow, wrapping only the active subtab's fields.
+		 * form table. For the 'usage_monitor' subtab it renders the violation log
+		 * and monitor configuration. For all other subtabs it falls back to the
+		 * standard form-table flow, wrapping only the active subtab's fields.
 		 */
 		public function render_wrapper() {
 			$subtab_groups = $this->get_subtab_groups();
@@ -1118,6 +1130,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 <div class="wp-mcp-ai-subtab-content">
 			<?php if ( 'overview' === $active_subtab ) : ?>
 				<?php $this->render_overview_subtab(); ?>
+			<?php elseif ( 'usage_monitor' === $active_subtab ) : ?>
+				<?php $this->render_usage_monitor_subtab(); ?>
 			<?php else : ?>
 <table class="form-table" role="presentation">
 				<?php $this->render(); ?>
@@ -1337,6 +1351,325 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				});
 			});
 		});
+			<?php
+			$js = ob_get_clean();
+			wp_print_inline_script_tag( $js );
+			?>
+			<?php
+		}
+
+		/**
+		 * Render the Usage Monitor sub-tab: monitor status, configuration,
+		 * emergency-shutdown recovery, and the triage violation log.
+		 */
+		private function render_usage_monitor_subtab() {
+			if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
+				return;
+			}
+
+			$monitor        = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
+			$settings       = $monitor->get_settings();
+			$raw_violations = $monitor->get_violations();
+			$violations     = is_array( $raw_violations ) ? $raw_violations : array();
+
+			$monitor_enabled = ! empty( $settings['enabled'] );
+			$auto_shutdown   = ! empty( $settings['auto_shutdown_enabled'] );
+			$max_requests    = isset( $settings['max_requests_per_minute'] ) ? absint( $settings['max_requests_per_minute'] ) : WP_MCP_AI_Nefarious_Usage_Monitor::DEFAULT_MAX_REQUESTS_PER_MINUTE;
+			$max_tools       = isset( $settings['max_tools_per_hour'] ) ? absint( $settings['max_tools_per_hour'] ) : WP_MCP_AI_Nefarious_Usage_Monitor::DEFAULT_MAX_TOOLS_PER_HOUR;
+			$threshold       = isset( $settings['violation_threshold'] ) ? absint( $settings['violation_threshold'] ) : 5;
+			$patterns        = isset( $settings['suspicious_patterns'] ) && is_array( $settings['suspicious_patterns'] ) ? $settings['suspicious_patterns'] : $monitor->get_default_suspicious_patterns();
+
+			$shutdown_active = $monitor->is_emergency_shutdown_active();
+			$shutdown        = get_option( WP_MCP_AI_Nefarious_Usage_Monitor::SHUTDOWN_OPTION, array() );
+
+			$hour_count = 0;
+			$cutoff     = time() - HOUR_IN_SECONDS;
+			foreach ( $violations as $violation ) {
+				if ( ! empty( $violation['timestamp'] ) && strtotime( $violation['timestamp'] ) >= $cutoff ) {
+					++$hour_count;
+				}
+			}
+
+			// Newest first, capped for readability (the option retains up to 100).
+			$display_violations = array_slice( array_reverse( $violations ), 0, 50 );
+
+			$rest_nonce = wp_create_nonce( 'wp_rest' );
+
+			$severity_colors = array(
+				'high'   => '#d63638',
+				'medium' => '#dba617',
+			);
+			$severity_labels = array(
+				'high'   => __( 'High', 'mcp-ai-wpoos' ),
+				'medium' => __( 'Medium', 'mcp-ai-wpoos' ),
+			);
+			?>
+	<div class="wp-mcp-ai-usage-monitor">
+
+			<?php if ( $shutdown_active ) : ?>
+		<!-- Emergency shutdown recovery -->
+		<div style="background:#fcf0f1;border:1px solid #d63638;border-radius:4px;padding:16px;margin-bottom:24px;">
+			<h3 style="margin-top:0;color:#d63638;"><?php esc_html_e( '🚨 Emergency Shutdown Active', 'mcp-ai-wpoos' ); ?></h3>
+			<p style="margin:0 0 12px;">
+				<?php esc_html_e( 'The AI Assistant has been automatically disabled because too many violations were recorded in a short window.', 'mcp-ai-wpoos' ); ?>
+			</p>
+				<?php if ( ! empty( $shutdown['triggering_violation'] ) ) : ?>
+				<p style="margin:0 0 12px;">
+					<em>
+						<?php
+						$trigger = $shutdown['triggering_violation'];
+						printf(
+							/* translators: 1: Violation type label, 2: Violation message. */
+							esc_html__( 'Triggering violation: %1$s — %2$s', 'mcp-ai-wpoos' ),
+							esc_html( WP_MCP_AI_Nefarious_Usage_Monitor::get_violation_type_label( ! empty( $trigger['type'] ) ? $trigger['type'] : '' ) ),
+							esc_html( ! empty( $trigger['message'] ) ? $trigger['message'] : '—' )
+						);
+						?>
+					</em>
+				</p>
+			<?php endif; ?>
+			<button type="button" id="wp-mcp-ai-clear-shutdown-btn" class="button" style="color:#d63638;border-color:#d63638;">
+				<?php esc_html_e( 'Clear Shutdown and Re-enable Assistant', 'mcp-ai-wpoos' ); ?>
+			</button>
+		</div>
+		<?php endif; ?>
+
+		<!-- Monitor status cards -->
+		<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:24px;">
+			<div style="background:#fff;border:1px solid #ddd;border-radius:4px;padding:16px;flex:1;min-width:200px;">
+				<h4 style="margin:0 0 8px;"><?php esc_html_e( 'Monitor Status', 'mcp-ai-wpoos' ); ?></h4>
+				<p style="margin:0;">
+					<span style="display:inline-block;padding:4px 10px;border-radius:3px;font-weight:600;color:#fff;background:<?php echo esc_attr( $monitor_enabled ? '#46b450' : '#d63638' ); ?>;">
+						<?php echo $monitor_enabled ? esc_html__( 'Enabled', 'mcp-ai-wpoos' ) : esc_html__( 'Disabled', 'mcp-ai-wpoos' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_html() applied in both branches. ?>
+					</span>
+				</p>
+				<p style="margin:8px 0 0;color:#646970;">
+					<?php echo esc_html( sprintf( /* translators: %d: number of violations in the last hour */ _n( '%d violation in the last hour', '%d violations in the last hour', $hour_count, 'mcp-ai-wpoos' ), $hour_count ) ); ?>
+				</p>
+			</div>
+			<div style="background:#fff;border:1px solid #ddd;border-radius:4px;padding:16px;flex:1;min-width:200px;">
+				<h4 style="margin:0 0 8px;"><?php esc_html_e( 'Auto-Shutdown', 'mcp-ai-wpoos' ); ?></h4>
+				<p style="margin:0;">
+					<span style="display:inline-block;padding:4px 10px;border-radius:3px;font-weight:600;color:#fff;background:<?php echo esc_attr( $auto_shutdown ? '#2271b1' : '#646970' ); ?>;">
+						<?php echo $auto_shutdown ? esc_html__( 'Armed', 'mcp-ai-wpoos' ) : esc_html__( 'Off', 'mcp-ai-wpoos' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_html() applied in both branches. ?>
+					</span>
+				</p>
+				<p style="margin:8px 0 0;color:#646970;">
+					<?php echo esc_html( sprintf( /* translators: %d: violation count that triggers shutdown */ __( 'Triggers at %d violations in 5 minutes', 'mcp-ai-wpoos' ), $threshold ) ); ?>
+				</p>
+			</div>
+			<div style="background:#fff;border:1px solid #ddd;border-radius:4px;padding:16px;flex:1;min-width:200px;">
+				<h4 style="margin:0 0 8px;"><?php esc_html_e( 'Rate Limits', 'mcp-ai-wpoos' ); ?></h4>
+				<p style="margin:0;color:#646970;">
+					<?php echo esc_html( sprintf( /* translators: %d: requests per minute limit */ __( '%d requests / minute', 'mcp-ai-wpoos' ), $max_requests ) ); ?><br>
+					<?php echo esc_html( sprintf( /* translators: %d: tool executions per hour limit */ __( '%d tool executions / hour', 'mcp-ai-wpoos' ), $max_tools ) ); ?>
+				</p>
+			</div>
+		</div>
+
+		<!-- Monitor configuration (saved via the main Save Changes button) -->
+		<h3 style="margin-bottom:8px;"><?php esc_html_e( 'Monitor Configuration', 'mcp-ai-wpoos' ); ?></h3>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row">
+					<label><?php esc_html_e( 'Nefarious Usage Monitor', 'mcp-ai-wpoos' ); ?></label>
+				</th>
+				<td>
+					<div class="wp-mcp-ai-settings-toggle-wrapper">
+						<label class="wp-mcp-ai-settings-toggle-switch">
+							<input type="checkbox" name="wp_mcp_ai_settings[wp_mcp_ai_security_monitor_enabled]" value="1" <?php checked( $monitor_enabled, true ); ?> />
+							<span class="wp-mcp-ai-settings-toggle-slider"></span>
+						</label>
+						<label class="wp-mcp-ai-settings-toggle-label"><?php esc_html_e( 'Detect suspicious patterns, rate abuse, and messaging abuse', 'mcp-ai-wpoos' ); ?></label>
+					</div>
+					<p class="description"><?php esc_html_e( 'Unchecking this stops all monitoring and clears the admin warning notice.', 'mcp-ai-wpoos' ); ?></p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row">
+					<label><?php esc_html_e( 'Auto-Shutdown', 'mcp-ai-wpoos' ); ?></label>
+				</th>
+				<td>
+					<div class="wp-mcp-ai-settings-toggle-wrapper">
+						<label class="wp-mcp-ai-settings-toggle-switch">
+							<input type="checkbox" name="wp_mcp_ai_settings[wp_mcp_ai_security_monitor_auto_shutdown]" value="1" <?php checked( $auto_shutdown, true ); ?> />
+							<span class="wp-mcp-ai-settings-toggle-slider"></span>
+						</label>
+						<label class="wp-mcp-ai-settings-toggle-label"><?php esc_html_e( 'Disable the AI Assistant when the violation threshold is hit', 'mcp-ai-wpoos' ); ?></label>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label><?php esc_html_e( 'Max Requests / Minute', 'mcp-ai-wpoos' ); ?></label></th>
+				<td>
+					<input type="number" name="wp_mcp_ai_settings[wp_mcp_ai_security_monitor_max_requests_per_minute]" value="<?php echo esc_attr( $max_requests ); ?>" min="1" max="1000" step="1" class="regular-text" />
+					<p class="description"><?php esc_html_e( 'Per user or guest. Exceeding this records a rate-limit violation.', 'mcp-ai-wpoos' ); ?></p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label><?php esc_html_e( 'Max Tool Executions / Hour', 'mcp-ai-wpoos' ); ?></label></th>
+				<td>
+					<input type="number" name="wp_mcp_ai_settings[wp_mcp_ai_security_monitor_max_tools_per_hour]" value="<?php echo esc_attr( $max_tools ); ?>" min="1" max="100000" step="1" class="regular-text" />
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label><?php esc_html_e( 'Shutdown Threshold', 'mcp-ai-wpoos' ); ?></label></th>
+				<td>
+					<input type="number" name="wp_mcp_ai_settings[wp_mcp_ai_security_monitor_violation_threshold]" value="<?php echo esc_attr( $threshold ); ?>" min="1" max="100" step="1" class="regular-text" />
+					<p class="description"><?php esc_html_e( 'Number of violations within 5 minutes that triggers emergency shutdown.', 'mcp-ai-wpoos' ); ?></p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label><?php esc_html_e( 'Suspicious Patterns', 'mcp-ai-wpoos' ); ?></label></th>
+				<td>
+					<textarea name="wp_mcp_ai_settings[wp_mcp_ai_security_monitor_patterns]" rows="8" class="large-text code"><?php echo esc_textarea( implode( "\n", $patterns ) ); ?></textarea>
+					<p class="description">
+						<?php esc_html_e( 'One regular expression per line, matched case-insensitively against every chat message and tool argument. Invalid expressions are ignored. Leave empty to restore the default set. Legitimate content containing these substrings (e.g. code snippets, SQL discussion) will be flagged — remove individual patterns to reduce false positives.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</td>
+			</tr>
+		</table>
+
+		<!-- Violation triage log -->
+		<div style="background:#fff;border:1px solid #ddd;border-radius:4px;padding:16px;margin:16px 0;">
+			<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+				<h3 style="margin:0;"><?php esc_html_e( '📋 Violation Log', 'mcp-ai-wpoos' ); ?></h3>
+				<button type="button" id="wp-mcp-ai-clear-violations-btn" class="button" <?php disabled( empty( $violations ) ); ?>>
+					<span class="dashicons dashicons-trash" style="vertical-align:middle;"></span>
+					<?php esc_html_e( 'Clear Violation Log', 'mcp-ai-wpoos' ); ?>
+				</button>
+			</div>
+
+			<?php if ( empty( $display_violations ) ) : ?>
+				<p style="color:#646970;margin:0;"><?php esc_html_e( 'No violations recorded. Events appear here when the monitor detects suspicious content, rate abuse, or messaging abuse.', 'mcp-ai-wpoos' ); ?></p>
+			<?php else : ?>
+				<?php if ( count( $violations ) > 50 ) : ?>
+					<p style="color:#646970;">
+						<?php echo esc_html( sprintf( /* translators: 1: displayed rows, 2: stored total */ __( 'Showing the latest %1$d of %2$d recorded violations.', 'mcp-ai-wpoos' ), 50, count( $violations ) ) ); ?>
+					</p>
+				<?php endif; ?>
+				<table class="widefat striped" style="margin:0;">
+					<thead>
+						<tr>
+							<th style="width:90px;"><?php esc_html_e( 'Severity', 'mcp-ai-wpoos' ); ?></th>
+							<th style="width:160px;"><?php esc_html_e( 'Time', 'mcp-ai-wpoos' ); ?></th>
+							<th style="width:180px;"><?php esc_html_e( 'Type', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Details', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'User', 'mcp-ai-wpoos' ); ?></th>
+							<th style="width:140px;"><?php esc_html_e( 'IP', 'mcp-ai-wpoos' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+					<?php foreach ( $display_violations as $violation ) : ?>
+						<?php
+						$type      = isset( $violation['type'] ) ? $violation['type'] : 'unknown';
+						$severity  = WP_MCP_AI_Nefarious_Usage_Monitor::get_violation_severity( $type );
+						$sev_color = isset( $severity_colors[ $severity ] ) ? $severity_colors[ $severity ] : '#2271b1';
+						$sev_label = isset( $severity_labels[ $severity ] ) ? $severity_labels[ $severity ] : ucfirst( $severity );
+
+						$timestamp  = ! empty( $violation['timestamp'] ) ? strtotime( $violation['timestamp'] ) : false;
+						$time_label = $timestamp ? wp_date( 'Y-m-d H:i:s', $timestamp ) : '—';
+
+						$user_id    = isset( $violation['user_id'] ) ? absint( $violation['user_id'] ) : 0;
+						$user_label = '—';
+						if ( $user_id > 0 ) {
+							$user       = get_userdata( $user_id );
+							$user_label = $user ? $user->user_login : ( '#' . $user_id );
+						}
+
+						$matched = array();
+						if ( ! empty( $violation['details']['patterns'] ) && is_array( $violation['details']['patterns'] ) ) {
+							$matched = $violation['details']['patterns'];
+						}
+						?>
+						<tr>
+							<td>
+								<span style="display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600;color:#fff;background:<?php echo esc_attr( $sev_color ); ?>;"><?php echo esc_html( $sev_label ); ?></span>
+							</td>
+							<td><?php echo esc_html( $time_label ); ?></td>
+							<td><?php echo esc_html( WP_MCP_AI_Nefarious_Usage_Monitor::get_violation_type_label( $type ) ); ?></td>
+							<td>
+								<?php echo esc_html( ! empty( $violation['message'] ) ? $violation['message'] : '—' ); ?>
+								<?php if ( ! empty( $matched ) ) : ?>
+									<br>
+									<span style="color:#646970;">
+										<?php esc_html_e( 'Matched:', 'mcp-ai-wpoos' ); ?>
+										<?php foreach ( $matched as $index => $pattern ) : ?>
+											<?php echo 0 === $index ? '' : ', '; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- plain separator. ?><code><?php echo esc_html( $pattern ); ?></code>
+										<?php endforeach; ?>
+									</span>
+								<?php endif; ?>
+							</td>
+							<td><?php echo esc_html( $user_label ); ?></td>
+							<td><?php echo esc_html( ! empty( $violation['ip'] ) ? $violation['ip'] : '—' ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+		</div>
+
+		<!-- False-positive guidance -->
+		<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:4px;padding:16px;margin:16px 0;">
+			<h4 style="margin-top:0;"><?php esc_html_e( '💡 About False Positives', 'mcp-ai-wpoos' ); ?></h4>
+			<p style="margin:0;">
+				<?php
+				printf(
+					wp_kses(
+						/* translators: %s: Link to testing documentation. */
+						__( 'The monitor matches patterns against every chat message and tool argument, so legitimate content such as code snippets or SQL discussion can be flagged. Review the log, remove or relax the offending patterns above, or raise the rate limits. See %s for the pattern list and testing guidance.', 'mcp-ai-wpoos' ),
+						array(
+							'a' => array(
+								'href'   => array(),
+								'target' => array(),
+								'rel'    => array(),
+							),
+						)
+					),
+					'<a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/operations/security/PROMPT_INJECTION_TESTING.md" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Prompt Injection Protection — Testing Guide', 'mcp-ai-wpoos' ) . '</a>'
+				);
+				?>
+			</p>
+		</div>
+
+	</div><!-- /.wp-mcp-ai-usage-monitor -->
+
+			<?php
+			ob_start();
+			?>
+			jQuery(function($){
+				var nonce = <?php echo wp_json_encode( $rest_nonce ); ?>;
+
+				$('#wp-mcp-ai-clear-violations-btn').on('click', function(){
+					if (!confirm(<?php echo wp_json_encode( __( 'Clear the violation log? This removes all recorded violations.', 'mcp-ai-wpoos' ) ); ?>)) { return; }
+					var $btn = $(this).prop('disabled', true);
+					wp.apiRequest({
+						path: '/mcp-ai/v1/security/clear-violations',
+						method: 'POST',
+						beforeSend: function(xhr){ xhr.setRequestHeader('X-WP-Nonce', nonce); }
+					}).done(function(){
+						window.location.reload();
+					}).fail(function(){
+						$btn.prop('disabled', false);
+						alert(<?php echo wp_json_encode( __( 'Could not clear the violation log. Please try again.', 'mcp-ai-wpoos' ) ); ?>);
+					});
+				});
+
+				$('#wp-mcp-ai-clear-shutdown-btn').on('click', function(){
+					if (!confirm(<?php echo wp_json_encode( __( 'Clear the emergency shutdown and re-enable the AI Assistant?', 'mcp-ai-wpoos' ) ); ?>)) { return; }
+					var $btn = $(this).prop('disabled', true);
+					wp.apiRequest({
+						path: '/mcp-ai/v1/security/clear-shutdown',
+						method: 'POST',
+						beforeSend: function(xhr){ xhr.setRequestHeader('X-WP-Nonce', nonce); }
+					}).done(function(){
+						window.location.reload();
+					}).fail(function(){
+						$btn.prop('disabled', false);
+						alert(<?php echo wp_json_encode( __( 'Could not clear the shutdown. Please try again.', 'mcp-ai-wpoos' ) ); ?>);
+					});
+				});
+			});
 			<?php
 			$js = ob_get_clean();
 			wp_print_inline_script_tag( $js );

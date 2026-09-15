@@ -311,4 +311,71 @@ class WP_MCP_AI_Nefarious_Usage_Monitor_Test extends WP_UnitTestCase {
 		$recent_count = $count_method->invoke( $this->monitor, 60 );
 		$this->assertEquals( 3, $recent_count, 'Should count 3 recent violations' );
 	}
+
+	/**
+	 * Test that pattern sanitization keeps valid regexes and drops invalid ones.
+	 */
+	public function test_sanitize_pattern_lines_drops_invalid_regexes() {
+		$raw = "verify.*account.*immediately\n[unclosed\n<scr\\w+>\n\n  \n";
+
+		$clean = WP_MCP_AI_Security_Monitor_Admin::sanitize_pattern_lines( $raw );
+
+		$this->assertContains( 'verify.*account.*immediately', $clean );
+		$this->assertContains( '<scr\\w+>', $clean );
+		$this->assertNotContains( '[unclosed', $clean );
+		$this->assertCount( 2, $clean, 'Only the two valid patterns should survive' );
+	}
+
+	/**
+	 * Test that an empty (or all-invalid) pattern list falls back to defaults.
+	 */
+	public function test_sanitize_pattern_lines_empty_falls_back_to_defaults() {
+		$clean = WP_MCP_AI_Security_Monitor_Admin::sanitize_pattern_lines( '' );
+
+		$this->assertSame( $this->monitor->get_default_suspicious_patterns(), $clean );
+
+		$clean_invalid = WP_MCP_AI_Security_Monitor_Admin::sanitize_pattern_lines( '[unclosed' );
+		$this->assertSame( $this->monitor->get_default_suspicious_patterns(), $clean_invalid );
+	}
+
+	/**
+	 * Test violation type labels and severity tiers.
+	 */
+	public function test_violation_type_helpers() {
+		$this->assertSame( 'high', WP_MCP_AI_Nefarious_Usage_Monitor::get_violation_severity( 'suspicious_chat_content' ) );
+		$this->assertSame( 'medium', WP_MCP_AI_Nefarious_Usage_Monitor::get_violation_severity( 'rate_limit_exceeded' ) );
+		$this->assertNotSame( 'unknown_type', WP_MCP_AI_Nefarious_Usage_Monitor::get_violation_type_label( 'suspicious_content' ) );
+		$this->assertSame( 'unknown_type', WP_MCP_AI_Nefarious_Usage_Monitor::get_violation_type_label( 'unknown_type' ) );
+	}
+
+	/**
+	 * Test that a malformed admin-edited pattern is skipped without breaking the scan.
+	 */
+	public function test_malformed_pattern_is_skipped_during_scan() {
+		// The monitor is a process-wide singleton, so restore settings
+		// afterwards to avoid polluting later test files.
+		$original_settings = $this->monitor->get_settings();
+
+		try {
+			$this->monitor->update_settings(
+				array(
+					'suspicious_patterns' => array(
+						'[unclosed',
+						'verify.*account.*immediately',
+					),
+				)
+			);
+
+			$reflection = new ReflectionClass( $this->monitor );
+			$method     = $reflection->getMethod( 'scan_for_suspicious_content' );
+			$method->setAccessible( true );
+
+			$matches = $method->invoke( $this->monitor, 'please verify your account immediately' );
+
+			$this->assertContains( 'verify.*account.*immediately', $matches );
+			$this->assertNotContains( '[unclosed', $matches );
+		} finally {
+			$this->monitor->update_settings( $original_settings );
+		}
+	}
 }
