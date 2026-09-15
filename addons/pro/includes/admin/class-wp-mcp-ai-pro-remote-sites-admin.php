@@ -34,6 +34,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_filter( 'allowed_redirect_hosts', array( $this, 'allow_google_oauth_host' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_whatsapp_live', array( $this, 'ajax_test_whatsapp_live' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_whatsapp_auto_reply', array( $this, 'ajax_test_whatsapp_auto_reply' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_whatsapp_webhook_verify', array( $this, 'ajax_test_whatsapp_webhook_verify' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_whatsapp_webhook_signature', array( $this, 'ajax_test_whatsapp_webhook_signature' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_check_whatsapp_subscription', array( $this, 'ajax_check_whatsapp_subscription' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_generate_messenger_token', array( $this, 'ajax_generate_messenger_token' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_messenger_live', array( $this, 'ajax_test_messenger_live' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_messenger_auto_reply', array( $this, 'ajax_test_messenger_auto_reply' ) );
@@ -1021,6 +1024,27 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			if ( is_wp_error( $result ) ) {
 				$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( $result->get_error_message() ) ) );
 			} else {
+				// Invalidate any cached Shopify Catalog API bearer token so the
+				// next catalog request uses the freshly-saved credentials. The
+				// cache key is derived from the client ID, so also purge the
+				// previously-stored ID when editing.
+				if ( 'shopify' === $connection_type && 'catalog_api' === $shopify_api_mode ) {
+					$shopify_client_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-client.php';
+					if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) && file_exists( $shopify_client_file ) ) {
+						require_once $shopify_client_file;
+					}
+					if ( class_exists( 'WP_MCP_AI_Shopify_Client' ) && method_exists( 'WP_MCP_AI_Shopify_Client', 'get_catalog_token_transient_key' ) ) {
+						$shopify_catalog_client_ids = array( $api_key );
+						$previous_connection        = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( isset( $connection_data['id'] ) ? $connection_data['id'] : '' );
+						if ( ! empty( $previous_connection['api_key'] ) ) {
+							$shopify_catalog_client_ids[] = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $previous_connection['api_key'] );
+						}
+						foreach ( array_unique( array_filter( $shopify_catalog_client_ids ) ) as $shopify_catalog_client_id ) {
+							delete_transient( WP_MCP_AI_Shopify_Client::get_catalog_token_transient_key( $shopify_catalog_client_id ) );
+						}
+					}
+				}
+
 				// Redirect back to the edit page so the user can verify the saved data.
 				$saved_connection_id = is_string( $result ) ? $result : ( isset( $connection_data['id'] ) ? $connection_data['id'] : '' );
 				if ( $saved_connection_id ) {
@@ -5095,6 +5119,28 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				</tr>
 
 				<tr class="whatsapp-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Webhook Tests', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+							<button type="button" id="whatsapp_test_webhook_verify_btn" class="button button-secondary">
+								<?php esc_html_e( 'Test Verification Handshake', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<button type="button" id="whatsapp_test_webhook_signature_btn" class="button button-secondary">
+								<?php esc_html_e( 'Test Signature Validation', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<button type="button" id="whatsapp_check_subscription_btn" class="button button-secondary">
+								<?php esc_html_e( 'Check Meta Subscription', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<span id="whatsapp_webhook_test_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						</div>
+						<p class="description">
+							<?php esc_html_e( 'Self-tests that mirror the checks Meta performs when configuring a webhook. Test Verification Handshake replays Meta\'s GET verification request (hub.mode / hub.verify_token / hub.challenge) against your channel endpoint and confirms the challenge is echoed back as plain text. Test Signature Validation sends a correctly signed test POST and a tampered one, confirming the HMAC-SHA256 App Secret check accepts valid signatures and rejects forgeries. Check Meta Subscription queries the Graph API to confirm your app is subscribed to this WhatsApp Business Account. Save the connection first.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+						<div id="whatsapp_webhook_test_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
+				<tr class="whatsapp-only-field" style="display: none;">
 					<th scope="row">
 						<label for="assigned_assistant_ids"><?php esc_html_e( 'Assigned Assistants', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
@@ -8656,6 +8702,205 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								waTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
 							}
 						});
+				});
+			}
+
+			// WhatsApp: Webhook self-tests (verification handshake, signature
+			// validation, Meta subscription) — industry-standard checks that
+			// mirror what Meta performs when configuring the webhook.
+			var waWhTestSpinner = document.getElementById('whatsapp_webhook_test_spinner');
+			var waWhTestResult  = document.getElementById('whatsapp_webhook_test_result');
+			var waWhTestButtons = [
+				document.getElementById('whatsapp_test_webhook_verify_btn'),
+				document.getElementById('whatsapp_test_webhook_signature_btn'),
+				document.getElementById('whatsapp_check_subscription_btn')
+			];
+
+			function waWebhookRunTest(action, nonce, extraData, renderFn) {
+				waWhTestButtons.forEach(function(btn) { if (btn) { btn.disabled = true; } });
+				if (waWhTestSpinner) { waWhTestSpinner.style.display = 'inline-block'; }
+				if (waWhTestResult)  { waWhTestResult.style.display = 'none'; waWhTestResult.innerHTML = ''; }
+
+				var connIdEl     = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+				var connectionId = connIdEl ? connIdEl.value.trim() : '';
+
+				var data = new FormData();
+				data.append('action', action);
+				data.append('nonce', nonce);
+				if (connectionId) { data.append('connection_id', connectionId); }
+				if (extraData) {
+					Object.keys(extraData).forEach(function(key) {
+						if (extraData[key]) { data.append(key, extraData[key]); }
+					});
+				}
+
+				fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
+					.then(function(response) {
+						if (!response.ok) { throw new Error('HTTP ' + response.status); }
+						return response.json();
+					})
+					.then(function(result) {
+						waWhTestButtons.forEach(function(btn) { if (btn) { btn.disabled = false; } });
+						if (waWhTestSpinner) { waWhTestSpinner.style.display = 'none'; }
+						if (!waWhTestResult) { return; }
+						waWhTestResult.style.display = 'block';
+						renderFn(result);
+					})
+					.catch(function() {
+						waWhTestButtons.forEach(function(btn) { if (btn) { btn.disabled = false; } });
+						if (waWhTestSpinner) { waWhTestSpinner.style.display = 'none'; }
+						if (waWhTestResult) {
+							waWhTestResult.style.display = 'block';
+							waWhTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+					});
+			}
+
+			function waWhTestNeedConnection(message) {
+				if (!waWhTestResult) { return; }
+				waWhTestResult.style.display = 'block';
+				waWhTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + message + '</p></div>';
+			}
+
+			// WhatsApp: Test Verification Handshake button.
+			var waWhVerifyBtn = document.getElementById('whatsapp_test_webhook_verify_btn');
+			if (waWhVerifyBtn) {
+				waWhVerifyBtn.addEventListener('click', function() {
+					var connIdEl     = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					var connectionId = connIdEl ? connIdEl.value.trim() : '';
+					if (!connectionId) {
+						waWhTestNeedConnection(<?php echo wp_json_encode( __( 'Save the connection first. The webhook test runs against the channel-specific endpoint that is created when the connection is saved.', 'mcp-ai-wpoos-pro' ) ); ?>);
+						return;
+					}
+
+					var verifyTokenEl = document.getElementById('whatsapp_verify_token');
+					var verifyToken   = verifyTokenEl ? verifyTokenEl.value.trim() : '';
+
+					waWebhookRunTest(
+						'wp_mcp_ai_test_whatsapp_webhook_verify',
+						<?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_whatsapp_webhook_verify' ) ); ?>,
+						{ verify_token: verifyToken },
+						function(result) {
+							if (result.success) {
+								var d = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Verification handshake passed', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								var items = [];
+								if (d.webhook_url) {
+									items.push(<?php echo wp_json_encode( __( 'Endpoint:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <code>' + d.webhook_url + '</code>');
+								}
+								if (d.echoed) {
+									items.push(<?php echo wp_json_encode( __( 'Challenge echoed as plain text: yes (HTTP', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.http_status + ')');
+								} else if (d.logic_pass) {
+									items.push(<?php echo wp_json_encode( __( 'Verification logic verified internally (the live request could not reach this site)', 'mcp-ai-wpoos-pro' ) ); ?>);
+								}
+								if (items.length) {
+									html += '<ul style="margin:8px 0;padding-left:20px;">';
+									items.forEach(function(item) { html += '<li>' + item + '</li>'; });
+									html += '</ul>';
+								}
+								if (d.warnings && d.warnings.length) {
+									d.warnings.forEach(function(w) { html += '<p style="margin:6px 0 0;color:#b45309;font-size:13px;">⚠ ' + w + '</p>'; });
+								}
+								html += '</div>';
+								waWhTestResult.innerHTML = html;
+							} else {
+								waWhTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Verification test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						}
+					);
+				});
+			}
+
+			// WhatsApp: Test Signature Validation button.
+			var waWhSigBtn = document.getElementById('whatsapp_test_webhook_signature_btn');
+			if (waWhSigBtn) {
+				waWhSigBtn.addEventListener('click', function() {
+					var connIdEl     = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					var connectionId = connIdEl ? connIdEl.value.trim() : '';
+					if (!connectionId) {
+						waWhTestNeedConnection(<?php echo wp_json_encode( __( 'Save the connection first. The signature test runs against the channel-specific endpoint that is created when the connection is saved.', 'mcp-ai-wpoos-pro' ) ); ?>);
+						return;
+					}
+
+					var appSecretEl = document.getElementById('whatsapp_app_secret');
+					var appSecret   = appSecretEl ? appSecretEl.value.trim() : '';
+
+					waWebhookRunTest(
+						'wp_mcp_ai_test_whatsapp_webhook_signature',
+						<?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_whatsapp_webhook_signature' ) ); ?>,
+						{ app_secret: appSecret },
+						function(result) {
+							if (result.success) {
+								var d = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Signature validation working correctly', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p><ul style="margin:8px 0;padding-left:20px;">';
+								html += '<li>' + <?php echo wp_json_encode( __( 'Correctly signed payload accepted (HTTP', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.positive_status + ')</li>';
+								html += '<li>' + <?php echo wp_json_encode( __( 'Tampered payload rejected (HTTP', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.negative_status + ')</li>';
+								html += '</ul>';
+								if (d.warnings && d.warnings.length) {
+									d.warnings.forEach(function(w) { html += '<p style="margin:6px 0 0;color:#b45309;font-size:13px;">⚠ ' + w + '</p>'; });
+								}
+								html += '</div>';
+								waWhTestResult.innerHTML = html;
+							} else {
+								waWhTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Signature test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						}
+					);
+				});
+			}
+
+			// WhatsApp: Check Meta Subscription button.
+			var waWhSubBtn = document.getElementById('whatsapp_check_subscription_btn');
+			if (waWhSubBtn) {
+				waWhSubBtn.addEventListener('click', function() {
+					var connIdEl     = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					var connectionId = connIdEl ? connIdEl.value.trim() : '';
+					if (!connectionId) {
+						waWhTestNeedConnection(<?php echo wp_json_encode( __( 'Save the connection first.', 'mcp-ai-wpoos-pro' ) ); ?>);
+						return;
+					}
+
+					var accessTokenEl = document.getElementById('whatsapp_access_token');
+					var appIdEl       = document.getElementById('whatsapp_app_id');
+					var wabaIdEl      = document.getElementById('whatsapp_business_account_id');
+					var versionEl     = document.getElementById('whatsapp_graph_api_version');
+
+					waWebhookRunTest(
+						'wp_mcp_ai_check_whatsapp_subscription',
+						<?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_check_whatsapp_subscription' ) ); ?>,
+						{
+							access_token: accessTokenEl ? accessTokenEl.value.trim() : '',
+							app_id: appIdEl ? appIdEl.value.trim() : '',
+							business_account_id: wabaIdEl ? wabaIdEl.value.trim() : '',
+							graph_api_version: versionEl ? versionEl.value.trim() : ''
+						},
+						function(result) {
+							if (result.success) {
+								var d = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Webhook subscription status', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p><ul style="margin:8px 0;padding-left:20px;">';
+								html += '<li>' + <?php echo wp_json_encode( __( 'WABA ID:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <code>' + d.waba_id + '</code></li>';
+								if (d.app_id) {
+									html += '<li>' + <?php echo wp_json_encode( __( 'Your App ID:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <code>' + d.app_id + '</code> — ' + (d.is_subscribed ? <?php echo wp_json_encode( __( 'subscribed ✓', 'mcp-ai-wpoos-pro' ) ); ?> : <?php echo wp_json_encode( __( 'NOT subscribed ✕', 'mcp-ai-wpoos-pro' ) ); ?>) + '</li>';
+								}
+								if (d.subscribed_apps && d.subscribed_apps.length) {
+									html += '<li>' + <?php echo wp_json_encode( __( 'Subscribed apps:', 'mcp-ai-wpoos-pro' ) ); ?>;
+									html += '<ul style="margin:4px 0 0 20px;">';
+									d.subscribed_apps.forEach(function(id) { html += '<li><code>' + id + '</code></li>'; });
+									html += '</ul></li>';
+								} else {
+									html += '<li>' + <?php echo wp_json_encode( __( 'Subscribed apps: none', 'mcp-ai-wpoos-pro' ) ); ?> + '</li>';
+								}
+								html += '</ul>';
+								if (d.warnings && d.warnings.length) {
+									d.warnings.forEach(function(w) { html += '<p style="margin:6px 0 0;color:#b45309;font-size:13px;">⚠ ' + w + '</p>'; });
+								}
+								html += '</div>';
+								waWhTestResult.innerHTML = html;
+							} else {
+								waWhTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Subscription check failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						}
+					);
 				});
 			}
 
@@ -12347,6 +12592,472 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	 *
 	 * @since 1.0.0
 	 */
+	/**
+	 * Dispatch an internal verification request to the WhatsApp webhook endpoint.
+	 *
+	 * Runs the same verification logic the live HTTP path exercises, but inside
+	 * the current process via rest_do_request(). Used as a fallback diagnostic
+	 * when the public loopback request cannot reach this site (local development,
+	 * firewall, DNS) and to localise a failure to either the verification logic
+	 * or the hosting environment.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param string $verify_token  Verify token to test.
+	 * @param string $challenge     Challenge string expected back.
+	 * @return array{status:int, error_code:string, echoed:bool} Dispatch result.
+	 */
+	protected function dispatch_whatsapp_webhook_verify_internal( $connection_id, $verify_token, $challenge ) {
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/webhooks/whatsapp/' . $connection_id );
+		$request->set_query_params(
+			array(
+				'hub_mode'         => 'subscribe',
+				'hub_verify_token' => $verify_token,
+				'hub_challenge'    => $challenge,
+			)
+		);
+
+		$response = rest_do_request( $request );
+		$data     = $response->get_data();
+
+		return array(
+			'status'     => $response->get_status(),
+			'error_code' => $response->is_error() ? $response->as_error()->get_error_code() : '',
+			'echoed'     => ( 200 === $response->get_status() && is_string( $data ) && hash_equals( $challenge, $data ) ),
+		);
+	}
+
+	/**
+	 * Dispatch a signed POST to the WhatsApp webhook endpoint internally.
+	 *
+	 * Exercises the full REST pipeline — signature permission callback plus
+	 * payload processing — without leaving the current process, so the test
+	 * works on local and non-public sites and never exposes the App Secret.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param string $payload       Raw JSON payload body.
+	 * @param string $signature     X-Hub-Signature-256 header value.
+	 * @return array{status:int, error_code:string, accepted:bool} Dispatch result.
+	 */
+	protected function dispatch_whatsapp_webhook_post( $connection_id, $payload, $signature ) {
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/whatsapp/' . $connection_id );
+		$request->set_header( 'content-type', 'application/json' );
+		$request->set_header( 'x-hub-signature-256', $signature );
+		$request->set_body( $payload );
+
+		$response = rest_do_request( $request );
+		$data     = $response->get_data();
+
+		return array(
+			'status'     => $response->get_status(),
+			'error_code' => $response->is_error() ? $response->as_error()->get_error_code() : '',
+			'accepted'   => ( 200 === $response->get_status() && is_array( $data ) && ! empty( $data['success'] ) ),
+		);
+	}
+
+	/**
+	 * AJAX handler: simulate Meta's webhook verification handshake (GET) against
+	 * this site's own channel-specific WhatsApp endpoint.
+	 *
+	 * Replays the exact request Meta's "Verify and Save" button performs —
+	 * hub.mode=subscribe, hub.verify_token=<stored token> and a fresh random
+	 * hub.challenge — and asserts the endpoint echoes the challenge back as
+	 * plain text with HTTP 200 (the WhatsApp Cloud API verification contract:
+	 * JSON wrapping, wrong tokens, missing dot-to-underscore conversion and
+	 * unreachable endpoints are the four most common verification failures).
+	 * When the live request cannot reach this site, an internal dispatch of
+	 * the same request validates the verification logic directly.
+	 *
+	 * Accepts (POST): connection_id, verify_token (optional), nonce.
+	 *
+	 * @since 1.0.0
+	 */
+	public function ajax_test_whatsapp_webhook_verify() {
+		check_ajax_referer( 'wp_mcp_ai_test_whatsapp_webhook_verify', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+		$verify_token  = isset( $_POST['verify_token'] ) ? sanitize_text_field( wp_unslash( $_POST['verify_token'] ) ) : '';
+
+		if ( empty( $connection_id ) ) {
+			wp_send_json_error( __( 'Save the connection first. The webhook test runs against the channel-specific endpoint that is created when the connection is saved.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		if ( empty( $connection ) || empty( $connection['connection_type'] ) || 'whatsapp' !== $connection['connection_type'] ) {
+			wp_send_json_error( __( 'Connection not found or is not a WhatsApp connection.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		// Fall back to the stored verify token when the field is blank (the
+		// stored value is preserved on save, so a blank field means "keep").
+		if ( empty( $verify_token ) ) {
+			$verify_token = isset( $connection['verify_token'] ) ? (string) $connection['verify_token'] : '';
+		}
+		if ( empty( $verify_token ) ) {
+			wp_send_json_error( __( 'No Verify Token is configured for this connection. Enter a Verify Token above, save the connection, then run the test again.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$webhook_url = home_url( '/wp-json/mcp-ai/v1/webhooks/whatsapp/' . $connection_id );
+		$challenge   = 'nvoos' . wp_generate_password( 24, false, false ); // Alphanumeric and URL-safe; mirrors Meta's random hub.challenge.
+
+		$test_url = add_query_arg(
+			array(
+				'hub.mode'         => 'subscribe',
+				'hub.verify_token' => $verify_token,
+				'hub.challenge'    => $challenge,
+			),
+			$webhook_url
+		);
+
+		$loopback = wp_remote_get(
+			$test_url,
+			array(
+				'timeout'     => 15,
+				'sslverify'   => true,
+				'redirection' => 0,
+			)
+		);
+
+		$http_status   = is_wp_error( $loopback ) ? 0 : (int) wp_remote_retrieve_response_code( $loopback );
+		$http_body     = is_wp_error( $loopback ) ? '' : wp_remote_retrieve_body( $loopback );
+		$transport_err = is_wp_error( $loopback ) ? $loopback->get_error_message() : '';
+		$echoed        = ( 200 === $http_status && hash_equals( $challenge, (string) $http_body ) );
+
+		// Internal logic check always runs so the result localises failures.
+		$internal = $this->dispatch_whatsapp_webhook_verify_internal( $connection_id, $verify_token, $challenge );
+
+		$warnings = array();
+		if ( 0 !== strpos( $webhook_url, 'https://' ) ) {
+			$warnings[] = __( 'This site is not served over HTTPS. Meta only delivers webhooks to public HTTPS URLs with a valid TLS certificate.', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( $echoed ) {
+			wp_send_json_success(
+				array(
+					'webhook_url' => $webhook_url,
+					'challenge'   => $challenge,
+					'http_status' => $http_status,
+					'echoed'      => true,
+					'warnings'    => $warnings,
+				)
+			);
+			return;
+		}
+
+		if ( ! empty( $internal['echoed'] ) ) {
+			// The verification logic is correct; the live request failed for
+			// environmental reasons. Report success with actionable guidance.
+			if ( ! empty( $transport_err ) ) {
+				$warnings[] = sprintf(
+					/* translators: %s: transport error message */
+					__( 'The live request could not reach this site (%s). This usually means the site is not publicly reachable (local development, firewall, or DNS). The internal check confirms the verification logic itself is correct.', 'mcp-ai-wpoos-pro' ),
+					$transport_err
+				);
+			} else {
+				$body_preview = strlen( (string) $http_body ) > 120 ? substr( (string) $http_body, 0, 120 ) . '…' : (string) $http_body;
+				$warnings[]   = sprintf(
+					/* translators: 1: HTTP status, 2: response body preview */
+					__( 'The live request returned HTTP %1$d with an unexpected body ("%2$s") even though the verification logic is correct. Check for a caching layer, firewall, or security plugin rewriting the webhook response.', 'mcp-ai-wpoos-pro' ),
+					$http_status,
+					esc_html( $body_preview )
+				);
+			}
+
+			wp_send_json_success(
+				array(
+					'webhook_url' => $webhook_url,
+					'challenge'   => $challenge,
+					'http_status' => $http_status,
+					'echoed'      => false,
+					'logic_pass'  => true,
+					'warnings'    => $warnings,
+				)
+			);
+			return;
+		}
+
+		// Both the live path and the internal logic check failed — the webhook
+		// would fail Meta's verification today.
+		if ( 'rest_no_route' === $internal['error_code'] ) {
+			wp_send_json_error( __( 'The WhatsApp webhook route is not registered. The Chat Channels Toolkit must be enabled (NV oOS → Tools → Toolkits) for the webhook endpoint to exist.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+		if ( 'whatsapp_no_verify_token' === $internal['error_code'] ) {
+			wp_send_json_error( __( 'The webhook controller could not find a stored Verify Token for this connection. Enter a Verify Token, save the connection, then run the test again.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$detail = sprintf(
+			/* translators: 1: HTTP status, 2: internal error code, 3: internal HTTP status */
+			__( 'Verification failed. Live request: HTTP %1$d. Internal check: %2$s (HTTP %3$d).', 'mcp-ai-wpoos-pro' ),
+			$http_status,
+			$internal['error_code'] ? $internal['error_code'] : __( 'unknown', 'mcp-ai-wpoos-pro' ),
+			$internal['status']
+		);
+		if ( ! empty( $transport_err ) ) {
+			$detail .= ' ' . sprintf(
+				/* translators: %s: transport error message */
+				__( 'Transport error: %s.', 'mcp-ai-wpoos-pro' ),
+				$transport_err
+			);
+		}
+		$detail .= ' ' . __( 'Check that the Verify Token saved on this connection matches the token configured in the Meta App Dashboard, then click Meta\'s Verify and Save again.', 'mcp-ai-wpoos-pro' );
+
+		wp_send_json_error( $detail );
+	}
+
+	/**
+	 * AJAX handler: test WhatsApp webhook signature validation (positive + negative).
+	 *
+	 * Dispatches a minimal, side-effect-free webhook payload to the channel
+	 * endpoint twice: once with a correctly computed X-Hub-Signature-256
+	 * HMAC-SHA256 signature (must be accepted with HTTP 200) and once with a
+	 * tampered signature (must be rejected with HTTP 4xx). This mirrors the
+	 * positive/negative signature self-tests offered by webhook tooling
+	 * (Svix, Hookdeck, Stripe CLI) and proves the stored App Secret matches
+	 * the one Meta uses to sign deliveries.
+	 *
+	 * Accepts (POST): connection_id, app_secret (optional), nonce.
+	 *
+	 * @since 1.0.0
+	 */
+	public function ajax_test_whatsapp_webhook_signature() {
+		check_ajax_referer( 'wp_mcp_ai_test_whatsapp_webhook_signature', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+		$app_secret    = isset( $_POST['app_secret'] ) ? wp_unslash( $_POST['app_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- app secrets must not be sanitized as sanitize_text_field() can truncate valid characters.
+		$app_secret    = trim( (string) $app_secret );
+
+		if ( empty( $connection_id ) ) {
+			wp_send_json_error( __( 'Save the connection first. The signature test runs against the channel-specific endpoint that is created when the connection is saved.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		if ( empty( $connection ) || empty( $connection['connection_type'] ) || 'whatsapp' !== $connection['connection_type'] ) {
+			wp_send_json_error( __( 'Connection not found or is not a WhatsApp connection.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		// Fall back to the stored (decrypted) App Secret when the field is blank.
+		if ( empty( $app_secret ) && ! empty( $connection['api_secret'] ) ) {
+			$app_secret = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_secret'] );
+		}
+		if ( empty( $app_secret ) ) {
+			wp_send_json_error( __( 'No App Secret is configured for this connection. The webhook controller rejects every incoming POST without one (fail-closed). Enter your Meta App Secret above, save the connection, then run the test again.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		// Minimal payload with an empty entry list — exercises the signature
+		// gate and the processing entry-point without triggering any AI reply.
+		$payload = wp_json_encode(
+			array(
+				'object' => 'whatsapp_business_account',
+				'entry'  => array(),
+			)
+		);
+
+		$positive = $this->dispatch_whatsapp_webhook_post( $connection_id, $payload, 'sha256=' . hash_hmac( 'sha256', $payload, $app_secret ) );
+		$negative = $this->dispatch_whatsapp_webhook_post( $connection_id, $payload, 'sha256=' . hash_hmac( 'sha256', $payload, 'tampered-secret' ) );
+
+		if ( ! empty( $positive['accepted'] ) && 400 <= $negative['status'] ) {
+			$warnings = array();
+			if ( 0 !== strpos( home_url( '/' ), 'https://' ) ) {
+				$warnings[] = __( 'Reminder: Meta only delivers webhooks to public HTTPS URLs with a valid TLS certificate.', 'mcp-ai-wpoos-pro' );
+			}
+			wp_send_json_success(
+				array(
+					'positive_accepted' => true,
+					'positive_status'   => $positive['status'],
+					'negative_rejected' => true,
+					'negative_status'   => $negative['status'],
+					'warnings'          => $warnings,
+				)
+			);
+			return;
+		}
+
+		if ( 'rest_no_route' === $positive['error_code'] || 'rest_no_route' === $negative['error_code'] ) {
+			wp_send_json_error( __( 'The WhatsApp webhook route is not registered. The Chat Channels Toolkit must be enabled (NV oOS → Tools → Toolkits) for the webhook endpoint to exist.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$message = sprintf(
+			/* translators: 1: positive-case HTTP status, 2: negative-case HTTP status */
+			__( 'Signature validation is not working as expected. Correctly signed payload: HTTP %1$d (expected 200). Tampered payload: HTTP %2$d (expected 4xx rejection).', 'mcp-ai-wpoos-pro' ),
+			$positive['status'],
+			$negative['status']
+		);
+
+		if ( empty( $positive['accepted'] ) && 400 <= $negative['status'] ) {
+			$message .= ' ' . __( 'The endpoint rejected even the correctly signed payload — the App Secret stored on this connection most likely does not match the App Secret in the Meta App Dashboard (App Dashboard → Settings → Basic → App Secret). Update it, save, and retry.', 'mcp-ai-wpoos-pro' );
+		} elseif ( ! empty( $positive['accepted'] ) && 400 > $negative['status'] ) {
+			$message .= ' ' . __( 'The endpoint accepted a payload with a tampered signature — the signature gate is not being enforced. Check the webhook controller configuration.', 'mcp-ai-wpoos-pro' );
+		}
+
+		wp_send_json_error( $message );
+	}
+
+	/**
+	 * AJAX handler: check which apps are subscribed to the WhatsApp Business
+	 * Account via the Graph API (GET /{WABA_ID}/subscribed_apps).
+	 *
+	 * Detects the "shadow delivery" misconfiguration documented across the
+	 * WhatsApp Cloud API community: the webhook URL verifies successfully in
+	 * the Meta App Dashboard but no events arrive because the app was never
+	 * subscribed to the WABA's webhook fields.
+	 *
+	 * Accepts (POST): connection_id, access_token, app_id,
+	 * business_account_id, graph_api_version (all optional — stored values
+	 * are used as fallback), nonce.
+	 *
+	 * @since 1.0.0
+	 */
+	public function ajax_check_whatsapp_subscription() {
+		check_ajax_referer( 'wp_mcp_ai_check_whatsapp_subscription', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+		$access_token  = isset( $_POST['access_token'] ) ? wp_unslash( $_POST['access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- access tokens must not be sanitized as sanitize_text_field() can truncate valid token characters.
+		$access_token  = trim( (string) $access_token );
+		$app_id        = isset( $_POST['app_id'] ) ? sanitize_text_field( wp_unslash( $_POST['app_id'] ) ) : '';
+		$waba_id       = isset( $_POST['business_account_id'] ) ? sanitize_text_field( wp_unslash( $_POST['business_account_id'] ) ) : '';
+		$raw_version   = isset( $_POST['graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['graph_api_version'] ) ) : '';
+
+		if ( empty( $connection_id ) ) {
+			wp_send_json_error( __( 'Save the connection first.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		if ( empty( $connection ) || empty( $connection['connection_type'] ) || 'whatsapp' !== $connection['connection_type'] ) {
+			wp_send_json_error( __( 'Connection not found or is not a WhatsApp connection.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		// Fall back to stored (decrypted) values for blank fields.
+		if ( empty( $access_token ) && ! empty( $connection['api_key'] ) ) {
+			$access_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+		}
+		if ( empty( $app_id ) && ! empty( $connection['app_id'] ) ) {
+			$app_id = $connection['app_id'];
+		}
+		if ( empty( $waba_id ) && ! empty( $connection['business_account_id'] ) ) {
+			$waba_id = $connection['business_account_id'];
+		}
+
+		if ( empty( $access_token ) ) {
+			wp_send_json_error( __( 'Access Token is required. Enter it above or save the connection first.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+		if ( empty( $waba_id ) ) {
+			wp_send_json_error( __( 'The WhatsApp Business Account ID (WABA ID) is required for the subscription check. Enter it in the Business Account ID field above and save, or find it in Meta Business Manager → Accounts → WhatsApp Accounts.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$graph_api_version = preg_match( '/^v\d+\.\d+$/', $raw_version ) ? $raw_version : 'v22.0';
+
+		$response = wp_remote_get(
+			sprintf( 'https://graph.facebook.com/%s/%s/subscribed_apps', $graph_api_version, rawurlencode( $waba_id ) ),
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+				'timeout' => 20,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to the Meta Graph API: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
+			return;
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( 200 !== $code || ! is_array( $body ) ) {
+			$fb_error = is_array( $body ) && isset( $body['error'] ) ? $body['error'] : array();
+			$fb_code  = isset( $fb_error['code'] ) ? (int) $fb_error['code'] : 0;
+			$fb_msg   = isset( $fb_error['message'] ) ? $fb_error['message'] : __( 'Invalid response from the Meta Graph API.', 'mcp-ai-wpoos-pro' );
+
+			if ( 200 === $fb_code ) {
+				wp_send_json_error( __( 'The access token lacks the whatsapp_business_management permission required to read webhook subscriptions. Grant the permission to your System User (Meta Business Suite → System Users) or use a User Access Token with that scope, then retry.', 'mcp-ai-wpoos-pro' ) );
+				return;
+			}
+			if ( 190 === $fb_code ) {
+				wp_send_json_error( __( 'The access token is invalid or expired. Generate a new System User Access Token in Meta Business Suite, update the Access Token field, save, and retry.', 'mcp-ai-wpoos-pro' ) );
+				return;
+			}
+
+			wp_send_json_error(
+				sprintf(
+					/* translators: 1: HTTP status, 2: Meta error code, 3: Meta error message */
+					__( 'Meta Graph API error (Status %1$d, code %2$d): %3$s', 'mcp-ai-wpoos-pro' ),
+					$code,
+					$fb_code,
+					$fb_msg
+				)
+			);
+			return;
+		}
+
+		$subscribed = array();
+		$apps       = isset( $body['data'] ) && is_array( $body['data'] ) ? $body['data'] : array();
+		foreach ( $apps as $app ) {
+			if ( isset( $app['whatsapp_business_api_id'] ) ) {
+				$subscribed[] = sanitize_text_field( (string) $app['whatsapp_business_api_id'] );
+			}
+		}
+
+		$warnings = array();
+		if ( empty( $subscribed ) ) {
+			$warnings[] = __( 'No apps are subscribed to this WhatsApp Business Account — webhook events are not being delivered anywhere. Subscribe this app in the Meta App Dashboard (WhatsApp → Configuration → Webhook fields), then send a test message.', 'mcp-ai-wpoos-pro' );
+		} elseif ( ! empty( $app_id ) && ! in_array( $app_id, $subscribed, true ) ) {
+			$warnings[] = sprintf(
+				/* translators: 1: App ID, 2: WABA ID */
+				__( 'Your App ID (%1$s) is NOT in the subscribed list. This is the classic "shadow delivery" setup: Meta accepts the webhook URL but delivers no events. Subscribe the app via the Meta App Dashboard → WhatsApp → Configuration → Webhook fields, or POST /%2$s/subscribed_apps on the Graph API.', 'mcp-ai-wpoos-pro' ),
+				$app_id,
+				$waba_id
+			);
+		}
+
+		wp_send_json_success(
+			array(
+				'waba_id'           => $waba_id,
+				'app_id'            => $app_id,
+				'subscribed_apps'   => $subscribed,
+				'is_subscribed'     => ! empty( $app_id ) && in_array( $app_id, $subscribed, true ),
+				'graph_api_version' => $graph_api_version,
+				'warnings'          => $warnings,
+			)
+		);
+	}
+
 	/**
 	 * AJAX handler: register a WhatsApp Business phone number with the Cloud API.
 	 *

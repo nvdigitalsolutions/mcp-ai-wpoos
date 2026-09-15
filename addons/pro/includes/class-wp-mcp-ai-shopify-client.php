@@ -336,7 +336,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 			}
 
 			// Cache key unique to this connection's credentials.
-			$transient_key = 'wp_mcp_ai_shopify_cat_tok_' . md5( $client_id );
+			$transient_key = self::get_catalog_token_transient_key( $client_id );
 
 			$cached = get_transient( $transient_key );
 			if ( ! empty( $cached ) ) {
@@ -397,14 +397,70 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 				);
 			}
 
+			// Reject tokens that were issued without the Catalog API scope.
+			// Shopify can accept a key's credentials but omit catalog access
+			// from the issued token; every catalog endpoint call then fails
+			// with 401 even though the token itself is fresh and valid.
+			if ( isset( $decoded['scope'] ) ) {
+				$granted_scopes = is_array( $decoded['scope'] )
+					? array_map( 'strval', $decoded['scope'] )
+					: preg_split( '/[\s,]+/', trim( (string) $decoded['scope'] ) );
+				$granted_scopes = is_array( $granted_scopes ) ? $granted_scopes : array();
+
+				if ( ! in_array( 'read_global_api_catalog_search', $granted_scopes, true ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_shopify_catalog_scope_missing',
+						sprintf(
+							/* translators: %s: granted scope list */
+							__( 'Shopify accepted the Catalog API credentials, but the issued token lacks the read_global_api_catalog_search scope (granted: %s). Enable Catalog API access for this API key in the Shopify Dev Dashboard.', 'mcp-ai-wpoos-pro' ),
+							esc_html( implode( ', ', array_filter( $granted_scopes ) ) )
+						)
+					);
+				}
+			}
+
 			$token      = $decoded['access_token'];
 			$expires_in = isset( $decoded['expires_in'] ) ? absint( $decoded['expires_in'] ) : 3600;
-			// Cache with a 60-second safety buffer to avoid using an expired token.
-			$cache_ttl = max( 60, $expires_in - 60 );
+			// Shopify documents a 60-minute JWT TTL for Dev Dashboard tokens even
+			// though the token response can advertise a longer expires_in (the docs
+			// sample shows 86399s). Caching past the JWT's real expiry produces 401s
+			// from the catalog endpoint until the transient dies, so cap the cache
+			// at 60 minutes and keep a 60-second safety buffer.
+			$cache_ttl = max( 60, min( $expires_in, 3600 ) - 60 );
 
 			set_transient( $transient_key, $token, $cache_ttl );
 
 			return $token;
+		}
+
+		/**
+		 * Build the transient key for a cached Catalog API bearer token.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param string $client_id Catalog API client ID.
+		 * @return string Transient key.
+		 */
+		public static function get_catalog_token_transient_key( $client_id ) {
+			return 'wp_mcp_ai_shopify_cat_tok_' . md5( (string) $client_id );
+		}
+
+		/**
+		 * Purge the cached Catalog API bearer token for this connection.
+		 *
+		 * Call after the connection credentials change, or after a 401, so the
+		 * next request fetches a fresh token instead of replaying a stale one.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @return void
+		 */
+		public function invalidate_catalog_token() {
+			$client_id = $this->get_catalog_client_id();
+
+			if ( ! empty( $client_id ) ) {
+				delete_transient( self::get_catalog_token_transient_key( $client_id ) );
+			}
 		}                                                     //
 		// ------------------------------------------------------------------ //
 
@@ -1275,12 +1331,6 @@ query GetLocations($first: Int!) {
 		 * @return array|WP_Error Decoded response array or WP_Error on failure.
 		 */
 		public function catalog_request( $path, array $query_args = array() ) {
-			$token = $this->get_catalog_token();
-
-			if ( is_wp_error( $token ) ) {
-				return $token;
-			}
-
 			$url = self::CATALOG_BASE_URL . '/' . ltrim( $path, '/' );
 			if ( ! empty( $query_args ) ) {
 				// add_query_arg() does not URL-encode values (build_query()
@@ -1290,27 +1340,29 @@ query GetLocations($first: Int!) {
 				$url          = $url . ( false === strpos( $url, '?' ) ? '?' : '&' ) . $query_string;
 			}
 
-			$raw_response = wp_safe_remote_get(
-				$url,
-				array(
-					'timeout' => self::DEFAULT_TIMEOUT,
-					'headers' => array(
-						'Authorization' => 'Bearer ' . $token,
-						'Accept'        => 'application/json',
-						'User-Agent'    => 'WP-MCP-AI-Pro/' . WP_MCP_AI_PRO_VERSION,
-					),
-				)
-			);
+			$raw_response = $this->catalog_get( $url );
 
 			if ( is_wp_error( $raw_response ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_shopify_catalog_request_failed',
-					/* translators: %s: error message */
-					sprintf( __( 'Shopify Catalog API request failed: %s', 'mcp-ai-wpoos-pro' ), $raw_response->get_error_message() )
-				);
+				return $raw_response;
 			}
 
 			$response_code = wp_remote_retrieve_response_code( $raw_response );
+
+			// A 401 can mean the cached bearer outlived the JWT's real expiry
+			// (see get_catalog_token()). Purge the cache and retry once with a
+			// freshly-issued token before surfacing the error.
+			if ( 401 === $response_code ) {
+				$this->invalidate_catalog_token();
+
+				$raw_response = $this->catalog_get( $url );
+
+				if ( is_wp_error( $raw_response ) ) {
+					return $raw_response;
+				}
+
+				$response_code = wp_remote_retrieve_response_code( $raw_response );
+			}
+
 			$response_body = wp_remote_retrieve_body( $raw_response );
 
 			if ( strlen( $response_body ) > self::MAX_RESPONSE_SIZE ) {
@@ -1615,6 +1667,44 @@ query GetLocations($first: Int!) {
 			}
 
 			return isset( $decoded['result'] ) ? $decoded['result'] : $decoded;
+		}
+
+		/**
+		 * Perform a single authenticated GET against the Catalog API.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param string $url Fully-qualified Catalog API URL.
+		 * @return array|WP_Error Raw response array or WP_Error.
+		 */
+		private function catalog_get( $url ) {
+			$token = $this->get_catalog_token();
+
+			if ( is_wp_error( $token ) ) {
+				return $token;
+			}
+
+			$raw_response = wp_safe_remote_get(
+				$url,
+				array(
+					'timeout' => self::DEFAULT_TIMEOUT,
+					'headers' => array(
+						'Authorization' => 'Bearer ' . $token,
+						'Accept'        => 'application/json',
+						'User-Agent'    => 'WP-MCP-AI-Pro/' . WP_MCP_AI_PRO_VERSION,
+					),
+				)
+			);
+
+			if ( is_wp_error( $raw_response ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_catalog_request_failed',
+					/* translators: %s: error message */
+					sprintf( __( 'Shopify Catalog API request failed: %s', 'mcp-ai-wpoos-pro' ), $raw_response->get_error_message() )
+				);
+			}
+
+			return $raw_response;
 		}
 
 		/**
