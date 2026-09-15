@@ -1014,6 +1014,27 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			if ( is_wp_error( $result ) ) {
 				$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( $result->get_error_message() ) ) );
 			} else {
+				// Invalidate any cached Shopify Catalog API bearer token so the
+				// next catalog request uses the freshly-saved credentials. The
+				// cache key is derived from the client ID, so also purge the
+				// previously-stored ID when editing.
+				if ( 'shopify' === $connection_type && 'catalog_api' === $shopify_api_mode ) {
+					$shopify_client_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-client.php';
+					if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) && file_exists( $shopify_client_file ) ) {
+						require_once $shopify_client_file;
+					}
+					if ( class_exists( 'WP_MCP_AI_Shopify_Client' ) && method_exists( 'WP_MCP_AI_Shopify_Client', 'get_catalog_token_transient_key' ) ) {
+						$shopify_catalog_client_ids = array( $api_key );
+						$previous_connection        = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( isset( $connection_data['id'] ) ? $connection_data['id'] : '' );
+						if ( ! empty( $previous_connection['api_key'] ) ) {
+							$shopify_catalog_client_ids[] = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $previous_connection['api_key'] );
+						}
+						foreach ( array_unique( array_filter( $shopify_catalog_client_ids ) ) as $shopify_catalog_client_id ) {
+							delete_transient( WP_MCP_AI_Shopify_Client::get_catalog_token_transient_key( $shopify_catalog_client_id ) );
+						}
+					}
+				}
+
 				// Redirect back to the edit page so the user can verify the saved data.
 				$saved_connection_id = is_string( $result ) ? $result : ( isset( $connection_data['id'] ) ? $connection_data['id'] : '' );
 				if ( $saved_connection_id ) {
