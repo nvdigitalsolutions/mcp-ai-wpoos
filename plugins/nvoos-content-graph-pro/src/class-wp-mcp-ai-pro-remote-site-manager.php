@@ -723,11 +723,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'shopify_api_version'            => isset( $connection_data['shopify_api_version'] ) && preg_match( '/^\d{4}-\d{2}$/', $connection_data['shopify_api_version'] )
 				? sanitize_text_field( $connection_data['shopify_api_version'] )
 				: '2025-01',
-			'shopify_api_mode'               => isset( $connection_data['shopify_api_mode'] ) && in_array( $connection_data['shopify_api_mode'], array( 'admin_api', 'catalog_api' ), true )
+			'shopify_api_mode'               => isset( $connection_data['shopify_api_mode'] ) && in_array( $connection_data['shopify_api_mode'], array( 'admin_api', 'catalog_api', 'storefront_catalog' ), true )
 				? $connection_data['shopify_api_mode']
 				: 'admin_api',
 			'shopify_catalog_shop_id'        => isset( $connection_data['shopify_catalog_shop_id'] )
 				? sanitize_text_field( $connection_data['shopify_catalog_shop_id'] )
+				: '',
+			// HTTPS-only UCP agent profile URL for keyless Storefront Catalog
+			// connections. Shopify fetches this profile for capability negotiation.
+			'shopify_ucp_agent_profile'      => isset( $connection_data['shopify_ucp_agent_profile'] ) && 0 === strpos( (string) $connection_data['shopify_ucp_agent_profile'], 'https://' )
+				? esc_url_raw( $connection_data['shopify_ucp_agent_profile'] )
 				: '',
 			// ShipEngine-specific fields.
 			'shipengine_carrier_id'          => isset( $connection_data['shipengine_carrier_id'] )
@@ -1995,6 +2000,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return self::test_shopify_catalog_connection( $connection );
 		}
 
+		if ( 'storefront_catalog' === $shopify_api_mode ) {
+			return self::test_shopify_storefront_catalog_connection( $connection );
+		}
+
 		$connection_id = isset( $connection['id'] ) ? $connection['id'] : null;
 		$client        = new WP_MCP_AI_Shopify_Client( $connection_id );
 
@@ -2064,6 +2073,38 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'success' => true,
 			'shopify' => true,
 			'message' => __( 'Shopify Catalog API connection successful. JWT token acquired and search endpoint verified.', 'nvoos-content-graph-pro' ),
+		);
+	}
+
+	/**
+	 * Test Shopify Storefront Catalog (UCP MCP) connection.
+	 *
+	 * Keyless: performs the MCP tools/list handshake against the
+	 * storefront's /api/ucp/mcp endpoint using the configured UCP agent
+	 * profile, which also exercises the UCP negotiation flow.
+	 *
+	 * @since 1.1.80
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_shopify_storefront_catalog_connection( $connection ) {
+		if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
+			require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-shopify-client.php';
+		}
+
+		$connection_id = isset( $connection['id'] ) ? $connection['id'] : null;
+		$client        = new WP_MCP_AI_Shopify_Client( $connection_id );
+
+		$tools = $client->storefront_catalog_list_tools();
+		if ( is_wp_error( $tools ) ) {
+			return $tools;
+		}
+
+		return array(
+			'success' => true,
+			'shopify' => true,
+			'message' => __( 'Shopify Storefront Catalog connection successful. UCP negotiation completed and catalog tools discovered.', 'nvoos-content-graph-pro' ),
 		);
 	}
 
@@ -3012,6 +3053,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$path = '' === $endpoint ? 'global/v2/search' : ltrim( $endpoint, '/' );
 				return WP_MCP_AI_Shopify_Client::CATALOG_BASE_URL . '/' . $path;
 			}
+			if ( 'storefront_catalog' === $shopify_api_mode ) {
+				// Storefront Catalog MCP lives on the store's own origin.
+				return $base_url . WP_MCP_AI_Shopify_Client::UCP_MCP_PATH;
+			}
 			$api_version = WP_MCP_AI_Shopify_Client::sanitize_api_version(
 				isset( $connection['shopify_api_version'] ) ? $connection['shopify_api_version'] : ''
 			);
@@ -3056,6 +3101,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( 'catalog_api' === $shopify_api_mode ) {
 				// Catalog API uses a short-lived JWT bearer token obtained from get_catalog_token().
 				// The token is fetched dynamically by WP_MCP_AI_Shopify_Client; here we set Content-Type only.
+				$headers['Content-Type'] = 'application/json';
+				$headers['Accept']       = 'application/json';
+			} elseif ( 'storefront_catalog' === $shopify_api_mode ) {
+				// Storefront Catalog MCP is keyless — the UCP agent profile is
+				// sent in the JSON-RPC body by the Shopify client.
 				$headers['Content-Type'] = 'application/json';
 				$headers['Accept']       = 'application/json';
 			} else {
@@ -3239,7 +3289,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		if ( 'shopify' === $connection_type ) {
 			$shopify_api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
-			if ( empty( $connection['api_key'] ) ) {
+			// Storefront Catalog is keyless — no API token or secret fields.
+			if ( 'storefront_catalog' !== $shopify_api_mode && empty( $connection['api_key'] ) ) {
 				$error_msg = 'catalog_api' === $shopify_api_mode
 					? __( 'Client ID is required for Shopify Catalog API connections.', 'nvoos-content-graph-pro' )
 					: __( 'Admin API access token is required for Shopify connections.', 'nvoos-content-graph-pro' );
@@ -3250,6 +3301,20 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 					'wp_mcp_ai_pro_missing_shopify_credentials',
 					__( 'Client secret (shpss_…) is required for Shopify Catalog API connections.', 'nvoos-content-graph-pro' )
 				);
+			}
+			if ( 'storefront_catalog' === $shopify_api_mode ) {
+				if ( empty( $connection['url'] ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_pro_missing_shopify_domain',
+						__( 'A store domain is required for Shopify Storefront Catalog connections.', 'nvoos-content-graph-pro' )
+					);
+				}
+				if ( ! empty( $connection['shopify_ucp_agent_profile'] ) && ! wp_http_validate_url( $connection['shopify_ucp_agent_profile'] ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_pro_invalid_ucp_agent_profile',
+						__( 'The UCP agent profile must be a valid HTTPS URL.', 'nvoos-content-graph-pro' )
+					);
+				}
 			}
 		}
 
