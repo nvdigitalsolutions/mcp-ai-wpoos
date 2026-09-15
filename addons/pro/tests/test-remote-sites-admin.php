@@ -1293,6 +1293,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		$_POST['action']          = 'wp_mcp_ai_test_whatsapp_live';
 		$_POST['nonce']           = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
 		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['access_token']    = 'test_access_token';
 		$_POST['phone_number_id'] = '111222333444555';
@@ -1387,6 +1388,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		$_POST['action']          = 'wp_mcp_ai_test_whatsapp_live';
 		$_POST['nonce']           = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
 		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['access_token']    = 'test_limited_access_token';
 		$_POST['phone_number_id'] = '111222333444555';
@@ -1469,6 +1471,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		$_POST['action']            = 'wp_mcp_ai_test_whatsapp_live';
 		$_POST['nonce']             = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
 		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['access_token']      = 'test_token_400_code_100';
 		$_POST['phone_number_id']   = '333444555666777';
@@ -1548,6 +1551,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		// Submit with blank access_token but valid connection_id.
 		$_POST['action']          = 'wp_mcp_ai_test_whatsapp_live';
 		$_POST['nonce']           = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
 		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['access_token']    = '';
 		$_POST['phone_number_id'] = '111222333444555';
@@ -1578,6 +1582,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	public function test_ajax_test_whatsapp_live_errors_when_no_token_and_no_connection_id() {
 		$_POST['action']          = 'wp_mcp_ai_test_whatsapp_live';
 		$_POST['nonce']           = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
 		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['access_token']    = '';
 		$_POST['phone_number_id'] = '111222333444555';
@@ -1654,6 +1659,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		$_POST['action']     = 'wp_mcp_ai_generate_messenger_token';
 		$_POST['nonce']      = wp_create_nonce( 'wp_mcp_ai_generate_messenger_token' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
 		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['app_id']     = '123456789';
 		$_POST['app_secret'] = 'test_app_secret';
@@ -1683,6 +1689,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	public function test_ajax_generate_messenger_token_fails_without_app_id() {
 		$_POST['action']     = 'wp_mcp_ai_generate_messenger_token';
 		$_POST['nonce']      = wp_create_nonce( 'wp_mcp_ai_generate_messenger_token' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
 		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['app_id']     = '';
 		$_POST['app_secret'] = 'test_app_secret';
@@ -1736,6 +1743,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		$_POST['action']     = 'wp_mcp_ai_generate_messenger_token';
 		$_POST['nonce']      = wp_create_nonce( 'wp_mcp_ai_generate_messenger_token' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
 		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['app_id']     = 'bad_app_id';
 		$_POST['app_secret'] = 'bad_app_secret';
@@ -1789,6 +1797,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		$_POST['action']       = 'wp_mcp_ai_test_messenger_live';
 		$_POST['nonce']        = wp_create_nonce( 'wp_mcp_ai_test_messenger_live' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
 		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['access_token'] = 'EAAtest_page_access_token';
 		$_POST['page_id']      = '987654321';
@@ -1848,6 +1857,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		$_POST['action']       = 'wp_mcp_ai_test_messenger_live';
 		$_POST['nonce']        = wp_create_nonce( 'wp_mcp_ai_test_messenger_live' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
 		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['access_token'] = '123456789|app_access_token_hash';
 		$_POST['page_id']      = '';
@@ -1878,6 +1888,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	public function test_ajax_test_messenger_live_fails_without_access_token() {
 		$_POST['action']       = 'wp_mcp_ai_test_messenger_live';
 		$_POST['nonce']        = wp_create_nonce( 'wp_mcp_ai_test_messenger_live' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
 		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['access_token'] = '';
 		$_POST['page_id']      = '';
@@ -1931,6 +1942,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		$_POST['action']       = 'wp_mcp_ai_test_messenger_live';
 		$_POST['nonce']        = wp_create_nonce( 'wp_mcp_ai_test_messenger_live' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
 		$_REQUEST['nonce']     = $_POST['nonce'];
 		$_POST['access_token'] = 'EAAtest_token';
 		$_POST['page_id']      = '';
