@@ -74,6 +74,9 @@ class Test_Remote_Admin_Slice extends WP_UnitTestCase {
 		$this->assertNotFalse( has_action( 'admin_init', array( $admin, 'handle_actions' ) ) );
 		$this->assertNotFalse( has_action( 'wp_ajax_wp_mcp_ai_test_remote_connection', array( $admin, 'ajax_test_connection' ) ) );
 		$this->assertNotFalse( has_action( 'wp_ajax_wp_mcp_ai_test_telegram_live', array( $admin, 'ajax_test_telegram_live' ) ) );
+		$this->assertNotFalse( has_action( 'wp_ajax_wp_mcp_ai_test_whatsapp_webhook_verify', array( $admin, 'ajax_test_whatsapp_webhook_verify' ) ) );
+		$this->assertNotFalse( has_action( 'wp_ajax_wp_mcp_ai_test_whatsapp_webhook_signature', array( $admin, 'ajax_test_whatsapp_webhook_signature' ) ) );
+		$this->assertNotFalse( has_action( 'wp_ajax_wp_mcp_ai_check_whatsapp_subscription', array( $admin, 'ajax_check_whatsapp_subscription' ) ) );
 		$this->assertNotFalse( has_filter( 'allowed_redirect_hosts', array( $admin, 'allow_google_oauth_host' ) ) );
 
 		// The metabox and the webhook page also self-register their hooks.
@@ -147,5 +150,154 @@ class Test_Remote_Admin_Slice extends WP_UnitTestCase {
 		if ( is_admin() ) {
 			$this->assertTrue( $registry->is_loaded( 'admin_remote_sites' ) );
 		}
+	}
+
+	/**
+	 * Both matrices: the Meta subscription self-test resolves the ported (or
+	 * base-owned, monolith) remote-site manager and reports the subscribed-app
+	 * list from the mocked Graph API response.
+	 */
+	public function test_whatsapp_subscription_check_lists_subscribed_apps(): void {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                => 'Test WhatsApp',
+				'url'                 => 'https://graph.facebook.com/v22.0',
+				'connection_type'     => 'whatsapp',
+				'auth_type'           => 'none',
+				'api_key'             => 'test_access_token',
+				'app_id'              => '123456789',
+				'business_account_id' => '987654321',
+				'phone_number_id'     => '111222333444555',
+				'verify_token'        => 'test_verify_token_abc123',
+				'enabled'             => true,
+			)
+		);
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$mock_callback = static function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'subscribed_apps' ) ) {
+				return $preempt;
+			}
+
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode(
+					array(
+						'data' => array(
+							array( 'whatsapp_business_api_id' => '123456789' ),
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']        = 'wp_mcp_ai_check_whatsapp_subscription';
+		$_POST['nonce']         = wp_create_nonce( 'wp_mcp_ai_check_whatsapp_subscription' );
+		$_REQUEST['nonce']      = $_POST['nonce']; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
+		$_POST['connection_id'] = (string) $connection_id;
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_check_whatsapp_subscription();
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected: wp_send_json_success calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+		unset( $_POST['action'], $_POST['nonce'], $_REQUEST['nonce'], $_POST['connection_id'] );
+
+		$data = json_decode( (string) $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertTrue( isset( $data['success'] ) && $data['success'], 'Expected success; got: ' . wp_json_encode( $data ) );
+		$this->assertTrue( $data['data']['is_subscribed'], 'This app must be flagged as subscribed' );
+	}
+
+	/**
+	 * Standalone only: the WhatsApp webhook REST controller is not ported (the
+	 * chat-channels REST slices landed Google Chat, Apple, Outlook, iCloud and
+	 * Telegram only), so the verification and signature self-tests must degrade
+	 * with the byte-identical rest_no_route message instead of failing hard.
+	 */
+	public function test_whatsapp_webhook_self_tests_degrade_standalone(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			$this->markTestSkipped( 'Monolith matrix: the base-owned WhatsApp webhook controller may register the route.' );
+		}
+
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Test WhatsApp',
+				'url'             => 'https://graph.facebook.com/v22.0',
+				'connection_type' => 'whatsapp',
+				'auth_type'       => 'none',
+				'api_key'         => 'test_access_token',
+				'api_secret'      => 'test_app_secret',
+				'phone_number_id' => '111222333444555',
+				'verify_token'    => 'test_verify_token_abc123',
+				'enabled'         => true,
+			)
+		);
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		// Keep the loopback request hermetic: fail at transport level.
+		$mock_callback = static function ( $preempt ) {
+			return new WP_Error( 'http_request_failed', 'Connection refused' );
+		};
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		// Verification self-test: internal dispatch must hit rest_no_route.
+		$_POST['action']        = 'wp_mcp_ai_test_whatsapp_webhook_verify';
+		$_POST['nonce']         = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_webhook_verify' );
+		$_REQUEST['nonce']      = $_POST['nonce']; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
+		$_POST['connection_id'] = (string) $connection_id;
+
+		ob_start();
+		try {
+			$admin->ajax_test_whatsapp_webhook_verify();
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected: wp_send_json_error calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		$data = json_decode( (string) $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertFalse( $data['success'], 'Verification self-test must degrade standalone' );
+		$this->assertStringContainsString( 'WhatsApp webhook route is not registered', $data['data'] );
+
+		// Signature self-test: both dispatches must hit rest_no_route.
+		$_POST['action']   = 'wp_mcp_ai_test_whatsapp_webhook_signature';
+		$_POST['nonce']    = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_webhook_signature' );
+		$_REQUEST['nonce'] = $_POST['nonce']; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
+
+		ob_start();
+		try {
+			$admin->ajax_test_whatsapp_webhook_signature();
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected: wp_send_json_error calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+		unset( $_POST['action'], $_POST['nonce'], $_REQUEST['nonce'], $_POST['connection_id'] );
+
+		$data = json_decode( (string) $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertFalse( $data['success'], 'Signature self-test must degrade standalone' );
+		$this->assertStringContainsString( 'WhatsApp webhook route is not registered', $data['data'] );
 	}
 }

@@ -1951,4 +1951,450 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		$this->assertStringContainsString( 'v21.0', $captured_url, 'Should fall back to v21.0 for invalid api_version' );
 	}
+
+	/**
+	 * Load and register the WhatsApp webhook REST routes so internal dispatches
+	 * (rest_do_request) can resolve the channel-specific endpoints.
+	 *
+	 * Registration must go through the rest_api_init action: WP 6.x raises a
+	 * _doing_it_wrong notice (which wp-phpunit turns into a test failure) when
+	 * register_rest_route() is called outside it.
+	 *
+	 * @return void
+	 */
+	private function load_whatsapp_webhook_routes() {
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			}
+		}
+		if ( class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			new WP_MCP_AI_WhatsApp_Webhook_Controller(); // Constructor hooks register_routes onto rest_api_init.
+			do_action( 'rest_api_init' );
+		}
+	}
+
+	/**
+	 * Test that ajax_test_whatsapp_webhook_verify errors without a saved connection.
+	 */
+	public function test_ajax_test_whatsapp_webhook_verify_errors_without_connection_id() {
+		$_POST['action']          = 'wp_mcp_ai_test_whatsapp_webhook_verify';
+		$_POST['nonce']           = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_webhook_verify' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
+		$_REQUEST['nonce']       = $_POST['nonce'];
+		$_POST['connection_id']  = '';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_whatsapp_webhook_verify();
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected: wp_send_json_error calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		unset( $_POST['action'], $_POST['nonce'], $_REQUEST['nonce'], $_POST['connection_id'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertFalse( $data['success'], 'Must fail without a saved connection' );
+		$this->assertStringContainsString( 'Save the connection first', $data['data'] );
+	}
+
+	/**
+	 * Test that ajax_test_whatsapp_webhook_verify reports success with logic_pass
+	 * when the live loopback request cannot reach the site but the internal
+	 * verification logic is correct.
+	 */
+	public function test_ajax_test_whatsapp_webhook_verify_succeeds_internally_when_loopback_unreachable() {
+		$connection_data = array(
+			'name'            => 'Test WhatsApp',
+			'url'             => 'https://graph.facebook.com/v22.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'api_key'         => 'test_access_token',
+			'api_secret'      => 'test_app_secret',
+			'phone_number_id' => '111222333444555',
+			'verify_token'    => 'test_verify_token_abc123',
+			'enabled'         => true,
+		);
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$this->load_whatsapp_webhook_routes();
+
+		// Simulate an unreachable site: every HTTP request fails at transport level.
+		$mock_callback = function ( $preempt ) {
+			return new WP_Error( 'http_request_failed', 'Connection refused' );
+		};
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']        = 'wp_mcp_ai_test_whatsapp_webhook_verify';
+		$_POST['nonce']         = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_webhook_verify' );
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
+		$_REQUEST['nonce']      = $_POST['nonce'];
+		$_POST['connection_id'] = $connection_id;
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_whatsapp_webhook_verify();
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected: wp_send_json_success calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+		unset( $_POST['action'], $_POST['nonce'], $_REQUEST['nonce'], $_POST['connection_id'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertTrue( isset( $data['success'] ) && $data['success'], 'Expected success with logic_pass; got: ' . wp_json_encode( $data ) );
+		$this->assertTrue( $data['data']['logic_pass'], 'Internal verification logic must pass' );
+	}
+
+	/**
+	 * Test that ajax_test_whatsapp_webhook_verify echoes the challenge back through
+	 * the mocked live loopback request (full Meta-style handshake).
+	 */
+	public function test_ajax_test_whatsapp_webhook_verify_echoes_challenge_via_loopback() {
+		$connection_data = array(
+			'name'            => 'Test WhatsApp',
+			'url'             => 'https://graph.facebook.com/v22.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'api_key'         => 'test_access_token',
+			'api_secret'      => 'test_app_secret',
+			'phone_number_id' => '111222333444555',
+			'verify_token'    => 'test_verify_token_abc123',
+			'enabled'         => true,
+		);
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$this->load_whatsapp_webhook_routes();
+
+		// Mock the loopback GET to behave like the webhook endpoint: echo the
+		// hub.challenge value from the query string as a plain-text 200 body.
+		$mock_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'hub.challenge=' ) ) {
+				return $preempt;
+			}
+
+			preg_match( '/hub\.challenge=([^&]+)/', $url, $matches );
+			$challenge = isset( $matches[1] ) ? $matches[1] : '';
+
+			return array(
+				'headers'  => array( 'content-type' => 'text/plain; charset=utf-8' ),
+				'body'     => $challenge,
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']        = 'wp_mcp_ai_test_whatsapp_webhook_verify';
+		$_POST['nonce']         = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_webhook_verify' );
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
+		$_REQUEST['nonce']      = $_POST['nonce'];
+		$_POST['connection_id'] = $connection_id;
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_whatsapp_webhook_verify();
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected: wp_send_json_success calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+		unset( $_POST['action'], $_POST['nonce'], $_REQUEST['nonce'], $_POST['connection_id'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertTrue( isset( $data['success'] ) && $data['success'], 'Expected success; got: ' . wp_json_encode( $data ) );
+		$this->assertTrue( $data['data']['echoed'], 'Challenge must be echoed back' );
+		$this->assertEquals( 200, $data['data']['http_status'] );
+	}
+
+	/**
+	 * Test that ajax_test_whatsapp_webhook_signature accepts a correctly signed
+	 * payload and rejects a tampered one.
+	 */
+	public function test_ajax_test_whatsapp_webhook_signature_accepts_valid_and_rejects_tampered() {
+		$connection_data = array(
+			'name'            => 'Test WhatsApp',
+			'url'             => 'https://graph.facebook.com/v22.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'api_key'         => 'test_access_token',
+			'api_secret'      => 'test_app_secret',
+			'phone_number_id' => '111222333444555',
+			'verify_token'    => 'test_verify_token_abc123',
+			'enabled'         => true,
+		);
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$this->load_whatsapp_webhook_routes();
+
+		$_POST['action']        = 'wp_mcp_ai_test_whatsapp_webhook_signature';
+		$_POST['nonce']         = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_webhook_signature' );
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
+		$_REQUEST['nonce']      = $_POST['nonce'];
+		$_POST['connection_id'] = $connection_id;
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_whatsapp_webhook_signature();
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected: wp_send_json_success calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		unset( $_POST['action'], $_POST['nonce'], $_REQUEST['nonce'], $_POST['connection_id'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertTrue( isset( $data['success'] ) && $data['success'], 'Expected success; got: ' . wp_json_encode( $data ) );
+		$this->assertTrue( $data['data']['positive_accepted'], 'Valid signature must be accepted' );
+		$this->assertTrue( $data['data']['negative_rejected'], 'Tampered signature must be rejected' );
+	}
+
+	/**
+	 * Test that ajax_test_whatsapp_webhook_signature errors when no App Secret is
+	 * configured (the controller is fail-closed without one).
+	 */
+	public function test_ajax_test_whatsapp_webhook_signature_errors_without_app_secret() {
+		$connection_data = array(
+			'name'            => 'Test WhatsApp',
+			'url'             => 'https://graph.facebook.com/v22.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'api_key'         => 'test_access_token',
+			'phone_number_id' => '111222333444555',
+			'verify_token'    => 'test_verify_token_abc123',
+			'enabled'         => true,
+		);
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$_POST['action']        = 'wp_mcp_ai_test_whatsapp_webhook_signature';
+		$_POST['nonce']         = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_webhook_signature' );
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
+		$_REQUEST['nonce']      = $_POST['nonce'];
+		$_POST['connection_id'] = $connection_id;
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_whatsapp_webhook_signature();
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected: wp_send_json_error calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		unset( $_POST['action'], $_POST['nonce'], $_REQUEST['nonce'], $_POST['connection_id'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertFalse( $data['success'], 'Must fail without an App Secret' );
+		$this->assertStringContainsString( 'App Secret', $data['data'] );
+	}
+
+	/**
+	 * Test that ajax_check_whatsapp_subscription lists subscribed apps and flags
+	 * this connection's app as subscribed.
+	 */
+	public function test_ajax_check_whatsapp_subscription_lists_subscribed_apps() {
+		$connection_data = array(
+			'name'                => 'Test WhatsApp',
+			'url'                 => 'https://graph.facebook.com/v22.0',
+			'connection_type'     => 'whatsapp',
+			'auth_type'           => 'none',
+			'api_key'             => 'test_access_token',
+			'app_id'              => '123456789',
+			'business_account_id' => '987654321',
+			'phone_number_id'     => '111222333444555',
+			'verify_token'        => 'test_verify_token_abc123',
+			'enabled'             => true,
+		);
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$mock_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'subscribed_apps' ) ) {
+				return $preempt;
+			}
+
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode(
+					array(
+						'data' => array(
+							array( 'whatsapp_business_api_id' => '123456789' ),
+							array( 'whatsapp_business_api_id' => '555555555' ),
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']        = 'wp_mcp_ai_check_whatsapp_subscription';
+		$_POST['nonce']         = wp_create_nonce( 'wp_mcp_ai_check_whatsapp_subscription' );
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
+		$_REQUEST['nonce']      = $_POST['nonce'];
+		$_POST['connection_id'] = $connection_id;
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_check_whatsapp_subscription();
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected: wp_send_json_success calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+		unset( $_POST['action'], $_POST['nonce'], $_REQUEST['nonce'], $_POST['connection_id'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertTrue( isset( $data['success'] ) && $data['success'], 'Expected success; got: ' . wp_json_encode( $data ) );
+		$this->assertTrue( $data['data']['is_subscribed'], 'This app must be flagged as subscribed' );
+		$this->assertCount( 2, $data['data']['subscribed_apps'] );
+		$this->assertEmpty( $data['data']['warnings'] );
+	}
+
+	/**
+	 * Test that ajax_check_whatsapp_subscription warns about the "shadow delivery"
+	 * setup when the app is not in the subscribed list.
+	 */
+	public function test_ajax_check_whatsapp_subscription_warns_when_app_not_subscribed() {
+		$connection_data = array(
+			'name'                => 'Test WhatsApp',
+			'url'                 => 'https://graph.facebook.com/v22.0',
+			'connection_type'     => 'whatsapp',
+			'auth_type'           => 'none',
+			'api_key'             => 'test_access_token',
+			'app_id'              => '123456789',
+			'business_account_id' => '987654321',
+			'phone_number_id'     => '111222333444555',
+			'verify_token'        => 'test_verify_token_abc123',
+			'enabled'             => true,
+		);
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$mock_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'subscribed_apps' ) ) {
+				return $preempt;
+			}
+
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode(
+					array(
+						'data' => array(
+							array( 'whatsapp_business_api_id' => '555555555' ),
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']        = 'wp_mcp_ai_check_whatsapp_subscription';
+		$_POST['nonce']         = wp_create_nonce( 'wp_mcp_ai_check_whatsapp_subscription' );
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
+		$_REQUEST['nonce']      = $_POST['nonce'];
+		$_POST['connection_id'] = $connection_id;
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_check_whatsapp_subscription();
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected: wp_send_json_success calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+		unset( $_POST['action'], $_POST['nonce'], $_REQUEST['nonce'], $_POST['connection_id'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertTrue( isset( $data['success'] ) && $data['success'], 'Expected success; got: ' . wp_json_encode( $data ) );
+		$this->assertFalse( $data['data']['is_subscribed'], 'App must not be flagged as subscribed' );
+		$this->assertNotEmpty( $data['data']['warnings'] );
+		$this->assertStringContainsString( 'shadow delivery', implode( ' ', $data['data']['warnings'] ) );
+	}
+
+	/**
+	 * Test that ajax_check_whatsapp_subscription errors when no WABA ID is configured.
+	 */
+	public function test_ajax_check_whatsapp_subscription_errors_without_waba_id() {
+		$connection_data = array(
+			'name'            => 'Test WhatsApp',
+			'url'             => 'https://graph.facebook.com/v22.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'api_key'         => 'test_access_token',
+			'phone_number_id' => '111222333444555',
+			'verify_token'    => 'test_verify_token_abc123',
+			'enabled'         => true,
+		);
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$_POST['action']        = 'wp_mcp_ai_check_whatsapp_subscription';
+		$_POST['nonce']         = wp_create_nonce( 'wp_mcp_ai_check_whatsapp_subscription' );
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test file manipulates superglobals; the nonce is created above.
+		$_REQUEST['nonce']      = $_POST['nonce'];
+		$_POST['connection_id'] = $connection_id;
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_check_whatsapp_subscription();
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected: wp_send_json_error calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		unset( $_POST['action'], $_POST['nonce'], $_REQUEST['nonce'], $_POST['connection_id'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertFalse( $data['success'], 'Must fail without a WABA ID' );
+		$this->assertStringContainsString( 'Business Account ID', $data['data'] );
+	}
 }
