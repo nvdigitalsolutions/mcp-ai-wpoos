@@ -523,6 +523,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-module-registry.php';
 		WP_MCP_AI_Pro_Module_Registry::get_instance()->boot();
 
+		// Serve the site's UCP agent profile for keyless Shopify Catalog MCP
+		// negotiation (Storefront Catalog connections reference it by URL).
+		$ucp_profile_controller = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-ucp-agent-profile-controller.php';
+		if ( file_exists( $ucp_profile_controller ) && ! class_exists( 'WP_MCP_AI_UCP_Agent_Profile_Controller' ) ) {
+			require_once $ucp_profile_controller;
+			new WP_MCP_AI_UCP_Agent_Profile_Controller();
+		}
+
 		// Register Pro tools when Core fires its registration action.
 		add_action( 'wp_mcp_ai_register_tools', 'wp_mcp_ai_pro_register_tools', 20 );
 

@@ -81,6 +81,29 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 		const CATALOG_AUTH_URL = 'https://api.shopify.com/auth/access_token';
 
 		/**
+		 * UCP (Universal Commerce Protocol) MCP endpoint path on a storefront.
+		 *
+		 * The Storefront Catalog MCP server is served by the merchant's own
+		 * store at https://{storeDomain}/api/ucp/mcp and is keyless — the UCP
+		 * agent profile carried in the request meta is the only credential.
+		 *
+		 * @var string
+		 */
+		const UCP_MCP_PATH = '/api/ucp/mcp';
+
+		/**
+		 * Fallback UCP agent profile URL used when a connection has no
+		 * profile configured.
+		 *
+		 * This is Shopify's hosted example profile and is only suitable for
+		 * testing. Production agents should host their own profile (the
+		 * plugin serves one at /wp-json/mcp-ai/v1/ucp/agent-profile).
+		 *
+		 * @var string
+		 */
+		const UCP_DEFAULT_AGENT_PROFILE = 'https://shopify.dev/ucp/agent-profiles/2026-08-25/valid-with-capabilities.json';
+
+		/**
 		 * Remote Sites connection ID.
 		 *
 		 * @var string|null
@@ -228,14 +251,15 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 		}
 
 		/**
-		 * Get the configured API mode: 'admin_api' (default) or 'catalog_api'.
+		 * Get the configured API mode: 'admin_api' (default), 'catalog_api',
+		 * or 'storefront_catalog' (keyless UCP MCP).
 		 *
-		 * @return string 'admin_api' or 'catalog_api'.
+		 * @return string 'admin_api', 'catalog_api', or 'storefront_catalog'.
 		 */
 		public function get_api_mode() {
 			$connection = $this->get_connection();
 			$mode       = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
-			return in_array( $mode, array( 'admin_api', 'catalog_api' ), true ) ? $mode : 'admin_api';
+			return in_array( $mode, array( 'admin_api', 'catalog_api', 'storefront_catalog' ), true ) ? $mode : 'admin_api';
 		}
 
 		/**
@@ -1391,6 +1415,258 @@ query GetLocations($first: Int!) {
 			}
 
 			return $decoded;
+		}
+
+		// ------------------------------------------------------------------ //
+		// Storefront Catalog MCP helpers (UCP, keyless, single merchant)      //
+		// ------------------------------------------------------------------ //
+
+		/**
+		 * Get the UCP agent profile URL used for Storefront Catalog requests.
+		 *
+		 * Shopify fetches this profile server-side and negotiates capabilities
+		 * against the store's business profile. The connection can override the
+		 * site default (served at /wp-json/mcp-ai/v1/ucp/agent-profile).
+		 *
+		 * @since 1.1.80
+		 *
+		 * @return string Profile URL.
+		 */
+		public function get_ucp_agent_profile() {
+			$connection = $this->get_connection();
+			return $connection && ! empty( $connection['shopify_ucp_agent_profile'] )
+				? esc_url_raw( $connection['shopify_ucp_agent_profile'] )
+				: self::UCP_DEFAULT_AGENT_PROFILE;
+		}
+
+		/**
+		 * Get the Storefront Catalog MCP endpoint URL for the configured store.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @return string|WP_Error Endpoint URL or WP_Error when no store domain is set.
+		 */
+		public function get_storefront_catalog_endpoint() {
+			$store_url = $this->get_store_url();
+			if ( empty( $store_url ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_ucp_missing_domain',
+					__( 'Shopify Storefront Catalog requires a store domain. Set the Shop Domain on the connection.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+			return untrailingslashit( $store_url ) . self::UCP_MCP_PATH;
+		}
+
+		/**
+		 * List the tools exposed by the storefront's UCP MCP endpoint.
+		 *
+		 * Performs the MCP tools/list handshake, which also validates the UCP
+		 * agent profile against the store's business profile.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
+		 */
+		public function storefront_catalog_list_tools() {
+			$params = array(
+				'arguments' => array(
+					'meta' => array(
+						'ucp-agent' => array(
+							'profile' => $this->get_ucp_agent_profile(),
+						),
+					),
+				),
+			);
+			return $this->storefront_catalog_rpc( 'tools/list', $params );
+		}
+
+		/**
+		 * Search a single storefront's catalog via the UCP search_catalog tool.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param string $query   Free-text search query.
+		 * @param int    $limit   Maximum results (1-250). Default 10.
+		 * @param array  $context Optional buyer context (address_country, language, currency, intent).
+		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
+		 */
+		public function storefront_catalog_search( $query, $limit = 10, array $context = array() ) {
+			$catalog = array(
+				'query'      => sanitize_text_field( $query ),
+				'pagination' => array(
+					'limit' => max( 1, min( 250, absint( $limit ) ) ),
+				),
+			);
+			if ( ! empty( $context ) ) {
+				$catalog['context'] = $context;
+			}
+			return $this->storefront_catalog_call( 'search_catalog', $catalog );
+		}
+
+		/**
+		 * Batch-lookup products or variants by GID via the UCP lookup_catalog tool.
+		 *
+		 * The UCP spec allows at most 10 identifiers per request.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param array $ids     Product/variant GIDs (up to 10).
+		 * @param array $context Optional buyer context (address_country, language, currency, intent).
+		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
+		 */
+		public function storefront_catalog_lookup( array $ids, array $context = array() ) {
+			$catalog = array(
+				'ids' => array_values(
+					array_slice(
+						array_filter(
+							array_map( 'sanitize_text_field', $ids )
+						),
+						0,
+						10
+					)
+				),
+			);
+			if ( ! empty( $context ) ) {
+				$catalog['context'] = $context;
+			}
+			return $this->storefront_catalog_call( 'lookup_catalog', $catalog );
+		}
+
+		/**
+		 * Get full product details via the UCP get_product tool, with optional
+		 * variant selection.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param string $id       Product or variant GID.
+		 * @param array  $selected Option selections, e.g. array( array( 'name' => 'Color', 'label' => 'Blue' ) ).
+		 * @param array  $context  Optional buyer context (address_country, language, currency, intent).
+		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
+		 */
+		public function storefront_catalog_get_product( $id, array $selected = array(), array $context = array() ) {
+			$catalog = array( 'id' => sanitize_text_field( $id ) );
+			if ( ! empty( $selected ) ) {
+				$catalog['selected'] = $selected;
+			}
+			if ( ! empty( $context ) ) {
+				$catalog['context'] = $context;
+			}
+			return $this->storefront_catalog_call( 'get_product', $catalog );
+		}
+
+		/**
+		 * Invoke a single catalog tool on the storefront's UCP MCP endpoint.
+		 *
+		 * Wraps the tool arguments in the UCP envelope: the agent profile meta
+		 * plus the catalog parameter object.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param string $tool    MCP tool name (search_catalog, lookup_catalog, get_product).
+		 * @param array  $catalog Catalog arguments object.
+		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
+		 */
+		private function storefront_catalog_call( $tool, array $catalog ) {
+			$params = array(
+				'name'      => $tool,
+				'arguments' => array(
+					'meta'    => array(
+						'ucp-agent' => array(
+							'profile' => $this->get_ucp_agent_profile(),
+						),
+					),
+					'catalog' => $catalog,
+				),
+			);
+			return $this->storefront_catalog_rpc( 'tools/call', $params );
+		}
+
+		/**
+		 * Perform a JSON-RPC 2.0 request against the Storefront Catalog MCP
+		 * endpoint and map failures onto WP_Error.
+		 *
+		 * UCP usage guidelines prohibit caching search results or product
+		 * images, so every call is live and nothing is stored.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param string $method JSON-RPC method (tools/list or tools/call).
+		 * @param array  $params JSON-RPC params object.
+		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
+		 */
+		private function storefront_catalog_rpc( $method, array $params ) {
+			$endpoint = $this->get_storefront_catalog_endpoint();
+			if ( is_wp_error( $endpoint ) ) {
+				return $endpoint;
+			}
+
+			$payload = array(
+				'jsonrpc' => '2.0',
+				'method'  => $method,
+				'params'  => $params,
+				'id'      => 1,
+			);
+
+			$raw_response = wp_safe_remote_post(
+				$endpoint,
+				array(
+					'timeout' => self::DEFAULT_TIMEOUT,
+					'headers' => array(
+						'Content-Type' => 'application/json',
+						'Accept'       => 'application/json',
+						'User-Agent'   => 'WP-MCP-AI-Pro/' . WP_MCP_AI_PRO_VERSION,
+					),
+					'body'    => wp_json_encode( $payload ),
+				)
+			);
+
+			if ( is_wp_error( $raw_response ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_ucp_request_failed',
+					/* translators: %s: error message */
+					sprintf( __( 'Shopify Storefront Catalog request failed: %s', 'mcp-ai-wpoos-pro' ), $raw_response->get_error_message() )
+				);
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $raw_response );
+			$response_body = wp_remote_retrieve_body( $raw_response );
+
+			if ( $response_code < 200 || $response_code >= 300 ) {
+				$detail = ! empty( $response_body )
+					? ' ' . esc_html( mb_substr( wp_strip_all_tags( $response_body ), 0, 200 ) )
+					: '';
+				return new WP_Error(
+					'wp_mcp_ai_shopify_ucp_http_error',
+					/* translators: 1: HTTP status code, 2: optional response detail */
+					sprintf( __( 'Shopify Storefront Catalog MCP endpoint returned HTTP %1$d.%2$s', 'mcp-ai-wpoos-pro' ), $response_code, $detail )
+				);
+			}
+
+			$decoded = json_decode( $response_body, true );
+
+			if ( json_last_error() !== JSON_ERROR_NONE ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_ucp_invalid_json',
+					__( 'Shopify Storefront Catalog MCP endpoint returned an invalid JSON response.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// JSON-RPC 2.0 error object.
+			if ( isset( $decoded['error'] ) && is_array( $decoded['error'] ) ) {
+				$rpc_code    = isset( $decoded['error']['code'] ) ? $decoded['error']['code'] : -32603;
+				$rpc_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unknown MCP error.', 'mcp-ai-wpoos-pro' );
+				return new WP_Error(
+					'wp_mcp_ai_shopify_ucp_rpc_error',
+					sprintf(
+						/* translators: 1: numeric error code, 2: error message */
+						__( 'Shopify Storefront Catalog MCP error %1$s: %2$s', 'mcp-ai-wpoos-pro' ),
+						$rpc_code,
+						$rpc_message
+					)
+				);
+			}
+
+			return isset( $decoded['result'] ) ? $decoded['result'] : $decoded;
 		}
 
 		/**

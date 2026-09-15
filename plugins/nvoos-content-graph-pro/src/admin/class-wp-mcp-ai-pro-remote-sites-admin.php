@@ -590,13 +590,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					break;
 				case 'shopify':
 					$shopify_api_mode = isset( $_POST['shopify_api_mode'] ) ? sanitize_key( wp_unslash( $_POST['shopify_api_mode'] ) ) : 'admin_api';
-					if ( ! in_array( $shopify_api_mode, array( 'admin_api', 'catalog_api' ), true ) ) {
+					if ( ! in_array( $shopify_api_mode, array( 'admin_api', 'catalog_api', 'storefront_catalog' ), true ) ) {
 						$shopify_api_mode = 'admin_api';
 					}
 					if ( 'catalog_api' === $shopify_api_mode ) {
 						$api_key    = isset( $_POST['shopify_catalog_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['shopify_catalog_client_id'] ) ) : '';
 						$api_secret = isset( $_POST['shopify_catalog_client_secret'] ) ? wp_unslash( $_POST['shopify_catalog_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- client secret must not be sanitized.
-					} else {
+					} elseif ( 'storefront_catalog' !== $shopify_api_mode ) {
+						// Admin API credentials. Storefront Catalog is keyless — no
+						// credentials to capture, only the domain and agent profile.
 						$api_key    = isset( $_POST['shopify_access_token'] ) ? wp_unslash( $_POST['shopify_access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- access token must not be sanitized.
 						$api_secret = isset( $_POST['shopify_storefront_token'] ) ? wp_unslash( $_POST['shopify_storefront_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- storefront token must not be sanitized.
 					}
@@ -762,8 +764,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					if ( ! empty( $shop_domain ) && false === strpos( $shop_domain, '.' ) ) {
 						$shop_domain .= '.myshopify.com';
 					}
-					$url       = ! empty( $shop_domain ) ? 'https://' . $shop_domain : $url;
-					$auth_type = 'custom_header'; // Admin API uses X-Shopify-Access-Token header.
+					$url = ! empty( $shop_domain ) ? 'https://' . $shop_domain : $url;
+					// Storefront Catalog is keyless; Admin API uses the access-token header.
+					$auth_type = 'storefront_catalog' === $shopify_api_mode ? 'none' : 'custom_header';
 				}
 			}
 
@@ -981,6 +984,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					: ( 'shopify' === $connection_type ? 'admin_api' : '' ),
 				'shopify_catalog_shop_id'        => 'shopify' === $connection_type && isset( $_POST['shopify_catalog_shop_id'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
 					? sanitize_text_field( wp_unslash( $_POST['shopify_catalog_shop_id'] ) )
+					: '',
+				// HTTPS-only UCP agent profile URL for keyless Storefront Catalog connections.
+				'shopify_ucp_agent_profile'      => 'shopify' === $connection_type && isset( $_POST['shopify_ucp_agent_profile'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+					? esc_url_raw( wp_unslash( $_POST['shopify_ucp_agent_profile'] ) )
 					: '',
 				// ShipEngine-specific fields.
 				'shipengine_carrier_id'          => 'shipengine' === $connection_type && isset( $_POST['shipengine_carrier_id'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
@@ -2679,13 +2686,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<select name="shopify_api_mode" id="shopify_api_mode" onchange="toggleShopifyApiMode(this.value)">
 							<option value="admin_api" <?php selected( $saved_shopify_mode, 'admin_api' ); ?>><?php esc_html_e( 'Admin API — store management (shpat_ / shpca_)', 'nvoos-content-graph-pro' ); ?></option>
 							<option value="catalog_api" <?php selected( $saved_shopify_mode, 'catalog_api' ); ?>><?php esc_html_e( 'Catalog API — global product search for agents (shpss_)', 'nvoos-content-graph-pro' ); ?></option>
+							<option value="storefront_catalog" <?php selected( $saved_shopify_mode, 'storefront_catalog' ); ?>><?php esc_html_e( 'Storefront Catalog MCP — single-store agent catalog (UCP, keyless)', 'nvoos-content-graph-pro' ); ?></option>
 						</select>
-						<p class="description"><?php esc_html_e( 'Admin API connects to a specific store. Catalog API queries the global Shopify product catalog for agentic commerce using Dev Dashboard credentials.', 'nvoos-content-graph-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Admin API connects to a specific store. Catalog API queries the global Shopify product catalog. Storefront Catalog MCP queries one store via the keyless Universal Commerce Protocol (UCP) — no API key required, just the store domain and an agent profile.', 'nvoos-content-graph-pro' ); ?></p>
 					</td>
 				</tr>
 
-				<!-- Admin API sub-fields -->
-				<tr class="shopify-only-field shopify-admin-api-field" style="display: none;">
+				<!-- Admin API / Storefront Catalog sub-fields (the store domain is shared by both modes) -->
+				<tr class="shopify-only-field shopify-admin-api-field shopify-domain-api-field" style="display: none;">
 					<th scope="row">
 						<label for="shopify_shop_domain"><?php esc_html_e( 'Shop Domain', 'nvoos-content-graph-pro' ); ?> <span class="required">*</span></label>
 					</th>
@@ -2699,7 +2707,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							?>
 							"
 							autocomplete="off" placeholder="mystore.myshopify.com">
-						<p class="description"><?php esc_html_e( 'Your Shopify store domain, e.g. mystore.myshopify.com. You can also enter just the store name and .myshopify.com will be appended automatically.', 'nvoos-content-graph-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Your Shopify store domain, e.g. mystore.myshopify.com. You can also enter just the store name and .myshopify.com will be appended automatically. Storefront Catalog MCP is served by the store at this domain (/api/ucp/mcp).', 'nvoos-content-graph-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -2810,6 +2818,24 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
+				<!-- Storefront Catalog (UCP MCP) sub-fields -->
+				<tr class="shopify-only-field shopify-storefront-catalog-field" style="display: none;">
+					<th scope="row">
+						<label for="shopify_ucp_agent_profile"><?php esc_html_e( 'UCP Agent Profile URL', 'nvoos-content-graph-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$ucp_profile_default = rest_url( 'mcp-ai/v1/ucp/agent-profile' );
+						$ucp_profile_saved   = $is_shopify_edit && ! empty( $connection['shopify_ucp_agent_profile'] ) ? $connection['shopify_ucp_agent_profile'] : '';
+						$ucp_profile_value   = ! empty( $ucp_profile_saved ) ? $ucp_profile_saved : $ucp_profile_default;
+						?>
+						<input type="url" name="shopify_ucp_agent_profile" id="shopify_ucp_agent_profile" class="regular-text"
+							value="<?php echo esc_attr( $ucp_profile_value ); ?>"
+							autocomplete="off" placeholder="https://your-site.com/wp-json/mcp-ai/v1/ucp/agent-profile">
+						<p class="description"><?php esc_html_e( 'HTTPS URL of your agent\'s UCP platform profile. Defaults to this site\'s own profile endpoint (recommended). Shopify fetches it server-side and negotiates catalog capabilities from it — no API key is involved.', 'nvoos-content-graph-pro' ); ?></p>
+					</td>
+				</tr>
+
 				<tr class="shopify-only-field" style="display: none;">
 					<th scope="row"><?php esc_html_e( 'Shopify Setup Guide', 'nvoos-content-graph-pro' ); ?></th>
 					<td>
@@ -2828,11 +2854,21 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<!-- Catalog API guide -->
 							<div class="shopify-catalog-api-guide" style="display: none;">
 								<p style="margin: 0 0 8px;"><strong><?php esc_html_e( 'Catalog API — How to create Dev Dashboard credentials:', 'nvoos-content-graph-pro' ); ?></strong></p>
-								<ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
+								<ol style="margin: 0 0 16px; padding-left: 20px; line-height: 1.8;">
 									<li><?php esc_html_e( 'Go to the Shopify Dev Dashboard at dev.shopify.com and sign in.', 'nvoos-content-graph-pro' ); ?></li>
 									<li><?php esc_html_e( 'Create a new API key (app) and copy the Client ID and Client Secret (shpss_…).', 'nvoos-content-graph-pro' ); ?></li>
 									<li><?php esc_html_e( 'Paste the Client ID and Client Secret above. A JWT bearer token is obtained automatically on each request (tokens expire in ~60 minutes and are cached).', 'nvoos-content-graph-pro' ); ?></li>
 									<li><?php esc_html_e( 'To limit results to your store only, enter your numeric Shop ID above. Find it in your Shopify admin URL (the number after /store/) or via the Admin GraphQL API query: { shop { id } }.', 'nvoos-content-graph-pro' ); ?></li>
+								</ol>
+							</div>
+							<!-- Storefront Catalog guide -->
+							<div class="shopify-storefront-catalog-guide" style="display: none;">
+								<p style="margin: 0 0 8px;"><strong><?php esc_html_e( 'Storefront Catalog MCP — How it works:', 'nvoos-content-graph-pro' ); ?></strong></p>
+								<ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
+									<li><?php esc_html_e( 'Enter your store domain above. The store serves the UCP MCP endpoint at https://{store}/api/ucp/mcp.', 'nvoos-content-graph-pro' ); ?></li>
+									<li><?php esc_html_e( 'Leave the UCP Agent Profile URL at the default — this site serves its own profile (search_catalog, lookup_catalog, get_product).', 'nvoos-content-graph-pro' ); ?></li>
+									<li><?php esc_html_e( 'No API key is required: Shopify authenticates the agent profile and negotiates capabilities server-side.', 'nvoos-content-graph-pro' ); ?></li>
+									<li><?php esc_html_e( 'Note: UCP catalog results and images must not be cached or stored — this mode is for live agent queries, not CCT sync.', 'nvoos-content-graph-pro' ); ?></li>
 								</ol>
 							</div>
 						</div>
@@ -7919,38 +7955,62 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		/**
-		 * Show/hide Shopify Admin API vs Catalog API sub-fields based on the selected mode.
+		 * Show/hide Shopify Admin API vs Catalog API vs Storefront Catalog
+		 * sub-fields based on the selected mode.
 		 *
-		 * @param {string} mode 'admin_api' or 'catalog_api'
+		 * @param {string} mode 'admin_api', 'catalog_api', or 'storefront_catalog'
 		 */
 		function toggleShopifyApiMode(mode) {
-			var adminFields   = document.querySelectorAll('.shopify-admin-api-field');
-			var catalogFields = document.querySelectorAll('.shopify-catalog-api-field');
-			var adminGuide    = document.querySelector('.shopify-admin-api-guide');
-			var catalogGuide  = document.querySelector('.shopify-catalog-api-guide');
-			var urlField      = document.getElementById('url');
+			var adminFields      = document.querySelectorAll('.shopify-admin-api-field');
+			var catalogFields    = document.querySelectorAll('.shopify-catalog-api-field');
+			var storefrontFields = document.querySelectorAll('.shopify-storefront-catalog-field');
+			var domainFields     = document.querySelectorAll('.shopify-domain-api-field');
+			var adminGuide       = document.querySelector('.shopify-admin-api-guide');
+			var catalogGuide     = document.querySelector('.shopify-catalog-api-guide');
+			var storefrontGuide  = document.querySelector('.shopify-storefront-catalog-guide');
+			var urlField         = document.getElementById('url');
+			var shopDomainField  = document.getElementById('shopify_shop_domain');
+
+			// Derive the URL from the shop domain for the two store-scoped modes.
+			function applyShopDomain() {
+				if (!urlField || !shopDomainField) { return; }
+				var domain = shopDomainField.value.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+				if (domain && domain.indexOf('.') === -1) {
+					domain += '.myshopify.com';
+				}
+				urlField.value = domain ? 'https://' + domain : '';
+			}
 
 			if (mode === 'catalog_api') {
 				adminFields.forEach(function(f) { f.style.display = 'none'; });
 				catalogFields.forEach(function(f) { f.style.display = 'table-row'; });
-				if (adminGuide)   { adminGuide.style.display   = 'none'; }
-				if (catalogGuide) { catalogGuide.style.display = 'block'; }
+				storefrontFields.forEach(function(f) { f.style.display = 'none'; });
+				domainFields.forEach(function(f) { f.style.display = 'none'; });
+				if (adminGuide)      { adminGuide.style.display      = 'none'; }
+				if (catalogGuide)    { catalogGuide.style.display    = 'block'; }
+				if (storefrontGuide) { storefrontGuide.style.display = 'none'; }
 				// Catalog API always uses a fixed URL.
 				if (urlField) { urlField.value = 'https://discover.shopifyapps.com'; }
+			} else if (mode === 'storefront_catalog') {
+				adminFields.forEach(function(f) { f.style.display = 'none'; });
+				catalogFields.forEach(function(f) { f.style.display = 'none'; });
+				storefrontFields.forEach(function(f) { f.style.display = 'table-row'; });
+				domainFields.forEach(function(f) { f.style.display = 'table-row'; });
+				if (adminGuide)      { adminGuide.style.display      = 'none'; }
+				if (catalogGuide)    { catalogGuide.style.display    = 'none'; }
+				if (storefrontGuide) { storefrontGuide.style.display = 'block'; }
+				// Storefront Catalog is served by the store's own domain.
+				applyShopDomain();
 			} else {
 				adminFields.forEach(function(f) { f.style.display = 'table-row'; });
 				catalogFields.forEach(function(f) { f.style.display = 'none'; });
-				if (adminGuide)   { adminGuide.style.display   = 'block'; }
-				if (catalogGuide) { catalogGuide.style.display = 'none'; }
+				storefrontFields.forEach(function(f) { f.style.display = 'none'; });
+				domainFields.forEach(function(f) { f.style.display = 'table-row'; });
+				if (adminGuide)      { adminGuide.style.display      = 'block'; }
+				if (catalogGuide)    { catalogGuide.style.display    = 'none'; }
+				if (storefrontGuide) { storefrontGuide.style.display = 'none'; }
 				// Admin API URL is derived from shop domain.
-				var shopDomainField = document.getElementById('shopify_shop_domain');
-				if (urlField && shopDomainField) {
-					var domain = shopDomainField.value.replace(/^https?:\/\//i, '').replace(/\/$/, '');
-					if (domain && domain.indexOf('.') === -1) {
-						domain += '.myshopify.com';
-					}
-					urlField.value = domain ? 'https://' + domain : '';
-				}
+				applyShopDomain();
 			}
 		}
 

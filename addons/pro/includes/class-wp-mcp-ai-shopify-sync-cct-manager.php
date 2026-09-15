@@ -1734,6 +1734,16 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				return $this->sync_from_catalog_api( $client, $dry_run, $run_id );
 			}
 
+				// Storefront Catalog (UCP MCP) is a keyless live agent-query
+				// mode — UCP usage guidelines prohibit caching catalog
+				// results, so the CCT cache is never fed from it.
+			if ( 'storefront_catalog' === $client->get_api_mode() ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_ucp_no_cct_sync',
+					__( 'This connection is configured for Shopify Storefront Catalog (UCP MCP), which is a live agent-query mode. UCP usage guidelines prohibit caching catalog results, so CCT sync is disabled for this connection. Use the catalog search tools for live queries instead.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
 				// Shopify Bulk Operation query — export all products with variants and inventory.
 				// When sync_mode is 'minimal', only requests title, SKU, and stock levels.
 				$settings   = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
@@ -1900,6 +1910,13 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_shopify_sync_catalog_only',
 					__( 'This connection is configured for Shopify Catalog API only. Inventory sync requires Shopify Admin API.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			if ( 'storefront_catalog' === $client->get_api_mode() ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_ucp_no_cct_sync',
+					__( 'This connection is configured for Shopify Storefront Catalog (UCP MCP), which is a live agent-query mode. UCP usage guidelines prohibit caching catalog results, so CCT sync is disabled for this connection.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 

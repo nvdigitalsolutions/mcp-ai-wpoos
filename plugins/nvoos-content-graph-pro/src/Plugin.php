@@ -59,6 +59,15 @@ final class Plugin {
 		if ( class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 			\WP_MCP_AI_Pro_Module_Registry::get_instance()->boot();
 		}
+
+		// Serve the site's UCP agent profile for keyless Shopify Storefront
+		// Catalog MCP negotiation (ecosystem port — F2-E storefront catalog).
+		// The base Pro addon boots the same controller in monolith installs.
+		$ucp_profile_controller = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/rest/class-wp-mcp-ai-ucp-agent-profile-controller.php';
+		if ( ! class_exists( 'WP_MCP_AI_UCP_Agent_Profile_Controller' ) && file_exists( $ucp_profile_controller ) ) {
+			require_once $ucp_profile_controller;
+			new WP_MCP_AI_UCP_Agent_Profile_Controller();
+		}
 	}
 
 	/**
