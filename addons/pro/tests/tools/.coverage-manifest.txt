@@ -24,12 +24,16 @@ wp-mcp-ai-crm-email-search-cron
 wp-mcp-ai-crm-engine
 wp-mcp-ai-crm-gmail-listener
 wp-mcp-ai-crm-gmail-pubsub-handler
+wp-mcp-ai-crm-gmail-reply-poller
+wp-mcp-ai-crm-identity
 wp-mcp-ai-crm-imap-client
 wp-mcp-ai-crm-imap-listener
+wp-mcp-ai-crm-link-tracker
 wp-mcp-ai-crm-message-log
 wp-mcp-ai-crm-optimization
 wp-mcp-ai-crm-pipeline-stages
 wp-mcp-ai-crm-sms-webhook-listener
+wp-mcp-ai-crm-stage-history
 wp-mcp-ai-crm-ticket-automation
 wp-mcp-ai-crm-ticket-notifications
 wp-mcp-ai-crm-web-form-listener
@@ -291,6 +295,7 @@ wp-mcp-ai-tool-build-contact-section
 wp-mcp-ai-tool-build-navigation-menu
 wp-mcp-ai-tool-build-testimonial-section
 wp-mcp-ai-tool-bulk-enroll-students
+wp-mcp-ai-tool-bulk-move-deal-stages
 wp-mcp-ai-tool-bulk-order-status-update
 wp-mcp-ai-tool-bulk-schedule-posts
 wp-mcp-ai-tool-bulk-update-products
@@ -522,6 +527,7 @@ wp-mcp-ai-tool-create-student
 wp-mcp-ai-tool-create-support-ticket
 wp-mcp-ai-tool-create-task
 wp-mcp-ai-tool-create-task-template
+wp-mcp-ai-tool-create-tracked-link
 wp-mcp-ai-tool-create-video-from-images
 wp-mcp-ai-tool-create-walkthrough-animation
 wp-mcp-ai-tool-create-workflow-rule
@@ -530,6 +536,7 @@ wp-mcp-ai-tool-crm-capture-interaction
 wp-mcp-ai-tool-crm-email-search-accounting
 wp-mcp-ai-tool-crm-email-search-correspondence
 wp-mcp-ai-tool-crm-email-search-leads
+wp-mcp-ai-tool-crypto-market-data
 wp-mcp-ai-tool-customer-lifetime-value
 wp-mcp-ai-tool-customer-segmentation-ml
 wp-mcp-ai-tool-data-warehouse-sync
@@ -587,6 +594,8 @@ wp-mcp-ai-tool-docgen-capture-style-memory
 wp-mcp-ai-tool-draft-lead-reply
 wp-mcp-ai-tool-draft-upwork-proposal
 wp-mcp-ai-tool-duplicate-reg-product
+wp-mcp-ai-tool-earnings-calendar-fetcher
+wp-mcp-ai-tool-economic-calendar-fetcher
 wp-mcp-ai-tool-emergency-fund-calculator
 wp-mcp-ai-tool-enhance-image-quality
 wp-mcp-ai-tool-enrich-place-coordinates
@@ -605,6 +614,7 @@ wp-mcp-ai-tool-execute-shell-command
 wp-mcp-ai-tool-expense-tracker
 wp-mcp-ai-tool-export-analytics-api
 wp-mcp-ai-tool-export-architectural-documents
+wp-mcp-ai-tool-export-assistant-blueprint
 wp-mcp-ai-tool-export-calendar-ics
 wp-mcp-ai-tool-export-ccda-document
 wp-mcp-ai-tool-export-comic-cbz
@@ -726,6 +736,7 @@ wp-mcp-ai-tool-get-contact-interactions
 wp-mcp-ai-tool-get-content-calendar
 wp-mcp-ai-tool-get-conversion-funnel
 wp-mcp-ai-tool-get-crm-activity
+wp-mcp-ai-tool-get-crm-handover
 wp-mcp-ai-tool-get-cross-platform-analytics
 wp-mcp-ai-tool-get-customer
 wp-mcp-ai-tool-get-deal
@@ -750,6 +761,7 @@ wp-mcp-ai-tool-get-no-show-appointments
 wp-mcp-ai-tool-get-notification-history
 wp-mcp-ai-tool-get-order-analytics
 wp-mcp-ai-tool-get-owner-workload
+wp-mcp-ai-tool-get-pipeline-digest
 wp-mcp-ai-tool-get-pipeline-view
 wp-mcp-ai-tool-get-place
 wp-mcp-ai-tool-get-pm-kpis
@@ -962,6 +974,7 @@ wp-mcp-ai-tool-log-call-outcome
 wp-mcp-ai-tool-log-health-metrics
 wp-mcp-ai-tool-log-vital-signs
 wp-mcp-ai-tool-low-stock-alert-automation
+wp-mcp-ai-tool-macro-data-fetcher
 wp-mcp-ai-tool-manage-architectural-precedents
 wp-mcp-ai-tool-manage-care-plan
 wp-mcp-ai-tool-manage-crm-contact
@@ -979,6 +992,7 @@ wp-mcp-ai-tool-manage-template-versions
 wp-mcp-ai-tool-manage-workflow-rules
 wp-mcp-ai-tool-mark-eca-attendance
 wp-mcp-ai-tool-market-forecast-analyzer
+wp-mcp-ai-tool-market-screener
 wp-mcp-ai-tool-market-sentiment-analyzer
 wp-mcp-ai-tool-matrix-operations
 wp-mcp-ai-tool-merge-duplicate-members
@@ -1001,6 +1015,7 @@ wp-mcp-ai-tool-optimize-for-web
 wp-mcp-ai-tool-optimize-image-sharp
 wp-mcp-ai-tool-optimize-schedule
 wp-mcp-ai-tool-optimize-space-layout
+wp-mcp-ai-tool-options-chain-fetcher
 wp-mcp-ai-tool-outpaint-background
 wp-mcp-ai-tool-paper-store-export
 wp-mcp-ai-tool-paper-store-import
@@ -1015,9 +1030,11 @@ wp-mcp-ai-tool-parse-health-information
 wp-mcp-ai-tool-pension-analyzer
 wp-mcp-ai-tool-plan-sprint
 wp-mcp-ai-tool-pm-capture-decision
+wp-mcp-ai-tool-portfolio-transaction-log
 wp-mcp-ai-tool-portfolio-visualizer
 wp-mcp-ai-tool-post-to-multiple-platforms
 wp-mcp-ai-tool-prepare-file-for-vector-store
+wp-mcp-ai-tool-price-alerts
 wp-mcp-ai-tool-pro-batch-ocr
 wp-mcp-ai-tool-pro-document-ocr
 wp-mcp-ai-tool-pro-excel-document
@@ -1046,6 +1063,7 @@ wp-mcp-ai-tool-real-time-event-tracking
 wp-mcp-ai-tool-rebalancing-analyzer
 wp-mcp-ai-tool-recalculate-engagement-scores
 wp-mcp-ai-tool-record-consent
+wp-mcp-ai-tool-record-crm-reply
 wp-mcp-ai-tool-refactor-tool-code
 wp-mcp-ai-tool-refine-composite-boundary
 wp-mcp-ai-tool-refine-subject-matte
