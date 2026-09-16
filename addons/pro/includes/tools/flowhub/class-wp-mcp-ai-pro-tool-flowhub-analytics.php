@@ -55,6 +55,10 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Analytics implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'       => 'object',
 			'properties' => array(
+				'connection_id' => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Remote Sites connection ID for FlowHub (conn_...). Omit to auto-resolve: toolkit settings credentials, then the configured sync connections, then the first enabled FlowHub connection.', 'mcp-ai-wpoos-pro' ),
+				),
 				'action'        => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform.', 'mcp-ai-wpoos-pro' ),
@@ -99,6 +103,10 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Analytics implements WP_MCP_AI_Tool_Interface, 
 	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+		// Gate 1: Sanitize.
+		if ( isset( $arguments['connection_id'] ) ) {
+			$arguments['connection_id'] = sanitize_key( $arguments['connection_id'] );
+		}
 		$action        = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'inventory_summary';
 		$category      = isset( $arguments['category'] ) ? sanitize_text_field( $arguments['category'] ) : '';
 		$location_id   = isset( $arguments['location_id'] ) ? sanitize_text_field( $arguments['location_id'] ) : '';
@@ -109,12 +117,12 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Analytics implements WP_MCP_AI_Tool_Interface, 
 			return new WP_Error( 'wp_mcp_ai_flowhub_forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$deps = $this->check_flowhub_dependencies();
+		$deps = $this->check_flowhub_dependencies( $arguments );
 		if ( is_wp_error( $deps ) ) {
 			return $deps;
 		}
 
-		$cct_manager = $this->get_flowhub_cct_manager();
+		$cct_manager = $this->get_flowhub_cct_manager( $arguments );
 		$filters     = array( 'per_page' => 100 );
 
 		if ( ! empty( $category ) ) {

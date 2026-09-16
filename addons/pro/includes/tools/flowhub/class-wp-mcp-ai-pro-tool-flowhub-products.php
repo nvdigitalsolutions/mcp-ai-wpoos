@@ -58,34 +58,38 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Products implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'     => array(
+				'connection_id' => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Remote Sites connection ID for FlowHub (conn_...). Omit to auto-resolve: toolkit settings credentials, then the configured sync connections, then the first enabled FlowHub connection.', 'mcp-ai-wpoos-pro' ),
+				),
+				'action'        => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'search', 'get_product', 'get_by_sku', 'list_categories' ),
 					'default'     => 'search',
 				),
-				'sku'        => array(
+				'sku'           => array(
 					'type'        => 'string',
 					'description' => __( 'Product SKU for get_by_sku action.', 'mcp-ai-wpoos-pro' ),
 				),
-				'product_id' => array(
+				'product_id'    => array(
 					'type'        => 'string',
 					'description' => __( 'FlowHub product ID.', 'mcp-ai-wpoos-pro' ),
 				),
-				'category'   => array(
+				'category'      => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by category.', 'mcp-ai-wpoos-pro' ),
 				),
-				'search'     => array(
+				'search'        => array(
 					'type'        => 'string',
 					'description' => __( 'Search products by name.', 'mcp-ai-wpoos-pro' ),
 				),
-				'page'       => array(
+				'page'          => array(
 					'type'    => 'integer',
 					'default' => 1,
 					'minimum' => 1,
 				),
-				'per_page'   => array(
+				'per_page'      => array(
 					'type'    => 'integer',
 					'default' => 25,
 					'minimum' => 1,
@@ -118,6 +122,9 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Products implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Gate 1: Sanitize.
+		if ( isset( $arguments['connection_id'] ) ) {
+			$arguments['connection_id'] = sanitize_key( $arguments['connection_id'] );
+		}
 		$action     = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'search';
 		$sku        = isset( $arguments['sku'] ) ? sanitize_text_field( $arguments['sku'] ) : '';
 		$product_id = isset( $arguments['product_id'] ) ? sanitize_text_field( $arguments['product_id'] ) : '';
@@ -133,12 +140,12 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Products implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Dependencies.
-		$deps = $this->check_flowhub_dependencies();
+		$deps = $this->check_flowhub_dependencies( $arguments );
 		if ( is_wp_error( $deps ) ) {
 			return $deps;
 		}
 
-		$cct_manager = $this->get_flowhub_cct_manager();
+		$cct_manager = $this->get_flowhub_cct_manager( $arguments );
 
 		switch ( $action ) {
 			case 'search':

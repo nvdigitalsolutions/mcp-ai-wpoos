@@ -71,6 +71,8 @@ FlowHub API ──(Action Scheduler, 1–60 min)──▶ JetEngine CCT (flowhub
 
 **Key principle:** All AI tool reads hit the CCT cache — zero FlowHub API calls per query. The Action Scheduler background job pulls fresh data from FlowHub on your configured interval. This means AI assistants can run hundreds of inventory queries without hitting FlowHub's rate limits.
 
+**Credential resolution:** The AI tools (base `flowhub_*` tools and Pro toolkit tools) resolve their FlowHub connection in this order: an explicit `connection_id` argument, the toolkit settings credentials, the toolkit's configured sync connections, then the first enabled FlowHub Remote Sites connection. Tools work even when credentials live only on a Remote Sites connection (for example, a synced connection such as "Kaya Flowhub").
+
 ## Using the AI Tools
 
 ### Example Natural Language Prompts

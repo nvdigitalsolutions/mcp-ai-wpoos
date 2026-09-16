@@ -195,6 +195,93 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Client' ) ) {
 			return new self( $client_id, $api_key, $base_url, null, $location_id, $proxy_url, $proxy_auth );
 		}
 
+		/**
+		 * Create a client instance from a Remote Sites connection.
+		 *
+		 * Credentials are decrypted from the connection record; base URL and
+		 * proxy fall back to the FlowHub toolkit settings. Mirrors the
+		 * credential resolution used by the sync engine.
+		 *
+		 * @since 1.7.0
+		 *
+		 * @param string $connection_id Remote Sites connection ID (conn_...).
+		 * @return WP_MCP_AI_FlowHub_Client|WP_Error Client instance or WP_Error.
+		 */
+		public static function from_connection( $connection_id ) {
+			$connection_id = sanitize_key( $connection_id );
+
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_connection_not_found',
+					__( 'Connection not found. Please check the connection ID.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+			if ( null === $connection ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_connection_not_found',
+					__( 'Connection not found. Please check the connection ID.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			if ( empty( $connection['connection_type'] ) || 'flowhub' !== $connection['connection_type'] ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_wrong_connection_type',
+					__( 'This connection is not a Flowhub connection.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			if ( empty( $connection['enabled'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_connection_disabled',
+					__( 'This connection is disabled. Please enable it in Remote Sites settings.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$client_id   = isset( $connection['client_id'] ) ? $connection['client_id'] : '';
+			$api_key     = isset( $connection['api_key'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] ) : '';
+			$location_id = isset( $connection['location_id'] ) ? $connection['location_id'] : '';
+
+			if ( empty( $client_id ) || empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_missing_credentials',
+					__( 'This FlowHub connection is missing its client ID or API key. Edit the connection in Remote Sites and add both values.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
+			$base_url = isset( $settings['api_base_url'] ) ? wp_unslash( $settings['api_base_url'] ) : '';
+
+			// Resolve proxy from the connection first (matching the sync engine),
+			// then fall back to toolkit settings.
+			$proxy_enabled  = ! empty( $connection['proxy_enabled'] );
+			$proxy_url      = isset( $connection['proxy_url'] ) ? $connection['proxy_url'] : '';
+			$proxy_username = isset( $connection['proxy_username'] ) ? $connection['proxy_username'] : '';
+			$proxy_password = isset( $connection['proxy_password'] )
+				? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['proxy_password'] )
+				: '';
+
+			if ( ! $proxy_enabled || empty( $proxy_url ) ) {
+				$proxy_enabled  = ! empty( $settings['proxy_enabled'] );
+				$proxy_url      = isset( $settings['proxy_url'] ) ? wp_unslash( $settings['proxy_url'] ) : '';
+				$proxy_username = isset( $settings['proxy_username'] ) ? wp_unslash( $settings['proxy_username'] ) : '';
+				$proxy_password = isset( $settings['proxy_password'] ) ? wp_unslash( $settings['proxy_password'] ) : '';
+			}
+
+			$proxy_auth = '';
+			if ( $proxy_enabled && ! empty( $proxy_url ) ) {
+				$proxy_auth = ( ! empty( $proxy_username ) || ! empty( $proxy_password ) )
+					? $proxy_username . ':' . $proxy_password
+					: '';
+			} else {
+				$proxy_url = '';
+			}
+
+			return new self( $client_id, $api_key, $base_url, null, $location_id, $proxy_url, $proxy_auth );
+		}
+
 		// ------------------------------------------------------------------ //
 		// Public API methods                                                   //
 		// ------------------------------------------------------------------ //
