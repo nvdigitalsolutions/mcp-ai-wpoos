@@ -25,7 +25,7 @@ mcp-ai-wpoos/
 ├── includes/              # Core plugin classes
 │   ├── admin/            # Admin UI and settings
 │   ├── assistants/       # Assistant CPT and CCT management
-│   ├── tools/            # ~1,572 total built-in tool implementations
+│   ├── tools/            # ~1,585 total built-in tool implementations
 │   ├── security/         # Security infrastructure (10 classes: request guard, security posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, load guard)
 │   ├── elementor/        # Elementor widget integrations
 │   ├── okf/              # OKF v0.2 engine (parser, reader, writer)
@@ -284,7 +284,7 @@ class Test_Feature extends WP_UnitTestCase {
 
 The plugin has two modes:
 - **Base Version** (default): ~306 core tools, no third-party dependencies
-- **Full Version**: ~1,572 tools (~306 base + ~1,266 pro) including WooCommerce, JetEngine, and Pro addons; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative
+- **Full Version**: ~1,585 tools (~306 base + ~1,279 pro) including WooCommerce, JetEngine, and Pro addons; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative
 
 Control with: `define( 'WP_MCP_AI_BASE_VERSION', true/false );`
 
