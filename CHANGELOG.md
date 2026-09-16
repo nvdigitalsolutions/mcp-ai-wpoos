@@ -1,5 +1,17 @@
 # oOS – Changelog
 
+## [1.1.81] - 2026-09-16
+
+### Added — Shopify UCP mode-aware tool routing (Pro + CG Pro)
+
+- **The Shopify tools now know when they are in a live-query catalog mode and act accordingly.** With a `storefront_catalog` or `global_catalog` (keyless UCP MCP) connection, `shopify_products` list/search/get now run **live UCP queries** (`search_catalog`, `lookup_catalog`, `get_product`) against the store's `/api/ucp/mcp` or `catalog.shopify.com` endpoint — previously only the Global Catalog path existed and Storefront fell through to a failing Admin API call. UCP usage guidelines prohibit caching catalog results, so these paths write nothing locally (no transients, no CCT) and mark every response `live: true`.
+- **Admin-only tools refuse catalog connections with an actionable hint** — `shopify_orders`, `shopify_customers`, and `shopify_inventory` return `wp_mcp_ai_shopify_catalog_mode_admin_only` pointing the agent at the live catalog tools instead of failing mid-API-call.
+- **`shopify_catalog` is now the unified mode-aware live catalog tool**: it accepts `storefront_catalog` and `global_catalog` connections (plus the deprecated REST `catalog_api`), adds the canonical `get_product` action with `selected` option narrowing, batch `ids` lookup with `not_found` surfacing, and `lookup_by_variant` resolution through `lookup_catalog` per the UCP spec.
+- **Industry-standard UCP passthrough**: buyer `context` (`address_country`, `language`, `currency`, `intent` — allowlisted and sanitized), opaque pagination `cursor` passthrough with the UCP `pagination` envelope (`cursor`, `has_next_page`, `total_count`) surfaced on search results, and per-mode result clamps (250 Storefront, 50 Global, 10 REST).
+- **`remote_shopify_connection` is mode-aware too**: `test_connection` validates UCP connections with the MCP `tools/list` negotiation handshake (no more misleading "credentials configured" message), and `list_connections` annotates each connection with its mode label, supported tools, and a `live_only` flag for catalog modes.
+- **Smart search stays live**: zero-result UCP queries decompose into live sub-queries at runtime (never cached), and the deprecated `catalog_api` mode keeps its existing REST handlers unchanged.
+- New characterization suites in both trees: `addons/pro/tests/test-shopify-ucp-mode-awareness.php` (20 tests) and the matrix-aware `plugins/nvoos-content-graph-pro/tests/test-ecommerce-shopify-ucp-mode-awareness.php` (monolith + standalone). All changed files remain byte-identical across the two trees; a pre-existing blank-line drift in the CG Pro client's `catalog_request()` was fixed while re-syncing.
+
 ## [1.1.80] - 2026-09-15
 
 ### Added — Assistant Export/Import Across All Surfaces (PR #6628)

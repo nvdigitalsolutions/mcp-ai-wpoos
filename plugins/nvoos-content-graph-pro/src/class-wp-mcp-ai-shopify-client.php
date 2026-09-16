@@ -1417,6 +1417,7 @@ query GetLocations($first: Int!) {
 
 				$response_code = wp_remote_retrieve_response_code( $raw_response );
 			}
+
 			$response_body = wp_remote_retrieve_body( $raw_response );
 
 			if ( strlen( $response_body ) > self::MAX_RESPONSE_SIZE ) {
@@ -1542,15 +1543,19 @@ query GetLocations($first: Int!) {
 		 * @param string $query   Free-text search query.
 		 * @param int    $limit   Maximum results (1-250). Default 10.
 		 * @param array  $context Optional buyer context (address_country, language, currency, intent).
+		 * @param string $cursor  Optional opaque pagination cursor from a previous response.
 		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
 		 */
-		public function storefront_catalog_search( $query, $limit = 10, array $context = array() ) {
+		public function storefront_catalog_search( $query, $limit = 10, array $context = array(), $cursor = '' ) {
 			$catalog = array(
 				'query'      => sanitize_text_field( $query ),
 				'pagination' => array(
 					'limit' => max( 1, min( 250, absint( $limit ) ) ),
 				),
 			);
+			if ( '' !== $cursor ) {
+				$catalog['pagination']['cursor'] = sanitize_text_field( $cursor );
+			}
 			if ( ! empty( $context ) ) {
 				$catalog['context'] = $context;
 			}
@@ -1684,15 +1689,19 @@ query GetLocations($first: Int!) {
 		 * @param int    $limit   Maximum results (1-50). Default 10.
 		 * @param array  $context Optional buyer context (address_country, language, currency, intent).
 		 * @param array  $filters Optional catalog filters (ships_to, ships_from, price, available, shops, attributes, rating, price_tier, categories).
+		 * @param string $cursor  Optional opaque pagination cursor from a previous response.
 		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
 		 */
-		public function global_catalog_search( $query, $limit = 10, array $context = array(), array $filters = array() ) {
+		public function global_catalog_search( $query, $limit = 10, array $context = array(), array $filters = array(), $cursor = '' ) {
 			$catalog = array(
 				'query'      => sanitize_text_field( $query ),
 				'pagination' => array(
 					'limit' => max( 1, min( 50, absint( $limit ) ) ),
 				),
 			);
+			if ( '' !== $cursor ) {
+				$catalog['pagination']['cursor'] = sanitize_text_field( $cursor );
+			}
 			if ( ! empty( $context ) ) {
 				$catalog['context'] = $context;
 			}

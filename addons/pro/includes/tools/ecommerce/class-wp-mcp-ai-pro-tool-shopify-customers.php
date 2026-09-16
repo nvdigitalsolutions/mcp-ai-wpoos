@@ -42,7 +42,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Customers implements WP_MCP_AI_Tool_Interface, 
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Access and manage customers on a connected Shopify store via the Admin GraphQL API. Supports listing, filtering by email/name/tags, and retrieving detailed customer profiles including order history and marketing consent.', 'mcp-ai-wpoos-pro' );
+		return __( 'Access and manage customers on a connected Shopify store via the Admin GraphQL API. Supports listing, filtering by email/name/tags, and retrieving detailed customer profiles including order history and marketing consent. Requires an admin_api mode connection — catalog connections (Storefront/Global Catalog MCP or the deprecated Catalog API) are live product-search modes that do not expose customers; those return a hint pointing at the catalog tools.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -163,6 +163,14 @@ class WP_MCP_AI_Pro_Tool_Shopify_Customers implements WP_MCP_AI_Tool_Interface, 
 
 		$client = new WP_MCP_AI_Shopify_Client( $connection_id );
 		$action = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'list';
+
+		// Catalog connections (UCP Storefront/Global Catalog MCP and the
+		// deprecated Catalog API) are live product-search modes that do not
+		// expose customers — refuse with a hint instead of failing mid-API-call.
+		$api_mode = $client->get_api_mode();
+		if ( 'admin_api' !== $api_mode ) {
+			return $this->get_catalog_mode_admin_only_error( $api_mode, __( 'Shopify customers', 'mcp-ai-wpoos-pro' ) );
+		}
 
 		switch ( $action ) {
 			case 'list':

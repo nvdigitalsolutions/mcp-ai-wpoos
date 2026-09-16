@@ -41,9 +41,9 @@ trait WP_MCP_AI_Shopify_Connection_Resolver {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array       $arguments        Tool arguments.
-	 * @param array       $context          Execution context (must include assistant_id).
-	 * @param string|null $required_api_mode Optional API mode requirement (e.g., 'catalog_api').
+	 * @param array             $arguments          Tool arguments.
+	 * @param array             $context            Execution context (must include assistant_id).
+	 * @param string|array|null $required_api_mode  Optional API mode requirement (e.g. 'catalog_api', or an array of allowed modes).
 	 * @return string|WP_Error Connection ID or WP_Error if none found.
 	 */
 	protected function resolve_shopify_connection_id( $arguments, $context, $required_api_mode = null ) {
@@ -140,10 +140,13 @@ trait WP_MCP_AI_Shopify_Connection_Resolver {
 				continue;
 			}
 
-			// If a specific API mode is required, filter by it.
+			// If a specific API mode is required, filter by it. A string
+			// matches a single mode; an array matches any of the listed
+			// modes (used by mode-aware tools such as the catalog tool).
 			if ( null !== $required_api_mode ) {
-				$api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
-				if ( $required_api_mode !== $api_mode ) {
+				$allowed_modes = (array) $required_api_mode;
+				$api_mode      = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
+				if ( ! in_array( $api_mode, $allowed_modes, true ) ) {
 					continue;
 				}
 			}
@@ -182,6 +185,78 @@ trait WP_MCP_AI_Shopify_Connection_Resolver {
 		}
 
 		return ' Available Shopify connections: ' . implode( ', ', $formatted ) . '.';
+	}
+
+	/**
+	 * Check whether an API mode is one of the keyless UCP catalog modes.
+	 *
+	 * Storefront Catalog MCP and Global Catalog MCP are live agent-query
+	 * modes: they only expose the canonical catalog tools (search_catalog,
+	 * lookup_catalog, get_product), and UCP usage guidelines prohibit
+	 * caching their results or product images.
+	 *
+	 * @since 1.1.81
+	 *
+	 * @param string $api_mode Connection API mode.
+	 * @return bool True for storefront_catalog / global_catalog modes.
+	 */
+	protected function is_ucp_catalog_api_mode( $api_mode ) {
+		return in_array( $api_mode, array( 'storefront_catalog', 'global_catalog' ), true );
+	}
+
+	/**
+	 * Human-readable label for a Shopify API mode.
+	 *
+	 * @since 1.1.81
+	 *
+	 * @param string $api_mode Connection API mode.
+	 * @return string Label for error messages and summaries.
+	 */
+	protected function get_shopify_api_mode_label( $api_mode ) {
+		$labels = array(
+			'admin_api'          => __( 'Admin API (store management)', 'nvoos-content-graph-pro' ),
+			'catalog_api'        => __( 'Catalog API (REST, deprecated by Shopify)', 'nvoos-content-graph-pro' ),
+			'storefront_catalog' => __( 'Storefront Catalog MCP (single-store UCP, keyless)', 'nvoos-content-graph-pro' ),
+			'global_catalog'     => __( 'Global Catalog MCP (cross-store UCP, keyless)', 'nvoos-content-graph-pro' ),
+		);
+
+		return isset( $labels[ $api_mode ] ) ? $labels[ $api_mode ] : (string) $api_mode;
+	}
+
+	/**
+	 * Build the "admin-only operation on a catalog connection" error.
+	 *
+	 * Catalog connections (catalog_api, storefront_catalog, global_catalog)
+	 * only expose live product search and lookup — admin operations such as
+	 * orders, customers, or inventory cannot run against them. UCP catalog
+	 * modes are additionally live agent-query modes whose results must not
+	 * be cached, so the agent is pointed at the live catalog tools instead
+	 * of being left with a confusing API failure.
+	 *
+	 * @since 1.1.81
+	 *
+	 * @param string $api_mode  Connection API mode.
+	 * @param string $operation Human-readable operation name (e.g. 'Shopify orders').
+	 * @return WP_Error
+	 */
+	protected function get_catalog_mode_admin_only_error( $api_mode, $operation ) {
+		if ( $this->is_ucp_catalog_api_mode( $api_mode ) ) {
+			$message = sprintf(
+				/* translators: 1: operation name, 2: API mode label */
+				__( '%1$s are not available for this Shopify connection: it is configured for the %2$s mode, which is a live agent-query catalog mode. UCP catalog modes only expose live catalog tools (search_catalog, lookup_catalog, get_product) and their results must not be cached, so no local copies exist. Use the live catalog tools (shopify_catalog, or shopify_products list/search/get) with this connection, or switch to an admin_api connection for %1$s.', 'nvoos-content-graph-pro' ),
+				$operation,
+				$this->get_shopify_api_mode_label( $api_mode )
+			);
+		} else {
+			$message = sprintf(
+				/* translators: 1: operation name, 2: API mode label */
+				__( '%1$s are not available for this Shopify connection: it is configured for the %2$s mode, which only exposes catalog search and lookup. Use the catalog tools (shopify_catalog, or shopify_products list/search/get) with this connection, or switch to an admin_api connection for %1$s.', 'nvoos-content-graph-pro' ),
+				$operation,
+				$this->get_shopify_api_mode_label( $api_mode )
+			);
+		}
+
+		return new WP_Error( 'wp_mcp_ai_shopify_catalog_mode_admin_only', $message );
 	}
 
 	/**
