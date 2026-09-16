@@ -1,13 +1,15 @@
 # NV oOS Documentation Index
 
-**Last Updated:** September 15, 2026
-**Plugin Version:** 1.1.80
+**Last Updated:** September 17, 2026
+**Plugin Version:** 1.1.81
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
+
+> **SEPTEMBER 17, 2026 UPDATE (v1.1.81):** SHOPIFY-UCP, FLOWHUB, CRM & FINANCIAL-RESILIENCE RELEASE. **SHOPIFY TOOLS ARE UCP CATALOG MODE-AWARE** (PR #6634) — STOREFRONT/GLOBAL CONNECTIONS DRIVE LIVE `search_catalog`/`lookup_catalog`/`get_product` QUERIES (BUYER `context`, CURSOR PASSTHROUGH, CLAMPS 250/50/10, ZERO CACHING PER UCP GUIDELINES); ADMIN-ONLY TOOLS REFUSE CATALOG CONNECTIONS WITH AN ACTIONABLE HINT; `remote_shopify_connection` VALIDATES UCP MODES VIA THE MCP `tools/list` HANDSHAKE. **SHOPIFY PRODUCT IMAGE CARDS** (PR #6638) — `images[]` + CHAT-RENDERED MARKDOWN CARD ON EVERY PRODUCT-RETURNING PATH (10-CARD CAP; SHARED NORMALIZERS TRAIT). **FLOWHUB REMOTE SITES RESOLUTION** (PR #6635) — SHARED RESOLVER CHAIN (EXPLICIT `connection_id` → TOOLKIT SETTINGS → SYNC CONNECTIONS → FIRST ENABLED) + **CONNECTION PROXY HONORED** IN LIVE TOOLS (PR #6637). **JOBNAVIGATOR CRM ADOPTION** (PR #6636; CG PRO PORT #6640) — 5 NEW PRO TOOLS (`bulk_move_deal_stages`, `record_crm_reply`, `get_crm_handover`, `get_pipeline_digest`, `create_tracked_link`), MACHINE-READABLE DEAL STAGE HISTORY, LEAD DEDUP + CANONICAL COMPANIES, REPLY SIGNALS, WON-DEAL LEAD RELEASE. **GMAIL REPLY POLLER + PIPELINE DIGEST RECIPE** (PR #6641) — CRON-DRIVEN INBOUND REPLY CLASSIFICATION WITH SENTIMENT + OPTIONAL STAGE ADVANCEMENT. **OPENTERMINAL FINANCIAL RESILIENCE** (PR #6639) — 8 NEW PRO TOOLS (`market_screener`, `macro_data_fetcher`, `economic_calendar_fetcher`, `earnings_calendar_fetcher`, `options_chain_fetcher`, `crypto_market_data`, `portfolio_transaction_log`, `price_alerts`), PROVIDER FALLBACK CHAINS + STALE-WHILE-REVALIDATE CACHING, KEYLESS AUTH, TECHNICAL INDICATORS. **MULTI-RECIPIENT RESULT-DELIVERY EMAIL** (PR #6643) — SANITIZED, DEDUPED, FANNED OUT VIA NODEMAILER + `wp_mail`. ALL SHOPIFY/CRM/FINANCIAL CHANGES PORT BYTE-IDENTICAL TO `nvoos-content-graph-pro`. TOOL COUNT: ~306 BASE + ~1,279 PRO (~1,585 TOTAL; +13 PRO). STALE 1.1.79 BUILD ZIPS REMOVED (30 FILES) + SUPERSEDED DOCS-HUB 0.4.3/0.4.4/0.4.5 ZIPS REMOVED. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE + NEW `docs/developer/crm-toolkit-jobnavigator-adoption-plan.md` + `docs/project/plans/financial-toolkit-openterminal-lessons-plan.md`.
 
 > **SEPTEMBER 15, 2026 UPDATE (v1.1.80):** PORTABILITY, SHOPIFY-CATALOG & SECURITY-OPERATIONS RELEASE. **ASSISTANT EXPORT/IMPORT ACROSS ALL SURFACES** (PR #6628) — ONE CANONICAL ENGINE, `nvoos-assistant` JSON BUNDLES (FORMAT_VERSION 1) FROM WP-CLI, REST (`POST /mcp-ai/v1/assistants/export|import`), ADMIN IMPORT/EXPORT PAGE + 3 NEW BASE TOOLS (`export_assistant`, `import_assistant`, `duplicate_assistant`) + PRO `export_assistant_blueprint`; CREDENTIAL HASHES NEVER EXPORTED, STRIPPED FROM IMPORTS; BACKUP PROVIDER NOW SHARES THE DENYLIST. **SECURITY CENTER USAGE MONITOR SUB-TAB** (PR #6632) — SEVERITY-TIERED VIOLATION TRIAGE LOG, MONITOR STATUS CARDS, SHUTDOWN RECOVERY, EDITABLE CONFIG, REST CLEAR ROUTES (`/security/clear-violations`, `/security/clear-shutdown`); NOTICE DEEP-LINKS + SHOWS LATEST VIOLATION; SANITIZE-CLOBBER BUG + MALFORMED-PATTERN HARDENING FIXED. **SHOPIFY UCP MODES** (PRs #6624/#6630) — KEYLESS STOREFRONT + GLOBAL CATALOG MODES REPLACE THE DEPRECATED REST CATALOG API (PUBLIC `/ucp/agent-profile` ROUTE, CCT SYNC REJECTED) ON PRO + CG PRO (BYTE-IDENTICAL PORTS); **REST CATALOG 401s FIXED** + JETENGINE SYNC GATE UNIFIED WITH SYSTEM STATUS (PR #6623). **WP-CLI REPAIRED + STREAMING** (PRs #6625/#6626) — `provider list`/`chat` NO LONGER FATAL ON PHP 8+; `chat --stream` STREAMS TOKEN-BY-TOKEN. **WHATSAPP WEBHOOK SELF-TESTS** (PR #6622) — VERIFICATION/SIGNATURE/SUBSCRIPTION CHECKS ON REMOTE SITES. **OKF EDITOR CONTEXT PRESERVED ON SAVE** (PR #6631). **SKILLS** (PRs #6627/#6629) — AGENT SKILLS VERIFIED AGAINST THE REAL PLUGIN SURFACE + NEW `design-brand-assistant-provisioning` SKILL; TEMPLATE WPCS CLEAN. **DOCS HUB COLORS** (PR #6621). TOOL COUNT: ~306 BASE + ~1,266 PRO (~1,572 TOTAL; +3 BASE +1 PRO). STALE 1.1.78 BUILD ZIPS REMOVED (30 FILES). UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
@@ -656,6 +658,18 @@ n#### New Audit & Compliance Docs
 - **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.39 latest updates section, version bump, duplicate section cleanup.
 
 ---
+
+## 🆕 September 2026 — v1.1.81: Shopify UCP Tool Routing, FlowHub Connections, JobNavigator CRM, OpenTerminal Financial Resilience
+
+### New and updated documents (September 17, 2026, v1.1.81)
+
+- **[docs/project/plans/v1.1.81-docs-catch-up.md](project/plans/v1.1.81-docs-catch-up.md)** ⭐ **NEW** — v1.1.81 docs & release catch-up plan (PR window #6634–#6643, +13 Pro tools, stale 1.1.79 ZIP removal, OI-1 groups 16–18 recorded).
+- **[docs/developer/crm-toolkit-jobnavigator-adoption-plan.md](../developer/crm-toolkit-jobnavigator-adoption-plan.md)** ⭐ **NEW** (in-window, PR #6636) — JobNavigator CRM adoption plan: stage history, dedup, reply signals, handover, tracked links.
+- **[docs/project/plans/financial-toolkit-openterminal-lessons-plan.md](project/plans/financial-toolkit-openterminal-lessons-plan.md)** ⭐ **NEW** (in-window, PR #6639) — OpenTerminal financial-toolkit resilience lessons.
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.81 highlights + latest updates (Shopify UCP tool routing + image cards, FlowHub connections, JobNavigator CRM + Gmail poller, OpenTerminal financial resilience, multi-recipient email).
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — the in-window [1.1.81] section completed with #6635–#6641 + the Versioning block; date 2026-09-17.
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.81 + changelog entry. (September 17, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — version + v1.1.81 recent-updates entry. (September 17, 2026)
 
 ## 🆕 September 2026 — v1.1.80: Assistant Portability, Shopify UCP Catalog, Security Usage Monitor, WP-CLI Repair
 

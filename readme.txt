@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.80
+Stable tag: 1.1.81
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.81 - September 17, 2026 =
+
+Shopify UCP, FlowHub, CRM, and financial-resilience release. Added: Shopify tools are now UCP catalog mode-aware (storefront/global connections drive live search/lookup/get_product queries with buyer context, cursor passthrough, and per-mode clamps; admin-only tools refuse catalog connections with an actionable hint; shopify_catalog is the unified live catalog tool; remote_shopify_connection validates UCP modes via the tools/list handshake) and every product-returning path ships the product image (images[] URLs plus a chat-rendered markdown card, 10-card cap on lists); FlowHub tools resolve credentials from Remote Sites connections via a shared resolver chain (explicit connection_id, toolkit settings, sync connections, first enabled connection); five new Pro CRM tools adopt JobNavigator mechanics (bulk_move_deal_stages, record_crm_reply, get_crm_handover, get_pipeline_digest, create_tracked_link) with deal stage history, lead dedup + canonical companies, reply signals, and won-deal lead release; a Gmail reply poller classifies inbound replies on cron with optional stage advancement and ships a pipeline-digest scheduling recipe; eight new Pro financial tools (market_screener, macro_data_fetcher, economic/earnings calendar fetchers, options_chain_fetcher, crypto_market_data, portfolio_transaction_log, price_alerts) add provider fallback chains, stale-while-revalidate caching, keyless auth, technical indicators, a portfolio ledger, and price alerts; and the Result Delivery email field accepts comma/semicolon/whitespace-separated recipient lists (sanitized, deduped, fanned out via Nodemailer and wp_mail). Fixed: live FlowHub requests honor the Remote Sites connection proxy. Ports: all Shopify/CRM/financial changes land byte-identical in nvoos-content-graph-pro. Tool count: ~306 base + ~1,279 Pro (~1,585 total; +13 Pro; live registry authoritative). Stale build ZIPs removed: the 1.1.79 set (30 files) + superseded docs-hub 0.4.3/0.4.4/0.4.5 ZIPs.
 
 = 1.1.80 - September 15, 2026 =
 

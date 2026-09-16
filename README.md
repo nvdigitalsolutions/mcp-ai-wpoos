@@ -11,12 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.80
-**Release Date:** 2026-09-15
+**Version:** 1.1.81
+**Release Date:** 2026-09-17
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
-**🆕 v1.1.80 Highlights:** A portability, Shopify-catalog, and security-operations release. **Assistants are now portable** — export/import a versioned `nvoos-assistant` JSON bundle from WP-CLI, REST, the admin Import/Export page, or AI tools (`export_assistant`/`import_assistant`/`duplicate_assistant`, plus the Pro `export_assistant_blueprint`), with credential hashes never exported and stripped from imports. **Shopify's deprecated REST Catalog is replaced** by two keyless UCP modes — Storefront and Global Catalog — on both the Pro addon and Content Graph Pro. **The Security Center gains a Usage Monitor sub-tab** with a severity-tiered violation triage log, editable monitor config, and REST clear actions, and the admin notice now deep-links to it. **WP-CLI is repaired and streams** — `provider list`/`chat` no longer fatal on PHP 8+, and `chat --stream` streams token-by-token. **Shopify Catalog 401s and the JetEngine sync gate are fixed**, and **the OKF editor keeps its context on save**. Tool count: ~306 base + ~1,266 Pro (~1,572 total). Stale 1.1.78 build ZIPs removed.
+**🆕 v1.1.81 Highlights:** A Shopify-UCP, FlowHub, CRM, and financial-resilience release. **Shopify tools are fully UCP catalog-aware** — storefront/global catalog connections drive live `search_catalog`/`lookup_catalog`/`get_product` queries (buyer context, cursor passthrough, per-mode clamps, zero caching), admin-only tools refuse catalog connections with an actionable hint, and every product-returning path now ships **product image cards** (`images[]` + a chat-rendered markdown card, 10-card cap on lists). **FlowHub tools resolve Remote Sites connections** and honor the connection proxy. **The CRM adopts JobNavigator mechanics** — 5 new tools (`bulk_move_deal_stages`, `record_crm_reply`, `get_crm_handover`, `get_pipeline_digest`, `create_tracked_link`), machine-readable stage history, lead dedup with canonical companies, reply signals, and won-deal lead release — plus a cron-driven **Gmail reply poller** with a pipeline-digest scheduling recipe. **The financial toolkit gains OpenTerminal resilience** — 8 new tools (market screener, macro data, economic/earnings calendars, options chain, crypto, portfolio ledger, price alerts), provider fallback chains, stale-while-revalidate caching, and keyless auth. **Result Delivery email accepts multiple recipients** (sanitized, deduped, fanned out via Nodemailer and `wp_mail`). All changes port byte-identical to Content Graph Pro. Tool count: ~306 base + ~1,279 Pro (~1,585 total; +13 Pro). Stale build ZIPs removed: the 1.1.79 set (30 files) + superseded docs-hub 0.4.3/0.4.4/0.4.5 ZIPs.
 
 **MCP Specification:** 2026-07-28 (Stateless Core, Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
@@ -150,6 +150,16 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit / Harness for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, Hugging Face, and Flowhub.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.81)
+
+- 🛍️ **Shopify Tools Are UCP Catalog Mode-Aware (PR #6634).** With a `storefront_catalog` or `global_catalog` connection, `shopify_products` list/search/get run live UCP queries (`search_catalog`/`lookup_catalog`/`get_product`) — never cached, marked `live: true`; admin-only tools (`orders`/`customers`/`inventory`) refuse catalog connections with an actionable hint; `shopify_catalog` becomes the unified mode-aware live catalog tool (`get_product`, batch `ids` + `not_found`, `lookup_by_variant`); buyer `context`, opaque `cursor`, and per-mode clamps (250/50/10) follow the UCP spec; `remote_shopify_connection` validates UCP modes with the MCP `tools/list` handshake. Byte-identical CG Pro port; 20-test + dual-matrix suites.
+- 🖼️ **Shopify Product Image Cards (PR #6638).** Every product-returning path now carries `images[]` URLs plus a chat-rendered markdown card (10-card cap on lists, full payload intact); UCP + REST normalizers move into a shared trait used by `shopify_products` and `shopify_catalog`. CG Pro mirrors byte-identically.
+- 🔌 **FlowHub Remote Sites Resolution + Connection Proxy (PRs #6635, #6637).** FlowHub tools resolve credentials through a shared chain (explicit `connection_id` → toolkit settings → sync connections → first enabled FlowHub connection) instead of failing with "credentials are not configured"; live requests now honor the connection proxy (`http_api_curl`) so egress no longer leaks the server IP.
+- 🧩 **JobNavigator CRM Adoption (PR #6636; CG Pro port #6640).** Five new Pro CRM tools — `bulk_move_deal_stages` (per-row reporting + undo), `record_crm_reply` (`email_reply` stage advancement), `get_crm_handover`, `get_pipeline_digest` (stalled-deal detection), `create_tracked_link` — plus machine-readable deal stage history (`stage_changed_at`, undoable moves), lead dedup with canonical companies, email/sentiment reply signals, and won-deal lead release. WP1–WP9 adoption suite; 11 CG Pro characterization tests.
+- 📬 **Gmail Reply Poller + Pipeline Digest Recipe (PR #6641).** Cron polls Gmail for unread replies from known leads, classifies sentiment, and applies reply signals (optional positive-sentiment stage advancement); `record_crm_reply` gains a cron-safe static `apply()` core; ships a digest scheduling recipe for the Workflow Builder + Pro Schedule Manager.
+- 💹 **OpenTerminal Financial Resilience (PR #6639).** Eight new Pro financial tools (`market_screener`, `macro_data_fetcher`, `economic_calendar_fetcher`, `earnings_calendar_fetcher`, `options_chain_fetcher`, `crypto_market_data`, `portfolio_transaction_log`, `price_alerts` with a daily cron), provider fallback chains + stale-while-revalidate caching in the yfinance service, keyless microservice auth, PHP technical indicators, news de-duplication, and a portfolio transaction ledger with P&L. Byte-identical CG Pro port.
+- ✉️ **Multiple Email Recipients in Result Delivery (PR #6643).** The On Success / On Failure email field accepts comma/semicolon/whitespace-separated lists — normalized on save, sanitized + deduped at the `sanitize_result_delivery()` boundary, fanned out through Nodemailer and the `wp_mail()` fallback; legacy `notify_email` stays single-address.
 
 ### ✨ What's New at a Glance (v1.1.80)
 
@@ -675,9 +685,9 @@ Real-time AI Orchestration Toolkit / Harness for Wordpress - **NV oOS** is a mod
 
 See the complete [External Services Reference](docs/reference/EXTERNAL_SERVICES.md) for all 20 services.  
 
-The plugin works standalone with **~306 base tools** and optionally extends through the **Pro addon**, which adds **~1,266 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services — including Google Calendar and the new Gmail/Drive read tools — Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization, Cloudways server management, CRM lead/deal/customer lifecycle, support ticket management, multichannel inbound/outbound messaging, Composio Connect, vision analysis object counting) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **~1,572 built-in tools** (~306 base + ~1,266 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+The plugin works standalone with **~306 base tools** and optionally extends through the **Pro addon**, which adds **~1,279 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services — including Google Calendar and the new Gmail/Drive read tools — Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization, Cloudways server management, CRM lead/deal/customer lifecycle, support ticket management, multichannel inbound/outbound messaging, Composio Connect, vision analysis object counting) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **~1,585 built-in tools** (~306 base + ~1,279 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
 
-> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (~306 tools) works standalone. The full version requires the Pro addon and provides ~1,572 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, Cloudways infrastructure management, CRM lead/deal/customer lifecycle + support tickets + multichannel, MCP Apps, Composio Connect, vision analysis, and more. Live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative.
+> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (~306 tools) works standalone. The full version requires the Pro addon and provides ~1,585 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, Cloudways infrastructure management, CRM lead/deal/customer lifecycle + support tickets + multichannel, MCP Apps, Composio Connect, vision analysis, and more. Live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative.
 
 **Addon Ecosystem:** NV oOS ships a growing family of 27 installable addons: **Pro** (`addons/pro/` — ~1,247 additional tools), **Chat SPA** (`addons/chat-spa/` — React chat replacement), **Docs Hub** (`addons/docs-hub/` — in-site documentation SPA), **SaaS Controller** + **Cloud Worker** (`addons/saas-controller/` + `addons/cloud-worker/` — NV oOS Cloud control plane), **Cloudways Dashboard** (`addons/cloudways-dashboard/` — Cloudways server management), **Toolkit Shell / Canvas / Canvas Toolkit / Document Editor / Media Studio** (`addons/toolkit-shell/` etc. — Toolkit SPA Blueprint Tier A–D), **Media Worker** (`addons/media-worker/` — Docker-based Node.js media sidecar, v3.2.0: multi-tenant shared worker mode, per-site provider keys, worker routing with local fallbacks, native `/api/crawl/*` endpoints + Crawl4AI facade), **Graphify** (`addons/graphify/` — knowledge graph), **Comic Reader** (`addons/comic-reader/` — CBR/CBZ/CB7/CBT reader), **Funiq Bridge** (`addons/funiq-bridge/` — Payload-to-WordPress bridge with React SPA), **Fleet Operator** (`addons/fleet-operator/` — scoped `op_` operator credentials for MCP/A2A supervisor agents like Hermes), **LibreChat** (`addons/librechat/` — code interpreter, speech, web search reranker), **Schedule Anything Platform + SPA** (`addons/schedule-anything-platform/` + `addons/schedule-anything-spa/` — SaaS booking with Stripe), **Tenant Router** (`addons/tenant-router/` — multi-tenant routing), **Page Agent** (`addons/page-agent/` — AI-powered browser page control copilot), **Checkout API** (`addons/checkout-api/` — vendor-side Stripe checkout/licensing service for premium addons), **Algorave**, **Cornerstone3D**, **Crocoblock DS**, **Embedded**, **Fantasy Football**. Separate standalone plugins: **NVOOS Content Graph** (`plugins/nvoos-content-graph/` — visual knowledge graph), **NVOOS Content Graph AI** (`plugins/nvoos-content-graph-ai/` — AI providers + chat + RAG), **NVOOS Content Graph AI Platform** (`plugins/nvoos-content-graph-ai-platform/` — agents, A2A, blueprints, skills). See [`docs/developer/addons/toolkit-spa-blueprint.md`](docs/developer/addons/toolkit-spa-blueprint.md) for the blueprint all SPA addons follow.
 
@@ -747,7 +757,7 @@ The orchestration layer makes NV oOS unique in the WordPress ecosystem by solvin
 NV oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
 
 - **15 language-model providers** — OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, Hugging Face, Flowhub
-- **~1,572 tool classes** (~306 base + ~1,266 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) registered through a singleton Tool Registry
+- **~1,585 tool classes** (~306 base + ~1,279 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) registered through a singleton Tool Registry
 - **36 REST controllers** (16 base + 20 pro) under the `mcp-ai/v1` namespace
 - **64 service classes** powering orchestration, budgets, and workflows
 - **5 authentication methods** — WordPress nonce, assistant credentials, mesh keys, Auth0 JWT, guest tokens
@@ -868,6 +878,17 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
+
+## 🆕 Latest Updates (v1.1.81 — September 2026)
+
+### September 17, 2026 — Shopify UCP Tool Routing, FlowHub Connections, JobNavigator CRM, OpenTerminal Financial Resilience
+
+- 🛍️ **Shopify UCP Mode-Aware Tools + Image Cards — PRs #6634, #6638.** Live UCP queries for `shopify_products`/`shopify_catalog` on storefront/global connections (no caching, `live: true`), actionable hints from admin-only tools, UCP passthrough + clamps, `tools/list` handshake validation, and image cards (`images[]` + markdown, 10-card cap) on every product-returning path. Byte-identical CG Pro ports with dual-matrix suites.
+- 🔌 **FlowHub Connection Resolution + Proxy — PRs #6635, #6637.** Shared resolver chain reads Remote Sites connections (explicit ID, settings, sync connections, first enabled); live requests honor the connection proxy. New base helper `WP_MCP_AI_FlowHub_Connection_Helper`.
+- 🧩 **JobNavigator CRM + Gmail Poller — PRs #6636, #6640, #6641.** Five new CRM tools (bulk stage moves, reply recording, handover, pipeline digest, tracked links), stage history, lead dedup, reply signals; cron-driven Gmail reply classification with sentiment + optional stage advancement; digest scheduling recipe for Workflow Builder + Pro Schedule Manager. `design-crm` skill updated.
+- 💹 **OpenTerminal Financial Toolkit — PR #6639.** Eight new tools (screener, macro, economic/earnings calendars, options, crypto, portfolio ledger, price alerts), fallback chains + SWR caching, keyless auth, technical indicators, news de-dup. `tool-status.txt` +8.
+- ✉️ **Multi-Recipient Result Delivery Email — PR #6643.** Comma/semicolon/whitespace lists, normalized on save, sanitized + deduped at the boundary, fanned out via Nodemailer + `wp_mail`.
+- 📦 **Versioning** — bumped to **1.1.81** across all version-bearing files. Pro addon: 1.1.81. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.8** (unchanged). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — byte-identical port batches only). Checkout API: **0.1.2** (unchanged). Docs Hub addon: **0.4.6** (unchanged). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.09.10** (unchanged). Tool count: **~306 base + ~1,279 Pro (~1,585 total)**; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative — +13 Pro (#6636 +5, #6639 +8). Provider count: **15**. Addon count: **27**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **58** (unchanged). Stale build ZIPs removed: the 1.1.79 set (30 files) + superseded docs-hub 0.4.3/0.4.4/0.4.5 ZIPs.
 
 ## 🆕 Latest Updates (v1.1.80 — September 2026)
 
@@ -2146,11 +2167,11 @@ The script mirrors the exclusion list in `.distignore` (used for the WordPress.o
 #### Final Steps
 
 1. Activate **Open Operator System Complete (NV oOS)** from WordPress admin
-2. You now have the **complete version** with all ~1,572 tools (~306 base + ~1,266 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+2. You now have the **complete version** with all ~1,585 tools (~306 base + ~1,279 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 **What you get from the repository clone:**
 
-- ✅ The full codebase — all ~1,572 built-in tools ready to use (~306 base + ~1,266 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- ✅ The full codebase — all ~1,585 built-in tools ready to use (~306 base + ~1,279 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - ✅ Single plugin activation (not separate base + pro)
 - ✅ Pro features automatically available (no separate Pro plugin to install)
 
@@ -2379,12 +2400,12 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 ### 📖 Documentation Hub
 - **[Documentation Hub](docs/README.md)** ⭐ **Start here** - Central navigation with organized categories
 - **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 1,600+ documentation files
-- **[Architecture Overview](docs/developer/architecture/ARCHITECTURE.md)** - System architecture (15 providers, ~1,572 tool classes, 36 REST controllers)
+- **[Architecture Overview](docs/developer/architecture/ARCHITECTURE.md)** - System architecture (15 providers, ~1,585 tool classes, 36 REST controllers)
 - **[Request Flow Walkthrough](docs/developer/architecture/REQUEST-FLOW-WALKTHROUGH.md)** - End-to-end chat request lifecycle trace
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
 
 ### Essential References
-- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~1,572 tools documented (~306 base + ~1,266 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~1,585 tools documented (~306 base + ~1,279 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **[REST API Documentation](docs/reference/api/rest-api.md)** - Complete API reference with examples
 - **[Testing & Quality Report](docs/developer/testing-docs/TESTING_AND_QUALITY_REPORT.md)** - Test results and code quality analysis
 
