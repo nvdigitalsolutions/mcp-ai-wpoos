@@ -11,6 +11,8 @@
  * - build_email_html(): embeds the converted HTML body.
  * - send_email(): format routing — markdown sends text/plain only, html and
  *   both send text/html, and both supplies html + text to Nodemailer.
+ * - send_email(): multi-recipient delivery via a comma-separated 'to' list.
+ * - sanitize_email_recipients(): list normalization across every input shape.
  * - sanitize_result_delivery(): email format allowlist with 'both' default.
  * - normalize_channel_credentials(): JSON-string credential coercion.
  * - resolve_channel_credentials(): Remote Sites connection token mapping
@@ -813,5 +815,118 @@ class Test_Pro_Result_Delivery_Email_Format extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'SUPER_SECRET', $serialized );
 
 		delete_option( WP_MCP_AI_Pro_Remote_Site_Manager::OPTION_NAME );
+	}
+
+	// -------------------------------------------------------------------------
+	// Multiple email recipients
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test sanitize_email_recipients() normalizes every supported input shape
+	 * into a comma-separated list of individually sanitized addresses.
+	 */
+	public function test_sanitize_email_recipients_normalizes_lists() {
+		$sanitize = function ( $value ) {
+			return WP_MCP_AI_Result_Delivery_Service::sanitize_email_recipients( $value );
+		};
+
+		// Single address passes through unchanged.
+		$this->assertSame( 'a@x.com', $sanitize( 'a@x.com' ) );
+
+		// Comma, semicolon, and whitespace separators all normalize.
+		$this->assertSame( 'a@x.com, b@y.com', $sanitize( 'a@x.com, b@y.com' ) );
+		$this->assertSame( 'a@x.com, b@y.com', $sanitize( 'a@x.com;b@y.com' ) );
+		$this->assertSame( 'a@x.com, b@y.com', $sanitize( '  a@x.com  b@y.com  ' ) );
+
+		// Empty tokens and duplicates are dropped.
+		$this->assertSame( 'a@x.com', $sanitize( 'a@x.com,, , a@x.com' ) );
+
+		// Array shapes are tolerated.
+		$this->assertSame( 'a@x.com', $sanitize( array( 'a@x.com' ) ) );
+		$this->assertSame( 'a@x.com, b@y.com', $sanitize( array( 'a@x.com', 'b@y.com' ) ) );
+
+		// Nothing valid remains → empty string.
+		$this->assertSame( '', $sanitize( '' ) );
+		$this->assertSame( '', $sanitize( '   ,,,   ' ) );
+		$this->assertSame( '', $sanitize( array() ) );
+	}
+
+	/**
+	 * Test that send_email() delivers to every address in a comma-separated
+	 * recipient list — through both Nodemailer and the wp_mail fallback.
+	 */
+	public function test_send_email_delivers_to_multiple_recipients() {
+		$payload = $this->email_payload();
+		$config  = array(
+			'to'     => 'first@example.com, second@example.com',
+			'format' => 'both',
+		);
+
+		$result = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'send_email',
+			array( $payload, $config )
+		);
+
+		$this->assertTrue( $result );
+		$this->assertNotNull( $this->captured_mail );
+		$this->assertSame( 'first@example.com, second@example.com', $this->captured_mail['to'] );
+
+		// When Nodemailer is in play its recipient list must match as well.
+		if ( null !== $this->captured_nodemailer ) {
+			$this->assertSame( 'first@example.com, second@example.com', $this->captured_nodemailer['to'] );
+		}
+	}
+
+	/**
+	 * Test that send_email() rejects configs whose recipient list contains no
+	 * usable address.
+	 */
+	public function test_send_email_rejects_empty_recipient_list() {
+		$result = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'send_email',
+			array(
+				$this->email_payload(),
+				array( 'to' => ' ,,, ' ),
+			)
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'missing_email_recipient', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that sanitize_result_delivery() stores multiple email recipients as
+	 * a comma-separated list of individually sanitized addresses, while legacy
+	 * single-address configs pass through unchanged.
+	 */
+	public function test_sanitize_result_delivery_supports_multiple_email_recipients() {
+		$delivery = array(
+			'on_success' => array(
+				'channels' => array(
+					'email' => array(
+						'enabled'  => true,
+						'to'       => 'primary@example.com, cc@example.com; ops@example.com',
+						'template' => 'full',
+						'format'   => 'both',
+					),
+				),
+			),
+			'on_failure' => array(
+				'channels' => array(),
+			),
+		);
+
+		$sanitized = WP_MCP_AI_Pro_Schedule_Manager::sanitize_result_delivery( $delivery );
+		$this->assertSame(
+			'primary@example.com, cc@example.com, ops@example.com',
+			$sanitized['on_success']['channels']['email']['to']
+		);
+
+		// Single-address configs keep their existing behavior.
+		$delivery['on_success']['channels']['email']['to'] = 'solo@example.com';
+		$sanitized = WP_MCP_AI_Pro_Schedule_Manager::sanitize_result_delivery( $delivery );
+		$this->assertSame( 'solo@example.com', $sanitized['on_success']['channels']['email']['to'] );
 	}
 }

@@ -1048,7 +1048,7 @@
 				const f           = def.fields[ i ];
 				let placeholder   = '';
 				switch ( f ) {
-					case 'to':          placeholder = channelSlug === 'email' ? 'team@example.com' : '+15551234567'; break;
+					case 'to':          placeholder = channelSlug === 'email' ? 'team@example.com, ops@example.com' : '+15551234567'; break;
 					case 'channel':     placeholder = '#research'; break;
 					case 'chat_id':     placeholder = '-1001234567890'; break;
 					case 'channel_id':  placeholder = '123456789012345678'; break;
@@ -1058,9 +1058,15 @@
 					case 'url':         placeholder = 'https://hooks.example.com/...'; break;
 					case 'collection':  placeholder = 'blog-research'; break;
 				}
-				fieldHtml += ' <input type="text" id="' + prefix + channelSlug + '-' + f + '" class="regular-text" value="' + this.esc( cfg[ f ] || '' ) + '" placeholder="' + placeholder + '" style="max-width:180px">';
+				fieldHtml += ' <input type="text" id="' + prefix + channelSlug + '-' + f + '" class="regular-text" value="' + this.esc( cfg[ f ] || '' ) + '" placeholder="' + placeholder + '" style="' + ( channelSlug === 'email' ? 'max-width:340px' : 'max-width:180px' ) + '">';
 			}
 			html += fieldHtml;
+
+			// The email channel accepts multiple recipients separated by commas
+			// (semicolons and whitespace are also accepted on save).
+			if ( channelSlug === 'email' ) {
+				html += ' <span class="description">Separate multiple addresses with commas.</span>';
+			}
 
 			// Template selector (where applicable).
 			if ( def.templates.length > 0 ) {
@@ -1167,7 +1173,12 @@
 				f = def.fields[ i ];
 				val = $( '#' + prefix + channelSlug + '-' + f ).val();
 				if ( val ) {
-					cfg[ f ] = val.trim();
+					// Email recipients may be a comma/semicolon/whitespace separated
+					// list; normalize to a canonical comma-joined list (the PHP
+					// sanitizer applies the same normalization server-side).
+					cfg[ f ] = ( channelSlug === 'email' && 'to' === f )
+						? val.split( /[\s,;]+/ ).map( function ( e ) { return e.trim(); } ).filter( Boolean ).join( ', ' )
+						: val.trim();
 				}
 			}
 
