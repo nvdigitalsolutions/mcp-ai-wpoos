@@ -2,7 +2,7 @@
 
 > **Start here.** This document answers the five questions every new maintainer asks: how the plugin boots, where the code lives, which commands to run, what Pro adds, and which docs to trust.
 >
-> Last reviewed: **September 15, 2026** (v1.1.80)
+> Last reviewed: **September 17, 2026** (v1.1.81)
 
 ### Related Files
 
@@ -74,7 +74,7 @@ wp_mcp_ai_pro_init()   (at plugins_loaded priority 15)
 
 | Constant | Default | Effect |
 |---|---|---|
-| `WP_MCP_AI_BASE_VERSION` | `true` | `true` = base-only (~306 tool classes); `false` = full mode (~1,572 tools: ~306 base + ~1,266 Pro) |
+| `WP_MCP_AI_BASE_VERSION` | `true` | `true` = base-only (~306 tool classes); `false` = full mode (~1,585 tools: ~306 base + ~1,279 Pro) |
 | `WP_MCP_AI_FILE` | (plugin file path) | Used by lifecycle hooks |
 | `WP_MCP_AI_PRO_VERSION` | set by Pro | Prevents double-loading of Pro addon |
 | `WP_DEBUG` | WordPress default | Enables extra error logging throughout |
@@ -100,7 +100,7 @@ mcp-ai-wpoos/
 │   ├─ google/                  ← Shared Google OAuth + Calendar foundation (OAuth service, Calendar v3 client, scope registry, credential resolver, sync, push — v1.1.64)
 │   ├─ conversation-import/      ← External AI conversation import pipeline → JetEngine CCT (17 classes, v1.1.60)
 │   │
-│   ├─ tools/                  ← Tool classes (~1,572 total implementations registered through the singleton registry; live count authoritative)
+│   ├─ tools/                  ← Tool classes (~1,585 total implementations registered through the singleton registry; live count authoritative)
 │   │   └─ class-wp-mcp-ai-tool-{name}.php   (one file per tool)
 │   │   └─ orchestration/      ← Tool routing / multi-tool orchestration
 │   │
@@ -283,7 +283,7 @@ npm run rebuild:all               # Rebuild all three ZIPs
 | | Base | Pro |
 |---|---|---|
 | **Entry point** | `mcp-ai-wpoos.php` | `addons/pro/mcp-ai-wpoos-pro.php` |
-| **Tools** | ~306 core tools | +~1,266 Pro tools = **~1,572 total** |
+| **Tools** | ~306 core tools | +~1,279 Pro tools = **~1,585 total** |
 | **Control constant** | `WP_MCP_AI_BASE_VERSION=true` | `WP_MCP_AI_BASE_VERSION=false` |
 | **PHP vendor** | `vendor/` (root) | `addons/pro/vendor/` (PHP 8.1+ deps: phpspreadsheet, etc.) |
 | **JS build** | `esbuild.config.js` | `esbuild.config.pro.js` |

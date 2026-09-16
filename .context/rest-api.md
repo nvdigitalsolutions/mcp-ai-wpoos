@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: September 15, 2026 (v1.1.80).
+> Last reviewed: September 17, 2026 (v1.1.81).
+>
+> **New in v1.1.81 (no REST surface changes):** no routes added, removed, or re-shaped this window — the Shopify UCP mode-aware routing + image cards (#6634/#6638) are tool/client-level, the FlowHub resolver + proxy (#6635/#6637) are client-level, the JobNavigator CRM batch + Gmail reply poller (#6636/#6640/#6641) are tool/service/cron-level, the OpenTerminal financial batch (#6639) is tool/service-level, and the multi-recipient email (#6643) is result-delivery-service-level. The Pro UCP `/ucp/agent-profile` route (1.1.80) is unchanged.
 >
 > **New in v1.1.80:** four new base REST routes and one new Pro route. Base: `POST /mcp-ai/v1/assistants/export` + `POST /mcp-ai/v1/assistants/import` (PR #6628 — admin-only, nonce/bearer auth, schema-validated args, 2 MB payload cap, dry-run preview; the canonical `nvoos-assistant` bundle engine powers them) and `POST /mcp-ai/v1/security/clear-violations` + `POST /mcp-ai/v1/security/clear-shutdown` (PR #6632 — `manage_options` + cookie-auth nonce, matching the Security Center controller patterns; legacy `admin_post` handlers remain as fallbacks). Pro: `GET /wp-json/mcp-ai/v1/ucp/agent-profile` (PRs #6624/#6630 — public by design, serves the site's UCP platform profile, no secrets; booted from the Pro main file monolith and `Plugin::register()` standalone).
 >

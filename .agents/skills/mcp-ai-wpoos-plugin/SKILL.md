@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.80"
-  plugin-version-tested: "1.1.80"
-  last-updated: "2026-09-15"
+  plugin-version: "1.1.81"
+  plugin-version-tested: "1.1.81"
+  last-updated: "2026-09-17"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -47,7 +47,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~306 base / ~1,572 full tools
+     │  Tool Registry     │  ~306 base / ~1,585 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -708,6 +708,41 @@ Import external AI conversation exports into the JetEngine
   toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
   dj-management/image-production slices.
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Shopify UCP Tool Routing, FlowHub Connections, JobNavigator CRM & OpenTerminal Financial Resilience (v1.1.81)
+
+- **Shopify tools are UCP catalog mode-aware** (PR #6634) — storefront/global
+  catalog connections drive live `search_catalog`/`lookup_catalog`/
+  `get_product` queries (no caching, `live: true`); admin-only tools refuse
+  catalog connections with an actionable hint; `remote_shopify_connection`
+  validates UCP modes via the `tools/list` handshake. **Product image cards**
+  (PR #6638) — `images[]` + a chat-rendered markdown card (10-card cap) on
+  every product-returning path via a shared normalizers trait. CG Pro ports
+  byte-identical.
+- **FlowHub Remote Sites resolution + proxy** (PRs #6635/#6637) — a shared
+  resolver chain (explicit `connection_id` → toolkit settings → sync
+  connections → first enabled FlowHub connection) ends the "credentials are
+  not configured" failure; live requests honor the connection proxy
+  (`http_api_curl`). New base helper `WP_MCP_AI_FlowHub_Connection_Helper`.
+- **JobNavigator CRM adoption + Gmail reply poller** (PRs #6636/#6640/#6641)
+  — 5 new Pro CRM tools (`bulk_move_deal_stages`, `record_crm_reply`,
+  `get_crm_handover`, `get_pipeline_digest`, `create_tracked_link`), deal
+  stage history + undo, lead dedup with canonical companies, reply signals,
+  won-deal lead release; a cron-driven Gmail reply poller classifies inbound
+  replies with sentiment + optional stage advancement; pipeline-digest
+  scheduling recipe for Workflow Builder + Pro Schedule Manager.
+- **OpenTerminal financial resilience** (PR #6639) — 8 new Pro financial
+  tools (`market_screener`, `macro_data_fetcher`, `economic_calendar_fetcher`,
+  `earnings_calendar_fetcher`, `options_chain_fetcher`, `crypto_market_data`,
+  `portfolio_transaction_log`, `price_alerts`), provider fallback chains +
+  stale-while-revalidate caching, keyless microservice auth, technical
+  indicators, portfolio transaction ledger with P&L. CG Pro port
+  byte-identical.
+- **Multi-recipient result-delivery email** (PR #6643) — comma/semicolon/
+  whitespace lists normalized on save + sanitized/deduped at the
+  `sanitize_result_delivery()` boundary; fanned out via Nodemailer +
+  `wp_mail()`; legacy `notify_email` stays single-address.
+- **Tool count** — +13 Pro: ~306 base + ~1,279 Pro (~1,585 total).
 
 ## Assistant Portability, Shopify UCP Modes, Security Usage Monitor & WP-CLI Repairs (v1.1.80)
 
