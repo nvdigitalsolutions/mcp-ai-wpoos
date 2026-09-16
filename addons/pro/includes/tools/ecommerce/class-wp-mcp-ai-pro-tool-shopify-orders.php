@@ -42,7 +42,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Orders implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Access and manage orders on a connected Shopify store via the Admin GraphQL API. Supports listing, filtering, and retrieving detailed order information including line items, fulfillments, and transactions.', 'mcp-ai-wpoos-pro' );
+		return __( 'Access and manage orders on a connected Shopify store via the Admin GraphQL API. Supports listing, filtering, and retrieving detailed order information including line items, fulfillments, and transactions. Requires an admin_api mode connection — catalog connections (Storefront/Global Catalog MCP or the deprecated Catalog API) are live product-search modes that do not expose orders; those return a hint pointing at the catalog tools.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -174,6 +174,14 @@ class WP_MCP_AI_Pro_Tool_Shopify_Orders implements WP_MCP_AI_Tool_Interface, WP_
 
 		$client = new WP_MCP_AI_Shopify_Client( $connection_id );
 		$action = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'list';
+
+		// Catalog connections (UCP Storefront/Global Catalog MCP and the
+		// deprecated Catalog API) are live product-search modes that do not
+		// expose orders — refuse with a hint instead of failing mid-API-call.
+		$api_mode = $client->get_api_mode();
+		if ( 'admin_api' !== $api_mode ) {
+			return $this->get_catalog_mode_admin_only_error( $api_mode, __( 'Shopify orders', 'mcp-ai-wpoos-pro' ) );
+		}
 
 		switch ( $action ) {
 			case 'list':
