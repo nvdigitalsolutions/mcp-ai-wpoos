@@ -1,0 +1,46 @@
+{
+	"$schema": "nvoos-crm/pipeline-digest-recipe/1",
+	"title": "CRM Pipeline Digest — scheduled workflow recipe",
+	"description": "Ready-to-import recipe for the NV oOS Pro Workflow Builder + Pro Schedule Manager: runs get_pipeline_digest and forwards the digest text to a messaging channel. No code changes required — apply via the MCP tools and adjust the delivery node's credentials for your site.",
+	"workflow": {
+		"title": "CRM Pipeline Digest",
+		"nodes": [
+			{
+				"id": "digest",
+				"type": "tool",
+				"tool_name": "get_pipeline_digest",
+				"arguments": {
+					"stale_days": 14,
+					"include_hot_leads": true,
+					"max_rows": 20
+				}
+			},
+			{
+				"id": "deliver",
+				"type": "tool",
+				"tool_name": "send_telegram_message",
+				"arguments": {
+					"token": "<YOUR_TELEGRAM_BOT_TOKEN>",
+					"chat_id": "<YOUR_CHAT_ID>",
+					"text": "{{digest.result.text}}"
+				}
+			}
+		],
+		"edges": [
+			{ "source": "digest", "target": "deliver" }
+		]
+	},
+	"schedule": {
+		"tool": "create_pro_schedule",
+		"title": "CRM Pipeline Digest — daily",
+		"recurrence": "daily",
+		"first_run": "2026-09-17T06:00:00Z",
+		"enabled": true
+	},
+	"notes": [
+		"Deliver via WhatsApp instead: swap deliver.tool_name to send_whatsapp_message and provide access_token/phone_number_id/to.",
+		"On sites without Telegram/WhatsApp credentials, change deliver.tool_name to create_document or a paper_store tool to persist the digest locally.",
+		"Stalled-deal detection uses the stage_changed_at anchor (stage-history ledger); legacy deals fall back to post_modified.",
+		"Apply the workflow through the Pro Workflow Builder UI (or its install_preset/tool endpoints), then create the schedule with create_pro_schedule pointing at the workflow."
+	]
+}
