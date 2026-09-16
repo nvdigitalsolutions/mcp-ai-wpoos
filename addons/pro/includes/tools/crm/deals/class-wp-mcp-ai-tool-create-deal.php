@@ -269,6 +269,12 @@ class WP_MCP_AI_Tool_Create_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			return $deal_id;
 		}
 
+		// Seed the machine-readable stage history with the initial entry so
+		// funnel analytics and the undo path have a complete ledger from day one.
+		if ( class_exists( 'WP_MCP_AI_CRM_Stage_History' ) ) {
+			WP_MCP_AI_CRM_Stage_History::record( $deal_id, null, $pipeline_stage, 'tool' );
+		}
+
 		// Record audit log.
 		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
 			WP_MCP_AI_CRM_Audit::record(
