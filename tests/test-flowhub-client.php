@@ -168,4 +168,124 @@ class Test_FlowHub_Client extends WP_UnitTestCase {
 		$this->assertSame( 'test_client', $captured_headers['clientId'] );
 		$this->assertSame( 'test_key', $captured_headers['key'] );
 	}
+
+	// ------------------------------------------------------------------ //
+	// Proxy Tests
+	// ------------------------------------------------------------------ //
+
+	/**
+	 * The client resolves proxy config from a proxied Remote Sites connection.
+	 */
+	public function test_get_proxy_config_from_connection() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro Remote Site Manager not available' );
+		}
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Proxied FlowHub',
+				'url'             => 'https://api.flowhub.co',
+				'connection_type' => 'flowhub',
+				'auth_type'       => 'none',
+				'client_id'       => 'test_client',
+				'api_key'         => 'test_key',
+				'enabled'         => true,
+				'proxy_enabled'   => true,
+				'proxy_url'       => 'http://proxy.local:3128',
+				'proxy_username'  => 'puser',
+				'proxy_password'  => 'ppass',
+			)
+		);
+
+		$client = new WP_MCP_AI_FlowHub_Client( $connection_id );
+
+		$this->assertSame( 'http://proxy.local:3128', $client->get_proxy_url() );
+		$this->assertSame( 'puser:ppass', $client->get_proxy_auth() );
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::delete_connection( $connection_id );
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * The client resolves proxy config from toolkit settings in settings mode.
+	 */
+	public function test_get_proxy_config_from_settings() {
+		update_option(
+			'wp_mcp_ai_flowhub_toolkit_settings',
+			array(
+				'proxy_enabled'  => true,
+				'proxy_url'      => 'http://settings-proxy:3128',
+				'proxy_username' => 'suser',
+				'proxy_password' => 'spass',
+			)
+		);
+
+		$client = new WP_MCP_AI_FlowHub_Client();
+
+		$this->assertSame( 'http://settings-proxy:3128', $client->get_proxy_url() );
+		$this->assertSame( 'suser:spass', $client->get_proxy_auth() );
+
+		delete_option( 'wp_mcp_ai_flowhub_toolkit_settings' );
+	}
+
+	/**
+	 * Make request: attaches the proxy during the request and removes it after.
+	 */
+	public function test_make_request_attaches_proxy_during_request() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro Remote Site Manager not available' );
+		}
+
+		remove_all_filters( 'http_api_curl' );
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Proxied FlowHub',
+				'url'             => 'https://api.flowhub.co',
+				'connection_type' => 'flowhub',
+				'auth_type'       => 'none',
+				'client_id'       => 'test_client',
+				'api_key'         => 'test_key',
+				'enabled'         => true,
+				'proxy_enabled'   => true,
+				'proxy_url'       => 'http://proxy.local:3128',
+			)
+		);
+
+		$proxy_hook_attached = false;
+		// phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter
+		add_filter(
+			'pre_http_request',
+			function ( $pre, $args, $url ) use ( &$proxy_hook_attached ) {
+				$proxy_hook_attached = false !== has_filter( 'http_api_curl' );
+
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'headers'  => array(),
+					'body'     => wp_json_encode( array( 'data' => array() ) ),
+					'cookies'  => array(),
+				);
+			},
+			10,
+			3
+		);
+		// phpcs:enable Generic.CodeAnalysis.UnusedFunctionParameter
+
+		$client = new WP_MCP_AI_FlowHub_Client( $connection_id );
+		$result = $client->make_request( '/v0/inventoryNonZero' );
+
+		remove_all_filters( 'pre_http_request' );
+		WP_MCP_AI_Pro_Remote_Site_Manager::delete_connection( $connection_id );
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		$this->assertNotWPError( $result, 'The mocked request should succeed.' );
+		$this->assertTrue( $proxy_hook_attached, 'The proxy must be attached while the request runs.' );
+		$this->assertFalse( has_filter( 'http_api_curl' ), 'The proxy must be removed after the request.' );
+	}
 }

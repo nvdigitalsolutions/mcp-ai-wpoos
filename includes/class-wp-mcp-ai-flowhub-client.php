@@ -169,6 +169,67 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 		}
 
 		/**
+		 * Get the proxy configuration for outbound FlowHub requests.
+		 *
+		 * Connection-scoped clients read the proxy from the Remote Sites
+		 * connection (with the FlowHub toolkit settings as fallback); settings
+		 * mode reads the toolkit settings. Mirrors the sync engine's resolution
+		 * order.
+		 *
+		 * @since 1.1.82
+		 *
+		 * @return array{url:string, auth:string} Proxy URL and optional
+		 *         user:pass auth string (both empty when no proxy applies).
+		 */
+		public function get_proxy_config() {
+			if ( class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
+				return WP_MCP_AI_FlowHub_Connection_Helper::resolve_proxy( $this->connection_id );
+			}
+
+			// Fallback when the helper is unavailable: toolkit settings only.
+			$config   = array(
+				'url'  => '',
+				'auth' => '',
+			);
+			$settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
+			if ( ! empty( $settings['proxy_enabled'] ) && ! empty( $settings['proxy_url'] ) ) {
+				$username = isset( $settings['proxy_username'] ) ? trim( (string) wp_unslash( $settings['proxy_username'] ) ) : '';
+				$password = isset( $settings['proxy_password'] ) ? (string) wp_unslash( $settings['proxy_password'] ) : '';
+
+				$config['url']  = (string) wp_unslash( $settings['proxy_url'] );
+				$config['auth'] = ( ! empty( $username ) || ! empty( $password ) ) ? $username . ':' . $password : '';
+			}
+
+			return $config;
+		}
+
+		/**
+		 * Get the configured proxy URL (empty when no proxy applies).
+		 *
+		 * @since 1.1.82
+		 *
+		 * @return string
+		 */
+		public function get_proxy_url() {
+			$config = $this->get_proxy_config();
+
+			return isset( $config['url'] ) ? $config['url'] : '';
+		}
+
+		/**
+		 * Get the configured proxy auth string (empty when no proxy auth).
+		 *
+		 * @since 1.1.82
+		 *
+		 * @return string
+		 */
+		public function get_proxy_auth() {
+			$config = $this->get_proxy_config();
+
+			return isset( $config['auth'] ) ? $config['auth'] : '';
+		}
+
+		/**
 		 * Sanitize error response body for safe inclusion in error data.
 		 * Truncates large bodies and extracts useful information from HTML.
 		 *
@@ -297,7 +358,35 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 				)
 			);
 
-			$response = wp_remote_request( $url, $request_args );
+			// Attach the resolved proxy. Proxied Remote Sites connections route
+			// FlowHub traffic through a forward proxy (e.g. a whitelisted egress
+			// IP); without it the request egresses directly and FlowHub rejects
+			// the server's IP with an auth error.
+			$proxy_config = $this->get_proxy_config();
+			$curl_proxy   = null;
+			if ( ! empty( $proxy_config['url'] ) ) {
+				$proxy_url  = $proxy_config['url'];
+				$proxy_auth = $proxy_config['auth'];
+				$curl_proxy = function ( $handle ) use ( $proxy_url, $proxy_auth ) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt -- Proxy support requires cURL-level configuration.
+					curl_setopt( $handle, CURLOPT_PROXY, $proxy_url );
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+					curl_setopt( $handle, CURLOPT_PROXYTYPE, CURLPROXY_HTTP );
+					if ( ! empty( $proxy_auth ) ) {
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+						curl_setopt( $handle, CURLOPT_PROXYUSERPWD, $proxy_auth );
+					}
+				};
+				add_action( 'http_api_curl', $curl_proxy, 10, 1 );
+			}
+
+			try {
+				$response = wp_remote_request( $url, $request_args );
+			} finally {
+				if ( null !== $curl_proxy ) {
+					remove_action( 'http_api_curl', $curl_proxy, 10 );
+				}
+			}
 
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_error( 'Flowhub API request failed.', array( 'error' => $response->get_error_message() ) );
