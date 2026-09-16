@@ -873,6 +873,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Delete_Deal'               => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/deals/class-wp-mcp-ai-tool-delete-deal.php',
 				'WP_MCP_AI_Tool_Move_Deal_Stage'           => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/deals/class-wp-mcp-ai-tool-move-deal-stage.php',
 
+				// ── Since 3.2.0: JobNavigator-adoption tools ──
+				'WP_MCP_AI_Tool_Bulk_Move_Deal_Stages'     => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/deals/class-wp-mcp-ai-tool-bulk-move-deal-stages.php',
+				'WP_MCP_AI_Tool_Create_Tracked_Link'       => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/deals/class-wp-mcp-ai-tool-create-tracked-link.php',
+				'WP_MCP_AI_Tool_Record_CRM_Reply'          => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-record-crm-reply.php',
+				'WP_MCP_AI_Tool_Get_CRM_Handover'          => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-get-crm-handover.php',
+				'WP_MCP_AI_Tool_Get_Pipeline_Digest'       => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/analytics/class-wp-mcp-ai-tool-get-pipeline-digest.php',
+
 				// ── Phase B: Activities (5) ──
 				'WP_MCP_AI_Tool_Create_CRM_Activity'       => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/activities/class-wp-mcp-ai-tool-create-crm-activity.php',
 				'WP_MCP_AI_Tool_List_CRM_Activities'       => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/activities/class-wp-mcp-ai-tool-list-crm-activities.php',
