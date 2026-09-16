@@ -23,6 +23,7 @@ This directory mirrors the [Healthcare Toolkit](../healthcare/README.md) layout:
 | Module | Folder | Sub-module | Phase introduced |
 |---|---|---|---|
 | Shared engine, codes, audit, capabilities, consent, pipeline stages, classifier | `.` (flat) | Shared infrastructure | Phase A |
+| Stage history, identity/dedup, tracked-link resolver | `.` (flat) | Shared infrastructure | v3.2.0 (JobNavigator adoption) |
 | Contact & Company CRUD | `.` (flat) | Core | Pre-Phase A (existing) |
 | Email search (leads, accounting, correspondence) | `.` (flat) | Core | Pre-Phase A (existing) |
 | MemPalace capture | `.` (flat) | Core | Pre-Phase A (existing) |
@@ -77,6 +78,11 @@ This directory mirrors the [Healthcare Toolkit](../healthcare/README.md) layout:
 | `WP_MCP_AI_Tool_Archive_Stale_Contacts` | `class-wp-mcp-ai-tool-archive-stale-contacts.php` | tool registry |
 | `WP_MCP_AI_Tool_Recalculate_Engagement_Scores` | `class-wp-mcp-ai-tool-recalculate-engagement-scores.php` | tool registry |
 | `WP_MCP_AI_Tool_Scan_Duplicate_Contacts` | `class-wp-mcp-ai-tool-scan-duplicate-contacts.php` | tool registry |
+| `WP_MCP_AI_Tool_Get_CRM_Handover` | `class-wp-mcp-ai-tool-get-crm-handover.php` | tool registry (v3.2.0) |
+| `WP_MCP_AI_Tool_Bulk_Move_Deal_Stages` | `deals/class-wp-mcp-ai-tool-bulk-move-deal-stages.php` | tool registry (v3.2.0) |
+| `WP_MCP_AI_Tool_Create_Tracked_Link` | `deals/class-wp-mcp-ai-tool-create-tracked-link.php` | tool registry (v3.2.0) |
+| `WP_MCP_AI_Tool_Record_CRM_Reply` | `inbound/class-wp-mcp-ai-tool-record-crm-reply.php` | tool registry (v3.2.0) |
+| `WP_MCP_AI_Tool_Get_Pipeline_Digest` | `analytics/class-wp-mcp-ai-tool-get-pipeline-digest.php` | tool registry (v3.2.0) |
 
 ### Email Hygiene Module
 
@@ -122,13 +128,16 @@ All tools respect the `enable_crm_toolkit` setting gate.
 
 | Symbol | File | Purpose |
 |---|---|---|
-| `WP_MCP_AI_CRM_Engine` | `class-wp-mcp-ai-crm-engine.php` | Settings, scoring, lifecycle, routing, pipeline, DNC, currency |
+| `WP_MCP_AI_CRM_Engine` | `class-wp-mcp-ai-crm-engine.php` | Settings, scoring, lifecycle, routing, pipeline, DNC, currency, auto-disqualify |
 | `WP_MCP_AI_CRM_Codes` | `class-wp-mcp-ai-crm-codes.php` | BANT/MEDDIC/CHAMP, lifecycle stages, channels, intents, sources, sentiment, dispositions |
 | `WP_MCP_AI_CRM_Audit` | `class-wp-mcp-ai-crm-audit.php` | Append-only PII/consent audit ledger (rolling buffer) |
 | `WP_MCP_AI_CRM_Capabilities` | `class-wp-mcp-ai-crm-capabilities.php` | Role → WP cap map (8 sales roles, 30+ logical capabilities) |
 | `WP_MCP_AI_CRM_Consent` | `class-wp-mcp-ai-crm-consent.php` | Channel-specific consent records + DNC enforcement + revocation |
 | `WP_MCP_AI_CRM_Pipeline_Stages` | `class-wp-mcp-ai-crm-pipeline-stages.php` | Deal stage definitions with win probabilities |
 | `WP_MCP_AI_CRM_Classifier` | `class-wp-mcp-ai-crm-classifier.php` | Intent/sentiment classification + BANT/MEDDIC extraction |
+| `WP_MCP_AI_CRM_Stage_History` | `class-wp-mcp-ai-crm-stage-history.php` | Deal stage transition ledger (`stage_history`/`stage_changed_at` meta), undo, next-open-stage (v3.2.0) |
+| `WP_MCP_AI_CRM_Identity` | `class-wp-mcp-ai-crm-identity.php` | Email normalization, lead dedup lookup, canonical company names, company auto-link/create (v3.2.0) |
+| `WP_MCP_AI_CRM_Link_Tracker` | `class-wp-mcp-ai-crm-link-tracker.php` | Front-end resolver for tracked proposal links (`?nvoos_track=<token>`) (v3.2.0) |
 
 ---
 
@@ -204,6 +213,9 @@ Programmatic access: `WP_MCP_AI_CRM_Engine::get_toolkit_settings()`.  Filterable
 | `wp_mcp_ai_crm_before_audit` | filter | Suppress an audit entry before it is written. |
 | `wp_mcp_ai_crm_after_audit` | action | Forward audit entries to an external SIEM. |
 | `wp_mcp_ai_crm_lead_score_calculated` | action | Fired after a composite lead score is calculated. |
+| `wp_mcp_ai_crm_deal_stage_history_recorded` | action | Fired after a stage transition is appended to a deal's history (v3.2.0). |
+| `wp_mcp_ai_crm_lead_auto_disqualified` | action | Fired after a lead is disqualified by the auto-disqualify rules (v3.2.0). |
+| `wp_mcp_ai_crm_deal_deleted` | action | Fired after a deal is deleted, with lead-release info (v3.2.0). |
 
 ---
 

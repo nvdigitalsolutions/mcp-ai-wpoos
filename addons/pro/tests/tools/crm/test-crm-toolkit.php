@@ -135,6 +135,13 @@ class Test_WP_MCP_AI_CRM_Toolkit extends WP_UnitTestCase {
 			'WP_MCP_AI_Tool_List_Upwork_Contracts',
 			'WP_MCP_AI_Tool_Sync_Upwork_Tasks',
 		),
+		'jobnavigator' => array(
+			'WP_MCP_AI_Tool_Bulk_Move_Deal_Stages',
+			'WP_MCP_AI_Tool_Create_Tracked_Link',
+			'WP_MCP_AI_Tool_Record_CRM_Reply',
+			'WP_MCP_AI_Tool_Get_CRM_Handover',
+			'WP_MCP_AI_Tool_Get_Pipeline_Digest',
+		),
 	);
 
 	/**
