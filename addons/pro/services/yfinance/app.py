@@ -25,6 +25,8 @@ import json
 import logging
 import time
 import hashlib
+import secrets
+import hmac
 from datetime import datetime, timedelta
 from functools import wraps
 from typing import Dict, List, Optional, Any
@@ -51,16 +53,67 @@ logger = logging.getLogger(__name__)
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app)  # Enable CORS for WordPress integration
+CORS(app, origins=os.getenv('WEB_ORIGIN', 'http://localhost:3000'))  # Enable CORS for WordPress integration
 
 # Configuration
 CACHE_DIR = os.getenv('CACHE_DIR', '/tmp/yfinance_cache')
 CACHE_TTL_MINUTES = int(os.getenv('CACHE_TTL_MINUTES', '15'))
 RATE_LIMIT_PER_MINUTE = int(os.getenv('RATE_LIMIT_PER_MINUTE', '30'))
 MAX_BATCH_SIZE = int(os.getenv('MAX_BATCH_SIZE', '50'))
+DATA_DIR = os.getenv('DATA_DIR', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data'))
 
 # Ensure cache directory exists
 os.makedirs(CACHE_DIR, exist_ok=True)
+os.makedirs(DATA_DIR, exist_ok=True)
+
+
+def _load_or_create_api_key() -> str:
+    """
+    Load the shared API secret from data/.api-key, generating one on first
+    run (OpenTerminal pattern). The bundled client reads the same file/env
+    automatically, so local development stays zero-config.
+    """
+    key_path = os.path.join(DATA_DIR, '.api-key')
+
+    env_key = os.getenv('API_KEY', '').strip()
+    if env_key:
+        return env_key
+
+    if os.path.exists(key_path):
+        with open(key_path, 'r', encoding='utf-8') as fh:
+            stored = fh.read().strip()
+            if stored:
+                return stored
+
+    generated = secrets.token_hex(32)
+    with open(key_path, 'w', encoding='utf-8') as fh:
+        fh.write(generated + '\n')
+    logger.info('Generated new API key at %s', key_path)
+    return generated
+
+
+API_KEY = _load_or_create_api_key()
+
+
+@app.before_request
+def require_api_key():
+    """
+    Require the shared API key on every request except the health check and
+    CORS preflight requests. Requests carry the key in the X-API-Key header.
+    """
+    if request.method == 'OPTIONS':
+        return None
+    if request.path == '/health':
+        return None
+
+    supplied = request.headers.get('X-API-Key', '')
+    if not supplied or not hmac.compare_digest(supplied, API_KEY):
+        return jsonify({
+            'error': 'Unauthorized',
+            'message': 'A valid X-API-Key header is required.'
+        }), 401
+
+    return None
 
 # Simple in-memory rate limiting
 request_timestamps = []
@@ -615,9 +668,10 @@ if __name__ == '__main__':
     port = int(os.getenv('PORT', '5000'))
     debug = os.getenv('DEBUG', 'False').lower() == 'true'
     
-    logger.info(f"Starting yfinance microservice on port {port}")
-    logger.info(f"Cache directory: {CACHE_DIR}")
-    logger.info(f"Cache TTL: {CACHE_TTL_MINUTES} minutes")
-    logger.info(f"Rate limit: {RATE_LIMIT_PER_MINUTE} requests/minute")
+    logger.info("Starting yfinance microservice on port %d", port)
+    logger.info("Cache directory: %s", CACHE_DIR)
+    logger.info("Cache TTL: %s minutes", CACHE_TTL_MINUTES)
+    logger.info("Rate limit: %s requests/minute", RATE_LIMIT_PER_MINUTE)
+    logger.info("API key: %s", 'configured' if API_KEY else 'MISSING')
     
     app.run(host='0.0.0.0', port=port, debug=debug)

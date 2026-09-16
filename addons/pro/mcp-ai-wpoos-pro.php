@@ -1607,6 +1607,17 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				// Transaction Categorisation tools.
 				'WP_MCP_AI_Tool_Get_Uncategorised_Transactions' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-get-uncategorised-transactions.php',
 				'WP_MCP_AI_Tool_Categorise_Transactions'   => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-categorise-transactions.php',
+				// Market data tools (keyless public endpoints, OpenTerminal lessons).
+				'WP_MCP_AI_Tool_Market_Screener'           => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-market-screener.php',
+				'WP_MCP_AI_Tool_Macro_Data_Fetcher'        => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-macro-data-fetcher.php',
+				'WP_MCP_AI_Tool_Economic_Calendar_Fetcher' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-economic-calendar-fetcher.php',
+				'WP_MCP_AI_Tool_Earnings_Calendar_Fetcher' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-earnings-calendar-fetcher.php',
+				'WP_MCP_AI_Tool_Options_Chain_Fetcher'     => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-options-chain-fetcher.php',
+				'WP_MCP_AI_Tool_Crypto_Market_Data'        => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-crypto-market-data.php',
+				// Portfolio transaction ledger (OpenTerminal lessons).
+				'WP_MCP_AI_Tool_Portfolio_Transaction_Log' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-portfolio-transaction-log.php',
+				// Price alerts (OpenTerminal lessons).
+				'WP_MCP_AI_Tool_Price_Alerts'              => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-price-alerts.php',
 			);
 			$pro_tools                       = array_merge( $pro_tools, $financial_planner_toolkit_tools );
 		}
