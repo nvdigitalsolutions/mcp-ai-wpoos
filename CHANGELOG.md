@@ -2,6 +2,10 @@
 
 ## [1.1.81] - 2026-09-16
 
+### Added — Multiple Email Recipients in Schedule Result Delivery
+
+- **The Result Delivery email field now accepts more than one address.** On Success / On Failure email recipients may be entered as a comma-, semicolon-, or whitespace-separated list; the edit modal normalizes the input on save and `sanitize_result_delivery()` stores it as a canonical comma-joined list of individually sanitized addresses (duplicates dropped, legacy single-address configs unchanged). Delivery fans out to every address through both Nodemailer and the `wp_mail()` fallback, and a list that sanitizes to nothing fails with the existing `missing_email_recipient` error.
+
 ### Added — Shopify UCP mode-aware tool routing (Pro + CG Pro)
 
 - **The Shopify tools now know when they are in a live-query catalog mode and act accordingly.** With a `storefront_catalog` or `global_catalog` (keyless UCP MCP) connection, `shopify_products` list/search/get now run **live UCP queries** (`search_catalog`, `lookup_catalog`, `get_product`) against the store's `/api/ucp/mcp` or `catalog.shopify.com` endpoint — previously only the Global Catalog path existed and Storefront fell through to a failing Admin API call. UCP usage guidelines prohibit caching catalog results, so these paths write nothing locally (no transients, no CCT) and mark every response `live: true`.
