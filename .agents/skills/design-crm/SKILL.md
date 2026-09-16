@@ -106,6 +106,10 @@ All CRM entities are managed through the **`toolkit_cpt`** MCP tool. Use the app
 | `amount` | string | Deal amount (string for precision) | `"0"`, `"50000"` |
 | `currency` | string | ISO currency code | `"USD"` |
 | `pipeline_stage` | string | Current pipeline stage | `"qualification"` |
+| `stage_history` | array | Machine-readable transitions (from/to/at/source) | see JobNavigator section |
+| `stage_changed_at` | string | ISO 8601 of the last real stage change | `"2026-09-16T09:00:00+00:00"` |
+| `last_email_received` | string | Last inbound reply timestamp | `"2026-09-16T09:00:00+00:00"` |
+| `last_email_sentiment` | string | Sentiment of the last reply | `"positive"` |
 | `expected_close_date` | string | Expected close date | `""`, `"2026-09-15"` |
 | `deal_owner` | string | WordPress user ID of owner | `"1"` |
 | `win_probability` | string | Win probability (0-1) | `"0.1"`, `"0.75"` |
@@ -357,6 +361,57 @@ Weekly pipeline review:
   "filters": [{ "key": "related_type", "value": "lead" },
               { "key": "related_id", "value": "12398" }] }
 ```
+
+## JobNavigator-Adoption Features (v3.2.0)
+
+Adopted from [vesaias/JobNavigator](https://github.com/vesaias/JobNavigator);
+full plan in `docs/developer/crm-toolkit-jobnavigator-adoption-plan.md`.
+
+### Stage transition history (deals)
+
+Every `move_deal_stage` (and `create_deal`) appends a machine-readable
+entry to the deal's `stage_history` meta:
+
+```json
+{ "from": "prospecting", "to": "qualification", "at": "2026-09-16T…", "source": "tool" }
+```
+
+- `source` is one of `tool`, `agent`, `workflow`, `manual`, `email_reply`, `bulk`.
+- `stage_changed_at` meta stamps the last real change — drives time-in-stage
+  and stalled-deal detection. **No-op stage moves never bump `updated_at`.**
+- `move_deal_stage` accepts `undo: true` to revert the last move without
+  recording a new transition (audits `deal_stage_reverted`).
+- Helper: `WP_MCP_AI_CRM_Stage_History` (`record`, `get_history`,
+  `undo_last`, `time_in_stage`, `next_open_stage`).
+
+### Lead dedup, companies, signals
+
+- `create_lead` refuses duplicates by normalized email with a 409
+  `wp_mcp_ai_duplicate_lead` error carrying `existing_lead_id`;
+  pass `allow_duplicate: true` to force-create.
+- `create_lead` auto-links `company_name` to a canonical company record
+  (case/space-insensitive; auto-creates when missing) via
+  `WP_MCP_AI_CRM_Identity`. Settings: `identity.auto_create_company`
+  (default true), `identity.auto_create_company_from_domain` (default false),
+  `identity.dedupe_leads` (default true).
+- Lead/deal email signals: `last_email_received`, `last_email_snippet`
+  (capped 500), `last_email_sentiment` (positive|neutral|negative|mixed|unknown).
+- Auto-disqualification: settings `auto_disqualify` block
+  (`enabled`, `max_score`, `min_age_days`, `only_statuses`) — evaluated
+  on lead create/update, fires `wp_mcp_ai_crm_lead_auto_disqualified`.
+
+### New tools
+
+| Slug | Purpose |
+|---|---|
+| `bulk_move_deal_stages` | Move up to 100 deals to one stage; reports `updated`/`skipped`/`not_found`; supports `undo` |
+| `record_crm_reply` | Store reply signals on lead + open deals; optionally advance a deal (`advance_deal: true`) with source `email_reply` |
+| `get_crm_handover` | Paste-ready plain-text bundle (facts, BANT, stage history, signals, activities + closing ask) for any AI/human handoff |
+| `get_pipeline_digest` | Compact digest text + data: stage totals, pipeline value, stalled deals, hot leads, overdue tasks |
+| `create_tracked_link` | Create a `?nvoos_track=<token>` link for a deal; opens recorded on the deal |
+
+- `delete_deal` on a `closed_won` deal releases the lead lifecycle back to
+  `opportunity` when no other won deal remains (hook `wp_mcp_ai_crm_deal_deleted`).
 
 ## Critical Rules
 

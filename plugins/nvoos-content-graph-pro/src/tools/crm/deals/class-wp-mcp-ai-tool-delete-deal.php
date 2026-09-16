@@ -1,6 +1,6 @@
 <?php
 /**
- * Delete Deal Tool (ecosystem port — Wave F2, CRM deals batch).
+ * Delete Deal Tool (ecosystem port — Wave F2, CRM JobNavigator-adoption batch).
  *
  * Ported from the base Pro addon's
  * `addons/pro/includes/tools/crm/deals/class-wp-mcp-ai-tool-delete-deal.php` for the standalone `nvoos-content-graph-pro` addon.
@@ -8,15 +8,16 @@
  * installs — the addon's autoloader skips its copy when
  * `WP_MCP_AI_PRO_PATH` is defined (see the plugin entry).
  *
- * Tool for deleting CRM deals/opportunities.
+ * Confirmation-gated deletion with lead-release cascade.
  * Documented deviations: `declare(strict_types=1)` added; text domain
- * `nvoos-content-graph-pro`.
+ * `nvoos-content-graph-pro`;
  *
  * @package NvoosContentGraphPro
  * @subpackage CRM_Toolkit
  */
 
 declare(strict_types=1);
+
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -177,12 +178,69 @@ class WP_MCP_AI_Tool_Delete_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			return $existing;
 		}
 
+		// Capture cascade context before the record is gone.
+		$lead_id      = isset( $existing['lead_id'] ) ? absint( $existing['lead_id'] ) : 0;
+		$deleted_stage = isset( $existing['pipeline_stage'] ) ? $existing['pipeline_stage'] : '';
+
 		// Perform deletion.
 		$result = $this->data_store->delete_item( $deal_id );
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
+
+		// ── Cascade: release the lead when the deleted deal was its only win ──
+		// Deleting a won deal must not leave the linked lead stranded as a
+		// customer. When no other won deal remains, the lead lifecycle drops
+		// back to 'opportunity' (JobNavigator releases the job on app delete).
+		$lead_released = false;
+		if ( $lead_id && WP_MCP_AI_CRM_Pipeline_Stages::is_won( $deleted_stage ) && 'mcp_ai_lead' === get_post_type( $lead_id ) ) {
+			$remaining_won = get_posts(
+				array(
+					'post_type'      => 'mcp_ai_deal',
+					'post_status'    => 'publish',
+					'posts_per_page' => 1,
+					'fields'         => 'ids',
+					'no_found_rows'  => true,
+					'suppress_filters' => true,
+					'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Intentional won-deal count.
+						'relation' => 'AND',
+						array(
+							'key'   => 'lead_id',
+							'value' => $lead_id,
+						),
+						array(
+							'relation' => 'OR',
+							array(
+								'key'   => 'pipeline_stage',
+								'value' => 'closed_won',
+							),
+							array(
+								'key'   => 'deal_stage',
+								'value' => 'closed_won',
+							),
+						),
+					),
+				)
+			);
+
+			if ( empty( $remaining_won ) && 'customer' === sanitize_key( (string) get_post_meta( $lead_id, 'lifecycle_stage', true ) ) ) {
+				update_post_meta( $lead_id, 'lifecycle_stage', 'opportunity' );
+				$lead_released = true;
+			}
+		}
+
+		/**
+		 * Fires after a deal has been deleted.
+		 *
+		 * @since 3.2.0
+		 *
+		 * @param int    $deal_id        Deleted deal ID.
+		 * @param int    $lead_id        Linked lead ID (0 when none).
+		 * @param bool   $lead_released  Whether the lead lifecycle was released.
+		 * @param string $deleted_stage  Stage of the deleted deal.
+		 */
+		do_action( 'wp_mcp_ai_crm_deal_deleted', $deal_id, $lead_id, $lead_released, $deleted_stage );
 
 		// Record destructive action in audit log.
 		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
@@ -191,7 +249,9 @@ class WP_MCP_AI_Tool_Delete_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				'deal',
 				$deal_id,
 				array(
-					'action' => 'delete',
+					'lead_id'       => $lead_id,
+					'lead_released' => $lead_released ? 1 : 0,
+					'action'        => 'delete',
 				)
 			);
 		}
@@ -199,8 +259,9 @@ class WP_MCP_AI_Tool_Delete_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		return $this->format_success_response(
 			__( 'Deal deleted permanently.', 'nvoos-content-graph-pro' ),
 			array(
-				'deal_id'      => $deal_id,
-				'storage_type' => $this->data_store->get_storage_type(),
+				'deal_id'       => $deal_id,
+				'lead_released' => $lead_released,
+				'storage_type'  => $this->data_store->get_storage_type(),
 			)
 		);
 	}

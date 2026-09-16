@@ -45,6 +45,18 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 
 	use WP_MCP_AI_Shopify_Connection_Resolver;
 	use WP_MCP_AI_Shopify_Smart_Search;
+	use WP_MCP_AI_Tool_Product_Card;
+	use WP_MCP_AI_Shopify_Product_Normalizers;
+
+	/**
+	 * Maximum number of markdown product cards rendered into the chat
+	 * message for list/search results. The full product payload stays
+	 * available in the structured response.
+	 *
+	 * @since 1.1.82
+	 * @var int
+	 */
+	const MAX_CARD_COUNT = 10;
 
 	/**
 	 * {@inheritdoc}
@@ -64,7 +76,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Live product search and lookup across Shopify catalog connections. Mode-aware: with a Storefront Catalog MCP connection (keyless UCP) this tool calls the store\'s own search_catalog, lookup_catalog, and get_product tools; with a Global Catalog MCP connection (keyless UCP) it searches products across all Shopify merchants; with the deprecated REST catalog_api connection it uses the legacy Catalog API. UCP usage guidelines prohibit caching catalog results, so every call is live and nothing is stored — do not use this tool\'s output to seed caches. Requires a catalog_api, storefront_catalog, or global_catalog mode connection.', 'nvoos-content-graph-pro' );
+		return __( 'Live product search and lookup across Shopify catalog connections. Mode-aware: with a Storefront Catalog MCP connection (keyless UCP) this tool calls the store\'s own search_catalog, lookup_catalog, and get_product tools; with a Global Catalog MCP connection (keyless UCP) it searches products across all Shopify merchants; with the deprecated REST catalog_api connection it uses the legacy Catalog API. UCP usage guidelines prohibit caching catalog results, so every call is live and nothing is stored — do not use this tool\'s output to seed caches. Requires a catalog_api, storefront_catalog, or global_catalog mode connection. Every product result includes image URLs (media) and a chat-rendered product card with the product image.', 'nvoos-content-graph-pro' );
 	}
 
 	/**
@@ -370,11 +382,21 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 			}
 		}
 
-		$count = count( $products );
+		$count      = count( $products );
+		$normalized = array_map( array( $this, 'normalize_catalog_product' ), $products );
+		$message    = $this->format_catalog_cards_message( $normalized );
+		if ( empty( $message ) ) {
+			$message = sprintf(
+				/* translators: %d: number of results */
+				__( 'Found %d product(s) in the Shopify Catalog.', 'nvoos-content-graph-pro' ),
+				$count
+			);
+		}
 
 		$result = array(
 			'success'  => true,
 			'action'   => 'search',
+			'message'  => $message,
 			'query'    => $query,
 			'count'    => $count,
 			'products' => $products,
@@ -454,11 +476,18 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 			return $response;
 		}
 
+		$product = $this->normalize_catalog_product( is_array( $response ) ? $response : array() );
+		$message = __( 'Product retrieved successfully.', 'nvoos-content-graph-pro' );
+		if ( ! empty( $product['title'] ) || ! empty( $product['images'] ) ) {
+			$message = $this->format_single_product_card( $product, 'shopify', array( 'max_description' => 200 ) );
+		}
+
 		return array(
 			'success' => true,
 			'action'  => 'lookup',
 			'upid'    => $upid,
 			'product' => $response,
+			'message' => $message,
 		);
 	}
 
@@ -484,12 +513,20 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 			return $response;
 		}
 
-		return array(
+		$normalized = $this->normalize_catalog_product( is_array( $response ) ? $response : array() );
+
+		$result = array(
 			'success' => true,
 			'action'  => 'lookup_by_variant',
 			'vid'     => $vid,
 			'variant' => $response,
 		);
+
+		if ( ! empty( $normalized['title'] ) || ! empty( $normalized['images'] ) ) {
+			$result['message'] = $this->format_single_product_card( $normalized, 'shopify', array( 'max_description' => 200 ) );
+		}
+
+		return $result;
 	}
 
 	// ------------------------------------------------------------------ //
@@ -576,12 +613,23 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 			}
 		}
 
-		$count  = count( $products );
+		$count      = count( $products );
+		$normalized = array_map( array( $this, 'normalize_ucp_product' ), $products );
+		$message    = $this->format_catalog_cards_message( $normalized );
+		if ( empty( $message ) ) {
+			$message = sprintf(
+				/* translators: %d: number of results */
+				__( 'Found %d product(s) in the Shopify catalog.', 'nvoos-content-graph-pro' ),
+				$count
+			);
+		}
+
 		$result = array(
 			'success'    => true,
 			'action'     => 'search',
 			'mode'       => $api_mode,
 			'live'       => true, // UCP usage guidelines: live query, nothing cached.
+			'message'    => $message,
 			'query'      => $query,
 			'count'      => $count,
 			'products'   => $products,
@@ -639,15 +687,26 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 			return $response;
 		}
 
-		$products = $this->extract_ucp_products( $response );
+		$products   = $this->extract_ucp_products( $response );
+		$count      = count( $products );
+		$normalized = array_map( array( $this, 'normalize_ucp_product' ), $products );
+		$message    = $this->format_catalog_cards_message( $normalized );
+		if ( empty( $message ) ) {
+			$message = sprintf(
+				/* translators: %d: number of results */
+				__( 'Resolved %d identifier(s) in the Shopify catalog.', 'nvoos-content-graph-pro' ),
+				$count
+			);
+		}
 
 		$result = array(
 			'success'  => true,
 			'action'   => 'lookup',
 			'mode'     => $api_mode,
 			'live'     => true, // UCP usage guidelines: live query, nothing cached.
+			'message'  => $message,
 			'ids'      => $ids,
-			'count'    => count( $products ),
+			'count'    => $count,
 			'products' => $products,
 			'raw'      => $response,
 		);
@@ -688,6 +747,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 
 		$products = $this->extract_ucp_products( $response );
 		$variant  = array();
+		$parent   = array();
 
 		// The matching variant lives inside the resolved product's variants array.
 		foreach ( $products as $product ) {
@@ -697,6 +757,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 			foreach ( $product['variants'] as $candidate ) {
 				if ( isset( $candidate['id'] ) && $candidate['id'] === $vid ) {
 					$variant = array_merge( $candidate, array( 'product_id' => isset( $product['id'] ) ? $product['id'] : '' ) );
+					$parent  = $product;
 					break 2;
 				}
 			}
@@ -709,7 +770,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
-		return array(
+		$result = array(
 			'success' => true,
 			'action'  => 'lookup_by_variant',
 			'mode'    => $api_mode,
@@ -718,6 +779,15 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 			'variant' => $variant,
 			'raw'     => $response,
 		);
+
+		if ( ! empty( $parent ) ) {
+			$normalized = $this->normalize_ucp_product( $parent );
+			if ( ! empty( $normalized['title'] ) || ! empty( $normalized['images'] ) ) {
+				$result['message'] = $this->format_single_product_card( $normalized, 'shopify', array( 'max_description' => 200 ) );
+			}
+		}
+
+		return $result;
 	}
 
 	/**
@@ -765,11 +835,18 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
+		$normalized = $this->normalize_ucp_product( $product );
+		$message    = __( 'Product retrieved successfully.', 'nvoos-content-graph-pro' );
+		if ( ! empty( $normalized['title'] ) || ! empty( $normalized['images'] ) ) {
+			$message = $this->format_single_product_card( $normalized, 'shopify', array( 'max_description' => 200 ) );
+		}
+
 		return array(
 			'success' => true,
 			'action'  => 'get_product',
 			'mode'    => $api_mode,
 			'live'    => true, // UCP usage guidelines: live query, nothing cached.
+			'message' => $message,
 			'product' => $product,
 			'raw'     => $response,
 		);
@@ -884,5 +961,37 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 			return $client->global_catalog_search( $query, $limit, $context, array(), $cursor );
 		}
 		return $client->storefront_catalog_search( $query, $limit, $context, $cursor );
+	}
+
+	/**
+	 * Format capped markdown product cards for catalog list/search results.
+	 *
+	 * Keeps the chat message bounded for large result sets — at most
+	 * MAX_CARD_COUNT cards are rendered — while the full product payload
+	 * stays available in the structured response. Returns '' when there
+	 * is nothing to render.
+	 *
+	 * @param array $products Normalized Shopify product arrays.
+	 * @return string Markdown cards message.
+	 */
+	protected function format_catalog_cards_message( array $products ) {
+		if ( empty( $products ) ) {
+			return '';
+		}
+
+		$capped    = array_slice( $products, 0, self::MAX_CARD_COUNT );
+		$message   = $this->format_product_cards( $capped, 'shopify' );
+		$remaining = count( $products ) - count( $capped );
+
+		if ( $remaining > 0 ) {
+			$message .= "\n\n" . sprintf(
+				/* translators: 1: number of cards shown, 2: number of products omitted from the cards */
+				__( '*Showing the first %1$d product card(s) — %2$d more product(s) in the structured results.*', 'nvoos-content-graph-pro' ),
+				count( $capped ),
+				$remaining
+			);
+		}
+
+		return $message;
 	}
 }

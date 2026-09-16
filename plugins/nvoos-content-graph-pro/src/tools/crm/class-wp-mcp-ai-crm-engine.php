@@ -1,33 +1,23 @@
 <?php
 /**
- * CRM Toolkit Shared Engine
+ * CRM Toolkit Shared Engine (ecosystem port — Wave F2, CRM JobNavigator-adoption batch).
  *
- * Cross-cutting helpers shared by all CRM sub-modules:
+ * Ported from the base Pro addon's
+ * `addons/pro/includes/tools/crm/class-wp-mcp-ai-crm-engine.php` for the standalone `nvoos-content-graph-pro` addon.
+ * Kept byte-identical. The base Pro addon owns the class in monolith
+ * installs — the addon's autoloader skips its copy when
+ * `WP_MCP_AI_PRO_PATH` is defined (see the plugin entry).
  *
- *  - Toolkit settings (wp_mcp_ai_crm_toolkit_settings) resolution.
- *  - Lead scoring (0–100 cold/warm/hot with factor decomposition).
- *  - Lifecycle stage progression (Subscriber → Lead → MQL → SAL → SQL → Opportunity → Customer).
- *  - Pipeline probability lookups (stage → win probability).
- *  - Routing strategy resolution (round_robin, weighted, territory, skill).
- *  - Currency formatting helpers.
- *  - DNC / suppression helper.
- *  - Search algorithm configuration (keyword_tfidf, fulltext).
- *
- * Mirrors WP_MCP_AI_Healthcare_Engine in the healthcare toolkit.
- *
- * Ported from the base Pro addon for the standalone
- * nvoos-content-graph-pro addon (Wave F2 pilot). Global class name kept
- * byte-identical; the base Pro addon owns the class in monolith installs.
- * Deviations: strict types; text domain nvoos-content-graph-pro.
+ * Settings, scoring, lifecycle, routing, pipeline, DNC, currency, auto-disqualify.
+ * Documented deviations: `declare(strict_types=1)` added; text domain
+ * `nvoos-content-graph-pro`;
  *
  * @package NvoosContentGraphPro
- * @since 2.3.0
- * @author    NV Digital Solutions
- * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
- * @license   Proprietary
+ * @subpackage CRM_Toolkit
  */
 
 declare(strict_types=1);
+
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -95,6 +85,24 @@ class WP_MCP_AI_CRM_Engine {
 				'pause_on_reply'          => true,
 				'pause_on_meeting_booked' => true,
 			),
+			// Identity & deduplication (since 3.2.0).
+			'identity'                => array(
+				'dedupe_leads'                    => true,
+				'canonical_company_names'          => true,
+				'auto_create_company'              => true,
+				'auto_create_company_from_domain'  => false,
+			),
+			// Auto-disqualification rules (since 3.2.0).
+			'auto_disqualify'         => array(
+				'enabled'       => false,
+				'max_score'     => 20,
+				'min_age_days'  => 30,
+				'only_statuses' => array( 'new', 'contacted' ),
+			),
+			// Stalled-deal threshold in days for digest/reporting (since 3.2.0).
+			'stale_deal_days'         => 14,
+			// Closing question for the handover bundle (since 3.2.0).
+			'handover_ask'            => 'Summarize this record and propose the next action.',
 			'pipeline'                => array(
 				'stages' => array(
 					'qualification' => array(
@@ -409,6 +417,90 @@ class WP_MCP_AI_CRM_Engine {
 			return null;
 		}
 		return self::LIFECYCLE_STAGES[ $pos + 1 ];
+	}
+
+	/**
+	 * Apply auto-disqualification rules to a lead.
+	 *
+	 * JobNavigator-style auto-reject: when enabled, leads whose score is at
+	 * or below the configured maximum, whose record is older than the minimum
+	 * age, and whose status is in the configured allowlist are disqualified
+	 * automatically. Disqualification preserves the audit trail (it never
+	 * deletes the record).
+	 *
+	 * @since 3.2.0
+	 *
+	 * @param int $lead_id Lead post ID.
+	 * @return bool True when the lead was disqualified, false otherwise.
+	 */
+	public static function maybe_auto_disqualify( $lead_id ) {
+		$lead_id = absint( $lead_id );
+		if ( ! $lead_id || 'mcp_ai_lead' !== get_post_type( $lead_id ) ) {
+			return false;
+		}
+
+		$settings = self::get_toolkit_settings();
+		$rules    = isset( $settings['auto_disqualify'] ) && is_array( $settings['auto_disqualify'] )
+			? $settings['auto_disqualify']
+			: array();
+
+		if ( empty( $rules['enabled'] ) ) {
+			return false;
+		}
+
+		$max_score = isset( $rules['max_score'] ) ? (int) $rules['max_score'] : 20;
+		$min_age   = isset( $rules['min_age_days'] ) ? max( 0, (int) $rules['min_age_days'] ) : 30;
+		$statuses  = isset( $rules['only_statuses'] ) && is_array( $rules['only_statuses'] )
+			? array_map( 'sanitize_key', $rules['only_statuses'] )
+			: array( 'new', 'contacted' );
+
+		$score  = (int) get_post_meta( $lead_id, 'lead_score', true );
+		$status = sanitize_key( (string) get_post_meta( $lead_id, 'lead_status', true ) );
+
+		if ( $score > $max_score ) {
+			return false;
+		}
+		if ( ! in_array( $status, $statuses, true ) ) {
+			return false;
+		}
+
+		// Age gate: post creation date must be at least min_age_days old.
+		if ( $min_age > 0 ) {
+			$post = get_post( $lead_id );
+			if ( ! $post ) {
+				return false;
+			}
+			$created = strtotime( $post->post_date_gmt );
+			if ( false === $created || ( time() - $created ) < ( $min_age * DAY_IN_SECONDS ) ) {
+				return false;
+			}
+		}
+
+		update_post_meta( $lead_id, 'lead_status', 'disqualified' );
+
+		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
+			WP_MCP_AI_CRM_Audit::record(
+				'lead_auto_disqualified',
+				'lead',
+				$lead_id,
+				array(
+					'lead_score' => $score,
+					'action'     => 'auto_disqualify',
+				)
+			);
+		}
+
+		/**
+		 * Fires after a lead was auto-disqualified by the rules engine.
+		 *
+		 * @since 3.2.0
+		 *
+		 * @param int $lead_id Lead post ID.
+		 * @param int $score   Lead score at disqualification time.
+		 */
+		do_action( 'wp_mcp_ai_crm_lead_auto_disqualified', $lead_id, $score );
+
+		return true;
 	}
 
 	/*

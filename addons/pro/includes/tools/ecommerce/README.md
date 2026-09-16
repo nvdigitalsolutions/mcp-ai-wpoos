@@ -5,6 +5,7 @@ This directory contains all tools for the E-commerce Pro Toolkit.
 - `init.php` — toolkit bootstrap; loads admin pages and optimization only when the toolkit is enabled.
 - `class-wp-mcp-ai-ecommerce-helpers.php` — side-effect-free helpers (e.g. `wp_mcp_ai_is_ecommerce_toolkit_enabled()`).
 - `trait-wp-mcp-ai-woo-price-qty-updater.php` — shared price/quantity update helpers used by `update_woo_product_price`, `update_woo_product_qty`, `woo_products`, and `bulk_update_products` (all-types target resolution, sale validation, canonical stock notifications with per-call `notify` suppression, variable-parent sync, transient cleanup).
+- `trait-wp-mcp-ai-shopify-product-normalizers.php` — shared Catalog API/UCP product normalizers (media→images, price shaping) used by `shopify_products` and `shopify_catalog` so every product result renders an image-bearing chat card.
 
 ## Tool Categories
 

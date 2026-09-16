@@ -1,6 +1,6 @@
 <?php
 /**
- * Create Deal Tool (ecosystem port — Wave F2, CRM deals batch).
+ * Create Deal Tool (ecosystem port — Wave F2, CRM JobNavigator-adoption batch).
  *
  * Ported from the base Pro addon's
  * `addons/pro/includes/tools/crm/deals/class-wp-mcp-ai-tool-create-deal.php` for the standalone `nvoos-content-graph-pro` addon.
@@ -8,15 +8,16 @@
  * installs — the addon's autoloader skips its copy when
  * `WP_MCP_AI_PRO_PATH` is defined (see the plugin entry).
  *
- * Tool for creating CRM deals/opportunities.
+ * Lead-linked deal creation with seeded stage history.
  * Documented deviations: `declare(strict_types=1)` added; text domain
- * `nvoos-content-graph-pro`.
+ * `nvoos-content-graph-pro`;
  *
  * @package NvoosContentGraphPro
  * @subpackage CRM_Toolkit
  */
 
 declare(strict_types=1);
+
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -276,6 +277,12 @@ class WP_MCP_AI_Tool_Create_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 
 		if ( is_wp_error( $deal_id ) ) {
 			return $deal_id;
+		}
+
+		// Seed the machine-readable stage history with the initial entry so
+		// funnel analytics and the undo path have a complete ledger from day one.
+		if ( class_exists( 'WP_MCP_AI_CRM_Stage_History' ) ) {
+			WP_MCP_AI_CRM_Stage_History::record( $deal_id, null, $pipeline_stage, 'tool' );
 		}
 
 		// Record audit log.
