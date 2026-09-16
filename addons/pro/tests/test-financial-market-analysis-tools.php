@@ -1064,4 +1064,102 @@ class Test_Financial_Market_Analysis_Tools extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 		$this->assertSame( 'wp_mcp_ai_forbidden', $result->get_error_code() );
 	}
+
+	// =========================================================================
+	// News de-duplication (OpenTerminal lessons).
+	// =========================================================================
+
+	/**
+	 * Test the aggregator de-duplicates identical headlines across sources.
+	 */
+	public function test_news_aggregator_dedupes_across_sources() {
+		$headline = 'Apple unveils new product lineup';
+
+		$rss_yahoo  = '<?xml version="1.0"?><rss version="2.0"><channel><title>Y</title><item><title>' . $headline . '</title><link>https://example.com/a</link><pubDate>' . gmdate( 'D, d M Y H:i:s O' ) . '</pubDate><description>Same story</description></item></channel></rss>';
+		$rss_google = '<?xml version="1.0"?><rss version="2.0"><channel><title>G</title><item><title>' . $headline . '!!</title><link>https://example.com/b</link><pubDate>' . gmdate( 'D, d M Y H:i:s O' ) . '</pubDate><description>Same story again</description></item></channel></rss>';
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( $rss_yahoo, $rss_google ) {
+				if ( false !== strpos( $url, 'finance.yahoo.com/news/rssindex' ) ) {
+					return array(
+						'body'     => $rss_yahoo,
+						'response' => array( 'code' => 200 ),
+					);
+				}
+				if ( false !== strpos( $url, 'news.google.com/rss' ) ) {
+					return array(
+						'body'     => $rss_google,
+						'response' => array( 'code' => 200 ),
+					);
+				}
+
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$tool   = new WP_MCP_AI_Tool_Financial_News_Aggregator();
+		$result = $tool->execute(
+			array(
+				'sources'    => array( 'yahoo_finance', 'google_finance' ),
+				'hours_back' => 24,
+			),
+			array( 'user_id' => $this->editor_user )
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( 1, $result['article_count'] );
+		$this->assertSame( 1, $result['duplicates_removed'] );
+
+		// The kept article records both source labels.
+		$sources = $result['articles'][0]['sources'];
+		$this->assertContains( 'Yahoo Finance', $sources );
+		$this->assertContains( 'Google Finance', $sources );
+	}
+
+	// =========================================================================
+	// stock_data_fetcher indicators action (OpenTerminal lessons).
+	// =========================================================================
+
+	/**
+	 * Test stock data fetcher exposes the indicators action + indicator list.
+	 */
+	public function test_stock_data_fetcher_indicators_action_surface() {
+		$tool   = new WP_MCP_AI_Tool_Stock_Data_Fetcher();
+		$schema = $tool->get_parameters_schema();
+
+		$this->assertContains( 'indicators', $schema['properties']['action']['enum'] );
+		$this->assertArrayHasKey( 'indicators', $schema['properties'] );
+		$this->assertSame(
+			array( 'sma', 'ema', 'vwap', 'bollinger', 'rsi', 'macd' ),
+			$schema['properties']['indicators']['items']['enum']
+		);
+	}
+
+	/**
+	 * Test stock data fetcher indicators action requires a ticker.
+	 */
+	public function test_stock_data_fetcher_indicators_requires_ticker() {
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_financial_planner_toolkit' => true,
+				'enable_yfinance_service'          => true,
+			)
+		);
+
+		$tool = new WP_MCP_AI_Tool_Stock_Data_Fetcher();
+
+		$result = $tool->execute(
+			array( 'action' => 'indicators' ),
+			array( 'user_id' => $this->editor_user )
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'missing_ticker', $result->get_error_code() );
+	}
 }

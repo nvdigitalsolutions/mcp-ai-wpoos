@@ -22,6 +22,10 @@ const params = JSON.parse(process.argv[3] || '{}');
 // Default service URL (can be overridden via params)
 const DEFAULT_SERVICE_URL = process.env.YFINANCE_SERVICE_URL || 'http://localhost:5000';
 
+// API key for the microservice (X-API-Key header). Falls back to the
+// YFINANCE_API_KEY env var when not provided per-request via params.
+const DEFAULT_API_KEY = process.env.YFINANCE_API_KEY || '';
+
 /**
  * Get yfinance service URL from params or environment
  * 
@@ -30,6 +34,32 @@ const DEFAULT_SERVICE_URL = process.env.YFINANCE_SERVICE_URL || 'http://localhos
  */
 function getServiceUrl(params) {
     return params.service_url || DEFAULT_SERVICE_URL;
+}
+
+/**
+ * Get the API key from params or environment
+ * 
+ * @param {Object} params - Request parameters
+ * @returns {string} API key (may be empty)
+ */
+function getApiKey(params) {
+    return params.api_key || DEFAULT_API_KEY;
+}
+
+/**
+ * Build the common request headers.
+ * 
+ * @param {Object} params - Request parameters
+ * @param {Object} extra - Extra headers
+ * @returns {Object} Headers
+ */
+function buildHeaders(params, extra) {
+    const headers = Object.assign({ 'Accept': 'application/json' }, extra || {});
+    const apiKey = getApiKey(params);
+    if (apiKey) {
+        headers['X-API-Key'] = apiKey;
+    }
+    return headers;
 }
 
 /**
@@ -51,9 +81,7 @@ async function getTickerInfo(params) {
     try {
         const response = await axios.get(url, {
             timeout: params.timeout || 10000,
-            headers: {
-                'Accept': 'application/json'
-            }
+            headers: buildHeaders(params)
         });
         
         return {
@@ -86,9 +114,7 @@ async function getCurrentPrice(params) {
         const response = await axios.get(url, {
             params: { period },
             timeout: params.timeout || 10000,
-            headers: {
-                'Accept': 'application/json'
-            }
+            headers: buildHeaders(params)
         });
         
         return {
@@ -127,10 +153,9 @@ async function getBatchPrices(params) {
             period
         }, {
             timeout: params.timeout || 15000,
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
+            headers: buildHeaders(params, {
+                'Content-Type': 'application/json'
+            })
         });
         
         return {
@@ -164,9 +189,7 @@ async function getPriceHistory(params) {
         const response = await axios.get(url, {
             params: { period, interval },
             timeout: params.timeout || 15000,
-            headers: {
-                'Accept': 'application/json'
-            }
+            headers: buildHeaders(params)
         });
         
         return {
@@ -203,9 +226,7 @@ async function searchTicker(params) {
         const response = await axios.get(url, {
             params: { q: query },
             timeout: params.timeout || 10000,
-            headers: {
-                'Accept': 'application/json'
-            }
+            headers: buildHeaders(params)
         });
         
         return {
@@ -230,9 +251,7 @@ async function checkHealth(params) {
     try {
         const response = await axios.get(url, {
             timeout: 5000,
-            headers: {
-                'Accept': 'application/json'
-            }
+            headers: buildHeaders(params)
         });
         
         return {
@@ -263,9 +282,7 @@ async function clearCache(params) {
     try {
         const response = await axios.post(url, {}, {
             timeout: 5000,
-            headers: {
-                'Accept': 'application/json'
-            }
+            headers: buildHeaders(params)
         });
         
         return {
