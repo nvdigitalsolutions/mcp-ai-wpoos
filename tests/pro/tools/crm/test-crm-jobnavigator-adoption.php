@@ -77,6 +77,8 @@ class Test_CRM_JobNavigator_Adoption extends WP_UnitTestCase {
 				'class-wp-mcp-ai-crm-stage-history.php',
 				'class-wp-mcp-ai-crm-identity.php',
 				'class-wp-mcp-ai-crm-link-tracker.php',
+				'inbound/class-wp-mcp-ai-crm-gmail-reply-poller.php',
+				'inbound/class-wp-mcp-ai-tool-record-crm-reply.php',
 			);
 			foreach ( $engine_files as $file ) {
 				$path = $crm_dir . $file;
@@ -720,6 +722,117 @@ class Test_CRM_JobNavigator_Adoption extends WP_UnitTestCase {
 		$this->assertTrue( $result['lead_released'] );
 		$this->assertSame( 'opportunity', get_post_meta( $lead_id, 'lifecycle_stage', true ) );
 		$this->assertSame( 1, $fired );
+	}
+
+	// ────────────────────────────────────────────────────────
+	// WP5b — Gmail reply poller
+	// ────────────────────────────────────────────────────────
+
+	/**
+	 * Test record_crm_reply's static apply path (cron-safe core).
+	 */
+	public function test_record_crm_reply_static_apply() {
+		$lead_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_lead',
+				'post_title'  => 'Apply Lead',
+				'post_status' => 'publish',
+			)
+		);
+		$this->test_lead_ids[] = $lead_id;
+		update_post_meta( $lead_id, 'email', 'apply@example.com' );
+
+		$deal_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_deal',
+				'post_title'  => 'Apply Deal',
+				'post_status' => 'publish',
+			)
+		);
+		$this->test_deal_ids[] = $deal_id;
+		update_post_meta( $deal_id, 'lead_id', $lead_id );
+		update_post_meta( $deal_id, 'pipeline_stage', 'prospecting' );
+		WP_MCP_AI_CRM_Stage_History::record( $deal_id, null, 'prospecting', 'tool' );
+
+		// Static apply runs without a capability check (cron context).
+		$applied = WP_MCP_AI_Tool_Record_CRM_Reply::apply(
+			$lead_id,
+			$deal_id,
+			'Send the proposal today.',
+			'positive',
+			gmdate( 'c' ),
+			true
+		);
+
+		$this->assertIsArray( $applied );
+		$this->assertSame( 'positive', get_post_meta( $lead_id, 'last_email_sentiment', true ) );
+		$this->assertSame( 'qualification', get_post_meta( $deal_id, 'pipeline_stage', true ) );
+
+		// Unknown lead refused.
+		$bad = WP_MCP_AI_Tool_Record_CRM_Reply::apply( 999999, 0, 'x', 'neutral', gmdate( 'c' ), false );
+		$this->assertWPError( $bad );
+	}
+
+	/**
+	 * Test the poller is disabled by default and reports the disabled status.
+	 */
+	public function test_gmail_reply_poller_disabled_by_default() {
+		$summary = WP_MCP_AI_CRM_Gmail_Reply_Poller::run();
+		$this->assertSame( 'disabled', $summary['status'] );
+		$this->assertSame( 0, $summary['replies'] );
+	}
+
+	/**
+	 * Test an enabled poll degrades gracefully with no Gmail connections.
+	 */
+	public function test_gmail_reply_poller_no_connections() {
+		$crm_settings                      = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+		$crm_settings['gmail_reply_poll']  = array(
+			'enabled'              => true,
+			'advance_on_positive'  => false,
+			'max_per_poll'         => 10,
+			'min_interval_minutes' => 15,
+		);
+		update_option( WP_MCP_AI_CRM_Engine::SETTINGS_OPTION, $crm_settings );
+		WP_MCP_AI_CRM_Engine::flush_settings_cache();
+
+		$summary = WP_MCP_AI_CRM_Gmail_Reply_Poller::run();
+		$this->assertSame( 'complete', $summary['status'] );
+		$this->assertSame( 0, $summary['replies'] );
+		$this->assertNotEmpty( get_option( WP_MCP_AI_CRM_Gmail_Reply_Poller::OPTION_LAST_POLL, '' ) );
+	}
+
+	/**
+	 * Test scheduling follows the settings gate and unschedules when off.
+	 */
+	public function test_gmail_reply_poller_scheduling() {
+		// Hook wiring.
+		WP_MCP_AI_CRM_Gmail_Reply_Poller::init();
+		$this->assertNotFalse( has_action( WP_MCP_AI_CRM_Gmail_Reply_Poller::CRON_HOOK ) );
+
+		// Disabled: nothing scheduled.
+		WP_MCP_AI_CRM_Gmail_Reply_Poller::maybe_schedule();
+		$this->assertFalse( wp_next_scheduled( WP_MCP_AI_CRM_Gmail_Reply_Poller::CRON_HOOK ) );
+
+		// Enabled: the event is scheduled.
+		$crm_settings                      = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+		$crm_settings['gmail_reply_poll']  = array(
+			'enabled'              => true,
+			'advance_on_positive'  => false,
+			'max_per_poll'         => 10,
+			'min_interval_minutes' => 15,
+		);
+		update_option( WP_MCP_AI_CRM_Engine::SETTINGS_OPTION, $crm_settings );
+		WP_MCP_AI_CRM_Engine::flush_settings_cache();
+
+		WP_MCP_AI_CRM_Gmail_Reply_Poller::maybe_schedule();
+		$this->assertNotFalse( wp_next_scheduled( WP_MCP_AI_CRM_Gmail_Reply_Poller::CRON_HOOK ) );
+
+		// Unschedule removes the event.
+		WP_MCP_AI_CRM_Gmail_Reply_Poller::unschedule();
+		$this->assertFalse( wp_next_scheduled( WP_MCP_AI_CRM_Gmail_Reply_Poller::CRON_HOOK ) );
+
+		delete_option( WP_MCP_AI_CRM_Gmail_Reply_Poller::OPTION_LAST_POLL );
 	}
 
 	// ────────────────────────────────────────────────────────

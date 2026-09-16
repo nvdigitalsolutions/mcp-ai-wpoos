@@ -193,6 +193,66 @@ class WP_MCP_AI_Tool_Record_CRM_Reply implements WP_MCP_AI_Tool_Interface, WP_MC
 			);
 		}
 
+		$result = self::apply( $lead_id, $deal_id, $snippet, $sentiment, $received_at, $advance_deal );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		// Record audit log.
+		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
+			WP_MCP_AI_CRM_Audit::record(
+				'reply_recorded',
+				'lead',
+				$lead_id,
+				array(
+					'sentiment'      => $sentiment,
+					'deals_touched'  => count( $result['deals_touched'] ),
+					'advanced_deals' => $advance_deal ? 1 : 0,
+					'action'         => 'email_reply',
+				)
+			);
+		}
+
+		return $this->format_success_response(
+			__( 'Reply recorded.', 'mcp-ai-wpoos-pro' ),
+			array(
+				'lead_id'      => $lead_id,
+				'sentiment'    => $sentiment,
+				'received_at'  => $received_at,
+				'deals_touched' => $result['deals_touched'],
+			)
+		);
+	}
+
+	/**
+	 * Apply reply signals to a lead and its open deals.
+	 *
+	 * Shared static core used by both the tool (after its capability gates)
+	 * and the Gmail reply poller (cron context, no acting user).
+	 *
+	 * @since 3.2.0
+	 *
+	 * @param int    $lead_id      Lead post ID.
+	 * @param int    $deal_id      Optional deal ID to advance.
+	 * @param string $snippet      Reply snippet (pre-sanitized).
+	 * @param string $sentiment    Sentiment slug.
+	 * @param string $received_at  ISO 8601 timestamp.
+	 * @param bool   $advance_deal Advance the requested open deal one stage.
+	 * @return array|WP_Error Array with deals_touched, or WP_Error.
+	 */
+	public static function apply( $lead_id, $deal_id, $snippet, $sentiment, $received_at, $advance_deal ) {
+		$lead_id = absint( $lead_id );
+		$deal_id = absint( $deal_id );
+
+		if ( ! $lead_id || 'mcp_ai_lead' !== get_post_type( $lead_id ) ) {
+			return new WP_Error(
+				'lead_not_found',
+				__( 'No lead could be resolved. Provide lead_id or a known reply email.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 404 )
+			);
+		}
+
 		if ( ! class_exists( 'WP_MCP_AI_Toolkit_Data_Store_Factory' ) ) {
 			return new WP_Error(
 				'store_unavailable',
@@ -305,29 +365,8 @@ class WP_MCP_AI_Tool_Record_CRM_Reply implements WP_MCP_AI_Tool_Interface, WP_MC
 			);
 		}
 
-		// Record audit log.
-		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
-			WP_MCP_AI_CRM_Audit::record(
-				'reply_recorded',
-				'lead',
-				$lead_id,
-				array(
-					'sentiment'      => $sentiment,
-					'deals_touched'  => count( $deals_touched ),
-					'advanced_deals' => $advance_deal ? 1 : 0,
-					'action'         => 'email_reply',
-				)
-			);
-		}
-
-		return $this->format_success_response(
-			__( 'Reply recorded.', 'mcp-ai-wpoos-pro' ),
-			array(
-				'lead_id'       => $lead_id,
-				'sentiment'     => $sentiment,
-				'received_at'   => $received_at,
-				'deals_touched' => $deals_touched,
-			)
+		return array(
+			'deals_touched' => $deals_touched,
 		);
 	}
 }

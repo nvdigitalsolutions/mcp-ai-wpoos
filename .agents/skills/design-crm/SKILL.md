@@ -413,6 +413,26 @@ entry to the deal's `stage_history` meta:
 - `delete_deal` on a `closed_won` deal releases the lead lifecycle back to
   `opportunity` when no other won deal remains (hook `wp_mcp_ai_crm_deal_deleted`).
 
+### Gmail reply poller (v3.2.0)
+
+Settings `gmail_reply_poll` block (`enabled` default false,
+`advance_on_positive` default false, `max_per_poll` 10,
+`min_interval_minutes` 15). When enabled, the cron
+(`wp_mcp_ai_crm_gmail_reply_poll`) polls Gmail for unread replies via the
+Gmail client + Remote Sites connections, matches senders to leads by
+normalized email, classifies sentiment via `WP_MCP_AI_CRM_Classifier`, and
+applies signals through `WP_MCP_AI_Tool_Record_CRM_Reply::apply()`. Unknown
+senders are skipped; the `wp_mcp_ai_crm_classify_intent` filter can swap in
+an LLM classifier. Last-poll stamp: `wp_mcp_ai_crm_reply_last_poll` option.
+
+### Pipeline digest scheduling (recipe asset, no code)
+
+`addons/pro/config/pipeline-digest-recipe.json` — an importable recipe:
+workflow nodes `get_pipeline_digest` → `send_telegram_message`
+(`{{digest.result.text}}` template) plus a `create_pro_schedule` daily
+config. Apply via the Pro Workflow Builder + Pro Schedule Manager MCP tools;
+swap the delivery node for WhatsApp or local persistence as needed.
+
 ## Critical Rules
 
 - **Always use `get_schema` first** before creating or updating a record to verify available field keys and types.

@@ -102,6 +102,13 @@ class WP_MCP_AI_CRM_Engine {
 				'min_age_days'  => 30,
 				'only_statuses' => array( 'new', 'contacted' ),
 			),
+			// Gmail reply poll (since 3.2.0).
+			'gmail_reply_poll'        => array(
+				'enabled'             => false,
+				'advance_on_positive' => false,
+				'max_per_poll'        => 10,
+				'min_interval_minutes' => 15,
+			),
 			// Stalled-deal threshold in days for digest/reporting (since 3.2.0).
 			'stale_deal_days'         => 14,
 			// Closing question for the handover bundle (since 3.2.0).

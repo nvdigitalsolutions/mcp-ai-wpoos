@@ -235,6 +235,13 @@ if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 		require_once $_link_tracker;
 		WP_MCP_AI_CRM_Link_Tracker::init();
 	}
+
+	// ---- Since 3.2.0: Gmail reply poller (inbound reply classification) ----
+	$_reply_poller = $crm_engine_dir . 'inbound/class-wp-mcp-ai-crm-gmail-reply-poller.php';
+	if ( file_exists( $_reply_poller ) ) {
+		require_once $_reply_poller;
+		WP_MCP_AI_CRM_Gmail_Reply_Poller::init();
+	}
 }
 
 /**
