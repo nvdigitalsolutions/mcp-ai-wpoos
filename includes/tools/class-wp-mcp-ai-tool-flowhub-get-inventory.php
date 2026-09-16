@@ -176,26 +176,60 @@ class WP_MCP_AI_Tool_Flowhub_Get_Inventory implements WP_MCP_AI_Tool_Interface, 
 			$options['timeout'] = max( 5, min( 60, absint( $arguments['timeout'] ) ) );
 		}
 
+		// Respect the connection's sandbox mode, matching the Remote Sites
+		// connection test and the base client's endpoint resolution.
+		$base_url = 'https://api.flowhub.co';
+		if ( ! empty( $resolved['connection'] ) && ! empty( $resolved['connection']['sandbox_mode'] ) ) {
+			$base_url = 'https://api.sandbox.flowhub.co';
+		}
+
 		if ( ! empty( $location_id ) ) {
-			$endpoint = 'https://api.flowhub.co/v0/locations/' . rawurlencode( $location_id ) . '/inventoryNonZero';
+			$endpoint = $base_url . '/v0/locations/' . rawurlencode( $location_id ) . '/inventoryNonZero';
 		} else {
-			$endpoint = 'https://api.flowhub.co/v0/inventoryNonZero';
+			$endpoint = $base_url . '/v0/inventoryNonZero';
 		}
 		$endpoint = add_query_arg( $options, $endpoint );
 
-		$response = wp_remote_get(
-			$endpoint,
-			array(
-				'timeout'     => isset( $options['timeout'] ) ? $options['timeout'] : 30,
-				'redirection' => 3,
-				'httpversion' => '1.1',
-				'headers'     => array(
-					'clientId' => $client_id,
-					'key'      => $api_key,
-					'Accept'   => 'application/json',
-				),
-			)
-		);
+		// Attach the resolved proxy. Proxied Remote Sites connections route
+		// FlowHub traffic through a forward proxy (e.g. a whitelisted egress
+		// IP); without it the request egresses directly and FlowHub rejects
+		// the server's IP with an auth error.
+		$curl_proxy = null;
+		if ( ! empty( $resolved['proxy']['url'] ) ) {
+			$proxy_url  = $resolved['proxy']['url'];
+			$proxy_auth = $resolved['proxy']['auth'];
+			$curl_proxy = function ( $handle ) use ( $proxy_url, $proxy_auth ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt -- Proxy support requires cURL-level configuration.
+				curl_setopt( $handle, CURLOPT_PROXY, $proxy_url );
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+				curl_setopt( $handle, CURLOPT_PROXYTYPE, CURLPROXY_HTTP );
+				if ( ! empty( $proxy_auth ) ) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+					curl_setopt( $handle, CURLOPT_PROXYUSERPWD, $proxy_auth );
+				}
+			};
+			add_action( 'http_api_curl', $curl_proxy, 10, 1 );
+		}
+
+		try {
+			$response = wp_remote_get(
+				$endpoint,
+				array(
+					'timeout'     => isset( $options['timeout'] ) ? $options['timeout'] : 30,
+					'redirection' => 3,
+					'httpversion' => '1.1',
+					'headers'     => array(
+						'clientId' => $client_id,
+						'key'      => $api_key,
+						'Accept'   => 'application/json',
+					),
+				)
+			);
+		} finally {
+			if ( null !== $curl_proxy ) {
+				remove_action( 'http_api_curl', $curl_proxy, 10 );
+			}
+		}
 
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(

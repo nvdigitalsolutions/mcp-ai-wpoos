@@ -70,6 +70,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
 		 *                            'connection'    => array|null,   // Raw connection record (connection modes only).
 		 *                            'source'        => string,       // 'connection' | 'sync_connection' | 'settings'.
 		 *                            'credentials'   => array,        // client_id / api_key / location_id.
+		 *                            'proxy'         => array,        // url / auth for proxied connections.
 		 *                        )
 		 *                        WP_Error when nothing resolves.
 		 */
@@ -88,6 +89,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
 					'connection'    => $connection,
 					'source'        => 'connection',
 					'credentials'   => self::get_connection_credentials( $connection_id ),
+					'proxy'         => self::resolve_proxy( $connection_id, $connection ),
 				);
 			}
 
@@ -99,6 +101,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
 					'connection'    => null,
 					'source'        => 'settings',
 					'credentials'   => $credentials,
+					'proxy'         => self::resolve_proxy(),
 				);
 			}
 
@@ -111,6 +114,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
 						'connection'    => $connection,
 						'source'        => 'sync_connection',
 						'credentials'   => self::get_connection_credentials( $connection_id ),
+						'proxy'         => self::resolve_proxy( $connection_id, $connection ),
 					);
 				}
 			}
@@ -123,6 +127,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
 					'connection'    => $first['connection'],
 					'source'        => 'connection',
 					'credentials'   => self::get_connection_credentials( $first['id'] ),
+					'proxy'         => self::resolve_proxy( $first['id'], $first['connection'] ),
 				);
 			}
 
@@ -218,6 +223,55 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
 			$credentials['location_id'] = isset( $connection['location_id'] ) ? trim( (string) $connection['location_id'] ) : '';
 
 			return $credentials;
+		}
+
+		/**
+		 * Resolve proxy configuration for a FlowHub request.
+		 *
+		 * The connection's proxy wins when enabled (proxy password is decrypted
+		 * from the connection record), falling back to the FlowHub toolkit
+		 * settings — matching the sync engine's resolution order.
+		 *
+		 * @since 1.1.82
+		 *
+		 * @param string     $connection_id Optional connection ID (conn_...).
+		 * @param array|null $connection    Optional pre-fetched connection record.
+		 * @return array{url:string, auth:string} Proxy URL and optional
+		 *         user:pass auth string (both empty when no proxy applies).
+		 */
+		public static function resolve_proxy( $connection_id = '', $connection = null ) {
+			$config = array(
+				'url'  => '',
+				'auth' => '',
+			);
+
+			if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) && ! empty( $connection_id ) ) {
+				if ( null === $connection ) {
+					$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( sanitize_key( $connection_id ) );
+				}
+
+				if ( is_array( $connection ) && ! empty( $connection['proxy_enabled'] ) && ! empty( $connection['proxy_url'] ) ) {
+					$username = isset( $connection['proxy_username'] ) ? trim( (string) $connection['proxy_username'] ) : '';
+					$password = isset( $connection['proxy_password'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['proxy_password'] ) : '';
+
+					$config['url']  = (string) $connection['proxy_url'];
+					$config['auth'] = ( ! empty( $username ) || ! empty( $password ) ) ? $username . ':' . $password : '';
+
+					return $config;
+				}
+			}
+
+			// Fall back to toolkit settings.
+			$settings = get_option( self::TOOLKIT_OPTION, array() );
+			if ( ! empty( $settings['proxy_enabled'] ) && ! empty( $settings['proxy_url'] ) ) {
+				$username = isset( $settings['proxy_username'] ) ? trim( (string) wp_unslash( $settings['proxy_username'] ) ) : '';
+				$password = isset( $settings['proxy_password'] ) ? (string) wp_unslash( $settings['proxy_password'] ) : '';
+
+				$config['url']  = (string) wp_unslash( $settings['proxy_url'] );
+				$config['auth'] = ( ! empty( $username ) || ! empty( $password ) ) ? $username . ':' . $password : '';
+			}
+
+			return $config;
 		}
 
 		/**

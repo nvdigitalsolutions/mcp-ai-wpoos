@@ -254,6 +254,101 @@ class Test_FlowHub_Connection_Helper extends WP_UnitTestCase {
 	}
 
 	// ------------------------------------------------------------------ //
+	// Proxy resolution
+	// ------------------------------------------------------------------ //
+
+	/**
+	 * Connection proxy resolves with decrypted password auth.
+	 */
+	public function test_resolve_proxy_from_connection() {
+		$connection_id = $this->create_flowhub_connection(
+			array(
+				'proxy_enabled'  => true,
+				'proxy_url'      => 'http://proxy.test:3128',
+				'proxy_username' => 'puser',
+				'proxy_password' => 'ppass',
+			)
+		);
+
+		$proxy = WP_MCP_AI_FlowHub_Connection_Helper::resolve_proxy( $connection_id );
+
+		$this->assertSame( 'http://proxy.test:3128', $proxy['url'] );
+		$this->assertSame( 'puser:ppass', $proxy['auth'] );
+	}
+
+	/**
+	 * Proxy falls back to toolkit settings when the connection has none.
+	 */
+	public function test_resolve_proxy_falls_back_to_toolkit_settings() {
+		update_option(
+			'wp_mcp_ai_flowhub_toolkit_settings',
+			array(
+				'proxy_enabled'  => true,
+				'proxy_url'      => 'http://settings-proxy:3128',
+				'proxy_username' => 'suser',
+				'proxy_password' => 'spass',
+			)
+		);
+
+		$proxy = WP_MCP_AI_FlowHub_Connection_Helper::resolve_proxy();
+
+		$this->assertSame( 'http://settings-proxy:3128', $proxy['url'] );
+		$this->assertSame( 'suser:spass', $proxy['auth'] );
+	}
+
+	/**
+	 * The connection proxy wins over the toolkit settings fallback.
+	 */
+	public function test_resolve_proxy_prefers_connection_over_settings() {
+		update_option(
+			'wp_mcp_ai_flowhub_toolkit_settings',
+			array(
+				'proxy_enabled' => true,
+				'proxy_url'     => 'http://settings-proxy:3128',
+			)
+		);
+
+		$connection_id = $this->create_flowhub_connection(
+			array(
+				'proxy_enabled' => true,
+				'proxy_url'     => 'http://connection-proxy:8080',
+			)
+		);
+
+		$proxy = WP_MCP_AI_FlowHub_Connection_Helper::resolve_proxy( $connection_id );
+
+		$this->assertSame( 'http://connection-proxy:8080', $proxy['url'] );
+	}
+
+	/**
+	 * Proxy is empty when neither the connection nor settings configure one.
+	 */
+	public function test_resolve_proxy_empty_when_unconfigured() {
+		$proxy = WP_MCP_AI_FlowHub_Connection_Helper::resolve_proxy();
+
+		$this->assertSame( '', $proxy['url'] );
+		$this->assertSame( '', $proxy['auth'] );
+	}
+
+	/**
+	 * The resolved connection array carries the connection's proxy.
+	 */
+	public function test_resolve_connection_includes_connection_proxy() {
+		$connection_id = $this->create_flowhub_connection(
+			array(
+				'proxy_enabled' => true,
+				'proxy_url'     => 'http://proxy.test:3128',
+			)
+		);
+
+		$resolved = WP_MCP_AI_FlowHub_Connection_Helper::resolve_connection( $connection_id );
+
+		$this->assertIsArray( $resolved );
+		$this->assertArrayHasKey( 'proxy', $resolved );
+		$this->assertSame( 'http://proxy.test:3128', $resolved['proxy']['url'] );
+	}
+
+	// ------------------------------------------------------------------ //
 	// is_configured()
 	// ------------------------------------------------------------------ //
 

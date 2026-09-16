@@ -3983,14 +3983,18 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	/**
 	 * Record health metric for connection monitoring.
 	 *
+	 * Public so connection-bound API clients (e.g. the base FlowHub client)
+	 * can report request health for a Remote Sites connection.
+	 *
 	 * @since 1.0.0
+	 * @since 1.1.82 Made public.
 	 *
 	 * @param string $connection_id Connection ID.
 	 * @param bool   $success       Whether request was successful.
 	 * @param float  $duration      Request duration in seconds.
 	 * @return void
 	 */
-	protected static function record_health_metric( $connection_id, $success, $duration ) {
+	public static function record_health_metric( $connection_id, $success, $duration ) {
 		if ( empty( $connection_id ) ) {
 			return;
 		}
