@@ -1,12 +1,8 @@
 # oOS – Changelog
 
-## [1.1.81] - 2026-09-16
+## [1.1.81] - 2026-09-17
 
-### Added — Multiple Email Recipients in Schedule Result Delivery
-
-- **The Result Delivery email field now accepts more than one address.** On Success / On Failure email recipients may be entered as a comma-, semicolon-, or whitespace-separated list; the edit modal normalizes the input on save and `sanitize_result_delivery()` stores it as a canonical comma-joined list of individually sanitized addresses (duplicates dropped, legacy single-address configs unchanged). Delivery fans out to every address through both Nodemailer and the `wp_mail()` fallback, and a list that sanitizes to nothing fails with the existing `missing_email_recipient` error.
-
-### Added — Shopify UCP mode-aware tool routing (Pro + CG Pro)
+### Added — Shopify UCP mode-aware tool routing (Pro + CG Pro, PR #6634)
 
 - **The Shopify tools now know when they are in a live-query catalog mode and act accordingly.** With a `storefront_catalog` or `global_catalog` (keyless UCP MCP) connection, `shopify_products` list/search/get now run **live UCP queries** (`search_catalog`, `lookup_catalog`, `get_product`) against the store's `/api/ucp/mcp` or `catalog.shopify.com` endpoint — previously only the Global Catalog path existed and Storefront fell through to a failing Admin API call. UCP usage guidelines prohibit caching catalog results, so these paths write nothing locally (no transients, no CCT) and mark every response `live: true`.
 - **Admin-only tools refuse catalog connections with an actionable hint** — `shopify_orders`, `shopify_customers`, and `shopify_inventory` return `wp_mcp_ai_shopify_catalog_mode_admin_only` pointing the agent at the live catalog tools instead of failing mid-API-call.
@@ -15,6 +11,43 @@
 - **`remote_shopify_connection` is mode-aware too**: `test_connection` validates UCP connections with the MCP `tools/list` negotiation handshake (no more misleading "credentials configured" message), and `list_connections` annotates each connection with its mode label, supported tools, and a `live_only` flag for catalog modes.
 - **Smart search stays live**: zero-result UCP queries decompose into live sub-queries at runtime (never cached), and the deprecated `catalog_api` mode keeps its existing REST handlers unchanged.
 - New characterization suites in both trees: `addons/pro/tests/test-shopify-ucp-mode-awareness.php` (20 tests) and the matrix-aware `plugins/nvoos-content-graph-pro/tests/test-ecommerce-shopify-ucp-mode-awareness.php` (monolith + standalone). All changed files remain byte-identical across the two trees; a pre-existing blank-line drift in the CG Pro client's `catalog_request()` was fixed while re-syncing.
+
+### Added — Shopify Product Image Cards (Pro + CG Pro, PR #6638)
+
+- **Every Shopify product-returning path now ships the product image** — `images[]` URLs in the structured payload plus a chat-rendered markdown card in the message, capped at 10 cards for list/search with the full payload kept intact. The UCP and REST Catalog API normalizers move into a shared `WP_MCP_AI_Shopify_Product_Normalizers` trait used by `shopify_products` and `shopify_catalog`; `shopify_catalog` gains card messages on all actions (`search`, `lookup`, `lookup_by_variant`, `get_product`) and `shopify_products` gains them on the `catalog_api` and UCP get paths. UCP results stay live-only per UCP usage guidelines. CG Pro mirrors the trait and both tools byte-identically; new image-card suites cover every mode, the 10-card cap, raw-payload preservation, and the trait's media-to-images mapping (8/8 Pro + both CG Pro matrices on WP 6.9 and 7.1).
+
+### Added — FlowHub Tools Resolve via Remote Sites Connections (PR #6635)
+
+- **FlowHub tools no longer fail with "credentials are not configured" when the credentials live only on a Remote Sites connection.** A shared resolver (used by base and Pro tools) tries, in order: an explicit `connection_id`, toolkit settings, configured sync connections, then the first enabled FlowHub connection. Pro tools gain a `connection_id` parameter, the Pro client gains `from_connection()`, and sync status reads per-connection freshness keys. New base helper `WP_MCP_AI_FlowHub_Connection_Helper`; `docs/toolkits/flowhub-integration.md` updated.
+
+### Fixed — FlowHub Connection Proxy Honored in Live Tools (PR #6637)
+
+- **Live FlowHub requests ignored the Remote Sites connection proxy**, egressing from the server IP — FlowHub rejected them with an auth error while the connection test and sync succeeded. Proxy config now resolves from the connection (toolkit-settings fallback) and attaches via `http_api_curl` in the base client and the `flowhub_get_inventory` tool; `record_health_metric()` is now public so connection-bound base client requests can report health.
+
+### Added — JobNavigator CRM Adoption: Stage History, Dedup, Reply Signals, Handover, Tracked Links (PR #6636; CG Pro port #6640)
+
+- **Five new Pro CRM tools** — `bulk_move_deal_stages` (per-row reporting + undo), `record_crm_reply` (inbound reply recording with `email_reply` stage advancement), `get_crm_handover` (paste-ready handover bundles), `get_pipeline_digest` (stalled-deal detection), and `create_tracked_link` (proposal links resolved by a front-end open tracker).
+- **Machine-readable deal stage history** — transitions record from/to/at/source with `stage_changed_at` for time-in-stage analytics; `move_deal_stage` can undo the last move without fabricating a new transition; no-op moves preserve the ageing signal.
+- **Lead dedup + canonical companies** — `create_lead` refuses duplicate emails with a pointer to the existing lead (`allow_duplicate` opt-out), links leads to canonical company profiles with optional auto-create, and stores source snapshots; leads and deals gain `last_email_received`/snippet/sentiment signals with a settings-gated auto-disqualify rule on create/update.
+- **Won-deal cleanup** — deleting a won deal releases its lead from customer back to opportunity when no other won deal remains.
+- New helpers `WP_MCP_AI_CRM_Stage_History`/`_Identity`/`_Link_Tracker`; the `design-crm` skill + CRM README updated; new `docs/developer/crm-toolkit-jobnavigator-adoption-plan.md`; WP1–WP9 adoption suite. **CG Pro (#6640)** ports the helpers, the five new tools, the engine, and the five modified tools byte-identically with the init wiring (11 characterization tests green in both matrices).
+
+### Added — Gmail Reply Poller & Pipeline Digest Recipe (PR #6641)
+
+- **Cron-driven inbound reply classification** — a new poller polls Gmail for unread replies from known leads, classifies sentiment, and applies reply signals (with optional positive-sentiment stage advancement); `record_crm_reply` gains a cron-safe static `apply()` core. Ships a digest scheduling recipe asset for the Workflow Builder + Pro Schedule Manager (`addons/pro/config/pipeline-digest-recipe.json`).
+
+### Added — OpenTerminal Financial Toolkit Resilience (PR #6639; CG Pro port byte-identical)
+
+- **Eight new Pro financial tools** — `market_screener`, `macro_data_fetcher`, `economic_calendar_fetcher`, `earnings_calendar_fetcher`, `options_chain_fetcher`, `crypto_market_data`, `portfolio_transaction_log`, and `price_alerts` (daily cron) — plus a portfolio transaction ledger CPT with P&L, PHP technical indicators, news de-duplication, and keyless microservice auth.
+- **Provider fallback chains + stale-while-revalidate caching** in the reworked yfinance service (Node + Python services updated). New `docs/project/plans/financial-toolkit-openterminal-lessons-plan.md`; financial-planning README + TOOL_INDEX updated; `docs/reference/tools/tool-status.txt` +8 slugs. CG Pro ports byte-identically with standalone wiring and characterization suites.
+
+### Added — Multiple Email Recipients in Schedule Result Delivery
+
+- **The Result Delivery email field now accepts more than one address.** On Success / On Failure email recipients may be entered as a comma-, semicolon-, or whitespace-separated list; the edit modal normalizes the input on save and `sanitize_result_delivery()` stores it as a canonical comma-joined list of individually sanitized addresses (duplicates dropped, legacy single-address configs unchanged). Delivery fans out to every address through both Nodemailer and the `wp_mail()` fallback, and a list that sanitizes to nothing fails with the existing `missing_email_recipient` error.
+
+### Versioning
+
+- Bumped to 1.1.81 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.81. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.8** (unchanged). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — byte-identical port batches only; CRM F2–F6 + financial F2-E tracker rows updated in-window). Checkout API: **0.1.2** (unchanged). Docs Hub addon: **0.4.6** (unchanged). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.09.10** (unchanged — no model PRs in-window). Tool count: **~306 base + ~1,279 Pro (~1,585 total)** — +5 Pro CRM tools (#6636) and +8 Pro financial tools (#6639); live registry authoritative. Providers: 15. Addons: 27. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: **58** (unchanged — the `design-crm` skill gained JobNavigator + Gmail-poller content in-window). Stale 1.1.79 build ZIPs removed (30 files).
 
 ## [1.1.80] - 2026-09-15
 
