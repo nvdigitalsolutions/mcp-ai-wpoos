@@ -11,6 +11,9 @@
  *   - wp_mcp_ai_fetch_whatsapp_phone_numbers
  *   - wp_mcp_ai_test_whatsapp_live
  *   - wp_mcp_ai_test_whatsapp_auto_reply
+ *   - wp_mcp_ai_test_whatsapp_webhook_verify
+ *   - wp_mcp_ai_test_whatsapp_webhook_signature
+ *   - wp_mcp_ai_check_whatsapp_subscription
  *   - wp_mcp_ai_register_whatsapp_phone_number
  *   - wp_mcp_ai_create_whatsapp_group
  *  Telegram
@@ -245,6 +248,90 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 			),
 			'wp_mcp_ai_test_whatsapp_auto_reply'
 		);
+	}
+
+	// ---
+	// wp_mcp_ai_test_whatsapp_webhook_verify
+	// ---
+
+	/** Guards against a missing or invalid nonce. */
+	public function test_whatsapp_webhook_verify_rejects_bad_nonce() {
+		$this->assertRejectsBadNonce( 'wp_mcp_ai_test_whatsapp_webhook_verify' );
+	}
+
+	/** Guards against insufficient capabilities. */
+	public function test_whatsapp_webhook_verify_rejects_subscriber() {
+		$this->assertRejectsSubscriber(
+			'wp_mcp_ai_test_whatsapp_webhook_verify',
+			array( 'connection_id' => 'conn_test' ),
+			'wp_mcp_ai_test_whatsapp_webhook_verify'
+		);
+	}
+
+	/** Requires a saved connection before dispatching any loopback. */
+	public function test_whatsapp_webhook_verify_requires_connection() {
+		$this->as_admin();
+		$response = $this->dispatch(
+			'wp_mcp_ai_test_whatsapp_webhook_verify',
+			array( 'nonce' => wp_create_nonce( 'wp_mcp_ai_test_whatsapp_webhook_verify' ) )
+		);
+		$this->assertAjaxError( $response );
+	}
+
+	// ---
+	// wp_mcp_ai_test_whatsapp_webhook_signature
+	// ---
+
+	/** Guards against a missing or invalid nonce. */
+	public function test_whatsapp_webhook_signature_rejects_bad_nonce() {
+		$this->assertRejectsBadNonce( 'wp_mcp_ai_test_whatsapp_webhook_signature' );
+	}
+
+	/** Guards against insufficient capabilities. */
+	public function test_whatsapp_webhook_signature_rejects_subscriber() {
+		$this->assertRejectsSubscriber(
+			'wp_mcp_ai_test_whatsapp_webhook_signature',
+			array( 'connection_id' => 'conn_test' ),
+			'wp_mcp_ai_test_whatsapp_webhook_signature'
+		);
+	}
+
+	/** Requires a saved connection before dispatching any loopback. */
+	public function test_whatsapp_webhook_signature_requires_connection() {
+		$this->as_admin();
+		$response = $this->dispatch(
+			'wp_mcp_ai_test_whatsapp_webhook_signature',
+			array( 'nonce' => wp_create_nonce( 'wp_mcp_ai_test_whatsapp_webhook_signature' ) )
+		);
+		$this->assertAjaxError( $response );
+	}
+
+	// ---
+	// wp_mcp_ai_check_whatsapp_subscription
+	// ---
+
+	/** Guards against a missing or invalid nonce. */
+	public function test_whatsapp_subscription_check_rejects_bad_nonce() {
+		$this->assertRejectsBadNonce( 'wp_mcp_ai_check_whatsapp_subscription' );
+	}
+
+	/** Guards against insufficient capabilities. */
+	public function test_whatsapp_subscription_check_rejects_subscriber() {
+		$this->assertRejectsSubscriber(
+			'wp_mcp_ai_check_whatsapp_subscription',
+			array( 'connection_id' => 'conn_test' ),
+			'wp_mcp_ai_check_whatsapp_subscription'
+		);
+	}
+
+	/** Requires a saved connection before querying the Graph API. */
+	public function test_whatsapp_subscription_check_requires_connection() {
+		$this->as_admin();
+		$response = $this->dispatch(
+			'wp_mcp_ai_check_whatsapp_subscription',
+			array( 'nonce' => wp_create_nonce( 'wp_mcp_ai_check_whatsapp_subscription' ) )
+		);
+		$this->assertAjaxError( $response );
 	}
 
 	// ---
