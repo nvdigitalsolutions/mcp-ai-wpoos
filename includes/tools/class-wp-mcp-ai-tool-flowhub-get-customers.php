@@ -57,7 +57,7 @@ class WP_MCP_AI_Tool_Flowhub_Get_Customers implements WP_MCP_AI_Tool_Interface, 
 			'properties'           => array(
 				'connection_id' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional Remote Sites connection ID for Flowhub. If not provided, will use settings-based configuration.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Optional Remote Sites connection ID for Flowhub (conn_...). Omit to auto-resolve: toolkit settings credentials, then the configured sync connections, then the first enabled FlowHub connection.', 'mcp-ai-wpoos' ),
 				),
 				'limit'         => array(
 					'type'        => 'integer',
@@ -142,59 +142,23 @@ class WP_MCP_AI_Tool_Flowhub_Get_Customers implements WP_MCP_AI_Tool_Interface, 
 			}
 		}
 
-		// Get connection_id if provided.
+		// Resolve the target FlowHub connection: explicit argument, settings
+		// credentials, configured sync connections, or the first enabled
+		// FlowHub connection in Remote Sites.
+		if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-flowhub-connection-helper.php';
+		}
 		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : null;
+		$resolved      = WP_MCP_AI_FlowHub_Connection_Helper::resolve_connection( $connection_id );
 
-		// Validate connection if provided.
-		if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
-
-			if ( null === $connection ) {
-				return new WP_Error(
-					'wp_mcp_ai_pro_connection_not_found',
-					__( 'Connection not found. Please check the connection ID.', 'mcp-ai-wpoos' )
-				);
-			}
-
-			// Validate connection type.
-			if ( empty( $connection['connection_type'] ) || 'flowhub' !== $connection['connection_type'] ) {
-				return new WP_Error(
-					'wp_mcp_ai_pro_wrong_connection_type',
-					__( 'This connection is not a Flowhub connection.', 'mcp-ai-wpoos' )
-				);
-			}
-
-			// Check if connection is enabled.
-			if ( empty( $connection['enabled'] ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_pro_connection_disabled',
-					__( 'This connection is disabled. Please enable it in Remote Sites settings.', 'mcp-ai-wpoos' )
-				);
-			}
+		if ( is_wp_error( $resolved ) ) {
+			return $resolved;
 		}
 
-		// Resolve credentials explicitly from connection or settings.
-		$client_id   = '';
-		$api_key     = '';
-		$location_id = '';
-		if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-			$connection_data = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
-			$client_id       = isset( $connection_data['client_id'] ) ? $connection_data['client_id'] : '';
-			$api_key         = isset( $connection_data['api_key'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection_data['api_key'] ) : '';
-			$location_id     = isset( $connection_data['location_id'] ) ? $connection_data['location_id'] : '';
-		} else {
-			$settings    = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
-			$client_id   = isset( $settings['client_id'] ) ? wp_unslash( $settings['client_id'] ) : '';
-			$api_key     = isset( $settings['api_key'] ) ? wp_unslash( $settings['api_key'] ) : '';
-			$location_id = isset( $settings['location_id'] ) ? wp_unslash( $settings['location_id'] ) : '';
-		}
-
-		if ( empty( $client_id ) || empty( $api_key ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_flowhub_missing_credentials',
-				__( 'FlowHub API credentials are not configured.', 'mcp-ai-wpoos' )
-			);
-		}
+		$connection_id = $resolved['connection_id'];
+		$client_id     = $resolved['credentials']['client_id'];
+		$api_key       = $resolved['credentials']['api_key'];
+		$location_id   = $resolved['credentials']['location_id'];
 
 		// Use the base client class, passing connection_id for lazy credential resolution.
 		if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {

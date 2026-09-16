@@ -59,60 +59,64 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Inventory implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'       => array(
+				'connection_id' => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Remote Sites connection ID for FlowHub (conn_...). Omit to auto-resolve: toolkit settings credentials, then the configured sync connections, then the first enabled FlowHub connection.', 'mcp-ai-wpoos-pro' ),
+				),
+				'action'        => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'search', 'get_item', 'get_levels', 'refresh' ),
 					'default'     => 'search',
 				),
-				'sku'          => array(
+				'sku'           => array(
 					'type'        => 'string',
 					'description' => __( 'Product SKU for get_item action.', 'mcp-ai-wpoos-pro' ),
 				),
-				'product_id'   => array(
+				'product_id'    => array(
 					'type'        => 'string',
 					'description' => __( 'FlowHub product ID.', 'mcp-ai-wpoos-pro' ),
 				),
-				'category'     => array(
+				'category'      => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by product category (e.g., Flower, Edible, Concentrate).', 'mcp-ai-wpoos-pro' ),
 				),
-				'location'     => array(
+				'location'      => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by location name (partial match).', 'mcp-ai-wpoos-pro' ),
 				),
-				'location_id'  => array(
+				'location_id'   => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by exact location ID.', 'mcp-ai-wpoos-pro' ),
 				),
-				'stock_status' => array(
+				'stock_status'  => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by stock status.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'in_stock', 'low_stock', 'out_of_stock' ),
 				),
-				'search'       => array(
+				'search'        => array(
 					'type'        => 'string',
 					'description' => __( 'Full-text search across product names and SKUs.', 'mcp-ai-wpoos-pro' ),
 				),
-				'orderby'      => array(
+				'orderby'       => array(
 					'type'        => 'string',
 					'description' => __( 'Sort order.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'product_name', 'quantity', 'last_updated', 'sku', 'category' ),
 					'default'     => 'product_name',
 				),
-				'order'        => array(
+				'order'         => array(
 					'type'        => 'string',
 					'description' => __( 'Sort direction.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'asc', 'desc' ),
 					'default'     => 'asc',
 				),
-				'page'         => array(
+				'page'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Page number.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 1,
 					'minimum'     => 1,
 				),
-				'per_page'     => array(
+				'per_page'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Items per page (max 100).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 25,
@@ -152,6 +156,9 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Inventory implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Gate 1: Sanitize.
+		if ( isset( $arguments['connection_id'] ) ) {
+			$arguments['connection_id'] = sanitize_key( $arguments['connection_id'] );
+		}
 		$action       = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'search';
 		$sku          = isset( $arguments['sku'] ) ? sanitize_text_field( $arguments['sku'] ) : '';
 		$product_id   = isset( $arguments['product_id'] ) ? sanitize_text_field( $arguments['product_id'] ) : '';
@@ -175,12 +182,12 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Inventory implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Dependency check.
-		$deps = $this->check_flowhub_dependencies();
+		$deps = $this->check_flowhub_dependencies( $arguments );
 		if ( is_wp_error( $deps ) ) {
 			return $deps;
 		}
 
-		$cct_manager = $this->get_flowhub_cct_manager();
+		$cct_manager = $this->get_flowhub_cct_manager( $arguments );
 
 		switch ( $action ) {
 			case 'search':

@@ -59,13 +59,17 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Sync implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'  => array(
+				'connection_id' => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Remote Sites connection ID for FlowHub (conn_...). Omit to auto-resolve: toolkit settings credentials, then the configured sync connections, then the first enabled FlowHub connection.', 'mcp-ai-wpoos-pro' ),
+				),
+				'action'        => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'sync_now', 'sync_status', 'clear_cache' ),
 					'default'     => 'sync_status',
 				),
-				'confirm' => array(
+				'confirm'       => array(
 					'type'        => 'boolean',
 					'description' => __( 'Set to true to confirm cache clearing (required for clear_cache).', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -97,6 +101,9 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Sync implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Gate 1: Sanitize.
+		if ( isset( $arguments['connection_id'] ) ) {
+			$arguments['connection_id'] = sanitize_key( $arguments['connection_id'] );
+		}
 		$action  = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'sync_status';
 		$confirm = isset( $arguments['confirm'] ) ? (bool) $arguments['confirm'] : false;
 
@@ -110,12 +117,12 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Sync implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		// Dependencies.
-		$deps = $this->check_flowhub_dependencies();
+		$deps = $this->check_flowhub_dependencies( $arguments );
 		if ( is_wp_error( $deps ) ) {
 			return $deps;
 		}
 
-		$cct_manager = $this->get_flowhub_cct_manager();
+		$cct_manager = $this->get_flowhub_cct_manager( $arguments );
 
 		switch ( $action ) {
 			case 'sync_now':
@@ -144,10 +151,18 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Sync implements WP_MCP_AI_Tool_Interface, WP_MC
 				);
 
 			case 'sync_status':
-				$last_sync  = $cct_manager->get_last_sync_time();
-				$row_count  = $cct_manager->get_row_count();
-				$is_fresh   = $cct_manager->is_fresh();
-				$last_error = get_option( 'wp_mcp_ai_flowhub_last_sync_error', '' );
+				$last_sync = $cct_manager->get_last_sync_time();
+				$row_count = $cct_manager->get_row_count();
+				$is_fresh  = $cct_manager->is_fresh();
+
+				// The sync engine stores per-connection option keys; read the
+				// error matching the resolved connection.
+				$last_error_key = 'wp_mcp_ai_flowhub_last_sync_error';
+				$manager_conn   = $cct_manager->get_connection_id();
+				if ( ! empty( $manager_conn ) ) {
+					$last_error_key .= '_' . $manager_conn;
+				}
+				$last_error = get_option( $last_error_key, '' );
 				$next_sync  = $this->get_next_scheduled_sync();
 
 				return array(
@@ -179,7 +194,15 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Sync implements WP_MCP_AI_Tool_Interface, WP_MC
 					return $result;
 				}
 
+				// Clear freshness options, including the per-connection keys the
+				// sync engine uses when syncing via a Remote Sites connection.
 				delete_option( 'wp_mcp_ai_flowhub_last_sync' );
+				delete_option( 'wp_mcp_ai_flowhub_last_sync_error' );
+				$manager_conn = $cct_manager->get_connection_id();
+				if ( ! empty( $manager_conn ) ) {
+					delete_option( 'wp_mcp_ai_flowhub_last_sync_' . sanitize_key( $manager_conn ) );
+					delete_option( 'wp_mcp_ai_flowhub_last_sync_error_' . sanitize_key( $manager_conn ) );
+				}
 
 				return array(
 					'success' => true,
