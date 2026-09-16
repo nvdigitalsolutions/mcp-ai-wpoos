@@ -1,8 +1,8 @@
 # Built-in tool reference
 
 **Status:** ✅ UPDATED - September 2026
-**Tool Count:** ~306 base tools + ~1,266 Pro tools = ~1,572 total (live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative; +3 base +1 Pro in v1.1.80 — `export_assistant`, `import_assistant`, `duplicate_assistant`, Pro `export_assistant_blueprint`, PR #6628)
-**Last Updated:** September 15, 2026 (v1.1.80)
+**Tool Count:** ~306 base tools + ~1,279 Pro tools = ~1,585 total (live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative; +13 Pro in v1.1.81 — five CRM tools `bulk_move_deal_stages`, `create_tracked_link`, `record_crm_reply`, `get_crm_handover`, `get_pipeline_digest` from PR #6636 and eight financial tools `market_screener`, `macro_data_fetcher`, `economic_calendar_fetcher`, `earnings_calendar_fetcher`, `options_chain_fetcher`, `crypto_market_data`, `portfolio_transaction_log`, `price_alerts` from PR #6639)
+**Last Updated:** September 17, 2026 (v1.1.81)
 
 NV oOS registers a suite of default tools through the central registry so every assistant can opt-in without custom code. The registry initialises on `plugins_loaded`, loads the bundled implementations, and exposes extension hooks for third parties to add their own integrations.【F:includes/class-wp-mcp-ai-tool-registry.php†L12-L124】【F:includes/tools/tools-init.php†L12-L14】
 
