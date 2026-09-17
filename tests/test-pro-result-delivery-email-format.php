@@ -246,7 +246,7 @@ class Test_Pro_Result_Delivery_Email_Format extends WP_UnitTestCase {
 			'response'     => $response,
 			'status'       => 'success',
 			'generated_at' => time(),
-			'data'         => array( 'assistant_id' => 7 ),
+			'data'         => array( 'tool_calls' => 2 ),
 		);
 
 		$payload = $this->invoke_static(
@@ -261,7 +261,52 @@ class Test_Pro_Result_Delivery_Email_Format extends WP_UnitTestCase {
 		$this->assertSame( 1, substr_count( $payload['plain'], '6-hour email review' ) );
 		$this->assertStringContainsString( 'Pinterest promos', $payload['plain'] );
 		// The structured data section still follows.
-		$this->assertStringContainsString( 'assistant_id: 7', $payload['plain'] );
+		$this->assertStringContainsString( 'tool_calls: 2', $payload['plain'] );
+	}
+
+	/**
+	 * The full email template must not render keys that duplicate the response
+	 * or expose internal execution metadata (`response`, `assistant_id`,
+	 * `is_agentic`) from the envelope data section — they previously produced
+	 * a duplicated response and a raw metadata footer at the end of the email.
+	 */
+	public function test_format_email_full_redacts_duplicate_and_metadata_keys() {
+		$response = "Here's your inbox rundown for the last 6 hours. Four messages landed and three of them carry real actions.";
+		$summary  = wp_trim_words( wp_strip_all_tags( $response ), 25, '…' );
+		$shared   = array(
+			'schedule_name' => 'Inbox Digest',
+			'summary'       => $summary,
+			'response'      => $response,
+			'status'        => 'success',
+			'is_success'    => true,
+			'generated_at'  => time(),
+			'schedule_type' => 'assistant_run',
+		);
+		$envelope = array(
+			'summary'      => $summary,
+			'response'     => $response,
+			'status'       => 'success',
+			'generated_at' => time(),
+			'data'         => array(
+				'response'      => $response,
+				'assistant_id'  => 953,
+				'is_agentic'    => 1,
+				'posts_created' => 3,
+			),
+		);
+
+		$payload = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'format_email',
+			array( $shared, $envelope, 'full' )
+		);
+
+		// The duplicate response copy and internal flags are stripped.
+		$this->assertStringNotContainsString( 'assistant_id', $payload['plain'] );
+		$this->assertStringNotContainsString( 'is_agentic', $payload['plain'] );
+		$this->assertSame( 1, substr_count( $payload['plain'], 'inbox rundown' ) );
+		// Legitimate data keys still render.
+		$this->assertStringContainsString( 'posts_created: 3', $payload['plain'] );
 	}
 
 	/**
