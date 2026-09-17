@@ -121,6 +121,7 @@ jobs:
             --exclude='.github/' \
             --exclude='.distignore' \
             --exclude='.wordpress-org/' \
+            --exclude='blueprints/' \
             --exclude='node_modules/' \
             --exclude='tests/' \
             --exclude='phpcs.xml.dist' \

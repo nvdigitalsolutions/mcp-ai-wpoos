@@ -1,4 +1,13 @@
 <?php
+// Playground blueprint dev tooling — this snippet is embedded into a
+// blueprint's runPHP step by bin/generate-content-graph-blueprint.php
+// (which strips this opening tag). The guard satisfies Plugin Check's
+// direct-access rule when the dev folder is scanned; inside the embedded
+// context ABSPATH is always defined, so the guard passes through.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Project Asteria — demo seed content for the NV oOS Content Graph
  * WordPress Playground blueprint.
