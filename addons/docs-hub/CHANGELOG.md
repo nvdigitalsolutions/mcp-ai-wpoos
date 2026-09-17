@@ -1,5 +1,101 @@
 # NV oOS Docs Hub — Changelog
 
+## 0.4.7 — 2026-09-17
+
+WordPress.org review response pass (third round).
+
+- Removed the `Tested up to` plugin header from `nvoos-docs-hub.php` —
+  WordPress.org declares it only in `readme.txt`; declaring it in both
+  places can surface the wrong compatibility version.
+- The daily rebuild cron is now scheduled on `init` instead of
+  `plugins_loaded`. `wp_schedule_event()` consults `wp_get_schedules()`,
+  which applies the `cron_schedules` filter — plugins such as WooCommerce
+  register translated schedule names there, so scheduling before `init`
+  triggered WordPress 6.7+'s "translation loading triggered too early"
+  notice on activation/dashboard loads.
+- Rebuild cron events (daily + pending chunked ticks) are now cleared on
+  plugin deactivation via `register_deactivation_hook`.
+- Deactivating Docs Hub itself no longer enqueues an async rebuild that
+  could never run (the tick callbacks no longer exist while inactive); the
+  cache is still cleared so re-activation starts from a fresh index.
+
+## 0.4.6 — 2026-09-13
+
+Packaging-only release — no functional changes.
+
+- Bundled the GPLv3 license file (`LICENSE`) at the plugin root so the
+  distribution ZIP carries the license text alongside the plugin code.
+
+## 0.4.5 — 2026-09-12
+
+### Security
+
+- **A symlinked cache directory can no longer redirect deletion.** The
+  uninstall helper checks `is_link()` on the top-level cache directory
+  before recursing and removes only the link when it is one, so the
+  external target is never touched. `NV_oOS_Docs_Hub_Cache` gained the
+  same guard in `rm_rf()`, and `get_live_dir()` replaces a symlinked cache
+  directory with a real one before writing cache files.
+
+### Changed
+
+- readme `External Services` rewritten to describe the
+  documentation-import service, the exact servers contacted, and that no
+  account is required for public repositories (an optional GitHub token
+  only raises API rate limits).
+
+## 0.4.4 — 2026-09-12
+
+WordPress.org review response pass. Security and guideline-compliance
+fixes; no functional changes for existing installations.
+
+### Security
+- **Context-source content no longer leaks through search.** `GET /search`
+  filters search-index entries with `source = "context"` for users without
+  `manage_options`, mirroring the existing manifest/page filtering —
+  protected `.context/` excerpts are no longer disclosed to guests.
+- **Context slugs no longer leak through the sitemap.** The WordPress
+  sitemap provider skips context-source pages, keeping admin-only slugs out
+  of the public sitemap index.
+- **Staging rebuilds are fully transient-isolated.** `get_page()`/
+  `set_page()` previously read/wrote the live page transient even in staging
+  mode, so a staged rebuild could serve (or populate) live cache data before
+  promotion. Both methods now honour the staging toggle like the
+  manifest/search-index methods.
+- **Page transients can no longer outlive the cache.** `promote_staging()`
+  invalidates the md5-keyed page transients for every slug touched by the
+  swap (including best-effort orphan slugs), and `clear()` / the uninstaller
+  now wildcard-clean page transients — cleared or deleted pages can never be
+  served from the transient fast-path until their TTL expires.
+- **GitHub tokens no longer localized into the page DOM.** The settings-page
+  script config previously received the full settings blob including
+  `remote_repos[].token` via `wp_localize_script` (the JS stripped them only
+  at export time). Tokens are now removed server-side before localization;
+  the export flow is unaffected.
+- **Recursive cache deletion is symlink-safe.** `Cache::rm_rf()` and the
+  uninstall helper check `is_link()` before recursing and verify that every
+  resolved path stays inside the plugin cache directory, so a symlinked
+  sub-directory can no longer redirect deletion outside the cache tree.
+
+### Changed
+- **Admin notice scoped (Guideline 11).** The “NV oOS base plugin is not
+  active” notice now renders only on the Docs Hub settings screen instead of
+  every admin page.
+- **`load_plugin_textdomain()` removed.** WordPress 4.6+ (and wp.org
+  hosting) loads translations automatically from the header `Text Domain` /
+  `Domain Path`; the manual call was redundant.
+- **Readme documents the source and build.** New `== Source Code ==`
+  section links the public repository
+  (https://github.com/nvdigitalsolutions/nvoos-docs-hub) and the esbuild
+  steps that regenerate `assets/dist/docs-hub.js`; `Contributors` now lists
+  the author's WordPress.org username `vsamtani`.
+
+### Build
+- `esbuild.config.js` prepends a banner to `assets/dist/docs-hub.js` and
+  `assets/dist/docs-hub.css` recording the source location, build command,
+  and license, so the minified bundles are self-describing (wp.org
+  Guideline 4).
+
 ## 0.4.3 — 2026-09-07
 
 WordPress.org submission preparation pass. No runtime behavior changes for

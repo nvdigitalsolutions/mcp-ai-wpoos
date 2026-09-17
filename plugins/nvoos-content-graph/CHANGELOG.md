@@ -1,6 +1,45 @@
 # NV oOS Content Graph — Changelog
 
-## 1.0.7 — 2026-09-11
+## 1.0.8 — 2026-09-13
+
+### Fixed — Stripe checkout failed for non-EU buyers
+
+- **Payment Element billing address** — the element was created with
+  `fields.billingDetails.address: 'never'`, which makes Stripe require
+  `billing_details.address.country` on every `confirmPayment()` call. The
+  modal only attaches an address for EU buyers, so every non-EU purchase
+  died client-side with `IntegrationError` before the payment was ever
+  attempted. The element now uses `'auto'`: Stripe collects the address
+  only when a payment method (or Stripe tax) genuinely requires it, and EU
+  buyers still pass their full billing address via `payment_method_data`
+
+### Fixed — Already-licensed sites could be charged again
+
+- **Pre-purchase license gate** — `/payments/session` now refuses to create
+  a chargeable session when the site is already licensed and the Complete
+  bundle (or the legacy AI addon) is active, returning an `already_licensed`
+  payload; the purchase modal renders the recorded license (key +
+  bundle-aware message) instead of the payment form, so a second charge is
+  impossible from this screen
+- **Bundle-aware messaging** — the `/payments/verify` short-circuit and the
+  success screen now name the artifact actually active (Complete bundle vs
+  legacy AI addon) via a `bundle_active` flag and an addon-specific
+  checklist line (`success_step_installed_addon` i18n key)
+- Tests: `CommerceTest` gains `sessionReturnsAlreadyLicensedWhenBundleActive`
+  and `verifyShortCircuitsWhenLicensedAndAddonActive` (both assert zero
+  vendor HTTP calls)
+
+## 1.0.7 — 2026-09-12
+
+### Changed — Purchase modal price note
+
+- **Price-subject-to-change note** — the modal's price block now renders "Introductory price — prices are subject to change." under the one-time label (`price_subject_change` i18n key → `nvoos-cg-price-change` in `content-graph-commerce.js`) while the owner settles final pricing. Deliberately phrased without a fake "limited time" claim per the hard rules in `docs/checkout-enhancement-plan.md` §6 (EU UCPD / FTC dark-pattern rules, wp.org guideline 9)
+
+### Fixed — Purchase modal showed a stale price after vendor-side changes
+
+- **Vendor-authoritative price display** — the modal's price block used a hardcoded client-side default (`$49.00`) and never picked up the vendor's configured price, so changing the price in Stripe + the checkout-api left the modal showing the old amount while the Payment Element charged the new one. The modal now syncs its price label from the vendor `/session` response (`amount` + `currency`, formatted via `Intl.NumberFormat` with a plain-USD fallback) as soon as the session is created; the local default remains only as the pre-session/fallback label
+- **Price bump** — the client-side fallback default (`Payments::DEFAULT_PRICE_CENTS`, mirrored by the checkout-api's `DEFAULT_PRICE_CENTS` for fresh vendor installs) moves to **$34.99** (3499 cents); `CommerceTest::defaultPriceIs3499Cents` pins the new default
+- **Test bootstrap hardening** — `tests/bootstrap.php` now prefers the plugin's own pristine vendored wp-phpunit test lib when `WP_TESTS_DIR` is unset (temp-dir fallback kept). The monorepo root bootstrap patches its vendor copy of `abstract-testcase.php` for PHPUnit 11 and persists the patch on disk; wp-phpunit can copy that patched file into the shared temp-dir lib, which breaks this plugin's PHPUnit 9.6 runs with `Call to undefined method ::name()`. A fresh clone of the plugin is now self-contained for local test runs
 
 ### New — Checkout connectivity diagnostics
 

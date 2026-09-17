@@ -114,10 +114,16 @@ class ModelCatalogMigration {
 			'microsoft/phi-3-small-8k-instruct'    => 'microsoft/phi-4',
 			// Vertex / GCP stale.
 
-			// DeepSeek legacy aliases → V4 Flash (May 2026).
-			'deepseek-chat'                        => 'deepseek-v4-flash',
-			'deepseek-reasoner'                    => 'deepseek-v4-flash',
-			'deepseek-coder'                       => 'deepseek-v4-flash',
+			// DeepSeek legacy aliases (deepseek-chat / deepseek-reasoner retired
+			// 2026-07-24; V4 Flash + V4 Flash Vision retired 2026-09-10) → V4.1 Flash.
+			// deepseek-v4-pro is deliberately NOT mapped: DeepSeek announced on
+			// 2026-09-10 that V4 Pro stays servable past 2026-09-14 (billing
+			// unchanged, no new sunset date), so stored references are left alone.
+			'deepseek-chat'                        => 'deepseek-flash',
+			'deepseek-reasoner'                    => 'deepseek-flash',
+			'deepseek-coder'                       => 'deepseek-flash',
+			'deepseek-v4-flash'                    => 'deepseek-flash',
+			'deepseek-v4-flash-vision-exp'         => 'deepseek-flash',
 		);
 	}
 

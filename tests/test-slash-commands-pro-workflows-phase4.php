@@ -52,11 +52,11 @@ class Test_Slash_Commands_Pro_Workflows_Phase4 extends WP_UnitTestCase {
 		$workflow  = $workflows['comprehensive_ecommerce_suite'];
 
 		$expected_commands = array(
-			'ecom-analytics',
+			'abandoned-recover',
 			'inventory-forecast',
-			'customer-segment',
-			'discount-optimize',
-			'upsell-suggest',
+			'create-discount-campaign',
+			'social-post',
+			'abandoned-recover',
 		);
 
 		foreach ( $workflow['steps'] as $index => $step ) {
@@ -104,11 +104,11 @@ class Test_Slash_Commands_Pro_Workflows_Phase4 extends WP_UnitTestCase {
 		$expected_commands = array(
 			'video-edit',
 			'video-trim',
-			'video-effect',
-			'video-music',
-			'video-subtitle',
-			'video-render',
-			'video-publish',
+			'video-merge',
+			'video-thumbnail',
+			'video-compress',
+			'video-transcode',
+			'social-post',
 		);
 
 		foreach ( $workflow['steps'] as $index => $step ) {

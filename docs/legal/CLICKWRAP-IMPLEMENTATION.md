@@ -2,8 +2,10 @@
 
 **Last updated:** September 10, 2026
 
-This guide covers how to make NV Digital Solutions' legal terms enforceable
-at the point of sale. It implements the clickwrap best practices that US
+This guide covers how to make the product Terms of Service — the binding
+agreement between the customer and **NV Digital Unlocked LLC**, the seller of
+the Products — enforceable at the point of sale. It implements the clickwrap
+best practices that US
 courts consistently uphold (see "Why This Matters" below) and is the
 operational companion to our
 [Terms of Service](TERMS-OF-SERVICE.md), [Refund Policy](REFUND-POLICY.md),
@@ -194,7 +196,8 @@ acceptance at license activation:
   tamper-evident trail across both systems.
 
 This is a defense-in-depth measure; do not make activation acceptance a
-substitute for checkout clickwrap.
+substitute for checkout clickwrap. The checkout service is operated on
+behalf of **NV Digital Unlocked LLC**, the seller of record for the Products.
 
 ---
 

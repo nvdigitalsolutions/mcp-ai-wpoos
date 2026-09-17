@@ -571,7 +571,7 @@ class Test_Model_Config extends WP_UnitTestCase {
 		$this->assertIsArray( $models );
 		$this->assertNotEmpty( $models, 'DeepSeek models should be present in catalog' );
 		$this->assertArrayHasKey( 'deepseek-flash', $models );
-		$this->assertArrayHasKey( 'deepseek-v4-pro', $models, 'deepseek-v4-pro stays in the catalog (deprecated, routed to V4.1 Flash from 2026-09-14).' );
+		$this->assertArrayHasKey( 'deepseek-v4-pro', $models, 'deepseek-v4-pro stays in the catalog (active — DeepSeek continues V4 Pro service past 2026-09-14 with unchanged billing).' );
 		$this->assertArrayNotHasKey( 'deepseek-v4-flash', $models, 'deepseek-v4-flash was retired from the API on 2026-09-10.' );
 		$this->assertArrayNotHasKey( 'deepseek-v4-flash-vision-exp', $models, 'deepseek-v4-flash-vision-exp was retired from the API on 2026-09-10.' );
 		$this->assertArrayNotHasKey( 'deepseek-chat', $models, 'deepseek-chat was retired from the API on 2026-07-24.' );

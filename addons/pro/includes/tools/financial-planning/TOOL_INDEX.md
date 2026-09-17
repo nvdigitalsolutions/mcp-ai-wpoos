@@ -1,6 +1,6 @@
 # Financial Planner Toolkit - Tool Index
 
-Quick reference for all 32 financial planning tools.
+Quick reference for all 42 financial planning tools.
 
 ## Budget & Expense Tracking (4 tools)
 1. `budget_planner` - Create and manage budgets with income/expense tracking
@@ -53,16 +53,28 @@ Inspired by [Awesome-finance-skills](https://github.com/RKiding/Awesome-finance-
 31. `financial_report_generator` - Generate structured professional financial reports (6 report types)
 32. `financial_search` - Specialized multi-source financial web search (SEC EDGAR, Yahoo, Google, etc.)
 
+## Market Data & Portfolio Ops (10 tools — OpenTerminal lessons, v1.1.80)
+33. `market_screener` - Whole-market screener (TradingView scanner API; sector, market cap, % change, volume filters)
+34. `macro_data_fetcher` - FRED keyless CSV (Treasury yields, T10Y2Y, VIX, fed funds, CPI, unemployment, index proxies)
+35. `economic_calendar_fetcher` - Forex Factory public feed (Fed/ECB/CPI/NFP; impact/currency/date filters)
+36. `earnings_calendar_fetcher` - Nasdaq earnings calendar (EPS forecast, market cap, timing; symbol filter)
+37. `options_chain_fetcher` - Nasdaq options chain (calls/puts: strike, bid/ask, volume, OI, ITM)
+38. `crypto_market_data` - Crypto board/quotes/history (CoinGecko with Binance fallback chain)
+39. `portfolio_transaction_log` - Buy/sell ledger; average cost + realized/unrealized P&L (`mcp_ai_fin_txn` CPT)
+40. `price_alerts` - Price alerts (above/below) with daily cron + `wp_mcp_ai_price_alert_triggered` delivery hook
+41. `stock_data_fetcher` `indicators` action - SMA/EMA/VWAP/Bollinger/RSI/MACD computed in PHP from cached OHLCV
+42. `financial_news_aggregator` de-duplication - Cross-source headline dedup with merged `sources` list
+
 ---
 
 ## Tool Classification
 
 ### By Capability Flags
-- **Pro Only**: All 32 tools
-- **Computation**: 28 tools (calculators, analyzers, planners, forecasters)
-- **Database Read**: 9 tools (trackers, history-based tools, signal tracker)
-- **Database Write**: 9 tools (trackers, history-based tools, signal tracker)
-- **External API**: 5 tools (bank_account_sync, financial_news_aggregator, stock_data_fetcher, financial_search, market_forecast_analyzer)
+- **Pro Only**: All 42 tools
+- **Computation**: 36 tools (calculators, analyzers, planners, forecasters, indicators)
+- **Database Read**: 11 tools (trackers, history-based tools, signal tracker, transaction ledger)
+- **Database Write**: 11 tools (trackers, history-based tools, signal tracker, transaction ledger, price alerts)
+- **External API**: 13 tools (bank_account_sync, financial_news_aggregator, stock_data_fetcher, financial_search, market_forecast_analyzer, market_screener, macro_data_fetcher, economic_calendar_fetcher, earnings_calendar_fetcher, options_chain_fetcher, crypto_market_data, portfolio_transaction_log, price_alerts)
 
 ### By Educational Disclaimers
 Investment tools (6, 7, 8, 9, 10, 26, 27, 28, 29) include "EDUCATIONAL ONLY" disclaimers
@@ -70,8 +82,9 @@ indicating they are not investment advice.
 
 ### By Data Persistence
 - **User Meta Storage**: expense_tracker, bank_account_sync, credit_score_tracker, savings_goal_planner
-- **WP Options Storage**: investment_signal_tracker (per-user signal data)
-- **Transient Cache**: financial_news_aggregator, stock_data_fetcher, financial_search
+- **WP Options Storage**: investment_signal_tracker (per-user signal data), price_alerts (per-user alert data)
+- **CPT Storage**: portfolio_transaction_log (`mcp_ai_fin_txn` posts)
+- **Transient Cache**: financial_news_aggregator, stock_data_fetcher, financial_search, market_screener, macro_data_fetcher, economic_calendar_fetcher, earnings_calendar_fetcher, options_chain_fetcher, crypto_market_data (plus SWR stale copies in the yfinance service)
 - **Session/Input Only**: All calculators and analyzers
 
 ---

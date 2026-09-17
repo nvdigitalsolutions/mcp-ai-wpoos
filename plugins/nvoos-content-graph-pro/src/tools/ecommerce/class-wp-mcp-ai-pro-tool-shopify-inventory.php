@@ -53,7 +53,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Inventory implements WP_MCP_AI_Tool_Interface, 
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Manage inventory on a connected Shopify store via the Admin GraphQL API. Supports listing inventory levels by location, adjusting available quantities, and listing store locations.', 'nvoos-content-graph-pro' );
+		return __( 'Manage inventory on a connected Shopify store via the Admin GraphQL API. Supports listing inventory levels by location, adjusting available quantities, and listing store locations. Requires an admin_api mode connection — catalog connections (Storefront/Global Catalog MCP or the deprecated Catalog API) are live product-search modes that do not expose inventory; those return a hint pointing at the catalog tools.', 'nvoos-content-graph-pro' );
 	}
 
 	/**
@@ -184,6 +184,14 @@ class WP_MCP_AI_Pro_Tool_Shopify_Inventory implements WP_MCP_AI_Tool_Interface, 
 
 		$client = new WP_MCP_AI_Shopify_Client( $connection_id );
 		$action = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'list_levels';
+
+		// Catalog connections (UCP Storefront/Global Catalog MCP and the
+		// deprecated Catalog API) are live product-search modes that do not
+		// expose inventory — refuse with a hint instead of failing mid-API-call.
+		$api_mode = $client->get_api_mode();
+		if ( 'admin_api' !== $api_mode ) {
+			return $this->get_catalog_mode_admin_only_error( $api_mode, __( 'Shopify inventory', 'nvoos-content-graph-pro' ) );
+		}
 
 		switch ( $action ) {
 			case 'list_levels':

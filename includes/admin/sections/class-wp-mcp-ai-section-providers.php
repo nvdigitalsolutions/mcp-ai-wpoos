@@ -1286,7 +1286,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'deepseek_model'                     => array(
 					'type'        => 'select',
 					'label'       => __( 'Default DeepSeek Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'The default DeepSeek model to use. deepseek-flash (V4.1 Flash: 1M context, 384K output, native vision) is the recommended general-purpose model supporting both non-thinking and thinking modes. deepseek-v4-pro is retiring — DeepSeek routes it to V4.1 Flash from September 14, 2026. Legacy models (chat, reasoner, coder, V4 Flash) are retired from the API.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default DeepSeek model to use. deepseek-flash (V4.1 Flash: 1M context, 384K output, native vision) is the recommended general-purpose model supporting both non-thinking and thinking modes. deepseek-v4-pro remains available — DeepSeek continues V4 Pro service past September 14, 2026 with unchanged billing until further notice. Legacy models (chat, reasoner, coder, V4 Flash) are retired from the API.', 'mcp-ai-wpoos' ),
 					'options'     => $deepseek_models,
 					'default'     => 'deepseek-flash',
 				),

@@ -419,7 +419,9 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 				new RecursiveDirectoryIterator( $storage_root, RecursiveDirectoryIterator::SKIP_DOTS )
 			);
 			foreach ( $iterator as $file ) {
-				if ( ! $file->isFile() ) {
+				// Symlinks are never counted: a link may resolve anywhere,
+				// including outside the storage root.
+				if ( ! $file->isFile() || $file->isLink() ) {
 					continue;
 				}
 				$basename = $file->getFilename();
@@ -802,6 +804,38 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 				RecursiveIteratorIterator::CHILD_FIRST
 			);
 			foreach ( $iterator as $item ) {
+				if ( $item->isLink() ) {
+					// Never follow a symlink. Removing the link itself is the only
+					// permitted operation on it — the target may resolve anywhere,
+					// including outside the storage root.
+					if ( ! $this->remove_link( $item->getPathname() ) ) {
+						WP_MCP_AI_Imaging_Audit_Log::log(
+							'study_delete_link_failed',
+							array(
+								'study_id' => $study_uid,
+								'path'     => $item->getPathname(),
+								'user_id'  => get_current_user_id(),
+							)
+						);
+					}
+					continue;
+				}
+
+				// Defence in depth: nothing handed back by the iterator may
+				// resolve outside the imaging storage root, even if a filesystem
+				// or PHP-version quirk ever makes it follow a link.
+				if ( ! $this->is_path_within_storage( $item->getPathname() ) ) {
+					WP_MCP_AI_Imaging_Audit_Log::log(
+						'study_delete_outside_storage_blocked',
+						array(
+							'study_id' => $study_uid,
+							'path'     => $item->getPathname(),
+							'user_id'  => get_current_user_id(),
+						)
+					);
+					continue;
+				}
+
 				if ( $item->isFile() ) {
 					// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
 					if ( ! unlink( $item->getPathname() ) ) {
@@ -967,6 +1001,11 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 	/**
 	 * Validate that a resolved path stays within the protected storage root.
 	 *
+	 * Both sides are canonicalised with realpath() so symlinked paths are
+	 * compared against their targets. The match additionally requires a
+	 * directory boundary, so a sibling whose name merely starts with the
+	 * storage root's name (e.g. "mcp-ai-imaging-evil") is rejected.
+	 *
 	 * @param string $path Absolute file path.
 	 * @return bool
 	 */
@@ -978,7 +1017,31 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 			return false;
 		}
 
-		return 0 === strpos( $real_path, $storage_root );
+		return $real_path === $storage_root || 0 === strpos( $real_path, $storage_root . DIRECTORY_SEPARATOR );
+	}
+
+	/**
+	 * Remove a symlink itself, never its target.
+	 *
+	 * The unlink() call removes the link entry on POSIX systems. On Windows,
+	 * removing a directory symlink/junction requires rmdir(); the fallback
+	 * applies to the link path only, so the target is never touched.
+	 *
+	 * @param string $path Absolute path to the link.
+	 * @return bool True when the link was removed.
+	 */
+	private function remove_link( $path ) {
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+		if ( unlink( $path ) ) {
+			return true;
+		}
+
+		if ( '\\' === DIRECTORY_SEPARATOR ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
+			return @rmdir( $path );
+		}
+
+		return false;
 	}
 
 	/**

@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.77"
-  plugin-version-tested: "1.1.77"
-  last-updated: "2026-09-11"
+  plugin-version: "1.1.81"
+  plugin-version-tested: "1.1.81"
+  last-updated: "2026-09-17"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -47,7 +47,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~303 base / ~1,568 full tools
+     │  Tool Registry     │  ~306 base / ~1,585 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -71,6 +71,26 @@ wsl docker compose logs -f wp-plugin-seed
 
 WordPress is at `http://localhost:8000`, admin at `/wp-admin`
 (**admin / password**).
+
+### Design Stack deployment (F:\GITHUB\design-stack)
+
+The environment actually operated day-to-day uses different ports and
+credentials than this repo's dev compose (verified on the live stack,
+2026-09 session):
+
+| Service | Address |
+|---|---|
+| WordPress | `http://localhost:8092` — admin at `/wp-admin` (**admin / design_admin_2026**) |
+| Media worker | `http://localhost:3100` |
+| MySQL | `localhost:3308` |
+
+- The stack mounts the plugin from `design-stack/plugins/mcp-ai-wpoos` — an
+  NTFS junction to the plugin repo — so code edits land in this repo.
+- `design-stack/.agents/skills/design-*` and `mcp-ai-wpoos-plugin` are
+  junctions into this repo's `.agents/skills/` (creation script:
+  `bin/create-skill-junctions.ps1`), so skill edits ship in the same PR as
+  plugin code.
+- `wp` inside the Design Stack WP container requires `--allow-root`.
 
 ### 2. API Key Auto-Detection (v1.1.47+)
 
@@ -225,6 +245,46 @@ echo "Token: $token\n";
 **Key insight:** If `_wp_mcp_ai_tools` post meta is empty, the MCP `tools/list`
 returns `[]` even though hundreds of tools are registered at the system level.
 Always assign tools after creating an assistant.
+
+### WP-CLI provisioning (preferred — verified end-to-end)
+
+The PHP path above works, but the WP-CLI path is shorter and idempotent.
+Verified on the Design Stack (2026-09):
+
+```bash
+# 0. In the Design Stack WP container, wp requires --allow-root.
+#    (In this repo's own compose: docker compose run --rm wp-cli ...)
+
+# 1. Discover valid tool slugs before assigning.
+wp mcp-ai tool list               # base registry: slug + enabled + capability
+wp mcp-ai toolkit list            # Pro toolkit settings keys
+
+# 2. Create the assistant record.
+wp mcp-ai assistant create --title="Brand Assistant" --status=publish --porcelain
+# → prints the new assistant ID
+
+# 3. Set runtime meta. NOTE: assistant create/update --model / --system-prompt
+#    write legacy mcp_ai_model / mcp_ai_system_prompt keys that the runtime
+#    does NOT read. The runtime reads _wp_mcp_ai_* — set those explicitly.
+wp post meta update <id> _wp_mcp_ai_provider openai
+wp post meta update <id> _wp_mcp_ai_model gpt-4o-mini
+wp post meta update <id> _wp_mcp_ai_temperature 0.7
+wp post meta update <id> _wp_mcp_ai_system_prompt "$(cat assistant-system-prompt.md)"
+wp post meta update <id> _wp_mcp_ai_classification internal
+wp post meta update <id> mcp_ai_required_capability manage_options
+# Tools is a serialized PHP array; wp post meta update would store a string,
+# so use wp eval for that one key:
+wp eval 'update_post_meta(<id>, "_wp_mcp_ai_tools", array("web_search", "deep_research", "create_post"));'
+
+# 4. Issue the credential (prints cred_xxxxx.SECRET exactly once).
+wp mcp-ai credential issue <id> --porcelain
+
+# 5. Smoke test (chat REST is the reliable verification path).
+curl -s -X POST http://localhost:8092/wp-json/mcp-ai/v1/chat \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"assistant_id": <id>, "messages": [{"role":"user","content":"Reply with exactly: OK"}]}'
+```
 
 ---
 
@@ -649,14 +709,143 @@ Import external AI conversation exports into the JetEngine
   dj-management/image-production slices.
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
 
+## Shopify UCP Tool Routing, FlowHub Connections, JobNavigator CRM & OpenTerminal Financial Resilience (v1.1.81)
+
+- **Shopify tools are UCP catalog mode-aware** (PR #6634) — storefront/global
+  catalog connections drive live `search_catalog`/`lookup_catalog`/
+  `get_product` queries (no caching, `live: true`); admin-only tools refuse
+  catalog connections with an actionable hint; `remote_shopify_connection`
+  validates UCP modes via the `tools/list` handshake. **Product image cards**
+  (PR #6638) — `images[]` + a chat-rendered markdown card (10-card cap) on
+  every product-returning path via a shared normalizers trait. CG Pro ports
+  byte-identical.
+- **FlowHub Remote Sites resolution + proxy** (PRs #6635/#6637) — a shared
+  resolver chain (explicit `connection_id` → toolkit settings → sync
+  connections → first enabled FlowHub connection) ends the "credentials are
+  not configured" failure; live requests honor the connection proxy
+  (`http_api_curl`). New base helper `WP_MCP_AI_FlowHub_Connection_Helper`.
+- **JobNavigator CRM adoption + Gmail reply poller** (PRs #6636/#6640/#6641)
+  — 5 new Pro CRM tools (`bulk_move_deal_stages`, `record_crm_reply`,
+  `get_crm_handover`, `get_pipeline_digest`, `create_tracked_link`), deal
+  stage history + undo, lead dedup with canonical companies, reply signals,
+  won-deal lead release; a cron-driven Gmail reply poller classifies inbound
+  replies with sentiment + optional stage advancement; pipeline-digest
+  scheduling recipe for Workflow Builder + Pro Schedule Manager.
+- **OpenTerminal financial resilience** (PR #6639) — 8 new Pro financial
+  tools (`market_screener`, `macro_data_fetcher`, `economic_calendar_fetcher`,
+  `earnings_calendar_fetcher`, `options_chain_fetcher`, `crypto_market_data`,
+  `portfolio_transaction_log`, `price_alerts`), provider fallback chains +
+  stale-while-revalidate caching, keyless microservice auth, technical
+  indicators, portfolio transaction ledger with P&L. CG Pro port
+  byte-identical.
+- **Multi-recipient result-delivery email** (PR #6643) — comma/semicolon/
+  whitespace lists normalized on save + sanitized/deduped at the
+  `sanitize_result_delivery()` boundary; fanned out via Nodemailer +
+  `wp_mail()`; legacy `notify_email` stays single-address.
+- **Tool count** — +13 Pro: ~306 base + ~1,279 Pro (~1,585 total).
+
+## Assistant Portability, Shopify UCP Modes, Security Usage Monitor & WP-CLI Repairs (v1.1.80)
+
+- **Assistant export/import across all surfaces** (PR #6628) — canonical
+  `WP_MCP_AI_Assistant_Portability` engine with `nvoos-assistant` JSON
+  bundles (format_version 1): `wp mcp-ai assistant export|import` rewritten
+  (legacy files still import; old export lost `_wp_mcp_ai_*` config — fixed),
+  REST `POST /mcp-ai/v1/assistants/export|import` (admin-only, nonce/bearer,
+  schema-validated, 2 MB cap, dry-run), admin Import/Export page + row/bulk
+  actions, and 3 new base tools (`export_assistant`, `import_assistant`,
+  `duplicate_assistant`) + Pro `export_assistant_blueprint`. Credential hashes
+  never exported, stripped from imports; the backup provider now shares the
+  denylist (previously it exported credential hashes).
+- **Security Center Usage Monitor sub-tab** (PR #6632) — new `usage_monitor`
+  sub-tab (violation triage log, status cards, shutdown recovery, editable
+  config); the admin notice deep-links to it and shows the latest violation;
+  `POST /mcp-ai/v1/security/clear-violations` + `/clear-shutdown`
+  (`manage_options` + nonce); monitor sanitize-clobber bug fixed (submitted
+  keys only); malformed patterns dropped/skipped.
+- **Shopify UCP modes** (PRs #6624/#6630) — keyless Storefront + Global
+  Catalog modes replace the deprecated REST Catalog API on Pro + CG Pro
+  (byte-identical ports; public `/ucp/agent-profile` route); REST catalog
+  401s fixed with a 60-min token cap, scope validation, and purge-and-retry
+  (PR #6623); JetEngine sync gate unified with the System Status row.
+- **WP-CLI repaired + streaming** (PRs #6625/#6626) — `provider list` and
+  every base-class command no longer fatal on PHP 8+ (by-reference Formatter
+  constructor → by-value `format_items()`); `chat` uses `get_model_router()`;
+  `chat --stream` streams natively (cURL SSE) or simulates chunks, honoring
+  the shared streaming filters. OKF editor keeps context on save (#6631).
+  WhatsApp webhook self-tests on Remote Sites (#6622).
+- **Tool count** — +3 base +1 Pro: ~306 base + ~1,266 Pro (~1,572 total).
+
+## Imaging Symlink Hardening, Checkout Hardening Tail & Sub-Project Bumps (v1.1.79)
+
+- **Imaging study deletion hardened against symlink traversal** (PR #6616) —
+  both recursive study-deletion paths now remove links as links and never
+  follow them; every iterator entry is realpath-verified against the
+  storage root; new `study_delete_link_failed` /
+  `study_delete_outside_storage_blocked` audit events; the
+  `nvoos-content-graph-pro` port ships the same two files byte-identically.
+- **Checkout hardening tail** (PRs #6611/#6613, vendor-side) — the Stripe
+  statement descriptor now ships as `statement_descriptor_suffix` (fixes the
+  424 that failed every live session); product/price creation verifies
+  stored Stripe IDs against the current key and recreates them after an
+  account switch.
+- **Content Graph 1.0.8** (in-session) — Stripe Payment Element
+  billing-address mode `never` → `auto` (non-EU purchases no longer die
+  client-side with `IntegrationError`); `/payments/session` refuses
+  chargeable sessions when the site is already licensed (no double
+  charges).
+- **Checkout API 0.1.2** (in-session) — buyers are emailed their license
+  once per license from both the webhook and `/verify` paths
+  (`email_sent_at` DB v4 → v5).
+- **Docs Hub 0.4.5 → 0.4.6** (PRs #6615/#6617) — second wp.org reviewer
+  pass (external-services disclosure, symlinked cache-dir uninstall guard)
+  + full 18-guideline pass (bundled GPLv3 license); PCP 0 blocking errors.
+- **Content-graph wp.org readiness** (PRs #6609/#6612/#6619) —
+  seller-of-record copy, price-subject-to-change note, packaging tri-sync
+  (`node_modules` exclude).
+- **Toolkit slash test repair** (test-only, PR #6618) — suite updated to the
+  declarative adapter contract from #6604.
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Slash-Command Rework, DeepSeek V4 Pro Restoration & Checkout Hardening (v1.1.78)
+
+- **Slash commands reworked as declarative tool wrappers** (PR #6604) — the
+  toolkit manager is now ~1,000 declarative lines: 36 commands across 15
+  toolkits, each mapped to a verified real tool slug; execution delegates to
+  `WP_MCP_AI_Tool_Registry::execute_tool()` via the new tool adapter
+  (`register_tool_command()`), and every command is exposed as a `slash.*`
+  MCP prompt template (`prompts/list` / `prompts/get`). ~76 placeholder
+  commands purged; removed outcomes stay reachable via plain chat. The
+  Content Graph platform port still ships the old placeholder system —
+  owned by the ecosystem-port loop.
+- **DeepSeek V4 Pro restored across all tracks** (PR #6608) — DeepSeek's
+  2026-09-10 changelog continues V4 Pro past Sep 14: `deepseek-v4-pro` is
+  **active** again ($0.66/$1.98 off-peak; migration map deliberately
+  unmapped). The Content Graph AI mirror bumps its catalog to v2026.09.10
+  and its v4-pro pricing is corrected; `lib/core` mirrors align.
+- **Checkout hardening** (PRs #6597/#6598/#6603) — Content Graph assets
+  cache-bust by file mtime (`Schema::assetVersion()`; fixes the invisible
+  1.0.7 purchase-modal hotfix — year-long `Cache-Control` on
+  `?ver=1.0.7`); the purchase modal syncs its price from the vendor
+  `/session` response (display-only, vendor re-verifies) with
+  `DEFAULT_PRICE_CENTS` **4900 → 3499**; minimalist modal restyle.
+- **Docs Hub 0.4.4** (PR #6606) — all wp.org review findings fixed (search
+  context filtering, source-code disclosure, symlink-safe deletion,
+  staging-transient isolation, sitemap slug leak); PCP gate 0 blocking
+  errors.
+- **Legal consolidation** (PRs #6599/#6605/#6607) — unified ToS, aligned
+  API-LICENSES, two-entity seller model (NV Digital Unlocked LLC sells;
+  NV Digital Solutions develops).
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
 ## DeepSeek V4.1 Flash, Base+Pro Gating & Memory CCT Slug (v1.1.77)
 
-- **DeepSeek V4.1 Flash refresh** (PR #6555) — the catalog's DeepSeek lineup
-  is now `deepseek-flash` (active, vision) + `deepseek-v4-pro` (deprecated,
-  sunset 2026-09-14); V4 Flash + Vision Exp retired; stored references
-  migrate on the catalog-version bump. Cost calculator gains peak/off-peak
-  (`calculate_cost_at()` with a record timestamp; legacy `calculate_cost()`
-  stays time-independent).
+- **DeepSeek V4.1 Flash refresh** (PR #6555, corrected 2026-09-12) — the
+  catalog's DeepSeek lineup is now `deepseek-flash` (active, vision) +
+  `deepseek-v4-pro` (active — DeepSeek announced it continues V4 Pro service
+  past 2026-09-14 with unchanged billing; no new sunset date); V4 Flash +
+  Vision Exp retired; stored references migrate on the catalog-version bump.
+  Cost calculator gains peak/off-peak (`calculate_cost_at()` with a record
+  timestamp; legacy `calculate_cost()` stays time-independent).
 - **Base+pro gating** (PR #6561) — Pro toolkits now load in base+pro
   installs (gate escape `! $is_base || defined( 'WP_MCP_AI_PRO_VERSION' )`);
   new `tests/basepro/` matrix + `composer run test:basepro` pins it.
@@ -1124,6 +1313,15 @@ releases page" with everything seemingly configured correctly.
 |----------|------|---------|
 | `_wp_mcp_ai_tools` | `array` of strings | Tool slugs assigned to the assistant |
 | `_wp_mcp_ai_credentials` | `array` of credential records | Issued tokens (hashed) with creation/expiry metadata |
+| `_wp_mcp_ai_provider` | `string` | Provider slug (`openai`, `gemini`, `anthropic`, `deepseek`, `ollama`, …) |
+| `_wp_mcp_ai_model` | `string` | Model identifier (`gpt-4o-mini`, `gemini-2.5-flash`, …) |
+| `_wp_mcp_ai_system_prompt` | `string` | Assistant persona / system prompt |
+| `_wp_mcp_ai_temperature` | `float` | Sampling temperature |
+| `_wp_mcp_ai_classification` | `string` | Information label; defaults to `internal` |
+| `mcp_ai_required_capability` | `string` | Capability gate for tool calls — **no `_wp_` prefix** (`manage_options`, `edit_posts`) |
+| `_wp_mcp_ai_vector_store_id` | `string` | OpenAI vector store for RAG |
+| `_wp_mcp_ai_memory_files` | `array` | Memory file attachment IDs |
+| `_wp_mcp_ai_harness_profile` | `array` (JSON) | Agent-harness profile (memory summary etc.) |
 
 ### Toolkit Categories (12 Built-In)
 
@@ -1297,6 +1495,30 @@ errors instead of resets.
 Python `urllib`); long synchronous tool calls exceed the ~100s proxy cutoff.
 **Fix:** use curl/browser-like user agents for probes, and prefer v1.1.55+
 where long tools are bounded or delivered out-of-band (SSE message queue).
+
+### `wp mcp-ai provider list` / `wp mcp-ai chat` fatal (PHP 8, fixed in #6625)
+
+Both commands fataled with a PHP 8 error on builds before the CLI fix:
+`provider list` goes through `WP_MCP_AI_CLI_Base_Command::format_output()`,
+which passed an inline array literal to `WP_CLI\Formatter`'s by-reference
+constructor (a fatal on every command using the base class), and `chat`
+constructed the language model router with zero arguments. **Fixed in #6625**
+(merged to alpha-working; ships after v1.1.79). On older builds:
+
+- Provider config status → NV oOS settings page; connectivity →
+  `wp mcp-ai provider test <slug>`.
+- Chat → the REST smoke test instead:
+  `POST /wp-json/mcp-ai/v1/chat` with `assistant_id` + `messages`
+  (see the provisioning recipe above).
+
+### `wp mcp-ai assistant create --model=…` has no runtime effect
+
+`assistant create|update --model` / `--system-prompt` write legacy
+`mcp_ai_model` / `mcp_ai_system_prompt` meta keys, while the chat runtime
+reads `_wp_mcp_ai_model` / `_wp_mcp_ai_system_prompt` — the flags are
+currently cosmetic. Set the `_wp_mcp_ai_*` keys via `wp post meta update`
+(or `wp eval` for the tools array) after creation. `assistant list|get`
+read the legacy keys too, so treat their model column as unreliable.
 
 ---
 

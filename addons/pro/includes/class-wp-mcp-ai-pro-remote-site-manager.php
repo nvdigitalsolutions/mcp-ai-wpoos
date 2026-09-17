@@ -164,6 +164,45 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	}
 
 	/**
+	 * Whether a URL is publicly reachable over HTTPS by external servers.
+	 *
+	 * Shopify fetches the UCP agent profile from its own servers, so
+	 * localhost, private/loopback IP literals, and non-HTTPS URLs can never
+	 * be fetched. Used to decide whether a submitted profile URL can be
+	 * stored or whether the client should fall back to Shopify's hosted
+	 * example profile.
+	 *
+	 * @since 1.1.80
+	 *
+	 * @param string $url URL to inspect.
+	 * @return bool True when the URL uses https:// with a public host.
+	 */
+	public static function is_public_https_url( $url ) {
+		$scheme = strtolower( (string) wp_parse_url( $url, PHP_URL_SCHEME ) );
+		$host   = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+
+		if ( 'https' !== $scheme || '' === $host ) {
+			return false;
+		}
+
+		// Hostnames that are never reachable from another server.
+		$non_public_hosts = array( 'localhost', '.localhost', '.local', '.internal', '.test', '.invalid' );
+		foreach ( $non_public_hosts as $non_public_host ) {
+			if ( $host === $non_public_host || substr( $host, -strlen( $non_public_host ) ) === $non_public_host ) {
+				return false;
+			}
+		}
+
+		// IP literals must be public addresses; private and reserved ranges
+		// are only reachable from the local network.
+		if ( filter_var( $host, FILTER_VALIDATE_IP ) ) {
+			return false !== filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE );
+		}
+
+		return true;
+	}
+
+	/**
 	 * Add or update a remote site connection.
 	 *
 	 * @since 1.0.0
@@ -710,11 +749,20 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'shopify_api_version'            => isset( $connection_data['shopify_api_version'] ) && preg_match( '/^\d{4}-\d{2}$/', $connection_data['shopify_api_version'] )
 				? sanitize_text_field( $connection_data['shopify_api_version'] )
 				: '2025-01',
-			'shopify_api_mode'               => isset( $connection_data['shopify_api_mode'] ) && in_array( $connection_data['shopify_api_mode'], array( 'admin_api', 'catalog_api' ), true )
+			'shopify_api_mode'               => isset( $connection_data['shopify_api_mode'] ) && in_array( $connection_data['shopify_api_mode'], array( 'admin_api', 'catalog_api', 'storefront_catalog', 'global_catalog' ), true )
 				? $connection_data['shopify_api_mode']
 				: 'admin_api',
 			'shopify_catalog_shop_id'        => isset( $connection_data['shopify_catalog_shop_id'] )
 				? sanitize_text_field( $connection_data['shopify_catalog_shop_id'] )
+				: '',
+			// HTTPS-only UCP agent profile URL for the keyless Storefront
+			// Catalog and Global Catalog (UCP MCP) modes. Shopify fetches
+			// this profile from its own servers, so only publicly reachable
+			// HTTPS URLs are stored; localhost and private-network URLs are
+			// dropped and the client falls back to Shopify's hosted example
+			// profile.
+			'shopify_ucp_agent_profile'      => isset( $connection_data['shopify_ucp_agent_profile'] ) && self::is_public_https_url( $connection_data['shopify_ucp_agent_profile'] )
+				? esc_url_raw( $connection_data['shopify_ucp_agent_profile'] )
 				: '',
 			// ShipEngine-specific fields.
 			'shipengine_carrier_id'          => isset( $connection_data['shipengine_carrier_id'] )
@@ -1972,6 +2020,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return self::test_shopify_catalog_connection( $connection );
 		}
 
+		if ( 'storefront_catalog' === $shopify_api_mode ) {
+			return self::test_shopify_storefront_catalog_connection( $connection );
+		}
+
+		if ( 'global_catalog' === $shopify_api_mode ) {
+			return self::test_shopify_global_catalog_connection( $connection );
+		}
+
 		$connection_id = isset( $connection['id'] ) ? $connection['id'] : null;
 		$client        = new WP_MCP_AI_Shopify_Client( $connection_id );
 
@@ -2038,6 +2094,70 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'success' => true,
 			'shopify' => true,
 			'message' => __( 'Shopify Catalog API connection successful. JWT token acquired and search endpoint verified.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * Test Shopify Storefront Catalog (UCP MCP) connection.
+	 *
+	 * Keyless: performs the MCP tools/list handshake against the
+	 * storefront's /api/ucp/mcp endpoint using the configured UCP agent
+	 * profile, which also exercises the UCP negotiation flow.
+	 *
+	 * @since 1.1.80
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_shopify_storefront_catalog_connection( $connection ) {
+		if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-client.php';
+		}
+
+		$connection_id = isset( $connection['id'] ) ? $connection['id'] : null;
+		$client        = new WP_MCP_AI_Shopify_Client( $connection_id );
+
+		$tools = $client->storefront_catalog_list_tools();
+		if ( is_wp_error( $tools ) ) {
+			return $tools;
+		}
+
+		return array(
+			'success' => true,
+			'shopify' => true,
+			'message' => __( 'Shopify Storefront Catalog connection successful. UCP negotiation completed and catalog tools discovered.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * Test Shopify Global Catalog (UCP MCP) connection.
+	 *
+	 * Keyless: performs the MCP tools/list handshake against the
+	 * cross-merchant Global Catalog endpoint using the configured UCP agent
+	 * profile, which also exercises the UCP capability negotiation.
+	 *
+	 * @since 1.1.80
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_shopify_global_catalog_connection( $connection ) {
+		if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-client.php';
+		}
+
+		$connection_id = isset( $connection['id'] ) ? $connection['id'] : null;
+		$client        = new WP_MCP_AI_Shopify_Client( $connection_id );
+
+		$tools = $client->global_catalog_list_tools();
+		if ( is_wp_error( $tools ) ) {
+			return $tools;
+		}
+
+		return array(
+			'success' => true,
+			'shopify' => true,
+			'message' => __( 'Shopify Global Catalog connection successful. UCP negotiation completed and catalog tools discovered.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -2983,6 +3103,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$path = '' === $endpoint ? 'global/v2/search' : ltrim( $endpoint, '/' );
 				return WP_MCP_AI_Shopify_Client::CATALOG_BASE_URL . '/' . $path;
 			}
+			if ( 'storefront_catalog' === $shopify_api_mode ) {
+				// Storefront Catalog MCP lives on the store's own origin.
+				return $base_url . WP_MCP_AI_Shopify_Client::UCP_MCP_PATH;
+			}
+			if ( 'global_catalog' === $shopify_api_mode ) {
+				// Global Catalog MCP is served by Shopify on a fixed origin.
+				return WP_MCP_AI_Shopify_Client::UCP_GLOBAL_CATALOG_URL;
+			}
 			$api_version = WP_MCP_AI_Shopify_Client::sanitize_api_version(
 				isset( $connection['shopify_api_version'] ) ? $connection['shopify_api_version'] : ''
 			);
@@ -3027,6 +3155,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( 'catalog_api' === $shopify_api_mode ) {
 				// Catalog API uses a short-lived JWT bearer token obtained from get_catalog_token().
 				// The token is fetched dynamically by WP_MCP_AI_Shopify_Client; here we set Content-Type only.
+				$headers['Content-Type'] = 'application/json';
+				$headers['Accept']       = 'application/json';
+			} elseif ( 'storefront_catalog' === $shopify_api_mode || 'global_catalog' === $shopify_api_mode ) {
+				// UCP catalog MCP modes are keyless — the UCP agent profile is
+				// sent in the JSON-RPC body by the Shopify client.
 				$headers['Content-Type'] = 'application/json';
 				$headers['Accept']       = 'application/json';
 			} else {
@@ -3210,7 +3343,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		if ( 'shopify' === $connection_type ) {
 			$shopify_api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
-			if ( empty( $connection['api_key'] ) ) {
+			// The two UCP catalog modes are keyless — no API token or secret fields.
+			if ( ! in_array( $shopify_api_mode, array( 'storefront_catalog', 'global_catalog' ), true ) && empty( $connection['api_key'] ) ) {
 				$error_msg = 'catalog_api' === $shopify_api_mode
 					? __( 'Client ID is required for Shopify Catalog API connections.', 'mcp-ai-wpoos-pro' )
 					: __( 'Admin API access token is required for Shopify connections.', 'mcp-ai-wpoos-pro' );
@@ -3220,6 +3354,26 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_shopify_credentials',
 					__( 'Client secret (shpss_…) is required for Shopify Catalog API connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+			if ( 'storefront_catalog' === $shopify_api_mode ) {
+				if ( empty( $connection['url'] ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_pro_missing_shopify_domain',
+						__( 'A store domain is required for Shopify Storefront Catalog connections.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+			}
+			// Syntax-check the profile URL only. wp_http_validate_url() also
+			// resolves the host and rejects loopback/private addresses unless the
+			// base plugin's http_request_host_is_external filter is loaded, which
+			// is absent in the standalone addon and makes the check
+			// environment-dependent. Public-reachability policy lives in
+			// sanitize_connection_data() via is_public_https_url().
+			if ( in_array( $shopify_api_mode, array( 'storefront_catalog', 'global_catalog' ), true ) && ! empty( $connection['shopify_ucp_agent_profile'] ) && false === filter_var( $connection['shopify_ucp_agent_profile'], FILTER_VALIDATE_URL ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_invalid_ucp_agent_profile',
+					__( 'The UCP agent profile must be a valid HTTPS URL.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
@@ -3829,14 +3983,18 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	/**
 	 * Record health metric for connection monitoring.
 	 *
+	 * Public so connection-bound API clients (e.g. the base FlowHub client)
+	 * can report request health for a Remote Sites connection.
+	 *
 	 * @since 1.0.0
+	 * @since 1.1.82 Made public.
 	 *
 	 * @param string $connection_id Connection ID.
 	 * @param bool   $success       Whether request was successful.
 	 * @param float  $duration      Request duration in seconds.
 	 * @return void
 	 */
-	protected static function record_health_metric( $connection_id, $success, $duration ) {
+	public static function record_health_metric( $connection_id, $success, $duration ) {
 		if ( empty( $connection_id ) ) {
 			return;
 		}

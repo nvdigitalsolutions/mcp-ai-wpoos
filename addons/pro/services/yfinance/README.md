@@ -427,11 +427,22 @@ sudo systemctl start yfinance-api
 
 ## Security Considerations
 
+### API Key Authentication (built in)
+
+The service now requires a shared API key on every request except the health
+check and CORS preflights. On first run it generates a 32-byte hex secret and
+stores it in `data/.api-key` (directory configurable via `DATA_DIR`). To
+override, set `API_KEY` in the environment. Clients send the key in the
+`X-API-Key` header — the bundled `node-services/yfinance-client.js` reads it
+from the `api_key` request parameter or the `YFINANCE_API_KEY` environment
+variable, and the WordPress layer passes it through
+`wp_mcp_ai_settings['yfinance_api_key']`.
+
 ### Production Checklist
 
+- [x] API key authentication enabled by default
 - [ ] Disable debug mode (`DEBUG=False`)
 - [ ] Use HTTPS/SSL for production
-- [ ] Implement authentication if exposing publicly
 - [ ] Configure firewall rules (only allow WordPress server)
 - [ ] Monitor rate limits and adjust as needed
 - [ ] Set up log rotation

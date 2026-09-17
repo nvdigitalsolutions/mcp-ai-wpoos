@@ -1,26 +1,26 @@
 <?php
 /**
- * Financial planning tool (ecosystem port — Wave F2, financial tools batch B).
+ * Financial toolkit ecosystem port (OpenTerminal lessons sub-cluster).
  *
- * Ported from the base Pro addon's `addons/pro/includes/tools/financial-planning/class-wp-mcp-ai-tool-financial-news-aggregator.php` for the standalone
- * `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro
- * addon owns the class in monolith installs — the addon's autoloader
- * skips its copy when `NVOOS_CONTENT_GRAPH_PRO_PATH` is defined (see the plugin
- * entry).
+ * Ported from the base Pro addon's `addons/pro/includes/tools/financial-planning/class-wp-mcp-ai-tool-financial-news-aggregator.php` for the
+ * standalone `nvoos-content-graph-pro` addon. Kept byte-identical. The base
+ * Pro addon owns the class in monolith installs — the addon's autoloader
+ * skips its copy when `WP_MCP_AI_PRO_PATH` is defined.
+ *
+ * What this file is: RE-PORT: cross-source headline de-duplication.
  *
  * Documented deviations: `declare(strict_types=1)` added; text domain
- * `nvoos-content-graph-pro`; `NVOOS_CONTENT_GRAPH_PRO_PATH` swaps where the
- * base references path constants (yfinance service require).
+ * `mcp-ai-wpoos-pro` → `nvoos-content-graph-pro`; `WP_MCP_AI_PRO_PATH .
+ * 'includes/'` path swaps → `NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/'`.
  *
  * @package NvoosContentGraphPro
- * @since 1.1.0
- * @author    NV Digital Solutions
+ * @since   1.1.0
+ * @author  NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
  */
 
 declare(strict_types=1);
-
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -247,6 +247,32 @@ class WP_MCP_AI_Tool_Financial_News_Aggregator implements WP_MCP_AI_Tool_Interfa
 			$all_articles = $this->filter_by_keywords( $all_articles, $keywords );
 		}
 
+		// De-duplicate across sources by normalized headline (first-seen wins;
+		// the kept article records every source that carried it).
+		$pre_dedup_count = count( $all_articles );
+		$deduped         = array();
+		$seen            = array();
+		foreach ( $all_articles as $article ) {
+			$normalized = $this->normalize_headline( isset( $article['title'] ) ? $article['title'] : '' );
+			if ( '' === $normalized ) {
+				$deduped[] = $article;
+				continue;
+			}
+
+			if ( isset( $seen[ $normalized ] ) ) {
+				$index                          = $seen[ $normalized ];
+				$deduped[ $index ]['sources'][] = isset( $article['source'] ) ? $article['source'] : '';
+				$deduped[ $index ]['sources']   = array_values( array_unique( array_filter( $deduped[ $index ]['sources'] ) ) );
+				continue;
+			}
+
+			$article['sources']  = isset( $article['source'] ) ? array( $article['source'] ) : array();
+			$seen[ $normalized ] = count( $deduped );
+			$deduped[]           = $article;
+		}
+		$all_articles       = $deduped;
+		$duplicates_removed = max( 0, $pre_dedup_count - count( $all_articles ) );
+
 		// Sort by published date descending.
 		usort(
 			$all_articles,
@@ -262,20 +288,21 @@ class WP_MCP_AI_Tool_Financial_News_Aggregator implements WP_MCP_AI_Tool_Interfa
 		$market_pulse   = $this->generate_market_pulse( $all_articles );
 
 		$result = array(
-			'success'         => true,
-			'articles'        => $all_articles,
-			'article_count'   => count( $all_articles ),
-			'sources_queried' => $sources,
-			'source_errors'   => $source_errors,
-			'unified_trends'  => $unified_trends,
-			'market_pulse'    => $market_pulse,
-			'filters'         => array(
+			'success'            => true,
+			'articles'           => $all_articles,
+			'article_count'      => count( $all_articles ),
+			'duplicates_removed' => $duplicates_removed,
+			'sources_queried'    => $sources,
+			'source_errors'      => $source_errors,
+			'unified_trends'     => $unified_trends,
+			'market_pulse'       => $market_pulse,
+			'filters'            => array(
 				'category'   => $category,
 				'keywords'   => $keywords,
 				'hours_back' => $hours_back,
 			),
-			'from_cache'      => false,
-			'disclaimer'      => __( 'EDUCATIONAL ONLY. News aggregation is for informational purposes only. Articles may be delayed or incomplete. Verify information from primary sources before making financial decisions. Not investment advice.', 'nvoos-content-graph-pro' ),
+			'from_cache'         => false,
+			'disclaimer'         => __( 'EDUCATIONAL ONLY. News aggregation is for informational purposes only. Articles may be delayed or incomplete. Verify information from primary sources before making financial decisions. Not investment advice.', 'nvoos-content-graph-pro' ),
 		);
 
 		set_transient( $cache_key, $result, self::CACHE_TTL );
@@ -513,6 +540,28 @@ class WP_MCP_AI_Tool_Financial_News_Aggregator implements WP_MCP_AI_Tool_Interfa
 				}
 			)
 		);
+	}
+
+	/**
+	 * Normalize a headline for cross-source de-duplication.
+	 *
+	 * Lowercases, strips HTML entities/tags and punctuation, and collapses
+	 * whitespace so the same story across Yahoo RSS and Google News RSS
+	 * matches despite formatting differences.
+	 *
+	 * @since 1.1.80
+	 *
+	 * @param string $title Raw headline.
+	 * @return string Normalized headline ('' when unidentifiable).
+	 */
+	private function normalize_headline( $title ) {
+		$title = html_entity_decode( (string) $title, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		$title = wp_strip_all_tags( $title );
+		$title = strtolower( $title );
+		$title = preg_replace( '/[^a-z0-9 ]+/', ' ', $title );
+		$title = preg_replace( '/\s+/', ' ', trim( (string) $title ) );
+
+		return (string) $title;
 	}
 
 	/**

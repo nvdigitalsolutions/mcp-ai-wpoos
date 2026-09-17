@@ -15,8 +15,12 @@ use function rawurlencode;
  *
  * This plugin never handles Stripe API keys. All payment processing —
  * PaymentIntent creation, server-side verification, and signed download
- * URLs — is delegated to the vendor checkout API (run by NV Digital
- * Solutions on its own server, where the Stripe secret key lives).
+ * URLs — is delegated to the vendor checkout API (operated by NV Digital
+ * Solutions on behalf of NV Digital Unlocked LLC, the seller of record,
+ * on its own server, where the Stripe secret key lives).
+ *
+ * The purchased artifact is the **NV oOS Complete** bundle (the full
+ * NV oOS plugin: base + Pro, distributed as a separate WordPress plugin).
  *
  * The purchased artifact is the **NV oOS Complete** bundle (the full
  * NV oOS plugin: base + Pro, distributed as a separate WordPress plugin).
@@ -29,7 +33,7 @@ use function rawurlencode;
 final class Payments {
 
 	/** @var int Default price in the smallest currency unit (USD cents). */
-	public const DEFAULT_PRICE_CENTS = 4900;
+	public const DEFAULT_PRICE_CENTS = 3499;
 
 	/**
 	 * Bundle version pinned for the fallback download URL.
@@ -97,7 +101,7 @@ final class Payments {
 	/**
 	 * Human-readable price label for the UI.
 	 *
-	 * @return string e.g. "$49.00".
+	 * @return string e.g. "$34.99".
 	 */
 	public static function priceLabel(): string {
 		return '$' . number_format( self::priceCents() / 100, 2 );

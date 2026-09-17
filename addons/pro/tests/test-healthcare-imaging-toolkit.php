@@ -821,4 +821,108 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 			'Three distinct study UIDs must produce three distinct path segments.'
 		);
 	}
+
+	// =========================================================================
+	// Study deletion — symlink hardening.
+	// =========================================================================
+
+	/**
+	 * Delete_study must remove a symlink found inside the study directory
+	 * without following it: the link's target — here, a directory outside the
+	 * imaging storage root — must survive intact while the study directory
+	 * itself (link included) is fully removed.
+	 */
+	public function test_delete_study_removes_symlink_but_preserves_target() {
+		if ( ! post_type_exists( WP_MCP_AI_Imaging_Study_CPT::POST_TYPE ) ) {
+			WP_MCP_AI_Imaging_Study_CPT::register_post_type();
+		}
+
+		$uploads = wp_upload_dir();
+		wp_mkdir_p( $uploads['basedir'] );
+		$storage_root = trailingslashit( $uploads['basedir'] ) . 'mcp-ai-imaging';
+		wp_mkdir_p( $storage_root );
+
+		$study_uid = '1.2.826.0.1.3680043.9.' . wp_generate_uuid4();
+		$study_dir = $storage_root . DIRECTORY_SEPARATOR . $study_uid;
+		wp_mkdir_p( $study_dir . DIRECTORY_SEPARATOR . 'series' );
+		file_put_contents( $study_dir . DIRECTORY_SEPARATOR . 'series' . DIRECTORY_SEPARATOR . 'slice.dcm', 'dicom-bytes' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Test fixture only.
+
+		$target_dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'imaging-symlink-target-' . wp_generate_uuid4();
+		wp_mkdir_p( $target_dir );
+		file_put_contents( $target_dir . DIRECTORY_SEPARATOR . 'victim.txt', 'must-survive' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Test fixture only.
+
+		$link_path = $study_dir . DIRECTORY_SEPARATOR . 'series' . DIRECTORY_SEPARATOR . 'evil';
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		if ( ! @symlink( $target_dir, $link_path ) ) {
+			unlink( $study_dir . DIRECTORY_SEPARATOR . 'series' . DIRECTORY_SEPARATOR . 'slice.dcm' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Test fixture cleanup.
+			rmdir( $study_dir . DIRECTORY_SEPARATOR . 'series' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Test fixture cleanup.
+			rmdir( $study_dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Test fixture cleanup.
+			unlink( $target_dir . DIRECTORY_SEPARATOR . 'victim.txt' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Test fixture cleanup.
+			rmdir( $target_dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Test fixture cleanup.
+			$this->markTestSkipped( 'Symlink creation unavailable in this environment.' );
+		}
+
+		$post_id = self::factory()->post->create(
+			array(
+				'post_type'  => WP_MCP_AI_Imaging_Study_CPT::POST_TYPE,
+				'post_title' => 'Symlink study',
+			)
+		);
+		update_post_meta( $post_id, '_imaging_study_instance_uid', $study_uid );
+		update_post_meta( $post_id, '_imaging_storage_path', $study_dir );
+
+		$request = new WP_REST_Request( 'DELETE', '/mcp-ai/v1/imaging/studies/' . $study_uid );
+		$request->set_param( 'studyId', $study_uid );
+		$controller = new WP_MCP_AI_Imaging_REST_Controller();
+
+		$response = $controller->delete_study( $request );
+
+		$this->assertNotWPError( $response );
+		$this->assertSame( 200, $response->get_status() );
+
+		// The target outside the storage root must be untouched.
+		$this->assertFileExists( $target_dir . DIRECTORY_SEPARATOR . 'victim.txt' );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Test assertion only.
+		$this->assertSame( 'must-survive', file_get_contents( $target_dir . DIRECTORY_SEPARATOR . 'victim.txt' ) );
+
+		// The study directory — symlink included — must be fully removed.
+		$this->assertFalse( is_dir( $study_dir ) );
+		$this->assertNull( get_post( $post_id ) );
+
+		unlink( $target_dir . DIRECTORY_SEPARATOR . 'victim.txt' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Test fixture cleanup.
+		rmdir( $target_dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Test fixture cleanup.
+	}
+
+	/**
+	 * Is_path_within_storage must reject a sibling directory whose name merely
+	 * starts with the storage root's name (prefix-boundary bypass).
+	 */
+	public function test_is_path_within_storage_rejects_sibling_prefix() {
+		$uploads = wp_upload_dir();
+		wp_mkdir_p( $uploads['basedir'] );
+
+		$sibling = trailingslashit( $uploads['basedir'] ) . 'mcp-ai-imaging-evil';
+		wp_mkdir_p( $sibling );
+
+		$storage_root = trailingslashit( $uploads['basedir'] ) . 'mcp-ai-imaging';
+		wp_mkdir_p( $storage_root );
+		$inside = $storage_root . DIRECTORY_SEPARATOR . '1.2.3';
+		wp_mkdir_p( $inside );
+
+		$controller = new WP_MCP_AI_Imaging_REST_Controller();
+		$reflect    = new ReflectionMethod( $controller, 'is_path_within_storage' );
+		$reflect->setAccessible( true );
+
+		$this->assertFalse(
+			$reflect->invoke( $controller, $sibling ),
+			'A sibling path sharing the storage root name as a prefix must be rejected.'
+		);
+		$this->assertTrue(
+			$reflect->invoke( $controller, $inside ),
+			'A real descendant of the storage root must pass.'
+		);
+
+		rmdir( $inside ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Test fixture cleanup.
+		rmdir( $sibling ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Test fixture cleanup.
+	}
 }

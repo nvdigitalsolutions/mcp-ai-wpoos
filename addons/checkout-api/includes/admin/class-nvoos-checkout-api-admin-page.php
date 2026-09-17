@@ -124,6 +124,11 @@ class NVOOS_Checkout_API_Admin_Page {
 	 * recorded in settings and then attached to every PaymentIntent as
 	 * metadata (reporting/tax only — charging behavior is unchanged).
 	 *
+	 * Stored IDs are verified against the current secret key first: after
+	 * the storefront switches Stripe accounts, the IDs belong to the
+	 * previous account (Stripe answers 404), so they are cleared and
+	 * recreated instead of silently keeping the old account's objects.
+	 *
 	 * @return void
 	 */
 	public static function handle_create_product(): void {
@@ -139,34 +144,145 @@ class NVOOS_Checkout_API_Admin_Page {
 			exit;
 		}
 
-		$client = new NVOOS_Checkout_API_Stripe_Client( $secret );
+		$result = self::ensure_product_and_price( new NVOOS_Checkout_API_Stripe_Client( $secret ) );
 
+		if ( 'error' === $result['status'] ) {
+			wp_safe_redirect(
+				admin_url(
+					'admin.php?page=' . self::MENU_SLUG . '&stripe_product=error&reason=' . rawurlencode( (string) $result['reason'] )
+				)
+			);
+			exit;
+		}
+
+		wp_safe_redirect(
+			admin_url( 'admin.php?page=' . self::MENU_SLUG . '&stripe_product=' . ( 'recreated' === $result['status'] ? 'recreated' : 'created' ) )
+		);
+		exit;
+	}
+
+	/**
+	 * Ensure the configured Stripe account has the Product + Price recorded
+	 * in settings, creating (or recreating) them as needed.
+	 *
+	 * The stored IDs are validated against the account the client is keyed
+	 * for. A stored ID that is missing from that account (404
+	 * `resource_missing` — the signature of a switched Stripe account) is
+	 * treated as stale: it is cleared and recreated. Any other failure
+	 * (invalid key, transport problem) aborts without touching the stored
+	 * IDs, so a transient problem can never destroy good settings.
+	 *
+	 * @param NVOOS_Checkout_API_Stripe_Client $client Client keyed with the saved secret key.
+	 * @return array{status: string, reason: string, product_id: string, price_id: string}
+	 */
+	public static function ensure_product_and_price( NVOOS_Checkout_API_Stripe_Client $client ): array {
 		$product_id = NVOOS_Checkout_API_Settings::product_id();
+		$price_id   = NVOOS_Checkout_API_Settings::price_id();
+		$recreated  = false;
+
+		if ( '' !== $product_id ) {
+			$existing = $client->retrieve_product( $product_id );
+			if ( is_wp_error( $existing ) ) {
+				if ( ! self::is_missing_resource( $existing ) ) {
+					return array(
+						'status'     => 'error',
+						'reason'     => 'verify',
+						'product_id' => $product_id,
+						'price_id'   => $price_id,
+					);
+				}
+
+				// Stale: the product belongs to a previous Stripe account.
+				// Its price dies with it — recreate both from scratch.
+				$product_id = '';
+				$price_id   = '';
+				NVOOS_Checkout_API_Settings::update_field( 'product_id', '' );
+				NVOOS_Checkout_API_Settings::update_field( 'price_id', '' );
+				$recreated = true;
+			}
+		}
+
 		if ( '' === $product_id ) {
 			$product = $client->create_product( NVOOS_Checkout_API_Settings::product_name() );
 			if ( is_wp_error( $product ) || empty( $product['id'] ) ) {
-				wp_safe_redirect( admin_url( 'admin.php?page=' . self::MENU_SLUG . '&stripe_product=error&reason=product' ) );
-				exit;
+				return array(
+					'status'     => 'error',
+					'reason'     => 'product',
+					'product_id' => '',
+					'price_id'   => '',
+				);
 			}
 			$product_id = (string) $product['id'];
 			NVOOS_Checkout_API_Settings::update_field( 'product_id', $product_id );
 		}
 
-		if ( '' === NVOOS_Checkout_API_Settings::price_id() ) {
+		if ( '' !== $price_id ) {
+			$existing    = $client->retrieve_price( $price_id );
+			$price_stale = is_wp_error( $existing )
+				? self::is_missing_resource( $existing )
+				: (string) ( $existing['product'] ?? '' ) !== $product_id;
+
+			if ( is_wp_error( $existing ) && ! $price_stale ) {
+				return array(
+					'status'     => 'error',
+					'reason'     => 'verify',
+					'product_id' => $product_id,
+					'price_id'   => $price_id,
+				);
+			}
+
+			if ( $price_stale ) {
+				$price_id = '';
+				NVOOS_Checkout_API_Settings::update_field( 'price_id', '' );
+				$recreated = true;
+			}
+		}
+
+		if ( '' === $price_id ) {
 			$price = $client->create_price(
 				$product_id,
 				NVOOS_Checkout_API_Settings::price_cents(),
 				NVOOS_Checkout_API_Settings::currency()
 			);
 			if ( is_wp_error( $price ) || empty( $price['id'] ) ) {
-				wp_safe_redirect( admin_url( 'admin.php?page=' . self::MENU_SLUG . '&stripe_product=error&reason=price' ) );
-				exit;
+				return array(
+					'status'     => 'error',
+					'reason'     => 'price',
+					'product_id' => $product_id,
+					'price_id'   => '',
+				);
 			}
-			NVOOS_Checkout_API_Settings::update_field( 'price_id', (string) $price['id'] );
+			$price_id = (string) $price['id'];
+			NVOOS_Checkout_API_Settings::update_field( 'price_id', $price_id );
 		}
 
-		wp_safe_redirect( admin_url( 'admin.php?page=' . self::MENU_SLUG . '&stripe_product=created' ) );
-		exit;
+		return array(
+			'status'     => $recreated ? 'recreated' : 'created',
+			'reason'     => '',
+			'product_id' => $product_id,
+			'price_id'   => $price_id,
+		);
+	}
+
+	/**
+	 * Whether a Stripe client error means the resource is missing from the
+	 * current account (404 `resource_missing`) — the signature of a switched
+	 * Stripe account — as opposed to a bad key or transport failure.
+	 *
+	 * @param WP_Error $error Error from the Stripe client.
+	 * @return bool
+	 */
+	private static function is_missing_resource( WP_Error $error ): bool {
+		$data = $error->get_error_data();
+		if ( ! is_array( $data ) ) {
+			return false;
+		}
+
+		if ( 404 === (int) ( $data['http_status'] ?? 0 ) ) {
+			return true;
+		}
+
+		return 'resource_missing' === (string) ( $data['stripe_code'] ?? '' );
 	}
 
 	/**
@@ -387,10 +503,19 @@ class NVOOS_Checkout_API_Admin_Page {
 
 			<?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- flag read only. ?>
 			<?php if ( isset( $_GET['stripe_product'] ) ) : ?>
+				<?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- flag read only. ?>
 				<?php if ( 'created' === $_GET['stripe_product'] ) : ?>
 					<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Stripe product and price created. They are now recorded on every payment.', 'nvoos-checkout-api' ); ?></p></div>
+				<?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- flag read only. ?>
+				<?php elseif ( 'recreated' === $_GET['stripe_product'] ) : ?>
+					<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'The stored Stripe product/price belonged to a different account. A new product and price were created in the current account.', 'nvoos-checkout-api' ); ?></p></div>
 				<?php else : ?>
-					<div class="notice notice-error is-dismissible"><p><?php esc_html_e( 'Could not create the Stripe product/price. Check the secret key and try again.', 'nvoos-checkout-api' ); ?></p></div>
+					<?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- flag read only. ?>
+					<?php if ( isset( $_GET['reason'] ) && 'verify' === $_GET['reason'] ) : ?>
+						<div class="notice notice-error is-dismissible"><p><?php esc_html_e( 'Could not verify the stored Stripe product/price with the current secret key. Save the Stripe settings and try again.', 'nvoos-checkout-api' ); ?></p></div>
+					<?php else : ?>
+						<div class="notice notice-error is-dismissible"><p><?php esc_html_e( 'Could not create the Stripe product/price. Check the secret key and try again.', 'nvoos-checkout-api' ); ?></p></div>
+					<?php endif; ?>
 				<?php endif; ?>
 			<?php endif; ?>
 
@@ -582,10 +707,10 @@ class NVOOS_Checkout_API_Admin_Page {
 							</td>
 						</tr>
 						<tr>
-							<th scope="row"><label for="nvoos-checkout-descriptor"><?php esc_html_e( 'Statement descriptor', 'nvoos-checkout-api' ); ?></label></th>
+							<th scope="row"><label for="nvoos-checkout-descriptor"><?php esc_html_e( 'Card statement suffix', 'nvoos-checkout-api' ); ?></label></th>
 							<td>
 								<input type="text" id="nvoos-checkout-descriptor" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[statement_descriptor]" value="<?php echo esc_attr( $settings['statement_descriptor'] ); ?>" class="regular-text" maxlength="22">
-								<p class="description"><?php esc_html_e( 'Appears on buyers\' card statements (5–22 characters, e.g. NV OOS COMPLETE). Leave blank for the Stripe default.', 'nvoos-checkout-api' ); ?></p>
+								<p class="description"><?php esc_html_e( 'Appended to your account\'s statement descriptor prefix on buyers\' card statements (2–22 characters, at least one letter, e.g. NV OOS COMPLETE). Leave blank for the Stripe default.', 'nvoos-checkout-api' ); ?></p>
 							</td>
 						</tr>
 						<tr>
@@ -593,6 +718,36 @@ class NVOOS_Checkout_API_Admin_Page {
 							<td>
 								<input type="text" id="nvoos-checkout-productname" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[product_name]" value="<?php echo esc_attr( $settings['product_name'] ); ?>" class="regular-text">
 								<p class="description"><?php esc_html_e( 'Used when creating the Stripe product below (type: service).', 'nvoos-checkout-api' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'License email', 'nvoos-checkout-api' ); ?></th>
+							<td>
+								<label>
+									<input type="checkbox" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[license_email_enabled]" value="1" <?php checked( (bool) $settings['license_email_enabled'] ); ?>>
+									<?php esc_html_e( 'Email the buyer their license key when a payment completes (sent once per license).', 'nvoos-checkout-api' ); ?>
+								</label>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="nvoos-checkout-mailsubject"><?php esc_html_e( 'Email subject', 'nvoos-checkout-api' ); ?></label></th>
+							<td>
+								<input type="text" id="nvoos-checkout-mailsubject" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[license_email_subject]" value="<?php echo esc_attr( $settings['license_email_subject'] ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'Your NV oOS Complete license', 'nvoos-checkout-api' ); ?>">
+								<p class="description"><?php esc_html_e( 'Leave blank for the default: “Your {product} license”.', 'nvoos-checkout-api' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="nvoos-checkout-mailfromname"><?php esc_html_e( 'From name', 'nvoos-checkout-api' ); ?></label></th>
+							<td>
+								<input type="text" id="nvoos-checkout-mailfromname" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[license_email_from_name]" value="<?php echo esc_attr( $settings['license_email_from_name'] ); ?>" class="regular-text" placeholder="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
+								<p class="description"><?php esc_html_e( 'Leave blank for the site name.', 'nvoos-checkout-api' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="nvoos-checkout-mailfrom"><?php esc_html_e( 'From email', 'nvoos-checkout-api' ); ?></label></th>
+							<td>
+								<input type="email" id="nvoos-checkout-mailfrom" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[license_email_from]" value="<?php echo esc_attr( $settings['license_email_from'] ); ?>" class="regular-text" placeholder="<?php echo esc_attr( (string) get_option( 'admin_email', '' ) ); ?>">
+								<p class="description"><?php esc_html_e( 'Sender and Reply-To address. Use an address your mail setup is allowed to send from. Leave blank for the WordPress default sender.', 'nvoos-checkout-api' ); ?></p>
 							</td>
 						</tr>
 					</tbody>
@@ -625,7 +780,7 @@ class NVOOS_Checkout_API_Admin_Page {
 				<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION_CREATE_PRODUCT ); ?>">
 				<?php wp_nonce_field( self::NONCE_CREATE_PRODUCT ); ?>
 				<?php submit_button( __( 'Create product & price in Stripe', 'nvoos-checkout-api' ), 'secondary', 'nvoos_checkout_create_product', false ); ?>
-				<span class="description"><?php esc_html_e( 'Creates a one-time price matching the configured price/currency and records both IDs on every payment for reporting and tax tooling. Safe to re-run.', 'nvoos-checkout-api' ); ?></span>
+				<span class="description"><?php esc_html_e( 'Runs against the saved secret key — save the form above first if you just changed it. Safe to re-run: if the stored IDs belong to a different Stripe account, a fresh product and price are created automatically.', 'nvoos-checkout-api' ); ?></span>
 			</form>
 
 			<h2><?php esc_html_e( 'REST endpoints', 'nvoos-checkout-api' ); ?></h2>
@@ -678,6 +833,7 @@ class NVOOS_Checkout_API_Admin_Page {
 		echo '<th>' . esc_html__( 'Product', 'nvoos-checkout-api' ) . '</th>';
 		echo '<th>' . esc_html__( 'Site', 'nvoos-checkout-api' ) . '</th>';
 		echo '<th>' . esc_html__( 'Buyer email', 'nvoos-checkout-api' ) . '</th>';
+		echo '<th>' . esc_html__( 'Emailed', 'nvoos-checkout-api' ) . '</th>';
 		echo '<th>' . esc_html__( 'Country', 'nvoos-checkout-api' ) . '</th>';
 		echo '<th>' . esc_html__( 'Amount', 'nvoos-checkout-api' ) . '</th>';
 		echo '<th>' . esc_html__( 'Status', 'nvoos-checkout-api' ) . '</th>';
@@ -693,6 +849,7 @@ class NVOOS_Checkout_API_Admin_Page {
 			echo '<td>' . esc_html( $row['product'] ) . '</td>';
 			echo '<td>' . esc_html( $row['site_url'] ) . '</td>';
 			echo '<td>' . ( empty( $row['buyer_email'] ) ? '—' : esc_html( $row['buyer_email'] ) ) . '</td>';
+			echo '<td>' . ( empty( $row['email_sent_at'] ) ? '—' : esc_html( $row['email_sent_at'] ) ) . '</td>';
 			echo '<td>' . ( empty( $row['buyer_country'] ) ? '—' : esc_html( $row['buyer_country'] ) ) . '</td>';
 			echo '<td>' . esc_html( number_format( (int) $row['amount'] / 100, 2 ) . ' ' . strtoupper( (string) $row['currency'] ) ) . '</td>';
 			echo '<td>' . esc_html( $row['status'] ) . '</td>';

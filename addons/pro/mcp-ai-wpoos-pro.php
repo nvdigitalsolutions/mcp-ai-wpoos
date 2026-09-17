@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Pro plugin constants.
 if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-	define( 'WP_MCP_AI_PRO_VERSION', '1.1.77' );
+	define( 'WP_MCP_AI_PRO_VERSION', '1.1.81' );
 }
 if ( ! defined( 'WP_MCP_AI_PRO_FILE' ) ) {
 	define( 'WP_MCP_AI_PRO_FILE', __FILE__ );
@@ -523,6 +523,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-module-registry.php';
 		WP_MCP_AI_Pro_Module_Registry::get_instance()->boot();
 
+		// Serve the site's UCP agent profile for keyless Shopify Catalog MCP
+		// negotiation (Storefront Catalog connections reference it by URL).
+		$ucp_profile_controller = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-ucp-agent-profile-controller.php';
+		if ( file_exists( $ucp_profile_controller ) && ! class_exists( 'WP_MCP_AI_UCP_Agent_Profile_Controller' ) ) {
+			require_once $ucp_profile_controller;
+			new WP_MCP_AI_UCP_Agent_Profile_Controller();
+		}
+
 		// Register Pro tools when Core fires its registration action.
 		add_action( 'wp_mcp_ai_register_tools', 'wp_mcp_ai_pro_register_tools', 20 );
 
@@ -629,6 +637,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Verify_Information'        => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-verify-information.php',
 			// Research → Paper Store pipeline (Phase 3 - Post creation).
 			'WP_MCP_AI_Pro_Tool_Create_Post_From_Research' => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-create-post-from-research.php',
+			// Assistant portability (blueprint exporter closes the blueprint-installer loop).
+			'WP_MCP_AI_Tool_Export_Assistant_Blueprint'    => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-tool-export-assistant-blueprint.php',
 			// Template Management tools (Ralph pattern - Phase 3).
 			'WP_MCP_AI_Pro_Tool_Create_Template'           => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-create-template.php',
 			'WP_MCP_AI_Pro_Tool_Instantiate_Template'      => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-instantiate-template.php',
@@ -862,6 +872,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Update_Deal'               => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/deals/class-wp-mcp-ai-tool-update-deal.php',
 				'WP_MCP_AI_Tool_Delete_Deal'               => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/deals/class-wp-mcp-ai-tool-delete-deal.php',
 				'WP_MCP_AI_Tool_Move_Deal_Stage'           => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/deals/class-wp-mcp-ai-tool-move-deal-stage.php',
+
+				// ── Since 3.2.0: JobNavigator-adoption tools ──
+				'WP_MCP_AI_Tool_Bulk_Move_Deal_Stages'     => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/deals/class-wp-mcp-ai-tool-bulk-move-deal-stages.php',
+				'WP_MCP_AI_Tool_Create_Tracked_Link'       => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/deals/class-wp-mcp-ai-tool-create-tracked-link.php',
+				'WP_MCP_AI_Tool_Record_CRM_Reply'          => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-record-crm-reply.php',
+				'WP_MCP_AI_Tool_Get_CRM_Handover'          => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-get-crm-handover.php',
+				'WP_MCP_AI_Tool_Get_Pipeline_Digest'       => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/analytics/class-wp-mcp-ai-tool-get-pipeline-digest.php',
 
 				// ── Phase B: Activities (5) ──
 				'WP_MCP_AI_Tool_Create_CRM_Activity'       => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/activities/class-wp-mcp-ai-tool-create-crm-activity.php',
@@ -1227,6 +1244,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		if ( ! trait_exists( 'WP_MCP_AI_Shopify_Smart_Search' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/trait-wp-mcp-ai-shopify-smart-search.php';
 		}
+		// Load the shared product normalizers trait (Catalog API + UCP card shapes).
+		if ( ! trait_exists( 'WP_MCP_AI_Shopify_Product_Normalizers' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/trait-wp-mcp-ai-shopify-product-normalizers.php';
+		}
 		$shopify_tools = array(
 			'WP_MCP_AI_Tool_Remote_Shopify_Connection' => WP_MCP_AI_PRO_PATH . 'includes/tools/remote-connections/class-wp-mcp-ai-tool-remote-shopify-connection.php',
 			'WP_MCP_AI_Pro_Tool_Shopify_Products'      => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-shopify-products.php',
@@ -1586,6 +1607,17 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				// Transaction Categorisation tools.
 				'WP_MCP_AI_Tool_Get_Uncategorised_Transactions' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-get-uncategorised-transactions.php',
 				'WP_MCP_AI_Tool_Categorise_Transactions'   => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-categorise-transactions.php',
+				// Market data tools (keyless public endpoints, OpenTerminal lessons).
+				'WP_MCP_AI_Tool_Market_Screener'           => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-market-screener.php',
+				'WP_MCP_AI_Tool_Macro_Data_Fetcher'        => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-macro-data-fetcher.php',
+				'WP_MCP_AI_Tool_Economic_Calendar_Fetcher' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-economic-calendar-fetcher.php',
+				'WP_MCP_AI_Tool_Earnings_Calendar_Fetcher' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-earnings-calendar-fetcher.php',
+				'WP_MCP_AI_Tool_Options_Chain_Fetcher'     => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-options-chain-fetcher.php',
+				'WP_MCP_AI_Tool_Crypto_Market_Data'        => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-crypto-market-data.php',
+				// Portfolio transaction ledger (OpenTerminal lessons).
+				'WP_MCP_AI_Tool_Portfolio_Transaction_Log' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-portfolio-transaction-log.php',
+				// Price alerts (OpenTerminal lessons).
+				'WP_MCP_AI_Tool_Price_Alerts'              => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-price-alerts.php',
 			);
 			$pro_tools                       = array_merge( $pro_tools, $financial_planner_toolkit_tools );
 		}

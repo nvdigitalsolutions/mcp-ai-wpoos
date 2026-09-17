@@ -112,37 +112,46 @@ class WP_MCP_AI_Tool_Stock_Data_Fetcher implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'   => array(
+				'action'     => array(
 					'type'        => 'string',
 					'description' => __( 'The action to perform.', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'search', 'quote', 'history', 'batch_quotes' ),
+					'enum'        => array( 'search', 'quote', 'history', 'batch_quotes', 'indicators' ),
 				),
-				'query'    => array(
+				'query'      => array(
 					'type'        => 'string',
 					'description' => __( 'Search query for ticker search (required for "search" action).', 'mcp-ai-wpoos-pro' ),
 				),
-				'ticker'   => array(
+				'ticker'     => array(
 					'type'        => 'string',
 					'description' => __( 'Ticker symbol (required for "quote" and "history" actions).', 'mcp-ai-wpoos-pro' ),
 				),
-				'tickers'  => array(
+				'tickers'    => array(
 					'type'        => 'array',
 					'description' => __( 'Array of ticker symbols (required for "batch_quotes" action).', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'period'   => array(
+				'period'     => array(
 					'type'        => 'string',
 					'description' => __( 'Data period for historical data.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( '1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', 'ytd', 'max' ),
 					'default'     => '1mo',
 				),
-				'interval' => array(
+				'interval'   => array(
 					'type'        => 'string',
 					'description' => __( 'Data interval for historical data.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( '1m', '5m', '15m', '30m', '1h', '1d', '1wk', '1mo' ),
 					'default'     => '1d',
+				),
+				'indicators' => array(
+					'type'        => 'array',
+					'description' => __( 'Technical indicators to compute for the "indicators" action.', 'mcp-ai-wpoos-pro' ),
+					'items'       => array(
+						'type' => 'string',
+						'enum' => array( 'sma', 'ema', 'vwap', 'bollinger', 'rsi', 'macd' ),
+					),
+					'default'     => array( 'sma', 'ema', 'rsi', 'macd' ),
 				),
 			),
 			'required'   => array( 'action' ),
@@ -194,11 +203,11 @@ class WP_MCP_AI_Tool_Stock_Data_Fetcher implements WP_MCP_AI_Tool_Interface, WP_
 
 		$action = isset( $arguments['action'] ) ? sanitize_text_field( $arguments['action'] ) : '';
 
-		$valid_actions = array( 'search', 'quote', 'history', 'batch_quotes' );
+		$valid_actions = array( 'search', 'quote', 'history', 'batch_quotes', 'indicators' );
 		if ( ! in_array( $action, $valid_actions, true ) ) {
 			return new WP_Error(
 				'invalid_action',
-				__( 'Invalid action. Must be one of: search, quote, history, batch_quotes.', 'mcp-ai-wpoos-pro' )
+				__( 'Invalid action. Must be one of: search, quote, history, batch_quotes, indicators.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -222,6 +231,9 @@ class WP_MCP_AI_Tool_Stock_Data_Fetcher implements WP_MCP_AI_Tool_Interface, WP_
 
 			case 'batch_quotes':
 				return $this->execute_batch_quotes( $service, $arguments, $period );
+
+			case 'indicators':
+				return $this->execute_indicators( $service, $arguments, $period, $interval );
 
 			default:
 				return new WP_Error(
@@ -419,6 +431,70 @@ class WP_MCP_AI_Tool_Stock_Data_Fetcher implements WP_MCP_AI_Tool_Interface, WP_
 			'period'       => $period,
 			'data'         => $result,
 			'disclaimer'   => __( 'EDUCATIONAL ONLY. Price data may be delayed 15 minutes or more. Not investment advice. Consult a licensed financial advisor before making investment decisions.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * Execute indicators action for a single ticker.
+	 *
+	 * @since 1.1.80
+	 *
+	 * @param WP_MCP_AI_YFinance_Service $service   YFinance service instance.
+	 * @param array                      $arguments Tool arguments.
+	 * @param string                     $period    Data period.
+	 * @param string                     $interval  Data interval.
+	 * @return array|WP_Error
+	 */
+	private function execute_indicators( $service, $arguments, $period, $interval ) {
+		$ticker = isset( $arguments['ticker'] ) ? strtoupper( sanitize_text_field( $arguments['ticker'] ) ) : '';
+
+		if ( empty( $ticker ) ) {
+			return new WP_Error(
+				'missing_ticker',
+				__( 'Ticker symbol is required for the "indicators" action.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$indicators = isset( $arguments['indicators'] ) && is_array( $arguments['indicators'] )
+			? array_map( 'sanitize_text_field', $arguments['indicators'] )
+			: array( 'sma', 'ema', 'rsi', 'macd' );
+
+		$result = $service->get_price_history( $ticker, $period, $interval );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		$rows = isset( $result['data'] ) && is_array( $result['data'] ) ? $result['data'] : array();
+		if ( empty( $rows ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_insufficient_history',
+				__( 'Not enough history to compute indicators. Try a longer period.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Technical_Indicators' ) ) {
+			$indicator_file = WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-technical-indicators.php';
+			if ( ! file_exists( $indicator_file ) ) {
+				return new WP_Error(
+					'indicators_not_installed',
+					__( 'Technical indicators service is not installed.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+			require_once $indicator_file;
+		}
+
+		$computed = WP_MCP_AI_Technical_Indicators::compute( $rows, $indicators );
+
+		return array(
+			'success'    => true,
+			'action'     => 'indicators',
+			'ticker'     => $ticker,
+			'period'     => $period,
+			'interval'   => $interval,
+			'indicators' => $computed,
+			'source'     => isset( $result['source'] ) ? $result['source'] : 'yfinance',
+			'disclaimer' => __( 'EDUCATIONAL ONLY. Technical indicators are computed from delayed public data and describe historical patterns only. Not investment advice.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

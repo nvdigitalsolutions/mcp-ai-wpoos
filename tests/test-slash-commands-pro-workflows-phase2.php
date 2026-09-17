@@ -109,13 +109,13 @@ class Test_Slash_Commands_Pro_Workflows_Phase2 extends WP_UnitTestCase {
 
 		// Verify step commands.
 		$this->assertEquals( 'inventory-forecast', $steps[0]['command'] );
-		$this->assertEquals( 'ecom-analytics', $steps[1]['command'] );
-		$this->assertEquals( 'customer-segment', $steps[2]['command'] );
+		$this->assertEquals( 'abandoned-recover', $steps[1]['command'] );
+		$this->assertEquals( 'inventory-forecast', $steps[2]['command'] );
 
 		// Verify first step has proper params.
-		$this->assertArrayHasKey( 'period', $steps[0]['params'] );
-		$this->assertEquals( 30, $steps[0]['params']['period'] );
-		$this->assertTrue( $steps[0]['params']['include-seasonal'] );
+		$this->assertArrayHasKey( 'forecast_type', $steps[0]['params'] );
+		$this->assertEquals( 'all', $steps[0]['params']['forecast_type'] );
+		$this->assertEquals( 30, $steps[0]['params']['analysis_period_days'] );
 	}
 
 	/**
@@ -131,16 +131,16 @@ class Test_Slash_Commands_Pro_Workflows_Phase2 extends WP_UnitTestCase {
 		$steps    = $workflow['steps'];
 
 		// Verify step commands.
-		$this->assertEquals( 'competitor-track', $steps[0]['command'] );
+		$this->assertEquals( 'research-query', $steps[0]['command'] );
 		$this->assertEquals( 'content-calendar', $steps[1]['command'] );
 		$this->assertEquals( 'social-schedule', $steps[2]['command'] );
 
 		// Verify parameter placeholders.
-		$this->assertArrayHasKey( 'competitor', $steps[0]['params'] );
-		$this->assertEquals( '{competitor_handle}', $steps[0]['params']['competitor'] );
+		$this->assertArrayHasKey( 'topic', $steps[0]['params'] );
+		$this->assertEquals( '{competitor_handle} competitor analysis', $steps[0]['params']['topic'] );
 
-		$this->assertArrayHasKey( 'action', $steps[1]['params'] );
-		$this->assertEquals( 'create', $steps[1]['params']['action'] );
+		$this->assertArrayHasKey( 'platform', $steps[1]['params'] );
+		$this->assertEquals( '{platform}', $steps[1]['params']['platform'] );
 	}
 
 	/**
@@ -161,12 +161,12 @@ class Test_Slash_Commands_Pro_Workflows_Phase2 extends WP_UnitTestCase {
 		$this->assertEquals( 'video-compress', $steps[2]['command'] );
 
 		// Verify second step uses previous result.
-		$this->assertArrayHasKey( 'video-id', $steps[1]['params'] );
-		$this->assertEquals( '{previous.video_id}', $steps[1]['params']['video-id'] );
+		$this->assertArrayHasKey( 'video_id', $steps[1]['params'] );
+		$this->assertEquals( '{previous.video_id}', $steps[1]['params']['video_id'] );
 
 		// Verify third step also uses previous result.
-		$this->assertArrayHasKey( 'video-id', $steps[2]['params'] );
-		$this->assertEquals( '{previous.video_id}', $steps[2]['params']['video-id'] );
+		$this->assertArrayHasKey( 'video_id', $steps[2]['params'] );
+		$this->assertEquals( '{previous.video_id}', $steps[2]['params']['video_id'] );
 	}
 
 	/**
@@ -268,7 +268,7 @@ class Test_Slash_Commands_Pro_Workflows_Phase2 extends WP_UnitTestCase {
 		$steps    = $workflow['steps'];
 
 		// Check for {previous.field} placeholder format.
-		$video_id_param = $steps[1]['params']['video-id'];
+		$video_id_param = $steps[1]['params']['video_id'];
 		$this->assertStringStartsWith( '{', $video_id_param );
 		$this->assertStringEndsWith( '}', $video_id_param );
 		$this->assertStringContainsString( 'previous', $video_id_param );

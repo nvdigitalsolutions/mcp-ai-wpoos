@@ -3,7 +3,7 @@
  * DeepSeek provider client.
  *
  * OpenAI-compatible API at https://api.deepseek.com/v1.
- * Supports reasoning_content passthrough for deepseek-reasoner.
+ * Supports reasoning_content passthrough for DeepSeek V4 thinking models.
  *
  * @package Nvoos\Core
  * @since   1.0.0

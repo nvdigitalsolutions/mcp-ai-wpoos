@@ -60,7 +60,7 @@ class Test_Model_Management extends \WP_UnitTestCase {
 		$this->assertSame( 'o3-mini', $map['o1-mini'] );
 		$this->assertSame( 'claude-sonnet-4-6', $map['claude-3-sonnet'] );
 		$this->assertSame( 'gemini-2.5-pro', $map['gemini-pro'] );
-		$this->assertSame( 'deepseek-v4-flash', $map['deepseek-chat'] );
+		$this->assertSame( 'deepseek-flash', $map['deepseek-chat'] );
 		$this->assertSame( 'microsoft/phi-4', $map['microsoft/phi-3-mini-4k-instruct'] );
 	}
 
@@ -123,7 +123,13 @@ class Test_Model_Management extends \WP_UnitTestCase {
 
 		$recorded = \get_option( ModelCatalogMigration::OPTION_KEY, '' );
 
-		$this->assertSame( '2026.07.14', $recorded );
+		// Derive the expected value from the bundled catalog so this test
+		// does not drift on future catalog-version bumps.
+		$catalog_path = \dirname( __DIR__, 2 ) . '/src/Model/model-catalog.json';
+		$decoded      = \json_decode( (string) \file_get_contents( $catalog_path ), true );
+		$expected     = \is_array( $decoded ) && isset( $decoded['version'] ) ? (string) $decoded['version'] : '';
+
+		$this->assertSame( $expected, $recorded );
 	}
 
 	// ─── Model integrity verifier ───────────────────────────────────

@@ -3244,8 +3244,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				);
 
 				// Channel-specific fields.
+				// Email recipients: a single address or a comma/semicolon/whitespace
+				// separated list. Normalized through the shared Result Delivery
+				// helper into a comma-joined list of individually sanitized
+				// addresses (legacy single-address configs pass through unchanged).
 				if ( 'email' === $channel && isset( $config['to'] ) ) {
-					$entry['to'] = sanitize_email( $config['to'] );
+					$entry['to'] = class_exists( 'WP_MCP_AI_Result_Delivery_Service' )
+						? WP_MCP_AI_Result_Delivery_Service::sanitize_email_recipients( $config['to'] )
+						: sanitize_email( $config['to'] );
+				}
+				if ( 'email' === $channel ) {
+					// Presentation format: both (HTML + plain-text Markdown fallback),
+					// html only, or markdown only. Defaults to 'both' so pre-existing
+					// schedules gain properly formatted HTML emails without migration.
+					$entry['format'] = isset( $config['format'] ) && in_array( $config['format'], array( 'both', 'html', 'markdown' ), true )
+						? $config['format']
+						: 'both';
 				}
 				if ( 'email' === $channel ) {
 					// Presentation format: both (HTML + plain-text Markdown fallback),

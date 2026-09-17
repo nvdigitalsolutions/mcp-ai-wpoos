@@ -1068,11 +1068,11 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		 * - `markdown`: text/plain Markdown only.
 		 *
 		 * @param array $payload Formatted email payload (subject, plain, html_body).
-		 * @param array $config  Channel config (must contain 'to'; optional 'format').
+		 * @param array $config  Channel config ('to' may hold one or more comma-separated recipients; optional 'format').
 		 * @return true|WP_Error
 		 */
 		protected static function send_email( array $payload, array $config ) {
-			$to = isset( $config['to'] ) ? sanitize_email( $config['to'] ) : '';
+			$to = self::sanitize_email_recipients( isset( $config['to'] ) ? $config['to'] : '' );
 			if ( '' === $to ) {
 				return new WP_Error( 'missing_email_recipient', __( 'No email recipient configured.', 'mcp-ai-wpoos-pro' ) );
 			}
@@ -1143,6 +1143,44 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			return isset( $config['format'] ) && in_array( $config['format'], self::EMAIL_FORMATS, true )
 				? $config['format']
 				: 'both';
+		}
+
+		/**
+		 * Normalize a recipient field into a comma-separated list of valid emails.
+		 *
+		 * Accepts a single address, a comma/semicolon/whitespace-separated list,
+		 * or an array of addresses (defensive — presets and MCP tools may pass
+		 * either shape). Each token is sanitized individually and empty tokens
+		 * are dropped so wp_mail() and Nodemailer receive a clean recipient
+		 * list. Duplicates are removed to avoid double delivery.
+		 *
+		 * @since 1.1.81
+		 *
+		 * @param string|array $value Raw recipient value.
+		 * @return string Comma-separated sanitized list, empty when nothing valid remains.
+		 */
+		public static function sanitize_email_recipients( $value ) {
+			if ( is_array( $value ) ) {
+				$value = implode( ',', $value );
+			}
+
+			$value = (string) $value;
+			if ( '' === trim( $value ) ) {
+				return '';
+			}
+
+			$tokens = preg_split( '/[\s,;]+/', $value );
+			$emails = array();
+			if ( is_array( $tokens ) ) {
+				foreach ( $tokens as $token ) {
+					$email = sanitize_email( trim( $token ) );
+					if ( '' !== $email ) {
+						$emails[] = $email;
+					}
+				}
+			}
+
+			return implode( ', ', array_unique( $emails ) );
 		}
 
 		/**

@@ -67,10 +67,15 @@ class WP_MCP_AI_Nodemailer_Service {
 			);
 		}
 
-		// Prepare email parameters.
+		// Prepare email parameters. 'to' may hold a comma-separated recipient
+		// list, so route it through the shared Result Delivery normalizer when
+		// available (falls back to the legacy single-address sanitization when
+		// Nodemailer is used standalone).
 		$params = array(
 			'from'    => isset( $email_data['from'] ) ? sanitize_email( $email_data['from'] ) : get_option( 'admin_email' ),
-			'to'      => sanitize_email( $email_data['to'] ),
+			'to'      => class_exists( 'WP_MCP_AI_Result_Delivery_Service' )
+				? WP_MCP_AI_Result_Delivery_Service::sanitize_email_recipients( $email_data['to'] )
+				: sanitize_email( $email_data['to'] ),
 			'subject' => sanitize_text_field( $email_data['subject'] ),
 		);
 

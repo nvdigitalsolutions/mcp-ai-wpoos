@@ -1154,9 +1154,13 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'assistant_management'      => array(
 				'name'        => __( '🤖 Assistant Management', 'mcp-ai-wpoos' ),
-				'description' => __( 'AI assistant creation, configuration, agent team management, and A2A delegation', 'mcp-ai-wpoos' ),
+				'description' => __( 'AI assistant creation, configuration, export/import, agent team management, and A2A delegation', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					'create_assistant',
+					'export_assistant',
+					'import_assistant',
+					'duplicate_assistant',
+					'export_assistant_blueprint',
 					'probe_chat',
 					'probe_remote_mcp',
 					'query_mesh_intelligent',

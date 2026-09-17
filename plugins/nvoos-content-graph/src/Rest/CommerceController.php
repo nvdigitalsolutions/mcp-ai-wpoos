@@ -165,6 +165,23 @@ class CommerceController {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function createSession( WP_REST_Request $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- REST callback signature
+		// Already-licensed site: never create a chargeable session again.
+		// The purchase modal renders the recorded license instead of a
+		// payment form, so a second charge is impossible from this screen.
+		if ( License::isLicensed() && Installer::isActive() ) {
+			$bundleActive = Installer::isBundleActive();
+			return rest_ensure_response(
+				array(
+					'already_licensed' => true,
+					'bundle_active'    => $bundleActive,
+					'license_key'      => License::licenseKey(),
+					'message'          => $bundleActive
+						? __( 'NV oOS Complete is already licensed and active on this site.', 'nvoos-content-graph' )
+						: __( 'Your NV oOS Content Graph — AI addon is already licensed and active on this site.', 'nvoos-content-graph' ),
+				)
+			);
+		}
+
 		if ( ! $this->passesThrottle( 'session', 5 ) ) {
 			return new WP_Error(
 				'nvoos_content_graph_rate_limited',
@@ -294,13 +311,17 @@ class CommerceController {
 		$buyerCountry  = (string) $request->get_param( 'buyer_country' );
 
 		if ( License::isLicensed() && Installer::isActive() ) {
+			$bundleActive = Installer::isBundleActive();
 			return rest_ensure_response(
 				array(
-					'licensed'    => true,
-					'installed'   => true,
-					'activated'   => true,
-					'license_key' => License::licenseKey(),
-					'message'     => __( 'NV oOS is already licensed and active on this site.', 'nvoos-content-graph' ),
+					'licensed'      => true,
+					'installed'     => true,
+					'activated'     => true,
+					'bundle_active' => $bundleActive,
+					'license_key'   => License::licenseKey(),
+					'message'       => $bundleActive
+						? __( 'NV oOS Complete is already licensed and active on this site.', 'nvoos-content-graph' )
+						: __( 'Your NV oOS Content Graph — AI addon is already licensed and active on this site.', 'nvoos-content-graph' ),
 				)
 			);
 		}
@@ -387,15 +408,16 @@ class CommerceController {
 
 		return rest_ensure_response(
 			array(
-				'licensed'     => true,
-				'installed'    => (bool) $install['installed'],
-				'activated'    => (bool) $install['activated'],
-				'license_key'  => $record['license_key'],
+				'licensed'      => true,
+				'installed'     => (bool) $install['installed'],
+				'activated'     => (bool) $install['activated'],
+				'bundle_active' => Installer::isBundleActive(),
+				'license_key'   => $record['license_key'],
 				// Manual install is the primary documented path — always
 				// surface the signed download URL alongside the auto-install
 				// result so the buyer can upload the ZIP themselves.
-				'download_url' => $zipUrl,
-				'message'      => (string) $install['message'],
+				'download_url'  => $zipUrl,
+				'message'       => (string) $install['message'],
 			)
 		);
 	}

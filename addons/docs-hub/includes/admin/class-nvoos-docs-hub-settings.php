@@ -90,7 +90,11 @@ class NV_oOS_Docs_Hub_Settings {
 			array(
 				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
 				'importNonce' => wp_create_nonce( 'nvoos_docs_hub_import_settings' ),
-				'settings'    => NV_oOS_Docs_Hub_Plugin::get_settings(),
+				// Tokens are stripped server-side: GitHub personal access
+				// tokens must never be localized into the page DOM. The
+				// settings-page script only needs token-free settings for the
+				// JSON export flow.
+				'settings'    => self::settings_without_tokens(),
 				'i18n'        => array(
 					/* translators: Loading indicator text. */
 					'importing'           => __( 'Importing…', 'nvoos-docs-hub' ),
@@ -101,6 +105,31 @@ class NV_oOS_Docs_Hub_Settings {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Return the plugin settings with all repository tokens removed.
+	 *
+	 * Used when localizing settings for the admin scripts so sensitive
+	 * GitHub personal access tokens never land in the page markup.
+	 *
+	 * @since 0.4.4
+	 *
+	 * @return array
+	 */
+	private static function settings_without_tokens() {
+		$settings = NV_oOS_Docs_Hub_Plugin::get_settings();
+
+		if ( isset( $settings['remote_repos'] ) && is_array( $settings['remote_repos'] ) ) {
+			foreach ( $settings['remote_repos'] as &$repo_row ) {
+				if ( is_array( $repo_row ) ) {
+					unset( $repo_row['token'] );
+				}
+			}
+			unset( $repo_row );
+		}
+
+		return $settings;
 	}
 
 	/**

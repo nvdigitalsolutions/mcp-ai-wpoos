@@ -25,6 +25,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 	use WP_MCP_AI_Shopify_Connection_Resolver;
 	use WP_MCP_AI_Tool_Product_Card;
 	use WP_MCP_AI_Shopify_Smart_Search;
+	use WP_MCP_AI_Shopify_Product_Normalizers;
 
 	/**
 	 * {@inheritdoc}
@@ -44,7 +45,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Manage products on a connected Shopify store via the Admin GraphQL API. Supports listing, searching, retrieving details, creating, and updating products, variants, and inventory.', 'mcp-ai-wpoos-pro' );
+		return __( 'Manage products on a connected Shopify store. Mode-aware: with an admin_api connection this tool lists, searches, retrieves, creates, and updates products via the Admin GraphQL API. With a Storefront Catalog MCP or Global Catalog MCP connection (keyless UCP, live agent-query mode) it performs live catalog queries only — search_catalog, lookup_catalog, get_product — and rejects create/update with a hint; UCP usage guidelines prohibit caching catalog results, so every call is live and nothing is stored. With the deprecated REST catalog_api connection it performs live Catalog API search and lookup. Every product result includes image URLs (images[]) and a chat-rendered product card with the product image.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -77,7 +78,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 				),
 				'after'           => array(
 					'type'        => 'string',
-					'description' => __( 'Pagination cursor (endCursor from a previous response).', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Pagination cursor (endCursor from a previous Admin API response, or the opaque UCP pagination cursor in Storefront/Global Catalog modes).', 'mcp-ai-wpoos-pro' ),
 				),
 				'query'           => array(
 					'type'        => 'string',
@@ -126,6 +127,22 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 					'type'        => 'boolean',
 					'description' => __( 'Enable smart search for list/search actions (default: true). When the full query returns zero results, automatically decomposes it into smaller keyword groups and merges results. Set to false to disable.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
+				),
+				'context'         => array(
+					'type'                 => 'object',
+					'description'          => __( 'Buyer context for live UCP catalog queries (Storefront/Global Catalog modes). Optional keys: address_country (2-letter ISO country, e.g. "US"), language (BCP-47 code, e.g. "en"), currency (ISO 4217 code, e.g. "USD"), intent (free-text buyer intent, e.g. "looking for a birthday gift"). Passed through to Shopify so results are localized and ranked to the buyer. Ignored in admin_api mode.', 'mcp-ai-wpoos-pro' ),
+					'properties'           => array(
+						'address_country' => array( 'type' => 'string' ),
+						'language'        => array( 'type' => 'string' ),
+						'currency'        => array( 'type' => 'string' ),
+						'intent'          => array( 'type' => 'string' ),
+					),
+					'additionalProperties' => false,
+				),
+				'selected'        => array(
+					'type'        => 'array',
+					'description' => __( 'Option selections for the get action in UCP catalog modes, e.g. [{"name":"Color","label":"Blue"}]. Narrows the returned product to matching variants with availability signals.', 'mcp-ai-wpoos-pro' ),
+					'items'       => array( 'type' => 'object' ),
 				),
 			),
 			'required'             => array( 'action' ),
@@ -238,6 +255,53 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 					return new WP_Error(
 						'wp_mcp_ai_shopify_catalog_read_only',
 						__( 'Product creation and updates are not supported in catalog_api mode. Switch to an admin_api connection for write operations.', 'mcp-ai-wpoos-pro' )
+					);
+
+				default:
+					return new WP_Error( 'wp_mcp_ai_shopify_invalid_action', __( 'Invalid action specified.', 'mcp-ai-wpoos-pro' ) );
+			}
+		}
+
+		// Global Catalog MCP mode — route read-only operations to the keyless
+		// UCP Global Catalog endpoint and reject unsupported write operations.
+		if ( 'global_catalog' === $api_mode ) {
+			switch ( $action ) {
+				case 'list':
+				case 'search':
+					return $this->handle_global_catalog_list( $client, $arguments, $connection );
+
+				case 'get':
+					return $this->handle_global_catalog_get( $client, $arguments );
+
+				case 'create':
+				case 'update':
+					return new WP_Error(
+						'wp_mcp_ai_shopify_global_catalog_read_only',
+						__( 'Product creation and updates are not supported in global_catalog mode. Switch to an admin_api connection for write operations.', 'mcp-ai-wpoos-pro' )
+					);
+
+				default:
+					return new WP_Error( 'wp_mcp_ai_shopify_invalid_action', __( 'Invalid action specified.', 'mcp-ai-wpoos-pro' ) );
+			}
+		}
+
+		// Storefront Catalog MCP mode — route read-only operations to the
+		// keyless UCP Storefront Catalog endpoint on the store itself and
+		// reject unsupported write operations.
+		if ( 'storefront_catalog' === $api_mode ) {
+			switch ( $action ) {
+				case 'list':
+				case 'search':
+					return $this->handle_storefront_catalog_list( $client, $arguments, $connection );
+
+				case 'get':
+					return $this->handle_storefront_catalog_get( $client, $arguments );
+
+				case 'create':
+				case 'update':
+					return new WP_Error(
+						'wp_mcp_ai_shopify_storefront_catalog_read_only',
+						__( 'Product creation and updates are not supported in storefront_catalog mode. UCP catalog modes are live agent-query modes: switch to an admin_api connection for write operations.', 'mcp-ai-wpoos-pro' )
 					);
 
 				default:
@@ -744,12 +808,407 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 
 		$product = $this->normalize_catalog_product( is_array( $response ) ? $response : array() );
 
+		$message = __( 'Product retrieved successfully.', 'mcp-ai-wpoos-pro' );
+		if ( ! empty( $product['title'] ) || ! empty( $product['images'] ) ) {
+			$message = $this->format_single_product_card( $product, 'shopify', array( 'max_description' => 200 ) );
+		}
+
 		return array(
 			'success' => true,
 			'product' => $product,
-			'message' => __( 'Product retrieved successfully.', 'mcp-ai-wpoos-pro' ),
+			'message' => $message,
 		);
 	}
+
+	/**
+	 * Handle list/search for Global Catalog MCP (UCP) mode connections.
+	 *
+	 * @param WP_MCP_AI_Shopify_Client $client     Shopify client.
+	 * @param array                    $arguments  Tool arguments.
+	 * @param array                    $connection Connection data array.
+	 * @return array|WP_Error
+	 */
+	protected function handle_global_catalog_list( $client, array $arguments, array $connection ) {
+		return $this->handle_ucp_catalog_list( $client, $arguments, $connection, 'global' );
+	}
+
+	/**
+	 * Handle list/search for Storefront Catalog MCP (UCP) mode connections.
+	 *
+	 * @param WP_MCP_AI_Shopify_Client $client     Shopify client.
+	 * @param array                    $arguments  Tool arguments.
+	 * @param array                    $connection Connection data array.
+	 * @return array|WP_Error
+	 */
+	protected function handle_storefront_catalog_list( $client, array $arguments, array $connection ) {
+		return $this->handle_ucp_catalog_list( $client, $arguments, $connection, 'storefront' );
+	}
+
+	/**
+	 * Shared live list/search core for UCP catalog modes.
+	 *
+	 * The UCP catalogs return products in the structuredContent envelope.
+	 * UCP usage guidelines prohibit caching, so every call is live (no
+	 * transients, no CCT writes); smart-search decomposition still applies
+	 * at runtime. Buyer context and the opaque UCP pagination cursor are
+	 * passed through so agents can localize results and page forward.
+	 *
+	 * @param WP_MCP_AI_Shopify_Client $client     Shopify client.
+	 * @param array                    $arguments  Tool arguments.
+	 * @param array                    $connection Connection data array.
+	 * @param string                   $mode       'global' or 'storefront'.
+	 * @return array|WP_Error
+	 */
+	protected function handle_ucp_catalog_list( $client, array $arguments, array $connection, $mode ) {
+		$is_global = 'global' === $mode;
+		$max_limit = $is_global ? 50 : 250;
+
+		$limit = isset( $arguments['first'] )
+			? max( 1, min( $max_limit, absint( $arguments['first'] ) ) )
+			: 10;
+
+		$query = isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '';
+
+		// The UCP catalogs have no wildcard browse; derive a browse-friendly default.
+		if ( empty( $query ) || '*' === $query ) {
+			$query = $this->build_catalog_browse_query( $connection );
+		}
+
+		$context = $this->build_ucp_context( $arguments );
+		$cursor  = isset( $arguments['after'] ) ? sanitize_text_field( $arguments['after'] ) : '';
+
+		$response = $this->ucp_catalog_search_call( $client, $is_global, $query, $limit, $context, $cursor );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$raw_products = $this->extract_ucp_products( $response );
+		$products     = array_map( array( $this, 'normalize_ucp_product' ), $raw_products );
+
+		// --- Progressive relaxation: decompose when no results and query is present. ---
+		$smart_search = ! isset( $arguments['smart_search'] ) || ! empty( $arguments['smart_search'] );
+		$decomposed   = false;
+
+		if ( empty( $products ) && ! empty( $query ) && $smart_search && $this->should_decompose_query( $query ) ) {
+			$tokens      = $this->extract_search_tokens( $query );
+			$sub_queries = $this->generate_sub_queries( $tokens, $query );
+
+			if ( ! empty( $sub_queries ) ) {
+				$result_sets = array();
+
+				foreach ( $sub_queries as $sub_query ) {
+					$sub_response = $this->ucp_catalog_search_call( $client, $is_global, $sub_query, $limit, $context, '' );
+
+					if ( is_wp_error( $sub_response ) ) {
+						continue;
+					}
+
+					$sub_products = array_map(
+						array( $this, 'normalize_ucp_product' ),
+						$this->extract_ucp_products( $sub_response )
+					);
+					if ( ! empty( $sub_products ) ) {
+						$result_sets[] = $sub_products;
+					}
+				}
+
+				if ( ! empty( $result_sets ) ) {
+					$products   = $this->merge_and_rank_products(
+						$result_sets,
+						function ( $product ) {
+							return isset( $product['id'] ) ? $product['id'] : '';
+						},
+						$limit
+					);
+					$decomposed = true;
+				}
+			}
+		}
+
+		$cards_message = $this->format_product_cards( $products, 'shopify' );
+		$catalog_label = $is_global
+			? __( 'Shopify Global Catalog', 'mcp-ai-wpoos-pro' )
+			: __( 'Shopify Storefront Catalog', 'mcp-ai-wpoos-pro' );
+
+		$result = array(
+			'success'    => true,
+			'live'       => true, // UCP usage guidelines: live query, nothing cached.
+			'message'    => ! empty( $cards_message ) ? $cards_message : sprintf(
+				/* translators: 1: catalog label, 2: number of products */
+				__( 'Retrieved %2$d product(s) from the %1$s', 'mcp-ai-wpoos-pro' ),
+				$catalog_label,
+				count( $products )
+			),
+			'products'   => $products,
+			'count'      => count( $products ),
+			'pagination' => $this->extract_ucp_pagination( $response ),
+			'raw'        => $raw_products,
+		);
+
+		if ( $decomposed ) {
+			$result['smart_search'] = true;
+			$result['note']         = sprintf(
+				/* translators: %1$d: number of results, %2$s: original query */
+				__( 'The original query "%2$s" returned 0 results. Smart search decomposed the query into smaller keywords and found %1$d product(s).', 'mcp-ai-wpoos-pro' ),
+				count( $products ),
+				$query
+			);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Handle single product lookup for Global Catalog MCP (UCP) mode.
+	 *
+	 * Accepts a product or variant identifier via product_id or upid.
+	 *
+	 * @param WP_MCP_AI_Shopify_Client $client    Shopify client.
+	 * @param array                    $arguments Tool arguments.
+	 * @return array|WP_Error
+	 */
+	protected function handle_global_catalog_get( $client, array $arguments ) {
+		return $this->handle_ucp_catalog_get( $client, $arguments, 'global' );
+	}
+
+	/**
+	 * Handle single product lookup for Storefront Catalog MCP (UCP) mode.
+	 *
+	 * Accepts a product or variant identifier via product_id or upid.
+	 *
+	 * @param WP_MCP_AI_Shopify_Client $client    Shopify client.
+	 * @param array                    $arguments Tool arguments.
+	 * @return array|WP_Error
+	 */
+	protected function handle_storefront_catalog_get( $client, array $arguments ) {
+		return $this->handle_ucp_catalog_get( $client, $arguments, 'storefront' );
+	}
+
+	/**
+	 * Shared live single-product lookup core for UCP catalog modes.
+	 *
+	 * Without option selections the canonical lookup_catalog tool resolves
+	 * the identifier; with `selected` option selections the canonical
+	 * get_product tool narrows variants and reports availability signals.
+	 * Unresolved identifiers surface in `not_found` per the UCP spec.
+	 *
+	 * @param WP_MCP_AI_Shopify_Client $client    Shopify client.
+	 * @param array                    $arguments Tool arguments.
+	 * @param string                   $mode      'global' or 'storefront'.
+	 * @return array|WP_Error
+	 */
+	protected function handle_ucp_catalog_get( $client, array $arguments, $mode ) {
+		$is_global = 'global' === $mode;
+
+		$id = '';
+		if ( isset( $arguments['product_id'] ) ) {
+			$id = sanitize_text_field( $arguments['product_id'] );
+		} elseif ( isset( $arguments['upid'] ) ) {
+			$id = sanitize_text_field( $arguments['upid'] );
+		}
+
+		if ( empty( $id ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_shopify_missing_product_id',
+				__( 'product_id is required for the get action in UCP catalog modes.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$context = $this->build_ucp_context( $arguments );
+
+		// With explicit option selections, use the canonical get_product tool
+		// so Shopify narrows the variants and reports availability signals.
+		$selected = isset( $arguments['selected'] ) && is_array( $arguments['selected'] )
+			? array_slice( $arguments['selected'], 0, 25 )
+			: array();
+
+		if ( ! empty( $selected ) ) {
+			$response = $is_global
+				? $client->global_catalog_get_product( $id, $selected, $context )
+				: $client->storefront_catalog_get_product( $id, $selected, $context );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$product = $this->extract_ucp_product( $response );
+
+			if ( empty( $product ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_product_not_found',
+					__( 'The requested product was not found in the Shopify catalog.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$normalized = $this->normalize_ucp_product( $product );
+			$message    = __( 'Product retrieved successfully.', 'mcp-ai-wpoos-pro' );
+			if ( ! empty( $normalized['title'] ) || ! empty( $normalized['images'] ) ) {
+				$message = $this->format_single_product_card( $normalized, 'shopify', array( 'max_description' => 200 ) );
+			}
+
+			return array(
+				'success' => true,
+				'live'    => true, // UCP usage guidelines: live query, nothing cached.
+				'product' => $normalized,
+				'message' => $message,
+			);
+		}
+
+		$response = $is_global
+			? $client->global_catalog_lookup( array( $id ), $context )
+			: $client->storefront_catalog_lookup( array( $id ), $context );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$products = $this->extract_ucp_products( $response );
+		$product  = ! empty( $products ) ? $this->normalize_ucp_product( $products[0] ) : array();
+
+		if ( empty( $product ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_shopify_product_not_found',
+				__( 'The requested product was not found in the Shopify catalog.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$message = __( 'Product retrieved successfully.', 'mcp-ai-wpoos-pro' );
+		if ( ! empty( $product['title'] ) || ! empty( $product['images'] ) ) {
+			$message = $this->format_single_product_card( $product, 'shopify', array( 'max_description' => 200 ) );
+		}
+
+		$result = array(
+			'success' => true,
+			'live'    => true, // UCP usage guidelines: live query, nothing cached.
+			'product' => $product,
+			'message' => $message,
+		);
+
+		$not_found = $this->extract_ucp_not_found( $response );
+		if ( ! empty( $not_found ) ) {
+			$result['not_found'] = $not_found;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Extract the product list from a UCP MCP tool response.
+	 *
+	 * UCP results wrap products inside result.structuredContent.products.
+	 *
+	 * @param array $response Decoded UCP MCP result.
+	 * @return array Product items.
+	 */
+	protected function extract_ucp_products( $response ) {
+		if ( ! is_array( $response ) ) {
+			return array();
+		}
+		$content  = isset( $response['structuredContent'] ) ? $response['structuredContent'] : $response;
+		$products = isset( $content['products'] ) ? $content['products'] : array();
+		return is_array( $products ) ? $products : array();
+	}
+
+	/**
+	 * Extract the single product object from a UCP get_product response.
+	 *
+	 * The get_product tool returns result.structuredContent.product; this
+	 * helper falls back to the first product entry for lookup-style shapes.
+	 *
+	 * @param array $response Decoded UCP MCP result.
+	 * @return array Product item or empty array.
+	 */
+	protected function extract_ucp_product( $response ) {
+		if ( ! is_array( $response ) ) {
+			return array();
+		}
+		$content = isset( $response['structuredContent'] ) ? $response['structuredContent'] : $response;
+		if ( isset( $content['product'] ) && is_array( $content['product'] ) ) {
+			return $content['product'];
+		}
+		$products = isset( $content['products'] ) ? $content['products'] : array();
+		return is_array( $products ) && ! empty( $products ) ? $products[0] : array();
+	}
+
+	/**
+	 * Extract the UCP pagination envelope from a search response.
+	 *
+	 * UCP search results carry result.structuredContent.pagination with a
+	 * cursor, has_next_page, and total_count — surfaced so agents can page
+	 * through live results without re-querying.
+	 *
+	 * @param array $response Decoded UCP MCP result.
+	 * @return array Pagination object or empty array.
+	 */
+	protected function extract_ucp_pagination( $response ) {
+		if ( ! is_array( $response ) ) {
+			return array();
+		}
+		$content    = isset( $response['structuredContent'] ) ? $response['structuredContent'] : $response;
+		$pagination = isset( $content['pagination'] ) ? $content['pagination'] : array();
+		return is_array( $pagination ) ? $pagination : array();
+	}
+
+	/**
+	 * Extract unresolved identifiers from a UCP lookup response.
+	 *
+	 * @param array $response Decoded UCP MCP result.
+	 * @return array not_found entries or empty array.
+	 */
+	protected function extract_ucp_not_found( $response ) {
+		if ( ! is_array( $response ) ) {
+			return array();
+		}
+		$content   = isset( $response['structuredContent'] ) ? $response['structuredContent'] : $response;
+		$not_found = isset( $content['not_found'] ) ? $content['not_found'] : array();
+		return is_array( $not_found ) ? $not_found : array();
+	}
+
+	/**
+	 * Build the UCP buyer-context object from tool arguments.
+	 *
+	 * Only the four UCP context signals are forwarded (address_country,
+	 * language, currency, intent) — everything else is ignored so agent
+	 * input cannot inject arbitrary keys into the upstream request.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return array UCP context object.
+	 */
+	protected function build_ucp_context( array $arguments ) {
+		$context = array();
+
+		if ( isset( $arguments['context'] ) && is_array( $arguments['context'] ) ) {
+			$allowed = array( 'address_country', 'language', 'currency', 'intent' );
+			foreach ( $allowed as $key ) {
+				if ( ! empty( $arguments['context'][ $key ] ) ) {
+					$context[ $key ] = sanitize_text_field( $arguments['context'][ $key ] );
+				}
+			}
+		}
+
+		return $context;
+	}
+
+	/**
+	 * Dispatch a live UCP search call to the matching client method.
+	 *
+	 * @param WP_MCP_AI_Shopify_Client $client   Shopify client.
+	 * @param bool                     $is_global True for Global Catalog, false for Storefront Catalog.
+	 * @param string                   $query    Free-text query.
+	 * @param int                      $limit    Result limit.
+	 * @param array                    $context  UCP buyer context.
+	 * @param string                   $cursor   Optional pagination cursor.
+	 * @return array|WP_Error Decoded UCP MCP result or WP_Error.
+	 */
+	protected function ucp_catalog_search_call( $client, $is_global, $query, $limit, array $context, $cursor ) {
+		if ( $is_global ) {
+			return $client->global_catalog_search( $query, $limit, $context, array(), $cursor );
+		}
+		return $client->storefront_catalog_search( $query, $limit, $context, $cursor );
+	}
+
+
 
 	/**
 	 * Build a browse-friendly default query for the Catalog API.
@@ -788,78 +1247,5 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 
 		// Final fallback — generic keyword.
 		return 'products';
-	}
-
-	/**
-	 * Normalize a product from the Catalog API response.
-	 *
-	 * Catalog API field names are all lowercase (displayname, pricerange,
-	 * lookupurl, availableforsale, etc.) and prices are in minor units
-	 * (cents).  This method maps them to a structure compatible with both
-	 * the Admin API normalizer output and the TMA template JS renderer.
-	 *
-	 * @param array $item Raw Catalog API product object.
-	 * @return array Normalized product array.
-	 */
-	protected function normalize_catalog_product( array $item ) {
-		$title = '';
-		if ( isset( $item['displayname'] ) ) {
-			$title = $item['displayname'];
-		} elseif ( isset( $item['title'] ) ) {
-			$title = $item['title'];
-		}
-
-		// Images / media — Catalog API uses a "media" array.
-		$images = array();
-		if ( isset( $item['media'] ) && is_array( $item['media'] ) ) {
-			foreach ( $item['media'] as $media ) {
-				$url = isset( $media['url'] ) ? $media['url'] : ( isset( $media['src'] ) ? $media['src'] : '' );
-				if ( $url ) {
-					$images[] = array( 'url' => $url );
-				}
-			}
-		}
-
-		// Price range — Catalog API uses lowercase keys; amounts in minor units (cents).
-		$price_range = array();
-		if ( isset( $item['pricerange'] ) && is_array( $item['pricerange'] ) ) {
-			$pr = $item['pricerange'];
-			if ( isset( $pr['minvariantprice'] ) && is_array( $pr['minvariantprice'] ) ) {
-				$min                            = $pr['minvariantprice'];
-				$price_range['minVariantPrice'] = array(
-					'amount'       => isset( $min['amount'] ) ? ( (float) $min['amount'] / 100 ) : 0,
-					'currencyCode' => isset( $min['currencycode'] ) ? $min['currencycode'] : 'USD',
-				);
-			}
-			if ( isset( $pr['maxvariantprice'] ) && is_array( $pr['maxvariantprice'] ) ) {
-				$max                            = $pr['maxvariantprice'];
-				$price_range['maxVariantPrice'] = array(
-					'amount'       => isset( $max['amount'] ) ? ( (float) $max['amount'] / 100 ) : 0,
-					'currencyCode' => isset( $max['currencycode'] ) ? $max['currencycode'] : 'USD',
-				);
-			}
-		}
-
-		return array(
-			'id'               => isset( $item['upid'] ) ? $item['upid'] : ( isset( $item['id'] ) ? $item['id'] : '' ),
-			'title'            => $title,
-			'handle'           => isset( $item['handle'] ) ? $item['handle'] : '',
-			'status'           => isset( $item['availableforsale'] ) && $item['availableforsale'] ? 'ACTIVE' : 'UNAVAILABLE',
-			'vendor'           => isset( $item['vendor'] ) ? $item['vendor'] : '',
-			'product_type'     => isset( $item['producttype'] ) ? $item['producttype'] : ( isset( $item['product_type'] ) ? $item['product_type'] : '' ),
-			'tags'             => isset( $item['tags'] ) ? $item['tags'] : array(),
-			'created_at'       => '',
-			'updated_at'       => '',
-			'price_range'      => $price_range,
-			'total_inventory'  => 0,
-			'variants'         => array(),
-			'images'           => $images,
-			'availableforsale' => isset( $item['availableforsale'] ) ? $item['availableforsale'] : true,
-			'lookupurl'        => isset( $item['lookupurl'] ) ? $item['lookupurl'] : '',
-			'displayname'      => $title,
-			// Preserve the raw media/pricerange for the TMA JS renderer.
-			'media'            => isset( $item['media'] ) ? $item['media'] : array(),
-			'pricerange'       => isset( $item['pricerange'] ) ? $item['pricerange'] : array(),
-		);
 	}
 }

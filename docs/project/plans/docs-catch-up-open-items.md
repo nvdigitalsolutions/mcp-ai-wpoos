@@ -1,8 +1,8 @@
 # Docs & Release Catch-Up — Standing Open-Items Tracker
 
 > **Purpose:** Single registry of every open item identified (and parked or deferred) by the docs & release catch-up runs, so future passes carry from this file instead of re-copying items between plans.
-> **Last reviewed:** 2026-09-11 (v1.1.77 pass)
-> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.77-docs-catch-up.md`](v1.1.77-docs-catch-up.md).
+> **Last reviewed:** 2026-09-17 (v1.1.81 pass)
+> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.81-docs-catch-up.md`](v1.1.81-docs-catch-up.md).
 > **Rule for future passes:** read this file first; a catch-up plan's "Open items" section should point here and only add new items it introduces.
 
 ---
@@ -32,6 +32,9 @@
 | 13 | `@since 1.0.0` | `addons/pro/includes/services/class-wp-mcp-ai-result-delivery-service.php` — `merge_channel_destination_fields()` + `normalize_channel_credentials()`, 2 instances (PRs #6482/#6488) | 1.1.75 | v1.1.75 plan |
 | 14 | *missing* | `addons/pro/includes/services/class-wp-mcp-ai-result-delivery-service.php` — `resolve_chat_format()`, `telegram_parse_mode()`, `escape_markdown_v2()`, `send_telegram_direct()`, `response_starts_with_summary()`, 5 instances (PRs #6525/#6548) + `includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php` — `hash_playbook_content()` (direct commit `fe4d0ee880`) | 1.1.76 | v1.1.76 plan |
 | 15 | `@since 1.1.76` | `includes/admin/class-wp-mcp-ai-onboarding-wizard.php` — `is_graph_tools_active()`, `is_content_graph_detected()`, `get_graphify_tool_slugs()`, `get_knowledge_graph_preset_tools()`, `get_effective_preset_selection()`, 7 instances (PR #6570) + `includes/class-wp-mcp-ai-cost-calculator.php` — `is_peak_time()`, `get_model_pricing_at()`, `calculate_cost_at()`, 4 instances (PR #6555) | 1.1.77 | v1.1.77 plan |
+| 16 | `@since 3.2.0` | `addons/pro/includes/tools/crm/` — 9 files: `class-wp-mcp-ai-crm-{stage-history,identity,link-tracker}.php`, `analytics/class-wp-mcp-ai-tool-get-pipeline-digest.php`, `class-wp-mcp-ai-tool-get-crm-handover.php`, `deals/class-wp-mcp-ai-tool-{bulk-move-deal-stages,create-tracked-link}.php`, `inbound/class-wp-mcp-ai-crm-gmail-reply-poller.php`, `inbound/class-wp-mcp-ai-tool-record-crm-reply.php` (PRs #6636/#6640/#6641; the init.php + `mcp-ai-wpoos-pro.php` registration comments also say "Since 3.2.0") | 1.1.81 | v1.1.81 plan |
+| 17 | `@since 1.1.82` | `addons/pro/includes/tools/ecommerce/trait-wp-mcp-ai-shopify-product-normalizers.php` — 1 instance (PR #6638; ahead of the shipping version) | 1.1.81 | v1.1.81 plan |
+| 18 | `@since 1.1.80` | `addons/pro/includes/class-wp-mcp-ai-financial-transaction-cpt.php` + `includes/services/class-wp-mcp-ai-market-data-providers.php` + `class-wp-mcp-ai-technical-indicators.php` + 8 `financial-planning/class-wp-mcp-ai-tool-*.php` files (PR #6639; one version behind the 1.1.81 ship) | 1.1.81 | v1.1.81 plan |
 
 - **Blocked on:** version-jump decision — does the next release stay on 1.1.x or jump to 1.2.0?
 - **Broader drift (new finding, 2026-08-26):** non-1.1.x tags are repo-wide (`@since 1.0.0` ×1,928 · `1.2.0` ×1,707 · `1.1.0` ×1,269 · `1.3.0` ×795 · `1.9.0` ×734, PHP source ex vendor). Many are legitimate history. A full-tree audit is a scripted-sweep project needing explicit sign-off — tracked inside issue #5968, not a catch-up-pass task.
@@ -41,7 +44,7 @@
 - **Status:** 🔒 Parked by user decision. Counts stay delta-derived in catch-up passes.
 - **Issue:** [#5967 — Re-derive live tool counts on a fully provisioned environment](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5967)
 - **What:** run `WP_MCP_AI_Tool_Registry::get_tools()` on a fully provisioned environment (seeded toolkits + optional plugins) and replace the delta-based figure.
-- **Current figure (v1.1.77):** ~303 base + ~1,265 Pro (~1,568 total), live-registry caveat retained on every count surface. (Delta-derived: +2 Woo price/qty tools, PR #6388; unchanged since — #6447/#6448 upgrade existing tools, #6469 extends a schema, #6488 extends the schedule-tool schemas with `result_delivery`, #6525 extends the delivery schemas with `template: full` + per-channel `format`, #6512 registers the existing Comic Creation toolkit's toggle, #6561 flips existing gates, #6570 adds an onboarding preset referencing existing slugs — no new slugs.)
+- **Current figure (v1.1.81):** ~306 base + ~1,279 Pro (~1,585 total), live-registry caveat retained on every count surface. (Delta-derived: +5 Pro CRM tools `bulk_move_deal_stages`/`create_tracked_link`/`record_crm_reply`/`get_crm_handover`/`get_pipeline_digest`, PR #6636, and +8 Pro financial tools `market_screener`/`macro_data_fetcher`/`economic_calendar_fetcher`/`earnings_calendar_fetcher`/`options_chain_fetcher`/`crypto_market_data`/`portfolio_transaction_log`/`price_alerts`, PR #6639; no base registrations in-window — #6634/#6635/#6637/#6638/#6641/#6643 add helpers/traits/services, not tools.)
 - **Known attempt:** QA container (`oos-qa-wp`) returns 363 tools because its DB is unprovisioned — not usable as source of truth.
 - **First noted in:** v1.1.59 plan; carried every pass since.
 
@@ -61,6 +64,13 @@
   4. **`test-agents.php` "Audit trail cpt registered in standalone mode" (v1.1.71 pass, PR #6319)** — fails locally when the WooCommerce test plugins are loaded (`do_action('init')` re-registers Woo blocks → incorrect-usage notices); reproduced on clean `alpha-working` via a temp worktree, passes in CI where Woo isn't loaded. Noted in PR #6319 as "Known pre-existing failure (not fixed here)" — hand to the test-suite workstream (OI-3 tracker).
 - **Verified closed (do not re-raise):** K16 failures #33 (`test-llm-sanitizer`), #107/#108 (`test-shortcodes-coordinator.php`) — fixed by PR #6311 (referenced as out-of-scope in #6304/#6305, which merged first); triage failure #50 (mempalace block count) — does not reproduce in any local ordering and is explained by the Graphify-precondition fix in PR #6302.
 - **First noted in:** v1.1.70 plan.
+
+### OI-5 · `tool-status.txt` missing the five new CRM slugs (recorded 2026-09-17 by the v1.1.81 pass)
+
+- **Status:** 🟡 Open. Recorded, not fixed (doc-file gap left by the introducing PR).
+- **What:** `docs/reference/tools/tool-status.txt` gained the 8 new financial slugs from #6639 (`crypto_market_data`, `earnings_calendar_fetcher`, `economic_calendar_fetcher`, `macro_data_fetcher`, `market_screener`, `options_chain_fetcher`, `portfolio_transaction_log`, `price_alerts`) but not the 5 new CRM slugs from #6636 (`bulk_move_deal_stages`, `create_tracked_link`, `record_crm_reply`, `get_crm_handover`, `get_pipeline_digest`) — the file already carries some CRM entries (`crm_email_search_*`), so the omission is an inconsistency, not a convention.
+- **Suggested owner:** docs workstream — either add the five slugs or document the file's coverage rule.
+- **First noted in:** v1.1.81 plan.
 
 ---
 
@@ -102,6 +112,7 @@ Open items recorded in docs **outside** the catch-up plans (audits, TODO files, 
 | Stale `.context/testing.md` "March 2026" stamp | v1.1.63 pass drift | v1.1.63 pass | stamped + sweep/exit-trap notes |
 | Stale `.context/settings-storage.md` "July 2026" stamp | v1.1.64 pass drift | v1.1.64 pass | stamped + log-buffer compaction note |
 | [#5973](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5973) Ralph Wiggum CCT Orchestration — decide implement or defer | filed 2026-08-26 | closed 2026-08-26 | **Implemented** (shipped v1.1.29): 13 orchestration tools, 4 Ralph CCT schemas, PM-toolkit native integration. Decision recorded in `proposals-retirement-log.md` entry #6 + `PROPOSALS_COMPLETION_STATUS.md` |
+| `@since 2.2.0` ×11 (`includes/slash-commands/` 5 files) + "Since v2.2.0" ×2 (slash-command READMEs) | v1.1.78 plan (OI-1 group 16) | v1.1.78 pass | **Fixed in-pass at user request** — all 13 occurrences corrected to `1.1.78` before shipping (group 16 never became history; no tracker row kept). |
 
 ---
 

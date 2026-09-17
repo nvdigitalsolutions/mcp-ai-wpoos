@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class NVOOS_Checkout_API_License_Store {
 
 	public const TABLE_NAME     = 'nvoos_checkout_licenses';
-	public const DB_VERSION     = '4';
+	public const DB_VERSION     = '5';
 	public const DB_VERSION_KEY = 'nvoos_checkout_licenses_db_version';
 
 	public const STATUS_ACTIVE  = 'active';
@@ -63,6 +63,7 @@ class NVOOS_Checkout_API_License_Store {
 			addon_version VARCHAR(16) NOT NULL DEFAULT '',
 			buyer_email VARCHAR(255) NOT NULL DEFAULT '',
 			buyer_country CHAR(2) NOT NULL DEFAULT '',
+			email_sent_at DATETIME NULL DEFAULT NULL,
 			terms_agreed_at DATETIME NULL DEFAULT NULL,
 			status VARCHAR(16) NOT NULL DEFAULT 'active',
 			created_at DATETIME NOT NULL,
@@ -263,6 +264,36 @@ class NVOOS_Checkout_API_License_Store {
 				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name comes from a class constant; values are prepared.
 				"UPDATE {$table} SET buyer_country = %s WHERE license_key = %s AND buyer_country = ''",
 				$country,
+				$license_key
+			)
+		);
+
+		return false !== $updated;
+	}
+
+	/**
+	 * Record that the license email has been sent.
+	 *
+	 * Sets the timestamp only once — the first successful send wins, so
+	 * repeated /verify calls or webhook redeliveries can never email the
+	 * buyer twice.
+	 *
+	 * @since 0.1.2
+	 *
+	 * @param string $license_key License key.
+	 * @return bool True when a row was updated.
+	 */
+	public static function mark_email_sent( string $license_key ): bool {
+		global $wpdb;
+
+		// The column only ever holds NULL (not sent) or a datetime, so
+		// IS NULL alone gates the fill (mirrors set_terms_agreed()).
+		$table   = self::table_name();
+		$updated = $wpdb->query(
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name comes from a class constant; values are prepared.
+				"UPDATE {$table} SET email_sent_at = %s WHERE license_key = %s AND email_sent_at IS NULL",
+				current_time( 'mysql', true ),
 				$license_key
 			)
 		);

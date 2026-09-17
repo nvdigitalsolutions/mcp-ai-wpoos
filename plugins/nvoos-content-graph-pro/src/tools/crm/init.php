@@ -32,6 +32,10 @@
  *    import/save/score/search) exist in the base tree but are NOT part of
  *    the monolith's `$crm_tools` map — the filter/ecosystem additions here
  *    are the standalone registrations for those files (documented).
+ * 6. JobNavigator-adoption batch (F2 CRM remainder): the stage-history +
+ *    identity helpers join the shared-engine load list, and the tracked-link
+ *    resolver boots inside the enabled block (mirrors the base init's
+ *    Since-3.2.0 block). The five new tools join both registration maps.
  *
  * @package NvoosContentGraphPro
  * @since   1.0.0
@@ -67,6 +71,9 @@ if ( $nvoos_content_graph_pro_is_enabled && ( ! $nvoos_content_graph_pro_is_base
 		'class-wp-mcp-ai-crm-consent.php',
 		'class-wp-mcp-ai-crm-pipeline-stages.php',
 		'class-wp-mcp-ai-crm-classifier.php',
+		// JobNavigator-adoption shared helpers (F2 CRM remainder).
+		'class-wp-mcp-ai-crm-stage-history.php',
+		'class-wp-mcp-ai-crm-identity.php',
 	);
 	foreach ( $nvoos_content_graph_pro_crm_files as $nvoos_content_graph_pro_file ) {
 		$nvoos_content_graph_pro_path = $nvoos_content_graph_pro_crm_engine_dir . $nvoos_content_graph_pro_file;
@@ -213,6 +220,14 @@ if ( $nvoos_content_graph_pro_is_enabled && ( ! $nvoos_content_graph_pro_is_base
 	if ( ! defined( 'WP_MCP_AI_PATH' ) && function_exists( 'nvoos_content_graph_get_tool_registry' ) ) {
 		wp_mcp_ai_pro_register_crm_ecosystem_tools();
 	}
+
+	// JobNavigator-adoption: tracked proposal links (front-end open
+	// resolver). Mirrors the base init's Since-3.2.0 block.
+	$nvoos_content_graph_pro_link_tracker = $nvoos_content_graph_pro_crm_engine_dir . 'class-wp-mcp-ai-crm-link-tracker.php';
+	if ( file_exists( $nvoos_content_graph_pro_link_tracker ) ) {
+		require_once $nvoos_content_graph_pro_link_tracker;
+		WP_MCP_AI_CRM_Link_Tracker::init();
+	}
 }
 
 /**
@@ -295,6 +310,12 @@ function wp_mcp_ai_pro_register_crm_tools( $tools ) {
 		'WP_MCP_AI_Tool_Update_Deal'                     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/deals/class-wp-mcp-ai-tool-update-deal.php',
 		'WP_MCP_AI_Tool_Delete_Deal'                     => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/deals/class-wp-mcp-ai-tool-delete-deal.php',
 		'WP_MCP_AI_Tool_Move_Deal_Stage'                 => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/deals/class-wp-mcp-ai-tool-move-deal-stage.php',
+		// JobNavigator-adoption batch (F2 CRM remainder).
+		'WP_MCP_AI_Tool_Bulk_Move_Deal_Stages'           => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/deals/class-wp-mcp-ai-tool-bulk-move-deal-stages.php',
+		'WP_MCP_AI_Tool_Create_Tracked_Link'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/deals/class-wp-mcp-ai-tool-create-tracked-link.php',
+		'WP_MCP_AI_Tool_Record_CRM_Reply'                => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/inbound/class-wp-mcp-ai-tool-record-crm-reply.php',
+		'WP_MCP_AI_Tool_Get_CRM_Handover'                => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/class-wp-mcp-ai-tool-get-crm-handover.php',
+		'WP_MCP_AI_Tool_Get_Pipeline_Digest'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/analytics/class-wp-mcp-ai-tool-get-pipeline-digest.php',
 		'WP_MCP_AI_Tool_Create_CRM_Activity'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/activities/class-wp-mcp-ai-tool-create-crm-activity.php',
 		'WP_MCP_AI_Tool_List_CRM_Activities'             => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/activities/class-wp-mcp-ai-tool-list-crm-activities.php',
 		'WP_MCP_AI_Tool_Get_CRM_Activity'                => NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/crm/activities/class-wp-mcp-ai-tool-get-crm-activity.php',
@@ -414,6 +435,11 @@ function wp_mcp_ai_pro_register_crm_ecosystem_tools() {
 			'WP_MCP_AI_Tool_Update_Deal',
 			'WP_MCP_AI_Tool_Delete_Deal',
 			'WP_MCP_AI_Tool_Move_Deal_Stage',
+			'WP_MCP_AI_Tool_Bulk_Move_Deal_Stages',
+			'WP_MCP_AI_Tool_Create_Tracked_Link',
+			'WP_MCP_AI_Tool_Record_CRM_Reply',
+			'WP_MCP_AI_Tool_Get_CRM_Handover',
+			'WP_MCP_AI_Tool_Get_Pipeline_Digest',
 			'WP_MCP_AI_Tool_Create_CRM_Activity',
 			'WP_MCP_AI_Tool_List_CRM_Activities',
 			'WP_MCP_AI_Tool_Get_CRM_Activity',

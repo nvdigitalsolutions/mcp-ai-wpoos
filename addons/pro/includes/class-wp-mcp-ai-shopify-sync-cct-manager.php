@@ -243,6 +243,37 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		}
 
 		/**
+		 * Whether the real JetEngine plugin is loaded and version-detectable.
+		 *
+		 * The version constant is JetEngine's own load marker. Test suites leak
+		 * file-scope `jet_engine()` stubs process-wide in the single-process
+		 * run, so function existence alone cannot prove the real plugin is
+		 * loaded. Older JetEngine builds (and some bundled distributions)
+		 * expose the version through the engine instance instead of the
+		 * constant, so either proof is accepted; the shared test stub has
+		 * neither, which keeps the gate stub-proof.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @return bool
+		 */
+		public static function is_jetengine_active() {
+			if ( ! function_exists( 'jet_engine' ) ) {
+				return false;
+			}
+
+			if ( defined( 'JET_ENGINE_VERSION' ) ) {
+				return true;
+			}
+
+			$engine = jet_engine();
+
+			return is_object( $engine )
+				&& method_exists( $engine, 'get_version' )
+				&& ! empty( $engine->get_version() );
+		}
+
+		/**
 		 * Check if JetEngine and the CCT are available.
 		 *
 		 * @since 1.3.0
@@ -250,14 +281,14 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		 * @return bool|WP_Error True if available, WP_Error otherwise.
 		 */
 		public function is_cct_available() {
-			// The version constant is JetEngine's own load marker. Test suites
-			// leak file-scope `jet_engine()` stubs process-wide in the
-			// single-process run, so function existence alone cannot prove the
-			// real plugin is loaded — without the constant, treat it as missing.
-			if ( ! function_exists( 'jet_engine' ) || ! defined( 'JET_ENGINE_VERSION' ) ) {
+			if ( ! self::is_jetengine_active() ) {
+				$message = function_exists( 'jet_engine' )
+					? __( 'JetEngine is loaded, but its version cannot be detected. Update JetEngine (or re-activate it) so Shopify Sync can verify the Custom Content Types module.', 'mcp-ai-wpoos-pro' )
+					: __( 'JetEngine plugin is required for Shopify Sync storage. Please install and activate JetEngine.', 'mcp-ai-wpoos-pro' );
+
 				return new WP_Error(
 					'wp_mcp_ai_shopify_sync_jetengine_missing',
-					__( 'JetEngine plugin is required for Shopify Sync storage. Please install and activate JetEngine.', 'mcp-ai-wpoos-pro' )
+					$message
 				);
 			}
 
@@ -1703,6 +1734,16 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				return $this->sync_from_catalog_api( $client, $dry_run, $run_id );
 			}
 
+				// The UCP catalog modes (Storefront/Global) are keyless live
+				// agent-query modes — UCP usage guidelines prohibit caching
+				// catalog results, so the CCT cache is never fed from them.
+			if ( in_array( $client->get_api_mode(), array( 'storefront_catalog', 'global_catalog' ), true ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_ucp_no_cct_sync',
+					__( 'This connection is configured for a Shopify UCP Catalog mode (Storefront/Global Catalog MCP), which is a live agent-query mode. UCP usage guidelines prohibit caching catalog results, so CCT sync is disabled for this connection. Use the catalog search tools for live queries instead.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
 				// Shopify Bulk Operation query — export all products with variants and inventory.
 				// When sync_mode is 'minimal', only requests title, SKU, and stock levels.
 				$settings   = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
@@ -1869,6 +1910,13 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_shopify_sync_catalog_only',
 					__( 'This connection is configured for Shopify Catalog API only. Inventory sync requires Shopify Admin API.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			if ( in_array( $client->get_api_mode(), array( 'storefront_catalog', 'global_catalog' ), true ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_ucp_no_cct_sync',
+					__( 'This connection is configured for a Shopify UCP Catalog mode (Storefront/Global Catalog MCP), which is a live agent-query mode. UCP usage guidelines prohibit caching catalog results, so CCT sync is disabled for this connection.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 

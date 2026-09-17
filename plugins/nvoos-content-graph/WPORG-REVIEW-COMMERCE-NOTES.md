@@ -14,7 +14,9 @@ upload that includes the commerce flow (introduced in v1.0.4+).
 
 The plugin contains an **optional, opt-in purchase flow** for the
 **NV oOS Complete** bundle — the full NV oOS plugin (base + Pro), which is a
-**separate plugin sold off-directory** by NV Digital Solutions. The flow:
+**separate plugin sold off-directory** by NV Digital Unlocked LLC (the seller
+of record, under license from NV Digital Solutions, the developer and IP
+owner). The flow:
 
 1. Shows "Get NV oOS Complete" cards on the plugin's own settings page
    (no site-wide notices, no automatic pop-ups).
@@ -56,7 +58,8 @@ feature-locked.**
   card details (entered in Stripe's own iframe — the plugin never sees
   them), buyer email, buyer country, EU billing address (VAT records), and
   receipt delivery.
-- **Vendor checkout server** (NV Digital Solutions): product name, site URL,
+- **Vendor checkout server** (operated by NV Digital Solutions on behalf of
+  NV Digital Unlocked LLC, the seller of record): product name, site URL,
   Stripe payment ID, buyer email, buyer country, Terms consent timestamp.
 - **GitHub** (`github.com`): only an HTTPS download of the purchased ZIP via
   a vendor-signed URL; no data sent.
@@ -73,6 +76,9 @@ feature-locked.**
 - v1.0.7 (later): buyer country + conditional EU billing address (VAT
   records); vendor records country on the license; Stripe statement
   descriptor and product/price metadata configurable on the vendor storefront.
+- v1.0.8: Stripe Payment Element billing-address fix (non-EU checkout no
+  longer fails); already-licensed sites show their existing license instead
+  of a chargeable payment form. No new data collected or sent.
 
 ## Review-team questions, pre-answered
 

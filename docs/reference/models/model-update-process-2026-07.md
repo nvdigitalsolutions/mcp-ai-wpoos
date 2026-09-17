@@ -343,6 +343,20 @@ https://api-docs.deepseek.com/quick_start/pricing/ (fetched 2026-09-10); cross-c
 with CellCog's release tracker (yuan figures: cache hit 0.02 / cache miss 1.00 /
 output 4.00 off-peak, peak 2×).
 
+### Correction (September 12, 2026) — V4 Pro stays servable
+
+DeepSeek's 2026-09-10 changelog (the same update that shipped V4.1 Flash) also
+announced: "we have decided to continue providing API services for DeepSeek V4
+Pro after September 14, 2026, with the billing method remaining unchanged. We
+will provide further notice should there be any changes."
+
+The `deepseek-v4-pro` catalog entry is therefore **active** again: no
+`sunset_date`, no `fallback_model` rewrite, and the migration map continues to
+leave stored `deepseek-v4-pro` references untouched. Admin copy, dropdown
+labels, cost-table comments, and the model-config test message were updated to
+match. The `deepseek-flash` defaults set by this run are unchanged (V4.1 Flash
+remains the recommended default).
+
 ### New Models Added to Catalog
 | Model | Provider | Notes |
 |---|---|---|
@@ -353,7 +367,7 @@ output 4.00 off-peak, peak 2×).
 |---|---|---|
 | `deepseek-v4-flash` | Removed | Retired 2026-09-10 — id now routes to V4.1 Flash and bills at Flash prices. |
 | `deepseek-v4-flash-vision-exp` | Removed | Retired 2026-09-10 — id now routes to V4.1 Flash. |
-| `deepseek-v4-pro` | Deprecated, sunset 2026-09-14 | DeepSeek routes `deepseek-v4-pro` to V4.1 Flash from 12:00 Beijing 2026-09-14 until V4.1 Pro ships. Fallback → `deepseek-flash`. |
+| `deepseek-v4-pro` | ~~Deprecated, sunset 2026-09-14~~ → **Active** (reverted 2026-09-12) | DeepSeek announced continuation past 2026-09-14 with unchanged billing — see the correction note above. |
 
 ### Default Changes
 | Setting | Old | New |

@@ -4177,7 +4177,7 @@
       "supports_vision": true,
       "cost_per_1k_input_tokens": 0.00015,
       "cost_per_1k_output_tokens": 0.0006,
-      "notes": "DeepSeek-V4.1-Flash — new-architecture flagship (released September 10, 2026). Native multimodal vision, 1M context, 384K max output, thinking + non-thinking modes. Canonical model name is deepseek-flash; the retired deepseek-v4-flash and deepseek-v4-flash-vision-exp ids now route here. Off-peak $0.15/$0.60 per 1M (cache miss; cache hit $0.003/1M); peak 2× during 01:00–04:00 and 06:00–10:00 UTC weekdays. From 2026-09-14 deepseek-v4-pro also routes here until V4.1 Pro ships.",
+      "notes": "DeepSeek-V4.1-Flash — new-architecture flagship (released September 10, 2026). Native multimodal vision, 1M context, 384K max output, thinking + non-thinking modes. Canonical model name is deepseek-flash; the retired deepseek-v4-flash and deepseek-v4-flash-vision-exp ids now route here. Off-peak $0.15/$0.60 per 1M (cache miss; cache hit $0.003/1M); peak 2× during 01:00–04:00 and 06:00–10:00 UTC weekdays. deepseek-v4-pro is served separately and stays available (see its entry).",
       "status": "active",
       "tpd_limit": 0,
       "rpd_limit": 0,
@@ -4197,12 +4197,12 @@
       "supports_vision": false,
       "cost_per_1k_input_tokens": 0.00066,
       "cost_per_1k_output_tokens": 0.00198,
-      "notes": "DeepSeek-V4-Pro — retiring: DeepSeek routes deepseek-v4-pro to V4.1 Flash (deepseek-flash) from 12:00 Beijing on September 14, 2026 until V4.1 Pro ships. Off-peak $0.66/$1.98 per 1M (cache miss; cache hit $0.022/1M); peak 2×. 1M context, 384K max output, thinking + non-thinking modes.",
-      "status": "deprecated",
+      "notes": "DeepSeek-V4-Pro — stays servable: DeepSeek announced (2026-09-10) that it continues providing V4 Pro API service after September 14, 2026 with unchanged billing, until further notice. Off-peak $0.66/$1.98 per 1M (cache miss; cache hit $0.022/1M); peak 2×. 1M context, 384K max output, thinking + non-thinking modes.",
+      "status": "active",
       "tpd_limit": 0,
       "rpd_limit": 0,
-      "fallback_model": "deepseek-flash",
-      "sunset_date": "2026-09-14"
+      "fallback_model": "",
+      "sunset_date": ""
     },
     {
       "model_name": "openrouter/auto",

@@ -35,6 +35,7 @@
 	var addressRow = null;
 	var busy = false;
 	var verifying = false;
+	var priceLabelEl = null;
 
 	/**
 	 * Build an element with text content, safe from XSS by construction.
@@ -490,11 +491,17 @@
 	 */
 	function renderPriceBlock() {
 		var block = el( 'div', 'nvoos-cg-price-block' );
-		block.appendChild( el( 'p', 'nvoos-cg-price', config.price_label || '' ) );
+		priceLabelEl = el( 'p', 'nvoos-cg-price', config.price_label || '' );
+		block.appendChild( priceLabelEl );
 
 		var oneTime = i18n.price_one_time || '';
 		if ( oneTime ) {
 			block.appendChild( el( 'p', 'nvoos-cg-price-sub', oneTime ) );
+		}
+
+		var priceChange = i18n.price_subject_change || '';
+		if ( priceChange ) {
+			block.appendChild( el( 'p', 'nvoos-cg-price-change', priceChange ) );
 		}
 
 		var scope = i18n.price_license_scope || '';
@@ -508,6 +515,47 @@
 		}
 
 		return block;
+	}
+
+	/**
+	 * Format a vendor price (integer cents) for display.
+	 *
+	 * Display-only: the vendor re-verifies the authoritative amount
+	 * server-side, so this label never participates in the payment.
+	 *
+	 * @param  {number} amount   Price in the smallest currency unit.
+	 * @param  {string} currency Three-letter ISO currency code.
+	 * @return {string} Formatted price, e.g. "$79.00".
+	 */
+	function formatPrice( amount, currency ) {
+		var code = String( currency || 'usd' ).toUpperCase();
+		try {
+			return new Intl.NumberFormat( undefined, {
+				style: 'currency',
+				currency: code
+			} ).format( amount / 100 );
+		} catch ( e ) {
+			return '$' + ( amount / 100 ).toFixed( 2 );
+		}
+	}
+
+	/**
+	 * Replace the modal's price label with the vendor session's authoritative
+	 * amount. The locally configured default (shown while the session is
+	 * being created) is kept whenever the session omits a valid price.
+	 *
+	 * @param {Object} data Vendor `/session` response payload.
+	 * @return {void}
+	 */
+	function syncPriceFromSession( data ) {
+		if ( ! priceLabelEl || ! data ) {
+			return;
+		}
+		var amount = parseInt( data.amount, 10 );
+		if ( ! isFinite( amount ) || amount < 50 ) {
+			return;
+		}
+		priceLabelEl.textContent = formatPrice( amount, data.currency );
 	}
 
 	/**
@@ -597,6 +645,7 @@
 		consentCheckbox = null;
 		consentAt = 0;
 		euWithdrawalNote = null;
+		priceLabelEl = null;
 		emailInput = null;
 		countrySelect = null;
 		addressLine1 = null;
@@ -786,6 +835,21 @@
 				return;
 			}
 
+			// Already-licensed site: render the recorded license instead
+			// of a fresh payment form — a second charge must never be
+			// possible from this screen.
+			if ( result.data && result.data.already_licensed ) {
+				renderSuccess( {
+					license_key: result.data.license_key,
+					message: result.data.message,
+					bundle_active: result.data.bundle_active,
+					installed: true,
+					activated: true,
+					skip_steps: true
+				} );
+				return;
+			}
+
 			stripe = window.Stripe( result.data.publishable_key );
 
 			// Stripe element setup failures (invalid element name, blocked
@@ -841,9 +905,14 @@
 				} );
 				// The plugin collects the buyer email, country, and EU billing
 				// address itself (receipt + VAT records); keep the Stripe iframe
-				// from asking for them again.
+				// from asking for them again. The address uses 'auto' rather
+				// than 'never': Stripe demands a country in confirmPayment()
+				// whenever 'never' is used, but this plugin only knows the
+				// country for EU buyers. With 'auto' the element collects the
+				// address only when a payment method (or Stripe tax) needs it,
+				// and EU buyers still pass theirs via payment_method_data.
 				paymentElement = elements.create( 'payment', {
-					fields: { billingDetails: { email: 'never', address: 'never' } }
+					fields: { billingDetails: { email: 'never', address: 'auto' } }
 				} );
 				paymentElement.mount( payBox );
 			} catch ( e ) {
@@ -861,6 +930,10 @@
 
 			payBtn.dataset.clientSecret = result.data.client_secret;
 			updatePayState();
+
+			// The vendor's amount is the price that will actually be charged —
+			// align the modal's price block with it (display only).
+			syncPriceFromSession( result.data );
 		} ).catch( function () {
 			// Network-level failure (fetch rejection): the endpoint is
 			// unavailable — fall back to the product page.
@@ -1072,36 +1145,44 @@
 
 		// "What happens next" checklist — post-purchase clarity sets
 		// expectations (receipt, install, license, roadmap) and reduces
-		// buyer's-remorse support contacts.
-		var steps = el( 'div', 'nvoos-cg-success-steps' );
-		var stepsTitle = i18n.success_steps_title || '';
-		if ( stepsTitle ) {
-			steps.appendChild( el( 'h4', 'nvoos-cg-success-steps-title', stepsTitle ) );
-		}
-		var stepsList = el( 'ol', 'nvoos-cg-success-steps-list' );
-		var stepItems = [
-			i18n.success_step_receipt || '',
-			i18n.success_step_installed || '',
-			i18n.success_step_license || ''
-		];
-		for ( var i = 0; i < stepItems.length; i++ ) {
-			if ( ! stepItems[ i ] ) {
-				continue;
+		// buyer's-remorse support contacts. Skipped for the
+		// already-licensed state, where nothing is happening next.
+		if ( data.skip_steps !== true ) {
+			var steps = el( 'div', 'nvoos-cg-success-steps' );
+			var stepsTitle = i18n.success_steps_title || '';
+			if ( stepsTitle ) {
+				steps.appendChild( el( 'h4', 'nvoos-cg-success-steps-title', stepsTitle ) );
 			}
-			stepsList.appendChild( el( 'li', '', stepItems[ i ] ) );
-		}
-		var roadmapStep = i18n.success_step_roadmap || '';
-		var changelogUrl = String( config.changelog_url || '' ).trim();
-		if ( roadmapStep || ( changelogUrl && /^https?:\/\//i.test( changelogUrl ) ) ) {
-			var last = el( 'li', '', roadmapStep );
-			if ( changelogUrl && /^https?:\/\//i.test( changelogUrl ) ) {
-				last.appendChild( document.createTextNode( ' ' ) );
-				last.appendChild( linkEl( 'nvoos-cg-changelog-link', i18n.changelog_link || 'View changelog', changelogUrl ) );
+			var stepsList = el( 'ol', 'nvoos-cg-success-steps-list' );
+			// The "installed" step names the artifact that is actually
+			// active: the Complete bundle, or the legacy AI addon.
+			var installedStep = data.bundle_active === false
+				? ( i18n.success_step_installed_addon || '' )
+				: ( i18n.success_step_installed || '' );
+			var stepItems = [
+				i18n.success_step_receipt || '',
+				installedStep,
+				i18n.success_step_license || ''
+			];
+			for ( var i = 0; i < stepItems.length; i++ ) {
+				if ( ! stepItems[ i ] ) {
+					continue;
+				}
+				stepsList.appendChild( el( 'li', '', stepItems[ i ] ) );
 			}
-			stepsList.appendChild( last );
+			var roadmapStep = i18n.success_step_roadmap || '';
+			var changelogUrl = String( config.changelog_url || '' ).trim();
+			if ( roadmapStep || ( changelogUrl && /^https?:\/\//i.test( changelogUrl ) ) ) {
+				var last = el( 'li', '', roadmapStep );
+				if ( changelogUrl && /^https?:\/\//i.test( changelogUrl ) ) {
+					last.appendChild( document.createTextNode( ' ' ) );
+					last.appendChild( linkEl( 'nvoos-cg-changelog-link', i18n.changelog_link || 'View changelog', changelogUrl ) );
+				}
+				stepsList.appendChild( last );
+			}
+			steps.appendChild( stepsList );
+			payBox.appendChild( steps );
 		}
-		steps.appendChild( stepsList );
-		payBox.appendChild( steps );
 
 		var support = i18n.support_line || '';
 		if ( support ) {

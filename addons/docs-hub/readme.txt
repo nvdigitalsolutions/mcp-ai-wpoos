@@ -1,10 +1,10 @@
 === NV oOS Docs Hub ===
-Contributors: nvdigitalsolutions
+Contributors: vsamtani
 Tags: documentation, markdown, github
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.4.3
+Stable tag: 0.4.7
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -117,6 +117,24 @@ rebuilds when the installed plugin versions no longer match the cached index.
 You can also rebuild manually from the settings page, via WP-CLI, or via the
 REST API (requires `manage_options`).
 
+== Source Code ==
+
+The complete, human-readable source code for this plugin — including the
+TypeScript/React source for the bundled `assets/dist/docs-hub.js` bundle — is
+publicly available in the plugin's GitHub repository:
+
+https://github.com/nvdigitalsolutions/nvoos-docs-hub
+
+The frontend bundle is generated from the `src/` directory with esbuild:
+
+1. `npm install` — installs the frontend dependencies (React, esbuild, etc.).
+2. `npm run build` — runs `node esbuild.config.js --prod` and writes the
+   minified `assets/dist/docs-hub.js` and `assets/dist/docs-hub.css`.
+
+The repository also contains the WordPress.org packaging and CI pipeline
+(`.github/workflows/`, `bin/`), the PHPUnit test suite (`tests/`), and the
+`.wordpress-org/` listing assets.
+
 == Screenshots ==
 
 1. Settings — documentation index status and rebuild panel.
@@ -126,26 +144,63 @@ REST API (requires `manage_options`).
 
 == External Services ==
 
-When you configure a remote documentation repository, this plugin contacts
-GitHub's public API — **server-side only, over HTTPS**, and only the hosts
-listed below. Every request is restricted to these hosts (all others are
-rejected, including private and reserved IP addresses), carries a bounded
-timeout and response-size cap, and only happens after an administrator
-configures a repository and triggers a rebuild (or the nightly cron runs).
-No requests are made if no remote repository is configured, and the plugin
-does not send any personal data to these services — it only fetches the
-public repository content exactly as GitHub serves it.
+This plugin provides a **documentation-import service**: when an
+administrator configures a remote repository, the plugin fetches Markdown
+files from that public GitHub repository, stores them locally in the
+uploads cache, and renders them in the documentation browser. Fetched
+content is cached on your server, so visitors are served from the local
+cache, not from GitHub.
 
-* `api.github.com` — repository tree metadata used by the file/folder
+All requests are made **server-side only, over HTTPS**, and only to the two
+hosts listed below. Every request is restricted to these hosts (all other
+hosts are rejected, including private and reserved IP addresses), carries a
+bounded timeout and a 4 MB response-size cap, and only happens after an
+administrator has configured a repository and triggered a rebuild (or the
+nightly cron runs). No requests are made if no remote repository is
+configured.
+
+**No account is required** for public repositories. An optional GitHub
+personal access token can be saved in the settings to raise GitHub's API
+rate limits; it is stored server-side and sent only to the two hosts below.
+
+* `api.github.com` — repository and tree metadata used by the file/folder
   picker and the indexer.
-  Terms: https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
-  Privacy: https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement
 * `raw.githubusercontent.com` — raw Markdown file content fetched during
   index rebuilds.
-  Terms: https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
-  Privacy: https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement
+
+The plugin does not send any personal data to these services — it only
+fetches the public repository content exactly as GitHub serves it. Rendered
+documentation pages display the repository content as authored, which may
+include links and images pointing at `github.com`,
+`raw.githubusercontent.com`, or `user-images.githubusercontent.com`; those
+are loaded by the visitor's browser directly from the source repository,
+not through the plugin or your server.
+
+GitHub Terms of Service:
+https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
+GitHub Privacy Statement:
+https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement
 
 == Changelog ==
+
+= 0.4.7 =
+* Fixed: removed the "Tested up to" line from the plugin headers — it is declared only in the readme.
+* Fixed: the daily rebuild cron is now scheduled on `init` instead of `plugins_loaded`, which prevented "translation loading triggered too early" notices on WordPress 6.7+ when other plugins register translated cron schedules.
+* Changed: rebuild cron events are cleared when the plugin is deactivated, and deactivating the plugin no longer enqueues a rebuild that could never run.
+
+= 0.4.6 =
+* Added: bundled GPLv3 license file (LICENSE) at the plugin root.
+
+= 0.4.5 =
+* Security: a symlinked cache directory can no longer redirect deletion — the uninstall routine removes only the link and leaves the external target untouched, and the cache class replaces a symlinked cache directory with a real one before writing.
+* Changed: the External Services section now explains the documentation-import service, the servers it contacts, and that no account is required for public repositories.
+
+= 0.4.4 =
+* Security: search results and the WordPress sitemap no longer expose context-source (`.context/`) content to non-admin users.
+* Security: GitHub personal access tokens are no longer localized into the settings-page scripts (they were stripped only on export before).
+* Security: staged rebuilds no longer read or write live page transients, page transients are invalidated when the cache is promoted or cleared, and recursive cache deletion is hardened against symlink traversal.
+* Changed: the base-plugin notice is scoped to the Docs Hub settings page, and the redundant `load_plugin_textdomain()` call was removed.
+* Changed: readme now documents the public source repository and the frontend build steps; the bundled `docs-hub.js` and `docs-hub.css` carry source banners.
 
 = 0.4.3 =
 * Added: WordPress.org listing screenshots and a Playwright capture script (`bin/capture-nvoos-docs-hub-screenshots.js`).
@@ -215,6 +270,18 @@ public repository content exactly as GitHub serves it.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 0.4.7 =
+Compatibility release — fixes activation-time notices on WordPress 6.7+ and cleans up cron events on deactivation. Recommended for all users.
+
+= 0.4.6 =
+Packaging-only release — bundles the GPLv3 license file. No functional changes.
+
+= 0.4.5 =
+Security hardening release — uninstall and cache cleanup are symlink-safe. Recommended for all users.
+
+= 0.4.4 =
+Security hardening release — context-source content can no longer leak through search or the sitemap. Recommended for all users.
 
 = 0.4.3 =
 WordPress.org submission hardening — no functional changes for existing sites. Recommended for all users.

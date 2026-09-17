@@ -1,13 +1,21 @@
 # NV oOS Documentation Index
 
-**Last Updated:** September 11, 2026
-**Plugin Version:** 1.1.77
+**Last Updated:** September 17, 2026
+**Plugin Version:** 1.1.81
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
+
+> **SEPTEMBER 17, 2026 UPDATE (v1.1.81):** SHOPIFY-UCP, FLOWHUB, CRM & FINANCIAL-RESILIENCE RELEASE. **SHOPIFY TOOLS ARE UCP CATALOG MODE-AWARE** (PR #6634) — STOREFRONT/GLOBAL CONNECTIONS DRIVE LIVE `search_catalog`/`lookup_catalog`/`get_product` QUERIES (BUYER `context`, CURSOR PASSTHROUGH, CLAMPS 250/50/10, ZERO CACHING PER UCP GUIDELINES); ADMIN-ONLY TOOLS REFUSE CATALOG CONNECTIONS WITH AN ACTIONABLE HINT; `remote_shopify_connection` VALIDATES UCP MODES VIA THE MCP `tools/list` HANDSHAKE. **SHOPIFY PRODUCT IMAGE CARDS** (PR #6638) — `images[]` + CHAT-RENDERED MARKDOWN CARD ON EVERY PRODUCT-RETURNING PATH (10-CARD CAP; SHARED NORMALIZERS TRAIT). **FLOWHUB REMOTE SITES RESOLUTION** (PR #6635) — SHARED RESOLVER CHAIN (EXPLICIT `connection_id` → TOOLKIT SETTINGS → SYNC CONNECTIONS → FIRST ENABLED) + **CONNECTION PROXY HONORED** IN LIVE TOOLS (PR #6637). **JOBNAVIGATOR CRM ADOPTION** (PR #6636; CG PRO PORT #6640) — 5 NEW PRO TOOLS (`bulk_move_deal_stages`, `record_crm_reply`, `get_crm_handover`, `get_pipeline_digest`, `create_tracked_link`), MACHINE-READABLE DEAL STAGE HISTORY, LEAD DEDUP + CANONICAL COMPANIES, REPLY SIGNALS, WON-DEAL LEAD RELEASE. **GMAIL REPLY POLLER + PIPELINE DIGEST RECIPE** (PR #6641) — CRON-DRIVEN INBOUND REPLY CLASSIFICATION WITH SENTIMENT + OPTIONAL STAGE ADVANCEMENT. **OPENTERMINAL FINANCIAL RESILIENCE** (PR #6639) — 8 NEW PRO TOOLS (`market_screener`, `macro_data_fetcher`, `economic_calendar_fetcher`, `earnings_calendar_fetcher`, `options_chain_fetcher`, `crypto_market_data`, `portfolio_transaction_log`, `price_alerts`), PROVIDER FALLBACK CHAINS + STALE-WHILE-REVALIDATE CACHING, KEYLESS AUTH, TECHNICAL INDICATORS. **MULTI-RECIPIENT RESULT-DELIVERY EMAIL** (PR #6643) — SANITIZED, DEDUPED, FANNED OUT VIA NODEMAILER + `wp_mail`. ALL SHOPIFY/CRM/FINANCIAL CHANGES PORT BYTE-IDENTICAL TO `nvoos-content-graph-pro`. TOOL COUNT: ~306 BASE + ~1,279 PRO (~1,585 TOTAL; +13 PRO). STALE 1.1.79 BUILD ZIPS REMOVED (30 FILES) + SUPERSEDED DOCS-HUB 0.4.3/0.4.4/0.4.5 ZIPS REMOVED. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE + NEW `docs/developer/crm-toolkit-jobnavigator-adoption-plan.md` + `docs/project/plans/financial-toolkit-openterminal-lessons-plan.md`.
+
+> **SEPTEMBER 15, 2026 UPDATE (v1.1.80):** PORTABILITY, SHOPIFY-CATALOG & SECURITY-OPERATIONS RELEASE. **ASSISTANT EXPORT/IMPORT ACROSS ALL SURFACES** (PR #6628) — ONE CANONICAL ENGINE, `nvoos-assistant` JSON BUNDLES (FORMAT_VERSION 1) FROM WP-CLI, REST (`POST /mcp-ai/v1/assistants/export|import`), ADMIN IMPORT/EXPORT PAGE + 3 NEW BASE TOOLS (`export_assistant`, `import_assistant`, `duplicate_assistant`) + PRO `export_assistant_blueprint`; CREDENTIAL HASHES NEVER EXPORTED, STRIPPED FROM IMPORTS; BACKUP PROVIDER NOW SHARES THE DENYLIST. **SECURITY CENTER USAGE MONITOR SUB-TAB** (PR #6632) — SEVERITY-TIERED VIOLATION TRIAGE LOG, MONITOR STATUS CARDS, SHUTDOWN RECOVERY, EDITABLE CONFIG, REST CLEAR ROUTES (`/security/clear-violations`, `/security/clear-shutdown`); NOTICE DEEP-LINKS + SHOWS LATEST VIOLATION; SANITIZE-CLOBBER BUG + MALFORMED-PATTERN HARDENING FIXED. **SHOPIFY UCP MODES** (PRs #6624/#6630) — KEYLESS STOREFRONT + GLOBAL CATALOG MODES REPLACE THE DEPRECATED REST CATALOG API (PUBLIC `/ucp/agent-profile` ROUTE, CCT SYNC REJECTED) ON PRO + CG PRO (BYTE-IDENTICAL PORTS); **REST CATALOG 401s FIXED** + JETENGINE SYNC GATE UNIFIED WITH SYSTEM STATUS (PR #6623). **WP-CLI REPAIRED + STREAMING** (PRs #6625/#6626) — `provider list`/`chat` NO LONGER FATAL ON PHP 8+; `chat --stream` STREAMS TOKEN-BY-TOKEN. **WHATSAPP WEBHOOK SELF-TESTS** (PR #6622) — VERIFICATION/SIGNATURE/SUBSCRIPTION CHECKS ON REMOTE SITES. **OKF EDITOR CONTEXT PRESERVED ON SAVE** (PR #6631). **SKILLS** (PRs #6627/#6629) — AGENT SKILLS VERIFIED AGAINST THE REAL PLUGIN SURFACE + NEW `design-brand-assistant-provisioning` SKILL; TEMPLATE WPCS CLEAN. **DOCS HUB COLORS** (PR #6621). TOOL COUNT: ~306 BASE + ~1,266 PRO (~1,572 TOTAL; +3 BASE +1 PRO). STALE 1.1.78 BUILD ZIPS REMOVED (30 FILES). UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
+
+> **SEPTEMBER 13, 2026 UPDATE (v1.1.79):** CHECKOUT-HARDENING-TAIL & SECURITY RELEASE. **IMAGING SYMLINK HARDENING** (PR #6616) — STUDY DELETION REMOVES LINKS AS LINKS AND NEVER FOLLOWS THEM; REALPATH CONTAINMENT PER ENTRY; NEW `study_delete_link_failed` / `study_delete_outside_storage_blocked` AUDIT EVENTS (BASE+PRO + BYTE-IDENTICAL CG PRO PORT). **CONTENT GRAPH 1.0.8** — STRIPE PAYMENT ELEMENT BILLING-ADDRESS MODE `never` → `auto` (NON-EU PURCHASES NO LONGER DIE WITH `IntegrationError`); `/payments/session` REFUSES CHARGEABLE SESSIONS WHEN ALREADY LICENSED (NO DOUBLE CHARGES). **CHECKOUT API 0.1.2** — VENDOR-SIDE BUYER LICENSE EMAILS FROM THE WEBHOOK + `/verify` PATHS (`email_sent_at` DB v4 → v5); STATEMENT-DESCRIPTOR 424 FIXED VIA `statement_descriptor_suffix` (PR #6613); STRIPE ACCOUNT-SWITCH CREATE-PRODUCT FIX (PR #6611). **DOCS HUB 0.4.5 → 0.4.6** (PRs #6615/#6617) — SECOND WP.ORG REVIEWER PASS + FULL 18-GUIDELINE PASS, 0 BLOCKING PCP ERRORS. **CONTENT-GRAPH WP.ORG READINESS** (PRs #6609/#6612/#6619) — SELLER-OF-RECORD COPY, PRICE NOTE, PACKAGING TRI-SYNC. **TOOLKIT SLASH TEST REPAIR** (PR #6618). TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.77 BUILD ZIPS REMOVED. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
+
+> **SEPTEMBER 12, 2026 UPDATE (v1.1.78):** SLASH-COMMAND, MODEL-RESTORATION, CHECKOUT-HARDENING & LEGAL-CONSOLIDATION RELEASE. **SLASH COMMANDS REWORKED AS DECLARATIVE TOOL WRAPPERS** (PR #6604) — ~76 PLACEHOLDER COMMANDS PURGED; 36 COMMANDS ACROSS 15 TOOLKITS EXECUTE THROUGH THE REAL TOOL REGISTRY VIA A NEW TOOL ADAPTER (CAPABILITY GATES, VALIDATION, SANITISATION, CANONICAL ENVELOPE LIVE IN THE TOOL LAYER) + NEW `slash.*` MCP PROMPT BRIDGE (`prompts/list`/`prompts/get`) WIRED INTO THE PER-TOOLKIT MCP SERVERS; ALL 19 BUILT-IN WORKFLOWS RE-CHAINED. **DEEPSEEK V4 PRO RESTORED** (PR #6608) — ACTIVE AGAIN ACROSS ALL TRACKS ($0.66/$1.98 OFF-PEAK; MIGRATION MAP UNMAPPED); CONTENT GRAPH AI MIRROR → CATALOG V2026.09.10 WITH CORRECTED USAGETRACKER PRICING; LIB/CORE MIRRORS ALIGNED. **CHECKOUT HARDENING** (PRs #6597/#6598/#6603) — ASSET CACHE-BUSTING BY FILE MTIME (`Schema::assetVersion()`; FIXES THE INVISIBLE 1.0.7 HOTFIX), VENDOR-SESSION PRICE SYNC WITH A $34.99 FALLBACK DEFAULT, MINIMALIST MODAL RESTYLE. **DOCS HUB 0.4.3 → 0.4.4** (PR #6606) — ALL WP.ORG REVIEW FINDINGS FIXED (SEARCH CONTEXT-SOURCE FILTERING, SOURCE-CODE SECTION, SYMLINK-SAFE DELETION, STAGING-TRANSIENT ISOLATION, SITEMAP SLUG LEAK), 0 BLOCKING PCP ERRORS. **LEGAL CONSOLIDATION** (PRs #6599/#6605/#6607) — UNIFIED TOS, ALIGNED API-LICENSES, TWO-ENTITY SELLER MODEL (NV DIGITAL UNLOCKED LLC SELLS + RUNS THE MARKETPLACE; NV DIGITAL SOLUTIONS DEVELOPS/OWNS IP/SERVICES). **CONTENT GRAPH 1.0.7 RELEASED** WITH WP.ORG 18-POINT SIGN-OFF. TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.76 BUILD ZIPS REMOVED (30 FILES). UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
 > **SEPTEMBER 11, 2026 UPDATE (v1.1.77):** MODEL-REFRESH, BASE+PRO & CHECKOUT-LAUNCH RELEASE. **DEEPSEEK V4.1 FLASH CATALOG REFRESH** (PR #6555) — NEW `deepseek-flash` (VISION, $0.15/$0.60 OFF-PEAK); V4 FLASH + V4 FLASH VISION EXP RETIRED; V4 PRO DEPRECATED (SUNSET 2026-09-14, FALLBACK `deepseek-flash`); MIGRATION MAP REWRITES ALL SIX LEGACY DEEPSEEK IDS; **PEAK/OFF-PEAK PRICING** LANDS IN THE COST CALCULATOR (`PEAK_WINDOWS`, `is_peak_time()`, `calculate_cost_at()` — LEGACY `calculate_cost()` TIME-INDEPENDENT). **KNOWLEDGE GRAPH COMPANION PRESET** (PR #6570) — FEATURED, AUTO-SELECTED WHEN A CONTENT GRAPH IS DETECTED, 20 BASE TOOLS + 14 `graphify_*` TOOLS WHEN ENABLED. **BASE+PRO GATING FIXED** (PR #6561) — PRO TOOLKITS NOW LOAD IN BASE+PRO INSTALLS (ALL 21 INIT GATES + ~550 TOOL GATES); NEW 15-TEST `tests/basepro/` MATRIX + CI JOB. **PRO WP-CLI LOAD-ORDER GUARD** (PR #6585) — NO MORE `WP_MCP_AI_PATH` FATAL WHEN PRO ACTIVATES FIRST. **MEMORY CCT PHANTOM SLUG FIXED** (PR #6591) — GRAPHIFY + RETENTION READ CANONICAL `ai_agent_memories` (SWEEPS, CAPS, PRUNING, HEALTH STATS WORK). **CHECKOUT LAUNCH COMPLETE** (PRs #6568/#6571/#6573/#6587–#6594) — CHECKOUT API **0.1.0 → 0.1.1** (BOOLEAN SERIALIZATION FIX, 424/502 CONTRACT, CONNECTION TEST, `GET /health`); CONTENT GRAPH **1.0.6 → 1.0.7** (CCT SOURCES + STATUS NOTES, TRUST MODAL, STRIPE ELEMENT + RELEASE-TAG FIXES). **SECURITY** — SHARP/NODEMAILER/JOI/POSTCSS-SELECTOR-PARSER BUMPS (#6592); BUILD PUBLISH RACE FIX (#6593). **WAVE G** (PRs #6551–#6584) — LAW-FIRM, CRE-DEBT, QUIZ, ECA, CHAT-CHANNELS COMPLETE; PLACES STARTS. TOOL COUNT UNCHANGED: ~303 BASE + ~1,265 PRO (~1,568 TOTAL). STALE 1.1.75 BUILD ZIPS REMOVED (30 FILES). UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
 
@@ -650,6 +658,63 @@ n#### New Audit & Compliance Docs
 - **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.39 latest updates section, version bump, duplicate section cleanup.
 
 ---
+
+## 🆕 September 2026 — v1.1.81: Shopify UCP Tool Routing, FlowHub Connections, JobNavigator CRM, OpenTerminal Financial Resilience
+
+### New and updated documents (September 17, 2026, v1.1.81)
+
+- **[docs/project/plans/v1.1.81-docs-catch-up.md](project/plans/v1.1.81-docs-catch-up.md)** ⭐ **NEW** — v1.1.81 docs & release catch-up plan (PR window #6634–#6643, +13 Pro tools, stale 1.1.79 ZIP removal, OI-1 groups 16–18 recorded).
+- **[docs/developer/crm-toolkit-jobnavigator-adoption-plan.md](../developer/crm-toolkit-jobnavigator-adoption-plan.md)** ⭐ **NEW** (in-window, PR #6636) — JobNavigator CRM adoption plan: stage history, dedup, reply signals, handover, tracked links.
+- **[docs/project/plans/financial-toolkit-openterminal-lessons-plan.md](project/plans/financial-toolkit-openterminal-lessons-plan.md)** ⭐ **NEW** (in-window, PR #6639) — OpenTerminal financial-toolkit resilience lessons.
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.81 highlights + latest updates (Shopify UCP tool routing + image cards, FlowHub connections, JobNavigator CRM + Gmail poller, OpenTerminal financial resilience, multi-recipient email).
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — the in-window [1.1.81] section completed with #6635–#6641 + the Versioning block; date 2026-09-17.
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.81 + changelog entry. (September 17, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — version + v1.1.81 recent-updates entry. (September 17, 2026)
+
+## 🆕 September 2026 — v1.1.80: Assistant Portability, Shopify UCP Catalog, Security Usage Monitor, WP-CLI Repair
+
+### New and updated documents (September 15, 2026, v1.1.80)
+
+- **[docs/project/plans/v1.1.80-docs-catch-up.md](project/plans/v1.1.80-docs-catch-up.md)** ⭐ **NEW** — v1.1.80 docs & release catch-up plan (PRs #6621–#6632, full PR-description review + count sweep + stale-ZIP housekeeping). (September 15, 2026)
+- **[docs/assistant-import-export.md](assistant-import-export.md)** ⭐ **NEW** — `nvoos-assistant` bundle format spec (v1), credential-redaction policy, surface reference, hooks, examples (PR #6628). (September 15, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.80 highlights + latest updates (assistant portability, Shopify UCP modes, security usage monitor, WP-CLI repairs, ~1,572 tools, 58 skills). (September 15, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.80] section with PR-level detail; the #6625/#6626 WP-CLI entries moved up from the released [1.1.79] block (they merged after the 1.1.79 packages were built). (September 15, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.80 + changelog entry. (September 15, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — version + v1.1.80 recent-updates entry. (September 15, 2026)
+- **[includes/assistants/README.md](../includes/assistants/README.md)** ⭐ **UPDATED** — portability engine added to the folder surface (PR #6628). (September 15, 2026)
+- **[docs/operations/security/PROMPT_INJECTION_TESTING.md](operations/security/PROMPT_INJECTION_TESTING.md)** ⭐ **UPDATED** — corrected nav path to the new Security Center Usage Monitor sub-tab (PR #6632). (September 15, 2026)
+
+---
+
+## 🆕 September 2026 — v1.1.79: Imaging Symlink Hardening, Checkout Hardening Tail, Content Graph 1.0.8, Checkout API 0.1.2
+
+### New and updated documents (September 13, 2026, v1.1.79)
+
+- **[docs/project/plans/v1.1.79-docs-catch-up.md](project/plans/v1.1.79-docs-catch-up.md)** ⭐ **NEW** — v1.1.79 docs & release catch-up plan (PRs #6609–#6619 + in-session content-graph 1.0.8 / checkout-api 0.1.2 work, full PR-description review + housekeeping). (September 13, 2026)
+- **[plugins/nvoos-content-graph/CHANGELOG.md](../plugins/nvoos-content-graph/CHANGELOG.md)** ⭐ **UPDATED** — v1.0.8: non-EU Stripe checkout fix + already-licensed pre-purchase gate. (September 13, 2026)
+- **[addons/checkout-api/CHANGELOG.md](../addons/checkout-api/CHANGELOG.md)** ⭐ **UPDATED** — v0.1.2: vendor-side buyer license emails. (September 13, 2026)
+- **[addons/docs-hub/readme.txt](../addons/docs-hub/readme.txt)** ⭐ **UPDATED** — v0.4.5/v0.4.6 wp.org review rounds (PRs #6615/#6617). (September 13, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.79 highlights + latest updates (symlink hardening, checkout hardening tail, content-graph 1.0.8, checkout-api 0.1.2, docs-hub 0.4.6, ~1,568 tools, 56 skills). (September 13, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.79] section with PR-level detail. (September 13, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.79 + changelog entry. (September 13, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.79 entry. (September 13, 2026)
+
+## 🆕 September 2026 — v1.1.78: Slash-Command Rework, DeepSeek V4 Pro Restoration, Checkout Hardening, Legal Consolidation
+
+### New and updated documents (September 12, 2026, v1.1.78)
+
+- **[docs/project/plans/v1.1.78-docs-catch-up.md](project/plans/v1.1.78-docs-catch-up.md)** ⭐ **NEW** — v1.1.78 docs & release catch-up plan (PRs #6597–#6608, full PR-description review + housekeeping). (September 12, 2026)
+- **[docs/legal/TERMS-OF-SERVICE.md](legal/TERMS-OF-SERVICE.md)** ⭐ **UPDATED** — consolidated Part A (Products) + Part B (Website/Services/Marketplace), then restructured into three parts for the two-entity seller model (PRs #6599/#6607). (September 11–12, 2026)
+- **[docs/legal/API-LICENSES.md](legal/API-LICENSES.md)** ⭐ **NEW** — License & Usage Terms aligned with the consolidated legal set + publishable HTML (PR #6605). (September 11, 2026)
+- **[docs/legal/PRIVACY-POLICY.md](legal/PRIVACY-POLICY.md)** ⭐ **UPDATED** — dual-controller rewrite (Unlocked: checkout/licensing/refund/marketplace data; Solutions: website/services data) (PR #6607). (September 12, 2026)
+- **[docs/reference/slash-commands/README.md](reference/slash-commands/README.md)** ⭐ **UPDATED** — declarative command registry, tool adapter, and MCP prompts bridge (PR #6604). (September 11, 2026)
+- **[includes/slash-commands/README.md](../includes/slash-commands/README.md)** ⭐ **UPDATED** — same rework documented at the source (PR #6604). (September 11, 2026)
+- **[plugins/nvoos-content-graph/WPORG-REVIEW-18POINT-SIGNOFF.md](../plugins/nvoos-content-graph/WPORG-REVIEW-18POINT-SIGNOFF.md)** ⭐ **NEW** — wp.org 18-point sign-off for the Content Graph 1.0.7 submission (direct commit `fda3e99c04`). (September 11, 2026)
+- **[addons/docs-hub/readme.txt](../addons/docs-hub/readme.txt)** ⭐ **UPDATED** — v0.4.4 contributors, Source Code section, and changelog (PR #6606). (September 12, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.78 highlights + latest updates (slash rework, DeepSeek restoration, checkout hardening, docs-hub 0.4.4, legal consolidation, ~1,568 tools, 56 skills). (September 12, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.78] section with PR-level detail. (September 12, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.78 + changelog entry. (September 12, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.78 entry. (September 12, 2026)
 
 ## 🆕 September 2026 — v1.1.77: DeepSeek V4.1 Flash, Base+Pro Gating, Checkout Launch
 

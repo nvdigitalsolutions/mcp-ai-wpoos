@@ -79,7 +79,7 @@ function check( label, cond ) {
 global.window.nvoosContentGraphCommerce = {
 	rest_url: 'https://example.local/wp-json/nvoos-content-graph/v1',
 	nonce: 'abc',
-	price_label: '$49.00',
+	price_label: '$34.99',
 	fallback_url: 'https://nvdigitalsolutions.com/plugins/nvoos-content-graph-ai/',
 	i18n: { generic_error: 'Something went wrong.', fallback_note: 'Redirecting…' }
 };

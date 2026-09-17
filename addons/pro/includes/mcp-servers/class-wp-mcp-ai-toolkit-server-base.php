@@ -420,6 +420,14 @@ abstract class WP_MCP_AI_Toolkit_Server_Base implements WP_MCP_AI_Toolkit_Server
 			);
 		}
 
+		// Surface the toolkit's slash commands as MCP prompts (slash.*). The
+		// prompts bridge renders each entry as an instruction to call the same
+		// backing tool the in-chat slash command delegates to, so a client
+		// that supports MCP prompts gains the toolkit's command surface for free.
+		if ( class_exists( 'WP_MCP_AI_Slash_Command_Prompts' ) ) {
+			$out = array_merge( $out, WP_MCP_AI_Slash_Command_Prompts::for_toolkit( $this->get_slug() ) );
+		}
+
 		return $out;
 	}
 

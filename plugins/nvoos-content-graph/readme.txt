@@ -5,7 +5,7 @@ Tags: knowledge graph, content visualization, cytoscape, content strategy, seman
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.7
+Stable tag: 1.0.8
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -94,7 +94,7 @@ The core graph engine runs entirely on your server. The optional "Resolve Extern
 
 = Do I have to pay for the NV oOS Complete bundle? =
 
-No. This plugin is complete and fully functional for free. The NV oOS Complete bundle (the full NV oOS plugin, base + Pro) is an optional, separately installed paid product, sold off-directory by NV Digital Solutions. Purchases are covered by a 30-day money-back guarantee; see the vendor's Terms of Service and Refund Policy linked in the checkout.
+No. This plugin is complete and fully functional for free. The NV oOS Complete bundle (the full NV oOS plugin, base + Pro) is an optional, separately installed paid product, sold off-directory by NV Digital Unlocked LLC under license from NV Digital Solutions. Purchases are covered by a 30-day money-back guarantee; see the vendor's Terms of Service and Refund Policy linked in the checkout.
 
 = Does it work on multisite? =
 
@@ -135,7 +135,7 @@ When you configure a remote source driver (REST API, RSS/Sitemap feed, SPARQL en
 
 **Stripe payments (opt-in only)**
 
-The "Get NV oOS Complete" buttons on the plugin's settings page open an optional checkout for the NV oOS Complete plugin bundle — the full NV oOS plugin (base + Pro) installed as a separate plugin. Card and payment details are entered directly on Stripe's servers (`js.stripe.com` iframe); the plugin never stores or transmits card data. Stripe.js is loaded only when the purchase modal is opened — merely visiting the settings page contacts no third party. The checkout is created and verified by the vendor's own server (NV Digital Solutions); this plugin only sends the product name, your site URL, the Stripe payment ID, the purchasing administrator's email address, the buyer's declared country, and a timestamp recording your agreement to the Terms of Service to that service. For buyers in the EU, a billing address (street, city, optional postal code) is collected in the modal, attached to the payment for VAT records, and shown to the vendor on the license. A local purchase record (license key, payment ID, price paid, the purchasing administrator's email address, country, and the consent timestamp) is stored after the vendor confirms the payment. Payment is entirely optional — the core plugin is fully functional without it.
+The "Get NV oOS Complete" buttons on the plugin's settings page open an optional checkout for the NV oOS Complete plugin bundle — the full NV oOS plugin (base + Pro) installed as a separate plugin. Card and payment details are entered directly on Stripe's servers (`js.stripe.com` iframe); the plugin never stores or transmits card data. Stripe.js is loaded only when the purchase modal is opened — merely visiting the settings page contacts no third party. The checkout is created and verified by the vendor's own server, operated by NV Digital Solutions on behalf of NV Digital Unlocked LLC (the seller of record); this plugin only sends the product name, your site URL, the Stripe payment ID, the purchasing administrator's email address, the buyer's declared country, and a timestamp recording your agreement to the Terms of Service to that service. For buyers in the EU, a billing address (street, city, optional postal code) is collected in the modal, attached to the payment for VAT records, and shown to the vendor on the license. A local purchase record (license key, payment ID, price paid, the purchasing administrator's email address, country, and the consent timestamp) is stored after the vendor confirms the payment. Payment is entirely optional — the core plugin is fully functional without it.
 
 - **Service provider:** Stripe, Inc. — Privacy Policy: https://stripe.com/privacy
 
@@ -165,12 +165,19 @@ All libraries are served locally from `assets/vendor/` and never loaded from thi
 
 == Changelog ==
 
-= 1.0.7 — 2026-09-09 =
+= 1.0.8 — 2026-09-13 =
+* Fixed Stripe checkout failing for non-EU buyers: the Payment Element no longer requires a billing-address country that the modal only collects from EU buyers
+* Already-licensed sites can no longer start a new payment: the purchase modal shows the existing license instead of a chargeable Stripe form
+
+= 1.0.7 — 2026-09-12 =
 * Checkout consent checkbox (Terms of Service + 30-day refund policy) and buyer-email collection with Stripe receipt delivery
 * Buyer country and conditional EU billing address (VAT records) collected in the purchase modal
 * Manual ZIP download offered after purchase alongside the automatic installer; manual install documented as the primary path
 * Roadmap link in the purchase modal; release-notes link and support email on the purchase success screen
 * Updated privacy disclosures (buyer email, country, EU billing address, and Terms consent timestamp sent to the checkout service)
+* Purchase modal price now syncs from the vendor's configured price (fallback default $34.99)
+* NV Digital Unlocked LLC named as the seller of record in checkout copy and disclosures
+* "Introductory price — prices are subject to change" note added to the purchase modal
 
 = 1.0.6 — 2026-09-08 =
 * Checkout now delivers the NV oOS Complete plugin bundle (base + Pro as a separate plugin) instead of the companion AI addon

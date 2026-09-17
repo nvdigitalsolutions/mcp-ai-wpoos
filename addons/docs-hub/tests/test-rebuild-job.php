@@ -229,4 +229,73 @@ class Test_Docs_Hub_Rebuild_Job extends WP_UnitTestCase {
 		$this->assertIsArray( $reloaded );
 		$this->assertEquals( NVOOS_DOCS_HUB_VERSION, $reloaded['version'] );
 	}
+
+	/**
+	 * Test that schedule() registers the daily rebuild cron event and that
+	 * unschedule() removes it along with any pending chunked-rebuild ticks.
+	 *
+	 * @return void
+	 */
+	public function test_schedule_and_unschedule_cron_events() {
+		$this->assertFalse( wp_next_scheduled( NV_oOS_Docs_Hub_Rebuild_Job::CRON_HOOK ) );
+
+		NV_oOS_Docs_Hub_Rebuild_Job::schedule();
+		$this->assertNotFalse( wp_next_scheduled( NV_oOS_Docs_Hub_Rebuild_Job::CRON_HOOK ) );
+
+		// A second call must not duplicate the event.
+		NV_oOS_Docs_Hub_Rebuild_Job::schedule();
+		$this->assertNotFalse( wp_next_scheduled( NV_oOS_Docs_Hub_Rebuild_Job::CRON_HOOK ) );
+
+		NV_oOS_Docs_Hub_Rebuild_Job::unschedule();
+		$this->assertFalse( wp_next_scheduled( NV_oOS_Docs_Hub_Rebuild_Job::CRON_HOOK ) );
+		$this->assertFalse( wp_next_scheduled( NV_oOS_Docs_Hub_Rebuild_Pipeline::TICK_HOOK ) );
+	}
+
+	/**
+	 * Test that deactivating Docs Hub itself clears the cache but does NOT
+	 * enqueue a rebuild (the tick callbacks no longer exist while the
+	 * plugin is inactive).
+	 *
+	 * @return void
+	 */
+	public function test_plugin_deactivated_self_clears_cache_without_enqueue() {
+		$cache = new NV_oOS_Docs_Hub_Cache();
+		$this->assertTrue(
+			$cache->set_manifest(
+				array(
+					'version'     => NVOOS_DOCS_HUB_VERSION,
+					'total_pages' => 2,
+				)
+			)
+		);
+
+		NV_oOS_Docs_Hub_Plugin::on_plugin_deactivated( plugin_basename( NVOOS_DOCS_HUB_FILE ) );
+
+		// Cache cleared, but no rebuild was enqueued.
+		$this->assertFalse( ( new NV_oOS_Docs_Hub_Cache() )->get_manifest() );
+		$this->assertFalse( NV_oOS_Docs_Hub_Rebuild_State::is_running() );
+	}
+
+	/**
+	 * Test that deactivating another docs-related plugin clears the cache
+	 * and enqueues a rebuild, as before.
+	 *
+	 * @return void
+	 */
+	public function test_plugin_deactivated_related_plugin_clears_and_enqueues() {
+		$cache = new NV_oOS_Docs_Hub_Cache();
+		$this->assertTrue(
+			$cache->set_manifest(
+				array(
+					'version'     => NVOOS_DOCS_HUB_VERSION,
+					'total_pages' => 4,
+				)
+			)
+		);
+
+		NV_oOS_Docs_Hub_Plugin::on_plugin_deactivated( 'mcp-ai-wpoos/mcp-ai-wpoos.php' );
+
+		$this->assertFalse( ( new NV_oOS_Docs_Hub_Cache() )->get_manifest() );
+		$this->assertTrue( NV_oOS_Docs_Hub_Rebuild_State::is_running() );
+	}
 }

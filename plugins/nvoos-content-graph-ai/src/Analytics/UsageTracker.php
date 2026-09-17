@@ -852,25 +852,34 @@ class UsageTracker {
 				'input_cost_per_1k'  => 0.0008,
 				'output_cost_per_1k' => 0.003,
 			),
-			'deepseek-v4-flash'                            => array(
-				'input_cost_per_1k'  => 0.00014,
-				'output_cost_per_1k' => 0.00028,
+			// DeepSeek direct API models (as of September 2026).
+			// See: https://api-docs.deepseek.com/quick_start/pricing.
+			// Off-peak cache-miss prices per 1K; peak 2× (window declared in
+			// WP_MCP_AI_Cost_Calculator::PEAK_WINDOWS).
+			'deepseek-flash'                               => array(
+				'input_cost_per_1k'       => 0.00015, // $0.15 per 1M tokens (off-peak cache miss).
+				'output_cost_per_1k'      => 0.0006,  // $0.60 per 1M tokens (off-peak).
+				'peak_input_cost_per_1k'  => 0.0003,
+				'peak_output_cost_per_1k' => 0.0012,
 			),
 			'deepseek-v4-pro'                              => array(
-				'input_cost_per_1k'  => 0.00174,
-				'output_cost_per_1k' => 0.00348,
+				'input_cost_per_1k'       => 0.00066, // $0.66/1M (off-peak cache miss).
+				'output_cost_per_1k'      => 0.00198, // $1.98/1M (off-peak).
+				'peak_input_cost_per_1k'  => 0.00132,
+				'peak_output_cost_per_1k' => 0.00396,
 			),
-			'deepseek-chat'                                => array(
-				'input_cost_per_1k'  => 0.00027,
-				'output_cost_per_1k' => 0.0011,
+			// Retired 2026-09-10 — the ids now serve V4.1 Flash and bill at Flash prices.
+			'deepseek-v4-flash'                            => array(
+				'input_cost_per_1k'       => 0.00015,
+				'output_cost_per_1k'      => 0.0006,
+				'peak_input_cost_per_1k'  => 0.0003,
+				'peak_output_cost_per_1k' => 0.0012,
 			),
-			'deepseek-reasoner'                            => array(
-				'input_cost_per_1k'  => 0.00055,
-				'output_cost_per_1k' => 0.00219,
-			),
-			'deepseek-coder'                               => array(
-				'input_cost_per_1k'  => 0.00027,
-				'output_cost_per_1k' => 0.0011,
+			'deepseek-v4-flash-vision-exp'                 => array(
+				'input_cost_per_1k'       => 0.00015, // Images billed as input tokens.
+				'output_cost_per_1k'      => 0.0006,
+				'peak_input_cost_per_1k'  => 0.0003,
+				'peak_output_cost_per_1k' => 0.0012,
 			),
 			'zai-org/glm-4'                                => array(
 				'input_cost_per_1k'  => 0.0006,

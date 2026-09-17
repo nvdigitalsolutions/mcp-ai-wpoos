@@ -27,7 +27,7 @@ class NVOOS_Checkout_API_Settings {
 
 	public const OPTION = 'nvoos_checkout_settings';
 
-	public const DEFAULT_PRICE_CENTS   = 4900;
+	public const DEFAULT_PRICE_CENTS   = 3499;
 	public const DEFAULT_ADDON_VERSION = '1.1.74';
 
 	/**
@@ -64,20 +64,24 @@ class NVOOS_Checkout_API_Settings {
 	 */
 	public static function all(): array {
 		$defaults = array(
-			'stripe_secret_key'      => '',
-			'stripe_publishable_key' => '',
-			'stripe_webhook_secret'  => '',
-			'price_cents'            => self::DEFAULT_PRICE_CENTS,
-			'currency'               => 'usd',
-			'test_mode'              => true,
-			'addon_version'          => self::DEFAULT_ADDON_VERSION,
-			'zip_source'             => self::default_zip_source(),
-			'terms_url'              => self::DEFAULT_TERMS_URL,
-			'refund_policy_url'      => self::DEFAULT_REFUND_POLICY_URL,
-			'statement_descriptor'   => '',
-			'product_name'           => self::DEFAULT_PRODUCT_NAME,
-			'product_id'             => '',
-			'price_id'               => '',
+			'stripe_secret_key'       => '',
+			'stripe_publishable_key'  => '',
+			'stripe_webhook_secret'   => '',
+			'price_cents'             => self::DEFAULT_PRICE_CENTS,
+			'currency'                => 'usd',
+			'test_mode'               => true,
+			'addon_version'           => self::DEFAULT_ADDON_VERSION,
+			'zip_source'              => self::default_zip_source(),
+			'terms_url'               => self::DEFAULT_TERMS_URL,
+			'refund_policy_url'       => self::DEFAULT_REFUND_POLICY_URL,
+			'statement_descriptor'    => '',
+			'product_name'            => self::DEFAULT_PRODUCT_NAME,
+			'product_id'              => '',
+			'price_id'                => '',
+			'license_email_enabled'   => true,
+			'license_email_subject'   => '',
+			'license_email_from_name' => '',
+			'license_email_from'      => '',
 		);
 
 		$stored = get_option( self::OPTION, array() );
@@ -229,10 +233,14 @@ class NVOOS_Checkout_API_Settings {
 	}
 
 	/**
-	 * The card statement descriptor, or '' to use Stripe's default.
+	 * The card statement descriptor suffix, or '' to use Stripe's default.
 	 *
-	 * Stripe requires 5–22 characters of a restricted alphabet for card
-	 * charges; invalid values are dropped so the default descriptor applies.
+	 * Stripe rejects the full `statement_descriptor` parameter for card
+	 * charges created with automatic payment methods, so the stored value
+	 * is sent as `statement_descriptor_suffix` instead: 2–22 characters
+	 * containing at least one letter, appended to the account's statement
+	 * descriptor prefix. Invalid values are dropped so Stripe's default
+	 * applies.
 	 *
 	 * @return string
 	 */
@@ -240,7 +248,10 @@ class NVOOS_Checkout_API_Settings {
 		$descriptor = strtoupper( (string) self::get( 'statement_descriptor', '' ) );
 		$descriptor = preg_replace( '/[^A-Z0-9 ._+*,-]/', '', $descriptor ) ?? '';
 		$descriptor = trim( $descriptor );
-		return strlen( $descriptor ) >= 5 && strlen( $descriptor ) <= 22 ? $descriptor : '';
+		if ( strlen( $descriptor ) < 2 || strlen( $descriptor ) > 22 ) {
+			return '';
+		}
+		return 1 === preg_match( '/[A-Z]/', $descriptor ) ? $descriptor : '';
 	}
 
 	/**
@@ -269,6 +280,51 @@ class NVOOS_Checkout_API_Settings {
 	 */
 	public static function price_id(): string {
 		return (string) self::get( 'price_id', '' );
+	}
+
+	/**
+	 * Whether the license email is enabled.
+	 *
+	 * @since 0.1.2
+	 *
+	 * @return bool
+	 */
+	public static function license_email_enabled(): bool {
+		return (bool) self::get( 'license_email_enabled', true );
+	}
+
+	/**
+	 * Custom license email subject (empty = the per-product default).
+	 *
+	 * @since 0.1.2
+	 *
+	 * @return string
+	 */
+	public static function license_email_subject(): string {
+		return sanitize_text_field( (string) self::get( 'license_email_subject', '' ) );
+	}
+
+	/**
+	 * Custom From name for the license email (empty = WordPress default).
+	 *
+	 * @since 0.1.2
+	 *
+	 * @return string
+	 */
+	public static function license_email_from_name(): string {
+		return sanitize_text_field( (string) self::get( 'license_email_from_name', '' ) );
+	}
+
+	/**
+	 * Custom From address for the license email (empty = WordPress default).
+	 *
+	 * @since 0.1.2
+	 *
+	 * @return string
+	 */
+	public static function license_email_from(): string {
+		$email = sanitize_email( (string) self::get( 'license_email_from', '' ) );
+		return false !== is_email( $email ) ? $email : '';
 	}
 
 	/**
@@ -369,13 +425,15 @@ class NVOOS_Checkout_API_Settings {
 			}
 		}
 
-		// Statement descriptor: sanitized strictly; invalid lengths are
-		// dropped (empty) so Stripe's default descriptor applies.
+		// Statement descriptor suffix: sanitized strictly; values that are
+		// shorter than 2 or longer than 22 characters, or contain no letter,
+		// are dropped (empty) so Stripe's default descriptor applies.
 		if ( isset( $raw['statement_descriptor'] ) ) {
 			$descriptor                        = strtoupper( (string) $raw['statement_descriptor'] );
 			$descriptor                        = preg_replace( '/[^A-Z0-9 ._+*,-]/', '', $descriptor ) ?? '';
 			$descriptor                        = trim( $descriptor );
-			$sanitized['statement_descriptor'] = ( strlen( $descriptor ) >= 5 && strlen( $descriptor ) <= 22 ) ? $descriptor : '';
+			$valid                             = strlen( $descriptor ) >= 2 && strlen( $descriptor ) <= 22 && 1 === preg_match( '/[A-Z]/', $descriptor );
+			$sanitized['statement_descriptor'] = $valid ? $descriptor : '';
 		}
 
 		if ( isset( $raw['product_name'] ) ) {
@@ -387,6 +445,21 @@ class NVOOS_Checkout_API_Settings {
 				$value             = (string) $raw[ $key ];
 				$sanitized[ $key ] = preg_match( '/^[A-Za-z0-9_]+$/', $value ) ? $value : '';
 			}
+		}
+
+		// License email (vendor → buyer confirmation with the license key).
+		$sanitized['license_email_enabled'] = ! empty( $raw['license_email_enabled'] ) ? 1 : 0;
+
+		if ( isset( $raw['license_email_subject'] ) ) {
+			$sanitized['license_email_subject'] = sanitize_text_field( (string) $raw['license_email_subject'] );
+		}
+
+		if ( isset( $raw['license_email_from_name'] ) ) {
+			$sanitized['license_email_from_name'] = sanitize_text_field( (string) $raw['license_email_from_name'] );
+		}
+
+		if ( isset( $raw['license_email_from'] ) ) {
+			$sanitized['license_email_from'] = sanitize_email( (string) $raw['license_email_from'] );
 		}
 
 		return $sanitized;

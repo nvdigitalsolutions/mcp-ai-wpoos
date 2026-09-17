@@ -28,6 +28,15 @@ if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 	// CPT creates its own menu automatically.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-financial-account-cpt.php';
 
+	// Load Financial Transaction CPT (portfolio ledger, tool-managed).
+	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-financial-transaction-cpt.php';
+	WP_MCP_AI_Financial_Transaction_CPT::init();
+
+	// Price alerts: daily evaluation cron + delivery hook.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-price-alerts.php';
+	add_action( WP_MCP_AI_Tool_Price_Alerts::CRON_HOOK, array( 'WP_MCP_AI_Tool_Price_Alerts', 'run_daily_check' ) );
+	WP_MCP_AI_Tool_Price_Alerts::maybe_schedule_cron();
+
 	// Register Financial Account meta fields with JetEngine for listing/discovery.
 	if ( function_exists( 'jet_engine' ) && class_exists( 'WP_MCP_AI_JetEngine_Meta_Helper' ) ) {
 		WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_fin_account' );

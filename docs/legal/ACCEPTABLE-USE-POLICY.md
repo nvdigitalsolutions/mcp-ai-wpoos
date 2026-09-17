@@ -1,13 +1,17 @@
 # Acceptable Use Policy — NV oOS Products
 
 **Effective date:** September 10, 2026
-**Last updated:** September 10, 2026
+**Last updated:** September 12, 2026
+
+> Updated September 12, 2026 to designate NV Digital Unlocked LLC as the
+> seller of the Products.
 
 This Acceptable Use Policy ("AUP") applies to your use of paid NV oOS
 products, including the **NV oOS Complete** bundle and any other paid
-add-ons, bundles, or license keys sold through our checkout service (the
-"Products"). It forms part of our [Terms of Service](TERMS-OF-SERVICE.md).
-Capitalized terms have the meanings given in the Terms of Service.
+add-ons, bundles, or license keys sold by **NV Digital Unlocked LLC** through
+our checkout service (the "Products"). It forms part of Part A of our
+[Terms of Service](TERMS-OF-SERVICE.md). Capitalized terms have the meanings
+given in the Terms of Service.
 
 Because the Products are AI orchestration software, this AUP includes
 AI-specific rules in addition to general rules of lawful use. You are

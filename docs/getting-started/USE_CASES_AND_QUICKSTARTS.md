@@ -41,7 +41,7 @@
 
 NV oOS (Open Operator System) is a WordPress AI assistant framework integrating OpenAI GPT models, Anthropic Claude, Google/Gemini, DeepSeek, Kimi/Moonshot, DigitalOcean Serverless Inference, Cloudflare Workers AI, Azure, NVIDIA, OpenRouter, Hugging Face, Baseten, Ollama, LM Studio, WebLLM, embedded MLC, and MCP-compatible tools.
 
-The current reconciled inventory is **~1,568 tools (~303 base + ~1,265 Pro)**. The live registry exposed by `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative because optional plugins, Pro addons, provider configuration, and site capabilities can change runtime availability.
+The current reconciled inventory is **~1,585 tools (~306 base + ~1,279 Pro)**. The live registry exposed by `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative because optional plugins, Pro addons, provider configuration, and site capabilities can change runtime availability.
 
 This guide focuses on practical use cases, setup paths, and operator checks. For inventory details behind this revision, see `docs/getting-started/_USE_CASES_FACT_SHEET.md`.
 
@@ -147,7 +147,7 @@ Pre-built team patterns include Engineering, Pharmaceutical Development, Researc
 1. Navigate to Professions → Add New.
 2. Add title, description, category, role description, and disclaimers.
 3. Add profession-specific knowledge and references.
-4. Browse the **~303 base tools** and any additional active Pro toolkit tools.
+4. Browse the **~306 base tools** and any additional active Pro toolkit tools.
 5. Select default tools, provider, model, and temperature.
 6. Publish and test the custom profession in the admin.
 
@@ -1334,6 +1334,8 @@ The Pro settings-page inventory includes reserved or specialised verticals such 
 
 | Revision | Date | Notes |
 |---|---|---|
+| 3.2 | September 17, 2026 | Count refresh only. Tested against plugin 1.1.81. Refreshed counts (~306 base + ~1,279 Pro ≈ ~1,585; +5 Pro CRM JobNavigator tools PR #6636 + 8 Pro OpenTerminal financial tools PR #6639); no other doc claims changed. |
+| 3.1 | September 15, 2026 | Count refresh only. Tested against plugin 1.1.80. Refreshed counts (~306 base + ~1,266 Pro ≈ ~1,572; +3 base assistant-portability tools + 1 Pro blueprint tool, PR #6628); no other doc claims changed. |
 | 3.0 | September 8, 2026 | Independent doc revision. Tested against plugin 1.1.72. Refreshed counts (~303 base + ~1,265 Pro ≈ ~1,568), rebuilt costs from model catalog `2026.09.05`, added Google Workspace / Vision Analysis / Workflow Builder + Pro Schedule Manager / Deep Research / Pro SPA v2 / Content Graph ecosystem sections, updated Chat SPA (0.7.0, Phase 8) and Docs Hub (0.4.3), refreshed Toolkit MCP Servers (33 servers, OAuth 2.0), added rate-limit and nonce troubleshooting, fixed all post-reorg links, and updated the fact sheet to Rev 3.0. |
 | 2.0 | May 17, 2026 | Independent doc revision. Tested against plugin 1.1.18. Refreshed counts, added fact sheet, moved AI Tool Builder to roadmap, added Scheduled Results / Toolkit MCP Servers / Memory Mining / Skill Packs / Chat SPA / Docs Hub, rewrote costs from model catalog `2026.05.04`, removed unsupported compliance percentage claims, fixed stale links, regenerated TOC, and added inline-async troubleshooting. |
 | 1.3.0 | Jan 31, 2026 | Superseded by 2.0 — counts and version references in that revision were already stale at publish. |

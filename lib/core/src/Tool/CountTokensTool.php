@@ -58,8 +58,8 @@ class CountTokensTool extends AbstractTool {
 		'gemini-2.5-flash'   => 1048576,
 		'gemini-2.0-flash'   => 1048576,
 		'gemini-2.0-flash-lite' => 1048576,
-		'deepseek-chat'      => 131072,
-		'deepseek-reasoner'  => 131072,
+		'deepseek-flash'     => 1048576,
+		'deepseek-v4-pro'    => 1048576,
 		'kimi-k2.6'          => 131072,
 	);
 

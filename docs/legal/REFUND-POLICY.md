@@ -1,12 +1,17 @@
 # Refund Policy — 30-Day Money-Back Guarantee
 
 **Effective date:** September 9, 2026  
-**Last updated:** September 9, 2026
+**Last updated:** September 12, 2026
 
-This Refund Policy applies to purchases of paid NV oOS products — including
-the **NV oOS Complete** bundle and any other paid add-ons, bundles, or
-license keys sold through our checkout service ("Products"). It forms part of
-our [Terms of Service](TERMS-OF-SERVICE.md).
+> Updated September 12, 2026 to designate NV Digital Unlocked LLC as the
+> seller of the Products.
+
+This Refund Policy is issued by **NV Digital Unlocked LLC**, the seller of
+paid NV oOS products — including the **NV oOS Complete** bundle and any other
+paid add-ons, bundles, or license keys sold through our checkout service
+("Products"). The Products are sold under license from NV Digital Solutions,
+the software developer. This policy forms part of Part A of our
+[Terms of Service](TERMS-OF-SERVICE.md).
 
 ---
 

@@ -314,6 +314,55 @@ class Test_Pro_Privacy extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A symlink inside a study storage directory must be removed without
+	 * being followed — the linked target must survive the erase intact.
+	 */
+	public function test_erase_imaging_studies_does_not_follow_symlinks(): void {
+		$this->register_test_cpt( 'mcp_ai_imaging_study' );
+
+		$upload_dir = wp_upload_dir();
+		wp_mkdir_p( $upload_dir['basedir'] );
+		$storage = $upload_dir['basedir'] . '/nvoos-privacy-symlink-' . wp_generate_uuid4();
+		wp_mkdir_p( $storage . '/nested' );
+		file_put_contents( $storage . '/nested/pixel.bin', 'dicom-bytes' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Test fixture only.
+
+		$target_dir = sys_get_temp_dir() . '/nvoos-privacy-target-' . wp_generate_uuid4();
+		wp_mkdir_p( $target_dir );
+		file_put_contents( $target_dir . '/victim.txt', 'must-survive' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Test fixture only.
+
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Test fixture only.
+		if ( ! @symlink( $target_dir, $storage . '/nested/evil' ) ) {
+			unlink( $target_dir . '/victim.txt' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Test fixture cleanup.
+			rmdir( $target_dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Test fixture cleanup.
+			unlink( $storage . '/nested/pixel.bin' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Test fixture cleanup.
+			rmdir( $storage . '/nested' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Test fixture cleanup.
+			rmdir( $storage ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Test fixture cleanup.
+			$this->markTestSkipped( 'Symlink creation unavailable in this environment.' );
+		}
+
+		list( $user, $ids ) = $this->create_authored_posts(
+			'mcp_ai_imaging_study',
+			1,
+			array( '_imaging_storage_path' => $storage )
+		);
+
+		$result = WP_MCP_AI_Pro_Privacy::erase_imaging_studies( $user->user_email );
+
+		$this->assertSame( 1, $result['items_removed'] );
+		$this->assertSame( array(), $result['messages'] );
+		$this->assertNull( get_post( $ids[0] ) );
+		$this->assertFalse( is_dir( $storage ) );
+
+		// The symlink target must be fully intact.
+		$this->assertFileExists( $target_dir . '/victim.txt' );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Test assertion only.
+		$this->assertSame( 'must-survive', file_get_contents( $target_dir . '/victim.txt' ) );
+
+		unlink( $target_dir . '/victim.txt' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Test fixture cleanup.
+		rmdir( $target_dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Test fixture cleanup.
+	}
+
+	/**
 	 * Standalone only: the health CPT map must carry the six F4 slugs.
 	 */
 	public function test_health_cpt_map_via_seam(): void {

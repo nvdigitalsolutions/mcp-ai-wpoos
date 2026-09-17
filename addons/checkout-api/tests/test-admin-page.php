@@ -102,6 +102,280 @@ class Test_Checkout_Api_Admin_Page extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Stub Stripe HTTP responses keyed by URL suffix (first match wins) and
+	 * record every request URL so tests can assert what was (not) called.
+	 *
+	 * @param array<string,array<string,mixed>> $routes Suffix => response.
+	 * @param array<int,string>                 $calls  Captured request URLs (by reference).
+	 * @return void
+	 */
+	private function stub_stripe( array $routes, array &$calls ): void {
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args, $url ) use ( &$calls, $routes ) {
+				$calls[] = (string) $url;
+				foreach ( $routes as $suffix => $payload ) {
+					if ( false !== strpos( (string) $url, $suffix ) ) {
+						return $payload;
+					}
+				}
+				return $response;
+			},
+			10,
+			3
+		);
+	}
+
+	/**
+	 * A Stripe response stub for the routes map above.
+	 *
+	 * @param int    $code HTTP status code.
+	 * @param string $body JSON body.
+	 * @return array<string,mixed>
+	 */
+	private function stripe_response( int $code, string $body ): array {
+		return array(
+			'response' => array( 'code' => $code ),
+			'body'     => $body,
+		);
+	}
+
+	/**
+	 * With nothing stored, the action creates a fresh product and price.
+	 *
+	 * @return void
+	 */
+	public function test_create_product_creates_fresh_pair_when_nothing_stored(): void {
+		delete_option( NVOOS_Checkout_API_Settings::OPTION );
+
+		$calls = array();
+		$this->stub_stripe(
+			array(
+				'/v1/products' => $this->stripe_response( 200, wp_json_encode( array( 'id' => 'prod_new' ) ) ),
+				'/v1/prices'   => $this->stripe_response( 200, wp_json_encode( array( 'id' => 'price_new' ) ) ),
+			),
+			$calls
+		);
+
+		$result = NVOOS_Checkout_API_Admin_Page::ensure_product_and_price( new NVOOS_Checkout_API_Stripe_Client( 'sk_test_abc' ) );
+
+		$this->assertSame( 'created', $result['status'] );
+		$this->assertSame( 'prod_new', $result['product_id'] );
+		$this->assertSame( 'price_new', $result['price_id'] );
+		$this->assertSame( 'prod_new', NVOOS_Checkout_API_Settings::product_id() );
+		$this->assertSame( 'price_new', NVOOS_Checkout_API_Settings::price_id() );
+		$this->assertSame( 2, count( $calls ) );
+	}
+
+	/**
+	 * Stored IDs that still exist in the current account are left alone.
+	 *
+	 * @return void
+	 */
+	public function test_create_product_keeps_valid_stored_ids(): void {
+		update_option(
+			NVOOS_Checkout_API_Settings::OPTION,
+			array(
+				'product_id' => 'prod_ok',
+				'price_id'   => 'price_ok',
+			)
+		);
+
+		$calls = array();
+		$this->stub_stripe(
+			array(
+				'/v1/products/prod_ok' => $this->stripe_response( 200, wp_json_encode( array( 'id' => 'prod_ok' ) ) ),
+				'/v1/prices/price_ok'   => $this->stripe_response(
+					200,
+					wp_json_encode(
+						array(
+							'id'      => 'price_ok',
+							'product' => 'prod_ok',
+						)
+					)
+				),
+			),
+			$calls
+		);
+
+		$result = NVOOS_Checkout_API_Admin_Page::ensure_product_and_price( new NVOOS_Checkout_API_Stripe_Client( 'sk_test_abc' ) );
+
+		$this->assertSame( 'created', $result['status'] );
+		$this->assertSame( 'prod_ok', $result['product_id'] );
+		$this->assertSame( 'price_ok', $result['price_id'] );
+		// Two verification GETs and no POSTs — nothing was recreated.
+		$this->assertSame( 2, count( $calls ) );
+		$this->assertStringContainsString( '/v1/products/prod_ok', $calls[0] );
+		$this->assertStringContainsString( '/v1/prices/price_ok', $calls[1] );
+	}
+
+	/**
+	 * After a Stripe account switch the stored IDs 404 and are recreated.
+	 *
+	 * Regression: the idempotency guard skipped creation whenever IDs were
+	 * stored, so after switching accounts the button silently did nothing
+	 * and the new account never received a product/price.
+	 *
+	 * @return void
+	 */
+	public function test_create_product_recreates_after_account_switch(): void {
+		update_option(
+			NVOOS_Checkout_API_Settings::OPTION,
+			array(
+				'product_id' => 'prod_VEgYH8bUP5knku',
+				'price_id'   => 'price_1UEDBEG2lMNHchL90Vmr8EWl',
+			)
+		);
+
+		$calls = array();
+		$this->stub_stripe(
+			array(
+				'/v1/products/prod_VEgYH8bUP5knku' => $this->stripe_response(
+					404,
+					wp_json_encode(
+						array(
+							'error' => array(
+								'code'    => 'resource_missing',
+								'message' => 'No such product: prod_VEgYH8bUP5knku',
+							),
+						)
+					)
+				),
+				'/v1/products'                     => $this->stripe_response( 200, wp_json_encode( array( 'id' => 'prod_fresh' ) ) ),
+				'/v1/prices'                       => $this->stripe_response( 200, wp_json_encode( array( 'id' => 'price_fresh' ) ) ),
+			),
+			$calls
+		);
+
+		$result = NVOOS_Checkout_API_Admin_Page::ensure_product_and_price( new NVOOS_Checkout_API_Stripe_Client( 'sk_test_abc' ) );
+
+		$this->assertSame( 'recreated', $result['status'] );
+		$this->assertSame( 'prod_fresh', $result['product_id'] );
+		$this->assertSame( 'price_fresh', $result['price_id'] );
+		$this->assertSame( 'prod_fresh', NVOOS_Checkout_API_Settings::product_id() );
+		$this->assertSame( 'price_fresh', NVOOS_Checkout_API_Settings::price_id() );
+		// Verify GET, then product POST, then price POST — the stale price
+		// is never re-verified because it died with its product.
+		$this->assertSame( 3, count( $calls ) );
+		$this->assertStringContainsString( '/v1/products/prod_VEgYH8bUP5knku', $calls[0] );
+		$this->assertStringContainsString( '/v1/products', $calls[1] );
+		$this->assertStringContainsString( '/v1/prices', $calls[2] );
+	}
+
+	/**
+	 * A valid product with a missing price recreates only the price.
+	 *
+	 * @return void
+	 */
+	public function test_create_product_recreates_missing_price_only(): void {
+		update_option(
+			NVOOS_Checkout_API_Settings::OPTION,
+			array(
+				'product_id' => 'prod_ok',
+				'price_id'   => 'price_gone',
+			)
+		);
+
+		$calls = array();
+		$this->stub_stripe(
+			array(
+				'/v1/products/prod_ok' => $this->stripe_response( 200, wp_json_encode( array( 'id' => 'prod_ok' ) ) ),
+				'/v1/prices/price_gone' => $this->stripe_response(
+					404,
+					wp_json_encode( array( 'error' => array( 'code' => 'resource_missing', 'message' => 'No such price' ) ) )
+				),
+				'/v1/prices'           => $this->stripe_response( 200, wp_json_encode( array( 'id' => 'price_fresh' ) ) ),
+			),
+			$calls
+		);
+
+		$result = NVOOS_Checkout_API_Admin_Page::ensure_product_and_price( new NVOOS_Checkout_API_Stripe_Client( 'sk_test_abc' ) );
+
+		$this->assertSame( 'recreated', $result['status'] );
+		$this->assertSame( 'prod_ok', $result['product_id'] );
+		$this->assertSame( 'price_fresh', $result['price_id'] );
+		$this->assertSame( 'prod_ok', NVOOS_Checkout_API_Settings::product_id() );
+		$this->assertSame( 'price_fresh', NVOOS_Checkout_API_Settings::price_id() );
+		$this->assertSame( 3, count( $calls ) );
+	}
+
+	/**
+	 * A price attached to a different product is recreated under the
+	 * current product.
+	 *
+	 * @return void
+	 */
+	public function test_create_product_recreates_price_attached_to_wrong_product(): void {
+		update_option(
+			NVOOS_Checkout_API_Settings::OPTION,
+			array(
+				'product_id' => 'prod_ok',
+				'price_id'   => 'price_wrong',
+			)
+		);
+
+		$calls = array();
+		$this->stub_stripe(
+			array(
+				'/v1/products/prod_ok' => $this->stripe_response( 200, wp_json_encode( array( 'id' => 'prod_ok' ) ) ),
+				'/v1/prices/price_wrong' => $this->stripe_response(
+					200,
+					wp_json_encode(
+						array(
+							'id'      => 'price_wrong',
+							'product' => 'prod_other',
+						)
+					)
+				),
+				'/v1/prices'           => $this->stripe_response( 200, wp_json_encode( array( 'id' => 'price_fresh' ) ) ),
+			),
+			$calls
+		);
+
+		$result = NVOOS_Checkout_API_Admin_Page::ensure_product_and_price( new NVOOS_Checkout_API_Stripe_Client( 'sk_test_abc' ) );
+
+		$this->assertSame( 'recreated', $result['status'] );
+		$this->assertSame( 'prod_ok', $result['product_id'] );
+		$this->assertSame( 'price_fresh', $result['price_id'] );
+	}
+
+	/**
+	 * A verification failure that is NOT a missing resource (e.g. an invalid
+	 * key) aborts without touching the stored IDs.
+	 *
+	 * @return void
+	 */
+	public function test_create_product_aborts_untouched_on_verify_failure(): void {
+		update_option(
+			NVOOS_Checkout_API_Settings::OPTION,
+			array(
+				'product_id' => 'prod_ok',
+				'price_id'   => 'price_ok',
+			)
+		);
+
+		$calls = array();
+		$this->stub_stripe(
+			array(
+				'/v1/products/prod_ok' => $this->stripe_response(
+					401,
+					wp_json_encode( array( 'error' => array( 'code' => 'api_key_expired', 'message' => 'Invalid API Key provided' ) ) )
+				),
+			),
+			$calls
+		);
+
+		$result = NVOOS_Checkout_API_Admin_Page::ensure_product_and_price( new NVOOS_Checkout_API_Stripe_Client( 'sk_bad' ) );
+
+		$this->assertSame( 'error', $result['status'] );
+		$this->assertSame( 'verify', $result['reason'] );
+		$this->assertSame( 'prod_ok', NVOOS_Checkout_API_Settings::product_id() );
+		$this->assertSame( 'price_ok', NVOOS_Checkout_API_Settings::price_id() );
+		// Only the verification GET ran — no creates, no clearing.
+		$this->assertSame( 1, count( $calls ) );
+	}
+
+	/**
 	 * Product/Price IDs round-trip through the settings form as hidden fields.
 	 *
 	 * A plain settings save calls update_option(), which replaces the whole

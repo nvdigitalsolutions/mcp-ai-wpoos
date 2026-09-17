@@ -88,6 +88,31 @@ class WP_MCP_AI_CRM_Engine {
 				'pause_on_reply'          => true,
 				'pause_on_meeting_booked' => true,
 			),
+			// Identity & deduplication (since 3.2.0).
+			'identity'                => array(
+				'dedupe_leads'                    => true,
+				'canonical_company_names'          => true,
+				'auto_create_company'              => true,
+				'auto_create_company_from_domain'  => false,
+			),
+			// Auto-disqualification rules (since 3.2.0).
+			'auto_disqualify'         => array(
+				'enabled'       => false,
+				'max_score'     => 20,
+				'min_age_days'  => 30,
+				'only_statuses' => array( 'new', 'contacted' ),
+			),
+			// Gmail reply poll (since 3.2.0).
+			'gmail_reply_poll'        => array(
+				'enabled'             => false,
+				'advance_on_positive' => false,
+				'max_per_poll'        => 10,
+				'min_interval_minutes' => 15,
+			),
+			// Stalled-deal threshold in days for digest/reporting (since 3.2.0).
+			'stale_deal_days'         => 14,
+			// Closing question for the handover bundle (since 3.2.0).
+			'handover_ask'            => 'Summarize this record and propose the next action.',
 			'pipeline'                => array(
 				'stages' => array(
 					'qualification' => array(
@@ -402,6 +427,90 @@ class WP_MCP_AI_CRM_Engine {
 			return null;
 		}
 		return self::LIFECYCLE_STAGES[ $pos + 1 ];
+	}
+
+	/**
+	 * Apply auto-disqualification rules to a lead.
+	 *
+	 * JobNavigator-style auto-reject: when enabled, leads whose score is at
+	 * or below the configured maximum, whose record is older than the minimum
+	 * age, and whose status is in the configured allowlist are disqualified
+	 * automatically. Disqualification preserves the audit trail (it never
+	 * deletes the record).
+	 *
+	 * @since 3.2.0
+	 *
+	 * @param int $lead_id Lead post ID.
+	 * @return bool True when the lead was disqualified, false otherwise.
+	 */
+	public static function maybe_auto_disqualify( $lead_id ) {
+		$lead_id = absint( $lead_id );
+		if ( ! $lead_id || 'mcp_ai_lead' !== get_post_type( $lead_id ) ) {
+			return false;
+		}
+
+		$settings = self::get_toolkit_settings();
+		$rules    = isset( $settings['auto_disqualify'] ) && is_array( $settings['auto_disqualify'] )
+			? $settings['auto_disqualify']
+			: array();
+
+		if ( empty( $rules['enabled'] ) ) {
+			return false;
+		}
+
+		$max_score = isset( $rules['max_score'] ) ? (int) $rules['max_score'] : 20;
+		$min_age   = isset( $rules['min_age_days'] ) ? max( 0, (int) $rules['min_age_days'] ) : 30;
+		$statuses  = isset( $rules['only_statuses'] ) && is_array( $rules['only_statuses'] )
+			? array_map( 'sanitize_key', $rules['only_statuses'] )
+			: array( 'new', 'contacted' );
+
+		$score  = (int) get_post_meta( $lead_id, 'lead_score', true );
+		$status = sanitize_key( (string) get_post_meta( $lead_id, 'lead_status', true ) );
+
+		if ( $score > $max_score ) {
+			return false;
+		}
+		if ( ! in_array( $status, $statuses, true ) ) {
+			return false;
+		}
+
+		// Age gate: post creation date must be at least min_age_days old.
+		if ( $min_age > 0 ) {
+			$post = get_post( $lead_id );
+			if ( ! $post ) {
+				return false;
+			}
+			$created = strtotime( $post->post_date_gmt );
+			if ( false === $created || ( time() - $created ) < ( $min_age * DAY_IN_SECONDS ) ) {
+				return false;
+			}
+		}
+
+		update_post_meta( $lead_id, 'lead_status', 'disqualified' );
+
+		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
+			WP_MCP_AI_CRM_Audit::record(
+				'lead_auto_disqualified',
+				'lead',
+				$lead_id,
+				array(
+					'lead_score' => $score,
+					'action'     => 'auto_disqualify',
+				)
+			);
+		}
+
+		/**
+		 * Fires after a lead was auto-disqualified by the rules engine.
+		 *
+		 * @since 3.2.0
+		 *
+		 * @param int $lead_id Lead post ID.
+		 * @param int $score   Lead score at disqualification time.
+		 */
+		do_action( 'wp_mcp_ai_crm_lead_auto_disqualified', $lead_id, $score );
+
+		return true;
 	}
 
 	/*

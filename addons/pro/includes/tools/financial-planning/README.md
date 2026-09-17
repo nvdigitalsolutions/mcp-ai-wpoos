@@ -1,6 +1,6 @@
 # Financial Planning Toolkit
 
-This directory contains 34 financial planning tools for the NV oOS WordPress plugin.
+This directory contains 42 financial planning tools for the NV oOS WordPress plugin.
 
 ## Tools Created:
 
@@ -55,7 +55,20 @@ Inspired by [Awesome-finance-skills](https://github.com/RKiding/Awesome-finance-
 33. ✓ get_uncategorised_transactions - Retrieve uncategorised transactions with filters
 34. ✓ categorise_transactions - Assign categories by IDs or rules (merchant_match, amount_range, date_pattern)
 
+### Market Data & Portfolio Ops (8 tools — OpenTerminal lessons, v1.1.80)
+Keyless public-endpoint tools with provider fallback chains, stale-while-revalidate caching, and technical indicators.
+35. ✓ market_screener - Screen the whole US market (sector, market cap, % change, volume) via TradingView scanner
+36. ✓ macro_data_fetcher - FRED keyless CSV: Treasury yields, yield-curve spread, VIX, fed funds, CPI, unemployment, index proxies
+37. ✓ economic_calendar_fetcher - Forex Factory public feed: Fed/ECB/CPI/NFP events with forecast + previous
+38. ✓ earnings_calendar_fetcher - Nasdaq public API: earnings events with EPS forecast, market cap, timing
+39. ✓ options_chain_fetcher - Nasdaq public API: calls/puts with strike, bid/ask, volume, OI, ITM
+40. ✓ crypto_market_data - CoinGecko (Binance fallback): crypto board, quotes, OHLC history
+41. ✓ portfolio_transaction_log - Buy/sell ledger with average cost + realized/unrealized P&L (mcp_ai_fin_txn CPT)
+42. ✓ price_alerts - Price alerts with daily cron evaluation + wp_mcp_ai_price_alert_triggered delivery hook
+
+Plus: stock_data_fetcher gains an `indicators` action (SMA/EMA/VWAP/Bollinger/RSI/MACD computed in PHP from cached OHLCV), and financial_news_aggregator de-duplicates headlines across sources.
+
 ## Implementation Status:
-- 34/34 tools fully implemented (100% complete)
+- 42/42 tools fully implemented (100% complete)
 
 All tools follow WordPress Coding Standards and implement required interfaces.

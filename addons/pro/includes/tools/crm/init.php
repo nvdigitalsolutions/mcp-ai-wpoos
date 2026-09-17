@@ -37,6 +37,9 @@ if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 		'class-wp-mcp-ai-crm-consent.php',
 		'class-wp-mcp-ai-crm-pipeline-stages.php',
 		'class-wp-mcp-ai-crm-classifier.php',
+		// Since 3.2.0: JobNavigator-adoption shared helpers.
+		'class-wp-mcp-ai-crm-stage-history.php',
+		'class-wp-mcp-ai-crm-identity.php',
 	);
 	foreach ( $_crm_files as $_file ) {
 		$_path = $crm_engine_dir . $_file;
@@ -224,6 +227,20 @@ if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 	if ( file_exists( $_wa_webhook_file ) ) {
 		require_once $_wa_webhook_file;
 		add_action( 'rest_api_init', array( 'WP_MCP_AI_CRM_WhatsApp_Webhook_Listener', 'register_route' ) );
+	}
+
+	// ---- Since 3.2.0: Tracked proposal links (front-end open resolver) ----
+	$_link_tracker = $crm_engine_dir . 'class-wp-mcp-ai-crm-link-tracker.php';
+	if ( file_exists( $_link_tracker ) ) {
+		require_once $_link_tracker;
+		WP_MCP_AI_CRM_Link_Tracker::init();
+	}
+
+	// ---- Since 3.2.0: Gmail reply poller (inbound reply classification) ----
+	$_reply_poller = $crm_engine_dir . 'inbound/class-wp-mcp-ai-crm-gmail-reply-poller.php';
+	if ( file_exists( $_reply_poller ) ) {
+		require_once $_reply_poller;
+		WP_MCP_AI_CRM_Gmail_Reply_Poller::init();
 	}
 }
 

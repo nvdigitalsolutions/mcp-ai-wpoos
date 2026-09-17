@@ -96,9 +96,9 @@ class WP_MCP_AI_Model_Catalog_Migration {
 
 			// DeepSeek legacy aliases (deepseek-chat / deepseek-reasoner retired
 			// 2026-07-24; V4 Flash + V4 Flash Vision retired 2026-09-10) → V4.1 Flash.
-			// deepseek-v4-pro is deliberately NOT mapped yet: it stays servable
-			// until 2026-09-14 (12:00 Beijing), so stored references are left
-			// alone until the post-sunset refresh adds the mapping.
+			// deepseek-v4-pro is deliberately NOT mapped: DeepSeek announced on
+			// 2026-09-10 that V4 Pro stays servable past 2026-09-14 (billing
+			// unchanged, no new sunset date), so stored references are left alone.
 			'deepseek-chat'                        => 'deepseek-flash',
 			'deepseek-reasoner'                    => 'deepseek-flash',
 			'deepseek-coder'                       => 'deepseek-flash',

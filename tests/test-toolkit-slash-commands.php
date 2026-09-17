@@ -32,6 +32,13 @@ class Test_Toolkit_Slash_Commands extends WP_UnitTestCase {
 	private $handler;
 
 	/**
+	 * Editor user ID used as execution context.
+	 *
+	 * @var int
+	 */
+	private $user_id;
+
+	/**
 	 * Setup test environment
 	 */
 	public function setUp(): void {
@@ -40,6 +47,7 @@ class Test_Toolkit_Slash_Commands extends WP_UnitTestCase {
 		// Load required classes.
 		require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-parser.php';
 		require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-handler.php';
+		require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-tool-adapter.php';
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-toolkit-registry.php';
 		require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-toolkit-manager.php';
 
@@ -64,7 +72,7 @@ class Test_Toolkit_Slash_Commands extends WP_UnitTestCase {
 		// WordPress init bootstrap), it retains the old handler. Force it to
 		// use the handler we just created so register_toolkit_commands()
 		// registers into the correct instance.
-		$reflection  = new ReflectionClass( WP_MCP_AI_Slash_Command_Toolkit_Manager::class );
+		$reflection   = new ReflectionClass( WP_MCP_AI_Slash_Command_Toolkit_Manager::class );
 		$handler_prop = $reflection->getProperty( 'handler' );
 		$handler_prop->setAccessible( true );
 		$handler_prop->setValue( $this->toolkit_manager, $this->handler );
@@ -114,51 +122,47 @@ class Test_Toolkit_Slash_Commands extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test content-draft command creates post
+	 * Test content-draft command delegates to the create_post tool and
+	 * creates a draft post.
 	 */
 	public function test_content_draft_creates_post() {
 		$this->toolkit_manager->register_toolkit_commands();
 
-		// Execute command.
+		// Execute command. The command is a declarative wrapper over the
+		// create_post tool: --topic maps to the post title and --content
+		// supplies the required body. The adapter sets status=draft.
 		$result = $this->handler->execute(
-			'/content-draft --topic="Test Post" --type=post --tone=casual',
+			'/content-draft --topic="Test Post" --content="Generated draft body."',
 			array(
 				'user_id' => $this->user_id,
 			)
 		);
 
-		// Verify result.
+		// Verify the canonical adapter envelope wraps the tool payload.
 		$this->assertIsArray( $result );
 		$this->assertTrue( $result['success'] );
 		$this->assertArrayHasKey( 'data', $result );
-		$this->assertArrayHasKey( 'post_id', $result['data'] );
+		$this->assertArrayHasKey( 'ID', $result['data'] );
 
-		$post_id = $result['data']['post_id'];
+		$post_id = $result['data']['ID'];
 
 		// Verify post was created.
 		$post = get_post( $post_id );
 		$this->assertInstanceOf( 'WP_Post', $post );
 		$this->assertEquals( 'Test Post', $post->post_title );
 		$this->assertEquals( 'draft', $post->post_status );
-
-		// Verify metadata.
-		$this->assertEquals(
-			'Test Post',
-			get_post_meta( $post_id, '_wp_mcp_ai_draft_topic', true )
-		);
-		$this->assertEquals(
-			'casual',
-			get_post_meta( $post_id, '_wp_mcp_ai_draft_tone', true )
-		);
+		$this->assertNotEmpty( $post->post_content );
 	}
 
 	/**
-	 * Test content-draft requires topic parameter
+	 * Test content-draft rejects a call missing its required arguments.
 	 */
 	public function test_content_draft_requires_topic() {
 		$this->toolkit_manager->register_toolkit_commands();
 
-		// Execute command without topic.
+		// Execute command without topic/title or content. Validation is
+		// delegated to the create_post tool, which rejects the call with the
+		// canonical tool error envelope.
 		$result = $this->handler->execute(
 			'/content-draft',
 			array(
@@ -166,11 +170,11 @@ class Test_Toolkit_Slash_Commands extends WP_UnitTestCase {
 			)
 		);
 
-		// Verify error.
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertArrayHasKey( 'error', $result );
-		$this->assertEquals( 'missing_required_param', $result['error'] );
+		// Verify error: the declarative adapter passes the tool's WP_Error
+		// through unchanged.
+		$this->assertTrue( is_wp_error( $result ), 'Expected WP_Error for missing required arguments' );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
+		$this->assertEquals( 'Validation failed', $result->get_error_message() );
 	}
 
 	/**
@@ -230,13 +234,17 @@ class Test_Toolkit_Slash_Commands extends WP_UnitTestCase {
 
 	/**
 	 * Test command response format
+	 *
+	 * The declarative adapter normalises the tool payload into the canonical
+	 * slash-command envelope: success, message and the raw tool data under
+	 * the data key.
 	 */
 	public function test_command_response_format() {
 		$this->toolkit_manager->register_toolkit_commands();
 
 		// Execute command.
 		$result = $this->handler->execute(
-			'/content-draft --topic="Test"',
+			'/content-draft --topic="Test" --content="Draft body."',
 			array(
 				'user_id' => $this->user_id,
 			)
@@ -248,36 +256,54 @@ class Test_Toolkit_Slash_Commands extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'message', $result );
 		$this->assertArrayHasKey( 'data', $result );
 
-		// Verify data structure.
-		$this->assertArrayHasKey( 'post_id', $result['data'] );
-		$this->assertArrayHasKey( 'topic', $result['data'] );
-		$this->assertArrayHasKey( 'type', $result['data'] );
-		$this->assertArrayHasKey( 'tone', $result['data'] );
-		$this->assertArrayHasKey( 'edit_url', $result['data'] );
+		// Verify the create_post tool payload structure.
+		$this->assertArrayHasKey( 'ID', $result['data'] );
+		$this->assertArrayHasKey( 'title', $result['data'] );
+		$this->assertArrayHasKey( 'status', $result['data'] );
+		$this->assertArrayHasKey( 'post_type', $result['data'] );
+		$this->assertEquals( 'Test', $result['data']['title'] );
+		$this->assertEquals( 'draft', $result['data']['status'] );
+		$this->assertEquals( 'post', $result['data']['post_type'] );
 	}
 
 	/**
-	 * Test placeholder commands return placeholder response
+	 * Test a command whose backing tool is not registered returns a clean
+	 * tool_unavailable error instead of a fatal.
 	 */
-	public function test_placeholder_commands() {
+	public function test_command_with_unavailable_tool_returns_error() {
 		$this->toolkit_manager->register_toolkit_commands();
 
-		// Test image-optimize (placeholder).
+		// Register a command whose backing tool is not registered anywhere.
+		$this->handler->register(
+			'no-backing-tool',
+			array(
+				'tool'        => 'no_such_tool_slug',
+				'description' => __( 'Command backed by an unavailable tool.', 'mcp-ai-wpoos' ),
+				'usage'       => '/no-backing-tool',
+				'capability'  => 'edit_posts',
+			)
+		);
+
+		// Execute command.
 		$result = $this->handler->execute(
-			'/image-optimize --attachment_id=123',
+			'/no-backing-tool',
 			array(
 				'user_id' => $this->user_id,
 			)
 		);
 
-		// Verify placeholder response.
-		$this->assertIsArray( $result );
-		$this->assertTrue( $result['success'] );
-		$this->assertStringContainsString( 'coming soon', $result['message'] );
+		// Verify the adapter reports the missing tool.
+		$this->assertTrue( is_wp_error( $result ), 'Expected WP_Error for a command with no backing tool' );
+		$this->assertEquals( 'tool_unavailable', $result->get_error_code() );
 	}
 
 	/**
-	 * Test all toolkits have commands defined
+	 * Test toolkit command coverage.
+	 *
+	 * Since the declarative rework, slash commands only exist for toolkits
+	 * with real backing tools — placeholder commands were purged. Toolkits
+	 * whose tools are not wrapped by any command therefore have an empty
+	 * command set, and every other toolkit has at least one command.
 	 */
 	public function test_all_toolkits_have_commands() {
 		$registry = WP_MCP_AI_Toolkit_Registry::get_instance();
@@ -285,19 +311,40 @@ class Test_Toolkit_Slash_Commands extends WP_UnitTestCase {
 
 		$manager = WP_MCP_AI_Slash_Command_Toolkit_Manager::get_instance();
 
+		// Toolkits with no tool-backed commands after the declarative rework.
+		$toolkits_without_commands = array(
+			'ecommerce_business',
+			'geospatial_location',
+			'workflow_automation',
+			'communication_outreach',
+			'integration_external',
+			'ai_model_management',
+		);
+
 		foreach ( array_keys( $toolkits ) as $toolkit_slug ) {
 			$commands = $manager->get_toolkit_commands( $toolkit_slug );
 
-			// Each toolkit should have at least one command.
-			$this->assertNotEmpty(
-				$commands,
-				"Toolkit {$toolkit_slug} should have commands defined"
-			);
+			if ( in_array( $toolkit_slug, $toolkits_without_commands, true ) ) {
+				// Purged toolkits have no commands.
+				$this->assertEmpty(
+					$commands,
+					"Toolkit {$toolkit_slug} should have no commands defined"
+				);
+			} else {
+				// Every remaining toolkit should have at least one command.
+				$this->assertNotEmpty(
+					$commands,
+					"Toolkit {$toolkit_slug} should have commands defined"
+				);
+			}
 		}
 	}
 
 	/**
 	 * Test pro toolkit commands are registered when not in base version mode.
+	 *
+	 * Since the declarative rework, pro commands are tool-backed wrappers:
+	 * placeholder commands without a backing tool were purged.
 	 *
 	 * @since 1.3.0
 	 */
@@ -309,32 +356,61 @@ class Test_Toolkit_Slash_Commands extends WP_UnitTestCase {
 
 		$this->toolkit_manager->register_toolkit_commands();
 
-		// Test some pro toolkit commands are registered.
+		// Test the retained pro toolkit commands are registered.
 		$pro_commands = array(
-			'aitool-create',          // AI Tool Builder
-			'analytics-dashboard',    // Analytics Pro
-			'architect-plan',         // Architect Agent
-			'floor-plan',             // Architectural Design
-			'booking-create',         // Calendar & Booking
-			'channel-create',         // Chat Channels
-			'lead-add',               // CRM
-			'track-add',              // DJ Management
-			'doc-create',             // Document Generation
-			'product-recommend',      // E-Commerce Pro
-			'budget-create',          // Financial Planner
-			'image-edit',             // Image Production
-			'media-organize',         // Media Pro
-			'translate-content',      // Multilingual
-			'business-register',      // Regulatory & Registration
-			'site-research',          // Site Creator
-			'social-post',            // Social Media
-			'video-edit',             // Video Production
+			'booking-create',
+			'lead-add',
+			'lead-qualify',
+			'lead-assign',
+			'deal-create',
+			'deal-move',
+			'pipeline-view',
+			'doc-create',
+			'abandoned-recover',
+			'inventory-forecast',
+			'create-discount-campaign',
+			'budget-create',
+			'image-edit',
+			'content-translate',
+			'translate-content',
+			'social-post',
+			'social-schedule',
+			'social-analytics',
+			'content-calendar',
+			'social-publish',
+			'video-compress',
+			'video-trim',
+			'video-merge',
+			'video-thumbnail',
+			'video-edit',
+			'get-video-metadata',
 		);
 
 		foreach ( $pro_commands as $command ) {
 			$this->assertTrue(
 				$this->handler->command_exists( $command ),
 				"Pro command '{$command}' should be registered"
+			);
+		}
+
+		// The purged placeholder commands must not be registered.
+		$purged_commands = array(
+			'aitool-create',
+			'analytics-dashboard',
+			'architect-plan',
+			'floor-plan',
+			'channel-create',
+			'track-add',
+			'product-recommend',
+			'media-organize',
+			'business-register',
+			'site-research',
+		);
+
+		foreach ( $purged_commands as $command ) {
+			$this->assertFalse(
+				$this->handler->command_exists( $command ),
+				"Placeholder command '{$command}' should have been purged"
 			);
 		}
 	}
@@ -352,26 +428,18 @@ class Test_Toolkit_Slash_Commands extends WP_UnitTestCase {
 
 		$manager = WP_MCP_AI_Slash_Command_Toolkit_Manager::get_instance();
 
-		// Define expected command counts for pro toolkits.
+		// Expected command counts for the retained pro toolkits after the
+		// declarative rework.
 		$expected_counts = array(
-			'ai_tool_builder'         => 10,
-			'analytics_pro'           => 12,
-			'architect_agent'         => 11,
-			'architectural_design'    => 16,
-			'calendar_booking'        => 12,
-			'chat_channels'           => 10,
-			'crm'                     => 14,
-			'dj_management'           => 11,
-			'document_generation'     => 13,
-			'ecommerce_pro'           => 17,
-			'financial_planner'       => 14,
-			'image_production'        => 13,
-			'media_pro'               => 11,
-			'multilingual'            => 12,
-			'regulatory_registration' => 15,
-			'site_creator'            => 14,
-			'social_media'            => 14,
-			'video_production'        => 15,
+			'calendar_booking'    => 1,
+			'crm'                 => 6,
+			'document_generation' => 1,
+			'ecommerce_pro'       => 3,
+			'financial_planner'   => 1,
+			'image_production'    => 1,
+			'multilingual'        => 2,
+			'social_media'        => 5,
+			'video_production'    => 6,
 		);
 
 		foreach ( $expected_counts as $toolkit_slug => $expected_count ) {
@@ -383,10 +451,33 @@ class Test_Toolkit_Slash_Commands extends WP_UnitTestCase {
 				"Toolkit '{$toolkit_slug}' should have {$expected_count} commands"
 			);
 		}
+
+		// The purged pro toolkits no longer define any commands.
+		$purged_toolkits = array(
+			'ai_tool_builder',
+			'analytics_pro',
+			'architect_agent',
+			'architectural_design',
+			'chat_channels',
+			'dj_management',
+			'media_pro',
+			'regulatory_registration',
+			'site_creator',
+		);
+
+		foreach ( $purged_toolkits as $toolkit_slug ) {
+			$this->assertEmpty(
+				$manager->get_toolkit_commands( $toolkit_slug ),
+				"Purged toolkit '{$toolkit_slug}' should have no commands"
+			);
+		}
 	}
 
 	/**
-	 * Test pro toolkit command uses generic handler.
+	 * Test pro toolkit commands use the generic tool adapter handler.
+	 *
+	 * Since the declarative rework every pro command delegates through a
+	 * WP_MCP_AI_Slash_Command_Tool_Adapter bound to its backing tool slug.
 	 *
 	 * @since 1.3.0
 	 */
@@ -396,24 +487,30 @@ class Test_Toolkit_Slash_Commands extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Test skipped in base version mode' );
 		}
 
-		// Set admin capabilities.
-		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $admin_id );
-
 		$this->toolkit_manager->register_toolkit_commands();
 
-		// Test a pro toolkit command that uses the generic handler.
-		// (aitool-create has its own dedicated handler, not generic.)
+		// The generic handler is the shared tool adapter bound to the command's
+		// backing tool slug.
+		$config = $this->handler->get_command( 'lead-add' );
+		$this->assertNotFalse( $config );
+		$this->assertInstanceOf( 'WP_MCP_AI_Slash_Command_Tool_Adapter', $config['handler'] );
+		$this->assertSame( 'create_lead', $config['handler']->get_tool_slug() );
+
+		// Execution routes through the adapter — never a command-routing
+		// failure. Depending on the bootstrap, the backing tool either runs
+		// (returning its envelope) or reports tool_unavailable.
 		$result = $this->handler->execute(
-			'/architect-plan --project="Test Project"',
+			'/lead-add --email=test@example.com',
 			array(
-				'user_id' => $admin_id,
+				'user_id' => $this->user_id,
 			)
 		);
 
-		// Verify generic handler response.
-		$this->assertIsArray( $result );
-		$this->assertTrue( $result['success'] );
-		$this->assertStringContainsString( 'coming soon', strtolower( $result['message'] ) );
+		if ( is_wp_error( $result ) ) {
+			$this->assertNotEquals( 'command_not_found', $result->get_error_code() );
+			$this->assertNotEquals( 'command_execution_error', $result->get_error_code() );
+		} else {
+			$this->assertIsArray( $result );
+		}
 	}
 }

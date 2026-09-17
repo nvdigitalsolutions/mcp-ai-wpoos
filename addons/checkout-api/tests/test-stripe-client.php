@@ -258,6 +258,104 @@ class Test_Checkout_Api_Stripe_Client extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The retrieve_product method GETs the product by ID.
+	 *
+	 * @return void
+	 */
+	public function test_retrieve_product(): void {
+		$captured_url = '';
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args, $url ) use ( &$captured_url ) {
+				$captured_url = $url;
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array( 'id' => 'prod_test_1' ) ),
+				);
+			},
+			10,
+			3
+		);
+
+		$client = new NVOOS_Checkout_API_Stripe_Client( 'sk_test_abc' );
+		$result = $client->retrieve_product( 'prod_test_1' );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'prod_test_1', $result['id'] );
+		$this->assertStringContainsString( '/v1/products/prod_test_1', $captured_url );
+	}
+
+	/**
+	 * The retrieve_price method GETs the price by ID.
+	 *
+	 * @return void
+	 */
+	public function test_retrieve_price(): void {
+		$captured_url = '';
+		add_filter(
+			'pre_http_request',
+			static function ( $response, $args, $url ) use ( &$captured_url ) {
+				$captured_url = $url;
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'price_test_1',
+							'product' => 'prod_test_1',
+						)
+					),
+				);
+			},
+			10,
+			3
+		);
+
+		$client = new NVOOS_Checkout_API_Stripe_Client( 'sk_test_abc' );
+		$result = $client->retrieve_price( 'price_test_1' );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'price_test_1', $result['id'] );
+		$this->assertSame( 'prod_test_1', $result['product'] );
+		$this->assertStringContainsString( '/v1/prices/price_test_1', $captured_url );
+	}
+
+	/**
+	 * A missing resource (404 resource_missing) carries the HTTP status and
+	 * Stripe error code in the WP_Error data so callers can tell a switched
+	 * Stripe account apart from a bad key or transport failure.
+	 *
+	 * @return void
+	 */
+	public function test_missing_resource_error_carries_http_status_and_stripe_code(): void {
+		add_filter(
+			'pre_http_request',
+			static function () {
+				return array(
+					'response' => array( 'code' => 404 ),
+					'body'     => wp_json_encode(
+						array(
+							'error' => array(
+								'code'    => 'resource_missing',
+								'message' => 'No such product: prod_ghost',
+							),
+						)
+					),
+				);
+			},
+			10,
+			0
+		);
+
+		$client = new NVOOS_Checkout_API_Stripe_Client( 'sk_test_abc' );
+		$result = $client->retrieve_product( 'prod_ghost' );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 424, $result->get_error_data()['status'] );
+		$this->assertSame( 404, $result->get_error_data()['http_status'] );
+		$this->assertSame( 'resource_missing', $result->get_error_data()['stripe_code'] );
+	}
+
+	/**
 	 * A valid signature passes verification.
 	 *
 	 * @return void

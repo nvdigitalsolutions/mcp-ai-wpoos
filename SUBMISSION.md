@@ -99,8 +99,9 @@ upsell UI, no installer, no license checks. The paid offering works like
 this:
 
 1. The **NV oOS Complete** bundle (base + Pro as a separate plugin) is sold
-   **off-directory** by NV Digital Solutions through its own Stripe-based
-   checkout server. The bundle itself, its license keys, and its revocation
+   **off-directory** by **NV Digital Unlocked LLC** through its Stripe-based
+   checkout server, under license from NV Digital Solutions. The bundle
+   itself, its license keys, and its revocation
    lifecycle are not part of any wp.org submission.
 2. The opt-in purchase flow lives in the standalone **NV oOS Content Graph**
    plugin (`plugins/nvoos-content-graph/` in this monorepo): a click-triggered

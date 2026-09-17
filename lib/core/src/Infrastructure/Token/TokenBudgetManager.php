@@ -56,7 +56,7 @@ class TokenBudgetManager {
 	 * Mirrors the canonical model-catalog.json and the legacy
 	 * WP_MCP_AI_Token_Budget_Manager::$model_limits table.
 	 *
-	 * Keyed by model slug; snapshot as of June 2026.
+	 * Keyed by model slug; snapshot as of September 2026.
 	 *
 	 * @var array<string, int>
 	 */
@@ -119,13 +119,12 @@ class TokenBudgetManager {
 		'gemini-1.5-pro'        => 2097152,
 		'gemini-1.5-flash'      => 1048576,
 		// DeepSeek.
-		'deepseek-v4-flash'  => 1048576,
-		'deepseek-v4-pro'    => 1048576,
-		'deepseek-chat'      => 65536,
-		'deepseek-reasoner'  => 65536,
-		'deepseek-v3'        => 65536,
-		'deepseek-coder'     => 16384,
-		'deepseek-r1-0528-qwen3-8b' => 32768,
+		'deepseek-flash'             => 1048576,
+		'deepseek-v4-flash-vision-exp' => 1048576,
+		'deepseek-v4-flash'          => 1048576,
+		'deepseek-v4-pro'            => 1048576,
+		'deepseek-v3'                => 65536,
+		'deepseek-r1-0528-qwen3-8b'  => 32768,
 		// Kimi / Moonshot AI.
 		'kimi-k2.6'          => 262144,
 		'kimi-k2.5'          => 262144,

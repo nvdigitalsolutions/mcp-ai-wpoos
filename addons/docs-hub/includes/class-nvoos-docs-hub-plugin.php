@@ -36,14 +36,19 @@ class NV_oOS_Docs_Hub_Plugin {
 	 */
 	public static function init() {
 		add_action( 'admin_notices', array( __CLASS__, 'admin_notices' ) );
-		add_action( 'plugins_loaded', array( __CLASS__, 'on_plugins_loaded' ) );
+		add_action( 'init', array( __CLASS__, 'schedule_rebuild_cron' ) );
 		add_action( 'init', array( __CLASS__, 'register_shortcodes' ), 12 );
 		add_action( 'init', array( __CLASS__, 'register_block' ), 12 );
 		add_action( 'rest_api_init', array( __CLASS__, 'init_rest' ) );
 		add_action( 'nvoos_docs_hub_rebuild_cron', array( __CLASS__, 'run_scheduled_rebuild' ) );
 		add_action( 'activated_plugin', array( __CLASS__, 'clear_cache_on_change' ) );
-		add_action( 'deactivated_plugin', array( __CLASS__, 'clear_cache_on_change' ) );
+		add_action( 'deactivated_plugin', array( __CLASS__, 'on_plugin_deactivated' ) );
 		add_action( 'upgrader_process_complete', array( __CLASS__, 'on_upgrader_complete' ), 10, 2 );
+
+		// Deactivation cleanup: drop the daily rebuild cron event and any
+		// pending chunked-rebuild ticks so no ghost events linger while the
+		// plugin is inactive.
+		register_deactivation_hook( NVOOS_DOCS_HUB_FILE, array( 'NV_oOS_Docs_Hub_Rebuild_Job', 'unschedule' ) );
 
 		// The base plugin's built-in updater replaces files in place and never
 		// fires upgrader_process_complete — it emits this action instead.
@@ -65,19 +70,25 @@ class NV_oOS_Docs_Hub_Plugin {
 	}
 
 	/**
-	 * Fired on plugins_loaded.
+	 * Ensure the daily rebuild cron event is scheduled.
 	 *
-	 * @since 1.0.0
+	 * Runs on init — never on plugins_loaded. wp_schedule_event() consults
+	 * wp_get_schedules(), which applies the cron_schedules filter. Several
+	 * popular plugins register translated schedule names in that filter
+	 * (e.g. WooCommerce's monthly interval), so calling wp_schedule_event()
+	 * before init triggers WordPress 6.7+'s "translation loading triggered
+	 * too early" notice on sites with those plugins active. Translations
+	 * load on init, so scheduling there is safe.
+	 *
+	 * Translations are loaded automatically by WordPress core (4.6+) from
+	 * the `languages/` directory declared in the plugin header — no
+	 * load_plugin_textdomain() call is needed for wp.org-hosted plugins.
+	 *
+	 * @since 0.4.7
 	 *
 	 * @return void
 	 */
-	public static function on_plugins_loaded() {
-		load_plugin_textdomain(
-			'nvoos-docs-hub',
-			false,
-			dirname( plugin_basename( NVOOS_DOCS_HUB_FILE ) ) . '/languages'
-		);
-
+	public static function schedule_rebuild_cron() {
 		NV_oOS_Docs_Hub_Rebuild_Job::schedule();
 	}
 
@@ -191,7 +202,7 @@ class NV_oOS_Docs_Hub_Plugin {
 	}
 
 	/**
-	 * Clear doc cache when a plugin is activated or deactivated.
+	 * Clear doc cache when a plugin is activated.
 	 *
 	 * @since 1.0.0
 	 *
@@ -199,6 +210,30 @@ class NV_oOS_Docs_Hub_Plugin {
 	 * @return void
 	 */
 	public static function clear_cache_on_change( $plugin ) {
+		NV_oOS_Docs_Hub_Rebuild_Job::handle_plugin_change( $plugin );
+	}
+
+	/**
+	 * Clear doc cache when a plugin is deactivated.
+	 *
+	 * When Docs Hub itself is deactivated, the deactivation hook has already
+	 * unscheduled the rebuild cron events, so a rebuild must not be
+	 * re-enqueued — its tick callbacks no longer exist once the plugin is
+	 * inactive. The cache is still cleared so a later re-activation starts
+	 * from a fresh index.
+	 *
+	 * @since 0.4.7
+	 *
+	 * @param string $plugin Plugin file path relative to plugins directory.
+	 * @return void
+	 */
+	public static function on_plugin_deactivated( $plugin ) {
+		if ( plugin_basename( NVOOS_DOCS_HUB_FILE ) === (string) $plugin ) {
+			$cache = new NV_oOS_Docs_Hub_Cache();
+			$cache->clear( true );
+			return;
+		}
+
 		NV_oOS_Docs_Hub_Rebuild_Job::handle_plugin_change( $plugin );
 	}
 
@@ -311,6 +346,9 @@ class NV_oOS_Docs_Hub_Plugin {
 	/**
 	 * Display admin notices about addon status.
 	 *
+	 * Notices are scoped to the plugin's own settings screen (Guideline 11 —
+	 * notices must be contextual and must not pollute every admin page).
+	 *
 	 * @since 1.0.0
 	 *
 	 * @return void
@@ -320,10 +358,32 @@ class NV_oOS_Docs_Hub_Plugin {
 			return;
 		}
 
+		if ( ! self::is_settings_screen() ) {
+			return;
+		}
+
 		if ( ! nvoos_docs_hub_is_base_active() ) {
 			echo '<div class="notice notice-warning is-dismissible"><p>';
 			esc_html_e( 'NV oOS Docs Hub: the NV oOS base plugin is not active. Documentation discovery from the base plugin will be skipped.', 'nvoos-docs-hub' );
 			echo '</p></div>';
 		}
+	}
+
+	/**
+	 * Whether the current admin screen is the plugin's settings page.
+	 *
+	 * @since 0.4.4
+	 *
+	 * @return bool
+	 */
+	private static function is_settings_screen() {
+		if ( ! function_exists( 'get_current_screen' ) ) {
+			return false;
+		}
+		$screen = get_current_screen();
+		if ( ! $screen ) {
+			return false;
+		}
+		return 'settings_page_nvoos-docs-hub' === $screen->id;
 	}
 }

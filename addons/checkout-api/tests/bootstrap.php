@@ -27,6 +27,7 @@ require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-token.
 require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-rate-limiter.php';
 require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-stripe-client.php';
 require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-download-server.php';
+require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-mailer.php';
 require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-rest-controller.php';
 require_once NVOOS_CHECKOUT_API_PATH . 'includes/admin/class-nvoos-checkout-api-admin-page.php';
 require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-plugin.php';

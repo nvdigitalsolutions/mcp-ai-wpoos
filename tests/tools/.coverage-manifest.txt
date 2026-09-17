@@ -65,6 +65,7 @@ wp-mcp-ai-tool-delete-cron-job
 wp-mcp-ai-tool-delete-post
 wp-mcp-ai-tool-detect-completion-indicators
 wp-mcp-ai-tool-discover-new-models
+wp-mcp-ai-tool-duplicate-assistant
 wp-mcp-ai-tool-edit-gemini-image
 wp-mcp-ai-tool-edit-gemini-image-validated
 wp-mcp-ai-tool-edit-omni-video
@@ -75,6 +76,7 @@ wp-mcp-ai-tool-erlang-c-queue-health
 wp-mcp-ai-tool-erlang-c-staffing-advisor
 wp-mcp-ai-tool-evolve-harness
 wp-mcp-ai-tool-execute-workflow
+wp-mcp-ai-tool-export-assistant
 wp-mcp-ai-tool-extract-image-text
 wp-mcp-ai-tool-flowhub-create-order
 wp-mcp-ai-tool-flowhub-get-customers
@@ -158,6 +160,7 @@ wp-mcp-ai-tool-huggingface-recommended-datasets
 wp-mcp-ai-tool-image-alt-text-optimizer
 wp-mcp-ai-tool-image-base
 wp-mcp-ai-tool-image-format-batch-converter
+wp-mcp-ai-tool-import-assistant
 wp-mcp-ai-tool-import-elementor-template-kit
 wp-mcp-ai-tool-invoke-jetengine-route
 wp-mcp-ai-tool-list-all-export-templates

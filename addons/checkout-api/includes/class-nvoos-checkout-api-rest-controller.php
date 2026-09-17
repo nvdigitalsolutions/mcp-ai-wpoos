@@ -215,10 +215,13 @@ class NVOOS_Checkout_API_Rest_Controller {
 			$intent_params['metadata']['stripe_price_id'] = NVOOS_Checkout_API_Settings::price_id();
 		}
 
-		// Card statement descriptor (omitted when unset/invalid so Stripe's
-		// default applies).
+		// Card statement descriptor suffix (omitted when unset/invalid so
+		// Stripe's default applies). Stripe rejects the full
+		// `statement_descriptor` parameter for card charges created with
+		// automatic payment methods; the suffix is appended to the
+		// account's statement descriptor prefix instead.
 		if ( '' !== NVOOS_Checkout_API_Settings::statement_descriptor() ) {
-			$intent_params['statement_descriptor'] = NVOOS_Checkout_API_Settings::statement_descriptor();
+			$intent_params['statement_descriptor_suffix'] = NVOOS_Checkout_API_Settings::statement_descriptor();
 		}
 
 		$intent = $client->create_payment_intent( $intent_params );
@@ -333,6 +336,10 @@ class NVOOS_Checkout_API_Rest_Controller {
 				$existing['buyer_country'] = $buyer_country;
 			}
 
+			// Email the license record once (no-op when already sent or when
+			// the row has no buyer email yet).
+			NVOOS_Checkout_API_Mailer::maybe_send( $existing );
+
 			return rest_ensure_response( $this->license_response( $existing ) );
 		}
 
@@ -355,6 +362,10 @@ class NVOOS_Checkout_API_Rest_Controller {
 		if ( is_wp_error( $license ) ) {
 			return new WP_Error( 'nvoos_checkout_license_failed', __( 'Could not issue a license. Please contact support.', 'nvoos-checkout-api' ), array( 'status' => 500 ) );
 		}
+
+		// Email the license record once (silently skipped when disabled or
+		// when the row has no buyer email).
+		NVOOS_Checkout_API_Mailer::maybe_send( $license );
 
 		return rest_ensure_response( $this->license_response( $license ) );
 	}
@@ -475,7 +486,15 @@ class NVOOS_Checkout_API_Rest_Controller {
 			)
 		);
 
-		return is_wp_error( $created ) ? 'insert_failed' : 'issued';
+		if ( is_wp_error( $created ) ) {
+			return 'insert_failed';
+		}
+
+		// Email the license record once — the webhook path is the fastest
+		// reliable trigger (fires the moment Stripe confirms the payment).
+		NVOOS_Checkout_API_Mailer::maybe_send( $created );
+
+		return 'issued';
 	}
 
 	/**

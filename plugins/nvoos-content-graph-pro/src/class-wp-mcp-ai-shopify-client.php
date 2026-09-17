@@ -88,6 +88,40 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 		const CATALOG_AUTH_URL = 'https://api.shopify.com/auth/access_token';
 
 		/**
+		 * UCP (Universal Commerce Protocol) MCP endpoint path on a storefront.
+		 *
+		 * The Storefront Catalog MCP server is served by the merchant's own
+		 * store at https://{storeDomain}/api/ucp/mcp and is keyless — the UCP
+		 * agent profile carried in the request meta is the only credential.
+		 *
+		 * @var string
+		 */
+		const UCP_MCP_PATH = '/api/ucp/mcp';
+
+		/**
+		 * Shopify Global Catalog MCP endpoint (cross-merchant product search).
+		 *
+		 * Keyless like the Storefront Catalog MCP: requests carry the UCP agent
+		 * profile in meta.ucp-agent.profile and Shopify negotiates the
+		 * dev.shopify.catalog.global capability server-side.
+		 *
+		 * @var string
+		 */
+		const UCP_GLOBAL_CATALOG_URL = 'https://catalog.shopify.com/api/ucp/mcp';
+
+		/**
+		 * Fallback UCP agent profile URL used when a connection has no
+		 * profile configured.
+		 *
+		 * This is Shopify's hosted example profile and is only suitable for
+		 * testing. Production agents should host their own profile (the
+		 * plugin serves one at /wp-json/mcp-ai/v1/ucp/agent-profile).
+		 *
+		 * @var string
+		 */
+		const UCP_DEFAULT_AGENT_PROFILE = 'https://shopify.dev/ucp/agent-profiles/2026-08-25/valid-with-capabilities.json';
+
+		/**
 		 * Remote Sites connection ID.
 		 *
 		 * @var string|null
@@ -235,14 +269,16 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 		}
 
 		/**
-		 * Get the configured API mode: 'admin_api' (default) or 'catalog_api'.
+		 * Get the configured API mode: 'admin_api' (default), 'catalog_api'
+		 * (deprecated REST), 'storefront_catalog', or 'global_catalog' — both
+		 * UCP MCP modes are keyless.
 		 *
-		 * @return string 'admin_api' or 'catalog_api'.
+		 * @return string One of 'admin_api', 'catalog_api', 'storefront_catalog', or 'global_catalog'.
 		 */
 		public function get_api_mode() {
 			$connection = $this->get_connection();
 			$mode       = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
-			return in_array( $mode, array( 'admin_api', 'catalog_api' ), true ) ? $mode : 'admin_api';
+			return in_array( $mode, array( 'admin_api', 'catalog_api', 'storefront_catalog', 'global_catalog' ), true ) ? $mode : 'admin_api';
 		}
 
 		/**
@@ -292,6 +328,31 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 		}
 
 		/**
+		 * Decode a JWT payload segment for diagnostics (no signature check).
+		 *
+		 * Used to read the scopes claim from Shopify Catalog API tokens, which
+		 * carry the granted scopes inside the JWT rather than the token
+		 * response body. The token is only ever sent back to Shopify, so a
+		 * scope gate needs no signature verification.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param string $token JWT access token.
+		 * @return array|null Decoded payload array or null when not a JWT.
+		 */
+		private static function decode_jwt_payload( $token ) {
+			$parts = explode( '.', (string) $token );
+			if ( 3 !== count( $parts ) ) {
+				return null;
+			}
+
+			// Base64url → base64. PHP's base64_decode() tolerates missing padding.
+			$payload = json_decode( base64_decode( strtr( rtrim( $parts[1], '=' ), '-_', '+/' ) ), true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- JWT payload decoding for the catalog scope gate (diagnostic only; the token is never stored or logged).
+
+			return is_array( $payload ) ? $payload : null;
+		}
+
+		/**
 		 * Fetch (or return a cached) Catalog API JWT bearer token.
 		 *
 		 * Exchanges client_id + client_secret for a short-lived JWT using
@@ -319,7 +380,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 			}
 
 			// Cache key unique to this connection's credentials.
-			$transient_key = 'wp_mcp_ai_shopify_cat_tok_' . md5( $client_id );
+			$transient_key = self::get_catalog_token_transient_key( $client_id );
 
 			$cached = get_transient( $transient_key );
 			if ( ! empty( $cached ) ) {
@@ -380,14 +441,81 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 				);
 			}
 
+			// Reject tokens that were issued without the Catalog API scope.
+			// Shopify can accept a key's credentials but omit catalog access
+			// from the issued token; every catalog endpoint call then fails
+			// with 401 even though the token itself is fresh and valid.
+			// The granted scopes live inside the JWT (scopes claim) — some
+			// token responses also carry a top-level scope field, so check both.
+			$granted_scopes = array();
+			if ( isset( $decoded['scope'] ) ) {
+				$granted_scopes = is_array( $decoded['scope'] )
+					? array_map( 'strval', $decoded['scope'] )
+					: preg_split( '/[\s,]+/', trim( (string) $decoded['scope'] ) );
+			}
+			if ( empty( $granted_scopes ) ) {
+				$jwt_payload = self::decode_jwt_payload( $decoded['access_token'] );
+				if ( is_array( $jwt_payload ) && ! empty( $jwt_payload['scopes'] ) ) {
+					$granted_scopes = is_array( $jwt_payload['scopes'] )
+						? array_map( 'strval', $jwt_payload['scopes'] )
+						: preg_split( '/[\s,]+/', trim( (string) $jwt_payload['scopes'] ) );
+				}
+			}
+			$granted_scopes = is_array( $granted_scopes ) ? $granted_scopes : array();
+
+			if ( ! empty( $granted_scopes ) && ! in_array( 'read_global_api_catalog_search', $granted_scopes, true ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_catalog_scope_missing',
+					sprintf(
+						/* translators: %s: granted scope list */
+						__( 'Shopify accepted the Catalog API credentials, but the issued token lacks the read_global_api_catalog_search scope (granted: %s). Enable Catalog API access for this API key in the Shopify Dev Dashboard.', 'nvoos-content-graph-pro' ),
+						esc_html( implode( ', ', array_filter( $granted_scopes ) ) )
+					)
+				);
+			}
+
 			$token      = $decoded['access_token'];
 			$expires_in = isset( $decoded['expires_in'] ) ? absint( $decoded['expires_in'] ) : 3600;
-			// Cache with a 60-second safety buffer to avoid using an expired token.
-			$cache_ttl = max( 60, $expires_in - 60 );
+			// Shopify documents a 60-minute JWT TTL for Dev Dashboard tokens even
+			// though the token response can advertise a longer expires_in (the docs
+			// sample shows 86399s). Caching past the JWT's real expiry produces 401s
+			// from the catalog endpoint until the transient dies, so cap the cache
+			// at 60 minutes and keep a 60-second safety buffer.
+			$cache_ttl = max( 60, min( $expires_in, 3600 ) - 60 );
 
 			set_transient( $transient_key, $token, $cache_ttl );
 
 			return $token;
+		}
+
+		/**
+		 * Build the transient key for a cached Catalog API bearer token.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param string $client_id Catalog API client ID.
+		 * @return string Transient key.
+		 */
+		public static function get_catalog_token_transient_key( $client_id ) {
+			return 'wp_mcp_ai_shopify_cat_tok_' . md5( (string) $client_id );
+		}
+
+		/**
+		 * Purge the cached Catalog API bearer token for this connection.
+		 *
+		 * Call after the connection credentials change, or after a 401, so the
+		 * next request fetches a fresh token instead of replaying a stale one.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @return void
+		 */
+		public function invalidate_catalog_token() {
+			$client_id = $this->get_catalog_client_id();
+
+			if ( ! empty( $client_id ) ) {
+				delete_transient( self::get_catalog_token_transient_key( $client_id ) );
+			}
 		}                                                     //
 		// ------------------------------------------------------------------ //
 
@@ -1258,12 +1386,6 @@ query GetLocations($first: Int!) {
 		 * @return array|WP_Error Decoded response array or WP_Error on failure.
 		 */
 		public function catalog_request( $path, array $query_args = array() ) {
-			$token = $this->get_catalog_token();
-
-			if ( is_wp_error( $token ) ) {
-				return $token;
-			}
-
 			$url = self::CATALOG_BASE_URL . '/' . ltrim( $path, '/' );
 			if ( ! empty( $query_args ) ) {
 				// add_query_arg() does not URL-encode values (build_query()
@@ -1273,27 +1395,29 @@ query GetLocations($first: Int!) {
 				$url          = $url . ( false === strpos( $url, '?' ) ? '?' : '&' ) . $query_string;
 			}
 
-			$raw_response = wp_safe_remote_get(
-				$url,
-				array(
-					'timeout' => self::DEFAULT_TIMEOUT,
-					'headers' => array(
-						'Authorization' => 'Bearer ' . $token,
-						'Accept'        => 'application/json',
-						'User-Agent'    => 'WP-MCP-AI-Pro/' . NVOOS_CONTENT_GRAPH_PRO_VERSION,
-					),
-				)
-			);
+			$raw_response = $this->catalog_get( $url );
 
 			if ( is_wp_error( $raw_response ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_shopify_catalog_request_failed',
-					/* translators: %s: error message */
-					sprintf( __( 'Shopify Catalog API request failed: %s', 'nvoos-content-graph-pro' ), $raw_response->get_error_message() )
-				);
+				return $raw_response;
 			}
 
 			$response_code = wp_remote_retrieve_response_code( $raw_response );
+
+			// A 401 can mean the cached bearer outlived the JWT's real expiry
+			// (see get_catalog_token()). Purge the cache and retry once with a
+			// freshly-issued token before surfacing the error.
+			if ( 401 === $response_code ) {
+				$this->invalidate_catalog_token();
+
+				$raw_response = $this->catalog_get( $url );
+
+				if ( is_wp_error( $raw_response ) ) {
+					return $raw_response;
+				}
+
+				$response_code = wp_remote_retrieve_response_code( $raw_response );
+			}
+
 			$response_body = wp_remote_retrieve_body( $raw_response );
 
 			if ( strlen( $response_body ) > self::MAX_RESPONSE_SIZE ) {
@@ -1306,7 +1430,7 @@ query GetLocations($first: Int!) {
 			if ( 401 === $response_code ) {
 				return new WP_Error(
 					'wp_mcp_ai_shopify_catalog_unauthorized',
-					__( 'Shopify Catalog API access denied. The bearer token may have expired; please retry.', 'nvoos-content-graph-pro' )
+					__( 'Shopify Catalog API access denied. The bearer token may have expired, or the API key may not have Catalog API access enabled (read_global_api_catalog_search scope) — verify in the Shopify Dev Dashboard and retry.', 'nvoos-content-graph-pro' )
 				);
 			}
 
@@ -1346,6 +1470,505 @@ query GetLocations($first: Int!) {
 			}
 
 			return $decoded;
+		}
+
+		// ------------------------------------------------------------------ //
+		// Storefront Catalog MCP helpers (UCP, keyless, single merchant)      //
+		// ------------------------------------------------------------------ //
+
+		/**
+		 * Get the UCP agent profile URL used for Storefront Catalog requests.
+		 *
+		 * Shopify fetches this profile server-side and negotiates capabilities
+		 * against the store's business profile. The connection can override the
+		 * site default (served at /wp-json/mcp-ai/v1/ucp/agent-profile).
+		 *
+		 * @since 1.1.80
+		 *
+		 * @return string Profile URL.
+		 */
+		public function get_ucp_agent_profile() {
+			$connection = $this->get_connection();
+			return $connection && ! empty( $connection['shopify_ucp_agent_profile'] )
+				? esc_url_raw( $connection['shopify_ucp_agent_profile'] )
+				: self::UCP_DEFAULT_AGENT_PROFILE;
+		}
+
+		/**
+		 * Get the Storefront Catalog MCP endpoint URL for the configured store.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @return string|WP_Error Endpoint URL or WP_Error when no store domain is set.
+		 */
+		public function get_storefront_catalog_endpoint() {
+			$store_url = $this->get_store_url();
+			if ( empty( $store_url ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_ucp_missing_domain',
+					__( 'Shopify Storefront Catalog requires a store domain. Set the Shop Domain on the connection.', 'nvoos-content-graph-pro' )
+				);
+			}
+			return untrailingslashit( $store_url ) . self::UCP_MCP_PATH;
+		}
+
+		/**
+		 * List the tools exposed by the storefront's UCP MCP endpoint.
+		 *
+		 * Performs the MCP tools/list handshake, which also validates the UCP
+		 * agent profile against the store's business profile.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
+		 */
+		public function storefront_catalog_list_tools() {
+			$params = array(
+				'arguments' => array(
+					'meta' => array(
+						'ucp-agent' => array(
+							'profile' => $this->get_ucp_agent_profile(),
+						),
+					),
+				),
+			);
+			return $this->storefront_catalog_rpc( 'tools/list', $params );
+		}
+
+		/**
+		 * Search a single storefront's catalog via the UCP search_catalog tool.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param string $query   Free-text search query.
+		 * @param int    $limit   Maximum results (1-250). Default 10.
+		 * @param array  $context Optional buyer context (address_country, language, currency, intent).
+		 * @param string $cursor  Optional opaque pagination cursor from a previous response.
+		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
+		 */
+		public function storefront_catalog_search( $query, $limit = 10, array $context = array(), $cursor = '' ) {
+			$catalog = array(
+				'query'      => sanitize_text_field( $query ),
+				'pagination' => array(
+					'limit' => max( 1, min( 250, absint( $limit ) ) ),
+				),
+			);
+			if ( '' !== $cursor ) {
+				$catalog['pagination']['cursor'] = sanitize_text_field( $cursor );
+			}
+			if ( ! empty( $context ) ) {
+				$catalog['context'] = $context;
+			}
+			return $this->storefront_catalog_call( 'search_catalog', $catalog );
+		}
+
+		/**
+		 * Batch-lookup products or variants by GID via the UCP lookup_catalog tool.
+		 *
+		 * The UCP spec allows at most 10 identifiers per request.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param array $ids     Product/variant GIDs (up to 10).
+		 * @param array $context Optional buyer context (address_country, language, currency, intent).
+		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
+		 */
+		public function storefront_catalog_lookup( array $ids, array $context = array() ) {
+			$catalog = array(
+				'ids' => array_values(
+					array_slice(
+						array_filter(
+							array_map( 'sanitize_text_field', $ids )
+						),
+						0,
+						10
+					)
+				),
+			);
+			if ( ! empty( $context ) ) {
+				$catalog['context'] = $context;
+			}
+			return $this->storefront_catalog_call( 'lookup_catalog', $catalog );
+		}
+
+		/**
+		 * Get full product details via the UCP get_product tool, with optional
+		 * variant selection.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param string $id       Product or variant GID.
+		 * @param array  $selected Option selections, e.g. array( array( 'name' => 'Color', 'label' => 'Blue' ) ).
+		 * @param array  $context  Optional buyer context (address_country, language, currency, intent).
+		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
+		 */
+		public function storefront_catalog_get_product( $id, array $selected = array(), array $context = array() ) {
+			$catalog = array( 'id' => sanitize_text_field( $id ) );
+			if ( ! empty( $selected ) ) {
+				$catalog['selected'] = $selected;
+			}
+			if ( ! empty( $context ) ) {
+				$catalog['context'] = $context;
+			}
+			return $this->storefront_catalog_call( 'get_product', $catalog );
+		}
+
+		/**
+		 * Invoke a single catalog tool on the storefront's UCP MCP endpoint.
+		 *
+		 * Wraps the tool arguments in the UCP envelope: the agent profile meta
+		 * plus the catalog parameter object.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param string $tool    MCP tool name (search_catalog, lookup_catalog, get_product).
+		 * @param array  $catalog Catalog arguments object.
+		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
+		 */
+		private function storefront_catalog_call( $tool, array $catalog ) {
+			$params = array(
+				'name'      => $tool,
+				'arguments' => array(
+					'meta'    => array(
+						'ucp-agent' => array(
+							'profile' => $this->get_ucp_agent_profile(),
+						),
+					),
+					'catalog' => $catalog,
+				),
+			);
+			return $this->storefront_catalog_rpc( 'tools/call', $params );
+		}
+
+		// ------------------------------------------------------------------ //
+		// Global Catalog MCP helpers (UCP, keyless, cross-merchant)           //
+		// ------------------------------------------------------------------ //
+
+		/**
+		 * Get the Global Catalog MCP endpoint URL.
+		 *
+		 * The global endpoint is fixed by Shopify and needs no store domain.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @return string Endpoint URL.
+		 */
+		public function get_global_catalog_endpoint() {
+			return self::UCP_GLOBAL_CATALOG_URL;
+		}
+
+		/**
+		 * List the tools exposed by the Global Catalog MCP endpoint.
+		 *
+		 * Performs the MCP tools/list handshake, which also validates the UCP
+		 * agent profile and negotiates the dev.shopify.catalog.global capability.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
+		 */
+		public function global_catalog_list_tools() {
+			$params = array(
+				'arguments' => array(
+					'meta' => array(
+						'ucp-agent' => array(
+							'profile' => $this->get_ucp_agent_profile(),
+						),
+					),
+				),
+			);
+			return $this->global_catalog_rpc( 'tools/list', $params );
+		}
+
+		/**
+		 * Search products across all Shopify merchants via the UCP search_catalog tool.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param string $query   Free-text search query.
+		 * @param int    $limit   Maximum results (1-50). Default 10.
+		 * @param array  $context Optional buyer context (address_country, language, currency, intent).
+		 * @param array  $filters Optional catalog filters (ships_to, ships_from, price, available, shops, attributes, rating, price_tier, categories).
+		 * @param string $cursor  Optional opaque pagination cursor from a previous response.
+		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
+		 */
+		public function global_catalog_search( $query, $limit = 10, array $context = array(), array $filters = array(), $cursor = '' ) {
+			$catalog = array(
+				'query'      => sanitize_text_field( $query ),
+				'pagination' => array(
+					'limit' => max( 1, min( 50, absint( $limit ) ) ),
+				),
+			);
+			if ( '' !== $cursor ) {
+				$catalog['pagination']['cursor'] = sanitize_text_field( $cursor );
+			}
+			if ( ! empty( $context ) ) {
+				$catalog['context'] = $context;
+			}
+			if ( ! empty( $filters ) ) {
+				$catalog['filters'] = $filters;
+			}
+			return $this->global_catalog_call( 'search_catalog', $catalog );
+		}
+
+		/**
+		 * Batch-lookup products or variants by identifier via the UCP lookup_catalog tool.
+		 *
+		 * The Global Catalog accepts at most 50 identifiers per request.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param array $ids     Product/variant GIDs or Shopify product URLs (up to 50).
+		 * @param array $context Optional buyer context (address_country, language, currency, intent).
+		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
+		 */
+		public function global_catalog_lookup( array $ids, array $context = array() ) {
+			$catalog = array(
+				'ids' => array_values(
+					array_slice(
+						array_filter(
+							array_map( 'sanitize_text_field', $ids )
+						),
+						0,
+						50
+					)
+				),
+			);
+			if ( ! empty( $context ) ) {
+				$catalog['context'] = $context;
+			}
+			return $this->global_catalog_call( 'lookup_catalog', $catalog );
+		}
+
+		/**
+		 * Get full product details via the UCP get_product tool, with optional
+		 * variant selection.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param string $id       Product or variant identifier.
+		 * @param array  $selected Option selections, e.g. array( array( 'name' => 'Color', 'label' => 'Blue' ) ).
+		 * @param array  $context  Optional buyer context (address_country, language, currency, intent).
+		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
+		 */
+		public function global_catalog_get_product( $id, array $selected = array(), array $context = array() ) {
+			$catalog = array( 'id' => sanitize_text_field( $id ) );
+			if ( ! empty( $selected ) ) {
+				$catalog['selected'] = $selected;
+			}
+			if ( ! empty( $context ) ) {
+				$catalog['context'] = $context;
+			}
+			return $this->global_catalog_call( 'get_product', $catalog );
+		}
+
+		/**
+		 * Invoke a single catalog tool on the Global Catalog MCP endpoint.
+		 *
+		 * Wraps the tool arguments in the UCP envelope: the agent profile meta
+		 * plus the catalog parameter object.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param string $tool    MCP tool name (search_catalog, lookup_catalog, get_product).
+		 * @param array  $catalog Catalog arguments object.
+		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
+		 */
+		private function global_catalog_call( $tool, array $catalog ) {
+			$params = array(
+				'name'      => $tool,
+				'arguments' => array(
+					'meta'    => array(
+						'ucp-agent' => array(
+							'profile' => $this->get_ucp_agent_profile(),
+						),
+					),
+					'catalog' => $catalog,
+				),
+			);
+			return $this->global_catalog_rpc( 'tools/call', $params );
+		}
+
+		/**
+		 * Perform a JSON-RPC 2.0 request against the Storefront Catalog MCP
+		 * endpoint and map failures onto WP_Error.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param string $method JSON-RPC method (tools/list or tools/call).
+		 * @param array  $params JSON-RPC params object.
+		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
+		 */
+		private function storefront_catalog_rpc( $method, array $params ) {
+			$endpoint = $this->get_storefront_catalog_endpoint();
+			if ( is_wp_error( $endpoint ) ) {
+				return $endpoint;
+			}
+			return $this->ucp_rpc( $endpoint, __( 'Shopify Storefront Catalog', 'nvoos-content-graph-pro' ), $method, $params );
+		}
+
+		/**
+		 * Perform a JSON-RPC 2.0 request against the Global Catalog MCP
+		 * endpoint and map failures onto WP_Error.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param string $method JSON-RPC method (tools/list or tools/call).
+		 * @param array  $params JSON-RPC params object.
+		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
+		 */
+		private function global_catalog_rpc( $method, array $params ) {
+			return $this->ucp_rpc( self::UCP_GLOBAL_CATALOG_URL, __( 'Shopify Global Catalog', 'nvoos-content-graph-pro' ), $method, $params );
+		}
+
+		/**
+		 * Shared JSON-RPC 2.0 core for the keyless UCP catalog endpoints.
+		 *
+		 * UCP usage guidelines prohibit caching search results or product
+		 * images, so every call is live and nothing is stored.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param string $endpoint UCP MCP endpoint URL.
+		 * @param string $label    Human-readable endpoint name for error messages.
+		 * @param string $method   JSON-RPC method (tools/list or tools/call).
+		 * @param array  $params   JSON-RPC params object.
+		 * @return array|WP_Error Decoded MCP result or WP_Error on failure.
+		 */
+		private function ucp_rpc( $endpoint, $label, $method, array $params ) {
+			$payload = array(
+				'jsonrpc' => '2.0',
+				'method'  => $method,
+				'params'  => $params,
+				'id'      => 1,
+			);
+
+			$raw_response = wp_safe_remote_post(
+				$endpoint,
+				array(
+					'timeout' => self::DEFAULT_TIMEOUT,
+					'headers' => array(
+						'Content-Type' => 'application/json',
+						'Accept'       => 'application/json',
+						'User-Agent'   => 'WP-MCP-AI-Pro/' . NVOOS_CONTENT_GRAPH_PRO_VERSION,
+					),
+					'body'    => wp_json_encode( $payload ),
+				)
+			);
+
+			if ( is_wp_error( $raw_response ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_ucp_request_failed',
+					sprintf(
+						/* translators: 1: catalog label, 2: error message */
+						__( '%1$s request failed: %2$s', 'nvoos-content-graph-pro' ),
+						$label,
+						$raw_response->get_error_message()
+					)
+				);
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $raw_response );
+			$response_body = wp_remote_retrieve_body( $raw_response );
+
+			if ( $response_code < 200 || $response_code >= 300 ) {
+				$detail = ! empty( $response_body )
+					? ' ' . esc_html( mb_substr( wp_strip_all_tags( $response_body ), 0, 200 ) )
+					: '';
+				return new WP_Error(
+					'wp_mcp_ai_shopify_ucp_http_error',
+					sprintf(
+						/* translators: 1: catalog label, 2: HTTP status code, 3: optional response detail */
+						__( '%1$s MCP endpoint returned HTTP %2$d.%3$s', 'nvoos-content-graph-pro' ),
+						$label,
+						$response_code,
+						$detail
+					)
+				);
+			}
+
+			$decoded = json_decode( $response_body, true );
+
+			if ( json_last_error() !== JSON_ERROR_NONE ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_ucp_invalid_json',
+					sprintf(
+						/* translators: %s: catalog label */
+						__( '%s MCP endpoint returned an invalid JSON response.', 'nvoos-content-graph-pro' ),
+						$label
+					)
+				);
+			}
+
+			// JSON-RPC 2.0 error object.
+			if ( isset( $decoded['error'] ) && is_array( $decoded['error'] ) ) {
+				$rpc_code    = isset( $decoded['error']['code'] ) ? $decoded['error']['code'] : -32603;
+				$rpc_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unknown MCP error.', 'nvoos-content-graph-pro' );
+
+				// Shopify could not fetch the configured agent profile from its
+				// own servers. Surface the exact URL and the fix.
+				if (
+					isset( $decoded['error']['data'], $decoded['error']['data']['code'] )
+					&& 'profile_unreachable' === $decoded['error']['data']['code']
+				) {
+					$rpc_message .= ' ' . sprintf(
+						/* translators: %s: agent profile URL Shopify tried to fetch */
+						__( 'Shopify could not fetch the agent profile at %s (UCP discovery failed). The profile URL must be publicly reachable over HTTPS; if this site is not public, clear the UCP Agent Profile field to use Shopify\'s hosted example profile.', 'nvoos-content-graph-pro' ),
+						esc_url_raw( $this->get_ucp_agent_profile() )
+					);
+				}
+
+				return new WP_Error(
+					'wp_mcp_ai_shopify_ucp_rpc_error',
+					sprintf(
+						/* translators: 1: catalog label, 2: numeric error code, 3: error message */
+						__( '%1$s MCP error %2$s: %3$s', 'nvoos-content-graph-pro' ),
+						$label,
+						$rpc_code,
+						$rpc_message
+					)
+				);
+			}
+
+			return isset( $decoded['result'] ) ? $decoded['result'] : $decoded;
+		}
+
+		/**
+		 * Perform a single authenticated GET against the Catalog API.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param string $url Fully-qualified Catalog API URL.
+		 * @return array|WP_Error Raw response array or WP_Error.
+		 */
+		private function catalog_get( $url ) {
+			$token = $this->get_catalog_token();
+
+			if ( is_wp_error( $token ) ) {
+				return $token;
+			}
+
+			$raw_response = wp_safe_remote_get(
+				$url,
+				array(
+					'timeout' => self::DEFAULT_TIMEOUT,
+					'headers' => array(
+						'Authorization' => 'Bearer ' . $token,
+						'Accept'        => 'application/json',
+						'User-Agent'    => 'WP-MCP-AI-Pro/' . NVOOS_CONTENT_GRAPH_PRO_VERSION,
+					),
+				)
+			);
+
+			if ( is_wp_error( $raw_response ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_catalog_request_failed',
+					/* translators: %s: error message */
+					sprintf( __( 'Shopify Catalog API request failed: %s', 'nvoos-content-graph-pro' ), $raw_response->get_error_message() )
+				);
+			}
+
+			return $raw_response;
 		}
 
 		/**

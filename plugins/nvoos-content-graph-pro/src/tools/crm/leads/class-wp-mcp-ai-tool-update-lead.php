@@ -1,6 +1,6 @@
 <?php
 /**
- * Update Lead Tool (ecosystem port — Wave F2, CRM leads batch).
+ * Update Lead Tool (ecosystem port — Wave F2, CRM JobNavigator-adoption batch).
  *
  * Ported from the base Pro addon's
  * `addons/pro/includes/tools/crm/leads/class-wp-mcp-ai-tool-update-lead.php` for the standalone `nvoos-content-graph-pro` addon.
@@ -8,20 +8,16 @@
  * installs — the addon's autoloader skips its copy when
  * `WP_MCP_AI_PRO_PATH` is defined (see the plugin entry).
  *
- * Tool for updating leads in the CRM system.
+ * Lead updates with email signals and auto-disqualify.
  * Documented deviations: `declare(strict_types=1)` added; text domain
- * `nvoos-content-graph-pro`; the validator-service require resolves
- * from `NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/services/'`.
+ * `nvoos-content-graph-pro`; the validator-service require resolves from `NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/services/'`;
  *
  * @package NvoosContentGraphPro
  * @subpackage CRM_Toolkit
- * @since     2.3.0
- * @author    NV Digital Solutions
- * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
- * @license   Proprietary
  */
 
 declare(strict_types=1);
+
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -175,6 +171,19 @@ class WP_MCP_AI_Tool_Update_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				'timeline'        => array(
 					'type'        => 'string',
 					'description' => __( 'Purchase timeline (BANT qualification).', 'nvoos-content-graph-pro' ),
+				),
+				// Inbound email reply signals (since 3.2.0).
+				'last_email_received' => array(
+					'type'        => 'string',
+					'description' => __( 'ISO 8601 timestamp of the last inbound email reply from the lead.', 'nvoos-content-graph-pro' ),
+				),
+				'last_email_snippet' => array(
+					'type'        => 'string',
+					'description' => __( 'Short snippet of the last inbound email reply (capped at 500 characters).', 'nvoos-content-graph-pro' ),
+				),
+				'last_email_sentiment' => array(
+					'type'        => 'string',
+					'description' => __( 'Classified sentiment of the last reply: positive, neutral, negative, mixed, or unknown.', 'nvoos-content-graph-pro' ),
 				),
 			),
 			'required'             => array( 'lead_id' ),
@@ -394,6 +403,36 @@ class WP_MCP_AI_Tool_Update_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			$update_data['budget'] = floatval( $arguments['budget'] );
 		}
 
+		// Inbound email reply signals (since 3.2.0).
+		if ( isset( $arguments['last_email_received'] ) ) {
+			$received = sanitize_text_field( $arguments['last_email_received'] );
+			if ( '' !== $received && false === strtotime( $received ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_received_at',
+					__( 'last_email_received must be an ISO 8601 timestamp.', 'nvoos-content-graph-pro' ),
+					array( 'status' => 400 )
+				);
+			}
+			$update_data['last_email_received'] = $received;
+		}
+
+		if ( isset( $arguments['last_email_snippet'] ) ) {
+			$update_data['last_email_snippet'] = substr( sanitize_textarea_field( $arguments['last_email_snippet'] ), 0, 500 );
+		}
+
+		if ( isset( $arguments['last_email_sentiment'] ) ) {
+			$sentiment = sanitize_key( $arguments['last_email_sentiment'] );
+			$allowed   = array( 'positive', 'neutral', 'negative', 'mixed', 'unknown' );
+			if ( ! in_array( $sentiment, $allowed, true ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_sentiment',
+					__( 'last_email_sentiment must be one of: positive, neutral, negative, mixed, unknown.', 'nvoos-content-graph-pro' ),
+					array( 'status' => 400 )
+				);
+			}
+			$update_data['last_email_sentiment'] = $sentiment;
+		}
+
 		// Rich text fields.
 		if ( isset( $arguments['notes'] ) ) {
 			$update_data['notes'] = wp_kses_post( $arguments['notes'] );
@@ -451,6 +490,12 @@ class WP_MCP_AI_Tool_Update_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		 */
 		do_action( 'wp_mcp_ai_crm_after_lead_create', $lead_id, $update_data, $arguments, $context );
 
+		// Apply auto-disqualification rules when configured (non-blocking).
+		$auto_disqualified = false;
+		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			$auto_disqualified = WP_MCP_AI_CRM_Engine::maybe_auto_disqualify( $lead_id );
+		}
+
 		// Record PII access in audit log.
 		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
 			WP_MCP_AI_CRM_Audit::record(
@@ -472,9 +517,10 @@ class WP_MCP_AI_Tool_Update_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				$lead_id
 			),
 			array(
-				'lead_id'        => $lead_id,
-				'updated_fields' => array_keys( $update_data ),
-				'storage_type'   => $this->data_store->get_storage_type(),
+				'lead_id'            => $lead_id,
+				'updated_fields'     => array_keys( $update_data ),
+				'auto_disqualified'  => $auto_disqualified,
+				'storage_type'       => $this->data_store->get_storage_type(),
 			)
 		);
 	}

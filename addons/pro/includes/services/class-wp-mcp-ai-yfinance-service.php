@@ -5,6 +5,14 @@
  * Helper class for interacting with the yfinance microservice via Node.js client.
  * Provides WordPress transient caching, batch requests, and error handling.
  *
+ * Since 1.1.80 the service also implements:
+ *  - A provider fallback chain (Stooq / Nasdaq / CoinGecko / Binance public
+ *    endpoints) via WP_MCP_AI_Market_Data_Providers, so a single provider
+ *    outage never fails a request.
+ *  - Stale-while-revalidate caching: expired-fresh + fetch-failure serves the
+ *    last-known-good payload with a `stale` flag instead of erroring.
+ *  - An API-key pass-through for the microservice (`yfinance_api_key`).
+ *
  * @package WP_MCP_AI_Pro
  * @since 1.1.0
  * @author    NV Digital Solutions
@@ -36,6 +44,14 @@ class WP_MCP_AI_YFinance_Service {
 	const DEFAULT_CACHE_TTL = 900;
 
 	/**
+	 * Stale-copy TTL in seconds (7 days). The stale copy survives fresh-TTL
+	 * expiry and is only served when the live fetch fails.
+	 *
+	 * @var int
+	 */
+	const STALE_TTL = 604800;
+
+	/**
 	 * Get singleton instance
 	 *
 	 * @return self
@@ -48,6 +64,21 @@ class WP_MCP_AI_YFinance_Service {
 		}
 
 		return $instance;
+	}
+
+	/**
+	 * Get the market data providers helper.
+	 *
+	 * @return WP_MCP_AI_Market_Data_Providers
+	 */
+	protected function get_providers() {
+		static $providers = null;
+
+		if ( null === $providers ) {
+			$providers = WP_MCP_AI_Market_Data_Providers::get_instance();
+		}
+
+		return $providers;
 	}
 
 	/**
@@ -73,6 +104,53 @@ class WP_MCP_AI_YFinance_Service {
 	}
 
 	/**
+	 * Get the microservice API key.
+	 *
+	 * @since 1.1.80
+	 *
+	 * @return string
+	 */
+	public function get_api_key() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$api_key  = isset( $settings['yfinance_api_key'] ) ? (string) $settings['yfinance_api_key'] : '';
+
+		/**
+		 * Filter the yfinance microservice API key.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param string $api_key API key.
+		 */
+		return apply_filters( 'wp_mcp_ai_yfinance_api_key', $api_key );
+	}
+
+	/**
+	 * Whether the keyless fallback providers are enabled.
+	 *
+	 * Defaults to enabled (the yfinance microservice is optional). Set
+	 * `yfinance_fallback_providers` to a falsy value in wp_mcp_ai_settings
+	 * to disable, or use the filter.
+	 *
+	 * @since 1.1.80
+	 *
+	 * @return bool
+	 */
+	public function fallbacks_enabled() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$enabled  = ! isset( $settings['yfinance_fallback_providers'] ) || ! empty( $settings['yfinance_fallback_providers'] );
+
+		/**
+		 * Filter whether the keyless fallback providers run after a
+		 * microservice failure.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param bool $enabled Whether fallbacks are enabled.
+		 */
+		return (bool) apply_filters( 'wp_mcp_ai_yfinance_fallbacks_enabled', $enabled );
+	}
+
+	/**
 	 * Get cache TTL in seconds
 	 *
 	 * @return int
@@ -82,6 +160,24 @@ class WP_MCP_AI_YFinance_Service {
 		$ttl      = isset( $settings['yfinance_cache_ttl'] ) ? absint( $settings['yfinance_cache_ttl'] ) : 0;
 
 		return $ttl > 0 ? $ttl * 60 : self::DEFAULT_CACHE_TTL;
+	}
+
+	/**
+	 * Get the stale-copy TTL in seconds.
+	 *
+	 * @since 1.1.80
+	 *
+	 * @return int
+	 */
+	public function get_stale_ttl() {
+		/**
+		 * Filter the stale-copy TTL.
+		 *
+		 * @since 1.1.80
+		 *
+		 * @param int $ttl TTL in seconds.
+		 */
+		return (int) apply_filters( 'wp_mcp_ai_yfinance_stale_ttl', self::STALE_TTL );
 	}
 
 	/**
@@ -136,6 +232,146 @@ class WP_MCP_AI_YFinance_Service {
 	}
 
 	/**
+	 * Get the stale (last-known-good) copy for a cache key.
+	 *
+	 * @since 1.1.80
+	 *
+	 * @param string $cache_key Fresh cache key.
+	 * @return array|false Stale envelope {ts, data} or false.
+	 */
+	private function get_stale( $cache_key ) {
+		return get_transient( $cache_key . '_stale' );
+	}
+
+	/**
+	 * Store the stale (last-known-good) copy for a cache key.
+	 *
+	 * @since 1.1.80
+	 *
+	 * @param string $cache_key Fresh cache key.
+	 * @param mixed  $data      Data payload.
+	 * @return bool
+	 */
+	private function set_stale( $cache_key, $data ) {
+		return set_transient(
+			$cache_key . '_stale',
+			array(
+				'ts'   => time(),
+				'data' => $data,
+			),
+			$this->get_stale_ttl()
+		);
+	}
+
+	/**
+	 * Stamp a cached payload with the cache marker.
+	 *
+	 * @param mixed $payload Cached payload.
+	 * @return mixed
+	 */
+	private function mark_from_cache( $payload ) {
+		if ( is_array( $payload ) ) {
+			$payload['from_cache'] = true;
+			$payload['stale']      = false;
+		}
+
+		return $payload;
+	}
+
+	/**
+	 * Build the stale-serve envelope for a failed fetch.
+	 *
+	 * @since 1.1.80
+	 *
+	 * @param array $stale Stale envelope {ts, data}.
+	 * @return array Payload with stale markers.
+	 */
+	private function mark_stale( $stale ) {
+		$data = isset( $stale['data'] ) ? $stale['data'] : array();
+
+		if ( is_array( $data ) ) {
+			$data['stale']                  = true;
+			$data['from_cache']             = true;
+			$data['stale_while_revalidate'] = true;
+			$data['data_age_seconds']       = max( 0, time() - (int) ( isset( $stale['ts'] ) ? $stale['ts'] : time() ) );
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Cache a successful fetch (fresh + stale copies).
+	 *
+	 * @since 1.1.80
+	 *
+	 * @param string $cache_key Cache key.
+	 * @param mixed  $result    Result payload.
+	 * @param int    $ttl       Fresh TTL in seconds (null = default).
+	 */
+	private function cache_success( $cache_key, $result, $ttl = null ) {
+		$this->set_cache( $cache_key, $result, $ttl );
+		$this->set_stale( $cache_key, $result );
+	}
+
+	/**
+	 * Resolve a failed primary fetch through the fallback chain or the stale copy.
+	 *
+	 * @since 1.1.80
+	 *
+	 * @param string         $cache_key   Fresh cache key.
+	 * @param string         $type        Chain type (quote, history, crypto).
+	 * @param array          $args        Provider arguments.
+	 * @param WP_Error|mixed $primary_error Primary fetch error (may be empty).
+	 * @return array|WP_Error Resolved payload or combined error.
+	 */
+	private function resolve_failure( $cache_key, $type, $args, $primary_error ) {
+		if ( ! $this->fallbacks_enabled() ) {
+			$stale = $this->get_stale( $cache_key );
+			if ( false !== $stale ) {
+				return $this->mark_stale( $stale );
+			}
+
+			if ( is_wp_error( $primary_error ) ) {
+				return $primary_error;
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_market_data_fetch_failed',
+				__( 'Failed to fetch market data.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$fallback = $this->get_providers()->fetch_with_fallback( $type, $args );
+
+		if ( ! is_wp_error( $fallback ) && ! empty( $fallback['data'] ) ) {
+			$data = $fallback['data'];
+			$this->cache_success( $cache_key, $data );
+
+			return $data;
+		}
+
+		$stale = $this->get_stale( $cache_key );
+		if ( false !== $stale ) {
+			return $this->mark_stale( $stale );
+		}
+
+		$messages = array();
+		if ( is_wp_error( $primary_error ) ) {
+			$messages[] = $primary_error->get_error_message();
+		}
+		if ( is_wp_error( $fallback ) ) {
+			$messages[] = $fallback->get_error_message();
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_market_data_fetch_failed',
+			empty( $messages )
+				? __( 'Failed to fetch market data.', 'mcp-ai-wpoos-pro' )
+				: implode( ' | ', $messages )
+		);
+	}
+
+	/**
 	 * Clear all yfinance caches
 	 *
 	 * @return int Number of caches cleared.
@@ -182,7 +418,7 @@ class WP_MCP_AI_YFinance_Service {
 		if ( $use_cache ) {
 			$cached = $this->get_cache( $cache_key );
 			if ( false !== $cached ) {
-				return $cached;
+				return $this->mark_from_cache( $cached );
 			}
 		}
 
@@ -190,17 +426,29 @@ class WP_MCP_AI_YFinance_Service {
 		$params = array(
 			'ticker'      => $ticker,
 			'service_url' => $this->get_service_url(),
+			'api_key'     => $this->get_api_key(),
 		);
 
 		$result = apply_filters( 'wp_mcp_ai_yfinance_ticker_info', false, $params );
 
-		if ( is_wp_error( $result ) ) {
-			return $result;
+		if ( is_wp_error( $result ) || empty( $result ) ) {
+			$fallback = $this->resolve_failure(
+				$cache_key,
+				'quote',
+				array( 'symbol' => $ticker ),
+				$result
+			);
+
+			return $fallback;
+		}
+
+		if ( ! isset( $result['source'] ) ) {
+			$result['source'] = 'yfinance';
 		}
 
 		// Cache the result.
-		if ( $use_cache && ! empty( $result ) ) {
-			$this->set_cache( $cache_key, $result );
+		if ( $use_cache ) {
+			$this->cache_success( $cache_key, $result );
 		}
 
 		return $result;
@@ -226,7 +474,7 @@ class WP_MCP_AI_YFinance_Service {
 		if ( $use_cache ) {
 			$cached = $this->get_cache( $cache_key );
 			if ( false !== $cached ) {
-				return $cached;
+				return $this->mark_from_cache( $cached );
 			}
 		}
 
@@ -235,17 +483,32 @@ class WP_MCP_AI_YFinance_Service {
 			'ticker'      => $ticker,
 			'period'      => $period,
 			'service_url' => $this->get_service_url(),
+			'api_key'     => $this->get_api_key(),
 		);
 
 		$result = apply_filters( 'wp_mcp_ai_yfinance_current_price', false, $params );
 
-		if ( is_wp_error( $result ) ) {
-			return $result;
+		if ( is_wp_error( $result ) || empty( $result ) ) {
+			$fallback = $this->resolve_failure(
+				$cache_key,
+				'quote',
+				array(
+					'symbol' => $ticker,
+					'period' => $period,
+				),
+				$result
+			);
+
+			return $fallback;
+		}
+
+		if ( ! isset( $result['source'] ) ) {
+			$result['source'] = 'yfinance';
 		}
 
 		// Cache the result.
-		if ( $use_cache && ! empty( $result ) ) {
-			$this->set_cache( $cache_key, $result );
+		if ( $use_cache ) {
+			$this->cache_success( $cache_key, $result );
 		}
 
 		return $result;
@@ -283,7 +546,7 @@ class WP_MCP_AI_YFinance_Service {
 		if ( $use_cache ) {
 			$cached = $this->get_cache( $cache_key );
 			if ( false !== $cached ) {
-				return $cached;
+				return $this->mark_from_cache( $cached );
 			}
 		}
 
@@ -292,20 +555,83 @@ class WP_MCP_AI_YFinance_Service {
 			'tickers'     => $tickers,
 			'period'      => $period,
 			'service_url' => $this->get_service_url(),
+			'api_key'     => $this->get_api_key(),
 		);
 
 		$result = apply_filters( 'wp_mcp_ai_yfinance_batch_prices', false, $params );
 
-		if ( is_wp_error( $result ) ) {
-			return $result;
+		if ( is_wp_error( $result ) || empty( $result ) ) {
+			$fallback = $this->resolve_batch_failure( $cache_key, $tickers, $result );
+
+			return $fallback;
+		}
+
+		if ( ! isset( $result['source'] ) ) {
+			$result['source'] = 'yfinance';
 		}
 
 		// Cache the result.
-		if ( $use_cache && ! empty( $result ) ) {
-			$this->set_cache( $cache_key, $result );
+		if ( $use_cache ) {
+			$this->cache_success( $cache_key, $result );
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Resolve a failed batch fetch: per-ticker fallback quotes or stale copy.
+	 *
+	 * @since 1.1.80
+	 *
+	 * @param string         $cache_key Fresh cache key.
+	 * @param array          $tickers   Tickers.
+	 * @param WP_Error|mixed $primary_error Primary error.
+	 * @return array|WP_Error
+	 */
+	private function resolve_batch_failure( $cache_key, $tickers, $primary_error ) {
+		if ( $this->fallbacks_enabled() ) {
+			$providers = $this->get_providers();
+			$data      = array();
+			$errors    = array();
+
+			foreach ( $tickers as $ticker ) {
+				$quote = $providers->stooq_get_quote( $ticker );
+
+				if ( is_wp_error( $quote ) ) {
+					$errors[ $ticker ] = $quote->get_error_message();
+					continue;
+				}
+
+				$data[ $ticker ] = $quote;
+			}
+
+			if ( ! empty( $data ) ) {
+				$result = array(
+					'count'         => count( $data ),
+					'data'          => $data,
+					'partial'       => ! empty( $errors ),
+					'errors'        => $errors,
+					'source'        => 'stooq',
+					'fallback_used' => true,
+				);
+
+				$this->cache_success( $cache_key, $result );
+
+				return $result;
+			}
+		}
+
+		$stale = $this->get_stale( $cache_key );
+		if ( false !== $stale ) {
+			return $this->mark_stale( $stale );
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_market_data_fetch_failed',
+			is_wp_error( $primary_error )
+				? $primary_error->get_error_message()
+				: __( 'Failed to fetch batch prices.', 'mcp-ai-wpoos-pro' )
+		);
 	}
 
 	/**
@@ -329,7 +655,7 @@ class WP_MCP_AI_YFinance_Service {
 		if ( $use_cache ) {
 			$cached = $this->get_cache( $cache_key );
 			if ( false !== $cached ) {
-				return $cached;
+				return $this->mark_from_cache( $cached );
 			}
 		}
 
@@ -339,17 +665,33 @@ class WP_MCP_AI_YFinance_Service {
 			'period'      => $period,
 			'interval'    => $interval,
 			'service_url' => $this->get_service_url(),
+			'api_key'     => $this->get_api_key(),
 		);
 
 		$result = apply_filters( 'wp_mcp_ai_yfinance_price_history', false, $params );
 
-		if ( is_wp_error( $result ) ) {
-			return $result;
+		if ( is_wp_error( $result ) || empty( $result ) ) {
+			$fallback = $this->resolve_failure(
+				$cache_key,
+				'history',
+				array(
+					'symbol'   => $ticker,
+					'period'   => $period,
+					'interval' => $interval,
+				),
+				$result
+			);
+
+			return $fallback;
+		}
+
+		if ( ! isset( $result['source'] ) ) {
+			$result['source'] = 'yfinance';
 		}
 
 		// Cache the result (longer TTL for historical data).
-		if ( $use_cache && ! empty( $result ) ) {
-			$this->set_cache( $cache_key, $result, $this->get_cache_ttl() * 4 ); // 4x longer.
+		if ( $use_cache ) {
+			$this->cache_success( $cache_key, $result, $this->get_cache_ttl() * 4 ); // 4x longer.
 		}
 
 		return $result;
@@ -372,6 +714,7 @@ class WP_MCP_AI_YFinance_Service {
 		$params = array(
 			'query'       => $query,
 			'service_url' => $this->get_service_url(),
+			'api_key'     => $this->get_api_key(),
 		);
 
 		$result = apply_filters( 'wp_mcp_ai_yfinance_search_ticker', false, $params );
@@ -391,6 +734,7 @@ class WP_MCP_AI_YFinance_Service {
 	public function check_health() {
 		$params = array(
 			'service_url' => $this->get_service_url(),
+			'api_key'     => $this->get_api_key(),
 		);
 
 		$result = apply_filters( 'wp_mcp_ai_yfinance_health_check', false, $params );
@@ -431,16 +775,20 @@ class WP_MCP_AI_YFinance_Service {
 			return $holdings;
 		}
 
+		// Normalize both legacy and fallback batch shapes.
+		$price_map    = isset( $prices['data'] ) && is_array( $prices['data'] ) ? $prices['data'] : $prices;
+		$batch_source = isset( $prices['source'] ) ? $prices['source'] : 'yfinance';
+
 		// Update holdings with fetched prices.
 		foreach ( $holdings as &$holding ) {
 			$ticker = strtoupper( $holding['ticker'] );
 
-			if ( empty( $holding['current_price'] ) && isset( $prices[ $ticker ] ) ) {
-				$price_data = $prices[ $ticker ];
+			if ( empty( $holding['current_price'] ) && isset( $price_map[ $ticker ] ) ) {
+				$price_data = $price_map[ $ticker ];
 
 				if ( isset( $price_data['current_price'] ) ) {
 					$holding['current_price'] = $price_data['current_price'];
-					$holding['price_source']  = 'yfinance';
+					$holding['price_source']  = isset( $price_data['source'] ) ? $price_data['source'] : $batch_source;
 					$holding['price_date']    = $price_data['date'] ?? gmdate( 'Y-m-d' );
 					$holding['price_open']    = $price_data['open'] ?? null;
 					$holding['price_high']    = $price_data['high'] ?? null;

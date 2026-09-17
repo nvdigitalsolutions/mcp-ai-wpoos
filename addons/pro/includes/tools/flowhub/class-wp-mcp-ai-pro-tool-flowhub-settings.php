@@ -66,6 +66,10 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Settings implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'       => 'object',
 			'properties' => array(
+				'connection_id'       => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Remote Sites connection ID for FlowHub (conn_...). Omit to auto-resolve: toolkit settings credentials, then the configured sync connections, then the first enabled FlowHub connection. Used by the test_connection action.', 'mcp-ai-wpoos-pro' ),
+				),
 				'action'              => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform.', 'mcp-ai-wpoos-pro' ),
@@ -126,6 +130,9 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Settings implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Gate 1: Sanitize.
+		if ( isset( $arguments['connection_id'] ) ) {
+			$arguments['connection_id'] = sanitize_key( $arguments['connection_id'] );
+		}
 		$action              = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'get_settings';
 		$client_id           = isset( $arguments['client_id'] ) ? sanitize_text_field( $arguments['client_id'] ) : null;
 		$api_key             = isset( $arguments['api_key'] ) ? sanitize_text_field( $arguments['api_key'] ) : null;
@@ -179,10 +186,10 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Settings implements WP_MCP_AI_Tool_Interface, W
 				);
 
 			case 'test_connection':
-				return $this->handle_test_connection();
+				return $this->handle_test_connection( $arguments );
 
 			case 'get_field_mapping':
-				$cct_manager = $this->get_flowhub_cct_manager();
+				$cct_manager = $this->get_flowhub_cct_manager( $arguments );
 				return array(
 					'success' => true,
 					'message' => __( 'Field mapping retrieved.', 'mcp-ai-wpoos-pro' ),
@@ -239,10 +246,29 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Settings implements WP_MCP_AI_Tool_Interface, W
 	 * Test the FlowHub API connection.
 	 *
 	 * @since 1.2.0
+	 * @since 1.7.0 Accepts tool arguments so the test honors a Remote Sites
+	 *              connection (explicit connection_id or auto-resolved).
+	 *
+	 * @param array $arguments Tool arguments.
 	 * @return array|WP_Error
 	 */
-	protected function handle_test_connection() {
-		$client = WP_MCP_AI_FlowHub_Client::from_settings();
+	protected function handle_test_connection( $arguments = array() ) {
+		$resolved = $this->resolve_flowhub_connection( $arguments );
+
+		if ( is_wp_error( $resolved ) ) {
+			return array(
+				'success' => true,
+				'message' => __( 'Connection test could not run.', 'mcp-ai-wpoos-pro' ),
+				'data'    => array(
+					'connected' => false,
+					'error'     => $resolved->get_error_message(),
+				),
+			);
+		}
+
+		$client = ! empty( $resolved['connection_id'] )
+			? WP_MCP_AI_FlowHub_Client::from_connection( $resolved['connection_id'] )
+			: WP_MCP_AI_FlowHub_Client::from_settings();
 
 		if ( is_wp_error( $client ) ) {
 			return array(

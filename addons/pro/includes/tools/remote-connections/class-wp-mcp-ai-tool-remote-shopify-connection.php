@@ -55,7 +55,7 @@ class WP_MCP_AI_Tool_Remote_Shopify_Connection implements WP_MCP_AI_Tool_Interfa
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Discover and manage Shopify store connections. Use list_connections to see available Shopify stores configured for this assistant. Use test_connection to verify connectivity. For product, order, customer, and inventory operations, use the dedicated shopify_products, shopify_orders, shopify_customers, and shopify_inventory tools — they will automatically use the correct connection when only one Shopify connection is configured.', 'mcp-ai-wpoos-pro' );
+		return __( 'Discover and manage Shopify store connections. Use list_connections to see the available Shopify stores configured for this assistant, each annotated with its API mode and the tools that mode supports. Use test_connection to verify connectivity — admin_api runs a GraphQL shop query, Storefront/Global Catalog MCP (keyless UCP) runs the MCP tools/list negotiation handshake, and catalog_api verifies credentials. For product, order, customer, and inventory operations, use the dedicated shopify_products, shopify_orders, shopify_customers, shopify_inventory, and shopify_catalog tools — they are mode-aware and automatically use the correct connection when only one Shopify connection is configured.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -147,6 +147,28 @@ class WP_MCP_AI_Tool_Remote_Shopify_Connection implements WP_MCP_AI_Tool_Interfa
 	protected function handle_list_connections( $context ) {
 		$shopify_connections = $this->get_available_shopify_connections( $context );
 
+		// Enrich each connection with its mode label and the operations that
+		// mode supports, so agents can pick the right tool without guessing.
+		foreach ( $shopify_connections as $index => $connection ) {
+			$api_mode = isset( $connection['api_mode'] ) ? $connection['api_mode'] : 'admin_api';
+
+			$shopify_connections[ $index ]['api_mode_label'] = $this->get_shopify_api_mode_label( $api_mode );
+
+			if ( 'admin_api' === $api_mode ) {
+				$shopify_connections[ $index ]['supported_tools'] = array(
+					'shopify_products',
+					'shopify_orders',
+					'shopify_customers',
+					'shopify_inventory',
+				);
+			} else {
+				// Catalog modes are live product-search modes: only the live
+				// catalog tools apply, and UCP results must not be cached.
+				$shopify_connections[ $index ]['supported_tools'] = array( 'shopify_catalog', 'shopify_products' );
+				$shopify_connections[ $index ]['live_only']       = true;
+			}
+		}
+
 		$result = array(
 			'summary'     => sprintf(
 				/* translators: %d: number of connections */
@@ -155,7 +177,7 @@ class WP_MCP_AI_Tool_Remote_Shopify_Connection implements WP_MCP_AI_Tool_Interfa
 			),
 			'connections' => $shopify_connections,
 			'count'       => count( $shopify_connections ),
-			'hint'        => __( 'Use shopify_products, shopify_orders, shopify_customers, or shopify_inventory tools to interact with these stores. When only one connection is configured, you do not need to provide connection_id — it will be resolved automatically.', 'mcp-ai-wpoos-pro' ),
+			'hint'        => __( 'Tools are mode-aware: admin_api connections support shopify_products, shopify_orders, shopify_customers, and shopify_inventory. Storefront Catalog MCP and Global Catalog MCP connections are keyless live agent-query modes — use shopify_catalog (search, lookup, lookup_by_variant, get_product) or shopify_products (list/search/get) for live queries; orders, customers, and inventory are unavailable on them, and their results must not be cached. When only one connection is configured, you do not need to provide connection_id — it will be resolved automatically.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		/**
@@ -212,14 +234,14 @@ class WP_MCP_AI_Tool_Remote_Shopify_Connection implements WP_MCP_AI_Tool_Interfa
 		// Determine API mode before creating the client.
 		$api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
 
-		// Attempt to load the Shopify client and run a basic shop info query.
-		if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-client.php';
-		}
-
-		$client = new WP_MCP_AI_Shopify_Client( $connection_id );
-
 		if ( 'admin_api' === $api_mode ) {
+			// Attempt to load the Shopify client and run a basic shop info query.
+			if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-client.php';
+			}
+
+			$client = new WP_MCP_AI_Shopify_Client( $connection_id );
+
 			// Test Admin GraphQL API via a simple shop query.
 			$query  = '{ shop { name myshopifyDomain plan { displayName } } }';
 			$result = $client->graphql( $query );
@@ -245,6 +267,33 @@ class WP_MCP_AI_Tool_Remote_Shopify_Connection implements WP_MCP_AI_Tool_Interfa
 				'myshopify_domain' => isset( $shop_data['myshopifyDomain'] ) ? $shop_data['myshopifyDomain'] : '',
 				'plan'             => isset( $shop_data['plan']['displayName'] ) ? $shop_data['plan']['displayName'] : '',
 				'message'          => __( 'Shopify Admin API connection successful.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		// UCP catalog modes — validate with the keyless MCP tools/list
+		// handshake, which also exercises the UCP capability negotiation
+		// against the configured agent profile (same path the Remote Sites
+		// admin test uses).
+		if ( $this->is_ucp_catalog_api_mode( $api_mode ) ) {
+			$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection_id );
+
+			if ( is_wp_error( $result ) ) {
+				return array(
+					'success'       => false,
+					'connection_id' => $connection_id,
+					'name'          => isset( $connection['name'] ) ? $connection['name'] : '',
+					'api_mode'      => $api_mode,
+					'error'         => $result->get_error_message(),
+				);
+			}
+
+			return array_merge(
+				array(
+					'connection_id' => $connection_id,
+					'name'          => isset( $connection['name'] ) ? $connection['name'] : '',
+					'api_mode'      => $api_mode,
+				),
+				$result
 			);
 		}
 

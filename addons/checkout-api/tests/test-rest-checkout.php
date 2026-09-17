@@ -28,6 +28,10 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 		$this->controller = new NVOOS_Checkout_API_Rest_Controller();
 		NVOOS_Checkout_API_License_Store::install_table();
 
+		// No mail transport exists in the test env — short-circuit wp_mail
+		// so license-email sends can never attempt a real delivery.
+		add_filter( 'pre_wp_mail', '__return_true' );
+
 		update_option(
 			NVOOS_Checkout_API_Settings::OPTION,
 			array(
@@ -48,6 +52,7 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 	 */
 	public function tearDown(): void {
 		remove_all_filters( 'pre_http_request' );
+		remove_all_filters( 'pre_wp_mail' );
 		delete_option( NVOOS_Checkout_API_Settings::OPTION );
 		parent::tearDown();
 	}
@@ -237,6 +242,51 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Verify emails the buyer once and marks the send on the license row.
+	 *
+	 * @return void
+	 */
+	public function test_verify_sends_license_email_once(): void {
+		$this->stub_stripe(
+			array(
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'id'              => 'pi_mail',
+							'status'          => 'succeeded',
+							'amount_received' => 4900,
+							'currency'        => 'usd',
+							'receipt_email'   => 'buyer@example.com',
+							'metadata'        => array(
+								'product'  => 'nvoos-oos-complete',
+								'site_url' => 'https://customer.example',
+							),
+						)
+					),
+				),
+			)
+		);
+
+		$request = new WP_REST_Request( 'POST', '/nvoos-checkout/v1/verify' );
+		$request->set_param( 'product', 'nvoos-oos-complete' );
+		$request->set_param( 'site_url', 'https://customer.example' );
+		$request->set_param( 'payment_intent', 'pi_mail' );
+
+		$response = $this->controller->verify_payment( $request );
+		$this->assertNotWPError( $response );
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_payment_intent( 'pi_mail' );
+		$this->assertNotNull( $license );
+		$this->assertNotEmpty( $license['email_sent_at'], 'The license email must be recorded as sent after verify.' );
+
+		// Re-verification is idempotent: the send timestamp never moves.
+		$this->controller->verify_payment( $request );
+		$rechecked = NVOOS_Checkout_API_License_Store::get_by_payment_intent( 'pi_mail' );
+		$this->assertSame( $license['email_sent_at'], $rechecked['email_sent_at'] );
+	}
+
+	/**
 	 * Re-verification of the same intent is idempotent (same license key).
 	 *
 	 * @return void
@@ -344,7 +394,8 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Statement descriptors are sanitized strictly; invalid lengths drop out.
+	 * Statement descriptor suffixes are sanitized strictly; values that are
+	 * too short, too long, or contain no letter drop out.
 	 *
 	 * @return void
 	 */
@@ -352,8 +403,11 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 		$clean = NVOOS_Checkout_API_Settings::sanitize( array( 'statement_descriptor' => '  nv oos* complete!! ' ) );
 		$this->assertSame( 'NV OOS* COMPLETE', $clean['statement_descriptor'] );
 
-		$short = NVOOS_Checkout_API_Settings::sanitize( array( 'statement_descriptor' => 'ABC' ) );
+		$short = NVOOS_Checkout_API_Settings::sanitize( array( 'statement_descriptor' => 'A' ) );
 		$this->assertSame( '', $short['statement_descriptor'] );
+
+		$numbers = NVOOS_Checkout_API_Settings::sanitize( array( 'statement_descriptor' => '12345' ) );
+		$this->assertSame( '', $numbers['statement_descriptor'] );
 
 		$long = NVOOS_Checkout_API_Settings::sanitize( array( 'statement_descriptor' => str_repeat( 'A', 30 ) ) );
 		$this->assertSame( '', $long['statement_descriptor'] );
@@ -400,7 +454,8 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 
 		$this->assertNotWPError( $response );
 		$this->assertIsArray( $captured );
-		$this->assertSame( 'NV OOS COMPLETE', $captured['statement_descriptor'] );
+		$this->assertSame( 'NV OOS COMPLETE', $captured['statement_descriptor_suffix'] );
+		$this->assertArrayNotHasKey( 'statement_descriptor', $captured );
 		$this->assertSame( 'prod_test_1', $captured['metadata']['stripe_product_id'] );
 		$this->assertSame( 'price_test_1', $captured['metadata']['stripe_price_id'] );
 	}

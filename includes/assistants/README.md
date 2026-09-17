@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Registers the `mcp_ai_assistant` custom post type and its admin metaboxes — the single source of truth for an assistant's provider, model, system prompt, tools, skills, datasets, credentials, and harness profile — and nothing else.
+Registers the `mcp_ai_assistant` custom post type and its admin metaboxes — the single source of truth for an assistant's provider, model, system prompt, tools, skills, datasets, credentials, and harness profile — plus the canonical assistant export/import engine (`WP_MCP_AI_Assistant_Portability`).
 
 ## Tier
 
@@ -21,6 +21,7 @@ Registers the `mcp_ai_assistant` custom post type and its admin metaboxes — th
 | `WP_MCP_AI_Assistant_CPT::POST_TYPE` + `META_*` constants | `class-wp-mcp-ai-assistant-cpt.php` | every caller that reads/writes assistant meta (use the constants, not bare strings) |
 | `WP_MCP_AI_Metabox_Base` (abstract) | `metaboxes/class-wp-mcp-ai-metabox-base.php` | every metabox in this folder + Pro metaboxes |
 | `WP_MCP_AI_Metabox_Credentials`, `..._Defaults`, `..._Primary_Roles`, `..._Base_Knowledge`, `..._Mesh_Routing`, `..._Datasets`, `..._Skills`, `..._MCP_Apps`, `..._Harness_Profile`, `..._Artifact_Governance` | `metaboxes/class-wp-mcp-ai-metabox-*.php` | wired by the CPT constructor; not called externally. `..._Artifact_Governance` renders the Phase G governor report, approval queue (with nonce'd admin-post decisions), and prompt lineage tree |
+| `WP_MCP_AI_Assistant_Portability` | `class-wp-mcp-ai-assistant-portability.php` | CLI assistant export/import, REST `/assistants/export|import`, admin row/bulk actions, `export_assistant`/`import_assistant`/`duplicate_assistant` tools, backup export provider |
 | `metaboxes-loader.php` | `metaboxes-loader.php` | included by `includes/class-assistant-cpt.php` ahead of the CPT class |
 
 ## Inputs / Outputs / Neighbors
@@ -29,7 +30,8 @@ Registers the `mcp_ai_assistant` custom post type and its admin metaboxes — th
 - **Writes to:** assistant post meta on save (tools, provider, model, prompt, skills, datasets, credentials, harness profile, role rules), optional JetEngine CCT mirror, optional Pro mesh-routing metadata.
 - **Upstream callers:** [`includes/admin/`](../admin/) (post type list table actions), [`includes/rest/`](../rest/) (assistant directory + create/update endpoints), [`includes/services/`](../services/) (chat service resolves provider/model/tools from the CPT), [`includes/a2a/`](../a2a/) (Agent Card builder reads metadata), [`includes/teams/`](../teams/) seeder.
 - **Downstream collaborators:** [`includes/tools/`](../tools/) registry (read-only), [`includes/harness/`](../harness/) `Harness_Profile` (metabox writes the JSON profile), [`includes/professions/`](../professions/) for default population.
-- **Events fired:** `save_post_mcp_ai_assistant` (WordPress core action, but it is *this* folder's contract). Filters: standard `manage_*_columns`, `manage_edit-mcp_ai_assistant_columns`, plus credential-related actions handled by `WP_MCP_AI_Credentials`.
+- **Portability contract:** `WP_MCP_AI_Assistant_Portability` defines the versioned `nvoos-assistant` bundle format (`format_version` 1) consumed by every export/import surface. Credential hashes are never exported; the meta denylist is filterable via `wp_mcp_ai_assistant_export_meta_denylist`. See [`docs/assistant-import-export.md`](../../docs/assistant-import-export.md).
+- **Events fired:** `save_post_mcp_ai_assistant` (WordPress core action, but it is *this* folder's contract), `wp_mcp_ai_assistant_imported` (per-assistant import). Filters: `wp_mcp_ai_assistant_export_data`, `wp_mcp_ai_assistant_import_data`, `wp_mcp_ai_assistant_export_meta_denylist`, `wp_mcp_ai_assistant_export_meta_prefixes`, `wp_mcp_ai_assistant_to_blueprint_json`, standard `manage_*_columns`, `manage_edit-mcp_ai_assistant_columns`, plus credential-related actions handled by `WP_MCP_AI_Credentials`.
 - **Events listened to:** `init` (CPT registration), `add_meta_boxes_mcp_ai_assistant`, `save_post_mcp_ai_assistant`, `admin_enqueue_scripts` (per-screen), invalidation hooks fired from `includes/bootstrap/hooks.php`.
 
 ## Conventions

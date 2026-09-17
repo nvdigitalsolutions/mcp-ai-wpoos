@@ -19,10 +19,22 @@ if ( ! file_exists( $autoload ) ) {
 require_once $autoload;
 
 // WordPress test suite.
+//
+// Prefer the wp-phpunit copy shipped in this plugin's own vendor directory:
+// the monorepo root suite patches ITS vendor copy at bootstrap time (for
+// PHPUnit 11) and writes the patch back to disk, and wp-phpunit can copy that
+// patched file into the shared temp-dir test lib — which then breaks this
+// plugin's PHPUnit 9.6 runs (`Call to undefined method ::name()`). Using the
+// pristine vendored copy keeps a fresh clone of this plugin self-contained.
 $_tests_dir = getenv( 'WP_TESTS_DIR' );
 
 if ( ! $_tests_dir ) {
-	$_tests_dir = rtrim( sys_get_temp_dir(), '/\\' ) . '/wordpress-tests-lib';
+	$vendored_tests_dir = dirname( __DIR__ ) . '/vendor/wp-phpunit/wp-phpunit';
+	if ( file_exists( $vendored_tests_dir . '/includes/functions.php' ) ) {
+		$_tests_dir = $vendored_tests_dir;
+	} else {
+		$_tests_dir = rtrim( sys_get_temp_dir(), '/\\' ) . '/wordpress-tests-lib';
+	}
 }
 
 if ( ! file_exists( $_tests_dir . '/includes/functions.php' ) ) {

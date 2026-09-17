@@ -173,7 +173,7 @@ class Test_Slash_Commands_Pro_Workflows extends WP_UnitTestCase {
 
 		// Verify second step is recover.
 		$this->assertEquals( 'abandoned-recover', $steps[1]['command'] );
-		$this->assertEquals( 'recover', $steps[1]['params']['action'] );
+		$this->assertEquals( 'send_recovery', $steps[1]['params']['action'] );
 	}
 
 	/**
@@ -210,12 +210,12 @@ class Test_Slash_Commands_Pro_Workflows extends WP_UnitTestCase {
 		$steps    = $workflow['steps'];
 
 		// Second step should reference previous.video_id.
-		$this->assertArrayHasKey( 'video-id', $steps[1]['params'] );
-		$this->assertEquals( '{previous.video_id}', $steps[1]['params']['video-id'] );
+		$this->assertArrayHasKey( 'video_id', $steps[1]['params'] );
+		$this->assertEquals( '{previous.video_id}', $steps[1]['params']['video_id'] );
 
 		// Third step should also reference previous.video_id.
-		$this->assertArrayHasKey( 'media', $steps[2]['params'] );
-		$this->assertEquals( '{previous.video_id}', $steps[2]['params']['media'] );
+		$this->assertArrayHasKey( 'media_urls', $steps[2]['params'] );
+		$this->assertEquals( '{previous.video_id}', $steps[2]['params']['media_urls'] );
 	}
 
 	/**
@@ -231,8 +231,8 @@ class Test_Slash_Commands_Pro_Workflows extends WP_UnitTestCase {
 		$steps    = $workflow['steps'];
 
 		// Second step should use result from first step.
-		$this->assertArrayHasKey( 'product-id', $steps[1]['params'] );
-		$this->assertEquals( '{previous.top_product_id}', $steps[1]['params']['product-id'] );
+		$this->assertArrayHasKey( 'product_id', $steps[1]['params'] );
+		$this->assertEquals( '{previous.top_product_id}', $steps[1]['params']['product_id'] );
 	}
 
 	/**

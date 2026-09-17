@@ -57,7 +57,7 @@ class WP_MCP_AI_Tool_Flowhub_Get_Inventory implements WP_MCP_AI_Tool_Interface, 
 			'properties'           => array(
 				'connection_id' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional Remote Sites connection ID for Flowhub. If not provided, will use settings-based configuration.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Optional Remote Sites connection ID for Flowhub (conn_...). Omit to auto-resolve: toolkit settings credentials, then the configured sync connections, then the first enabled FlowHub connection.', 'mcp-ai-wpoos' ),
 				),
 				'limit'         => array(
 					'type'        => 'integer',
@@ -142,56 +142,22 @@ class WP_MCP_AI_Tool_Flowhub_Get_Inventory implements WP_MCP_AI_Tool_Interface, 
 			}
 		}
 
-		// Get connection_id if provided.
+		// Resolve the target FlowHub connection: explicit argument, settings
+		// credentials, configured sync connections, or the first enabled
+		// FlowHub connection in Remote Sites.
+		if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-flowhub-connection-helper.php';
+		}
 		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : null;
+		$resolved      = WP_MCP_AI_FlowHub_Connection_Helper::resolve_connection( $connection_id );
 
-		// Validate connection if provided.
-		if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
-
-			if ( null === $connection ) {
-				return new WP_Error(
-					'wp_mcp_ai_pro_connection_not_found',
-					__( 'Connection not found. Please check the connection ID.', 'mcp-ai-wpoos' )
-				);
-			}
-
-			// Validate connection type.
-			if ( empty( $connection['connection_type'] ) || 'flowhub' !== $connection['connection_type'] ) {
-				return new WP_Error(
-					'wp_mcp_ai_pro_wrong_connection_type',
-					__( 'This connection is not a Flowhub connection.', 'mcp-ai-wpoos' )
-				);
-			}
-
-			// Check if connection is enabled.
-			if ( empty( $connection['enabled'] ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_pro_connection_disabled',
-					__( 'This connection is disabled. Please enable it in Remote Sites settings.', 'mcp-ai-wpoos' )
-				);
-			}
+		if ( is_wp_error( $resolved ) ) {
+			return $resolved;
 		}
 
-		// Resolve credentials and location from connection or toolkit settings.
-		if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-			$connection_data = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
-			$client_id       = isset( $connection_data['client_id'] ) ? $connection_data['client_id'] : '';
-			$api_key         = isset( $connection_data['api_key'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection_data['api_key'] ) : '';
-			$location_id     = isset( $connection_data['location_id'] ) ? $connection_data['location_id'] : '';
-		} else {
-			$settings    = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
-			$client_id   = isset( $settings['client_id'] ) ? wp_unslash( $settings['client_id'] ) : '';
-			$api_key     = isset( $settings['api_key'] ) ? wp_unslash( $settings['api_key'] ) : '';
-			$location_id = isset( $settings['location_id'] ) ? wp_unslash( $settings['location_id'] ) : '';
-		}
-
-		if ( empty( $client_id ) || empty( $api_key ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_flowhub_missing_credentials',
-				__( 'FlowHub API credentials are not configured. Please set up your client ID and API key.', 'mcp-ai-wpoos' )
-			);
-		}
+		$client_id   = $resolved['credentials']['client_id'];
+		$api_key     = $resolved['credentials']['api_key'];
+		$location_id = $resolved['credentials']['location_id'];
 
 		// Build the inventory endpoint. When location_id is available, scope to that
 		// location. Otherwise use the root inventoryNonZero endpoint (no location required).
@@ -210,26 +176,60 @@ class WP_MCP_AI_Tool_Flowhub_Get_Inventory implements WP_MCP_AI_Tool_Interface, 
 			$options['timeout'] = max( 5, min( 60, absint( $arguments['timeout'] ) ) );
 		}
 
+		// Respect the connection's sandbox mode, matching the Remote Sites
+		// connection test and the base client's endpoint resolution.
+		$base_url = 'https://api.flowhub.co';
+		if ( ! empty( $resolved['connection'] ) && ! empty( $resolved['connection']['sandbox_mode'] ) ) {
+			$base_url = 'https://api.sandbox.flowhub.co';
+		}
+
 		if ( ! empty( $location_id ) ) {
-			$endpoint = 'https://api.flowhub.co/v0/locations/' . rawurlencode( $location_id ) . '/inventoryNonZero';
+			$endpoint = $base_url . '/v0/locations/' . rawurlencode( $location_id ) . '/inventoryNonZero';
 		} else {
-			$endpoint = 'https://api.flowhub.co/v0/inventoryNonZero';
+			$endpoint = $base_url . '/v0/inventoryNonZero';
 		}
 		$endpoint = add_query_arg( $options, $endpoint );
 
-		$response = wp_remote_get(
-			$endpoint,
-			array(
-				'timeout'     => isset( $options['timeout'] ) ? $options['timeout'] : 30,
-				'redirection' => 3,
-				'httpversion' => '1.1',
-				'headers'     => array(
-					'clientId' => $client_id,
-					'key'      => $api_key,
-					'Accept'   => 'application/json',
-				),
-			)
-		);
+		// Attach the resolved proxy. Proxied Remote Sites connections route
+		// FlowHub traffic through a forward proxy (e.g. a whitelisted egress
+		// IP); without it the request egresses directly and FlowHub rejects
+		// the server's IP with an auth error.
+		$curl_proxy = null;
+		if ( ! empty( $resolved['proxy']['url'] ) ) {
+			$proxy_url  = $resolved['proxy']['url'];
+			$proxy_auth = $resolved['proxy']['auth'];
+			$curl_proxy = function ( $handle ) use ( $proxy_url, $proxy_auth ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt -- Proxy support requires cURL-level configuration.
+				curl_setopt( $handle, CURLOPT_PROXY, $proxy_url );
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+				curl_setopt( $handle, CURLOPT_PROXYTYPE, CURLPROXY_HTTP );
+				if ( ! empty( $proxy_auth ) ) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+					curl_setopt( $handle, CURLOPT_PROXYUSERPWD, $proxy_auth );
+				}
+			};
+			add_action( 'http_api_curl', $curl_proxy, 10, 1 );
+		}
+
+		try {
+			$response = wp_remote_get(
+				$endpoint,
+				array(
+					'timeout'     => isset( $options['timeout'] ) ? $options['timeout'] : 30,
+					'redirection' => 3,
+					'httpversion' => '1.1',
+					'headers'     => array(
+						'clientId' => $client_id,
+						'key'      => $api_key,
+						'Accept'   => 'application/json',
+					),
+				)
+			);
+		} finally {
+			if ( null !== $curl_proxy ) {
+				remove_action( 'http_api_curl', $curl_proxy, 10 );
+			}
+		}
 
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(

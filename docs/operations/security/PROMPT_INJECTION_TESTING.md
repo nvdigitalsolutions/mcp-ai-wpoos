@@ -158,7 +158,10 @@ After implementing prompt injection protection, verify:
 wp option get wp_mcp_ai_nefarious_violations --format=json
 
 // Via WordPress admin
-// Navigate to: Settings → NV oOS → Security → Nefarious Usage Monitor
+// Navigate to: NV oOS → Settings → Security → Usage Monitor
+// (admin.php?page=wp-mcp-ai-dashboard&tab=security&subtab=usage_monitor)
+// The sub-tab renders the triage log, monitor configuration, and
+// clear-violation / clear-shutdown controls.
 ```
 
 ### Sample Violation Entry

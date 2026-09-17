@@ -88,3 +88,26 @@ commerce flow (notes pre-answered in `WPORG-REVIEW-COMMERCE-NOTES.md`).
    pre-prepared in `WPORG-REVIEW-COMMERCE-NOTES.md`.
 3. Listing assets already in `.wordpress-org/assets/` (icon v5 master,
    banner, 6 screenshots) — re-upload with the new version if changed.
+
+## Re-verification (2026-09-13, final pre-upload pass)
+
+Three commerce PRs landed on `alpha-working` after the 18-point pass above
+(#6603 vendor-price sync, #6609 seller-of-record copy, #6612
+price-subject-to-change note). All were re-checked before upload:
+
+- Full deltas reviewed against guidelines 1–18 — benign commerce
+  copy/price/i18n changes; no new remote hosts, endpoints, or notices.
+- PCP re-run on the exact upload ZIP: 0 ERRORs, 160 WARNINGs (unchanged
+  known/false-positive categories: direct-DB queries against
+  constant-derived table names, prefixed-hook constant indirection,
+  slow meta queries).
+- CI green on the shipping tree (`fca2a957df`): build, plugin-check,
+  publish, and the `phpunit-content-graph` suite (116 tests).
+- Fixes applied in this pass: tri-sync gap (the build script and workflow
+  rsync lists were missing the `.distignore` `node_modules` exclude, so
+  local rebuilds shipped 9.4 MB of node_modules); POT
+  `Project-Id-Version` bumped to 1.0.7; readme changelog dated
+  2026-09-12 with the three late fixes; `CHANGELOG.md` "Unreleased"
+  folded into 1.0.7.
+- ZIP rebuilt (480 KB) via `bin/build-nvoos-content-graph.sh`;
+  SHA-256 recorded alongside the artifact in `build/`.

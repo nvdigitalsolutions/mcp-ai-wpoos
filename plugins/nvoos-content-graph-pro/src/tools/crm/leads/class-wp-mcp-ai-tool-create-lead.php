@@ -1,6 +1,6 @@
 <?php
 /**
- * Create Lead Tool (ecosystem port — Wave F2, CRM leads batch).
+ * Create Lead Tool (ecosystem port — Wave F2, CRM JobNavigator-adoption batch).
  *
  * Ported from the base Pro addon's
  * `addons/pro/includes/tools/crm/leads/class-wp-mcp-ai-tool-create-lead.php` for the standalone `nvoos-content-graph-pro` addon.
@@ -8,19 +8,16 @@
  * installs — the addon's autoloader skips its copy when
  * `WP_MCP_AI_PRO_PATH` is defined (see the plugin entry).
  *
- * Tool for creating leads in the CRM system.
+ * Lead creation with duplicate refusal and company auto-link.
  * Documented deviations: `declare(strict_types=1)` added; text domain
- * `nvoos-content-graph-pro`.
+ * `nvoos-content-graph-pro`; the validator-service require resolves from `NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/services/'`;
  *
  * @package NvoosContentGraphPro
  * @subpackage CRM_Toolkit
- * @since     2.3.0
- * @author    NV Digital Solutions
- * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
- * @license   Proprietary
  */
 
 declare(strict_types=1);
+
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -149,6 +146,18 @@ class WP_MCP_AI_Tool_Create_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 					'type'        => 'array',
 					'items'       => array( 'type' => 'string' ),
 					'description' => __( 'Tags for categorisation.', 'nvoos-content-graph-pro' ),
+				),
+				'allow_duplicate' => array(
+					'type'        => 'boolean',
+					'description' => __( 'When true, create the lead even if another lead with the same email already exists. Defaults to false (duplicates are refused with a pointer to the existing lead).', 'nvoos-content-graph-pro' ),
+				),
+				'source_message_id' => array(
+					'type'        => 'string',
+					'description' => __( 'Identifier of the source email/message this lead originated from (e.g. Gmail message ID).', 'nvoos-content-graph-pro' ),
+				),
+				'source_email_snapshot' => array(
+					'type'        => 'string',
+					'description' => __( 'Snapshot of the source email content (capped at 5000 characters) so the origin survives source deletion.', 'nvoos-content-graph-pro' ),
 				),
 			),
 			'required'             => array( 'email' ),
@@ -323,6 +332,34 @@ class WP_MCP_AI_Tool_Create_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			$contact_owner = WP_MCP_AI_CRM_Engine::get_next_owner();
 		}
 
+		// ── Duplicate refusal with pointer to the existing lead ──
+		// JobNavigator-style dedup: refuse by default, point the caller at the
+		// existing record so nothing is silently duplicated across sources.
+		$dedupe_enabled = true;
+		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			$settings       = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+			$identity       = isset( $settings['identity'] ) && is_array( $settings['identity'] ) ? $settings['identity'] : array();
+			$dedupe_enabled = array_key_exists( 'dedupe_leads', $identity ) ? (bool) $identity['dedupe_leads'] : true;
+		}
+
+		if ( $dedupe_enabled && empty( $arguments['allow_duplicate'] ) && class_exists( 'WP_MCP_AI_CRM_Identity' ) ) {
+			$existing_lead_id = WP_MCP_AI_CRM_Identity::find_lead_by_email( $email );
+			if ( $existing_lead_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_duplicate_lead',
+					sprintf(
+						/* translators: %s: lead email */
+						__( 'A lead with email %s already exists.', 'nvoos-content-graph-pro' ),
+						esc_html( $email )
+					),
+					array(
+						'status'            => 409,
+						'existing_lead_id'  => $existing_lead_id,
+					)
+				);
+			}
+		}
+
 		// Build lead data payload.
 		$lead_data = array(
 			'email'           => $email,
@@ -337,6 +374,10 @@ class WP_MCP_AI_Tool_Create_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'contact_owner'   => $contact_owner,
 			'notes'           => isset( $arguments['notes'] ) ? wp_kses_post( $arguments['notes'] ) : '',
 			'tags'            => isset( $arguments['tags'] ) ? array_map( 'sanitize_text_field', (array) $arguments['tags'] ) : array(),
+			'source_message_id' => isset( $arguments['source_message_id'] ) ? sanitize_text_field( $arguments['source_message_id'] ) : '',
+			'source_email_snapshot' => isset( $arguments['source_email_snapshot'] )
+				? substr( sanitize_textarea_field( $arguments['source_email_snapshot'] ), 0, 5000 )
+				: '',
 		);
 
 		/**
@@ -373,6 +414,23 @@ class WP_MCP_AI_Tool_Create_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		 */
 		do_action( 'wp_mcp_ai_crm_after_lead_create', $lead_id, $lead_data, $arguments, $context );
 
+		// Link (or auto-create) the company profile from the lead's company
+		// name / email domain (JobNavigator's company auto-creation pattern).
+		$company_id = 0;
+		if ( class_exists( 'WP_MCP_AI_CRM_Identity' ) ) {
+			$company_id = WP_MCP_AI_CRM_Identity::link_or_create_company(
+				$lead_id,
+				isset( $lead_data['company_name'] ) ? $lead_data['company_name'] : '',
+				$email
+			);
+		}
+
+		// Apply auto-disqualification rules when configured (non-blocking).
+		$auto_disqualified = false;
+		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			$auto_disqualified = WP_MCP_AI_CRM_Engine::maybe_auto_disqualify( $lead_id );
+		}
+
 		// Record PII access in audit log.
 		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
 			WP_MCP_AI_CRM_Audit::record(
@@ -394,12 +452,14 @@ class WP_MCP_AI_Tool_Create_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				esc_html( $email )
 			),
 			array(
-				'lead_id'         => $lead_id,
-				'email'           => esc_html( $email ),
-				'lifecycle_stage' => esc_html( $lifecycle_stage ),
-				'lead_score'      => 0,
-				'contact_owner'   => $contact_owner,
-				'storage_type'    => $this->data_store->get_storage_type(),
+				'lead_id'            => $lead_id,
+				'email'              => esc_html( $email ),
+				'lifecycle_stage'    => esc_html( $lifecycle_stage ),
+				'lead_score'         => 0,
+				'contact_owner'      => $contact_owner,
+				'company_id'         => $company_id,
+				'auto_disqualified'  => $auto_disqualified,
+				'storage_type'       => $this->data_store->get_storage_type(),
 			)
 		);
 	}

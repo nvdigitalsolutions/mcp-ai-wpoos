@@ -1,6 +1,167 @@
 # oOS – Changelog
 
-## [1.1.77] - 2026-09-11
+## [1.1.81] - 2026-09-17
+
+### Added — Shopify UCP mode-aware tool routing (Pro + CG Pro, PR #6634)
+
+- **The Shopify tools now know when they are in a live-query catalog mode and act accordingly.** With a `storefront_catalog` or `global_catalog` (keyless UCP MCP) connection, `shopify_products` list/search/get now run **live UCP queries** (`search_catalog`, `lookup_catalog`, `get_product`) against the store's `/api/ucp/mcp` or `catalog.shopify.com` endpoint — previously only the Global Catalog path existed and Storefront fell through to a failing Admin API call. UCP usage guidelines prohibit caching catalog results, so these paths write nothing locally (no transients, no CCT) and mark every response `live: true`.
+- **Admin-only tools refuse catalog connections with an actionable hint** — `shopify_orders`, `shopify_customers`, and `shopify_inventory` return `wp_mcp_ai_shopify_catalog_mode_admin_only` pointing the agent at the live catalog tools instead of failing mid-API-call.
+- **`shopify_catalog` is now the unified mode-aware live catalog tool**: it accepts `storefront_catalog` and `global_catalog` connections (plus the deprecated REST `catalog_api`), adds the canonical `get_product` action with `selected` option narrowing, batch `ids` lookup with `not_found` surfacing, and `lookup_by_variant` resolution through `lookup_catalog` per the UCP spec.
+- **Industry-standard UCP passthrough**: buyer `context` (`address_country`, `language`, `currency`, `intent` — allowlisted and sanitized), opaque pagination `cursor` passthrough with the UCP `pagination` envelope (`cursor`, `has_next_page`, `total_count`) surfaced on search results, and per-mode result clamps (250 Storefront, 50 Global, 10 REST).
+- **`remote_shopify_connection` is mode-aware too**: `test_connection` validates UCP connections with the MCP `tools/list` negotiation handshake (no more misleading "credentials configured" message), and `list_connections` annotates each connection with its mode label, supported tools, and a `live_only` flag for catalog modes.
+- **Smart search stays live**: zero-result UCP queries decompose into live sub-queries at runtime (never cached), and the deprecated `catalog_api` mode keeps its existing REST handlers unchanged.
+- New characterization suites in both trees: `addons/pro/tests/test-shopify-ucp-mode-awareness.php` (20 tests) and the matrix-aware `plugins/nvoos-content-graph-pro/tests/test-ecommerce-shopify-ucp-mode-awareness.php` (monolith + standalone). All changed files remain byte-identical across the two trees; a pre-existing blank-line drift in the CG Pro client's `catalog_request()` was fixed while re-syncing.
+
+### Added — Shopify Product Image Cards (Pro + CG Pro, PR #6638)
+
+- **Every Shopify product-returning path now ships the product image** — `images[]` URLs in the structured payload plus a chat-rendered markdown card in the message, capped at 10 cards for list/search with the full payload kept intact. The UCP and REST Catalog API normalizers move into a shared `WP_MCP_AI_Shopify_Product_Normalizers` trait used by `shopify_products` and `shopify_catalog`; `shopify_catalog` gains card messages on all actions (`search`, `lookup`, `lookup_by_variant`, `get_product`) and `shopify_products` gains them on the `catalog_api` and UCP get paths. UCP results stay live-only per UCP usage guidelines. CG Pro mirrors the trait and both tools byte-identically; new image-card suites cover every mode, the 10-card cap, raw-payload preservation, and the trait's media-to-images mapping (8/8 Pro + both CG Pro matrices on WP 6.9 and 7.1).
+
+### Added — FlowHub Tools Resolve via Remote Sites Connections (PR #6635)
+
+- **FlowHub tools no longer fail with "credentials are not configured" when the credentials live only on a Remote Sites connection.** A shared resolver (used by base and Pro tools) tries, in order: an explicit `connection_id`, toolkit settings, configured sync connections, then the first enabled FlowHub connection. Pro tools gain a `connection_id` parameter, the Pro client gains `from_connection()`, and sync status reads per-connection freshness keys. New base helper `WP_MCP_AI_FlowHub_Connection_Helper`; `docs/toolkits/flowhub-integration.md` updated.
+
+### Fixed — FlowHub Connection Proxy Honored in Live Tools (PR #6637)
+
+- **Live FlowHub requests ignored the Remote Sites connection proxy**, egressing from the server IP — FlowHub rejected them with an auth error while the connection test and sync succeeded. Proxy config now resolves from the connection (toolkit-settings fallback) and attaches via `http_api_curl` in the base client and the `flowhub_get_inventory` tool; `record_health_metric()` is now public so connection-bound base client requests can report health.
+
+### Added — JobNavigator CRM Adoption: Stage History, Dedup, Reply Signals, Handover, Tracked Links (PR #6636; CG Pro port #6640)
+
+- **Five new Pro CRM tools** — `bulk_move_deal_stages` (per-row reporting + undo), `record_crm_reply` (inbound reply recording with `email_reply` stage advancement), `get_crm_handover` (paste-ready handover bundles), `get_pipeline_digest` (stalled-deal detection), and `create_tracked_link` (proposal links resolved by a front-end open tracker).
+- **Machine-readable deal stage history** — transitions record from/to/at/source with `stage_changed_at` for time-in-stage analytics; `move_deal_stage` can undo the last move without fabricating a new transition; no-op moves preserve the ageing signal.
+- **Lead dedup + canonical companies** — `create_lead` refuses duplicate emails with a pointer to the existing lead (`allow_duplicate` opt-out), links leads to canonical company profiles with optional auto-create, and stores source snapshots; leads and deals gain `last_email_received`/snippet/sentiment signals with a settings-gated auto-disqualify rule on create/update.
+- **Won-deal cleanup** — deleting a won deal releases its lead from customer back to opportunity when no other won deal remains.
+- New helpers `WP_MCP_AI_CRM_Stage_History`/`_Identity`/`_Link_Tracker`; the `design-crm` skill + CRM README updated; new `docs/developer/crm-toolkit-jobnavigator-adoption-plan.md`; WP1–WP9 adoption suite. **CG Pro (#6640)** ports the helpers, the five new tools, the engine, and the five modified tools byte-identically with the init wiring (11 characterization tests green in both matrices).
+
+### Added — Gmail Reply Poller & Pipeline Digest Recipe (PR #6641)
+
+- **Cron-driven inbound reply classification** — a new poller polls Gmail for unread replies from known leads, classifies sentiment, and applies reply signals (with optional positive-sentiment stage advancement); `record_crm_reply` gains a cron-safe static `apply()` core. Ships a digest scheduling recipe asset for the Workflow Builder + Pro Schedule Manager (`addons/pro/config/pipeline-digest-recipe.json`).
+
+### Added — OpenTerminal Financial Toolkit Resilience (PR #6639; CG Pro port byte-identical)
+
+- **Eight new Pro financial tools** — `market_screener`, `macro_data_fetcher`, `economic_calendar_fetcher`, `earnings_calendar_fetcher`, `options_chain_fetcher`, `crypto_market_data`, `portfolio_transaction_log`, and `price_alerts` (daily cron) — plus a portfolio transaction ledger CPT with P&L, PHP technical indicators, news de-duplication, and keyless microservice auth.
+- **Provider fallback chains + stale-while-revalidate caching** in the reworked yfinance service (Node + Python services updated). New `docs/project/plans/financial-toolkit-openterminal-lessons-plan.md`; financial-planning README + TOOL_INDEX updated; `docs/reference/tools/tool-status.txt` +8 slugs. CG Pro ports byte-identically with standalone wiring and characterization suites.
+
+### Added — Multiple Email Recipients in Schedule Result Delivery
+
+- **The Result Delivery email field now accepts more than one address.** On Success / On Failure email recipients may be entered as a comma-, semicolon-, or whitespace-separated list; the edit modal normalizes the input on save and `sanitize_result_delivery()` stores it as a canonical comma-joined list of individually sanitized addresses (duplicates dropped, legacy single-address configs unchanged). Delivery fans out to every address through both Nodemailer and the `wp_mail()` fallback, and a list that sanitizes to nothing fails with the existing `missing_email_recipient` error.
+
+### Versioning
+
+- Bumped to 1.1.81 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.81. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.8** (unchanged). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — byte-identical port batches only; CRM F2–F6 + financial F2-E tracker rows updated in-window). Checkout API: **0.1.2** (unchanged). Docs Hub addon: **0.4.6** (unchanged). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.09.10** (unchanged — no model PRs in-window). Tool count: **~306 base + ~1,279 Pro (~1,585 total)** — +5 Pro CRM tools (#6636) and +8 Pro financial tools (#6639); live registry authoritative. Providers: 15. Addons: 27. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: **58** (unchanged — the `design-crm` skill gained JobNavigator + Gmail-poller content in-window). Stale build ZIPs removed: 1.1.79 set (30 files) + superseded docs-hub 0.4.3/0.4.4/0.4.5 ZIPs (0.4.6 is current).
+
+## [1.1.80] - 2026-09-15
+
+### Added — Assistant Export/Import Across All Surfaces (PR #6628)
+
+- **Portable assistant bundles with a single canonical engine** — `WP_MCP_AI_Assistant_Portability` (`includes/assistants/`) emits and consumes a versioned `nvoos-assistant` JSON bundle (format_version 1) from every surface: WP-CLI (`wp mcp-ai assistant export|import`, rewritten onto the engine; legacy CLI files still import, and the old export's loss of `_wp_mcp_ai_*` config — tools, provider, model, system prompt, roles, skills, memory files — is fixed), REST (`POST /mcp-ai/v1/assistants/export|import`, admin-only, schema-validated, 2 MB cap, dry-run preview), admin UI (row + bulk actions and an Import/Export page with skip/overwrite/duplicate modes), and AI tools — **3 new base tools** (`export_assistant`, `import_assistant`, `duplicate_assistant`) plus a **new Pro tool** (`export_assistant_blueprint`, the Blueprint Installer dialect).
+- **Credential hashes are never exported** and are stripped from any import payload (filterable denylist); the backup export provider now shares the engine denylist — previously its assistants export included credential hashes. Imports auto-detect canonical v1, legacy CLI, and blueprint payloads; matching is slug-first then exact title; overwrite replaces only plugin-owned meta (target credentials survive).
+- Bundle spec in `docs/assistant-import-export.md`; new coding-time skill `mcp-ai-wpoos-assistant-portability`; Content Graph port cluster recorded as ecosystem tracker row D-UI-7.
+
+### Added — Security Center Usage Monitor Sub-Tab & Violation Triage Log (PR #6632)
+
+- The "Security Violations Detected" admin notice now deep-links to a real detail view — a new `usage_monitor` sub-tab under Settings → Security renders the nefarious-usage violation triage log (severity tier, timestamp, type, message, matched patterns, user, IP; latest 50 of 100 stored), monitor status cards, the emergency-shutdown recovery panel, and the full editable monitor config (enable/auto-shutdown toggles, per-minute request + hourly tool limits, shutdown threshold, suspicious-pattern regex list). The notice itself also shows the most recent violation type and message.
+- Clear actions are wired to REST — `POST /mcp-ai/v1/security/clear-violations` and `POST /mcp-ai/v1/security/clear-shutdown` (both `manage_options`-gated, cookie-auth nonce); the legacy `admin_post` handlers remain as fallbacks.
+
+### Added — Shopify Storefront & Global Catalog UCP Modes (PRs #6624, #6630; Pro + CG Pro)
+
+- Shopify deprecated the REST Catalog API and no longer grants its scope to new keys, so two keyless UCP MCP connection modes now replace it: **Storefront Catalog** (`storefront_catalog`, per-merchant UCP search, #6624) and **Global Catalog** (`global_catalog`, cross-merchant search at `catalog.shopify.com`, #6630). Both modes validate keyless connections with a `tools/list` handshake, reject CCT sync (UCP usage guidelines prohibit caching catalog results), and advertise their capabilities through the new public `GET /wp-json/mcp-ai/v1/ucp/agent-profile` route (no secrets). The deprecated REST `catalog_api` mode carries a deprecation notice in the connection UI, and the UCP profile field pre-fills with the site's own endpoint only when it is publicly reachable (no more `profile_unreachable` 422s from local URLs). Both modes are ported byte-identically to `nvoos-content-graph-pro`.
+
+### Added — WhatsApp Webhook Self-Tests (PR #6622)
+
+- The Remote Sites connection edit form gains a Webhook Tests row with three industry-standard checks: verification-handshake replay, positive/negative HMAC-SHA256 signature validation, and the Graph API `subscribed_apps` subscription check (shadow-delivery detection). The CG Pro port re-syncs byte-identical (the WhatsApp webhook REST controller stays base-owned, so the signature self-tests degrade with a `rest_no_route` message standalone).
+
+### Changed — `wp mcp-ai chat --stream` Now Streams (PR #6626)
+
+- The `--stream` flag now actually streams instead of printing one buffered blob: native cURL SSE forwarding for the nine raw-SSE providers (openai, deepseek, openrouter, lm_studio, digitalocean, kimi, baseten, nvidia, huggingface) with a simulated 50-char/10ms fallback elsewhere; both paths honor the `wp_mcp_ai_disable_native_streaming` / `wp_mcp_ai_native_streaming_providers` filters, `stream: true` is only sent when the real-time callback is active, and Gemini-style content part arrays are flattened to text.
+
+### Fixed — WP-CLI Fatals in Provider List & Chat (PR #6625)
+
+- **`wp mcp-ai provider list` (and every base-class command, incl. all Pro CLI) no longer fatals on PHP 8+** — the shared formatter passed an inline array literal to `WP_CLI\Formatter::__construct()`, whose first parameter is by-reference; output now goes through the by-value `WP_CLI\Utils\format_items()` helper with display fields derived from the first row (matching legacy Formatter behavior, including on WP-CLI 2.12).
+- **`wp mcp-ai chat` no longer fatals on router construction** — a new `get_model_router()` resolver prefers the DI container's `router` service and falls back to direct construction with the three minimum clients (the same pattern as the REST controller fallback).
+
+### Fixed — Shopify Catalog 401s & JetEngine Sync Gate (PR #6623)
+
+- **Catalog API "bearer token may have expired" fixed** — Shopify can advertise a day-long `expires_in` while the JWT dies after 60 minutes, so a stale token was replayed for up to a day. The transient is now capped at 60 minutes (with the 60-second safety buffer), the `read_global_api_catalog_search` scope is validated from the token response, a 401 purges the cached token and retries once with a fresh one, and saving a connection purges cached tokens for both the new and previous client IDs.
+- **System Status no longer lies about JetEngine** — the sync gate required the `JET_ENGINE_VERSION` constant while the status row only checked `function_exists('jet_engine')`, so the UI could show green while the dry-run rejected the environment. Both now share `is_jetengine_active()` (constant **or** `jet_engine()->get_version()` for older/bundled builds), with a distinct "Loaded, but version undetectable" warning state.
+
+### Fixed — Security Monitor Sanitization Clobbering & Malformed Patterns (PR #6632)
+
+- **Unrelated settings saves no longer silently disable the monitor** — `sanitize_monitor_settings()` only updates keys actually present in the submission; previously any save from another tab/sub-tab flipped `enabled` and `auto_shutdown_enabled` off.
+- **Malformed admin-edited patterns are dropped at sanitize time and skipped at scan time** instead of emitting `preg_match()` warnings or breaking the scan loop; an empty pattern list restores the defaults.
+
+### Fixed — OKF Editor Preserves Context on Save (PR #6631)
+
+- Saving a concept in the OKF Bundle Manager editor tab bounced the user back to the Bundles tab — the inline `okfReload()` helper navigated to the bare page URL, dropping the `tab`/`bundle`/`concept` query args. It now reloads the current URL, and concept deletion returns to the bundle's Browser tab (the concept file no longer exists after archiving).
+
+### Docs & Sub-Projects
+
+- **Docs Hub frontend color fixes (#6621)** — code-block strings render white on the dark code background and heading-anchor `#` matches the heading color (0.4.6 track unchanged, no version bump).
+- **Agent-skill verification + new brand-provisioning skill (#6627)** — `design-ai-assistant-admin` rewritten to the code-verified surface (real `_wp_mcp_ai_*` / `_wp_mcp_ai_peer_*` meta keys, real CLI commands, the `toolkit_cpt` caveat, the legacy `mcp_ai_model` quirk), the `mcp-ai-wpoos-plugin` skill gains Design Stack deployment facts + a WP-CLI provisioning recipe, and a new `design-brand-assistant-provisioning` skill codifies the verified Aerlinn brand-intake pattern.
+- **Brand-provisioning template WPCS clean (#6629)** — the skill template's 67 WPCS violations fixed (0 errors / 0 warnings); template semantics unchanged.
+
+### Versioning
+
+- Bumped to 1.1.80 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.80. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.8** (unchanged). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — byte-identical port patches only). Checkout API: **0.1.2** (unchanged). Docs Hub addon: **0.4.6** (unchanged — #6621 is a CSS fix without a bump). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.09.10** (unchanged — no model PRs in-window). Tool count: **~306 base + ~1,266 Pro (~1,572 total)** — +3 base (`export_assistant`, `import_assistant`, `duplicate_assistant`) and +1 Pro (`export_assistant_blueprint`), PR #6628; live registry authoritative. Providers: 15. Addons: 27. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: **58** (new `design-brand-assistant-provisioning` + `mcp-ai-wpoos-assistant-portability`). Stale 1.1.78 build ZIPs removed (30 files).
+
+## [1.1.79] - 2026-09-13
+### Fixed — Imaging Study Deletion Hardened Against Symlink Traversal (PR #6616)
+
+- Both recursive study-deletion paths now handle symlinks **link-first** — a link is removed as a link and never followed, so a symlinked directory can no longer cause its target's contents to be deleted (the privacy eraser) or block study removal. Every iterator entry is additionally `realpath()`-verified against the storage root before `unlink`/`rmdir`, `is_path_within_storage()` now requires a directory-boundary match (sibling-prefix directories no longer pass), and new audit events (`study_delete_link_failed`, `study_delete_outside_storage_blocked`) record blocked removals. The `nvoos-content-graph-pro` port patches the same two files byte-identically per the Wave F port rules.
+
+### Fixed — Content Graph Checkout: Non-EU Payments & Duplicate Charges (in-session, Content Graph 1.0.8)
+
+- **Non-EU Stripe checkout fixed** — the Payment Element was created with billing-address collection set to `never`, which makes Stripe require `billing_details.address.country` on every `confirmPayment()`; the modal only attached an address for EU buyers, so every non-EU purchase died client-side with `IntegrationError` before the payment was attempted. The element now uses `auto` (EU buyers still pass their full address via `payment_method_data`).
+- **Already-licensed sites can no longer be charged twice** — `/payments/session` refuses to create a chargeable session when the site is already licensed and active, returning an `already_licensed` payload the modal renders as the recorded license (bundle-aware messaging via a `bundle_active` flag).
+
+### Added — Vendor-Side Buyer License Emails (in-session, Checkout API 0.1.2)
+
+- When a payment completes, the checkout API now emails the buyer their license key, product, licensed site, and amount — once per license, from both the webhook and `/verify` issuance paths, guarded by a new `email_sent_at` column (license table v4 → v5 via `dbDelta`). Storefront settings add an enable switch plus subject / From name / From address (sender + Reply-To); the admin license table gains an "Emailed" column.
+
+### Fixed — Checkout Hardening Tail (PRs #6611, #6613, Checkout API)
+
+- **Stripe statement descriptor (vendor-side, #6613)** — Stripe rejects the full `statement_descriptor` for card charges created with `automatic_payment_methods`, so every live `/session` call failed with a 424 rejection; the stored value now ships as `statement_descriptor_suffix` (2–22 chars, ≥1 letter, appended to the account's prefix; invalid values drop out so Stripe's default applies).
+- **Create-product after Stripe account switch (vendor-side, #6611)** — the admin action was idempotent on stored Stripe IDs that still pointed at the old account, so the button appeared to do nothing; stored IDs are now verified against the current key first and stale IDs are cleared + recreated on a 404 `resource_missing` (distinct `recreated`/`verify` notices).
+
+### Docs & Sub-Projects
+
+- **Docs Hub 0.4.5 → 0.4.6** (#6615, #6617) — the second wp.org reviewer pass fixes the external-services disclosure and the symlinked cache-dir uninstall guard, and a full 18-guideline pass bundles the GPLv3 license and sweeps all seven version locations (PCP 0 blocking errors) ahead of the directory re-upload.
+- **Content Graph 1.0.7 wp.org readiness** (#6609, #6612, #6619) — seller-of-record copy (NV Digital Unlocked LLC), the price-subject-to-change note in the purchase modal, the packaging tri-sync fix (`node_modules` exclude in the build script + workflow), and the final pre-upload pass.
+- **Toolkit slash-command test repair (test-only, #6618)** — `tests/test-toolkit-slash-commands.php` now asserts the declarative adapter contract from #6604.
+
+### Versioning
+
+- Bumped to 1.1.79 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.79. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.8** (bumped in-window — Stripe non-EU fix + already-licensed gate). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — byte-identical port patch only). Checkout API: **0.1.2** (bumped in-window — license emails). Docs Hub addon: **0.4.5 → 0.4.6** (bumped in-window). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.09.10** (unchanged — no model PRs in-window). Tool count: ~303 base + ~1,265 Pro (~1,568 total; live registry authoritative — unchanged this window; no new slugs). Providers: 15. Addons: 27. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: **56** (unchanged). Stale 1.1.77 build ZIPs removed.
+
+## [1.1.78] - 2026-09-12
+
+### Changed — Slash Commands Reworked as Declarative Tool Wrappers (PR #6604)
+
+- The slash-command layer no longer maintains ~76 "implementation coming soon" placeholder commands: the toolkit manager shrinks from ~10,400 to ~1,000 declarative lines — **36 commands across 15 toolkits**, each mapped to a verified real tool slug. Parsing, auth, rate-limiting, and audit stay in the handler while execution delegates to the tool registry through a new `WP_MCP_AI_Slash_Command_Tool_Adapter` (`register_tool_command()` / `wp_mcp_ai_register_tool_command()`), so capability gates, validation, sanitisation, and the canonical envelope all live in the tool layer. A new `WP_MCP_AI_Slash_Command_Prompts` bridge exposes every command as an MCP prompt template (`slash.<command>` via `prompts/list` / `prompts/get`) wired into the per-toolkit MCP servers, and all 19 built-in orchestrator workflows now chain only registered, tool-backed commands. Native chat commands (`/help`, `/session`, `/model`, `/persona`, `/compact`, `/ship`) are untouched; removed commands' outcomes stay reachable through plain chat.
+
+### Added — DeepSeek V4 Pro Restored Across All Tracks (PR #6608)
+
+- DeepSeek's official 2026-09-10 changelog announces the V4 Pro API continues after September 14, 2026 with unchanged billing — so the 1.1.77 deprecation is reversed: `deepseek-v4-pro` is back to **active** ($0.66/$1.98 off-peak, `sunset_date`/`fallback_model` cleared) and the migration map deliberately leaves it unmapped (stored references untouched). The `nvoos-content-graph-ai` mirror (deferred by the V4.1 Flash refresh) catches up to catalog **v2026.09.10** with its `deepseek-flash` lineup and fixes its UsageTracker's stale $1.74/$3.48 v4-pro pricing to $0.66/$1.98; the `lib/core` mirrors (CostCalculator, TokenBudgetManager, CountTokensTool, SuggestBestModelTool) align. The base catalog version intentionally stays **v2026.09.10** (migration bookkeeping unchanged).
+
+### Fixed — Content Graph Checkout Hardening (PRs #6597, #6598, #6603)
+
+- **Asset cache-busting by file mtime (#6598).** The 1.0.7 purchase-modal hotfix stayed invisible because assets were enqueued as `?ver=1.0.7` with a year-long `Cache-Control` — browsers and Cloudflare served the broken JS. New `Schema::assetVersion()` versions every plugin-owned enqueue by the asset file's mtime (falling back to the plugin version when the file is missing): any future hotfix produces a new URL automatically, unchanged files keep long-term caching.
+- **Vendor-authoritative price display + $34.99 default (#6603).** The purchase modal now syncs its price label from the vendor `/session` response (`Intl.NumberFormat`, display-only — the vendor still re-verifies the amount server-side), and `DEFAULT_PRICE_CENTS` moves 4900 → 3499 in both the content-graph plugin and the checkout-api fresh-install default.
+- **Purchase-modal restyle (#6597).** Unified 40px field spec with soft focus ring, custom SVG select chevron, fixed address-grid layout, Stripe `appearance`-harmonized Payment Element, and a custom minimalist terms-consent checkbox.
+
+### Fixed — Docs Hub wp.org Review Findings (PR #6606, Docs Hub 0.4.4)
+
+- Docs Hub bumps **0.4.3 → 0.4.4** fixing every wp.org review finding: contributors list (`vsamtani`), a `== Source Code ==` readme section + rebuilt JS with a self-describing source banner, `/search` context-source filtering for users without `manage_options`, `load_plugin_textdomain()` removal, admin-notice scoping to the Docs Hub settings screen, staging-transient isolation, and symlink-safe recursive deletion (resolved-path containment). Sweep fixes: context-source slugs no longer leak into the public WordPress sitemap, and stale page transients are invalidated on promote/clear/uninstall. Official Plugin Check gate: **0 blocking errors**.
+
+### Docs — Legal Consolidation & Content Graph 1.0.7 Release
+
+- **Terms of Service consolidated (#6599)** into one document — Part A (NV oOS Paid Products, verbatim) + Part B (Website, Services, and Marketplace) — closing the gap between the live site terms and the checkout product terms.
+- **api-licenses aligned (#6605)** — new `docs/legal/API-LICENSES.md` + publishable HTML match the consolidated terms (one-license-one-site, 1-year updates, 30-day guarantee, GPLv3 clarification, Florida governing law).
+- **Two-entity seller model (#6607)** — NV Digital Unlocked LLC is now the seller of the paid Products and marketplace operator; NV Digital Solutions remains developer, IP owner, and services provider. ToS restructured into three parts with per-part definitions, dual-controller Privacy Policy, and the full legal set + `docs/legal/publish/*.html` regenerated.
+- **Content Graph 1.0.7 released** (direct commits) — changelog marked released (tag `content-graph-v1.0.7`) and a wp.org 18-point sign-off document added.
+
+### Versioning
+
+- Bumped to 1.1.78 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.78. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.7** (released in-window). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — no port waves in-window). Checkout API: **0.1.1** (unchanged). Docs Hub addon: **0.4.3 → 0.4.4** (bumped in-window). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.09.10** (unchanged — V4 Pro restoration deliberately leaves it; content-graph-ai mirror bumps to v2026.09.10 on its own track). Tool count: ~303 base + ~1,265 Pro (~1,568 total; live registry authoritative — unchanged this window; no new slugs). Providers: 15. Addons: 27. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: **56** (unchanged). Stale 1.1.76 build ZIPs removed (30 files).
 
 ### Added — DeepSeek V4.1 Flash Catalog Refresh + Peak/Off-Peak Pricing (PR #6555)
 
