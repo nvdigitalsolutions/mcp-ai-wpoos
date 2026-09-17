@@ -23,7 +23,15 @@ SQLite preload fatal).
 The chat embed uses the **Pro SPA v2 shortcode** (`[nvoos_pro_spa]`, Pro —
 ships in the Complete bundle): chat-first embedded mode with transcripts,
 drawers, tool shortcuts, and the OKF drawer, mounted via
-`[nvoos_pro_spa assistant_id="<id>" theme="dark" height="720px" show_sidebar="1"]`.
+`[nvoos_pro_spa assistant_id="<id>" theme="dark" height="720px" show_sidebar="0"]`
+(sidebar off on the cold Playground worker — the Complete bundle boots
+slowly per request, and the transcripts/threads/sessions burst can exhaust
+the worker's messaging budget and crash the instance).
+
+The banner's inline JS is deliberately pure ASCII (`\uXXXX` escapes for
+emoji/em-dashes): multi-byte UTF-8 inside a streamed inline script can be
+misdecoded with a non-UTF-8 fallback and throw "Invalid or unexpected
+token" in the browser.
 
 ## Why localhost works here
 

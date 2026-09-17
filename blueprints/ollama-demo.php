@@ -104,7 +104,11 @@ function nvoos_ollama_demo_seed(): void {
 		// tool shortcuts, OKF drawer); fall back to the legacy chat shortcode
 		// when Pro is absent (e.g. base-only zips).
 		if ( shortcode_exists( 'nvoos_pro_spa' ) ) {
-			$chat_shortcode = '[nvoos_pro_spa assistant_id="' . $assistant_id . '" theme="dark" height="720px" show_sidebar="1"]';
+			// show_sidebar=0 keeps the transcripts/threads/sessions request
+			// burst off the cold Playground worker (the Complete bundle boots
+			// slowly per request; parallel REST calls can exhaust the worker's
+			// messaging budget and crash the instance).
+			$chat_shortcode = '[nvoos_pro_spa assistant_id="' . $assistant_id . '" theme="dark" height="720px" show_sidebar="0"]';
 		} elseif ( $assistant_id > 0 ) {
 			$chat_shortcode = '[mcp_ai_chat assistant="' . $assistant_id . '"]';
 		} else {

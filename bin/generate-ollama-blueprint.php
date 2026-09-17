@@ -76,20 +76,24 @@ if ( ! function_exists( 'nvoos_ollama_status_shortcode' ) ) {
 		$id   = 'nvoos-ollama-status-' . wp_rand( 100000, 999999 );
 		$base = 'border:1px solid #c3c4c7;background:#f6f7f7;border-radius:6px;padding:12px 16px;margin:0 0 24px;';
 		$html = '<div id="' . esc_attr( $id ) . '" style="' . esc_attr( $base ) . '">⏳ Checking your local Ollama…</div>' . "\n";
+		// NOTE: the JS below is deliberately pure ASCII — every emoji/em-dash
+		// is a \uXXXX escape. Multi-byte UTF-8 inside an inline script can be
+		// misdecoded when the streamed document is parsed with a non-UTF-8
+		// fallback, which yields "Invalid or unexpected token" in the browser.
 		$html .= '<script>(function(){' . "\n"
 			. 'var el=document.getElementById(' . wp_json_encode( $id ) . ');if(!el){return;}' . "\n"
 			. 'var base=' . wp_json_encode( $base ) . ';' . "\n"
 			. 'function paint(extra,html){el.setAttribute("style",base+extra);el.innerHTML=html;}' . "\n"
 			. 'function esc(s){return String(s).replace(/[<>&]/g,function(c){return c==="<"?"&lt;":c===">"?"&gt;":"&amp;";});}' . "\n"
 			. 'var ctrl=(typeof AbortController!=="undefined")?new AbortController():null;' . "\n"
-			. 'var timer=setTimeout(function(){if(ctrl){ctrl.abort();}paint("background:#fff8e5;border-color:#ffb900;","<strong>⚠ Ollama not detected.</strong> The request timed out — is Ollama running? Check the setup steps below, then refresh.");},4000);' . "\n"
+			. 'var timer=setTimeout(function(){if(ctrl){ctrl.abort();}paint("background:#fff8e5;border-color:#ffb900;","<strong>\u26a0 Ollama not detected.</strong> The request timed out \u2014 is Ollama running? Check the setup steps below, then refresh.");},4000);' . "\n"
 			. 'fetch("http://localhost:11434/api/tags",{signal:ctrl?ctrl.signal:undefined}).then(function(r){if(!r.ok){throw new Error("HTTP "+r.status);}return r.json();}).then(function(d){' . "\n"
 			. 'clearTimeout(timer);var names=[];if(d&&Array.isArray(d.models)){for(var i=0;i<Math.min(d.models.length,8);i++){if(d.models[i]&&d.models[i].name){names.push(esc(d.models[i].name));}}}' . "\n"
-			. 'paint("background:#edfaef;border-color:#46b450;","<strong>✅ Ollama connected!</strong> This browser can reach your local Ollama."+(names.length?" Models: <code>"+names.join("</code>, <code>")+"</code>.":"")+" The chat below answers on your machine — nothing leaves it.");' . "\n"
+			. 'paint("background:#edfaef;border-color:#46b450;","<strong>\u2705 Ollama connected!</strong> This browser can reach your local Ollama."+(names.length?" Models: <code>"+names.join("</code>, <code>")+"</code>.":"")+" The chat below answers on your machine \u2014 nothing leaves it.");' . "\n"
 			. '}).catch(function(err){clearTimeout(timer);var msg=err&&err.message?err.message:String(err);' . "\n"
-			. 'if(msg==="Failed to fetch"){paint("background:#fcf0f1;border-color:#dc3232;","<strong>❌ The browser blocked the localhost request.</strong> Private Network Access / CORS — see the browser notes below.");}' . "\n"
-			. 'else if(msg==="AbortError"||msg.indexOf("abort")===0){paint("background:#fff8e5;border-color:#ffb900;","<strong>⚠ Ollama not detected.</strong> The request timed out — is Ollama running?");}' . "\n"
-			. 'else{paint("background:#fcf0f1;border-color:#dc3232;","<strong>❌ Could not reach Ollama.</strong> "+esc(msg));}' . "\n"
+			. 'if(msg==="Failed to fetch"){paint("background:#fcf0f1;border-color:#dc3232;","<strong>\u274c The browser blocked the localhost request.</strong> Private Network Access / CORS \u2014 see the browser notes below.");}' . "\n"
+			. 'else if(msg==="AbortError"||msg.indexOf("abort")===0){paint("background:#fff8e5;border-color:#ffb900;","<strong>\u26a0 Ollama not detected.</strong> The request timed out \u2014 is Ollama running?");}' . "\n"
+			. 'else{paint("background:#fcf0f1;border-color:#dc3232;","<strong>\u274c Could not reach Ollama.</strong> "+esc(msg));}' . "\n"
 			. '});' . "\n"
 			. '})();</script>' . "\n";
 		return $html;
