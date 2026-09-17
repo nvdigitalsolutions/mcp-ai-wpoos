@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-updates
-description: "Operational guide for the two recurring NV oOS maintenance tracks — (1) Docs & Release Catch-Up: the plan-first per-version documentation/context/version-bump pass (plan template, P0–P3 work items, commit breakdown, branch+PR conventions, validation sweeps, stale-ZIP housekeeping, skill-count bookkeeping); (2) Model Catalog & Config Updates: the monthly model-config refresh across includes/data/model-catalog.json and its ~24+ derived files (migration map, settings defaults across all three layers, selector/router, provider clients, token budgets, cost tables, admin placeholders, Pro tool enums, test-drift files, Docker cross-worktree validation). Use when asked to 'catch up docs', 'do the docs catch-up for version X', 'complete the release notes', 'update the model configs', 'refresh the model catalog', or 'do the same monthly model exercise'."
+description: "Operational guide for the three recurring NV oOS maintenance tracks: (1) Docs & Release Catch-Up — plan-first per-version docs, changelog, and version-bump passes; (2) Model Catalog & Config Updates — the monthly model-config refresh across the catalog and its derived files; (3) PR Deferred-Item Sweep — review merged/closed PRs for deferred work and file GitHub issues for what is still incomplete. Use when asked to 'catch up docs', 'update the model configs', or 'review the week's PRs for deferred work'."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -10,15 +10,15 @@ metadata:
   last-updated: "2026-09-17"
 ---
 
-# NV oOS Updates — Docs Catch-Up & Model Catalog Maintenance
+# NV oOS Updates — Docs Catch-Up, Model Catalog & PR Deferred-Item Sweeps
 
-Playbook for the two recurring update tracks in this repo, distilled from the
+Playbook for the three recurring update tracks in this repo, distilled from the
 executed catch-up plans (`docs/project/plans/v1.1.58-docs-catch-up.md` through
-`v1.1.81-docs-catch-up.md`) and the model-catalog process docs, including the
-executed July 2026 and September 2026 model-catalog runs. The workflows
-implement industry standards — Keep a Changelog, SemVer commit separation, and
-deprecation-driven LLM model lifecycle management — adapted to this repo's
-conventions.
+`v1.1.81-docs-catch-up.md`), the model-catalog process docs (July 2026 and
+September 2026 runs), and the executed 2026-09-17 PR deferred-item sweep
+(issues #6646–#6655). The workflows implement industry standards — Keep a
+Changelog, SemVer commit separation, and deprecation-driven LLM model lifecycle
+management — adapted to this repo's conventions.
 
 ## When to use this skill
 
@@ -32,8 +32,14 @@ conventions.
 - Provider deprecations, price changes, new default models
 - The monthly model-update exercise
 
-Both tracks can run in the same window: Track B's catalog changes always get a
-changelog mention, folded into Track A's release surfaces.
+**Track C — PR Deferred-Item Sweep:**
+- "Review all the PRs for the past week to find deferred issues"
+- "Add deferred/incomplete items to the issues list"
+- A PR window has follow-up notes that were never re-tracked
+
+Tracks A and B can run in the same window: Track B's catalog changes always get
+a changelog mention, folded into Track A's release surfaces. Track C runs
+weekly (or on demand), independent of any release.
 
 ---
 
@@ -422,6 +428,105 @@ Files the 24-file map misses (all touched in the September 2026 run):
 
 ---
 
+## Track C — PR Deferred-Item Sweep (weekly review → issues list)
+
+Reviews a window of merged/closed PRs for work the PRs explicitly deferred
+("follow-up", "out of scope", "parked", "next cluster") and files GitHub issues
+for what is still incomplete and untracked. Executed once for 2026-09-10 →
+2026-09-17 and back one week (2026-09-03 → 2026-09-10): filed #6646–#6655,
+closed-as-complete #6389.
+
+### C0. Orientation
+
+- **Use the `gh` CLI, not the GitHub API MCP tools** — the MCP GitHub tools
+  fail with "Authentication Failed: Bad credentials" in this environment while
+  `gh pr/issue` works. `gh auth status` confirms the token.
+- Check `git log --all` first (direct commits from closed PRs, e.g. #6614's
+  release commit, only show with `--all`).
+- The sweep files issues; it never fixes code.
+- Scope = the requested window (default: last 7 days) **plus one window back**
+  when asked — port-wave PRs defer work that lands a week later.
+
+### C1. Harvest
+
+1. Dump the window's PRs (bounded windows use `updated:START..END`):
+   ```
+   gh pr list --repo nvdigitalsolutions/mcp-ai-wpoos --state all --limit 200 \
+     --search "updated:>=YYYY-MM-DD" \
+     --json number,title,body,state,mergedAt \
+     --jq '.[] | "=== #" + (.number|tostring) + " [" + .state + "] " + .title + "\n" + (.body // "") + "\n"' \
+     > /tmp/pr_bodies.txt
+   ```
+   (`/tmp` persists between terminal calls in this environment — one dump per
+   window, then grep it repeatedly.)
+2. Grep for deferral language (case-insensitive, always `-B 3` for context):
+   ```
+   grep -n -i -B 3 "defer|follow-up|followup|todo|out of scope|not addressed|future work|future pr|later pr|next pr|remaining work|parked|postponed|known limitation|left for|tracked in|issue candidate" /tmp/pr_bodies.txt
+   ```
+3. Read every matched section in full — a bare keyword hit is not a deferred
+   item (e.g. "JS display toggles now defer to the stylesheet").
+4. Separately list CLOSED-without-merge PRs (`grep "\[CLOSED\]"`) — their
+   content never landed, so their plans/fixes may exist nowhere else.
+
+### C2. Triage each candidate
+
+- **Resolved by a later PR?** Verify with `gh pr view` / `git log --all --grep`
+  (#6587's Stripe-424 follow-up → done by #6589; #6555's lib/core mirrors →
+  done by #6608).
+- **Tracked already?** Check the three in-repo trackers plus the issue list:
+  `docs/project/ecosystem-port-tracker.md` (a cluster row ending "Remaining:
+  —" means the wave completed), `docs/project/plans/docs-catch-up-open-items.md`
+  (OI-1…OI-5), `docs/legal/COMPLIANCE-CHECKLIST.md` (legal ops), and
+  `gh issue list --state open`. Tracked ⇒ no new issue.
+- **Byte-identical quirks are NOT bugs to file.** The port policy pins upstream
+  quirks as-is (unkeyed `$arguments['blueprint']` read, dead `ok` key). Only
+  file *latent bugs* explicitly flagged "follow-up issue candidate" in PR
+  bodies or the tracker.
+- **Closed plan-only PRs lose their content** — recover the plan from the PR
+  body when filing (issue #6654 recovered #6519 this way).
+- **Verify every claim before filing**: `git tag --sort=-creatordate` for
+  missing release tags, grep root `CHANGELOG.md`/`README.md` for stale version
+  stamps, `ls build/` for ZIPs, grep `plugins/` for missing port files.
+
+### C3. File the issues
+
+- One issue per deferred item. Labels: `status:needs-triage` + area labels
+  (`area:pro`, `area:core`, `area:tools`, `area:docs`, `area:frontend`,
+  `area:ci-cd`, `area:integrations`) + `bug`/`proposal` when apt.
+- Body structure that survived review:
+  1. `## Source` — PR number/title + the exact deferred quote.
+  2. `## Still incomplete` — verified evidence, **with the verification date**.
+  3. `## Suggested scope` — a concrete follow-up plan.
+  For multi-part deferrals add `## Status of each deferred item` marking what
+  later PRs completed (see issue #6649's structure).
+- Write bodies to `/tmp/issueN.md` with a **quoted** heredoc (`<<'EOF'`) so
+  backticks/`$` stay literal under `sh`, then:
+  ```
+  gh issue create --repo nvdigitalsolutions/mcp-ai-wpoos --title "..." \
+    --body-file /tmp/issueN.md --label "area:pro,status:needs-triage"
+  ```
+- Housekeeping: close stale-but-complete issues found during the sweep, with a
+  closing comment referencing the completing PRs (#6389 closed after #6447 /
+  #6448 landed both of its items).
+
+### C4. Report back
+
+Summarize in three tables: (1) filed issues with numbers, (2) already-tracked
+(no action), (3) verified-resolved (no action). Offer the same sweep for the
+previous window — the user will usually want it back-dated.
+
+### Known deferral hotspots (where this repo parks work)
+
+| Hotspot | What to expect |
+|---|---|
+| Ecosystem-port PRs | "Deferred (tracker-documented)" = in-wave, usually completed by a later sub-cluster — confirm the tracker row before filing |
+| Docs catch-up PRs | OI-1/OI-2 parked ⇒ already issues #5968/#5967; new OI groups are *recorded in the open-items tracker, not fixed* — file an issue only when a new OI has no GitHub issue (OI-5 → #6651) |
+| Release/sub-project PRs | Root docs + tags deferred to "next catch-up" and silently dropped when the PR is closed unmerged (#6614 → #6646) |
+| Dependency-bump PRs | Cross-major bumps deferred "to a separate PR" (AI SDK v5) — almost never re-tracked (#6592 → #6647) |
+| Legal/compliance PRs | Out-of-repo ops deferred into `docs/legal/COMPLIANCE-CHECKLIST.md` — a static checklist nobody revisits; file an umbrella issue (#6507/#6607 → #6655) |
+
+---
+
 ## Industry-standards grounding (why the workflow looks like this)
 
 - **Keep a Changelog** (`keepachangelog.com`): a curated, chronological list of
@@ -456,6 +561,8 @@ Files the 24-file map misses (all touched in the September 2026 run):
   `docs/project/plans/v1.1.59-docs-catch-up.md`,
   `docs/project/plans/v1.1.81-docs-catch-up.md` (latest executed)
 - Standing open items: `docs/project/plans/docs-catch-up-open-items.md`
+- Executed PR deferred-item sweep (2026-09-17): issues #6646–#6655; closed
+  #6389 as complete
 - Model process: `docs/reference/models/model-update-process-2026-07.md`,
   `docs/reference/models/keeping-the-model-catalog-up-to-date.md`
 - Cross-worktree Docker test runner + phpcs details:
