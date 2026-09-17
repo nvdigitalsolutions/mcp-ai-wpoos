@@ -479,11 +479,17 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 					$body .= __( 'Results', 'mcp-ai-wpoos-pro' ) . ":\n";
 					$body .= $response;
 				}
-				if ( ! empty( $envelope['data'] ) ) {
+				// Render the structured data section for delivery. Assistant-run
+				// envelopes store a duplicate of the response plus internal
+				// execution metadata under `data`; delivery_safe_data() strips
+				// those keys so the report does not repeat the response or end
+				// with assistant_id / is_agentic metadata as a footer.
+				$data_text = self::envelope_data_to_text( self::delivery_safe_data( isset( $envelope['data'] ) ? $envelope['data'] : array() ) );
+				if ( '' !== trim( $data_text ) ) {
 					if ( '' !== $body ) {
 						$body .= "\n\n---\n\n";
 					}
-					$body .= self::envelope_data_to_text( $envelope['data'] );
+					$body .= $data_text;
 				}
 			} else {
 				$body = $shared['summary'];
@@ -619,12 +625,14 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 					$message .= $esc( $response );
 				}
 
-				if ( ! empty( $envelope['data'] ) && is_array( $envelope['data'] ) ) {
-					$data_text = self::envelope_data_to_text( $envelope['data'] );
-					if ( '' !== trim( $data_text ) ) {
-						$message .= "\n\n" . $esc( '---' ) . "\n\n";
-						$message .= $esc( $data_text );
-					}
+				// Strip duplicate/internal keys before rendering the data
+				// section (see delivery_safe_data()) so the report does not
+				// repeat the response or end with assistant_id / is_agentic
+				// metadata as a footer.
+				$data_text = self::envelope_data_to_text( self::delivery_safe_data( isset( $envelope['data'] ) ? $envelope['data'] : array() ) );
+				if ( '' !== trim( $data_text ) ) {
+					$message .= "\n\n" . $esc( '---' ) . "\n\n";
+					$message .= $esc( $data_text );
 				}
 			} elseif ( 'response_only' === $template ) {
 				// Deliver only the substantive AI/tool response.
@@ -635,8 +643,18 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 					$message .= "\n" . $esc( $shared['summary'] );
 				}
 			} else {
-				$truncated = wp_trim_words( $shared['summary'], 60, '…' );
-				$message  .= "\n" . $esc( $truncated );
+				// Summary template: summary line plus a response excerpt below.
+				// Assistant-run summaries are a trim of the response's first
+				// words, so when the response already opens with the summary
+				// the excerpt subsumes the summary line — skip the standalone
+				// line to avoid printing the same text twice.
+				$response = isset( $shared['response'] ) ? (string) $shared['response'] : '';
+				$summary  = (string) $shared['summary'];
+				$is_dup   = '' !== $response && '' !== $summary && self::response_starts_with_summary( $response, $summary );
+				if ( ! $is_dup && '' !== $summary ) {
+					$truncated = wp_trim_words( $summary, 60, '…' );
+					$message  .= "\n" . $esc( $truncated );
+				}
 			}
 
 			// Include a response excerpt when available — this is the substantive
@@ -673,15 +691,22 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				: wp_trim_words( $shared['summary'], 10, '…' );
 
 			$message = $prefix . $name;
-			if ( ! empty( $summary ) ) {
-				$message .= ': ' . $summary;
-			}
 
-			// Append a response excerpt when available and not an error.
+			// Append a response excerpt when available and not an error. When
+			// the response already opens with the summary (assistant-run
+			// summaries are a trim of the response's first words) the excerpt
+			// subsumes the summary, so only the excerpt is sent to avoid
+			// printing the same text twice.
 			$response = isset( $shared['response'] ) ? (string) $shared['response'] : '';
 			if ( ! $is_error && '' !== $response ) {
-				$excerpt  = wp_trim_words( $response, 12, '…' );
-				$message .= ' - ' . $excerpt;
+				$excerpt = wp_trim_words( $response, 12, '…' );
+				if ( '' !== (string) $shared['summary'] && '' !== $summary && ! self::response_starts_with_summary( $response, (string) $shared['summary'] ) ) {
+					$message .= ': ' . $summary . ' - ' . $excerpt;
+				} else {
+					$message .= ': ' . $excerpt;
+				}
+			} elseif ( '' !== $summary ) {
+				$message .= ': ' . $summary;
 			}
 
 			// Truncate to ~160 chars (GSM-7 safe).
@@ -1870,6 +1895,37 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		}
 
 		/**
+		 * Strip keys that duplicate already-rendered content or expose internal
+		 * execution metadata from an envelope data section before it is rendered
+		 * into a delivered report (email, chat, Paper Store, WordPress post).
+		 *
+		 * Assistant-run envelopes store `response` — a truncated copy of the
+		 * response rendered above the data section — plus `assistant_id` and
+		 * `is_agentic` execution flags. Rendering them would repeat the response
+		 * as a trailing footer and leak implementation details recipients do not
+		 * need. All other keys (steps, broadcast, hook, args, …) pass through.
+		 *
+		 * @since 1.1.82
+		 *
+		 * @param mixed $data Envelope data section (expected array).
+		 * @return array Data section safe to render for delivery.
+		 */
+		protected static function delivery_safe_data( $data ) {
+			if ( ! is_array( $data ) ) {
+				return array();
+			}
+
+			return array_diff_key(
+				$data,
+				array(
+					'response'     => true,
+					'assistant_id' => true,
+					'is_agentic'   => true,
+				)
+			);
+		}
+
+		/**
 		 * Convert an envelope to a Markdown document.
 		 *
 		 * Used by both Paper Store and WordPress post formatters.
@@ -1922,12 +1978,21 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			}
 
 			if ( ! empty( $shared['summary'] ) ) {
-				$md .= "## Summary\n\n" . esc_html( $shared['summary'] ) . "\n\n";
+				$summary = (string) $shared['summary'];
+				// Skip the summary section when the response above already opens
+				// with it — assistant-run summaries are a trim of the response's
+				// first words and would otherwise print twice.
+				if ( '' !== $summary && ! self::response_starts_with_summary( $response, $summary ) ) {
+					$md .= "## Summary\n\n" . esc_html( $summary ) . "\n\n";
+				}
 			}
 
-			if ( ! empty( $envelope['data'] ) && is_array( $envelope['data'] ) ) {
+			// Render the details section without keys that duplicate the response
+			// or expose internal metadata (see delivery_safe_data()).
+			$details = self::delivery_safe_data( isset( $envelope['data'] ) ? $envelope['data'] : array() );
+			if ( ! empty( $details ) ) {
 				$md .= "## Details\n\n";
-				$md .= self::envelope_data_to_markdown( $envelope['data'], 2 );
+				$md .= self::envelope_data_to_markdown( $details, 2 );
 			}
 
 			if ( ! empty( $schedule['tags'] ) ) {
