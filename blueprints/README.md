@@ -11,9 +11,14 @@ Dev-only blueprints for the full NV oOS plugin (base + Pro "Complete" bundle).
 | `ollama-demo.php` | Seed snippet embedded into the blueprint's `runPHP` step: configures the Ollama provider (`enable_ollama`, endpoint `http://localhost:11434`, model `llama3.1:8b`, `default_provider`/`default_model`, priority list), creates the "Oma" demo assistant (`mcp_ai_assistant` CPT + meta) as `default_assistant`, and creates the **Ollama Test Lab** page with `[ollama_status]` + the **Pro SPA v2 embedded chat** (`[nvoos_pro_spa]`, falling back to `[mcp_ai_chat]` when Pro is absent). Idempotent (`nvoos_ollama_demo_seeded` option). |
 
 The blueprint also writes `wp-content/mu-plugins/ollama-status.php` — a
-self-diagnosing `[ollama_status]` shortcode that pings
-`http://localhost:11434/api/tags` and renders a green/amber/red banner with
-the user's model list (source lives in `bin/generate-ollama-blueprint.php`).
+self-diagnosing `[ollama_status]` shortcode that renders a green/amber/red
+banner with the user's model list (source lives in
+`bin/generate-ollama-blueprint.php`). The check runs **client-side** (async
+fetch to `http://localhost:11434/api/tags` with an AbortController timeout):
+a synchronous PHP-side `wp_remote_get()` to localhost on the render path
+can hang the Playground worker when the browser's Private Network Access
+policy blocks the request, which crashes the whole instance (duplicate
+SQLite preload fatal).
 
 The chat embed uses the **Pro SPA v2 shortcode** (`[nvoos_pro_spa]`, Pro —
 ships in the Complete bundle): chat-first embedded mode with transcripts,
@@ -72,6 +77,8 @@ local Ollama 0.32.5 (llama3.1:8b):
   rendering its embedded mount div with `assistantId`/`theme: dark`/
   `mode: embedded` in `data-config`) + `[ollama_status]`; mu-plugin
   shortcode registered
-- `[ollama_status]` rendered **green** with the live model list
+- `[ollama_status]` renders the client-side checker container + inline
+  script, and the mu-plugin performs **no PHP-side HTTP to localhost**
+  (verified: `wp_remote_get` absent, `AbortController` present)
 - `/api/tags` → 200; `/api/chat` → 200 — the model answered
   **"Asteria Online"**

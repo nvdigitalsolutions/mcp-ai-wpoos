@@ -51,12 +51,20 @@ $seedCode = trim( $seedCode );
 // ─── Mu-plugin: [ollama_status] live connectivity banner ──────────
 // Written into wp-content/mu-plugins by the blueprint so the Test Lab
 // page can self-diagnose whether the browser↔Ollama path is open.
+//
+// IMPORTANT: the check runs CLIENT-SIDE (async fetch + AbortController
+// timeout). A synchronous PHP-side wp_remote_get() to localhost would
+// block the Playground worker when the browser's Private Network Access
+// policy hangs the request — the worker then times out, re-preloads the
+// SQLite integration, fatals on the duplicate class, and takes the whole
+// Playground instance down. Never fetch localhost from PHP render paths.
 $muPluginCode = <<<'PHP'
 <?php
 /**
  * Demo mu-plugin for the NV oOS Playground blueprint.
- * Adds [ollama_status] — a live banner showing whether this Playground
- * instance can reach the user's local Ollama (http://localhost:11434).
+ * Adds [ollama_status] — a live banner showing whether this browser can
+ * reach the user's local Ollama (http://localhost:11434). The check is
+ * an async fetch with a hard timeout, so PHP never blocks on it.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -65,42 +73,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! function_exists( 'nvoos_ollama_status_shortcode' ) ) {
 	function nvoos_ollama_status_shortcode() {
-		$cached = get_transient( 'nvoos_ollama_status_banner' );
-		if ( false !== $cached && is_string( $cached ) && '' !== $cached ) {
-			return $cached;
-		}
-
-		$res = wp_remote_get( 'http://localhost:11434/api/tags', array( 'timeout' => 8 ) );
-
-		$styles = array(
-			'ok'   => 'background:#edfaef;border:1px solid #46b450;border-radius:6px;padding:12px 16px;margin:0 0 24px;',
-			'warn' => 'background:#fff8e5;border:1px solid #ffb900;border-radius:6px;padding:12px 16px;margin:0 0 24px;',
-			'bad'  => 'background:#fcf0f1;border:1px solid #dc3232;border-radius:6px;padding:12px 16px;margin:0 0 24px;',
-		);
-
-		if ( is_wp_error( $res ) ) {
-			$html = '<div style="' . $styles['warn'] . '"><strong>⚠ Ollama not detected.</strong> The browser could not reach <code>http://localhost:11434</code> — start Ollama (and check the browser notes below), then refresh. Error: ' . esc_html( $res->get_error_message() ) . '</div>';
-		} else {
-			$status = (int) wp_remote_retrieve_response_code( $res );
-			if ( 200 === $status ) {
-				$body    = wp_remote_retrieve_body( $res );
-				$decoded = json_decode( (string) $body, true );
-				$names   = array();
-				if ( is_array( $decoded ) && isset( $decoded['models'] ) && is_array( $decoded['models'] ) ) {
-					foreach ( array_slice( $decoded['models'], 0, 8 ) as $model ) {
-						if ( isset( $model['name'] ) ) {
-							$names[] = esc_html( (string) $model['name'] );
-						}
-					}
-				}
-				$models = $names ? ' Models: <code>' . implode( '</code>, <code>', $names ) . '</code>.' : '';
-				$html   = '<div style="' . $styles['ok'] . '"><strong>✅ Ollama connected!</strong> This browser can reach your local Ollama.' . $models . ' The chat below answers on your machine — nothing leaves it.</div>';
-			} else {
-				$html = '<div style="' . $styles['bad'] . '"><strong>❌ Ollama rejected this origin (HTTP ' . absint( $status ) . ').</strong> Set <code>OLLAMA_ORIGINS</code> to include <code>https://playground.wordpress.net</code> (see the setup steps below), restart Ollama, and refresh.</div>';
-			}
-		}
-
-		set_transient( 'nvoos_ollama_status_banner', $html, 30 );
+		$id   = 'nvoos-ollama-status-' . wp_rand( 100000, 999999 );
+		$base = 'border:1px solid #c3c4c7;background:#f6f7f7;border-radius:6px;padding:12px 16px;margin:0 0 24px;';
+		$html = '<div id="' . esc_attr( $id ) . '" style="' . esc_attr( $base ) . '">⏳ Checking your local Ollama…</div>' . "\n";
+		$html .= '<script>(function(){' . "\n"
+			. 'var el=document.getElementById(' . wp_json_encode( $id ) . ');if(!el){return;}' . "\n"
+			. 'var base=' . wp_json_encode( $base ) . ';' . "\n"
+			. 'function paint(extra,html){el.setAttribute("style",base+extra);el.innerHTML=html;}' . "\n"
+			. 'function esc(s){return String(s).replace(/[<>&]/g,function(c){return c==="<"?"&lt;":c===">"?"&gt;":"&amp;";});}' . "\n"
+			. 'var ctrl=(typeof AbortController!=="undefined")?new AbortController():null;' . "\n"
+			. 'var timer=setTimeout(function(){if(ctrl){ctrl.abort();}paint("background:#fff8e5;border-color:#ffb900;","<strong>⚠ Ollama not detected.</strong> The request timed out — is Ollama running? Check the setup steps below, then refresh.");},4000);' . "\n"
+			. 'fetch("http://localhost:11434/api/tags",{signal:ctrl?ctrl.signal:undefined}).then(function(r){if(!r.ok){throw new Error("HTTP "+r.status);}return r.json();}).then(function(d){' . "\n"
+			. 'clearTimeout(timer);var names=[];if(d&&Array.isArray(d.models)){for(var i=0;i<Math.min(d.models.length,8);i++){if(d.models[i]&&d.models[i].name){names.push(esc(d.models[i].name));}}}' . "\n"
+			. 'paint("background:#edfaef;border-color:#46b450;","<strong>✅ Ollama connected!</strong> This browser can reach your local Ollama."+(names.length?" Models: <code>"+names.join("</code>, <code>")+"</code>.":"")+" The chat below answers on your machine — nothing leaves it.");' . "\n"
+			. '}).catch(function(err){clearTimeout(timer);var msg=err&&err.message?err.message:String(err);' . "\n"
+			. 'if(msg==="Failed to fetch"){paint("background:#fcf0f1;border-color:#dc3232;","<strong>❌ The browser blocked the localhost request.</strong> Private Network Access / CORS — see the browser notes below.");}' . "\n"
+			. 'else if(msg==="AbortError"||msg.indexOf("abort")===0){paint("background:#fff8e5;border-color:#ffb900;","<strong>⚠ Ollama not detected.</strong> The request timed out — is Ollama running?");}' . "\n"
+			. 'else{paint("background:#fcf0f1;border-color:#dc3232;","<strong>❌ Could not reach Ollama.</strong> "+esc(msg));}' . "\n"
+			. '});' . "\n"
+			. '})();</script>' . "\n";
 		return $html;
 	}
 }
