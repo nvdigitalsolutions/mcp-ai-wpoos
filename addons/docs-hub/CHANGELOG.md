@@ -1,5 +1,24 @@
 # NV oOS Docs Hub — Changelog
 
+## 0.4.7 — 2026-09-17
+
+WordPress.org review response pass (third round).
+
+- Removed the `Tested up to` plugin header from `nvoos-docs-hub.php` —
+  WordPress.org declares it only in `readme.txt`; declaring it in both
+  places can surface the wrong compatibility version.
+- The daily rebuild cron is now scheduled on `init` instead of
+  `plugins_loaded`. `wp_schedule_event()` consults `wp_get_schedules()`,
+  which applies the `cron_schedules` filter — plugins such as WooCommerce
+  register translated schedule names there, so scheduling before `init`
+  triggered WordPress 6.7+'s "translation loading triggered too early"
+  notice on activation/dashboard loads.
+- Rebuild cron events (daily + pending chunked ticks) are now cleared on
+  plugin deactivation via `register_deactivation_hook`.
+- Deactivating Docs Hub itself no longer enqueues an async rebuild that
+  could never run (the tick callbacks no longer exist while inactive); the
+  cache is still cleared so re-activation starts from a fresh index.
+
 ## 0.4.6 — 2026-09-13
 
 Packaging-only release — no functional changes.
