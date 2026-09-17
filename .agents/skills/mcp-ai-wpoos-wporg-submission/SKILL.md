@@ -7,18 +7,19 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.71"
   plugin-version-tested: "1.1.71"
-  last-updated: "2026-09-12"
+  last-updated: "2026-09-17"
 ---
 
 # NV oOS WordPress.org Submission — Readiness Playbook
 
-Playbook distilled from three executed passes: the Docs Hub 0.4.3
+Playbook distilled from four executed passes: the Docs Hub 0.4.3
 submission-readiness pass (PR #6403), the base-plugin gate repair, the first
 real reviewer-reply pass (0.4.3 → 0.4.4, PR #6606 — all findings fixed plus
-a related-issue sweep), and the second reviewer-reply pass (0.4.4 → 0.4.5 —
-remote-call service framing + the initial-dir symlink residual). Covers
-everything between "this plugin should ship to wp.org" and "the reviewer
-approves it".
+a related-issue sweep), the second reviewer-reply pass (0.4.4 → 0.4.5 —
+remote-call service framing + the initial-dir symlink residual), and the
+third reviewer-reply pass (0.4.6 → 0.4.7 — readme-only "Tested up to" +
+cron-on-init fix). Covers everything between "this plugin should ship to
+wp.org" and "the reviewer approves it".
 
 ## When to use this skill
 
@@ -129,18 +130,37 @@ Hard rules learned the expensive way:
    `FILE: <path>` header + JSON array **per file with findings** (chunked
    stream, not one array). Gate with the slurp form:
    `jq -s '[.[][] | select(.type=="ERROR" and .code!="<allowlist>")] | length'`.
+   The report is NOT a single valid JSON document — `json_decode()` of the
+   whole file returns null, and a run with zero findings produces an EMPTY
+   report. In `bin/run-docs-hub-plugin-check.sh` the gate is grep-based
+   (`"type":"ERROR"` — no space after the colon in PCP's output) so no jq
+   is needed.
 8. **The `--help` trap:** `wp plugin check --help` fatal-errors (PCP's
    mu-plugin hook runs without a plugin arg). Don't use it; read the source
    under `wp-content/plugins/plugin-check/includes/`.
 9. **The report is ephemeral.** `/tmp/pcp-report.json` lives in the one-off
    container's filesystem and is gone when the run exits — a second `docker
-   run` to inspect it finds nothing. Compute the jq gate (and copy the
-   report to a mounted host dir) INSIDE the same `sh -c` that ran the check.
+   run` to inspect it finds nothing. Compute the gate (and copy the report
+   to a mounted host dir) INSIDE the same `sh -c` that ran the check.
+10. **No `jq` in `wordpress:cli-php8.2` (current image), and host-shell
+   quoting mangles inline gates.** `sh: jq: not found` aborts the documented
+   one-liner, and nested `$(php -r '…$f["type"]…')` through the Windows
+   host shell dies with `syntax error near unexpected token`. Both were hit
+   on the 0.4.7 pass. Use `bin/run-docs-hub-plugin-check.sh` — it writes the
+   runner as a heredoc (LF endings, no quoting trap), copies it into the
+   container before executing (the bind mount is read-only, so in-place
+   `sed -i 's/\r$//'` on a Windows-host script fails with "Resource busy"),
+   and counts blocking errors with grep instead of jq.
 
 For small plugin trees (docs-hub scale) a fully isolated variant avoids the
 QA volume entirely — build the stage tree on the host with the CI's exact
 `tar --exclude` list, mount it read-only, download WP core into the
-container, and `cp -r` the plugin in:
+container, and `cp -r` the plugin in.
+
+**Preferred: `bin/run-docs-hub-plugin-check.sh`** (repo root) does the
+staging + scratch DB + one-off PCP run + grep-based gate in one shot,
+handling pitfalls 9 and 10. The raw commands below are the fallback when
+that script needs adapting:
 
 ```bash
 # Host: stage the ZIP-shaped tree (mirrors build-spa-addons.yml EXCLUDES +
@@ -262,6 +282,16 @@ wanted re-framed, one an AI-flagged corner of the previous symlink fix:
 | "Calling files remotely" — flagged `raw.githubusercontent.com` in `class-nvoos-docs-hub-remote-repo.php` (ALLOWED_HOSTS + raw URL build) | The remote fetcher IS the plugin's service (like Akismet/oEmbed) — server-side only, host-allowlisted, admin-triggered — but the readme didn't say so in reviewer terms | Do **not** rip out the service. Rewrite `== External Services ==` to state it is a *documentation-import service*: what it does, the servers called (`api.github.com`, `raw.githubusercontent.com`), that **no account is required** (optional token only raises rate limits), that fetches are server-side/cached, and that rendered pages may contain content-authored links/images to github.com domains loaded by the *browser*, not the server. Reply explaining the service exception (Guideline 6) |
 | "The initial cache directory can itself be a symlink: realpath() treats its external target as the containment root" (uninstall.php:112) | The 0.4.4 containment guard resolves the root *from the path being deleted* — when the top-level cache dir is a symlink, target == root and the guard passes trivially | `is_link()`-check the **top-level** cache dir before recursing and delete only the link. Same class of bug in `Cache::get_live_dir()`: a symlinked cache dir would receive `.htaccess`/`index.php`/`pages/` writes and make `clear()`'s `glob()` deletes touch external files — unlink the link and recreate a real dir there. Keep `is_link()`-first guards at every recursion entry. Regression tests: symlink the cache dir → `Cache::clear()` and `require uninstall.php` must leave the external target's sentinel file intact |
 
+### Third reviewer pass (0.4.6 → 0.4.7, review P0TDX367696HGN)
+
+The 0.4.5 fixes passed but the automated gate flagged two new items — one
+packaging rule and one WP 6.7+ timing bug:
+
+| Review finding | Root cause | Fix pattern (docs-hub) |
+|---|---|---|
+| "Please declare 'Tested up to' only in your readme file" — the value is also in the main PHP file's plugin headers | wp.org's readme header list is the ONLY supported place for `Tested up to`; declaring it in the PHP header risks the wrong compatibility version being shown | Remove the `* Tested up to:` line from the main PHP file; keep it in `readme.txt` only. `Requires at least`/`Requires PHP`/`Text Domain`/`Domain Path` ARE valid PHP headers — only `Tested up to` is readme-only. Sweep: the base plugin `mcp-ai-wpoos.php` and several addons also carry the header — fix each before ITS submission |
+| "The plugin has problems when it is activated… early WooCommerce translation-loading notice before init" | `Rebuild_Job::schedule()` ran `wp_schedule_event()` on `plugins_loaded`. `wp_schedule_event()` consults `wp_get_schedules()`, which applies the `cron_schedules` filter — WooCommerce registers a TRANSLATED interval there (`__( 'Once monthly', 'woocommerce' )`), and on WP 6.7+ translations load on `init`, so the call triggers the "translation loading triggered too early" notice on the first dashboard load after activation | Move cron scheduling to `init` (never call `wp_schedule_event()` or translation functions before `init`). Related sweep: (a) add `register_deactivation_hook()` → `unschedule()` clearing the daily cron AND pending pipeline tick events (ghost-event cleanup), (b) on self-deactivation clear the cache but do NOT re-enqueue an async rebuild — the tick callbacks no longer exist once inactive, (c) grep the whole plugin for other pre-`init` scheduling/translation — none remained. Regression tests: schedule/unschedule round-trip + self-vs-related deactivation behavior |
+
 ### Related-issue sweep checklist (always run after fixing the flagged items)
 
 Each review item is a category — grep the whole plugin for siblings:
@@ -313,23 +343,20 @@ and confirm validation. State the permalink only if changing it.
 Hi,
 
 Thanks for the detailed review. All reported issues are fixed and version
-0.4.4 has been uploaded:
+0.4.7 has been uploaded:
 
-- Added my username (vsamtani) to Contributors.
-- The plugin's public repository is https://github.com/nvdigitalsolutions/nvoos-docs-hub;
-  the readme now documents the source location and build steps, and the
-  bundled assets carry source banners.
-- /search no longer returns .context/ content to non-admin users (manifest,
-  pages, and sitemap were already filtered — sitemap now also skips context pages).
-- Removed load_plugin_textdomain().
-- The base-plugin notice is now shown only on the Docs Hub settings page.
-- Staged rebuilds no longer read or write live transients; page transients
-  are invalidated on promotion/clear.
-- Recursive cache deletion is symlink-safe (is_link checks + realpath
-  containment) in both the cache class and uninstall.php.
-- GitHub tokens are no longer localized into settings-page scripts.
+- Removed the "Tested up to" header from nvoos-docs-hub.php — it is now
+  declared only in readme.txt.
+- The daily rebuild cron is now scheduled on init instead of plugins_loaded,
+  so wp_schedule_event() no longer runs before translations load (the cause
+  of the "translation loading triggered too early" notice with WooCommerce
+  active).
+- Related sweep: rebuild cron events are cleared on plugin deactivation, and
+  deactivating the plugin no longer enqueues a rebuild that cannot run.
 
-wp plugin check reports 0 errors and the PHPUnit suite passes.
+Validated on a clean WordPress install with WP_DEBUG on: activation is
+clean, wp plugin check reports 0 errors (only the documented allowlisted
+items), and the full PHPUnit suite passes on WordPress 6.9 and 7.1.
 
 Keeping the permalink nvoos-docs-hub.
 
@@ -369,6 +396,13 @@ vendor/bin/phpunit -c phpunit.xml.dist --no-coverage \
 
 - `test-fnmatch-polyfill.php` is a **standalone script**, not PHPUnit —
   passing it errors with "Class test-fnmatch-polyfill cannot be found".
+- **Run them through the Docker runner, not the host vendor** — see
+  `.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md` → "Cross-worktree runs".
+  The host `vendor/` is frequently a pruned copy whose classmap has zero
+  PHPUnit entries (`Class "PHPUnit\\TextUI\\Application" not found` on BOTH
+  host and container); the Linux vendor volume is the reliable path. The
+  0.4.7 pass validated the full docs-hub set on **WP 6.9 and WP 7.1** with
+  an isolated DB (`wordpress_test_moth*`) — 107 tests, 0 failures each.
 - Known pre-existing **Windows-only failure**:
   `Test_Docs_Hub_Scanner::test_path_traversal_prevented` (realpath behavior
   differs on Windows; passes on Linux CI). Don't chase it in local runs.
