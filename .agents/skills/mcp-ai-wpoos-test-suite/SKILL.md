@@ -5,7 +5,7 @@ description: Repair and triage guide for the NV oOS PHPUnit test suite — Docke
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-09-05"
+  last-updated: "2026-09-17"
 ---
 
 # NV oOS Test Suite — Repair & Triage Guide
@@ -71,6 +71,8 @@ sharing the WP-core volume, with your worktree mounted over the plugin path:
 # 1. Build a Linux vendor into a named volume (the Windows-host vendor/
 #    breaks inside Linux — classmap paths with backslashes →
 #    'Class "PHPUnit\\TextUI\\Application" not found').
+#    REUSE an existing complete volume when present (docker volume ls):
+#    mcp-ai-wpoos-vendor ships with PHPUnit + wp-phpunit and needs no build.
 docker volume create <worktree>-vendor
 MSYS_NO_PATHCONV=1 docker run --rm \
   -v F:/GITHUB/worktrees/mcp-ai-wpoos/<worktree>/mcp-ai-wpoos:/app:ro \
@@ -102,6 +104,22 @@ docker cp oos-wp:/tmp/wp71 ./docker-tmp-wp71
 Clean up afterwards: `rm -rf docker-tmp-wp71` and `docker volume rm <worktree>-vendor`
 — never stage either artifact. The no-concurrent-phpunit rule applies to
 one-off runners too (same shared DB).
+
+**Pruned-vendor carry-over (hit on the 0.4.7 docs-hub pass):** some
+worktrees carry a partial `vendor/` whose
+`vendor/composer/autoload_classmap.php` has **zero** PHPUnit entries —
+`php -r 'require "vendor/autoload.php"; var_dump(class_exists("PHPUnit\\TextUI\\Application"));'`
+prints `false` on BOTH host and container, and `vendor/bin/phpunit` dies
+with `Class "PHPUnit\TextUI\Application" not found`. Quick check:
+`grep -c PHPUnit vendor/composer/autoload_classmap.php` (0 = pruned). The
+Linux vendor volume is the fix for container runs; for host-side runs,
+`composer install` on the host rebuilds a Windows vendor that then breaks
+INSIDE Linux — pick one environment per session.
+
+**`docker-tmp-logs/` artifact:** running the root suite writes an untracked
+`docker-tmp-logs/` directory into the repo root (random `.jpg` files +
+`chunk8.txt`). Delete it before staging anything (`git status --porcelain`
+will show it as `??`).
 
 ### Pro addon dual-matrix runs (nvoos-content-graph-pro)
 

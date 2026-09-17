@@ -41,7 +41,10 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 	}
 
 	/**
-	 * Unschedule the rebuild cron event.
+	 * Unschedule the rebuild cron event and any pending chunked-rebuild
+	 * ticks.
+	 *
+	 * Called from the plugin's deactivation hook and from uninstall.php.
 	 *
 	 * @since 1.0.0
 	 *
@@ -49,6 +52,7 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 	 */
 	public static function unschedule() {
 		wp_clear_scheduled_hook( self::CRON_HOOK );
+		wp_clear_scheduled_hook( NV_oOS_Docs_Hub_Rebuild_Pipeline::TICK_HOOK );
 	}
 
 	/**

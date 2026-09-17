@@ -4,7 +4,7 @@ Tags: documentation, markdown, github
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.4.6
+Stable tag: 0.4.7
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -183,6 +183,11 @@ https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-s
 
 == Changelog ==
 
+= 0.4.7 =
+* Fixed: removed the "Tested up to" line from the plugin headers — it is declared only in the readme.
+* Fixed: the daily rebuild cron is now scheduled on `init` instead of `plugins_loaded`, which prevented "translation loading triggered too early" notices on WordPress 6.7+ when other plugins register translated cron schedules.
+* Changed: rebuild cron events are cleared when the plugin is deactivated, and deactivating the plugin no longer enqueues a rebuild that could never run.
+
 = 0.4.6 =
 * Added: bundled GPLv3 license file (LICENSE) at the plugin root.
 
@@ -265,6 +270,9 @@ https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-s
 * Initial release.
 
 == Upgrade Notice ==
+
+= 0.4.7 =
+Compatibility release — fixes activation-time notices on WordPress 6.7+ and cleans up cron events on deactivation. Recommended for all users.
 
 = 0.4.6 =
 Packaging-only release — bundles the GPLv3 license file. No functional changes.
