@@ -318,6 +318,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '/lib' \
         --exclude '/plugins' \
         --exclude 'archive' \
+        --exclude 'blueprints' \
         --exclude 'packages' \
         --exclude '/src' \
         --exclude 'package.json' \
@@ -810,6 +811,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '/shared' \
         --exclude '/plugins' \
         --exclude 'archive' \
+        --exclude 'blueprints' \
         --exclude 'packages' \
         --exclude '/src' \
         --exclude 'package.json' \

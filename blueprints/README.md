@@ -1,0 +1,77 @@
+# Playground Blueprints — NV oOS Complete Demos
+
+Dev-only blueprints for the full NV oOS plugin (base + Pro "Complete" bundle).
+**This folder never ships in distribution ZIPs** — it is excluded from
+`bin/build-plugin-zip.sh` (both rsync blocks) and from the root `.distignore`
+(wp.org SVN deploy).
+
+| File | Role |
+|---|---|
+| `ollama-demo.json` | **Generated.** One-click demo that pre-wires NV oOS Complete to the user's **local Ollama** and lands on a chat page that answers immediately (if Ollama is running). |
+| `ollama-demo.php` | Seed snippet embedded into the blueprint's `runPHP` step: configures the Ollama provider (`enable_ollama`, endpoint `http://localhost:11434`, model `llama3.1:8b`, `default_provider`/`default_model`, priority list), creates the "Oma" demo assistant (`mcp_ai_assistant` CPT + meta) as `default_assistant`, and creates the **Ollama Test Lab** page with `[ollama_status]` + the **Pro SPA v2 embedded chat** (`[nvoos_pro_spa]`, falling back to `[mcp_ai_chat]` when Pro is absent). Idempotent (`nvoos_ollama_demo_seeded` option). |
+
+The blueprint also writes `wp-content/mu-plugins/ollama-status.php` — a
+self-diagnosing `[ollama_status]` shortcode that pings
+`http://localhost:11434/api/tags` and renders a green/amber/red banner with
+the user's model list (source lives in `bin/generate-ollama-blueprint.php`).
+
+The chat embed uses the **Pro SPA v2 shortcode** (`[nvoos_pro_spa]`, Pro —
+ships in the Complete bundle): chat-first embedded mode with transcripts,
+drawers, tool shortcuts, and the OKF drawer, mounted via
+`[nvoos_pro_spa assistant_id="<id>" theme="dark" height="720px" show_sidebar="1"]`.
+
+## Why localhost works here
+
+Playground runs WordPress **in the browser**, so the plugin's
+`http://localhost:11434` endpoint IS the user's machine. The plugin's SSRF
+guard (`wp_mcp_ai_validate_ai_provider_url()`) explicitly allowlists
+`localhost`/`127.0.0.1` for AI providers.
+
+## Regenerating
+
+```bash
+php bin/generate-ollama-blueprint.php
+```
+
+The bundle URL is pinned to `build/nvdigital-open-operator-system-oos-complete-1.1.81.zip`
+served via `raw.githubusercontent.com` (CORS-enabled). Bump the pin in the
+generator when a new release ships.
+
+## Trying it
+
+```
+https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/<branch>/blueprints/ollama-demo.json
+```
+
+**The user needs a running local Ollama that allows this origin:**
+
+- Windows: `ollama pull llama3.1:8b` then
+  `setx OLLAMA_ORIGINS "https://playground.wordpress.net,http://localhost,http://127.0.0.1"`
+  and restart Ollama (quit from the tray).
+- macOS / Linux: `OLLAMA_ORIGINS="https://playground.wordpress.net,http://localhost,http://127.0.0.1" ollama serve`
+
+**Browser caveats** (documented on the demo page itself):
+
+- Firefox works out of the box once Ollama allows the origin.
+- Chrome/Edge may prompt for local-network access or block silently
+  (Private Network Access) — allow the prompt, or disable
+  `chrome://flags/#block-insecure-private-network-requests`.
+- Bulletproof fallback: `npx @wp-playground/cli server` (local origin →
+  no policy friction at all).
+
+## Validation (2026-09-18)
+
+End-to-end via `@wp-playground/cli` on WP 7.1.1 / PHP 8.3 against a real
+local Ollama 0.32.5 (llama3.1:8b):
+
+- Plugin active; settings correctly pre-wired (`enable_ollama`, endpoint,
+  model, `default_provider`, priority list starts with `ollama`)
+- Demo assistant created (provider/model meta set) and marked
+  `default_assistant`
+- Test Lab page created with `[nvoos_pro_spa]` (Pro SPA v2 registered and
+  rendering its embedded mount div with `assistantId`/`theme: dark`/
+  `mode: embedded` in `data-config`) + `[ollama_status]`; mu-plugin
+  shortcode registered
+- `[ollama_status]` rendered **green** with the live model list
+- `/api/tags` → 200; `/api/chat` → 200 — the model answered
+  **"Asteria Online"**

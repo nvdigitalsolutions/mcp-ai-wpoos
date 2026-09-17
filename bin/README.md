@@ -214,6 +214,20 @@ Architecture:
 
 ---
 
+### `generate-ollama-blueprint.php` — NV oOS Complete × Ollama demo
+
+`php bin/generate-ollama-blueprint.php` generates `blueprints/ollama-demo.json`
+from `blueprints/ollama-demo.php`: installs the NV oOS Complete bundle
+(repo raw ZIP), pre-wires the plugin to the user's **local Ollama**
+(`http://localhost:11434` — Playground runs WordPress in the browser, so
+localhost IS the user's machine), creates a demo assistant + an
+"Ollama Test Lab" page embedding the **Pro SPA v2 chat shortcode**
+(`[nvoos_pro_spa]`) with a self-diagnosing `[ollama_status]` banner
+mu-plugin, and lands on the chat. See [`blueprints/README.md`](../blueprints/README.md)
+for the CORS setup users must run once and the browser caveats.
+
+---
+
 ## Other Utility Scripts
 
 For information about screenshot capture tools, see [README-SCREENSHOT-TOOLS.md](README-SCREENSHOT-TOOLS.md).
