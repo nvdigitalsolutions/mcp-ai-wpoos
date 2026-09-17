@@ -75,11 +75,11 @@ if ( ! function_exists( 'nvoos_ollama_status_shortcode' ) ) {
 	function nvoos_ollama_status_shortcode() {
 		$id   = 'nvoos-ollama-status-' . wp_rand( 100000, 999999 );
 		$base = 'border:1px solid #c3c4c7;background:#f6f7f7;border-radius:6px;padding:12px 16px;margin:0 0 24px;';
-		$html = '<div id="' . esc_attr( $id ) . '" style="' . esc_attr( $base ) . '">⏳ Checking your local Ollama…</div>' . "\n";
-		// NOTE: the JS below is deliberately pure ASCII — every emoji/em-dash
-		// is a \uXXXX escape. Multi-byte UTF-8 inside an inline script can be
-		// misdecoded when the streamed document is parsed with a non-UTF-8
-		// fallback, which yields "Invalid or unexpected token" in the browser.
+		$html = '<div id="' . esc_attr( $id ) . '" style="' . esc_attr( $base ) . '">Checking your local Ollama...</div>' . "\n";
+		// NOTE: the entire mu-plugin output is deliberately pure ASCII.
+		// Multi-byte UTF-8 anywhere in the rendered page invites
+		// "Invalid or unexpected token" errors when Playground's worker
+		// truncates a streamed response mid-byte-sequence.
 		$html .= '<script>(function(){' . "\n"
 			. 'var el=document.getElementById(' . wp_json_encode( $id ) . ');if(!el){return;}' . "\n"
 			. 'var base=' . wp_json_encode( $base ) . ';' . "\n"

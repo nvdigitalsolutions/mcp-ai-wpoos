@@ -221,10 +221,48 @@ from `blueprints/ollama-demo.php`: installs the NV oOS Complete bundle
 (repo raw ZIP), pre-wires the plugin to the user's **local Ollama**
 (`http://localhost:11434` — Playground runs WordPress in the browser, so
 localhost IS the user's machine), creates a demo assistant + an
-"Ollama Test Lab" page embedding the **Pro SPA v2 chat shortcode**
-(`[nvoos_pro_spa]`) with a self-diagnosing `[ollama_status]` banner
-mu-plugin, and lands on the chat. See [`blueprints/README.md`](../blueprints/README.md)
-for the CORS setup users must run once and the browser caveats.
+"Ollama Test Lab" page embedding the **legacy `[mcp_ai_chat]`** surface
+with a self-diagnosing `[ollama_status]` banner mu-plugin, and lands on the
+chat. A second page, **"Ollama Test Lab (Pro SPA)"**, offers the Pro SPA v2
+shortcode (`[nvoos_pro_spa]`) for users who want the full toolkit UI. See
+[`blueprints/README.md`](../blueprints/README.md) for the CORS setup users
+must run once and the browser caveats.
+
+**Why the legacy chat is the default.** The Pro SPA opens a blocking SSE
+cron-status stream on mount plus a burst of parallel REST calls. On
+Playground's WASM worker (especially while the 38 MB Complete bundle is
+still cold) that exhausts the worker's request budget: requests time out,
+the worker re-spawns, the SQLite preload double-declares and the whole
+instance dies ("Cannot declare class Playground_SQLite_Integration_Loader"
+followed by `Aborted()`). The legacy chat only streams when the user sends
+a message, so the default demo survives.
+
+**ASCII discipline.** The seed and the mu-plugin output are deliberately
+pure ASCII. Playground can truncate a streamed response mid-byte-sequence
+when the worker dies, which surfaces as `Uncaught SyntaxError: Invalid or
+unexpected token` on the last inline script of the page. Non-ASCII in the
+seed never reaches rendered pages. (Assistant titles in the SPA's localized
+config are safe regardless — `wp_localize_script` escapes them as `\uXXXX`.)
+
+**Verification harness** (all under `bin/`):
+
+```bash
+php bin/check-nonascii.php blueprints/ollama-demo.json   # ASCII audit
+php bin/make-probe-blueprint.php                         # build probe JSON
+MSYS_NO_PATHCONV=1 npx -y @wp-playground/cli@3.1.54 run-blueprint \
+  --blueprint=blueprints/ollama-demo.probe.json \
+  --mount-dir-before-install "F:/path/to/repo/verify-out" "/verify-out"
+# then: node --check each verify-out/js/block-*.js and read
+# verify-out/report.json (page/assistant/script inventory).
+```
+
+The probe appends a `runPHP` step that renders the demo page server-side
+(the CLI cannot reproduce browser-only failures, but it validates that the
+seed, the banner JS, and the shortcode output are all healthy).
+`bin/capture-real-page.sh` additionally boots `@wp-playground/cli server`
+against the blueprint to fetch the real page over HTTP — note that server
+mode answers `502 WordPress is not ready yet` while the site boots, so the
+first poll must allow several minutes.
 
 ---
 
