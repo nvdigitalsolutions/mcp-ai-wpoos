@@ -13,6 +13,7 @@ import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import { readProSpaConfig, applyPerInstanceConfig } from '../api/config';
 import { createChatFetch } from '../sse-adapter';
 import { EmbeddedApp } from '../features/embedded/EmbeddedApp';
+import { useModelStore } from '../stores/modelStore';
 
 const VALID_RUNTIME = {
 	apiUrl: 'https://example.com/wp-json/',
@@ -53,6 +54,7 @@ afterEach( () => {
 	cleanup();
 	setRuntime( null );
 	localStorage.clear();
+	useModelStore.getState().setModel( { provider: 'openai', model: 'gpt-4o' } );
 } );
 
 describe( 'applyPerInstanceConfig', () => {
@@ -206,5 +208,31 @@ describe( 'EmbeddedApp', () => {
 			String( url ).includes( 'cron-status' )
 		);
 		expect( cronStatusCalls ).toHaveLength( 0 );
+	}, 15000 );
+
+	it( 'seeds the model store from the preloaded assistant config', async () => {
+		setRuntime( {
+			...VALID_RUNTIME,
+			config: { ...VALID_RUNTIME.config, assistantId: 42 },
+			assistants: [
+				{ id: 42, title: 'Oma', provider: 'ollama', model: 'llama3.1:8b' },
+			],
+		} );
+
+		const { container } = render( <EmbeddedApp /> );
+
+		await waitFor( () => {
+			expect(
+				container.querySelector( '.nvoos-pro-spa-embedded__layout' )
+			).not.toBeNull();
+		} );
+
+		// Embedded mode never renders the sidebar that normally syncs the
+		// model store — bootstrap must seed it from the assistant preload so
+		// chat requests do not send the openai/gpt-4o default override.
+		expect( useModelStore.getState().model ).toEqual( {
+			provider: 'ollama',
+			model: 'llama3.1:8b',
+		} );
 	}, 15000 );
 } );
