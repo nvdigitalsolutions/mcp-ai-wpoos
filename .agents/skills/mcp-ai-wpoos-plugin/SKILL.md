@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.81"
-  plugin-version-tested: "1.1.81"
-  last-updated: "2026-09-17"
+  plugin-version: "1.1.82"
+  plugin-version-tested: "1.1.82"
+  last-updated: "2026-09-18"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -708,6 +708,14 @@ Import external AI conversation exports into the JetEngine
   toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
   dj-management/image-production slices.
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## WordPress Playground Demos, Pro SPA Fixes & Token-Tracking Hardening (v1.1.82)
+
+- **WordPress Playground demo blueprints** (PRs #6662/#6663/#6666/#6670/#6673/#6674) — two one-click demos: Content Graph "Project Asteria" (seeded sci-fi universe, deterministic build via the public `nvoos_content_graph/initial_build` hook) and **NV oOS Complete × local Ollama** (the browser worker's `localhost:11434` is the user's machine — provider pre-wired, Oma assistant, Test Lab page with `[ollama_status]` + embedded Pro SPA). `bin/generate-ollama-blueprint.php` auto-discovers the newest Complete bundle ZIP; `build-assets.yml` regenerates the blueprint on every build. New skill `mcp-ai-wpoos-playground-demos` (59th) documents the authoring/CORS/PCP/crash-mode playbook; end-user walkthrough in `docs/user-guides/playground-demo.md`.
+- **Pro SPA fixes** (PRs #6665/#6672) — `[nvoos_pro_spa cron_monitor="0"]` no-ops the blocking SSE cron-status stream + REST poll for constrained hosts (default `true`); embedded mode seeds the model store from the assistant's real config (no more hardcoded `gpt-4o` override).
+- **Token-tracking table hardening** (PR #6669) — verify-then-version, hourly retry backoff, quiet failure, graceful reads for SQLite-backed environments; ported 1:1 to `nvoos-content-graph-ai`.
+- **Result-delivery dedupe** (PR #6661) — `delivery_safe_data()` strips the duplicated response + `assistant_id`/`is_agentic` metadata; summary/SMS prefix dedupe. **`[ollama_status]` banner fixed** (PR #6668) — footer-enqueued checker (shortcodes render markup only). **Portability coverage guards repaired** (PR #6645). **Docs Hub 0.4.7** (PRs #6659/#6667) — third wp.org reviewer pass.
+- **Tool count** — unchanged: ~306 base + ~1,279 Pro (~1,585 total). Coding-time skills: 58 → 59.
 
 ## Shopify UCP Tool Routing, FlowHub Connections, JobNavigator CRM & OpenTerminal Financial Resilience (v1.1.81)
 

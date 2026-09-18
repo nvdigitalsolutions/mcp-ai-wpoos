@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.81
+Stable tag: 1.1.82
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.82 - September 18, 2026 =
+
+Playground demos, Pro SPA, and hardening release. Added: two one-click WordPress Playground demo blueprints — the Content Graph demo seeds a fictional sci-fi universe (26 posts, 5 pages, 3 true orphans) and builds the graph deterministically via the public initial_build hook, and the NV oOS Complete demo boots the Complete bundle against the user's local Ollama (pre-wired provider, the Oma assistant, and an Ollama Test Lab page with the status banner plus embedded Pro SPA chat); the Ollama blueprint generator now auto-discovers the newest Complete bundle ZIP instead of a hardcoded pin, and the build-assets workflow regenerates the blueprint with every build; a Demo NV oOS Complete button joins the README badge row; and a new end-user Playground walkthrough (docs/user-guides/playground-demo.md) covers Ollama setup, what to expect, and troubleshooting. Added: a new coding-time skill (mcp-ai-wpoos-playground-demos, the 59th) and the updates skill gains the PR deferred-item sweep track. Fixed: the [ollama_status] banner frozen by wptexturize (checker JS is now footer-enqueued instead of an inline script inside the_content); the embedded Pro SPA no longer overrides the assistant's real model with a hardcoded gpt-4o (the model store seeds from assistant config); token-tracking table creation is hardened for SQLite-backed environments (verify-then-version, hourly retry backoff, quiet failure, graceful reads — no more per-request database error dumps); schedule result delivery no longer duplicates the summary or leaks assistant_id/is_agentic metadata into reports; and the assistant portability coverage guards are repaired. Added (Pro): [nvoos_pro_spa cron_monitor="0"] no-ops the blocking SSE cron-status stream and REST poll for constrained hosts. Sub-projects: Docs Hub 0.4.7 (third wp.org reviewer pass — invalid PHP header removed, rebuild cron moved to init, deactivation cleanup, third-party library + external services disclosures, 0 blocking Plugin Check errors). Tool count: ~306 base + ~1,279 Pro (~1,585 total; unchanged; live registry authoritative). Stale build ZIPs removed: the 1.1.80 set (30 files) + the superseded docs-hub 0.4.6 ZIP.
 
 = 1.1.81 - September 17, 2026 =
 

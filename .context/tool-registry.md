@@ -1,7 +1,9 @@
 # NV oOS Tool Registry Context
 
 > **GSD Context File** — Load this when working on tool implementations, toolkits, MCP servers, or OKF tools.
-> Last reviewed: September 17, 2026 (v1.1.81).
+> Last reviewed: September 18, 2026 (v1.1.82).
+>
+> **New in v1.1.82 (counts unchanged — ~306 base + ~1,279 Pro, ~1,585 total):** no tools added or removed. #6645 adds the four existing portability slugs (`export_assistant`/`import_assistant`/`duplicate_assistant`/`export_assistant_blueprint`) to the `assistant_management` preset — preset-level, not new registrations. #6661 (`delivery_safe_data()` + summary/SMS dedupe in the result-delivery service), #6665 (the Pro SPA `cron_monitor` shortcode flag), #6669 (token-tracking table verify-then-version/backoff/quiet-failure/graceful-reads), and #6672 (Pro SPA model-store seeding) are service/shortcode/DB/SPA-level. #6662–#6674 are demo blueprints, docs, skills (new `mcp-ai-wpoos-playground-demos`), and build artifacts. Every count surface stays ~1,585.
 >
 > **New in v1.1.81 (+13 Pro tools — ~306 base + ~1,279 Pro, ~1,585 total):** #6636 registers five CRM tools on the JobNavigator adoption batch — `bulk_move_deal_stages`, `create_tracked_link`, `record_crm_reply`, `get_crm_handover`, `get_pipeline_digest` (registered in `addons/pro/mcp-ai-wpoos-pro.php`; the helpers `WP_MCP_AI_CRM_Stage_History`/`_Identity`/`_Link_Tracker` are service classes, not tools). #6639 registers eight financial-planning tools — `market_screener`, `macro_data_fetcher`, `economic_calendar_fetcher`, `earnings_calendar_fetcher`, `options_chain_fetcher`, `crypto_market_data`, `portfolio_transaction_log`, `price_alerts` (`docs/reference/tools/tool-status.txt` +8; the transaction CPT + provider/indicator services are service-side). Every count surface moves to ~1,585. #6634/#6638 (Shopify UCP routing + image cards — a shared trait + existing tool files), #6635/#6637 (FlowHub resolver + proxy — a base helper class + existing tools), #6641 (Gmail reply poller — cron service, not a tool; `record_crm_reply` gains a static `apply()`), and #6643 (multi-recipient email — result-delivery service) add no new tool slugs.
 >

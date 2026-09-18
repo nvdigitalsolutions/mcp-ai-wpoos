@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: September 17, 2026 (v1.1.81).
+> Last reviewed: September 18, 2026 (v1.1.82).
+>
+> **New in v1.1.82 (no REST surface changes):** no routes added, removed, or re-shaped this window — the token-tracking hardening (#6669) is DB-level, the result-delivery dedupe (#6661) and portability preset/coverage fixes (#6645) are service/preset-level, the Pro SPA `cron_monitor` flag + model-store seeding (#6665/#6672) are shortcode/TS-level, and the Playground demo blueprints/docs/skills (#6662–#6674) add no routes.
 >
 > **New in v1.1.81 (no REST surface changes):** no routes added, removed, or re-shaped this window — the Shopify UCP mode-aware routing + image cards (#6634/#6638) are tool/client-level, the FlowHub resolver + proxy (#6635/#6637) are client-level, the JobNavigator CRM batch + Gmail reply poller (#6636/#6640/#6641) are tool/service/cron-level, the OpenTerminal financial batch (#6639) is tool/service-level, and the multi-recipient email (#6643) is result-delivery-service-level. The Pro UCP `/ucp/agent-profile` route (1.1.80) is unchanged.
 >
