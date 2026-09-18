@@ -82,7 +82,8 @@ tar -C "$PLUGIN_SRC" -cf - \
 	--exclude='./vendor' --exclude='./docs' --exclude='./.wordpress-org' \
 	--exclude='*.md' --exclude='./composer.json' --exclude='./composer.lock' \
 	--exclude='./package.json' --exclude='./package-lock.json' \
-	--exclude='./tsconfig.json' --exclude='./esbuild.config.js' \
+	--exclude='./tsconfig.json' --exclude='./esbuild.config.cjs' \
+	--exclude='./esbuild.config.js' \
 	--exclude='./eslint.config.js' --exclude='./vitest.config.ts' \
 	--exclude='./.gitignore' --exclude='./.distignore' \
 	--exclude='./.DS_Store' . | tar -C "$STAGE_DIR/nvoos-docs-hub" -xf -
