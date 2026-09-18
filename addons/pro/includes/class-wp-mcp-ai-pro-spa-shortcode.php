@@ -63,6 +63,7 @@ class WP_MCP_AI_Pro_SPA_Shortcode {
 				'guest'                 => '0',
 				'allow_sensitive_tools' => '0',
 				'show_sidebar'          => '1',
+				'cron_monitor'          => '1',
 			),
 			$atts,
 			self::SHORTCODE
@@ -101,6 +102,7 @@ class WP_MCP_AI_Pro_SPA_Shortcode {
 			'guest'                 => $guest,
 			'allow_sensitive_tools' => ! empty( $atts['allow_sensitive_tools'] ) && '0' !== (string) $atts['allow_sensitive_tools'],
 			'show_sidebar'          => ! empty( $atts['show_sidebar'] ) && '0' !== (string) $atts['show_sidebar'],
+			'cron_monitor'          => ! empty( $atts['cron_monitor'] ) && '0' !== (string) $atts['cron_monitor'],
 			'routes'                => array( 'chat' ),
 		);
 

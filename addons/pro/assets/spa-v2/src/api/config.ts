@@ -26,6 +26,14 @@ export interface ProSpaPerInstanceConfig {
 	guestToken?: string;
 	/** Whether embedded mode renders the transcripts sidebar. */
 	showSidebar?: boolean;
+	/**
+	 * Whether the SPA connects to the cron-status job stream on mount
+	 * (blocking SSE + REST poll fallback). Defaults to true. Set false for
+	 * embedded surfaces on constrained hosts (e.g. WordPress Playground),
+	 * where the held-open SSE connection exhausts the worker's request
+	 * budget. Mirrors the [nvoos_pro_spa cron_monitor="0"] attribute.
+	 */
+	cronMonitor?: boolean;
 	/** Route allowlist for the instance (embedded mode: chat only). */
 	routes?: string[];
 }

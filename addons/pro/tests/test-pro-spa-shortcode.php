@@ -114,6 +114,24 @@ class Test_WP_MCP_AI_Pro_SPA_Shortcode extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test cron monitoring defaults to enabled in the per-instance config.
+	 */
+	public function test_render_defaults_cron_monitor_to_enabled() {
+		$out = WP_MCP_AI_Pro_SPA_Shortcode::render( array() );
+
+		$this->assertStringContainsString( '&quot;cronMonitor&quot;:true', $out );
+	}
+
+	/**
+	 * Test cron_monitor="0" disables the job stream in the per-instance config.
+	 */
+	public function test_render_cron_monitor_zero_disables_job_stream() {
+		$out = WP_MCP_AI_Pro_SPA_Shortcode::render( array( 'cron_monitor' => '0' ) );
+
+		$this->assertStringContainsString( '&quot;cronMonitor&quot;:false', $out );
+	}
+
+	/**
 	 * Test guest mode is ignored for logged-in users.
 	 */
 	public function test_render_guest_ignored_when_logged_in() {
