@@ -38,9 +38,13 @@ php bin/generate-content-graph-blueprint.php   # emits both content-graph files
 php bin/generate-ollama-blueprint.php          # emits blueprints/ollama-demo.json
 ```
 
-The Ollama demo pins the bundle ZIP at
-`alpha-working/build/nvdigital-open-operator-system-oos-complete-1.1.81.zip`
-— bump the pin in the generator when a new release ships.
+The Ollama demo's `installPlugin` step points at the **newest**
+`alpha-working/build/nvdigital-open-operator-system-oos-complete-*.zip` — the
+generator globs `build/` and picks the highest version (override with
+`--bundle-url=`), so no pin bump is needed when a release ships. The
+`build-assets` workflow regenerates the JSON right after rebuilding the ZIPs,
+and its push paths include `addons/**/*.{js,ts,tsx,css}` so asset-side changes
+trigger the rebuild too.
 
 Design plan + full validation checklist:
 `plugins/nvoos-content-graph/docs/playground-blueprint-plan.md`.

@@ -52,9 +52,12 @@ guard (`wp_mcp_ai_validate_ai_provider_url()`) explicitly allowlists
 php bin/generate-ollama-blueprint.php
 ```
 
-The bundle URL is pinned to `build/nvdigital-open-operator-system-oos-complete-1.1.81.zip`
-served via `raw.githubusercontent.com` (CORS-enabled). Bump the pin in the
-generator when a new release ships.
+The generator picks the **newest**
+`build/nvdigital-open-operator-system-oos-complete-*.zip` (highest version,
+served via `raw.githubusercontent.com`, which is CORS-enabled) — no pin bump
+needed when a new release ships. The `build-assets` workflow regenerates the
+JSON right after rebuilding the ZIPs. Override with
+`php bin/generate-ollama-blueprint.php --bundle-url=<url>`.
 
 ## Trying it
 
