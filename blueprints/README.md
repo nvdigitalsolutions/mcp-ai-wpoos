@@ -8,7 +8,7 @@ Dev-only blueprints for the full NV oOS plugin (base + Pro "Complete" bundle).
 | File | Role |
 |---|---|
 | `ollama-demo.json` | **Generated.** One-click demo that pre-wires NV oOS Complete to the user's **local Ollama** and lands on a chat page that answers immediately (if Ollama is running). |
-| `ollama-demo.php` | Seed snippet embedded into the blueprint's `runPHP` step: configures the Ollama provider (`enable_ollama`, endpoint `http://localhost:11434`, model `llama3.1:8b`, `default_provider`/`default_model`, priority list), creates the "Oma" demo assistant (`mcp_ai_assistant` CPT + meta) as `default_assistant`, and creates the **Ollama Test Lab** page with `[ollama_status]` + the **Pro SPA v2 embedded chat** (`[nvoos_pro_spa]`, falling back to `[mcp_ai_chat]` when Pro is absent). Idempotent (`nvoos_ollama_demo_seeded` option). |
+| `ollama-demo.php` | Seed snippet embedded into the blueprint's `runPHP` step: configures the Ollama provider (`enable_ollama`, endpoint `http://localhost:11434`, model `llama3.1:8b`, `default_provider`/`default_model`, priority list), creates the "Oma" demo assistant (`mcp_ai_assistant` CPT + meta) as `default_assistant`, creates the **Ollama Test Lab** page with `[ollama_status]` + the **legacy `[mcp_ai_chat]`**, and a secondary **Ollama Test Lab (Pro SPA)** page with `[nvoos_pro_spa … cron_monitor="0"]` when Pro is present. Idempotent (`nvoos_ollama_demo_seeded` option). |
 
 The blueprint also writes `wp-content/mu-plugins/ollama-status.php` — a
 self-diagnosing `[ollama_status]` shortcode that renders a green/amber/red
@@ -20,13 +20,19 @@ can hang the Playground worker when the browser's Private Network Access
 policy blocks the request, which crashes the whole instance (duplicate
 SQLite preload fatal).
 
-The chat embed uses the **Pro SPA v2 shortcode** (`[nvoos_pro_spa]`, Pro —
-ships in the Complete bundle): chat-first embedded mode with transcripts,
-drawers, tool shortcuts, and the OKF drawer, mounted via
-`[nvoos_pro_spa assistant_id="<id>" theme="dark" height="720px" show_sidebar="0"]`
-(sidebar off on the cold Playground worker — the Complete bundle boots
-slowly per request, and the transcripts/threads/sessions burst can exhaust
-the worker's messaging budget and crash the instance).
+The chat embed on the **main page** uses the legacy `[mcp_ai_chat]`
+shortcode: it makes a stream request only when the user sends a message,
+which keeps the cold Playground worker alive. The **secondary page** offers
+the Pro SPA v2 embedded surface (`[nvoos_pro_spa]`, Pro — ships in the
+Complete bundle): chat-first embedded mode with transcripts, drawers, tool
+shortcuts, and the OKF drawer, mounted via
+`[nvoos_pro_spa assistant_id="<id>" theme="dark" height="720px" show_sidebar="0" cron_monitor="0"]`.
+The Pro SPA opens a blocking SSE cron-status stream on mount by default;
+`cron_monitor="0"` (Pro v1.1.82+, PR #6665) disables that job stream plus
+its REST poll fallback so the mount does not hold a worker slot. Older
+bundles ignore the attribute — harmless, but the stream stays on and the
+page may crash the instance; that is why the legacy chat remains the
+default landing surface.
 
 The banner's inline JS is deliberately pure ASCII (`\uXXXX` escapes for
 emoji/em-dashes): multi-byte UTF-8 inside a streamed inline script can be
@@ -81,12 +87,17 @@ local Ollama 0.32.5 (llama3.1:8b):
   model, `default_provider`, priority list starts with `ollama`)
 - Demo assistant created (provider/model meta set) and marked
   `default_assistant`
-- Test Lab page created with `[nvoos_pro_spa]` (Pro SPA v2 registered and
-  rendering its embedded mount div with `assistantId`/`theme: dark`/
-  `mode: embedded` in `data-config`) + `[ollama_status]`; mu-plugin
-  shortcode registered
+- Test Lab page created with the legacy `[mcp_ai_chat]` (chat container
+  rendered) + `[ollama_status]`; secondary "Ollama Test Lab (Pro SPA)"
+  page created with `[nvoos_pro_spa … cron_monitor="0"]` (Pro SPA v2
+  registered and rendering its embedded mount div); mu-plugin shortcode
+  registered
 - `[ollama_status]` renders the client-side checker container + inline
   script, and the mu-plugin performs **no PHP-side HTTP to localhost**
   (verified: `wp_remote_get` absent, `AbortController` present)
+- Seed + banner output are **pure ASCII** (only comment-only em dashes
+  remain in the embedded snippet); every rendered inline script passes
+  `node --check` via the probe harness
+  (`bin/make-probe-blueprint.php` + `@wp-playground/cli run-blueprint`)
 - `/api/tags` → 200; `/api/chat` → 200 — the model answered
   **"Asteria Online"**
