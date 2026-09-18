@@ -420,6 +420,12 @@ esbuild/eslint/tsconfig/vitest configs, `docs/`, `.wordpress-org/`,
 `.gitignore`, `.distignore`, `.DS_Store`. Any new dev-only path must be added
 to all three.
 
+The same trap bit the content-graph workflow (`build-nvoos-content-graph.yml`)
+in PR #6662: its inline rsync list drifted from `.distignore`, a dev
+`blueprints/` folder shipped in the ZIP, and PCP failed on the leaked PHP
+file. Playground-demo dev folders and their exclusion checklist live in the
+`mcp-ai-wpoos-playground-demos` skill.
+
 ## .wordpress-org assets
 
 Layout mirrors `plugins/nvoos-content-graph/.wordpress-org/`:
