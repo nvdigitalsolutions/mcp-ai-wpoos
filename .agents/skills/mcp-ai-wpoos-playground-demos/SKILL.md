@@ -129,7 +129,7 @@ is the bug to fix.
 |---|---|---|
 | 1 | **Synchronous PHP-side fetch to localhost during page render** (e.g. `wp_remote_get('http://localhost:11434')` inside a shortcode). When browser Private Network Access hangs the request, PHP blocks, the worker times out, a retry reuses the instance, and the SQLite preload re-declares → fatal. | Never fetch localhost from PHP render paths. Move connectivity checks client-side: render a container + inline `<script>` that fetches with an `AbortController` timeout. |
 | 2 | **Inline `<script>` with raw multi-byte UTF-8** (emoji, em dashes) in hand-built shortcode/mu-plugin output. If the streamed inline script is decoded with a non-UTF-8 fallback, the bytes become invalid tokens → `Uncaught SyntaxError: Invalid or unexpected token`. NOTE: `wp_localize_script` is SAFE by default — PHP `json_encode` escapes non-ASCII as `\uXXXX`, so assistant titles like "Oma — Asteria Guide" land in `NVOOS_PRO_SPA` already escaped (verified by rendering the page server-side). The risk is limited to inline scripts you build by hand. | Keep hand-built inline JS **pure ASCII**: `\uXXXX` escapes for every non-ASCII char. Verify: extract the RENDERED script and assert `node --check` passes and `grep -cP '[^\x00-\x7F]'` returns 0 (`bin/check-nonascii.php`). |
-| 3 | **The Pro SPA holds a blocking SSE connection on mount.** `useJobBus()` in the SPA v2 source opens the `cron-status?stream=true` SSE stream (blocking emitter — the worker slot is held for the connection's lifetime) and starts a 15-second REST poll fallback. Combined with the SPA's parallel REST burst (approvals, slash-commands, …) on a cold 38 MB Complete bundle, the worker's request budget exhausts → same duplicate-class fatal. `show_sidebar="0"` does NOT stop the SSE or the approvals/slash-commands calls. | For Playground demos, make the **legacy `[mcp_ai_chat]`** the default surface (it only streams when the user sends a message) and offer `[nvoos_pro_spa]` on a SECONDARY page labeled as heavier. A runtime flag to disable the SPA job bus would be the proper plugin-side fix (follow-up on `alpha-working`).
+| 3 | **The Pro SPA holds a blocking SSE connection on mount.** `useJobBus()` in the SPA v2 source opens the `cron-status?stream=true` SSE stream (blocking emitter — the worker slot is held for the connection's lifetime) and starts a 15-second REST poll fallback. Combined with the SPA's parallel REST burst (approvals, slash-commands, …) on a cold 38 MB Complete bundle, the worker's request budget exhausts → same duplicate-class fatal. `show_sidebar="0"` does NOT stop the SSE or the approvals/slash-commands calls. | For Playground demos, make the **legacy `[mcp_ai_chat]`** the default surface (it only streams when the user sends a message) and offer `[nvoos_pro_spa]` on a SECONDARY page labeled as heavier. Since PR #6665 (`cron_monitor="0"`, Pro v1.1.82+) the SPA can also mount WITHOUT the job stream — once the flag ships in a rebuilt Complete bundle, the demo's Pro page should use `[nvoos_pro_spa … cron_monitor="0"]`. |
 
 Note the CLI cannot reproduce crashes #1/#3 — it has no browser policies
 and serializes requests. Browser caveats must be eyeballed manually.
@@ -157,9 +157,11 @@ and serializes requests. Browser caveats must be eyeballed manually.
   the CPT slug is the idempotent lookup.
 - **Pro SPA v2 shortcode** (Pro, v1.1.68+, ships in the Complete bundle):
   `[nvoos_pro_spa assistant_id="ID" mode="embedded" theme="dark" height="720px"
-  guest="0" allow_sensitive_tools="0" show_sidebar="0"]`. Fallback for
-  base-only: `[mcp_ai_chat assistant="ID"]`. Use
-  `shortcode_exists( 'nvoos_pro_spa' )` to pick at seed time.
+  guest="0" allow_sensitive_tools="0" show_sidebar="0"]`. From Pro v1.1.82
+  (PR #6665) add `cron_monitor="0"` to skip the job-stream SSE on
+  constrained hosts (§5 row 3). Fallback for base-only:
+  `[mcp_ai_chat assistant="ID"]`. Use `shortcode_exists( 'nvoos_pro_spa' )`
+  to pick at seed time.
 - **OLLAMA_ORIGINS is mandatory.** Ollama 403s unknown browser origins by
   default. Windows: `setx OLLAMA_ORIGINS "https://playground.wordpress.net,
   http://localhost,http://127.0.0.1"` + quit the desktop app from the tray and
