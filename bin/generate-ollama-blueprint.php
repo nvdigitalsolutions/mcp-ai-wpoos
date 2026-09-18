@@ -58,13 +58,22 @@ $seedCode = trim( $seedCode );
 // policy hangs the request — the worker then times out, re-preloads the
 // SQLite integration, fatals on the duplicate class, and takes the whole
 // Playground instance down. Never fetch localhost from PHP render paths.
+//
+// ARCHITECTURE: the shortcode renders a placeholder DIV ONLY. The checker
+// script is a proper footer script (wp_enqueue_scripts + wp_add_inline_script).
+// Never inline the JS in the shortcode output: the_content's wptexturize /
+// entity pass rewrites `&&` into `&#038;&#038;` — a JavaScript syntax error
+// that silently kills the banner (observed on the real demo page; the
+// initial "Checking..." text stays frozen forever). Footer scripts print
+// via wp_footer, outside the content pipeline, so no filter can touch them.
 $muPluginCode = <<<'PHP'
 <?php
 /**
  * Demo mu-plugin for the NV oOS Playground blueprint.
  * Adds [ollama_status] — a live banner showing whether this browser can
- * reach the user's local Ollama (http://localhost:11434). The check is
- * an async fetch with a hard timeout, so PHP never blocks on it.
+ * reach the user's local Ollama (http://localhost:11434). The check is an
+ * async fetch with a hard timeout, so PHP never blocks on it. The shortcode
+ * outputs a placeholder div; the checker script is enqueued in the footer.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -73,34 +82,49 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! function_exists( 'nvoos_ollama_status_shortcode' ) ) {
 	function nvoos_ollama_status_shortcode() {
-		$id   = 'nvoos-ollama-status-' . wp_rand( 100000, 999999 );
 		$base = 'border:1px solid #c3c4c7;background:#f6f7f7;border-radius:6px;padding:12px 16px;margin:0 0 24px;';
-		$html = '<div id="' . esc_attr( $id ) . '" style="' . esc_attr( $base ) . '">Checking your local Ollama...</div>' . "\n";
-		// NOTE: the entire mu-plugin output is deliberately pure ASCII.
-		// Multi-byte UTF-8 anywhere in the rendered page invites
-		// "Invalid or unexpected token" errors when Playground's worker
-		// truncates a streamed response mid-byte-sequence.
-		$html .= '<script>(function(){' . "\n"
-			. 'var el=document.getElementById(' . wp_json_encode( $id ) . ');if(!el){return;}' . "\n"
-			. 'var base=' . wp_json_encode( $base ) . ';' . "\n"
-			. 'function paint(extra,html){el.setAttribute("style",base+extra);el.innerHTML=html;}' . "\n"
-			. 'function esc(s){return String(s).replace(/[<>&]/g,function(c){return c==="<"?"&lt;":c===">"?"&gt;":"&amp;";});}' . "\n"
-			. 'var ctrl=(typeof AbortController!=="undefined")?new AbortController():null;' . "\n"
-			. 'var timer=setTimeout(function(){if(ctrl){ctrl.abort();}paint("background:#fff8e5;border-color:#ffb900;","<strong>\u26a0 Ollama not detected.</strong> The request timed out \u2014 is Ollama running? Check the setup steps below, then refresh.");},4000);' . "\n"
-			. 'fetch("http://localhost:11434/api/tags",{signal:ctrl?ctrl.signal:undefined}).then(function(r){if(!r.ok){throw new Error("HTTP "+r.status);}return r.json();}).then(function(d){' . "\n"
-			. 'clearTimeout(timer);var names=[];if(d&&Array.isArray(d.models)){for(var i=0;i<Math.min(d.models.length,8);i++){if(d.models[i]&&d.models[i].name){names.push(esc(d.models[i].name));}}}' . "\n"
-			. 'paint("background:#edfaef;border-color:#46b450;","<strong>\u2705 Ollama connected!</strong> This browser can reach your local Ollama."+(names.length?" Models: <code>"+names.join("</code>, <code>")+"</code>.":"")+" The chat below answers on your machine \u2014 nothing leaves it.");' . "\n"
-			. '}).catch(function(err){clearTimeout(timer);var msg=err&&err.message?err.message:String(err);' . "\n"
-			. 'if(msg==="Failed to fetch"){paint("background:#fcf0f1;border-color:#dc3232;","<strong>\u274c The browser blocked the localhost request.</strong> Private Network Access / CORS \u2014 see the browser notes below.");}' . "\n"
-			. 'else if(msg==="AbortError"||msg.indexOf("abort")===0){paint("background:#fff8e5;border-color:#ffb900;","<strong>\u26a0 Ollama not detected.</strong> The request timed out \u2014 is Ollama running?");}' . "\n"
-			. 'else{paint("background:#fcf0f1;border-color:#dc3232;","<strong>\u274c Could not reach Ollama.</strong> "+esc(msg));}' . "\n"
-			. '});' . "\n"
-			. '})();</script>' . "\n";
-		return $html;
+		return '<div class="nvoos-ollama-status" data-nvoos-ollama-status="pending" style="' . esc_attr( $base ) . '">Checking your local Ollama...</div>' . "\n";
 	}
 }
 
 add_shortcode( 'ollama_status', 'nvoos_ollama_status_shortcode' );
+
+/**
+ * Enqueue the client-side checker in the footer.
+ *
+ * @return void
+ */
+function nvoos_ollama_status_enqueue_checker() {
+	$handle = 'nvoos-ollama-status-checker';
+	wp_register_script( $handle, false, array(), '1.1.0', true );
+	wp_enqueue_script( $handle );
+
+	// Pure ASCII JS. Runs outside the_content (footer), so wptexturize can
+	// never rewrite the operators.
+	$js = '(function(){' . "\n"
+		. 'if(typeof document==="undefined"){return;}' . "\n"
+		. 'var base="border:1px solid #c3c4c7;background:#f6f7f7;border-radius:6px;padding:12px 16px;margin:0 0 24px;";' . "\n"
+		. 'function paint(el,extra,html){el.setAttribute("style",base+extra);el.innerHTML=html;}' . "\n"
+		. 'function esc(s){return String(s).replace(/[<>&]/g,function(c){return c==="<"?"&lt;":c===">"?"&gt;":"&amp;";});}' . "\n"
+		. 'function check(el){' . "\n"
+		. 'var ctrl=(typeof AbortController!=="undefined")?new AbortController():null;' . "\n"
+		. 'var timer=setTimeout(function(){if(ctrl){ctrl.abort();}paint(el,"background:#fff8e5;border-color:#ffb900;","<strong>\u26a0 Ollama not detected.</strong> The request timed out \u2014 is Ollama running? Check the setup steps below, then refresh.");},4000);' . "\n"
+		. 'fetch("http://localhost:11434/api/tags",{signal:ctrl?ctrl.signal:undefined}).then(function(r){if(!r.ok){throw new Error("HTTP "+r.status);}return r.json();}).then(function(d){' . "\n"
+		. 'clearTimeout(timer);var names=[];if(d&&Array.isArray(d.models)){for(var i=0;i<Math.min(d.models.length,8);i++){if(d.models[i]&&d.models[i].name){names.push(esc(d.models[i].name));}}}' . "\n"
+		. 'paint(el,"background:#edfaef;border-color:#46b450;","<strong>\u2705 Ollama connected!</strong> This browser can reach your local Ollama."+(names.length?" Models: <code>"+names.join("</code>, <code>")+"</code>.":"")+" The chat below answers on your machine \u2014 nothing leaves it.");' . "\n"
+		. '}).catch(function(err){clearTimeout(timer);var msg=err&&err.message?err.message:String(err);' . "\n"
+		. 'if(msg==="Failed to fetch"){paint(el,"background:#fcf0f1;border-color:#dc3232;","<strong>\u274c The browser blocked the localhost request.</strong> Private Network Access / CORS \u2014 see the browser notes below.");}' . "\n"
+		. 'else if(msg==="AbortError"||msg.indexOf("abort")===0){paint(el,"background:#fff8e5;border-color:#ffb900;","<strong>\u26a0 Ollama not detected.</strong> The request timed out \u2014 is Ollama running?");}' . "\n"
+		. 'else{paint(el,"background:#fcf0f1;border-color:#dc3232;","<strong>\u274c Could not reach Ollama.</strong> "+esc(msg));}' . "\n"
+		. '});}' . "\n"
+		. 'function boot(){var els=document.querySelectorAll(".nvoos-ollama-status");for(var i=0;i<els.length;i++){if(els[i].getAttribute("data-nvoos-ollama-status")==="pending"){els[i].setAttribute("data-nvoos-ollama-status","checking");check(els[i]);}}}' . "\n"
+		. 'if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",boot);}else{boot();}' . "\n"
+		. '})();';
+
+	wp_add_inline_script( $handle, $js );
+}
+
+add_action( 'wp_enqueue_scripts', 'nvoos_ollama_status_enqueue_checker' );
 PHP;
 
 // ─── Steps ────────────────────────────────────────────────────────

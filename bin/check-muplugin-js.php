@@ -46,7 +46,7 @@ foreach ( $nonascii as $hex => $n ) {
 
 // Extract inline JS blocks and scan those specifically.
 preg_match_all( '#<script[^>]*>(.*?)</script>#s', $mu, $m );
-echo 'inline script blocks: ' . count( $m[1] ) . "\n";
+echo 'inline script blocks in shortcode output: ' . count( $m[1] ) . "\n";
 foreach ( $m[1] as $i => $js ) {
 	$bad = array();
 	foreach ( preg_split( '//u', $js, -1, PREG_SPLIT_NO_EMPTY ) as $ch ) {
@@ -57,3 +57,11 @@ foreach ( $m[1] as $i => $js ) {
 	echo '  block ' . ( $i + 1 ) . ': ' . strlen( $js ) . " bytes, "
 		. ( $bad ? 'NON-ASCII ' . implode( ',', array_keys( $bad ) ) : 'pure ASCII' ) . "\n";
 }
+
+// The checker JS is no longer shortcode output: it must be an enqueued
+// footer script (wp_add_inline_script) — safe from the_content filters.
+echo 'enqueued-checker markers: '
+	. ( false !== strpos( $mu, 'wp_add_inline_script' ) ? 'wp_add_inline_script ' : 'MISSING ' )
+	. ( false !== strpos( $mu, 'wp_enqueue_scripts' ) ? 'wp_enqueue_scripts ' : 'MISSING ' )
+	. ( false !== strpos( $mu, 'data-nvoos-ollama-status' ) ? 'data-attr' : 'MISSING data-attr' )
+	. "\n";

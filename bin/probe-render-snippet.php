@@ -56,17 +56,29 @@ if ( $page instanceof WP_Post ) {
 	$GLOBALS['post'] = $page;
 	setup_postdata( $page );
 
-	// Render the REAL page through the active theme's template loader +
-	// admin bar, matching what a browser receives as closely as possible.
-	// Fake the main query (the runPHP request already has one), then drive
-	// template-loader the same way wp-blog-header does.
+	// Render the REAL page the way a block theme does in the browser:
+	// resolve the theme's page template and run it through do_blocks() with
+	// the post context set, wrapped in wp_head()/wp_footer() (admin bar
+	// included). This reproduces the full document, unlike the synthetic
+	// wrapper or template-loader (which block themes do not use).
 	$GLOBALS['wp_query']     = new WP_Query( array( 'pagename' => 'ollama-test-lab' ) );
 	$GLOBALS['wp_the_query'] = $GLOBALS['wp_query'];
 	$GLOBALS['post']         = $GLOBALS['wp_query']->posts[0] ?? null;
 	setup_postdata( $GLOBALS['post'] );
 
+	$template = function_exists( 'get_block_template' )
+		? ( get_block_template( get_stylesheet() . '//page', 'wp_template' ) ?: get_block_template( get_stylesheet() . '//index', 'wp_template' ) )
+		: null;
+	$template_html = ( $template && ! empty( $template->content ) ) ? $template->content : '';
+
 	ob_start();
-	require ABSPATH . WPINC . '/template-loader.php';
+	wp_head();
+	if ( '' !== $template_html ) {
+		echo do_blocks( $template_html );
+	} else {
+		echo apply_filters( 'the_content', $page->post_content );
+	}
+	wp_footer();
 	$real = ob_get_clean();
 	file_put_contents( '/verify-out/real-render.html', $real );
 	$report['real_render_len'] = strlen( $real );

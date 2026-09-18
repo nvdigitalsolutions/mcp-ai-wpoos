@@ -125,6 +125,15 @@ the crash signature above; audit the rendered scripts with `node --check`
 (§7) — if they are all clean, the SyntaxError is truncation, and the crash
 is the bug to fix.
 
+**BUT: a mid-content inline script can be silently killed by `the_content`
+filters instead.** `wptexturize` / entity normalization rewrites raw `&&`
+inside a shortcode's inline `<script>` into `&#038;&#038;` — a JS syntax
+error that freezes the banner at its initial text forever (diagnosed from
+the user's DOM paste; smart quotes/en dashes in the same output are the
+texturize fingerprint). Rule: **shortcodes render markup only; every script
+must be enqueued** (`wp_enqueue_scripts` + `wp_add_inline_script` → footer),
+outside the content pipeline.
+
 | # | Cause | Prevention |
 |---|---|---|
 | 1 | **Synchronous PHP-side fetch to localhost during page render** (e.g. `wp_remote_get('http://localhost:11434')` inside a shortcode). When browser Private Network Access hangs the request, PHP blocks, the worker times out, a retry reuses the instance, and the SQLite preload re-declares → fatal. | Never fetch localhost from PHP render paths. Move connectivity checks client-side: render a container + inline `<script>` that fetches with an `AbortController` timeout. |

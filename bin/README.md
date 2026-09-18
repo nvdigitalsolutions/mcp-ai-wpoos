@@ -261,6 +261,15 @@ unexpected token` on the last inline script of the page. Non-ASCII in the
 seed never reaches rendered pages. (Assistant titles in the SPA's localized
 config are safe regardless — `wp_localize_script` escapes them as `\uXXXX`.)
 
+**Never inline JS in shortcode output.** `the_content`'s `wptexturize` /
+entity pass rewrites raw `&&` inside a shortcode's inline `<script>` into
+`&#038;&#038;` — a JavaScript syntax error that silently kills the script
+(the `[ollama_status]` banner froze on "Checking..." forever; the breakage
+was only visible by inspecting the rendered DOM). The banner therefore
+renders a placeholder `<div>` only and enqueues its checker via
+`wp_enqueue_scripts` + `wp_add_inline_script` (footer), where no content
+filter can touch it.
+
 **Verification harness** (all under `bin/`):
 
 ```bash
