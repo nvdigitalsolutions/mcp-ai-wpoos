@@ -473,6 +473,38 @@ if ( ! function_exists( 'wp_mcp_ai_pro_vendor_incomplete_notice' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_mcp_ai_pro_incomplete_install_notice' ) ) {
+	/**
+	 * Display an admin notice when critical Pro addon files are missing.
+	 *
+	 * A partial deploy (interrupted FTP/zip extraction, installer cleanup
+	 * collision, or an AV/SFTP sync exclusion) can leave the Pro tree without
+	 * files the bootstrap requires unconditionally. Requiring those files
+	 * blindly fatals the whole site, so the bootstrap degrades to this notice
+	 * and the site keeps running on the base plugin alone.
+	 *
+	 * @since 1.1.82
+	 *
+	 * @param array $missing_files List of missing file paths (relative to the Pro root).
+	 */
+	function wp_mcp_ai_pro_incomplete_install_notice( $missing_files ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$sample  = implode( ', ', array_slice( (array) $missing_files, 0, 3 ) );
+		$message = sprintf(
+			/* translators: %s: comma-separated sample of missing Pro file paths */
+			'<strong>NV oOS Pro:</strong> ' . esc_html__( 'The Pro addon installation is incomplete (missing: %s). Pro features have been disabled to protect the site. Please re-run the Pro update from NV oOS &#8594; Settings &#8594; Advanced &#8594; Data Management, or re-upload the Pro addon ZIP via Plugins &#8594; Add New &#8594; Upload Plugin. Do not hand-create individual files — they are version-coupled.', 'mcp-ai-wpoos-pro' ),
+			esc_html( $sample )
+		);
+		printf(
+			'<div class="notice notice-error"><p>%s</p></div>',
+			wp_kses_post( $message )
+		);
+	}
+}
+
 if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 	/**
 	 * Initialize Open Operator System Pro.
@@ -520,7 +552,27 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		add_action( 'init', 'wp_mcp_ai_pro_load_textdomain', 1 );
 
 		// Delegate all Pro subsystem loading to the module registry.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-module-registry.php';
+		// The registry file is version-coupled and loaded unconditionally;
+		// if a partial deploy left it missing, requiring it blindly would
+		// fatal the whole site (not just Pro). Degrade to an admin notice
+		// instead so the site keeps running on the base plugin.
+		$pro_registry_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-module-registry.php';
+		if ( ! file_exists( $pro_registry_file ) ) {
+			if ( is_admin() ) {
+				add_action(
+					'admin_notices',
+					function () {
+						wp_mcp_ai_pro_incomplete_install_notice( array( 'includes/class-wp-mcp-ai-pro-module-registry.php' ) );
+					}
+				);
+			}
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only diagnostics for a broken Pro install.
+				error_log( 'WP MCP AI Pro: module registry file missing, Pro disabled: ' . $pro_registry_file );
+			}
+			return;
+		}
+		require_once $pro_registry_file;
 		WP_MCP_AI_Pro_Module_Registry::get_instance()->boot();
 
 		// Serve the site's UCP agent profile for keyless Shopify Catalog MCP

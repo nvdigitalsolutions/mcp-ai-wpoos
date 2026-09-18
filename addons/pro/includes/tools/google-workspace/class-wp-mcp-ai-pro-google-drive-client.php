@@ -49,6 +49,15 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 	public static function resolve_credentials( $connection_id ) {
 		$connection_id = sanitize_key( (string) $connection_id );
 
+		// The tool schema documents the fallback as "settings-based
+		// credentials"; assistants sometimes pass the literal string
+		// "settings" instead of omitting the argument. Treat it as the
+		// settings fallback so the call self-corrects instead of failing
+		// with connection_not_found.
+		if ( 'settings' === $connection_id ) {
+			$connection_id = '';
+		}
+
 		$client_id       = '';
 		$client_secret   = '';
 		$refresh_token   = '';
