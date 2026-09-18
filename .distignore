@@ -140,6 +140,7 @@ verify-*.sh
 # Build output and build-time directories (not needed in SVN)
 # Note: build/workflow-builder/ is included (contains pre-built visual builder assets)
 svn-*
+blueprints
 addons
 core
 shared
