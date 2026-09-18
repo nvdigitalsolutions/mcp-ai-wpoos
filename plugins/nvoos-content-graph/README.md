@@ -1,5 +1,7 @@
 # NV oOS Content Graph
 
+[![Demo Content Graph](https://img.shields.io/badge/Demo_Content_Graph-Playground-blueviolet?style=for-the-badge&logo=wordpress&logoColor=white)](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/alpha-working/plugins/nvoos-content-graph/blueprints/demo.json)
+
 ## Purpose
 
 Visual knowledge graph for WordPress — maps your content into an interactive, navigable graph using Cytoscape.js, without requiring any API keys.
