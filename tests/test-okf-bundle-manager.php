@@ -149,6 +149,13 @@ class WP_MCP_AI_OKF_Bundle_Manager_Test extends WP_UnitTestCase {
 		$this->assertNotWPError( $path );
 		$this->assertStringEndsWith( '/brand-new-bundle', $path );
 		$this->assertDirectoryDoesNotExist( $path ); // Resolution has no side effects.
+
+		// The not-found error lists existing bundles so callers can self-correct.
+		wp_mkdir_p( $path );
+		$missing_again = $manager->resolve_bundle_root( 'another-missing-bundle' );
+		$this->assertWPError( $missing_again );
+		$this->assertSame( 'okf_bundle_not_found', $missing_again->get_error_code() );
+		$this->assertStringContainsString( 'Available bundles: brand-new-bundle', $missing_again->get_error_message() );
 	}
 
 	/**
@@ -492,7 +499,12 @@ class WP_MCP_AI_OKF_Bundle_Manager_Test extends WP_UnitTestCase {
 			'metric',
 			array(
 				'type'        => 'Metric',
-				'verified'    => array( array( 'by' => 'human:admin', 'at' => gmdate( 'c' ) ) ),
+				'verified'    => array(
+					array(
+						'by' => 'human:admin',
+						'at' => gmdate( 'c' ),
+					),
+				),
 				'stale_after' => gmdate( 'Y-m-d', strtotime( '-1 day' ) ),
 			),
 			'Body.'
