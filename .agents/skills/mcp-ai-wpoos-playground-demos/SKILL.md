@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-playground-demos
-description: "Operational guide for the NV oOS WordPress Playground demo blueprints — the Content Graph \"Project Asteria\" demo and the Complete bundle × local Ollama demo. Covers blueprint authoring patterns (embedded runPHP seed snippets, generator scripts, preview-safe vs standalone split), CORS hosting gotchas, the CI Plugin Check gate (built-ZIP scan, rsync/distignore sync, ABSPATH guards), Playground worker crash modes (PHP-side localhost fetches, inline-script UTF-8, SPA mount bursts), local Ollama integration (OLLAMA_ORIGINS, browser policy matrix, plugin settings + assistant meta keys), and the CLI validation harness. Use when extending or debugging the demo blueprints, adding a new Playground demo, or triaging a crashing Playground instance."
+description: "Operational guide for the NV oOS WordPress Playground demo blueprints — the Content Graph \"Project Asteria\" demo and the Complete bundle × local Ollama demo. Covers blueprint authoring patterns (embedded runPHP seed snippets, generator scripts, preview-safe vs standalone split), CORS hosting gotchas, the CI Plugin Check gate (built-ZIP scan, rsync/distignore sync, ABSPATH guards), Playground worker crash modes (PHP-side localhost fetches, inline-script UTF-8, SPA SSE-hold mount bursts, crash-truncation SyntaxErrors), local Ollama integration (OLLAMA_ORIGINS, browser policy matrix, plugin settings + assistant meta keys), and the CLI validation harness (probe builder, mount quirks, server-mode 502 boot). Use when extending or debugging the demo blueprints, adding a new Playground demo, or triaging a crashing Playground instance."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -29,7 +29,7 @@ including two full Playground-instance crashes and their fixes.
 | Demo | PR | Source | Generated | Landing |
 |---|---|---|---|---|
 | Content Graph "Project Asteria" (26 posts + 5 pages, graph pre-built) | #6662 | `plugins/nvoos-content-graph/blueprints/seed-content.php` | `…/blueprints/demo.json` (standalone) + `…/.wordpress-org/blueprints/blueprint.json` (wp.org Preview; mirrors SVN `assets/blueprints/blueprint.json`) | `/wp-admin/admin.php?page=nvoos-content-graph` |
-| Complete bundle × local Ollama ("Oma" assistant + Pro SPA v2 chat) | #6663 | `blueprints/ollama-demo.php` (repo root) | `blueprints/ollama-demo.json` | `/ollama-test-lab/` |
+| Complete bundle × local Ollama ("Oma" assistant + legacy `[mcp_ai_chat]` on the main page; Pro SPA v2 on a secondary page) | #6663 | `blueprints/ollama-demo.php` (repo root) | `blueprints/ollama-demo.json` | `/ollama-test-lab/` |
 
 Generators (commit the generated JSON; re-run after editing the seed):
 
@@ -115,11 +115,21 @@ because the name is already in use in /internal/shared/preload/0-sqlite.php`
 → `Aborted()` / `unreachable RuntimeError`. Everything after (500s, more
 timeouts) is fallout, not cause.
 
+**A `Uncaught SyntaxError: Invalid or unexpected token` near the END of the
+page is usually a crash SYMPTOM, not a UTF-8 bug.** When the worker dies
+mid-request, the streamed response truncates inside the last inline script
+→ the browser reports an invalid token at that spot. The line number varies
+between runs (seen at `:668:127` and `VM…:9`) because the truncation point
+moves. Before hunting for bad bytes, check whether the console also shows
+the crash signature above; audit the rendered scripts with `node --check`
+(§7) — if they are all clean, the SyntaxError is truncation, and the crash
+is the bug to fix.
+
 | # | Cause | Prevention |
 |---|---|---|
 | 1 | **Synchronous PHP-side fetch to localhost during page render** (e.g. `wp_remote_get('http://localhost:11434')` inside a shortcode). When browser Private Network Access hangs the request, PHP blocks, the worker times out, a retry reuses the instance, and the SQLite preload re-declares → fatal. | Never fetch localhost from PHP render paths. Move connectivity checks client-side: render a container + inline `<script>` that fetches with an `AbortController` timeout. |
-| 2 | **Inline `<script>` with raw multi-byte UTF-8** (emoji, em dashes) in shortcode output. If the streamed inline script is decoded with a non-UTF-8 fallback, the bytes become invalid tokens → `Uncaught SyntaxError: Invalid or unexpected token`. | Keep inline JS **pure ASCII**: `\uXXXX` escapes for every non-ASCII char. Verify: extract the RENDERED script and assert `node --check` passes and `grep -cP '[^\x00-\x7F]'` returns 0. |
-| 3 | **Parallel REST bursts on a cold worker.** The Pro SPA fires ~8 concurrent REST calls on mount; the Complete bundle boots ~4s per request, the queue exhausts Playground's messaging budget, and the same duplicate-class fatal follows. | Reduce the mount burst (e.g. `[nvoos_pro_spa … show_sidebar="0"]` skips transcripts/threads/sessions), prefer serialized requests, and recommend Firefox or the local server fallback for heavy demos. |
+| 2 | **Inline `<script>` with raw multi-byte UTF-8** (emoji, em dashes) in hand-built shortcode/mu-plugin output. If the streamed inline script is decoded with a non-UTF-8 fallback, the bytes become invalid tokens → `Uncaught SyntaxError: Invalid or unexpected token`. NOTE: `wp_localize_script` is SAFE by default — PHP `json_encode` escapes non-ASCII as `\uXXXX`, so assistant titles like "Oma — Asteria Guide" land in `NVOOS_PRO_SPA` already escaped (verified by rendering the page server-side). The risk is limited to inline scripts you build by hand. | Keep hand-built inline JS **pure ASCII**: `\uXXXX` escapes for every non-ASCII char. Verify: extract the RENDERED script and assert `node --check` passes and `grep -cP '[^\x00-\x7F]'` returns 0 (`bin/check-nonascii.php`). |
+| 3 | **The Pro SPA holds a blocking SSE connection on mount.** `useJobBus()` in the SPA v2 source opens the `cron-status?stream=true` SSE stream (blocking emitter — the worker slot is held for the connection's lifetime) and starts a 15-second REST poll fallback. Combined with the SPA's parallel REST burst (approvals, slash-commands, …) on a cold 38 MB Complete bundle, the worker's request budget exhausts → same duplicate-class fatal. `show_sidebar="0"` does NOT stop the SSE or the approvals/slash-commands calls. | For Playground demos, make the **legacy `[mcp_ai_chat]`** the default surface (it only streams when the user sends a message) and offer `[nvoos_pro_spa]` on a SECONDARY page labeled as heavier. A runtime flag to disable the SPA job bus would be the proper plugin-side fix (follow-up on `alpha-working`).
 
 Note the CLI cannot reproduce crashes #1/#3 — it has no browser policies
 and serializes requests. Browser caveats must be eyeballed manually.
@@ -138,9 +148,13 @@ and serializes requests. Browser caveats must be eyeballed manually.
   `provider_priority_list` (ollama first), `default_assistant`.
 - **Demo assistant (CPT `mcp_ai_assistant`) meta keys:** `_wp_mcp_ai_provider`,
   `_wp_mcp_ai_model`, `_wp_mcp_ai_temperature`, `_wp_mcp_ai_system_prompt`,
-  `_wp_mcp_ai_tools` (array). The plugin ships ~5 default assistants on
-  activation; `get_page_by_path()` against the CPT slug is the idempotent
-  lookup.
+  `_wp_mcp_ai_tools` (array). The plugin seeds **6 "Ralph" orchestration
+  assistants on activation** (`includes/class-wp-mcp-ai-default-assistants.php`
+  — Orchestrator, Research Operative, Parser, Drafter, SEO Auditor,
+  Publisher). Their system prompts contain ~2,600 non-ASCII chars
+  (box-drawing, bullets, checkmarks) but never render into inline scripts —
+  they travel via REST as JSON, which is safe. `get_page_by_path()` against
+  the CPT slug is the idempotent lookup.
 - **Pro SPA v2 shortcode** (Pro, v1.1.68+, ships in the Complete bundle):
   `[nvoos_pro_spa assistant_id="ID" mode="embedded" theme="dark" height="720px"
   guest="0" allow_sensitive_tools="0" show_sidebar="0"]`. Fallback for
@@ -167,25 +181,48 @@ and serializes requests. Browser caveats must be eyeballed manually.
 ## 7. Validation harness (CLI)
 
 `npx -y @wp-playground/cli@3.1.54 run-blueprint` boots real WP in Node and
-executes the blueprint. The report-file pattern:
+executes the blueprint. The committed probe harness (branch
+`feat/ollama-playground-demo`, also in `bin/`):
 
-1. Copy the blueprint to `_verify.json` and append a throwaway `runPHP`
-   step that writes a JSON report to a mounted dir
-   (`file_put_contents( '/verify-out/…' )`).
-2. Run with the mount: `--mount-dir "C:/Users/<u>/AppData/Local/Temp/nvoos-verify" "/verify-out"`.
-   In Git Bash, prefix `MSYS_NO_PATHCONV=1` (MSYS mangles `/verify-out`).
-3. Assert: plugin active, settings/assistant/page intact, shortcodes
-   registered + rendered, `/api/tags` + `/api/chat` return 200, seed
-   idempotency guards present.
-4. Lint the embedded code: extract each `runPHP` step's `code` and `php -l`
-   it. For inline JS: write the do_shortcode render to the mount, extract
-   the script on the host, `node --check` + ASCII assertion (§5 row 2).
-5. Delete all throwaway files (`_verify.json`, temp builders, logs).
+```bash
+php bin/make-probe-blueprint.php       # ollama-demo.json + appended probe runPHP step
+MSYS_NO_PATHCONV=1 npx -y @wp-playground/cli@3.1.54 run-blueprint \
+  --blueprint=blueprints/ollama-demo.probe.json \
+  --mount-dir-before-install "F:/path/to/repo/verify-out" "/verify-out"
+php bin/dump-report.php page_found content_len scripts   # read verify-out/report.json
+node --check verify-out/js/block-1.js                    # lint each inline script
+```
 
-Known CLI quirks: `runPHP` stdout is not printed (state checks must go
-through the report-file pattern); `pathRegexp is not a function` on older
-CLI versions → pin `@3.1.54`; `wp_json_encode()` does not exist in plain
-PHP CLI (use `json_encode` in host-side throwaway scripts).
+`bin/probe-render-snippet.php` (embedded by the builder) renders the demo
+page server-side via `do_shortcode`, writes the HTML + a report
+(assistant inventory, page content, script blocks with non-ASCII/control
+char scans) to the mount, and extracts each inline script for host-side
+`node --check`. `bin/check-nonascii.php` audits any file; `bin/dump-report.php`
+prints report keys. `bin/capture-real-page.sh` boots `@wp-playground/cli
+server` against the blueprint and curls the real page — see the server-mode
+quirks below.
+
+Assert in the report: plugin active, settings/assistant/page intact,
+shortcodes registered + rendered, seed idempotency guards present.
+
+Known CLI quirks:
+
+- `runPHP` stdout is not printed — state checks must go through the
+  report-file pattern.
+- `pathRegexp is not a function` on older CLI versions → pin `@3.1.54`.
+- `wp_json_encode()` does not exist in plain PHP CLI (use `json_encode` in
+  host-side throwaway scripts).
+- `--mount-before-install F:/…:/verify-out` rejects Windows drive paths
+  (the colon splits the pair) — use the two-argument `--mount-dir-before-install
+  "F:\path" "/verify-out"` form instead.
+- **`server` mode answers `502 WordPress is not ready yet` while the site
+  boots** — the boot runs lazily INSIDE the first HTTP request, so the first
+  poll must allow several minutes (`curl --max-time 360`), and later polls
+  should stay bounded (`--max-time 15`) so a hung worker cannot stall the
+  loop. Server-mode boot is slower and flakier than `run-blueprint`; prefer
+  `run-blueprint` + the probe for regular validation.
+- The mounted guest dir is created lazily — `mkdir()` subdirectories (e.g.
+  `/verify-out/js`) inside the probe before writing into them.
 
 ## 8. Checklist when adding a demo blueprint
 
