@@ -903,6 +903,11 @@ n#### New Audit & Compliance Docs
 - **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.63 + changelog entry. (August 23, 2026)
 - **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.63 entry. (August 23, 2026)
 
+### New and updated documents (September 18, 2026, v1.1.82)
+
+- **[docs/user-guides/playground-demo.md](user-guides/playground-demo.md)** ⭐ **NEW** — one-click WordPress Playground demo of the Complete bundle with a local Ollama chat: the link, Ollama prerequisites (`OLLAMA_ORIGINS` per OS incl. the desktop-app relaunch gotcha), what to expect (banner states, chat, Pro SPA page, wp-admin), troubleshooting table, and the local CLI-server fallback. (September 18, 2026)
+- **[blueprints/README.md](../blueprints/README.md)** ⭐ **UPDATED** — end-user walkthrough linked from "Trying it". (September 18, 2026)
+
 ### New and updated documents (August 22, 2026, v1.1.62)
 
 - **[docs/features/okf-integration.md](features/okf-integration.md)** ⭐ **UPDATED** — OKF bundle management (Phases A–H): bundle lifecycle manager, admin screen, 10-tool surface, Pro skill bridge / enrichment agent / hybrid router, SPA v2 skills drawer + read-only REST surface. (August 22, 2026)
