@@ -135,6 +135,25 @@ The repository also contains the WordPress.org packaging and CI pipeline
 (`.github/workflows/`, `bin/`), the PHPUnit test suite (`tests/`), and the
 `.wordpress-org/` listing assets.
 
+== Third-Party Libraries ==
+
+The bundled `assets/dist/docs-hub.js` frontend is built from TypeScript/React
+sources in the public repository and includes the following open-source
+libraries (all GPL-compatible licenses; MIT unless noted):
+
+* React and React DOM (MIT) — https://react.dev
+* React Markdown (MIT) — https://github.com/remarkjs/react-markdown
+* React Router (MIT) — https://reactrouter.com
+* FlexSearch (Apache-2.0) — https://github.com/nextapps-de/flexsearch
+* Lowlight and highlight.js language grammars (MIT / BSD-3-Clause)
+* The unified/remark/rehype ecosystem: remark-gfm, remark-directive,
+  remark-frontmatter, rehype-slug, rehype-autolink-headings,
+  rehype-highlight, unist-util-visit (MIT) and github-slugger (ISC)
+
+Build and test tooling (esbuild, ESLint, TypeScript, Vitest) is not shipped
+in the distribution ZIP. The complete dependency graph and its licenses are
+listed in `package.json` and `package-lock.json` in the public repository.
+
 == Screenshots ==
 
 1. Settings — documentation index status and rebuild panel.
@@ -155,9 +174,10 @@ All requests are made **server-side only, over HTTPS**, and only to the two
 hosts listed below. Every request is restricted to these hosts (all other
 hosts are rejected, including private and reserved IP addresses), carries a
 bounded timeout and a 4 MB response-size cap, and only happens after an
-administrator has configured a repository and triggered a rebuild (or the
-nightly cron runs). No requests are made if no remote repository is
-configured.
+administrator has configured a repository and a rebuild is triggered —
+manually, via WP-CLI, by the nightly cron, or automatically when the cache
+is invalidated (a related plugin is activated, deactivated, or updated).
+No requests are made if no remote repository is configured.
 
 **No account is required** for public repositories. An optional GitHub
 personal access token can be saved in the settings to raise GitHub's API
@@ -187,6 +207,7 @@ https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-s
 * Fixed: removed the "Tested up to" line from the plugin headers — it is declared only in the readme.
 * Fixed: the daily rebuild cron is now scheduled on `init` instead of `plugins_loaded`, which prevented "translation loading triggered too early" notices on WordPress 6.7+ when other plugins register translated cron schedules.
 * Changed: rebuild cron events are cleared when the plugin is deactivated, and deactivating the plugin no longer enqueues a rebuild that could never run.
+* Changed: the readme now discloses the bundled third-party libraries and their licenses and lists every automatic rebuild trigger in the External Services section.
 
 = 0.4.6 =
 * Added: bundled GPLv3 license file (LICENSE) at the plugin root.

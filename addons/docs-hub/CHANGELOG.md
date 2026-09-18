@@ -18,6 +18,12 @@ WordPress.org review response pass (third round).
 - Deactivating Docs Hub itself no longer enqueues an async rebuild that
   could never run (the tick callbacks no longer exist while inactive); the
   cache is still cleared so re-activation starts from a fresh index.
+- The readme now discloses the bundled third-party libraries and their
+  licenses (all MIT/ISC/Apache-2.0/BSD-3-Clause) and lists every automatic
+  rebuild trigger in the External Services section.
+- The full test suite was validated against a real WordPress 7.1.1 core.
+  `Tested up to` stays at `7.1` (major.minor) — PCP rejects patch-level
+  values with `invalid_tested_upto_minor` when they match the latest stable.
 
 ## 0.4.6 — 2026-09-13
 
