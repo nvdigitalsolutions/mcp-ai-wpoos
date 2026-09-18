@@ -58,6 +58,11 @@ generator when a new release ships.
 
 ## Trying it
 
+**End-user walkthrough:** [docs/user-guides/playground-demo.md](../docs/user-guides/playground-demo.md)
+— the one-click link, Ollama prerequisites (`OLLAMA_ORIGINS` per OS,
+including the desktop-app relaunch gotcha), what to expect (banner states,
+chat, Pro SPA page, wp-admin), and a troubleshooting table.
+
 ```
 https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/<branch>/blueprints/ollama-demo.json
 ```
