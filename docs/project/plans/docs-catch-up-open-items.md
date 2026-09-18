@@ -1,8 +1,8 @@
 # Docs & Release Catch-Up — Standing Open-Items Tracker
 
 > **Purpose:** Single registry of every open item identified (and parked or deferred) by the docs & release catch-up runs, so future passes carry from this file instead of re-copying items between plans.
-> **Last reviewed:** 2026-09-17 (v1.1.81 pass)
-> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.81-docs-catch-up.md`](v1.1.81-docs-catch-up.md).
+> **Last reviewed:** 2026-09-18 (v1.1.82 pass)
+> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.82-docs-catch-up.md`](v1.1.82-docs-catch-up.md).
 > **Rule for future passes:** read this file first; a catch-up plan's "Open items" section should point here and only add new items it introduces.
 
 ---
@@ -33,7 +33,7 @@
 | 14 | *missing* | `addons/pro/includes/services/class-wp-mcp-ai-result-delivery-service.php` — `resolve_chat_format()`, `telegram_parse_mode()`, `escape_markdown_v2()`, `send_telegram_direct()`, `response_starts_with_summary()`, 5 instances (PRs #6525/#6548) + `includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php` — `hash_playbook_content()` (direct commit `fe4d0ee880`) | 1.1.76 | v1.1.76 plan |
 | 15 | `@since 1.1.76` | `includes/admin/class-wp-mcp-ai-onboarding-wizard.php` — `is_graph_tools_active()`, `is_content_graph_detected()`, `get_graphify_tool_slugs()`, `get_knowledge_graph_preset_tools()`, `get_effective_preset_selection()`, 7 instances (PR #6570) + `includes/class-wp-mcp-ai-cost-calculator.php` — `is_peak_time()`, `get_model_pricing_at()`, `calculate_cost_at()`, 4 instances (PR #6555) | 1.1.77 | v1.1.77 plan |
 | 16 | `@since 3.2.0` | `addons/pro/includes/tools/crm/` — 9 files: `class-wp-mcp-ai-crm-{stage-history,identity,link-tracker}.php`, `analytics/class-wp-mcp-ai-tool-get-pipeline-digest.php`, `class-wp-mcp-ai-tool-get-crm-handover.php`, `deals/class-wp-mcp-ai-tool-{bulk-move-deal-stages,create-tracked-link}.php`, `inbound/class-wp-mcp-ai-crm-gmail-reply-poller.php`, `inbound/class-wp-mcp-ai-tool-record-crm-reply.php` (PRs #6636/#6640/#6641; the init.php + `mcp-ai-wpoos-pro.php` registration comments also say "Since 3.2.0") | 1.1.81 | v1.1.81 plan |
-| 17 | `@since 1.1.82` | `addons/pro/includes/tools/ecommerce/trait-wp-mcp-ai-shopify-product-normalizers.php` — 1 instance (PR #6638; ahead of the shipping version) | 1.1.81 | v1.1.81 plan |
+| 17 | `@since 1.1.82` | `addons/pro/includes/tools/ecommerce/trait-wp-mcp-ai-shopify-product-normalizers.php` — 1 instance (PR #6638; ahead of the shipping version) | 1.1.81 | v1.1.81 plan — ✅ **self-resolved by the 1.1.82 ship** (the tag now matches the shipping version; noted by the v1.1.82 pass) |
 | 18 | `@since 1.1.80` | `addons/pro/includes/class-wp-mcp-ai-financial-transaction-cpt.php` + `includes/services/class-wp-mcp-ai-market-data-providers.php` + `class-wp-mcp-ai-technical-indicators.php` + 8 `financial-planning/class-wp-mcp-ai-tool-*.php` files (PR #6639; one version behind the 1.1.81 ship) | 1.1.81 | v1.1.81 plan |
 
 - **Blocked on:** version-jump decision — does the next release stay on 1.1.x or jump to 1.2.0?
@@ -44,7 +44,7 @@
 - **Status:** 🔒 Parked by user decision. Counts stay delta-derived in catch-up passes.
 - **Issue:** [#5967 — Re-derive live tool counts on a fully provisioned environment](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5967)
 - **What:** run `WP_MCP_AI_Tool_Registry::get_tools()` on a fully provisioned environment (seeded toolkits + optional plugins) and replace the delta-based figure.
-- **Current figure (v1.1.81):** ~306 base + ~1,279 Pro (~1,585 total), live-registry caveat retained on every count surface. (Delta-derived: +5 Pro CRM tools `bulk_move_deal_stages`/`create_tracked_link`/`record_crm_reply`/`get_crm_handover`/`get_pipeline_digest`, PR #6636, and +8 Pro financial tools `market_screener`/`macro_data_fetcher`/`economic_calendar_fetcher`/`earnings_calendar_fetcher`/`options_chain_fetcher`/`crypto_market_data`/`portfolio_transaction_log`/`price_alerts`, PR #6639; no base registrations in-window — #6634/#6635/#6637/#6638/#6641/#6643 add helpers/traits/services, not tools.)
+- **Current figure (v1.1.82):** ~306 base + ~1,279 Pro (~1,585 total), live-registry caveat retained on every count surface. (Delta-derived; **no tool registrations in-window** — #6645/#6661/#6665/#6669/#6672 are preset/service/shortcode/DB/SPA-level.)
 - **Known attempt:** QA container (`oos-qa-wp`) returns 363 tools because its DB is unprovisioned — not usable as source of truth.
 - **First noted in:** v1.1.59 plan; carried every pass since.
 
