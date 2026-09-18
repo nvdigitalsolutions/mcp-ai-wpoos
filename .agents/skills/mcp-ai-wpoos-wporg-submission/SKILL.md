@@ -497,6 +497,12 @@ Capture pitfalls (all hit in practice):
 - `== Screenshots ==` section with `1. Alt text` lines matching
   `screenshot-{N}.png` in SVN assets; add when the PNGs land.
 - `Stable tag` must equal the plugin header `Version`; `Tested up to` latest WP.
+  `Tested up to` must be **major.minor only** (`7.1`) — when the value
+  matches the latest stable, a patch-level value (`7.1.1`) is a PCP ERROR
+  `invalid_tested_upto_minor` ("The version number should only include major
+  versions"). A major.minor `7.1` against latest `7.1.x` is NOT stale (PCP
+  compares major.minor). Validate the suite against the patch release anyway
+  — declare major.minor, back it with the patch run.
 - Trim tags to directory-standard tags (PCP flags exotic tags).
 - Text Domain header must equal the slug for the ZIP dir name on wp.org.
 
