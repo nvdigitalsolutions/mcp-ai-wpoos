@@ -118,6 +118,14 @@ class WP_MCP_AI_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		// Check if connection_id is provided.
 		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : '';
 
+		// The schema documents the fallback as "settings-based credentials";
+		// assistants sometimes pass the literal string "settings" instead of
+		// omitting the argument. Treat it as the settings fallback so the
+		// call self-corrects instead of failing with connection_not_found.
+		if ( 'settings' === $connection_id ) {
+			$connection_id = '';
+		}
+
 		$client_id       = '';
 		$client_secret   = '';
 		$refresh_token   = '';
@@ -135,7 +143,7 @@ class WP_MCP_AI_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 					'wp_mcp_ai_gmail_connection_not_found',
 					sprintf(
 						/* translators: %s: connection ID. */
-						__( 'Gmail connection "%s" not found. Please check your connection settings.', 'mcp-ai-wpoos' ),
+						__( 'Gmail connection "%s" not found. Call list_gmail_connections to see available connection IDs, or omit connection_id to use settings-based credentials.', 'mcp-ai-wpoos' ),
 						$connection_id
 					)
 				);
