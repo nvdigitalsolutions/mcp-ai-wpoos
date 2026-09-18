@@ -187,11 +187,18 @@ ellipses), and truncated scripts — each maps to a different root cause.
   `ollama.exe`, then relaunch the app with the env var set, or run
   `OLLAMA_ORIGINS="…" ollama serve` from a console). macOS/Linux:
   `OLLAMA_ORIGINS="…" ollama serve`.
-- **Browser policy matrix:** Firefox works out of the box. Chrome/Edge may
-  prompt for local-network access or block (Ollama's preflight lacks
+- **Browser policy matrix:** the BANNER check runs in the page itself -
+  Firefox works out of the box once Ollama allows the origin; Chrome/Edge
+  may prompt for local-network access or block (Ollama's preflight lacks
   `Access-Control-Allow-Private-Network`); workaround:
-  `chrome://flags/#block-insecure-private-network-requests`. Bulletproof:
-  `npx @wp-playground/cli server` — a local origin has zero policy friction.
+  `chrome://flags/#block-insecure-private-network-requests`. The CHAT's model
+  call is PHP-side: browsers sandbox Playground's worker away from localhost
+  (confirmed in both Chrome and Firefox - page fetch works, worker fetch
+  does not), so a green banner does NOT imply a working chat in the browser
+  preview. The full chat experience requires
+  `npx -y @wp-playground/cli@3.1.54 server` (local origin; Node transport
+  reaches local Ollama directly - validated end-to-end with a real chat
+  reply).
 - Verify end-to-end server-side regardless of browser:
   `wp_remote_get( 'http://localhost:11434/api/tags' )` and a non-streaming
   `wp_remote_post( '…/api/chat', { model, messages, stream:false,

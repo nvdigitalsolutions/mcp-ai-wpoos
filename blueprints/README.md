@@ -71,12 +71,18 @@ https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.co
 
 **Browser caveats** (documented on the demo page itself):
 
-- Firefox works out of the box once Ollama allows the origin.
-- Chrome/Edge may prompt for local-network access or block silently
-  (Private Network Access) — allow the prompt, or disable
-  `chrome://flags/#block-insecure-private-network-requests`.
-- Bulletproof fallback: `npx @wp-playground/cli server` (local origin →
-  no policy friction at all).
+- The `[ollama_status]` banner runs client-side: Firefox works out of the box
+  once Ollama allows the origin; Chrome/Edge may block localhost requests
+  (Private Network Access) until
+  `chrome://flags/#block-insecure-private-network-requests` is disabled.
+- The CHAT's model call is PHP-side (inside Playground's worker). Browsers
+  sandbox that worker away from localhost (confirmed in both Chrome and
+  Firefox), so the banner can be green while the chat cannot answer in the
+  browser preview.
+- Full chat experience: run the demo locally -
+  `npx -y @wp-playground/cli@3.1.54 server --blueprint=https://raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/alpha-working/blueprints/ollama-demo.json --login`
+  and open the printed local URL (Node transport reaches local Ollama
+  directly; validated end-to-end: `/api/chat` returned "Asteria Online").
 
 ## Validation (2026-09-18)
 
