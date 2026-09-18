@@ -16,6 +16,7 @@
  *
  * Usage:
  *   php bin/generate-ollama-blueprint.php
+ *   php bin/generate-ollama-blueprint.php --bundle-url=<url>   # override ZIP discovery
  *
  * The generated file is committed; re-run after editing the seed snippet.
  *
@@ -24,10 +25,50 @@
 
 declare(strict_types=1);
 
+/**
+ * Resolve the Complete bundle ZIP URL for the blueprint's installPlugin step.
+ *
+ * Globs build/nvdigital-open-operator-system-oos-complete-*.zip and picks the
+ * highest version so the demo always installs the newest Complete bundle
+ * without a manual pin bump. The build-assets workflow calls the generator
+ * right after rebuilding the ZIPs, keeping the committed JSON current.
+ *
+ * @param string $root Repo root directory.
+ * @param array  $argv CLI arguments (supports --bundle-url=<url>).
+ * @return string Raw bundle URL.
+ */
+function nvoos_ollama_resolve_bundle_url( string $root, array $argv ): string {
+	foreach ( $argv as $arg ) {
+		if ( 0 === strpos( $arg, '--bundle-url=' ) ) {
+			return substr( $arg, strlen( '--bundle-url=' ) );
+		}
+	}
+
+	$prefix = 'nvdigital-open-operator-system-oos-complete-';
+	$latest = null;
+
+	foreach ( glob( $root . '/build/' . $prefix . '*.zip' ) ?: array() as $file ) {
+		$version = substr( basename( $file ), strlen( $prefix ), -4 );
+		if ( null === $latest || version_compare( $version, $latest, '>' ) ) {
+			$latest = $version;
+		}
+	}
+
+	if ( null === $latest ) {
+		fwrite( STDERR, "No Complete bundle ZIP found in build/ - run bin/rebuild-all-zips.sh first.\n" );
+		exit( 1 );
+	}
+
+	printf( "Resolved bundle version: %s\n", $latest );
+
+	return 'https://raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/alpha-working/build/'
+		. $prefix . $latest . '.zip';
+}
+
 $root       = dirname( __DIR__ );
 $seedSrc    = $root . '/blueprints/ollama-demo.php';
 $outPath    = $root . '/blueprints/ollama-demo.json';
-$bundleUrl  = 'https://raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/alpha-working/build/nvdigital-open-operator-system-oos-complete-1.1.81.zip';
+$bundleUrl  = nvoos_ollama_resolve_bundle_url( $root, $argv );
 
 if ( ! is_file( $seedSrc ) ) {
 	fwrite( STDERR, "Missing seed file: {$seedSrc}\n" );
