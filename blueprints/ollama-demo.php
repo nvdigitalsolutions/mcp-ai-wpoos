@@ -155,12 +155,14 @@ function nvoos_ollama_demo_seed(): void {
 	// opens a blocking SSE cron-status stream on mount, which can exhaust
 	// Playground's WASM worker (especially while the 38 MB Complete bundle
 	// is still cold). Offered as a separate page so the default demo stays
-	// reliable.
+	// reliable. cron_monitor="0" (Pro v1.1.82+, PR #6665) tells the SPA to
+	// skip that job stream entirely; older bundles ignore the attribute, so
+	// the seed stays compatible across bundle versions.
 	if ( shortcode_exists( 'nvoos_pro_spa' ) && ! get_page_by_path( 'ollama-test-lab-pro', OBJECT, 'page' ) ) {
-		$spa_shortcode = '[nvoos_pro_spa assistant_id="' . $assistant_id . '" theme="dark" height="720px" show_sidebar="0"]';
+		$spa_shortcode = '[nvoos_pro_spa assistant_id="' . $assistant_id . '" theme="dark" height="720px" show_sidebar="0" cron_monitor="0"]';
 
 		$pro_page = '<p>The <strong>Pro SPA v2</strong> surface - chat-first UI with drawers, tool shortcuts, and the OKF drawer - running against your local Ollama.</p>' . "\n"
-			. '<p><strong>Heads up:</strong> this surface opens a live cron-status stream and several background requests on mount. On WordPress Playground that can overload the WASM worker and crash the instance. If this page becomes unresponsive, <a href="/ollama-test-lab/">use the standard Test Lab instead</a>.</p>' . "\n"
+			. '<p><strong>Heads up:</strong> this surface mounts with its live cron-status job stream disabled (cron_monitor="0") so it does not hold a server connection open in the background. On older bundle versions the attribute is ignored and the stream stays on, which can overload the WASM worker on WordPress Playground. If this page becomes unresponsive, <a href="/ollama-test-lab/">use the standard Test Lab instead</a>.</p>' . "\n"
 			. '<p>[ollama_status]</p>' . "\n"
 			. '<p>' . $spa_shortcode . '</p>' . "\n";
 
