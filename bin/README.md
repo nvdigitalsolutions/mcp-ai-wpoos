@@ -214,6 +214,23 @@ Architecture:
 
 ---
 
+## Playground Blueprint Generator (`generate-content-graph-blueprint.php`)
+
+`php bin/generate-content-graph-blueprint.php` generates the two WordPress
+Playground blueprint files for the NV oOS Content Graph "Project Asteria"
+demo from `plugins/nvoos-content-graph/blueprints/seed-content.php`:
+
+| Output | Role |
+|---|---|
+| `plugins/nvoos-content-graph/.wordpress-org/blueprints/blueprint.json` | wp.org Live Preview blueprint (plugin pre-installed by the preview loader; mirrors SVN `assets/blueprints/blueprint.json`) |
+| `plugins/nvoos-content-graph/blueprints/demo.json` | Standalone demo for shareable links (installs the plugin from wordpress.org) |
+
+The generated files are committed; re-run the generator after editing the
+seed content. See [`plugins/nvoos-content-graph/docs/playground-blueprint-plan.md`](../plugins/nvoos-content-graph/docs/playground-blueprint-plan.md)
+for the full plan and validation checklist.
+
+---
+
 ### `generate-ollama-blueprint.php` — NV oOS Complete × Ollama demo
 
 `php bin/generate-ollama-blueprint.php` generates `blueprints/ollama-demo.json`
