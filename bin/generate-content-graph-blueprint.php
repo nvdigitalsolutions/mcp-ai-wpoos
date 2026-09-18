@@ -12,10 +12,12 @@
  *
  *   2. plugins/nvoos-content-graph/blueprints/demo.json
  *      The standalone demo blueprint for shareable links. Includes the
- *      installPlugin step (from wordpress.org) so the link is self-contained.
+ *      installPlugin step (newest built ZIP from the repo) so the link is
+ *      self-contained and always current.
  *
  * Usage:
  *   php bin/generate-content-graph-blueprint.php
+ *   php bin/generate-content-graph-blueprint.php --plugin-url=<url>   # override ZIP discovery
  *
  * The generated files are committed, so this script is optional tooling for
  * content updates — not a build dependency.
@@ -24,6 +26,47 @@
  */
 
 declare(strict_types=1);
+
+/**
+ * Resolve the plugin ZIP URL for the standalone demo's installPlugin step.
+ *
+ * Globs build/nvoos-content-graph-v*.zip and picks the highest version so
+ * the demo always installs the newest Content Graph build instead of
+ * whatever wordpress.org currently serves. The build-assets workflow calls
+ * the generator right after rebuilding the ZIPs, keeping the committed
+ * demo.json current.
+ *
+ * @param string $root Repo root directory.
+ * @param array  $argv CLI arguments (supports --plugin-url=<url>).
+ * @return string Raw plugin ZIP URL.
+ */
+function nvoos_cg_resolve_plugin_url( string $root, array $argv ): string {
+	foreach ( $argv as $arg ) {
+		if ( 0 === strpos( $arg, '--plugin-url=' ) ) {
+			return substr( $arg, strlen( '--plugin-url=' ) );
+		}
+	}
+
+	$prefix = 'nvoos-content-graph-v';
+	$latest = null;
+
+	foreach ( glob( $root . '/build/' . $prefix . '*.zip' ) ?: array() as $file ) {
+		$version = substr( basename( $file ), strlen( $prefix ), -4 );
+		if ( null === $latest || version_compare( $version, $latest, '>' ) ) {
+			$latest = $version;
+		}
+	}
+
+	if ( null === $latest ) {
+		fwrite( STDERR, "No Content Graph ZIP found in build/ - run bin/rebuild-all-zips.sh first.\n" );
+		exit( 1 );
+	}
+
+	printf( "Resolved plugin version: %s\n", $latest );
+
+	return 'https://raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/alpha-working/build/'
+		. $prefix . $latest . '.zip';
+}
 
 $root    = dirname( __DIR__ );
 $seedSrc = $root . '/plugins/nvoos-content-graph/blueprints/seed-content.php';
@@ -106,8 +149,8 @@ $optionsStep = array(
 $installStep = array(
 	'step'       => 'installPlugin',
 	'pluginData' => array(
-		'resource' => 'wordpress.org/plugins',
-		'slug'     => 'nvoos-content-graph',
+		'resource' => 'url',
+		'url'      => nvoos_cg_resolve_plugin_url( $root, $argv ),
 	),
 	'options'    => array(
 		'activate' => true,

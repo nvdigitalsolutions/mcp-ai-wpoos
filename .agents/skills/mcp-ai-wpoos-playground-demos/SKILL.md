@@ -41,8 +41,10 @@ php bin/generate-ollama-blueprint.php          # emits blueprints/ollama-demo.js
 The Ollama demo's `installPlugin` step points at the **newest**
 `alpha-working/build/nvdigital-open-operator-system-oos-complete-*.zip` — the
 generator globs `build/` and picks the highest version (override with
-`--bundle-url=`), so no pin bump is needed when a release ships. The
-`build-assets` workflow regenerates the JSON right after rebuilding the ZIPs,
+`--bundle-url=`), so no pin bump is needed when a release ships. The Content
+Graph demo's `demo.json` does the same against
+`build/nvoos-content-graph-v*.zip` (override with `--plugin-url=`). The
+`build-assets` workflow regenerates both JSONs right after rebuilding the ZIPs,
 and its push paths include `addons/**/*.{js,ts,tsx,css}` so asset-side changes
 trigger the rebuild too.
 
