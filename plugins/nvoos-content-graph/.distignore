@@ -46,6 +46,9 @@
 # wp.org SVN assets — uploaded to plugins.svn.wordpress.org, not shipped in the ZIP
 /.wordpress-org
 
+# Playground blueprint tooling — the canonical blueprint lives in .wordpress-org/blueprints
+/blueprints
+
 # Per-folder developer READMEs (monorepo convention — not for distribution)
 src/**/README.md
 
