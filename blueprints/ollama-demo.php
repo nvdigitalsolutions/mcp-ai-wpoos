@@ -117,20 +117,20 @@ function nvoos_ollama_demo_seed(): void {
 	if ( ! get_page_by_path( 'ollama-test-lab', OBJECT, 'page' ) ) {
 		$chat_shortcode = $assistant_id > 0 ? '[mcp_ai_chat assistant="' . $assistant_id . '"]' : '[mcp_ai_chat]';
 
-		$page = '<p>This entire site - WordPress, the NV oOS Complete bundle, and the chat below - is running in <strong>your browser</strong> via WordPress Playground. The chat is powered by <strong>your local Ollama</strong>. No prompts ever leave your machine.</p>' . "\n"
+		$page = '<p>This entire site - WordPress, the NV oOS Complete bundle, and the chat below - is running in <strong>your browser</strong> via WordPress Playground. The chat is wired to <strong>your local Ollama</strong>. No prompts ever leave your machine.</p>' . "\n"
 			. '<p>[ollama_status]</p>' . "\n"
 			. '<p>' . $chat_shortcode . '</p>' . "\n"
-			. '<h2>Not working yet? Three-step setup</h2>' . "\n"
+			. '<h2>How to run the full demo</h2>' . "\n"
+			. '<p>The status banner above checks your Ollama from the page itself and turns green when the browser can reach it. The chat asks the model through Playground\'s PHP worker - and browsers sandbox that worker away from localhost, so the full chat experience runs best on your own machine:</p>' . "\n"
 			. '<ol>' . "\n"
 			. '<li><strong>Install and run Ollama</strong> - <a href="https://ollama.com/download">ollama.com/download</a>, then pull a model: <code>ollama pull llama3.1:8b</code> (any model you pull works; the demo defaults to llama3.1:8b).</li>' . "\n"
-			. '<li><strong>Allow this site\'s origin</strong> - Ollama blocks browser cross-origin requests by default. Windows: <code>setx OLLAMA_ORIGINS "https://playground.wordpress.net,http://localhost,http://127.0.0.1"</code>, then quit Ollama from the tray and relaunch. macOS / Linux: <code>OLLAMA_ORIGINS="https://playground.wordpress.net,http://localhost,http://127.0.0.1" ollama serve</code>.</li>' . "\n"
-			. '<li><strong>Refresh this page</strong> - the status banner above turns green and the chat answers.</li>' . "\n"
+			. '<li><strong>Allow the local origin</strong> - Windows: <code>setx OLLAMA_ORIGINS "https://playground.wordpress.net,http://localhost,http://127.0.0.1"</code>, then quit Ollama from the tray and relaunch. macOS / Linux: <code>OLLAMA_ORIGINS="https://playground.wordpress.net,http://localhost,http://127.0.0.1" ollama serve</code>.</li>' . "\n"
+			. '<li><strong>Run Playground locally</strong> - <code>npx -y @wp-playground/cli@3.1.54 server --blueprint=https://raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/alpha-working/blueprints/ollama-demo.json --login</code> and open the printed local URL. On your machine, Playground\'s PHP worker reaches local Ollama directly - the banner turns green and the chat answers.</li>' . "\n"
 			. '</ol>' . "\n"
-			. '<h2>Browser notes</h2>' . "\n"
+			. '<h2>Browser preview notes</h2>' . "\n"
 			. '<ul>' . "\n"
-			. '<li><strong>Firefox</strong>: works out of the box once Ollama allows the origin.</li>' . "\n"
-			. '<li><strong>Chrome / Edge</strong>: may show an "allow access to your local network" prompt - allow it. If localhost requests are still blocked, disable the Private Network Access check at <code>chrome://flags/#block-insecure-private-network-requests</code>.</li>' . "\n"
-			. '<li><strong>Bulletproof fallback</strong>: run Playground on your machine - <code>npx @wp-playground/cli server</code> - and open this blueprint link on the printed local URL. A local origin reaches local Ollama with zero browser policy friction.</li>' . "\n"
+			. '<li>The banner check runs in the page itself: <strong>Firefox</strong> works out of the box once Ollama allows the origin. <strong>Chrome / Edge</strong> may block localhost requests until the Private Network Access flag at <code>chrome://flags/#block-insecure-private-network-requests</code> is disabled.</li>' . "\n"
+			. '<li>The chat\'s model call runs inside the PHP worker, which the browser preview sandboxes away from your localhost - the banner can be green while the chat cannot answer. Use the local server above for the full chat experience.</li>' . "\n"
 			. '</ul>' . "\n"
 			. '<h2>Where things live</h2>' . "\n"
 			. '<ul>' . "\n"
@@ -162,7 +162,7 @@ function nvoos_ollama_demo_seed(): void {
 		$spa_shortcode = '[nvoos_pro_spa assistant_id="' . $assistant_id . '" theme="dark" height="720px" show_sidebar="0" cron_monitor="0"]';
 
 		$pro_page = '<p>The <strong>Pro SPA v2</strong> surface - chat-first UI with drawers, tool shortcuts, and the OKF drawer - running against your local Ollama.</p>' . "\n"
-			. '<p><strong>Heads up:</strong> this surface mounts with its live cron-status job stream disabled (cron_monitor="0") so it does not hold a server connection open in the background. On older bundle versions the attribute is ignored and the stream stays on, which can overload the WASM worker on WordPress Playground. If this page becomes unresponsive, <a href="/ollama-test-lab/">use the standard Test Lab instead</a>.</p>' . "\n"
+			. '<p><strong>Heads up:</strong> this surface mounts with its live cron-status job stream disabled (cron_monitor="0") so it does not hold a server connection open in the background. On older bundle versions the attribute is ignored and the stream stays on, which can overload the WASM worker on WordPress Playground. If this page becomes unresponsive, <a href="/ollama-test-lab/">use the standard Test Lab instead</a>. As with the Test Lab, the chat\'s model call runs inside Playground\'s PHP worker - for the full chat experience run the demo locally with <code>npx -y @wp-playground/cli@3.1.54 server</code> (see the Test Lab page for the full command).</p>' . "\n"
 			. '<p>[ollama_status]</p>' . "\n"
 			. '<p>' . $spa_shortcode . '</p>' . "\n";
 
