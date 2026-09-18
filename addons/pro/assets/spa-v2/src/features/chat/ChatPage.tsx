@@ -507,7 +507,14 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const speech = useSpeechPlayback( { toolsEndpoint: endpoints?.tools ?? '', nonce, assistantId } );
 
 	// ── Job system (v0.9.0) ───────────────────────────────────────────────────
-	const cronBase = ( endpoints?.chat ?? '' ).replace( /\/chat\/?$/, '' );
+	// When the per-instance config disables cron monitoring (embedded mode on
+	// constrained hosts, e.g. WordPress Playground), pass an empty base URL so
+	// useJobBus() skips BOTH the blocking SSE cron-status stream and the REST
+	// poll fallback on mount.
+	const cronMonitorEnabled = runtime?.config?.cronMonitor !== false;
+	const cronBase = cronMonitorEnabled
+		? ( endpoints?.chat ?? '' ).replace( /\/chat\/?$/, '' )
+		: '';
 	const jobBus = useJobBus( cronBase, nonce );
 	useTabTitleBadge( jobBus.runningCount );
 

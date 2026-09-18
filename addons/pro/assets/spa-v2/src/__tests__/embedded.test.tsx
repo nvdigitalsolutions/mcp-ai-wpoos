@@ -75,6 +75,7 @@ describe( 'applyPerInstanceConfig', () => {
 			height: '720px',
 			guest: true,
 			guestToken: 'tok_123',
+			cronMonitor: false,
 		} );
 
 		const merged = readProSpaConfig();
@@ -84,6 +85,8 @@ describe( 'applyPerInstanceConfig', () => {
 		expect( merged!.config.height ).toBe( '720px' );
 		expect( merged!.config.guest ).toBe( true );
 		expect( merged!.config.guestToken ).toBe( 'tok_123' );
+		// The shortcode's cron_monitor="0" attribute must reach the runtime.
+		expect( merged!.config.cronMonitor ).toBe( false );
 		// Untouched fields survive the merge.
 		expect( merged!.config.showSidebar ).toBe( true );
 	} );
@@ -178,5 +181,30 @@ describe( 'EmbeddedApp', () => {
 				container.querySelector( '.nvoos-pro-spa-embedded__layout' )
 			).not.toBeNull();
 		} );
+	}, 15000 );
+
+	it( 'skips the cron-status stream when cronMonitor is false', async () => {
+		setRuntime( {
+			...VALID_RUNTIME,
+			config: { ...VALID_RUNTIME.config, cronMonitor: false },
+		} );
+
+		const fetchMock = vi.fn().mockResolvedValue( { ok: false, body: null } );
+		vi.stubGlobal( 'fetch', fetchMock );
+
+		const { container } = render( <EmbeddedApp /> );
+
+		await waitFor( () => {
+			expect(
+				container.querySelector( '.nvoos-pro-spa-embedded__layout' )
+			).not.toBeNull();
+		} );
+
+		// No request (SSE stream or REST poll) may target the cron-status
+		// endpoint — that is the whole point of the flag on constrained hosts.
+		const cronStatusCalls = fetchMock.mock.calls.filter( ( [ url ] ) =>
+			String( url ).includes( 'cron-status' )
+		);
+		expect( cronStatusCalls ).toHaveLength( 0 );
 	}, 15000 );
 } );
