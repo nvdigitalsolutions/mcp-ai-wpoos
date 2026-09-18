@@ -71,6 +71,11 @@ class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interfa
 	const DEFAULT_TIMEOUT = 15;
 
 	/**
+	 * Telegram Bot API limit for a single message: 1-4096 characters.
+	 */
+	const MAX_MESSAGE_LENGTH = 4096;
+
+	/**
 	 * Check if this tool is available.
 	 *
 	 * @since 1.0.0
@@ -130,6 +135,11 @@ class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interfa
 					'type'        => 'boolean',
 					'description' => __( 'Disables link previews for links in the sent message.', 'nvoos-content-graph-pro' ),
 					'default'     => false,
+				),
+				'chunk'                    => array(
+					'type'        => 'boolean',
+					'description' => __( 'Automatically split messages longer than 4,096 characters into multiple Telegram messages. Default true.', 'nvoos-content-graph-pro' ),
+					'default'     => true,
 				),
 			),
 			'required'             => array( 'token', 'chat_id', 'text' ),
@@ -193,16 +203,81 @@ class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interfa
 		}
 
 		$disable_preview = ! empty( $arguments['disable_web_page_preview'] );
+		$chunk           = isset( $arguments['chunk'] ) ? (bool) $arguments['chunk'] : true;
 
 		$endpoint = sprintf( 'https://api.telegram.org/bot%s/sendMessage', rawurlencode( $token ) );
+		$timeout  = apply_filters( 'wp_mcp_ai_send_telegram_message_timeout', self::DEFAULT_TIMEOUT, $context, $arguments );
+
+		// Auto-split messages that exceed Telegram's 4,096-character limit so
+		// long reports (e.g. scheduled assistant-run summaries) are delivered
+		// instead of failing with a 400 "message is too long".
+		$chunks = array(
+			array(
+				'text'       => $text,
+				'hard_split' => false,
+			),
+		);
+		if ( $chunk && mb_strlen( $text ) > self::MAX_MESSAGE_LENGTH ) {
+			$chunks = $this->split_message_text( $text, self::MAX_MESSAGE_LENGTH );
+		}
+
+		if ( 1 === count( $chunks ) && ! $chunks[0]['hard_split'] ) {
+			return $this->send_single_message( $endpoint, $chat_id, $chunks[0]['text'], $parse_mode, $disable_preview, $timeout, false );
+		}
+
+		$sent = array();
+		foreach ( $chunks as $index => $chunk_data ) {
+			$result = $this->send_single_message( $endpoint, $chat_id, $chunk_data['text'], $parse_mode, $disable_preview, $timeout, $chunk_data['hard_split'] );
+			if ( is_wp_error( $result ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_telegram_chunk_error',
+					sprintf(
+						/* translators: 1: failed chunk index, 2: total chunk count, 3: underlying error */
+						__( 'Failed to send Telegram message chunk %1$d of %2$d: %3$s', 'nvoos-content-graph-pro' ),
+						$index + 1,
+						count( $chunks ),
+						$result->get_error_message()
+					),
+					array(
+						'chunk'        => $index + 1,
+						'total_chunks' => count( $chunks ),
+					)
+				);
+			}
+			$sent[] = $result;
+		}
+
+		return array(
+			'ok'            => true,
+			'messages_sent' => count( $sent ),
+			'results'       => $sent,
+		);
+	}
+
+	/**
+	 * Send a single Telegram message via the Bot API.
+	 *
+	 * @param string $endpoint         Fully-qualified sendMessage endpoint.
+	 * @param string $chat_id          Target chat identifier.
+	 * @param string $text             Message text (already within the length limit).
+	 * @param string $parse_mode       Validated parse mode or empty string.
+	 * @param bool   $disable_preview  Whether link previews are disabled.
+	 * @param int    $timeout          HTTP request timeout in seconds.
+	 * @param bool   $strip_parse_mode When true, send without parse_mode because a
+	 *                                 hard split may have broken markup entities mid-tag,
+	 *                                 which Telegram would reject with a 400.
+	 * @return array|WP_Error Decoded Telegram response or error.
+	 */
+	protected function send_single_message( $endpoint, $chat_id, $text, $parse_mode, $disable_preview, $timeout, $strip_parse_mode = false ) {
+		$effective_mode = $strip_parse_mode ? '' : $parse_mode;
 
 		$payload = array(
 			'chat_id' => $chat_id,
 			'text'    => $text,
 		);
 
-		if ( '' !== $parse_mode ) {
-			$payload['parse_mode'] = $parse_mode;
+		if ( '' !== $effective_mode ) {
+			$payload['parse_mode'] = $effective_mode;
 		}
 
 		if ( $disable_preview ) {
@@ -222,7 +297,7 @@ class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interfa
 				'endpoint' => 'https://api.telegram.org/bot***/sendMessage',
 				'chat_id'  => $chat_id,
 				'options'  => array(
-					'parse_mode'               => $parse_mode,
+					'parse_mode'               => $effective_mode,
 					'disable_web_page_preview' => $disable_preview,
 				),
 			)
@@ -234,7 +309,7 @@ class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interfa
 				'headers' => array(
 					'Content-Type' => 'application/json',
 				),
-				'timeout' => apply_filters( 'wp_mcp_ai_send_telegram_message_timeout', self::DEFAULT_TIMEOUT, $context, $arguments ),
+				'timeout' => $timeout,
 				'body'    => $body,
 			)
 		);
@@ -265,7 +340,7 @@ class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interfa
 				array(
 					'http_code'   => $code,
 					'chat_id'     => $chat_id,
-					'parse_mode'  => $parse_mode,
+					'parse_mode'  => $effective_mode,
 					'api_message' => $message,
 				)
 			);
@@ -281,6 +356,87 @@ class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interfa
 		}
 
 		return $decoded;
+	}
+
+	/**
+	 * Split message text into Telegram-sized chunks.
+	 *
+	 * Prefers paragraph boundaries (double newline), then line boundaries, and
+	 * finally hard character splits for pathological single blocks. Hard-split
+	 * chunks may break markup entities mid-tag, so they are flagged for the
+	 * send loop to deliver without parse_mode.
+	 *
+	 * @param string $text  Full message text.
+	 * @param int    $limit Maximum chunk length in characters.
+	 * @return array<int,array{text:string,hard_split:bool}> Ordered chunks.
+	 */
+	protected function split_message_text( $text, $limit ) {
+		$chunks = array();
+
+		// Prefer whole-block splits: they keep markup entities intact.
+		foreach ( array( "\n\n", "\n" ) as $separator ) {
+			$blocks = explode( $separator, $text );
+
+			$longest = 0;
+			foreach ( $blocks as $block ) {
+				$block_len = mb_strlen( $block );
+				if ( $block_len > $longest ) {
+					$longest = $block_len;
+				}
+			}
+
+			if ( $longest <= $limit ) {
+				$current = '';
+				foreach ( $blocks as $block ) {
+					if ( '' === $current ) {
+						$current = $block;
+					} elseif ( mb_strlen( $current . $separator . $block ) <= $limit ) {
+						$current .= $separator . $block;
+					} else {
+						$chunks[] = array(
+							'text'       => trim( $current ),
+							'hard_split' => false,
+						);
+						$current  = $block;
+					}
+				}
+				if ( '' !== $current ) {
+					$chunks[] = array(
+						'text'       => trim( $current ),
+						'hard_split' => false,
+					);
+				}
+				return $chunks;
+			}
+		}
+
+		// A single block exceeds the limit: hard-split at the last whitespace
+		// before the boundary (or exactly at the limit when no whitespace is
+		// available). These chunks may break markup, hence the hard_split flag.
+		$remaining = $text;
+		while ( mb_strlen( $remaining ) > $limit ) {
+			$window = mb_substr( $remaining, 0, $limit );
+			$cut    = mb_strrpos( $window, ' ' );
+
+			if ( false === $cut || $cut < (int) floor( $limit / 2 ) ) {
+				$cut = $limit;
+			}
+
+			$chunks[]  = array(
+				'text'       => trim( mb_substr( $remaining, 0, $cut ) ),
+				'hard_split' => true,
+			);
+			$remaining = ltrim( mb_substr( $remaining, $cut ) );
+		}
+
+		if ( '' !== trim( $remaining ) ) {
+			$chunks[] = array(
+				'text'       => trim( $remaining ),
+				'hard_split' => true,
+			);
+		}
+
+		return $chunks;
 	}
 
 	/**
