@@ -98,6 +98,20 @@ Reference: `docs/features/tool-presets-system.md`.
 
 ---
 
+## Tool Description Engineering (v1.1.83)
+
+Tool descriptions are engineered for the LLM, not just the admin UI:
+
+- **`WP_MCP_AI_Tool_Usage_Guidance_Interface`** — optional tool interface declaring `get_usage_guidance()`, returning `when_to_use` / `when_not_to_use` / `related_tools` / `notes` (all keys optional).
+- **Registry assembly** — `WP_MCP_AI_Tool_Registry::get_model_facing_description()` appends the guidance to the model-facing payload as a compact `[Usage: …]` suffix, mirroring the existing `[Data contract: …]` suffix so strict OpenAI schemas stay valid.
+- **`WPMCPAI.Tools.ToolDescriptionGuidance` sniff** — warns when a tool implements `WP_MCP_AI_Tool_Interface` but neither implements the guidance interface nor embeds usage guidance in `get_description()`. Severity 0 (advisory) in `phpcs.xml.dist` during roll-out; severity 5 in `phpcs/WPMCPAI/ruleset.xml` — run explicitly with `vendor/bin/phpcs --standard=phpcs/WPMCPAI/ruleset.xml --severity=5 includes/tools addons/pro/includes/tools`.
+- **Adaptive tool cap (opt-in)** — option `wp_mcp_ai_adaptive_tool_cap` (default off) + `WP_MCP_AI_Tool_Payload_Advisor` lower the effective payload cap by model context window: 40 tools ≤128K, 64 ≤256K, 100 above.
+- **`list_mcp_tools` lazy schemas** — new params `tool_slug` (fetch one tool's full schema on demand) and `include_schemas` (default `true`; `false` returns a lean name/description/toolkit/risk catalogue).
+
+Reference: `docs/features/tool-description-guidelines.md`, `docs/project/proposals/tool-description-engineering-proposal.md`.
+
+---
+
 ## File Locations
 
 | Type | Directory | Registration File |
