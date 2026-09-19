@@ -76,13 +76,15 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Bare /freelance-jobs/{slug}/ and /hire/{slug}/ paths are category pages;
-	 * job post URLs carry a ~jobId suffix (or live under /jobs/).
+	 * Bare /freelance-jobs/{slug}/, /freelance-jobs/apply/{category}/, and
+	 * /hire/{slug}/ paths are category pages; job post URLs carry a ~jobId
+	 * suffix (or live under /jobs/).
 	 */
 	public function test_is_upwork_category_page_classifies_urls() {
 		$category_pages = array(
 			'https://www.upwork.com/freelance-jobs/administrative-support/',
 			'https://www.upwork.com/freelance-jobs/level-design',
+			'https://www.upwork.com/freelance-jobs/apply/web-development/',
 			'https://www.upwork.com/hire/virtual-assistants/',
 			'https://upwork.com/hire/mobile-app-developers',
 		);
@@ -92,6 +94,7 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 
 		$job_postings = array(
 			'https://www.upwork.com/freelance-jobs/WordPress-Developer_~01d7d03bb39cc7daec/',
+			'https://www.upwork.com/freelance-jobs/apply/WordPress-Developer-for-Elementor-Website_~022091870001775728249/',
 			'https://www.upwork.com/jobs/wordpress-dev_~0123456789abcdef/',
 			'https://www.upwork.com/nx/find-work/best-matches',
 		);
@@ -361,6 +364,80 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The broad second pass must run even when the call carries no keywords
+	 * (the discovery-scan preset passes an empty query) — otherwise a
+	 * category-page-dominated first pass leaves the schedule with no jobs.
+	 */
+	public function test_execute_fallback_runs_broad_pass_without_keywords() {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->register_tool( new WP_MCP_AI_Tool_Web_Search() );
+
+		// Pass 1 (site-restricted) surfaces only category pages; pass 2
+		// (broad) surfaces one real posting plus an aggregator listing.
+		$category_only = wp_json_encode(
+			array(
+				'AbstractText'  => 'WordPress Freelance Jobs: Work Remote & Earn Online',
+				'AbstractURL'   => 'https://www.upwork.com/freelance-jobs/wordpress/',
+				'Heading'       => 'WordPress Freelance Jobs: Work Remote & Earn Online',
+				'RelatedTopics' => array(
+					array(
+						'Text'     => 'Typing Freelance Jobs: Work Remote & Earn Online',
+						'FirstURL' => 'https://www.upwork.com/freelance-jobs/typing/',
+						'Result'   => 'Entry Experience level · We are looking for a detail-oriented freelancer…',
+					),
+				),
+			)
+		);
+		$broad_body    = wp_json_encode(
+			array(
+				'RelatedTopics' => array(
+					array(
+						'Text'     => 'WordPress Developer for Block-Based Theme - Upwork',
+						'FirstURL' => 'https://www.upwork.com/freelance-jobs/apply/WordPress-Developer-for-Block-Based-Theme_~022048801956531499628/',
+						'Result'   => 'Hourly: $25.00-$45.00 · Posted 1 hour ago',
+					),
+					array(
+						'Text'     => 'Senior WordPress developer openings this week',
+						'FirstURL' => 'https://remoteok.com/remote-wordpress-jobs',
+						'Result'   => 'A curated board of remote WordPress roles.',
+					),
+				),
+			)
+		);
+
+		$http_stub = static function ( $preempt, $args, $url ) use ( $category_only, $broad_body ) {
+			if ( false !== strpos( $url, 'duckduckgo.com' ) ) {
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => false !== strpos( urldecode( $url ), 'site:upwork.com' ) ? $category_only : $broad_body,
+				);
+			}
+			return $preempt;
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		// No query, no skills, no category — the preset's default call shape.
+		$result = $this->tool->execute(
+			array( 'limit' => 10 ),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertCount( 2, $result['jobs'] );
+		$this->assertStringContainsString( 'expanded second search', $result['notice'] );
+		$urls = wp_list_pluck( $result['jobs'], 'url' );
+		$this->assertContains( 'https://www.upwork.com/freelance-jobs/apply/WordPress-Developer-for-Block-Based-Theme_~022048801956531499628/', $urls );
+		$this->assertContains( 'https://remoteok.com/remote-wordpress-jobs', $urls );
+	}
+
+	/**
 	 * When every fallback hit is a category page, the tool returns an empty
 	 * list with actionable guidance instead of junk leads.
 	 */
@@ -413,20 +490,27 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 	 */
 	public function test_build_fallback_query_primary_and_broad_modes() {
 		$args = array(
-			'query'    => 'wordpress developer',
+			'query'    => 'WordPress developer',
 			'location' => 'Remote',
 			'job_type' => 'hourly',
 		);
 
 		$primary = $this->invoke_private( 'build_fallback_query', array( $args ) );
-		$this->assertStringContainsString( 'site:upwork.com/freelance-jobs', $primary );
-		$this->assertStringContainsString( '"wordpress developer"', $primary );
+		$this->assertStringContainsString( 'site:upwork.com/freelance-jobs/apply', $primary );
+		$this->assertStringContainsString( '"WordPress developer"', $primary );
 		$this->assertStringContainsString( 'Remote', $primary );
 		$this->assertStringContainsString( 'hourly', $primary );
 
 		$broad = $this->invoke_private( 'build_fallback_query', array( $args, true ) );
 		$this->assertStringNotContainsString( 'site:', $broad );
-		$this->assertStringContainsString( '"wordpress developer"', $broad );
+		$this->assertStringContainsString( '"WordPress developer"', $broad );
+
+		// Without any filters the broad query still seeds generic job terms
+		// plus the recency default — the second pass must work even when the
+		// schedule preset carries no keywords.
+		$broad_plain = $this->invoke_private( 'build_fallback_query', array( array(), true ) );
+		$this->assertStringContainsString( 'upwork', $broad_plain );
+		$this->assertStringContainsString( 'recently posted freelance job openings', $broad_plain );
 	}
 
 	/**
@@ -606,7 +690,7 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 		$result = $this->tool->execute(
 			array(
 				'connection_id' => $connection_id,
-				'query'         => 'wordpress developer',
+				'query'         => 'WordPress developer',
 				'location'      => 'Remote',
 				'sort'          => 'recency',
 				'limit'         => 10,
@@ -636,7 +720,7 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 
 		// Location folded into the search expression.
 		$this->assertSame(
-			'wordpress developer (Remote)',
+			'WordPress developer (Remote)',
 			$captured_graphql['variables']['marketPlaceJobFilter']['searchExpression']
 		);
 

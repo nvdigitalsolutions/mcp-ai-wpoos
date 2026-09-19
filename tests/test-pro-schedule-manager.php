@@ -52,6 +52,56 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Workflow digests enrich item titles with budget, contract type, and
+	 * recency so delivered reports show decision-driving job details instead
+	 * of bare titles.
+	 */
+	public function test_build_result_envelope_workflow_items_carry_details() {
+		$schedule   = array(
+			'name'          => 'Upwork scan',
+			'schedule_type' => 'workflow',
+		);
+		$action_log = array(
+			'steps' => array(
+				array(
+					'tool_slug' => 'search_upwork_jobs',
+					'label'     => 'Search for new matching jobs',
+					'duration'  => 0.94,
+					'result'    => array(
+						'success'     => true,
+						'mode'        => 'fallback',
+						'total_count' => 2,
+						'count'       => 2,
+						'notice'      => 'Results obtained via web search.',
+						'jobs'        => array(
+							array(
+								'title'     => 'WordPress Developer needed',
+								'url'       => 'https://www.upwork.com/jobs/wordpress-developer_~01abc/',
+								'job_type'  => 'fixed',
+								'budget'    => 120.0,
+								'published' => '2 days ago',
+							),
+							array(
+								'title'     => 'API integration specialist',
+								'url'       => 'https://remoteok.com/api-jobs',
+								'job_type'  => 'hourly',
+								'budget'    => null,
+								'published' => '2026-09-17T10:00:00Z',
+							),
+						),
+					),
+				),
+			),
+		);
+
+		$envelope = WP_MCP_AI_Pro_Schedule_Manager::build_result_envelope( $schedule, $action_log, true, '' );
+
+		$this->assertStringContainsString( 'WordPress Developer needed — $120 · Fixed-price · 2 days ago', $envelope['response'] );
+		$this->assertStringContainsString( 'API integration specialist — Hourly', $envelope['response'] );
+		$this->assertStringNotContainsString( '2026-09-17T10:00:00Z', $envelope['response'] );
+	}
+
+	/**
 	 * Tear down test environment.
 	 */
 	public function tearDown(): void {
