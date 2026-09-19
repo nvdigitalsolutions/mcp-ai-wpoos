@@ -3726,8 +3726,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				$item_keys = array( 'jobs', 'products', 'orders', 'posts', 'items', 'results', 'files', 'records' );
 				foreach ( $item_keys as $item_key ) {
 					if ( ! empty( $result[ $item_key ] ) && is_array( $result[ $item_key ] ) ) {
-						$items       = $result[ $item_key ];
-						$max_display = min( 5, count( $items ) );
+						$items = $result[ $item_key ];
+
+						// Deliver the full result set, not a five-item summary. The
+						// search tools cap at 50 postings, so 50 is the natural
+						// default; brevity-constrained channels choose the summary
+						// template instead of relying on this response being short.
+						/**
+						 * Filters the number of list items included in a workflow
+						 * delivery response before the “… and N more.” line.
+						 *
+						 * @since 1.1.83
+						 *
+						 * @param int $item_cap Maximum items per list.
+						 */
+						$item_cap    = (int) apply_filters( 'wp_mcp_ai_pro_workflow_response_item_cap', 50 );
+						$max_display = min( max( 1, $item_cap ), count( $items ) );
 						$item_lines  = array();
 						for ( $i = 0; $i < $max_display; $i++ ) {
 							if ( ! is_array( $items[ $i ] ) ) {
@@ -3774,6 +3788,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 								}
 
 								$item_lines[] = ( $i + 1 ) . '. ' . $name;
+
+								// The listing URL is what makes the result actionable —
+								// carry it as an indented line under each item.
+								$url = isset( $items[ $i ]['url'] ) ? (string) $items[ $i ]['url'] : '';
+								if ( '' !== $url ) {
+									$item_lines[] = '   ' . $url;
+								}
 							}
 						}
 						if ( ! empty( $item_lines ) ) {

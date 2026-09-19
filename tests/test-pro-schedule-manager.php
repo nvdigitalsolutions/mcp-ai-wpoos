@@ -97,8 +97,104 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 		$envelope = WP_MCP_AI_Pro_Schedule_Manager::build_result_envelope( $schedule, $action_log, true, '' );
 
 		$this->assertStringContainsString( 'WordPress Developer needed — $120 · Fixed-price · 2 days ago', $envelope['response'] );
+		$this->assertStringContainsString( 'https://www.upwork.com/jobs/wordpress-developer_~01abc/', $envelope['response'] );
 		$this->assertStringContainsString( 'API integration specialist — Hourly', $envelope['response'] );
 		$this->assertStringNotContainsString( '2026-09-17T10:00:00Z', $envelope['response'] );
+	}
+
+	/**
+	 * The workflow response must carry the FULL item list (not a five-item
+	 * summary) with each listing's URL on an indented line.
+	 */
+	public function test_build_result_envelope_workflow_lists_all_items_with_urls() {
+		$schedule = array(
+			'name'          => 'Upwork scan',
+			'schedule_type' => 'workflow',
+		);
+
+		$jobs = array();
+		for ( $i = 1; $i <= 7; $i++ ) {
+			$jobs[] = array(
+				'title'    => 'Job number ' . $i,
+				'url'      => 'https://www.upwork.com/jobs/job-' . $i . '_~0' . $i . 'abc/',
+				'job_type' => 'fixed',
+			);
+		}
+
+		$action_log = array(
+			'steps' => array(
+				array(
+					'tool_slug' => 'search_upwork_jobs',
+					'label'     => 'Search for new matching jobs',
+					'duration'  => 0.94,
+					'result'    => array(
+						'success'     => true,
+						'mode'        => 'fallback',
+						'total_count' => 7,
+						'count'       => 7,
+						'jobs'        => $jobs,
+					),
+				),
+			),
+		);
+
+		$envelope = WP_MCP_AI_Pro_Schedule_Manager::build_result_envelope( $schedule, $action_log, true, '' );
+
+		for ( $i = 1; $i <= 7; $i++ ) {
+			$this->assertStringContainsString( $i . '. Job number ' . $i, $envelope['response'] );
+			$this->assertStringContainsString( 'https://www.upwork.com/jobs/job-' . $i . '_~0' . $i . 'abc/', $envelope['response'] );
+		}
+		$this->assertStringNotContainsString( '… and', $envelope['response'] );
+	}
+
+	/**
+	 * The item cap is filterable — integrators can restore the brief summary
+	 * shape by lowering wp_mcp_ai_pro_workflow_response_item_cap.
+	 */
+	public function test_build_result_envelope_workflow_item_cap_filter() {
+		$schedule = array(
+			'name'          => 'Upwork scan',
+			'schedule_type' => 'workflow',
+		);
+
+		$jobs = array();
+		for ( $i = 1; $i <= 6; $i++ ) {
+			$jobs[] = array(
+				'title' => 'Job number ' . $i,
+				'url'   => 'https://www.upwork.com/jobs/job-' . $i . '_~0' . $i . 'abc/',
+			);
+		}
+
+		$action_log = array(
+			'steps' => array(
+				array(
+					'tool_slug' => 'search_upwork_jobs',
+					'label'     => 'Search for new matching jobs',
+					'duration'  => 0.94,
+					'result'    => array(
+						'success'     => true,
+						'total_count' => 6,
+						'count'       => 6,
+						'jobs'        => $jobs,
+					),
+				),
+			),
+		);
+
+		add_filter(
+			'wp_mcp_ai_pro_workflow_response_item_cap',
+			function () {
+				return 3;
+			}
+		);
+
+		$envelope = WP_MCP_AI_Pro_Schedule_Manager::build_result_envelope( $schedule, $action_log, true, '' );
+
+		remove_all_filters( 'wp_mcp_ai_pro_workflow_response_item_cap' );
+
+		$this->assertStringContainsString( '3. Job number 3', $envelope['response'] );
+		$this->assertStringNotContainsString( '4. Job number 4', $envelope['response'] );
+		$this->assertStringContainsString( '… and 3 more.', $envelope['response'] );
 	}
 
 	/**
