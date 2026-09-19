@@ -1,5 +1,53 @@
 # oOS – Changelog
 
+## [1.1.82] - 2026-09-18
+
+### Added — WordPress Playground Demos: Content Graph "Project Asteria" & NV oOS Complete × Ollama (PRs #6662, #6663, #6666, #6670, #6671, #6673, #6674)
+
+- **Two one-click WordPress Playground demo blueprints** let anyone test-drive the plugin with zero setup. The **Content Graph demo** (PR #6662) boots the standalone plugin with a fictional sci-fi universe seeded — 26 posts + 5 pages, 4 authors, categories, tags, and 3 true degree-0 orphan posts — then runs a deterministic graph build via the public `nvoos_content_graph/initial_build` hook (validated: 49 nodes, 255 edges, 5 communities on WP 7.1.1). The **NV oOS Complete demo** (PR #6663) boots the Complete bundle against the user's **local Ollama**: Playground runs WordPress in the browser, so the plugin's `http://localhost:11434` endpoint *is* the user's machine — the blueprint pre-wires the Ollama provider, creates the Oma assistant, and lands on the Ollama Test Lab page (`[ollama_status]` banner + embedded Pro SPA chat; validated end-to-end against real Ollama 0.32.5).
+- **Bundle pin auto-discovery (PR #6674)** — `bin/generate-ollama-blueprint.php` no longer hardcodes the Complete bundle ZIP pin; it globs `build/nvdigital-open-operator-system-oos-complete-*.zip` and picks the highest version, with a `--bundle-url=` override. The `build-assets.yml` workflow regenerates the blueprint right after the ZIPs rebuild and stages it in the same build commit, and its trigger `paths` now cover `addons/**/*.{js,ts,tsx,css}`.
+- **Demo polish** — `cron_monitor="0"` on the demo's Pro SPA page (PR #6666); honest copy on the banner-vs-chat browser boundary (PR #6670: the status banner is page-side and works in Firefox, the chat is worker-side PHP and needs the local CLI server); a `Demo NV oOS Complete` button in the README badge row (PR #6673); and a new end-user walkthrough `docs/user-guides/playground-demo.md` (PR #6671).
+
+### Fixed — `[ollama_status]` Banner Frozen by Texturize (PR #6668)
+
+- **The Ollama status banner froze at "Checking…" forever** because its inline `<script>` inside `the_content` had `&&` rewritten by `wptexturize`/entity normalization into `&#038;&#038;` — a silent JavaScript syntax error. The shortcode now renders a placeholder `<div>` only, and the checker JS (pure ASCII, 4s AbortController timeout) is a properly footer-enqueued script (`wp_register_script(…, false, …)` + `wp_add_inline_script`) that self-locates every `.nvoos-ollama-status` div. New `bin/analyze-render.php` host-side analyzer; the probe now renders through the block-theme path.
+
+### Added — Pro SPA `cron_monitor` Flag for Constrained Hosts (PR #6665)
+
+- **The Pro SPA v2 embedded surface opens a blocking SSE `cron-status` stream on mount** plus a 15-second REST poll fallback — on constrained hosts (concretely, WordPress Playground running the 38 MB Complete bundle) that exhausts the WASM worker's request budget and cascades into 500s. New per-instance flag `[nvoos_pro_spa cron_monitor="0"]` flows through `WP_MCP_AI_Pro_SPA_Config::build()` into `config.cronMonitor` and no-ops **both** the SSE stream and the REST poll. Default stays `true` — no behavior change for existing uses.
+
+### Fixed — Pro SPA Seeded Model Store from Assistant Config (PR #6672)
+
+- **The embedded Pro SPA hardcoded `{provider: 'openai', model: 'gpt-4o'}`** and sent that override on every chat request even when the assistant was wired to another provider (the sidebar sync that reads the real config never renders in embedded mode). `useBootstrap.ts` now seeds the model store from the preloaded assistant config (provider + model) right after `setRuntime()`.
+
+### Fixed — Token Tracking Table Creation and Reads Hardened (PR #6669)
+
+- **Every request on SQLite-backed environments (Playground) dumped a `SHOW FULL COLUMNS` database error** for the missing `wp_mcp_ai_hourly_token_usage` table: dbDelta cannot introspect schemas there (1146 aborts before create), and the schema-version option advanced unconditionally even when creation failed, so the table stayed missing forever. Now: **verify-then-version** (the version advances only when the table verifiably exists afterwards; existing installs with a version set but a missing table self-heal), an **hourly retry-backoff transient** for layers that can never run dbDelta, **quiet failure** (suppressed errors, a single `error_log` line instead of the HTML dump, lazy repair attempt + `false` return in `record_usage()`), and **graceful reads** (usage/cost/aggregate/cleanup methods return empty results when absent). Schema unchanged — no ALTERs. Ported 1:1 to `plugins/nvoos-content-graph-ai/src/Analytics/TokenTrackingDatabase.php` with an ecosystem test matrix.
+
+### Fixed — Schedule Result Delivery Duplicate Content (PR #6661)
+
+- **Pro Schedule result delivery duplicated content two ways.** Chat `summary` and SMS templates now carry the `response_starts_with_summary()` dedupe the `full` template already had (the summary line is skipped when the response already opens with it). New `delivery_safe_data()` strips the duplicate `response` copy plus `assistant_id` / `is_agentic` metadata from the envelope data before rendering (email `full`, chat `full`, Paper Store / WordPress post markdown) — legitimate keys like workflow `steps` and broadcast summaries pass through untouched. `envelope_to_markdown()` also skips the `## Summary` section on prefix match and no longer emits an empty `## Details` section.
+
+### Fixed — Assistant Portability Coverage Guards (PR #6645)
+
+- **The assistant export/import merge landed without updating the CI coverage guards** (4 failures in run 35096081494). `export_assistant`/`import_assistant`/`duplicate_assistant`/`export_assistant_blueprint` join the `assistant_management` preset; 9 new AJAX tests cover the three WhatsApp handlers in the base-suite location (nonce gate, capability gate, missing-connection validation per handler); the AJAX inventory and both tool-class coverage manifests were regenerated.
+
+### Added — Playground Demos Coding-Time Skill (PR #6664)
+
+- **New coding-time skill `mcp-ai-wpoos-playground-demos`** (59th) codifies everything learned building the two blueprints: runPHP seed-snippet authoring + idempotency guards, CORS hosting rules (raw.githubusercontent.com vs release-asset CDN), the CI Plugin Check built-ZIP gate, the three worker crash modes, the local-Ollama policy matrix, and the CLI validation harness. Skill-count bookkeeping (58 → 59) updated in AGENTS.md, copilot-instructions, and README.
+
+### Changed — Updates Skill Gains the PR Deferred-Item Sweep Track (PR #6656)
+
+- **`mcp-ai-wpoos-updates` codifies Track C** — the weekly PR deferred-item sweep: `gh` CLI harvest pattern with the deferral-keyword grep list, triage rules (later-PR resolution, in-repo trackers, byte-identical quirks vs latent bugs, closed-unmerged PRs, verify-before-filing), issue body template + labels, and the report-back format. Docs-only.
+
+### Sub-projects — Docs Hub 0.4.7 (PRs #6659, #6667)
+
+- **Docs Hub bumps to 0.4.7** (third wp.org reviewer pass, own track): the invalid `Tested up to:` PHP header is removed (readme.txt-only now), the daily rebuild cron moved from `plugins_loaded` to `init` (fixes the WP 6.7+ early-translation notice triggered by WooCommerce's translated cron interval), deactivation clears the cron + pending chunked-rebuild tick events and no longer enqueues a rebuild that can never run, the readme gains `== Third-Party Libraries ==` and an exact `== External Services ==` trigger list, and Plugin Check reports 0 blocking errors. `addons/docs-hub/CHANGELOG.md` carries the sub-project detail.
+
+### Versioning
+
+- Bumped to 1.1.82 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.82. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.8** (unchanged; standalone ZIP built in-window). nvoos-content-graph-ai: **1.0.4** (unchanged; ZIP built in-window). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — no CG Pro port waves in-window). Checkout API: **0.1.2** (unchanged). Docs Hub addon: **0.4.7** (was 0.4.6 — third wp.org reviewer pass). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.09.10** (unchanged — no model PRs in-window). Tool count: **~306 base + ~1,279 Pro (~1,585 total)** — unchanged, no tool registrations in-window; live registry authoritative. Providers: 15. Addons: 27. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: **59** (+1 — new `mcp-ai-wpoos-playground-demos` skill, PR #6664). Stale build ZIPs removed: the 1.1.80 set (30 files) + the superseded docs-hub 0.4.6 ZIP (0.4.7 is current).
+
 ## [1.1.81] - 2026-09-17
 
 ### Added — Shopify UCP mode-aware tool routing (Pro + CG Pro, PR #6634)

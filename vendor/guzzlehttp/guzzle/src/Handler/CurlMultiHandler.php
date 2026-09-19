@@ -345,8 +345,6 @@ class CurlMultiHandler
 
     public function __invoke(RequestInterface $request, array $options): PromiseInterface
     {
-        HostValidator::assertRequestHost($request);
-
         if ($this->connectionCapsApplied
             && \defined('CURLOPT_SHARE')
             && isset($options['curl'])

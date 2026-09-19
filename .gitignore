@@ -261,6 +261,9 @@ verify-*.php
 /wp-content/
 test-transcript-routes.php
 
+# Playground demo capture harness output (bin/capture-real-page.sh)
+/verify-out/
+
 # SVN working copies (for WordPress.org deployment)
 /svn-*/
 

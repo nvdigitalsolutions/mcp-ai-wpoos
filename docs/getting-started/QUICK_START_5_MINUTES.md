@@ -6,6 +6,13 @@
 
 ---
 
+> **⚡ Zero-install option:** want to skip the setup entirely and try the
+> Complete bundle in minutes with a free local AI model (no API key)? Run
+> the one-command WordPress Playground demo — see
+> [Test NV oOS on Your PC — Playground Demo](../user-guides/playground-demo.md).
+
+---
+
 ## What You'll Do
 
 In 5 minutes, you'll:

@@ -420,6 +420,12 @@ esbuild/eslint/tsconfig/vitest configs, `docs/`, `.wordpress-org/`,
 `.gitignore`, `.distignore`, `.DS_Store`. Any new dev-only path must be added
 to all three.
 
+The same trap bit the content-graph workflow (`build-nvoos-content-graph.yml`)
+in PR #6662: its inline rsync list drifted from `.distignore`, a dev
+`blueprints/` folder shipped in the ZIP, and PCP failed on the leaked PHP
+file. Playground-demo dev folders and their exclusion checklist live in the
+`mcp-ai-wpoos-playground-demos` skill.
+
 ## .wordpress-org assets
 
 Layout mirrors `plugins/nvoos-content-graph/.wordpress-org/`:
@@ -491,6 +497,12 @@ Capture pitfalls (all hit in practice):
 - `== Screenshots ==` section with `1. Alt text` lines matching
   `screenshot-{N}.png` in SVN assets; add when the PNGs land.
 - `Stable tag` must equal the plugin header `Version`; `Tested up to` latest WP.
+  `Tested up to` must be **major.minor only** (`7.1`) — when the value
+  matches the latest stable, a patch-level value (`7.1.1`) is a PCP ERROR
+  `invalid_tested_upto_minor` ("The version number should only include major
+  versions"). A major.minor `7.1` against latest `7.1.x` is NOT stale (PCP
+  compares major.minor). Validate the suite against the patch release anyway
+  — declare major.minor, back it with the patch run.
 - Trim tags to directory-standard tags (PCP flags exotic tags).
 - Text Domain header must equal the slug for the ZIP dir name on wp.org.
 

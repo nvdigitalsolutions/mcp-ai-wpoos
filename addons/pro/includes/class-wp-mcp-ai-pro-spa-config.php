@@ -78,6 +78,12 @@ class WP_MCP_AI_Pro_SPA_Config {
 	 *     @type bool   $guest                 Whether to enable guest access.
 	 *     @type bool   $allow_sensitive_tools Whether sensitive tools are permitted.
 	 *     @type bool   $show_sidebar          Whether embedded mode renders the transcripts sidebar.
+	 *     @type bool   $cron_monitor          Whether the SPA connects to the cron-status job
+	 *                                         stream on mount. Defaults to true. Set to false
+	 *                                         for embedded surfaces on constrained hosts
+	 *                                         (e.g. WordPress Playground), where the blocking
+	 *                                         SSE stream plus its REST poll fallback exhausts
+	 *                                         the worker's request budget.
 	 *     @type array  $routes                Route allowlist for the instance.
 	 * }
 	 * @return array Runtime array for wp_localize_script.
@@ -138,6 +144,7 @@ class WP_MCP_AI_Pro_SPA_Config {
 			'mode'                => $mode,
 			'height'              => isset( $per_instance['height'] ) ? sanitize_text_field( $per_instance['height'] ) : '',
 			'showSidebar'         => ! isset( $per_instance['show_sidebar'] ) || ! empty( $per_instance['show_sidebar'] ),
+			'cronMonitor'         => ! isset( $per_instance['cron_monitor'] ) || ! empty( $per_instance['cron_monitor'] ),
 			'routes'              => $routes,
 		);
 

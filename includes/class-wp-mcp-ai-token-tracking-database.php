@@ -40,6 +40,22 @@ class WP_MCP_AI_Token_Tracking_Database {
 	const TABLE_NAME = 'mcp_ai_hourly_token_usage';
 
 	/**
+	 * Transient gate for retrying table creation after a failure.
+	 *
+	 * @since 1.1.82
+	 * @var string
+	 */
+	const RETRY_TRANSIENT = 'wp_mcp_ai_token_tracking_table_retry';
+
+	/**
+	 * How long to wait after a failed creation attempt before retrying.
+	 *
+	 * @since 1.1.82
+	 * @var int
+	 */
+	const RETRY_TTL_SECONDS = HOUR_IN_SECONDS;
+
+	/**
 	 * Initialize the database management.
 	 */
 	public static function init() {
@@ -60,14 +76,34 @@ class WP_MCP_AI_Token_Tracking_Database {
 
 	/**
 	 * Check if table creation or update is needed.
+	 *
+	 * The version option is only advanced when the table verifiably exists,
+	 * and a failed attempt sets a short backoff transient so a database
+	 * layer that cannot run dbDelta (e.g. the SQLite integration inside
+	 * WordPress Playground, which raises 1146 for SHOW FULL COLUMNS instead
+	 * of an empty result set) is not retried on every request.
+	 *
+	 * @return bool True when the table is known to exist at the current schema version.
 	 */
 	public static function maybe_create_or_update_table() {
 		$current_version = get_option( self::DB_VERSION_OPTION, '0.0.0' );
 
-		if ( version_compare( $current_version, self::DB_VERSION, '<' ) ) {
-			self::create_or_update_table();
-			update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
+		if ( version_compare( $current_version, self::DB_VERSION, '>=' ) && self::table_exists() ) {
+			return true;
 		}
+
+		if ( get_transient( self::RETRY_TRANSIENT ) ) {
+			return false;
+		}
+
+		if ( self::create_or_update_table() ) {
+			update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
+			delete_transient( self::RETRY_TRANSIENT );
+			return true;
+		}
+
+		set_transient( self::RETRY_TRANSIENT, 1, self::RETRY_TTL_SECONDS );
+		return false;
 	}
 
 	/**
@@ -88,6 +124,8 @@ class WP_MCP_AI_Token_Tracking_Database {
 	 * - created_at: When the record was created
 	 *
 	 * @global wpdb $wpdb WordPress database abstraction object.
+	 *
+	 * @return bool True when the table verifiably exists afterwards.
 	 */
 	public static function create_or_update_table() {
 		global $wpdb;
@@ -119,16 +157,54 @@ class WP_MCP_AI_Token_Tracking_Database {
 		if ( ! function_exists( 'dbDelta' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		}
-		dbDelta( $sql );
 
-		// Verify table was created.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
-		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
+		// dbDelta can fail (or throw) on database layers whose schema
+		// introspection is incomplete — e.g. the SQLite integration used by
+		// WordPress Playground raises 1146 for SHOW FULL COLUMNS instead of
+		// returning an empty set, so dbDelta aborts before creating anything.
+		// Suppress the noisy DB error output and verify the result; the
+		// version option is only advanced by maybe_create_or_update_table()
+		// when this method reports success.
+		$wpdb->suppress_errors( true );
+		try {
+			dbDelta( $sql );
+			$created = self::table_exists();
+		} catch ( \Throwable $e ) {
+			$created = false;
+		}
+		$wpdb->suppress_errors( false );
 
-		if ( $table_exists !== $table_name ) {
+		if ( ! $created ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log records table creation failure as a last-resort diagnostic; this indicates a database schema problem requiring admin attention.
 			error_log( 'WP MCP AI: Failed to create token tracking table: ' . $table_name );
+			return false;
 		}
+
+		return true;
+	}
+
+	/**
+	 * Whether the token tracking table currently exists.
+	 *
+	 * @since 1.1.82
+	 *
+	 * @return bool True when the table exists.
+	 */
+	private static function table_exists() {
+		global $wpdb;
+
+		$table = self::get_table_name();
+
+		$wpdb->suppress_errors( true );
+		try {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Lightweight existence probe on a custom plugin table; WP_Query has no equivalent.
+			$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table;
+		} catch ( \Throwable $e ) {
+			$exists = false;
+		}
+		$wpdb->suppress_errors( false );
+
+		return $exists;
 	}
 
 	/**
@@ -206,12 +282,23 @@ class WP_MCP_AI_Token_Tracking_Database {
 			'%s', // created_at.
 		);
 
+		// Attempt a lazy repair when the table never got created (activation
+		// failure on an exotic database layer); maybe_create_or_update_table()
+		// is gated by a backoff transient so a permanently broken layer is
+		// only retried once per hour.
+		if ( ! self::table_exists() ) {
+			self::maybe_create_or_update_table();
+		}
+
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Direct query required for custom plugin table access; WP_Query does not support custom table queries.
+		$wpdb->suppress_errors( true );
 		$result = $wpdb->insert( self::get_table_name(), $data, $format );
+		$last_error = $wpdb->last_error;
+		$wpdb->suppress_errors( false );
 
 		if ( false === $result ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log records a DB insert failure as a last-resort diagnostic fallback; indicates a database problem requiring admin attention.
-			error_log( 'WP MCP AI: Failed to insert token usage record: ' . $wpdb->last_error );
+			error_log( 'WP MCP AI: Failed to insert token usage record: ' . $last_error );
 			return false;
 		}
 
@@ -258,6 +345,10 @@ class WP_MCP_AI_Token_Tracking_Database {
 
 		$user_id = absint( $user_id );
 		if ( ! $user_id ) {
+			return array();
+		}
+
+		if ( ! self::table_exists() ) {
 			return array();
 		}
 
@@ -308,6 +399,15 @@ class WP_MCP_AI_Token_Tracking_Database {
 
 		$user_id = absint( $user_id );
 		if ( ! $user_id ) {
+			return array(
+				'total_cost'     => 0.0,
+				'total_tokens'   => 0,
+				'estimated_cost' => 0.0,
+				'actual_cost'    => 0.0,
+			);
+		}
+
+		if ( ! self::table_exists() ) {
 			return array(
 				'total_cost'     => 0.0,
 				'total_tokens'   => 0,
@@ -367,6 +467,10 @@ class WP_MCP_AI_Token_Tracking_Database {
 	public static function get_aggregated_by_provider( $start_date, $end_date ) {
 		global $wpdb;
 
+		if ( ! self::table_exists() ) {
+			return array();
+		}
+
 		// Escape table name for defense-in-depth.
 		$table_name = esc_sql( self::get_table_name() );
 
@@ -400,6 +504,10 @@ class WP_MCP_AI_Token_Tracking_Database {
 	 */
 	public static function get_aggregated_by_model( $start_date, $end_date ) {
 		global $wpdb;
+
+		if ( ! self::table_exists() ) {
+			return array();
+		}
 
 		// Escape table name for defense-in-depth.
 		$table_name = esc_sql( self::get_table_name() );
@@ -436,6 +544,10 @@ class WP_MCP_AI_Token_Tracking_Database {
 	public static function get_aggregated_by_tool( $start_date, $end_date ) {
 		global $wpdb;
 
+		if ( ! self::table_exists() ) {
+			return array();
+		}
+
 		// Escape table name for defense-in-depth.
 		$table_name = esc_sql( self::get_table_name() );
 
@@ -469,6 +581,10 @@ class WP_MCP_AI_Token_Tracking_Database {
 	 */
 	public static function get_aggregated_by_date( $start_date, $end_date ) {
 		global $wpdb;
+
+		if ( ! self::table_exists() ) {
+			return array();
+		}
 
 		// Escape table name for defense-in-depth.
 		$table_name = esc_sql( self::get_table_name() );
@@ -505,6 +621,10 @@ class WP_MCP_AI_Token_Tracking_Database {
 	public static function get_aggregated_by_user( $start_date, $end_date ) {
 		global $wpdb;
 
+		if ( ! self::table_exists() ) {
+			return array();
+		}
+
 		// Escape table name for defense-in-depth.
 		$table_name = esc_sql( self::get_table_name() );
 
@@ -538,6 +658,11 @@ class WP_MCP_AI_Token_Tracking_Database {
 		global $wpdb;
 
 		$days = absint( $days );
+
+		if ( ! self::table_exists() ) {
+			return 0;
+		}
+
 		// Escape table name for defense-in-depth.
 		$table_name = esc_sql( self::get_table_name() );
 

@@ -124,6 +124,65 @@ class Test_Crm_Tools_Upwork extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A web_search-mode connection must never route through the Upwork API,
+	 * and API mode must require a completed OAuth flow (refresh token).
+	 *
+	 * Regression: the scheduled Upwork Job Discovery Scan failed with
+	 * `wp_mcp_ai_upwork_no_refresh_token` because the search tool ignored
+	 * the connection's `upwork_mode` and missing credentials.
+	 */
+	public function test_search_connection_mode_gating(): void {
+		$option_snapshot = get_option( 'wp_mcp_ai_pro_remote_sites', null );
+		update_option(
+			'wp_mcp_ai_pro_remote_sites',
+			array(
+				'upwork_web'        => array(
+					'id'              => 'upwork_web',
+					'connection_type' => 'upwork',
+					'enabled'         => true,
+					'upwork_mode'     => 'web_search',
+				),
+				'upwork_api_broken' => array(
+					'id'              => 'upwork_api_broken',
+					'connection_type' => 'upwork',
+					'enabled'         => true,
+					'upwork_mode'     => 'api',
+					'client_id'       => 'client',
+					'client_secret'   => 'secret',
+				),
+				'upwork_api_ok'     => array(
+					'id'              => 'upwork_api_ok',
+					'connection_type' => 'upwork',
+					'enabled'         => true,
+					'upwork_mode'     => 'api',
+					'client_id'       => 'client',
+					'client_secret'   => 'secret',
+					'refresh_token'   => 'refresh',
+				),
+			)
+		);
+
+		$tool = new WP_MCP_AI_Tool_Search_Upwork_Jobs();
+		$ref  = new ReflectionMethod( $tool, 'has_valid_connection' );
+		$ref->setAccessible( true );
+
+		// Web Search (AI-powered discovery) mode: API path must be rejected.
+		$this->assertFalse( $ref->invoke( $tool, array( 'connection_id' => 'upwork_web' ) ) );
+
+		// API mode without a completed OAuth flow: API path must be rejected.
+		$this->assertFalse( $ref->invoke( $tool, array( 'connection_id' => 'upwork_api_broken' ) ) );
+
+		// API mode with full OAuth credentials: API path allowed.
+		$this->assertTrue( $ref->invoke( $tool, array( 'connection_id' => 'upwork_api_ok' ) ) );
+
+		if ( null === $option_snapshot ) {
+			delete_option( 'wp_mcp_ai_pro_remote_sites' );
+		} else {
+			update_option( 'wp_mcp_ai_pro_remote_sites', $option_snapshot );
+		}
+	}
+
+	/**
 	 * Standalone only: the init's tool filter must carry the upwork batch.
 	 */
 	public function test_filter_shape_standalone(): void {

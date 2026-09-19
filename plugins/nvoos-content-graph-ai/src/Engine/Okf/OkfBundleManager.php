@@ -227,17 +227,54 @@ class OkfBundleManager {
 		}
 
 		if ( ! $create ) {
-			return new \WP_Error(
-				'okf_bundle_not_found',
-				\sprintf(
-					/* translators: %s: bundle name */
-					__( 'OKF bundle not found: %s', 'nvoos-content-graph-ai' ),
-					$bundle
-				)
+			$message = \sprintf(
+				/* translators: %s: bundle name */
+				__( 'OKF bundle not found: %s', 'nvoos-content-graph-ai' ),
+				$bundle
 			);
+
+			// List the bundles that do exist so callers can self-correct
+			// instead of guessing further names.
+			$available = self::list_bundle_names( $root );
+			if ( ! empty( $available ) ) {
+				$message .= ' ' . \sprintf(
+					/* translators: %s: comma-separated list of available bundle names */
+					__( 'Available bundles: %s.', 'nvoos-content-graph-ai' ),
+					\implode( ', ', $available )
+				);
+			}
+
+			return new \WP_Error( 'okf_bundle_not_found', $message );
 		}
 
 		return $path;
+	}
+
+	/**
+	 * Enumerate existing bundle directory names under the knowledge root.
+	 *
+	 * @param string $root Absolute path to the knowledge root directory.
+	 * @return array<int,string> Sorted bundle names (may be empty).
+	 */
+	private static function list_bundle_names( $root ) {
+		$names = array();
+
+		if ( ! \function_exists( 'glob' ) ) {
+			return $names;
+		}
+
+		$dirs = \glob( \rtrim( $root, '/\\' ) . '/*', GLOB_ONLYDIR );
+		if ( ! \is_array( $dirs ) ) {
+			return $names;
+		}
+
+		foreach ( $dirs as $dir ) {
+			$names[] = \basename( $dir );
+		}
+
+		\sort( $names );
+
+		return $names;
 	}
 
 	/**

@@ -187,10 +187,25 @@ class WP_MCP_AI_Tool_Load_Skill implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			// Not resolved externally: fall back to the installed-skill registry,
 			// still scoped by the assistant's allow-list.
 			if ( $assistant_id && ! in_array( $name, $allowed, true ) ) {
+				$message = sprintf(
+					/* translators: %s: skill name */
+					__( 'The skill "%s" is not assigned to this assistant.', 'mcp-ai-wpoos' ),
+					$name
+				);
+
+				// List the assigned skills so the caller can self-correct
+				// instead of guessing further names.
+				if ( ! empty( $allowed ) ) {
+					$message .= ' ' . sprintf(
+						/* translators: %s: comma-separated list of assigned skill names */
+						__( 'Assigned skills: %s.', 'mcp-ai-wpoos' ),
+						implode( ', ', $allowed )
+					);
+				}
+
 				return new WP_Error(
 					'wp_mcp_ai_load_skill_not_assigned',
-					/* translators: %s: skill name */
-					sprintf( __( 'The skill "%s" is not assigned to this assistant.', 'mcp-ai-wpoos' ), $name ),
+					$message,
 					array( 'status' => 403 )
 				);
 			}
