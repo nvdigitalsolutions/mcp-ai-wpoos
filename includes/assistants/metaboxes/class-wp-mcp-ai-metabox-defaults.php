@@ -104,6 +104,8 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 		$model         = get_post_meta( $post->ID, WP_MCP_AI_Assistant_CPT::META_MODEL, true );
 		$temperature   = get_post_meta( $post->ID, WP_MCP_AI_Assistant_CPT::META_TEMPERATURE, true );
 		$system_prompt = get_post_meta( $post->ID, WP_MCP_AI_Assistant_CPT::META_SYSTEM_PROMPT, true );
+		$adaptive_cap  = get_post_meta( $post->ID, WP_MCP_AI_Assistant_CPT::META_ADAPTIVE_TOOL_CAP, true );
+		$adaptive_cap  = WP_MCP_AI_Assistant_CPT::sanitize_adaptive_tool_cap_meta( $adaptive_cap );
 
 		$settings         = WP_MCP_AI_Admin_Settings::get_settings();
 		$default_provider = isset( $settings['default_provider'] ) ? sanitize_key( $settings['default_provider'] ) : 'openai';
@@ -195,6 +197,34 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 		<br>
 		<span class="description">
 			<?php esc_html_e( 'Reduces latency and API costs by caching the system prompt and tool definitions on supported providers (Anthropic, OpenAI, DeepSeek, Gemini). Static content is reused across conversation turns.', 'mcp-ai-wpoos' ); ?>
+		</span>
+	</p>
+	<p>
+		<label for="wp-mcp-ai-adaptive-tool-cap"><strong><?php esc_html_e( 'Model-Aware Tool Cap', 'mcp-ai-wpoos' ); ?></strong></label>
+		<select id="wp-mcp-ai-adaptive-tool-cap" name="wp_mcp_ai_adaptive_tool_cap" class="widefat">
+			<option value="" <?php selected( $adaptive_cap, '' ); ?>><?php esc_html_e( 'Default (use site setting)', 'mcp-ai-wpoos' ); ?></option>
+			<option value="on" <?php selected( $adaptive_cap, 'on' ); ?>><?php esc_html_e( 'Enabled — cap tools to the model context window', 'mcp-ai-wpoos' ); ?></option>
+			<option value="off" <?php selected( $adaptive_cap, 'off' ); ?>><?php esc_html_e( 'Disabled — always use the configured maximum', 'mcp-ai-wpoos' ); ?></option>
+		</select>
+		<br>
+		<span class="description">
+			<?php
+			$recommended_cap = 0;
+			if ( class_exists( 'WP_MCP_AI_Tool_Payload_Advisor' ) ) {
+				$recommended_cap = WP_MCP_AI_Tool_Payload_Advisor::recommended_cap_for_model( trim( (string) $model ) );
+			}
+
+			if ( $recommended_cap > 0 ) {
+				printf(
+					/* translators: 1: model slug, 2: recommended maximum tool count */
+					esc_html__( 'Recommended cap for %1$s: %2$d tools (fewer tools improves tool-selection accuracy on smaller context windows).', 'mcp-ai-wpoos' ),
+					esc_html( trim( (string) $model ) ),
+					(int) $recommended_cap
+				);
+			} else {
+				esc_html_e( 'When enabled, tools are capped by the model context window: 40 tools up to 128K, 64 up to 256K, 100 above. The cap only lowers the configured maximum, never raises it.', 'mcp-ai-wpoos' );
+			}
+			?>
 		</span>
 	</p>
 		<?php

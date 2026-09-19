@@ -9298,12 +9298,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$max_tools = max( 1, min( 128, $max_tools ) ); // Clamp to 1-128.
 
 				// Adaptive (model-aware) tool cap — opt-in via the payload advisor.
-				// When enabled, the cap is lowered for small-context models following
-				// the industry ~40-tool rule of thumb (see MCP Toolbox style guide
-				// and docs/project/proposals/tool-description-engineering-proposal.md).
-				// The advisor only lowers the cap, never raises it, and only when
-				// the adaptive setting is explicitly enabled (default off).
-			if ( class_exists( 'WP_MCP_AI_Tool_Payload_Advisor' ) && WP_MCP_AI_Tool_Payload_Advisor::is_adaptive_cap_enabled() ) {
+				// When enabled (per-assistant override or site default), the cap is
+				// lowered for small-context models following the industry ~40-tool
+				// rule of thumb (see MCP Toolbox style guide and
+				// docs/project/proposals/tool-description-engineering-proposal.md).
+				// The advisor only lowers the cap, never raises it.
+			if ( class_exists( 'WP_MCP_AI_Tool_Payload_Advisor' ) && WP_MCP_AI_Tool_Payload_Advisor::is_adaptive_cap_enabled( $assistant_config ) ) {
 				$assistant_model = isset( $assistant_config['model'] ) ? sanitize_text_field( $assistant_config['model'] ) : '';
 				$adaptive_cap    = WP_MCP_AI_Tool_Payload_Advisor::recommended_cap_for_model( $assistant_model );
 				if ( $adaptive_cap > 0 ) {

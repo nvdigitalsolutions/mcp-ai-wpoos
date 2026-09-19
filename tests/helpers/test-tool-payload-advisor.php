@@ -27,6 +27,45 @@ class Test_Tool_Payload_Advisor extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A per-assistant "on" override wins over a disabled site default.
+	 */
+	public function test_assistant_override_on_beats_global_off() {
+		delete_option( 'wp_mcp_ai_adaptive_tool_cap' );
+
+		$this->assertTrue(
+			WP_MCP_AI_Tool_Payload_Advisor::is_adaptive_cap_enabled(
+				array( 'adaptive_tool_cap' => 'on' )
+			)
+		);
+	}
+
+	/**
+	 * A per-assistant "off" override wins over an enabled site default.
+	 */
+	public function test_assistant_override_off_beats_global_on() {
+		update_option( 'wp_mcp_ai_adaptive_tool_cap', true );
+
+		$this->assertFalse(
+			WP_MCP_AI_Tool_Payload_Advisor::is_adaptive_cap_enabled(
+				array( 'adaptive_tool_cap' => 'off' )
+			)
+		);
+	}
+
+	/**
+	 * An empty assistant value inherits the enabled site default.
+	 */
+	public function test_assistant_default_inherits_global_on() {
+		update_option( 'wp_mcp_ai_adaptive_tool_cap', true );
+
+		$this->assertTrue(
+			WP_MCP_AI_Tool_Payload_Advisor::is_adaptive_cap_enabled(
+				array( 'adaptive_tool_cap' => '' )
+			)
+		);
+	}
+
+	/**
 	 * The adaptive cap can be enabled via the stored option.
 	 */
 	public function test_adaptive_cap_enabled_via_option() {

@@ -53,16 +53,38 @@ class WP_MCP_AI_Tool_Payload_Advisor {
 	/**
 	 * Whether the adaptive (model-aware) tool cap is enabled.
 	 *
-	 * Defaults to off so existing sites keep today's behavior. The filter
-	 * allows code-level control (e.g. per-site or per-environment toggling).
+	 * Resolution order:
+	 *  1. Per-assistant override — an assistant config with
+	 *     `adaptive_tool_cap` set to 'on' or 'off' wins outright
+	 *     (stored on the Assistant edit screen).
+	 *  2. Site default — the wp_mcp_ai_adaptive_tool_cap option
+	 *     (default off, so existing sites keep today's behavior).
+	 *
+	 * The filter allows code-level control for both layers.
 	 *
 	 * @since 1.1.83
 	 *
+	 * @param array $assistant_config Optional assistant configuration
+	 *                                (as returned by WP_MCP_AI_Assistant_CPT::get_assistant_configuration()).
 	 * @return bool True when the model-aware cap should be applied.
 	 */
-	public static function is_adaptive_cap_enabled() {
+	public static function is_adaptive_cap_enabled( $assistant_config = array() ) {
+		$assistant_value = ( is_array( $assistant_config ) && isset( $assistant_config['adaptive_tool_cap'] ) && is_string( $assistant_config['adaptive_tool_cap'] ) )
+			? strtolower( trim( $assistant_config['adaptive_tool_cap'] ) )
+			: '';
+
+		if ( 'on' === $assistant_value ) {
+			return true;
+		}
+
+		if ( 'off' === $assistant_value ) {
+			return false;
+		}
+
 		/**
 		 * Filter whether the model-aware tool payload cap is applied.
+		 *
+		 * Only consulted when the assistant has no explicit override.
 		 *
 		 * @since 1.1.83
 		 *
@@ -114,10 +136,11 @@ class WP_MCP_AI_Tool_Payload_Advisor {
 	 *
 	 * @since 1.1.83
 	 *
-	 * @param string $model Model slug. Empty string = unknown model.
+	 * @param string $model            Model slug. Empty string = unknown model.
+	 * @param array  $assistant_config Optional assistant configuration (per-assistant override).
 	 * @return array{enabled: bool, model: string, context_limit: int, recommended_cap: int, effective_cap: int}
 	 */
-	public static function get_recommendation_summary( $model = '' ) {
+	public static function get_recommendation_summary( $model = '', $assistant_config = array() ) {
 		$model         = is_string( $model ) ? trim( $model ) : '';
 		$context_limit = 0;
 
@@ -128,13 +151,14 @@ class WP_MCP_AI_Tool_Payload_Advisor {
 		$recommended = self::recommended_cap_for_model( $model );
 		$configured  = (int) apply_filters( 'wp_mcp_ai_max_chat_tools', 100 );
 		$configured  = max( 1, min( 128, $configured ) );
+		$enabled     = self::is_adaptive_cap_enabled( $assistant_config );
 
 		return array(
-			'enabled'         => self::is_adaptive_cap_enabled(),
+			'enabled'         => $enabled,
 			'model'           => $model,
 			'context_limit'   => $context_limit,
 			'recommended_cap' => $recommended,
-			'effective_cap'   => ( self::is_adaptive_cap_enabled() && $recommended > 0 ) ? min( $configured, $recommended ) : $configured,
+			'effective_cap'   => ( $enabled && $recommended > 0 ) ? min( $configured, $recommended ) : $configured,
 		);
 	}
 }

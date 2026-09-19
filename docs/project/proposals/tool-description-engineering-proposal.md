@@ -50,10 +50,17 @@ Descriptions become structured guidance, assembled at the registry layer:
 ### 3.2 Adopt: model-aware tool payload cap (opt-in)
 
 The chat payload cap (`wp_mcp_ai_max_chat_tools`, default 100) stays
-backward-compatible. A new opt-in setting enables an adaptive default derived
-from the model's context window (40 tools ≤128k, 64 ≤256k, 100 larger),
-implemented in `WP_MCP_AI_Tool_Payload_Advisor`. Default off — zero behavior
-change for existing sites.
+backward-compatible. An adaptive default derived from the model's context
+window (40 tools ≤128k, 64 ≤256k, 100 larger) is implemented in
+`WP_MCP_AI_Tool_Payload_Advisor`. Two opt-in layers, default off:
+
+- **Site default** — option `wp_mcp_ai_adaptive_tool_cap` (or the filter of
+  the same name).
+- **Per-assistant override** — `_wp_mcp_ai_adaptive_tool_cap` meta
+  (`on` / `off` / empty = inherit), editable in the Default Settings metabox
+  on the Assistant edit screen; resolved by
+  `WP_MCP_AI_Tool_Payload_Advisor::is_adaptive_cap_enabled( $assistant_config )`
+  before `WP_MCP_AI_REST::build_tools_payload()` applies the cap.
 
 ### 3.3 Adopt: lazy schema retrieval through `list_mcp_tools`
 
