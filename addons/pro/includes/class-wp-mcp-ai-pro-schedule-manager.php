@@ -3737,6 +3737,42 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 							? (string) $items[ $i ]['title']
 							: ( isset( $items[ $i ]['name'] ) ? (string) $items[ $i ]['name'] : '' );
 							if ( '' !== $name ) {
+								// Append the same decision-driving details a freelancer
+								// scans a listing for: budget, contract type, and
+								// recency — so the digest shows real job info, not
+								// bare titles.
+								$details = array();
+
+								$budget = isset( $items[ $i ]['budget'] ) ? $items[ $i ]['budget'] : null;
+								if ( is_array( $budget ) && isset( $budget['amount'] ) && is_numeric( $budget['amount'] ) ) {
+									$details[] = '$' . number_format( (float) $budget['amount'], 0 );
+								} elseif ( is_numeric( $budget ) && (float) $budget > 0 ) {
+									$details[] = '$' . number_format( (float) $budget, 0 );
+								}
+
+								$job_type = isset( $items[ $i ]['job_type'] ) ? (string) $items[ $i ]['job_type'] : '';
+								if ( 'hourly' === $job_type ) {
+									$details[] = __( 'Hourly', 'mcp-ai-wpoos-pro' );
+								} elseif ( '' !== $job_type ) {
+									$details[] = __( 'Fixed-price', 'mcp-ai-wpoos-pro' );
+								}
+
+								$published = isset( $items[ $i ]['published'] ) ? (string) $items[ $i ]['published'] : '';
+								if ( '' !== $published ) {
+									if ( preg_match( '/^\d{4}-\d{2}-\d{2}T/', $published ) ) {
+										$timestamp = strtotime( $published );
+										if ( false !== $timestamp ) {
+											$details[] = date_i18n( get_option( 'date_format' ), $timestamp );
+										}
+									} else {
+										$details[] = $published;
+									}
+								}
+
+								if ( ! empty( $details ) ) {
+									$name .= ' — ' . implode( ' · ', $details );
+								}
+
 								$item_lines[] = ( $i + 1 ) . '. ' . $name;
 							}
 						}

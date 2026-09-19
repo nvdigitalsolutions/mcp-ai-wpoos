@@ -507,13 +507,12 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 		// Two-pass strategy: a site-restricted Upwork pass first, then — when
 		// the first pass leaves too few job postings — a broader second pass
 		// (aggregators, job boards) whose results are merged and deduped.
-		$has_keywords = ! empty( $arguments['query'] )
-			|| ( ! empty( $arguments['skills'] ) && is_array( $arguments['skills'] ) )
-			|| ! empty( $arguments['category2'] );
-		$pass_queries = array( $search_query );
-		if ( $has_keywords ) {
-			$pass_queries[] = $this->build_fallback_query( $arguments, true );
-		}
+		// The broad pass always runs as a fallback: with no keyword filters
+		// (e.g. the discovery-scan preset with no defaults configured) the
+		// first pass still surfaces mostly category pages, and the second
+		// pass is the only path to real postings.
+		$pass_queries   = array( $search_query );
+		$pass_queries[] = $this->build_fallback_query( $arguments, true );
 
 		// Normalise web search results into the standard job listing format.
 		$jobs_by_url  = array();
@@ -646,9 +645,13 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return string Search query string.
 	 */
 	private function build_fallback_query( array $arguments, $broad = false ) {
+		// Primary pass: individual postings live under
+		// /freelance-jobs/apply/{title}~{jobId}/ — restricting the site search
+		// to that subtree keeps bare category pages out of the SERP in the
+		// first place instead of relying on post-filtering alone.
 		$parts = $broad
 			? array( 'upwork', 'freelance', 'job' )
-			: array( 'site:upwork.com/freelance-jobs' );
+			: array( 'site:upwork.com/freelance-jobs/apply' );
 
 		if ( ! empty( $arguments['query'] ) ) {
 			$keyword = sanitize_text_field( $arguments['query'] );
@@ -696,8 +699,10 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			}
 		}
 
-		// If no meaningful filters were provided, add a sensible default.
-		if ( count( $parts ) <= 1 ) {
+		// If no meaningful filters were provided, add a sensible default. The
+		// broad pass seeds three generic terms, so its floor is higher.
+		$floor = $broad ? 3 : 1;
+		if ( count( $parts ) <= $floor ) {
 			$parts[] = 'recently posted freelance job openings';
 		}
 
@@ -812,10 +817,10 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 	 *
 	 * Upwork job post URLs carry a `~<jobId>` suffix (e.g.
 	 * `/freelance-jobs/Some-Title_~01d7d03bb39cc7daec/`), while category pages
-	 * are bare `/freelance-jobs/{category}/` or `/hire/{category}/` paths.
-	 * Web search engines index the category pages heavily, so the fallback
-	 * must recognise and drop them — they describe a job family, not a
-	 * bidding opportunity.
+	 * are bare `/freelance-jobs/{category}/`, `/freelance-jobs/apply/{category}/`,
+	 * or `/hire/{category}/` paths. Web search engines index the category
+	 * pages heavily, so the fallback must recognise and drop them — they
+	 * describe a job family, not a bidding opportunity.
 	 *
 	 * @param string $url Result URL.
 	 * @return bool True when the URL is an Upwork category page.
@@ -835,8 +840,14 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 
 		$path = strtolower( rtrim( $path, '/' ) );
 
-		// Bare category/landing paths: /freelance-jobs/{slug} or /hire/{slug}.
+		// Bare category/landing paths: /freelance-jobs/{slug}, /hire/{slug},
+		// and the category-apply form /freelance-jobs/apply/{category} — a
+		// job detail URL always carries the ~jobId suffix, so an anchored
+		// slug-only match can never swallow a real posting.
 		if ( preg_match( '#^/freelance-jobs/[a-z0-9\-]+$#', $path ) ) {
+			return true;
+		}
+		if ( preg_match( '#^/freelance-jobs/apply/[a-z0-9\-]+$#', $path ) ) {
 			return true;
 		}
 		if ( preg_match( '#^/hire/[a-z0-9\-]+$#', $path ) ) {
