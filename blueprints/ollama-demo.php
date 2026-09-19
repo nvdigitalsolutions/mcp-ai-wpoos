@@ -26,7 +26,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * What it does:
  *   1. Pre-configures the plugin for a local Ollama instance
  *      (http://localhost:11434 — inside Playground that IS the user's
- *      machine, because WordPress runs in the browser).
+ *      machine, because WordPress runs in the browser), and switches the
+ *      site to pretty permalinks so the landing URL resolves.
  *   2. Creates a demo assistant ("Oma", a Project Asteria archivist)
  *      wired to the Ollama provider and sets it as the default assistant.
  *   3. Creates the "Ollama Test Lab" frontend page embedding
@@ -77,6 +78,15 @@ function nvoos_ollama_demo_seed(): void {
 	$settings['provider_priority_list'] = $priority;
 
 	update_option( 'wp_mcp_ai_settings', $settings );
+
+	// 1b. Pretty permalinks so the blueprint's landing URL
+	// (/ollama-test-lab/) and the internal links in the demo pages resolve.
+	// Fresh WordPress installs default to plain permalinks (?page_id=N),
+	// which would 404 the landing page.
+	if ( '' === get_option( 'permalink_structure' ) ) {
+		update_option( 'permalink_structure', '/%postname%/' );
+		flush_rewrite_rules();
+	}
 
 	// 2. Demo assistant: Oma, Project Asteria archivist.
 	$assistant_id = 0;
