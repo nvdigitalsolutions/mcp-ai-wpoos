@@ -21,7 +21,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-tool-markdown-converter.php';
  * This is a simplified version of save_post that only handles
  * post creation, not updates. Use save_post for update operations.
  */
-class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Content_Media;
 	use WP_MCP_AI_Tool_Markdown_Converter;
@@ -45,6 +45,18 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Creates a new WordPress post. For updating existing posts, use save_post instead.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a brand new WordPress post when no post ID is involved.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Updating or overwriting existing content; use save_post when a post ID is known.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'save_post', 'get_post', 'delete_post', 'get_recent_posts' ),
+			'notes'           => __( 'Status defaults to draft; pass status=publish only when the post is ready to go live.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

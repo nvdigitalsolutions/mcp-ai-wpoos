@@ -19,7 +19,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 /**
  * Allows users to delete scheduled WordPress cron jobs.
  */
-class WP_MCP_AI_Tool_Delete_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
+class WP_MCP_AI_Tool_Delete_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Safety_Profile;
 
@@ -42,6 +42,18 @@ class WP_MCP_AI_Tool_Delete_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Deletes a scheduled WordPress cron job and removes it from the system.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Removing a scheduled job that is no longer needed, identified by its job ID.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Rescheduling, modifying, or pausing a job; reschedule via create_cron_job or update the event instead.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'list_cron_jobs', 'get_cron_job', 'create_cron_job' ),
+			'notes'           => __( 'Deletion is permanent; confirm the job_id via list_cron_jobs or get_cron_job before deleting.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

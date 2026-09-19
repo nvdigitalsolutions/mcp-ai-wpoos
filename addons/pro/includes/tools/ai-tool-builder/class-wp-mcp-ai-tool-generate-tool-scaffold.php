@@ -301,7 +301,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 		$parameters       = $config['parameters'];
 
 		// Build interface list.
-		$interface_list = array( 'WP_MCP_AI_Tool_Interface' );
+		$interface_list = array( 'WP_MCP_AI_Tool_Interface', 'WP_MCP_AI_Tool_Usage_Guidance_Interface' );
 		if ( ! empty( $capability_flags ) ) {
 			$interface_list[] = 'WP_MCP_AI_Tool_Capability_Flags_Interface';
 		}
@@ -361,6 +361,17 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 		$scaffold .= "\t/**\n\t * {@inheritdoc}\n\t */\n";
 		$scaffold .= "\tpublic function get_description() {\n";
 		$scaffold .= "\t\treturn __( '{$description}', 'mcp-ai-wpoos-pro' );\n";
+		$scaffold .= "\t}\n\n";
+
+		// get_usage_guidance method.
+		$scaffold .= "\t/**\n\t * {@inheritdoc}\n\t */\n";
+		$scaffold .= "\tpublic function get_usage_guidance() {\n";
+		$scaffold .= "\t\treturn array(\n";
+		$scaffold .= "\t\t\t'when_to_use'     => __( 'Describe when THIS tool is the right pick.', 'mcp-ai-wpoos-pro' ),\n";
+		$scaffold .= "\t\t\t'when_not_to_use' => __( 'Describe when a different tool fits better; name it.', 'mcp-ai-wpoos-pro' ),\n";
+		$scaffold .= "\t\t\t'related_tools'   => array(),\n";
+		$scaffold .= "\t\t\t'notes'           => __( 'Optional operational notes (enums, output size).', 'mcp-ai-wpoos-pro' ),\n";
+		$scaffold .= "\t\t);\n";
 		$scaffold .= "\t}\n\n";
 
 		// get_parameters_schema method.
