@@ -3261,14 +3261,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 						? $config['format']
 						: 'both';
 				}
-				if ( 'email' === $channel ) {
-					// Presentation format: both (HTML + plain-text Markdown fallback),
-					// html only, or markdown only. Defaults to 'both' so pre-existing
-					// schedules gain properly formatted HTML emails without migration.
-					$entry['format'] = isset( $config['format'] ) && in_array( $config['format'], array( 'both', 'html', 'markdown' ), true )
-						? $config['format']
-						: 'both';
-				}
 				if ( 'sms' === $channel && isset( $config['to'] ) ) {
 					$entry['to'] = sanitize_text_field( $config['to'] );
 				}
@@ -3734,8 +3726,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				$item_keys = array( 'jobs', 'products', 'orders', 'posts', 'items', 'results', 'files', 'records' );
 				foreach ( $item_keys as $item_key ) {
 					if ( ! empty( $result[ $item_key ] ) && is_array( $result[ $item_key ] ) ) {
-						$items       = $result[ $item_key ];
-						$max_display = min( 5, count( $items ) );
+						$items = $result[ $item_key ];
+
+						// Deliver the full result set, not a five-item summary. The
+						// search tools cap at 50 postings, so 50 is the natural
+						// default; brevity-constrained channels choose the summary
+						// template instead of relying on this response being short.
+						/**
+						 * Filters the number of list items included in a workflow
+						 * delivery response before the “… and N more.” line.
+						 *
+						 * @since 1.1.83
+						 *
+						 * @param int $item_cap Maximum items per list.
+						 */
+						$item_cap    = (int) apply_filters( 'wp_mcp_ai_pro_workflow_response_item_cap', 50 );
+						$max_display = min( max( 1, $item_cap ), count( $items ) );
 						$item_lines  = array();
 						for ( $i = 0; $i < $max_display; $i++ ) {
 							if ( ! is_array( $items[ $i ] ) ) {
@@ -3745,7 +3751,50 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 							? (string) $items[ $i ]['title']
 							: ( isset( $items[ $i ]['name'] ) ? (string) $items[ $i ]['name'] : '' );
 							if ( '' !== $name ) {
+								// Append the same decision-driving details a freelancer
+								// scans a listing for: budget, contract type, and
+								// recency — so the digest shows real job info, not
+								// bare titles.
+								$details = array();
+
+								$budget = isset( $items[ $i ]['budget'] ) ? $items[ $i ]['budget'] : null;
+								if ( is_array( $budget ) && isset( $budget['amount'] ) && is_numeric( $budget['amount'] ) ) {
+									$details[] = '$' . number_format( (float) $budget['amount'], 0 );
+								} elseif ( is_numeric( $budget ) && (float) $budget > 0 ) {
+									$details[] = '$' . number_format( (float) $budget, 0 );
+								}
+
+								$job_type = isset( $items[ $i ]['job_type'] ) ? (string) $items[ $i ]['job_type'] : '';
+								if ( 'hourly' === $job_type ) {
+									$details[] = __( 'Hourly', 'mcp-ai-wpoos-pro' );
+								} elseif ( '' !== $job_type ) {
+									$details[] = __( 'Fixed-price', 'mcp-ai-wpoos-pro' );
+								}
+
+								$published = isset( $items[ $i ]['published'] ) ? (string) $items[ $i ]['published'] : '';
+								if ( '' !== $published ) {
+									if ( preg_match( '/^\d{4}-\d{2}-\d{2}T/', $published ) ) {
+										$timestamp = strtotime( $published );
+										if ( false !== $timestamp ) {
+											$details[] = date_i18n( get_option( 'date_format' ), $timestamp );
+										}
+									} else {
+										$details[] = $published;
+									}
+								}
+
+								if ( ! empty( $details ) ) {
+									$name .= ' — ' . implode( ' · ', $details );
+								}
+
 								$item_lines[] = ( $i + 1 ) . '. ' . $name;
+
+								// The listing URL is what makes the result actionable —
+								// carry it as an indented line under each item.
+								$url = isset( $items[ $i ]['url'] ) ? (string) $items[ $i ]['url'] : '';
+								if ( '' !== $url ) {
+									$item_lines[] = '   ' . $url;
+								}
 							}
 						}
 						if ( ! empty( $item_lines ) ) {

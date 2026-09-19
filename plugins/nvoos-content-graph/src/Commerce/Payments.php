@@ -22,9 +22,6 @@ use function rawurlencode;
  * The purchased artifact is the **NV oOS Complete** bundle (the full
  * NV oOS plugin: base + Pro, distributed as a separate WordPress plugin).
  *
- * The purchased artifact is the **NV oOS Complete** bundle (the full
- * NV oOS plugin: base + Pro, distributed as a separate WordPress plugin).
- *
  * The browser is never trusted with an amount: the price shown here is
  * for display only, and the vendor re-verifies everything server-side.
  *

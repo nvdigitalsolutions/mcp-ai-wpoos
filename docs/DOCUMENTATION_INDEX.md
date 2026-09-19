@@ -1,13 +1,15 @@
 # NV oOS Documentation Index
 
-**Last Updated:** September 17, 2026
-**Plugin Version:** 1.1.81
+**Last Updated:** September 18, 2026
+**Plugin Version:** 1.1.82
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
+
+> **SEPTEMBER 18, 2026 UPDATE (v1.1.82):** PLAYGROUND DEMOS, PRO SPA & HARDENING RELEASE. **TWO ONE-CLICK WORDPRESS PLAYGROUND DEMO BLUEPRINTS** — CONTENT GRAPH "PROJECT ASTERIA" (PR #6662; SEEDED SCI-FI UNIVERSE: 26 POSTS / 5 PAGES / 3 TRUE ORPHANS; DETERMINISTIC BUILD VIA THE PUBLIC `nvoos_content_graph/initial_build` HOOK; 49 NODES / 255 EDGES / 5 COMMUNITIES) AND **NV OOS COMPLETE × LOCAL OLLAMA** (PR #6663; PLAYGROUND RUNS WORDPRESS IN THE BROWSER SO THE PLUGIN'S `localhost:11434` ENDPOINT IS THE USER'S MACHINE — PROVIDER PRE-WIRED, OMA ASSISTANT, TEST LAB PAGE WITH THE `[ollama_status]` BANNER + EMBEDDED PRO SPA). **BLUEPRINT PIN AUTO-DISCOVERY** (PR #6674) — THE GENERATOR PICKS THE NEWEST COMPLETE BUNDLE ZIP AND THE BUILD-ASSETS WORKFLOW REGENERATES THE BLUEPRINT WITH EVERY BUILD; `cron_monitor="0"` ON THE DEMO'S PRO SPA PAGE (PR #6666); README DEMO BUTTON (PR #6673); NEW `docs/user-guides/playground-demo.md` WALKTHROUGH (PR #6671). **PRO SPA FIXES** — `[nvoos_pro_spa cron_monitor="0"]` NO-OPS THE BLOCKING SSE CRON-STATUS STREAM + REST POLL (PR #6665); EMBEDDED MODE SEEDS THE MODEL STORE FROM THE ASSISTANT'S REAL CONFIG INSTEAD OF HARDCODED `gpt-4o` (PR #6672). **TOKEN-TRACKING TABLE HARDENING** (PR #6669) — VERIFY-THEN-VERSION, HOURLY RETRY BACKOFF, QUIET FAILURE, GRACEFUL READS FOR SQLITE-BACKED ENVIRONMENTS; PORTED 1:1 TO `nvoos-content-graph-ai`. **RESULT-DELIVERY DEDUPE** (PR #6661) — `delivery_safe_data()` STRIPS THE DUPLICATED RESPONSE COPY + `assistant_id`/`is_agentic` METADATA; SUMMARY/SMS PREFIX DEDUPE; NO EMPTY `## Details`. **`[ollama_status]` BANNER UNFROZEN** (PR #6668) — FOOTER-ENQUEUED CHECKER REPLACES THE TEXTURIZE-MANGLED INLINE SCRIPT. **PORTABILITY COVERAGE GUARDS REPAIRED** (PR #6645) — PRESET ENTRIES + 9 AJAX TESTS + REGENERATED MANIFESTS. **SKILLS** — NEW 59TH CODING-TIME SKILL `mcp-ai-wpoos-playground-demos` (PR #6664); UPDATES SKILL GAINS THE PR DEFERRED-ITEM SWEEP TRACK C (PR #6656). **DOCS HUB 0.4.7** (PRs #6659/#6667) — THIRD WP.ORG REVIEWER PASS: INVALID PHP HEADER REMOVED, REBUILD CRON ON `init`, DEACTIVATION CLEANUP, THIRD-PARTY + EXTERNAL SERVICES DISCLOSURES, 0 BLOCKING PLUGIN CHECK ERRORS. TOOL COUNT: ~306 BASE + ~1,279 PRO (~1,585 TOTAL; UNCHANGED — NO TOOL REGISTRATIONS IN-WINDOW). STALE 1.1.80 BUILD ZIPS REMOVED (30 FILES) + SUPERSEDED DOCS-HUB 0.4.6 ZIP REMOVED. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE + NEW `docs/user-guides/playground-demo.md`.
 
 > **SEPTEMBER 17, 2026 UPDATE (v1.1.81):** SHOPIFY-UCP, FLOWHUB, CRM & FINANCIAL-RESILIENCE RELEASE. **SHOPIFY TOOLS ARE UCP CATALOG MODE-AWARE** (PR #6634) — STOREFRONT/GLOBAL CONNECTIONS DRIVE LIVE `search_catalog`/`lookup_catalog`/`get_product` QUERIES (BUYER `context`, CURSOR PASSTHROUGH, CLAMPS 250/50/10, ZERO CACHING PER UCP GUIDELINES); ADMIN-ONLY TOOLS REFUSE CATALOG CONNECTIONS WITH AN ACTIONABLE HINT; `remote_shopify_connection` VALIDATES UCP MODES VIA THE MCP `tools/list` HANDSHAKE. **SHOPIFY PRODUCT IMAGE CARDS** (PR #6638) — `images[]` + CHAT-RENDERED MARKDOWN CARD ON EVERY PRODUCT-RETURNING PATH (10-CARD CAP; SHARED NORMALIZERS TRAIT). **FLOWHUB REMOTE SITES RESOLUTION** (PR #6635) — SHARED RESOLVER CHAIN (EXPLICIT `connection_id` → TOOLKIT SETTINGS → SYNC CONNECTIONS → FIRST ENABLED) + **CONNECTION PROXY HONORED** IN LIVE TOOLS (PR #6637). **JOBNAVIGATOR CRM ADOPTION** (PR #6636; CG PRO PORT #6640) — 5 NEW PRO TOOLS (`bulk_move_deal_stages`, `record_crm_reply`, `get_crm_handover`, `get_pipeline_digest`, `create_tracked_link`), MACHINE-READABLE DEAL STAGE HISTORY, LEAD DEDUP + CANONICAL COMPANIES, REPLY SIGNALS, WON-DEAL LEAD RELEASE. **GMAIL REPLY POLLER + PIPELINE DIGEST RECIPE** (PR #6641) — CRON-DRIVEN INBOUND REPLY CLASSIFICATION WITH SENTIMENT + OPTIONAL STAGE ADVANCEMENT. **OPENTERMINAL FINANCIAL RESILIENCE** (PR #6639) — 8 NEW PRO TOOLS (`market_screener`, `macro_data_fetcher`, `economic_calendar_fetcher`, `earnings_calendar_fetcher`, `options_chain_fetcher`, `crypto_market_data`, `portfolio_transaction_log`, `price_alerts`), PROVIDER FALLBACK CHAINS + STALE-WHILE-REVALIDATE CACHING, KEYLESS AUTH, TECHNICAL INDICATORS. **MULTI-RECIPIENT RESULT-DELIVERY EMAIL** (PR #6643) — SANITIZED, DEDUPED, FANNED OUT VIA NODEMAILER + `wp_mail`. ALL SHOPIFY/CRM/FINANCIAL CHANGES PORT BYTE-IDENTICAL TO `nvoos-content-graph-pro`. TOOL COUNT: ~306 BASE + ~1,279 PRO (~1,585 TOTAL; +13 PRO). STALE 1.1.79 BUILD ZIPS REMOVED (30 FILES) + SUPERSEDED DOCS-HUB 0.4.3/0.4.4/0.4.5 ZIPS REMOVED. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE + NEW `docs/developer/crm-toolkit-jobnavigator-adoption-plan.md` + `docs/project/plans/financial-toolkit-openterminal-lessons-plan.md`.
 
@@ -902,6 +904,18 @@ n#### New Audit & Compliance Docs
 - **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.63] section with PR-level detail. (August 23, 2026)
 - **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.63 + changelog entry. (August 23, 2026)
 - **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.63 entry. (August 23, 2026)
+
+## 🆕 September 2026 — v1.1.82: WordPress Playground Demos, Pro SPA Fixes, Token-Tracking & Delivery Hardening, Docs Hub 0.4.7
+
+### New and updated documents (September 18, 2026, v1.1.82)
+
+- **[docs/user-guides/playground-demo.md](user-guides/playground-demo.md)** ⭐ **NEW** — one-click WordPress Playground demo of the Complete bundle with a local Ollama chat: the link, Ollama prerequisites (`OLLAMA_ORIGINS` per OS incl. the desktop-app relaunch gotcha), what to expect (banner states, chat, Pro SPA page, wp-admin), troubleshooting table, and the local CLI-server fallback. (September 18, 2026)
+- **[blueprints/README.md](../blueprints/README.md)** ⭐ **UPDATED** — end-user walkthrough linked from "Trying it". (September 18, 2026)
+- **[docs/project/plans/v1.1.82-docs-catch-up.md](project/plans/v1.1.82-docs-catch-up.md)** ⭐ **NEW** — v1.1.82 docs & release catch-up plan (PR window #6645–#6674, no tool-count change, stale 1.1.80 ZIP removal, OI-1 group 17 self-resolution noted). (September 18, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.82 highlights + latest updates (Playground demos, `cron_monitor` + model-store seeding, token-tracking hardening, result-delivery dedupe, skill #59). (September 18, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.82] section with PR-level detail + the Versioning block; date 2026-09-18. (September 18, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.82 + changelog entry. (September 18, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — version + v1.1.82 recent-updates entry. (September 18, 2026)
 
 ### New and updated documents (August 22, 2026, v1.1.62)
 

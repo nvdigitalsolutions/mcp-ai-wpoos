@@ -32,6 +32,24 @@ export function useBootstrap(): BootstrapResult {
 		}
 		setRuntime( config );
 
+		// Seed the model selection from the pre-loaded assistant config.
+		// The sidebar normally syncs the model store when an assistant is
+		// selected, but embedded instances (show_sidebar="0") never render
+		// it — without this, every chat request sends the hardcoded default
+		// (openai/gpt-4o) as a provider/model override and the server rejects
+		// it with "No OpenAI API key has been configured" even though the
+		// assistant is wired to another provider (e.g. Ollama).
+		const bootstrapAssistantId = config.config?.assistantId ?? config.user?.assistant_id ?? 0;
+		const preloadedAssistant = ( config.assistants ?? [] ).find(
+			( a ) => a.id === bootstrapAssistantId,
+		);
+		if ( preloadedAssistant?.provider && preloadedAssistant?.model ) {
+			useModelStore.getState().setModel( {
+				provider: preloadedAssistant.provider,
+				model: preloadedAssistant.model,
+			} );
+		}
+
 		if ( typeof console !== 'undefined' && console.info ) {
 			console.info(
 				'[NV oOS Pro SPA] Initialized',

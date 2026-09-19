@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.81"
-  plugin-version-tested: "1.1.81"
-  last-updated: "2026-09-17"
+  plugin-version: "1.1.82"
+  plugin-version-tested: "1.1.82"
+  last-updated: "2026-09-19"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -399,6 +399,55 @@ keep their HTTP statuses. Revert via filter `wp_mcp_ai_mcp_error_http_status`.
 
 ---
 
+## Testing Tools Through the Chat REST Endpoint (no MCP client needed)
+
+The chat UI executes tools through `POST /wp-json/mcp-ai/v1/tools` — the
+fastest way to verify a tool end-to-end with `curl` instead of spinning up
+an MCP client or a chat session.
+
+```json
+{
+  "assistant_id": 9,
+  "tool": "search_upwork_jobs",
+  "arguments": { "query": "wordpress developer", "limit": 5 }
+}
+```
+
+- **Auth:** `X-WP-Nonce` + the logged-in cookie (same origin), or a Bearer
+  credential. The nonce must be **bound to a real session** — generate one
+  from a probe script, not from a bare CLI `wp_create_nonce()`:
+
+  ```php
+  $expiration = time() + 3600;
+  $token = WP_Session_Tokens::get_instance( $uid )->create( $expiration );
+  $cookie = wp_generate_auth_cookie( $uid, $expiration, 'logged_in', $token );
+  $_COOKIE[ LOGGED_IN_COOKIE ] = $cookie;          // nonce binds to this session
+  wp_set_current_user( $uid );
+  $nonce = wp_create_nonce( 'wp_rest' );           // use with curl -H "X-WP-Nonce: ..."
+  ```
+
+- **Gate 1 — assistant allowlist:** every assistant scopes tool access via
+  the `_wp_mcp_ai_tools` post meta. A tool not in that list returns
+  `403 wp_mcp_ai_tool_forbidden` ("This assistant is not allowed to execute
+  the requested tool"). Grant access with
+  `update_post_meta( $assistant_id, '_wp_mcp_ai_tools', $tools_with_slug )`.
+- **Gate 2 — availability:** `search_upwork_jobs` (and the other Upwork CRM
+  tools) also need `enable_crm_toolkit` in `wp_mcp_ai_settings`.
+- **DuckDuckGo returns no real SERPs.** The default `web_search_provider`
+  (`duckduckgo`) hits the free Instant Answer API, which returns empty
+  `RelatedTopics` for ordinary queries — so fallback-mode tools that
+  depend on `web_search` (`search_upwork_jobs` without an Upwork
+  connection, `research_company`, etc.) come back with **0 results** even
+  though outbound internet works. Configure a Brave (`BRAVE_API_KEY` env)
+  or Tavily key and set `web_search_provider` to it — Brave also supplies
+  `published_date`, which the Upwork fallback maps onto `published`.
+- **MSYS path gotcha:** `docker exec <ctr> php /tmp/probe.php` mangles
+  `/tmp/...` into a Windows path unless prefixed with `MSYS_NO_PATHCONV=1`.
+  CLI `php` inside the WP container also defaults to 128M — use
+  `php -d memory_limit=512M` when bootstrapping WordPress with Elementor.
+
+---
+
 ## MCP Transports & Client Compatibility
 
 The `/wp-json/mcp-ai/v1/mcp` endpoint supports **two transports**, chosen by
@@ -708,6 +757,14 @@ Import external AI conversation exports into the JetEngine
   toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
   dj-management/image-production slices.
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## WordPress Playground Demos, Pro SPA Fixes & Token-Tracking Hardening (v1.1.82)
+
+- **WordPress Playground demo blueprints** (PRs #6662/#6663/#6666/#6670/#6673/#6674) — two one-click demos: Content Graph "Project Asteria" (seeded sci-fi universe, deterministic build via the public `nvoos_content_graph/initial_build` hook) and **NV oOS Complete × local Ollama** (the browser worker's `localhost:11434` is the user's machine — provider pre-wired, Oma assistant, Test Lab page with `[ollama_status]` + embedded Pro SPA). `bin/generate-ollama-blueprint.php` auto-discovers the newest Complete bundle ZIP; `build-assets.yml` regenerates the blueprint on every build. New skill `mcp-ai-wpoos-playground-demos` (59th) documents the authoring/CORS/PCP/crash-mode playbook; end-user walkthrough in `docs/user-guides/playground-demo.md`.
+- **Pro SPA fixes** (PRs #6665/#6672) — `[nvoos_pro_spa cron_monitor="0"]` no-ops the blocking SSE cron-status stream + REST poll for constrained hosts (default `true`); embedded mode seeds the model store from the assistant's real config (no more hardcoded `gpt-4o` override).
+- **Token-tracking table hardening** (PR #6669) — verify-then-version, hourly retry backoff, quiet failure, graceful reads for SQLite-backed environments; ported 1:1 to `nvoos-content-graph-ai`.
+- **Result-delivery dedupe** (PR #6661) — `delivery_safe_data()` strips the duplicated response + `assistant_id`/`is_agentic` metadata; summary/SMS prefix dedupe. **`[ollama_status]` banner fixed** (PR #6668) — footer-enqueued checker (shortcodes render markup only). **Portability coverage guards repaired** (PR #6645). **Docs Hub 0.4.7** (PRs #6659/#6667) — third wp.org reviewer pass.
+- **Tool count** — unchanged: ~306 base + ~1,279 Pro (~1,585 total). Coding-time skills: 58 → 59.
 
 ## Shopify UCP Tool Routing, FlowHub Connections, JobNavigator CRM & OpenTerminal Financial Resilience (v1.1.81)
 

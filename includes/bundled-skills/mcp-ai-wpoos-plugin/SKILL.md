@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.81"
-  plugin-version-tested: "1.1.81"
-  last-updated: "2026-09-17"
+  plugin-version: "1.1.82"
+  plugin-version-tested: "1.1.82"
+  last-updated: "2026-09-19"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -27,6 +27,10 @@ auto-detection, and tool assignment.
 - API keys not being picked up from Docker environment variables
 - Troubleshooting 0 tools returned from `tools/list`
 - Configuring the plugin for IGCSE study (which tools to assign)
+- WordPress.org submission prep — Plugin Check (PCP) runs, wp.org listing
+  screenshots, packaging exclusions, and the compliance checklist are covered
+  by the `.agents/skills/mcp-ai-wpoos-wporg-submission` skill instead of this
+  one (see that skill for Docker PCP recipes and the CI gate anatomy)
 
 ## Architecture
 
@@ -67,6 +71,26 @@ wsl docker compose logs -f wp-plugin-seed
 
 WordPress is at `http://localhost:8000`, admin at `/wp-admin`
 (**admin / password**).
+
+### Design Stack deployment (F:\GITHUB\design-stack)
+
+The environment actually operated day-to-day uses different ports and
+credentials than this repo's dev compose (verified on the live stack,
+2026-09 session):
+
+| Service | Address |
+|---|---|
+| WordPress | `http://localhost:8092` — admin at `/wp-admin` (**admin / design_admin_2026**) |
+| Media worker | `http://localhost:3100` |
+| MySQL | `localhost:3308` |
+
+- The stack mounts the plugin from `design-stack/plugins/mcp-ai-wpoos` — an
+  NTFS junction to the plugin repo — so code edits land in this repo.
+- `design-stack/.agents/skills/design-*` and `mcp-ai-wpoos-plugin` are
+  junctions into this repo's `.agents/skills/` (creation script:
+  `bin/create-skill-junctions.ps1`), so skill edits ship in the same PR as
+  plugin code.
+- `wp` inside the Design Stack WP container requires `--allow-root`.
 
 ### 2. API Key Auto-Detection (v1.1.47+)
 
@@ -136,7 +160,44 @@ docker compose exec -T wordpress sh -c "
 The current `docker-compose.yml` uses relative paths (`.`) which Docker Desktop
 translates automatically. No action needed. If you encounter path issues with
 custom setups, use WSL paths (`/mnt/c/...`, `/mnt/f/...`) rather than Windows
-drive letters (`C:/...`, `F:/...`). See Docker Compose header comment for details.
+drive letters (`C:/...`, `/F:/...`). See Docker Compose header comment for details.
+
+### 5. Symlinks on WSL2 / Windows
+
+**`ln -s` silently creates copies on NTFS drives.** When you run `ln -s` from
+WSL targeting a path on a Windows-mounted drive (e.g. `/mnt/f/...`), it does
+NOT error — but it creates a real directory copy instead of a symlink. You
+need Windows Developer Mode enabled OR admin privileges for true symlinks.
+
+**Workaround: use NTFS junctions.** Junctions are directory-only reparse points
+that work without admin and are transparent to both Windows and WSL:
+
+```powershell
+# PowerShell (from WSL):
+Remove-Item "F:\path\to\link" -Recurse -Force
+New-Item -Path "F:\path\to\link" -ItemType Junction -Target "F:\path\to\target"
+```
+
+```bash
+# Or via cmd.exe (no admin needed for junctions):
+cmd.exe /c "mklink /J F:\path\to\link F:\path\to\target"
+```
+
+**Batch creation** is best done via a PowerShell `.ps1` script, not a shell
+loop — each `cmd.exe /c` spawns a new process with the copyright banner.
+
+**When to use which:**
+
+| Type | Command | Admin | Scope |
+|------|---------|-------|-------|
+| Junction | `mklink /J` | No | Directories only, same volume |
+| Symlink (file) | `mklink` | Usually | Files, cross-volume OK |
+| Symlink (dir) | `mklink /D` | Yes | Directories, cross-volume OK |
+| WSL symlink | `ln -s` | Dev Mode | Only on WSL-native filesystems |
+
+> **Design Stack**: `.agents/skills/design-*` and `mcp-ai-wpoos-plugin` use
+> junctions pointing to `plugins/mcp-ai-wpoos/.agents/skills/`. The creation
+> script is at `bin/create-skill-junctions.ps1`.
 
 ---
 
@@ -185,6 +246,46 @@ echo "Token: $token\n";
 returns `[]` even though hundreds of tools are registered at the system level.
 Always assign tools after creating an assistant.
 
+### WP-CLI provisioning (preferred — verified end-to-end)
+
+The PHP path above works, but the WP-CLI path is shorter and idempotent.
+Verified on the Design Stack (2026-09):
+
+```bash
+# 0. In the Design Stack WP container, wp requires --allow-root.
+#    (In this repo's own compose: docker compose run --rm wp-cli ...)
+
+# 1. Discover valid tool slugs before assigning.
+wp mcp-ai tool list               # base registry: slug + enabled + capability
+wp mcp-ai toolkit list            # Pro toolkit settings keys
+
+# 2. Create the assistant record.
+wp mcp-ai assistant create --title="Brand Assistant" --status=publish --porcelain
+# → prints the new assistant ID
+
+# 3. Set runtime meta. NOTE: assistant create/update --model / --system-prompt
+#    write legacy mcp_ai_model / mcp_ai_system_prompt keys that the runtime
+#    does NOT read. The runtime reads _wp_mcp_ai_* — set those explicitly.
+wp post meta update <id> _wp_mcp_ai_provider openai
+wp post meta update <id> _wp_mcp_ai_model gpt-4o-mini
+wp post meta update <id> _wp_mcp_ai_temperature 0.7
+wp post meta update <id> _wp_mcp_ai_system_prompt "$(cat assistant-system-prompt.md)"
+wp post meta update <id> _wp_mcp_ai_classification internal
+wp post meta update <id> mcp_ai_required_capability manage_options
+# Tools is a serialized PHP array; wp post meta update would store a string,
+# so use wp eval for that one key:
+wp eval 'update_post_meta(<id>, "_wp_mcp_ai_tools", array("web_search", "deep_research", "create_post"));'
+
+# 4. Issue the credential (prints cred_xxxxx.SECRET exactly once).
+wp mcp-ai credential issue <id> --porcelain
+
+# 5. Smoke test (chat REST is the reliable verification path).
+curl -s -X POST http://localhost:8092/wp-json/mcp-ai/v1/chat \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"assistant_id": <id>, "messages": [{"role":"user","content":"Reply with exactly: OK"}]}'
+```
+
 ---
 
 ## MCP Token & Authentication
@@ -224,9 +325,13 @@ node bin/mcp-bridge.js
 ### Auth Methods (in order of preference)
 
 1. **Bearer token** (`cred_xxxxx.SECRET`) — recommended for MCP clients
-2. **OAuth 2.0** (authorization_code grant) — browser-based MCP app flow
-3. **Mesh Key** (`X-WP-MCP-AI-Mesh-Key` header) — mesh federation
-4. **WordPress nonce** (`X-WP-Nonce` header + auth cookie) — browser admin
+2. **Raw credential** (`Authorization: cred_xxxxx.SECRET` without `Bearer `) —
+   accepted since v1.1.55 for agent configs that forward the header verbatim
+   (e.g. Cloudways Agent); disable via filter
+   `wp_mcp_ai_accept_raw_credential_header`
+3. **OAuth 2.0** (authorization_code grant) — browser-based MCP app flow
+4. **Mesh Key** (`X-WP-MCP-AI-Mesh-Key` header) — mesh federation
+5. **WordPress nonce** (`X-WP-Nonce` header + auth cookie) — browser admin
 
 Application passwords (Basic auth) are not supported on the MCP endpoint.
 Use Bearer tokens instead.
@@ -283,56 +388,269 @@ Response is in `result.content[0].text` as a JSON string. Canonical envelope:
 success returns an array; errors return a `WP_Error` object serialized as
 `{"code":"...", "message":"...", "data":{...}}`.
 
+### HTTP status semantics (v1.1.55+)
+
+JSON-RPC **error envelopes are returned with HTTP 200** so client SDKs that
+drop non-2xx bodies (e.g. the TypeScript SDK bundled with `mcp-remote`)
+still relay errors to the agent. Pre-1.1.55, errors were returned as
+400/404/500 and such SDKs **silently discarded them** — tool calls appeared
+to return nothing. Auth failures (401/403) and pre-dispatch guards (429)
+keep their HTTP statuses. Revert via filter `wp_mcp_ai_mcp_error_http_status`.
+
 ---
 
-## Rate Limiting, Restricted Users & Conversation Import (v1.1.60+)
+## Testing Tools Through the Chat REST Endpoint (no MCP client needed)
 
-**Restricted users.** Ephemeral rate-limit and token-budget blocks become
-persistent, reviewable restriction records (`WP_MCP_AI_Restriction_Registry`)
-with auto-expiry and audit logging:
+The chat UI executes tools through `POST /wp-json/mcp-ai/v1/tools` — the
+fastest way to verify a tool end-to-end with `curl` instead of spinning up
+an MCP client or a chat session.
 
-- Chat rate limit filterable via `wp_mcp_ai_chat_rate_limit` and
-  `wp_mcp_ai_chat_rate_limit_window` (was hardcoded 60 req/min).
-- Enforcement hooks: `wp_mcp_ai_tool_token_limit_exceeded`,
-  `wp_mcp_ai_per_session_limit_exceeded`, `wp_mcp_ai_rate_limit_exceeded`.
-- Admin: Token Manager "Restricted Users" panel (Base) + Pro Command Center
-  **Restrictions** tab; notice toggle at Settings → Orchestration →
-  Restriction Notifications (`enable_restriction_admin_notices`).
-- WP-CLI: `wp mcp-ai restrictions list|lift|add`.
-- REST: `GET /mcp-ai/v1/restrictions`,
+```json
+{
+  "assistant_id": 9,
+  "tool": "search_upwork_jobs",
+  "arguments": { "query": "wordpress developer", "limit": 5 }
+}
+```
+
+- **Auth:** `X-WP-Nonce` + the logged-in cookie (same origin), or a Bearer
+  credential. The nonce must be **bound to a real session** — generate one
+  from a probe script, not from a bare CLI `wp_create_nonce()`:
+
+  ```php
+  $expiration = time() + 3600;
+  $token = WP_Session_Tokens::get_instance( $uid )->create( $expiration );
+  $cookie = wp_generate_auth_cookie( $uid, $expiration, 'logged_in', $token );
+  $_COOKIE[ LOGGED_IN_COOKIE ] = $cookie;          // nonce binds to this session
+  wp_set_current_user( $uid );
+  $nonce = wp_create_nonce( 'wp_rest' );           // use with curl -H "X-WP-Nonce: ..."
+  ```
+
+- **Gate 1 — assistant allowlist:** every assistant scopes tool access via
+  the `_wp_mcp_ai_tools` post meta. A tool not in that list returns
+  `403 wp_mcp_ai_tool_forbidden` ("This assistant is not allowed to execute
+  the requested tool"). Grant access with
+  `update_post_meta( $assistant_id, '_wp_mcp_ai_tools', $tools_with_slug )`.
+- **Gate 2 — availability:** `search_upwork_jobs` (and the other Upwork CRM
+  tools) also need `enable_crm_toolkit` in `wp_mcp_ai_settings`.
+- **DuckDuckGo returns no real SERPs.** The default `web_search_provider`
+  (`duckduckgo`) hits the free Instant Answer API, which returns empty
+  `RelatedTopics` for ordinary queries — so fallback-mode tools that
+  depend on `web_search` (`search_upwork_jobs` without an Upwork
+  connection, `research_company`, etc.) come back with **0 results** even
+  though outbound internet works. Configure a Brave (`BRAVE_API_KEY` env)
+  or Tavily key and set `web_search_provider` to it — Brave also supplies
+  `published_date`, which the Upwork fallback maps onto `published`.
+- **MSYS path gotcha:** `docker exec <ctr> php /tmp/probe.php` mangles
+  `/tmp/...` into a Windows path unless prefixed with `MSYS_NO_PATHCONV=1`.
+  CLI `php` inside the WP container also defaults to 128M — use
+  `php -d memory_limit=512M` when bootstrapping WordPress with Elementor.
+
+---
+
+## MCP Transports & Client Compatibility
+
+The `/wp-json/mcp-ai/v1/mcp` endpoint supports **two transports**, chosen by
+the request shape:
+
+| Transport | How it connects | Response channel |
+|-----------|-----------------|------------------|
+| **Streamable HTTP** (default) | `POST /mcp` JSON-RPC, `Accept` includes `application/json` | JSON body on the POST response, HTTP 200/202 |
+| **Legacy HTTP+SSE** (v1.1.55+, flag `WP_MCP_AI_LEGACY_SSE_ENABLED`) | `GET /mcp` with SSE-only `Accept: text/event-stream` (or `?stream=true`) → `event: endpoint` with `session_id`; then `POST /mcp?session_id=...` | POST returns 202; responses arrive on the GET stream as `event: message` frames |
+
+**Discriminator rule:** `Accept` containing `text/event-stream` **and not**
+`application/json` → legacy SSE handshake. Mixed `Accept` headers
+(`application/json, text/event-stream`) always get JSON — that is deliberate,
+because Zed, Cursor, LM Studio and mcp-remote all send the mixed header but
+expect JSON responses.
+
+**Session model (legacy SSE):** sessions are owned by the credential that
+opened them (SHA-256 hash of the `Authorization` header); message POSTs with
+a different credential get 404. Caps: 5 sessions/credential, 20 global,
+30-min TTL (`wp_mcp_ai_sse_session_ttl` / `wp_mcp_ai_sse_max_per_credential` /
+`wp_mcp_ai_sse_max_total`). Store: `WP_MCP_AI_SSE_Session_Store`
+(`includes/rest/class-wp-mcp-ai-sse-session-store.php`).
+
+**`GET /sse` is NOT a message channel** — it streams the assistant directory
+(`event: directory`). Legacy SSE clients cannot complete a session there.
+`GET /no-sse` returns the directory as JSON.
+
+### Client compatibility quick reference
+
+| Client | What works |
+|--------|-----------|
+| Zed / Cursor / LM Studio / new SDKs | Native Streamable HTTP (`url` = `/mcp`) |
+| Python MCP SDK | `streamable_http_client(url, headers=...)` works; `sse_client(url)` **requires v1.1.55+** for the handshake |
+| mcp-remote bridge (Claude Desktop, older agents) | `npx -y mcp-remote@latest <url> --header "Authorization: Bearer <token>"` — connects via Streamable HTTP, needs Node 24+ |
+| Cloudways Agent 0.19.0 / Codex-style agents | A bare `url:` is treated as **SSE transport** — use the mcp-remote stdio bridge, or point at the `/mcp` endpoint on v1.1.55+ |
+
+### mcp-remote stdio bridge pattern (verified)
+
+For agents whose MCP client only speaks legacy SSE over a configured URL
+(Cloudways Agent, Claude Desktop):
+
+```yaml
+mcp_servers:
+  nv-oos-sophie-agent:
+    command: npx
+    args:
+      - "-y"
+      - "mcp-remote@latest"
+      - "https://<site>/wp-json/mcp-ai/v1/mcp"
+      - "--header"
+      - "Authorization: Bearer cred_xxxxx.SECRET"
+    enabled: true
+```
+
+mcp-remote auto-detects the transport (`http-first` strategy) and exposes the
+remote tools over local stdio. **Note:** mcp-remote opens a GET SSE stream
+for server-initiated messages and retries it on failure — on pre-1.1.55
+servers that GET hits the request rate limiter, and the retry loop can burn
+the whole hourly quota (see Rate Limiting below).
+
+### SSH-only sites — `bin/mcp-bridge-ssh.js` (Zed stdio over SSH)
+
+For sites with **no public web route** (SSH is the only way in), use the
+repo's own bridge, which owns the SSH port-forward and delegates to
+`bin/mcp-bridge.js` (newline-delimited stdio ↔ Streamable HTTP relay). No
+manual tunnel, no mcp-remote, no npm dependencies — Zed spawns it as a stdio
+context server.
+
+**Prerequisite:** SSH key auth (`ssh <user>@<host> -p <port>` must succeed
+non-interactively). Password prompts are impossible for a spawned process
+with no TTY.
+
+Zed `context_servers` entry (Settings → AI → MCP Servers → Add Local Server):
+
+```json
+{
+  "command": "node",
+  "args": ["bin/mcp-bridge-ssh.js"],
+  "env": {
+    "MCP_AI_SSH_USER": "user",
+    "MCP_AI_SSH_HOST": "203.0.113.10",
+    "MCP_AI_SSH_PORT": "2222",
+    "MCP_AI_SSH_REMOTE_PORT": "80",
+    "MCP_AI_TOKEN": "op_xxxx.SECRET"
+  }
+}
+```
+
+Key env vars: `MCP_AI_SSH_REMOTE_HOST`/`MCP_AI_SSH_REMOTE_PORT` (web server
+from the server's perspective; probe with curl over SSH — Cloudways Apache
+may sit on 8080), `MCP_AI_HOST_HEADER` (canonical host override when the
+web server 301-redirects on Host), `MCP_AI_SSH_EXTRA_ARGS` (e.g.
+`"-i C:/keys/id_ed25519 -o ProxyJump=bastion"`), `MCP_AI_ENV_FILE` (default
+`~/.nvoos-bridge.env` — keep the token out of settings.json).
+
+Operator-credential audience binding is checked against `home_url()` from
+the database, not the request Host header, so `http://127.0.0.1:<port>`
+requests through the tunnel validate normally.
+
+Orphan-proofing: the bridge holds ssh's stdin open so a hard-killed bridge
+closes the pipe and ssh exits — no stray tunnels. Tests:
+`node bin/test-mcp-bridge-ssh.js`.
+
+For driving a **Hermes Agent** (Nous Research) itself rather than the NV oOS
+console — its WebUI API over public HTTPS — see `bin/hermes-mcp-server.js`
+(tools: `hermes_chat`, `hermes_list_sessions`, `hermes_session_detail`,
+`hermes_sync_skills`; runbook: `docs/operations/fleet/hermes-operator-setup.md`
+§7). The server also auto-syncs `.agents/skills/` to the agent on startup
+(`HERMES_SYNC_SKILLS_ON_START=1`, default); the standalone CLI
+`bin/sync-skills-to-hermes.js` does the same from cron or a git post-merge hook.
+
+---
+
+## Rate Limiting & Agent Traffic
+
+Two independent limiters apply to MCP traffic:
+
+1. **General request limiter** — `rate_limit_requests` per
+   `rate_limit_window` seconds per user/IP (oOS → Security → Network & Headers).
+   GET/HEAD requests are exempt since v1.1.55 (discovery/SSE probes must not
+   consume the budget aimed at state-changing traffic).
+   **For AI-agent workloads set `rate_limit_requests` to 1000** — the default
+   300 is for chat usage, and client retry loops burn requests fast.
+2. **Tool execution limiter** — v1.1.55+ settings under oOS → Security →
+   **Tool Rate Limiting**: `tool_rate_limit_max` (default 300, 0 = unlimited),
+   `tool_rate_limit_window` (default 60s), `tool_rate_limit_exempt_tokens`
+   (default **on** — credential-token/agent traffic is exempt because an
+   assistant credential is already an explicit grant of its tool set).
+   Pre-1.1.55 this was a hardcoded 60 calls/60s with no UI — agents burst
+   through it routinely.
+3. **Nefarious usage monitor** — a third counter, deliberately namespaced
+   (`wp_mcp_ai_nefarious_rate_limit_` transient) away from the chat REST
+   limiter (`wp_mcp_ai_rate_limit_`): a shared counter would halve the
+   configured chat budget and entangle the two enforcement paths.
+   Rate-limit classification uses the dispatching request's real HTTP verb
+   (internal dispatches like `rest_do_request`/WP-CLI are classified
+   correctly instead of by the ambient request); GET/HEAD stay exempt.
+   Custom emitters of `wp_mcp_ai_before_chat_request` may fire the legacy
+   2-arg `( $messages, $request_data )` shape — core subscribers tolerate
+   both it and the canonical
+   `( $assistant_id, $messages, $options, $request )`.
+
+**Symptom of a tripped tool limiter on pre-1.1.55 servers:** tools/call
+returns HTTP 500 with a `-32603 "Tool rate limit exceeded"` error body —
+which mcp-remote-style SDKs silently drop, so the agent sees no response
+at all. With v1.1.55+ the same condition returns a visible JSON-RPC error
+(and is unlikely to trip for agent tokens).
+
+---
+
+## Restricted Users & Chat Rate Limits (v1.1.60+)
+
+The plugin converts ephemeral rate-limit and token-budget blocks into
+**persistent restriction records** (`WP_MCP_AI_Restriction_Registry`) so
+admins can review, lift, or add them.
+
+- **Chat rate limit** — the hardcoded 60 req/min chat cap is now filterable:
+  `wp_mcp_ai_chat_rate_limit` and `wp_mcp_ai_chat_rate_limit_window`
+  (WordPress bridge → `ChatOrchestrator::setChatRateLimit()`).
+- **Enforcement hooks** — `wp_mcp_ai_tool_token_limit_exceeded`,
+  `wp_mcp_ai_per_session_limit_exceeded`, and the new
+  `wp_mcp_ai_rate_limit_exceeded` (fired by the OOS `RateLimiter` adapter)
+  feed the registry; records auto-expire on a daily cleanup cron and are
+  audit-logged.
+- **Admin surfaces** — Token Manager "Restricted Users" panel (Base) with
+  one-click lift; Pro Command Center **Restrictions** tab (KPI cards, live
+  table, lift actions); dismissible notices toggled from Settings →
+  Orchestration → Restriction Notifications (`enable_restriction_admin_notices`).
+- **WP-CLI** — `wp mcp-ai restrictions list|lift|add`.
+- **REST** — `GET /mcp-ai/v1/restrictions`,
   `GET|POST /mcp-ai/v1/users/{id}/restrictions`,
   `DELETE /mcp-ai/v1/users/{id}/restrictions/{type}`; rate-limited responses
-  carry IETF `RateLimit-Policy` / `RateLimit` / `Retry-After` headers.
-- Reference: `docs/features/security/user-restrictions.md`.
+  carry IETF headers (`RateLimit-Policy`, `RateLimit`, `Retry-After`).
+- Full reference: `docs/features/security/user-restrictions.md`.
 
-**Conversation import (JetEngine).** Imports ChatGPT, Gemini Takeout, Claude,
-ShareGPT, and OpenAI JSONL exports into the `ai_chat_transcripts` CCT:
+## Conversation Import (v1.1.60+, JetEngine)
 
-- Tools: `conversation_import_detect|run|status|delete` (require
-  `manage_options`).
-- WP-CLI: `wp mcp-ai conversation-import detect|import|status|delete`
+Import external AI conversation exports into the JetEngine
+`ai_chat_transcripts` CCT (one row per conversation):
+
+- **Formats** — ChatGPT `conversations.json` (incl. ZIP), Google Takeout
+  Gemini activity, Claude `conversations.jsonl`, ShareGPT, OpenAI
+  fine-tuning JSONL.
+- **Tools** — `conversation_import_detect|run|status|delete` (require
+  `manage_options`; JetEngine must be active).
+- **WP-CLI** — `wp mcp-ai conversation-import detect|import|status|delete`
   (`--dry-run`, `--policy=skip|refresh`, `--resume-token=`).
-- Admin upload/preview page, GDPR export/erase, optional memory mining via
+- **Admin** — upload/preview page with progress reporting; GDPR
+  export/erase + retention coverage; optional memory mining via
   `mine_agent_memory`. Guide: `docs/user-guides/conversation-import.md`.
-
----
 
 ## Agent Identity Bridging & OKF Bundle (v1.1.61+)
 
-**Agent identity bridging.** `store_agent_context` resolves virtual agent
-keys (e.g. `nvoos-pro-spa-memory-drawer`, `virtual_planner_*`) to the
-canonical assistant post ID via `WP_MCP_AI_Agent_Identity_Resolver` (alias
-map in the `wp_mcp_ai_agent_id_aliases` option; bounded, never autoloaded);
-the envelope echoes `original_agent_id` / `agent_id_resolved`. Chat-memory
-recall merges alias buckets with a `stored_under` stamp per record, and the
-memory drawers (base, chat-spa, pro-spa) show scope/stored-under chips, the
-agent ID they recall under, and a show-all-scopes toggle; open drawers
-refresh on `memory_event` store frames.
-
+- **Agent identity bridging** — `store_agent_context` resolves virtual agent
+  keys (e.g. `nvoos-pro-spa-memory-drawer`) to the canonical assistant post
+  ID (`WP_MCP_AI_Agent_Identity_Resolver`, alias map in the
+  `wp_mcp_ai_agent_id_aliases` option); the envelope echoes
+  `original_agent_id` / `agent_id_resolved`. Chat-memory recall merges alias
+  buckets (`stored_under` per record) and the memory drawers show
+  scope/stored-under chips, the agent ID, and a show-all-scopes toggle.
 **OKF bundle.** The `skill-knowledge` bundle is auto-generated from
-`includes/bundled-skills/` on bootstrap (priority 32) and refreshed after
-bundled-skill reinstall — `okf_search` works out of the box (no more "OKF
-bundle not found: skill-knowledge").
+  bundled skills on bootstrap (and after bundled-skill reinstall), so
+  `okf_search` works out of the box (no more "OKF bundle not found").
 
 ## OKF Bundle Management & Pro Knowledge Routing (v1.1.62+)
 
@@ -419,6 +737,512 @@ bundle not found: skill-knowledge").
   registration; CSV list args accept `"1,2"` and `"1, 2"`;
   assistant-builder and Pro toolkit blocks register idempotently
   (WP 7.1 notices).
+
+## Telegram Delivery Fixes, Memory Bridge & Wave F2 Toolkit Completions (v1.1.75+)
+
+- **Telegram broadcast credentials** (PR #6482) — inline credentials stored as
+  JSON strings no longer fatal the array-typed broadcast tool;
+  `normalize_channel_credentials()` decodes/rejects, and the Remote Sites
+  schema mapping decrypts `api_key`/`token` for the real storage keys.
+- **Scheduled delivery credential fallback** (PR #6488) — tier-4 fallback
+  resolves the first enabled Remote Sites connection of the channel type for
+  cron delivery; `create_pro_schedule`/`update_pro_schedule` and the schedules
+  REST endpoint accept `result_delivery`; diagnostics never carry secrets.
+- **Content Graph memory bridge + NV oOS Complete checkout** (PR #6486) —
+  new `wp_mcp_ai_wake_up_context_graph_retriever` filter seam on
+  `wake_up_context`; the checkout sells the Complete bundle (base + Pro) with
+  a conflict guard; nvoos-content-graph **1.0.4 → 1.0.6**.
+- **Wave F2 port completions** (PRs #6476–#6501) — `nvoos-content-graph-pro`
+  (1.0.0) completes the financial-planning, social-media, and mcp-servers
+  toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
+  dj-management/image-production slices.
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## WordPress Playground Demos, Pro SPA Fixes & Token-Tracking Hardening (v1.1.82)
+
+- **WordPress Playground demo blueprints** (PRs #6662/#6663/#6666/#6670/#6673/#6674) — two one-click demos: Content Graph "Project Asteria" (seeded sci-fi universe, deterministic build via the public `nvoos_content_graph/initial_build` hook) and **NV oOS Complete × local Ollama** (the browser worker's `localhost:11434` is the user's machine — provider pre-wired, Oma assistant, Test Lab page with `[ollama_status]` + embedded Pro SPA). `bin/generate-ollama-blueprint.php` auto-discovers the newest Complete bundle ZIP; `build-assets.yml` regenerates the blueprint on every build. New skill `mcp-ai-wpoos-playground-demos` (59th) documents the authoring/CORS/PCP/crash-mode playbook; end-user walkthrough in `docs/user-guides/playground-demo.md`.
+- **Pro SPA fixes** (PRs #6665/#6672) — `[nvoos_pro_spa cron_monitor="0"]` no-ops the blocking SSE cron-status stream + REST poll for constrained hosts (default `true`); embedded mode seeds the model store from the assistant's real config (no more hardcoded `gpt-4o` override).
+- **Token-tracking table hardening** (PR #6669) — verify-then-version, hourly retry backoff, quiet failure, graceful reads for SQLite-backed environments; ported 1:1 to `nvoos-content-graph-ai`.
+- **Result-delivery dedupe** (PR #6661) — `delivery_safe_data()` strips the duplicated response + `assistant_id`/`is_agentic` metadata; summary/SMS prefix dedupe. **`[ollama_status]` banner fixed** (PR #6668) — footer-enqueued checker (shortcodes render markup only). **Portability coverage guards repaired** (PR #6645). **Docs Hub 0.4.7** (PRs #6659/#6667) — third wp.org reviewer pass.
+- **Tool count** — unchanged: ~306 base + ~1,279 Pro (~1,585 total). Coding-time skills: 58 → 59.
+
+## Shopify UCP Tool Routing, FlowHub Connections, JobNavigator CRM & OpenTerminal Financial Resilience (v1.1.81)
+
+- **Shopify tools are UCP catalog mode-aware** (PR #6634) — storefront/global
+  catalog connections drive live `search_catalog`/`lookup_catalog`/
+  `get_product` queries (no caching, `live: true`); admin-only tools refuse
+  catalog connections with an actionable hint; `remote_shopify_connection`
+  validates UCP modes via the `tools/list` handshake. **Product image cards**
+  (PR #6638) — `images[]` + a chat-rendered markdown card (10-card cap) on
+  every product-returning path via a shared normalizers trait. CG Pro ports
+  byte-identical.
+- **FlowHub Remote Sites resolution + proxy** (PRs #6635/#6637) — a shared
+  resolver chain (explicit `connection_id` → toolkit settings → sync
+  connections → first enabled FlowHub connection) ends the "credentials are
+  not configured" failure; live requests honor the connection proxy
+  (`http_api_curl`). New base helper `WP_MCP_AI_FlowHub_Connection_Helper`.
+- **JobNavigator CRM adoption + Gmail reply poller** (PRs #6636/#6640/#6641)
+  — 5 new Pro CRM tools (`bulk_move_deal_stages`, `record_crm_reply`,
+  `get_crm_handover`, `get_pipeline_digest`, `create_tracked_link`), deal
+  stage history + undo, lead dedup with canonical companies, reply signals,
+  won-deal lead release; a cron-driven Gmail reply poller classifies inbound
+  replies with sentiment + optional stage advancement; pipeline-digest
+  scheduling recipe for Workflow Builder + Pro Schedule Manager.
+- **OpenTerminal financial resilience** (PR #6639) — 8 new Pro financial
+  tools (`market_screener`, `macro_data_fetcher`, `economic_calendar_fetcher`,
+  `earnings_calendar_fetcher`, `options_chain_fetcher`, `crypto_market_data`,
+  `portfolio_transaction_log`, `price_alerts`), provider fallback chains +
+  stale-while-revalidate caching, keyless microservice auth, technical
+  indicators, portfolio transaction ledger with P&L. CG Pro port
+  byte-identical.
+- **Multi-recipient result-delivery email** (PR #6643) — comma/semicolon/
+  whitespace lists normalized on save + sanitized/deduped at the
+  `sanitize_result_delivery()` boundary; fanned out via Nodemailer +
+  `wp_mail()`; legacy `notify_email` stays single-address.
+- **Tool count** — +13 Pro: ~306 base + ~1,279 Pro (~1,585 total).
+
+## Assistant Portability, Shopify UCP Modes, Security Usage Monitor & WP-CLI Repairs (v1.1.80)
+
+- **Assistant export/import across all surfaces** (PR #6628) — canonical
+  `WP_MCP_AI_Assistant_Portability` engine with `nvoos-assistant` JSON
+  bundles (format_version 1): `wp mcp-ai assistant export|import` rewritten
+  (legacy files still import; old export lost `_wp_mcp_ai_*` config — fixed),
+  REST `POST /mcp-ai/v1/assistants/export|import` (admin-only, nonce/bearer,
+  schema-validated, 2 MB cap, dry-run), admin Import/Export page + row/bulk
+  actions, and 3 new base tools (`export_assistant`, `import_assistant`,
+  `duplicate_assistant`) + Pro `export_assistant_blueprint`. Credential hashes
+  never exported, stripped from imports; the backup provider now shares the
+  denylist (previously it exported credential hashes).
+- **Security Center Usage Monitor sub-tab** (PR #6632) — new `usage_monitor`
+  sub-tab (violation triage log, status cards, shutdown recovery, editable
+  config); the admin notice deep-links to it and shows the latest violation;
+  `POST /mcp-ai/v1/security/clear-violations` + `/clear-shutdown`
+  (`manage_options` + nonce); monitor sanitize-clobber bug fixed (submitted
+  keys only); malformed patterns dropped/skipped.
+- **Shopify UCP modes** (PRs #6624/#6630) — keyless Storefront + Global
+  Catalog modes replace the deprecated REST Catalog API on Pro + CG Pro
+  (byte-identical ports; public `/ucp/agent-profile` route); REST catalog
+  401s fixed with a 60-min token cap, scope validation, and purge-and-retry
+  (PR #6623); JetEngine sync gate unified with the System Status row.
+- **WP-CLI repaired + streaming** (PRs #6625/#6626) — `provider list` and
+  every base-class command no longer fatal on PHP 8+ (by-reference Formatter
+  constructor → by-value `format_items()`); `chat` uses `get_model_router()`;
+  `chat --stream` streams natively (cURL SSE) or simulates chunks, honoring
+  the shared streaming filters. OKF editor keeps context on save (#6631).
+  WhatsApp webhook self-tests on Remote Sites (#6622).
+- **Tool count** — +3 base +1 Pro: ~306 base + ~1,266 Pro (~1,572 total).
+
+## Imaging Symlink Hardening, Checkout Hardening Tail & Sub-Project Bumps (v1.1.79)
+
+- **Imaging study deletion hardened against symlink traversal** (PR #6616) —
+  both recursive study-deletion paths now remove links as links and never
+  follow them; every iterator entry is realpath-verified against the
+  storage root; new `study_delete_link_failed` /
+  `study_delete_outside_storage_blocked` audit events; the
+  `nvoos-content-graph-pro` port ships the same two files byte-identically.
+- **Checkout hardening tail** (PRs #6611/#6613, vendor-side) — the Stripe
+  statement descriptor now ships as `statement_descriptor_suffix` (fixes the
+  424 that failed every live session); product/price creation verifies
+  stored Stripe IDs against the current key and recreates them after an
+  account switch.
+- **Content Graph 1.0.8** (in-session) — Stripe Payment Element
+  billing-address mode `never` → `auto` (non-EU purchases no longer die
+  client-side with `IntegrationError`); `/payments/session` refuses
+  chargeable sessions when the site is already licensed (no double
+  charges).
+- **Checkout API 0.1.2** (in-session) — buyers are emailed their license
+  once per license from both the webhook and `/verify` paths
+  (`email_sent_at` DB v4 → v5).
+- **Docs Hub 0.4.5 → 0.4.6** (PRs #6615/#6617) — second wp.org reviewer
+  pass (external-services disclosure, symlinked cache-dir uninstall guard)
+  + full 18-guideline pass (bundled GPLv3 license); PCP 0 blocking errors.
+- **Content-graph wp.org readiness** (PRs #6609/#6612/#6619) —
+  seller-of-record copy, price-subject-to-change note, packaging tri-sync
+  (`node_modules` exclude).
+- **Toolkit slash test repair** (test-only, PR #6618) — suite updated to the
+  declarative adapter contract from #6604.
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Slash-Command Rework, DeepSeek V4 Pro Restoration & Checkout Hardening (v1.1.78)
+
+- **Slash commands reworked as declarative tool wrappers** (PR #6604) — the
+  toolkit manager is now ~1,000 declarative lines: 36 commands across 15
+  toolkits, each mapped to a verified real tool slug; execution delegates to
+  `WP_MCP_AI_Tool_Registry::execute_tool()` via the new tool adapter
+  (`register_tool_command()`), and every command is exposed as a `slash.*`
+  MCP prompt template (`prompts/list` / `prompts/get`). ~76 placeholder
+  commands purged; removed outcomes stay reachable via plain chat. The
+  Content Graph platform port still ships the old placeholder system —
+  owned by the ecosystem-port loop.
+- **DeepSeek V4 Pro restored across all tracks** (PR #6608) — DeepSeek's
+  2026-09-10 changelog continues V4 Pro past Sep 14: `deepseek-v4-pro` is
+  **active** again ($0.66/$1.98 off-peak; migration map deliberately
+  unmapped). The Content Graph AI mirror bumps its catalog to v2026.09.10
+  and its v4-pro pricing is corrected; `lib/core` mirrors align.
+- **Checkout hardening** (PRs #6597/#6598/#6603) — Content Graph assets
+  cache-bust by file mtime (`Schema::assetVersion()`; fixes the invisible
+  1.0.7 purchase-modal hotfix — year-long `Cache-Control` on
+  `?ver=1.0.7`); the purchase modal syncs its price from the vendor
+  `/session` response (display-only, vendor re-verifies) with
+  `DEFAULT_PRICE_CENTS` **4900 → 3499**; minimalist modal restyle.
+- **Docs Hub 0.4.4** (PR #6606) — all wp.org review findings fixed (search
+  context filtering, source-code disclosure, symlink-safe deletion,
+  staging-transient isolation, sitemap slug leak); PCP gate 0 blocking
+  errors.
+- **Legal consolidation** (PRs #6599/#6605/#6607) — unified ToS, aligned
+  API-LICENSES, two-entity seller model (NV Digital Unlocked LLC sells;
+  NV Digital Solutions develops).
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## DeepSeek V4.1 Flash, Base+Pro Gating & Memory CCT Slug (v1.1.77)
+
+- **DeepSeek V4.1 Flash refresh** (PR #6555, corrected 2026-09-12) — the
+  catalog's DeepSeek lineup is now `deepseek-flash` (active, vision) +
+  `deepseek-v4-pro` (active — DeepSeek announced it continues V4 Pro service
+  past 2026-09-14 with unchanged billing; no new sunset date); V4 Flash +
+  Vision Exp retired; stored references migrate on the catalog-version bump.
+  Cost calculator gains peak/off-peak (`calculate_cost_at()` with a record
+  timestamp; legacy `calculate_cost()` stays time-independent).
+- **Base+pro gating** (PR #6561) — Pro toolkits now load in base+pro
+  installs (gate escape `! $is_base || defined( 'WP_MCP_AI_PRO_VERSION' )`);
+  new `tests/basepro/` matrix + `composer run test:basepro` pins it.
+- **Pro WP-CLI load-order guard** (PR #6585) — no more
+  `Undefined constant WP_MCP_AI_PATH` when Pro activates before the base
+  plugin; the CLI loader defers to `plugins_loaded` 30.
+- **Memory CCT canonical slug** (PR #6591) — Graphify bridge + Pro memory
+  retention read `ai_agent_memories` (canonical) with a legacy-table
+  fallback; dormancy sweeps, per-user caps, expiry pruning, and Memory
+  Health stats start working.
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Delivery Formats, Checkout Legal Series & Wave F2 Completions (v1.1.76+)
+
+- **Chat delivery full report + per-channel formats** (PR #6525) — chat
+  channels support the `full` template (summary + substantive response +
+  envelope data); per-channel `format` allowlists (Telegram
+  `html`/`markdown`/`markdown_v2`/`plain`; WhatsApp/Slack/Discord/Teams
+  `markdown`/`plain`; Messenger/Google Chat `plain`); Telegram delivery
+  routes through `send_telegram_message` directly so `parse_mode` works;
+  `MarkdownV2` reserved-char escaping; group-mention skips log
+  `telegram_group_mention_required_ignored` instead of silently dropping.
+- **Duplicate-summary skip** (PR #6548) — assistant-run delivery skips the
+  derived summary when the response already opens with it
+  (`response_starts_with_summary()` normalizes tags/whitespace + strips
+  the trailing ellipsis).
+- **Comic Creation toolkit toggle + playbook seeder idempotency** (#6512,
+  direct commit) — the `enable_comic_creation_toolkit` toggle is now
+  registered (Tools section, Pro Features subtab, memory estimator,
+  WP-CLI maps); `hash_playbook_content()` strips the `Generated:`
+  timestamp so playbook syncs no longer recreate attachments.
+- **Checkout launch-complete series** (#6507/#6520/#6523/#6550) — required
+  ToS consent + buyer email, EU country selector + billing-address block,
+  Stripe product/price metadata, license DB v3 (`dbDelta`), manual install
+  as primary path (`/verify` returns `download_url`), commercial legal
+  docs (`docs/legal/`). Checkout API stays **0.1.0**.
+- **Security sweeps** (#6515/#6532/#6546/#6504) — 9 Dependabot alerts,
+  SVGO CVE-2026-84370 `>=4.1.0`, svgo/hono/vitest bumps, docs-hub ZIP
+  excludes `*.md` (keep `readme.txt`).
+- **Wave F2 port completions + new port skill** (PRs #6505–#6549) —
+  `nvoos-content-graph-pro` (1.0.0) completes ten toolkit ports
+  (comic-creation, dj-management, ai-tool-builder, architect-agent,
+  architectural-design, site-creator, document-generation,
+  regulatory-registration, healthcare, law-firm); new coding-time skill
+  `mcp-ai-wpoos-ecosystem-port` (skill count 55 → 56).
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Checkout Connectivity Diagnostics & Pro CLI Load-Order Guard (v1.1.77+)
+
+- **Checkout API addon `GET /health`** (PR #6573) — public, no Stripe, no
+  rate-limit token, no writes; returns `status`/`service`/`version`/
+  `configured`/`server_time`. Live on nvdigitalsolutions.com:
+  `GET https://nvdigitalsolutions.com/wp-json/nvoos-checkout/v1/health`.
+- **Checkout API admin "REST endpoints" section** (PR #6573) — live
+  per-route registered/missing markers (from `rest_get_server()->get_routes()`
+  endpoint lists) plus a nonce-protected loopback self-check of `GET /health`
+  reporting HTTP status + latency.
+- **Content Graph client diagnostics** (PR #6573) — `Vendor::health()` and
+  the admin-only `GET /payments/health` route (deliberately NOT throttled,
+  so diagnostics cannot trigger the "Too many checkout attempts" lockout);
+  the purchase modal offers a "Test connection" action when session
+  creation fails.
+- **Checkout troubleshooting playbook** — two independent throttles: client
+  (transients `nvoos_content_graph_commerce_{session,verify}_throttle_{uid}`,
+  5 and 15 attempts per 10 min per user) and vendor (per server IP, 20
+  session / 30 verify per 10 min on the checkout-api addon). Diagnose from
+  the client site's server:
+
+  ```bash
+  # Outbound connectivity from the site's server (works even when other
+  # plugins fatal under WP-CLI, see below):
+  wp --skip-plugins eval '$main = glob( WP_PLUGIN_DIR . "/*nvoos-content-graph*/nvoos-content-graph.php" ); if ( empty( $main ) ) { exit; } require_once $main[0]; var_export( ( new \NvoosContentGraph\Commerce\Vendor( \NvoosContentGraph\Commerce\Payments::vendorApiUrl() ) )->health() );'
+
+  # Clear the client throttles. If the remote shell mangles $variables,
+  # ship the PHP base64-encoded instead:
+  wp --skip-plugins eval 'for ( $i = 1; $i <= 200; $i++ ) { delete_transient( "nvoos_content_graph_commerce_session_throttle_" . $i ); delete_transient( "nvoos_content_graph_commerce_verify_throttle_" . $i ); }'
+  ```
+
+  The vendor-side per-IP bucket only clears with time (10 min).
+- **Pro CLI load-order fatal** — when the Pro addon is activated before the
+  base plugin, every `wp` command dies with `Undefined constant
+  "WP_MCP_AI_PATH"` (Pro requires its CLI files at include time under
+  WP_CLI; web requests are unaffected). Site fix: reorder `active_plugins`
+  via `wp --skip-plugins eval` (move the `-pro` entry after the base
+  entry). Code fix: PR #6585 defers the CLI require loop to
+  `plugins_loaded` when the base constant is missing at include time.
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Checkout Purchase-Modal Redirect Bug & Release-Tag URL Fix (PR #6594)
+
+Diagnosed live on victory.nvdigital.solutions (client) + nvdigitalsolutions.com
+(vendor) when "the purchase modal says nothing and redirects to the GitHub
+releases page" with everything seemingly configured correctly.
+
+- **The silent-redirect failure mode.** `checkoutUnavailable()` — the only
+  path that redirects to `fallback_url` — fires when the modal's
+  `/payments/session` call returns 404/≥500 **or its `.catch` runs**. The
+  `.catch` wraps the ENTIRE `.then` chain, so ANY throw after the session
+  call (Stripe element setup included) is mislabelled as "checkout
+  unavailable". Status-code errors (424/429/403) stay in-modal with a
+  "Test connection" action; a redirect means the response was 404/5xx,
+  non-JSON, or a post-session throw. The fallback note is shown only 1.2 s
+  — users report it as "says nothing, just redirects".
+- **Root cause found: invalid Stripe element name.** The modal called
+  `elements.create( 'paymentElement', … )` — the core Stripe.js API name is
+  **`payment`** (`paymentElement` is the React component name). Stripe threw
+  `IntegrationError: A valid Element name must be provided … you passed:
+  paymentElement` AFTER a 200 session, and the catch-all redirected. Fix
+  (PR #6594): `create( 'payment' )` plus a try/catch around Stripe element
+  setup that surfaces a new `stripe_setup_error` message in the modal
+  instead of the misleading redirect. The no-browser contract verifier is
+  `node plugins/nvoos-content-graph/scripts/verify-commerce-fallback.js`.
+- **Release-tag convention mismatch (same PR).** GitHub releases moved to
+  `nvdigital-oos-v*.*.*` tags (`build-nvdigital-oos-wporg.yml` is the
+  active path; `release.yml` `v*` tags are the legacy wp.org path). The
+  checkout-api `default_zip_source()` and the client `Payments::zipUrl()`
+  fallback still built `releases/download/v{VERSION}/…` → post-payment
+  downloads 404/502 while payment + license succeed. Symptom: buyer pays,
+  then "Could not fetch the addon package: 404 Not Found" (vendor download
+  server) or a broken fallback URL. Verify: `curl -I …/releases/download/
+  nvdigital-oos-v1.1.76/nvdigital-open-operator-system-oos-complete-
+  1.1.76.zip` (200) vs the `v1.1.76` tag shape (404). Live-site remedy
+  without a release: edit the vendor's **ZIP source** setting to
+  `https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/nvdigital-oos-v{VERSION}/nvdigital-open-operator-system-oos-complete-{VERSION}.zip`
+  (keep **Addon version** as the plain `1.1.76` — the tag prefix belongs in
+  the ZIP source pattern, not the version field).
+- **Browser-side diagnostics that worked** (config lives in
+  `window.nvoosContentGraphCommerce` — `rest_url`, `nonce`, `fallback_url` —
+  only on the content-graph admin page, admin-logged-in):
+  1. Replicate the modal call from the console:
+     `fetch( rest_url + '/payments/session', { POST, credentials 'same-origin', X-WP-Nonce: nonce, body '{}' } )`
+     — 200 + `client_secret` proves vendor/keys/throttles all healthy
+     (each call creates a real live PaymentIntent; cancel it via
+     `POST api.stripe.com/v1/payment_intents/{id}/cancel`).
+  2. Raw-body variant (`r.text()`) to catch **non-JSON** responses (PHP
+     warnings/debug lines, Cloudflare challenge HTML) — those reject
+     `response.json()` and trip the redirect.
+  3. Monkey-patch `window.fetch` to log every `/payments/` request with
+     `r.clone().text()` BEFORE clicking Buy — captures what the modal
+     actually sends/receives regardless of the 1.2 s redirect.
+  4. To isolate a throw, load the REAL `https://js.stripe.com/v3/` first,
+     then wrap the real `window.Stripe` with logging at call → elements →
+     create → mount. **Pitfall: replacing `window.Stripe` with a stub
+     short-circuits `loadStripeJs` (`if ( window.Stripe )`), so the modal
+     never downloads Stripe.js and the stub's undefined return throws — a
+     self-inflicted false positive.**
+  5. DevTools "pause on caught exceptions" first lands on Stripe's internal
+     `ArrayBuffer()` bot-check `try/catch` — harmless noise. Press F8 until
+     the pause is in `content-graph-commerce.js` or carries a non-Stripe
+     message.
+- **Server-side diagnostics from the client site's shell:**
+  `curl -sS -X POST https://nvdigitalsolutions.com/wp-json/nvoos-checkout/v1/session -H 'Content-Type: application/json' -d '{"product":"nvoos-oos-complete","site_url":"https://victory.nvdigital.solutions"}'`
+  tests the exact server→vendor path (outbound firewall/DNS/SSL issues the
+  browser can't see); `wp eval '$v = new \NvoosContentGraph\Commerce\Vendor( \NvoosContentGraph\Commerce\Payments::vendorApiUrl() ); …'`
+  runs the plugin's own `health()`/`createSession()` on the site's server.
+- **Live config facts (verified):** vendor `GET /health` is public;
+  `POST /session` requires `product` ∈ {`nvoos-oos-complete`,
+  `nvoos-content-graph-ai`} + `site_url`; a webhook signature test =
+  HMAC-SHA256 over `{ts}.{payload}` with the dashboard `whsec_` sent as
+  `Stripe-Signature: t={ts},v1={hex}` — a benign `charge.succeeded` event
+  answering `{"received":true}` proves the dashboard secret matches the
+  plugin's stored one; the Stripe webhook endpoint must subscribe
+  `payment_intent.succeeded` + `charge.refunded` (+ optional
+  `charge.dispute.created`); the client's commerce REST routes are
+  **admin-only by design** (anonymous 403/401 is normal); if the base NV oOS
+  plugin is already active on the client site (`mcp-ai/v1` in `/wp-json/`),
+  the post-payment install correctly 409s (conflict guard) with a
+  manual-download link — purchases on such a site need no install.
+
+## Calendar Query Fix, Email Formats & Wave F2 PM/Calendar (v1.1.74+)
+
+- **Google Calendar date queries** (PR #6460) — calendar query values are
+  now `rawurlencode()`d before `add_query_arg()` (the raw `+` in RFC3339
+  offsets decoded as a space → 400); `calendar.freebusy` in the Standard
+  scope profile (new grants only).
+- **Result Delivery email formats** (PR #6465) — new
+  `WP_MCP_AI_Markdown_Converter` (escaped + `wp_kses` allowlist +
+  protocol-allowlisted links) + per-channel `format` setting (`both`
+  default | `html` | `markdown`).
+- **Schedule Manager assistant prompts** (PR #6469) — the edit modal shows
+  and updates `assistant_run` prompts; `update_pro_schedule` accepts
+  `assistant_config` via MCP.
+- **Wave F2 PM + calendar-booking ports** (PRs #6450–#6472) —
+  `nvoos-content-graph-pro` (1.0.0) completes both toolkit ports;
+  perf-suite MCP-abilities fix process-wide in `tests/bootstrap.php`
+  (#6470); content-graph-pro excluded from the root WPCS gate (#6457).
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Woo Tool Upgrades, Queue Bootstrap Fix & Wave F2 (v1.1.73+)
+
+- **`bulk_update_products` variable scope** (PR #6447) — new `scope`
+  argument (`all` default, `product` legacy) expands price/stock fields
+  from variable parents to variations and grouped parents to children
+  (`resolve_update_targets()` + `WC_Product_Variable::sync()`); the
+  response reports `targets[]` per input ID + `scope`/`updated_targets`
+  keys (acknowledged shape change).
+- **`update_woo_product_qty` notify flag** (PR #6448) — `notify` (default
+  `true`) suppresses low/no-stock emails for the write via scoped
+  `woocommerce_should_send_*` filters removed in a `finally`;
+  `woocommerce_*_stock` actions still fire.
+- **Async job queue table bootstrap fix** (PR #6423) — the queue class now
+  boots in time to create its table (activation + first-load self-heal;
+  `get_queue_stats()` fails soft) — no more missing-table SQL floods.
+- **Comic Reader 0.5.0** (PR #6402) — Komga-parity upgrade; **Docs Hub
+  0.4.3** (PRs #6397/#6403) — wp.org prep; **Wave F2** (PRs #6397–#6445,
+  #6449) — new `nvoos-content-graph-pro` v1.0.0 standalone addon (Pro CRM
+  + e-commerce ports, 43 e-commerce tools).
+- **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Woo Price/Qty Tools & Ecosystem Port Waves (v1.1.72+)
+
+- **WooCommerce price & quantity tools** (PR #6388) —
+  `update_woo_product_price` (regular/sale, all product types) and
+  `update_woo_product_qty` (stock + management) share the new
+  `WP_MCP_AI_Woo_Price_Qty_Updater` trait; `bulk_update_products` uses it;
+  tool presets register the new slugs.
+- **Scheduled sync connection ID** (PR #6386) — EZuite/FlowHub scheduled
+  syncs deliver the assigned connection ID (the scheduled action was
+  dropping it).
+- **Pro update vendor integrity** (PR #6338) — "Update Pro Now" verifies the
+  Pro package's `vendor/` before and after updating.
+- **Container binding** (PR #6339) — `tool_registry` is registered
+  `transient`; every `get()` resolves the live singleton (test-swap safe).
+- **Deps + defaults** (PRs #6365, #6332) — browserslist/qs patched (12
+  Dependabot alerts); `gpt-image-2` aligned across all three settings
+  layers.
+- **Ecosystem ports** (PRs #6330–#6387) — Wave D8 closes the standalone
+  tool-execution gap in Content Graph AI; Wave E6 engine pieces fold into
+  the AI addon; the platform addon closes Waves E2/E3/E5/E1/E4 +
+  E-UI-1/2/3. Sub-project versions unchanged (1.0.4 / 1.0.4 / 2.0.0).
+- **Tool count** — +2 Pro: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Rate-Limit Unlock, Model Catalog & Ecosystem (v1.1.71+)
+
+- **REST rate-limit unlock** (PR #6322) — `check_rate_limit()` uses fixed-window
+  accounting (`{count, first_seen}` payload; TTL never extended past window end)
+  with honest remaining-time `retry_after`; the new
+  `wp_mcp_ai_rest_request_rate_limit_exceeded` action flags the restriction
+  registry, so blocked users appear in Command Center → Restrictions with the
+  Lift button (lifting also clears the `wp_mcp_ai_rate_limit_user_{id}`
+  transient; guest IP-keyed blocks expire on their own).
+- **MemPalace wing scope** (PR #6327) — `wake_up_context` enforces
+  `wing`/`room` exclusions (`matches_wake_filters()`); Graphify graph anchors
+  only boost scores and never excluded out-of-scope memories.
+- **September 2026 model catalog** (PR #6328) — 228 models; new defaults
+  `default_gemini_model` → `gemini-3.6-flash`, `openai_image_model` →
+  `gpt-image-2`, Kimi default → `kimi-k3`; retired DeepSeek chat/reasoner/coder,
+  `gemini-3.1-flash`, `imagen-4` have migration-map successors.
+- **Checkout API** (PR #6315) — addon joins the standard build + PHPUnit
+  pipeline; token/crypto classes derive `wp_salt()` salts (never raw
+  `AUTH_KEY . SECURE_AUTH_KEY`). Connectors links → `options-connectors.php`
+  (PR #6314). Coding-time agent skills: 53 → **54** (`mcp-ai-wpoos-updates`).
+- **Tool count** — unchanged: ~303 base + ~1,263 Pro (~1,566 total).
+
+## Wave-5 Repair Campaign & Host-Hardening Fixes (v1.1.70+)
+
+- **exec-disabled hosts** — on PHP 8+ a disabled function throws a fatal
+  `Error` that `@` cannot suppress; never call `exec`/`shell_exec`/`proc_open`
+  unguarded. Use `wp_mcp_ai_check_nodejs_available()` /
+  `wp_mcp_ai_get_nodejs_version()` (exec-first, Process Service fallback) and
+  the OCR service's `is_cli_tool_available()` / `run_cli_command()` helpers;
+  sanitizers clamp with `max( 0, … )`, never `absint()` (it flips negatives).
+- **Wave-5 fixes** (PRs #6280–#6312) — transcript `attachments` metadata
+  preserved; complexity-based model routing restored; JetEngine gates require
+  `JET_ENGINE_VERSION` + a physical CCT-table probe (`is_storage_available()`);
+  mesh peer URLs validated before `esc_url_raw()`; Auth0 audiences validated
+  structurally (no DNS); image/chart permission checks use the **acting user**;
+  markup REST validation errors return `400`; the legacy SSE handshake is
+  filterable (`wp_mcp_ai_legacy_sse_enabled`); `wp_mcp_ai_pro_get_tool_map()`
+  caches the Pro tool map; settings-repository reads fall back to the canonical
+  `wp_mcp_ai_settings` blob so runtime gates see dashboard-saved values;
+  agentic events reach the recent-activity feed.
+- **Tool count** — unchanged: ~303 base + ~1,263 Pro (~1,566 total).
+
+## Vision Analysis, tagDiv Compat, DeepSeek Schemas & ZipSlip Revival (v1.1.69+)
+
+- **Vision Analysis toolkit (Pro)** — new `analyze_image_objects` tool
+  counts objects per category (HF OWLv2 / Ollama `detection`, VLM `vlm`,
+  hybrid label normalization; `annotate=true` returns a GD box-annotated
+  attachment). Gated by `enable_vision_analysis_toolkit` on the NV oOS →
+  Vision Analysis settings page — **off by default**; remote image URLs go
+  through the SSRF URL guard. Docs: `docs/toolkits/vision-analysis-toolkit.md`.
+- **tagDiv Newspaper admin compat** — the four SiteKit tools return string
+  capability-flag arrays (the old `CAPABILITY_CAN_USE_IF_ADMIN` constant
+  never existed and fatalled the assistant tools metabox at
+  `sitekit_get_adsense`); the sortable shim prints a bundled jQuery UI
+  1.14.2 copy whenever `td_wp_admin` is enqueued (detected via the print
+  queue — a registered+enqueued core handle can still fail to execute);
+  tools metabox CSS is enqueued on `admin_enqueue_scripts` so it prints in
+  the head.
+- **Tool schemas: `properties` must be an object** — argument-less tools
+  encode `"properties": {}` (never `[]`; DeepSeek returns 400 otherwise).
+  `LegacyToolAdapter` preserves object maps and upgrades empty arrays; the
+  AI Tool Builder scaffold emits `new stdClass()` for parameterless tools.
+- **ZipSlip guard** — `ZipArchive::$num_files` does not exist on PHP 8.x;
+  the entry loops must use `count( $zip )` (OKF bundle manager + four Pro
+  admin pages). The guard was silently dead code.
+- **Rate limiting** — `check_rate_limit()` classifies internal dispatches by
+  the dispatching request's real HTTP verb; the nefarious monitor keeps its
+  own `wp_mcp_ai_nefarious_rate_limit_` counter (never share the chat REST
+  limiter's — it halves the chat budget). `wp_mcp_ai_before_chat_request`
+  subscribers tolerate the legacy 2-arg emitter shape.
+- **Settings save** — capture `wp_suspend_cache_addition()` state *before*
+  suspending (the function returns the new state, so reading it after
+  suspends re-applies `true` and jams inline-async tick locks on WP 7.1).
+- **Tool count** — ~303 base + ~1,263 Pro (~1,566 total).
+
+## Front-End Surfaces, Nonce Self-Heal & Provider Defaults (v1.1.68+)
+
+- **Pro SPA v2 shortcode** — `[nvoos_pro_spa]` embeds the Pro SPA v2 chat
+  surface on the front end (chat-first embedded mode: threads, drawers,
+  tool shortcuts, OKF drawer; router-free; optional guest mode behind the
+  "Allow Guest Access" setting). Proposal 033.
+- **Hermes dashboard fleet extensions** — new top-level `extensions/` tree
+  (fleet monitoring + control plane, backup-download, external-app-tab,
+  mcp-tool-shortcuts; `install.sh` + smoke tests). Plans in
+  `docs/developer/integration/`.
+- **Stale REST nonce self-heal** — `GET /mcp-ai/v1/session/nonce` mints a
+  fresh session-bound nonce from the request's own auth cookie (`no-cache`/
+  `no-store`); chat surfaces retry `403 rest_cookie_invalid_nonce` failures
+  instead of showing "Cookie check failed" (full-page caching / SPA session
+  rotation).
+- **Docs Hub 0.4.2** — local-page links resolve to in-app `#/slug` routes,
+  TOC anchors match github-slugger, "Accept fix" suggestions are
+  directory-relative with `../` validation + skip reasons, sync failures
+  surface "Atomic swap failed", and the emoji loader no longer crashes the
+  React SPA on docs-browser pages.
+- **Provider enable defaults (fresh installs)** — OpenAI/Anthropic/Gemini
+  now default to **disabled**; provider dropdowns list only enabled +
+  credentialed providers (`get_available_providers()`); the onboarding
+  wizard auto-enables the provider whose key you enter. When helping users
+  with "no providers available", check both the key **and** the enable
+  checkbox.
+- **Grouped fixes (third test wave, ~21 PRs)** — calendar granted-scopes
+  `%20` normalization; agent-identity canonical-ID int cast; token-budget
+  catalog dedup + `wp_mcp_ai_model_tpm_limit` filter seam; assistant
+  untrash restores the pre-trash status; presets gain missing tools;
+  `wp_mcp_ai_seed_task_templates` AJAX; `fast-uri` >=4.1.4; Tiptap 3.30.4
+  pins; jQuery UI sortable shim on post edit screens. Tool count unchanged:
+  ~303 base + ~1,262 Pro (~1,565 total).
 
 ## Platform Extraction v2.0.0, Ecosystem Port Wave D + D-UI & Google Workspace Read Tools (v1.1.67+)
 
@@ -546,6 +1370,15 @@ bundle not found: skill-knowledge").
 |----------|------|---------|
 | `_wp_mcp_ai_tools` | `array` of strings | Tool slugs assigned to the assistant |
 | `_wp_mcp_ai_credentials` | `array` of credential records | Issued tokens (hashed) with creation/expiry metadata |
+| `_wp_mcp_ai_provider` | `string` | Provider slug (`openai`, `gemini`, `anthropic`, `deepseek`, `ollama`, …) |
+| `_wp_mcp_ai_model` | `string` | Model identifier (`gpt-4o-mini`, `gemini-2.5-flash`, …) |
+| `_wp_mcp_ai_system_prompt` | `string` | Assistant persona / system prompt |
+| `_wp_mcp_ai_temperature` | `float` | Sampling temperature |
+| `_wp_mcp_ai_classification` | `string` | Information label; defaults to `internal` |
+| `mcp_ai_required_capability` | `string` | Capability gate for tool calls — **no `_wp_` prefix** (`manage_options`, `edit_posts`) |
+| `_wp_mcp_ai_vector_store_id` | `string` | OpenAI vector store for RAG |
+| `_wp_mcp_ai_memory_files` | `array` | Memory file attachment IDs |
+| `_wp_mcp_ai_harness_profile` | `array` (JSON) | Agent-harness profile (memory summary etc.) |
 
 ### Toolkit Categories (12 Built-In)
 
@@ -564,6 +1397,27 @@ Additional Pro toolkits are addons under `addons/pro/`.
 | `includes/integrations/class-wp-mcp-ai-custom-tool-loader.php` | `wp_mkdir_p()` + `is_dir()` guards before writes |
 | `includes/paper-store/class-wp-mcp-ai-paper-store-manager.php` | `mkdir()` → `wp_mkdir_p()`, guards before writes |
 | `includes/bootstrap/activation.php` | `wp_mcp_ai_auto_detect_env_keys()` + activation hook |
+
+### Integration contracts (updated Aug 2026)
+
+Notable filter/API contract changes from the recent test-suite repair
+clusters — relevant when writing integrations against these seams:
+
+| Seam | Contract |
+|------|----------|
+| `wp_mcp_ai_vendor_package_paths` | Filter on the NPM vendor package-path map in `wp_mcp_ai_check_vendor_packages()`; lets integrations remap/inject package locations (PR #6097) |
+| `wp_mcp_ai_chat_transcript_handler` | Now invoked with **7 args** (`$handler, $assistant_id, $messages, $options, $response, $request, $context`) by `WP_MCP_AI_Chat_Transcript_Recorder::resolve_handler()` |
+| Chat message `content` shape | The REST validator stores message content as **segments**: `array( array( 'type' => 'text', 'text' => '…' ) )` — affects `/chat-transcripts` payloads and `extract_request_messages()` consumers |
+| `WP_MCP_AI_Profession_CPT::sanitize_memory_files()` | Negative IDs now **clamp to 0 and are dropped** (previously `absint()` coerced e.g. `-999` → `999`) — PR #6105 |
+| Graphify `on_plugins_loaded` | Admin classes (`NV_oOS_Graphify_Settings`, `NV_oOS_Graphify_Remote_Admin`) are now required defensively before `init()` when `is_admin()` — PR #6106 |
+
+## Development & Test Suite
+
+For the PHPUnit repair workflow — Docker test commands (WP 6.9 + 7.1),
+CI log triage, the recurring root-cause patterns, and the cluster-by-cluster
+PR conventions — see the dedicated skill
+[`mcp-ai-wpoos-test-suite`](../mcp-ai-wpoos-test-suite/SKILL.md) and
+`.context/testing.md` for test-writing patterns and the coverage policy.
 
 ---
 
@@ -595,9 +1449,36 @@ update_post_meta( $assistant_id, '_wp_mcp_ai_tools', array( 'web_search', 'creat
 
 ### "No AI providers configured" / tools return errors
 
-**Cause:** No API key for the provider.
+**Cause:** No API key for the provider, or the provider's enable flag is off.
 **Fix:** Set environment variables before starting Docker (Fix 3 auto-detects
 them), or set keys via WordPress admin → oOS → Providers tab.
+
+Since the provider-defaults fix (PR #6255), fresh installs keep **all** cloud
+providers disabled by default: after adding an API key, also check the
+"Enable … Provider" checkbox on Settings → NV oOS → AI Providers (each
+provider's subtab), or enter the key via the onboarding wizard, which
+auto-enables the provider whose key you provide. Provider dropdowns elsewhere
+in admin only list providers that are both **enabled** and **credentialed**
+(`WP_MCP_AI_Model_Config::get_available_providers()`), so an enabled-but-keyless
+or keyed-but-disabled provider is invisible in dropdowns.
+
+### semantic_content_search returns "No OpenAI API key has been configured"
+
+**Cause (pre-1.2.0):** the tool picked the embedding backend from the
+assistant's chat provider and hard-failed on OpenAI. Since v1.2.0 embeddings
+are resolved independently of the chat provider — configure **any** embedding
+backend:
+
+| Backend | Setting |
+|---|---|
+| OpenAI | `openai_api_key` |
+| Gemini | `gemini_api_key` |
+| Ollama (local) | `ollama_endpoint_url` |
+| DigitalOcean | `digitalocean_api_key` |
+
+Pin a specific backend with `embedding_provider` (`openai`, `gemini`,
+`ollama`, or `digitalocean`). With no backend configured, the tool falls back
+to keyword search (`fallback_mode: "keyword"`) instead of failing.
 
 ### Credential token invalid (401)
 
@@ -630,6 +1511,72 @@ wp_mcp_ai_auto_detect_env_keys();
 ```
 Or set keys manually via admin UI → oOS → Providers.
 
+### Agent logs "unhandled errors in a TaskGroup (1 sub-exception)" / tools never load
+
+**Cause:** the client is using the legacy SSE transport against `/mcp`, but
+the server answers JSON (`SSEError: Expected response with content type
+'text/event-stream', got 'application/json'`).
+**Fix:** switch the client to Streamable HTTP, use the mcp-remote stdio
+bridge (see Transports section), or upgrade the server to v1.1.55+ where
+GET `/mcp` with an SSE-only Accept serves a real SSE handshake.
+
+### Tool call responses never come back (agent hangs on tools)
+
+**Cause (pre-v1.1.55):** tool errors are returned as HTTP 400/404/500 with a
+JSON-RPC error body; SDKs like the one in mcp-remote **silently drop
+non-2xx responses**, so the pending request never resolves. This includes
+rate-limit hits and every tool `WP_Error`.
+**Fix:** upgrade to v1.1.55+ (errors return HTTP 200 with the JSON-RPC
+envelope), or reduce tool-call frequency to avoid the 60/min tool limit.
+
+### Constant "429 ... Failed to open SSE stream: Too Many Requests" from mcp-remote
+
+**Cause:** mcp-remote's GET SSE-stream retry loop consumes the general
+`rate_limit_requests` bucket (per user/IP). Each retry counts.
+**Fix:** raise `rate_limit_requests` (1000 for agent sites) and upgrade to
+v1.1.55+ (GETs exempt from the quota, real SSE stream stops the retry loop).
+
+### `remote_wp_connection` / `ezuite_erp` calls hang, then return 0 bytes
+
+**Cause:** these network-dependent tools route through the async job queue;
+`mcp_wait_for_async_tool()` could poll up to 6 minutes (120 polls × 3s),
+longer than Cloudflare's ~100s cutoff (524) — the request dies mid-wait.
+**Fix:** v1.1.55+ bounds the wait to ~45s (filter `wp_mcp_ai_async_max_polls`,
+default 15) and kicks stuck jobs inline (`kick_inline_if_stale`) so hosts
+with a dead WP-Cron loopback self-heal; timeouts now surface as visible
+errors instead of resets.
+
+### Cloudflare blocks non-browser clients (error 1010) or 524 timeouts
+
+**Cause:** Cloudflare WAF blocks default non-browser user agents (e.g.
+Python `urllib`); long synchronous tool calls exceed the ~100s proxy cutoff.
+**Fix:** use curl/browser-like user agents for probes, and prefer v1.1.55+
+where long tools are bounded or delivered out-of-band (SSE message queue).
+
+### `wp mcp-ai provider list` / `wp mcp-ai chat` fatal (PHP 8, fixed in #6625)
+
+Both commands fataled with a PHP 8 error on builds before the CLI fix:
+`provider list` goes through `WP_MCP_AI_CLI_Base_Command::format_output()`,
+which passed an inline array literal to `WP_CLI\Formatter`'s by-reference
+constructor (a fatal on every command using the base class), and `chat`
+constructed the language model router with zero arguments. **Fixed in #6625**
+(merged to alpha-working; ships after v1.1.79). On older builds:
+
+- Provider config status → NV oOS settings page; connectivity →
+  `wp mcp-ai provider test <slug>`.
+- Chat → the REST smoke test instead:
+  `POST /wp-json/mcp-ai/v1/chat` with `assistant_id` + `messages`
+  (see the provisioning recipe above).
+
+### `wp mcp-ai assistant create --model=…` has no runtime effect
+
+`assistant create|update --model` / `--system-prompt` write legacy
+`mcp_ai_model` / `mcp_ai_system_prompt` meta keys, while the chat runtime
+reads `_wp_mcp_ai_model` / `_wp_mcp_ai_system_prompt` — the flags are
+currently cosmetic. Set the `_wp_mcp_ai_*` keys via `wp post meta update`
+(or `wp eval` for the tools array) after creation. `assistant list|get`
+read the legacy keys too, so treat their model column as unreliable.
+
 ---
 
 ## References
@@ -642,3 +1589,8 @@ Or set keys manually via admin UI → oOS → Providers.
 - Activation logic: `includes/bootstrap/activation.php`
 - Credentials: `includes/class-wp-mcp-ai-credentials.php`
 - API key store: `includes/security/class-wp-mcp-ai-api-key-store.php`
+- MCP controller (transports, SSE handshake): `includes/rest/class-wp-mcp-ai-rest-mcp-controller.php`
+- Legacy SSE session store: `includes/rest/class-wp-mcp-ai-sse-session-store.php`
+- JSON-RPC dispatch & error mapping: `includes/class-wp-mcp-ai-rest-mcp-methods.php`
+- Rate limiters: `check_rate_limit()` / `check_tool_rate_limit()` in `includes/class-wp-mcp-ai-rest.php`
+- Implementation plans: `docs/developer/implementation-plan-mcp-agent-compat.md`, `docs/developer/legacy-sse-transport-plan.md`

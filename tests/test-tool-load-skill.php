@@ -106,6 +106,29 @@ class Test_Tool_Load_Skill extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The not-assigned error lists the assistant's assigned skills so the
+	 * caller can self-correct instead of guessing further skill names.
+	 */
+	public function test_not_assigned_error_lists_assigned_skills() {
+		$assistant_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+			)
+		);
+		update_post_meta( $assistant_id, '_wp_mcp_ai_skills', array( 'assigned-skill-a', 'assigned-skill-b' ) );
+
+		$result = $this->tool->execute(
+			array( 'name' => 'some-valid-looking-skill' ),
+			array( 'assistant_id' => $assistant_id )
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_load_skill_not_assigned', $result->get_error_code() );
+		$this->assertStringContainsString( 'Assigned skills: assigned-skill-a, assigned-skill-b', $result->get_error_message() );
+	}
+
+	/**
 	 * When assistant_id=0 and no user_id, returns forbidden.
 	 */
 	public function test_no_user_and_no_assistant_returns_forbidden() {

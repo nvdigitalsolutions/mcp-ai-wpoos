@@ -69,10 +69,11 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 	 * @var string
 	 */
 	const SEARCH_QUERY = '
-		query SearchUpworkJobs($marketPlaceJobFilter: MarketplaceJobPostingsSearchFilter, $paging: Paging) {
+		query SearchUpworkJobs($marketPlaceJobFilter: MarketplaceJobPostingsSearchFilter, $paging: Paging, $sortAttributes: [MarketplaceJobPostingSearchSortAttribute]) {
 			marketplaceJobPostingsSearch(
 				marketPlaceJobFilter: $marketPlaceJobFilter,
-				paging: $paging
+				paging: $paging,
+				sortAttributes: $sortAttributes
 			) {
 				totalCount
 				edges {
@@ -144,6 +145,16 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 				'query'              => array(
 					'type'        => 'string',
 					'description' => __( 'Keyword search query.', 'nvoos-content-graph-pro' ),
+				),
+				'location'           => array(
+					'type'        => 'string',
+					'description' => __( 'Location filter (e.g. "Remote", "United States"). Combined with the keyword query; leave blank for worldwide.', 'nvoos-content-graph-pro' ),
+				),
+				'sort'               => array(
+					'type'        => 'string',
+					'enum'        => array( 'recency', 'best_match' ),
+					'description' => __( 'Sort order. recency returns the newest postings first (default); best_match favours keyword relevance.', 'nvoos-content-graph-pro' ),
+					'default'     => 'recency',
 				),
 				'category2'          => array(
 					'type'        => 'string',
@@ -257,8 +268,24 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 		// Build GraphQL variables.
 		$filter = array();
 
+		// Combine the keyword query with the location filter into a single
+		// search expression (Upwork's searchExpression understands partial
+		// Lucene syntax incl. OR/AND grouping), so location filtering works
+		// without relying on dialect-specific filter keys.
+		$search_expression = '';
 		if ( ! empty( $arguments['query'] ) ) {
-			$filter['searchExpression'] = sanitize_text_field( $arguments['query'] );
+			$search_expression = sanitize_text_field( $arguments['query'] );
+		}
+		if ( ! empty( $arguments['location'] ) ) {
+			$location = sanitize_text_field( $arguments['location'] );
+			if ( '' === $search_expression ) {
+				$search_expression = $location;
+			} else {
+				$search_expression .= ' (' . $location . ')';
+			}
+		}
+		if ( '' !== $search_expression ) {
+			$filter['searchExpression'] = $search_expression;
 		}
 
 		if ( ! empty( $arguments['category2'] ) ) {
@@ -320,6 +347,13 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			$variables['marketPlaceJobFilter'] = $filter;
 		}
 
+		// Recency sort — surface the newest postings first so job discovery
+		// sees fresh opportunities (the default Upwork feed behaviour).
+		$sort = isset( $arguments['sort'] ) ? sanitize_key( $arguments['sort'] ) : 'recency';
+		if ( 'recency' === $sort ) {
+			$variables['sortAttributes'] = array( array( 'field' => 'RECENCY' ) );
+		}
+
 		// Execute the search.
 		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-upwork-client.php';
 		$client = new WP_MCP_AI_Upwork_Client( $connection_id );
@@ -348,6 +382,7 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 				'id'            => isset( $node['id'] ) ? $node['id'] : '',
 				'title'         => isset( $node['title'] ) ? $node['title'] : '',
 				'description'   => isset( $node['description'] ) ? wp_trim_words( $node['description'], 60 ) : '',
+				'url'           => self::build_job_url( $node ),
 				'created'       => isset( $node['createdDateTime'] ) ? $node['createdDateTime'] : '',
 				'published'     => isset( $node['publishedDateTime'] ) ? $node['publishedDateTime'] : '',
 				'job_type'      => isset( $node['jobType'] ) ? $node['jobType'] : '',
@@ -414,6 +449,17 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			return false;
 		}
 
+		// If explicitly set to web_search mode, never use the API.
+		$mode = isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : 'api';
+		if ( 'web_search' === $mode ) {
+			return false;
+		}
+
+		// API mode: require OAuth credentials.
+		if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) || empty( $connection['refresh_token'] ) ) {
+			return false;
+		}
+
 		return true;
 	}
 
@@ -452,58 +498,126 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 		// Build a descriptive search query from the provided filters.
 		$search_query = $this->build_fallback_query( $arguments );
 
-		$limit         = isset( $arguments['limit'] ) ? min( 50, max( 1, absint( $arguments['limit'] ) ) ) : 10;
-		$max_results   = min( $limit, 10 ); // Web search typically caps at ~10 results.
-		$search_result = $web_search_tool->execute(
-			array(
-				'query'       => $search_query,
-				'max_results' => $max_results,
-			),
-			$context
-		);
+		$limit = isset( $arguments['limit'] ) ? min( 50, max( 1, absint( $arguments['limit'] ) ) ) : 10;
+		// Ask the web search provider for its full result cap (10). Category
+		// landing pages dominate Upwork SERPs and get dropped by the
+		// post-filter below, so request headroom to leave real job postings.
+		$max_results = 10;
 
-		if ( is_wp_error( $search_result ) ) {
-			return $search_result;
-		}
+		// Two-pass strategy: a site-restricted Upwork pass first, then — when
+		// the first pass leaves too few job postings — a broader second pass
+		// (aggregators, job boards) whose results are merged and deduped.
+		// The broad pass always runs as a fallback: with no keyword filters
+		// (e.g. the discovery-scan preset with no defaults configured) the
+		// first pass still surfaces mostly category pages, and the second
+		// pass is the only path to real postings.
+		$pass_queries   = array( $search_query );
+		$pass_queries[] = $this->build_fallback_query( $arguments, true );
 
 		// Normalise web search results into the standard job listing format.
-		$jobs    = array();
-		$results = isset( $search_result['results'] ) && is_array( $search_result['results'] )
-			? $search_result['results']
-			: array();
+		$jobs_by_url  = array();
+		$filtered_out = 0;
+		$passes_run   = 0;
 
-		foreach ( $results as $idx => $result ) {
-			$title   = isset( $result['title'] ) ? $result['title'] : '';
-			$snippet = isset( $result['snippet'] ) ? $result['snippet'] : '';
-			$url     = isset( $result['url'] ) ? $result['url'] : '';
-
-			$jobs[] = array(
-				'id'            => 'web_' . ( $idx + 1 ),
-				'title'         => $title,
-				'description'   => $snippet,
-				'url'           => $url,
-				'created'       => '',
-				'published'     => '',
-				'job_type'      => '',
-				'engagement'    => '',
-				'duration'      => '',
-				'budget'        => null,
-				'hourly_budget' => null,
-				'skills'        => array(),
-				'category'      => '',
-				'subcategory'   => '',
-				'applicants'    => 0,
-				'tier'          => '',
-				'client'        => array(
-					'feedback'         => null,
-					'total_hires'      => null,
-					'jobs_posted'      => null,
-					'total_spent'      => null,
-					'payment_verified' => null,
-					'country'          => '',
+		foreach ( $pass_queries as $pass_query ) {
+			$search_result = $web_search_tool->execute(
+				array(
+					'query'       => $pass_query,
+					'max_results' => $max_results,
 				),
-				'cursor'        => '',
+				$context
 			);
+
+			if ( is_wp_error( $search_result ) ) {
+				// A failed first pass is fatal; a failed second pass degrades
+				// to the first pass's results.
+				if ( 0 === $passes_run ) {
+					return $search_result;
+				}
+				break;
+			}
+
+			++$passes_run;
+
+			$results = isset( $search_result['results'] ) && is_array( $search_result['results'] )
+				? $search_result['results']
+				: array();
+
+			// Drop non-job results (Upwork category landing pages, empty entries)
+			// so the fallback returns leads the scoring pipeline can actually use.
+			$results       = $this->filter_upwork_job_results( $results );
+			$filtered_out += count( $search_result['results'] ) - count( $results );
+
+			foreach ( $results as $idx => $result ) {
+				$title   = isset( $result['title'] ) ? $result['title'] : '';
+				$snippet = isset( $result['snippet'] ) ? $result['snippet'] : '';
+				$url     = isset( $result['url'] ) ? $result['url'] : '';
+
+				// Best-effort structured fields extracted from the snippet, since
+				// the web search fallback has no API payload to normalise.
+				$meta = $this->extract_snippet_metadata( $snippet );
+
+				$job = array(
+					'id'            => 'web_' . ( $idx + 1 ),
+					'title'         => $title,
+					'description'   => $snippet,
+					'url'           => $url,
+					'created'       => '',
+					'published'     => '' !== $meta['published']
+						? $meta['published']
+						: ( isset( $result['published_date'] ) ? sanitize_text_field( $result['published_date'] ) : '' ),
+					'job_type'      => $meta['job_type'],
+					'engagement'    => '',
+					'duration'      => '',
+					'budget'        => $meta['budget'],
+					'hourly_budget' => null,
+					'skills'        => array(),
+					'category'      => '',
+					'subcategory'   => '',
+					'applicants'    => 0,
+					'tier'          => '',
+					'client'        => array(
+						'feedback'         => null,
+						'total_hires'      => null,
+						'jobs_posted'      => null,
+						'total_spent'      => null,
+						'payment_verified' => null,
+						'country'          => '',
+					),
+					'cursor'        => '',
+				);
+
+				// Dedupe across passes by URL (first pass wins).
+				$dedupe_key = '' !== $url ? $url : strtolower( $title );
+				if ( '' !== $dedupe_key && ! isset( $jobs_by_url[ $dedupe_key ] ) ) {
+					$jobs_by_url[ $dedupe_key ] = $job;
+				}
+			}
+
+			// Stop when the first pass already collected a useful batch.
+			if ( count( $jobs_by_url ) >= min( $limit, 5 ) ) {
+				break;
+			}
+		}
+
+		$jobs = $this->rank_fallback_jobs( array_values( $jobs_by_url ), $arguments );
+
+		// Respect the caller's limit now that filtering has completed.
+		$jobs = array_slice( $jobs, 0, $limit );
+
+		$notice = __( 'Results obtained via web search because no Upwork connection is configured. Data is less structured than the Upwork API. Configure an Upwork connection in Remote Sites for full access to job details, client history, and pagination.', 'nvoos-content-graph-pro' );
+		if ( $filtered_out > 0 ) {
+			$notice .= ' ' . sprintf(
+				/* translators: %d: number of excluded results */
+				_n( '%d result was excluded because it was an Upwork category page rather than an individual job posting.', '%d results were excluded because they were Upwork category pages rather than individual job postings.', $filtered_out, 'nvoos-content-graph-pro' ),
+				$filtered_out
+			);
+		}
+		if ( $passes_run > 1 ) {
+			$notice .= ' ' . __( 'An expanded second search was merged in because the site-restricted first pass returned few job postings.', 'nvoos-content-graph-pro' );
+		}
+		if ( empty( $jobs ) ) {
+			$notice .= ' ' . __( 'No individual job postings were found. Pass a query keyword (or configure default search keywords in CRM settings) to narrow the fallback search, or configure an Upwork connection in Remote Sites for direct API search.', 'nvoos-content-graph-pro' );
 		}
 
 		return array(
@@ -516,7 +630,8 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			'page_info'     => array(),
 			'has_next_page' => false,
 			'end_cursor'    => null,
-			'notice'        => __( 'Results obtained via web search because no Upwork connection is configured. Data is less structured than the Upwork API. Configure an Upwork connection in Remote Sites for full access to job details, client history, and pagination.', 'nvoos-content-graph-pro' ),
+			'filtered_out'  => $filtered_out,
+			'notice'        => $notice,
 		);
 	}
 
@@ -524,13 +639,28 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 	 * Build a natural-language search query from the tool arguments.
 	 *
 	 * @param array $arguments Tool arguments.
+	 * @param bool  $broad     Broad pass: drop the site restriction and phrase
+	 *                         the query for aggregators and job boards instead
+	 *                         of Upwork's own SERPs.
 	 * @return string Search query string.
 	 */
-	private function build_fallback_query( array $arguments ) {
-		$parts = array( 'site:upwork.com/freelance-jobs' );
+	private function build_fallback_query( array $arguments, $broad = false ) {
+		// Primary pass: individual postings live under
+		// /freelance-jobs/apply/{title}~{jobId}/ — restricting the site search
+		// to that subtree keeps bare category pages out of the SERP in the
+		// first place instead of relying on post-filtering alone.
+		$parts = $broad
+			? array( 'upwork', 'freelance', 'job' )
+			: array( 'site:upwork.com/freelance-jobs/apply' );
 
 		if ( ! empty( $arguments['query'] ) ) {
-			$parts[] = sanitize_text_field( $arguments['query'] );
+			$keyword = sanitize_text_field( $arguments['query'] );
+			// Quote multi-word queries so providers treat them as a phrase and
+			// surface postings that mention the exact skill set.
+			if ( false !== strpos( $keyword, ' ' ) ) {
+				$keyword = '"' . $keyword . '"';
+			}
+			$parts[] = $keyword;
 		}
 
 		if ( ! empty( $arguments['category2'] ) ) {
@@ -539,6 +669,10 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 
 		if ( ! empty( $arguments['skills'] ) && is_array( $arguments['skills'] ) ) {
 			$parts[] = implode( ' ', array_map( 'sanitize_text_field', array_slice( $arguments['skills'], 0, 5 ) ) );
+		}
+
+		if ( ! empty( $arguments['location'] ) ) {
+			$parts[] = sanitize_text_field( $arguments['location'] );
 		}
 
 		if ( ! empty( $arguments['job_type'] ) ) {
@@ -565,12 +699,237 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			}
 		}
 
-		// If no meaningful filters were provided, add a sensible default.
-		if ( count( $parts ) <= 1 ) {
-			$parts[] = 'latest freelance jobs';
+		// If no meaningful filters were provided, add a sensible default. The
+		// broad pass seeds three generic terms, so its floor is higher.
+		$floor = $broad ? 3 : 1;
+		if ( count( $parts ) <= $floor ) {
+			$parts[] = 'recently posted freelance job openings';
 		}
 
 		return implode( ' ', $parts );
+	}
+
+	/**
+	 * Derive a human-facing Upwork job URL from a GraphQL job node.
+	 *
+	 * Upwork resolves job URLs by the `~<jobId>` suffix; the title slug is
+	 * cosmetic (the server redirects on a mismatched slug), so this works
+	 * without an extra API round trip. Matches the shape Upwork itself uses:
+	 * `https://www.upwork.com/jobs/<slug>_~<id>/`.
+	 *
+	 * @param array $node GraphQL job node.
+	 * @return string Job URL, or empty string when the node lacks an id/title.
+	 */
+	private function build_job_url( array $node ) {
+		$id    = isset( $node['id'] ) ? trim( (string) $node['id'] ) : '';
+		$title = isset( $node['title'] ) ? (string) $node['title'] : '';
+
+		if ( '' === $id || '' === $title ) {
+			return '';
+		}
+
+		$slug = sanitize_title( $title );
+		if ( '' === $slug ) {
+			return '';
+		}
+
+		return 'https://www.upwork.com/jobs/' . $slug . '_' . $id . '/';
+	}
+
+	/**
+	 * Rank fallback jobs by how likely they are to be actionable leads.
+	 *
+	 * Upwork job-post URLs (which carry the `~jobId` suffix) rank above
+	 * aggregator listings; keyword matches in the title and snippet follow,
+	 * so the most relevant postings surface first before the limit slice.
+	 * Deterministic and side-effect free.
+	 *
+	 * @param array $jobs      Normalised fallback job entries.
+	 * @param array $arguments Original tool arguments (query, skills).
+	 * @return array Ranked jobs.
+	 */
+	private function rank_fallback_jobs( array $jobs, array $arguments ) {
+		// Build the keyword bag once.
+		$tokens = array();
+		if ( ! empty( $arguments['query'] ) ) {
+			$query_tokens = preg_split( '/\s+/', strtolower( sanitize_text_field( $arguments['query'] ) ) );
+			if ( is_array( $query_tokens ) ) {
+				$tokens = array_merge( $tokens, $query_tokens );
+			}
+		}
+		if ( ! empty( $arguments['skills'] ) && is_array( $arguments['skills'] ) ) {
+			foreach ( $arguments['skills'] as $skill ) {
+				$tokens[] = strtolower( sanitize_text_field( $skill ) );
+			}
+		}
+		$tokens = array_values( array_filter( array_unique( array_map( 'trim', $tokens ) ) ) );
+
+		foreach ( $jobs as $idx => $job ) {
+			$score = 0;
+			$url   = isset( $job['url'] ) ? (string) $job['url'] : '';
+			$title = isset( $job['title'] ) ? strtolower( (string) $job['title'] ) : '';
+			$desc  = isset( $job['description'] ) ? strtolower( (string) $job['description'] ) : '';
+
+			// Direct Upwork job postings carry the ~jobId suffix.
+			if ( false !== strpos( $url, 'upwork.com' ) && false !== strpos( $url, '~' ) ) {
+				$score += 100;
+			} elseif ( false !== strpos( $url, 'upwork.com' ) ) {
+				$score += 30;
+			}
+
+			foreach ( $tokens as $token ) {
+				if ( '' === $token ) {
+					continue;
+				}
+				if ( false !== strpos( $title, $token ) ) {
+					$score += 10;
+				}
+				if ( false !== strpos( $desc, $token ) ) {
+					$score += 3;
+				}
+			}
+
+			// Prefer job-type signals in the snippet over generic listings.
+			if ( '' !== ( isset( $job['job_type'] ) ? (string) $job['job_type'] : '' ) ) {
+				$score += 2;
+			}
+
+			$jobs[ $idx ]['_rank'] = $score;
+		}
+
+		usort(
+			$jobs,
+			static function ( $a, $b ) {
+				return (int) $b['_rank'] <=> (int) $a['_rank'];
+			}
+		);
+
+		// Drop the internal ranking key before returning.
+		foreach ( $jobs as $idx => $job ) {
+			unset( $jobs[ $idx ]['_rank'] );
+		}
+
+		return $jobs;
+	}
+
+	/**
+	 * Whether a URL is an Upwork category landing page rather than a job posting.
+	 *
+	 * Upwork job post URLs carry a `~<jobId>` suffix (e.g.
+	 * `/freelance-jobs/Some-Title_~01d7d03bb39cc7daec/`), while category pages
+	 * are bare `/freelance-jobs/{category}/`, `/freelance-jobs/apply/{category}/`,
+	 * or `/hire/{category}/` paths. Web search engines index the category
+	 * pages heavily, so the fallback must recognise and drop them — they
+	 * describe a job family, not a bidding opportunity.
+	 *
+	 * @param string $url Result URL.
+	 * @return bool True when the URL is an Upwork category page.
+	 */
+	private function is_upwork_category_page( $url ) {
+		$url = trim( (string) $url );
+		if ( '' === $url ) {
+			return false;
+		}
+
+		$host = wp_parse_url( $url, PHP_URL_HOST );
+		$path = wp_parse_url( $url, PHP_URL_PATH );
+
+		if ( ! is_string( $host ) || false === stripos( $host, 'upwork.com' ) || ! is_string( $path ) ) {
+			return false;
+		}
+
+		$path = strtolower( rtrim( $path, '/' ) );
+
+		// Bare category/landing paths: /freelance-jobs/{slug}, /hire/{slug},
+		// and the category-apply form /freelance-jobs/apply/{category} — a
+		// job detail URL always carries the ~jobId suffix, so an anchored
+		// slug-only match can never swallow a real posting.
+		if ( preg_match( '#^/freelance-jobs/[a-z0-9\-]+$#', $path ) ) {
+			return true;
+		}
+		if ( preg_match( '#^/freelance-jobs/apply/[a-z0-9\-]+$#', $path ) ) {
+			return true;
+		}
+		if ( preg_match( '#^/hire/[a-z0-9\-]+$#', $path ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Drop non-job results from the web search fallback list.
+	 *
+	 * Keeps only entries that have a title and URL and are not Upwork
+	 * category landing pages, so downstream scoring and import steps operate
+	 * on actual job leads.
+	 *
+	 * @param array $results Raw web search results.
+	 * @return array Filtered results.
+	 */
+	private function filter_upwork_job_results( array $results ) {
+		$filtered = array();
+
+		foreach ( $results as $result ) {
+			if ( ! is_array( $result ) ) {
+				continue;
+			}
+
+			$title = isset( $result['title'] ) ? trim( (string) $result['title'] ) : '';
+			$url   = isset( $result['url'] ) ? trim( (string) $result['url'] ) : '';
+
+			if ( '' === $title || '' === $url ) {
+				continue;
+			}
+
+			if ( $this->is_upwork_category_page( $url ) ) {
+				continue;
+			}
+
+			$filtered[] = $result;
+		}
+
+		return $filtered;
+	}
+
+	/**
+	 * Extract best-effort structured fields from a search result snippet.
+	 *
+	 * Upwork SERP snippets embed the job type ("Fixed-price", "Hourly"),
+	 * a budget figure, and a "Posted … ago" recency label. Parsing them
+	 * gives the fallback the same shape of data the GraphQL API returns
+	 * natively, without any scraping — only the snippet text is read.
+	 *
+	 * @param string $snippet Search result snippet.
+	 * @return array{job_type:string,budget:float|null,published:string} Extracted metadata.
+	 */
+	private function extract_snippet_metadata( $snippet ) {
+		$snippet = wp_strip_all_tags( (string) $snippet );
+
+		$meta = array(
+			'job_type'  => '',
+			'budget'    => null,
+			'published' => '',
+		);
+
+		// Job type — Upwork snippets label "Hourly" or "Fixed-price" contracts.
+		if ( false !== stripos( $snippet, 'hourly' ) ) {
+			$meta['job_type'] = 'hourly';
+		} elseif ( false !== stripos( $snippet, 'fixed-price' ) || false !== stripos( $snippet, 'fixed price' ) ) {
+			$meta['job_type'] = 'fixed';
+		}
+
+		// Budget — the first currency amount in the snippet.
+		if ( preg_match( '/\$\s?([\d,]+(?:\.\d+)?)/', $snippet, $m ) ) {
+			$meta['budget'] = (float) str_replace( ',', '', $m[1] );
+		}
+
+		// Recency — "Posted 2 days ago" style labels.
+		if ( preg_match( '/posted\s+(.+?ago)/i', $snippet, $m ) ) {
+			$meta['published'] = sanitize_text_field( $m[1] );
+		}
+
+		return $meta;
 	}
 
 	/**
@@ -598,6 +957,18 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 		// Search keywords.
 		if ( empty( $arguments['query'] ) && ! empty( $upwork_cfg['default_search_keywords'] ) ) {
 			$arguments['query'] = $upwork_cfg['default_search_keywords'];
+		}
+
+		// Location.
+		if ( empty( $arguments['location'] ) && ! empty( $upwork_cfg['default_location'] ) ) {
+			$arguments['location'] = $upwork_cfg['default_location'];
+		}
+
+		// Sort order.
+		if ( empty( $arguments['sort'] ) && ! empty( $upwork_cfg['default_sort'] ) ) {
+			$arguments['sort'] = $upwork_cfg['default_sort'];
+		} elseif ( empty( $arguments['sort'] ) ) {
+			$arguments['sort'] = 'recency';
 		}
 
 		// Job type (hourly / fixed).

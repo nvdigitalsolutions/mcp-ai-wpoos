@@ -70,8 +70,6 @@ class CurlHandler
 
     public function __invoke(RequestInterface $request, array $options): PromiseInterface
     {
-        HostValidator::assertRequestHost($request);
-
         if (isset($options['delay'])) {
             \usleep($options['delay'] * 1000);
         }

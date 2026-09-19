@@ -29,12 +29,55 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 	public function tearDown(): void {
 		global $wpdb;
 
-		// Clean up test data.
+		// Never leak the creation-retry backoff into other tests.
+		delete_transient( WP_MCP_AI_Token_Tracking_Database::RETRY_TRANSIENT );
+
+		// Restore the REAL table so later suites see a consistent database
+		// (the harness rewrites CREATE TABLE into a TEMPORARY variant).
+		$this->create_real_table();
+
+		// Clean up test data (the temp shadow on this connection).
 		$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Test-only DDL on a plugin-owned table; name from a class constant.
 		$wpdb->query( "TRUNCATE TABLE {$table_name}" );
 
 		parent::tearDown();
+	}
+
+	/**
+	 * Create the REAL token tracking table, bypassing the harness's
+	 * CREATE TABLE → CREATE TEMPORARY TABLE rewrite.
+	 */
+	private function create_real_table() {
+		global $wpdb;
+
+		remove_filter( 'query', array( $this, '_create_temporary_tables' ) );
+		remove_filter( 'query', array( $this, '_drop_temporary_tables' ) );
+		WP_MCP_AI_Token_Tracking_Database::maybe_create_or_update_table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Test-only DDL on a custom plugin table.
+		$wpdb->query( 'TRUNCATE TABLE ' . WP_MCP_AI_Token_Tracking_Database::get_table_name() );
+		add_filter( 'query', array( $this, '_create_temporary_tables' ) );
+		add_filter( 'query', array( $this, '_drop_temporary_tables' ) );
+	}
+
+	/**
+	 * Drop the REAL token tracking table (and any temporary shadow),
+	 * bypassing the harness's DROP TABLE → DROP TEMPORARY TABLE rewrite.
+	 */
+	private function drop_real_table() {
+		global $wpdb;
+
+		$table = WP_MCP_AI_Token_Tracking_Database::get_table_name();
+
+		// A temporary shadow may exist on this connection from earlier
+		// suites; drop it through the normal (rewriting) filters.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Test-only DDL on a custom plugin table.
+		$wpdb->query( 'DROP TEMPORARY TABLE IF EXISTS ' . $table );
+
+		remove_filter( 'query', array( $this, '_drop_temporary_tables' ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Test-only DDL on a custom plugin table.
+		$wpdb->query( 'DROP TABLE IF EXISTS ' . $table );
+		add_filter( 'query', array( $this, '_drop_temporary_tables' ) );
 	}
 
 	/**
@@ -105,7 +148,7 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 		// Verify cost was calculated.
 		global $wpdb;
 		$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Test-only read on a plugin-owned table; name from a class constant.
 		$record = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table_name} WHERE id = %d", $insert_id ), ARRAY_A );
 
 		$this->assertNotNull( $record, 'Record should exist' );
@@ -366,5 +409,118 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 		$this->assertTrue( $fired, 'Action hook should be fired after recording usage' );
 
 		remove_action( 'wp_mcp_ai_token_usage_recorded', $callback );
+	}
+
+	/**
+	 * Test the fast path returns true when table and version are current.
+	 */
+	public function test_maybe_create_fast_path_when_current() {
+		$this->assertTrue( WP_MCP_AI_Token_Tracking_Database::maybe_create_or_update_table() );
+		$this->assertSame( WP_MCP_AI_Token_Tracking_Database::DB_VERSION, get_option( WP_MCP_AI_Token_Tracking_Database::DB_VERSION_OPTION ) );
+	}
+
+	/**
+	 * Test a failed creation never advances the version option and is gated
+	 * by the retry backoff transient (broken database layers are not retried
+	 * on every request).
+	 */
+	public function test_maybe_create_backoff_when_creation_fails() {
+		global $wpdb;
+
+		$this->drop_real_table();
+		delete_option( WP_MCP_AI_Token_Tracking_Database::DB_VERSION_OPTION );
+
+		// Backoff active: no creation attempt, no version bump, no error output.
+		set_transient( WP_MCP_AI_Token_Tracking_Database::RETRY_TRANSIENT, 1, HOUR_IN_SECONDS );
+
+		ob_start();
+		$result = WP_MCP_AI_Token_Tracking_Database::maybe_create_or_update_table();
+		$output = ob_get_clean();
+
+		$this->assertFalse( $result );
+		$this->assertStringNotContainsString( 'WordPress database error', $output );
+		$this->assertSame( false, get_option( WP_MCP_AI_Token_Tracking_Database::DB_VERSION_OPTION, false ) );
+		$this->assertNotFalse( get_transient( WP_MCP_AI_Token_Tracking_Database::RETRY_TRANSIENT ) );
+	}
+
+	/**
+	 * Test maybe_create recreates the table and records the version when
+	 * the real table is missing (mirrors production, where no harness
+	 * rewrite exists).
+	 */
+	public function test_maybe_create_recovers_missing_table() {
+		global $wpdb;
+
+		$this->drop_real_table();
+		delete_option( WP_MCP_AI_Token_Tracking_Database::DB_VERSION_OPTION );
+		delete_transient( WP_MCP_AI_Token_Tracking_Database::RETRY_TRANSIENT );
+
+		remove_filter( 'query', array( $this, '_create_temporary_tables' ) );
+		$result = WP_MCP_AI_Token_Tracking_Database::maybe_create_or_update_table();
+		add_filter( 'query', array( $this, '_create_temporary_tables' ) );
+
+		$this->assertTrue( $result );
+		$this->assertSame( WP_MCP_AI_Token_Tracking_Database::DB_VERSION, get_option( WP_MCP_AI_Token_Tracking_Database::DB_VERSION_OPTION ) );
+		$this->assertSame( '', $wpdb->last_error, 'Table creation must not leave a database error behind.' );
+	}
+
+	/**
+	 * Test record_usage fails silently (no DB error output) when the table
+	 * is missing and the backoff gate is active.
+	 */
+	public function test_record_usage_silent_when_table_missing() {
+		$this->drop_real_table();
+		delete_option( WP_MCP_AI_Token_Tracking_Database::DB_VERSION_OPTION );
+		set_transient( WP_MCP_AI_Token_Tracking_Database::RETRY_TRANSIENT, 1, HOUR_IN_SECONDS );
+
+		$user_id = $this->factory->user->create();
+
+		ob_start();
+		$result = WP_MCP_AI_Token_Tracking_Database::record_usage(
+			$user_id,
+			'chat',
+			'openai',
+			'gpt-4o',
+			1000,
+			500
+		);
+		$output = ob_get_clean();
+
+		$this->assertFalse( $result );
+		$this->assertStringNotContainsString( 'WordPress database error', $output );
+	}
+
+	/**
+	 * Test the read paths degrade gracefully while the table is missing.
+	 */
+	public function test_read_paths_graceful_when_table_missing() {
+		$this->drop_real_table();
+		delete_option( WP_MCP_AI_Token_Tracking_Database::DB_VERSION_OPTION );
+		set_transient( WP_MCP_AI_Token_Tracking_Database::RETRY_TRANSIENT, 1, HOUR_IN_SECONDS );
+
+		$user_id    = $this->factory->user->create();
+		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 day' ) );
+		$end_date   = gmdate( 'Y-m-d H:i:s' );
+
+		ob_start();
+		$usage      = WP_MCP_AI_Token_Tracking_Database::get_user_usage( $user_id, $start_date, $end_date );
+		$summary    = WP_MCP_AI_Token_Tracking_Database::get_user_cost_summary( $user_id, $start_date, $end_date );
+		$aggregates = WP_MCP_AI_Token_Tracking_Database::get_aggregated_by_provider( $start_date, $end_date );
+		$cleaned    = WP_MCP_AI_Token_Tracking_Database::cleanup_old_records( 90 );
+		$output     = ob_get_clean();
+
+		$this->assertSame( array(), $usage );
+		$this->assertSame(
+			array(
+				'total_cost'     => 0.0,
+				'total_tokens'   => 0,
+				'estimated_cost' => 0.0,
+				'actual_cost'    => 0.0,
+			),
+			$summary
+		);
+		$this->assertSame( array(), $aggregates );
+		$this->assertSame( 0, $cleaned );
+		$this->assertStringNotContainsString( 'WordPress database error', $output );
 	}
 }
