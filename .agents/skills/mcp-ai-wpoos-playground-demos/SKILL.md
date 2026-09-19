@@ -255,6 +255,20 @@ Known CLI quirks:
   `run-blueprint` + the probe for regular validation.
 - The mounted guest dir is created lazily — `mkdir()` subdirectories (e.g.
   `/verify-out/js`) inside the probe before writing into them.
+- **Server mode runs the blueprint lazily IN THE BACKGROUND after the first
+  request** — the site answers `502` immediately, then serves while
+  `installPlugin` + the seed are still running (observed: the seeded page
+  only appears in REST 2–20 min after the first 502, and one run crashed
+  with an `installPlugin` move "Operation not permitted" — transient,
+  retry). Wait for the seeded page to appear via REST before asserting.
+- **The CLI auto-login step answers the first request with a one-time 302
+  self-redirect** (`playground_auto_login_already_happened` cookie). A
+  browser follows it fine; `curl -L` without a cookie jar loops forever
+  (`-c jar -b jar` breaks it).
+- Fresh installs default to **plain permalinks** — a blueprint that seeds
+  page slugs and lands on `/slug/` must set `permalink_structure` +
+  `flush_rewrite_rules()` in the seed or the landing URL 404s even though
+  the page exists at `/?page_id=N` (fixed in the Ollama demo 2026-09-19).
 
 ## 8. Checklist when adding a demo blueprint
 
