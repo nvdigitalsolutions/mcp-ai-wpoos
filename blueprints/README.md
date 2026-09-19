@@ -8,7 +8,7 @@ Dev-only blueprints for the full NV oOS plugin (base + Pro "Complete" bundle).
 | File | Role |
 |---|---|
 | `ollama-demo.json` | **Generated.** One-click demo that pre-wires NV oOS Complete to the user's **local Ollama** and lands on a chat page that answers immediately (if Ollama is running). |
-| `ollama-demo.php` | Seed snippet embedded into the blueprint's `runPHP` step: configures the Ollama provider (`enable_ollama`, endpoint `http://localhost:11434`, model `llama3.1:8b`, `default_provider`/`default_model`, priority list), creates the "Oma" demo assistant (`mcp_ai_assistant` CPT + meta) as `default_assistant`, creates the **Ollama Test Lab** page with `[ollama_status]` + the **legacy `[mcp_ai_chat]`**, and a secondary **Ollama Test Lab (Pro SPA)** page with `[nvoos_pro_spa … cron_monitor="0"]` when Pro is present. Idempotent (`nvoos_ollama_demo_seeded` option). |
+| `ollama-demo.php` | Seed snippet embedded into the blueprint's `runPHP` step: configures the Ollama provider (`enable_ollama`, endpoint `http://localhost:11434`, model `llama3.1:8b`, `default_provider`/`default_model`, priority list), switches the site to pretty permalinks (`/%postname%/` + rewrite flush, so the landing URL resolves on a fresh install), creates the "Oma" demo assistant (`mcp_ai_assistant` CPT + meta) as `default_assistant`, creates the **Ollama Test Lab** page with `[ollama_status]` + the **legacy `[mcp_ai_chat]`**, and a secondary **Ollama Test Lab (Pro SPA)** page with `[nvoos_pro_spa … cron_monitor="0"]` when Pro is present. Idempotent (`nvoos_ollama_demo_seeded` option). |
 
 The blueprint also writes `wp-content/mu-plugins/ollama-status.php` — a
 self-diagnosing `[ollama_status]` shortcode that renders a green/amber/red
@@ -62,15 +62,29 @@ JSON right after rebuilding the ZIPs. Override with
 ## Trying it
 
 **End-user walkthrough:** [docs/user-guides/playground-demo.md](../docs/user-guides/playground-demo.md)
-— the one-click link, Ollama prerequisites (`OLLAMA_ORIGINS` per OS,
-including the desktop-app relaunch gotcha), what to expect (banner states,
-chat, Pro SPA page, wp-admin), and a troubleshooting table.
+— the local one-command flow (primary), the one-click browser preview,
+Ollama prerequisites (`OLLAMA_ORIGINS` per OS, including the desktop-app
+relaunch gotcha), what to expect (banner states, chat, Pro SPA page,
+wp-admin), and a troubleshooting table.
+
+**Primary — run the demo on your machine** (Node transport reaches local
+Ollama directly, so the banner turns green and the chat answers):
+
+```bash
+npx -y @wp-playground/cli@3.1.54 server --blueprint=https://raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/alpha-working/blueprints/ollama-demo.json --login
+```
+
+Open the printed local URL. The first boot takes a few minutes (the CLI
+downloads the Complete bundle and runs the blueprint lazily inside the
+first request).
+
+**Quick preview — one-click browser link:**
 
 ```
 https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/<branch>/blueprints/ollama-demo.json
 ```
 
-**The user needs a running local Ollama that allows this origin:**
+**The user needs a running local Ollama that allows the origin:**
 
 - Windows: `ollama pull llama3.1:8b` then
   `setx OLLAMA_ORIGINS "https://playground.wordpress.net,http://localhost,http://127.0.0.1"`
@@ -86,11 +100,29 @@ https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.co
 - The CHAT's model call is PHP-side (inside Playground's worker). Browsers
   sandbox that worker away from localhost (confirmed in both Chrome and
   Firefox), so the banner can be green while the chat cannot answer in the
-  browser preview.
-- Full chat experience: run the demo locally -
-  `npx -y @wp-playground/cli@3.1.54 server --blueprint=https://raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/alpha-working/blueprints/ollama-demo.json --login`
-  and open the printed local URL (Node transport reaches local Ollama
-  directly; validated end-to-end: `/api/chat` returned "Asteria Online").
+  browser preview — the local `npx` server above is the full chat experience.
+
+## Validation (2026-09-19)
+
+Local-server verification of the raw-URL command on Windows (Node 24,
+`@wp-playground/cli@3.1.54`):
+
+- `npx … server --blueprint=<raw ollama-demo.json URL> --login` boots and
+  serves the site; the seed completes a few minutes after the first request
+  (the blueprint runs lazily in the background of server mode).
+- The CLI auto-login answers the first request with a one-time 302
+  (self-redirect + `playground_auto_login_already_happened` cookie) — a
+  browser follows it transparently.
+- **Fixed:** the seed now switches the site to `/%postname%/` permalinks;
+  previously the landing URL `/ollama-test-lab/` 404'd on a fresh install
+  (plain permalinks) even though the page existed at `/?page_id=N`.
+  Verified: `/ollama-test-lab/` → 200 with the Test Lab page, the
+  `[ollama_status]` banner (client-side checker with `AbortController`),
+  and the legacy chat container all rendering.
+- Server-mode boot is slow and can flake on the first run (observed once:
+  `installPlugin` move "Operation not permitted" — transient, succeeds on
+  retry); prefer `run-blueprint` + the probe harness (see the
+  `mcp-ai-wpoos-playground-demos` skill) for regular validation.
 
 ## Validation (2026-09-18)
 

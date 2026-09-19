@@ -50,7 +50,7 @@
 - [🏗 System Architecture](#-system-architecture)
 - [🚀 Features](#-features)
 - [📦 Installation](#-installation)
-  - [🌱 Beginner 3-Step Install (Try it on Your PC)](#-beginner-3-step-install-try-it-on-your-pc)
+  - [🌱 Try It on Your PC](#-try-it-on-your-pc)
 - [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
 - [⚙️ Configuration Checklist](#configuration-checklist-action-items)
 - [📚 Documentation](#-documentation)
@@ -2072,9 +2072,35 @@ See [docs/user-guides/chat/chat-history-persistence.md](docs/user-guides/chat/ch
 > **🚀 Getting Started Wizard**  
 > After activating the plugin, you'll be redirected to a **4-step setup wizard** that walks you through connecting an AI provider, choosing a use case, and creating your first assistant — all in under 2 minutes. The wizard creates fully-configured assistants with tools, system prompts, and tuned temperatures so your site is working out of the box. You can access the wizard any time at **NV oOS → Getting Started** or directly at `/wp-admin/admin.php?page=wp-mcp-ai-getting-started`.
 
-### 🌱 Beginner 3-Step Install (Try it on Your PC)
+### 🌱 Try It on Your PC
 
-> **No live site. No API costs. No risk.** The fastest way to try NV oOS is on your own computer using a free local WordPress environment. Follow the full walkthrough on the NV Digital Solutions blog: **[How to Test NV oOS on Your Own PC Using Local + Downloading the Plugin →](https://nvdigitalsolutions.com/ai-llm/how-to-test-nv-oos-on-your-own-pc-using-local-downloading-plugin/)**
+> **No live site. No API costs. No risk.** The primary way to test NV oOS is a one-command demo that boots WordPress and the Complete bundle locally via WordPress Playground and wires the chat to your **local Ollama** — no API key, no server, and no prompts leave your machine.
+
+#### ⚡ Fastest: One Command (Playground + Local Ollama)
+
+**One-time prerequisites:**
+
+1. Install [Ollama](https://ollama.com/download) and pull a model:
+   ```bash
+   ollama pull llama3.1:8b
+   ```
+2. Allow the local origin, then restart Ollama:
+   - **Windows:** `setx OLLAMA_ORIGINS "https://playground.wordpress.net,http://localhost,http://127.0.0.1"`, then quit Ollama from the system tray and relaunch it.
+   - **macOS / Linux:** `OLLAMA_ORIGINS="https://playground.wordpress.net,http://localhost,http://127.0.0.1" ollama serve`
+
+Then run this command (requires [Node.js](https://nodejs.org/) 20+):
+
+```bash
+npx -y @wp-playground/cli@3.1.54 server --blueprint=https://raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/alpha-working/blueprints/ollama-demo.json --login
+```
+
+Open the printed local URL (e.g. `http://127.0.0.1:9400/ollama-test-lab/`). The first boot takes a few minutes while it downloads and installs the whole stack — after that you land on the **Ollama Test Lab**: a live status banner plus a chat that answers from your local model. Admin login: `admin` / `password`.
+
+Full walkthrough, browser quick-preview link, and troubleshooting: **[docs/user-guides/playground-demo.md](docs/user-guides/playground-demo.md)**.
+
+#### 🧰 Classic 3-Step Install (Local, Studio, XAMPP, etc.)
+
+Prefer a traditional local WordPress install? Follow the full walkthrough on the NV Digital Solutions blog: **[How to Test NV oOS on Your Own PC Using Local + Downloading the Plugin →](https://nvdigitalsolutions.com/ai-llm/how-to-test-nv-oos-on-your-own-pc-using-local-downloading-plugin/)**
 
 1. **Install a local WordPress environment** — [Local by WP Engine](https://localwp.com/) or [WordPress Studio](https://developer.wordpress.com/studio/) is the easiest option (one-click install, no server config). Alternatives: [XAMPP](https://www.apachefriends.org/), [MAMP](https://www.mamp.info/), or [DevKinsta](https://kinsta.com/devkinsta/).
 
