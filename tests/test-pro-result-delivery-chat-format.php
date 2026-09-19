@@ -350,6 +350,112 @@ class Test_Pro_Result_Delivery_Chat_Format extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Workflow envelopes store the step log under `data.steps`; the full chat
+	 * template must render it as a compact execution log — never as a
+	 * flattened dot-notation dump of the nested step results.
+	 */
+	public function test_format_chat_full_renders_workflow_steps_as_compact_log() {
+		$envelope = array(
+			'data' => array(
+				'steps' => array(
+					array(
+						'tool_slug' => 'search_upwork_jobs',
+						'label'     => 'Search for new matching jobs',
+						'result'    => array(
+							'success' => true,
+							'jobs'    => array(
+								array(
+									'id'    => 'web_1',
+									'title' => 'WordPress Developer needed for agency',
+								),
+							),
+						),
+						'duration'  => 0.942,
+					),
+				),
+			),
+		);
+
+		$payload = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'format_chat',
+			array( $this->chat_shared(), 'full', 'plain', $envelope )
+		);
+
+		// Compact log: label, tool slug, status, and duration on one line.
+		$this->assertStringContainsString( 'Search for new matching jobs', $payload['message'] );
+		$this->assertStringContainsString( '(search_upwork_jobs)', $payload['message'] );
+		$this->assertStringContainsString( 'completed', $payload['message'] );
+		$this->assertStringContainsString( '0.94s', $payload['message'] );
+		// The nested result payload is never flattened into dot notation.
+		$this->assertStringNotContainsString( 'steps.0', $payload['message'] );
+		$this->assertStringNotContainsString( 'tool_slug:', $payload['message'] );
+		$this->assertStringNotContainsString( 'steps.', $payload['message'] );
+		// The raw job title stays inside the response, not the data dump.
+		$this->assertStringNotContainsString( 'web_1', $payload['message'] );
+	}
+
+	/**
+	 * Failed workflow steps must surface their error message in the log line.
+	 */
+	public function test_format_chat_full_renders_failed_workflow_step() {
+		$envelope = array(
+			'data' => array(
+				'steps' => array(
+					array(
+						'tool_slug' => 'search_upwork_jobs',
+						'label'     => 'Search for new matching jobs',
+						'result'    => new WP_Error( 'workflow_step_failed', 'Upwork API rejected the request.' ),
+						'duration'  => 0.1,
+					),
+				),
+			),
+		);
+
+		$payload = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'format_chat',
+			array( $this->chat_shared(), 'full', 'plain', $envelope )
+		);
+
+		$this->assertStringContainsString( 'failed: Upwork API rejected the request.', $payload['message'] );
+	}
+
+	/**
+	 * The generic text flattening must skip empty values so structured data
+	 * sections never render blank "key:" lines.
+	 */
+	public function test_envelope_data_to_text_skips_empty_values() {
+		$data = array(
+			'posts_created' => 5,
+			'zero_count'    => 0,
+			'tags'          => array( 'seo', 'news', '' ),
+			'empty_string'  => '',
+			'null_value'    => null,
+			'empty_array'   => array(),
+			'nested'        => array(
+				'name'  => 'digest',
+				'blank' => '',
+			),
+		);
+
+		$text = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'envelope_data_to_text',
+			array( $data )
+		);
+
+		$this->assertStringContainsString( 'posts_created: 5', $text );
+		$this->assertStringContainsString( 'zero_count: 0', $text );
+		$this->assertStringContainsString( 'tags: seo, news', $text );
+		$this->assertStringContainsString( 'nested.name: digest', $text );
+		$this->assertStringNotContainsString( 'empty_string', $text );
+		$this->assertStringNotContainsString( 'null_value', $text );
+		$this->assertStringNotContainsString( 'empty_array', $text );
+		$this->assertStringNotContainsString( 'blank', $text );
+	}
+
+	/**
 	 * The SMS summary format must not repeat the summary when the response
 	 * excerpt already opens with it — the excerpt subsumes the summary.
 	 */

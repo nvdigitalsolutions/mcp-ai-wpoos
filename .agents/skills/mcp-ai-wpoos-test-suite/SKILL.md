@@ -1,11 +1,11 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 47 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 48 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-09-17"
+  last-updated: "2026-09-19"
 ---
 
 # NV oOS Test Suite — Repair & Triage Guide
@@ -600,6 +600,26 @@ the changed files is the substantive gate; plan CI waits accordingly.
     scanner must skip the continuation bytes of valid sequences
     (`$i += $len - 1` on the VALID branch too), or every continuation byte
     reports as a false-positive invalid sequence.
+48. **Order-dependent `pro_schedules` cache interference (renderer suite).**
+    `addons/pro/tests/test-pro-schedule-result-renderer.php` writes
+    `SCHEDULES_OPTION`/`RESULTS_OPTION` via `update_option()` directly and
+    expects `render()` to read them back, but
+    `WP_MCP_AI_Pro_Schedule_Manager::load_schedules()` short-circuits
+    through `WP_MCP_AI_Cache_Helper` (`pro_schedules`, 300 s TTL) when
+    caching is enabled — so when a schedule-manager suite runs earlier in
+    the same process, the renderer reads the stale cached copy and fails
+    with `Schedule not found.` (proven pre-existing on a pristine worktree:
+    `tests/test-pro-schedule-manager.php`
+    + `addons/pro/tests/test-pro-schedule-result-renderer.php` in one
+    invocation — not a regression of adjacent changes). Fix in the
+    renderer test's `setUp()`: `WP_MCP_AI_Cache_Helper::delete(
+    'pro_schedules' )`, or run the suite in isolation. Related fixture
+    note: `WP_MCP_AI_Pro_Remote_Site_Manager::save_connection()`
+    validates `url` for EVERY connection type — an OAuth fixture (upwork,
+    gmail) without a `url` fails with `wp_mcp_ai_pro_missing_url` before
+    the type-specific checks; `save_connection()` encrypts
+    `refresh_token`/`client_secret` and `get_access_token()` decrypts them,
+    so plain fixture credentials round-trip fine.
 
 ## Production fix vs test fix
 

@@ -195,6 +195,30 @@ toolkit_cpt(action: "list_types")
 toolkit_cpt(action: "get_schema", post_type: "mcp_ai_lead")
 ```
 
+### Upwork job search (`search_upwork_jobs`)
+
+Freelancer sourcing uses the Upwork CRM tools (`search_upwork_jobs`,
+`score_upwork_job`, `draft_upwork_proposal`). Key behaviour:
+
+- **Args:** `query`, `location` (folded into the GraphQL `searchExpression`,
+  e.g. `wordpress developer (Remote)`), `job_type` (`hourly`/`fixed`),
+  `experience_level`, `skills`, `budget_min/max`, `sort` (`recency` default —
+  sends GraphQL `sortAttributes: [{field: RECENCY}]`; `best_match`),
+  `limit`, `cursor`. Omitted filters resolve from **CRM Settings → Upwork →
+  Search Defaults** (`default_search_keywords`, `default_location`, …).
+- **API mode** (Remote Sites connection with OAuth creds): returns structured
+  jobs including a derived `url` (`https://www.upwork.com/jobs/<slug>_~<id>/`).
+- **Fallback mode** (no connection): two-pass web search — site-restricted
+  Upwork pass, then a broader pass merged with URL dedupe. Upwork category
+  landing pages (`/freelance-jobs/{slug}/` — no `~jobId`) are filtered out
+  and reported in `filtered_out`; snippets are parsed for `job_type`,
+  `budget`, and `published`; direct postings rank first.
+- **The fallback needs a real search provider.** With the default
+  DuckDuckGo provider the fallback returns 0 results (Instant Answer API
+  has no SERPs). Set a Brave/Tavily key in plugin Settings → Web Search.
+- A bare query (no keywords, no defaults) returns the guidance notice —
+  configure default keywords or pass `query` for targeted results.
+
 ### Reading records
 
 ```json

@@ -3374,12 +3374,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'workflow_steps' => array(
 							array(
 								'tool_slug' => 'search_upwork_jobs',
+								// No job_type / experience_level filter — the tool
+								// treats an omitted filter as "any", and the preset
+								// uses the CRM toolkit Search Defaults (keywords,
+								// location) configured in the CRM settings page.
 								'arguments' => array(
-									'query'            => '',
-									'job_type'         => 'all',
-									'experience_level' => 'all',
-									'sort'             => 'recency',
-									'limit'            => 20,
+									'query' => '',
+									'sort'  => 'recency',
+									'limit' => 20,
 								),
 								'label'     => __( 'Search for new matching jobs', 'mcp-ai-wpoos-pro' ),
 							),
