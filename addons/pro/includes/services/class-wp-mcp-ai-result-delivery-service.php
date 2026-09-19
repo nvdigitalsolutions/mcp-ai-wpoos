@@ -484,7 +484,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				// execution metadata under `data`; delivery_safe_data() strips
 				// those keys so the report does not repeat the response or end
 				// with assistant_id / is_agentic metadata as a footer.
-				$data_text = self::envelope_data_to_text( self::delivery_safe_data( isset( $envelope['data'] ) ? $envelope['data'] : array() ) );
+				$data_text = self::envelope_data_to_delivery_text( isset( $envelope['data'] ) ? $envelope['data'] : array() );
 				if ( '' !== trim( $data_text ) ) {
 					if ( '' !== $body ) {
 						$body .= "\n\n---\n\n";
@@ -629,7 +629,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				// section (see delivery_safe_data()) so the report does not
 				// repeat the response or end with assistant_id / is_agentic
 				// metadata as a footer.
-				$data_text = self::envelope_data_to_text( self::delivery_safe_data( isset( $envelope['data'] ) ? $envelope['data'] : array() ) );
+				$data_text = self::envelope_data_to_delivery_text( isset( $envelope['data'] ) ? $envelope['data'] : array() );
 				if ( '' !== trim( $data_text ) ) {
 					$message .= "\n\n" . $esc( '---' ) . "\n\n";
 					$message .= $esc( $data_text );
@@ -1878,20 +1878,200 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				$full_key = $prefix ? $prefix . '.' . $key : $key;
 
 				if ( is_array( $value ) ) {
-					if ( isset( $value[0] ) && is_scalar( $value[0] ) ) {
-						// Simple indexed array — comma-separated.
-						$lines[] = $indent . $full_key . ': ' . implode( ', ', array_map( 'strval', $value ) );
-					} else {
-						// Nested structure — recurse.
-						$lines[] = $indent . $full_key . ':';
-						$lines[] = self::envelope_data_to_text( $value, $depth + 1, $full_key );
+					// Empty structures render as meaningless "key:" lines — skip.
+					if ( empty( $value ) ) {
+						continue;
 					}
-				} elseif ( is_scalar( $value ) ) {
+
+					if ( isset( $value[0] ) && is_scalar( $value[0] ) ) {
+						// Simple indexed array — comma-separated, empty entries dropped.
+						$non_empty = array_values( array_filter( array_map( 'strval', $value ), 'strlen' ) );
+						if ( ! empty( $non_empty ) ) {
+							$lines[] = $indent . $full_key . ': ' . implode( ', ', $non_empty );
+						}
+					} else {
+						// Nested structure — recurse. Only emit the key header when
+						// the recursion produced readable content.
+						$nested = self::envelope_data_to_text( $value, $depth + 1, $full_key );
+						if ( '' !== $nested ) {
+							$lines[] = $indent . $full_key . ':';
+							$lines[] = $nested;
+						}
+					}
+				} elseif ( is_scalar( $value ) && null !== $value && '' !== (string) $value ) {
 					$lines[] = $indent . $full_key . ': ' . (string) $value;
 				}
 			}
 
 			return implode( "\n", $lines );
+		}
+
+		/**
+		 * Whether an envelope data section consists solely of a workflow step list.
+		 *
+		 * Workflow envelopes store the dispatcher's step log under
+		 * `data.steps`; when nothing else sits alongside it the substantive
+		 * output already lives in the envelope `response`, so the delivery
+		 * formatters render a compact execution log instead of flattening the
+		 * nested result payloads into unreadable dot-notation lines.
+		 *
+		 * @since 1.1.83
+		 *
+		 * @param mixed $data Envelope data section.
+		 * @return bool True when the section is a pure workflow step list.
+		 */
+		protected static function is_workflow_steps_data( $data ) {
+			return is_array( $data )
+				&& 1 === count( $data )
+				&& isset( $data['steps'] )
+				&& is_array( $data['steps'] )
+				&& ! empty( $data['steps'] );
+		}
+
+		/**
+		 * Resolve a step's outcome label and duration suffix.
+		 *
+		 * @since 1.1.83
+		 *
+		 * @param mixed $result Step result (array, string, or WP_Error).
+		 * @param mixed $duration Step duration in seconds.
+		 * @return string Outcome text fragment ("completed · 0.94s").
+		 */
+		protected static function workflow_step_outcome( $result, $duration ) {
+			$meta = array();
+
+			if ( is_wp_error( $result ) ) {
+				$meta[] = __( 'failed', 'mcp-ai-wpoos-pro' ) . ': ' . $result->get_error_message();
+			} else {
+				$meta[] = __( 'completed', 'mcp-ai-wpoos-pro' );
+			}
+
+			if ( isset( $duration ) && is_numeric( $duration ) ) {
+				$meta[] = sprintf( '%.2fs', (float) $duration );
+			}
+
+			return implode( ' · ', $meta );
+		}
+
+		/**
+		 * Render workflow step records as a compact plain-text execution log.
+		 *
+		 * One line per step: label (tool slug) — status · duration. The step
+		 * `result` payloads are intentionally not flattened — the substantive
+		 * output is already rendered from the envelope `response` above this
+		 * section, and raw nested arrays read as noise to human recipients.
+		 *
+		 * @since 1.1.83
+		 *
+		 * @param array $steps Workflow step records from the action log.
+		 * @return string Compact execution log.
+		 */
+		protected static function workflow_steps_to_text( array $steps ) {
+			$lines = array();
+
+			foreach ( $steps as $idx => $step ) {
+				if ( ! is_array( $step ) ) {
+					continue;
+				}
+
+				$tool   = isset( $step['tool_slug'] ) ? (string) $step['tool_slug'] : '';
+				$label  = isset( $step['label'] ) && '' !== (string) $step['label'] ? (string) $step['label'] : $tool;
+				$result = isset( $step['result'] ) ? $step['result'] : null;
+				$dur    = isset( $step['duration'] ) ? $step['duration'] : null;
+
+				$line = ( $idx + 1 ) . '. ' . $label;
+				if ( '' !== $tool && $tool !== $label ) {
+					$line .= ' (' . $tool . ')';
+				}
+				$line .= ' — ' . self::workflow_step_outcome( $result, $dur );
+
+				$lines[] = $line;
+			}
+
+			return implode( "\n", $lines );
+		}
+
+		/**
+		 * Render workflow step records as compact Markdown bullets.
+		 *
+		 * Markdown counterpart of {@see workflow_steps_to_text()} for the
+		 * Paper Store and WordPress post delivery paths.
+		 *
+		 * @since 1.1.83
+		 *
+		 * @param array $steps Workflow step records from the action log.
+		 * @return string Compact execution log in Markdown.
+		 */
+		protected static function workflow_steps_to_markdown( array $steps ) {
+			$lines = array();
+
+			foreach ( $steps as $idx => $step ) {
+				if ( ! is_array( $step ) ) {
+					continue;
+				}
+
+				$tool   = isset( $step['tool_slug'] ) ? (string) $step['tool_slug'] : '';
+				$label  = isset( $step['label'] ) && '' !== (string) $step['label'] ? (string) $step['label'] : $tool;
+				$result = isset( $step['result'] ) ? $step['result'] : null;
+				$dur    = isset( $step['duration'] ) ? $step['duration'] : null;
+
+				$line = esc_html( ( $idx + 1 ) . '. ' . $label );
+				if ( '' !== $tool && $tool !== $label ) {
+					$line .= ' (' . esc_html( $tool ) . ')';
+				}
+				$line .= ' — ' . esc_html( self::workflow_step_outcome( $result, $dur ) );
+
+				$lines[] = '- ' . $line;
+			}
+
+			return implode( "\n", $lines ) . "\n";
+		}
+
+		/**
+		 * Render an envelope data section for plain-text delivery.
+		 *
+		 * Pure workflow step lists render as a compact execution log (see
+		 * {@see workflow_steps_to_text()}); everything else falls back to the
+		 * generic key flattening. Always strips keys that duplicate the
+		 * response or expose internal metadata via {@see delivery_safe_data()}.
+		 *
+		 * @since 1.1.83
+		 *
+		 * @param mixed $data Envelope data section (expected array).
+		 * @return string Plain-text representation.
+		 */
+		protected static function envelope_data_to_delivery_text( $data ) {
+			if ( ! is_array( $data ) ) {
+				return '';
+			}
+
+			$data = self::delivery_safe_data( $data );
+
+			if ( self::is_workflow_steps_data( $data ) ) {
+				return self::workflow_steps_to_text( $data['steps'] );
+			}
+
+			return self::envelope_data_to_text( $data );
+		}
+
+		/**
+		 * Render the envelope details section for Markdown delivery.
+		 *
+		 * Pure workflow step lists render as a compact bulleted execution log;
+		 * everything else falls back to the generic recursive Markdown
+		 * rendering.
+		 *
+		 * @since 1.1.83
+		 *
+		 * @param array $data Envelope data section (delivery-safe).
+		 * @return string Markdown.
+		 */
+		protected static function envelope_details_to_markdown( array $data ) {
+			if ( self::is_workflow_steps_data( $data ) ) {
+				return self::workflow_steps_to_markdown( $data['steps'] );
+			}
+
+			return self::envelope_data_to_markdown( $data, 2 );
 		}
 
 		/**
@@ -1992,7 +2172,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			$details = self::delivery_safe_data( isset( $envelope['data'] ) ? $envelope['data'] : array() );
 			if ( ! empty( $details ) ) {
 				$md .= "## Details\n\n";
-				$md .= self::envelope_data_to_markdown( $details, 2 );
+				$md .= self::envelope_details_to_markdown( $details );
 			}
 
 			if ( ! empty( $schedule['tags'] ) ) {
@@ -2022,7 +2202,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 						foreach ( $value as $item ) {
 							if ( is_array( $item ) ) {
 								foreach ( $item as $ik => $iv ) {
-									if ( is_scalar( $iv ) ) {
+									if ( is_scalar( $iv ) && null !== $iv && '' !== (string) $iv ) {
 										$md .= '- **' . esc_html( $ik ) . ':** ' . esc_html( (string) $iv ) . "\n";
 									}
 								}
@@ -2033,7 +2213,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 						$md .= $hashes . '# ' . esc_html( ucfirst( str_replace( '_', ' ', $key ) ) ) . "\n\n";
 						$md .= self::envelope_data_to_markdown( $value, $depth + 1 );
 					}
-				} elseif ( is_scalar( $value ) ) {
+				} elseif ( is_scalar( $value ) && null !== $value && '' !== (string) $value ) {
 					$md .= '- **' . esc_html( $key ) . ':** ' . esc_html( (string) $value ) . "\n";
 				}
 			}

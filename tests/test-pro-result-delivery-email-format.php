@@ -342,6 +342,55 @@ class Test_Pro_Result_Delivery_Email_Format extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Workflow envelopes store the step log under `data.steps`; the full email
+	 * template must render it as a compact execution log — never as a
+	 * flattened dot-notation dump of the nested step results.
+	 */
+	public function test_format_email_full_renders_workflow_steps_as_compact_log() {
+		$shared   = array(
+			'schedule_name' => 'Upwork Job Discovery Scan',
+			'summary'       => '1 workflow step completed.',
+			'response'      => "Search for new matching jobs\n10 results found.",
+			'status'        => 'success',
+			'is_success'    => true,
+			'generated_at'  => time(),
+			'schedule_type' => 'workflow',
+		);
+		$envelope = array(
+			'data' => array(
+				'steps' => array(
+					array(
+						'tool_slug' => 'search_upwork_jobs',
+						'label'     => 'Search for new matching jobs',
+						'result'    => array(
+							'success' => true,
+							'jobs'    => array(
+								array(
+									'id'    => 'web_1',
+									'title' => 'WordPress Developer needed for agency',
+								),
+							),
+						),
+						'duration'  => 0.942,
+					),
+				),
+			),
+		);
+
+		$payload = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'format_email',
+			array( $shared, $envelope, 'full' )
+		);
+
+		$this->assertStringContainsString( '1. Search for new matching jobs (search_upwork_jobs)', $payload['plain'] );
+		$this->assertStringContainsString( 'completed · 0.94s', $payload['plain'] );
+		$this->assertStringNotContainsString( 'steps.0', $payload['plain'] );
+		$this->assertStringNotContainsString( 'tool_slug:', $payload['plain'] );
+		$this->assertStringNotContainsString( 'web_1', $payload['plain'] );
+	}
+
+	/**
 	 * Test that build_email_html() embeds the converted body.
 	 */
 	public function test_build_email_html_embeds_converted_body() {
