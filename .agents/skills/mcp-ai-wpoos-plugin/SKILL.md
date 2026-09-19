@@ -7,7 +7,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.82"
   plugin-version-tested: "1.1.82"
-  last-updated: "2026-09-18"
+  last-updated: "2026-09-19"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -396,6 +396,55 @@ still relay errors to the agent. Pre-1.1.55, errors were returned as
 400/404/500 and such SDKs **silently discarded them** — tool calls appeared
 to return nothing. Auth failures (401/403) and pre-dispatch guards (429)
 keep their HTTP statuses. Revert via filter `wp_mcp_ai_mcp_error_http_status`.
+
+---
+
+## Testing Tools Through the Chat REST Endpoint (no MCP client needed)
+
+The chat UI executes tools through `POST /wp-json/mcp-ai/v1/tools` — the
+fastest way to verify a tool end-to-end with `curl` instead of spinning up
+an MCP client or a chat session.
+
+```json
+{
+  "assistant_id": 9,
+  "tool": "search_upwork_jobs",
+  "arguments": { "query": "wordpress developer", "limit": 5 }
+}
+```
+
+- **Auth:** `X-WP-Nonce` + the logged-in cookie (same origin), or a Bearer
+  credential. The nonce must be **bound to a real session** — generate one
+  from a probe script, not from a bare CLI `wp_create_nonce()`:
+
+  ```php
+  $expiration = time() + 3600;
+  $token = WP_Session_Tokens::get_instance( $uid )->create( $expiration );
+  $cookie = wp_generate_auth_cookie( $uid, $expiration, 'logged_in', $token );
+  $_COOKIE[ LOGGED_IN_COOKIE ] = $cookie;          // nonce binds to this session
+  wp_set_current_user( $uid );
+  $nonce = wp_create_nonce( 'wp_rest' );           // use with curl -H "X-WP-Nonce: ..."
+  ```
+
+- **Gate 1 — assistant allowlist:** every assistant scopes tool access via
+  the `_wp_mcp_ai_tools` post meta. A tool not in that list returns
+  `403 wp_mcp_ai_tool_forbidden` ("This assistant is not allowed to execute
+  the requested tool"). Grant access with
+  `update_post_meta( $assistant_id, '_wp_mcp_ai_tools', $tools_with_slug )`.
+- **Gate 2 — availability:** `search_upwork_jobs` (and the other Upwork CRM
+  tools) also need `enable_crm_toolkit` in `wp_mcp_ai_settings`.
+- **DuckDuckGo returns no real SERPs.** The default `web_search_provider`
+  (`duckduckgo`) hits the free Instant Answer API, which returns empty
+  `RelatedTopics` for ordinary queries — so fallback-mode tools that
+  depend on `web_search` (`search_upwork_jobs` without an Upwork
+  connection, `research_company`, etc.) come back with **0 results** even
+  though outbound internet works. Configure a Brave (`BRAVE_API_KEY` env)
+  or Tavily key and set `web_search_provider` to it — Brave also supplies
+  `published_date`, which the Upwork fallback maps onto `published`.
+- **MSYS path gotcha:** `docker exec <ctr> php /tmp/probe.php` mangles
+  `/tmp/...` into a Windows path unless prefixed with `MSYS_NO_PATHCONV=1`.
+  CLI `php` inside the WP container also defaults to 128M — use
+  `php -d memory_limit=512M` when bootstrapping WordPress with Elementor.
 
 ---
 
