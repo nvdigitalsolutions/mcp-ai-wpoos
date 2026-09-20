@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-respons
 /**
  * Convert sketches to floor plans using AI vision.
  */
-class WP_MCP_AI_Tool_Convert_Sketch_To_Floor_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+class WP_MCP_AI_Tool_Convert_Sketch_To_Floor_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Convert_Sketch_To_Floor_Plan implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Convert hand-drawn sketches to CAD-ready floor plans. Uses computer vision to recognize rooms, walls, doors, and windows.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Converting a hand-drawn sketch attachment into a CAD-ready floor plan via vision, with text recognition and wall auto-correction.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For generating new plans from text requirements - use generate_floor_plan or create_floor_plan_variations.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_floor_plan', 'create_floor_plan_variations' ),
+			'notes'           => __( 'sketch_image must be a numeric attachment ID (URLs are not yet supported); requires upload_files and a vision model.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Import IFC model.
  */
-class WP_MCP_AI_Tool_Import_Ifc_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Ifc_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 
@@ -77,6 +77,20 @@ class WP_MCP_AI_Tool_Import_Ifc_Model implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Normalise a simplified-IFC JSON payload (project, levels, spaces, walls, openings) into the toolkit canonical floor-plan structure. Returns a model summary (storey + space + wall + opening counts and total floor area). Binary IFC STEP / IFCXML parsing must be done externally; pipe the JSON output here.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Normalising a simplified-IFC JSON payload (project, levels, spaces, walls, openings) into the canonical floor-plan structure.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Raw IFC STEP or IFCXML parsing (pipe externally produced JSON here) or DWG data; use import_dwg_floor_plan.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'import_dwg_floor_plan', 'export_to_ifc', 'generate_floor_plan' ),
+			'notes'           => __( 'Returns storey, space, wall, and opening counts plus total floor area to help reason about the model.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

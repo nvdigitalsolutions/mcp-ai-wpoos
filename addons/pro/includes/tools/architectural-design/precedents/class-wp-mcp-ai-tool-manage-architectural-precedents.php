@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Manage architectural precedents.
  */
-class WP_MCP_AI_Tool_Manage_Architectural_Precedents implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Manage_Architectural_Precedents implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 
@@ -77,6 +77,20 @@ class WP_MCP_AI_Tool_Manage_Architectural_Precedents implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'List / get / create / update / delete architectural precedents (built case studies). On create / update the tool regenerates the cached OpenAI embedding so search_architectural_precedents can perform cosine-similarity semantic search.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing, getting, creating, updating, or deleting architectural precedent records (action=list, get, create, update, delete).', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For finding precedents by semantic similarity - use search_architectural_precedents.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'search_architectural_precedents' ),
+			'notes'           => __( 'Create and update regenerate the cached OpenAI embedding so search stays current; title is required for create.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

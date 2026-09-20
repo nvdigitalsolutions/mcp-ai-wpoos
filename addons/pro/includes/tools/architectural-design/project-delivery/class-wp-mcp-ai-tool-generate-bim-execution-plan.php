@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Generate BIM Execution Plan.
  */
-class WP_MCP_AI_Tool_Generate_Bim_Execution_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Bim_Execution_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 
@@ -76,6 +76,20 @@ class WP_MCP_AI_Tool_Generate_Bim_Execution_Plan implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Produce a BIM Execution Plan (BEP) outline aligned with AIA E202/E203 and ISO 19650-2 — section catalogue and seeded content from the supplied project metadata, plus a ready-to-edit markdown rendering.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing a BEP outline aligned with AIA E202/E203 and ISO 19650-2, with seeded sections plus a ready-to-edit markdown rendering.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Construction scheduling; use generate_construction_timeline. RFI or submittal tracking; use manage_rfi_log or manage_submittal_log.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'export_to_ifc', 'generate_construction_timeline', 'manage_submittal_log' ),
+			'notes'           => __( 'Accepts country_code, standards, bim_uses, lod, and cde_platform; defaults to ISO 19650-2 + AIA E203 and LOD 350.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

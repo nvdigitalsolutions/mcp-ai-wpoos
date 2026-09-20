@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Import DWG floor plan.
  */
-class WP_MCP_AI_Tool_Import_Dwg_Floor_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Dwg_Floor_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 
@@ -78,6 +78,20 @@ class WP_MCP_AI_Tool_Import_Dwg_Floor_Plan implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Validate and normalise a JSON floor-plan payload produced by an external DWG converter (e.g. ODA Teigha, LibreDWG) into the toolkit canonical structure. Reports referential errors and synonym remappings (rooms→spaces, doors+windows→openings).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Normalising an externally converted DWG JSON payload into the canonical floor-plan structure used by the Phase A/B/C tools.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Binary DWG files (convert externally first) or IFC-derived data; use import_ifc_model for IFC JSON.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'import_ifc_model', 'generate_floor_plan', 'convert_sketch_to_floor_plan' ),
+			'notes'           => __( 'Reports referential errors and synonym remappings (rooms to spaces, doors and windows to openings).', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

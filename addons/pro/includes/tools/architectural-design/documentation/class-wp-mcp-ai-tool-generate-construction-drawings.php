@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-respons
 /**
  * Generate construction drawings.
  */
-class WP_MCP_AI_Tool_Generate_Construction_Drawings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Construction_Drawings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Generate_Construction_Drawings implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Create professional blueprint sets with dimensions, annotations, and construction details. Includes floor plans, elevations, and sections.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Turning a floor plan into a blueprint set (floor_plan, elevations, sections, site_plan, roof_plan) with scales and dimension annotations.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For single AI-rendered visuals or component-level details - use generate_architectural_drawing or generate_detail_drawings.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_detail_drawings', 'export_architectural_documents' ),
+			'notes'           => __( 'drawing_types default to floor_plan and elevations; scale accepts 1/4, 1/8, 1/16, or 1/32 inches per foot.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

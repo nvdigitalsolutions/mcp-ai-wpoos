@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Manage submittal log.
  */
-class WP_MCP_AI_Tool_Manage_Submittal_Log implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Manage_Submittal_Log implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 
@@ -77,6 +77,20 @@ class WP_MCP_AI_Tool_Manage_Submittal_Log implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'List / create / update construction submittals (shop drawings, product data, samples, mockups) on an architectural project. Stored as JSON post-meta on mcp_ai_arch_proj. Status workflow follows AIA / CSI conventions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing, creating, updating, or reading submittals (shop drawings, product data, samples, mockups) on an mcp_ai_arch_proj project.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Formal contractor questions; use manage_rfi_log. Producing shop drawings; use generate_construction_drawings.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_rfi_log', 'generate_construction_drawings', 'generate_material_schedule' ),
+			'notes'           => __( 'Statuses: submitted, under_review, approved, approved_as_noted, revise_and_resubmit, rejected, void.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

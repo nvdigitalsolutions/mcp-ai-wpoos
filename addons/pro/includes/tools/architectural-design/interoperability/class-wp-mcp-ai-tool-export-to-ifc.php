@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Export to IFC.
  */
-class WP_MCP_AI_Tool_Export_To_Ifc implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Export_To_Ifc implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Export_To_Ifc implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Generate an IFC 4.3 STEP-format text body (HEADER + DATA) from a normalised floor plan. Output is a valid STEP file body — geometry is minimal but the entity graph (project → site → building → storeys → spaces / walls / openings) is structurally complete.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Emitting an IFC 4.3 STEP body whose entity graph (project, site, building, storeys, spaces, walls, openings) is complete.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Energy simulation inputs; use export_to_gbxml for EnergyPlus / OpenStudio, and note geometry here is minimal.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'import_dwg_floor_plan', 'import_ifc_model', 'export_to_gbxml' ),
+			'notes'           => __( 'Geometry is minimal; run the output through ifcopenshell or a BIM authoring tool for coordinated geometry.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

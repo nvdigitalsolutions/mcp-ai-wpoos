@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Search architectural precedents.
  */
-class WP_MCP_AI_Tool_Search_Architectural_Precedents implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Search_Architectural_Precedents implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 
@@ -77,6 +77,20 @@ class WP_MCP_AI_Tool_Search_Architectural_Precedents implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Semantic search over the architectural precedent library using OpenAI embeddings + cosine similarity. Optional filters for country, building type and floor area. Falls back to keyword scoring when embeddings are unavailable.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding built case studies by natural-language query with optional country, building type, and floor area filters.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For creating or editing precedent records - use manage_architectural_precedents.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_architectural_precedents' ),
+			'notes'           => __( 'Uses OpenAI embeddings with cosine similarity, falling back to keyword scoring offline; limit is 1-50, default 5.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

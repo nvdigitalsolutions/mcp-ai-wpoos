@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Propose value-engineering options.
  */
-class WP_MCP_AI_Tool_Propose_Value_Engineering_Options implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Propose_Value_Engineering_Options implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -69,6 +69,20 @@ class WP_MCP_AI_Tool_Propose_Value_Engineering_Options implements WP_MCP_AI_Tool
 	 */
 	public function get_description() {
 		return __( 'Return a ranked list of cost-saving alternatives drawn from the toolkit value-engineering library. Filters by country applicability and category and applies the savings range against an optional baseline cost so each option carries indicative savings in the chosen currency.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Ranking cost-saving alternatives from the VE library for a country, optionally scored against a baseline cost and filtered by category.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For fresh cost estimates or BoQ totals - use estimate_construction_cost or generate_bill_of_quantities.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'estimate_construction_cost', 'generate_bill_of_quantities' ),
+			'notes'           => __( 'country_code is required; top_n caps results at 50 and aggregate savings is capped at 60 percent of baseline.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

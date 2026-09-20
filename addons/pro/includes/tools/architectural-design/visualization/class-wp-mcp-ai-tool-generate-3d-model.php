@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-respons
 /**
  * Generate 3D building models.
  */
-class WP_MCP_AI_Tool_Generate_3d_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_3d_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Generate_3d_Model implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Create 3D building models from floor plans. Supports various export formats for visualization, VR, and CAD software.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a 3D building model from a floor plan with wall height, roof type, materials, and furniture for visualization, VR, or CAD export.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Still renders or videos; use render_architectural_view or create_walkthrough_animation. 2D drafting; use generate_architectural_drawing.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'render_architectural_view', 'create_walkthrough_animation', 'generate_floor_plan' ),
+			'notes'           => __( 'Exports obj, fbx, gltf, or stl; async output with large-response and performance impact.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

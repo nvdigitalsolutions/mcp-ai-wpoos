@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Check UDA planning compliance.
  */
-class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -69,6 +69,20 @@ class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Validate a project against the Sri Lanka UDA Planning & Building Regulations: setbacks, FAR, site coverage, minimum perches per dwelling, EIA threshold, NBRO landslide-zone clearance, and the SLIA registered-architect signoff requirement.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Validating a Sri Lanka project against UDA setbacks, FAR, site coverage, minimum perches, EIA threshold, and NBRO landslide clearance.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Other jurisdictions; use check_us_ibc_irc_compliance or check_jnbc_hurricane_compliance. Geometry only; use validate_setbacks_and_far.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'validate_setbacks_and_far', 'generate_compliance_dossier', 'check_us_ibc_irc_compliance' ),
+			'notes'           => __( 'gazette_vintage selects the 2021 or 2025 UDA gazette; SLIA registered-architect signoff is checked separately.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
