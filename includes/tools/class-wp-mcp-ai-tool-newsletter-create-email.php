@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides functionality to create newsletter emails in the Newsletter plugin.
  */
-class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
+class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Safety_Profile;
 
@@ -56,6 +56,20 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Create a new newsletter email campaign with subject, content, and settings. Requires Newsletter plugin.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Drafting a newsletter campaign email with subject, HTML body, list targeting, and scheduling.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Reviewing or sending existing campaigns; use newsletter_get_emails to list them first.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'newsletter_get_emails', 'newsletter_get_subscribers' ),
+			'notes'           => __( 'Status defaults to new (draft); set status=sending to send. send_time schedules a future send in ISO 8601.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

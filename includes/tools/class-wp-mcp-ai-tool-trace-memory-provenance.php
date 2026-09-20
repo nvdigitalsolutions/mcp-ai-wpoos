@@ -34,7 +34,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.20
  */
-class WP_MCP_AI_Tool_Trace_Memory_Provenance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Trace_Memory_Provenance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_Trace_Memory_Provenance implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Return the full origin chain for a single memory record: audit trail, version history, and (when Graphify is active) the graph neighbourhood reachable via RECALLS edges. Read-only; powers the Memory Drawer "Why does the agent know this?" row and GDPR DSAR workflows.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Explaining why an agent knows something: audit trail, version history, and Graphify graph neighborhood for one context_id.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Searching or listing memories; use retrieve_agent_memory for lookups and memory_audit_trail for the raw audit log.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'retrieve_agent_memory', 'store_agent_context', 'memory_audit_trail' ),
+			'notes'           => __( 'Read-only and local-only; degrades gracefully when Graphify is absent and supports GDPR DSAR workflows.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Creates a new record in a Paper Store collection. Requires edit_posts capability.
  */
-class WP_MCP_AI_Tool_Paper_Store_Write implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Paper_Store_Write implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Paper_Store_Remote;
 
@@ -41,6 +41,20 @@ class WP_MCP_AI_Tool_Paper_Store_Write implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Creates a new record in a Paper Store collection. The record will be stored as a JSON file in the collection directory. Requires an "id" slug, a "title", and optional tags, status, description, and body content.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new record in a Paper Store collection with an id slug and title.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Existing IDs; use paper_store_update. Removing a record; use paper_store_delete.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'paper_store_update', 'paper_store_delete', 'paper_store_read' ),
+			'notes'           => __( 'Duplicate IDs are rejected; status defaults to published and body/meta accept any JSON value.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

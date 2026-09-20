@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 /**
  * Provides a tool for transcribing or translating audio attachments via OpenAI.
  */
-class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_Tool_Chat_Response;
 
@@ -49,6 +49,20 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Converts an uploaded audio file into text using AI speech-to-text. Supports OpenAI Whisper, Cloudflare Workers AI (Whisper, Deepgram Flux), Hugging Face, and Google Gemini providers.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Turning an uploaded audio file into text (or English translation) via OpenAI Whisper or another configured speech provider.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Argument validation enforcement; use transcribe_openai_audio_validated when Symfony Validator checks are required.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'transcribe_openai_audio_validated', 'generate_openai_speech', 'submit_document_prompt' ),
+			'notes'           => __( 'Accepts attachment_id, file_id, or URL; supports srt/vtt subtitle output and translation only via the OpenAI provider.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

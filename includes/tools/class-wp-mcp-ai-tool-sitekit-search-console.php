@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_SiteKit_Search_Console implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_SiteKit_Search_Console implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -83,6 +83,20 @@ class WP_MCP_AI_Tool_SiteKit_Search_Console implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Retrieve Google Search Console data including search queries, impressions, clicks, CTR, and average position. Helps analyze organic search performance and identify keyword opportunities.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Analyzing organic search queries, impressions, clicks, CTR, and average position grouped by query, page, country, or device.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Ad earnings or on-page performance; use sitekit_get_adsense for monetization and sitekit_get_pagespeed for performance scores.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'sitekit_get_analytics', 'sitekit_get_adsense' ),
+			'notes'           => __( 'Requires the Site Kit plugin and manage_options; supports a URL filter and a 1-100 result limit. Read-only.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

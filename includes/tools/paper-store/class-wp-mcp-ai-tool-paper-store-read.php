@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Paper Store — Read tool.
  */
-class WP_MCP_AI_Tool_Paper_Store_Read implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Paper_Store_Read implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Paper_Store_Remote;
 
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_Paper_Store_Read implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Reads a single record from the NV oOS Paper Store by collection name and record ID. Returns the full record including metadata, tags, and body content.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading one known Paper Store record by collection and record ID.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Unknown IDs or free-text queries; use paper_store_search or paper_store_list.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'paper_store_search', 'paper_store_list', 'paper_store_update' ),
+			'notes'           => __( 'Returns the full record including metadata, tags, and body; connection_id routes to a remote site.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

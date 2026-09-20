@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * OKF — Traverse tool.
  */
-class WP_MCP_AI_Tool_OKF_Traverse implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_OKF_Traverse implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_OKF_Traverse implements WP_MCP_AI_Tool_Interface {
 	 */
 	public function get_description() {
 		return __( 'Follows cross-links from an OKF concept (v0.2) up to a specified depth, returning the subgraph of connected concepts with trust-signal summaries. Use this to explore related knowledge without guessing which concepts are relevant.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Exploring the subgraph of concepts linked from a starting OKF concept.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Reading one known concept body; use okf_read_concept. Filtering by metadata; use okf_search.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'okf_read_concept', 'okf_search', 'okf_browse' ),
+			'notes'           => __( 'depth accepts 1-5 and defaults to 2; returns connected concepts with trust-signal summaries.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

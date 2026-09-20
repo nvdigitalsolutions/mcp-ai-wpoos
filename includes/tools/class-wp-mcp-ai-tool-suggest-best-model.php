@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Recommends the best OpenAI model based on task requirements.
  */
-class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -58,6 +58,20 @@ class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Recommends the best OpenAI model for a given task based on requirements. Use this for dynamic model selection, cost optimization, performance optimization, or task-appropriate model matching.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Picking an OpenAI model from task type, requirements (speed, quality, cost, vision, function_calling), context length, and budget.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Listing or comparing the full catalog; use list_available_models for the catalog and get_model_information for one model details.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'list_available_models', 'get_model_information', 'research_model' ),
+			'notes'           => __( 'Uses a hardcoded model database with scoring; returns a recommendation, alternatives, estimated cost, and capabilities.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

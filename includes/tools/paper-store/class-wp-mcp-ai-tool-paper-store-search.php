@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Searches across one or all collections using LIKE matching on title
  * and description fields, plus optional tag/status/type filters.
  */
-class WP_MCP_AI_Tool_Paper_Store_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Paper_Store_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Paper_Store_Remote;
 
@@ -42,6 +42,20 @@ class WP_MCP_AI_Tool_Paper_Store_Search implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Search for records across one or all Paper Store collections by title, description, or tags. Use this for free-text discovery when you don\'t know the exact record ID.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Free-text discovery across one or all collections when the record ID is unknown.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Known record IDs; use paper_store_read. Paginated collection listings; use paper_store_list.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'paper_store_read', 'paper_store_list' ),
+			'notes'           => __( 'Matches title and description only; limit defaults to 20 and caps at 100.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

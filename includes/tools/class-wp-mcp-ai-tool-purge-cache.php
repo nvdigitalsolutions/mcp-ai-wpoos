@@ -22,7 +22,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 /**
  * Provides a master tool for purging all configured cache layers.
  */
-class WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
+class WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Safety_Profile;
 
@@ -51,6 +51,20 @@ class WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Purges all configured caching layers (Cloudflare, Varnish, etc.) in the correct order to ensure content updates are properly reflected.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Clearing every configured cache layer (Varnish then Cloudflare) in the correct order.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Single-layer purges; use purge_varnish_cache or purge_cloudflare_cache directly.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'purge_cloudflare_cache', 'purge_varnish_cache' ),
+			'notes'           => __( 'Requires manage_options. Returns a 400 when no cache layers are configured.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

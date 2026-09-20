@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_SiteKit_AdSense implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_SiteKit_AdSense implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -83,6 +83,20 @@ class WP_MCP_AI_Tool_SiteKit_AdSense implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Retrieve Google AdSense earnings and performance metrics including revenue, impressions, clicks, CTR, and RPM. Helps monitor site monetization performance.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reporting AdSense revenue, impressions, clicks, CTR, and RPM for the last 7, 28, or 90 days to monitor monetization performance.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Traffic or search performance questions; use sitekit_get_analytics for traffic and sitekit_get_search_console for search data.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'sitekit_get_analytics', 'sitekit_get_search_console' ),
+			'notes'           => __( 'Requires the Site Kit plugin plus a user with manage_options; dates use the Site Kit API and results are read-only.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

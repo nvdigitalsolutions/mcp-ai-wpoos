@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -55,6 +55,20 @@ class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Sets up automatic monitoring for a batch job with WordPress cron. Checks status periodically and triggers actions when completed, failed, or expired. Useful for long-running batches.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scheduling cron-based status checks for a running OpenAI batch job.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'One-off status checks; use get_batch_status. Creating batches; use create_batch.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_batch', 'get_batch_status' ),
+			'notes'           => __( 'Requires manage_options. Fails when the batch is already final. auto_download stores results in a 24-hour transient.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - λ (Arrival Rate): Sessions starting per hour
  * - W (Service Time): Average session duration in hours
  */
-class WP_MCP_AI_Tool_Calculate_Orchestration_Capacity implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Calculate_Orchestration_Capacity implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
@@ -80,6 +80,20 @@ class WP_MCP_AI_Tool_Calculate_Orchestration_Capacity implements WP_MCP_AI_Tool_
 				),
 			),
 			'required_capability' => 'read',
+		);
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Planning concurrent session capacity via Little\'s Law: calculate_capacity, predict_wait_time, or analyze_current.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Per-session health monitoring; use analyze_loop_health or get_session_status.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'analyze_loop_health', 'get_session_status', 'manage_autonomous_session' ),
+			'notes'           => __( 'calculate_capacity needs arrival_rate (per hour) and service_time (hours); analyze_current reads live session transients.', 'mcp-ai-wpoos' ),
 		);
 	}
 

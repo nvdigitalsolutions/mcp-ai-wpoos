@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.62
  */
-class WP_MCP_AI_Tool_OKF_Import_Bundle implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_OKF_Import_Bundle implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -40,6 +40,20 @@ class WP_MCP_AI_Tool_OKF_Import_Bundle implements WP_MCP_AI_Tool_Interface {
 	 */
 	public function get_description() {
 		return __( 'Imports an OKF bundle from a ZIP archive that is already present on this server (e.g. uploaded via the WordPress media library or placed by an administrator). Provide the absolute path to the .zip file and the target bundle name. The archive is checked for ZipSlip entries, symbolic links, entry/size caps, and must contain at least one concept document. Requires administrator capability because it writes files to the knowledge directory.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Loading a new OKF bundle from a ZIP archive that is already present on this server.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Creating or editing concepts inside an existing bundle; use okf_write_concept.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'okf_write_concept', 'okf_validate_bundle', 'okf_list_bundles' ),
+			'notes'           => __( 'Requires manage_options; the archive must pass ZipSlip, size, and entry checks and contain at least one concept.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

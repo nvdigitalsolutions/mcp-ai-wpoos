@@ -19,7 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 /**
  * Provides analytics on OpenAI API usage.
  */
-class WP_MCP_AI_Tool_OpenAI_Usage_Analytics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_OpenAI_Usage_Analytics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -77,6 +77,20 @@ class WP_MCP_AI_Tool_OpenAI_Usage_Analytics implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Provides analytics on OpenAI API usage including total requests, tokens used, and estimated costs. Helps monitor and optimize API usage.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Analyzing local NV oOS activity logs for request counts, token totals, and estimated costs.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Official OpenAI billing; use open_openai_usage. Request-level logs; use open_openai_logs.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'open_openai_usage', 'open_openai_logs' ),
+			'notes'           => __( 'Costs are estimates from bundled per-model rates. custom period requires start_date and end_date.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Scrapes product information from URLs and downloads product images to WordPress media library.
  */
-class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Chat_Response;
 
@@ -38,6 +38,20 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Scrapes product information (title, subtitle, description, images, price, availability) from a product URL or saved HTML file. Supports Schema.org JSON-LD parsing for structured product data. Downloads highest resolution images to WordPress media library.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Extracting title, description, images, price, and availability from a product URL or saved HTML file.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Validated scraping or WooCommerce import; use scrape_product_validated for strict args and create_woo_product to import results.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'scrape_product_validated', 'create_woo_product', 'run_crawl4ai_job' ),
+			'notes'           => __( 'Provide url or html_file; JSON-LD is parsed when present and best-resolution images download to the media library.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
  *
  * @since 1.2.2
  */
-class WP_MCP_AI_Tool_Visualize_Workflow_Metrics implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Visualize_Workflow_Metrics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -47,6 +47,20 @@ class WP_MCP_AI_Tool_Visualize_Workflow_Metrics implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Creates interactive Chart.js visualizations of workflow execution metrics including completion rates, timing, and performance data.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Turning workflow execution results into Chart.js performance, completion, or timing charts, optionally saved as an HTML attachment.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'General charting of arbitrary data; use create_chart for generic charts, or check_workflow_health to inspect workflow state.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'check_workflow_health', 'execute_workflow', 'create_chart' ),
+			'notes'           => __( 'Requires a workflow_results object; returns self-contained HTML and can persist it to the media library.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

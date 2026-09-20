@@ -20,7 +20,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 /**
  * Triggers a WP All Import template to execute.
  */
-class WP_MCP_AI_Tool_Trigger_All_Import implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Trigger_All_Import implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_Trigger_All_Import implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Triggers a WP All Import template to execute and import data. Requires WP All Import plugin.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Starting a WP All Import template by ID so data is imported in the background via the plugin cron URL.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Exporting data; use trigger_all_export for WP All Export templates instead.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'trigger_all_export' ),
+			'notes'           => __( 'Requires the WP All Import plugin and manage_options; import_id must reference an import post that is not already processing.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Wraps the WP_MCP_AI_Remote_Tester inside a callable assistant tool.
  */
-class WP_MCP_AI_Tool_Probe_Remote_MCP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+class WP_MCP_AI_Tool_Probe_Remote_MCP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_Probe_Remote_MCP implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Runs the remote MCP connectivity tester against a live REST namespace to validate authentication and chat access.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Testing connectivity and auth against a remote MCP REST namespace (/assistants and /chat).', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Probing this local site; use probe_chat. Sending real mesh prompts; use query_mesh_intelligent.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'probe_chat', 'query_mesh_intelligent' ),
+			'notes'           => __( 'Requires manage_options. Pass token, guest_token, or nonce headers for authenticated deployments.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

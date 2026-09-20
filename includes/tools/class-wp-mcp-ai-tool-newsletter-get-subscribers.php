@@ -17,7 +17,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 /**
  * Provides functionality to list and filter Newsletter plugin subscribers.
  */
-class WP_MCP_AI_Tool_Newsletter_Get_Subscribers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Newsletter_Get_Subscribers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -57,6 +57,20 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscribers implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Retrieve Newsletter plugin subscribers with filtering options. Requires Newsletter plugin.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing or searching Newsletter subscribers with status, list, email, or name filters.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Adding subscribers; use newsletter_add_subscriber. Removing them; use newsletter_unsubscribe.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'newsletter_add_subscriber', 'newsletter_unsubscribe', 'newsletter_get_subscriber_stats' ),
+			'notes'           => __( 'Limit is capped at 100 rows per call; email and name support partial matching.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

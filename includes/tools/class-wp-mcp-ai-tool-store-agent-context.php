@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -59,6 +59,20 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Stores important context, learnings, or information for an agent to remember. Supports automatic content ingestion from Vector Stores, WordPress posts/pages, and URLs. Use this to persist knowledge across sessions, track important facts, or maintain agent memory. Context can be retrieved later using retrieve_agent_memory.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Persisting facts, learnings, or decisions an agent should remember, optionally ingesting a URL, WordPress post, or vector store.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Reading memory back; use retrieve_agent_memory for lookups and wake_up_context to preload memory at session boot.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'retrieve_agent_memory', 'wake_up_context', 'memory_audit_trail' ),
+			'notes'           => __( 'Supports wing/room scoping and a 30-day default TTL; ingested source content is capped at 8000 characters per record.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

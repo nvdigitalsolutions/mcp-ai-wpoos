@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Gets profession statistics.
  */
-class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Retrieves statistics about professions including counts by category, total professions, and category distribution.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Summarizing profession counts and category distribution for dashboards or reports.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Listing individual professions; use list_professions.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'list_professions' ),
+			'notes'           => __( 'Read-only; requires the professions module to be loaded. Percentages round to one decimal.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

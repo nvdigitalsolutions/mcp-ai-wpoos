@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Lists records in a collection, optionally filtered by tags or status.
  */
-class WP_MCP_AI_Tool_Paper_Store_List implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Paper_Store_List implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Paper_Store_Remote;
 
@@ -41,6 +41,20 @@ class WP_MCP_AI_Tool_Paper_Store_List implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Lists records in a Paper Store collection, with optional filtering by tags, status, or type. Use this to discover what records exist in a collection.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing records in a collection with optional tag, status, type, and pagination filters.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Free-text discovery; use paper_store_search. Reading one known record; use paper_store_read.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'paper_store_search', 'paper_store_read', 'paper_store_write' ),
+			'notes'           => __( 'limit defaults to 50 and caps at 200; status accepts published, draft, archived.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

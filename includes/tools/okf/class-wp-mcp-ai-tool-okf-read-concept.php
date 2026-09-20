@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * OKF — Read Concept tool.
  */
-class WP_MCP_AI_Tool_OKF_Read_Concept implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_OKF_Read_Concept implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -41,6 +41,20 @@ class WP_MCP_AI_Tool_OKF_Read_Concept implements WP_MCP_AI_Tool_Interface {
 	 */
 	public function get_description() {
 		return __( 'Reads a single OKF concept by its concept ID (e.g. "policies/patient-admission"). Returns the frontmatter metadata including OKF v0.2 trust signals (status, trust tier, staleness, provenance) and the markdown body. Use this to retrieve curated, authoritative knowledge from the Open Knowledge Format bundle. Check the trust_tier to assess reliability before acting on the content.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching a known OKF concept by ID, including its v0.2 trust signals and markdown body.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Discovering or filtering concepts; use okf_browse, okf_search, or okf_traverse.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'okf_browse', 'okf_search', 'okf_traverse' ),
+			'notes'           => __( 'concept_id is the file path without the .md suffix; check trust_tier and stale before acting on the body.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

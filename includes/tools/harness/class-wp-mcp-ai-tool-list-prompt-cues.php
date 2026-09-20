@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * List registered prompt cues.
  */
-class WP_MCP_AI_Tool_List_Prompt_Cues implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Prompt_Cues implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -40,6 +40,20 @@ class WP_MCP_AI_Tool_List_Prompt_Cues implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'List registered prompt cues from the LLM-harness Prompt Cue Library, optionally filtered by task class. Returns slug, label, description, version, citation, and applicable task classes for each cue.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing registered prompt cues, optionally filtered by task_class, before applying one.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Prepending cues to a prompt; use apply_prompt_cue. Picking one cue; use select_prompt_cue.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'apply_prompt_cue', 'select_prompt_cue' ),
+			'notes'           => __( 'task_class examples: math, code, qa, rag, research, agentic, general; read-only and cacheable.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

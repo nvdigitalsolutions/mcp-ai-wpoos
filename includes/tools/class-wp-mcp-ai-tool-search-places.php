@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * Provides a tool for searching places using Google Maps Places API (nearby and text search).
  * Follows separation of concerns: handles WordPress integration while delegating API calls to client.
  */
-class WP_MCP_AI_Tool_Search_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+class WP_MCP_AI_Tool_Search_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Chat_Response;
 
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Search_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Search for businesses, landmarks, and points of interest using Google Maps Places API. Supports nearby search and text search with AI-powered contextual results.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding businesses, landmarks, or points of interest via Places text search or coordinate-based nearby search.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Converting addresses to coordinates; use geocode_address to resolve addresses before a nearby search.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'geocode_address', 'gemini_geospatial_query' ),
+			'notes'           => __( 'Text search requires query; nearby search requires latitude and longitude. Results come from the Places API.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

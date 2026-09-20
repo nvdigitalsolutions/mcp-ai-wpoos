@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates or updates a profession.
  */
-class WP_MCP_AI_Tool_Save_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Save_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_Save_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Creates a new profession or updates an existing one. Professions define roles that can be used when creating AI assistants, including their expertise areas, default tools, and knowledge base.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating or updating a profession so assistants can be built on its expertise, default tools, and knowledge base.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Reading professions; use list_professions to browse or get_profession to fetch one by slug.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'list_professions', 'create_assistant' ),
+			'notes'           => __( 'Updates require the existing slug; the defined role is applied when the profession is used at assistant creation.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

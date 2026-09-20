@@ -104,6 +104,20 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Auditing pages or images for srcset/sizes, lazy loading, modern formats, LCP, and Core Web Vitals compliance.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Converting or optimizing images; use image_format_batch_converter to convert formats and media_library_optimizer for cleanup.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'image_format_batch_converter', 'media_library_optimizer' ),
+			'notes'           => __( 'Choose one action per call: validate_page, validate_images, check_lcp, or audit_cwv; LCP threshold defaults to 2.5s.', 'mcp-ai-wpoos' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @since 1.0.0

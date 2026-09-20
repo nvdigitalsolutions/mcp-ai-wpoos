@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides functionality to unsubscribe or remove Newsletter plugin subscribers.
  */
-class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
+class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Safety_Profile;
 
@@ -56,6 +56,20 @@ class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Unsubscribe or remove a subscriber from the Newsletter plugin by email or ID. Requires Newsletter plugin.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Unsubscribing or deleting a subscriber identified by email or subscriber ID.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Adding or re-adding subscribers; use newsletter_add_subscriber.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'newsletter_add_subscriber', 'newsletter_get_subscribers' ),
+			'notes'           => __( 'action=delete permanently removes the row; action=unsubscribe keeps the record with status U.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

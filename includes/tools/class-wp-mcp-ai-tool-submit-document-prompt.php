@@ -19,7 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 /**
  * Provides a tool for forwarding an attachment and prompt to the model.
  */
-class WP_MCP_AI_Tool_Submit_Document_Prompt implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Submit_Document_Prompt implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -41,6 +41,20 @@ class WP_MCP_AI_Tool_Submit_Document_Prompt implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Uploads the referenced document with a follow-up prompt and returns the model response.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Asking the model about a specific attachment or uploaded OpenAI file with a follow-up prompt in one call.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Checking whether a file suits a task first; use analyze_file_suitability, or transcribe_openai_audio for audio-only files.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'analyze_file_suitability', 'transcribe_openai_audio', 'analyze_image' ),
+			'notes'           => __( 'Consumes AI tokens and provider credentials; requires a prompt plus at least one attachment_id or file_id.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

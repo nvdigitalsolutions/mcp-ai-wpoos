@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Analyze Loop Health Tool
  */
-class WP_MCP_AI_Tool_Analyze_Loop_Health implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Analyze_Loop_Health implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
@@ -83,6 +83,20 @@ class WP_MCP_AI_Tool_Analyze_Loop_Health implements WP_MCP_AI_Tool_Interface {
 				'required'   => array( 'session_id' ),
 			),
 			'required_capability' => 'read',
+		);
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking an autonomous session for repeated actions, error cascades, stuck patterns, or resource pressure.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Reading basic session metrics or progress; use get_session_status. Capacity planning; use calculate_orchestration_capacity.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_session_status', 'check_exit_conditions', 'manage_autonomous_session' ),
+			'notes'           => __( 'Accepts last_actions and current_error for pattern detection; updates session health and can open the circuit breaker.', 'mcp-ai-wpoos' ),
 		);
 	}
 

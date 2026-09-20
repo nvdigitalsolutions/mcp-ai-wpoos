@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-run-crawl4ai-job.php';
  * This class extends the original run_crawl4ai_job tool to use
  * Symfony Validator for argument validation.
  */
-class WP_MCP_AI_Tool_Run_Crawl4AI_Job_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+class WP_MCP_AI_Tool_Run_Crawl4AI_Job_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * The original run_crawl4ai_job tool instance for delegation.
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job_Validated extends WP_MCP_AI_Validated_Tool
 	 */
 	public function get_description() {
 		return __( 'Submits a Crawl4AI crawl request and optionally waits for the results with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Crawling URLs when Symfony Validator must reject malformed arguments before any crawl request is made.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Lightweight crawl calls; use run_crawl4ai_job when argument validation is not required.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'run_crawl4ai_job', 'scrape_product_validated' ),
+			'notes'           => __( 'Same parameters and behaviour as run_crawl4ai_job; invalid arguments return a WP_Error instead of running.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-send-group-email.php';
  * This class extends the original send_group_email tool to use
  * Symfony Validator for argument validation.
  */
-class WP_MCP_AI_Tool_Send_Group_Email_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
+class WP_MCP_AI_Tool_Send_Group_Email_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Safety_Profile;
 
@@ -62,6 +62,20 @@ class WP_MCP_AI_Tool_Send_Group_Email_Validated extends WP_MCP_AI_Validated_Tool
 	 */
 	public function get_description() {
 		return __( 'Sends an email to recipients using the WordPress mailer with Symfony Validator for argument validation. Email content can be provided directly or loaded from attachment files.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Group email sends where Symfony Validator should enforce recipient formats and required content fields first.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Unvalidated sends; use send_group_email when inline argument checking is sufficient.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'send_group_email', 'search_gmail' ),
+			'notes'           => __( 'Delegates to send_group_email after validation; invalid recipient or content arguments return a WP_Error.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

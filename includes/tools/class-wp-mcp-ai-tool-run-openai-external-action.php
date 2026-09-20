@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
 /**
  * Provides an integration point for OpenAI external actions.
  */
-class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const RESPONSES_ENDPOINT = 'https://api.openai.com/v1/responses';
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Invokes a predefined OpenAI workflow or assistant using the Responses API.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Triggering a predefined OpenAI workflow or assistant via the Responses API with input text and variables.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Containerized multi-step agents; use run_gemini_managed_agent for code execution and persistent sessions.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'run_gemini_managed_agent', 'delegate_to_agent' ),
+			'notes'           => __( 'identifier takes a workflow_id or assistant_id; input_variables must match the target action\'s expected schema.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Select a prompt cue for a task.
  */
-class WP_MCP_AI_Tool_Select_Prompt_Cue implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Select_Prompt_Cue implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -41,6 +41,20 @@ class WP_MCP_AI_Tool_Select_Prompt_Cue implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Pick the best prompt cue for a task class. Returns the cue (slug, label, template, citation) so the caller can prepend it to the system prompt.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Picking the best prompt cue for a task class, model, and assistant.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Merging cues into the prompt; use apply_prompt_cue. Reviewing the catalogue; use list_prompt_cues.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'apply_prompt_cue', 'list_prompt_cues' ),
+			'notes'           => __( 'Selection is filterable via wp_mcp_ai_select_prompt_cue; returns a null cue when nothing applies.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

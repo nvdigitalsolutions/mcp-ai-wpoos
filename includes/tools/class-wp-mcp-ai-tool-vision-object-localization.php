@@ -21,7 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
  * reuses the configured Gemini API key, which can be overridden via the
  * `wp_mcp_ai_vision_api_key` filter.
  */
-class WP_MCP_AI_Tool_Vision_Object_Localization implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Vision_Object_Localization implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const DEFAULT_REQUIRED_CAPABILITY = 'manage_options';
@@ -46,6 +46,20 @@ class WP_MCP_AI_Tool_Vision_Object_Localization implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Detects and localizes multiple objects in an image using Google Cloud Vision API. Note: Requires proper Google Cloud authentication to succeed.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Detecting and locating multiple objects in an image with bounding information via the Google Cloud Vision API.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Finding similar products; use vision_product_search for product matching, or analyze_image for general image analysis.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'vision_product_search', 'analyze_image' ),
+			'notes'           => __( 'Requires a Google Cloud API key (reuses the Gemini key); accepts image_url or base64 image_content, max 100 results.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

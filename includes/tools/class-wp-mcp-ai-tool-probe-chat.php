@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Executes a probe request against a published assistant.
  */
-class WP_MCP_AI_Tool_Probe_Chat implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+class WP_MCP_AI_Tool_Probe_Chat implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_Probe_Chat implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	public function get_description() {
 		return __( 'Runs an internal chat probe against a selected assistant to confirm the MCP stack is responsive.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Diagnosing a published assistant by probing the local chat endpoint without a provider call.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Testing a remote site; use probe_remote_mcp. General site diagnostics; use get_environment_status.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'probe_remote_mcp', 'get_environment_status' ),
+			'notes'           => __( 'Requires manage_options and a valid assistant ID. Returns configuration warnings, not model output.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

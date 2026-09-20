@@ -19,7 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-r
 /**
  * Provides a tool for sending a group email based on an uploaded file.
  */
-class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
+class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_Tool_Safety_Profile;
@@ -45,6 +45,20 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Sends an email using the WordPress mailer to recipients. Email content (subject, message, recipients) can be provided directly as parameters or loaded from uploaded attachment files in JSON or plain text format.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending one email to a group of recipients with content passed inline or loaded from uploaded JSON or text files.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Strictly validated sends or inbox lookups; use send_group_email_validated for validation and search_gmail to find messages.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'send_group_email_validated', 'search_gmail' ),
+			'notes'           => __( 'Recipient count is capped at 100; attachment files must be JSON or plain text format.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

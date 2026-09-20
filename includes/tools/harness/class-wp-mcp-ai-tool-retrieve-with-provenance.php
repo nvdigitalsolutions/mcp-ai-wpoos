@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Retrieval-harness front-end tool.
  */
-class WP_MCP_AI_Tool_Retrieve_With_Provenance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Retrieve_With_Provenance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -41,6 +41,20 @@ class WP_MCP_AI_Tool_Retrieve_With_Provenance implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Unified retrieval facade. Queries recall_memory, semantic_context_search, and retrieve_agent_memory in one call, deduplicates results by content hash, and returns top-k passages with citation metadata, freshness scores, and a recall-confidence aggregate.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Unified memory retrieval with deduplication, provenance, and optional citation verification in one call.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Single-source retrieval with leaner output; use recall_memory or retrieve_agent_memory.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'recall_memory', 'retrieve_agent_memory', 'scope_memory' ),
+			'notes'           => __( 'Fans out to recall_memory, semantic_context_search, and retrieve_agent_memory; verify_answer runs citation checks.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

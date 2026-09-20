@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-relevance-search.
  *
  * @since 2.4.0 Added configurable orderby/order and TF-IDF relevance.
  */
-class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Ability_Interface {
+class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Ability_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Relevance_Search;
 
@@ -51,6 +51,20 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Search published posts by keyword, post type, taxonomy terms, and metadata. Supports configurable sort order (date, title) and TF-IDF relevance ranking via orderby=relevance.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding published posts by keyword, post type, taxonomy terms, or metadata, sorted by relevance, date, or title.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Meaning-based matching; use semantic_content_search for embeddings and search_content_validated for strict arguments.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'search_content_validated', 'semantic_content_search', 'get_recent_posts' ),
+			'notes'           => __( 'orderby=relevance enables TF-IDF ranking; post_type=any searches all public types within the query limit.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -103,6 +103,20 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Running site performance checks: CWV analysis, database optimization, caching review, or reports.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Clearing live caches; use purge_cache. This tool reports and optionally auto-fixes; verify changes after.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'purge_cache' ),
+			'notes'           => __( 'action selects the operation; optimization_level safe, moderate, or aggressive. auto_fix=true applies safe changes.', 'mcp-ai-wpoos' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @since 1.0.0

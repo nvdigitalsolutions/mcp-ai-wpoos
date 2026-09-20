@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Paper Store — Delete tool.
  */
-class WP_MCP_AI_Tool_Paper_Store_Delete implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Paper_Store_Delete implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Paper_Store_Remote;
 
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_Paper_Store_Delete implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Deletes a record from a Paper Store collection by ID. This permanently removes the file. Use with caution.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently removing a Paper Store record by ID.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Partial changes; use paper_store_update. Keeping the record with an archived status; use paper_store_update.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'paper_store_update', 'paper_store_write', 'paper_store_read' ),
+			'notes'           => __( 'Deletion is permanent; connection_id routes the call to a remote WordPress site.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

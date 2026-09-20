@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Mine_Agent_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Mine_Agent_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -64,6 +64,20 @@ class WP_MCP_AI_Tool_Mine_Agent_Memory implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Bulk-ingests memory records from a source (WordPress post type query, list of URLs, or raw text items) into the agent memory store. Each item is stored as a verbatim record so the original wording is preserved, optionally scoped to a wing/room. Long content is chunked. Mirrors MemPalace\'s "mine" workflow.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Bulk-ingesting posts, URLs, raw text, or chat transcripts into agent memory as verbatim records.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Writing a single memory record; use store_agent_context. Reading memory back; use retrieve_agent_memory.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'store_agent_context', 'retrieve_agent_memory' ),
+			'notes'           => __( 'Runs are capped at 200 records; long content is chunked. Set dry_run=true to preview without writing.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

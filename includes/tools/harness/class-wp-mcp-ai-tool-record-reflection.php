@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Persist a verbal reflection into agent memory.
  */
-class WP_MCP_AI_Tool_Record_Reflection implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Record_Reflection implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -41,6 +41,20 @@ class WP_MCP_AI_Tool_Record_Reflection implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Persist a verbal reflection (Reflexion-style) into agent memory after PII / secret scrubbing. Use after a self-refine cycle to capture what to do differently next time. Tagged by task class so reflections do not pollute unrelated tasks.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Persisting a verbal reflection after a self-refine cycle so future tasks can learn from it.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Reading stored memories; use retrieve_with_provenance, recall_memory, or retrieve_agent_memory.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'retrieve_with_provenance', 'scope_memory', 'recall_memory' ),
+			'notes'           => __( 'Reflection text is scrubbed for PII and secrets before storage; tag with task_class to avoid cross-task pollution.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

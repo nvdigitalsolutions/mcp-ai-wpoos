@@ -19,7 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 /**
  * Provides an assistant tool for searching Google Drive files via the Drive REST API.
  */
-class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Searches Google Drive and returns matching files and folders with names, types, and metadata. Supports simple text queries (e.g., "report") or advanced Drive query syntax (e.g., "name contains \'invoice\'" or "mimeType = \'application/pdf\'"). Automatically excludes trashed items. Can include shared files and folders, and sort by creation or modification time.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding Drive files and folders by name, MIME type, or advanced query syntax, including shared items.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Mail or attachment lookups; use search_gmail for inbox queries and search_attachments for message attachments.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'search_gmail', 'search_attachments' ),
+			'notes'           => __( 'Advanced queries use Drive syntax such as "mimeType = \'application/pdf\'"; trashed items are excluded by default.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

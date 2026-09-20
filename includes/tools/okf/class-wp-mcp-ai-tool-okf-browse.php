@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * OKF — Browse tool.
  */
-class WP_MCP_AI_Tool_OKF_Browse implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_OKF_Browse implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -40,6 +40,20 @@ class WP_MCP_AI_Tool_OKF_Browse implements WP_MCP_AI_Tool_Interface {
 	 */
 	public function get_description() {
 		return __( 'Browses an OKF bundle (v0.2) directory via its index.md, listing available concepts and subdirectories with trust-signal summaries (type, status, trust tier). Use this to discover what knowledge is available before reading specific concepts.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering which concepts and subdirectories exist in an OKF bundle before reading specific ones.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Fetching one known concept body; use okf_read_concept. Filtering by criteria; use okf_search.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'okf_read_concept', 'okf_search', 'okf_list_bundles' ),
+			'notes'           => __( 'path is empty for the bundle root; trust-signal summaries are added for concept entries only.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

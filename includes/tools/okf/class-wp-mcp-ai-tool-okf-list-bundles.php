@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.62
  */
-class WP_MCP_AI_Tool_OKF_List_Bundles implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_OKF_List_Bundles implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -40,6 +40,20 @@ class WP_MCP_AI_Tool_OKF_List_Bundles implements WP_MCP_AI_Tool_Interface {
 	 */
 	public function get_description() {
 		return __( 'Lists the OKF knowledge bundles available on this site with health statistics — concept count, stale/deprecated counts, conformance, issue count, concept types, and trust-tier histogram. Use this to discover which bundles exist before browsing or searching them. Bundle filesystem paths are not exposed.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering which OKF bundles exist and their health before browsing or searching them.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Listing concepts inside one bundle; use okf_browse or okf_search.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'okf_browse', 'okf_search', 'okf_validate_bundle' ),
+			'notes'           => __( 'Bundle filesystem paths are never exposed; trust_tiers is a histogram of human-reviewed, machine-confirmed, and unverified counts.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

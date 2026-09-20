@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-web-search.php';
  * This class extends the original web_search tool to use
  * Symfony Validator for argument validation.
  */
-class WP_MCP_AI_Tool_Web_Search_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+class WP_MCP_AI_Tool_Web_Search_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * The original web_search tool instance for delegation.
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_Web_Search_Validated extends WP_MCP_AI_Validated_Tool imple
 	 */
 	public function get_description() {
 		return __( 'Searches the public web via the configured provider and returns the top results with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Searching the public web with Symfony Validator enforcement of the query and result-count arguments.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'When strict validation is unnecessary; use web_search directly, or search_content for content on this site.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'web_search', 'semantic_content_search', 'run_crawl4ai_job' ),
+			'notes'           => __( 'Validated arguments are converted back to an array and executed by the original web_search tool.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

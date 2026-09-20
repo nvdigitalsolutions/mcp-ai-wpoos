@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-scrape-product.php';
  * This class extends the original scrape_product tool to use
  * Symfony Validator for argument validation.
  */
-class WP_MCP_AI_Tool_Scrape_Product_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Scrape_Product_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * The original scrape_product tool instance for delegation.
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_Scrape_Product_Validated extends WP_MCP_AI_Validated_Tool i
 	 */
 	public function get_description() {
 		return __( 'Scrapes product information (title, subtitle, description, images, price, availability) from a product URL or saved HTML file with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scraping product data with Symfony Validator enforcing required url/html_file arguments and formats first.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Unvalidated scraping; use scrape_product when strict argument checks are not needed.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'scrape_product', 'create_woo_product_validated' ),
+			'notes'           => __( 'Delegates to scrape_product after validation; invalid arguments return a WP_Error before any request is made.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

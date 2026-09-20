@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * site based on current load, response times, and task complexity. It supports
  * automatic failover and retry logic for resilient distributed compute.
  */
-class WP_MCP_AI_Tool_Query_Mesh_Intelligent implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Query_Mesh_Intelligent implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -41,6 +41,20 @@ class WP_MCP_AI_Tool_Query_Mesh_Intelligent implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Send a prompt to the mesh network with AI-powered peer selection and automatic failover. The system intelligently routes your request to the optimal peer site based on current load, response times, and task complexity.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending a prompt into the mesh with AI-routed peer selection and automatic failover.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Connectivity tests; use probe_remote_mcp. This tool needs an enabled mesh and assistant context.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'probe_remote_mcp' ),
+			'notes'           => __( 'Requires enable_mesh in settings and an assistant context. Routing strategy comes from the hub config.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

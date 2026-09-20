@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_SiteKit_Analytics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_SiteKit_Analytics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -83,6 +83,20 @@ class WP_MCP_AI_Tool_SiteKit_Analytics implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Retrieve Google Analytics data through Site Kit. Provides metrics like sessions, pageviews, bounce rate, and average session duration.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Retrieving GA metrics such as sessions, pageviews, bounce rate, average session duration, or users for a date range, optionally filtered by URL.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Monetization or search rankings; use sitekit_get_adsense for ad earnings and sitekit_get_search_console for queries and position.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'sitekit_get_adsense', 'sitekit_get_search_console', 'sitekit_get_pagespeed' ),
+			'notes'           => __( 'Read-only; requires the Site Kit plugin and manage_options, and returns data as supplied by the Site Kit Analytics module.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

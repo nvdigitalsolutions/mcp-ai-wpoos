@@ -17,7 +17,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-
 /**
  * Provides an integration with the Crawl4AI REST API.
  */
-class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const DEFAULT_WAIT_TIMEOUT  = 120;
@@ -120,6 +120,20 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Submits a Crawl4AI crawl request and optionally waits for the results.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Crawling one or more URLs with markdown extraction, waiting inline for results or submitting async crawls.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Schema-enforced calls; use run_crawl4ai_job_validated when Symfony Validator should reject bad arguments first.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'run_crawl4ai_job_validated', 'scrape_product', 'web_search' ),
+			'notes'           => __( 'Set wait=true with a timeout for inline results; large crawls are cheaper submitted async and polled later.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

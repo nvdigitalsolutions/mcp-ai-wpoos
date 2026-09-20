@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Majority-vote across candidate answers.
  */
-class WP_MCP_AI_Tool_Self_Consistency_Vote implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Self_Consistency_Vote implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -42,6 +42,20 @@ class WP_MCP_AI_Tool_Self_Consistency_Vote implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Pick the modal answer across N candidate solutions and report an agreement ratio. Use after sampling the same prompt multiple times to estimate confidence in the final answer.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Choosing the modal answer across multiple sampled candidates and measuring agreement.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Generating the candidates themselves; sample the prompt multiple times through the chat pipeline first.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'record_reflection', 'retrieve_with_provenance' ),
+			'notes'           => __( 'Input is hard-capped at 64 candidates; a low agreement ratio means the answer is uncertain.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
