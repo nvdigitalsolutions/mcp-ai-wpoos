@@ -142,6 +142,20 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating, updating, or deleting vault items (logins, notes, cards, identities) programmatically.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading stored credentials; use vault_access.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'vault_access' ),
+			'notes'           => __( 'Requires manage_options; passwords, TOTP secrets, and card data are sensitive inputs.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @param array $arguments Tool arguments.

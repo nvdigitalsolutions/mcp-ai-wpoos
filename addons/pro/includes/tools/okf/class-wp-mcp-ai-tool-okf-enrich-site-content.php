@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.62
  */
-class WP_MCP_AI_Tool_OKF_Enrich_Site_Content implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_OKF_Enrich_Site_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -40,6 +40,20 @@ class WP_MCP_AI_Tool_OKF_Enrich_Site_Content implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Crawls published WordPress content (posts, pages, other public post types, and optionally taxonomy terms) and auto-generates OKF concepts with cross-links into a bundle (default "site-content"). Deterministic and idempotent — re-running refreshes the same concepts. Descriptions can be upgraded to AI summaries via the wp_mcp_ai_okf_enrichment_description filter. Requires administrator capability because it writes many files.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating or refreshing OKF concepts for published site content into a bundle, idempotently.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Querying or browsing knowledge; use okf_search, okf_browse, or route_knowledge_query.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'route_knowledge_query', 'okf_search', 'okf_list_bundles' ),
+			'notes'           => __( 'Requires manage_options and writes many files; limit is capped at 200 items.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

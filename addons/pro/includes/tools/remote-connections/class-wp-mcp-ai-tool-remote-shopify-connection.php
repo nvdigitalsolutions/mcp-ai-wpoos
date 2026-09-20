@@ -33,7 +33,7 @@ if ( ! trait_exists( 'WP_MCP_AI_Shopify_Connection_Resolver' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Remote_Shopify_Connection implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Remote_Shopify_Connection implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Shopify_Connection_Resolver;
 
@@ -56,6 +56,20 @@ class WP_MCP_AI_Tool_Remote_Shopify_Connection implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Discover and manage Shopify store connections. Use list_connections to see the available Shopify stores configured for this assistant, each annotated with its API mode and the tools that mode supports. Use test_connection to verify connectivity — admin_api runs a GraphQL shop query, Storefront/Global Catalog MCP (keyless UCP) runs the MCP tools/list negotiation handshake, and catalog_api verifies credentials. For product, order, customer, and inventory operations, use the dedicated shopify_products, shopify_orders, shopify_customers, shopify_inventory, and shopify_catalog tools — they are mode-aware and automatically use the correct connection when only one Shopify connection is configured.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering configured Shopify connections and testing connectivity or API mode before store operations.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Store data operations; use shopify_products, shopify_orders, shopify_customers, shopify_inventory, or shopify_catalog.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'shopify_products', 'shopify_orders', 'shopify_catalog' ),
+			'notes'           => __( 'test_connection without connection_id uses the sole connection when only one is configured.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

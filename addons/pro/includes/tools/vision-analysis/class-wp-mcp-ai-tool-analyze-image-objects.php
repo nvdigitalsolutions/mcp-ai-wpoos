@@ -42,7 +42,7 @@ if ( ! function_exists( 'wp_mcp_ai_vision_analysis_get_settings' ) ) {
  *
  * @since 1.1.68
  */
-class WP_MCP_AI_Tool_Analyze_Image_Objects extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Analyze_Image_Objects extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Maximum downscale dimension applied to oversized images before upload.
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_Analyze_Image_Objects extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	public function get_description() {
 		return __( 'Detect and count the objects in an image, returning a per-category count breakdown with confidence scores and optional bounding boxes. Uses dedicated detectors (HuggingFace OWLv2, local Ollama vision) with an optional VLM pass (OpenAI, Anthropic, Gemini) for open-world counting and label normalization. Can return an annotated copy of the image with boxes drawn on it.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Counting objects in an image per category with confidence scores, optional boxes, and annotated output.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'General image description or visual Q&A; use analyze_image.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'analyze_image', 'vision_object_localization', 'vision_product_search' ),
+			'notes'           => __( 'Detection modes use HuggingFace OWLv2 or Ollama; hybrid keeps detector counts authoritative.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

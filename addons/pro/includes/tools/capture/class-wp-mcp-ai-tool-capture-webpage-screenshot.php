@@ -36,7 +36,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.3.5
  */
-class WP_MCP_AI_Tool_Capture_Webpage_Screenshot implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Capture_Webpage_Screenshot implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default operation timeout in seconds.
@@ -83,6 +83,20 @@ class WP_MCP_AI_Tool_Capture_Webpage_Screenshot implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Capture a screenshot of any public web page. Supports desktop, tablet, and mobile viewports, full-page or viewport-only capture, PNG/JPEG output, and optional save to the WordPress media library. Uses a Playwright service when configured, with automatic fallback to the WordPress.com mshots thumbnail API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Capturing a visual screenshot of a public URL at a preset or custom viewport, with optional media-library save.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Multi-step browsing, form filling, or JS interaction; use web_browser.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'web_browser' ),
+			'notes'           => __( 'Blocks internal/private IPs; rate limited to 30 captures per hour per user.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

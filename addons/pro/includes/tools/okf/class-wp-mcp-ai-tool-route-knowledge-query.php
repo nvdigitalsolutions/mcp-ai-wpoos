@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.62
  */
-class WP_MCP_AI_Tool_Route_Knowledge_Query implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Route_Knowledge_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -40,6 +40,20 @@ class WP_MCP_AI_Tool_Route_Knowledge_Query implements WP_MCP_AI_Tool_Interface {
 	 */
 	public function get_description() {
 		return __( 'Classifies a knowledge query and produces an ordered routing plan across the OKF bundles (curated markdown), the vector store (semantic embeddings), and Paper Store (structured records). When OKF is the primary route, also performs the OKF lookup and returns the top matching concepts. Use this to decide which store to query first for a given question.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Classifying a knowledge question into a routing plan across OKF, the vector store, and Paper Store, and running the OKF lookup when primary.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Direct reads from a known store; use okf_search or paper_store_search.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'okf_enrich_site_content', 'okf_search', 'paper_store_search' ),
+			'notes'           => __( 'Requires the hybrid knowledge router class; top is capped at 10 results.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

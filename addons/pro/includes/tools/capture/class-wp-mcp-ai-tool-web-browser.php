@@ -32,7 +32,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default timeout for browser operations in seconds.
@@ -63,6 +63,20 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Automate web browsers to navigate JavaScript-heavy sites, take screenshots, generate PDFs, fill forms, and extract dynamic content. Supports both remote Playwright service and local HTTP fallback.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Navigating JavaScript-heavy pages, filling forms, clicking elements, extracting dynamic content, and rendering PDFs or screenshots.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'One-shot static captures; use capture_webpage_screenshot for a simple screenshot.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'capture_webpage_screenshot', 'run_crawl4ai_job' ),
+			'notes'           => __( 'Playwright service is primary with local HTTP fallback; timeout caps at 60 seconds.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -22,7 +22,7 @@ if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 /**
  * Paper Store — Export tool.
  */
-class WP_MCP_AI_Tool_Paper_Store_Export implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Paper_Store_Export implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Paper_Store_Remote;
 
@@ -45,6 +45,20 @@ class WP_MCP_AI_Tool_Paper_Store_Export implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description(): string {
 		return __( 'Exports all records from a Paper Store collection as a JSON array. Optionally filter by tags or status.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance(): array {
+		return array(
+			'when_to_use'     => __( 'Dumping a whole Paper Store collection (optionally filtered by tags or status) as JSON for backup or migration.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading a single record or browsing within the site; use paper_store_read or paper_store_list.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'paper_store_import', 'paper_store_list', 'paper_store_search' ),
+			'notes'           => __( 'Requires manage_options; pass connection_id to export from a remote site instead.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

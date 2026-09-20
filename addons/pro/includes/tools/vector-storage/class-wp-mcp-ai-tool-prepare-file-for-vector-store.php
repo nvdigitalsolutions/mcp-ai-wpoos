@@ -33,7 +33,7 @@ require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-file-preprocess
  *
  * @since 1.3.0
  */
-class WP_MCP_AI_Tool_Prepare_File_For_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Prepare_File_For_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -55,6 +55,20 @@ class WP_MCP_AI_Tool_Prepare_File_For_Vector_Store implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Automatically prepare files for optimal vector store ingestion. Converts unreliable formats (CSV, XLSX, PPTX) to PDF or structured text, extracts text with OCR support, fixes encoding issues, and optimizes document structure. Returns a new, optimized file ready for upload to OpenAI vector stores.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Converting attachments (CSV, XLSX, PPTX, scanned PDFs) into vector-store-ready PDF, TXT, or MD with OCR and encoding fixes.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Uploading or managing files already in a store; use manage_vector_store_files.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_vector_store_files', 'create_vector_store', 'vectorize_image' ),
+			'notes'           => __( 'output_format auto picks the best target; requires upload_files capability.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
