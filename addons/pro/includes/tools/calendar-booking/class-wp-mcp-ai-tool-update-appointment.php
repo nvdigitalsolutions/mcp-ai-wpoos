@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.6.0
  */
-class WP_MCP_AI_Tool_Update_Appointment implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Appointment implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -96,6 +96,20 @@ class WP_MCP_AI_Tool_Update_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Update existing appointments with new client details, time slots, or booking information. Supports partial updates and change tracking.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Changing client details, status, notes, or booking fields on an existing appointment with partial updates.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Moving the appointment to a different time slot; use reschedule_appointment instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_appointment', 'reschedule_appointment', 'cancel_appointment', 'get_appointment_details' ),
+			'notes'           => __( 'Sends an update email when send_notification is true and checks time conflicts by default.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

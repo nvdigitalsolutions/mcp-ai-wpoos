@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates a new event.
  */
-class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Creates a new calendar event or updates an existing one if event_id is provided. Events can be meetings, deadlines, milestones, or any time-based activities. Supports all-day events and time-specific events.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adding a meeting, deadline, milestone, or reminder to the project calendar, or updating one via event_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Booking client appointments; use create_appointment. Reading existing entries; use list_events or get_calendar_view.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_events', 'get_calendar_view', 'delete_event' ),
+			'notes'           => __( 'Omit start_time and end_time to create an all-day event.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

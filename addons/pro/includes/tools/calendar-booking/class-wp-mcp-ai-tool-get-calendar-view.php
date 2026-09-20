@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Gets a unified calendar view of projects, tasks, and events.
  */
-class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Gets a unified calendar view combining projects, tasks, and events within a specified date range. Perfect for displaying comprehensive schedules and timelines.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Building a date-range overview that merges projects, tasks, events, and external bookings.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Finding bookable times; use get_available_slots or check_availability. Listing one project\'s events; use list_events.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_events', 'create_event', 'get_appointment_details' ),
+			'notes'           => __( 'Use include_types to limit output; results are grouped by date by default.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

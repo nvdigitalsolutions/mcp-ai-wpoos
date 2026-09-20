@@ -28,7 +28,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-document-resp
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Media_Worker_Client;
 	use WP_MCP_AI_Tool_Document_Response;
 
@@ -51,6 +51,18 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Export project calendar events as RFC 5545 compliant ICS file. Share project timelines, task schedules, and events with team members via Google Calendar, Outlook, or Apple Calendar. Supports recurring events, reminders, and timezone handling.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing a shareable ICS file of a project\'s events and tasks for import into external calendars.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Browsing the schedule on screen; use get_calendar_view. Reading single appointment data; use get_appointment_details.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_calendar_view', 'list_events', 'create_event' ),
+			'notes'           => __( 'Requires Node.js with the ICS package; set download_file=false to receive the raw ICS content.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

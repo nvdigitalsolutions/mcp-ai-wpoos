@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Deletes an event.
  */
-class WP_MCP_AI_Tool_Delete_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Get the tool slug.
 	 *
@@ -41,6 +41,20 @@ class WP_MCP_AI_Tool_Delete_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Deletes a calendar event permanently.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently removing a calendar event by event_id once deletion is confirmed.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Cancelling a client appointment; use cancel_appointment. Adjusting an event instead; use create_event or update_event.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_events', 'create_event', 'update_event' ),
+			'notes'           => __( 'Deletion is permanent and cannot be undone.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

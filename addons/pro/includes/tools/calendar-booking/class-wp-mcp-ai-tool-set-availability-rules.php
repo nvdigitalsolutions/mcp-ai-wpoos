@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Set_Availability_Rules tool.
  */
-class WP_MCP_AI_Tool_Set_Availability_Rules implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Set_Availability_Rules implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -71,6 +71,20 @@ class WP_MCP_AI_Tool_Set_Availability_Rules implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Define availability rules and business hours for appointment scheduling.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Configuring business hours, slot duration, or buffer time for a day of the week.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Checking whether a specific time slot is free; use get_available_slots or check_availability.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_available_slots', 'check_availability', 'create_appointment' ),
+			'notes'           => __( 'Rules are stored in the wp_mcp_ai_business_hours option; one day is updated per call.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

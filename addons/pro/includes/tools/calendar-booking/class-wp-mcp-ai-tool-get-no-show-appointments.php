@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.9.0
  */
-class WP_MCP_AI_Tool_Get_No_Show_Appointments implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_No_Show_Appointments implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -46,6 +46,18 @@ class WP_MCP_AI_Tool_Get_No_Show_Appointments implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Retrieves a list of appointments marked as no-show, with optional date range and service filters. Useful for identifying missed appointments and planning reschedule outreach.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reviewing appointments marked no_show for reschedule outreach or policy enforcement.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Bookings awaiting confirmation; use get_unconfirmed_bookings. One record\'s full details; use get_appointment_details.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_unconfirmed_bookings', 'get_appointment_details', 'send_appointment_reminder' ),
+			'notes'           => __( 'Filter with date_from, date_to, and service_type; results default to 50.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Updates an existing event.
  */
-class WP_MCP_AI_Tool_Update_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Get the tool slug.
 	 *
@@ -41,6 +41,20 @@ class WP_MCP_AI_Tool_Update_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Updates an existing calendar event. Provide only the fields you want to update.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Changing fields on an existing calendar event, providing only the fields that should change.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating or removing events; use create_event or delete_event instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_event', 'delete_event', 'list_events', 'get_calendar_view' ),
+			'notes'           => __( 'Only provided fields are updated; every other event field is left untouched.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.5.0
  */
-class WP_MCP_AI_Tool_Sync_From_JetAppointment implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Sync_From_JetAppointment implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -61,6 +61,18 @@ class WP_MCP_AI_Tool_Sync_From_JetAppointment implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Import appointments from JetAppointment into the NV oOS calendar. Uses _jetappointment_id meta to prevent duplicate imports on re-sync.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pulling existing JetAppointment bookings into the NV oOS calendar (import direction), idempotently.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Writing NV oOS appointments into JetAppointment; use sync_to_jetappointment instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'sync_to_jetappointment', 'get_jetappointment_providers', 'get_jetappointment_services' ),
+			'notes'           => __( 'Requires the JetAppointment plugin and adapter; re-runs update existing posts instead of duplicating them.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

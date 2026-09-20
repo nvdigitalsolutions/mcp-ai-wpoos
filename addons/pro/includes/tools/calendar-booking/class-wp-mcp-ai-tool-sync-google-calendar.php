@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Sync_Google_Calendar tool.
  */
-class WP_MCP_AI_Tool_Sync_Google_Calendar implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Sync_Google_Calendar implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Check if tool is available.
 	 *
@@ -54,6 +54,19 @@ class WP_MCP_AI_Tool_Sync_Google_Calendar implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Sync appointments with Google Calendar.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pushing an NV oOS appointment to Google Calendar, creating or updating its linked Google event.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Importing Google events into NV oOS; this tool only pushes appointments to Google Calendar.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'sync_outlook_calendar', 'update_appointment', 'export_calendar_ics' ),
+			'notes'           => __( 'Repeated syncs update the same event via _google_calendar_event_id; requires Google Calendar credentials.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 		/**
 		 * Get the parameters schema.
 		 *
