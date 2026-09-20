@@ -16,7 +16,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Media_Center' ) ) {
 	/**
 	 * Media Center tool.
 	 */
-	class WP_MCP_AI_Tool_DietPi_Media_Center extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_Media_Center extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 		public function get_slug() {
@@ -31,6 +31,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Media_Center' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Control Plex or Jellyfin media center: list libraries, browse recently added items, view active streams, and trigger library scans. Specify the "app" parameter to choose which media center to target.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Browsing Plex or Jellyfin libraries, recently added items, and active streams, or triggering a library scan.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Requesting new media downloads; use dietpi_media_request_flow or dietpi_search_jackett.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_media_request_flow', 'dietpi_list_transmission', 'dietpi_control_service' ),
+				'notes'           => __( 'refresh_library requires library_id; other actions are read-only. Defaults to Plex unless app=jellyfin.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

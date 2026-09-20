@@ -23,7 +23,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Storage' ) ) {
 	/**
 	 * Manage storage tool.
 	 */
-	class WP_MCP_AI_Tool_DietPi_Manage_Storage extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_Manage_Storage extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 		public function get_slug() {
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Storage' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Inspect and manage storage on the DietPi device. List all mounted drives with usage, check free space on a specific path (useful for Transmission download directory), list large directories by size, and view drive information via dietpi-drive_manager.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Inspecting mounts, free space, and large directories on the DietPi device to diagnose disk pressure.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Changing mounts, partitioning, or formatting disks; this tool is read-only. Use dietpi_send_ssh_command for changes.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_system_stats', 'dietpi_backup_system', 'dietpi_send_ssh_command' ),
+				'notes'           => __( 'All actions are read-only inspections; nothing is mounted, unmounted, or repartitioned.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

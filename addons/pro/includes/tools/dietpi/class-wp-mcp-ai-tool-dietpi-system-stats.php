@@ -16,7 +16,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_System_Stats' ) ) {
 	/**
 	 * System Stats tool.
 	 */
-	class WP_MCP_AI_Tool_DietPi_System_Stats extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_System_Stats extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 		public function get_slug() {
@@ -31,6 +31,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_System_Stats' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Get live system statistics: CPU temperature and frequency, RAM usage, disk space, system load, and Raspberry Pi throttling flags (undervoltage, thermal throttling, etc.).', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Getting live metrics: CPU temperature and frequency, RAM usage, disk space, load, and throttling flags.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Static device identity like model, OS version, or kernel; use dietpi_system_info.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_system_info', 'dietpi_health_check', 'dietpi_manage_storage' ),
+			);
 		}
 
 		/** {@inheritdoc} */

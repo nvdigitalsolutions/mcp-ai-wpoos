@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Control_Transmission' ) ) {
 	/**
 	 * Control Transmission torrents tool.
 	 */
-	class WP_MCP_AI_Tool_DietPi_Control_Transmission extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_Control_Transmission extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 		public function get_slug() {
@@ -36,6 +36,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Control_Transmission' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Control individual or all torrents in Transmission: start, stop, remove (with optional data deletion), verify, set speed limits, move data, or set labels. Destructive actions require explicit confirmation.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Starting, stopping, removing, verifying, or relabelling torrents, or setting speed limits in Transmission.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Adding new torrents; use dietpi_add_transmission. Managing the transmission-daemon service; use dietpi_control_service.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_add_transmission', 'dietpi_list_transmission', 'dietpi_control_service' ),
+				'notes'           => __( 'remove needs confirm=true and delete_local_data=true permanently deletes downloaded files.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

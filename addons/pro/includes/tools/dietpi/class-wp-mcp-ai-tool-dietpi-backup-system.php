@@ -23,7 +23,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Backup_System' ) ) {
 	/**
 	 * Backup system tool.
 	 */
-	class WP_MCP_AI_Tool_DietPi_Backup_System extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_Backup_System extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 		public function get_slug() {
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Backup_System' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Manage DietPi system backups. List existing backups and their dates/sizes, create a new full system backup or app-data-only backup, and check backup status. Backups are created via dietpi-backup and stored in the configured backup location.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Listing existing backups, creating a full or app-data backup, or checking backup status on the DietPi system.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Routine health or storage monitoring; use dietpi_health_check or dietpi_manage_storage.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_health_check', 'dietpi_manage_storage', 'dietpi_update_system' ),
+				'notes'           => __( 'A full backup runs for minutes with heavy disk I/O; create one only when the user asked for it.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

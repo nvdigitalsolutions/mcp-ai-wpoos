@@ -15,7 +15,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_List_Radarr_Movies' ) ) {
 	/**
 	 * Lists movies in Radarr via the Radarr API.
 	 */
-	class WP_MCP_AI_Tool_DietPi_List_Radarr_Movies extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_List_Radarr_Movies extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 		/**
 		 * {@inheritdoc}
 		 */
@@ -35,6 +35,17 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_List_Radarr_Movies' ) ) {
 		 */
 		public function get_description() {
 			return __( 'List all movies in Radarr with status, quality profile, availability, and file info.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/**
+		 * {@inheritdoc}
+		 */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Listing movies already in Radarr with status, monitored state, and file info.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Adding a new movie; use dietpi_add_radarr_movie. Changing existing entries; use dietpi_manage_radarr.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_add_radarr_movie', 'dietpi_manage_radarr', 'dietpi_dashboard_summary' ),
+			);
 		}
 
 		/**
