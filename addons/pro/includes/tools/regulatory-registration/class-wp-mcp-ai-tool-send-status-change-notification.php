@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Sends status change notifications.
  */
-class WP_MCP_AI_Tool_Send_Status_Change_Notification implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Send_Status_Change_Notification implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
@@ -40,6 +40,18 @@ class WP_MCP_AI_Tool_Send_Status_Change_Notification implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Sends email notifications when registration status transitions occur with detailed change information and next steps.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When stakeholders need email notification of a registration status transition from one status to another.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When the status itself must change or only a history read is needed; use update_registration_status or get_notification_history.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_registration_status', 'get_notification_history', 'get_registration_timeline' ),
+			'notes'           => __( 'old_status and new_status are required; recipient defaults come from plugin settings when omitted.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

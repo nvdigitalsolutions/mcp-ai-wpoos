@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Tracks document version history.
  */
-class WP_MCP_AI_Tool_Track_Document_Version implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Track_Document_Version implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Track_Document_Version implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Tracks version history for a document, allowing AI to retrieve version history or create new versions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When reading a document version history or recording a new version of an existing document.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When changing document metadata or adding a brand new file; use update_reg_document or upload_reg_document.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_reg_document', 'upload_reg_document', 'list_reg_documents' ),
+			'notes'           => __( 'action=get_history is read-only; action=create_version needs new_version and file_url plus the document ID.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Gets registration timeline with milestones.
  */
-class WP_MCP_AI_Tool_Get_Registration_Timeline implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Registration_Timeline implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Get_Registration_Timeline implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Calculates milestones, deadlines, and progress for a registration. Provides expected timeline based on country-specific processing times.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Showing milestones, expected vs actual processing time, and progress for one registration.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Comparing many registrations or checking current status; use generate_pipeline_report or get_registration.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_registration', 'generate_pipeline_report', 'generate_country_performance' ),
+			'notes'           => __( 'Timelines vary by country (LK, AE, SA) and registration_type; countries without a profile use defaults.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

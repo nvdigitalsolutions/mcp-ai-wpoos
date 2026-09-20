@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Duplicates a regulatory product.
  */
-class WP_MCP_AI_Tool_Duplicate_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Duplicate_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Duplicate_Reg_Product implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Creates a copy of an existing product with optional data selection. Useful for product variants or similar products. Can optionally copy registrations and documents.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a variant or similar product by copying an existing product, optionally including registrations and documents.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating a product from scratch with no shared data; use create_reg_product.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_reg_product', 'get_reg_product', 'update_reg_product' ),
+			'notes'           => __( 'The copy starts as a draft; copy_registrations and copy_documents default to false.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

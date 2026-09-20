@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Lists regulatory registrations.
  */
-class WP_MCP_AI_Tool_List_Registrations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Registrations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_List_Registrations implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Lists registration instances in the regulatory system with optional filtering by country, status, product, or expiry date.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When finding registrations by country, status, product, or expiry window, and when other tools need a registration ID.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When you need per-country statistics or one record in detail; use list_registrations_by_country or get_registration.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_registration', 'list_registrations_by_country', 'create_registration' ),
+			'notes'           => __( 'Status filter accepts the slug form, e.g. pending_documents or ready_for_submission; country filter takes the country name.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

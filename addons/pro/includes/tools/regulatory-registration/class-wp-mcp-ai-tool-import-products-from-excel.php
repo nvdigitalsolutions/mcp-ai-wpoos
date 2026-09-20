@@ -21,7 +21,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 /**
  * Imports products from Excel files.
  */
-class WP_MCP_AI_Tool_Import_Products_From_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Products_From_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
@@ -43,6 +43,18 @@ class WP_MCP_AI_Tool_Import_Products_From_Excel implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Bulk imports regulatory products from Excel file (XLSX format) with comprehensive field mapping, validation, and support for multiple worksheet formats including L\'OCCITANE, Puig, and other regulatory tracking sheets. Requires PHP 8.1 or higher.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When bulk creating or updating mcp_ai_reg_product records from an XLSX workbook with column mapping.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When creating one product or exporting existing data; use create_reg_product or export_products_to_excel instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'validate_excel_import', 'export_products_to_excel', 'list_reg_products' ),
+			'notes'           => __( 'Validate the workbook with validate_excel_import before importing; the file must live under the uploads directory.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Gets notification history.
  */
-class WP_MCP_AI_Tool_Get_Notification_History implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Notification_History implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Get_Notification_History implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Retrieves notification history and audit trail with filtering by type, date range, and registration.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Auditing which emails were sent, filtering by notification type, registration, or date range.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Changing notification settings or sending an email; use configure_email_notifications or send_status_change_notification.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'configure_email_notifications', 'send_status_change_notification', 'send_expiry_alerts' ),
+			'notes'           => __( 'limit defaults to 50 (max 200); results are sorted newest first.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

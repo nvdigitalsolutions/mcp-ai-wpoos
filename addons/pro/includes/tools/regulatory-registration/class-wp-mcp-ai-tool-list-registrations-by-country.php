@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Lists registrations by country.
  */
-class WP_MCP_AI_Tool_List_Registrations_By_Country implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Registrations_By_Country implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_List_Registrations_By_Country implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Lists registrations grouped by country with statistics. Provides country-specific registration overview including status distribution and expiry tracking.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When you need a country-level overview of registrations with status distribution and expiry statistics.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When you need one flat list of individual records; use list_registrations or list_expiring_registrations instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_registrations', 'list_expiring_registrations', 'generate_country_performance' ),
+			'notes'           => __( 'country filter takes a country code; set group_by_status to split each country into status groups.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

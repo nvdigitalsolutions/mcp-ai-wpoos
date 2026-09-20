@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Gets regulatory requirements.
  */
-class WP_MCP_AI_Tool_Get_Regulatory_Requirements implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Regulatory_Requirements implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Get_Regulatory_Requirements implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Retrieves regulatory requirements for a specific country/authority. Filters by requirement type, product category, and mandatory status.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing document, test, certification, and ingredient requirements defined for a country or authority.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Checking a specific product against requirements or creating new ones; use check_product_compliance or add_regulatory_requirement.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'add_regulatory_requirement', 'check_product_compliance', 'get_regulatory_updates' ),
+			'notes'           => __( 'country is required; add mandatory_only=true to list only is_mandatory requirements.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
