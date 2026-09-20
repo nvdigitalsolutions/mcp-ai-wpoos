@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides a tool for creating Google Business Profile posts via the My Business API.
  */
-class WP_MCP_AI_Pro_Tool_Post_Google_Business_Update implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Post_Google_Business_Update implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -53,6 +53,18 @@ class WP_MCP_AI_Pro_Tool_Post_Google_Business_Update implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Creates a local post on a Google Business Profile location via the My Business API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Publishing an offer, event, or announcement to a Google Business Profile location.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading location metrics; use get_google_business_insights instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_google_business_insights', 'post_to_multiple_platforms', 'schedule_social_post' ),
+			'notes'           => __( 'The update becomes publicly visible on Google Search and Maps; confirm copy before publishing.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

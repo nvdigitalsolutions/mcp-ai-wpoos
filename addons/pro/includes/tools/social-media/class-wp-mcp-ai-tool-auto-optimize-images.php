@@ -32,7 +32,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Auto_Optimize_Images implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Auto_Optimize_Images implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -188,6 +188,19 @@ class WP_MCP_AI_Tool_Auto_Optimize_Images implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Automatically resize and optimize images for social media platform requirements. Supports platform-specific dimensions, format conversion, quality optimization, and batch processing.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Resizing, converting, or compressing images to platform-specific dimensions before publishing.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Downloading or sourcing images; use download_facebook_page_images or download_instagram_page_images.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'post_facebook_instagram', 'bulk_schedule_posts', 'create_social_video' ),
+		);
 	}
 
 	/**

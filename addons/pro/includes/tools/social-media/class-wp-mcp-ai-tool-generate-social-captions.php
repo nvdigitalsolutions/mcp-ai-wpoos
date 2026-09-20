@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.8.0
  */
-class WP_MCP_AI_Tool_Generate_Social_Captions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Social_Captions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -45,6 +45,18 @@ class WP_MCP_AI_Tool_Generate_Social_Captions implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Generates AI-powered social media captions for posts. Returns caption suggestions that can be reviewed before publishing.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating platform-appropriate caption variations for an existing WordPress post before publishing.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Ideating new topics; use generate_post_ideas. Publishing content; use publish_to_social or post_to_multiple_platforms.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_post_ideas', 'publish_to_social', 'post_to_multiple_platforms' ),
+			'notes'           => __( 'Returns prompt context for the assistant to write captions; nothing is published or saved.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

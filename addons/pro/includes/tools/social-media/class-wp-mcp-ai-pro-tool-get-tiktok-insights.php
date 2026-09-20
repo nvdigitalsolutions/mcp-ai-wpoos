@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides a tool for querying TikTok Open API insight endpoints.
  */
-class WP_MCP_AI_Pro_Tool_Get_Tiktok_Insights implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Tiktok_Insights implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -58,6 +58,17 @@ class WP_MCP_AI_Pro_Tool_Get_Tiktok_Insights implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Fetches TikTok account performance metrics using the TikTok Open API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching performance metrics for one TikTok account, such as video views or follower growth.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Uploading or scheduling videos; use post_tiktok_video or schedule_social_post.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'post_tiktok_video', 'track_hashtag_performance', 'get_cross_platform_analytics' ),
+		);
 	}
 
 	/**

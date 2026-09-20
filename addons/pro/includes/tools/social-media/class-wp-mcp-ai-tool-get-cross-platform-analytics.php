@@ -38,7 +38,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Get_Cross_Platform_Analytics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Cross_Platform_Analytics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -106,6 +106,19 @@ class WP_MCP_AI_Tool_Get_Cross_Platform_Analytics implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Retrieve unified social media analytics from all connected platforms. Includes engagement metrics (likes, comments, shares), reach, impressions, follower growth trends, and identification of best performing posts. Supports custom date ranges and platform filtering.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pulling aggregate engagement, reach, growth, and top-post reports across all connected platforms.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Prefer get_social_analytics for sectioned reports. For hashtag or competitor focus, use track_hashtag_performance or competitor_analysis.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_social_analytics', 'track_hashtag_performance', 'competitor_analysis' ),
+		);
 	}
 
 	/**

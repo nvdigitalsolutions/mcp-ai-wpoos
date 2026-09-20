@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides a tool for querying Google Business Profile insights.
  */
-class WP_MCP_AI_Pro_Tool_Get_Google_Business_Insights implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Google_Business_Insights implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -58,6 +58,18 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Business_Insights implements WP_MCP_AI_Tool_
 	 */
 	public function get_description() {
 		return __( 'Fetches performance metrics for a Google Business Profile location.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pulling Google Business Profile metrics for one location, such as search impressions, calls, or directions.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Publishing local posts or downloading listing photos; use post_google_business_update or download_google_maps_images.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'post_google_business_update', 'download_google_maps_images', 'get_cross_platform_analytics' ),
+			'notes'           => __( 'Metric IDs follow Business Profile names such as BUSINESS_IMPRESSIONS_SEARCH.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

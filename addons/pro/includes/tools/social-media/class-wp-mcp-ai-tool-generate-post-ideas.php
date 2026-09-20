@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Generate_Post_Ideas implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Post_Ideas implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -96,6 +96,19 @@ class WP_MCP_AI_Tool_Generate_Post_Ideas implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Generate AI-powered social media content ideas based on trending topics, brand voice, target audience, and past performance. Provides ready-to-use post concepts with headlines, hooks, and suggested formats.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Brainstorming ready-to-use social post concepts with headlines, hooks, formats, and hashtags.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Writing captions for a specific post; use generate_social_captions. Publishing anything; use publish_to_social.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_social_captions', 'create_content_calendar', 'track_hashtag_performance' ),
+		);
 	}
 
 	/**
