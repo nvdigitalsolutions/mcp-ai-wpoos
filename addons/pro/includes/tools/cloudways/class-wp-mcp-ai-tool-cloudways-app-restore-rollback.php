@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Restore_Rollback' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_App_Restore_Rollback extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_App_Restore_Rollback extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Restore_Rollback' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Roll back the last backup restore action.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Reversing the last backup restore when the restored state was wrong.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Restoring to a backup in the first place; use cloudways_app_restore.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_app_restore', 'cloudways_create_app_backup', 'cloudways_get_operation_status' ),
+				'notes'           => __( 'Only undoes the most recent restore; check cloudways_get_operation_status if state is unclear.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

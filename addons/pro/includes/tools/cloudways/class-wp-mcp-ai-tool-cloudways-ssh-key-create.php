@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_SSH_Key_Create' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_SSH_Key_Create extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_SSH_Key_Create extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_SSH_Key_Create' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Add an SSH public key to a server, application, or system user.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Adding a public SSH key to a server, app, or system user to grant deploy or admin access.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Viewing or revoking keys; use cloudways_ssh_key_list or cloudways_ssh_key_delete.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_ssh_key_list', 'cloudways_ssh_key_delete' ),
+				'notes'           => __( 'Send only the public key; private key material must never be submitted.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

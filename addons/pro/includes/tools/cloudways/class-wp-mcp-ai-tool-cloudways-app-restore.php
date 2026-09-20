@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Restore' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_App_Restore extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_App_Restore extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Restore' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Restore an application to a previous backup version.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Rolling an application back to its most recent backup after a bad deploy or data loss.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Undoing a restore that just ran; use cloudways_app_restore_rollback to reverse the last restore.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_app_restore_rollback', 'cloudways_create_app_backup', 'cloudways_get_operation_status' ),
+				'notes'           => __( 'Restoring overwrites current app data; ensure a fresh backup exists with cloudways_create_app_backup.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

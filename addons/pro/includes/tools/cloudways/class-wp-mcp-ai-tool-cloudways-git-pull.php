@@ -22,7 +22,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Git_Pull' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Git_Pull extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Git_Pull extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -39,6 +39,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Git_Pull' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Pull the latest commits from the linked Git branch and deploy them onto an application.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Deploying the newest commits of the already linked Git branch onto an app.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'First-time setup or switching to a different branch; use cloudways_git_clone instead.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_git_clone', 'cloudways_git_history_get', 'cloudways_git_branches_get' ),
+				'notes'           => __( 'Verify the result with cloudways_git_history_get once the deploy finishes.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

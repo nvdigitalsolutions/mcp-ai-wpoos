@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Git_Clone' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Git_Clone extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Git_Clone extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Git_Clone' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Clone a Git repository into an application\'s web root and deploy.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Performing the initial deploy of a chosen branch into an app\'s web root.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Deploying newer commits of an already linked repository; use cloudways_git_pull instead.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_git_pull', 'cloudways_git_branches_get', 'cloudways_git_key_get', 'cloudways_git_history_get' ),
+				'notes'           => __( 'Replaces the app web root with the cloned branch; take a backup with cloudways_create_app_backup first.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

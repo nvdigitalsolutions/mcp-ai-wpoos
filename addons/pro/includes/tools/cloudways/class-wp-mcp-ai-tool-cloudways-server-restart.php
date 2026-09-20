@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Restart' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Server_Restart extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Server_Restart extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Restart' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Restart a Cloudways server to apply configuration changes.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Rebooting a server to apply configuration changes or recover from an unresponsive state.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Restarting a single service; use cloudways_restart_service for a narrower impact.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_restart_service', 'cloudways_service_status', 'cloudways_server_stop', 'cloudways_server_start' ),
+				'notes'           => __( 'All apps on the server experience downtime until the reboot completes.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

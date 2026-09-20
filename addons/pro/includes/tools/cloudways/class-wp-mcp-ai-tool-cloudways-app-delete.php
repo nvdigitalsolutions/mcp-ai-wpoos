@@ -22,7 +22,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Delete' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_App_Delete extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_App_Delete extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -39,6 +39,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Delete' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Permanently delete an application and its data. THIS ACTION IS IRREVERSIBLE.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Permanently removing an application after the user has explicitly confirmed deletion.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Temporary changes or stoppages; verify the target with cloudways_get_app first.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_get_app', 'cloudways_create_app_backup', 'cloudways_list_apps' ),
+				'notes'           => __( 'Requires confirm=true. Deletion is irreversible and removes all app data; take a backup first.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Copilot_Insights_List' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Copilot_Insights_List extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Copilot_Insights_List extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Copilot_Insights_List' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Retrieve AI-driven insights, alerts, and recommendations for your infrastructure.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Getting Cloudways Copilot alerts and recommendations for the account or a specific app.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Raw metrics or vulnerability data; use cloudways_app_monitor_summary or cloudways_app_vulnerabilities_list.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_app_monitor_summary', 'cloudways_app_vulnerabilities_list', 'cloudways_server_monitor_summary' ),
+				'notes'           => __( 'server_id and app_id are optional; omit them to scan the whole account.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

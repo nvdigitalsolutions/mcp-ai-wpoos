@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Git_Branches_Get' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Git_Branches_Get extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Git_Branches_Get extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Git_Branches_Get' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Refresh and return the list of branches available in the linked Git repository.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Listing the branches available in the linked repository before choosing one to deploy.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Deploying code or reviewing past deployments; use cloudways_git_clone, cloudways_git_pull, or cloudways_git_history_get.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_git_clone', 'cloudways_git_pull', 'cloudways_git_history_get' ),
+				'notes'           => __( 'Requires server_id and app_id; refreshes the branch list from the remote repository.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

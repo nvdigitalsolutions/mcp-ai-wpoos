@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Credentials' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_App_Credentials extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_App_Credentials extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Credentials' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Get SSH/SFTP credentials for an application.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Fetching the SSH or SFTP host, username, and port for a known application.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Listing SSH keys on a server; use cloudways_ssh_key_list for key management context.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_get_app', 'cloudways_ssh_key_list', 'cloudways_list_apps' ),
+				'notes'           => __( 'Returns host, username, and port only; key material stays managed by the Cloudways platform.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

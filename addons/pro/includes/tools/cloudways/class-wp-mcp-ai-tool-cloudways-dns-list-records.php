@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_DNS_List_Records' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_DNS_List_Records extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_DNS_List_Records extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_DNS_List_Records' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'List DNS records for a domain.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Listing DNS records for one domain to review values or find a record ID.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Discovering which domains exist; use cloudways_dns_list_domains first.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_dns_list_domains', 'cloudways_dns_add_record', 'cloudways_dns_delete_record' ),
+			);
 		}
 
 		/** {@inheritdoc} */

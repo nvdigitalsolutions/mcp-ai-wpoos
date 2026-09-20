@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_CNAME_Update' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_App_CNAME_Update extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_App_CNAME_Update extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_CNAME_Update' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( "Update an application's primary domain (CNAME).", 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Changing an application primary domain or CNAME after the new DNS is ready.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Creating or removing DNS records; use cloudways_dns_add_record or cloudways_dns_delete_record.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_get_app', 'cloudways_dns_add_record', 'cloudways_list_apps' ),
+				'notes'           => __( 'Requires server_id and app_id; updating the CNAME before DNS resolves can take the app offline.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

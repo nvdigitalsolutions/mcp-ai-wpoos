@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Scale_Volume' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Server_Scale_Volume extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Server_Scale_Volume extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Scale_Volume' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Change the data volume size on a server (Amazon and GCE only).', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Growing the data volume on an Amazon or GCE server when it runs out of disk space.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'CPU/RAM changes or other clouds; use cloudways_server_scale, and note DigitalOcean, Vultr, and Linode are unsupported.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_server_scale', 'cloudways_server_monitor_summary', 'cloudways_get_server' ),
+				'notes'           => __( 'Amazon and GCE only; increasing the volume size cannot be reversed and may change billing.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */
