@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.ph
 /**
  * Rotate and flip images.
  */
-class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	public function get_description() {
 		return __( 'Rotate an image by degrees or flip it horizontally/vertically.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to rotate an image by degrees or flip it horizontally or vertically without resizing.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Use resize_image for dimension changes or image_format_batch_converter for bulk format conversion.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'resize_image', 'vectorize_image', 'image_format_batch_converter' ),
+			'notes'           => __( 'Common angles are 90, 180, and 270 degrees. Large images may briefly affect performance.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

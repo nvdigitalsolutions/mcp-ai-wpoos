@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.ph
 /**
  * Convert images between different formats (PNG, JPEG, WebP, GIF).
  */
-class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	public function get_description() {
 		return __( 'Convert an image to a different format (PNG, JPEG, WebP, GIF) with optional quality control.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Changing an existing image to another format such as WebP, PNG, JPEG, GIF, or SVG with quality control.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Resizing or cropping; use resize_image or crop_image for geometry changes.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'resize_image', 'crop_image', 'graphic_editor_plus' ),
+			'notes'           => __( 'Quality only affects JPEG and WebP output; the SVG target requires the SVG vectorizer.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

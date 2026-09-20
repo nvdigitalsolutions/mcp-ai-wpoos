@@ -25,7 +25,7 @@ require_once __DIR__ . '/../traits/trait-wp-mcp-ai-tool-wordpress-native.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Suggest_Internal_Links implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Suggest_Internal_Links implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_WordPress_Native;
 
 	/**
@@ -47,6 +47,18 @@ class WP_MCP_AI_Tool_Suggest_Internal_Links implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Analyzes post content and suggests relevant internal links to improve SEO and user navigation. Uses AI to find contextually relevant connections between posts.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to find contextually relevant internal link targets and anchor text for a post.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Use seo_meta_optimizer for titles and descriptions; use get_post to fetch a link target.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'seo_meta_optimizer', 'get_post', 'save_post_validated' ),
+			'notes'           => __( 'max_suggestions is capped at 20. min_relevance defaults to 0.5.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

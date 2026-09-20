@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Invoke JetEngine REST routes using authenticated MCP context.
  */
-class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -49,6 +49,16 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface,
 	/** {@inheritdoc} */
 	public function get_description() {
 		return __( 'Executes JetEngine REST API routes using the authenticated WordPress user context.', 'mcp-ai-wpoos' );
+	}
+
+	/** {@inheritdoc} */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to execute a JetEngine REST operation such as get_items or add_item with the authenticated user context.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Use list_jetengine_rest_routes to discover available routes before invoking them.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'list_jetengine_rest_routes', 'jetengine_mcp' ),
+			'notes'           => __( 'Requires JetEngine to be active. transport=rest forces internal dispatch for speed; prefer_mcp uses the 3.8+ MCP server.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/** {@inheritdoc} */
@@ -263,7 +273,7 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface,
 			return $errors;
 		}
 
-		// JetEngine v2 endpoints: { success: false, message: "...", notices: [...] }
+		// JetEngine v2 endpoints return success flags, messages, and notices.
 		if ( isset( $data['success'] ) && false === $data['success'] ) {
 			$errors['jetengine_success'] = false;
 

@@ -25,7 +25,7 @@ require_once plugin_dir_path( __FILE__ ) . 'class-wp-mcp-ai-tool-get-user-info.p
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Get_User_Info_Validated extends WP_MCP_AI_Validated_Tool {
+class WP_MCP_AI_Tool_Get_User_Info_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Original tool instance.
@@ -88,6 +88,18 @@ class WP_MCP_AI_Tool_Get_User_Info_Validated extends WP_MCP_AI_Validated_Tool {
 	 */
 	public function get_description() {
 		return $this->original_tool->get_description();
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading a user profile through the Symfony Validator layer for strict user_id validation.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'When the validator is unavailable or PHP is below 8.0; use the non-validated get_user_info twin instead.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_user_info', 'user_activity_auditor' ),
+			'notes'           => __( 'Requires PHP 8.0+; delegates the read to the original get_user_info tool.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

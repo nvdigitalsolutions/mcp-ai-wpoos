@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * discover the site's existing taxonomy structure before mapping new content
  * against it.
  */
-class WP_MCP_AI_Tool_List_Terms implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Terms implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -41,6 +41,18 @@ class WP_MCP_AI_Tool_List_Terms implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	public function get_description() {
 		return __( 'Lists terms in a taxonomy (categories, tags, or custom taxonomies) with IDs, names, parents, and post counts. Use this to discover the site\'s existing category/tag structure before creating or assigning terms.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to list terms in a taxonomy with IDs, parents, and counts before creating or assigning terms.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Use list_taxonomies to discover taxonomy names; use get_post for a single known post.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'list_taxonomies', 'create_term', 'update_term' ),
+			'notes'           => __( 'Set include_counts=false and a small limit to keep large taxonomies from flooding the context.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

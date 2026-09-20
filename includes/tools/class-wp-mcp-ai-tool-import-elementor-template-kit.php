@@ -16,7 +16,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-r
 /**
  * Imports Elementor template kits from ZIP files in the Media Library.
  */
-class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Attachment_File_Resolver;
 
@@ -59,6 +59,18 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Imports an Elementor template kit ZIP file from the Media Library and creates pages. Requires Elementor to be active.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to import an Elementor template kit ZIP from the Media Library and create pages from its templates.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Use save_post_validated to create or edit individual pages when no template kit ZIP is involved.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'save_post_validated', 'search_attachments', 'get_post' ),
+			'notes'           => __( 'Requires Elementor to be active. Set dry_run=true to preview the import before creating pages.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

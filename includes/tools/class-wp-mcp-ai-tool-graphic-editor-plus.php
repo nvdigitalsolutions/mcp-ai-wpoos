@@ -36,7 +36,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
  * - ai_background: Remove or change background
  * - ai_retouch: General AI-powered retouching and edits
  */
-class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -57,6 +57,18 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	public function get_description() {
 		return __( 'Comprehensive graphic editing tool with both local operations (logo overlay, smart resize, canvas expansion) and AI-powered features (style transfer, background removal, intelligent enhancement). Use local operations for speed and AI operations for intelligent transformations.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Combined local and Gemini-powered edits: logo overlay, smart resize, canvas expansion, style transfer, and background removal.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Simple single-operation edits; use resize_image, crop_image, or convert_image_format for predictable local-only results.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'resize_image', 'crop_image', 'convert_image_format', 'remove_image_background' ),
+			'notes'           => __( 'Local operations run without API cost; AI operations require a Gemini model and may incur provider calls.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
@@ -436,8 +448,8 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			return new WP_Error( 'wp_mcp_ai_read_failed', __( 'Failed to read image data.', 'mcp-ai-wpoos' ) );
 		}
 
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- base64_encode used to encode binary image data for API transmission, not for obfuscation.
 		return array(
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- base64_encode used to encode binary image data for API transmission, not for obfuscation.
 			'data'      => base64_encode( $image_data ),
 			// WP_Image_Editor::get_mime_type() is protected; use the MIME type returned
 			// by save(), which provides the same value via the public 'mime-type' key.

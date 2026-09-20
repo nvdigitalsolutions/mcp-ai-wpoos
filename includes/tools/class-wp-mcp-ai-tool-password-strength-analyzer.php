@@ -33,7 +33,7 @@ require_once __DIR__ . '/../traits/trait-wp-mcp-ai-tool-wordpress-native.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_WordPress_Native;
 
 	/**
@@ -55,6 +55,18 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Analyzes password strength using AI and 2026 security standards. Checks length, complexity, common patterns, and breach databases. Provides recommendations for improvement.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to score a password or bulk-audit user password policies against 2026 security standards.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Use login_security_monitor for login attempts and threats; use user_activity_auditor for activity logs.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'login_security_monitor', 'user_activity_auditor', 'check_site_security' ),
+			'notes'           => __( 'bulk_audit checks strength patterns only and never stores passwords. check_breaches queries Have I Been Pwned.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
