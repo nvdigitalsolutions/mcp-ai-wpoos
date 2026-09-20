@@ -22,7 +22,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CMBS_Special_Servicing_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CMBS_Special_Servicing_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Option key for storing special servicing records.
@@ -94,6 +94,20 @@ class WP_MCP_AI_Tool_CMBS_Special_Servicing_Tracker implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description(): string {
 		return __( 'Track loans transferred to special servicing. Add, update, list, and retrieve specially serviced loan records including transfer reasons, workout strategies, and resolution outcomes.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording specially serviced loans: add, update, or list transfers with reasons, workout strategies, modification terms, and resolutions.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Modeling workout strategies; use cre_workout_scenario_modeler. Quantifying modification terms; use cre_loan_modification_calculator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_workout_scenario_modeler', 'cre_loan_modification_calculator', 'cmbs_surveillance_monitor' ),
+			'notes'           => __( 'transfer_reason accepts payment_default, maturity_default, imminent_default, or borrower_request; records persist in wp_options.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

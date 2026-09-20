@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Loan_Sizer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Loan_Sizer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_Loan_Sizer implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description(): string {
 		return __( 'Size a commercial real estate loan against LTV, DSCR, and debt-yield constraints. Returns maximum loan amount, binding constraint, key metrics, and full amortization schedule with IO and P&I periods.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding the maximum loan amount under LTV, DSCR, and debt yield constraints and the binding constraint.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Scheduling payments for an already-sized loan; use cre_amortization_scheduler.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_amortization_scheduler', 'cre_debt_yield_analyzer', 'cre_stress_test_modeler' ),
+			'notes'           => __( 'Defaults: 75% max LTV, 1.25 min DSCR, 10% min debt yield; returns the constraint that binds.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

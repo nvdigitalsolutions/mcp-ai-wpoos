@@ -22,7 +22,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CMBS_Maturity_Risk_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CMBS_Maturity_Risk_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Assumed market rates for refinancing by property type.
@@ -91,6 +91,20 @@ class WP_MCP_AI_Tool_CMBS_Maturity_Risk_Analyzer implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description(): string {
 		return __( 'Analyze maturity risk for CMBS loans. For each maturing loan, estimates refinancing feasibility at current market rates, calculates new DSCR, required equity infusion, payoff probability score, and extension likelihood.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Assessing refinancing feasibility for maturing CMBS loans: new DSCR, required equity, payoff probability, and extension likelihood.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Defeasance or yield maintenance costs; use cmbs_defeasance_calculator. New refi loan quotes; use cre_loan_quote_generator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cmbs_surveillance_monitor', 'cmbs_defeasance_calculator', 'cre_loan_quote_generator' ),
+			'notes'           => __( 'Market rates and minimum DSCR are assumed per property_type (e.g. office 7.0% rate, 1.30 DSCR); results are estimates.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

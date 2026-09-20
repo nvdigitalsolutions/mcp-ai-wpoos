@@ -22,7 +22,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CMBS_Deal_Structurer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CMBS_Deal_Structurer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default subordination levels by rating (percentage of pool that sits below).
@@ -75,6 +75,20 @@ class WP_MCP_AI_Tool_CMBS_Deal_Structurer implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description(): string {
 		return __( 'Structure a CMBS securitization by sizing tranches from AAA to equity. Calculates credit enhancement per tranche, weighted average spread, excess spread, and deal economics.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Structuring a CMBS capital stack by sizing rated tranches, computing credit enhancement, weighted average spread, and excess spread.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Rating-based subordination estimates; use cmbs_rating_agency_analyzer. Tranche cash flow projections; use cmbs_bond_cash_flow_modeler.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cmbs_rating_agency_analyzer', 'cmbs_bond_cash_flow_modeler', 'cmbs_pool_analyzer' ),
+			'notes'           => __( 'num_tranches accepts 2 to 8 rated tranches; the equity tranche is always appended below the rated stack.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

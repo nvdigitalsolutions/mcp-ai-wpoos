@@ -22,7 +22,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Execution_Strategy_Advisor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Execution_Strategy_Advisor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_CRE_Execution_Strategy_Advisor implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description(): string {
 		return __( 'Score and rank CRE loan execution paths (balance sheet, agency, CMBS, debt fund, CRE CLO, life company, bank) based on deal characteristics, property type, and borrower profile. Returns suitability scores with pros and cons.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Ranking execution paths such as balance sheet, agency, CMBS, debt fund, CRE CLO, life company, and bank for a deal.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Pricing one loan quote; use cre_loan_quote_generator. Comparing actual term sheets; use cre_term_sheet_comparator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_loan_quote_generator', 'cre_term_sheet_comparator', 'cre_deal_screening_calculator' ),
+			'notes'           => __( 'Requires loan_amount, property_type, property_value, noi, and loan_purpose. Returns per-path suitability scores with pros and cons.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

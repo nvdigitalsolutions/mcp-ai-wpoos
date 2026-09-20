@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Credit_Risk_Scorer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Credit_Risk_Scorer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_Credit_Risk_Scorer implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description(): string {
 		return __( 'Score loan-level credit risk with probability of default (PD) by LTV bucket, DSCR adjustment, property-type LGD, expected loss, and risk-weighted assets for a CRE debt portfolio.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scoring loan-level credit risk: probability of default, loss given default, expected loss, and risk-weighted assets per loan.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Concentration limit checks; use cre_concentration_limit_monitor. Portfolio stress scenarios; use cre_fund_scenario_modeler.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_concentration_limit_monitor', 'cre_fund_scenario_modeler', 'cre_deal_screening_calculator' ),
+			'notes'           => __( 'Loans need name, balance, ltv, dscr, and property_type. Returns per-loan risk ratings. Analysis only, not investment advice.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Rate_Lock_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Rate_Lock_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_Rate_Lock_Manager implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description(): string {
 		return __( 'Analyze rate lock economics including lock value, break-even rate movement, extension costs, hedge economics, and mark-to-market impact for CRE loan originations.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Analyzing rate lock economics: lock value, break-even movement, extension costs, hedge position, and mark-to-market impact.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Deal lifecycle tracking; use cre_deal_pipeline_manager. Closing item tracking; use cre_closing_checklist_manager.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_closing_checklist_manager', 'cre_deal_pipeline_manager', 'cre_loan_quote_generator' ),
+			'notes'           => __( 'Requires loan_amount, locked_rate, and current_market_rate. Lock terms and hedge inputs are optional.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

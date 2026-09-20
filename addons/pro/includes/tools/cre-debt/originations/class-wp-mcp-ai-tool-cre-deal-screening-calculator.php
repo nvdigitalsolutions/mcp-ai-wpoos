@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Deal_Screening_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Deal_Screening_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_Deal_Screening_Calculator implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description(): string {
 		return __( 'Score a CRE deal on a 100-point scale across LTV (25pts), DSCR (25pts), Debt Yield (20pts), Sponsor (15pts), and Market (15pts). Returns a go/no-go recommendation with detailed scoring breakdown.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scoring a prospective deal on LTV, DSCR, debt yield, sponsor, and market for a go/no-go recommendation.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Term sheet pricing; use cre_loan_quote_generator. Execution path ranking; use cre_execution_strategy_advisor.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_loan_quote_generator', 'cre_execution_strategy_advisor', 'cre_term_sheet_comparator' ),
+			'notes'           => __( 'Requires property_value, noi, requested_loan_amount, property_type, market_tier, sponsor_experience_years, and interest_rate.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_CRE_Debt_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_CRE_Debt_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR = WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/examples';
@@ -63,6 +63,20 @@ class WP_MCP_AI_Tool_Import_CRE_Debt_Blueprint implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Install a curated CRE debt assistant blueprint for loan origination, CMBS structuring, or fund management workflows.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing a curated CRE debt assistant blueprint for loan origination, CMBS structuring, or fund management.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Running CRE calculations directly; use cre_loan_sizer, cre_dcf_modeler, or the other cre_* tools instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_loan_sizer', 'cmbs_deal_structurer', 'cre_fund_return_calculator' ),
+			'notes'           => __( 'Blueprint enum: loan-originator, cmbs-analyst, fund-manager; set overwrite to replace an existing assistant.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * {@inheritdoc}

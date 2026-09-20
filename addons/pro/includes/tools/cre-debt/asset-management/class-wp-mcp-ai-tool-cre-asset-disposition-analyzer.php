@@ -22,7 +22,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Asset_Disposition_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Asset_Disposition_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Performs the operation.
@@ -65,6 +65,20 @@ class WP_MCP_AI_Tool_CRE_Asset_Disposition_Analyzer implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description(): string {
 		return __( 'Analyze REO and note sale disposition strategies with carrying cost projections, net proceeds calculations, recovery rate analysis, and NPV comparison at a 10% discount rate.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Evaluating REO or note sale disposition strategies with carrying costs, net proceeds, recovery rates, NPV, and breakeven price.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Hold vs. sell on a performing asset; use cre_hold_sell_analyzer. Multi-strategy workouts; use cre_workout_scenario_modeler.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_hold_sell_analyzer', 'cre_workout_scenario_modeler', 'cre_servicing_fee_calculator' ),
+			'notes'           => __( 'asset_type accepts reo or note_sale; NPV uses a 10% discount rate; legal costs default to 25000.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
