@@ -19,7 +19,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-pro-google-drive-client.php';
 /**
  * Provides an assistant tool for searching Google Drive files via the Drive REST API.
  */
-class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 	const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
 
@@ -42,6 +42,20 @@ class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Searches Google Drive and returns matching files and folders with names, types, sizes, and metadata. Supports simple text queries (e.g., "report") or advanced Drive query syntax (e.g., "name contains \'invoice\'" or "mimeType = \'application/pdf\'"). Automatically excludes trashed items. Can include shared files and folders, sort by creation or modification time, and return bare IDs (ids_only). Use get_drive_file to read a file\'s contents or list a folder.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding Drive files and folders by name, MIME type, or advanced query syntax across owned items.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading file contents or listing a folder; use get_drive_file with the returned file or folder ID.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_drive_file', 'list_drive_connections' ),
+			'notes'           => __( 'Excludes trashed items by default; set include_shared true to search files shared with the account.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

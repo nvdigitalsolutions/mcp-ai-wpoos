@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-c
  * `array( 'already_deleted' => true )`. That is reported as success, because the
  * caller's intent — "this event should not exist" — has been satisfied.
  */
-class WP_MCP_AI_Pro_Tool_Delete_Google_Calendar_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Delete_Google_Calendar_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Capability required before the tool talks to the Calendar API.
@@ -66,6 +66,20 @@ class WP_MCP_AI_Pro_Tool_Delete_Google_Calendar_Event implements WP_MCP_AI_Tool_
 	 */
 	public function get_description() {
 		return __( 'Permanently deletes an event from a Google Calendar. This cannot be undone. Deleting an event that is already gone is reported as success with already_deleted set to true. To hide an event without destroying it, use update_google_calendar_event with status "cancelled" instead.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently removing a Google Calendar event by event_id once the user confirms the event must be destroyed.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Hiding or rescheduling an event instead of destroying it; use update_google_calendar_event with status cancelled.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_google_calendar_events', 'update_google_calendar_event' ),
+			'notes'           => __( 'Idempotent: deleting an already-gone event succeeds with already_deleted set to true. send_updates accepts all, externalOnly, or none.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

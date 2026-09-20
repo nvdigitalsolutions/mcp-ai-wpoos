@@ -17,7 +17,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Provides an assistant tool that creates events in Google Calendar.
  */
-class WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	const DEFAULT_REQUIRED_CAPABILITY = 'manage_options';
 	const TOKEN_GRANT_TYPE            = 'urn:ietf:params:oauth:grant-type:jwt-bearer';
 	const DEFAULT_SCOPE               = 'https://www.googleapis.com/auth/calendar.events';
@@ -42,6 +42,20 @@ class WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_
 	 */
 	public function get_description() {
 		return __( 'Creates an event in a connected Google Calendar using either a provided access token or a service account.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new Google Calendar event with exact start and end times, attendees, reminders, or a Google Meet link.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating events from plain language; use quick_add_google_calendar_event. Changing existing events; use update_google_calendar_event.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'check_google_calendar_availability', 'quick_add_google_calendar_event', 'update_google_calendar_event' ),
+			'notes'           => __( 'Pass duration_minutes when end_time is omitted. create_meet_link is generated asynchronously and may be missing from the immediate response.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-pro-gmail-client.php';
 /**
  * Provides an assistant tool for reading a single Gmail message.
  */
-class WP_MCP_AI_Pro_Tool_Get_Gmail_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Gmail_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -47,6 +47,20 @@ class WP_MCP_AI_Pro_Tool_Get_Gmail_Message implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Reads a single Gmail message by ID and returns its full body as plain text (default) or sanitised HTML, with sender, subject, labels, timestamp, and attachment names. Use message IDs from search_gmail results. Bodies longer than max_chars are truncated at a word boundary with the truncated flag set.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading the full body of one known Gmail message by ID, including sender, subject, labels, timestamp, and attachment names.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Finding messages; use search_gmail. Reading whole conversations; use get_gmail_thread. Label or read-state changes; use modify_gmail_message.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'search_gmail', 'get_gmail_thread', 'modify_gmail_message' ),
+			'notes'           => __( 'Bodies truncate at max_chars (100-50000, default 4000) with a truncated flag. format plain is default; html is sanitised.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

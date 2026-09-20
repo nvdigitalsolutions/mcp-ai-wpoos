@@ -28,7 +28,7 @@ require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-c
  *    offset. A bare `2026-06-01T09:00:00` is rejected by the API, so incoming
  *    values are re-formatted with an explicit offset.
  */
-class WP_MCP_AI_Pro_Tool_List_Google_Calendar_Events implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_List_Google_Calendar_Events implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Capability required before the tool talks to the Calendar API.
@@ -77,6 +77,20 @@ class WP_MCP_AI_Pro_Tool_List_Google_Calendar_Events implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Lists events from a Google Calendar within an optional time window, with free-text search, pagination, and recurring-event expansion. Returns each event\'s ID, title, start/end, all-day flag, organiser, attendee count, and Google Meet link. Use list_google_calendars first to discover calendar IDs.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading events in a date range or matching a search term, including expanded recurring instances and Meet links.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Writing events or checking free/busy; use create_google_calendar_event, update_google_calendar_event, or check_google_calendar_availability.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_google_calendars', 'check_google_calendar_availability', 'create_google_calendar_event' ),
+			'notes'           => __( 'time_min/time_max must be RFC3339 with a timezone offset; order_by startTime forces single_events true.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
