@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Returns basic information about a WordPress user.
  */
-class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Returns profile details for the specified WordPress user.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching profile details for a known user ID, defaulting to the current user.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Auditing a user activity trail; use user_activity_auditor for login and role-change history.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'user_activity_auditor', 'get_recent_posts' ),
+			'notes'           => __( 'Viewing another profile requires list_users or manage_options capability.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

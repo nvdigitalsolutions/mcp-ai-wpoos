@@ -25,7 +25,7 @@ require_once __DIR__ . '/../traits/trait-wp-mcp-ai-tool-wordpress-native.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Generate_Post_Excerpt implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Post_Excerpt implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_WordPress_Native;
 
 	/**
@@ -47,6 +47,18 @@ class WP_MCP_AI_Tool_Generate_Post_Excerpt implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Generates compelling post excerpts using AI. Creates SEO-optimized summaries that capture the essence of content and encourage engagement.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Drafting an SEO-friendly excerpt for a post, optionally saved directly to the post with auto_save.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Rewriting full post content; use save_post for body edits instead.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_post', 'save_post', 'create_post' ),
+			'notes'           => __( 'Length is bounded to 10-100 words; tone accepts professional, casual, engaging, informative, or compelling.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * `update_term` so agents can discover which taxonomies exist and their
  * properties before working with terms.
  */
-class WP_MCP_AI_Tool_List_Taxonomies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Taxonomies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -41,6 +41,18 @@ class WP_MCP_AI_Tool_List_Taxonomies implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Lists registered taxonomies (e.g., category, post_tag, product_cat) with their labels, hierarchy, and object types. Use this to discover which taxonomies exist on the site before listing or creating terms.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to discover which taxonomies exist, their hierarchy, and object types before working with terms.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Use list_terms to fetch terms inside a known taxonomy; use get_post for a single known post.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'list_terms', 'create_term', 'update_term' ),
+			'notes'           => __( 'Filter by public=true or object_type to keep the response small on large sites.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

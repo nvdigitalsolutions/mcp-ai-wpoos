@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provide a condensed view of JetFormBuilder form submissions.
  */
-class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -49,6 +49,16 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 	/** {@inheritdoc} */
 	public function get_description() {
 		return __( 'Retrieves recent JetFormBuilder submissions for a given form, including key field snapshots.', 'mcp-ai-wpoos' );
+	}
+
+	/** {@inheritdoc} */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing recent submissions for one known JetFormBuilder form, optionally filtered by status.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Elementor submissions; use get_elementor_form_submissions. Unknown form IDs belong to get_jetformbuilder_forms first.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_jetformbuilder_forms', 'get_all_form_submissions', 'get_elementor_form_submissions' ),
+			'notes'           => __( 'Status accepts values such as success or failed; local reads use direct DB access by default.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/** {@inheritdoc} */

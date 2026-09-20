@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-get-recent-posts.php';
  * This class extends the original get_recent_posts tool to use
  * Symfony Validator for argument validation.
  */
-class WP_MCP_AI_Tool_Get_Recent_Posts_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Recent_Posts_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * The original get_recent_posts tool instance for delegation.
@@ -60,6 +60,18 @@ class WP_MCP_AI_Tool_Get_Recent_Posts_Validated extends WP_MCP_AI_Validated_Tool
 	 */
 	public function get_description() {
 		return __( 'Retrieves a list of recent posts using Symfony Validator for argument validation. Allows filtering by post type and limiting the number of results.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing recent posts with Symfony Validator-enforced limit and post_type arguments.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Keyword search or TF-IDF relevance ranking; use get_recent_posts, which this validated twin does not pass search through.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_recent_posts', 'get_post', 'search_content' ),
+			'notes'           => __( 'Requires PHP 8.0+; only limit and post_type are validated and forwarded.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

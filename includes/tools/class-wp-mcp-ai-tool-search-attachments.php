@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Searches for accessible attachments and returns metadata plus download links.
  */
-class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -42,6 +42,18 @@ class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Searches Media Library files that the current request is allowed to access and returns download URLs with metadata.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to find Media Library attachments by title or MIME type and get accessible download URLs.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Use get_post to fetch a known post by ID; this tool only searches attachments.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_post', 'image_alt_text_optimizer', 'resize_image' ),
+			'notes'           => __( 'Results are capped at 50 per call; paginate with offset and limit.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

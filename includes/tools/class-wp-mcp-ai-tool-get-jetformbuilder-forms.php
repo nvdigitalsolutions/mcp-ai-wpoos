@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provide a concise view of JetFormBuilder forms for the assistant.
  */
-class WP_MCP_AI_Tool_Get_JetFormBuilder_Forms implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_JetFormBuilder_Forms implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -49,6 +49,16 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Forms implements WP_MCP_AI_Tool_Interfac
 	/** {@inheritdoc} */
 	public function get_description() {
 		return __( 'Lists all JetFormBuilder forms with their IDs, names, and statuses. Use this BEFORE querying form submissions to discover which forms exist in the system. Each returned form has an id field that can be passed as form_id to get_jetformbuilder_submissions or get_all_form_submissions.', 'mcp-ai-wpoos' );
+	}
+
+	/** {@inheritdoc} */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering available JetFormBuilder forms and their IDs before querying submissions.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Reading submission data; use get_jetformbuilder_submissions once you have a form ID.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_jetformbuilder_submissions', 'get_all_form_submissions', 'get_elementor_templates' ),
+			'notes'           => __( 'Pass each returned form id to get_jetformbuilder_submissions as form_id.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/** {@inheritdoc} */

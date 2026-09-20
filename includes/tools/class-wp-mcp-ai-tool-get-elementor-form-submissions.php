@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * in Elementor Pro 3.2+ when "Collect Submissions" is enabled on a
  * Form widget.
  */
-class WP_MCP_AI_Tool_Get_Elementor_Form_Submissions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Elementor_Form_Submissions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -70,6 +70,16 @@ class WP_MCP_AI_Tool_Get_Elementor_Form_Submissions implements WP_MCP_AI_Tool_In
 	/** {@inheritdoc} */
 	public function get_description() {
 		return __( 'Retrieves Elementor Pro form submissions for a given page (post_id). Only works with Elementor Pro 3.2+ forms where "Collect Submissions" is enabled. The form_post_id parameter is the WordPress post ID of the page containing the Elementor Form widget. Use get_elementor_templates first to discover available Elementor pages. Returns a form_found flag indicating whether the given post_id actually had any form submissions — false means the form may not exist at that location.', 'mcp-ai-wpoos' );
+	}
+
+	/** {@inheritdoc} */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing submissions collected by an Elementor Pro form on a known page, optionally filtered by widget and status.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'JetFormBuilder submissions; use get_jetformbuilder_submissions. Cross-plugin queries belong to get_all_form_submissions.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_elementor_templates', 'get_all_form_submissions', 'get_jetformbuilder_submissions' ),
+			'notes'           => __( 'Requires Elementor Pro 3.2+ with Collect Submissions enabled; a form_found=false flag means no form at that post ID.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/** {@inheritdoc} */
