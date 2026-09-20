@@ -19,7 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for managing Mailjet contact lists.
  */
-class WP_MCP_AI_Pro_Tool_Manage_Mailjet_Contacts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Manage_Mailjet_Contacts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	const API_BASE = 'https://api.mailjet.com/v3/REST';
 
 	/**
@@ -41,6 +41,20 @@ class WP_MCP_AI_Pro_Tool_Manage_Mailjet_Contacts implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Manages contacts and contact lists in Mailjet (add, remove, list contacts).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adding, removing, or listing Mailjet contacts and contact lists by email address.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Brevo contact work; use manage_brevo_contacts. Sending email belongs to send_mailjet_email.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_brevo_contacts', 'send_mailjet_email', 'get_mailjet_statistics' ),
+			'notes'           => __( 'remove_contact resolves the contact by email before deletion; is_excluded adds contacts to the exclusion list.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -19,7 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for triggering Mailjet email deliveries.
  */
-class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	const API_ENDPOINT = 'https://api.mailjet.com/v3.1/send';
 
 	/**
@@ -41,6 +41,20 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Sends an email using the configured Mailjet credentials.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending transactional email through the configured Mailjet account with CC, BCC, reply-to, and an optional custom ID.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Brevo or Mailgun delivery; use send_brevo_email or send_mailgun_email. Contact work belongs to manage_mailjet_contacts.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_brevo_email', 'send_mailgun_email', 'manage_mailjet_contacts' ),
+			'notes'           => __( 'Send status is reported per message in the Messages array; custom_id is truncated to 255 characters.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

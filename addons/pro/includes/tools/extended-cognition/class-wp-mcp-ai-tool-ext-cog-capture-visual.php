@@ -26,7 +26,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-ext-cog-sensor-access.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Ext_Cog_Capture_Visual implements WP_MCP_AI_Ext_Cog_Tool_Interface {
+class WP_MCP_AI_Tool_Ext_Cog_Capture_Visual implements WP_MCP_AI_Ext_Cog_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Ext_Cog_Sensor_Access;
 
@@ -55,6 +55,20 @@ class WP_MCP_AI_Tool_Ext_Cog_Capture_Visual implements WP_MCP_AI_Ext_Cog_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Capture a still frame from the user\'s camera for AI vision analysis.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Capturing a single camera frame to see what is in front of the user\'s device.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Screen content; use ext_cog_capture_screen. Structured detection; use ext_cog_detect_objects or ext_cog_recognize_products.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'ext_cog_capture_screen', 'ext_cog_detect_objects', 'ext_cog_recognize_products' ),
+			'notes'           => __( 'Returns a base64 JPEG; set store=true to save the frame as a media attachment.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

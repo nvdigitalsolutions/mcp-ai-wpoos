@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.1.0
  */
-class WP_MCP_AI_Pro_Tool_JetEngine_Create_Post_Type implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_JetEngine_Create_Post_Type implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -75,6 +75,20 @@ class WP_MCP_AI_Pro_Tool_JetEngine_Create_Post_Type implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Create a new JetEngine custom post type via the MCP Server. Provide a slug, singular label, and plural label. Optionally specify additional settings like public visibility, has_archive, menu_icon, and supports array.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Registering a new JetEngine custom post type with slug, labels, and supports via the MCP server.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Taxonomies or meta fields; use jetengine_create_taxonomy or jetengine_create_meta_field. CCT records; use jetengine.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'jetengine_create_taxonomy', 'jetengine_create_meta_field', 'jetengine_mcp' ),
+			'notes'           => __( 'Requires manage_options; the slug must be 20 characters or fewer and not already exist.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
