@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Build_Navigation_Menu implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Build_Navigation_Menu implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -54,6 +54,18 @@ class WP_MCP_AI_Tool_Build_Navigation_Menu implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Creates smart navigation menus with dropdown support, mobile responsiveness, and accessibility. Generates menu structure and styling.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating a navigation menu structure with items, dropdown style, and sticky behavior for a new site.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Registering a real WordPress menu on the live site; use site_creator with a menus plan. Building page content; use create_homepage_layout.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_footer_widget', 'create_homepage_layout', 'site_creator' ),
+			'notes'           => __( 'Returns menu structure data; it does not register the WordPress menu.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

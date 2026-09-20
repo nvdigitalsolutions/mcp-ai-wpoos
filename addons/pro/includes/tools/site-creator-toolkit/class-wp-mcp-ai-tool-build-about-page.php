@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Build_About_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Build_About_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -62,6 +62,18 @@ class WP_MCP_AI_Tool_Build_About_Page implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Creates comprehensive about pages with company story, mission/vision/values, team profiles, timeline, and culture sections. Builds trust and connection with visitors through authentic storytelling.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating an about page draft with story, mission, values, team, and timeline sections.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Publishing a real WordPress page; use create_post or site_creator. Other page types; use create_homepage_layout or generate_landing_page.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_homepage_layout', 'build_testimonial_section', 'build_contact_section' ),
+			'notes'           => __( 'Returns generated page data and HTML; it does not create the WordPress page.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

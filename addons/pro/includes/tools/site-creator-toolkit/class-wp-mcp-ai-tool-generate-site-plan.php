@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Generate_Site_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Site_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -63,6 +63,18 @@ class WP_MCP_AI_Tool_Generate_Site_Plan implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Creates comprehensive site development plans based on business requirements, target audience, and industry best practices. Generates structured blueprints including site structure, content strategy, design system, features, and implementation roadmap.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing a planning-only site blueprint with structure, content strategy, design system, features, and implementation roadmap.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'To create pages or themes use generate_landing_page, create_homepage_layout, or scaffold_theme_structure; this tool writes nothing.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'research_site_best_practices', 'analyze_competitor_sites', 'scaffold_theme_structure' ),
+			'notes'           => __( 'Optionally consumes best_practices and competitor_analysis output from research_site_best_practices and analyze_competitor_sites.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

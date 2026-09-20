@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Integrate_With_Architect implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Integrate_With_Architect implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -54,6 +54,18 @@ class WP_MCP_AI_Tool_Integrate_With_Architect implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Integrates Site Creator Toolkit with Architect Agent for automated development workflows, code generation, and self-editing capabilities.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Preparing a generate, modify, optimize, or test workflow brief for the Architect Agent against a theme, plugin, or component.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For planning or page generation use generate_site_plan or the layout tools; this tool only prepares the brief.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'automate_development_workflow', 'scaffold_theme_structure', 'generate_site_plan' ),
+			'notes'           => __( 'Returns a workflow brief with steps and suggested tools; it does not run the Architect Agent.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

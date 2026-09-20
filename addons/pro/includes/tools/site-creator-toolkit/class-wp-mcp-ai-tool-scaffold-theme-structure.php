@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Scaffold_Theme_Structure implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Scaffold_Theme_Structure implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -54,6 +54,18 @@ class WP_MCP_AI_Tool_Scaffold_Theme_Structure implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Generates complete WordPress theme scaffolding with templates, functions, styles, and best practices implementation.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating a complete classic, block, or hybrid theme scaffold with file manifest, templates, features, and validated theme.json.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For page-level layouts use create_homepage_layout or generate_landing_page; for a full site blueprint use generate_site_plan.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_site_plan', 'integrate_with_architect', 'install_and_activate_theme' ),
+			'notes'           => __( 'Returns a structure manifest and theme.json data; it does not write theme files to disk.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

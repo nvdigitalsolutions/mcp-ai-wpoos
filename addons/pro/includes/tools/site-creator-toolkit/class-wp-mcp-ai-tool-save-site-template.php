@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Save_Site_Template implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Save_Site_Template implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -54,6 +54,18 @@ class WP_MCP_AI_Tool_Save_Site_Template implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Saves complete site structures as reusable templates including pages, sections, widgets, and settings to the wp_site_template CPT.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Persisting a complete site structure such as pages, sections, widgets, and settings as a reusable wp_site_template.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'To apply an existing template use import_site_template; to export templates as portable JSON use export_template_kit.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'import_site_template', 'export_template_kit', 'manage_template_versions' ),
+			'notes'           => __( 'Each call creates a new template seeded at version 1.0.0; track revisions with manage_template_versions.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

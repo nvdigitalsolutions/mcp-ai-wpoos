@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Create_CTA_Section implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_CTA_Section implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -54,6 +54,18 @@ class WP_MCP_AI_Tool_Create_CTA_Section implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Generates call-to-action sections with compelling copy, urgency elements, and conversion-optimized buttons. Includes multiple CTA styles.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating a conversion-focused call-to-action section with headline, button, style, and urgency elements.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Opening hero content; use create_hero_section. Social proof; use build_testimonial_section. Forms and maps; use build_contact_section.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_hero_section', 'build_testimonial_section', 'build_contact_section' ),
+			'notes'           => __( 'Returns section data for assembly; it does not create the page.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
