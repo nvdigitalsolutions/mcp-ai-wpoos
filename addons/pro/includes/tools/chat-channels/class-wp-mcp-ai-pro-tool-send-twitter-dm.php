@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  *
  * @see https://developer.twitter.com/en/docs/twitter-api/direct-messages/manage/api-reference/post-dm_conversations-with-participant_id-messages
  */
-class WP_MCP_AI_Pro_Tool_Send_Twitter_DM implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Send_Twitter_DM implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default timeout for Twitter API requests.
@@ -60,6 +60,18 @@ class WP_MCP_AI_Pro_Tool_Send_Twitter_DM implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Sends a Direct Message to a Twitter/X user via API v2 using OAuth 1.0a authentication.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending a Direct Message to a Twitter/X user via API v2 with OAuth 1.0a user context.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading existing DMs; use get_twitter_dms. Configuring webhooks; use manage_twitter_webhook.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_twitter_dms', 'manage_twitter_webhook' ),
+			'notes'           => __( 'External communication: sends real DMs; user-context OAuth 1.0a is required, bearer tokens cannot send DMs.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

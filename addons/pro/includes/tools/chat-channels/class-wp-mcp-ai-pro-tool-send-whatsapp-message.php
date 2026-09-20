@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides a tool for sending WhatsApp Cloud API messages.
  */
-class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -58,6 +58,18 @@ class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Message implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Sends a text message to a WhatsApp user via the Meta Cloud API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending a plain text message to a WhatsApp user or group via the Meta Cloud API.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Media files; use send_whatsapp_media. Reply buttons or lists; use send_whatsapp_interactive.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_whatsapp_media', 'send_whatsapp_interactive', 'send_whatsapp_template' ),
+			'notes'           => __( 'Delivers real messages to recipients; supports individual and group recipient types.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

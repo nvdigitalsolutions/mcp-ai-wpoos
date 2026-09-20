@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for retrieving iCloud Drive file metadata via a configured gateway API.
  */
-class WP_MCP_AI_Pro_Tool_Get_Icloud_Drive_File implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Icloud_Drive_File implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default timeout for iCloud gateway API requests (seconds).
@@ -63,6 +63,18 @@ class WP_MCP_AI_Pro_Tool_Get_Icloud_Drive_File implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Retrieves metadata and download information for a file from iCloud Drive via a configured iCloud gateway API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching metadata and a download link for a known iCloud Drive file through a gateway.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Discovering which files exist or uploading; use list_icloud_drive_files or upload_icloud_drive_file.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_icloud_drive_files', 'upload_icloud_drive_file' ),
+			'notes'           => __( 'Requires a file ID from list_icloud_drive_files; Apple has no public API, so a gateway is mandatory.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

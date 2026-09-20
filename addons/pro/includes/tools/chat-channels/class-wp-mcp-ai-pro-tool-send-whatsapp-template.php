@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for sending WhatsApp template messages via the Cloud API.
  */
-class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Template implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Template implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default timeout for WhatsApp API requests.
@@ -60,6 +60,18 @@ class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Template implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Sends a pre-approved WhatsApp template message via the Meta Cloud API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending a pre-approved WhatsApp template message, for example outside the 24-hour service window.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Free-form text; use send_whatsapp_message. Media files; use send_whatsapp_media.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_whatsapp_message', 'send_whatsapp_media' ),
+			'notes'           => __( 'External communication: the template must already be approved in the WhatsApp Business account.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

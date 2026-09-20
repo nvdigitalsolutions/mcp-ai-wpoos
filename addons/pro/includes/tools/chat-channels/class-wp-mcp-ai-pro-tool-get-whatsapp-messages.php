@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for retrieving WhatsApp message history via the Cloud API.
  */
-class WP_MCP_AI_Pro_Tool_Get_WhatsApp_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_WhatsApp_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default timeout for WhatsApp API requests.
@@ -60,6 +60,18 @@ class WP_MCP_AI_Pro_Tool_Get_WhatsApp_Messages implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Retrieves WhatsApp message history via the Meta Cloud API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading WhatsApp message history for a WhatsApp Business number via the Cloud API.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sending messages; use send_whatsapp_message, send_whatsapp_template, or send_whatsapp_interactive.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_whatsapp_message', 'send_whatsapp_template', 'send_whatsapp_interactive' ),
+			'notes'           => __( 'Requires a phone_number_id and access_token; use the after cursor for pagination.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

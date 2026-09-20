@@ -21,7 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * Supports setMyCommands, deleteMyCommands and getMyCommands with full
  * BotCommandScope support.
  */
-class WP_MCP_AI_Pro_Tool_Manage_Telegram_Commands implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Manage_Telegram_Commands implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Telegram requests.
 	 */
@@ -57,6 +57,18 @@ class WP_MCP_AI_Pro_Tool_Manage_Telegram_Commands implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Manages slash commands registered with a Telegram bot via setMyCommands/deleteMyCommands/getMyCommands with BotCommandScope support.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Registering, deleting, or listing slash commands for a Telegram bot with scope control.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sending a chat message; use send_telegram_message. Configuring the webhook; use manage_telegram_webhook.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_telegram_message', 'manage_telegram_webhook', 'get_telegram_updates' ),
+			'notes'           => __( 'Changes the live command menu that Telegram users see for the bot.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for uploading files to Microsoft OneDrive via the Microsoft Graph API.
  */
-class WP_MCP_AI_Pro_Tool_Upload_OneDrive_File implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Upload_OneDrive_File implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Microsoft Graph API requests.
 	 */
@@ -54,6 +54,18 @@ class WP_MCP_AI_Pro_Tool_Upload_OneDrive_File implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Uploads a file to Microsoft OneDrive using the Microsoft Graph API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Uploading a file to Microsoft OneDrive via the Microsoft Graph API.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Listing files; use list_onedrive_files. Reading one file; use get_onedrive_file.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_onedrive_files', 'get_onedrive_file' ),
+			'notes'           => __( 'Moves files to an external cloud; requires a Graph token with Files.ReadWrite scope.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

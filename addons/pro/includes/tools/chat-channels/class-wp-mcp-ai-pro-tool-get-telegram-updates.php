@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for retrieving Telegram bot updates via the Bot API.
  */
-class WP_MCP_AI_Pro_Tool_Get_Telegram_Updates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Telegram_Updates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Telegram requests.
 	 */
@@ -54,6 +54,18 @@ class WP_MCP_AI_Pro_Tool_Get_Telegram_Updates implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Retrieves incoming updates from a Telegram bot using the Bot API getUpdates method.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Polling a Telegram bot for incoming updates, messages, and chat IDs.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sending replies or reacting; use send_telegram_message or add_telegram_message_reaction.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_telegram_message', 'add_telegram_message_reaction', 'manage_telegram_webhook' ),
+			'notes'           => __( 'Returned updates include chat IDs for replies; use offset to acknowledge processed updates.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
