@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Returns tasks assigned to the current user grouped by project.
  */
-class WP_MCP_AI_Tool_Get_My_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_My_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,20 @@ class WP_MCP_AI_Tool_Get_My_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Returns tasks assigned to the current user. Results are grouped by project for easy organization. Optional filters: status, project_id, and limit. Use this tool for personal task lists and daily stand-ups.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing tasks assigned to the current user, grouped by project, for personal to-do lists or stand-ups.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Project-wide task queries for anyone else; use list_tasks. Deadline-focused views; use get_upcoming_deadlines.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_tasks', 'get_upcoming_deadlines', 'update_task' ),
+			'notes'           => __( 'Scoped to the current user_id; filter by status, project_id, or a limit of up to 200.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

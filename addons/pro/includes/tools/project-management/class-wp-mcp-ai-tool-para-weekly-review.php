@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Weekly review summary.
  */
-class WP_MCP_AI_Tool_PARA_Weekly_Review implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_PARA_Weekly_Review implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Get the tool slug.
@@ -45,6 +45,20 @@ class WP_MCP_AI_Tool_PARA_Weekly_Review implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Generate the PARA weekly-review summary. Returns: areas with no recent activity, resources unreferenced for 90+ days, and archive candidates (completed/cancelled projects not yet archived). Useful for the AI assistant to drive the user through a weekly review.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Running the weekly review to surface dormant areas, unreferenced resources, and archive candidates.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Acting on the results; use para_update_area, para_move_to_archives, or para_classify_item per item.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'para_list_areas', 'para_move_to_archives', 'para_update_area' ),
+			'notes'           => __( 'Serves the cached daily sweep; set force_refresh=true to regenerate the summary instead.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates burndown chart data for a project or sprint.
  */
-class WP_MCP_AI_Tool_Get_Burndown_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Burndown_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_Get_Burndown_Chart implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Generate burndown chart data for a project or sprint. Computes the ideal burndown line versus actual remaining tasks day-by-day from start to end. Requires a project_id, and optionally a sprint_id to use sprint-specific date boundaries.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Building a day-by-day ideal-vs-actual burndown for a project, optionally scoped to one sprint_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Weekly or period-wide velocity trends; use get_team_velocity. Portfolio-level health; use get_portfolio_health.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_team_velocity', 'get_project_timeline', 'forecast_completion' ),
+			'notes'           => __( 'Pass sprint_id to use sprint start/end dates; otherwise project dates apply, defaulting to 14 days when unset.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

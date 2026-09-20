@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Returns upcoming deadlines across tasks and events.
  */
-class WP_MCP_AI_Tool_Get_Upcoming_Deadlines implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Upcoming_Deadlines implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,20 @@ class WP_MCP_AI_Tool_Get_Upcoming_Deadlines implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Returns upcoming deadlines including both tasks and events within a configurable number of days (default: 7). Each deadline includes title, type (task or event), due date, priority, days until due, and associated project information for tasks.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing tasks and events due within a look-ahead window, bucketed into overdue, today, this week, and later.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Personal task lists; use get_my_tasks. Full portfolio KPIs; use get_pm_kpis.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_my_tasks', 'get_pm_kpis', 'list_tasks' ),
+			'notes'           => __( 'Defaults to a 7-day window with up to 20 items; task entries include project_id and project_title.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

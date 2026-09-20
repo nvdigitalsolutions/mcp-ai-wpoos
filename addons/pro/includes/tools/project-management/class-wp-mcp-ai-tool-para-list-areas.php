@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * List Areas.
  */
-class WP_MCP_AI_Tool_PARA_List_Areas implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_PARA_List_Areas implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Get the tool slug.
@@ -42,6 +42,20 @@ class WP_MCP_AI_Tool_PARA_List_Areas implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'List PARA Areas (ongoing responsibilities), optionally filtered by owner or review cadence. Returns title, owner, standard, cadence, and last-reviewed timestamp.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing Areas with owner, standard, cadence, and last-reviewed timestamp, optionally filtered.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reviewing dormancy or archive candidates; use para_weekly_review. Editing an area; use para_update_area.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'para_create_area', 'para_update_area', 'para_weekly_review' ),
+			'notes'           => __( 'Read-only; returns up to 100 areas (default 25) ordered by title.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

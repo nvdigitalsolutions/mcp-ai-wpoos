@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Updates an existing project.
  */
-class WP_MCP_AI_Tool_Update_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -48,6 +48,20 @@ class WP_MCP_AI_Tool_Update_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Updates an existing project. Provide only the fields you want to update.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Changing specific fields of a known project: name, description, status, dates, or assigned users.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating projects; use create_project. Discovering IDs; use list_projects. Deleting; use delete_project.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_project', 'list_projects', 'delete_project' ),
+			'notes'           => __( 'Only provided fields are updated; omit a field to leave it unchanged.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

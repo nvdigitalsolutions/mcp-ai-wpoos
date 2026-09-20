@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates a new project.
  */
-class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Create a new project or update an existing project. If project_id is provided, updates the existing project instead of creating a new one. Projects can have a name, description, start/end dates, status, and assigned members. Use this tool for both creating new projects and updating existing ones.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new project with name, dates, status, and assignees; also updates an existing one when project_id is passed.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Editing fields of a known project; use update_project. Discovering project IDs; use list_projects.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_project', 'list_projects', 'create_task' ),
+			'notes'           => __( 'Status defaults to planning; valid values are planning, active, on-hold, completed, cancelled. Dates use YYYY-MM-DD.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

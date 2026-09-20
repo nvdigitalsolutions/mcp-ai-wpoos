@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Forecasts project completion date with confidence range.
  */
-class WP_MCP_AI_Tool_Forecast_Completion implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Forecast_Completion implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_Forecast_Completion implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Forecast a project completion date range (optimistic, expected, pessimistic) based on historical team velocity and remaining open tasks. Useful for stakeholders and sprint planning.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Forecasting when a project will finish, using historical weekly velocity and remaining open tasks.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Detailed historical velocity analysis; use get_team_velocity. Exact task-level dates; use get_project_timeline.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_team_velocity', 'get_project_timeline', 'get_pm_kpis' ),
+			'notes'           => __( 'Falls back to a conservative 4-week completion estimate when no velocity data is available.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

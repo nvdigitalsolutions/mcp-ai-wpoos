@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Classify a post into a PARA bucket.
  */
-class WP_MCP_AI_Tool_PARA_Classify_Item implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_PARA_Classify_Item implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Get the tool slug.
@@ -46,6 +46,20 @@ class WP_MCP_AI_Tool_PARA_Classify_Item implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Assign a project, task, event, area, or document to one of the four PARA buckets: projects, areas, resources, or archives. A sub-bucket term ID may be provided instead of the root slug to use a user-defined sub-bucket. The item must already exist.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Assigning an existing post to a PARA bucket (projects, areas, resources, archives) or a sub-bucket term_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating new items; create them first with their own tools. Archiving with a required reason; use para_move_to_archives.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'para_move_to_archives', 'para_promote_resource_to_project', 'para_list_areas' ),
+			'notes'           => __( 'term_id takes precedence over bucket and must descend from one of the four locked roots.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

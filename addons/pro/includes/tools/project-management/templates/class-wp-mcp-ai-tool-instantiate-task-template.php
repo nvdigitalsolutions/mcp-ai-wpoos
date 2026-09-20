@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * parses `- [ ] Task name` lines, and creates individual mcp_ai_task
  * posts for each checkbox item under the target project.
  */
-class WP_MCP_AI_Tool_Instantiate_Task_Template implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Instantiate_Task_Template implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Instantiate_Task_Template implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Create tasks from a task template. Parses the template markdown content for checkbox items and creates individual tasks under the specified project. Useful for setting up project task boards from reusable templates.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating individual tasks under a project from a saved template, with optional assignee_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Defining new templates; use create_task_template. Discovering templates; use list_task_templates.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_task_template', 'list_task_templates', 'create_task' ),
+			'notes'           => __( 'Parses "- [ ]" checkbox lines; falls back to treating each non-empty line as a task.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

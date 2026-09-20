@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Assesses project risk with dimension breakdown and recommendations.
  */
-class WP_MCP_AI_Tool_Assess_Project_Risk implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Assess_Project_Risk implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -40,6 +40,20 @@ class WP_MCP_AI_Tool_Assess_Project_Risk implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Assess the risk level of a project across multiple dimensions: schedule slippage, scope creep, resource churn, blocker count, and stale task ratio. Returns an overall risk score (0-100), risk level classification, dimension breakdown, and actionable recommendations.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scoring a single project across risk dimensions with actionable recommendations and a breakdown.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Portfolio-wide health; use get_portfolio_health. Stale-task remediation lists; use detect_stale_tasks.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_portfolio_health', 'detect_stale_tasks', 'identify_blockers' ),
+			'notes'           => __( 'Higher scores mean higher risk; recommendations are generated per dimension that exceeds its threshold.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

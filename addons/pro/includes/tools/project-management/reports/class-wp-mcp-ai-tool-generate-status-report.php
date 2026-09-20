@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates a project status report.
  */
-class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -41,6 +41,20 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Generate a comprehensive project status report. Compiles project summary, recently completed tasks, upcoming tasks, blockers, risk assessment, and burndown snapshot if sprint data is available. Outputs in markdown or HTML format.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing a stakeholder-ready project report with completions, upcoming tasks, blockers, risk, and burndown.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Raw tabular data export; use export_project_csv. Per-dimension risk scoring only; use assess_project_risk.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'export_project_csv', 'assess_project_risk', 'get_burndown_chart' ),
+			'notes'           => __( 'Output format is markdown by default; HTML is available via the format argument.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

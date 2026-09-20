@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Exports project tasks to CSV.
  */
-class WP_MCP_AI_Tool_Export_Project_Csv implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Export_Project_Csv implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -41,6 +41,20 @@ class WP_MCP_AI_Tool_Export_Project_Csv implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Export all tasks for a project as a CSV-formatted string. Includes Task ID, Title, Status, Priority, Assignee, Due Date, Project name, Dependencies, and Tags.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing a CSV of all tasks in one project for spreadsheets, backups, or external reporting.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Human-readable status summaries; use generate_status_report. Interactive task listing; use list_tasks.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_status_report', 'list_tasks', 'list_projects' ),
+			'notes'           => __( 'Returns CSV text in the response; columns: ID, title, status, priority, assignee, due date, project, dependencies, tags.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

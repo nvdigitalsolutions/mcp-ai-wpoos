@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Retrieves dependency information for a task.
  */
-class WP_MCP_AI_Tool_Get_Task_Dependencies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Task_Dependencies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -63,6 +63,20 @@ class WP_MCP_AI_Tool_Get_Task_Dependencies implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Returns the full dependency graph for a task: which tasks it is waiting for (depends_on) and which tasks it is blocking (blocks). Includes task titles and statuses.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Inspecting which tasks block a given task and which it depends on, including the can_start readiness flag.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating or removing links; use add_task_dependency or remove_task_dependency. Finding blocked work globally; use identify_blockers.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'add_task_dependency', 'remove_task_dependency', 'identify_blockers' ),
+			'notes'           => __( 'Read-only; can_start is true only when every depends_on task is completed.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

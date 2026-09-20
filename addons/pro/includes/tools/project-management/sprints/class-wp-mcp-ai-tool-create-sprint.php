@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Saves as mcp_ai_sprint CPT (inserted via wp_insert_post) with goal,
  * dates, velocity target, and status stored as post meta.
  */
-class WP_MCP_AI_Tool_Create_Sprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Sprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Valid sprint statuses.
@@ -49,6 +49,20 @@ class WP_MCP_AI_Tool_Create_Sprint implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Create a new sprint within a project. Sprints are time-boxed iterations with a goal, date range, and velocity target. Useful for agile project management and iterative delivery planning.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a time-boxed sprint with goal, start/end dates, and velocity target inside a project.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Assigning tasks to a sprint; use plan_sprint. Ending a sprint; use close_sprint.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'plan_sprint', 'close_sprint', 'create_project' ),
+			'notes'           => __( 'New sprints start in planning status; dates must be ISO 8601 (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
