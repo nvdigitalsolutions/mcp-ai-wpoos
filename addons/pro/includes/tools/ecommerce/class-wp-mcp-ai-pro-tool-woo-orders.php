@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -80,6 +80,18 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Comprehensive WooCommerce order management. View order details, statuses, customer information, order items, update statuses, add notes, and process refunds.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Viewing or updating WooCommerce orders: details, statuses, notes, and simple refunds.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Bulk status changes or advanced partial refunds; use bulk_order_status_update or refund_order_advanced.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'bulk_order_status_update', 'refund_order_advanced', 'woo_customers', 'process_order_workflow' ),
+			'notes'           => __( 'Actions: get, list, and search. Status updates and refunds affect real order data, so confirm the target order first.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

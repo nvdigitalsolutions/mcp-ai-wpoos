@@ -30,7 +30,7 @@ if ( ! trait_exists( 'WP_MCP_AI_Woo_Price_Qty_Updater' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Woo_Price_Qty_Updater;
 
@@ -88,6 +88,18 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Comprehensive WooCommerce product management with full CRUD operations. Supports products, variations, categories, tags, attributes, images, and inventory management.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Managing WooCommerce products with full CRUD plus categories, tags, attributes, images, and inventory.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Bulk editing many products at once; use bulk_update_products or update_woo_product_price for single price changes.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'bulk_update_products', 'update_woo_product_price', 'update_woo_product_qty', 'create_product_advanced' ),
+			'notes'           => __( 'Actions: get, list, create, update, search, delete, manage_categories, manage_tags, manage_attributes.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

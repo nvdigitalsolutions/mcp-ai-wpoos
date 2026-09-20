@@ -46,7 +46,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Pro_Tool_Validate_Image_For_Vehicle implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+class WP_MCP_AI_Pro_Tool_Validate_Image_For_Vehicle implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_Tool_Chat_Response;
 
@@ -207,6 +207,18 @@ class WP_MCP_AI_Pro_Tool_Validate_Image_For_Vehicle implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Validates vehicle images to ensure they meet the requirements for AI-powered cleaning or repair estimates. For cleaning estimates, verifies a full vehicle shot is present for size classification. For repair estimates, checks multi-angle coverage (front, rear, left, right), damage visibility, and optional VIN plate photo. Uses OpenAI Vision to assess image quality, vehicle detection, view angles, and damage/condition visibility. Returns a weighted quality rating (0-100, A-F) with actionable feedback.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking vehicle photos meet the requirements for AI-powered cleaning or repair estimates.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Validating product or accessory shots; use validate_image_for_product for try-on imagery.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'validate_image_for_product', 'product_actualization' ),
+			'notes'           => __( 'Repair estimates need front, rear, left, right shots plus damage close-ups; cleaning needs one full exterior shot.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.8.0
  */
-class WP_MCP_AI_Tool_Get_Abandoned_Carts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Abandoned_Carts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -45,6 +45,18 @@ class WP_MCP_AI_Tool_Get_Abandoned_Carts implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Retrieves abandoned WooCommerce shopping carts, optionally filtered by date range, minimum cart value, or customer status (guest, registered, or all). Queries WooCommerce session data and returns cart contents, totals, and customer information.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing abandoned carts with contents, totals, and customer types before a recovery campaign.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Contacting customers; use send_cart_recovery_email to send and abandoned_cart_recovery for automation.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_cart_recovery_email', 'abandoned_cart_recovery', 'segment_customers' ),
+			'notes'           => __( 'Read-only session data, up to 500 carts; it never emails customers.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

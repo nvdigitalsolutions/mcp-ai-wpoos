@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_Ecommerce_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Ecommerce_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR = WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/examples';
@@ -63,6 +63,16 @@ class WP_MCP_AI_Tool_Import_Ecommerce_Blueprint implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Install a curated e-commerce assistant blueprint for store management, product merchandising, or order fulfillment workflows.', 'mcp-ai-wpoos-pro' ); }
+
+	/** {@inheritdoc} */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing a curated store-manager, product-merchandiser, or order-fulfillment blueprint.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Importing product data; use import_products_csv or create_product_advanced for catalog content.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'import_products_csv', 'create_product_advanced', 'woo_products' ),
+			'notes'           => __( 'Use overwrite true to replace an existing assistant with the same name.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * {@inheritdoc}

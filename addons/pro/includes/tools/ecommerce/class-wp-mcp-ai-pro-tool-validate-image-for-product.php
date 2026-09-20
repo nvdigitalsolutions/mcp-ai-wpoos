@@ -41,7 +41,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Pro_Tool_Validate_Image_For_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+class WP_MCP_AI_Pro_Tool_Validate_Image_For_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_Tool_Chat_Response;
 
@@ -225,6 +225,18 @@ class WP_MCP_AI_Pro_Tool_Validate_Image_For_Product implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Validates a user-provided image (profile picture or full body shot) to ensure it meets the requirements for virtual product placement / try-on. Checks image quality, dimensions, lighting, and verifies that the necessary body parts are visible for the selected product type (watch, ring, earring, necklace, glasses, hat, bag, bracelet, or general accessory). Uses OpenAI Vision to perform intelligent analysis and returns actionable feedback.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking a user photo meets virtual try-on requirements for a product type like watch, ring, or glasses.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Actually placing the product into a scene; use product_actualization after validation passes.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'product_actualization', 'validate_image_for_vehicle' ),
+			'notes'           => __( 'Pass attachment_id, file_id, or url plus product_type. Uses OpenAI Vision; strict_mode makes every recommended check required.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

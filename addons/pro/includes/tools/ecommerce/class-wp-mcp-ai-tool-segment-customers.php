@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Segment_Customers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Segment_Customers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -103,6 +103,20 @@ class WP_MCP_AI_Tool_Segment_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Create customer segments based on purchase behavior, demographics, and engagement patterns. Supports RFM analysis, geographic segmentation, product preferences, and custom criteria for targeted marketing campaigns.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for tool selection.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Grouping customers by RFM, spend tiers, geography, or product preference for campaigns.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Per-customer lifetime metrics; use customer_lifetime_value for single-customer value.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'customer_lifetime_value', 'woo_customers', 'export_customer_data' ),
+			'notes'           => __( 'Segments derive from order history; pair with export_customer_data for campaign lists.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

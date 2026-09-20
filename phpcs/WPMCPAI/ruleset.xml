@@ -18,4 +18,18 @@
 	<rule ref="phpcs/WPMCPAI/Sniffs/Tools/ToolDescriptionGuidanceSniff.php">
 		<severity>5</severity>
 	</rule>
+
+	<!--
+		PHPCS auto-registers sibling sniffs from this standard's Sniffs/
+		tree, which would surface pre-existing CanonicalReturnEnvelope and
+		SanitizeAtEntry findings. This ruleset is the guidance-only gate
+		for the sweep; the other two sniffs stay enforced through the main
+		phpcs.xml.dist.
+	-->
+	<rule ref="phpcs/WPMCPAI/Sniffs/Tools/CanonicalReturnEnvelopeSniff.php">
+		<severity>0</severity>
+	</rule>
+	<rule ref="phpcs/WPMCPAI/Sniffs/Tools/SanitizeAtEntrySniff.php">
+		<severity>0</severity>
+	</rule>
 </ruleset>
