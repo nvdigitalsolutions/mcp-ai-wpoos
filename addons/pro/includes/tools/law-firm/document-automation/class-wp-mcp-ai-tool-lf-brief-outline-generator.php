@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates structured brief outlines with standard sections.
  */
-class WP_MCP_AI_Tool_LF_Brief_Outline_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Brief_Outline_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -67,6 +67,20 @@ class WP_MCP_AI_Tool_LF_Brief_Outline_Generator implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Generates structured outlines for appellate, trial, amicus, or reply briefs with standard sections and argument framework.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When a structured outline with standard sections is needed for an appellate, trial, amicus, or reply brief.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'To save a document or draft full text; use lf_document_drafter to persist a draft.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_document_drafter', 'lf_pleading_generator', 'lf_legal_citation_checker' ),
+			'notes'           => __( 'brief_type accepts appellate, trial, amicus, or reply; issue is required. The outline is returned in-memory, not saved.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

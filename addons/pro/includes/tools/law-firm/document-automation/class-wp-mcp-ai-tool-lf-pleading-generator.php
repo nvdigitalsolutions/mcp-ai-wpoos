@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates pleading outlines with standard sections for litigation documents.
  */
-class WP_MCP_AI_Tool_LF_Pleading_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Pleading_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_LF_Pleading_Generator implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Generates structured pleading outlines for complaints, answers, motions to dismiss, motions for summary judgment, motions to compel, and motions in limine.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When a sectioned outline is needed for a complaint, answer, or motion pleading type.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'To save the pleading as a document; use lf_document_drafter to persist a draft.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_document_drafter', 'lf_brief_outline_generator', 'lf_discovery_request_builder' ),
+			'notes'           => __( 'pleading_type accepts complaint, answer, motion_to_dismiss, motion_for_summary_judgment, motion_to_compel, or motion_in_limine.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

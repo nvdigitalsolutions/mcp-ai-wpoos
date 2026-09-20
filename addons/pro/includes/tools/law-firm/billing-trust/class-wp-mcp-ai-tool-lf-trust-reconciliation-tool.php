@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Performs three-way reconciliation of trust accounts.
  */
-class WP_MCP_AI_Tool_LF_Trust_Reconciliation_Tool implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Trust_Reconciliation_Tool implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -67,6 +67,19 @@ class WP_MCP_AI_Tool_LF_Trust_Reconciliation_Tool implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Performs three-way reconciliation of trust accounts comparing bank balance, book balance, and client ledger totals.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Comparing bank, book, and client ledger balances in a three-way trust reconciliation.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Posting individual trust transactions or retainer alerts; use lf_trust_account_manager or lf_retainer_balance_monitor.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_trust_account_manager', 'lf_retainer_balance_monitor' ),
+			'notes'           => __( 'Requires bank_balance; optional matter_id scopes reconciliation to a single matter.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Compares two legal documents and produces a redline diff.
  */
-class WP_MCP_AI_Tool_LF_Redline_Comparator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Redline_Comparator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_LF_Redline_Comparator implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Compares two document versions and produces a word-level diff with additions, deletions, and material changes summary.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When comparing two saved document versions for word-level additions, deletions, and material legal-term changes.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'To audit one document for risk or ambiguity; use lf_contract_reviewer for risk flags.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_document_version_tracker', 'lf_contract_reviewer' ),
+			'notes'           => __( 'Pass two saved document_id values; comparison_mode accepts full (includes word lists) or summary.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Monitors bar association reporting deadlines and CLE requirements.
  */
-class WP_MCP_AI_Tool_LF_Bar_Deadline_Monitor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Bar_Deadline_Monitor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -203,6 +203,20 @@ class WP_MCP_AI_Tool_LF_Bar_Deadline_Monitor implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Monitors bar association reporting deadlines, CLE requirements, and membership renewal dates by state for attorneys.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing bar dues, CLE compliance, and trust account reporting deadlines for a state abbreviation.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Tracking earned CLE credits or court filing deadlines; use lf_cle_credit_tracker or lf_court_deadline_tracker.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_cle_credit_tracker', 'lf_court_deadline_tracker' ),
+			'notes'           => __( 'Requires a two-letter state; built-in data covers CA, NY, TX, FL, and IL only.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Monitors retainer balances and alerts when replenishment is needed.
  */
-class WP_MCP_AI_Tool_LF_Retainer_Balance_Monitor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Retainer_Balance_Monitor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -67,6 +67,19 @@ class WP_MCP_AI_Tool_LF_Retainer_Balance_Monitor implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Monitors retainer balances against original retainer amounts and alerts when balance falls below threshold.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking which matters need retainer replenishment by comparing trust balances against retainer amounts.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Posting trust transactions or reconciling the bank; use lf_trust_account_manager or lf_trust_reconciliation_tool.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_trust_account_manager', 'lf_trust_reconciliation_tool' ),
+			'notes'           => __( 'Read-only; threshold_percentage defaults to 0.25; alert_below sets a dollar floor instead.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**
