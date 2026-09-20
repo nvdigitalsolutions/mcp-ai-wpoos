@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Uses AI and web search to research comprehensive information about
  * places, attractions, businesses, and locations.
  */
-class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Research comprehensive information about a place, attraction, or business using AI and web search. Returns name, description, address, coordinates, contact info, hours, amenities, and other details ready for creating a place entry.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Researching a place from the web before saving it, to get structured facts for a new entry.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading already-saved records; use get_place or list_places for local data.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_place', 'search_and_save_places', 'enrich_place_details' ),
+			'notes'           => __( 'Returns fields mapped for create_place; set use_google_places=false to skip Places API and rely on web search only.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Retrieves quiz submissions.
  */
-class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Retrieves submissions for a specific quiz.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing submissions for a quiz, optionally filtered to pending or graded, with pagination.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'A single submission; use get_quiz_results by submission_id for full detail.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_quiz_results', 'get_quiz_analytics', 'grade_quiz' ),
+			'notes'           => __( 'Only the quiz author or users with edit_others_posts can list submissions; filter by status to find ungraded work.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

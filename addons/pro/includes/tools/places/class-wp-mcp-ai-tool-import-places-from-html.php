@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.4.0
  */
-class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default extraction selectors.
@@ -125,6 +125,20 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Import places by scraping a directory of static HTML files (HTTrack exports, site mirrors, Wayback Machine archives). Parses HTML to extract titles, descriptions, images, coordinates, and structured data.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Importing places from a directory of scraped or archived HTML pages such as HTTrack mirrors or Wayback exports.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Structured JSON/CSV imports; use import_places for plain data payloads.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'import_places', 'create_place', 'research_place' ),
+			'notes'           => __( 'Parses titles, descriptions, images, coordinates, JSON-LD, and breadcrumbs via DOM; requires a server-side directory path.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

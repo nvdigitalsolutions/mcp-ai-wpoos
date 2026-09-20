@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates Chart.js visualization data for quiz analytics.
  */
-class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Generates Chart.js visualization data for quiz analytics including score distribution, pass/fail rates, completion times, and question performance.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating aggregate performance stats for a quiz: score distribution, pass/fail rates, and question performance.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Individual student results; use get_quiz_results per submission or get_quiz_submissions for the list.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_quiz_submissions', 'get_quiz_results', 'get_quiz' ),
+			'notes'           => __( 'Needs at least one graded submission; pick chart_types or get all five, and output is Chart.js-ready JSON.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

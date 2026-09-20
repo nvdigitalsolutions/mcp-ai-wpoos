@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Uses AI and web search to research comprehensive information about
  * educational topics and generate quiz content.
  */
-class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -85,6 +85,20 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Research comprehensive information about an educational topic and generate quiz questions with answers using multi-stage web search and AI analysis. Supports configurable research depth (basic/standard/comprehensive) and focus areas for targeted research. Returns title, description, difficulty level, suggested questions with multiple choice answers, and educational metadata ready for creating a quiz.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Researching an educational topic and generating quiz questions with answers before creating a quiz.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Managing existing quizzes; use get_quiz or update_quiz for saved records.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_quiz', 'list_quizzes', 'get_quiz' ),
+			'notes'           => __( 'Depth controls search passes (basic=1, standard=2, comprehensive=3); output maps directly into create_quiz questions.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

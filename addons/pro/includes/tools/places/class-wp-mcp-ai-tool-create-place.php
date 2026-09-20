@@ -21,7 +21,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/helpers/class-wp-mcp-ai-place-helper
 /**
  * Creates a new place with comprehensive location and business data.
  */
-class WP_MCP_AI_Tool_Create_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Content_Media;
 
 	/**
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Create_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Creates a new place (attraction, business, location) or updates an existing one if place_id is provided. Includes address, coordinates, contact info, hours, and other details. Supports auto-geocoding and Google Places API integration.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new place record from gathered data, or updating an existing place when place_id is supplied.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Bulk data entry; use import_places for JSON/CSV batches and search_and_save_places for Google Maps results.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_place', 'import_places', 'enrich_place_details' ),
+			'notes'           => __( 'Only name is required; set auto_geocode=true (default) to fill latitude/longitude from the address.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

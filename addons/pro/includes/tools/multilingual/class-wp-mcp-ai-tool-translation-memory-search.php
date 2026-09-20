@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Translation_Memory_Search tool.
  */
-class WP_MCP_AI_Tool_Translation_Memory_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Translation_Memory_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Translation_Memory_Search implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Search and reuse previous translations from translation memory database to ensure consistency.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Looking up previous translations of a phrase to keep wording consistent across the site.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Translating new content; use auto_translate_content or translate_woocommerce_products instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'auto_translate_content', 'translate_woocommerce_products' ),
+			'notes'           => __( 'Lower min_similarity to widen the match pool; it defaults to 0.8.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.4.2
  */
-class WP_MCP_AI_Tool_Enrich_Place_Details implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Enrich_Place_Details implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -57,6 +57,20 @@ class WP_MCP_AI_Tool_Enrich_Place_Details implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Enrich a place with data from the Google Places API: ratings, phone numbers, websites, and Google Place IDs. Requires a Google Maps API key configured in plugin settings.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Backfilling ratings, Google Place IDs, phone, website, or price level from Google Places.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Missing coordinates; use enrich_place_coordinates for geocoding. Also fails without a Google Maps API key.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'enrich_place_coordinates', 'get_place', 'research_place' ),
+			'notes'           => __( 'Requires a Google Maps API key; pass fields to limit fetching, or omit place_id to batch the oldest incomplete places.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

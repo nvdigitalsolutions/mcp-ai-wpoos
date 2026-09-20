@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Multilingual_SEO_Audit tool.
  */
-class WP_MCP_AI_Tool_Multilingual_SEO_Audit implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Multilingual_SEO_Audit implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Multilingual_SEO_Audit implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'SEO optimization audit for translated content including hreflang tags and meta descriptions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Auditing translated content for SEO gaps such as hreflang tags and translated meta descriptions.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Translation quality checks; use translation_quality_check for completeness and consistency instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'translation_quality_check', 'auto_translate_content' ),
+			'notes'           => __( 'Toggle check_hreflang and check_meta to narrow the audit to tags or meta descriptions.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

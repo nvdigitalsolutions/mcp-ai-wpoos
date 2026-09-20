@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Grades a quiz submission.
  */
-class WP_MCP_AI_Tool_Grade_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Grade_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Grade_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	public function get_description() {
 		return __( 'Grades a quiz submission. Provides scores for each question and calculates total score and pass/fail status.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scoring a pending submission by assigning per-question points and optional feedback.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Viewing results; use get_quiz_results after grading. Submission creation happens via submit_quiz_answer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'submit_quiz_answer', 'get_quiz_results', 'get_quiz_submissions' ),
+			'notes'           => __( 'Grades use zero-based question_index; total and pass/fail are computed from the quiz passing_score.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

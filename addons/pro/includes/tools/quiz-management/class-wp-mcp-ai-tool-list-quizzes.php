@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Lists available quizzes.
  */
-class WP_MCP_AI_Tool_List_Quizzes implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Quizzes implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_List_Quizzes implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Lists available quizzes with optional filtering.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Browsing published quizzes, optionally filtered by author, with pagination.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'One quiz; use get_quiz by ID for full questions and settings.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_quiz', 'create_quiz', 'get_quiz_analytics' ),
+			'notes'           => __( 'Returns question_count and total_points per quiz without loading question bodies.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

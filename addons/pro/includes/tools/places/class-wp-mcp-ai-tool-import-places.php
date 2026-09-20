@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.4.0
  */
-class WP_MCP_AI_Tool_Import_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_Import_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Bulk import places from JSON or CSV data with deduplication, skip-existing, update-existing, dry-run preview, and image sideloading.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Bulk-creating or updating many places from a JSON array or CSV payload.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Single-place entry; use create_place. Use import_places_from_html when source data is a directory of HTML files.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_place', 'import_places_from_html', 'search_and_save_places' ),
+			'notes'           => __( 'Set skip_existing or update_existing to control duplicates; dry-run previews before writing and supports image sideloading.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

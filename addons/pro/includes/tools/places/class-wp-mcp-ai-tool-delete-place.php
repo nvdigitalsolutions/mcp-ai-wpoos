@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Deletes a place.
  */
-class WP_MCP_AI_Tool_Delete_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_Delete_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Deletes a place permanently.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently removing a place record the user explicitly wants gone.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reversible edits; use update_place to change data, and confirm before deleting since this cannot be undone.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_place', 'update_place', 'list_places' ),
+			'notes'           => __( 'Deletion is permanent and ignores the trash; verify the place via get_place first.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

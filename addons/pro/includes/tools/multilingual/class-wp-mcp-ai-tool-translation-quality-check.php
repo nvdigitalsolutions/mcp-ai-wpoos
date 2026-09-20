@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Translation_Quality_Check tool.
  */
-class WP_MCP_AI_Tool_Translation_Quality_Check implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Translation_Quality_Check implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Translation_Quality_Check implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Validate translation completeness, consistency, and quality with automated checks.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scoring a translated post for completeness, language consistency, and HTML formatting.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Finding untranslated content or translating it; use find_untranslated_strings and auto_translate_content.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'find_untranslated_strings', 'auto_translate_content', 'multilingual_seo_audit' ),
+			'notes'           => __( 'Pass post_id and source_post_id for completeness and formatting checks; returns a 0-100 score.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 
