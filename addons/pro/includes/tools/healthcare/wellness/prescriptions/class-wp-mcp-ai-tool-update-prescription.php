@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Updates an existing prescription.
  */
-class WP_MCP_AI_Tool_Update_Prescription implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Prescription implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Update_Prescription implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Updates an existing prescription with new medication details, dosage, or schedule information.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Changing dosage, frequency, status, notes, or refill counts on an existing prescription by prescription_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Recording a new prescription; use create_prescription. Removing one; use delete_prescription.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_prescription', 'get_prescription', 'delete_prescription' ),
+			'notes'           => __( 'Only provided fields change; create_prescription can also update prescriptions when prescription_id is passed.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

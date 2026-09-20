@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Import_Healthcare_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Healthcare_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -90,6 +90,20 @@ class WP_MCP_AI_Tool_Import_Healthcare_Blueprint implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Install a curated healthcare assistant blueprint for general clinic front desk, veterinary practice, personal health tracking, or radiology review workflows. Blueprints include pre-configured PHI audit logging, FHIR/CCDA/HL7v2 tool sets, and capability-gated access.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing a curated healthcare assistant blueprint (clinic front desk, veterinary practice, health tracker, or radiology review).', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Storing patient data or encounters; use health_capture_encounter or log_vital_signs.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'health_capture_encounter', 'log_vital_signs' ),
+			'notes'           => __( 'Slugs: general-clinic, veterinary-practice, personal-health-tracker, radiology-review. overwrite=true replaces an existing assistant.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

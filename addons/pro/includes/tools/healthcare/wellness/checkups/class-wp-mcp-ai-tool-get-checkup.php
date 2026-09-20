@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get a single checkup/appointment.
  */
-class WP_MCP_AI_Tool_Get_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Get_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Retrieves detailed information about a specific checkup or appointment.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching full details for one known checkup_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Browsing multiple appointments; use list_checkups or get_recent_health_appointments.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_checkups', 'get_recent_health_appointments' ),
+			'notes'           => __( 'Returns datetime, provider, location, type, status, and the linked member name.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

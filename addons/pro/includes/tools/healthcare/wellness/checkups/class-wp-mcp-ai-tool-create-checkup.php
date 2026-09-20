@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates a new checkup/appointment.
  */
-class WP_MCP_AI_Tool_Create_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Create_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Creates a new checkup or appointment or updates an existing one if checkup_id is provided. Includes date, time, provider, and location information.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scheduling a new checkup or appointment for a member, or updating one by passing checkup_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Editing an existing checkup; use update_checkup. Viewing upcoming visits; use get_upcoming_checkups.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_checkup', 'get_upcoming_checkups', 'list_checkups' ),
+			'notes'           => __( 'datetime must be YYYY-MM-DD HH:MM; status defaults to scheduled.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

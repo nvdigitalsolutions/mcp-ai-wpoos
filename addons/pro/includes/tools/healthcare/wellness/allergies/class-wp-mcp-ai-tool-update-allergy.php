@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Updates an existing allergy record.
  */
-class WP_MCP_AI_Tool_Update_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Get the tool slug.
 	 *
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Update_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Updates an existing allergy record with new information.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Updating fields on an existing allergy record by allergy_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating a new allergy; use create_allergy.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_allergy', 'get_allergy' ),
+			'notes'           => __( 'Only provided fields are changed; severity accepts mild, moderate, or severe.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

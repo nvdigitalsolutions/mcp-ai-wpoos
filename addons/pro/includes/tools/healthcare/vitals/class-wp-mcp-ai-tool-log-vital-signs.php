@@ -33,7 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Logs and tracks vital signs for health monitoring.
  */
-class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * WordPress option key used to persist the vitals embedding index.
@@ -72,6 +72,20 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Log and track vital signs including blood pressure, heart rate, temperature (F or C — automatically normalised to °F), weight, BMI, blood glucose, oxygen saturation (SpO2), respiratory rate, kidney-health indicators (eGFR, creatinine, BUN, potassium, sodium, phosphorus, albumin), a complete CBC panel (hemoglobin, hematocrit, RBC, WBC, platelets, MCV, MCH, MCHC, RDW, and WBC differential with percent and absolute counts), extended BMP/CMP electrolytes (chloride, CO2/bicarbonate, calcium, magnesium), and liver function tests (total bilirubin, AST, ALT, total protein). Provenance fields (facility_name, document_name, test_panel, document_date, collection_time, result_time, import_batch_id, review_status, abnormal_flags) support audit trails for imported lab data. When JetEngine is active measurements are stored in the structured vitals_log CCT with options-based storage maintained as a fallback. Supports trend analysis, normal range validation, and alerts for abnormal readings. HIPAA-compliant with audit trails.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Logging, retrieving, updating, or analysing a member\'s clinical vital signs and lab panels through the action parameter.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Bulk imports from FHIR or CSV files; use import_vitals. Daily wellness habits; use log_health_metrics.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'import_vitals', 'analyze_vital_trends', 'flag_abnormal_vitals' ),
+			'notes'           => __( 'Measurements store in the vitals_log CCT when JetEngine is active, with options-based fallback storage kept in sync.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

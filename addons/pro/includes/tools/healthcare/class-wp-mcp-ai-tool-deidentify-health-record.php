@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.4.0
  */
-class WP_MCP_AI_Tool_Deidentify_Health_Record implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Deidentify_Health_Record implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Default_Capability;
 
@@ -65,6 +65,20 @@ class WP_MCP_AI_Tool_Deidentify_Health_Record implements WP_MCP_AI_Tool_Interfac
 			. 'using HIPAA Safe Harbor de-identification. Supports all 18 PHI '
 			. 'identifier types. No patient data leaves your network.',
 			'nvoos-embedded'
+		);
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Removing the 18 HIPAA Safe Harbor identifier types from clinical text before it is shared, exported, or sent to a model.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Structuring text into entities; use extract_clinical_entities. Exporting records; use export_fhir_data or export_ccda_document.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'extract_clinical_entities', 'export_fhir_data', 'health_capture_encounter' ),
+			'notes'           => __( 'Methods: mask, remove, replace, hash, shift_dates. Requires the deidentify_phi capability and the admin PHI acknowledgement.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

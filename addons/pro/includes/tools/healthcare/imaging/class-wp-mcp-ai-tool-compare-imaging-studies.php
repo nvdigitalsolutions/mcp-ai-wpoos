@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Compare imaging studies tool.
  */
-class WP_MCP_AI_Tool_Compare_Imaging_Studies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Compare_Imaging_Studies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -55,6 +55,20 @@ class WP_MCP_AI_Tool_Compare_Imaging_Studies implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Diff a prior and current imaging study (modality, dates, series and instance counts, attached impressions). Useful for radiology follow-up reads.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Diffing a prior and current imaging study (modality, dates, series and instance counts, attached impressions) for follow-up reads.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Browsing or fetching a single study; use manage_imaging_studies. Clinical interpretation; use interpret_imaging_study.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_imaging_studies', 'interpret_imaging_study', 'attach_radiology_report' ),
+			'notes'           => __( 'Pass prior_ and current_ study_id or study_uid pairs. Compares stored metadata, not pixel data.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

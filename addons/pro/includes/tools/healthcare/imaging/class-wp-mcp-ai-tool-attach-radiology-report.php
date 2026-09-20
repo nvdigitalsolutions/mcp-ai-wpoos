@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Attach radiology report tool.
  */
-class WP_MCP_AI_Tool_Attach_Radiology_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Attach_Radiology_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -82,6 +82,20 @@ class WP_MCP_AI_Tool_Attach_Radiology_Report implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Attach a radiology report (findings + impression) to a stored imaging study, with optional minimal DICOM SR generation.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Attaching findings and impression to a stored imaging study, optionally generating a DICOM Structured Report.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Fetching or summarising study metadata; use manage_imaging_studies. AI-assisted reading; use interpret_imaging_study.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_imaging_studies', 'interpret_imaging_study', 'compare_imaging_studies' ),
+			'notes'           => __( 'Requires study_id or study_uid plus findings and impression. Set generate_sr=true to also store DICOM SR JSON.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

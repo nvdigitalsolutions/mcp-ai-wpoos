@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Log and retrieve daily health & wellness metrics (steps, water, sleep, calories, sodium, mood).
  */
-class WP_MCP_AI_Tool_Log_Health_Metrics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Log_Health_Metrics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Performs the operation.
@@ -55,6 +55,20 @@ class WP_MCP_AI_Tool_Log_Health_Metrics implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Logs or retrieves daily health & wellness metrics (steps, water intake, sleep, calories, sodium, mood) for a member. Use action "log" to save a day\'s data and "get_history" to retrieve historical entries.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording or retrieving a member\'s daily wellness metrics (steps, water, sleep, calories, sodium, mood) keyed by date.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Recording clinical vital signs or lab panels; use log_vital_signs.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'log_vital_signs', 'get_health_timeline' ),
+			'notes'           => __( 'Entries are keyed by date, so re-logging the same day overwrites it; get_history is capped at 365 days.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

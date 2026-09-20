@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Compiles health data from all available sources for research and analysis.
  */
-class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -41,6 +41,20 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Compile a member\'s complete health data from all available sources — JetEngine CCT vital signs, options-based vital signs, medical records, prescriptions, checkups, allergies, attached media files, and vector store context from the AI assistant — into a single structured research payload. Ideal for generating health summaries, trend reports, or priming an AI assistant with current patient context.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Aggregating a member\'s vitals, records, prescriptions, checkups, allergies, files, and vector context into one payload.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'A quick at-a-glance overview; use get_member_health_summary. Visual output; use generate_health_chart.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_member_health_summary', 'generate_health_chart', 'get_health_timeline' ),
+			'notes'           => __( 'output_format can be structured, narrative, or fhir_bundle; days_back caps vital-sign history at 365.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

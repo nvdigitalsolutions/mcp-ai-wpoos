@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.4.0
  */
-class WP_MCP_AI_Tool_Extract_Clinical_Entities implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Extract_Clinical_Entities implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Default_Capability;
 
@@ -67,6 +67,20 @@ class WP_MCP_AI_Tool_Extract_Clinical_Entities implements WP_MCP_AI_Tool_Interfa
 			. 'lab values, symptoms) from unstructured medical text using specialised '
 			. 'clinical NLP models. Runs locally — no patient data leaves the network.',
 			'nvoos-embedded'
+		);
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Extracting diseases, medications, procedures, anatomy, lab values, and symptoms from unstructured clinical text.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Removing identifiers before sharing text; use deidentify_health_record. Persisting findings; use health_capture_encounter.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'deidentify_health_record', 'health_capture_encounter', 'export_fhir_data' ),
+			'notes'           => __( 'Model enum offers seven clinical NER models; analysis runs locally via OpenMed so text never leaves the network.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

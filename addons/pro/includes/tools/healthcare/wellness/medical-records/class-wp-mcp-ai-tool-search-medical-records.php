@@ -21,7 +21,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/traits/trait-wp-mcp-ai-relevance-sea
  *
  * @since 2.4.0
  */
-class WP_MCP_AI_Tool_Search_Medical_Records implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Search_Medical_Records implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_CRM_Relevance_Search;
 
 	/**
@@ -51,6 +51,20 @@ class WP_MCP_AI_Tool_Search_Medical_Records implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Search and research medical records including procedures, diagnoses, lab results, treatments, vaccinations, imaging, and hospitalizations. Filter by member, record type, provider, date ranges, and keywords. Supports configurable sort order (date, title, provider) and TF-IDF relevance ranking when searching by keyword. Essential for medical history review and care coordination.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Researching records by keyword, member, record type, provider, or date range, with optional TF-IDF relevance ranking.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Simple member or type enumeration; use list_medical_records. One known record_id; use get_medical_record.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_medical_records', 'get_medical_record', 'get_health_timeline' ),
+			'notes'           => __( 'Set orderby=relevance with a search keyword for TF-IDF ranking; supports provider and date filters.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get imaging hanging protocol tool.
  */
-class WP_MCP_AI_Tool_Get_Imaging_Hanging_Protocol implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Imaging_Hanging_Protocol implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -57,6 +57,20 @@ class WP_MCP_AI_Tool_Get_Imaging_Hanging_Protocol implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Return a default viewer hanging-protocol for a given modality (or for the modality of a stored study). Filterable so partner viewers can plug in custom layouts.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching a default per-modality viewer layout for Cornerstone3D or OHIF before displaying a study.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Study metadata or summaries; use manage_imaging_studies. Importing studies; use import_dicom_study.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_imaging_studies', 'interpret_imaging_study' ),
+			'notes'           => __( 'Pass modality, study_id, or study_uid. Unknown modalities fall back to a generic 1x1 layout.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

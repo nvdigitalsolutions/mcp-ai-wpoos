@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * List prescriptions.
  */
-class WP_MCP_AI_Tool_List_Prescriptions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Prescriptions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_List_Prescriptions implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Lists prescriptions with optional filtering by member and status.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing prescriptions for a member, optionally filtered by status.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Medication-name or prescriber research; use search_prescriptions. One known prescription_id; use get_prescription.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_prescription', 'search_prescriptions', 'get_medication_schedule' ),
+			'notes'           => __( 'Default 20 prescriptions per page, max 100; status values are active, completed, discontinued, or expired.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
