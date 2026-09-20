@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Generate_Feature_Section implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Feature_Section implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -54,6 +54,18 @@ class WP_MCP_AI_Tool_Generate_Feature_Section implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Creates feature showcase sections with icons, titles, and descriptions. Supports grid, list, and card layouts with customizable columns and styling.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a feature showcase section with icons, titles, and descriptions in grid, list, or card layout.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For image portfolios use generate_gallery_section; for customer quotes use build_testimonial_section.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_gallery_section', 'build_testimonial_section', 'generate_landing_page' ),
+			'notes'           => __( 'Returns section data for assembly into a page; nothing is published.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

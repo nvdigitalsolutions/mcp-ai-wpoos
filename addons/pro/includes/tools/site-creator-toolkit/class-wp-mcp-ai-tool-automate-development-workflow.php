@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Automate_Development_Workflow implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Automate_Development_Workflow implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -54,6 +54,18 @@ class WP_MCP_AI_Tool_Automate_Development_Workflow implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Automates end-to-end development workflows from planning to deployment using integrated Site Creator and Architect Agent tools.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Laying out a staged research-to-deploy workflow plan for a site, theme, plugin, or component project.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Executing the build; use site_creator for sites or scaffold_theme_structure for theme files. Page-level planning; use generate_site_plan.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_site_plan', 'site_creator', 'scaffold_theme_structure', 'integrate_with_architect' ),
+			'notes'           => __( 'Returns a workflow plan; it does not execute the stages.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

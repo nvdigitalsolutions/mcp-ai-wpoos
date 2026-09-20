@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -63,6 +63,18 @@ class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Research industry-standard best practices for site building including page builders, widgets, performance optimization, accessibility, and modern design patterns. Uses web search to discover current standards and recommendations.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Gathering current performance, accessibility, SEO, and conversion best practices before planning or building a site.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'To produce the build plan itself use generate_site_plan; to inspect live competitors use analyze_competitor_sites.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_site_plan', 'analyze_competitor_sites', 'generate_landing_page' ),
+			'notes'           => __( 'Falls back to static best practices when web search is unavailable.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

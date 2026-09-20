@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * This tool delegates to other tools to perform tasks like creating content,
  * installing plugins, and configuring settings.
  */
-class WP_MCP_AI_Pro_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -51,6 +51,18 @@ class WP_MCP_AI_Pro_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Creates a complete WordPress site from a plan following 2025 best practices. The plan can include site options, plugins to install, themes to activate (with theme.json support), and content to create (pages, posts).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Provisioning a complete live WordPress site from one plan: options, theme, plugins, pages, and menus.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Planning without executing; use generate_site_plan. Single option changes; use update_option. Drafting page content; use build_about_page or create_homepage_layout.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_site_plan', 'install_and_activate_plugin', 'update_option' ),
+			'notes'           => __( 'State-changing: installs plugins and themes and creates real content on the live site.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

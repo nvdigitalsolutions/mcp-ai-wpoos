@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Create_Footer_Widget implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Footer_Widget implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -54,6 +54,18 @@ class WP_MCP_AI_Tool_Create_Footer_Widget implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Generates footer widgets and sections including copyright, menus, social links, and multi-column layouts.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating a footer layout with columns, copyright, social links, and optional newsletter signup.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Header navigation; use build_navigation_menu. Sidebar widgets; use generate_sidebar_widget. Custom widget code; use create_custom_widget.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'build_navigation_menu', 'generate_sidebar_widget', 'create_custom_widget' ),
+			'notes'           => __( 'Returns footer structure data; it does not register widget areas or menus.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

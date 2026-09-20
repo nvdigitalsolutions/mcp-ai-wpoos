@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Pro_Tool_Elementor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Elementor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -79,6 +79,20 @@ class WP_MCP_AI_Pro_Tool_Elementor implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Query Elementor templates. List and search saved templates, sections, and pages.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing, searching, or fetching saved Elementor templates before reusing, exporting, or referencing one.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating or editing templates, or packaging kits; use export_template_kit or save_site_template.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'export_template_kit', 'save_site_template', 'import_site_template' ),
+			'notes'           => __( 'Read-only: requires Elementor to be active and never modifies templates.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

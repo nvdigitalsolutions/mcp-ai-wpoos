@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Generate_Gallery_Section implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Gallery_Section implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -54,6 +54,18 @@ class WP_MCP_AI_Tool_Generate_Gallery_Section implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Creates image and portfolio gallery sections with lightbox, filters, and various layouts. Supports grid, masonry, and carousel presentations.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Building an image or portfolio gallery section with grid, masonry, carousel, or justified layouts, filters, and lightbox.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For text feature grids use generate_feature_section; for a full page layout use create_homepage_layout.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_feature_section', 'create_homepage_layout', 'generate_landing_page' ),
+			'notes'           => __( 'Generated gallery items are placeholders; swap in real media URLs before publishing.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

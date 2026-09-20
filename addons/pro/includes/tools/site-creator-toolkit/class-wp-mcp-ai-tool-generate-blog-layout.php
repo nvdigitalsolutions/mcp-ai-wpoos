@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Generate_Blog_Layout implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Blog_Layout implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -54,6 +54,18 @@ class WP_MCP_AI_Tool_Generate_Blog_Layout implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Creates blog listing and detail page layouts with categories, pagination, sidebar widgets, and featured post sections. Supports grid, list, and masonry layouts.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Designing blog listing and single-post layouts with grid, list, masonry, or featured styles, pagination, sidebar, and featured sections.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For a whole-page marketing layout use create_homepage_layout or generate_landing_page.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_sidebar_widget', 'create_homepage_layout', 'generate_landing_page' ),
+			'notes'           => __( 'Returns layout structure data only; it does not create pages or posts.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
