@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Benchmark AI tool performance and resource usage. Measures execution time, memory consumption, database queries, HTTP requests, and provides optimization recommendations. Supports multiple test runs and statistical analysis.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Measuring execution time, memory, or query load of a tool before or after refactoring it.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Static code quality or security review; use check_tool_compliance or analyze_tool_security instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'analyze_tool_security', 'check_tool_compliance', 'refactor_tool_code' ),
+			'notes'           => __( 'Runs the tool repeatedly; keep iterations low for long-running tools and set warmup_runs for stable averages.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

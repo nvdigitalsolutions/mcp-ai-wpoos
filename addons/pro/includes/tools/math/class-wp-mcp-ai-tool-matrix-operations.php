@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-math-response
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Matrix_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Matrix_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Math_Response;
 
 	/**
@@ -48,6 +48,20 @@ class WP_MCP_AI_Tool_Matrix_Operations implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Perform linear algebra and matrix operations. Supports addition, multiplication, transpose, inverse, determinant, eigenvalues, and more with LaTeX rendering.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Performing linear algebra on matrices: add, subtract, multiply, transpose, inverse, determinant, eigenvalues, rank, trace.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Symbolic calculus on functions; use calculate_derivative or calculate_integral.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'solve_equation', 'simplify_expression' ),
+			'notes'           => __( 'matrix_b is needed only for add, subtract, and multiply.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

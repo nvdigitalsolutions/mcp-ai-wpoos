@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_AI_Tool_Builder_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_AI_Tool_Builder_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR  = WP_MCP_AI_PRO_PATH . 'includes/tools/ai-tool-builder/examples';
@@ -49,6 +49,20 @@ class WP_MCP_AI_Tool_Import_AI_Tool_Builder_Blueprint implements WP_MCP_AI_Tool_
 	 */
 	public function get_description() {
 		return __( 'Install the AI Tool Developer assistant blueprint for custom tool development workflows.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing the tool-developer assistant blueprint when the AI Tool Builder toolkit is enabled.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Generating or editing tool code directly; use generate_tool_scaffold, generate_tool_logic, or refactor_tool_code.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_tool_scaffold', 'generate_tool_logic', 'generate_tool_tests' ),
+			'notes'           => __( 'Only the tool-developer blueprint is available; overwrite replaces an existing assistant.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 	/**
 	 * {@inheritdoc}
 	 */

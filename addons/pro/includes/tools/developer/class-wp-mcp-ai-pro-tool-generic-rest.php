@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a generic REST API client tool for AI assistants.
  */
-class WP_MCP_AI_Pro_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Allowed HTTP methods.
 	 *
@@ -61,6 +61,20 @@ class WP_MCP_AI_Pro_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Make HTTP requests to REST API endpoints for plugins or external services not explicitly integrated. Supports GET, POST, PUT, PATCH, and DELETE methods with custom headers and request bodies.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Making one-off HTTP calls to REST endpoints of plugins or external services that have no dedicated integration.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Connection-based API workflows; use generic_rest_api for saved connections with caching and retries.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generic_rest_api' ),
+			'notes'           => __( 'Response bodies are capped at 5 MB; requires manage_options. Supports bearer, basic, header, or no auth.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

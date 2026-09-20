@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Analyze_Tool_Security implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Analyze_Tool_Security implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Analyze_Tool_Security implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Perform comprehensive security analysis on AI tool code. Checks for input validation, sanitization, capability checks, SQL injection risks, XSS vulnerabilities, CSRF protection, and provides actionable security recommendations.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Auditing tool code for security issues before shipping or registering a new tool.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Style, naming, or documentation checks; use check_tool_compliance for standards and validate_tool_schema for parameter schemas.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'check_tool_compliance', 'validate_tool_schema', 'refactor_tool_code' ),
+			'notes'           => __( 'Defaults to a medium severity threshold; set ai_enhanced=true for AI review, which consumes tokens.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

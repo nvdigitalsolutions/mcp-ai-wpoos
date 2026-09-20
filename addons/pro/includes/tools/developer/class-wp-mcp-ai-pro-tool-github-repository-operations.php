@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-github-clie
 /**
  * Provides an assistant tool for GitHub repository operations focused on custom tool development.
  */
-class WP_MCP_AI_Pro_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,20 @@ class WP_MCP_AI_Pro_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_
 	 */
 	public function get_description() {
 		return __( 'Perform GitHub repository operations such as creating branches and managing files in the custom-tools directory.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Branching a repository or reading and writing files under the custom-tools directory via the GitHub API.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Discovering repository names or managing Codespaces; use list_github_repositories or manage_github_codespace.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_github_repositories', 'manage_github_codespace' ),
+			'notes'           => __( 'File paths must stay within custom-tools/; requires manage_options by default.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

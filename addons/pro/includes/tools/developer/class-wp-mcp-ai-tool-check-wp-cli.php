@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Reports on the current WP-CLI environment.
  */
-class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Inspects the server for a WP-CLI binary and reports path, version, and execution support.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Verifying WP-CLI availability: binary path, version, and whether the server can execute it.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Running WP-CLI or shell commands; use execute_shell_command to actually execute commands.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'execute_shell_command', 'site_creator' ),
+			'notes'           => __( 'Disabled unless the Site Creator settings enable WP-CLI tools; requires manage_options.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
