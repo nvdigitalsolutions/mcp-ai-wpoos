@@ -1,4 +1,21 @@
 <?xml version="1.0"?>
 <ruleset name="WPMCPAI">
 	<description>NV oOS project-specific PHPCS sniffs that enforce conventions documented in docs/proposals/.</description>
+
+	<arg value="p"/>
+	<arg name="extensions" value="php"/>
+
+	<!--
+		Tool Description Engineering — usage guidance on tool classes.
+
+		Run explicitly while the roll-out is in progress (the same sniff is
+		registered at severity 0 in the main phpcs.xml.dist so CI stays green):
+
+		vendor/bin/phpcs -standard=phpcs/WPMCPAI/ruleset.xml -severity=5 includes/tools addons/pro/includes/tools
+
+		See docs/project/proposals/tool-description-engineering-proposal.md.
+	-->
+	<rule ref="phpcs/WPMCPAI/Sniffs/Tools/ToolDescriptionGuidanceSniff.php">
+		<severity>5</severity>
+	</rule>
 </ruleset>

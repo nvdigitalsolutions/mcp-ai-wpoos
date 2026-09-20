@@ -17,7 +17,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-tool-markdown-converter.php';
 /**
  * Creates a new post or updates an existing one.
  */
-class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Markdown_Converter;
 
@@ -40,6 +40,18 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	 */
 	public function get_description() {
 		return __( 'Creates a new post or updates an existing one with the supplied content.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating or updating a post in one call, or updating content when the post ID is already known.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Strictly new posts with no update path; create_post is the simpler creation-only alternative.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_post', 'get_post', 'delete_post' ),
+			'notes'           => __( 'Omit post_id to create a new post; pass post_id to update the existing one.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

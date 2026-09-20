@@ -80,13 +80,13 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  * @since 1.0.0
  * @package WP_MCP_AI
  */
-class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * Build a search API URL with RFC 1738-encoded query parameters.
 	 *
-	 * add_query_arg() does not URL-encode values (build_query() passes
+	 * The add_query_arg() function does not URL-encode values (build_query() passes
 	 * $urlencode=false), which would leave raw spaces in the search query
 	 * sent to DuckDuckGo or Brave.
 	 *
@@ -137,6 +137,18 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	public function get_description() {
 		return __( 'Searches the public web via the configured provider and returns the top results.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Looking up current public web information, facts, or sources beyond site-local content.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Searching the local WordPress site; use search_content for site posts and pages.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'search_content', 'deep_research', 'get_post' ),
+			'notes'           => __( 'Provider is configurable (duckduckgo, brave, tavily, exa, perplexity); LLM responses are capped at 3 results.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

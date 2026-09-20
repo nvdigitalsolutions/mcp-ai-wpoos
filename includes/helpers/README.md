@@ -24,6 +24,7 @@ Every class in this folder is part of the public surface; there are no internal-
 | `WP_MCP_AI_User_Context_Helper` | `class-wp-mcp-ai-user-context-helper.php` | REST controllers, AJAX handlers, CLI commands — anywhere `wp_set_current_user()` would otherwise be called |
 | `WP_MCP_AI_Shortcut_Recommendations` | `class-wp-mcp-ai-shortcut-recommendations.php` | Tool registry presentation, slash-commands dashboard, prompt-shortcut UI |
 | `WP_MCP_AI_Content_Format_Helper` | `class-wp-mcp-ai-content-format-helper.php` | Post content-format detection (blocks/Elementor/classic), readable-text extraction, SEO plugin awareness — used by all post-reading and post-writing tools |
+| `WP_MCP_AI_Tool_Payload_Advisor` | `class-wp-mcp-ai-tool-payload-advisor.php` | Model-aware tool-cap recommendations for `WP_MCP_AI_REST::build_tools_payload()` (opt-in via `wp_mcp_ai_adaptive_tool_cap`) |
 
 ## Inputs / Outputs / Neighbors
 

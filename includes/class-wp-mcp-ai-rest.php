@@ -9297,6 +9297,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$max_tools = (int) apply_filters( 'wp_mcp_ai_max_chat_tools', 100 );
 				$max_tools = max( 1, min( 128, $max_tools ) ); // Clamp to 1-128.
 
+				// Adaptive (model-aware) tool cap — opt-in via the payload advisor.
+				// When enabled (per-assistant override or site default), the cap is
+				// lowered for small-context models following the industry ~40-tool
+				// rule of thumb (see MCP Toolbox style guide and
+				// docs/project/proposals/tool-description-engineering-proposal.md).
+				// The advisor only lowers the cap, never raises it.
+			if ( class_exists( 'WP_MCP_AI_Tool_Payload_Advisor' ) && WP_MCP_AI_Tool_Payload_Advisor::is_adaptive_cap_enabled( $assistant_config ) ) {
+				$assistant_model = isset( $assistant_config['model'] ) ? sanitize_text_field( $assistant_config['model'] ) : '';
+				$adaptive_cap    = WP_MCP_AI_Tool_Payload_Advisor::recommended_cap_for_model( $assistant_model );
+				if ( $adaptive_cap > 0 ) {
+					$max_tools = max( 1, min( $max_tools, $adaptive_cap ) );
+				}
+			}
+
 				/**
 				 * Maximum combined token budget for tool definitions within a chat payload.
 				 *
@@ -9420,7 +9434,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						$schema['properties'] = new stdClass();
 					}
 
-					$description = $tool->get_description();
+					// Use the model-facing description (short description + usage
+					// guidance suffix) so the LLM sees selection hints alongside
+					// the data-contract hints assembled by the registry.
+					$description = $this->registry->get_model_facing_description( $tool );
 
 					// Add provider-specific fallback text for tools that require a different provider.
 					$description = $this->maybe_add_provider_fallback_text( $tool, $description, $chat_provider );

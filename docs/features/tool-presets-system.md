@@ -58,6 +58,8 @@ Tools that have been "validated" (passed safety and capability checks) are autom
 
 The tool payload cap has been raised from 50 to 100 tools per assistant. This is managed by the preset system to ensure compatibility with AI provider context limits.
 
+The cap default stays at 100 (filter `wp_mcp_ai_max_chat_tools`, clamped 1–128, plus the 48,000-token budget filter `wp_mcp_ai_max_chat_tool_tokens`). A new opt-in adaptive cap (option `wp_mcp_ai_adaptive_tool_cap`, default off) lowers the effective cap per model context window via `WP_MCP_AI_Tool_Payload_Advisor` — 40 tools for ≤128K contexts, 64 for ≤256K, 100 above — and never raises it. Each assistant can override the site default from the Default Settings metabox on the Assistant edit screen (meta `_wp_mcp_ai_adaptive_tool_cap`: `on` / `off` / empty = inherit).
+
 ### Chips Bar UI
 
 Selected tools display as clickable chips below the tool selector:

@@ -151,6 +151,8 @@ class WP_MCP_AI_Tool_Example extends WP_MCP_AI_Tool_Base {
 }
 ```
 
+Tools may optionally implement `WP_MCP_AI_Tool_Usage_Guidance_Interface`: `get_description()` stays short (admin UI), while guidance (`when_to_use` / `when_not_to_use` / `related_tools` / `notes`) is assembled into the model-facing payload as a `[Usage: …]` suffix by `WP_MCP_AI_Tool_Registry::get_model_facing_description()`. Enforced by the `WPMCPAI.Tools.ToolDescriptionGuidance` sniff (advisory severity 0 during roll-out). See [`docs/features/tool-description-guidelines.md`](docs/features/tool-description-guidelines.md).
+
 ## Tool Return Format — Canonical Envelope
 
 Every tool's `execute()` method returns **exactly one of two shapes**. This is the canonical envelope enforced repo-wide (see [Unix Theory Compliance Proposal §2.2](docs/project/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md#22-canonical-return-envelope)).
