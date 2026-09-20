@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.11.0
  */
-class WP_MCP_AI_Tool_Manage_ICP_Profile implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Manage_ICP_Profile implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Option key that holds all ICP profile definitions.
@@ -112,6 +112,20 @@ class WP_MCP_AI_Tool_Manage_ICP_Profile implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Create, read, update, or delete Ideal Customer Profile definitions. ICP profiles define the characteristics of your best customers and are used for lead scoring, company evaluation, and pipeline prioritization.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating, updating, listing, or deleting ICP profile definitions, or setting the default with action=set_default.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Scoring a specific company or lead against a profile; use compute_icp_score.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'compute_icp_score', 'score_lead' ),
+			'notes'           => __( 'Profiles persist in the wp_mcp_ai_icp_profiles option; profile_slug is required for get, update, delete, and set_default.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	// -------------------------------------------------------------------------

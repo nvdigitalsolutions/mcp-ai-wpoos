@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @package WP_MCP_AI_Pro
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Snooze_CRM_Activity implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Snooze_CRM_Activity implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether this tool is available.
@@ -57,6 +57,20 @@ class WP_MCP_AI_Tool_Snooze_CRM_Activity implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Snooze a CRM activity to a future date.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Postponing an activity to a later due date without marking it complete.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Finishing the activity; use complete_crm_activity. Logging a new activity; use create_crm_activity.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'complete_crm_activity', 'create_crm_activity', 'get_crm_activity' ),
+			'notes'           => __( 'Requires activity_id. Defaults to tomorrow when new_due_date is omitted and increments snooze_count.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * Parameters schema.

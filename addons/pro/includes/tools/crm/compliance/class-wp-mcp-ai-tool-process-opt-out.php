@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Process_Opt_Out implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Process_Opt_Out implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -73,6 +73,20 @@ class WP_MCP_AI_Tool_Process_Opt_Out implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Process an opt-out request: add to DNC list, revoke consent, pseudonymise PII on matching leads, and log for compliance.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Handling a full opt-out request: add to the DNC list, revoke consent, and pseudonymise PII on every matching lead.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Revoking consent for one known contact only; use revoke_consent. Checking DNC status before outreach; use check_dnc_status.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'revoke_consent', 'check_dnc_status', 'record_consent' ),
+			'notes'           => __( 'Pseudonymises email, name, and phone by default; set preserve_record=true to keep PII and only apply DNC plus revocation.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Check_Dnc_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Check_Dnc_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_Check_Dnc_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Check whether an identifier (email or phone) is on the Do Not Contact list.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Verifying whether an email or phone is on the Do Not Contact list before sending any outreach.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Recording an opt-out or suppressing records; use process_opt_out. Recording consent; use record_consent.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'process_opt_out', 'record_consent', 'revoke_consent' ),
+			'notes'           => __( 'Checks internal and external DNC sources (wp_mcp_ai_crm_dnc_lists filter); channel defaults to all.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

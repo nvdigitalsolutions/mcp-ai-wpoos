@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Record_Consent implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Record_Consent implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_Record_Consent implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Record a consent event for a contact on a specific channel with legal basis and evidence.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Logging a consent event for a contact on a specific channel with legal basis, source, and optional evidence URL.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Revoking consent or handling opt-outs; use revoke_consent or process_opt_out. Viewing the trail; use get_consent_audit.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'revoke_consent', 'get_consent_audit', 'process_opt_out' ),
+			'notes'           => __( 'legal_basis enum: consent, legitimate_interest, contractual_necessity, legal_obligation; channel must be a CRM Codes channel.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

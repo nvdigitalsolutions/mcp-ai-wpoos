@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @package WP_MCP_AI_Pro
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Create_CRM_Activity implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_CRM_Activity implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether this tool is available.
@@ -65,6 +65,20 @@ class WP_MCP_AI_Tool_Create_CRM_Activity implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Log a sales activity (call, email, meeting, task, note) against a lead or deal.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Logging a call, email, meeting, task, or note against a lead, deal, or contact.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Marking an existing activity complete; use complete_crm_activity. Reading logged activities; use list_crm_activities.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'complete_crm_activity', 'list_crm_activities', 'get_crm_activity' ),
+			'notes'           => __( 'Set related_type and related_id to attach the activity. activity_type accepts call, email, meeting, task, or note.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * Parameters schema.

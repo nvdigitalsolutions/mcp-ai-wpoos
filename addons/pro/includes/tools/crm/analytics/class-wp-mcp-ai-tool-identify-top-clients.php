@@ -44,7 +44,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.7.0
  */
-class WP_MCP_AI_Tool_Identify_Top_Clients implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Identify_Top_Clients implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -87,6 +87,20 @@ class WP_MCP_AI_Tool_Identify_Top_Clients implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Identify your most-contacted relationships by aggregating activity volume, recency, channel diversity, and completion rates across calls, emails, meetings, and tasks. Answers the question "who do I talk to the most?" — ranks by engagement frequency, not revenue. For revenue-based ranking, use identify_top_customers instead.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Ranking your most-contacted relationships by activity volume, recency, channel diversity, and completion rates.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Revenue-based customer ranking; use identify_top_customers, which scores deal value and lifecycle instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'identify_top_customers', 'get_contact_interactions', 'recalculate_engagement_scores' ),
+			'notes'           => __( 'Ranks by engagement frequency, not revenue; filter by activity_type, date range, and min_interactions.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

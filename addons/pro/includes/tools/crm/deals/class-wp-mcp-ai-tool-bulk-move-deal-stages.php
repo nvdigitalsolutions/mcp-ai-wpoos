@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 3.2.0
  */
-class WP_MCP_AI_Tool_Bulk_Move_Deal_Stages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Bulk_Move_Deal_Stages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -92,6 +92,20 @@ class WP_MCP_AI_Tool_Bulk_Move_Deal_Stages implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Move up to 100 deals to a single pipeline stage in one call. Reports per-row outcomes (updated, skipped, not_found) so a malformed ID never aborts the batch. Supports undo of the last move per row.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Moving up to 100 deals to one pipeline stage in a single call, with per-row updated, skipped, or not_found results.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Moving a single deal; use move_deal_stage. Changing non-stage fields; use update_deal.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'move_deal_stage', 'list_deals', 'update_deal' ),
+			'notes'           => __( 'Rows already at the target stage are skipped without touching updated_at. Set undo=true to revert the last move.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

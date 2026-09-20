@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_List_Deals implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Deals implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -84,6 +84,20 @@ class WP_MCP_AI_Tool_List_Deals implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	public function get_description() {
 		return __( 'List and filter CRM deals/opportunities by stage, lead, owner, amount range, and close date. Returns deals with win probability and weighted amounts.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing and filtering deals by stage, lead, owner, amount range, or close date with pagination.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Fetching one deal in full; use get_deal. Changing a deal; use update_deal or move_deal_stage.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_deal', 'update_deal', 'move_deal_stage' ),
+			'notes'           => __( 'Enriches each row with win_probability, weighted_amount, and formatted_amount using CRM engine defaults.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

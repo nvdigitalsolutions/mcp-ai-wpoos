@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 3.2.0
  */
-class WP_MCP_AI_Tool_Get_CRM_Handover implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_CRM_Handover implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -78,6 +78,20 @@ class WP_MCP_AI_Tool_Get_CRM_Handover implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Assemble a paste-ready plain-text handover bundle for a lead or deal: entity facts, BANT scores, stage history with time-in-stage, last email signals, company profile, recent activities, and a closing ask. No AI call is made.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Assembling a paste-ready briefing for a lead or deal to hand off to another assistant or a human.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Editing records; this tool is read-only. Fetching one raw record; use get_deal or manage_crm_contact.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_deal', 'manage_crm_contact', 'get_contact_interactions' ),
+			'notes'           => __( 'entity is lead or deal; include selects sections: lead, company, deals, activities, history. No LLM call is made.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

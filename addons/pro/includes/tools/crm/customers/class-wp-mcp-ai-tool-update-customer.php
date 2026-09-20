@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.6.0
  */
-class WP_MCP_AI_Tool_Update_Customer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Customer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -56,6 +56,20 @@ class WP_MCP_AI_Tool_Update_Customer implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Update an existing customer record. Modify contact details, billing data, lifecycle stage, tags, or notes.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Changing contact details, billing data, lifecycle stage, tags, or notes on an existing customer.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating a new record; use create_customer. Removing a record; use delete_customer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_customer', 'create_customer', 'delete_customer' ),
+			'notes'           => __( 'Emails are re-validated when supplied; updating first_name or last_name also rebuilds the post title.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

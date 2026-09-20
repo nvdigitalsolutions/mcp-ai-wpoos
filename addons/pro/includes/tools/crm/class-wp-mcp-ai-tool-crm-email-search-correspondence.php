@@ -33,7 +33,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/traits/trait-wp-mcp-ai-relevance-sea
  *
  * @since 2.1.0
  */
-class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_CRM_Relevance_Search;
 
@@ -140,6 +140,20 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Search CRM contacts for customer correspondence activity. Supports industry-standard email categories (support, general, sales, escalated), response-time analytics, routing suggestions, follow-up status filtering, and free-text TF-IDF relevance search across name, company, and email. Configurable orderby (relevance, last_contacted, date, name, company) and order (ASC/DESC). Results are cached and can be auto-refreshed on a WP Cron schedule.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding contacts needing follow-up or SLA review, with response-time analytics and routing suggestions.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Invoice or payment records; use crm_email_search_accounting. Fresh inbound leads; use crm_email_search_leads.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'crm_email_search_leads', 'crm_email_search_accounting' ),
+			'notes'           => __( 'Set sla_breach_only=true with days_since_contact to list SLA breaches; include_analytics adds response-time data.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

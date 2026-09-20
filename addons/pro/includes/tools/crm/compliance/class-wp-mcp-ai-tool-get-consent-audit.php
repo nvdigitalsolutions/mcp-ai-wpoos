@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Get_Consent_Audit implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Consent_Audit implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_Get_Consent_Audit implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Retrieve full consent audit trail for a contact — consent records + audit log entries. Suitable for DSAR / regulator inspection.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pulling the full consent trail for a contact - consent records plus audit entries - for DSAR responses or regulator inspection.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Recording new consent; use record_consent. Revoking consent or opting out; use revoke_consent or process_opt_out.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'record_consent', 'revoke_consent', 'check_dnc_status' ),
+			'notes'           => __( 'Requires manage_options and carries the pii-access flag; viewing the audit is itself logged as consent_audit_viewed.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

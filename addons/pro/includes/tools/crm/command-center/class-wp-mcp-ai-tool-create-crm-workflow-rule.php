@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * (registration lifecycle automation): both files originally declared the same
  * class name, which fataled whenever both were loaded in one process.
  */
-class WP_MCP_AI_Tool_Create_Crm_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Crm_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Check whether the tool is available.
 	 *
@@ -53,6 +53,20 @@ class WP_MCP_AI_Tool_Create_Crm_Workflow_Rule implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Create an if-this-then-that automation rule for the CRM Workflow Command Center.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new if-this-then-that automation rule for the CRM Workflow Command Center.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Listing, updating, deleting, or toggling rules; use manage_workflow_rules. Previewing outcomes; use simulate_workflow_rule.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_workflow_rules', 'simulate_workflow_rule', 'get_workflow_inbox' ),
+			'notes'           => __( 'Requires manage_options; triggers include inbound_message_received and lead_score_exceeds; actions are type/params pairs.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 	/**
 	 * Get the JSON Schema for the tool parameters.
 	 *

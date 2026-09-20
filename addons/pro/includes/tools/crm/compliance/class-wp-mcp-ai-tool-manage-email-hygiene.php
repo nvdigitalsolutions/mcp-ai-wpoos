@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.8.0
  */
-class WP_MCP_AI_Tool_Manage_Email_Hygiene implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Manage_Email_Hygiene implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -72,6 +72,20 @@ class WP_MCP_AI_Tool_Manage_Email_Hygiene implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'View, add, and remove entries from the email exclude list and priority list. Exclude entries are always skipped during import; priority entries are always fast-tracked. Supports exact emails, domain patterns (@example.com), and substring matching.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adding, removing, or viewing entries in the CRM email exclude list and priority list that steer the import pipeline.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Classifying a single email; use classify_email_hygiene. Removing spam or stale leads; use prune_crm_messages.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'classify_email_hygiene', 'prune_crm_messages' ),
+			'notes'           => __( 'Supports exact emails and @domain patterns; add and remove actions are audit-logged with an optional reason.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
