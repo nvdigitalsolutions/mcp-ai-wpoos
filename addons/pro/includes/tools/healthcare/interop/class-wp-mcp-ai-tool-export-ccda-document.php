@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Export CCDA document tool.
  */
-class WP_MCP_AI_Tool_Export_CCDA_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Export_CCDA_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_Export_CCDA_Document implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Generate a minimal HL7 C-CDA R2.1 Continuity of Care Document (XML) for a member, with allergies, medications, problems, and immunizations narratives.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating a minimal C-CDA R2.1 Continuity of Care Document XML for a member to share with another provider or portal.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Exchanging machine-readable resources between systems; use export_fhir_data instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'export_fhir_data', 'import_fhir_bundle' ),
+			'notes'           => __( 'Allergies, medications, problems, and immunizations are drawn from local CPTs; enrich via the wp_mcp_ai_healthcare_ccda_document filter.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -32,7 +32,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Capture_Tool_Base' ) ) {
 /**
  * MemPalace capture tool for healthcare clinical encounters.
  */
-class WP_MCP_AI_Tool_Health_Capture_Encounter extends WP_MCP_AI_Pro_Capture_Tool_Base {
+class WP_MCP_AI_Tool_Health_Capture_Encounter extends WP_MCP_AI_Pro_Capture_Tool_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -53,6 +53,20 @@ class WP_MCP_AI_Tool_Health_Capture_Encounter extends WP_MCP_AI_Pro_Capture_Tool
 	 */
 	public function get_description() {
 		return __( 'Capture a clinical encounter, vitals reading, allergy note, prescription change, imaging finding, or clinical note into the MemPalace patient drawer. Records are PHI-classified and are born tier=core so they are always loaded by hierarchical recall and wake_up_context.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Saving a clinical encounter, vitals reading, allergy note, prescription change, imaging finding, or note into the patient MemPalace drawer.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Structured vitals or checkup CPT records; use log_vital_signs or create_checkup. De-identifying text; use deidentify_health_record.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_health_timeline', 'log_vital_signs', 'deidentify_health_record' ),
+			'notes'           => __( 'Rooms: vitals, allergies, prescriptions, imaging, notes. Records are PHI-classified, verbatim, and born tier=core.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

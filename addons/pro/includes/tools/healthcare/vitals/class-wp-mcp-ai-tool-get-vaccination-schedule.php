@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get vaccination schedule tool.
  */
-class WP_MCP_AI_Tool_Get_Vaccination_Schedule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Vaccination_Schedule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -53,6 +53,20 @@ class WP_MCP_AI_Tool_Get_Vaccination_Schedule implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Return CDC, WHO, AAFP feline, or AAHA canine vaccine recommendations for a given age, sorted into due/overdue/upcoming buckets.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Looking up CDC, WHO, AAFP feline, or AAHA canine vaccine recommendations for an age and species, bucketed into due, overdue, and upcoming.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Recording an administered dose or checking a member\'s stored history; use track_vaccinations.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'track_vaccinations' ),
+			'notes'           => __( 'Pass given_codes (CVX or short slugs) so the evaluator excludes doses already administered when bucketing.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

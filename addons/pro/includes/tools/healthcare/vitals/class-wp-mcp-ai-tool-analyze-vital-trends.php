@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Analyze Vital Trends tool.
  */
-class WP_MCP_AI_Tool_Analyze_Vital_Trends implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Analyze_Vital_Trends implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -54,6 +54,20 @@ class WP_MCP_AI_Tool_Analyze_Vital_Trends implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Compute trend statistics (min/max/mean and direction) over a member\'s recent vital-sign readings.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Summarising a member\'s recent vital-sign readings with min/max/mean statistics and direction over a days_back window.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Flagging out-of-range readings; use flag_abnormal_vitals. Logging new measurements; use log_vital_signs.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'log_vital_signs', 'flag_abnormal_vitals' ),
+			'notes'           => __( 'Delegates to the log_vital_signs analyse_trends action; returns empty statistics when the member has no stored readings.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
