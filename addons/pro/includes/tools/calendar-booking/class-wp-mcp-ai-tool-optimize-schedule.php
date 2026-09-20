@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Optimize_Schedule tool.
  */
-class WP_MCP_AI_Tool_Optimize_Schedule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Optimize_Schedule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Check if tool is available.
 	 *
@@ -55,6 +55,19 @@ class WP_MCP_AI_Tool_Optimize_Schedule implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'AI-optimize appointment scheduling for efficiency.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Analyzing appointment density over a date range and generating gap-reduction, booking-growth, or load-balancing suggestions.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Moving specific appointments yourself; use reschedule_appointment or update_appointment instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_calendar_view', 'reschedule_appointment', 'check_availability' ),
+			'notes'           => __( 'Returns analysis and recommendations only; it never moves or modifies appointments.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 		/**
 		 * Get the parameters schema.
 		 *

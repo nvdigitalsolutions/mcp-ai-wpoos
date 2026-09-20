@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Sync_Outlook_Calendar tool.
  */
-class WP_MCP_AI_Tool_Sync_Outlook_Calendar implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Sync_Outlook_Calendar implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Check if tool is available.
 	 *
@@ -54,6 +54,19 @@ class WP_MCP_AI_Tool_Sync_Outlook_Calendar implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Sync appointments with Outlook Calendar.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Queuing an appointment for Outlook Calendar sync when an Outlook bridge is configured on the site.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Syncing with Google Calendar; use sync_google_calendar instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'sync_google_calendar', 'update_appointment' ),
+			'notes'           => __( 'Without an Outlook integration the sync is only marked pending, not delivered.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 		/**
 		 * Get the parameters schema.
 		 *

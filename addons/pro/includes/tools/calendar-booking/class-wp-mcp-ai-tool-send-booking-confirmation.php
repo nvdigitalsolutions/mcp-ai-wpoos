@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Send_Booking_Confirmation tool.
  */
-class WP_MCP_AI_Tool_Send_Booking_Confirmation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Send_Booking_Confirmation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Check if tool is available.
 	 *
@@ -54,6 +54,19 @@ class WP_MCP_AI_Tool_Send_Booking_Confirmation implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Send confirmation emails to clients for their appointments.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Emailing a single client to confirm their appointment, with an optional iCal attachment and custom message.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Confirming several bookings in one batch; use send_booking_confirmations instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_booking_confirmations', 'send_appointment_reminder', 'create_appointment' ),
+			'notes'           => __( 'Sends real email via wp_mail and stamps the appointment with a confirmation timestamp.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 		/**
 		 * Get the parameters schema.
 		 *

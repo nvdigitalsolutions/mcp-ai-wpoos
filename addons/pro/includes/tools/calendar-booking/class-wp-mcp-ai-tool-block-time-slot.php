@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Block_Time_Slot tool.
  */
-class WP_MCP_AI_Tool_Block_Time_Slot implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Block_Time_Slot implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Check if tool is available.
 	 *
@@ -55,6 +55,19 @@ class WP_MCP_AI_Tool_Block_Time_Slot implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Block specific time slots to prevent appointments.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Removing specific time ranges from the bookable schedule so no appointments can be created in them.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Setting recurring weekly hours; use set_availability_rules. Removing an existing booking; use cancel_appointment.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'set_availability_rules', 'check_availability', 'get_available_slots' ),
+			'notes'           => __( 'Blocked ranges are respected by check_availability and get_available_slots.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 		/**
 		 * Get the parameters schema.
 		 *

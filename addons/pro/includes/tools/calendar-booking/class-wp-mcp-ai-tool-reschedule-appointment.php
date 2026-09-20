@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.6.0
  */
-class WP_MCP_AI_Tool_Reschedule_Appointment implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Reschedule_Appointment implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -96,6 +96,20 @@ class WP_MCP_AI_Tool_Reschedule_Appointment implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Reschedule appointments to new time slots with automatic conflict detection and client notifications.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Moving an existing appointment to a new time slot with conflict checking and an optional client notification.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Changing client details or status without moving the time; use update_appointment instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_appointment', 'cancel_appointment', 'send_reschedule_invitation', 'check_availability' ),
+			'notes'           => __( 'Emails the client when send_notification is true; conflicts are checked by default.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

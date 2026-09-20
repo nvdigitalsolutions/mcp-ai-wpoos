@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.6.0
  */
-class WP_MCP_AI_Tool_Check_Availability implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Check_Availability implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -96,6 +96,20 @@ class WP_MCP_AI_Tool_Check_Availability implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Check time slot availability for appointment booking. Considers existing appointments, business hours, and blocked times.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Verifying that one specific start_time/end_time window is free before creating a booking.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Listing all open times for a day; use get_available_slots. Defining weekly hours; use set_availability_rules.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_available_slots', 'create_appointment', 'block_time_slot' ),
+			'notes'           => __( 'Pass provider_id and service_id for JetAppointment or instance_id for JetBooking to include external systems.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

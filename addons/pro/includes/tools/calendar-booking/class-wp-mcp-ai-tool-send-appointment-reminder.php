@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Send_Appointment_Reminder tool.
  */
-class WP_MCP_AI_Tool_Send_Appointment_Reminder implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Send_Appointment_Reminder implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Check if tool is available.
 	 *
@@ -54,6 +54,19 @@ class WP_MCP_AI_Tool_Send_Appointment_Reminder implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Send automated reminders for upcoming appointments.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Emailing a client a reminder for a specific upcoming appointment before it starts.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Confirming a new booking or inviting a no-show to rebook; use send_booking_confirmation or send_reschedule_invitation.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_booking_confirmation', 'send_reschedule_invitation', 'send_booking_confirmations' ),
+			'notes'           => __( 'Sends real email to the stored client address via wp_mail and logs the reminder on the appointment.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 		/**
 		 * Get the parameters schema.
 		 *
