@@ -71,6 +71,20 @@ class WP_MCP_AI_Pro_Tool_List_Templates {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering available templates, their categories, usage stats, and placeholders before instantiating one.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating a plan from a chosen template; use instantiate_template. One-time library setup belongs to seed_template_library.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'instantiate_template', 'create_template', 'seed_template_library' ),
+			'notes'           => __( 'Defaults to 20 results sorted by usage_count descending; category and status filters accept "all".', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @param array $arguments Tool arguments.

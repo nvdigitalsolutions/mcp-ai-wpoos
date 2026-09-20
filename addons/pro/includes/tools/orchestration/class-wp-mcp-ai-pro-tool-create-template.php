@@ -91,6 +91,20 @@ class WP_MCP_AI_Pro_Tool_Create_Template {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Standardizing a repeatable workflow as a reusable template with placeholders and default configuration.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use create_task_plan for one-off task lists; instantiate_template turns a saved template into a plan.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_task_plan', 'instantiate_template', 'list_templates' ),
+			'notes'           => __( 'Requires template_name, description, category, and markdown_template; use {{placeholder}} syntax for variables.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @param array $arguments Tool arguments.

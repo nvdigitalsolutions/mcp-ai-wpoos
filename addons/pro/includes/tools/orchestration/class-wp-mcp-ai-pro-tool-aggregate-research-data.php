@@ -96,6 +96,20 @@ class WP_MCP_AI_Pro_Tool_Aggregate_Research_Data {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Merging research results from multiple URLs or content blocks into one deduplicated compilation.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use generate_research_report to compile a narrative report from findings you already have.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_research_report', 'extract_structured_data', 'create_post_from_research' ),
+			'notes'           => __( 'Duplicate URLs and near-identical content are dropped based on the deduplication_mode threshold.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Execute tool
 	 *
 	 * @param array $arguments Tool arguments.

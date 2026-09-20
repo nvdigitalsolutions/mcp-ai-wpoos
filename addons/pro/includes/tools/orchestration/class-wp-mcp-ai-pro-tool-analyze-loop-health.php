@@ -79,6 +79,20 @@ class WP_MCP_AI_Pro_Tool_Analyze_Loop_Health {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Diagnosing a running autonomous session for repeated actions, error cascades, or stuck loops.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use check_exit_conditions to decide whether the loop should stop and get_session_status for a plain summary.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'check_exit_conditions', 'get_loop_metrics', 'get_session_status' ),
+			'notes'           => __( 'Requires a valid session_id; health status, warnings, and recommendations are persisted back to the session.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @param array $arguments Tool arguments.

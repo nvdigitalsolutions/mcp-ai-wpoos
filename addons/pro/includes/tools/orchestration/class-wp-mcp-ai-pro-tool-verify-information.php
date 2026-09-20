@@ -67,6 +67,21 @@ class WP_MCP_AI_Pro_Tool_Verify_Information {
 
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking a claim against supplied source texts to return a confidence score and verdict.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Discovering new information from the web; use generate_research_report for sourced reports.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_research_report', 'aggregate_research_data', 'create_post_from_research' ),
+			'notes'           => __( 'Uses keyword overlap scoring; verdicts are verified, partially_verified, contradicted, or unverified.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.

@@ -72,6 +72,20 @@ class WP_MCP_AI_Pro_Tool_Check_Exit_Conditions {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Gating loop termination when both completion indicators and an explicit EXIT_SIGNAL are required.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use detect_completion_indicators to score text first; this tool only evaluates the gate, not the work.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'detect_completion_indicators', 'create_execution_prompt', 'analyze_loop_health' ),
+			'notes'           => __( 'Exits cleanly only on the dual gate; safety limits (iterations, tokens, expiry, circuit breaker) force a guarded exit.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @param array $arguments Tool arguments.
