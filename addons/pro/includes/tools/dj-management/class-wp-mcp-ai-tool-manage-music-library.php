@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Manages and organizes music library.
  */
-class WP_MCP_AI_Tool_Manage_Music_Library implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Manage_Music_Library implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Manage_Music_Library implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Manages the DJ music library. Add, update, or search tracks with metadata including genre, BPM, key, and tags.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adding, updating, searching, or deleting tracks in the DJ music library via the action parameter.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Read-only popularity reports; use get_trending_tracks. Building playlists; use create_playlist or generate_playlist_ai.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_trending_tracks', 'analyze_track_bpm', 'create_playlist', 'mix_transition_planner' ),
+			'notes'           => __( 'Write actions: add, update, delete. Search is read-only. Delete permanently removes the dj_track post.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

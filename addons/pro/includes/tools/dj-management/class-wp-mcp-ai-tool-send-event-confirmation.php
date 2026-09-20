@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Sends event confirmation emails.
  */
-class WP_MCP_AI_Tool_Send_Event_Confirmation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Send_Event_Confirmation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Send_Event_Confirmation implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Sends a booking confirmation email to the client with event details, timeline, and next steps.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Emailing a real booking confirmation to a client once event details are locked in.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Editing booking content before confirming; use update_event_details. Requesting payment; use send_client_invoice.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_client_invoice', 'update_event_details', 'create_event_booking', 'generate_event_timeline' ),
+			'notes'           => __( 'Sends immediately and sets _booking_status to confirmed. Include the timeline only after it is finalized.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

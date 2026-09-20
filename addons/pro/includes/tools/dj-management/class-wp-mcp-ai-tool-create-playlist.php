@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates custom DJ playlists.
  */
-class WP_MCP_AI_Tool_Create_Playlist implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Playlist implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Create_Playlist implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Create a new playlist or update an existing playlist. If playlist_id is provided, updates the existing playlist instead of creating a new one. Supports event-specific and genre-based playlists with tracks, ordering, and metadata. Use this tool for both creating new playlists and updating existing ones.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a playlist with a hand-picked track list or updating an existing one by playlist_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Auto-building from mood and genre; use generate_playlist_ai. Reordering an existing set for rotation; use update_playlist_rotation.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_playlist_ai', 'update_playlist_rotation', 'manage_music_library' ),
+			'notes'           => __( 'Tracks are passed as objects with title, artist, bpm, key, and duration.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

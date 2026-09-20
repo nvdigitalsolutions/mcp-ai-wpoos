@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Tracks event payment status.
  */
-class WP_MCP_AI_Tool_Track_Event_Payments implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Track_Event_Payments implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Track_Event_Payments implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Tracks payment status for DJ event bookings. Records deposits, payments, and outstanding balances.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording a deposit or payment against a booking and recalculating the outstanding balance.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sending the invoice that requests payment; use send_client_invoice. Changing pricing; use update_event_details.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_client_invoice', 'update_event_details', 'create_event_booking' ),
+			'notes'           => __( 'State-changing: appends to _payments meta and updates _payment_status to paid, partial, or pending.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

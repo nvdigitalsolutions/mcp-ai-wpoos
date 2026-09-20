@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Adds a new equipment item to DJ inventory.
  */
-class WP_MCP_AI_Tool_Add_Equipment_Item implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Add_Equipment_Item implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Add_Equipment_Item implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Add a new equipment item or update an existing equipment item. If equipment_id is provided, updates the existing equipment item instead of creating a new one. Tracks equipment details, purchase information, and current status in the inventory system. Use this tool for both adding new equipment items and updating existing ones.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adding a new DJ gear item to inventory or updating an existing item by equipment_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Inventory-wide views; use equipment_inventory_report. Booking gear for an event; use reserve_equipment.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'equipment_inventory_report', 'reserve_equipment', 'track_equipment_maintenance' ),
+			'notes'           => __( 'Pass equipment_id to update an item instead of creating a duplicate; new items default to available.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

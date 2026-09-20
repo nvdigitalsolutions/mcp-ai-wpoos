@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates DJ service contracts.
  */
-class WP_MCP_AI_Tool_Generate_DJ_Contract implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_DJ_Contract implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Generate_DJ_Contract implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Generates a professional DJ service contract with event details, terms, and conditions. Creates a formatted contract document.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Drafting a formal DJ service agreement for a booking with terms, pricing, and cancellation policy.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Confirming booking details with the client; use send_event_confirmation. Requesting payment; use send_client_invoice.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_event_booking', 'send_event_confirmation', 'send_client_invoice' ),
+			'notes'           => __( 'The output is a client-facing legal document; review it before sending it to the client.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
