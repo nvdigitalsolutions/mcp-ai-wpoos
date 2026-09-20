@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Updates an existing ECA.
  */
-class WP_MCP_AI_Tool_Update_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,18 @@ class WP_MCP_AI_Tool_Update_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	public function get_description() {
 		return __( 'Updates an existing Extra-Curricular Activity. Provide only the fields you want to update. Tracks all changes in an audit trail and automatically adjusts capacity status.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Changing fields on an existing ECA such as name, schedule, capacity, or cost while keeping its enrollments.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating or deleting an ECA; use create_eca or delete_eca.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_eca', 'delete_eca', 'get_eca' ),
+			'notes'           => __( 'Audit-trails changes and recalculates capacity status; push changes to iSAMS with sync_ecas_to_isams.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

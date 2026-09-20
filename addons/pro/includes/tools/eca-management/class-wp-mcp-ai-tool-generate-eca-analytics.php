@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates comprehensive ECA program analytics with Chart.js-compatible data.
  */
-class WP_MCP_AI_Tool_Generate_ECA_Analytics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_ECA_Analytics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Generate_ECA_Analytics implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Generates comprehensive ECA program analytics with Chart.js-compatible data. Supports participation, capacity, financial, and engagement report types with customizable date ranges and filters.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing program-level analytics for participation, capacity, financial, or engagement with Chart.js-ready data.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'A report for one ECA or one student; use generate_eca_participation_report or get_student_participation_summary. Raw CSV; use export_eca_data.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_eca_participation_report', 'get_student_participation_summary', 'export_eca_data' ),
+			'notes'           => __( 'Set a date_range to avoid pulling full-history data.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

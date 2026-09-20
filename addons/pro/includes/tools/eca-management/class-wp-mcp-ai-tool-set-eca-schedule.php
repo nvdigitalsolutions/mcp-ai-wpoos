@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Sets advanced scheduling with multiple sessions and recurring patterns for an ECA.
  */
-class WP_MCP_AI_Tool_Set_ECA_Schedule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Set_ECA_Schedule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Set_ECA_Schedule implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Set advanced scheduling with multiple sessions and recurring patterns for an Extra-Curricular Activity. Supports weekly, biweekly, and monthly recurrence with venue conflict detection.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Defining multi-session weekly, biweekly, or monthly schedules with venues for an ECA.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading the current schedule; use get_eca_timetable. Simple single-field changes; use update_eca.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_eca_timetable', 'check_eca_conflicts', 'update_eca' ),
+			'notes'           => __( 'Detects venue conflicts and replaces the existing schedule; re-send the full session set on changes.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

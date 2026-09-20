@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Manages waitlisted students for an ECA.
  */
-class WP_MCP_AI_Tool_Manage_ECA_Waitlist implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Manage_ECA_Waitlist implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Manage_ECA_Waitlist implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'View, reorder, and manage waitlisted students for an ECA.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Viewing, reordering, promoting, or removing waitlisted students for an ECA.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Directly enrolling a student; use enroll_student_eca or bulk_enroll_students.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'enroll_student_eca', 'withdraw_student_eca', 'get_eca' ),
+			'notes'           => __( 'Promote moves a student into an active enrollment; promote_next fills the first open spot.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
