@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Deletes a medical record.
  */
-class WP_MCP_AI_Tool_Delete_Medical_Record implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Medical_Record implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Delete_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Permanently deletes a medical record from the system.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently removing a medical record by record_id when it was entered in error or must be purged.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Correcting or marking a record; use update_medical_record. This deletion is permanent and cannot be undone.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_medical_record', 'get_medical_record' ),
+			'notes'           => __( 'Requires delete_posts capability; the record is deleted permanently, not trashed.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

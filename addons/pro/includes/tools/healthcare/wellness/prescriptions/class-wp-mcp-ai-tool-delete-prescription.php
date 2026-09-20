@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Deletes a prescription.
  */
-class WP_MCP_AI_Tool_Delete_Prescription implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Prescription implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Delete_Prescription implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Permanently deletes a prescription from the system.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently removing a prescription by prescription_id when it was entered in error.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Stopping a course of treatment; use update_prescription to set status to discontinued. Deletion cannot be undone.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_prescription', 'get_prescription' ),
+			'notes'           => __( 'Requires delete_posts capability; the prescription is deleted permanently, not trashed.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

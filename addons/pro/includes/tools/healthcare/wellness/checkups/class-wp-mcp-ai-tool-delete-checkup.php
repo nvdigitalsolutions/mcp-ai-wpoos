@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Deletes a checkup/appointment.
  */
-class WP_MCP_AI_Tool_Delete_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Delete_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Permanently deletes a checkup or appointment from the system.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently removing a single checkup or appointment by checkup_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Cancelling without removing the record; set status via update_checkup.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_checkup', 'update_checkup' ),
+			'notes'           => __( 'Deletion is permanent; confirm the ID with get_checkup before calling.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

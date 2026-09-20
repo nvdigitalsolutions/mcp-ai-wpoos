@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Deletes a member.
  */
-class WP_MCP_AI_Tool_Delete_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Delete_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Deletes a member. Note: This does not delete associated health records, prescriptions, or other related data.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently removing a member record by member_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( "Keeping the member's health history with a surviving record; use merge_duplicate_members.", 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'merge_duplicate_members', 'update_member' ),
+			'notes'           => __( 'Associated health records, prescriptions, and checkups are not deleted.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Gets a comprehensive health summary for a member.
  */
-class WP_MCP_AI_Tool_Get_Member_Health_Summary implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Member_Health_Summary implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,20 @@ class WP_MCP_AI_Tool_Get_Member_Health_Summary implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Retrieves a comprehensive health summary for a member including demographics, allergies, active prescriptions, upcoming checkups, and recent medical records. Provides an at-a-glance health overview inspired by AI health platforms like Claude Health and ChatGPT Health.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Getting an at-a-glance overview of demographics, allergies, active prescriptions, upcoming checkups, and recent records.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Full research payloads; use compile_health_research_data. Visualizations; use generate_health_chart.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'compile_health_research_data', 'generate_health_chart', 'get_health_timeline' ),
+			'notes'           => __( 'Set include_records=false to skip recent medical records for a leaner response.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

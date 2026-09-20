@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get upcoming checkups/appointments.
  */
-class WP_MCP_AI_Tool_Get_Upcoming_Checkups implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Upcoming_Checkups implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Get_Upcoming_Checkups implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Retrieves upcoming checkups and appointments for a member within a specified time frame (default: next 90 days).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( "Listing a member's scheduled checkups within a look-ahead window, default 90 days.", 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Past appointments; use get_recent_health_appointments or list_checkups.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_recent_health_appointments', 'list_checkups' ),
+			'notes'           => __( 'days is capped at 365; only status=scheduled checkups are returned.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

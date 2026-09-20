@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get a single prescription.
  */
-class WP_MCP_AI_Tool_Get_Prescription implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Prescription implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Get_Prescription implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Retrieves detailed information about a specific prescription.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading medication, dosage, and schedule details for one known prescription_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Discovering prescriptions by member or status; use list_prescriptions or search_prescriptions.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_prescriptions', 'search_prescriptions', 'update_prescription' ),
+			'notes'           => __( 'Returns dosage, frequency, prescriber, refills remaining, and NDC code for one prescription.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

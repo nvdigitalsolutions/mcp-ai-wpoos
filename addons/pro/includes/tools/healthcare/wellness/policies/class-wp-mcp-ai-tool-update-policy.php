@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Updates an existing policy.
  */
-class WP_MCP_AI_Tool_Update_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Update_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Updates an existing insurance policy. Provide only the fields you want to update.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Changing status, coverage dates, provider, premium, or coverage details on an existing policy by policy_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Registering a new policy; use create_policy. Removing a policy; use delete_policy.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_policy', 'get_policy', 'delete_policy' ),
+			'notes'           => __( 'Provide only the fields to change; status options are active, expired, pending, or cancelled.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

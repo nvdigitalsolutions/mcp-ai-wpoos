@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * List medical records.
  */
-class WP_MCP_AI_Tool_List_Medical_Records implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Medical_Records implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_List_Medical_Records implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Lists medical records with optional filtering by member and record type.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing a paginated set of records, optionally filtered by member_id and record_type.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Keyword, provider, or date-range research; use search_medical_records. One known record; use get_medical_record.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_medical_record', 'search_medical_records' ),
+			'notes'           => __( 'Default 20 records per page, max 100; record_type values include lab-result, diagnosis, and treatment.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * List allergies.
  */
-class WP_MCP_AI_Tool_List_Allergies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Allergies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Get the tool slug.
 	 *
@@ -41,6 +41,20 @@ class WP_MCP_AI_Tool_List_Allergies implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Lists allergies with optional filtering by member and severity.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing allergy records with optional member_id and severity filters.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Testing one suspected allergen; use check_member_allergies.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'check_member_allergies', 'get_allergy' ),
+			'notes'           => __( 'severity filter accepts mild, moderate, or severe; pagination via per_page and page.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates a new prescription.
  */
-class WP_MCP_AI_Tool_Create_Prescription implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Prescription implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Create_Prescription implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Creates a new prescription or updates an existing one if prescription_id is provided. Includes medication details, dosage, and schedule information.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording a new prescription with dosage and frequency for a member, or updating one via prescription_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Bulk unstructured entry; use parse_health_information. Daily schedule lookup; use get_medication_schedule.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_prescription', 'get_prescription', 'get_medication_schedule' ),
+			'notes'           => __( 'Optionally capture NDC code, route, Rx number, refills_remaining, quantity, and pharmacy details.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

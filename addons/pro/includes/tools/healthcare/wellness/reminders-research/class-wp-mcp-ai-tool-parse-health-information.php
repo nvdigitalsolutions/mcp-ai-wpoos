@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Parses and organizes raw health information into structured records.
  */
-class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,20 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Accepts raw, unstructured health information (notes, medical records, prescriptions, policy details, lab results, etc.) and intelligently parses it into structured health records aligned with industry standards (HL7 FHIR, USCDI, ICD-10, NDC/RxNorm, LOINC). Detects diagnoses with ICD-10 code hints, medications with NDC codes and route of administration, allergy type (food/drug/environmental) and onset, lab values with reference ranges, insurance group numbers and plan types, immunizations/vaccinations, and vital sign readings. Automatically creates properly organized CPT records with all structured metadata fields populated. Perfect for bulk data entry where users want to paste everything and let AI handle the organization.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Turning pasted, unstructured health text into structured medical records, prescriptions, policies, allergies, or checkups.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Single structured entries; use create_medical_record, create_prescription, or create_policy.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'guide_health_record_creation', 'create_medical_record', 'create_prescription' ),
+			'notes'           => __( 'Set confirmation_required=true to review parsed records before creation; auto_create_records defaults to true.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

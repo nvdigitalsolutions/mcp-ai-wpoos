@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * List insurance policies.
  */
-class WP_MCP_AI_Tool_List_Policies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Policies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_List_Policies implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Lists insurance policies with optional filtering by member, policy type, and status.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing policies with optional filters for member_id, policy_type, and status.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Keyword or provider search; use search_policies. One known policy_id; use get_policy.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_policy', 'search_policies' ),
+			'notes'           => __( 'Default 20 policies per page, max 100; status values are active, expired, pending, or cancelled.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
