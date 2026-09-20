@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Uses AI and web search to research comprehensive information about
  * extra-curricular activities and educational programs.
  */
-class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -85,6 +85,18 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Research comprehensive information about an extra-curricular activity or educational program using multi-stage web search and AI analysis. Supports configurable research depth (basic/standard/comprehensive) and focus areas for targeted research. Returns title, description, category, schedule, materials, learning objectives, and implementation details ready for creating an ECA entry.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Researching a prospective activity before creating it, to get description, schedule, materials, and learning objectives.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'General web research outside the ECA context; use deep_research or web_search. Creating the ECA; use create_eca.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_eca', 'list_ecas', 'deep_research' ),
+			'notes'           => __( 'Returns structured fields ready for create_eca; nothing is saved to the ECA catalog.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

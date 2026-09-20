@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Manages academic terms for ECA scheduling.
  */
-class WP_MCP_AI_Tool_Manage_ECA_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Manage_ECA_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Manage_ECA_Term implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Manages academic terms for ECA scheduling. Supports creating, listing, and transitioning between terms. Handles rollover of ECAs between terms including enrollment resets and status updates.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating academic terms, transitioning between terms, or closing a term with enrollment rollover and attendance resets.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Editing a single ECA session schedule; use set_eca_schedule or update_eca.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'set_eca_schedule', 'list_ecas', 'update_eca' ),
+			'notes'           => __( 'Transition and close can roll enrollments forward and reset attendance; review the flags before running.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

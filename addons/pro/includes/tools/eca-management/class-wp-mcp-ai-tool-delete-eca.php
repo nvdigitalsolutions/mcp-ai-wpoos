@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Deletes an ECA with safety checks and cascade cleanup.
  */
-class WP_MCP_AI_Tool_Delete_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,18 @@ class WP_MCP_AI_Tool_Delete_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	public function get_description() {
 		return __( 'Deletes or cancels an Extra-Curricular Activity. Supports soft delete (cancel) or permanent deletion with cascade cleanup of student enrollments. Requires confirmation when active enrollments exist.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently deleting an ECA, or cancelling it via soft_delete, with cascade cleanup of its enrollments.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Ending an ECA at term end or changing its status; use manage_eca_term or update_eca. Removing one student; use withdraw_student_eca.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_eca', 'manage_eca_term', 'withdraw_student_eca', 'list_ecas' ),
+			'notes'           => __( 'Permanent deletion cannot be undone; prefer soft_delete and pass confirm_delete when enrollments exist.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

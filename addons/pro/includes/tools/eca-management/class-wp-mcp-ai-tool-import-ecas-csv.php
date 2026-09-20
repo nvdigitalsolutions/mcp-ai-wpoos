@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Imports ECAs from CSV file or text content with column mapping and dry-run support.
  */
-class WP_MCP_AI_Tool_Import_ECAs_CSV implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_ECAs_CSV implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Import_ECAs_CSV implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Imports ECAs from a CSV file or CSV text content. Maps columns to ECA fields and creates or updates ECAs in bulk. Supports dry-run mode to preview changes before committing.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating or updating many ECAs at once from CSV text or a file, with a dry-run preview option.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'A single ECA; use create_eca or update_eca. School system data; use sync_ecas_from_isams or sync_ecas_from_socs.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_eca', 'update_eca', 'export_eca_data', 'sync_ecas_from_isams' ),
+			'notes'           => __( 'Run dry_run first and check the preview before committing; update_existing matches by eca_code.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -19,7 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-content-media
 /**
  * Creates a new ECA (Extra-Curricular Activity).
  */
-class WP_MCP_AI_Tool_Create_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Content_Media;
 
 	/**
@@ -41,6 +41,18 @@ class WP_MCP_AI_Tool_Create_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	public function get_description() {
 		return __( 'Creates a new Extra-Curricular Activity (ECA) or updates an existing one if eca_id is provided. Includes schedule, venue, capacity, teacher assignments, and cost information. Supports clubs, societies, and sports activities.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new ECA record with schedule, venue, capacity, and teacher details, or updating one when eca_id is supplied.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Field-level edits to an existing ECA; use update_eca or set_eca_schedule. Discovering existing ECAs; use list_ecas.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_ecas', 'update_eca', 'set_eca_schedule', 'get_eca' ),
+			'notes'           => __( 'Check list_ecas first to avoid duplicate clubs; iSAMS sync is available for schools using iSAMS.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

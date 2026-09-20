@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Enrolls a student in an ECA.
  */
-class WP_MCP_AI_Tool_Enroll_Student_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Enroll_Student_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Enroll_Student_ECA implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Enrolls a student in an Extra-Curricular Activity. Checks capacity limits, year group eligibility, and handles payment requirements. Updates enrollment counts automatically.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Enrolling one student in one ECA, including waitlist or trial enrollments and payment status.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Many students at once; use bulk_enroll_students. Removing a student; use withdraw_student_eca. Waitlist promotion; use manage_eca_waitlist.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'bulk_enroll_students', 'withdraw_student_eca', 'manage_eca_waitlist', 'list_ecas' ),
+			'notes'           => __( 'Resolve student_id and eca_id first via list_students and list_ecas; full ECAs fall back to waitlist unless skip_capacity_check is set.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
