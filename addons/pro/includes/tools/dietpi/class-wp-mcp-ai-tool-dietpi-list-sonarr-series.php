@@ -15,7 +15,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_List_Sonarr_Series' ) ) {
 	/**
 	 * Lists TV series in Sonarr via the Sonarr API.
 	 */
-	class WP_MCP_AI_Tool_DietPi_List_Sonarr_Series extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_List_Sonarr_Series extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 		/**
 		 * {@inheritdoc}
 		 */
@@ -35,6 +35,17 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_List_Sonarr_Series' ) ) {
 		 */
 		public function get_description() {
 			return __( 'List all TV series in Sonarr with monitoring status, episode counts, and quality profile info.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/**
+		 * {@inheritdoc}
+		 */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Listing every TV series in Sonarr to see monitoring status, episode counts, and quality profile info.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Adding or monitoring a new series; use dietpi_add_sonarr_series. For queue or status, use dietpi_manage_sonarr.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_manage_sonarr', 'dietpi_add_sonarr_series', 'dietpi_media_request_flow' ),
+			);
 		}
 
 		/**

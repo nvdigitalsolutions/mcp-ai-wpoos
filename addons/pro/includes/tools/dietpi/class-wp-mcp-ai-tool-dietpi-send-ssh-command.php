@@ -24,7 +24,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Send_SSH_Command' ) ) {
 	 *
 	 * @since 1.3.0
 	 */
-	class WP_MCP_AI_Tool_DietPi_Send_SSH_Command extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_Send_SSH_Command extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 		public function get_slug() {
@@ -39,6 +39,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Send_SSH_Command' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Execute a shell command on the Raspberry Pi via SSH. Use this for system administration, reading logs, managing packages, or running DietPi utilities. State-changing commands require explicit confirmation. Results include stdout, stderr, and exit code.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Running a specific shell command on the DietPi device that no dedicated tool covers, such as log reads or ad-hoc admin tasks.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Prefer a dedicated tool when one exists, e.g. dietpi_system_info, dietpi_system_stats, or dietpi_control_service.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_system_info', 'dietpi_system_stats', 'dietpi_control_service', 'dietpi_update_system' ),
+				'notes'           => __( 'Highest-risk tool: arbitrary shell commands on the server. Requires manage_options; destructive commands can damage the system.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

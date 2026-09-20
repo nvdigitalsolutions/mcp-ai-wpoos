@@ -59,10 +59,12 @@ class ToolDescriptionGuidanceSniff implements Sniff {
 	public function process( File $phpcsFile, $stackPtr ) {
 		$tokens = $phpcsFile->getTokens();
 
-		// Abstract tool bases (e.g. WP_MCP_AI_Tool_Cloudways_Base) are shared
+		// Abstract tool bases (e.g. WP_MCP_AI_Tool_DietPi_Base) are shared
 		// scaffolding that concrete tools extend; they are never instantiated
 		// or registered, so guidance belongs on the concrete classes only.
-		$abstract_ptr = $phpcsFile->findPrevious( T_ABSTRACT, max( 0, $stackPtr - 5 ), $stackPtr - 1 );
+		// findPrevious( $type, $start, $end ) scans BACKWARD from $start to
+		// $end, so the bounds must run from the token before T_CLASS outward.
+		$abstract_ptr = $phpcsFile->findPrevious( T_ABSTRACT, $stackPtr - 1, max( 0, $stackPtr - 5 ) );
 		if ( false !== $abstract_ptr ) {
 			return;
 		}

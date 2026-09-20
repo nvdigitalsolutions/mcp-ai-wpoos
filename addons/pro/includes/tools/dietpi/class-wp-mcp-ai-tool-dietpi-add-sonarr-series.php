@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Add_Sonarr_Series' ) ) {
 	/**
 	 * Add Sonarr series tool.
 	 */
-	class WP_MCP_AI_Tool_DietPi_Add_Sonarr_Series extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_Add_Sonarr_Series extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 		public function get_slug() {
@@ -36,6 +36,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Add_Sonarr_Series' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Add a new TV series to Sonarr. Supports lookup by TVDb ID, IMDb ID, or title search. Also supports setting quality profile, root folder, and monitoring options.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Adding a TV series to Sonarr so it is monitored and downloaded, identified by TVDb ID, IMDb ID, or title.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Reviewing or changing series already in Sonarr; use dietpi_list_sonarr_series or dietpi_manage_sonarr.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_list_sonarr_series', 'dietpi_manage_sonarr', 'dietpi_media_request_flow' ),
+				'notes'           => __( 'This queues real episode downloads; pass a TVDb ID when possible for an unambiguous match.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

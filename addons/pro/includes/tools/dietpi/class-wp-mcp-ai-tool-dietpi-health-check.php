@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Health_Check' ) ) {
 	/**
 	 * DietPi health check tool.
 	 */
-	class WP_MCP_AI_Tool_DietPi_Health_Check extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_Health_Check extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 		public function get_slug() {
@@ -36,6 +36,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Health_Check' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Run a comprehensive health check on the DietPi system: verify all managed services are running, check disk space and temperature, inspect download queues in Transmission/Sonarr/Radarr, and flag any warnings.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Running a full diagnostic scan of services, disk, temperature, and app reachability when something looks wrong.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Quick overviews; use dietpi_dashboard_summary. Fixing a found problem; use dietpi_control_service or dietpi_update_system.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_dashboard_summary', 'dietpi_system_stats', 'dietpi_control_service' ),
+				'notes'           => __( 'Read-only scan; pair with dietpi_system_stats when warnings appear.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

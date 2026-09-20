@@ -23,7 +23,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Dashboard_Summary' ) ) {
 	/**
 	 * Dashboard summary tool.
 	 */
-	class WP_MCP_AI_Tool_DietPi_Dashboard_Summary extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_Dashboard_Summary extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 		public function get_slug() {
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Dashboard_Summary' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Generate a comprehensive dashboard summary of the entire DietPi system. This is the recommended first tool to call when checking system status. Returns: system health (CPU/RAM/disk/temp), all service states, Transmission torrent count, Sonarr/Radarr queue summaries, storage overview, and any active warnings. Designed for quick at-a-glance monitoring.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Getting a quick at-a-glance snapshot of the whole DietPi system: health, services, queues, and storage.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Deep diagnostics of one problem; use dietpi_health_check. Raw metric snapshots; use dietpi_system_stats.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_health_check', 'dietpi_system_stats', 'dietpi_list_services' ),
+				'notes'           => __( 'The recommended first call for status questions; set include_queues=false for a faster response.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

@@ -15,7 +15,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_List_Transmission' ) ) {
 	/**
 	 * Lists torrents in Transmission via the Transmission RPC API.
 	 */
-	class WP_MCP_AI_Tool_DietPi_List_Transmission extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_List_Transmission extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 		/**
 		 * {@inheritdoc}
 		 */
@@ -35,6 +35,17 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_List_Transmission' ) ) {
 		 */
 		public function get_description() {
 			return __( 'List all torrents in Transmission with filtering by status or label. Returns torrent name, status, progress, download/upload speed, ETA, size, and label.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/**
+		 * {@inheritdoc}
+		 */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Listing all Transmission torrents with progress, speeds, ETA, and labels, optionally filtered by status.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Adding torrents or changing their state; use dietpi_add_transmission or dietpi_control_transmission.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_control_transmission', 'dietpi_add_transmission', 'dietpi_search_jackett' ),
+			);
 		}
 
 		/**
