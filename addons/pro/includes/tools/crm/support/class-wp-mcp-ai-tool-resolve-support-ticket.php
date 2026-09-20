@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * {@inheritdoc}
  */
-class WP_MCP_AI_Tool_Resolve_Support_Ticket implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Resolve_Support_Ticket implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -54,6 +54,20 @@ class WP_MCP_AI_Tool_Resolve_Support_Ticket implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Mark a support ticket as resolved with resolution type and closing note. Fires resolution hooks.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Marking a ticket resolved with a resolution type and closing note once the issue is fixed.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Closing without resolution tracking; use update_support_ticket with status=closed. Reopening; use reopen_support_ticket.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'reopen_support_ticket', 'update_support_ticket' ),
+			'notes'           => __( 'Stamps the resolution time and fires resolution hooks. Already closed tickets are rejected.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

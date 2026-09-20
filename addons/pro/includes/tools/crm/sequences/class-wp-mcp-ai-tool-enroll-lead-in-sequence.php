@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Enroll_Lead_In_Sequence implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Enroll_Lead_In_Sequence implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -51,6 +51,20 @@ class WP_MCP_AI_Tool_Enroll_Lead_In_Sequence implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Enroll a lead into an outreach sequence. Idempotent — skips if already enrolled. Respects suppression list.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Starting a lead on an outreach sequence by lead_id and sequence_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Pausing, resuming, or exiting an enrollment; use manage_sequence_state. Building the sequence; use create_outreach_sequence.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_sequence_state', 'create_outreach_sequence', 'get_sequence_performance' ),
+			'notes'           => __( 'Idempotent; returns already_enrolled for active enrollments and blocks leads on the DNC suppression list.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

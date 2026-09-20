@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * {@inheritdoc}
  */
-class WP_MCP_AI_Tool_Reopen_Support_Ticket implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Reopen_Support_Ticket implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -54,6 +54,20 @@ class WP_MCP_AI_Tool_Reopen_Support_Ticket implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Reopen a resolved or closed support ticket. Moves back to In Progress, increments reopen counter.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Returning a resolved or closed ticket to in_progress when the issue recurs.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Logging a brand new issue; use create_support_ticket. Other field edits; use update_support_ticket.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'resolve_support_ticket', 'update_support_ticket', 'create_support_ticket' ),
+			'notes'           => __( 'Increments the reopen counter and clears the resolution timestamp.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

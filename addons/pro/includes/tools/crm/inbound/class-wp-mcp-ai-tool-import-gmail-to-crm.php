@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.4.0
  */
-class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 	const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1';
@@ -84,6 +84,20 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Searches your Gmail inbox and imports matching emails into the CRM pipeline. Each email is classified for intent, scored, and upserted as a lead — spam and newsletters are automatically filtered out. Use this to turn raw inbox emails into structured CRM leads.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Turning raw inbox emails into structured CRM leads by searching Gmail and importing matches through the pipeline.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Single-message triage; use evaluate_inbound_message. Email lookups without CRM import; use crm_email_search_leads.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'evaluate_inbound_message', 'create_lead', 'crm_email_search_leads' ),
+			'notes'           => __( 'Requires Gmail OAuth credentials; spam and newsletter emails are filtered before classification and lead upsert.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * Parameters schema.

@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.10.0
  */
-class WP_MCP_AI_Tool_Search_LinkedIn_Jobs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Search_LinkedIn_Jobs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Determine whether CRM toolkit is enabled.
@@ -69,6 +69,20 @@ class WP_MCP_AI_Tool_Search_LinkedIn_Jobs implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Search LinkedIn for job postings matching specified criteria.  Supports keyword, location, and experience-level filters.  Falls back to AI-powered web search when no LinkedIn connection is configured.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Searching LinkedIn job postings by keyword, location, experience level, and job type.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Scoring or saving a specific posting; use score_linkedin_job then save_linkedin_job.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'score_linkedin_job', 'save_linkedin_job', 'import_linkedin_profile' ),
+			'notes'           => __( 'Uses the LinkedIn API when a connection exists, otherwise an AI web-search fallback; limit is capped at 50.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

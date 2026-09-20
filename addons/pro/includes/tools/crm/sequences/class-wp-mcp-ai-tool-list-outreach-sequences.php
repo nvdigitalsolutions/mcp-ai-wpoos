@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_List_Outreach_Sequences implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Outreach_Sequences implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -51,6 +51,20 @@ class WP_MCP_AI_Tool_List_Outreach_Sequences implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'List all outreach sequence definitions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing outreach sequence definitions with pagination to discover sequence_id values.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Performance for one sequence; use get_sequence_performance. Creating a sequence; use create_outreach_sequence.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_sequence_performance', 'create_outreach_sequence', 'update_outreach_sequence' ),
+			'notes'           => __( 'Supports per_page and page; each entry includes id, name, step_count, and the full steps array.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

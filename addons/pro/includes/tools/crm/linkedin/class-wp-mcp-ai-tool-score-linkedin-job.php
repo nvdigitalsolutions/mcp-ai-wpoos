@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.10.0
  */
-class WP_MCP_AI_Tool_Score_LinkedIn_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Score_LinkedIn_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Determine whether CRM toolkit is enabled.
@@ -65,6 +65,20 @@ class WP_MCP_AI_Tool_Score_LinkedIn_Job implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Evaluate a LinkedIn job posting against your ideal-client profile and return a score with breakdown by qualification dimension.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Evaluating a LinkedIn job posting against the ideal-client profile for a score, label, and recommended action.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Saving the posting to the CRM; use save_linkedin_job. Finding postings; use search_linkedin_jobs.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'save_linkedin_job', 'search_linkedin_jobs', 'compute_icp_score' ),
+			'notes'           => __( 'Needs job_url, job_description, or job_title; falls back to a manual-review score when no AI provider is available.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

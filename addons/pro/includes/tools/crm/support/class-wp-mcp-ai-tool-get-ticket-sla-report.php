@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * {@inheritdoc}
  */
-class WP_MCP_AI_Tool_Get_Ticket_Sla_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Ticket_Sla_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -54,6 +54,20 @@ class WP_MCP_AI_Tool_Get_Ticket_Sla_Report implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'SLA compliance report: breached count, avg first response, avg resolution, by assignee.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reporting SLA compliance, breach counts, and average response or resolution times over a date range.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Inspecting a single ticket; use get_support_ticket. Browsing tickets; use list_support_tickets.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_support_ticket', 'list_support_tickets' ),
+			'notes'           => __( 'Defaults to the last 30 days grouped by assignee; group_by also accepts priority or status.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

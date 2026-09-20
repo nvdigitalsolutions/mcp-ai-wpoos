@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Qualify_Lead_Meddic implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Qualify_Lead_Meddic implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if the tool is available.
@@ -62,6 +62,20 @@ class WP_MCP_AI_Tool_Qualify_Lead_Meddic implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Enterprise qualification using MEDDIC: Metrics, Economic Buyer, Decision Criteria, Decision Process, Identify Pain, Champion.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Enterprise qualification using MEDDIC: Metrics, Economic Buyer, Decision Criteria, Decision Process, Identify Pain, Champion.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'SMB or standard BANT-style qualification; use qualify_lead_bant.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'qualify_lead_bant', 'score_lead', 'get_lead' ),
+			'notes'           => __( 'Stores the assessment in meddic_assessment meta; is_qualified means overall score >= 45.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
