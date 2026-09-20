@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Merge_Videos tool.
  */
-class WP_MCP_AI_Tool_Merge_Videos implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Merge_Videos implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Merge_Videos implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Combine multiple video clips into a single video with optional transitions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Joining two or more video clips into one timeline, with optional fade or dissolve transitions.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Cutting a section out of a single clip; use trim_video.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'trim_video', 'transcode_video', 'resize_video_resolution' ),
+			'notes'           => __( 'Processing requires FFmpeg; set output_format to mp4, webm, or mov.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

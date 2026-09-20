@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Optimize_For_Platform tool.
  */
-class WP_MCP_AI_Tool_Optimize_For_Platform implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Optimize_For_Platform implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Optimize_For_Platform implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Optimize videos for specific platforms (YouTube, Instagram, TikTok) with ideal specs.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Preparing a video to meet one platform\'s recommended specs, such as YouTube, Instagram, or TikTok.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Changing only the resolution or container without platform presets; use resize_video_resolution or convert_video_format.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'resize_video_resolution', 'convert_video_format', 'transcode_video' ),
+			'notes'           => __( 'Platforms: youtube, instagram, tiktok, facebook, twitter. Content types: feed, story, reel, short.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

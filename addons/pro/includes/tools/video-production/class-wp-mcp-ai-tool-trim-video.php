@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Trim_Video tool.
  */
-class WP_MCP_AI_Tool_Trim_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Trim_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Trim_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	public function get_description() {
 		return __( 'Cut and trim video sections with precise start and end time controls.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Cutting a video to a precise in/out range by setting start_time and end_time in seconds.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Joining multiple clips into one; use merge_videos. Changing playback speed; use adjust_video_speed.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'merge_videos', 'adjust_video_speed', 'transcode_video' ),
+			'notes'           => __( 'Set preserve_audio=false to drop the original audio track from the trimmed output.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

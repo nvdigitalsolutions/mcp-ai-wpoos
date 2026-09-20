@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Create_Video_From_Images tool.
  */
-class WP_MCP_AI_Tool_Create_Video_From_Images implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Video_From_Images implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Create_Video_From_Images implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Create slideshow videos from image collections with transitions, music, and text overlays.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Building a slideshow video from media library images with per-image duration, transitions, optional music, and resolution.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Code-driven or animated compositions; use create_remotion_video. Editing existing footage; use trim_video or merge_videos.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_remotion_video', 'add_watermark_to_video', 'compress_video' ),
+			'notes'           => __( 'Resolution defaults to 1080p; processing requires FFmpeg on the server.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

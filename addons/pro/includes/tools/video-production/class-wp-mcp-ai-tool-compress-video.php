@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Compress_Video tool.
  */
-class WP_MCP_AI_Tool_Compress_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Compress_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Compress_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Reduce video file size while maintaining quality using modern compression algorithms.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reducing file size for faster uploads or storage savings via quality presets, target size, or codec choice.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Changing container or streams; use convert_video_format or transcode_video. Matching delivery specs; use optimize_for_platform.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'convert_video_format', 'transcode_video', 'optimize_for_platform' ),
+			'notes'           => __( 'target_size_mb overrides the quality preset; h265 and vp9 compress more than h264 but encode slower.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

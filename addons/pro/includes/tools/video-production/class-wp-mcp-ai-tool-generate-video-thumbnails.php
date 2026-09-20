@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Generate_Video_Thumbnails tool.
  */
-class WP_MCP_AI_Tool_Generate_Video_Thumbnails implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Video_Thumbnails implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Generate_Video_Thumbnails implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Create multiple thumbnail options from video frames at different timestamps.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating thumbnail candidates with evenly spaced, scene detection, or best frame selection methods.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Exact timestamps or interval control; use extract_video_frames. Finding videos missing thumbnails; use get_videos_without_thumbnails.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'extract_video_frames', 'get_videos_without_thumbnails', 'add_watermark_to_video' ),
+			'notes'           => __( 'Defaults to 5 medium thumbnails; scene detection needs FFmpeg scene analysis.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 
