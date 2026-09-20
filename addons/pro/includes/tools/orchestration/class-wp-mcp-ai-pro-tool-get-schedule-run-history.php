@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager
 /**
  * Provides an AI tool for retrieving execution history of a pro schedule.
  */
-class WP_MCP_AI_Pro_Tool_Get_Schedule_Run_History implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Schedule_Run_History implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -39,6 +39,18 @@ class WP_MCP_AI_Pro_Tool_Get_Schedule_Run_History implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Retrieves execution history for a named pro schedule, including run times, durations, and any failure messages.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Auditing a schedule execution record - run times, durations, and failure messages over recent runs.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Needing only the latest result envelope (use get_schedule_latest_result) or discovering which schedules exist (use list_pro_schedules).', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_schedule_latest_result', 'list_pro_schedules', 'update_pro_schedule' ),
+			'notes'           => __( 'History is a ring buffer of the last 50 runs per schedule; the limit argument caps entries at 50.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
