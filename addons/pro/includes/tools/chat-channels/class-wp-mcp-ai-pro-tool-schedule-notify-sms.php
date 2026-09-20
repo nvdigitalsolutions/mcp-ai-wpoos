@@ -22,7 +22,7 @@ use NotifyLk\ApiException;
 /**
  * Provides a tool for scheduling Notify.lk SMS messages.
  */
-class WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	const CRON_HOOK = 'wp_mcp_ai_notifylk_send_scheduled_sms';
 
 	/**
@@ -69,6 +69,18 @@ class WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Schedules an SMS through Notify.lk to be sent at a future time using the official PHP SDK.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scheduling a Notify.lk SMS to be delivered at a future time via WordPress cron.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Immediate CRM lead SMS; use send_lead_sms. Multi-channel delivery; use unified_channel_broadcast.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_lead_sms', 'unified_channel_broadcast', 'schedule_channel_broadcast' ),
+			'notes'           => __( 'External communication: the SMS really sends to the recipient when the cron job fires.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

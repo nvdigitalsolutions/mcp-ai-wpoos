@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for listing Discord channels via the Discord Bot API.
  */
-class WP_MCP_AI_Pro_Tool_Get_Discord_Channels implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Discord_Channels implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Discord requests.
 	 */
@@ -54,6 +54,18 @@ class WP_MCP_AI_Pro_Tool_Get_Discord_Channels implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Retrieves a list of channels from a Discord server (guild) using the Discord Bot API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing channels in a Discord guild to discover channel IDs before reading or posting.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading history once you know the channel ID; use get_discord_messages.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_discord_messages', 'create_discord_channel', 'send_discord_message' ),
+			'notes'           => __( 'Run this first when you only have a guild ID; feed the returned channel ID to get_discord_messages.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for sending text messages via Apple Messages for Business through an MSP.
  */
-class WP_MCP_AI_Pro_Tool_Send_Apple_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Send_Apple_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default timeout for MSP API requests (seconds).
@@ -69,6 +69,18 @@ class WP_MCP_AI_Pro_Tool_Send_Apple_Message implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Sends a text message via Apple Messages for Business (iMessage) through an approved Messaging Service Provider (MSP). Supports individual and group conversations.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending a text message to an Apple Messages for Business conversation through your MSP.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Group conversations; use send_apple_message_group. Interactive widgets; use send_apple_message_interactive.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_apple_message_group', 'send_apple_message_interactive', 'get_apple_messages' ),
+			'notes'           => __( 'Transmits real messages through your approved Messaging Service Provider (MSP).', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

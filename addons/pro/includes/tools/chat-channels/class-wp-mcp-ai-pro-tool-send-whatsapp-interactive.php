@@ -21,7 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for sending WhatsApp interactive messages.
  */
-class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Interactive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Interactive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default timeout for WhatsApp API requests.
@@ -83,6 +83,18 @@ class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Interactive implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Sends an interactive WhatsApp message with reply buttons or list options via the Meta Cloud API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending an interactive WhatsApp message with reply buttons or list options.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Plain text; use send_whatsapp_message. Media attachments; use send_whatsapp_media.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_whatsapp_message', 'send_whatsapp_media', 'send_whatsapp_template' ),
+			'notes'           => __( 'Sends real interactive messages via the WhatsApp Cloud API.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

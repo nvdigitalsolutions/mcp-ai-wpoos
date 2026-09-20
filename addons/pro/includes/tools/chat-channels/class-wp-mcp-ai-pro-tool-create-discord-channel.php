@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for creating Discord channels via the Discord Bot API.
  */
-class WP_MCP_AI_Pro_Tool_Create_Discord_Channel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Create_Discord_Channel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Discord requests.
 	 */
@@ -54,6 +54,18 @@ class WP_MCP_AI_Pro_Tool_Create_Discord_Channel implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Creates a new channel in a Discord server (guild) using the Discord Bot API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new text, voice, category, or announcement channel in a Discord guild.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Listing existing channels or posting a message; use get_discord_channels or send_discord_message.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_discord_channels', 'send_discord_message', 'get_discord_messages' ),
+			'notes'           => __( 'The channel is immediately visible to guild members; the bot needs the Manage Channels permission.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

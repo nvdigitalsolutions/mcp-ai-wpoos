@@ -21,7 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for sending WhatsApp media messages.
  */
-class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Media implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Media implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default timeout for WhatsApp API requests.
@@ -94,6 +94,18 @@ class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Media implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Sends a media message (image, video, audio, document, or sticker) via WhatsApp Cloud API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending an image, video, audio, document, or sticker through the WhatsApp Cloud API.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Plain text; use send_whatsapp_message. Buttons or lists; use send_whatsapp_interactive.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_whatsapp_message', 'send_whatsapp_interactive', 'send_whatsapp_template' ),
+			'notes'           => __( 'Size limits: 5MB images, 16MB video/audio, 100MB documents, 500KB stickers.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

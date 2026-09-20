@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * format "name:id" (e.g. "thinking:1234567890"). Used by agent workflow hooks
  * to signal processing phases to users in real time.
  */
-class WP_MCP_AI_Pro_Tool_Add_Discord_Message_Reaction implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Add_Discord_Message_Reaction implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default timeout for Discord API requests.
@@ -63,6 +63,18 @@ class WP_MCP_AI_Pro_Tool_Add_Discord_Message_Reaction implements WP_MCP_AI_Tool_
 	 */
 	public function get_description() {
 		return __( 'Adds an emoji reaction to a Discord message via the Discord Bot API. Supports Unicode emoji (e.g. "👍") and custom guild emoji ("name:id"). Used for lifecycle feedback during AI processing phases (queued, thinking, tool-use, done, error).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adding an emoji reaction to a known Discord message to signal a processing phase.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Posting content or reading history; use send_discord_message or get_discord_messages instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_discord_message', 'get_discord_messages', 'get_discord_channels' ),
+			'notes'           => __( 'Reactions are visible to everyone in the channel, so keep them neutral and phase-specific.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

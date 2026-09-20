@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for retrieving email messages from a Microsoft Outlook mailbox via the Microsoft Graph API.
  */
-class WP_MCP_AI_Pro_Tool_Get_Outlook_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Outlook_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Microsoft Graph API requests.
 	 */
@@ -54,6 +54,18 @@ class WP_MCP_AI_Pro_Tool_Get_Outlook_Messages implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Retrieves email messages from a Microsoft Outlook mailbox using the Microsoft Graph API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading email from an Outlook mailbox folder through the Microsoft Graph API.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sending email; use send_outlook_mail instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_outlook_mail' ),
+			'notes'           => __( 'Defaults to the inbox; folder_id accepts well-known names like sentitems. Supports OData filters.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

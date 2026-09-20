@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for sending Facebook Messenger messages via the Messenger Platform API.
  */
-class WP_MCP_AI_Pro_Tool_Send_Messenger_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Send_Messenger_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Facebook Messenger API requests.
 	 */
@@ -54,6 +54,18 @@ class WP_MCP_AI_Pro_Tool_Send_Messenger_Message implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Sends a text message to a Facebook Messenger user using the Messenger Platform API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending a text message to a Facebook Messenger user via the Messenger Platform API.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Listing conversations; use get_messenger_conversations. Mass outreach; use create_messenger_broadcast.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_messenger_conversations', 'create_messenger_broadcast', 'unified_channel_broadcast' ),
+			'notes'           => __( 'Delivers real messages to the recipient PSID using a Page access token.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

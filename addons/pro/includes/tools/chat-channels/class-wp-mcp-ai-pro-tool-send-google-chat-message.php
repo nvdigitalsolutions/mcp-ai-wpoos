@@ -25,7 +25,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Google Chat API requests.
 	 */
@@ -61,6 +61,18 @@ class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Sends a text message to a Google Chat space using an incoming webhook URL.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Posting a text message to a Google Chat space via its incoming webhook URL.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading space messages; use get_google_chat_messages. Listing spaces; use get_google_chat_spaces.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_google_chat_messages', 'get_google_chat_spaces', 'unified_channel_broadcast' ),
+			'notes'           => __( 'The webhook URL carries the auth key, so no separate bearer token is needed.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

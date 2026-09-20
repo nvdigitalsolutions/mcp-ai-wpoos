@@ -19,7 +19,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-pro-google-service-account.php';
 /**
  * Provides a tool for retrieving Google Chat message history via the Google Chat API.
  */
-class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Google Chat requests.
 	 */
@@ -60,6 +60,18 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Messages implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Retrieves message history from a Google Chat space using the Google Chat API v1.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading message history from a Google Chat space once you know its space resource name.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Discovering the space name or replying; use get_google_chat_spaces or send_google_chat_message.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_google_chat_spaces', 'send_google_chat_message', 'list_google_chat_space_members' ),
+			'notes'           => __( 'Requires a space name in spaces/SPACE_ID format; obtain it from get_google_chat_spaces.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

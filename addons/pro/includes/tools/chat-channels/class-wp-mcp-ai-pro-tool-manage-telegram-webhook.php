@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for managing Telegram bot webhooks via the Bot API.
  */
-class WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Telegram requests.
 	 */
@@ -54,6 +54,18 @@ class WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Configures or deletes webhook settings for a Telegram bot.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Setting or deleting the Telegram bot webhook URL that receives incoming updates.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Registering bot slash commands; use manage_telegram_commands. Sending messages; use send_telegram_message.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_telegram_commands', 'send_telegram_message', 'get_telegram_updates' ),
+			'notes'           => __( 'Alters a live inbound integration; deleting the webhook stops bot updates from reaching the site.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

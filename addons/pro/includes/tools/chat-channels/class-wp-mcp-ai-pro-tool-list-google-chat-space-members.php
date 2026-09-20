@@ -19,7 +19,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-pro-google-service-account.php';
 /**
  * Provides a tool for listing members of a Google Chat space via the Google Chat API.
  */
-class WP_MCP_AI_Pro_Tool_List_Google_Chat_Space_Members implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_List_Google_Chat_Space_Members implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Google Chat requests.
 	 */
@@ -60,6 +60,18 @@ class WP_MCP_AI_Pro_Tool_List_Google_Chat_Space_Members implements WP_MCP_AI_Too
 	 */
 	public function get_description() {
 		return __( 'Lists the members of a Google Chat space using the Google Chat API v1.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing members of a Google Chat space to review membership before making changes.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Adding or removing members; use add_google_chat_space_member or remove_google_chat_space_member.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'add_google_chat_space_member', 'remove_google_chat_space_member', 'get_google_chat_spaces' ),
+			'notes'           => __( 'Requires a space name in spaces/SPACE_ID format; obtain it from get_google_chat_spaces.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

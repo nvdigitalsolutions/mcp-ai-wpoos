@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for listing Microsoft Teams channels via the Microsoft Graph API.
  */
-class WP_MCP_AI_Pro_Tool_Get_Teams_Channels implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Teams_Channels implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Microsoft Graph API requests.
 	 */
@@ -54,6 +54,18 @@ class WP_MCP_AI_Pro_Tool_Get_Teams_Channels implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Retrieves a list of channels from a Microsoft Teams team using the Microsoft Graph API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing channels in a Microsoft Teams team to discover channel IDs.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading messages once you know the channel ID; use get_teams_messages.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_teams_messages', 'send_teams_message' ),
+			'notes'           => __( 'Run this first when you only have a team ID; feed the returned channel ID to get_teams_messages.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
