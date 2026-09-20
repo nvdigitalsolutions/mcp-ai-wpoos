@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-mana
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	public function get_description() {
 		return __( 'Connect to EZuite ERP system for inventory management, item lookups, and other ERP operations. Supports multiple API actions including item pull, inventory updates, and more.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering EZuite connections, testing them, or invoking raw ERP API actions such as LX_ItemPull via a connection ID.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Simple catalog reads (use ezuite_erp_get_products) or cached inventory queries (use ezuite_inventory).', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'ezuite_erp_get_products', 'ezuite_inventory', 'ezuite_settings' ),
+			'notes'           => __( 'Always call list_connections first; pass Item_Code in api_body to avoid pulling large responses.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

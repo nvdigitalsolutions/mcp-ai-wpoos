@@ -34,7 +34,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.2.0
  */
-class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface {
+class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_Tool_Chat_Response;
@@ -99,6 +99,20 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Generates a car-wash or detailing estimate from vehicle photos. Classifies the vehicle into a size tier (Car, Small Truck/SUV, Oversize Truck/SUV) using AI vision, applies the selected package and add-ons, and returns a line-item breakdown with totals. No VIN required.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing a car-wash or detailing estimate from vehicle photos with a package tier, add-ons, and a line-item total.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Collision or mechanical damage pricing; use vehicle_repair_estimate instead. Identifying a vehicle by VIN; use vin_decode.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'vehicle_repair_estimate', 'vin_decode' ),
+			'notes'           => __( 'Best with a full-vehicle photo for size tiering; set size_override to skip vision classification. Defaults to CAD.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

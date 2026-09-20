@@ -28,7 +28,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-ezuite-sync-engine.p
  *
  * @since 1.9.0
  */
-class WP_MCP_AI_Pro_Tool_EZuite_Sync implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_EZuite_Sync implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Rate limit: max requests per minute for trigger/dry_run.
@@ -57,6 +57,20 @@ class WP_MCP_AI_Pro_Tool_EZuite_Sync implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Trigger EZuite inventory sync, check sync status, or run a dry-run validation.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Triggering a full EZuite sync, checking sync status and freshness, or validating configuration with a dry run.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Querying cached inventory items (use ezuite_inventory) or changing toolkit settings (use ezuite_settings).', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'ezuite_inventory', 'ezuite_settings', 'ezuite_erp' ),
+			'notes'           => __( 'trigger and dry_run require manage_options and are rate limited to 5 per minute; trigger runs async via Action Scheduler.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

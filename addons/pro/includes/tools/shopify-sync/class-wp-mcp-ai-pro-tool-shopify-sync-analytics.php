@@ -25,7 +25,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/trait-wp-mcp-ai-shop
  *
  * @since 1.3.0
  */
-class WP_MCP_AI_Pro_Tool_Shopify_Sync_Analytics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Shopify_Sync_Analytics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Shopify_Connection_Resolver;
 	use WP_MCP_AI_Shopify_Sync_Connection_Resolver;
@@ -49,6 +49,20 @@ class WP_MCP_AI_Pro_Tool_Shopify_Sync_Analytics implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Compute aggregated analytics from the Shopify sync cache. Inventory summaries, stock velocity, product performance metrics, and cross-store comparisons — all from local CCT data with zero GraphQL API cost.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Aggregated analytics from the sync cache: inventory summaries, stock velocity, product performance, and vendor breakdowns.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Raw item or order lookups; use shopify_sync_inventory, shopify_sync_products, or shopify_sync_orders instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'shopify_sync_inventory', 'shopify_sync_products', 'shopify_sync_orders' ),
+			'notes'           => __( 'Reads local CCT data only; metrics reflect the last sync, so trigger shopify_sync_settings sync_now first if stale.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

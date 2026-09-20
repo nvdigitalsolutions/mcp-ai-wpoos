@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-mana
  *
  * @since 1.9.0
  */
-class WP_MCP_AI_Pro_Tool_EZuite_Settings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_EZuite_Settings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Option key for toolkit settings.
@@ -63,6 +63,20 @@ class WP_MCP_AI_Pro_Tool_EZuite_Settings implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Read and manage EZuite Toolkit configuration settings.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading or updating EZuite toolkit settings: sync interval, direction, low-stock threshold, CCT slug, and field mapping.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Inventory queries (use ezuite_inventory), sync execution or status (use ezuite_sync), or product reads (use ezuite_erp_get_products).', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'ezuite_sync', 'ezuite_inventory', 'ezuite_erp_get_products' ),
+			'notes'           => __( 'update needs manage_options and a settings object with at least one supported key; 10 requests per minute limit.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

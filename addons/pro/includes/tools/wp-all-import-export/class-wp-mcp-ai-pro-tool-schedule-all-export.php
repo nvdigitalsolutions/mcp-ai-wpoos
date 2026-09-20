@@ -20,7 +20,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 /**
  * Schedules a WP All Export to run at specified intervals.
  */
-class WP_MCP_AI_Pro_Tool_Schedule_All_Export implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Schedule_All_Export implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Determine whether WP All Export is available.
 	 *
@@ -58,6 +58,20 @@ class WP_MCP_AI_Pro_Tool_Schedule_All_Export implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Schedules a WP All Export to run at specified intervals (Pro feature). Requires WP All Export plugin.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Automating an existing WP All Export template on a recurring hourly, twicedaily, daily, or weekly cron schedule.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Removing a template you no longer need; use delete_all_export instead, or schedule_all_import to automate imports.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'delete_all_export', 'schedule_all_import' ),
+			'notes'           => __( 'Requires manage_options. Re-scheduling a template replaces its existing schedule; the weekly interval is registered on demand.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

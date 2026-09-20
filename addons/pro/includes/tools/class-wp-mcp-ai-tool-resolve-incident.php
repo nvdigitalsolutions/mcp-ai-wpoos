@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Resolve_Incident' ) ) {
 	 *
 	 * @since 1.4.0
 	 */
-	class WP_MCP_AI_Tool_Resolve_Incident implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	class WP_MCP_AI_Tool_Resolve_Incident implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		use WP_MCP_AI_Tool_Default_Capability;
 
@@ -41,6 +41,20 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Resolve_Incident' ) ) {
 				'description'         => __( 'Mark an operational incident as resolved.', 'mcp-ai-wpoos' ),
 				'required_capability' => 'manage_options',
 				'parameters'          => $this->get_parameters_schema(),
+			);
+		}
+
+		/**
+		 * Get usage guidance for the tool.
+		 *
+		 * @return array
+		 */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Closing an operational incident by transitioning it to the resolved phase with a resolution message.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Creating incidents (use create_incident) or moving through intermediate phases (use update_incident).', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'create_incident', 'update_incident', 'get_service_status' ),
+				'notes'           => __( 'Fails when the incident cannot transition from its current phase; message defaults to a generic resolution.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 

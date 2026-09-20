@@ -33,7 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.2.0
  */
-class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface {
+class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_Tool_Chat_Response;
@@ -126,6 +126,20 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Generates a structured vehicle repair estimate from damage photos. Identifies the vehicle via VIN or visual recognition, detects damaged parts, classifies damage types and severity, and maps findings to price-sheet line items. Returns a detailed estimate with confidence scores and assumptions.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing a structured repair estimate from damage photos with an optional VIN and a CSV, XLSX, or JSON price sheet.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Wash or detailing pricing; use vehicle_cleaning_estimate instead. VIN lookup without damage; use vin_decode.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'vin_decode', 'vehicle_cleaning_estimate' ),
+			'notes'           => __( 'Vision-based and may take minutes; supply a price sheet and labor_rate_profile for accurate line-item costs.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

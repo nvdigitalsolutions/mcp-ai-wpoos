@@ -27,7 +27,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/trait-wp-mcp-ai-shop
  *
  * @since 1.3.0
  */
-class WP_MCP_AI_Pro_Tool_Shopify_Sync_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Shopify_Sync_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Shopify_Connection_Resolver;
 	use WP_MCP_AI_Shopify_Sync_Connection_Resolver;
@@ -51,6 +51,20 @@ class WP_MCP_AI_Pro_Tool_Shopify_Sync_Orders implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'List and retrieve Shopify orders. Order headers (ID, status, total, customer name, date) are cached locally for zero-cost listing. Full order detail (line items, fulfillments, refunds) requires a live API call and may cost GraphQL points.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing and searching Shopify orders; cached order headers cost nothing, while full detail and order analytics need live API calls.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Zero-cost cached listings of products or inventory; use shopify_sync_products or shopify_sync_inventory instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'shopify_sync_analytics', 'shopify_sync_products', 'shopify_sync_settings' ),
+			'notes'           => __( 'get_order and get_order_analytics cost GraphQL points; list_recent and search read cached headers at zero cost.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

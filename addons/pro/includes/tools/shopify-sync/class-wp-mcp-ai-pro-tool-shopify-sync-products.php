@@ -25,7 +25,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/trait-wp-mcp-ai-shop
  *
  * @since 1.3.0
  */
-class WP_MCP_AI_Pro_Tool_Shopify_Sync_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Shopify_Sync_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Shopify_Connection_Resolver;
 	use WP_MCP_AI_Shopify_Sync_Connection_Resolver;
@@ -49,6 +49,20 @@ class WP_MCP_AI_Pro_Tool_Shopify_Sync_Products implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Browse and search the Shopify product catalog from the local sync cache. List products by type, vendor, or status. Find products by SKU or variant GID. All read operations have zero GraphQL API cost.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Browsing the Shopify catalog from the sync cache: search, SKU or variant lookup, and listings by type, vendor, or status.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Stock levels (use shopify_sync_inventory) or live product management and writes (use shopify_products).', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'shopify_sync_inventory', 'shopify_sync_analytics', 'shopify_sync_settings' ),
+			'notes'           => __( 'All reads are cache-only and free; for fresh catalog data trigger shopify_sync_settings sync_now or use live shopify_products.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
