@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides a tool for publishing TikTok videos via the Open API share endpoint.
  */
-class WP_MCP_AI_Pro_Tool_Post_Tiktok_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Post_Tiktok_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -58,6 +58,18 @@ class WP_MCP_AI_Pro_Tool_Post_Tiktok_Video implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Publishes a video to TikTok using the official Open API share endpoint.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Uploading a finished video file to a TikTok account with an optional caption.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating or editing video, or scheduling posts; use create_social_video or schedule_social_post.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_social_video', 'schedule_social_post', 'get_tiktok_insights' ),
+			'notes'           => __( 'Videos go live publicly on TikTok; only publish finalized, user-approved assets.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

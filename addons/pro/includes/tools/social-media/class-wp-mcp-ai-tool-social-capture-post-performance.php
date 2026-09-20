@@ -26,7 +26,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Capture_Tool_Base' ) ) {
 /**
  * MemPalace capture tool for social-media voice + post performance.
  */
-class WP_MCP_AI_Tool_Social_Capture_Post_Performance extends WP_MCP_AI_Pro_Capture_Tool_Base {
+class WP_MCP_AI_Tool_Social_Capture_Post_Performance extends WP_MCP_AI_Pro_Capture_Tool_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -47,6 +47,18 @@ class WP_MCP_AI_Tool_Social_Capture_Post_Performance extends WP_MCP_AI_Pro_Captu
 	 */
 	public function get_description() {
 		return __( 'Capture brand voice notes, post-performance observations, or audience reactions into the MemPalace brand drawer. Records are born tier=recall; the tier manager promotes high-importance items to core based on access frequency.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Capturing brand voice notes or post-performance observations into the MemPalace brand wing for later recall.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Fetching fresh performance data; use get_social_analytics or get_cross_platform_analytics first.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_social_analytics', 'get_cross_platform_analytics', 'monitor_mentions_replies' ),
+			'notes'           => __( 'Stores records at tier=recall; the tier manager promotes the most-accessed items to core over time.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

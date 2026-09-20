@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.8.0
  */
-class WP_MCP_AI_Tool_Get_Content_Calendar implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Content_Calendar implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -41,6 +41,17 @@ class WP_MCP_AI_Tool_Get_Content_Calendar implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Retrieves the social media content calendar showing scheduled posts, optionally filtered by platform, status, or date range.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reviewing the queue of scheduled, draft, or published social posts, filtered by platform, status, or date.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Planning a new calendar; use create_content_calendar. Creating scheduled posts; use schedule_social_posts.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_content_calendar', 'schedule_social_posts', 'schedule_social_post', 'publish_to_social' ),
+		);
 	}
 
 	/**
