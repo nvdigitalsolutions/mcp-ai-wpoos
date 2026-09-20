@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Cloudflare_Add_Domain' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Cloudflare_Add_Domain extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Cloudflare_Add_Domain extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Cloudflare_Add_Domain' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Add a domain to Cloudflare CDN for an application.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Putting a new domain behind Cloudflare CDN for an existing application.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Checking CDN status or configuration; use cloudways_cloudflare_details to review first.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_cloudflare_details', 'cloudways_get_app', 'cloudways_dns_list_domains' ),
+				'notes'           => __( 'Requires server_id, app_id, and domain; DNS must resolve correctly for the CDN to serve traffic.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

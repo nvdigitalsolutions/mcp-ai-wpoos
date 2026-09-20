@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Clone_To_Server' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_App_Clone_To_Server extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_App_Clone_To_Server extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Clone_To_Server' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Clone an application to a different server.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Duplicating an application onto a different server for migrations or horizontal scaling.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Same-server copies; use cloudways_app_clone when source and target share one server.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_app_clone', 'cloudways_list_servers', 'cloudways_get_operation_status' ),
+				'notes'           => __( 'Requires source server_id/app_id plus target_server_id; verify IDs with the list tools first.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

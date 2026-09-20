@@ -22,7 +22,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Create' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Server_Create extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Server_Create extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -39,6 +39,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Create' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Create a new server on DigitalOcean, AWS, GCE, Vultr, or Linode with an initial application.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Provisioning a brand new server with an initial app on digitalocean, aws, gce, vultr, or linode.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Copying an existing server; use cloudways_server_clone instead.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_server_clone', 'cloudways_list_servers', 'cloudways_get_server', 'cloudways_get_operation_status' ),
+				'notes'           => __( 'Starts recurring billing immediately; double-check cloud, size, region, app, and label values first.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

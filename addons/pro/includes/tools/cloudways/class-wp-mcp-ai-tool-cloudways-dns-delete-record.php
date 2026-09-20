@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_DNS_Delete_Record' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_DNS_Delete_Record extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_DNS_Delete_Record extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_DNS_Delete_Record' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Delete a DNS record for a domain.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Removing a DNS record only after the user confirms the exact record ID.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Blind removal; list current records with cloudways_dns_list_records and confirm the record_id first.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_dns_list_records', 'cloudways_dns_add_record', 'cloudways_dns_list_domains' ),
+				'notes'           => __( 'Deletion is immediate and irreversible; a wrong record_id can take the site offline.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

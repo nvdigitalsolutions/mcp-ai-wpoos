@@ -20,7 +20,8 @@
  * Not triggered by:
  *   … implements WP_MCP_AI_Tool_Usage_Guidance_Interface       ← compliant
  *   get_description() containing "when to use"/"when NOT to use" ← compliant
- *   non-tool classes; WP_MCP_AI_Legacy_Tool_Wrapper            ← skipped
+ *   non-tool classes; WP_MCP_AI_Legacy_Tool_Wrapper;          ← skipped
+ *   abstract tool base classes (shared scaffolding)           ← skipped
  *
  * @package WP_MCP_AI
  * @author    NV Digital Solutions
@@ -57,6 +58,14 @@ class ToolDescriptionGuidanceSniff implements Sniff {
 	 */
 	public function process( File $phpcsFile, $stackPtr ) {
 		$tokens = $phpcsFile->getTokens();
+
+		// Abstract tool bases (e.g. WP_MCP_AI_Tool_Cloudways_Base) are shared
+		// scaffolding that concrete tools extend; they are never instantiated
+		// or registered, so guidance belongs on the concrete classes only.
+		$abstract_ptr = $phpcsFile->findPrevious( T_ABSTRACT, max( 0, $stackPtr - 5 ), $stackPtr - 1 );
+		if ( false !== $abstract_ptr ) {
+			return;
+		}
 
 		$class_name = $phpcsFile->findNext( T_STRING, $stackPtr + 1 );
 		if ( false === $class_name ) {

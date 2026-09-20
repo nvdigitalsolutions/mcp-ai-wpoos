@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Vulnerabilities_List' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_App_Vulnerabilities_List extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_App_Vulnerabilities_List extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Vulnerabilities_List' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'List WordPress vulnerabilities with severity scores for an application.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Checking a WordPress application for known vulnerabilities and their severity scores.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Performance or uptime checks; use the analytics or monitoring tools for those.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_app_monitor_summary', 'cloudways_copilot_insights_list', 'cloudways_get_app' ),
+			);
 		}
 
 		/** {@inheritdoc} */

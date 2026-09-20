@@ -22,7 +22,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_List_Projects' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_List_Projects extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_List_Projects extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -39,6 +39,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_List_Projects' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'List all projects on the account with their IDs, names, and server/app groupings.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Enumerating account projects and their IDs when grouping servers or apps by project.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Server or app inventory; use cloudways_list_servers or cloudways_list_apps.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_list_servers', 'cloudways_list_apps' ),
+			);
 		}
 
 		/** {@inheritdoc} */

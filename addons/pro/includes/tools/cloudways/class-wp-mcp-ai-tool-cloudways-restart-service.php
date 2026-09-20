@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Restart_Service' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Restart_Service extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Restart_Service extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Restart_Service' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Restart a specific service (nginx, mysql, php-fpm) on a server.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Restarting one stack service after a config change or when nginx, mysql, php-fpm, varnish, or redis hangs.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'A full server reboot or health checks; use cloudways_server_restart or cloudways_service_status.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_service_status', 'cloudways_server_restart', 'cloudways_get_server' ),
+				'notes'           => __( 'The service argument accepts nginx, mysql, php-fpm, varnish, or redis; expect a few seconds of downtime.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

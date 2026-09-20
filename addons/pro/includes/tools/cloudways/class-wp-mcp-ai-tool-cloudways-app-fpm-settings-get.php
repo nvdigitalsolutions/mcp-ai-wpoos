@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_FPM_Settings_Get' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_App_FPM_Settings_Get extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_App_FPM_Settings_Get extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_FPM_Settings_Get' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Retrieve current PHP-FPM configuration for an application.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Inspecting current PHP-FPM values like max_children or memory_limit before tuning.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Changing FPM values; use cloudways_app_fpm_settings_update to write new settings.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_app_fpm_settings_update', 'cloudways_app_php_analytics', 'cloudways_app_monitor_summary' ),
+				'notes'           => __( 'Returns max_children, max_requests, memory_limit, and process_manager for the app.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

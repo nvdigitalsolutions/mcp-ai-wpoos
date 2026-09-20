@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Update_Server_Label' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Update_Server_Label extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Update_Server_Label extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Update_Server_Label' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Rename a server.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Renaming a server in the Cloudways console for clearer identification and organization.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Renaming apps or changing server configuration; use cloudways_update_app_label.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_update_app_label', 'cloudways_list_servers', 'cloudways_get_server' ),
+				'notes'           => __( 'Requires a server_id from cloudways_list_servers; the label is cosmetic and does not affect services.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

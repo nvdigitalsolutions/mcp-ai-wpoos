@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Cron_List_Get' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_App_Cron_List_Get extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_App_Cron_List_Get extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Cron_List_Get' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Retrieve the list of cron jobs for an application.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Listing the scheduled cron jobs for a known application along with their commands.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Creating or deleting cron jobs; this tool is read-only, so manage them in the Cloudways console.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_list_apps', 'cloudways_get_app' ),
+				'notes'           => __( 'Requires server_id and app_id; discover them with the list tools first.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

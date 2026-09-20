@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_List_Apps' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_List_Apps extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_List_Apps extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_List_Apps' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'List all applications on a specific Cloudways server.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Discovering app IDs, labels, and types on a known server before app-level operations.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Finding servers or one app\'s details; use cloudways_list_servers or cloudways_get_app.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_list_servers', 'cloudways_get_app', 'cloudways_get_server' ),
+				'notes'           => __( 'Requires a server_id; app IDs from this list feed tools like cloudways_get_app and cloudways_purge_app_cache.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */
