@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-c
  * interpretation is opaque: the resolved `start` and `end` are echoed back so
  * the caller can confirm Google understood the phrase before relying on it.
  */
-class WP_MCP_AI_Pro_Tool_Quick_Add_Google_Calendar_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Quick_Add_Google_Calendar_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Capability required before the tool talks to the Calendar API.
@@ -68,6 +68,20 @@ class WP_MCP_AI_Pro_Tool_Quick_Add_Google_Calendar_Event implements WP_MCP_AI_To
 	 */
 	public function get_description() {
 		return __( 'Creates a Google Calendar event from a plain-language phrase such as "Lunch with Alice Friday at noon" or "Team standup tomorrow 9am for 30 minutes", letting Google resolve the date and time against the calendar\'s timezone. The resolved start and end are returned so you can verify the interpretation. Use create_google_calendar_event when you already have exact timestamps, attendees, or reminders.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating an event from a natural-language phrase like "Lunch Friday at noon" when Google should resolve date and time.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When exact timestamps, attendees, or reminders are known; use create_google_calendar_event.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_google_calendar_event', 'list_google_calendars', 'check_google_calendar_availability' ),
+			'notes'           => __( 'Relative dates are interpreted by Google against the calendar timezone; the resolved start and end are echoed back.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

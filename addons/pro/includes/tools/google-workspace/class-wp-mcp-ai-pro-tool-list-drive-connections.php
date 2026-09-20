@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php
 /**
  * Provides an assistant tool for discovering Google Drive connections.
  */
-class WP_MCP_AI_Pro_Tool_List_Drive_Connections implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_List_Drive_Connections implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -47,6 +47,20 @@ class WP_MCP_AI_Pro_Tool_List_Drive_Connections implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Lists configured Google Drive connections (Remote Sites roster plus the settings-based fallback) with their connection IDs, names, enabled state, user emails, and optional scoped folder IDs. Use the returned IDs as connection_id for search_drive and get_drive_file. Credentials are never returned.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering valid connection_id values and enabled state before calling search_drive or get_drive_file.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading or searching Drive content; use search_drive or get_drive_file. Listing Gmail connections; use list_gmail_connections.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'search_drive', 'get_drive_file', 'list_gmail_connections' ),
+			'notes'           => __( 'Credentials are never returned. The settings-based fallback appears as the "settings" row when no connection_id is passed.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

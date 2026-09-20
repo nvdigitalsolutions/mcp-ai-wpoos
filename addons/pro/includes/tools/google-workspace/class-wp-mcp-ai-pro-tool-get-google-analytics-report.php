@@ -17,7 +17,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Runs Analytics Data API reports for GA4 properties.
  */
-class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	const DEFAULT_SCOPE      = 'https://www.googleapis.com/auth/analytics.readonly';
 	const DEFAULT_TOKEN_URI  = 'https://oauth2.googleapis.com/token';
 	const TOKEN_CACHE_PREFIX = 'wp_mcp_ai_ga_token_';
@@ -44,6 +44,20 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Retrieves GA4 reporting data using the Google Analytics Data API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching GA4 report rows with metrics, dimensions, filters, order_bys, and date ranges from the Google Analytics Data API.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Managing GA4 properties, accounts, or admin settings; this tool only runs read-only reports via the Data API.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array(),
+			'notes'           => __( 'Defaults to 7daysAgo through today. Pass metrics as strings or arrays; filters accept raw Analytics API definitions.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

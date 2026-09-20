@@ -21,7 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-c
  * account's calendar list, so later tools can be pointed at a concrete
  * calendar ID instead of guessing at `primary`.
  */
-class WP_MCP_AI_Pro_Tool_List_Google_Calendars implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_List_Google_Calendars implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Capability required before the tool talks to the Calendar API.
@@ -72,6 +72,20 @@ class WP_MCP_AI_Pro_Tool_List_Google_Calendars implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Lists the Google Calendars the connected account can see, including each calendar ID, display name, time zone, and access role. Use this first to discover the calendar_id required by the other Google Calendar tools instead of assuming "primary".', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering valid calendar_id values before calling the other Google Calendar tools instead of assuming "primary".', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading or writing events; use list_google_calendar_events to read and create_google_calendar_event to write.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_google_calendar_events', 'create_google_calendar_event', 'quick_add_google_calendar_event' ),
+			'notes'           => __( 'Calendar list reads require the readonly calendar-list scope; granular accounts may need re-consent.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -33,7 +33,7 @@ require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-c
  * omitted shared properties as "reset to default" and Google answers with
  * `forbiddenForNonOrganizer`.
  */
-class WP_MCP_AI_Pro_Tool_Update_Google_Calendar_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Update_Google_Calendar_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Capability required before the tool talks to the Calendar API.
@@ -106,6 +106,20 @@ class WP_MCP_AI_Pro_Tool_Update_Google_Calendar_Event implements WP_MCP_AI_Tool_
 	 */
 	public function get_description() {
 		return __( 'Updates an existing Google Calendar event: title, description, location, start/end time, or status. Supply either a full timestamp for a timed event or YYYY-MM-DD for an all-day event; note that an all-day end date is exclusive, so a single-day event on 2026-06-01 ends on 2026-06-02. Set partial to true when you are not the event organiser.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Editing title, description, location, time, or status of an existing event found via list_google_calendar_events.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating new events or removing them; use create_google_calendar_event or delete_google_calendar_event.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_google_calendar_events', 'create_google_calendar_event', 'delete_google_calendar_event' ),
+			'notes'           => __( 'Default strategy replays the fetched event via events.update; set partial true when you are not the organiser.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
