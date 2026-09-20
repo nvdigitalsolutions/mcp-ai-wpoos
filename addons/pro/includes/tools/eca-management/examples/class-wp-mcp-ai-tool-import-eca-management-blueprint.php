@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_ECA_Management_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_ECA_Management_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR = WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/examples';
@@ -62,6 +62,18 @@ class WP_MCP_AI_Tool_Import_ECA_Management_Blueprint implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Install a curated ECA management assistant blueprint for school ECA coordination or iSAMS administration workflows.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing the school-eca-coordinator or isams-administrator assistant blueprint for a school.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Importing ECA records; use import_ecas_csv or sync_ecas_from_isams instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'import_ecas_csv', 'sync_ecas_from_isams', 'list_ecas' ),
+			'notes'           => __( 'Pass overwrite to replace an existing assistant with the same name.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * {@inheritdoc}

@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Syncs Extra-Curricular Activities from iSAMS/SOCS into WordPress.
  */
-class WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Syncs Extra-Curricular Activity (ECA) data from iSAMS/SOCS School Management System into WordPress. Can sync individual ECAs by ID or bulk sync all ECAs with pagination support.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Importing ECA definitions from iSAMS into WordPress, individually or in paginated bulk.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Importing enrollments or students; use sync_eca_enrollments_from_isams or sync_students_from_isams. Writing back; use sync_ecas_to_isams.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'sync_eca_enrollments_from_isams', 'sync_students_from_isams', 'sync_ecas_to_isams' ),
+			'notes'           => __( 'Imports into WordPress from the live school system; update_existing defaults to true.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

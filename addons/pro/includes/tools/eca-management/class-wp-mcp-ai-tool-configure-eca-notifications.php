@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Sets up automated notification rules for an ECA.
  */
-class WP_MCP_AI_Tool_Configure_ECA_Notifications implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Configure_ECA_Notifications implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Configure_ECA_Notifications implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Sets up automated notification rules for an ECA. Define triggers and actions for automatic email notifications when events like enrollment, waitlist promotion, cancellation, or attendance absences occur.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Setting up automated email rules for an ECA, such as alerting parents when a student is waitlisted or absent.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sending a one-off message now; use send_eca_notification or send_eca_parent_report instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_eca_notification', 'send_eca_parent_report', 'get_eca' ),
+			'notes'           => __( 'This tool requires administrator capability; resolve the ECA ID first with list_ecas.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

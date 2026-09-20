@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Records attendance for students in an ECA session.
  */
-class WP_MCP_AI_Tool_Mark_ECA_Attendance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Mark_ECA_Attendance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Mark_ECA_Attendance implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Records attendance for students in an ECA session. Tracks present, absent, late, and excused statuses with optional notes per student and per session.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording present, absent, late, or excused attendance for an ECA session after it takes place.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading past attendance records; use get_eca_attendance_report.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_eca_attendance_report', 'get_eca', 'send_eca_parent_report' ),
+			'notes'           => __( 'Writes attendance records for the session date; supports per-student and per-session notes.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Cross-ECA participation report for a student.
  */
-class WP_MCP_AI_Tool_Get_Student_Participation_Summary implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Student_Participation_Summary implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Get_Student_Participation_Summary implements WP_MCP_AI_Tool
 	 */
 	public function get_description() {
 		return __( 'Retrieves a cross-ECA participation report for a student, including enrollment details and attendance rates for each ECA, with an overall engagement score.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Summarizing engagement across all ECAs for one student, including attendance rates and an engagement score.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Attendance for a single ECA; use get_eca_attendance_report. Program or year-group reports; use generate_eca_participation_report.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_student', 'get_eca_attendance_report', 'generate_eca_participation_report' ),
+			'notes'           => __( 'Filter by term to limit results to one academic period.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

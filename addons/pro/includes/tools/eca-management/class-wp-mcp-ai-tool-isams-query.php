@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Queries iSAMS School Management System via REST API.
  */
-class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Query iSAMS School Management System for pupils, employees, departments, terms, and other school data.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching raw iSAMS MIS records such as pupils, employees, departments, houses, or terms that no dedicated ECA tool covers.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Bulk imports into WordPress; use sync_students_from_isams, sync_ecas_from_isams, or sync_eca_enrollments_from_isams.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'sync_students_from_isams', 'sync_ecas_from_isams', 'sync_eca_enrollments_from_isams' ),
+			'notes'           => __( 'Read-only: never writes to iSAMS. Returns raw API payloads, not formatted ECA records.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

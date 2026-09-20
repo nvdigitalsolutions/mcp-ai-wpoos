@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates a timetable view for a student, teacher, venue, or year group.
  */
-class WP_MCP_AI_Tool_Get_ECA_Timetable implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_ECA_Timetable implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Get_ECA_Timetable implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Generate a timetable view for a student, teacher, venue, or year group showing all scheduled Extra-Curricular Activities organized by day with optional conflict detection.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Rendering the weekly ECA schedule for a student, teacher, venue, or year group.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Checking a single proposed time slot; use check_eca_conflicts. Editing the schedule; use set_eca_schedule.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'check_eca_conflicts', 'set_eca_schedule', 'list_ecas' ),
+			'notes'           => __( 'Set include_conflicts to true to flag overlapping sessions; pass week_of for a non-current week.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

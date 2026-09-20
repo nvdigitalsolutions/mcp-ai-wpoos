@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Syncs students from iSAMS into WordPress.
  */
-class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Syncs student data from iSAMS School Management System into WordPress. Can sync individual students by ID or bulk sync by year group or all students.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Importing individual, year-group, or all students from iSAMS into WordPress student records.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Importing ECAs or enrollments; use sync_ecas_from_isams or sync_eca_enrollments_from_isams. Raw queries; use isams_query.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'sync_ecas_from_isams', 'sync_eca_enrollments_from_isams', 'isams_query' ),
+			'notes'           => __( 'Imports into WordPress from the live iSAMS system; update_existing defaults to true.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
