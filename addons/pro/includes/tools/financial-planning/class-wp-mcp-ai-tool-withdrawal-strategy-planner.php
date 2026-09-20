@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Withdrawal_Strategy_Planner implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Withdrawal_Strategy_Planner implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,22 @@ class WP_MCP_AI_Tool_Withdrawal_Strategy_Planner implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Plan retirement withdrawal strategies to maximize portfolio longevity. Compares withdrawal methods (4% rule, dynamic, fixed), calculates tax-efficient withdrawal ordering, and projects portfolio sustainability over time.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Comparing withdrawal methods (4% rule, dynamic, fixed) and account ordering to project portfolio longevity.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Accumulation-phase savings projections; use retirement_calculator. Claiming age decisions belong to social_security_optimizer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'retirement_calculator', 'social_security_optimizer', 'pension_analyzer' ),
+			'notes'           => __( 'Requires portfolio_balance and retirement_age; strategy accepts four_percent, dynamic, fixed_amount, and rmb.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

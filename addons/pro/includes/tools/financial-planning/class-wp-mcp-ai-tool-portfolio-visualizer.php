@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Portfolio_Visualizer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Portfolio_Visualizer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,22 @@ class WP_MCP_AI_Tool_Portfolio_Visualizer implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Visualize investment portfolio allocation and performance. Supports automatic price fetching via yfinance service or manual price input. Analyze asset distribution, sector diversification, and risk metrics. EDUCATIONAL ONLY - Data may be delayed 15 minutes. Not investment advice.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Analyzing allocation, performance, diversification, or risk across a supplied set of portfolio holdings.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Recording trades or lot-level P&L; use portfolio_transaction_log. Rebalance trades belong to rebalancing_analyzer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'portfolio_transaction_log', 'rebalancing_analyzer', 'investment_return_calculator' ),
+			'notes'           => __( 'Requires holdings with ticker and shares; auto_fetch_prices=true pulls current prices from the yfinance service.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

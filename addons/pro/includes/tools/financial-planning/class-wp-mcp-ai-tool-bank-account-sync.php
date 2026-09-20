@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Bank_Account_Sync implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Bank_Account_Sync implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,20 @@ class WP_MCP_AI_Tool_Bank_Account_Sync implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Connect and sync bank accounts via Plaid API. Automatically retrieve transactions, balances, and account details. Supports multiple financial institutions with secure OAuth authentication.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'To connect a bank account via Plaid and sync its transactions and balances automatically.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For manually entered expenses or budget checks; use expense_tracker or budget_planner instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'expense_tracker', 'categorise_transactions', 'get_uncategorised_transactions' ),
+			'notes'           => __( 'The connect action requires a Plaid access token. Sync and transaction fetches are mock responses until Plaid credentials are configured.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

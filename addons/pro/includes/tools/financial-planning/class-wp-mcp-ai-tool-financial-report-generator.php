@@ -32,7 +32,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Financial_Report_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Financial_Report_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -104,6 +104,22 @@ class WP_MCP_AI_Tool_Financial_Report_Generator implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Generate structured professional financial reports from provided data. Supports portfolio summaries, market analysis, investment theses, risk assessments, earnings summaries, and sector comparisons. Output in Markdown or HTML. EDUCATIONAL ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'To render a structured portfolio, market, thesis, risk, earnings, or sector report from provided data.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'To gather the underlying data or news first; use financial_search or financial_news_aggregator instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'financial_search', 'financial_news_aggregator', 'portfolio_visualizer' ),
+			'notes'           => __( 'Requires report_type, title, and data. format is markdown or html; include_charts_config adds chart JSON.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

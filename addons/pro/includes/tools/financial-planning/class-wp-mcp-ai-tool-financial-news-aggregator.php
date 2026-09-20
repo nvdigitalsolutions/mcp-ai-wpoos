@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Financial_News_Aggregator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Financial_News_Aggregator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -109,6 +109,22 @@ class WP_MCP_AI_Tool_Financial_News_Aggregator implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Aggregate financial news from configurable sources including Yahoo Finance RSS, MarketWatch, Reuters, and SEC EDGAR filings. Filter by category and keywords. Returns unified trend analysis and market pulse summaries. EDUCATIONAL ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'To pull recent financial news from configurable RSS and filing sources with trend summaries.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For targeted lookups by ticker, filing, or definition; use financial_search instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'financial_search', 'market_sentiment_analyzer', 'earnings_calendar_fetcher' ),
+			'notes'           => __( 'Sources include Yahoo Finance, MarketWatch, Reuters, and SEC EDGAR. Fetches require network access.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

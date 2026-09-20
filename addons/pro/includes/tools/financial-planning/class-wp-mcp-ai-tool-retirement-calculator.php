@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Retirement_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Retirement_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -96,6 +96,22 @@ class WP_MCP_AI_Tool_Retirement_Calculator implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Calculate retirement savings needs and projections. Estimates how much you need to save, projects future savings growth, and calculates monthly contributions needed to reach retirement goals. Includes inflation adjustments and compound interest calculations.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Projecting retirement savings growth and the monthly contributions needed to reach a desired retirement income.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'IRA type choice; use ira_roth_comparison. Spending from an existing balance belongs to withdrawal_strategy_planner.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'withdrawal_strategy_planner', 'ira_roth_comparison', 'social_security_optimizer' ),
+			'notes'           => __( 'Requires current_age, retirement_age, current_savings, desired_annual_income; rates are percentages such as 7.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

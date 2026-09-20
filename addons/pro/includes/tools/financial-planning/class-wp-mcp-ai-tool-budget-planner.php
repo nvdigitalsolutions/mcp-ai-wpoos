@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Budget_Planner implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Budget_Planner implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,20 @@ class WP_MCP_AI_Tool_Budget_Planner implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Create and track monthly budgets with category allocations. Supports custom categories, spending limits, variance tracking, and 50/30/20 rule recommendations for needs, wants, and savings.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'To create, update, or track a monthly budget with category allocations and variance analysis.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For cash flow projections or logging individual expenses; use cash_flow_analyzer or expense_tracker instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cash_flow_analyzer', 'expense_tracker', 'savings_goal_planner' ),
+			'notes'           => __( 'Requires action (create, update, track, suggest) and monthly_income. The suggest action can apply the 50/30/20 rule.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

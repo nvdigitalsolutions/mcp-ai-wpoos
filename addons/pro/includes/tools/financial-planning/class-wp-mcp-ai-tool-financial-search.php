@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Financial_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Financial_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -111,6 +111,22 @@ class WP_MCP_AI_Tool_Financial_Search implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Search financial-specific sources including SEC EDGAR filings, Yahoo Finance, Google Finance, Investopedia, and Finviz. Supports general, company, filing, definition, and screener search types with result caching. EDUCATIONAL ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'To search financial sources like SEC EDGAR, Yahoo Finance, or Investopedia for tickers, filings, or definitions.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For a stream of recent headlines; use financial_news_aggregator instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'financial_news_aggregator', 'stock_data_fetcher', 'macro_data_fetcher' ),
+			'notes'           => __( 'Requires query. search_type can be general, company, filing, definition, or screener. Requires network access.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
