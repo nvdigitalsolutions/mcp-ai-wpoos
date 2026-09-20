@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_Regulatory_Registration_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Regulatory_Registration_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR = WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/examples';
@@ -62,7 +62,16 @@ class WP_MCP_AI_Tool_Import_Regulatory_Registration_Blueprint implements WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Install a curated regulatory registration assistant blueprint for regulatory affairs management or product registration specialist workflows.', 'mcp-ai-wpoos-pro' ); }
-
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When setting up a new regulatory affairs or product registration assistant with the curated blueprint.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When building an assistant from scratch or importing a non-regulatory blueprint; use the matching import blueprint tool.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_registration', 'list_registrations' ),
+			'notes'           => __( 'Valid blueprint slugs: regulatory-affairs-manager and product-registration-specialist; set overwrite to replace.', 'mcp-ai-wpoos-pro' ),
+		); }
 	/**
 	 * {@inheritdoc}
 	 */

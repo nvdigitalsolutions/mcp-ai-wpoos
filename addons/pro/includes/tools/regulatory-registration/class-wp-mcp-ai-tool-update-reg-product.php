@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Updates a regulatory product.
  */
-class WP_MCP_AI_Tool_Update_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Update_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Updates an existing product in the regulatory registration system. Can update name, description, metadata, and taxonomies.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When changing fields of an existing product such as name, brand, INCI ingredients, HS code, or barcode.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When creating a product or checking data quality; use create_reg_product or validate_reg_product instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_reg_product', 'validate_reg_product', 'list_reg_products' ),
+			'notes'           => __( 'Requires a product ID from list_reg_products or search_reg_products; unspecified fields are left unchanged.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

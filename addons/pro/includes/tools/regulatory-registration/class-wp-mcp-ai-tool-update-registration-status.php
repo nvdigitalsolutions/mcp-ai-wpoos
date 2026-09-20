@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Updates registration status.
  */
-class WP_MCP_AI_Tool_Update_Registration_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Registration_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Update_Registration_Status implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Updates the status of a registration (Draft, Pending Documents, Ready for Submission, Submitted, Under Review, Approved, Rejected, On Hold, Renewal Due).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When moving a registration between statuses and optionally recording submission, approval, or expiry dates.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When marking the submission specifically or emailing stakeholders; use submit_registration or send_status_change_notification.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'submit_registration', 'send_status_change_notification', 'approve_registration' ),
+			'notes'           => __( 'Externally consequential when status reflects authority outcomes; pair with send_status_change_notification to inform stakeholders.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

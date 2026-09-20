@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Lists regulatory products.
  */
-class WP_MCP_AI_Tool_List_Reg_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Reg_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_List_Reg_Products implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Lists products in the regulatory registration system with optional filtering by category, brand, country of origin, or search term.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When listing products by category, brand, origin, or name filter, and when other tools need a product_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When you need a multi-field keyword search or one product in detail; use search_reg_products or get_reg_product.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'search_reg_products', 'get_reg_product', 'create_reg_product' ),
+			'notes'           => __( 'Supports pagination via limit and offset; results include product IDs to reuse in registration and update tools.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Syncs with Sri Lanka NMRA API.
  */
-class WP_MCP_AI_Tool_Sync_With_Nmra implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Sync_With_Nmra implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Sync_With_Nmra implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Synchronizes registration data with Sri Lanka National Medicines Regulatory Authority (NMRA) API for status updates and submissions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When a Sri Lanka registration needs an NMRA API status check, submission, update, or withdrawal.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When the authority is not NMRA or only a generic status read is needed; use sync_with_mohap or check_authority_status.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'sync_with_mohap', 'check_authority_status', 'submit_to_authority' ),
+			'notes'           => __( 'Externally consequential when action is submit, update, or withdraw; status_check is read-only and the default.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

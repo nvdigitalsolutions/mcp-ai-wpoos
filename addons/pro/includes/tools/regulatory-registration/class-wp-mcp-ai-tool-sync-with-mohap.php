@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Syncs with UAE MOHAP portal.
  */
-class WP_MCP_AI_Tool_Sync_With_Mohap implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Sync_With_Mohap implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Sync_With_Mohap implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Synchronizes registration data with UAE Ministry of Health and Prevention (MOHAP) portal for status updates and electronic submissions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When a UAE registration needs a MOHAP portal status check, submission, renewal, or withdrawal.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When the authority is not MOHAP or only a generic status read is needed; use sync_with_nmra or check_authority_status.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'sync_with_nmra', 'check_authority_status', 'submit_to_authority' ),
+			'notes'           => __( 'Externally consequential when action is submit, renew, or withdraw; status_check is read-only and the default.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

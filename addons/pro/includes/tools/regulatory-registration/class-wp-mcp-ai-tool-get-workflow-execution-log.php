@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Gets workflow execution log.
  */
-class WP_MCP_AI_Tool_Get_Workflow_Execution_Log implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Workflow_Execution_Log implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Get_Workflow_Execution_Log implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Retrieves workflow execution audit trail with filtering by rule, date range, and execution status for monitoring and debugging.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When troubleshooting why a workflow rule did or did not fire, or when auditing recent rule executions.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When checking which rules exist or simulating new rule logic; use list_workflow_rules or test_workflow_rule instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_workflow_rules', 'test_workflow_rule' ),
+			'notes'           => __( 'rule_id, action_type, and date range filters are optional; results include per-action-type statistics.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

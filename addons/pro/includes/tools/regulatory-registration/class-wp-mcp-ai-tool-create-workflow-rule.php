@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates workflow automation rules.
  */
-class WP_MCP_AI_Tool_Create_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
@@ -40,6 +40,18 @@ class WP_MCP_AI_Tool_Create_Workflow_Rule implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Creates automated workflow rule with trigger conditions, actions, and execution schedule for registration lifecycle management.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Automating a registration lifecycle event (status change, expiry approaching, document upload) with actions like email or status updates.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Running an action right now or reviewing existing rules; use list_workflow_rules or get_workflow_execution_log.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_workflow_rules', 'test_workflow_rule', 'update_workflow_rule' ),
+			'notes'           => __( 'Requires manage_options; triggers use events like status_change and expiry_approaching, actions include send_email and update_status.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

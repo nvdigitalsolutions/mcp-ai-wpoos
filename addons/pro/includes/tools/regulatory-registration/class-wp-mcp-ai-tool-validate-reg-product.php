@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Validates a regulatory product.
  */
-class WP_MCP_AI_Tool_Validate_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Validate_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Validate_Reg_Product implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Performs comprehensive validation of a product including INCI ingredients, HS code, data completeness, and readiness for registration.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When checking that a stored product is complete, compliant, and ready for registration in a target country.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When checking only documents or a single ingredient list; use validate_document_checklist or validate_inci_ingredients.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'check_product_compliance', 'check_hs_code', 'validate_document_checklist' ),
+			'notes'           => __( 'Requires a product_id from list_reg_products; INCI, HS code, and completeness checks can be toggled individually.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
@@ -115,10 +127,7 @@ class WP_MCP_AI_Tool_Validate_Reg_Product implements WP_MCP_AI_Tool_Interface, W
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['product_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Product ID is required.', 'mcp-ai-wpoos-pro' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_missing_param', __( 'Product ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$product_id = absint( $arguments['product_id'] );
@@ -126,10 +135,7 @@ class WP_MCP_AI_Tool_Validate_Reg_Product implements WP_MCP_AI_Tool_Interface, W
 		// Verify product exists.
 		$product = get_post( $product_id );
 		if ( ! $product || 'mcp_ai_reg_product' !== $product->post_type ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Product not found.', 'mcp-ai-wpoos-pro' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_not_found', __( 'Product not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Initialize validation results.

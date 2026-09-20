@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Exports registrations to Excel files.
  */
-class WP_MCP_AI_Tool_Export_Registrations_To_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Export_Registrations_To_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Export_Registrations_To_Excel implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Exports regulatory registrations to Excel file with custom filters, field selection, and status grouping.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing a downloadable spreadsheet of registrations filtered by country or status.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Exporting products instead of registrations; use export_products_to_excel, or list_registrations for in-chat results.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'export_products_to_excel', 'list_registrations', 'import_registrations_from_excel' ),
+			'notes'           => __( 'Choose fields such as cos_number and expiry_date; the file is written under wp-content/uploads/exports.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

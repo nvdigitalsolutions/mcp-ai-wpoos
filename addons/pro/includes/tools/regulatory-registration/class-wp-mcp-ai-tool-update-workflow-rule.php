@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Updates workflow automation rules.
  */
-class WP_MCP_AI_Tool_Update_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
@@ -40,6 +40,18 @@ class WP_MCP_AI_Tool_Update_Workflow_Rule implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Updates existing workflow automation rule configuration including name, trigger conditions, actions, and enabled status.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When changing an existing workflow rule name, trigger, actions, or enabled state.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When adding a new rule or validating changes; use create_workflow_rule or test_workflow_rule instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_workflow_rule', 'test_workflow_rule', 'list_workflow_rules' ),
+			'notes'           => __( 'Get the rule ID from list_workflow_rules first; only provided fields are changed.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

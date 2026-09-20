@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Gets regulatory updates.
  */
-class WP_MCP_AI_Tool_Get_Regulatory_Updates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Regulatory_Updates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Get_Regulatory_Updates implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Retrieves recent regulatory updates, amendments, and guideline changes for specific countries or authorities. Helps stay informed about compliance changes.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Tracking regulation changes, amendments, and guidelines for countries or authorities since a given date.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading stable country requirements or checking compliance; use get_regulatory_requirements or check_product_compliance.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_regulatory_requirements', 'check_product_compliance', 'get_registration' ),
+			'notes'           => __( 'since_date defaults to 30 days ago; update_type supports new_regulation, amendment, guideline, restriction, and other.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

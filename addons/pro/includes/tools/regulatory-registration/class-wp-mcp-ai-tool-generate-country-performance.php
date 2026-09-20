@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates country performance reports.
  */
-class WP_MCP_AI_Tool_Generate_Country_Performance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Country_Performance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Generate_Country_Performance implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Generates country-level performance metrics including approval rates, processing times, compliance status, and jurisdiction comparisons.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Comparing approval rates, processing days, and expiry health across countries or jurisdictions.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Looking up one registration or a single document; use get_registration or get_reg_document.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_compliance_report', 'generate_pipeline_report', 'check_authority_status' ),
+			'notes'           => __( 'sort_by accepts total, approval_rate, avg_approval_days, or active; include_comparison adds cross-country highlights.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

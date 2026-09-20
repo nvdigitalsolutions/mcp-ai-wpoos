@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Deletes workflow automation rules.
  */
-class WP_MCP_AI_Tool_Delete_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
@@ -40,6 +40,18 @@ class WP_MCP_AI_Tool_Delete_Workflow_Rule implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Permanently deletes a workflow automation rule from the system. This action cannot be undone.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently removing a workflow rule that must no longer fire, such as a deprecated automation.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Disabling a rule you might re-enable later; set enabled=false via update_workflow_rule instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_workflow_rules', 'update_workflow_rule', 'get_workflow_execution_log' ),
+			'notes'           => __( 'Deletion is permanent; confirm=true is required, and the rule_id must match one returned by list_workflow_rules.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

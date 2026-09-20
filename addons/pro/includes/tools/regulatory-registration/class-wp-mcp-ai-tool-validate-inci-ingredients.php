@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Validates INCI ingredients.
  */
-class WP_MCP_AI_Tool_Validate_INCI_Ingredients implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Validate_INCI_Ingredients implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Validate_INCI_Ingredients implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Validates ingredient names against INCI (International Nomenclature Cosmetic Ingredient) standards. Checks for proper formatting, common names, and restricted substances.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When checking an ingredient list for INCI naming, formatting, or country-restricted substances.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When validating a whole stored product or general compliance; use validate_reg_product or check_product_compliance.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'validate_reg_product', 'check_product_compliance', 'update_reg_product' ),
+			'notes'           => __( 'Ingredients are comma-separated; restriction checks respect the country code and are on by default.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
@@ -103,10 +115,7 @@ class WP_MCP_AI_Tool_Validate_INCI_Ingredients implements WP_MCP_AI_Tool_Interfa
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['ingredients'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Ingredients list is required.', 'mcp-ai-wpoos-pro' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_missing_param', __( 'Ingredients list is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Parse ingredients.

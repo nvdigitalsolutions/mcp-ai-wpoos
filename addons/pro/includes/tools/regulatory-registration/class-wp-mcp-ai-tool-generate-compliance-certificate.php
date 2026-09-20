@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates compliance certificates for registrations.
  */
-class WP_MCP_AI_Tool_Generate_Compliance_Certificate implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Compliance_Certificate implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Generate_Compliance_Certificate implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Generates an official compliance certificate for approved registrations with regulatory details, approval dates, and validity period.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Issuing a certificate document for a registration whose status is approved or active.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Generating certificates for unapproved registrations, or producing a full dossier; use generate_pdf_dossier or generate_submission_pack.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_registration', 'generate_pdf_dossier', 'generate_submission_pack' ),
+			'notes'           => __( 'Fails unless the registration status is approved or active; certificate_type supports standard, gcc, coa, and free_sale.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

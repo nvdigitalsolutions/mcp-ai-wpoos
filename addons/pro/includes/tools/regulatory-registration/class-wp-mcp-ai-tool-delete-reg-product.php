@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Deletes a regulatory product.
  */
-class WP_MCP_AI_Tool_Delete_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Delete_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Permanently deletes a product from the regulatory registration system. Warning: This action cannot be undone and will also delete associated registrations and documents.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently removing a product record the team has confirmed is obsolete, with awareness that its history is gone.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Deactivating or editing a product you may need later; use update_reg_product, or duplicate_reg_product to make a variant first.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_reg_product', 'list_reg_products', 'update_reg_product' ),
+			'notes'           => __( 'Permanent deletion with no undo; the product cannot be recovered, so confirm the ID with get_reg_product first.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

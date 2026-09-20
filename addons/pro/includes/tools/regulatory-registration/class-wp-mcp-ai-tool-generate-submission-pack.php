@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates a submission pack for a registration.
  */
-class WP_MCP_AI_Tool_Generate_Submission_Pack implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Submission_Pack implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Generate_Submission_Pack implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Generates a complete submission package for a registration, bundling all required documents and creating a submission record.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Bundling all required documents of a registration into a submission package with optional cover letter and index.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Generating only a cover letter or a certificate; use generate_cover_letter or generate_compliance_certificate.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_pdf_dossier', 'generate_cover_letter', 'validate_document_checklist' ),
+			'notes'           => __( 'Fails and lists missing documents when country-required types (loa, fsc, coa, gmp, msds, pif, artwork, formula) are absent.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

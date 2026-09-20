@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Checks document expiry status.
  */
-class WP_MCP_AI_Tool_Check_Document_Expiry implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Check_Document_Expiry implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Check_Document_Expiry implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Checks expiry status of documents and returns expired or soon-to-expire documents that need renewal. Critical for maintaining compliance.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scanning documents for expired or soon-to-expire certificates and licenses that need renewal.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reviewing one known document in detail or forecasting registration expiry; use get_reg_document or generate_expiry_forecast.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_reg_document', 'list_reg_documents', 'generate_expiry_forecast' ),
+			'notes'           => __( 'warning_days defaults to 90; narrow results with product_id or registration_id to keep output small.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

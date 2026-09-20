@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Adds a regulatory requirement.
  */
-class WP_MCP_AI_Tool_Add_Regulatory_Requirement implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Add_Regulatory_Requirement implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Add_Regulatory_Requirement implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Creates a new regulatory requirement for a specific country/authority. Used to define what documents, tests, or compliance items are required for registration.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new country/authority-specific requirement (document, test, certification, or ingredient restriction) for compliance checking.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading existing requirements or checking a product against them; use get_regulatory_requirements or check_product_compliance.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_regulatory_requirements', 'check_product_compliance', 'validate_document_checklist' ),
+			'notes'           => __( 'Set requirement_type to document, test, certification, ingredient_restriction, or other; is_mandatory defaults to true.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

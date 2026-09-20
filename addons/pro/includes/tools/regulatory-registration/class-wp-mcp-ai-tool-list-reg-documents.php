@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Lists regulatory documents.
  */
-class WP_MCP_AI_Tool_List_Reg_Documents implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Reg_Documents implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_List_Reg_Documents implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Lists documents in the regulatory registration system with filtering by product, registration, document type, and expiry status.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When finding documents by product, registration, type, or expiry status, and when you need document IDs.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When you need the details of one document; use get_reg_document with the ID returned here.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_reg_document', 'upload_reg_document', 'update_reg_document' ),
+			'notes'           => __( 'Results are paginated (default 20 per page, max 100) and include document IDs and expiry flags.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

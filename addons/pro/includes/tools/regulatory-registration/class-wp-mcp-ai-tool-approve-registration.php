@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Marks registration as approved.
  */
-class WP_MCP_AI_Tool_Approve_Registration implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Approve_Registration implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Approve_Registration implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Marks a registration as approved. Updates status to "Approved" and records approval date, expiry date, and COS number.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Marking a known registration ID as approved after the authority grants it, recording approval date, expiry date, and COS number.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Moving a registration to any other status or sending the approval notice; use update_registration_status or send_status_change_notification.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_registration', 'update_registration_status', 'generate_compliance_certificate' ),
+			'notes'           => __( 'Approval date defaults to today when omitted; expiry_date and cos_number are optional but recommended for downstream reports.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
