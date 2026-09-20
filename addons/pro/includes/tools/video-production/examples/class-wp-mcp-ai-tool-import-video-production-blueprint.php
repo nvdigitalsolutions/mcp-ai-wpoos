@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_Video_Production_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Video_Production_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -80,6 +80,18 @@ class WP_MCP_AI_Tool_Import_Video_Production_Blueprint implements WP_MCP_AI_Tool
 	 */
 	public function get_description() {
 		return __( 'Install a curated video production assistant blueprint for video editing or production management workflows.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing the curated video-editor or production-manager assistant blueprint on this site.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Building a custom assistant from scratch; use create_assistant.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_assistant', 'import_ai_tool_builder_blueprint' ),
+			'notes'           => __( 'Set overwrite=true to replace an existing assistant with the same name.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

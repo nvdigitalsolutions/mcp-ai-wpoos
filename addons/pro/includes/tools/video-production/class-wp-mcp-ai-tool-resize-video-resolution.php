@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Resize_Video_Resolution tool.
  */
-class WP_MCP_AI_Tool_Resize_Video_Resolution implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Resize_Video_Resolution implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Resize_Video_Resolution implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Change video dimensions and aspect ratio for different platforms and devices.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Changing a video\'s width, height, or aspect ratio, such as 16:9 to 9:16 for social feeds.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Converting codecs or file formats without changing size; use transcode_video or convert_video_format.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'transcode_video', 'optimize_for_platform', 'convert_video_format' ),
+			'notes'           => __( 'Use resolution=custom with width and height for exact pixel sizes.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

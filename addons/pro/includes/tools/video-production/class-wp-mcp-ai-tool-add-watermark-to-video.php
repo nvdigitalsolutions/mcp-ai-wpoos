@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Add_Watermark_To_Video tool.
  */
-class WP_MCP_AI_Tool_Add_Watermark_To_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Add_Watermark_To_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Add_Watermark_To_Video implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Brand videos with custom watermarks, logos, or text overlays with positioning control.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Branding a finished video with a logo, image, or text overlay at a chosen position, opacity, and scale.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Changing dimensions instead; use resize_video_resolution. Preparing platform delivery specs; use optimize_for_platform.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'resize_video_resolution', 'optimize_for_platform', 'merge_videos', 'compress_video' ),
+			'notes'           => __( 'The watermark must already be in the media library; processing requires FFmpeg on the server.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

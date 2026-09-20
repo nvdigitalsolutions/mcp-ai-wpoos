@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Adjust_Video_Speed tool.
  */
-class WP_MCP_AI_Tool_Adjust_Video_Speed implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Adjust_Video_Speed implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Adjust_Video_Speed implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Speed up or slow down video playback with audio pitch correction.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Speeding up or slowing down an entire video (0.25x to 4x) with optional audio pitch correction.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Cutting or reordering footage; use trim_video or merge_videos. Changing dimensions; use resize_video_resolution.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'trim_video', 'merge_videos', 'compress_video' ),
+			'notes'           => __( 'maintain_pitch defaults to true so sped-up audio keeps its natural tone.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

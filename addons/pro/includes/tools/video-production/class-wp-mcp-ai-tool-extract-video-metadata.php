@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Extract_Video_Metadata tool.
  */
-class WP_MCP_AI_Tool_Extract_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Extract_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Extract_Video_Metadata implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Extract comprehensive video information including duration, resolution, codec, and bitrate.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading duration, resolution, codec, and audio details for a media library video, with optional audio analysis.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Stream-level detail from URLs or attachments; use get_video_metadata. Queue or upload status; use get_queued_videos.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_video_metadata', 'get_queued_videos', 'transcribe_video' ),
+			'notes'           => __( 'Takes a media library video_id; get_video_metadata also accepts URLs and file IDs.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

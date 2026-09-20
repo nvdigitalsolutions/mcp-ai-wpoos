@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.8.0
  */
-class WP_MCP_AI_Tool_Get_Videos_Without_Transcripts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Videos_Without_Transcripts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -41,6 +41,18 @@ class WP_MCP_AI_Tool_Get_Videos_Without_Transcripts implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Retrieves videos that lack transcripts or captions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Auditing the media library for videos that still need transcripts or captions.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Generating the transcripts themselves; use transcribe_video.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'transcribe_video', 'generate_video_captions', 'get_videos_without_thumbnails' ),
+			'notes'           => __( 'Filter by platform or language to narrow the backlog before queueing transcription.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

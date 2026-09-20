@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Convert_Video_Format tool.
  */
-class WP_MCP_AI_Tool_Convert_Video_Format implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Convert_Video_Format implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Convert_Video_Format implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Convert videos between formats (MP4, WebM, MOV, AVI) with codec options.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Switching a video between containers (MP4, WebM, MOV, AVI) with explicit video and audio codec choices.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Keeping the format but shrinking size; use compress_video. Applying platform presets; use optimize_for_platform or transcode_video.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'compress_video', 'transcode_video', 'optimize_for_platform' ),
+			'notes'           => __( 'Container conversion re-encodes the streams, so expect a quality and time cost.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

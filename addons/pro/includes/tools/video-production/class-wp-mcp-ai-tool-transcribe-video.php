@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.8.0
  */
-class WP_MCP_AI_Tool_Transcribe_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Transcribe_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,18 @@ class WP_MCP_AI_Tool_Transcribe_Video implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Generates transcripts for videos. Supports dry_run mode.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Queueing one or more videos for transcription before captioning, search indexing, or accessibility work.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Finding which videos still need transcripts; use get_videos_without_transcripts.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_videos_without_transcripts', 'generate_video_captions', 'get_videos_without_thumbnails' ),
+			'notes'           => __( 'Dry run is the default; set dry_run=false to queue. Uses AI provider transcription tokens, so batch size affects cost.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

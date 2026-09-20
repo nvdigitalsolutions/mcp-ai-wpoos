@@ -29,7 +29,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-r
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Transcode_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Transcode_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
 
 	/**
@@ -51,6 +51,18 @@ class WP_MCP_AI_Tool_Transcode_Video implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Transcode videos to different formats using fluent-ffmpeg. Convert between formats (MP4, WebM, AVI, MOV), adjust resolution for social media platforms, optimize codecs and bitrates. Perfect for preparing videos for YouTube, Instagram, TikTok, Facebook, and more.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Converting a video to another format or codec, or applying a platform preset with tuned bitrate, resolution, and FPS.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Cutting or joining clips; use trim_video or merge_videos.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'convert_video_format', 'compress_video', 'resize_video_resolution' ),
+			'notes'           => __( 'Presets: youtube, instagram, tiktok, facebook, twitter, linkedin. Set save_to_media=false to skip media library import.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
