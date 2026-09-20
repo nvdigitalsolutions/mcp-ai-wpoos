@@ -25,7 +25,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 /**
  * Finds pricing information for BJ's, Sam's Club, and Costco by querying Crawl4AI's web search endpoint.
  */
-class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const DEFAULT_MAX_RESULTS = 5;
@@ -108,6 +108,20 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( "Uses Crawl4AI's web search endpoint to gather the latest pricing from BJ's, Sam's Club, and Costco.", 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Comparing current prices for a product across BJ\'s, Sam\'s Club, and Costco.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'For general web research use web_search; for scraping product pages use scrape_product.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'web_search', 'scrape_product' ),
+			'notes'           => __( 'Requires Crawl4AI web search or the local fallback; max_results caps results per store at 10.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

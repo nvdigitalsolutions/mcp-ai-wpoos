@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * for planning and budgeting purposes. For production-critical token counting,
  * consider using OpenAI's tiktoken library on the client side.
  */
-class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -67,6 +67,20 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Estimates token counts for text or messages. Supports two methods: accurate tiktoken tokenizer (default) or fast heuristic estimation (~4 chars/token). Useful for planning requests and managing token budgets.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Estimating token usage of text or chat messages for planning requests and staying within model context budgets.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'For choosing a model use suggest_best_model; for billed usage history use openai_usage_analytics.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'suggest_best_model', 'get_model_information' ),
+			'notes'           => __( 'The heuristic method is ~4 chars per token; method=tiktoken is accurate when the tiktoken-php library is installed.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

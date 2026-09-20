@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Check_Workflow_Health implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Check_Workflow_Health implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -47,6 +47,20 @@ class WP_MCP_AI_Tool_Check_Workflow_Health implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Checks the health status of workflows to detect if they are stuck in initialized state. Provides recommendations for fixing workflow issues. Important for WordPress plugins where workflows may wait for cron/async processing.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Diagnosing workflows stuck in initialized state or verifying overall workflow health before execution.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Running or linting workflow logic; use execute_workflow to run and validate_workflow to check definitions.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'execute_workflow', 'validate_workflow' ),
+			'notes'           => __( 'Optional workflow_id scopes the check to one workflow; omit it to check all active workflows.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

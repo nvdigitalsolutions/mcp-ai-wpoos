@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-restrict-from
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Client_Question_Answering implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Client_Question_Answering implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
@@ -45,6 +45,20 @@ class WP_MCP_AI_Tool_Client_Question_Answering implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Extract answers to questions from provided context using browser-native AI. Processes instantly without server round-trip.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Answering a specific question from a provided context passage entirely in the browser.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Finding relevant documents across a corpus; use client_semantic_search or semantic_content_search first.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'client_semantic_search', 'client_extract_entities', 'client_summarize_text' ),
+			'notes'           => __( 'Requires both question and context parameters. Client-side only; browser-native AI must be enabled.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

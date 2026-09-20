@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.80
  */
-class WP_MCP_AI_Tool_Export_Assistant implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Export_Assistant implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -47,6 +47,20 @@ class WP_MCP_AI_Tool_Export_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Exports one, several, or all AI assistants as a portable JSON bundle (titles, system prompts, tool assignments, model settings, skills, datasets, and all plugin meta). Credential tokens are never included. Optionally embeds A2A agent cards and saves the bundle as a media attachment.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Backing up or migrating assistant configurations as a portable JSON bundle.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Restoring a bundle or creating assistants from scratch; use import_assistant or create_assistant.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'import_assistant', 'create_assistant' ),
+			'notes'           => __( 'Credential tokens are never exported. Formats: json, a2a, blueprint (blueprint requires a single assistant).', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

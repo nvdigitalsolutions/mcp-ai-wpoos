@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chart-accessi
  * - Rendering Layer: Generates Chart.js configuration and HTML
  * - Storage Layer: Optionally saves chart as HTML file attachment
  */
-class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface {
+class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Chart_Accessibility;
@@ -52,6 +52,20 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Creates interactive charts using Chart.js. Supports bar, line, pie, doughnut, radar, and polar area charts. Returns HTML/JavaScript or saves as attachment.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Rendering interactive Chart.js visualizations (bar, line, pie, doughnut, radar, polarArea, scatter, bubble) from data.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'For Mermaid diagrams use generate_mermaid; for AI-generated chart images use generate_chart; for validated input use create_chart_validated.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_chart_validated', 'generate_chart', 'generate_mermaid' ),
+			'notes'           => __( 'Returns HTML/JavaScript by default; save_as_attachment=true stores an HTML file in the media library.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

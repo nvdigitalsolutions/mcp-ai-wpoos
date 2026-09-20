@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-restrict-from
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Client_Extract_Entities implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Client_Extract_Entities implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
@@ -45,6 +45,20 @@ class WP_MCP_AI_Tool_Client_Extract_Entities implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Extract named entities (people, places, organizations, etc.) from text using browser-native AI. Processes instantly without server round-trip.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Extracting people, places, and organizations from short text in the browser without server calls.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Answering questions or summarizing; use client_question_answering or client_summarize_text for those tasks.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'client_analyze_sentiment', 'client_question_answering', 'client_semantic_search' ),
+			'notes'           => __( 'Client-side Transformers.js execution; requires browser-native AI enabled in settings.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

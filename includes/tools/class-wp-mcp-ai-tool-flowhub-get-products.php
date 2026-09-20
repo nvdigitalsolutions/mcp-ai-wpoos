@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for retrieving product catalog from Flowhub.
  */
-class WP_MCP_AI_Tool_Flowhub_Get_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Flowhub_Get_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Product_Card;
 
@@ -47,6 +47,20 @@ class WP_MCP_AI_Tool_Flowhub_Get_Products implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Retrieve cannabis product catalog from Flowhub including strains, concentrates, edibles, accessories with pricing, descriptions, THC/CBD content, and compliance information. Supports category filtering and pagination.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Browsing the Flowhub catalog: strains, concentrates, edibles, pricing, and THC/CBD content.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Current stock levels or catalog writes; use flowhub_get_inventory or flowhub_manage_product.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'flowhub_get_inventory', 'flowhub_manage_product' ),
+			'notes'           => __( 'Filter by category such as flower, concentrate, or edible; paginate with limit and offset.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

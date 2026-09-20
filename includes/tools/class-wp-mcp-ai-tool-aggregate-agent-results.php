@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Aggregate_Agent_Results implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Aggregate_Agent_Results implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -47,6 +47,20 @@ class WP_MCP_AI_Tool_Aggregate_Agent_Results implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Combines results from multiple agents using various aggregation strategies. Use this after receiving outputs from multiple specialized agents to synthesize a unified result.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Combining outputs from multiple specialized agents into one synthesized result after team execution.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Running the agents themselves; use create_agent_team or delegate_to_agent to produce the results this tool consumes.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_agent_team', 'delegate_to_agent', 'check_workflow_health' ),
+			'notes'           => __( 'strategy enum: consensus, weighted, hierarchical, first, best. weighted needs weights; hierarchical takes priority_order roles.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

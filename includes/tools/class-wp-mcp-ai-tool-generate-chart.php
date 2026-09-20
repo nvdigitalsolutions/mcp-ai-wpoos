@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Generate_Chart implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Generate_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -55,6 +55,20 @@ class WP_MCP_AI_Tool_Generate_Chart implements WP_MCP_AI_Tool_Interface {
 	 */
 	public function get_description() {
 		return 'Generate interactive charts (line, bar, pie, doughnut, scatter, radar) from data using Chart.js';
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Rendering line, bar, pie, doughnut, scatter, or radar charts from structured data.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'When input validation matters; use create_chart or create_chart_validated.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_chart', 'create_chart_validated' ),
+			'notes'           => __( 'Data needs labels and datasets arrays; Chart.js renders the output client-side.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

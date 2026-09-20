@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -47,6 +47,20 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Delegates a subtask to a specialized agent. The agent will use its expertise and tools to complete the task. Use this for complex workflows where different specialists handle different aspects of the work.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Delegating a subtask to a specialized agent by post ID, name or slug, profession, or virtual team agent ID.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'For remote A2A agents use delegate_to_a2a_agent; for combining several outputs use aggregate_agent_results.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_agent_team', 'delegate_to_a2a_agent', 'aggregate_agent_results' ),
+			'notes'           => __( 'Pass the agent_id value returned by create_agent_team when delegating to virtual agents.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

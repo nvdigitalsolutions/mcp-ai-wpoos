@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * Provides a tool for geospatial queries with Gemini and Google Maps grounding.
  * Enables AI-powered location-based queries with map context and rich insights.
  */
-class WP_MCP_AI_Tool_Gemini_Geospatial_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+class WP_MCP_AI_Tool_Gemini_Geospatial_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -42,6 +42,20 @@ class WP_MCP_AI_Tool_Gemini_Geospatial_Query implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Ask location-based questions using Gemini AI with Google Maps grounding. Returns AI-generated answers about places, directions, and local information with map context tokens for visualization.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Location-aware questions about places, directions, or local information with map context.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'General web research or exact coordinates; use web_search or geocode_address.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'web_search', 'geocode_address', 'search_places' ),
+			'notes'           => __( 'Optional latitude and longitude narrow results. Requires a configured Gemini API key.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

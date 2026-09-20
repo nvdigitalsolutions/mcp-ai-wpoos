@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-restrict-from
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Client_Analyze_Sentiment implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Client_Analyze_Sentiment implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
@@ -45,6 +45,20 @@ class WP_MCP_AI_Tool_Client_Analyze_Sentiment implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Analyze the sentiment (positive or negative) of text using browser-native AI. Processes instantly without server round-trip.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Quick sentiment classification of short text in the browser without server or API calls.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Server-side content screening or policy checks; use moderate_content for moderation workflows.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'client_extract_entities', 'client_summarize_text', 'client_translate_text' ),
+			'notes'           => __( 'Runs entirely client-side via Transformers.js; requires browser-native AI enabled in settings.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

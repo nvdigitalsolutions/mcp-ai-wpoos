@@ -19,7 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 /**
  * Analyzes video content using AI vision models that support video understanding.
  */
-class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_Tool_Chat_Response;
 
@@ -42,6 +42,20 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Analyzes video content to extract information, describe scenes, identify objects, and provide insights using AI vision models with video understanding capabilities.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Summarizing or describing video content, scene breakdowns, or timeline extraction from a video URL or attachment.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Generating videos or captioning for publishing; use generate_veo_video to create and generate_video_caption for captions.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'analyze_image', 'generate_video_caption', 'check_video_status' ),
+			'notes'           => __( 'Requires a video-capable vision model (defaults to gemini). analysis_type enum: general, scene_breakdown, timeline, detailed.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

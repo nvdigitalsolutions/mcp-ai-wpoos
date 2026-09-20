@@ -46,7 +46,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
  *
  * Works with any configured AI provider (OpenAI, Gemini, Anthropic, Ollama, etc.)
  */
-class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -82,6 +82,20 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( '(Pro) Performs comprehensive deep research on any topic using multi-step web search and AI analysis. Works with all supported AI providers (OpenAI, Gemini, Anthropic, Cloudflare, HuggingFace, Ollama). Generates detailed research reports with findings and citations. Configure a dedicated research model in Settings → NV oOS → deep_research_model.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing a cited multi-source research report on a topic through iterative web search and AI analysis.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'For a quick single search use web_search; for site-specific knowledge use semantic_content_search.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'web_search', 'semantic_content_search', 'store_agent_context' ),
+			'notes'           => __( 'Depth is basic, standard, or comprehensive; run_mode=background uses cron and results are cached for one hour.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

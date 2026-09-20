@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for retrieving orders and transactions from Flowhub.
  */
-class WP_MCP_AI_Tool_Flowhub_Get_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Flowhub_Get_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -46,6 +46,20 @@ class WP_MCP_AI_Tool_Flowhub_Get_Orders implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Retrieve order and transaction data from Flowhub dispensary system including sales, returns, customer details, and order status. Supports filtering and pagination.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reviewing Flowhub sales, returns, and transaction history with status filtering.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Creating a new sale; use flowhub_create_order.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'flowhub_create_order', 'flowhub_get_customers' ),
+			'notes'           => __( 'Filter by status such as completed, pending, or cancelled; paginate with limit and offset.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

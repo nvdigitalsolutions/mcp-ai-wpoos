@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-edit-gemini-image.php';
  * This class extends the original edit_gemini_image tool to use
  * Symfony Validator for argument validation.
  */
-class WP_MCP_AI_Tool_Edit_Gemini_Image_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Rules_Interface {
+class WP_MCP_AI_Tool_Edit_Gemini_Image_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Rules_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * The original edit_gemini_image tool instance for delegation.
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image_Validated extends WP_MCP_AI_Validated_Too
 	 */
 	public function get_description() {
 		return __( 'Edits an existing image using Gemini Nano Banana (text + image-to-image) and stores the result in the Media Library with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Editing an existing Media Library image with Gemini Nano Banana and Symfony-validated arguments.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Generating new images; use generate_gemini_image. For DALL-E editing use edit_openai_image.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'edit_gemini_image', 'generate_gemini_image', 'edit_openai_image' ),
+			'notes'           => __( 'Same prompt schema as edit_gemini_image; arguments are rejected before execution when invalid.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates an Auth0 bearer token using OAuth 2.0 client credentials flow.
  */
-class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -55,6 +55,20 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Generates an Auth0 bearer token using OAuth 2.0 client credentials flow. Requires Auth0 Management API client ID and client secret.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Minting an Auth0 bearer token via the OAuth 2.0 client credentials flow.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Signing arbitrary JWT payloads; use generate_simple_jwt_token.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'generate_simple_jwt_token' ),
+			'notes'           => __( 'Requires manage_options. Audience defaults to the Auth0 Management API v2 endpoint.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

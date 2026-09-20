@@ -30,7 +30,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-erlang-c.php';
  *
  * @since 1.1.8
  */
-class WP_MCP_AI_Tool_Erlang_C_Queue_Health implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Erlang_C_Queue_Health implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -72,6 +72,20 @@ class WP_MCP_AI_Tool_Erlang_C_Queue_Health implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Real-time queue health monitor. Accepts current queue depth, available agents, and arrival rate then applies Erlang C to calculate live service level. Fires wp_mcp_ai_queue_alert when SLA is at risk, stores snapshots for trend analysis, and optionally fetches metrics from a configured contact-centre REST endpoint.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking whether current contact-centre traffic is meeting its service-level target right now.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Capacity planning or session concurrency; use erlang_c_staffing_advisor or erlang_c_concurrency_advisor.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'erlang_c_staffing_advisor', 'erlang_c_concurrency_advisor', 'calculate_erlang_c' ),
+			'notes'           => __( 'Fires wp_mcp_ai_queue_alert when SLA is at risk and stores snapshots for trend analysis.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

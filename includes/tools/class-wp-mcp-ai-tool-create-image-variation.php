@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-respons
 /**
  * Provides a tool for creating image variations via OpenAI's DALL-E API.
  */
-class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
 	use WP_MCP_AI_SVG_Vectorizer;
 	use WP_MCP_AI_Tool_Chat_Response;
@@ -48,6 +48,20 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Creates variations of an existing image using OpenAI\'s DALL-E API. Useful for generating alternative versions of an image.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating alternative versions of an existing WordPress image attachment via the DALL-E variations API.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'For text-prompted generation use generate_openai_image; for instruction-based edits use edit_openai_image.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'edit_openai_image', 'generate_openai_image', 'resize_image' ),
+			'notes'           => __( 'Only dall-e-2 supports variations; size options are 256x256, 512x512, and 1024x1024.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

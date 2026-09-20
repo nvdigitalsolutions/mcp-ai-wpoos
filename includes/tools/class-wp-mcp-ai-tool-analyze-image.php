@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  * Provides a tool for analyzing images via multiple AI vision providers.
  * Supports OpenAI, Anthropic, and Gemini.
  */
-class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Vision_Request_Timeout;
@@ -48,6 +48,20 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Analyzes images using AI vision capabilities from OpenAI, Anthropic, or Gemini. Supports detailed image description, object detection, text extraction (OCR), and visual question answering.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Describing, OCR-extracting, or answering questions about an image attachment via a vision model.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Generating or editing images; use generate_openai_image or edit_gemini_image. For upload checks use analyze_file_suitability.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'analyze_video', 'extract_image_text', 'generate_image_alt_text' ),
+			'notes'           => __( 'provider enum: openai, anthropic, gemini. Pass attachment_id, file_id, url, or image_url; consumes tokens per request.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

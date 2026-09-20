@@ -133,6 +133,20 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating related-content recommendations for a post or user with personalization and trending support.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Categorizing or refreshing content itself; use auto_categorize_content or content_freshness_checker for those tasks.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'auto_categorize_content', 'content_freshness_checker', 'suggest_internal_links' ),
+			'notes'           => __( 'action enum: get_recommendations, train_model, track_interaction, analyze_performance. recommendation_type enum: similar_content, personalized, trending, category_based.', 'mcp-ai-wpoos' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @since 1.0.0

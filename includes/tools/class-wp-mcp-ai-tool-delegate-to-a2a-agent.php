@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Tool for delegating tasks to remote A2A agents.
  */
-class WP_MCP_AI_Tool_Delegate_To_A2A_Agent implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Delegate_To_A2A_Agent implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -67,6 +67,20 @@ class WP_MCP_AI_Tool_Delegate_To_A2A_Agent implements WP_MCP_AI_Tool_Interface {
 	 */
 	public function get_description() {
 		return __( 'Delegate a task to a remote A2A-compliant agent. Discovers the agent, sends a message, and returns the result. Use this when the task requires capabilities available on an external agent.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Delegating a task to a remote A2A-compliant agent discovered via its agent.json card.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'For delegating to a local assistant or virtual team member use delegate_to_agent.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'delegate_to_agent', 'query_remote_site' ),
+			'notes'           => __( 'Polls up to ~60 seconds when wait_for_result is true; auth_type supports bearer, apiKey, or none.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

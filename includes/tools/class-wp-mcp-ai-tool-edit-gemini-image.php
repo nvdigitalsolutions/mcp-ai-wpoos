@@ -40,7 +40,7 @@ require_once WP_MCP_AI_PATH . 'includes/markup/interface-wp-mcp-ai-markup-aware-
  * downstream observability, clears the elicitation flag, and re-runs
  * `execute()`.
  */
-class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Rules_Interface, WP_MCP_AI_Markup_Aware_Tool_Interface {
+class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Rules_Interface, WP_MCP_AI_Markup_Aware_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_NodeJS_Subprocess;
 	use WP_MCP_AI_SVG_Vectorizer;
@@ -78,6 +78,20 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Edits an existing image using Gemini Nano Banana (text + image-to-image) and stores the result in the Media Library. IMPORTANT: When a user attaches an image in chat, extract the "url" field from the message content segments (look for type:"input_image" segments with a url field) and pass it as the "url" parameter. Can also edit images from the Media Library by attachment_id.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Editing an existing image (background removal, restyling, regional edits) with Gemini Nano Banana.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'For text-prompted generation use generate_gemini_image; for OpenAI-based edits use edit_openai_image.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'generate_gemini_image', 'edit_openai_image', 'create_image_variation' ),
+			'notes'           => __( 'Pass the "url" from attached chat image segments; request_user_region=true asks the user to draw the edit region.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

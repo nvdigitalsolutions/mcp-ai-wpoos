@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-create-woo-product.php';
  * This class extends the original create_woo_product tool to use
  * Symfony Validator for argument validation.
  */
-class WP_MCP_AI_Tool_Create_Woo_Product_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
+class WP_MCP_AI_Tool_Create_Woo_Product_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Safety_Profile;
 
 	/**
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_Create_Woo_Product_Validated extends WP_MCP_AI_Validated_To
 	 */
 	public function get_description() {
 		return __( 'Creates a WooCommerce product draft using merchandising data with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a WooCommerce product draft when strict Symfony Validator argument validation is preferred.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'When validation overhead is unneeded use create_woo_product; for browsing existing products use get_woo_products.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_woo_product', 'get_woo_products' ),
+			'notes'           => __( 'Same parameters as create_woo_product; requires WooCommerce and delegates creation to the original tool.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

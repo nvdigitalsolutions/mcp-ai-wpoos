@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Report progress of a running or resumed conversation import.
  */
-class WP_MCP_AI_Tool_Conversation_Import_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Conversation_Import_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -56,6 +56,20 @@ class WP_MCP_AI_Tool_Conversation_Import_Status implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Returns the checkpoint status of a running conversation import by its run token.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking progress, totals, or errors of a conversation import by its run token.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'For starting or resuming an import use conversation_import_run; for deleting imported rows use conversation_import_delete.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'conversation_import_run', 'conversation_import_delete' ),
+			'notes'           => __( 'Requires the token returned by conversation_import_run; returns a not_found status for unknown tokens.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Adds or updates AI model configuration in the orchestration layer.
  * Integrates with WP_MCP_AI_Model_Config for persistent storage.
  */
-class WP_MCP_AI_Tool_Add_Model_Config implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Add_Model_Config implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Add_Model_Config implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Add or update an AI model configuration in the orchestration layer. Takes model specification data and stores it for use in model selection and orchestration.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Persisting a researched model specification into the orchestration layer so routing can select it.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Researching or discovering models; use research_model or discover_new_models first, then suggest_best_model for selection.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'research_model', 'discover_new_models', 'list_available_models' ),
+			'notes'           => __( 'Requires manage_options. config needs name, provider, and context_window; set overwrite=true to update an existing model_id.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

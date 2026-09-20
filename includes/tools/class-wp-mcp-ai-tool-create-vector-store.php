@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 /**
  * Creates OpenAI vector stores.
  */
-class WP_MCP_AI_Tool_Create_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Chat_Response;
 
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Create_Vector_Store implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Creates a new OpenAI vector store for knowledge retrieval and semantic search. Vector stores can contain multiple files for RAG (Retrieval-Augmented Generation).', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating an OpenAI vector store for RAG knowledge retrieval, optionally attaching file IDs and an expiration.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'For inspecting stores use list_vector_stores or get_vector_store; for adding files later use manage_vector_store_files.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'list_vector_stores', 'get_vector_store', 'manage_vector_store_files' ),
+			'notes'           => __( 'Requires manage_options; expires_after supports anchor last_active_at with 1-365 days.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

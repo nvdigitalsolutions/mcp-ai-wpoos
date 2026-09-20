@@ -23,7 +23,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-tool-content-media.php';
 /**
  * Creates draft WooCommerce products using a reference identifier.
  */
-class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
+class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Content_Media;
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Safety_Profile;
@@ -59,6 +59,20 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 	/** {@inheritdoc} */
 	public function get_description() {
 		return __( 'Creates a WooCommerce product draft using merchandising data gathered for a reference number.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a WooCommerce product draft from merchandising data gathered for a reference number or brand page.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'When strict argument validation is required use create_woo_product_validated; for browsing products use get_woo_products.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_woo_product_validated', 'get_woo_products', 'scrape_product' ),
+			'notes'           => __( 'Requires WooCommerce; products are created as drafts and images can be sideloaded from URLs.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/** {@inheritdoc} */

@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-create-chart.php';
  * This class extends the original create_chart tool to use
  * Symfony Validator for argument validation.
  */
-class WP_MCP_AI_Tool_Create_Chart_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_Rules_Interface {
+class WP_MCP_AI_Tool_Create_Chart_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_Rules_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * The original create_chart tool instance for delegation.
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_Create_Chart_Validated extends WP_MCP_AI_Validated_Tool imp
 	 */
 	public function get_description() {
 		return __( 'Creates interactive charts using Chart.js with Symfony Validator for argument validation. Supports bar, line, pie, doughnut, radar, and polar area charts.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating Chart.js visualizations when strict Symfony Validator argument validation is preferred.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'When validation overhead is unneeded use create_chart; for Mermaid diagrams use generate_mermaid.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_chart', 'generate_mermaid' ),
+			'notes'           => __( 'Same chart types and parameters as create_chart; delegates rendering to the original tool.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

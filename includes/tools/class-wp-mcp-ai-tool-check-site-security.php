@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Checks WordPress site security and warns about potential risks for using this plugin.
  */
-class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -42,6 +42,20 @@ class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Checks if the WordPress site has security vulnerabilities that make it unsafe to use this AI plugin.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Auditing the WordPress hardening baseline before enabling the AI plugin or after a security incident.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'User-level account hardening; use 2fa_setup_assistant or password_strength_analyzer for account security.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( '2fa_setup_assistant', 'login_security_monitor', 'password_strength_analyzer' ),
+			'notes'           => __( 'Requires manage_options. Returns per-check pass, warning, or critical results plus an overall risk level.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

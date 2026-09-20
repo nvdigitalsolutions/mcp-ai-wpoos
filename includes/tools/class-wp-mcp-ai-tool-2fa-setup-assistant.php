@@ -98,6 +98,20 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Setting up or managing 2FA for users: enable, disable, check status, generate backup codes, or bulk-enforce by role.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Site-wide security audits or login monitoring; use check_site_security or login_security_monitor instead.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'check_site_security', 'login_security_monitor', 'password_strength_analyzer' ),
+			'notes'           => __( 'action enum: setup, status, enable, disable, generate_backup, bulk_enforce. Method defaults to totp; bulk_enforce needs a role.', 'mcp-ai-wpoos' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @since 1.0.0

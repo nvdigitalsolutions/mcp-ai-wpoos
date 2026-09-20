@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.1
  */
-class WP_MCP_AI_Tool_Analyze_Code_Sequence implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Analyze_Code_Sequence implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -46,6 +46,20 @@ class WP_MCP_AI_Tool_Analyze_Code_Sequence implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Analyzes and optimizes long code sequences. Performs syntax validation, WordPress Coding Standards checking, security scanning (eval, SQL injection, XSS, file inclusion), and provides improvement suggestions. Supports PHP and identifies patterns, issues, and optimization opportunities.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Validating and reviewing a code snippet for syntax, style, and security issues before use or deployment.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Running code or auditing the site environment; use check_site_security for site-level hardening checks.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'check_site_security', 'analyze_file_suitability' ),
+			'notes'           => __( 'Only PHP gets full validation; other languages are checked heuristically. Input is a code string, not a file path.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

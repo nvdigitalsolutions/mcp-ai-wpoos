@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Batch_Manage_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Batch_Manage_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -52,6 +52,20 @@ class WP_MCP_AI_Tool_Batch_Manage_Memory implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Perform batch operations on agent memory contexts: bulk update tags/importance, bulk delete, export to JSON, import from JSON, and batch tag management. Optimized for managing large-scale memory systems.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Bulk-editing, exporting, importing, or deleting agent memory contexts and their tags at scale.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Single-context reads or writes; use retrieve_agent_memory or store_agent_context for individual items.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'retrieve_agent_memory', 'store_agent_context', 'manage_context_lifecycle' ),
+			'notes'           => __( 'action enum: bulk_update, bulk_delete, export, import, tag_add, tag_remove, tag_replace. options.dry_run previews without applying.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -32,7 +32,7 @@ require_once WP_MCP_AI_PATH . 'includes/markup/interface-wp-mcp-ai-markup-aware-
  * injects the rasterized mask attachment ID back into the arguments
  * and execution proceeds normally.
  */
-class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Markup_Aware_Tool_Interface {
+class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Markup_Aware_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
 	use WP_MCP_AI_SVG_Vectorizer;
 	use WP_MCP_AI_Tool_Chat_Response;
@@ -57,6 +57,20 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Edits an existing image using OpenAI\'s DALL-E image editing API. Can use a mask to specify which areas to edit.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Editing an existing image with DALL-E, optionally restricting edits to a mask area.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Gemini-based edits or brand-new images; use edit_gemini_image or generate_openai_image.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'generate_openai_image', 'edit_gemini_image', 'edit_gemini_image_validated' ),
+			'notes'           => __( 'Model is fixed to dall-e-2. Set request_user_mask=true to have the user paint a mask in chat.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
