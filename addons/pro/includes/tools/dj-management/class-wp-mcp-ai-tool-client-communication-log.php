@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Logs client communications.
  */
-class WP_MCP_AI_Tool_Client_Communication_Log implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Client_Communication_Log implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Client_Communication_Log implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Logs all communications with DJ clients. Track emails, calls, meetings, and notes for complete client interaction history.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording an email, call, meeting, or note against a client or booking to keep an interaction history.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Editing the client record itself; use create_client_profile. Sending a new message; use send_event_confirmation.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_client_profile', 'create_event_booking', 'send_event_confirmation' ),
+			'notes'           => __( 'Accepts client_id or booking_id; set follow_up_required and follow_up_date to flag a reminder.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

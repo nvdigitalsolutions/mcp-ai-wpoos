@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Plans track transitions for DJ mixes.
  */
-class WP_MCP_AI_Tool_Mix_Transition_Planner implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Mix_Transition_Planner implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Mix_Transition_Planner implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Plans smooth transitions between DJ tracks. Analyzes BPM, key compatibility, and suggests mix points and techniques.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Planning a transition between two known track IDs, comparing BPM and key compatibility and getting mix points.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Analyzing a single track tempo; use analyze_track_bpm. Changing playlist contents; use create_playlist or update_playlist_rotation.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'analyze_track_bpm', 'manage_music_library', 'create_playlist' ),
+			'notes'           => __( 'Read-only. transition_style enum: smooth, quick, hard_cut, long_blend, echo_out.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

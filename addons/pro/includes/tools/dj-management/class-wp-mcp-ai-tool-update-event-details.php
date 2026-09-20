@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Updates DJ event booking details.
  */
-class WP_MCP_AI_Tool_Update_Event_Details implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Event_Details implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Update_Event_Details implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Updates existing DJ event booking details. Modify event information, client details, pricing, and status.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Changing venue, times, pricing, or status on an existing booking by booking_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating a new booking; use create_event_booking. Notifying the client of changes; use send_event_confirmation.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_event_booking', 'send_event_confirmation', 'send_client_invoice', 'track_event_payments' ),
+			'notes'           => __( 'Only fields present in arguments are updated. booking_status enum: pending, confirmed, completed, cancelled.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

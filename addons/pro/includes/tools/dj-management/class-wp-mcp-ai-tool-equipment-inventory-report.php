@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates equipment inventory reports.
  */
-class WP_MCP_AI_Tool_Equipment_Inventory_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Equipment_Inventory_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Equipment_Inventory_Report implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Generates a comprehensive inventory report for DJ equipment. Includes equipment details, values, status, and maintenance schedules.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Summarizing gear inventory by status or type, including total value and maintenance dates.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Editing one gear item; use add_equipment_item. Booking gear; use reserve_equipment. Logging service; use track_equipment_maintenance.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'add_equipment_item', 'reserve_equipment', 'track_equipment_maintenance' ),
+			'notes'           => __( 'Set export_xlsx=true to return a downloadable spreadsheet URL (requires phpspreadsheet).', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
