@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.9.0
  */
-class WP_MCP_AI_Tool_Generate_Invoice_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Invoice_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,18 @@ class WP_MCP_AI_Tool_Generate_Invoice_Batch implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Generates invoice documents for a batch of orders. Supports specifying a template, automatic email delivery, and dry_run mode to preview the batch before generation.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Invoicing many WooCommerce orders in one pass, with dry-run preview and optional email delivery.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Invoicing a single order; use generate_invoice_pdf instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_invoice_pdf', 'get_uninvoiced_orders' ),
+			'notes'           => __( 'Review the dry run before enabling send_email; orders already marked _invoiced are skipped.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

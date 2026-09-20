@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.9.0
  */
-class WP_MCP_AI_Tool_Archive_Documents implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Archive_Documents implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,18 @@ class WP_MCP_AI_Tool_Archive_Documents implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Archives documents by moving them to an archive status or category. Supports dry_run mode to preview changes before applying them.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Retiring document template posts in bulk, with a dry-run preview before any status change.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Finding documents that need attention; use get_expired_documents for expiry checks.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_expired_documents', 'qms_mark_obsolete' ),
+			'notes'           => __( 'Dry run is on by default; pass dry_run=false to actually move documents to archive status.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

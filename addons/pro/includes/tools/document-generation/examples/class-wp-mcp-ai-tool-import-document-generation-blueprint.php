@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_Document_Generation_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Document_Generation_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR = WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/examples';
@@ -53,6 +53,18 @@ class WP_MCP_AI_Tool_Import_Document_Generation_Blueprint implements WP_MCP_AI_T
 	 */
 	public function get_description() {
 		return __( 'Install the Document Production Specialist assistant blueprint for PDF, Word, Excel, and email document workflows.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Setting up the Document Production Specialist assistant once to add PDF, Word, Excel, and email document tools to an assistant roster.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Generating a document directly or managing QMS records; use pro_pdf_document, pro_word_document, pro_excel_document, or the qms_* tools instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'pro_pdf_document', 'pro_word_document', 'pro_excel_document' ),
+			'notes'           => __( 'Requires the Document Generation Toolkit setting to be enabled; existing assistants are only replaced when the overwrite flag is set.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * {@inheritdoc}

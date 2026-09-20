@@ -31,7 +31,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-pro-word.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Generate_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Document_Response;
 
@@ -68,6 +68,18 @@ class WP_MCP_AI_Tool_Generate_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Generate Word documents from content. Simplified interface for creating .docx files with basic formatting. For advanced features, use Pro Word Document tool.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Turning plain content into a simple .docx file that the user can edit in Word.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When you need advanced Word formatting or provider-based generation; use pro_word_document.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'pro_word_document', 'generate_pdf', 'generate_email_template' ),
+			'notes'           => __( 'Delegates to pro_word_document with simplified arguments and writes the .docx to the media library.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

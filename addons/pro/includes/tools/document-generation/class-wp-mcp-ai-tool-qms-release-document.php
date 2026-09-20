@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_QMS_Release_Document tool.
  */
-class WP_MCP_AI_Tool_QMS_Release_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_QMS_Release_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 
 	/**
@@ -43,6 +43,19 @@ class WP_MCP_AI_Tool_QMS_Release_Document implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Release an approved controlled document so it is in force. Requires a signed approval e-signature on the record. Sets the effective_date to today if not already set.', 'mcp-ai-wpoos-pro' );
+	}
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Putting an approved controlled document in force with an effective date after the approval e-signature is on record.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Approving a document still in review or ending its lifecycle; use qms_approve_document for in_review records and qms_mark_obsolete or qms_supersede_document to retire.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'qms_approve_document', 'qms_sign_document', 'qms_supersede_document' ),
+			'notes'           => __( 'Requires a signed approval e-signature on the record; sets effective_date to today when unset.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 		/**
 		 * Get the parameters schema.

@@ -31,7 +31,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-pro-excel-document.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Generate_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Document_Response;
 
@@ -68,6 +68,18 @@ class WP_MCP_AI_Tool_Generate_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Generate Excel spreadsheets from data. Simplified interface for creating .xlsx files with tables and data. For advanced features, use Pro Excel Document tool.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Quickly producing a simple spreadsheet from JSON or CSV text without managing row arrays.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When you need exact row, header, or formatting control; use excel_data_export or pro_excel_document.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'excel_data_export', 'pro_excel_document', 'excel_data_import' ),
+			'notes'           => __( 'Delegates to pro_excel_document with simplified arguments and writes the file to the media library.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

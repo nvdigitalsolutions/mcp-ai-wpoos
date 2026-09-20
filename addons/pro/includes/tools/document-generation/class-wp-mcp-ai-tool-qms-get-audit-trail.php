@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_QMS_Get_Audit_Trail tool.
  */
-class WP_MCP_AI_Tool_QMS_Get_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_QMS_Get_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 
 	/**
@@ -43,6 +43,19 @@ class WP_MCP_AI_Tool_QMS_Get_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Read-only query of the QMS/PARA immutable audit log. Filter by post_id, document_id, subsystem (qms or para), and event type.', 'mcp-ai-wpoos-pro' );
+	}
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Querying the immutable QMS/PARA audit log to see who changed a document, when, and why.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Changing document state or listing current records; use the qms_* transition tools to act and qms_list_controlled_documents for the register.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'qms_list_controlled_documents', 'qms_approve_document', 'qms_mark_obsolete' ),
+			'notes'           => __( 'Read-only; never mutates records. Combine with qms_list_controlled_documents for evidence-gathering workflows.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 		/**
 		 * Get the parameters schema.

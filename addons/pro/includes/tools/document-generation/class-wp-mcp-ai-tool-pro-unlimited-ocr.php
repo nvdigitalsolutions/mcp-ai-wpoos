@@ -30,7 +30,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-structured-
  *
  * @since 1.5.0
  */
-class WP_MCP_AI_Tool_Pro_Unlimited_OCR implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Pro_Unlimited_OCR implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Document_Response;
 	use WP_MCP_AI_Attachment_File_Resolver;
@@ -67,6 +67,18 @@ class WP_MCP_AI_Tool_Pro_Unlimited_OCR implements WP_MCP_AI_Tool_Interface, WP_M
 			. 'structured output with layout preservation, table extraction, and Paper Store integration. '
 			. 'Requires a self-hosted vLLM instance with GPU. Zero per-page API costs.',
 			'mcp-ai-wpoos-pro'
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Parsing long multi-page PDFs in a single forward pass on a self-hosted GPU instance with zero per-page API cost.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Cloud providers or per-document format options; use pro_document_ocr for cloud vision models and rich output formats, or pro_batch_ocr for queued bulk processing.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'pro_document_ocr', 'pro_batch_ocr', 'ocr_pdf_text' ),
+			'notes'           => __( 'Requires a self-hosted vLLM instance; multi-page input forces base image mode, and table extraction needs the structured output format.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
