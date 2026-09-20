@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -127,6 +127,20 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Research and gather structured information about a product before creating it in WooCommerce. Performs comprehensive multi-step research using web search and AI analysis. Supports configurable research depth (basic/standard/comprehensive) and focus areas. Returns product data that can be used with the Create WooCommerce Product Draft tool.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Researching a product (specs, pricing, reviews) to prepare a structured WooCommerce draft.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Non-product research; use deep_research for general topics or research_post for blog content.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_woo_product', 'deep_research' ),
+			'notes'           => __( 'Requires WooCommerce to be active; returns data ready for the create_woo_product draft tool.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

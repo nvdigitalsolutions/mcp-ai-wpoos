@@ -27,7 +27,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-flowhub-cct-manager.
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Pro_Tool_FlowHub_Settings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_FlowHub_Settings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_FlowHub_Connection_Resolver;
 
@@ -57,6 +57,20 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Settings implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'View and update FlowHub toolkit settings. Test the API connection and manage field mappings between FlowHub and WooCommerce.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading or updating FlowHub credentials, sync interval, direction, thresholds, and field mappings, or testing the API.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Triggering or checking syncs; use flowhub_sync for sync_now, sync_status, and clear_cache.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'flowhub_sync', 'flowhub_inventory' ),
+			'notes'           => __( 'Write operations require manage_options; get_settings returns the api_key redacted.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

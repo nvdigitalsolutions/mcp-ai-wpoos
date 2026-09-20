@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-flowhub-cct-manager.
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Pro_Tool_FlowHub_Locations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_FlowHub_Locations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_FlowHub_Connection_Resolver;
 
@@ -49,6 +49,20 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Locations implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'List FlowHub dispensary locations and view location details from the local cache. Each location shows the number of inventory items available.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing FlowHub dispensary locations and their cached inventory item counts.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Querying per-product stock; use flowhub_inventory with a location filter.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'flowhub_inventory', 'flowhub_analytics' ),
+			'notes'           => __( 'Locations are derived from cached inventory data; the FlowHub v0 API has no locations endpoint.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

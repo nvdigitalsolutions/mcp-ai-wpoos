@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-flowhub-cct-manager.
  *
  * @since 1.4.0
  */
-class WP_MCP_AI_Pro_Tool_FlowHub_Analytics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_FlowHub_Analytics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_FlowHub_Connection_Resolver;
 
@@ -46,6 +46,20 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Analytics implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Compute aggregated analytics from the FlowHub sync cache. Inventory summaries, stock velocity, category breakdowns, compliance summaries, and location comparisons — all from local CCT data with zero FlowHub API cost.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Computing inventory summaries, stock velocity, category breakdowns, compliance summaries, or location comparisons.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Fetching raw product or stock rows; use flowhub_inventory or flowhub_products instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'flowhub_inventory', 'flowhub_products', 'flowhub_locations' ),
+			'notes'           => __( 'Reads the local CCT cache only, so it never costs a FlowHub API call.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

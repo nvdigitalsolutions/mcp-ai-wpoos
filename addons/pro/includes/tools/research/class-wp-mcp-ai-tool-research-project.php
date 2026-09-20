@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Uses AI and web search to research comprehensive information about
  * projects and project management approaches.
  */
-class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -85,6 +85,20 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Research comprehensive information about a project using multi-stage web search and AI analysis. Supports configurable research depth (basic/standard/comprehensive) and focus areas for targeted research. Returns title, description, objectives, timeline, resources, milestones, deliverables, and implementation details ready for creating a project entry.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Researching a project plan (objectives, timeline, resources, milestones) to prepare a project entry.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Content or product research; use research_post, research_page, or research_product instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'toolkit_cpt', 'deep_research' ),
+			'notes'           => __( 'Returns fields ready for a project entry; store the result with toolkit_cpt (mcp_ai_project).', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

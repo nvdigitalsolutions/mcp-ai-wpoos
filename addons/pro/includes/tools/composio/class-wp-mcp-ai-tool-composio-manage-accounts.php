@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Composio — Manage connected accounts.
  */
-class WP_MCP_AI_Tool_Composio_Manage_Accounts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface {
+class WP_MCP_AI_Tool_Composio_Manage_Accounts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Envelope;
 
 	/**
@@ -55,6 +55,20 @@ class WP_MCP_AI_Tool_Composio_Manage_Accounts implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description(): string {
 		return __( 'Manage the lifecycle of Composio connected accounts. "validate" probes an account against the live provider and returns a verified verdict with last_validated_at and last_error. "reconnect" re-authorises the SAME account in place (no orphaned duplicate) and returns a URL for the user to finish the flow. "delete" removes an account and revokes its upstream credentials. "prune" deletes every account for a toolkit that failed its last credential check. "disable"/"enable" toggle an account without deleting it.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Repairing, disabling, deleting, or pruning Composio accounts when a health check reports a broken credential.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating an account for a first-time user; use composio_create_connect_link to start the OAuth flow.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'composio_list_connected_accounts', 'composio_create_connect_link' ),
+			'notes'           => __( 'reconnect re-authorizes the same account in place; prune removes every failed account for a toolkit.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

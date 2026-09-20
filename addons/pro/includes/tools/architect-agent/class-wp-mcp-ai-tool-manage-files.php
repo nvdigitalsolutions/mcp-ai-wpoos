@@ -34,7 +34,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Manage_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Manage_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -56,6 +56,20 @@ class WP_MCP_AI_Tool_Manage_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Read, write, and list files within the plugin directory. Enables self-editing capabilities for Architect Agent. Restricted to users with edit_plugins capability and confined to the plugin directory for security.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading, writing, or listing files inside the plugin directory for self-editing tasks.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Searching code or running commands; use search_codebase for lookups and execute_shell_command for commands.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'search_codebase', 'execute_shell_command', 'git_inspect' ),
+			'notes'           => __( 'Requires edit_plugins; paths are confined to the plugin directory and traversal is blocked.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

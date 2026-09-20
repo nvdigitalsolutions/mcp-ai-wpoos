@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Search_Codebase implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Search_Codebase implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -52,6 +52,20 @@ class WP_MCP_AI_Tool_Search_Codebase implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Search the plugin codebase for patterns, functions, classes, and files. Supports grep-style pattern matching, file type filtering, and symbol search. Similar to GitHub Copilot CLI search capabilities.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding code patterns, functions, classes, files, or symbols inside the plugin codebase.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading or writing file contents; use manage_files for file access and execute_shell_command for commands.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_files', 'execute_shell_command', 'git_inspect' ),
+			'notes'           => __( 'Read-only; supports grep-style regex with search_type, file_pattern, and exclude_pattern filters.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
