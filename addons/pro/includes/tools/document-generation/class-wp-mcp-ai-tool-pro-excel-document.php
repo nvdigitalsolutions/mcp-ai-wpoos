@@ -33,7 +33,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-media-worker-clie
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Document_Response;
 	use WP_MCP_AI_Media_Worker_Client;
@@ -57,6 +57,18 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'AI-powered Excel spreadsheet (.xlsx) generation. Create professional Excel documents from natural language descriptions. Generate data tables, apply formatting, add formulas, and create multi-sheet workbooks with charts and calculations.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating AI-generated Excel workbooks from a natural-language description, including tables, formulas, formatting, and multi-sheet layouts.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Simple tables or data transfer; use generate_excel for basic sheets and excel_data_export or excel_data_import to move existing data.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_excel', 'excel_data_export', 'excel_data_import' ),
+			'notes'           => __( 'Spreadsheet rendering needs Node.js with ExcelJS or a Media Worker sidecar; AI content quality varies by the selected model.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

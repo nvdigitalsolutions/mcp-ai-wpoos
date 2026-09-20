@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -46,6 +46,18 @@ class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Generate responsive email templates using MJML. Create professional, mobile-friendly emails with cross-client compatibility. Perfect for newsletters, marketing campaigns, transactional emails, and notifications.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Building a responsive, cross-client email layout such as a newsletter or transactional notice.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sending the email itself; this tool only returns markup and never dispatches messages.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_pdf', 'html_to_pdf', 'generate_word' ),
+			'notes'           => __( 'Requires the MJML Node.js service; set output_format to html, mjml, or both.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

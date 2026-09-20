@@ -28,7 +28,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_HTML_To_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_HTML_To_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Document_Response;
 
@@ -51,6 +51,18 @@ class WP_MCP_AI_Tool_HTML_To_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Convert HTML content to PDF documents. Supports CSS styling, images, and responsive layouts. Perfect for converting web pages, reports, or formatted content into downloadable PDFs.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Converting styled HTML with CSS, images, and tables into a downloadable PDF.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Rendering plain text with an AI-driven layout; use generate_pdf or pro_pdf_document instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_pdf', 'pro_pdf_document', 'generate_email_template' ),
+			'notes'           => __( 'Needs DomPDF or the wkhtmltopdf binary; shell tools must be enabled for wkhtmltopdf.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

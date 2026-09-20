@@ -25,7 +25,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-self-hosted-ocr-client.p
  *
  * @since 1.5.0
  */
-class WP_MCP_AI_Tool_Pro_Batch_OCR implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Pro_Batch_OCR implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -92,6 +92,18 @@ class WP_MCP_AI_Tool_Pro_Batch_OCR implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			. '(up to 100 docs via background jobs). Requires a self-hosted '
 			. 'Unlimited-OCR or DeepSeek-OCR vLLM instance.',
 			'mcp-ai-wpoos-pro'
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Processing up to 100 documents with self-hosted OCR in the background when results are not needed in the same reply.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Single documents, structured output, or cloud providers; use pro_unlimited_ocr for one-shot long PDFs, pro_document_ocr for structured cloud OCR, or ocr_pdf_text for one scanned PDF.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'pro_unlimited_ocr', 'pro_document_ocr', 'ocr_pdf_text' ),
+			'notes'           => __( 'Synchronous mode caps at 10 documents; async mode returns Action Scheduler job IDs for later polling.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

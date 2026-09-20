@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.9.0
  */
-class WP_MCP_AI_Tool_Get_Expired_Documents implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Expired_Documents implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,18 @@ class WP_MCP_AI_Tool_Get_Expired_Documents implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Retrieves documents that have passed their expiry date, optionally filtered by document type. Returns document details including expiry date, type, and associated metadata.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing document templates whose expiry date has passed, for renewal or cleanup workflows.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Changing document status; use archive_documents or qms_mark_obsolete for follow-up actions.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'archive_documents', 'qms_mark_obsolete' ),
+			'notes'           => __( 'Read-only; returns up to 1000 records. Narrow the list with document_type or days_past_expiry.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

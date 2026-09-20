@@ -31,7 +31,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-pro-pdf.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Generate_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Document_Response;
 
@@ -68,6 +68,18 @@ class WP_MCP_AI_Tool_Generate_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Generate PDF documents from content. Simplified interface for creating PDFs with basic formatting and structure. For advanced features, use Pro PDF Document tool.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Turning plain content into a simple PDF when basic formatting is all that is needed.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When you need advanced layout, tables, or provider-based generation; use pro_pdf_document.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'pro_pdf_document', 'html_to_pdf', 'generate_word' ),
+			'notes'           => __( 'Delegates to pro_pdf_document with simplified arguments and writes the PDF to the media library.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
