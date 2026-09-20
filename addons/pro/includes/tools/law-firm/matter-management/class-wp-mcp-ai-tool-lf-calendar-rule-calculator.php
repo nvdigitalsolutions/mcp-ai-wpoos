@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-law-firm-calculator.php';
 /**
  * Calculates deadlines using calendar rules for various legal events.
  */
-class WP_MCP_AI_Tool_LF_Calendar_Rule_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Calendar_Rule_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -73,6 +73,20 @@ class WP_MCP_AI_Tool_LF_Calendar_Rule_Calculator implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Calculates legal deadlines based on calendar rules for service, filing, motions, discovery responses, and appeals across federal and state jurisdictions with adjustments for service method.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Computing response deadlines for service, filing, motions, discovery responses, or appeals using FRCP calendar rules and service-method adjustments.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Computing claim expiration dates; use lf_statute_of_limitations_calculator. Managing stored deadlines on matters; use lf_court_deadline_tracker.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_court_deadline_tracker', 'lf_statute_of_limitations_calculator' ),
+			'notes'           => __( 'event_type accepts service, filing, motion, discovery_response, or appeal. Mail service adds 3 days under FRCP Rule 6(d).', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

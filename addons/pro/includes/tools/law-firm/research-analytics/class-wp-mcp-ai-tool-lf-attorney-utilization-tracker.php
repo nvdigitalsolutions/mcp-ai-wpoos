@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Tracks attorney billable and non-billable hours against utilization targets.
  */
-class WP_MCP_AI_Tool_LF_Attorney_Utilization_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Attorney_Utilization_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -68,6 +68,20 @@ class WP_MCP_AI_Tool_LF_Attorney_Utilization_Tracker implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Tracks attorney time utilization against targets including billable hours, non-billable hours, utilization rate, and target variance.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reviewing billable versus non-billable hours, utilization rate, and target variance per attorney for a week, month, quarter, or year.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Recording time entries; use lf_time_entry_recorder. Aggregating firm-wide KPIs; use lf_firm_performance_dashboard.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_firm_performance_dashboard', 'lf_time_entry_recorder', 'lf_task_assignment_manager' ),
+			'notes'           => __( 'period accepts week, month, quarter, year and defaults to month. target_hours defaults to 160. Reads mcp_ai_lf_time_entry posts from the period start.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

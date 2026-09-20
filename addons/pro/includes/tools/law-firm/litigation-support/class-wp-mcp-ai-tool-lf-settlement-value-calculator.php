@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-law-firm-calculator.php';
 /**
  * Calculates settlement value ranges using expected value and risk analysis.
  */
-class WP_MCP_AI_Tool_LF_Settlement_Value_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Settlement_Value_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -73,6 +73,20 @@ class WP_MCP_AI_Tool_LF_Settlement_Value_Calculator implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Calculates recommended settlement value ranges using expected value analysis, liability probability, trial cost estimates, and time-value discounting.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Estimating a settlement range from damages, liability probability, trial cost, and time to trial.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Computing the underlying damages; use lf_damages_calculator and pass its totals here.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_damages_calculator', 'lf_case_outcome_predictor' ),
+			'notes'           => __( 'Expected value is damages times liability probability less trial costs, discounted to present value.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

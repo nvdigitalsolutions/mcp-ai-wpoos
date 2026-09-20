@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Manages the matter pipeline for creating, updating, and listing matters.
  */
-class WP_MCP_AI_Tool_LF_Matter_Pipeline_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Matter_Pipeline_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_LF_Matter_Pipeline_Manager implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Creates, updates, lists, and summarizes legal matters with case details including client, practice area, status, case number, court, judge, and jurisdiction.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating, listing, updating, or summarizing legal matters with client, practice area, status, case number, court, judge, and jurisdiction.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Analyzing a matter on time, budget, or compliance; use lf_matter_analytics_generator. Firm-wide status counts; use lf_case_status_dashboard.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_case_status_dashboard', 'lf_matter_analytics_generator', 'lf_task_assignment_manager' ),
+			'notes'           => __( 'action accepts create, update_status, list, or get_summary. create requires matter_title and defaults status to active. Writes require manage_options.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

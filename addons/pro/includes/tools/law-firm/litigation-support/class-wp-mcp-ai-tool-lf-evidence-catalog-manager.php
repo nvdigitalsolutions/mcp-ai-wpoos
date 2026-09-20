@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Manages evidence catalog entries as post meta on matter posts.
  */
-class WP_MCP_AI_Tool_LF_Evidence_Catalog_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Evidence_Catalog_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -71,6 +71,20 @@ class WP_MCP_AI_Tool_LF_Evidence_Catalog_Manager implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Manages an evidence catalog for litigation matters. Supports adding, listing, updating, and searching exhibit records stored as post meta on matter posts.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adding, listing, updating, or searching exhibit records attached to a matter for trial organization.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Tracking expert witnesses; use lf_expert_witness_tracker. Marking trial checklist items; use lf_trial_preparation_checklist.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_expert_witness_tracker', 'lf_trial_preparation_checklist', 'lf_ediscovery_document_analyzer' ),
+			'notes'           => __( 'Stored as _lf_evidence_catalog post meta on the matter; add requires exhibit_number and description.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Checks for conflicts of interest across clients and matters.
  */
-class WP_MCP_AI_Tool_LF_Conflict_Of_Interest_Checker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Conflict_Of_Interest_Checker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_LF_Conflict_Of_Interest_Checker implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Checks for potential conflicts of interest by searching existing client records and matter data for matching party names and related entities.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking a prospective party name and related entities against existing client and matter records.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating the client record after the check passes; use lf_client_intake_processor.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_client_intake_processor', 'lf_client_profile_analyzer' ),
+			'notes'           => __( 'Keyword-based search over client and matter titles; treat hits as flags for manual review.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

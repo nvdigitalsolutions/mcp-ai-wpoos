@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Compares firm metrics against industry benchmarks by firm size, practice area, and region.
  */
-class WP_MCP_AI_Tool_LF_Competitive_Benchmarker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Competitive_Benchmarker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -108,6 +108,20 @@ class WP_MCP_AI_Tool_LF_Competitive_Benchmarker implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Compares firm performance against industry benchmarks by firm size, practice areas, and region. Returns benchmark data alongside actual firm metrics.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Comparing firm billing rate, realization, utilization, revenue per lawyer, and collections against industry benchmarks by firm size and region.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Internal firm KPI dashboards; use lf_firm_performance_dashboard. Forecasting future revenue; use lf_revenue_forecaster.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_firm_performance_dashboard', 'lf_revenue_forecaster', 'lf_profitability_analyzer' ),
+			'notes'           => __( 'firm_size accepts solo, small, mid_size, or large and defaults to small. Benchmarks are static survey figures adjusted only for region.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

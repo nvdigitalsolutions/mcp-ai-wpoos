@@ -20,7 +20,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-law-firm-calculator.php';
 /**
  * Calculates statute of limitations deadlines.
  */
-class WP_MCP_AI_Tool_LF_Statute_Of_Limitations_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Statute_Of_Limitations_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -72,6 +72,20 @@ class WP_MCP_AI_Tool_LF_Statute_Of_Limitations_Calculator implements WP_MCP_AI_T
 	 */
 	public function get_description() {
 		return __( 'Calculates statute of limitations deadlines based on claim type, incident date, state jurisdiction, discovery date, and tolling factors such as minority or defendant absence.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Computing statute-of-limitations expiration dates and remaining days from claim type, incident or discovery date, state, and tolling factors.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Computing procedural response deadlines; use lf_calendar_rule_calculator. Storing deadlines on matters; use lf_court_deadline_tracker.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_calendar_rule_calculator', 'lf_court_deadline_tracker', 'lf_case_outcome_predictor' ),
+			'notes'           => __( 'claim_type accepts ten keys such as personal_injury and breach_of_contract. Minor plaintiffs add 365 tolling days; defendant_absent_days adds directly.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
