@@ -19,7 +19,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 /**
  * Retrieves import duty rates from the ITA Tariff Rates API.
  */
-class WP_MCP_AI_Pro_Tool_Get_Import_Duty implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Import_Duty implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	const API_ENDPOINT = 'https://api.trade.gov/v1/tariff_rates/search';
 
 	/**
@@ -41,6 +41,18 @@ class WP_MCP_AI_Pro_Tool_Get_Import_Duty implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Finds the most recent import duty rate for an HS code or product description when importing into the United States, Jamaica, or Sri Lanka.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Estimating duty or tariff costs before importing goods into the United States, Jamaica, or Sri Lanka.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Quoting retail prices or store catalog data; use lookup_product_price or remote_wp_connection instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lookup_product_price', 'shipping_rate_estimator', 'remote_wp_connection' ),
+			'notes'           => __( 'Provide an hs_code or a description; country is required. Needs an ITA Tariff Rates API key for reliable results.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

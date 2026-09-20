@@ -33,7 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Shipping_Box_Packer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Shipping_Box_Packer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -199,6 +199,20 @@ class WP_MCP_AI_Tool_Shipping_Box_Packer implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Pack items into optimal shipping boxes using a 3D bin-packing algorithm. Supports custom cubic boxes and USPS flat-rate boxes with automatic best-fit selection, weight limits, and USPS cubic pricing tier calculation. Can pack from a WooCommerce order or from manually specified items and box definitions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for tool selection.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Packing items into optimal boxes from an order or item list, with USPS flat-rate options.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Carrier price quotes; use shipping_rate_estimator to get live rates for packed boxes.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'shipping_rate_estimator', 'woo_orders', 'woo_products' ),
+			'notes'           => __( 'Custom boxes need id, name, and dimension/weight fields; USPS boxes are built in.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

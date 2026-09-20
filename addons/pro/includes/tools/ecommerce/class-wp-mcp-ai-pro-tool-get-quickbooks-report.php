@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Retrieves QuickBooks Online reports using the configured credentials.
  */
-class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Base URL for the QuickBooks Online reports API.
 	 */
@@ -40,6 +40,18 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Retrieves reporting data from QuickBooks Online using the configured company ID.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pulling a specific QuickBooks Online report (for example ProfitAndLoss) with a configured company ID or Remote Sites connection.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading QuickBooks Desktop company files; use quickbooks_desktop_sync for QODBC relay queries.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'quickbooks_desktop_sync', 'remote_wp_connection' ),
+			'notes'           => __( 'Use connection_id from Remote Sites; report is required and dates use YYYY-MM-DD format.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

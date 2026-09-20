@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Syncs data between WordPress and QuickBooks Desktop through a QODBC relay.
  */
-class WP_MCP_AI_Pro_Tool_QuickBooks_Desktop_Sync implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_QuickBooks_Desktop_Sync implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Maximum number of rows a single query may return.
@@ -145,6 +145,18 @@ class WP_MCP_AI_Pro_Tool_QuickBooks_Desktop_Sync implements WP_MCP_AI_Tool_Inter
 		return __(
 			'Syncs data with QuickBooks Desktop through a QODBC relay API. Supports querying customers, invoices, vendors, items, employees, and other QuickBooks Desktop entities. Can also create and update records when the relay is configured with a read-write QODBC license. Requires a Remote Sites connection of type "quickbooks_desktop" pointing to the PHP relay endpoint.',
 			'mcp-ai-wpoos-pro'
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Querying or writing QuickBooks Desktop entities (customers, invoices, items) through a configured QODBC relay connection.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading QuickBooks Online reports; use quickbooks_report with a quickbooks connection instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'quickbooks_report', 'remote_wp_connection' ),
+			'notes'           => __( 'Actions include query, list_tables, get_customers, and get_items; create_record and update_record need a write-enabled QODBC license.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

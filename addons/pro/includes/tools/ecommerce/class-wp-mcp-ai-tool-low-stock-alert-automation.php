@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Low_Stock_Alert_Automation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Low_Stock_Alert_Automation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -103,6 +103,20 @@ class WP_MCP_AI_Tool_Low_Stock_Alert_Automation implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Automated low stock monitoring and notification system. Detects products below threshold, sends email alerts, and generates stock reports. Supports custom thresholds and product-specific alerts.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for tool selection.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking stock below a threshold, emailing restock alerts, or generating low-stock reports.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Demand planning; use inventory_forecast for reorder points and stockout risk.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'inventory_forecast', 'update_woo_product_qty', 'track_inventory_movement' ),
+			'notes'           => __( 'Emails send only when send_email is true; recipients default to the site admin email.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

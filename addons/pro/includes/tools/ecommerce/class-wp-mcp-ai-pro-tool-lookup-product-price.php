@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface {
+class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -93,6 +93,20 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Find current online prices for products from images, documents, or URLs. Works like Google Lens Shopping or browser price comparison extensions. Supports image recognition, document parsing (invoices/quotes), single URL lookup, or batch URL comparison across multiple retailers.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding current online prices for a product from an image, a document, or one or more product URLs.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Checking store catalog prices; use woo_products, crawl4ai_price_lookup for single-page scrapes, or get_import_duty for duties.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'crawl4ai_price_lookup', 'run_crawl4ai_job', 'get_import_duty', 'woo_products' ),
+			'notes'           => __( 'Requires Crawl4AI. Pass image_attachment_id, document_attachment_id, or urls; max 20 URLs per batch.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

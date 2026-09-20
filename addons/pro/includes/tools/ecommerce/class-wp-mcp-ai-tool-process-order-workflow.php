@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Process_Order_Workflow implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Process_Order_Workflow implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -103,6 +103,20 @@ class WP_MCP_AI_Tool_Process_Order_Workflow implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Advanced order processing automation with customizable workflows. Automate status transitions, validation, notifications, and custom processing steps. Supports batch processing and order rules engine.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for tool selection.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Running order workflows: validation, status transitions, notifications, or batch processing.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Refunds or analytics; use refund_order_advanced for refunds and get_order_analytics for reporting.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'bulk_order_status_update', 'refund_order_advanced', 'woo_orders' ),
+			'notes'           => __( 'Status changes email customers unless send_notifications is set to false.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

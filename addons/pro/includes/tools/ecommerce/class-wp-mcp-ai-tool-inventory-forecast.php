@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Inventory_Forecast implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Inventory_Forecast implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -103,6 +103,20 @@ class WP_MCP_AI_Tool_Inventory_Forecast implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Predict future inventory needs using sales trend analysis and demand forecasting. Calculate optimal reorder points, assess stock-out risks, and identify seasonal demand patterns for better inventory planning.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for tool selection.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Forecasting demand, reorder points, and stockout risk from sales history for one or more products.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Stock level changes; use update_woo_product_qty or sync_product_inventory for writes.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'low_stock_alert_automation', 'update_woo_product_qty', 'track_inventory_movement' ),
+			'notes'           => __( 'Longer analysis windows (90+ days) produce more stable seasonal forecasts.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

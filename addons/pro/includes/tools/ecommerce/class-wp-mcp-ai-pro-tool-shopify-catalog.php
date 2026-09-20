@@ -42,7 +42,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Shopify_Connection_Resolver;
 	use WP_MCP_AI_Shopify_Smart_Search;
@@ -78,6 +78,18 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Live product search and lookup across Shopify catalog connections. Mode-aware: with a Storefront Catalog MCP connection (keyless UCP) this tool calls the store\'s own search_catalog, lookup_catalog, and get_product tools; with a Global Catalog MCP connection (keyless UCP) it searches products across all Shopify merchants; with the deprecated REST catalog_api connection it uses the legacy Catalog API. UCP usage guidelines prohibit caching catalog results, so every call is live and nothing is stored — do not use this tool\'s output to seed caches. Requires a catalog_api, storefront_catalog, or global_catalog mode connection. Every product result includes image URLs (media) and a chat-rendered product card with the product image.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering products across Shopify catalogs with natural-language search, batch lookups, or variant details.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Managing a specific store\'s products, orders, or inventory; use shopify_products, shopify_orders, or shopify_inventory.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'shopify_products', 'shopify_orders', 'shopify_customers' ),
+			'notes'           => __( 'Actions: search, lookup, lookup_by_variant, and get_product. UCP catalog modes are live only; never cache results.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

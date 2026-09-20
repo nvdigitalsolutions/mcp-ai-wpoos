@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Export_Products_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Export_Products_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -104,6 +104,20 @@ class WP_MCP_AI_Tool_Export_Products_Report implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Export WooCommerce product catalog to Excel or CSV with comprehensive analytics including sales data, stock levels, pricing, and product attributes. Supports filtered exports and custom field selection.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for tool selection.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Exporting the catalog to CSV or Excel with sales, stock, and pricing columns for offline review.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Analyzing order revenue; use get_order_analytics or sales_performance_dashboard for in-chat analysis.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_order_analytics', 'sales_performance_dashboard', 'woo_products' ),
+			'notes'           => __( 'Files upload to the media library by default; set upload false to return a local file path.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

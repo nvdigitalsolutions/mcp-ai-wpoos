@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -103,6 +103,20 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Synchronize product inventory across multiple locations or warehouses. Supports bulk sync operations, individual product updates, stock level reconciliation, and maintains inventory audit trail for compliance.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for tool selection.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Writing stock levels across warehouses, including bulk sync and reconcile methods.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Single-product stock edits; use update_woo_product_qty for set, increase, or decrease.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_woo_product_qty', 'track_inventory_movement', 'shopify_inventory' ),
+			'notes'           => __( 'Stock writes are live catalog changes; keep log_changes true for an audit trail.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
