@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Audits client confidentiality safeguards for compliance with ABA Rule 1.6.
  */
-class WP_MCP_AI_Tool_LF_Client_Confidentiality_Auditor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Client_Confidentiality_Auditor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_LF_Client_Confidentiality_Auditor implements WP_MCP_AI_Tool
 	 */
 	public function get_description() {
 		return __( 'Audits client confidentiality safeguards across communications, documents, and access controls for a legal matter, checking compliance with ABA Model Rule 1.6.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Auditing matter-level confidentiality safeguards across communications, documents, and access controls per ABA Rule 1.6.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Scenario-based ethics checks or privacy regulation mapping; use lf_ethics_rule_checker or lf_data_privacy_compliance_checker.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_ethics_rule_checker', 'lf_data_privacy_compliance_checker', 'lf_malpractice_risk_scorer' ),
+			'notes'           => __( 'audit_scope accepts communications, documents, access_controls, or all; matter_id is optional.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

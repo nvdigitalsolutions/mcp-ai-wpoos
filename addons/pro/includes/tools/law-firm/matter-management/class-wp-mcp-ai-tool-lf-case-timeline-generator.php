@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates chronological case timelines from matter data.
  */
-class WP_MCP_AI_Tool_LF_Case_Timeline_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Case_Timeline_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_LF_Case_Timeline_Generator implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Generates a chronological timeline of events for a matter by aggregating deadlines, filings, communications, and tasks into a unified view.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Building a chronological timeline of deadlines, filings, tasks, and communications for a single matter.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Computing new deadline dates; use lf_calendar_rule_calculator. Recording deadlines on a matter; use lf_court_deadline_tracker.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_court_deadline_tracker', 'lf_task_assignment_manager', 'lf_case_status_dashboard' ),
+			'notes'           => __( 'Requires matter_id. include_deadlines and include_filings default to true; stored tasks and client communications are always included.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Validates billing entries against compliance standards.
  */
-class WP_MCP_AI_Tool_LF_Billing_Compliance_Checker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Billing_Compliance_Checker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -67,6 +67,19 @@ class WP_MCP_AI_Tool_LF_Billing_Compliance_Checker implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Checks billing entries for UTBMS code compliance, block billing patterns, and rate compliance issues.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Auditing matter time entries for missing or invalid UTBMS codes, block billing, excessive hours, and zero rates.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Recording new time entries or calculating fees; use lf_time_entry_recorder or lf_fee_calculator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_time_entry_recorder', 'lf_fee_calculator', 'lf_invoice_generator' ),
+			'notes'           => __( 'Requires matter_id; check_type accepts utbms, block_billing, rate_compliance, or all.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Aggregates firm-wide KPIs: realization, collection, utilization, and revenue metrics.
  */
-class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -68,6 +68,20 @@ class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Generates firm-wide KPIs including realization rate, collection rate, utilization rate, revenue per lawyer, and matters per attorney for a given period.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Aggregating firm-wide realization, collection, utilization, revenue per lawyer, and matters per attorney for a month, quarter, or year.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Comparing against industry benchmarks; use lf_competitive_benchmarker. Projecting future revenue; use lf_revenue_forecaster.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_competitive_benchmarker', 'lf_revenue_forecaster', 'lf_attorney_utilization_tracker' ),
+			'notes'           => __( 'period accepts month, quarter, or year and defaults to quarter. Optionally filtered by practice_area; trust balance comes from mcp_ai_lf_trust_txn entries.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

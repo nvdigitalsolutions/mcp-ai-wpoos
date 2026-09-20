@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Processes client intake data and creates client records.
  */
-class WP_MCP_AI_Tool_LF_Client_Intake_Processor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Client_Intake_Processor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -75,6 +75,20 @@ class WP_MCP_AI_Tool_LF_Client_Intake_Processor implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Processes new client intake forms and creates client records with contact information, practice area, case description, urgency level, and referral source.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new client record from intake data with contact details, practice area, urgency, and referral source.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Scoring the lead before intake; use lf_lead_scoring_calculator. Screening for conflicts; use lf_conflict_of_interest_checker.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_conflict_of_interest_checker', 'lf_lead_scoring_calculator', 'lf_referral_source_tracker' ),
+			'notes'           => __( 'Creates an mcp_ai_lf_client post; run lf_conflict_of_interest_checker on the party name first.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

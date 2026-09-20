@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Manages trust account transactions and balances.
  */
-class WP_MCP_AI_Tool_LF_Trust_Account_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Trust_Account_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -67,6 +67,19 @@ class WP_MCP_AI_Tool_LF_Trust_Account_Manager implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Manages client trust (IOLTA) account deposits, disbursements, balance inquiries, and ledger retrieval.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording IOLTA deposits and disbursements, checking balances, or fetching a matter trust ledger.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Three-way reconciliation against bank statements; use lf_trust_reconciliation_tool.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_trust_reconciliation_tool', 'lf_retainer_balance_monitor' ),
+			'notes'           => __( 'Requires action (deposit, disburse, get_balance, get_ledger) and matter_id; disbursements check funds.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

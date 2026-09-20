@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_Law_Firm_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Law_Firm_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR = WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/examples';
@@ -64,6 +64,20 @@ class WP_MCP_AI_Tool_Import_Law_Firm_Blueprint implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Install a curated law firm assistant blueprint for litigation associate, managing partner, paralegal, or compliance officer workflows.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing a curated law firm assistant blueprint (litigation-associate, managing-partner, paralegal, or compliance-officer).', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'To modify an existing assistant; this tool only installs the four bundled blueprints.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_matter_pipeline_manager', 'lf_document_drafter', 'lf_case_status_dashboard' ),
+			'notes'           => __( 'blueprint must be litigation-associate, managing-partner, paralegal, or compliance-officer; overwrite=true replaces same-named assistants.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * {@inheritdoc}

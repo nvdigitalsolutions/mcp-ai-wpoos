@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Calculates lead scores based on weighted intake criteria.
  */
-class WP_MCP_AI_Tool_LF_Lead_Scoring_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Lead_Scoring_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_LF_Lead_Scoring_Calculator implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Calculates a lead score (0-100) for potential clients based on practice area, estimated case value, urgency, referral source, and client type.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Ranking a prospective client 0-100 from practice area, case value, urgency, referral source, and client type.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating the client record once the lead is accepted; use lf_client_intake_processor.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_client_intake_processor', 'lf_referral_source_tracker', 'lf_conflict_of_interest_checker' ),
+			'notes'           => __( 'Score is deterministic from the supplied factors; A-D grades map to follow-up priority, not legal merit.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Tracks opposing counsel information on legal matters.
  */
-class WP_MCP_AI_Tool_LF_Opposing_Counsel_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Opposing_Counsel_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_LF_Opposing_Counsel_Tracker implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Tracks opposing counsel information on matters including attorney name, firm, bar number, contact details, and notes. Supports adding, listing, and viewing history across matters.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording or looking up opposing counsel names, firms, bar numbers, and contact details, including history of matters involving an attorney.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Screening clients for conflicts; use lf_conflict_of_interest_checker. Logging client communications; use lf_client_communication_logger.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_conflict_of_interest_checker', 'lf_matter_pipeline_manager' ),
+			'notes'           => __( 'action accepts add, list, or get_history. get_history matches attorney_name case-insensitively across all matters. Writes require manage_options.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

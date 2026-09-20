@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Logs and tracks client communications.
  */
-class WP_MCP_AI_Tool_LF_Client_Communication_Logger implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Client_Communication_Logger implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_LF_Client_Communication_Logger implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Logs client communications (emails, phone calls, meetings, letters, texts) with date, summary, participants, and optional matter association.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording a client phone call, email, meeting, letter, or text exchange with date, summary, and participants.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating the client record; use lf_client_intake_processor. Recording billable work time; use lf_time_entry_recorder.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_client_intake_processor', 'lf_client_profile_analyzer' ),
+			'notes'           => __( 'Entries are stored in client post meta and surface in lf_client_profile_analyzer output.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

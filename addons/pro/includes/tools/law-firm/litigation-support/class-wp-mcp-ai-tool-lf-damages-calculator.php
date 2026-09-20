@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-law-firm-calculator.php';
 /**
  * Calculates litigation damages with present value analysis.
  */
-class WP_MCP_AI_Tool_LF_Damages_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Damages_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -73,6 +73,20 @@ class WP_MCP_AI_Tool_LF_Damages_Calculator implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Calculates economic, non-economic, and punitive damages with present value analysis. Uses industry-standard formulas for lost wages, medical expenses, and future damages.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Estimating economic, non-economic, or punitive damages with present value of lost wages and future medical costs.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Producing a settlement demand range; use lf_settlement_value_calculator with the damages totals as inputs.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_settlement_value_calculator' ),
+			'notes'           => __( 'Defaults: pain multiplier 3, discount rate 0.04, wage growth 0.03; values are clamped to safe ranges.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

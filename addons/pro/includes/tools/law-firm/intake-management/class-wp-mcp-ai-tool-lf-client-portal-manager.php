@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Manages client portal access and document sharing.
  */
-class WP_MCP_AI_Tool_LF_Client_Portal_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Client_Portal_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_LF_Client_Portal_Manager implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Manages client portal access including creating access, revoking access, listing shared documents, and sharing documents with clients.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Granting or revoking portal access for a client, listing shared documents, or sharing an attachment.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Logging a conversation with the client; use lf_client_communication_logger for communication records.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_client_communication_logger', 'lf_client_profile_analyzer' ),
+			'notes'           => __( 'Actions: create_access, revoke_access, list_shared, share_document. share_document needs an attachment document_id.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

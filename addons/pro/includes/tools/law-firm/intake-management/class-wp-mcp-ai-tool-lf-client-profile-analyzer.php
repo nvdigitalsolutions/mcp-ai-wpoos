@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Analyzes client profile data for a comprehensive summary.
  */
-class WP_MCP_AI_Tool_LF_Client_Profile_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Client_Profile_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -71,6 +71,20 @@ class WP_MCP_AI_Tool_LF_Client_Profile_Analyzer implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Analyzes a client profile by gathering data from their record, associated matters, communications, and time entries to provide a comprehensive summary.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Getting a consolidated view of one client: record fields, related matters, communications, and billed hours.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating the client record; use lf_client_intake_processor. Logging a new communication; use lf_client_communication_logger.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_client_intake_processor', 'lf_client_communication_logger', 'lf_time_entry_recorder' ),
+			'notes'           => __( 'Read-only summary keyed by client_id; requires an mcp_ai_lf_client post.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

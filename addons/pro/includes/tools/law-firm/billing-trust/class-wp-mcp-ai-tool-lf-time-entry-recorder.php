@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Records and validates time entries for legal billing.
  */
-class WP_MCP_AI_Tool_LF_Time_Entry_Recorder implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Time_Entry_Recorder implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -67,6 +67,19 @@ class WP_MCP_AI_Tool_LF_Time_Entry_Recorder implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Records billable time entries for legal matters with UTBMS code validation and block billing detection.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating billable or non-billable time entries with UTBMS validation and block-billing warnings.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Auditing existing entries or generating invoices; use lf_billing_compliance_checker or lf_invoice_generator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_billing_compliance_checker', 'lf_invoice_generator', 'lf_fee_calculator' ),
+			'notes'           => __( 'Requires matter_id, hours, and description; UTBMS and block-billing issues return as warnings, not errors.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

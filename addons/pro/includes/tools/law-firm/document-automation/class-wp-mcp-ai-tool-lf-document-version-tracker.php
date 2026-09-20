@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Retrieves document version history from WordPress revisions.
  */
-class WP_MCP_AI_Tool_LF_Document_Version_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Document_Version_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -67,6 +67,20 @@ class WP_MCP_AI_Tool_LF_Document_Version_Tracker implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Retrieves version history for legal documents using WordPress post revisions.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When retrieving the revision history of a saved document, or its current version number, author, and modified date.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'To compare content between versions; use lf_redline_comparator for word-level changes.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_redline_comparator', 'lf_document_drafter' ),
+			'notes'           => __( 'Needs a saved document_id; action defaults to get_history, and versions come from WordPress post revisions.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

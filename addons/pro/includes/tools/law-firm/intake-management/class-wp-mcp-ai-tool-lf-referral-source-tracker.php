@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Tracks and analyzes referral sources across clients.
  */
-class WP_MCP_AI_Tool_LF_Referral_Source_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Referral_Source_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_LF_Referral_Source_Tracker implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Analyzes client referral sources over a specified period, optionally filtered by practice area, to provide business development insights.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reviewing which referral sources produced clients over the last month, quarter, or year, with practice-area filtering.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Scoring one lead; use lf_lead_scoring_calculator. Storing a referral for a new client; use lf_client_intake_processor.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_lead_scoring_calculator', 'lf_client_intake_processor' ),
+			'notes'           => __( 'Reads _lf_referral_source meta on client posts created since the period start; empty sources count as unknown.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

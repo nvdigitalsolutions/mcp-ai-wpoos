@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Tracks accounts receivable with aging analysis.
  */
-class WP_MCP_AI_Tool_LF_Accounts_Receivable_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Accounts_Receivable_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -67,6 +67,19 @@ class WP_MCP_AI_Tool_LF_Accounts_Receivable_Tracker implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Tracks outstanding invoices with aging bucket analysis (0-30, 31-60, 61-90, 90+ days) and collection rate metrics.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Aging unpaid billable time entries into 0-30, 31-60, 61-90, and 90+ day buckets with collection-rate metrics.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Recording new time entries or generating invoices; use lf_time_entry_recorder or lf_invoice_generator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_invoice_generator', 'lf_billing_compliance_checker', 'lf_profitability_analyzer' ),
+			'notes'           => __( 'Read-only; sums unpaid billable entries from mcp_ai_lf_time_entry, optionally filtered by matter_id.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

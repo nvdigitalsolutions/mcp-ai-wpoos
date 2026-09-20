@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Monitors regulatory and legal changes for specified practice areas and jurisdictions.
  */
-class WP_MCP_AI_Tool_LF_Regulatory_Change_Monitor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Regulatory_Change_Monitor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -134,6 +134,20 @@ class WP_MCP_AI_Tool_LF_Regulatory_Change_Monitor implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Monitors regulatory and legal changes across specified practice areas and jurisdictions, returning a structured monitoring framework with applicable sources and tracked updates.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Building a practice-area monitoring framework with applicable regulatory sources and recent tracked updates.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Analyzing case law or running open legal research; use lf_case_law_analyzer or lf_legal_research_assistant.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_case_law_analyzer', 'lf_legal_research_assistant' ),
+			'notes'           => __( 'time_period accepts week, month, quarter; queries mcp_ai_lf_reg_update posts since that date.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

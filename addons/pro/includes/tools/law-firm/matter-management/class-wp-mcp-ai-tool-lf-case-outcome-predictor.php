@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Predicts case outcomes using scoring heuristics.
  */
-class WP_MCP_AI_Tool_LF_Case_Outcome_Predictor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Case_Outcome_Predictor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -71,6 +71,20 @@ class WP_MCP_AI_Tool_LF_Case_Outcome_Predictor implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Provides heuristic-based case outcome predictions based on practice area, estimated case value, jurisdiction, complexity, and liability strength. Returns predicted outcome, confidence level, estimated duration, and value range.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Estimating a likely case outcome, confidence level, duration, and value range from practice area, case value, complexity, and liability strength.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Computing a numeric settlement value; use lf_settlement_value_calculator. Analyzing stored matter metrics; use lf_matter_analytics_generator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_settlement_value_calculator', 'lf_matter_analytics_generator' ),
+			'notes'           => __( 'case_complexity accepts simple, moderate, complex; liability_strength accepts weak, moderate, strong. Requires practice_area and case_value_estimate.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

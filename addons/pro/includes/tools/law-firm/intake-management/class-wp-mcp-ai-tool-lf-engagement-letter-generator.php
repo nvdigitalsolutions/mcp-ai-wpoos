@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates engagement letter templates for client matters.
  */
-class WP_MCP_AI_Tool_LF_Engagement_Letter_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Engagement_Letter_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_LF_Engagement_Letter_Generator implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Generates an engagement letter template based on client name, matter description, practice area, fee arrangement, billing rate, retainer amount, and jurisdiction.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Drafting an engagement letter template with fee terms from client, matter, practice area, and fee arrangement.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Drafting pleadings or motions; use lf_document_drafter. Computing fees; use lf_fee_calculator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_document_drafter', 'lf_document_template_manager', 'lf_client_intake_processor' ),
+			'notes'           => __( 'Output is a template with placeholders; review and customize before sending. fee_arrangement is required.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

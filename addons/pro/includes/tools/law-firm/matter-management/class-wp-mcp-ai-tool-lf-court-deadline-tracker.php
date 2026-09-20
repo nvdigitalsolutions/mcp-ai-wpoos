@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Manages court deadlines on legal matters.
  */
-class WP_MCP_AI_Tool_LF_Court_Deadline_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Court_Deadline_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_LF_Court_Deadline_Tracker implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Adds, lists, completes, and retrieves upcoming court deadlines on a matter. Supports FRCP, state, and local rule types with priority levels.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording, listing, completing, or fetching upcoming deadlines on a matter with FRCP, state, or local rule types and priorities.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Computing deadline dates from rules; use lf_calendar_rule_calculator. Computing claim expiration; use lf_statute_of_limitations_calculator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_calendar_rule_calculator', 'lf_case_timeline_generator', 'lf_statute_of_limitations_calculator' ),
+			'notes'           => __( 'action accepts add, list, mark_complete, or get_upcoming. Add and mark_complete require a user with manage_options.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
