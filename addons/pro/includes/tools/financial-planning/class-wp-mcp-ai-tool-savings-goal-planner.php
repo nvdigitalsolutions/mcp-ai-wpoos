@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Savings_Goal_Planner implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Savings_Goal_Planner implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,22 @@ class WP_MCP_AI_Tool_Savings_Goal_Planner implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Plan and track multiple savings goals. Set target amounts, deadlines, and monitor progress. Calculate required monthly contributions to reach goals on time.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating and tracking multiple savings goals with deadlines, priorities, and required monthly contributions.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Emergency fund sizing alone; use emergency_fund_calculator. College-specific planning belongs to college_savings_calculator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'emergency_fund_calculator', 'college_savings_calculator', 'budget_planner' ),
+			'notes'           => __( 'action is required (create, update, list, delete, calculate); calculate needs target_amount and target_date.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

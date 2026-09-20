@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Tax_Estimator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Tax_Estimator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,22 @@ class WP_MCP_AI_Tool_Tax_Estimator implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Estimate annual federal tax liability for planning purposes. Calculates taxes based on income, filing status, deductions, and credits. Provides effective tax rate and take-home pay estimates. NOT tax advice - consult a tax professional.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Estimating annual federal tax liability and effective rate from income, filing status, deductions, and credits.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Harvesting losses to offset gains; use tax_loss_harvesting_tracker. Retirement account choice belongs to ira_roth_comparison.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'tax_loss_harvesting_tracker', 'ira_roth_comparison', 'retirement_calculator' ),
+			'notes'           => __( 'Requires gross_income; filing_status and tax_year (2020-2030) select the brackets used. Not tax advice.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

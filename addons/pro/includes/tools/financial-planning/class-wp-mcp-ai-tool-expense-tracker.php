@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Expense_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Expense_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,20 @@ class WP_MCP_AI_Tool_Expense_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Log and categorize expenses with receipt tracking. Track spending by category, date range, and merchant. Supports recurring expense detection and detailed spending analysis.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'To log, list, summarize, or delete tracked expenses with categories and receipt URLs.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'To auto-import transactions from a bank account; use bank_account_sync instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'budget_planner', 'cash_flow_analyzer', 'categorise_transactions', 'get_uncategorised_transactions' ),
+			'notes'           => __( 'Action enum: log, list, summary, delete. log requires amount and category; delete requires expense_id.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Rebalancing_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Rebalancing_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,22 @@ class WP_MCP_AI_Tool_Rebalancing_Analyzer implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Analyze portfolio drift and generate rebalancing recommendations. Identifies assets that have drifted from target allocation and suggests trades to restore balance. EDUCATIONAL ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Detecting drift between current and target allocation and generating trades to restore balance.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Charting current holdings; use portfolio_visualizer. Recording executed trades belongs to portfolio_transaction_log.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'portfolio_visualizer', 'portfolio_transaction_log', 'asset_allocation_planner' ),
+			'notes'           => __( 'Requires current_allocation, target_allocation, and portfolio_value; account_type adjusts tax considerations.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

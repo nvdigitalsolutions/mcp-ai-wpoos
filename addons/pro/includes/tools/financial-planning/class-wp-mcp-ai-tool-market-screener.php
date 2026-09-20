@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.80
  */
-class WP_MCP_AI_Tool_Market_Screener implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Market_Screener implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Cache TTL in seconds.
@@ -99,6 +99,22 @@ class WP_MCP_AI_Tool_Market_Screener implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Screen the entire US equity market by sector, market cap, daily % change, and volume using keyless public market data. Returns a sortable result set. EDUCATIONAL ONLY - Data may be delayed. Not investment advice.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scanning the whole US equity market by sector, market cap, daily change, and volume to shortlist candidates.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Quote or history for one known ticker; use stock_data_fetcher. Macro conditions belong to macro_data_fetcher.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'stock_data_fetcher', 'macro_data_fetcher', 'financial_news_aggregator' ),
+			'notes'           => __( 'Keyless public endpoint with a 15-minute cache; negative change_min finds losers and limit caps the result count.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.8.0
  */
-class WP_MCP_AI_Tool_Get_Uncategorised_Transactions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Uncategorised_Transactions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -45,6 +45,18 @@ class WP_MCP_AI_Tool_Get_Uncategorised_Transactions implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Retrieves financial transactions that have not been categorised, optionally filtered by date range, account, or amount range. Useful for identifying transactions that need manual or rule-based categorisation.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'To list transactions that still lack a category so they can be reviewed and categorised.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'To assign categories or apply categorisation rules; use categorise_transactions instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'categorise_transactions', 'bank_account_sync', 'expense_tracker' ),
+			'notes'           => __( 'Read-only. Filter by date_from, date_to, account_id, min_amount, and max_amount; limit defaults to 100.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

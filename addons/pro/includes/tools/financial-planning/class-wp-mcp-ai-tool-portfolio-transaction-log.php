@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.80
  */
-class WP_MCP_AI_Tool_Portfolio_Transaction_Log implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Portfolio_Transaction_Log implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,22 @@ class WP_MCP_AI_Tool_Portfolio_Transaction_Log implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Log buy/sell transactions and compute per-ticker average cost plus realized and unrealized P&L. Prices are fetched from public market data when available. EDUCATIONAL ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording buys and sells and computing per-ticker average cost with realized and unrealized P&L.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Allocation charts or risk metrics; use portfolio_visualizer. Rebalance suggestions belong to rebalancing_analyzer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'portfolio_visualizer', 'rebalancing_analyzer', 'stock_data_fetcher' ),
+			'notes'           => __( 'action is required; add needs ticker, side, quantity, and price. Prices are fetched from public data when missing.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

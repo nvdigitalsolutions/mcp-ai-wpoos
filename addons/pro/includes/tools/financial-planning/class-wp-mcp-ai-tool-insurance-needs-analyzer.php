@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Insurance_Needs_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Insurance_Needs_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,20 @@ class WP_MCP_AI_Tool_Insurance_Needs_Analyzer implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Calculate life and disability insurance needs based on income, dependents, and obligations. Uses DIME method (Debt, Income, Mortgage, Education) for life insurance. Provides coverage recommendations and gap analysis.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'To estimate life and disability insurance coverage needs and gaps via the DIME method.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For emergency fund sizing or overall health scoring; use emergency_fund_calculator or financial_health_score instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'emergency_fund_calculator', 'financial_health_score', 'net_worth_calculator' ),
+			'notes'           => __( 'Requires annual_income and age. analysis_type can be life, disability, or both.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

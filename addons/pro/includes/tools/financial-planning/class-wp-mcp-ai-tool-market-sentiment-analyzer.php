@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Market_Sentiment_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Market_Sentiment_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -100,6 +100,22 @@ class WP_MCP_AI_Tool_Market_Sentiment_Analyzer implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Analyze sentiment in financial texts using rule-based keyword scoring. Scores texts from -1.0 (bearish) to +1.0 (bullish) with confidence levels. Supports intensity modifiers and aggregate analysis. EDUCATIONAL ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scoring financial texts from -1.0 bearish to +1.0 bullish with confidence levels and aggregate sentiment.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Price or volume data; use stock_data_fetcher. Fetching fresh headlines belongs to financial_news_aggregator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'financial_news_aggregator', 'market_forecast_analyzer', 'stock_data_fetcher' ),
+			'notes'           => __( 'Requires texts (max 20); keyword mode is rule-based and does not call an AI provider.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

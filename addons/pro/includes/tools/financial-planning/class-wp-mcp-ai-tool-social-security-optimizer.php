@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Social_Security_Optimizer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Social_Security_Optimizer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,22 @@ class WP_MCP_AI_Tool_Social_Security_Optimizer implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Optimize social security claiming age to maximize lifetime benefits. Compares claiming at ages 62-70, calculates break-even points, and projects total lifetime benefits based on life expectancy.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Comparing Social Security claiming ages 62 through 70 with break-even points and lifetime benefit projections.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Pension payout decisions; use pension_analyzer. Total retirement income gaps belong to retirement_calculator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'pension_analyzer', 'retirement_calculator', 'withdrawal_strategy_planner' ),
+			'notes'           => __( 'Requires monthly_benefit_at_fra; include_spouse=true adds spousal and survivor benefit comparisons.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

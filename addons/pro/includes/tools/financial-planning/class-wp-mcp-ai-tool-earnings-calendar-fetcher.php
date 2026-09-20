@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.80
  */
-class WP_MCP_AI_Tool_Earnings_Calendar_Fetcher implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Earnings_Calendar_Fetcher implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Cache TTL in seconds.
@@ -104,6 +104,22 @@ class WP_MCP_AI_Tool_Earnings_Calendar_Fetcher implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Fetch the earnings calendar (company, EPS forecast, market cap, reporting timing) from keyless public market data. Filter by date or symbol. EDUCATIONAL ONLY - Data may be delayed. Not investment advice.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @since 1.1.80
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'To list upcoming company earnings reports with EPS forecasts and reporting timing.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For macro events like CPI or Fed meetings; use economic_calendar_fetcher instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'economic_calendar_fetcher', 'stock_data_fetcher', 'financial_news_aggregator' ),
+			'notes'           => __( 'Uses a keyless public Nasdaq endpoint. date must be YYYY-MM-DD; days_ahead scans up to 7 days.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
