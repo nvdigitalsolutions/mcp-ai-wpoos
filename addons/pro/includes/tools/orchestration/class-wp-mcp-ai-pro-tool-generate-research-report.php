@@ -176,6 +176,21 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing a researched, cited report (AIA, NCS, CSI, or general) from a topic, or formatting pre-written sections.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Quick fact checks on a single claim; use verify_information. Combining existing findings belongs to aggregate_research_data.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'verify_information', 'aggregate_research_data', 'create_post_from_research' ),
+			'notes'           => __( 'Research mode needs topic; formatting mode needs title and sections. Can save to Paper Store or create a draft post.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.

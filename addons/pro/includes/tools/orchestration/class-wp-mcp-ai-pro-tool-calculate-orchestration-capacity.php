@@ -76,6 +76,20 @@ class WP_MCP_AI_Pro_Tool_Calculate_Orchestration_Capacity {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Estimating safe concurrent-session limits using Little\'s Law before scaling autonomous workloads.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use get_loop_metrics or analyze_loop_health to inspect live loop behavior instead of capacity math.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'analyze_loop_health', 'get_loop_metrics', 'manage_autonomous_session' ),
+			'notes'           => __( 'Pass arrival_rate and service_time for calculate_capacity; analyze_current reads session transients instead.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @param array $arguments Tool arguments.

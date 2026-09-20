@@ -63,6 +63,20 @@ class WP_MCP_AI_Pro_Tool_Get_Loop_Metrics {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reviewing loop performance analytics - success rate, durations, tool frequency, and error distribution - for a session.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Live session state or circuit breaker checks; use get_session_status. Deeper diagnosis belongs to analyze_loop_health.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_session_status', 'analyze_loop_health', 'check_exit_conditions' ),
+			'notes'           => __( 'Requires session_id; period defaults to session. Empty history returns zeroed metrics with an informational message.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.

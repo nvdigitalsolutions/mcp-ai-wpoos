@@ -89,6 +89,20 @@ class WP_MCP_AI_Pro_Tool_Create_Task_Plan {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Breaking a project into prioritized checkbox tasks with progress tracking, creating or updating a task plan.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use create_template for reusable scaffolds, and instantiate_template to spin up a plan from a template.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_template', 'instantiate_template', 'update_task_plan' ),
+			'notes'           => __( 'Pass task_plan_id to update an existing plan; storage falls back to the mcp_task_plan CPT without JetEngine CCT.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @param array $arguments Tool arguments.

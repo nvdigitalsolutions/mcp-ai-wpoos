@@ -103,6 +103,20 @@ class WP_MCP_AI_Pro_Tool_Create_Execution_Prompt {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Building a fresh, scoped prompt for the next iteration of an autonomous orchestration loop.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use create_task_plan to define or revise the plan; this tool only renders prompts from an existing plan.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_task_plan', 'get_task_plan', 'check_exit_conditions' ),
+			'notes'           => __( 'Pass previous_result for continuity; the prompt embeds budget, success criteria, and EXIT_SIGNAL instructions.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
