@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_DCF_Modeler implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_DCF_Modeler implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_DCF_Modeler implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description(): string {
 		return __( 'Build a full Discounted Cash Flow model from a rent roll. Projects annual NOI with growth rates, discounts operating cash flows, calculates terminal/reversion value, and returns total property value. Accepts tenants, vacancy, opex, growth assumptions, hold period, exit cap rate, and discount rate.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Valuing a property from a tenant rent roll with growth assumptions, hold period, exit cap rate, and discount rate.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Quick single-NOI value; use cre_property_valuation_engine or cre_cap_rate_sensitivity.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_property_valuation_engine', 'cre_cap_rate_sensitivity', 'cre_noi_calculator' ),
+			'notes'           => __( 'Year-1 PGI is computed from the tenants array; hold period must stay between 1 and 30 years.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

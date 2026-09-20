@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Performs the operation.
@@ -63,6 +63,20 @@ class WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description(): string {
 		return __( 'Generate and manage CRE loan closing checklists by loan type (CMBS, balance sheet, agency, debt fund). Track item completion percentage across standard closing requirements: appraisal, environmental, title, survey, insurance, legal, UCC, borrower docs, financials, rent roll, and estoppels.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating a closing checklist for a deal and tracking item completion by loan type through closing.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Pipeline stage tracking; use cre_deal_pipeline_manager. Rate lock economics; use cre_rate_lock_manager.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_deal_pipeline_manager', 'cre_rate_lock_manager', 'cre_term_sheet_comparator' ),
+			'notes'           => __( 'Requires action (generate, update_item, get_status) and deal_id. loan_type is cmbs, balance_sheet, agency, or debt_fund.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

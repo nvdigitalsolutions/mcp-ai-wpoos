@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Fund_Liquidity_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Fund_Liquidity_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_Fund_Liquidity_Analyzer implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description(): string {
 		return __( 'Build a 12-month forward liquidity projection from cash on hand, expected payoffs (sources), expected fundings (uses), and warehouse availability. Flags months with negative cash.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Projecting 12 months of fund cash from cash on hand, expected payoffs, fundings, and warehouse availability to flag shortfall months.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Historical fund performance metrics; use cre_fund_return_calculator. Warehouse line draw and paydown actions; use cre_warehouse_line_manager.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_fund_capital_call_calculator', 'cre_warehouse_line_manager', 'cre_fund_return_calculator' ),
+			'notes'           => __( 'Requires cash_on_hand, unfunded_commitments, expected_payoffs, and expected_fundings; entries need name, amount, and expected_date.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

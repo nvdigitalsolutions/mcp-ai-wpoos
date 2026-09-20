@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Fund_Capital_Call_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Fund_Capital_Call_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_Fund_Capital_Call_Calculator implements WP_MCP_AI_Tool_
 	 */
 	public function get_description(): string {
 		return __( 'Calculate LP-level capital call amounts with pro-rata allocation, overcall buffer, management fee component, and remaining unfunded commitment for each limited partner.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Computing each LP share of a capital call with pro-rata allocation, overcall buffer, management fee, and remaining unfunded commitment.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Distribution waterfall splits; use cre_debt_waterfall_modeler. Formatted LP reports; use cre_lp_report_generator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_debt_waterfall_modeler', 'cre_fund_liquidity_analyzer', 'cre_lp_report_generator' ),
+			'notes'           => __( 'Requires call_amount and lps with name, commitment, called_to_date, and ownership_pct. Returns per-LP call amount and unfunded balance.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

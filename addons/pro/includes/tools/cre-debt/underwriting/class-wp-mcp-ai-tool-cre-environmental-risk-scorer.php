@@ -22,7 +22,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Environmental_Risk_Scorer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Environmental_Risk_Scorer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_CRE_Environmental_Risk_Scorer implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description(): string {
 		return __( 'Score environmental risk for a CRE property on a 0–100 scale. Evaluates Phase I/II ESA status, flood zone classification, seismic zone, brownfield status, and climate risk to produce a composite risk score with category breakdowns and risk-level classification.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scoring environmental due diligence factors (Phase I/II, flood, seismic, brownfield, climate) for a lending decision.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Overall borrower or loan credit risk; use cre_credit_risk_scorer or cre_stress_test_modeler.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_credit_risk_scorer', 'cre_stress_test_modeler', 'cre_underwriting_memo_generator' ),
+			'notes'           => __( 'Returns a 0-100 composite with category weights, risk-level classification, and actionable recommendations.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

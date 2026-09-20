@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Concentration_Limit_Monitor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Concentration_Limit_Monitor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_Concentration_Limit_Monitor implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description(): string {
 		return __( 'Monitor portfolio concentration by borrower, property type, geography, and single-loan exposure against configurable policy limits. Flags breaches and warnings.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking borrower, property-type, geography, and single-loan exposure against concentration limits; flags breaches and warnings.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Loan-level default probability and loss metrics; use cre_credit_risk_scorer. Covenant thresholds; use cre_covenant_compliance_checker.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_credit_risk_scorer', 'cre_covenant_compliance_checker', 'cre_fund_portfolio_dashboard' ),
+			'notes'           => __( 'Loans need name, balance, borrower, property_type, and state. Default limits are 10/35/25/10 percent; warnings start at 90 percent.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

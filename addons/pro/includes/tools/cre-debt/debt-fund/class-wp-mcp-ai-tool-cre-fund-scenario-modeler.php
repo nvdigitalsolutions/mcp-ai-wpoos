@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Fund_Scenario_Modeler implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Fund_Scenario_Modeler implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_Fund_Scenario_Modeler implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description(): string {
 		return __( 'Model multiple portfolio stress scenarios with rate shocks, default rates, prepayment speeds, and loss severities. Returns per-scenario impact analysis ranked by loss severity.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Stress-testing a portfolio under rate shocks, default rates, prepayment speeds, and loss severities, ranked by impact.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Single-loan credit scoring; use cre_credit_risk_scorer. Covenant threshold checks; use cre_covenant_compliance_checker.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_credit_risk_scorer', 'cre_stress_test_modeler', 'cre_fund_portfolio_dashboard' ),
+			'notes'           => __( 'Requires portfolio_balance, wa_rate, and scenarios, each with a name. Returns per-scenario impact ranked by loss severity. Analysis only.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

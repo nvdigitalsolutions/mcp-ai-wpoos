@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Warehouse_Line_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Warehouse_Line_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Performs the operation.
@@ -64,6 +64,20 @@ class WP_MCP_AI_Tool_CRE_Warehouse_Line_Manager implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description(): string {
 		return __( 'Manage warehouse credit facility utilization — view status, add/remove loans on the line, and update facility terms. Data is persisted in WordPress options.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Managing warehouse facility status, adding or removing loans, and updating facility terms. Changes persist in WordPress options.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Read-only cash projections; use cre_fund_liquidity_analyzer. Portfolio summaries; use cre_fund_portfolio_dashboard.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_fund_liquidity_analyzer', 'cre_fund_portfolio_dashboard', 'cre_fund_capital_call_calculator' ),
+			'notes'           => __( 'Requires action (status, update, add_loan, remove_loan) and facility_name. Loans need name and balance. State persists.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

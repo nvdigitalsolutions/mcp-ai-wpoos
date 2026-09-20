@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Fund_Return_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Fund_Return_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_Fund_Return_Calculator implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description(): string {
 		return __( 'Calculate fund-level return metrics including gross/net IRR, equity multiple, DPI, RVPI, and TVPI from cash-flow data, commitments, distributions, and current NAV.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Calculating fund gross/net IRR, equity multiple, DPI, RVPI, and TVPI from cash flows, commitments, distributions, and NAV.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Distribution waterfall splits; use cre_debt_waterfall_modeler. Forward cash projections; use cre_fund_liquidity_analyzer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_debt_waterfall_modeler', 'cre_fund_liquidity_analyzer', 'cre_lp_report_generator' ),
+			'notes'           => __( 'Requires cash_flows, total_committed, total_called, total_distributed, and current_nav. Flows are period/amount pairs.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

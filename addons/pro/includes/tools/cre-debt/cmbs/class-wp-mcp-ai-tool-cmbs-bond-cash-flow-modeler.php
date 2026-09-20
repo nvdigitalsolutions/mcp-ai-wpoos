@@ -22,7 +22,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CMBS_Bond_Cash_Flow_Modeler implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CMBS_Bond_Cash_Flow_Modeler implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_CMBS_Bond_Cash_Flow_Modeler implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description(): string {
 		return __( 'Model monthly cash flows for a CMBS tranche using CDR/CPR/loss severity assumptions. Projects scheduled principal, prepayments, defaults, losses, and net cash flow to the tranche.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Projecting monthly cash flows for one CMBS tranche from CDR/CPR/loss severity assumptions to scheduled principal, defaults, and losses.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sizing tranches or credit enhancement for a new deal; use cmbs_deal_structurer. Pool-level statistics; use cmbs_pool_analyzer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cmbs_deal_structurer', 'cmbs_pool_analyzer', 'cmbs_rating_agency_analyzer' ),
+			'notes'           => __( 'projection_months accepts 1 to 360; tranche_position accepts senior, mezzanine, junior, or equity.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

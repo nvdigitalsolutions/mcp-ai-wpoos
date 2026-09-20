@@ -22,7 +22,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Watchlist_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Watchlist_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Performs the operation.
@@ -65,6 +65,20 @@ class WP_MCP_AI_Tool_CRE_Watchlist_Manager implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description(): string {
 		return __( 'Manage a CRE loan watchlist with escalation levels, trigger events, action plans, and resolution tracking. Supports add, update, remove, and list operations with portfolio risk summary.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Maintaining the CRE loan watchlist: add, update, or remove entries with escalation levels, triggers, action plans, and resolutions.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Computing surveillance metrics that identify watchlist candidates; use cre_loan_surveillance_dashboard.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_loan_surveillance_dashboard', 'cmbs_surveillance_monitor', 'cmbs_special_servicing_tracker' ),
+			'notes'           => __( 'action accepts add, update, remove, or list; escalation_level accepts watch, elevated, or critical; entries persist in wp_options.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

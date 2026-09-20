@@ -22,7 +22,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Property_Performance_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Property_Performance_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_CRE_Property_Performance_Tracker implements WP_MCP_AI_Tool_
 	 */
 	public function get_description(): string {
 		return __( 'Track and analyze property financial performance across multiple periods. Calculates NOI, margins, expense ratios, and identifies performance trends.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Analyzing property performance across multiple periods: NOI, margins, expense ratios, and occupancy/collections trends.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Budget creation or variance analysis; use cre_property_budget_manager. Market expense benchmarking; use cre_operating_expense_benchmarker.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_property_budget_manager', 'cre_operating_expense_benchmarker', 'cre_hold_sell_analyzer' ),
+			'notes'           => __( 'Each period needs period, revenue, opex, and occupancy_pct; collections_pct defaults to 100 and capex to 0.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
