@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.ph
 /**
  * Generate responsive image variants.
  */
-class WP_MCP_AI_Tool_Generate_Responsive_Images extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Generate_Responsive_Images extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,18 @@ class WP_MCP_AI_Tool_Generate_Responsive_Images extends WP_MCP_AI_Tool_Image_Bas
 	 */
 	public function get_description() {
 		return __( 'Generate multiple responsive variants of an image with optimized sizes for different screen resolutions and devices.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to produce multiple width variants of an image (with optional WebP/AVIF conversion) for responsive srcset delivery.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use convert_image_format to change format on a single image, or resize_image_smart for one resized copy.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'convert_image_format', 'resize_image_smart', 'compress_image' ),
+			'notes'           => __( 'Widths larger than the source are skipped; default output format is webp.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

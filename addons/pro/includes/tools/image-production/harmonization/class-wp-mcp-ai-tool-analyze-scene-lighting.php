@@ -21,7 +21,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-harmonization-base.php';
 /**
  * Analyze the lighting of a scene image.
  */
-class WP_MCP_AI_Tool_Analyze_Scene_Lighting extends WP_MCP_AI_Tool_Harmonization_Base {
+class WP_MCP_AI_Tool_Analyze_Scene_Lighting extends WP_MCP_AI_Tool_Harmonization_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -42,6 +42,18 @@ class WP_MCP_AI_Tool_Analyze_Scene_Lighting extends WP_MCP_AI_Tool_Harmonization
 	 */
 	public function get_description() {
 		return __( 'Estimate the light direction, color temperature, intensity, and contrast of a scene image. Heuristic-first; can escalate to AI vision when confidence is low.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to measure light direction, color temperature, intensity, and contrast before generating shadows or relighting a subject.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use relight_subject to actually apply lighting changes, or generate_shadow to produce a shadow layer from the detected direction.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'relight_subject', 'generate_shadow', 'suggest_placement' ),
+			'notes'           => __( 'Heuristic and free by default; set allow_ai_escalation=true to refine low-confidence results with an AI vision call.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

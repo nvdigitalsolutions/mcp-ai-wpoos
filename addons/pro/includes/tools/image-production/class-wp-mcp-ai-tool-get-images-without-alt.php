@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get images without alt text tool.
  */
-class WP_MCP_AI_Tool_Get_Images_Without_Alt implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Images_Without_Alt implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -62,6 +62,18 @@ class WP_MCP_AI_Tool_Get_Images_Without_Alt implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Retrieves media library images missing alt text, optionally filtered by date or mime type.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to discover media library images missing alt text so they can be fixed for accessibility and SEO.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use get_unoptimised_images to audit file-size or format issues, or get_unwatermarked_images to audit watermark coverage.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_unoptimised_images', 'get_unwatermarked_images', 'batch_process_images' ),
+			'notes'           => __( 'Returns attachment IDs only; setting alt text happens through WordPress media APIs or SEO tooling.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

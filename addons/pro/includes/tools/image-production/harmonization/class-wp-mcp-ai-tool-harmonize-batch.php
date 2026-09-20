@@ -20,7 +20,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-harmonization-base.php';
 /**
  * Batch harmonization across multiple subjects.
  */
-class WP_MCP_AI_Tool_Harmonize_Batch extends WP_MCP_AI_Tool_Harmonization_Base {
+class WP_MCP_AI_Tool_Harmonize_Batch extends WP_MCP_AI_Tool_Harmonization_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -41,6 +41,18 @@ class WP_MCP_AI_Tool_Harmonize_Batch extends WP_MCP_AI_Tool_Harmonization_Base {
 	 */
 	public function get_description() {
 		return __( 'Run end-to-end harmonization across a list of subjects sharing one background and style spec. Useful for product catalog hero treatments. Returns one composite per subject plus a per-call cost summary.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Compositing many catalog subjects onto one shared background and style in a single batch call.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'A single composite: use harmonize_image_into_background. Tweaking one pipeline stage: use that stage tool directly (harmonize_color, relight_subject).', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'harmonize_image_into_background', 'harmonize_color', 'relight_subject' ),
+			'notes'           => __( 'Async and long-running. Max 50 subjects per call; returns a per-subject result plus a cost summary.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

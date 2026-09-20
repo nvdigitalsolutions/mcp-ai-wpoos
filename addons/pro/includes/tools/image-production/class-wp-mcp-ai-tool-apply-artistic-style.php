@@ -25,7 +25,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.ph
 /**
  * Apply artistic styles to images using AI style transfer.
  */
-class WP_MCP_AI_Tool_Apply_Artistic_Style extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Apply_Artistic_Style extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -46,6 +46,18 @@ class WP_MCP_AI_Tool_Apply_Artistic_Style extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	public function get_description() {
 		return __( 'Apply artistic styles to images using AI style transfer. Transform photos into artwork in various artistic styles.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to transform a photo into artwork with an AI style preset such as van_gogh, watercolor, or pop_art, or a custom reference image.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use enhance_image_quality for realistic correction of sharpness and noise, or generate_image_ai to create a new image from a prompt.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'enhance_image_quality', 'generate_image_ai', 'generate_image_variations' ),
+			'notes'           => __( 'Style strength is 0-1; set use_remote=true to prefer GPU processing when available.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

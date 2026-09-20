@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Optimise images batch tool.
  */
-class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -62,6 +62,18 @@ class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Optimizes a batch of images (compress, convert to webp, strip metadata). Supports dry_run mode for preview without modifying.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Bulk-compressing, WebP-converting, and stripping metadata from many media attachments, starting with a safe dry_run preview.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Single-image Sharp operations like blur, sharpen, or rotate: use optimize_image_sharp. Web-delivery tuning for one image: use optimize_for_web.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'optimize_image_sharp', 'optimize_for_web', 'get_unoptimised_images' ),
+			'notes'           => __( 'dry_run defaults to true. WebP conversion requires the PHP GD extension; quality defaults to 82.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

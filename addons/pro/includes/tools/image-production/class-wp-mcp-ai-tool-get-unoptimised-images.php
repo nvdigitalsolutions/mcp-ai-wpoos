@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get unoptimised images tool.
  */
-class WP_MCP_AI_Tool_Get_Unoptimised_Images implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Unoptimised_Images implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -61,6 +61,18 @@ class WP_MCP_AI_Tool_Get_Unoptimised_Images implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Retrieves images that may need optimization (large file size, not webp, etc.).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to find images that are large, not WebP, or otherwise unoptimized before running a compression or conversion pass.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use get_images_without_alt for alt-text audits, or get_unwatermarked_images for watermark coverage checks.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'optimise_images_batch', 'compress_image', 'optimize_for_web', 'get_unwatermarked_images' ),
+			'notes'           => __( 'Pair results with optimise_images_batch or compress_image to fix what this tool finds.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
