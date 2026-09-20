@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Calculate wind loads for a given country / wind zone.
  */
-class WP_MCP_AI_Tool_Calculate_Wind_Loads implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Calculate_Wind_Loads implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -69,6 +69,20 @@ class WP_MCP_AI_Tool_Calculate_Wind_Loads implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Calculate regional wind design loads using country-appropriate standards (BS 6399-2 / IS 875-3 for Sri Lanka, ASCE 7 via JNBC 2018 for Jamaica, ASCE 7-22 for the United States). Returns basic wind speed, velocity pressure, and an indicative design wind pressure for low-rise buildings. Analytical only — engage a chartered structural engineer for design.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Computing regional wind design loads (wind speed, velocity pressure, design pressure) for low-rise LK, JM, or US buildings.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Seismic loading; use calculate_seismic_loads. Cladding or member design; engage a structural engineer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'calculate_seismic_loads', 'check_jnbc_hurricane_compliance', 'generate_compliance_dossier' ),
+			'notes'           => __( 'Defaults: exposure C, Kzt 1.0, gust factor 0.85, pressure coefficient 1.0 for enclosed low-rise windward walls.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Score LEED v4 BD+C certification.
  */
-class WP_MCP_AI_Tool_Score_Leed_V4_Certification implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Score_Leed_V4_Certification implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -69,6 +69,20 @@ class WP_MCP_AI_Tool_Score_Leed_V4_Certification implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Score a LEED v4/v4.1 BD+C: New Construction submission. Pass `awarded_credits` (credit-id => points) and `met_prerequisites` (prereq-id => bool). Returns the awarded certification level (Certified / Silver / Gold / Platinum), category totals, missing prerequisites, and any over-max or unknown credit IDs. Indicative — final certification requires GBCI review.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scoring a LEED v4/v4.1 BD+C submission from awarded_credits and met_prerequisites to report Certified / Silver / Gold / Platinum.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'EDGE certification for emerging markets; use score_edge_certification. Final ratings; certification requires GBCI review.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'score_edge_certification', 'calculate_sustainability_metrics', 'simulate_thermal_comfort' ),
+			'notes'           => __( 'Reports category totals, missing prerequisites, and over-max or unknown credit IDs.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

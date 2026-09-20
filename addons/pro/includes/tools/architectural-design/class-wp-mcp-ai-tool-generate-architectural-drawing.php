@@ -27,7 +27,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-respons
 /**
  * Provides a Pro tool for generating architectural drawings using AI.
  */
-class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface {
+class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
 	use WP_MCP_AI_Media_Worker_Client;
 	use WP_MCP_AI_Tool_Image_Response;
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Generates professional architectural drawings (floor plans, elevations, sections, details) using OpenAI DALL-E or Gemini Imagen. Supports 10 drawing types, 6 presentation styles, building codes, dimension specifications, and material lists. Output can be PNG (raster) or SVG (vector).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating presentation drawings from a prompt: floor plans, elevations, sections, or details via DALL-E or Gemini Imagen as PNG or SVG.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For structured blueprint sets or CAD exports - use generate_construction_drawings or export_architectural_documents.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_floor_plan', 'generate_construction_drawings' ),
+			'notes'           => __( 'Provider defaults to openai (gpt-image-2); set output_format=svg for vectorized output. Generation consumes tokens and is non-deterministic.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

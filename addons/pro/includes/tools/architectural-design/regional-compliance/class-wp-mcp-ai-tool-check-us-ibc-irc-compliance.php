@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Check US IBC/IRC compliance.
  */
-class WP_MCP_AI_Tool_Check_US_IBC_IRC_Compliance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Check_US_IBC_IRC_Compliance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -68,6 +68,20 @@ class WP_MCP_AI_Tool_Check_US_IBC_IRC_Compliance implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Validate a US project against the appropriate ICC code (IBC for commercial / multi-family, IRC for 1-2 family dwellings) plus IECC 2024 envelope minima and ADA 2010 accessibility.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Validating a US project against IBC (commercial / multi-family) or IRC (1-2 family) plus IECC 2024 envelope minima and ADA 2010 accessibility.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sri Lanka or Jamaica projects; use check_uda_planning_compliance or check_jnbc_hurricane_compliance. Loads; use calculate_seismic_loads.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'calculate_seismic_loads', 'calculate_wind_loads', 'generate_compliance_dossier' ),
+			'notes'           => __( 'code_path auto-selects IRC for R-3 with up to 2 units and 3 storeys, otherwise IBC; AHJ amendments may differ.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

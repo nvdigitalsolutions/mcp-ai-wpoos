@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Analyze daylight & solar gain.
  */
-class WP_MCP_AI_Tool_Analyze_Daylight_And_Solar_Gain implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Analyze_Daylight_And_Solar_Gain implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_Analyze_Daylight_And_Solar_Gain implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Estimate daylight factor (CIE simplified) and per-orientation solar gain. Returns climate-aware advice for tropical (LK / JM) versus temperate (US) overhang and glazing strategies.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Estimating daylight factor and per-orientation solar gain for a space, with climate-aware overhang and glazing advice for LK, JM, or US.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For ventilation or sustainability scoring - use analyze_natural_ventilation or calculate_sustainability_metrics.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'analyze_natural_ventilation', 'calculate_sustainability_metrics' ),
+			'notes'           => __( 'Pass space.floor_area_sqm and space.window_area_sqm above zero; orientation accepts N, S, E, W, NE, NW, SE, SW.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

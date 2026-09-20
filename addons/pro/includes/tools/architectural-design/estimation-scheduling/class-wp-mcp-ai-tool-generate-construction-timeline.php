@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Generate construction timelines.
  */
-class WP_MCP_AI_Tool_Generate_Construction_Timeline implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Construction_Timeline implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -72,6 +72,20 @@ class WP_MCP_AI_Tool_Generate_Construction_Timeline implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Create project schedules with task sequencing, dependencies, and duration estimates. Generate Gantt charts and critical path analysis.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing a construction schedule with task dependencies, milestones, and critical path as gantt, list, calendar, or json.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For costs or quantities - use estimate_construction_cost or generate_bill_of_quantities.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'estimate_construction_cost', 'generate_material_schedule' ),
+			'notes'           => __( 'crew_size accepts small, medium, large; output_format defaults to gantt. Durations are fixed placeholders.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

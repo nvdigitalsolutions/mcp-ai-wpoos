@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Check building code compliance.
  */
-class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -72,6 +72,20 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Validate designs against building codes and regulations. Supports IBC, IRC, and local building codes.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking a floor plan against code packs such as lk_uda_2021, jm_jnbc_2018, or us_ibc_2024 for egress, fire, accessibility, and structural.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For load calculations or energy benchmarks - use analyze_structural_feasibility or calculate_sustainability_metrics.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'analyze_structural_feasibility', 'analyze_natural_ventilation' ),
+			'notes'           => __( 'code_packs overrides the legacy building_code enum when both are set; missing required inputs return warning status, not pass.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

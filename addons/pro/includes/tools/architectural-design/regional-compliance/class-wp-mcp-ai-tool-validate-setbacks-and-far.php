@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Validate proposed lot geometry against zoning rules.
  */
-class WP_MCP_AI_Tool_Validate_Setbacks_And_Far implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Validate_Setbacks_And_Far implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -68,6 +68,20 @@ class WP_MCP_AI_Tool_Validate_Setbacks_And_Far implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Validate proposed lot geometry against the zoning rules of the supplied country / code pack(s): minimum lot size (perches or m²), maximum Floor Area Ratio, maximum site coverage and per-side setback minima. Returns pass/fail per rule.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Validating lot geometry (minimum lot size, FAR, site coverage, per-side setbacks) against zoning rules for a country or code pack.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Jurisdiction-specific checklists (EIA, NBRO, SLIA); use check_uda_planning_compliance. Dossier assembly; use generate_compliance_dossier.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'check_uda_planning_compliance', 'check_us_ibc_irc_compliance', 'generate_compliance_dossier' ),
+			'notes'           => __( 'Returns pass / fail per rule with calculated values; accepts lot_area_m2 or lot_perches.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

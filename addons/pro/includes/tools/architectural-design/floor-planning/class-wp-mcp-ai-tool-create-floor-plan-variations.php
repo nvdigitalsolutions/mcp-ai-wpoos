@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-respons
 /**
  * Create floor plan variations using AI.
  */
-class WP_MCP_AI_Tool_Create_Floor_Plan_Variations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Floor_Plan_Variations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Create_Floor_Plan_Variations implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Generate multiple layout options from a single set of requirements. Explore design alternatives with different configurations.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Exploring multiple layout alternatives from one set of requirements, varying layout, room sizes, door placement, or window placement.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For a single plan from scratch or sketch conversion - use generate_floor_plan or convert_sketch_to_floor_plan.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_floor_plan', 'optimize_space_layout' ),
+			'notes'           => __( 'num_variations is capped at 10; variation_focus accepts layout, room_sizes, door_placement, window_placement, or style.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
