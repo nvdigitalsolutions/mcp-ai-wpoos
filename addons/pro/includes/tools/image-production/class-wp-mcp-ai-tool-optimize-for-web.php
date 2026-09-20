@@ -27,7 +27,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.ph
 /**
  * Optimize images for web performance.
  */
-class WP_MCP_AI_Tool_Optimize_For_Web extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Optimize_For_Web extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -48,6 +48,18 @@ class WP_MCP_AI_Tool_Optimize_For_Web extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	public function get_description() {
 		return __( 'Comprehensively optimize images for web performance. Includes format conversion, compression, metadata stripping, and more.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Preparing a single image for web delivery: format conversion, max-width resize, metadata stripping, and target file size.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Whole-library sweeps: use optimise_images_batch. Sharp-based enhance, blur, or rotate: use optimize_image_sharp.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'optimise_images_batch', 'optimize_image_sharp', 'generate_responsive_images' ),
+			'notes'           => __( 'target_format auto picks AVIF on WordPress 6.5+, then WebP, then JPEG. target_size_kb re-compresses to fit.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

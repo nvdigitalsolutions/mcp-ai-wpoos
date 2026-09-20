@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Batch process multiple images with operations.
  */
-class WP_MCP_AI_Tool_Batch_Process_Images implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Batch_Process_Images implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,18 @@ class WP_MCP_AI_Tool_Batch_Process_Images implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Apply multiple operations to a batch of images at once. Supports chaining operations like resize, compress, and convert.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to chain ordered operations (resize, compress, convert, enhance, remove_background) across many images in a single call.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use compress_image or convert_image_format for a single-image operation, or optimize_for_web for one-step web optimization.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'compress_image', 'convert_image_format', 'optimize_for_web' ),
+			'notes'           => __( 'Operations run in the order given; for bulk watermarking prefer apply_watermark_batch.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

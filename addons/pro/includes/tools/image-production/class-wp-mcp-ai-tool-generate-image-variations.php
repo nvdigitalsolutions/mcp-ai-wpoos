@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.ph
 /**
  * Generate variations of existing images using AI.
  */
-class WP_MCP_AI_Tool_Generate_Image_Variations extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Generate_Image_Variations extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,18 @@ class WP_MCP_AI_Tool_Generate_Image_Variations extends WP_MCP_AI_Tool_Image_Base
 	 */
 	public function get_description() {
 		return __( 'Create variations of an existing image using AI. The variations will be similar to the original but with creative differences.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to create similar-but-different AI variations of an existing image for A/B testing or alternative creative options.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use generate_image_ai for new images from a text prompt, or apply_artistic_style to change the image\'s artistic look.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_image_ai', 'apply_artistic_style', 'colorize_image' ),
+			'notes'           => __( 'Requires a configured OpenAI provider and consumes generation tokens; sizes range 256x256 to 1024x1024.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

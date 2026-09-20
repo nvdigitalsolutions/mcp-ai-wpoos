@@ -20,7 +20,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-harmonization-base.php';
 /**
  * Refine the alpha matte of a transparent subject.
  */
-class WP_MCP_AI_Tool_Refine_Subject_Matte extends WP_MCP_AI_Tool_Harmonization_Base {
+class WP_MCP_AI_Tool_Refine_Subject_Matte extends WP_MCP_AI_Tool_Harmonization_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -41,6 +41,18 @@ class WP_MCP_AI_Tool_Refine_Subject_Matte extends WP_MCP_AI_Tool_Harmonization_B
 	 */
 	public function get_description() {
 		return __( 'Clean up the alpha channel of a transparent PNG: edge feathering, halo/fringe suppression, and optional AI polish for hair/fur edges. Non-destructive — saves a new attachment.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Cleaning the alpha channel of a transparent subject PNG: feathering, halo and fringe suppression, and optional AI polish for hair and fur edges.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Subject still has a background: use remove_background first. Composite already built: use refine_composite_boundary.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'remove_background', 'refine_composite_boundary', 'harmonize_image_into_background' ),
+			'notes'           => __( 'Non-destructive: saves a new attachment. feather_radius range is 1 to 10.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

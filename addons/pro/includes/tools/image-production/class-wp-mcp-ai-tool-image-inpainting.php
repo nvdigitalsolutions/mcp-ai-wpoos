@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.ph
 /**
  * AI-powered image inpainting for targeted edits.
  */
-class WP_MCP_AI_Tool_Image_Inpainting extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Image_Inpainting extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -47,6 +47,18 @@ class WP_MCP_AI_Tool_Image_Inpainting extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	public function get_description() {
 		return __( 'Edit specific regions of an image using AI. Provide a mask to define the area to edit and a prompt describing the desired change.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Editing a specific masked region of an image: remove objects, add elements, fix defects, or swap small areas.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Whole-image generation: use generate_image_ai. Whole-image edits without a mask: use edit_openai_image. Cutting a subject out: use remove_background.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'edit_openai_image', 'remove_background', 'generate_image_ai' ),
+			'notes'           => __( 'Mask accepts attachment_id, url, or base64. Output sizes: 1024x1024, 512x512, 256x256.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

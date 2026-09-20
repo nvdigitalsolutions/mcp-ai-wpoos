@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.ph
 /**
  * Remove image backgrounds using AI.
  */
-class WP_MCP_AI_Tool_Remove_Image_Background extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Remove_Image_Background extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,18 @@ class WP_MCP_AI_Tool_Remove_Image_Background extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	public function get_description() {
 		return __( 'Remove the background from an image using AI, creating a transparent PNG. Supports both free (rembg) and paid (remove.bg) methods.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'AI background removal into a transparent PNG when calling from a workflow that knows this alias slug.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Prefer the canonical remove_background tool. Masked region edits: use image_inpainting.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'remove_background', 'refine_subject_matte', 'harmonize_image_into_background' ),
+			'notes'           => __( 'Delegates to remove_background with the same method options (auto, free, paid).', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

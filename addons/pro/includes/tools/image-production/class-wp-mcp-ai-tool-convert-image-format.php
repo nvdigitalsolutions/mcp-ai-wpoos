@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.ph
 /**
  * Convert images between different formats.
  */
-class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,18 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	public function get_description() {
 		return __( 'Convert images between formats (JPG, PNG, WebP, AVIF, GIF). Supports optimization during conversion.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to convert images between JPG, PNG, WebP, AVIF, and GIF formats, optionally optimizing output for web delivery.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use generate_responsive_images for multiple width variants, or compress_image to shrink size within the same format.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_responsive_images', 'compress_image', 'optimize_for_web' ),
+			'notes'           => __( 'PNG keeps transparency; WebP and AVIF give smaller web files when supported by the server.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

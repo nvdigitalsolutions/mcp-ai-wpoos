@@ -19,7 +19,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-harmonization-base.php';
 /**
  * Generate a reflection layer for a transparent subject.
  */
-class WP_MCP_AI_Tool_Generate_Reflection extends WP_MCP_AI_Tool_Harmonization_Base {
+class WP_MCP_AI_Tool_Generate_Reflection extends WP_MCP_AI_Tool_Harmonization_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -40,6 +40,18 @@ class WP_MCP_AI_Tool_Generate_Reflection extends WP_MCP_AI_Tool_Harmonization_Ba
 	 */
 	public function get_description() {
 		return __( 'Synthesize a ground/surface reflection layer (vertical flip with progressive fade and opacity) for a subject. Useful when placing on glossy/water/marble surfaces.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to synthesize a ground reflection layer (vertical flip with fade) for a transparent subject on glossy, water, or marble surfaces.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use generate_shadow for contact and cast shadows, or harmonize_image_into_background to composite the subject into a scene.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_shadow', 'harmonize_image_into_background', 'analyze_scene_lighting' ),
+			'notes'           => __( 'Output is a transparent PNG layer; tune fade and opacity (0-1) to match surface glossiness.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

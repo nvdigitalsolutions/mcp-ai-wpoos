@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Optimize text prompts for better AI image generation.
  */
-class WP_MCP_AI_Tool_Text_To_Image_Prompt_Optimizer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Text_To_Image_Prompt_Optimizer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,18 @@ class WP_MCP_AI_Tool_Text_To_Image_Prompt_Optimizer implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Optimize and enhance text prompts for AI image generation. Returns improved prompts with better descriptions, keywords, and style modifiers.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Improving a draft text-to-image prompt with keywords, style modifiers, and provider-specific phrasing before generation.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Generating the image itself: use generate_image_ai. Editing an existing image: use edit_openai_image or image_inpainting.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_image_ai', 'generate_image_variations', 'apply_artistic_style' ),
+			'notes'           => __( 'Uses gpt-4o-mini. provider targets: general, openai, stability, midjourney.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

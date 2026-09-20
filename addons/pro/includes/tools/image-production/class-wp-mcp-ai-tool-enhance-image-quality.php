@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.ph
 /**
  * Enhance image quality using AI.
  */
-class WP_MCP_AI_Tool_Enhance_Image_Quality extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Enhance_Image_Quality extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,18 @@ class WP_MCP_AI_Tool_Enhance_Image_Quality extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	public function get_description() {
 		return __( 'Enhance image quality using AI. Improves sharpness, colors, contrast, and removes artifacts and noise.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to improve sharpness, color, contrast, and reduce noise or artifacts on an existing image with AI enhancement.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use upscale_image_ai to increase resolution, or compress_image to reduce file size without visual changes.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'upscale_image_ai', 'compress_image', 'colorize_image' ),
+			'notes'           => __( 'Enhancements: sharpness, color, contrast, denoise, auto; strength is 0-1.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

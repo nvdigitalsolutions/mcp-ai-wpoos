@@ -31,7 +31,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
 	use WP_MCP_AI_Media_Worker_Client;
 
@@ -54,6 +54,18 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'High-performance image optimization using Sharp. Supports resizing, format conversion (WebP, AVIF), compression, and advanced operations like blur, sharpen, and rotate. Significantly faster than ImageMagick/GraphicsMagick for batch processing.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'High-performance single-image processing with Sharp: compress, resize, convert to WebP or AVIF, or enhance with blur, sharpen, and rotate.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Batch library optimization: use optimise_images_batch. Plain dimension-only resize: use resize_image_smart.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'optimise_images_batch', 'optimize_for_web', 'resize_image_smart' ),
+			'notes'           => __( 'Operations: optimize, resize, convert, enhance. Requires the Sharp Node.js sidecar; WebP and AVIF compress best.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
