@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a Pro tool for breaking down a comic script into numbered panels.
  */
-class WP_MCP_AI_Tool_Breakdown_Comic_Panels implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Breakdown_Comic_Panels implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Breakdown_Comic_Panels implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Breaks down a comic script into individual numbered panels with descriptions, dialogue, and camera angle metadata. Creates `mcp_ai_comic_panel` posts for each panel. Accepts either a script ID or raw script text.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Converting a comic script into discrete numbered mcp_ai_comic_panel posts for the artwork pipeline.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For writing the script use generate_comic_script; for panel artwork use generate_comic_panel.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_comic_script', 'generate_comic_panel', 'create_comic_layout' ),
+			'notes'           => __( 'Accepts a script_id or raw JSON script_text. Sets _panel_order, _scene_number, _camera_angle, and _panel_dialogue meta.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a Pro tool for lettering a comic panel.
  */
-class WP_MCP_AI_Tool_Letter_Comic_Panel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Letter_Comic_Panel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Letter_Comic_Panel implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Adds text elements (dialogue, captions, sound effects) to a comic panel image. Accepts a JSON array of text definitions with position, font style, size, and content. Returns the lettered image URL.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Rendering dialogue, captions, sound effects, or titles onto finished panel artwork.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For structured bubble metadata use add_speech_bubbles; for writing dialogue use generate_comic_script.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'add_speech_bubbles', 'generate_comic_script', 'colorize_comic_panel' ),
+			'notes'           => __( 'text_elements is a JSON array with text, x, y, font_size, style (dialogue|caption|sfx|title), color, font, rotation.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Real_Time_Event_Tracking implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Real_Time_Event_Tracking implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -92,6 +92,20 @@ class WP_MCP_AI_Tool_Real_Time_Event_Tracking implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Track real-time user events and interactions. Monitor page views, clicks, form submissions, and custom events as they happen.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording page views, clicks, form submissions, purchases, or custom events as they happen.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Storing numeric business KPIs; use collect_custom_metrics instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'collect_custom_metrics', 'funnel_analysis', 'data_warehouse_sync' ),
+			'notes'           => __( 'Persists to the mcp_ai_events table and fires wp_mcp_ai_real_time_event; event_type and event_name are required.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

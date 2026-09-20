@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Create_Custom_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Custom_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -84,6 +84,20 @@ class WP_MCP_AI_Tool_Create_Custom_Report implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Build custom analytics reports with templates. Supports scheduled delivery via email with charts and visualizations.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Building a reusable report from the executive, sales, marketing, operations, or custom template, or scheduling email delivery.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'One-off ad hoc analysis of a single question; use funnel_analysis or cohort_analysis instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_executive_dashboard', 'export_analytics_api', 'collect_custom_metrics' ),
+			'notes'           => __( 'Scheduling requires recipients; the report configuration is saved so it can be re-run or emailed on a schedule.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

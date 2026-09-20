@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Data_Warehouse_Sync implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Data_Warehouse_Sync implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -92,6 +92,20 @@ class WP_MCP_AI_Tool_Data_Warehouse_Sync implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Synchronize analytics data to external data warehouses like BigQuery, Snowflake, or Redshift. Supports batch and incremental sync.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pushing orders, customers, products, or custom metrics into BigQuery, Snowflake, Redshift, or a webhook.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Downloading a one-off data snapshot for local use; use export_analytics_api instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'export_analytics_api', 'collect_custom_metrics', 'real_time_event_tracking' ),
+			'notes'           => __( 'Sync mode defaults to incremental; warehouse credentials are passed per call and orders sync requires WooCommerce.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
