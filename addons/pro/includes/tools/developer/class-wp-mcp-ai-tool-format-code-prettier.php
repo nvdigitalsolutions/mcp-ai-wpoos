@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Format_Code_Prettier implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Format_Code_Prettier implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -46,6 +46,20 @@ class WP_MCP_AI_Tool_Format_Code_Prettier implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Format code using Prettier for clean, consistent output. Supports JavaScript, TypeScript, CSS, HTML, PHP, JSON, YAML, and Markdown. Perfect for formatting AI-generated code or cleaning up existing code snippets.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reformatting JavaScript, TypeScript, CSS, HTML, PHP, JSON, YAML, or Markdown code with Prettier.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating or publishing WPCode snippets; use create_wpcode_snippet.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_wpcode_snippet' ),
+			'notes'           => __( 'Pass snippet_id to format a stored WPCode snippet in place; check_syntax validates before formatting.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

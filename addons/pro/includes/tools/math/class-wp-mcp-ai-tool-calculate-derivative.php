@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-math-response
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Calculate_Derivative implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Calculate_Derivative implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Math_Response;
 
 	/**
@@ -48,6 +48,20 @@ class WP_MCP_AI_Tool_Calculate_Derivative implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Calculate derivatives of mathematical functions symbolically. Supports polynomial, trigonometric, exponential, and logarithmic functions with LaTeX rendering.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Computing symbolic derivatives of a function, including higher orders up to 5.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Integrating a function; use calculate_integral. Plotting a function; use graph_function.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'calculate_integral', 'graph_function', 'simplify_expression' ),
+			'notes'           => __( 'Order is capped at 5; format accepts latex, text, or both.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

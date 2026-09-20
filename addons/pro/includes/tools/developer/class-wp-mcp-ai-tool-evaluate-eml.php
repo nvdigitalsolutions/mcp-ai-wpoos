@@ -56,7 +56,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.5.0
  */
-class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const MAX_TREE_DEPTH = 12;
 	const MAX_NODE_COUNT = 256;
@@ -81,6 +81,20 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Evaluate or decompose expressions using the universal binary operator eml(x, y) = exp(x) − ln(y) introduced by Odrzywołek (arXiv:2603.21852, 2026). With the constant 1, EML generates every elementary function over the complex domain — the continuous-mathematics analogue of NAND universality. This tool runs strictly over the reals: decompose mode encodes only the paper-published real-valued identities (one, e, exp, ln per Eq. (5), and zero, sub, neg, inv, mul per Table 4 / Figure 2). Trigonometric, π, i, √ and other complex-valued constants/functions are not supported here because their paper proofs require explicit branch-cut tracking.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Evaluating or decomposing expressions built from the universal operator eml(x, y) = exp(x) - ln(y) over the reals.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Standard calculus operations; use calculate_derivative or calculate_integral. Complex-valued EML is unsupported.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'evaluate_logic_gate', 'calculate_derivative' ),
+			'notes'           => __( 'evaluate rejects ln-domain violations; decompose covers only the real-valued identities from the paper.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

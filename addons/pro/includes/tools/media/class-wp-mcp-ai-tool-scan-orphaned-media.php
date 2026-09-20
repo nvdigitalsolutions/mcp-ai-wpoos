@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.7.0
  */
-class WP_MCP_AI_Tool_Scan_Orphaned_Media implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Scan_Orphaned_Media implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -45,6 +45,20 @@ class WP_MCP_AI_Tool_Scan_Orphaned_Media implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Scans the WordPress media library for orphaned files. Identifies attachments that are not referenced in any post or page content, attachment records where the underlying physical file no longer exists, and files in the uploads directory that have no corresponding attachment record. Returns counts and details by category.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Auditing the media library for unreferenced, missing-file, or unregistered media before cleanup.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Deleting anything; use cleanup_orphaned_media after reviewing this scan.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cleanup_orphaned_media' ),
+			'notes'           => __( 'Read-only; restrict the scan with year_month or scan_type and raise the limit for large libraries.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

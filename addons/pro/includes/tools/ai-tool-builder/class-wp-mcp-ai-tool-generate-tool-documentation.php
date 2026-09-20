@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Generate_Tool_Documentation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Tool_Documentation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Generate_Tool_Documentation implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Generate comprehensive documentation for AI tools. Creates detailed usage guides, parameter tables, code examples, integration guides, and troubleshooting sections. Supports Markdown and HTML output.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing user-facing Markdown or HTML documentation for an existing tool class.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Writing code, tests, or schemas; use generate_tool_logic, generate_tool_tests, or generate_tool_parameters.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_tool_logic', 'generate_tool_parameters', 'generate_tool_tests' ),
+			'notes'           => __( 'Requires tool_class; AI generation consumes tokens and uses the assistant model by default.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

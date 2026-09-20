@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_Media_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Media_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR = WP_MCP_AI_PRO_PATH . 'includes/tools/media/examples';
@@ -58,6 +58,20 @@ class WP_MCP_AI_Tool_Import_Media_Blueprint implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Install the Digital Asset Manager assistant blueprint for media organization and processing.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing a media assistant blueprint (digital-asset-manager, content-publisher, blog-editor, page-manager).', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating media templates or collections directly; use create_media_template or create_media_collection.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_media_template', 'create_media_collection', 'list_media_templates' ),
+			'notes'           => __( 'Requires the Media Toolkit to be enabled; overwrite replaces an existing assistant.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * {@inheritdoc}

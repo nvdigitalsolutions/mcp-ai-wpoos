@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Generate_Tool_Parameters implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Tool_Parameters implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Generate_Tool_Parameters implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Generate JSON schema parameter definitions from natural language descriptions. Uses AI to intelligently infer parameter types, validation rules, required fields, and descriptions. Perfect for quickly scaffolding tool parameters.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Drafting a JSON-schema parameter list from a plain-language tool description.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Generating the execute() body; use generate_tool_logic. Whole-file scaffolding; use generate_tool_scaffold.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_tool_scaffold', 'generate_tool_logic', 'validate_tool_schema' ),
+			'notes'           => __( 'Consumes AI tokens; output_format defaults to php_array and strict_types to true.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

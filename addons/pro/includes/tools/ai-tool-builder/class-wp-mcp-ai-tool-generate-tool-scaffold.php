@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Generate a complete WordPress AI tool class scaffold with proper structure, PHPDoc, interfaces, and method stubs. Creates production-ready boilerplate following WP_MCP_AI tool patterns.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scaffolding a brand-new tool class with interfaces, PHPDoc, and method stubs before filling in real logic.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Writing the execute() body or parameter schema for an existing class; use generate_tool_logic or generate_tool_parameters.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_tool_logic', 'generate_tool_parameters', 'generate_tool_tests' ),
+			'notes'           => __( 'Output is boilerplate for review; run check_tool_compliance on the result before registering the tool.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

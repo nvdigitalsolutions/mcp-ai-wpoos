@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Apply one or more templates to all items in a media collection.
  */
-class WP_MCP_AI_Tool_Apply_Collection_Template implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Apply_Collection_Template implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -36,6 +36,20 @@ class WP_MCP_AI_Tool_Apply_Collection_Template implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Apply one or more templates to all items in a media collection. This is a convenience method that assigns templates to the collection and then processes it. Returns processing results and updates collection configuration.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Assigning and running templates across every item in an existing media collection in one call.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Processing a single image; use apply_media_template. Assigning only; set process=false here instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'process_collection', 'apply_media_template', 'create_media_collection' ),
+			'notes'           => __( 'Set append=false to replace existing templates; process=false assigns templates without running the batch.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

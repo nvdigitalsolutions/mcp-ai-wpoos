@@ -23,7 +23,7 @@ if ( ! trait_exists( 'WP_MCP_AI_Tool_Restrict_From_Chat_Client' ) ) {
  * This tool is restricted from chat-client by default for security reasons
  * as it allows code execution.
  */
-class WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Context_Restrictions_Interface {
+class WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Context_Restrictions_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
@@ -74,6 +74,20 @@ class WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Creates a new WPCode snippet or updates an existing one with the supplied configuration.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating or updating WPCode snippets for PHP, JS, CSS, HTML, and other supported code types.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Formatting code without saving a snippet; use format_code_prettier.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'format_code_prettier' ),
+			'notes'           => __( 'Requires the WPCode plugin; auto_insert=true needs a location valid for the chosen code_type.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

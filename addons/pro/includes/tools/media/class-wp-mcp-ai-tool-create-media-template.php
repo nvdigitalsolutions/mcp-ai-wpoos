@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Create a new media template via AI.
  */
-class WP_MCP_AI_Tool_Create_Media_Template implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Media_Template implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -36,6 +36,20 @@ class WP_MCP_AI_Tool_Create_Media_Template implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Create a new media template or update an existing template. If template_id is provided, updates the existing template instead of creating a new one. Templates are used for the Graphic Editor Plus tool and store reusable operation configurations for consistent image processing. Returns the template ID and details. Use this tool for both creating new templates and updating existing ones.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Saving a reusable Graphic Editor Plus operation configuration as a named template.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Applying a template to an image; use apply_media_template. Batch work; use apply_collection_template.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'apply_media_template', 'list_media_templates', 'create_media_collection' ),
+			'notes'           => __( 'Pass template_id to update an existing template; operation and parameters are required.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

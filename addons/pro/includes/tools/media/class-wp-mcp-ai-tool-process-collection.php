@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Batch process all items in a media collection using assigned templates.
  */
-class WP_MCP_AI_Tool_Process_Collection implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Process_Collection implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -36,6 +36,20 @@ class WP_MCP_AI_Tool_Process_Collection implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Batch process all items in a media collection using the collection\'s assigned templates. Each item will be processed by each template in sequence. Returns processing results and statistics.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Running the assigned templates over every item in an existing media collection.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Processing one image; use apply_media_template. Assigning templates to a collection; use apply_collection_template.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'apply_collection_template', 'apply_media_template', 'create_media_collection' ),
+			'notes'           => __( 'Long-running and async; each item runs every template in sequence, consuming AI tokens.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

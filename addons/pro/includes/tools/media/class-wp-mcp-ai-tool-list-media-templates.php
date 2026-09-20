@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * List available media templates with filtering options.
  */
-class WP_MCP_AI_Tool_List_Media_Templates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Media_Templates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -36,6 +36,20 @@ class WP_MCP_AI_Tool_List_Media_Templates implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'List available media templates with optional filtering by operation type, category, or search term. Returns template ID, title, operation, parameters, usage stats, and categories.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding a template ID by operation type, category, or search before applying it.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating or updating a template; use create_media_template.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_media_template', 'apply_media_template' ),
+			'notes'           => __( 'Read-only and paginated; include_preset defaults to true, per_page caps at 100.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
