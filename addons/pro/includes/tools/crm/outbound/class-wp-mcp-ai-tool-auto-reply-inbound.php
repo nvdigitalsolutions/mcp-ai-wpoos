@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 2.3.0
  * @since 2.4.0 Wired to real transport; no longer just a stub logger.
  */
-class WP_MCP_AI_Tool_Auto_Reply_Inbound implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Auto_Reply_Inbound implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether this tool is available.
@@ -65,6 +65,20 @@ class WP_MCP_AI_Tool_Auto_Reply_Inbound implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Send an automated reply on the same channel (email/SMS/WhatsApp) based on matched intent rules.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Automated rule-based replies to inbound lead messages, dispatched on the same channel (email, SMS, or WhatsApp) as the inquiry.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Human-reviewed outreach; use draft_lead_reply first. Routing without sending; use auto_route_inbound_message.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'draft_lead_reply', 'auto_route_inbound_message', 'send_lead_email' ),
+			'notes'           => __( 'Intent must match a CRM inquiry type; consent and DNC gates apply. Channels without a transport are logged as activity only.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * Parameters schema.

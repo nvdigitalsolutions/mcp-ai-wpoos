@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Detect_Buying_Signals implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Detect_Buying_Signals implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if the tool is available.
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_Detect_Buying_Signals implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Detect buying-intent keywords and phrases in a message body.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scanning a message body for buying-intent keywords and flagging hot leads with 3+ signals.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Intent, sentiment, or spam classification; use classify_message_intent. Full pipeline; use evaluate_inbound_message.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'classify_message_intent', 'evaluate_inbound_message', 'score_lead' ),
+			'notes'           => __( 'Keywords are filterable via wp_mcp_ai_crm_buying_signal_keywords; is_hot means 3+ distinct signals.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

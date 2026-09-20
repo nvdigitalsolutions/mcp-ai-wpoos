@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Determine whether CRM toolkit is enabled.
@@ -112,6 +112,20 @@ class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Algorithmically scores an Upwork job posting (0-100) based on budget fit, skill match, client quality, and competition level. Returns a score breakdown and an apply/skip/maybe recommendation. When no Upwork connection is configured, accepts a job description and title as text for offline scoring.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Ranking an Upwork job by budget fit, skill match, client quality, and competition before applying.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Discovering jobs; use search_upwork_jobs. Writing the proposal; use draft_upwork_proposal.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'search_upwork_jobs', 'draft_upwork_proposal', 'import_upwork_project' ),
+			'notes'           => __( 'Returns a 0-100 breakdown with an apply/skip/maybe recommendation. Works offline from pasted job text.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
@@ -227,7 +241,7 @@ class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		// score_upwork_job
+		// score_upwork_job.
 		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, $this->get_required_capability() ) ) {

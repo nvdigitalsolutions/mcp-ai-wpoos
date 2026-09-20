@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 2.3.0
  * @since 2.4.0 Wired to real Meta Cloud API; stub removed.
  */
-class WP_MCP_AI_Tool_Send_Lead_Whatsapp implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Send_Lead_Whatsapp implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * WhatsApp Graph API version.
@@ -73,6 +73,20 @@ class WP_MCP_AI_Tool_Send_Lead_Whatsapp implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Send a WhatsApp message via the Meta Cloud API. Auto-detects 24-hour session vs template message requirement.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending a WhatsApp message to a lead via the Meta Cloud API when WhatsApp consent is on file.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Email or SMS; use send_lead_email or send_lead_sms. Drafting the message; use draft_lead_reply.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_lead_sms', 'send_lead_email', 'draft_lead_reply' ),
+			'notes'           => __( 'Requires whatsapp_access_token and whatsapp_phone_number_id; outside the 24-hour session set allow_template_message=true.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * Parameters schema.

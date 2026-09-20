@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * {@inheritdoc}
  */
-class WP_MCP_AI_Tool_List_Support_Tickets implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Support_Tickets implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -54,6 +54,20 @@ class WP_MCP_AI_Tool_List_Support_Tickets implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'List support tickets with filters for status, priority, assignee, contact, date range, and search.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding tickets by status, priority, assignee, contact, SLA status, date range, or search term.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading full detail for one ID; use get_support_ticket. SLA aggregates; use get_ticket_sla_report.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_support_ticket', 'get_ticket_sla_report', 'update_support_ticket' ),
+			'notes'           => __( 'Returns summary rows; paginate with page and per_page (max 50).', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

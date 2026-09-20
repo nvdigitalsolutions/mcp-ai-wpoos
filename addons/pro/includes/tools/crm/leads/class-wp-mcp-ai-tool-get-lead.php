@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Get_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -82,6 +82,20 @@ class WP_MCP_AI_Tool_Get_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	 */
 	public function get_description() {
 		return __( 'Retrieve a full lead record with BANT qualification fields, lifecycle stage, lead score with label, associated activities, and related deals.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading one known lead by ID, including score label, BANT fields, activities, and related deals.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Listing, filtering, or discovering leads; use list_leads.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_leads', 'update_lead', 'score_lead' ),
+			'notes'           => __( 'Output includes activities and deals inline; long lead histories can make the response heavy.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * {@inheritdoc}
  */
-class WP_MCP_AI_Tool_Merge_Support_Tickets implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Merge_Support_Tickets implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -54,6 +54,20 @@ class WP_MCP_AI_Tool_Merge_Support_Tickets implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Merge duplicate support tickets by copying activities to the parent and closing duplicates.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Consolidating duplicate tickets by moving source activities into a target and closing the source.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Linking related tickets without moving data; use update_support_ticket instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_support_ticket', 'reopen_support_ticket' ),
+			'notes'           => __( 'The source is closed as a duplicate. Up to 100 activities are moved.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

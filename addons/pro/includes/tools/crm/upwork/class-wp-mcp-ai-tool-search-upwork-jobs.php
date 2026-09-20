@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Determine whether CRM toolkit is enabled.
@@ -112,6 +112,20 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Search Upwork marketplace job postings with filters for keyword, category, skills, budget, job type, experience level, duration, and more. Returns a paginated list of matching jobs. When no Upwork connection is configured, automatically falls back to web search for job discovery.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering Upwork postings by keyword, category, skills, budget, job type, or experience level.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Evaluating a specific posting; use score_upwork_job. Drafting a response; use draft_upwork_proposal.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'score_upwork_job', 'draft_upwork_proposal', 'import_upwork_project' ),
+			'notes'           => __( 'Falls back to web search when no Upwork connection is configured. Paginate with cursor.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Create_Outreach_Sequence implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Outreach_Sequence implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -53,6 +53,20 @@ class WP_MCP_AI_Tool_Create_Outreach_Sequence implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Define a multi-step outreach cadence with channel, timing, and branching rules.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Defining a new multi-step outreach cadence with per-step channel, template_id, wait_hours, and branch_on_reply.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Editing an existing sequence; use update_outreach_sequence. Listing definitions; use list_outreach_sequences.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_outreach_sequence', 'list_outreach_sequences', 'enroll_lead_in_sequence' ),
+			'notes'           => __( 'Steps run in array order; each step needs a channel and may carry template_id and wait_hours.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

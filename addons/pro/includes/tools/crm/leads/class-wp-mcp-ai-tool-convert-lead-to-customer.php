@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Convert_Lead_To_Customer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Convert_Lead_To_Customer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -100,6 +100,20 @@ class WP_MCP_AI_Tool_Convert_Lead_To_Customer implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Convert a lead to a customer by creating a dedicated customer record, migrating data from the lead, advancing the lifecycle stage, and optionally creating a deal. Links the customer back to the originating lead for full traceability.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Promoting a won lead to a customer record, migrating its data, and optionally creating a deal.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating a customer without a source lead; use create_customer. Field edits; use update_lead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_customer', 'update_lead', 'create_deal' ),
+			'notes'           => __( 'Refuses leads already at lifecycle_stage customer; set create_deal=true with deal_amount to open a deal.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
