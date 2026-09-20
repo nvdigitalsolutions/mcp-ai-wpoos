@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Create_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -91,6 +91,20 @@ class WP_MCP_AI_Tool_Create_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Create a new deal/opportunity in the CRM pipeline. Associates a lead, sets pipeline stage with win probability, and fires stage change hooks.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new deal/opportunity linked to a lead, with stage, amount, currency, and expected close date.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Editing an existing deal; use update_deal. Changing its pipeline stage; use move_deal_stage.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_deal', 'move_deal_stage', 'list_deals' ),
+			'notes'           => __( 'Requires lead_id. pipeline_stage defaults to the first stage and win_probability is derived from it.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

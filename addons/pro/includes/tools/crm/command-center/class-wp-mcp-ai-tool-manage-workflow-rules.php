@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Manage Workflow Rules tool — list, update, or delete workflow automation rules.
  */
-class WP_MCP_AI_Tool_Manage_Workflow_Rules implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Manage_Workflow_Rules implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Check whether the tool is available.
 	 *
@@ -49,6 +49,20 @@ class WP_MCP_AI_Tool_Manage_Workflow_Rules implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'List, update, or delete workflow automation rules.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing, updating, deleting, or toggling existing CRM workflow automation rules by rule_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating a new rule; use create_crm_workflow_rule. Testing what a rule would fire; use simulate_workflow_rule.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_crm_workflow_rule', 'simulate_workflow_rule' ),
+			'notes'           => __( 'Action enum: list, update, delete, toggle; update only changes the rule name; requires manage_options.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 	/**
 	 * Get the JSON Schema for the tool parameters.
 	 *

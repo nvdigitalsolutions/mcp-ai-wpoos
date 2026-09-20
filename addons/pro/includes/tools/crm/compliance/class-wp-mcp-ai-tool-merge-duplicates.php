@@ -34,7 +34,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.8.0
  */
-class WP_MCP_AI_Tool_Merge_Duplicates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Merge_Duplicates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -95,6 +95,20 @@ class WP_MCP_AI_Tool_Merge_Duplicates implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Safely merge a duplicate lead into a survivor. Fills empty fields from the duplicate, reassigns all child deals/activities/customers, flags the merged-away record, and audits the operation. Dry-run mode previews the merge plan.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Merging a confirmed duplicate lead into a survivor, filling empty fields and reassigning child deals, activities, and customers.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Finding candidate duplicates; run detect_duplicates first to discover the pairs to merge.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'detect_duplicates', 'scan_duplicate_contacts', 'repair_crm_data' ),
+			'notes'           => __( 'Dry-run defaults to true; survivor wins on conflicts; duplicate is flagged _is_merged=1 and optionally trashed.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

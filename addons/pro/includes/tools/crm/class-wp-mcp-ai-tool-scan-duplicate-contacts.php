@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.9.0
  */
-class WP_MCP_AI_Tool_Scan_Duplicate_Contacts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Scan_Duplicate_Contacts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Scan_Duplicate_Contacts implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Scans the CRM for potential duplicate contacts based on email, phone, or name similarity. Returns grouped duplicates with match confidence scores to help identify and merge redundant records.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding duplicate lead or customer records by email, phone, or name similarity before a merge.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Merging or deleting the duplicates it finds; use manage_crm_contact for the actual changes.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_crm_contact', 'archive_stale_contacts' ),
+			'notes'           => __( 'Read-only. match_field accepts email, phone, name, or all; min_similarity defaults to 80 for name matching.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

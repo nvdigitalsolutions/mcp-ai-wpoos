@@ -24,7 +24,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Web_Search' ) ) {
 /**
  * Provides functionality to research companies using web search and AI.
  */
-class WP_MCP_AI_Tool_Research_Company implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Research_Company implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -68,6 +68,20 @@ class WP_MCP_AI_Tool_Research_Company implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Research a company using AI-powered web search. Gets company information, industry insights, market position, and identifies if they are a good target for your services. Returns structured data ready for CRM import.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Researching a prospect via web search for an overview, target fit, industry trends, or competitive positioning.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Saving the company to the CRM; use create_company with the returned data. Browsing saved companies; use get_companies.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_company', 'get_companies' ),
+			'notes'           => __( 'Requires the web_search tool. research_focus accepts general, target_fit, industry_analysis, or competition.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

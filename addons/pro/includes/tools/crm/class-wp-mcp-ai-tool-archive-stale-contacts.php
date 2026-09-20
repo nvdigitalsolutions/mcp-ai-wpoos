@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.9.0
  */
-class WP_MCP_AI_Tool_Archive_Stale_Contacts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Archive_Stale_Contacts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Archive_Stale_Contacts implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Archives CRM contacts (leads and/or customers) that have had no activity for a specified period. Supports dry_run mode to preview which contacts would be archived.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Archiving leads and customers with no CRM activity for days_inactive; preview the list first with dry_run=true.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Archiving a single contact by ID; use manage_crm_contact. Refreshing activity scores; use recalculate_engagement_scores.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_crm_contact', 'recalculate_engagement_scores', 'scan_duplicate_contacts' ),
+			'notes'           => __( 'Archiving sets post_status to draft and stores _archived_date, _archive_reason, and _archived_by on each contact.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

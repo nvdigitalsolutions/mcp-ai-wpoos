@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.6.0
  */
-class WP_MCP_AI_Tool_Delete_Customer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Customer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_Delete_Customer implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Delete a customer record. By default moves to Trash (recoverable). Use force_delete=true for permanent deletion. Compliance-aware: records the deletion in the audit log.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Removing a customer record, either to Trash (recoverable) or permanently with force_delete=true.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Correcting fields on an existing customer; use update_customer. Removing a lead record; use delete_lead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_customer', 'update_customer', 'list_customers' ),
+			'notes'           => __( 'Deletion is audit-logged and defaults to Trash; force_delete=true skips the trash and cannot be undone.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

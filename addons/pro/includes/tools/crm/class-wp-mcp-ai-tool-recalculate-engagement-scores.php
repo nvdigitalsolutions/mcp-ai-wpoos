@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.9.0
  */
-class WP_MCP_AI_Tool_Recalculate_Engagement_Scores implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Recalculate_Engagement_Scores implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Recalculate_Engagement_Scores implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Recalculates engagement scores for CRM contacts based on recent activity metrics. Supports standard and custom scoring models, targeting specific contacts or all, with dry_run mode.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Refreshing 0-100 engagement scores for specific contacts or all leads and customers after activity changes.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Inspecting raw activity records; use get_contact_interactions. Archiving inactive contacts; use archive_stale_contacts.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_contact_interactions', 'archive_stale_contacts' ),
+			'notes'           => __( 'Scores combine activity volume (40%), recency (25%), channel diversity (20%), and completion (15%). Dry run by default.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

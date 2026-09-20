@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides functionality to list and search companies in the CRM.
  */
-class WP_MCP_AI_Tool_Get_Companies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Companies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -57,6 +57,20 @@ class WP_MCP_AI_Tool_Get_Companies implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'List and search companies in the CRM. Filter by industry, size, target status, or location. Returns company details including contacts.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing or searching CRM companies by industry, size, target status, or location with pagination.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Adding a new company record; use create_company. External research on a company; use research_company.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_company', 'research_company' ),
+			'notes'           => __( 'Read-only and local; filters apply as AND conditions. Results are sorted alphabetically by company name.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

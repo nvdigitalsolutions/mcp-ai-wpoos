@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 3.2.0
  */
-class WP_MCP_AI_Tool_Get_Pipeline_Digest implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Pipeline_Digest implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_Get_Pipeline_Digest implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Build a compact pipeline digest: per-stage counts and value, total pipeline value, stalled deals, hot leads, and overdue tasks. Returns ready-to-forward text plus structured data.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Building a compact daily CRM digest with per-stage counts and value, stalled deals, hot leads, and overdue tasks for messaging channels.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Per-deal stage board details; use get_pipeline_view. Future revenue scenarios; use forecast_pipeline_revenue.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_pipeline_view', 'get_workflow_inbox', 'forecast_pipeline_revenue' ),
+			'notes'           => __( 'Returns ready-to-forward text plus structured data; stalled detection uses stage_changed_at with updated_at fallback.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

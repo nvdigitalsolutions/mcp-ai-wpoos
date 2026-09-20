@@ -33,7 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.8.0
  */
-class WP_MCP_AI_Tool_Repair_CRM_Data implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Repair_CRM_Data implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_Repair_CRM_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Detect and fix common data quality issues in imported CRM records: broken dates (1970-01-01 epoch defaults, far-future dates), generic lead titles (raw emails, impersonal company names), and auto-generated activity titles. Dry-run mode previews all repairs safely.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fixing broken dates, generic lead titles, auto-generated activity titles, and impersonal sender names in imported records.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Deleting spam or stale records; use prune_crm_messages. Finding duplicate records; use detect_duplicates.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'prune_crm_messages', 'detect_duplicates', 'manage_email_hygiene' ),
+			'notes'           => __( 'dry_run defaults to true; each repair category can be toggled individually; max_repairs caps each category (default 100).', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

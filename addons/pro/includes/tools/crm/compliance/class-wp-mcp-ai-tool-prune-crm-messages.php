@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.8.0
  */
-class WP_MCP_AI_Tool_Prune_CRM_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Prune_CRM_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -65,6 +65,20 @@ class WP_MCP_AI_Tool_Prune_CRM_Messages implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Shed old, spam, and low-value messages from the CRM lead database. Supports pruning by: spam classification, age (stale leads), excluded domains, and never-engaged contacts. Dry-run mode previews what would be deleted without making changes. Industry recommendation: remove unengaged after 90–180 days.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Deleting spam, excluded-domain, stale, or never-engaged leads from the CRM, with a dry-run preview of what would be removed.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Fixing data quality without deleting records; use repair_crm_data. Managing the exclude list; use manage_email_hygiene.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'repair_crm_data', 'manage_email_hygiene', 'classify_email_hygiene' ),
+			'notes'           => __( 'dry_run defaults to true; max_prune caps each run (default 100); deletions are force-deleted and audit-logged.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

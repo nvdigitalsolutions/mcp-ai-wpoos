@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
 
 /** Forecast Pipeline Revenue — weighted revenue forecast. */
-class WP_MCP_AI_Tool_Forecast_Pipeline_Revenue implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Forecast_Pipeline_Revenue implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Whether this tool is available.
 	 *
@@ -51,6 +51,20 @@ class WP_MCP_AI_Tool_Forecast_Pipeline_Revenue implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Weighted pipeline revenue forecast by month/quarter with best-case, most-likely, and commit scenarios.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Forecasting future revenue from open deals by month or quarter, with best-case, most-likely, and commit scenarios.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reviewing historical win/loss performance; use get_conversion_funnel. Per-deal stage board; use get_pipeline_view.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_pipeline_view', 'get_conversion_funnel', 'get_pipeline_digest' ),
+			'notes'           => __( 'Excludes closed won/lost deals and past close dates; commit counts deals at 75%+ probability.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * Parameters schema.

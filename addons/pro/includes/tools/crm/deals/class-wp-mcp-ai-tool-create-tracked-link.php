@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 3.2.0
  */
-class WP_MCP_AI_Tool_Create_Tracked_Link implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Tracked_Link implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -83,6 +83,20 @@ class WP_MCP_AI_Tool_Create_Tracked_Link implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Create a tracked link for a proposal or document attached to a deal. Records every open with a timestamp on the deal, so proposal engagement becomes a measurable sales signal.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a tracked proposal or document link on a deal so opens are recorded as sales signals.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading the deal or its link history; use get_deal to fetch the deal record.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_deal', 'list_deals' ),
+			'notes'           => __( 'Requires deal_id and an absolute http(s) url. Max 50 links per deal; each open is timestamped by the link tracker.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -45,7 +45,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/traits/trait-wp-mcp-ai-relevance-sea
  * @since 2.1.0
  * @since 2.4.0 Added free-text TF-IDF relevance search with configurable orderby/order parameters.
  */
-class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_CRM_Relevance_Search;
 
@@ -213,6 +213,20 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Search CRM contacts for new leads by free-text search with TF-IDF relevance scoring, or by email-based criteria including lead score, email domain, inquiry type, source channel, priority, and date range. Sort results by relevance, lead_score, date, name, or company in ASC or DESC order. Supports multi-remote Gmail connection search via Remote Sites connection IDs for cross-account lead discovery. Results are cached for efficient throughout-the-day querying and can be auto-refreshed on a WP Cron schedule. Implements industry-standard lead scoring (HubSpot/Salesforce), 14 inquiry type categories, and pipeline-stage filtering (MQL/SQL).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding new, unscored, or high-intent leads by keyword, lead score, inquiry type, source, or MQL/SQL stage.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Existing customer conversations; use crm_email_search_correspondence. Billing signals; use crm_email_search_accounting.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'crm_email_search_correspondence', 'crm_email_search_accounting' ),
+			'notes'           => __( 'Pass connection_ids to also search Remote Sites Gmail accounts, or action=import_from_gmail to pull leads into the CRM.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

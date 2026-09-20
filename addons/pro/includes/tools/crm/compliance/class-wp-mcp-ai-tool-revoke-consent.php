@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Revoke_Consent implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Revoke_Consent implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_Revoke_Consent implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Revoke consent for one or all channels. Automatically propagates to DNC list and pauses active sequences. TCPA Apr 2025 FCC compliant.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Revoking consent for a contact on one or all channels, propagating to the DNC list and pausing active sequences.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Full opt-out with PII pseudonymisation; use process_opt_out. Recording consent; use record_consent.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'record_consent', 'process_opt_out', 'check_dnc_status' ),
+			'notes'           => __( 'channel defaults to all; active sequences are paused with reason consent_revoked; requires manage_options.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

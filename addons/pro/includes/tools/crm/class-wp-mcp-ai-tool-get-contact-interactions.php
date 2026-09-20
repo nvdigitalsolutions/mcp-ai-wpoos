@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.9.0
  */
-class WP_MCP_AI_Tool_Get_Contact_Interactions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Contact_Interactions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Get_Contact_Interactions implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Retrieves all interactions (emails, calls, meetings, notes) for a CRM contact, optionally filtered by type or date range. Returns interaction details sorted by date.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading the full activity timeline for one contact, filtered by interaction type or date range.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Logging a new interaction; use create_crm_activity. Listing activities across contacts; use list_crm_activities.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_crm_activity', 'list_crm_activities' ),
+			'notes'           => __( 'Requires contact_id. interaction_type accepts email, call, meeting, note, or all; results default to 50, max 500.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

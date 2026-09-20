@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.8.0
  */
-class WP_MCP_AI_Tool_Detect_Duplicates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Detect_Duplicates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -75,6 +75,20 @@ class WP_MCP_AI_Tool_Detect_Duplicates implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Scan the lead database for potential duplicate records using exact email, normalised phone, and fuzzy name+company matching. Returns scored duplicate pairs with field-level evidence so you can review before merging. Industry standard: 10-30% of CRM records are duplicates.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scanning the lead database for duplicate pairs using exact email, normalised phone, and fuzzy name plus company matching.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Merging the flagged duplicates; use merge_duplicates after reviewing the pairs this tool returns.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'merge_duplicates', 'scan_duplicate_contacts', 'repair_crm_data' ),
+			'notes'           => __( 'Strategy enum: exact_email, phone, fuzzy, all; min_confidence defaults to 0.70; include_merged=false skips merged leads.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

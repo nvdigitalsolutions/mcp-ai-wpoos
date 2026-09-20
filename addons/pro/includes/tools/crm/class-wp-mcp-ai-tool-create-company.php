@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides functionality to create companies in the CRM.
  */
-class WP_MCP_AI_Tool_Create_Company implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Company implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -57,6 +57,20 @@ class WP_MCP_AI_Tool_Create_Company implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Create a new company record in the CRM system with industry, size, location, and contact information. Useful for tracking target companies and prospects.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adding a new company record with industry, size, location, and contact details to the CRM directory.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Researching a company before creating it; use research_company. Finding existing companies; use get_companies.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'research_company', 'get_companies' ),
+			'notes'           => __( 'Requires company_name and industry. target_status accepts prospect, target, in_discussion, client, or not_interested.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

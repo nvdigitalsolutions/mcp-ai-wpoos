@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.11.0
  */
-class WP_MCP_AI_Tool_Compute_ICP_Score implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Compute_ICP_Score implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -132,6 +132,20 @@ class WP_MCP_AI_Tool_Compute_ICP_Score implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Calculate an Ideal Customer Profile (ICP) fit score for a company or lead using the 7-dimension scoring model. Returns a 0-100 total score with detailed breakdown by dimension, tier classification (A/B/C), and actionable recommendations.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scoring a company or lead against an ICP profile to get a 0-100 fit score with per-dimension breakdown and tier.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating or editing profile definitions; use manage_icp_profile. Lead BANT/MEDDIC qualification; use qualify_lead_bant.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_icp_profile', 'score_lead', 'qualify_lead_bant' ),
+			'notes'           => __( 'Score from company_id, lead_id, or manual company_data; at least three data points are needed for a meaningful score.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

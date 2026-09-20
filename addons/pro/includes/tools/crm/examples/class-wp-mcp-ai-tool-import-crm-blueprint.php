@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Import_CRM_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_CRM_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -86,6 +86,20 @@ class WP_MCP_AI_Tool_Import_CRM_Blueprint implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Install a curated CRM assistant blueprint for B2B SaaS SDR, agency account management, real estate buyer agent, wholesale distribution, bespoke concierge, luxury sourcing, business advisory, or career coaching workflows.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing one of eight curated CRM assistant blueprints (B2B SaaS SDR, agency, real estate, and more) by slug.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Importing CRM data records or leads; use import_crm_csv. Defining automation rules; use create_crm_workflow_rule.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'import_crm_csv', 'create_crm_workflow_rule' ),
+			'notes'           => __( 'Blueprint slugs are fixed in BLUEPRINT_SLUGS; set overwrite=true to replace an existing assistant of the same name.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
