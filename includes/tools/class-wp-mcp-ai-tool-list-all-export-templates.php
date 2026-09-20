@@ -20,7 +20,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 /**
  * Lists WP All Export templates configured on the site.
  */
-class WP_MCP_AI_Tool_List_All_Export_Templates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_All_Export_Templates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_List_All_Export_Templates implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Returns a list of WP All Export templates configured on the site. Requires WP All Export plugin.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering WP All Export templates configured on the site so a workflow can reference them.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Listing import templates or running an export; use list_all_import_templates.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'list_all_import_templates' ),
+			'notes'           => __( 'Requires the WP All Export plugin and a manage_options user.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

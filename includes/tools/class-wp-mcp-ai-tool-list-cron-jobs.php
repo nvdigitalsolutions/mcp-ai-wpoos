@@ -19,7 +19,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 /**
  * Allows users to list all scheduled WordPress cron jobs.
  */
-class WP_MCP_AI_Tool_List_Cron_Jobs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Ability_Interface {
+class WP_MCP_AI_Tool_List_Cron_Jobs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Ability_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -41,6 +41,20 @@ class WP_MCP_AI_Tool_List_Cron_Jobs implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Lists all WordPress cron jobs that have been scheduled through the plugin.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reviewing plugin-scheduled WordPress cron jobs and their next run times.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Scheduling or removing jobs; use create_cron_job_validated or delete_cron_job.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_cron_job_validated', 'get_cron_job', 'delete_cron_job' ),
+			'notes'           => __( 'Requires manage_options and cron orchestration enabled in settings.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

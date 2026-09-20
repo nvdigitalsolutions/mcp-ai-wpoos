@@ -20,7 +20,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Statistics' ) ) {
 	 *
 	 * @since 1.0.0
 	 */
-	class WP_MCP_AI_Tool_Huggingface_Dataset_Get_Statistics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	class WP_MCP_AI_Tool_Huggingface_Dataset_Get_Statistics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		use WP_MCP_AI_Tool_Chat_Response;
 
@@ -68,6 +68,20 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Statistics' ) ) {
 		 */
 		public function get_description() {
 			return __( 'Get statistical information about a HuggingFace dataset', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * Get usage guidance for the tool.
+		 *
+		 * @return array
+		 */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Inspecting column types, distributions, and summaries for a known dataset split.', 'mcp-ai-wpoos' ),
+				'when_not_to_use' => __( 'Checking whether a dataset exists; use huggingface_dataset_is_valid first.', 'mcp-ai-wpoos' ),
+				'related_tools'   => array( 'huggingface_dataset_is_valid', 'huggingface_dataset_list_splits', 'huggingface_dataset_preview_rows' ),
+				'notes'           => __( 'Dataset and split are required; the HuggingFace Datasets provider must be enabled.', 'mcp-ai-wpoos' ),
+			);
 		}
 
 		/**

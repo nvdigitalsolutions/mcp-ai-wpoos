@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-generate-openai-image.php';
  * This class extends the original generate_openai_image tool to use
  * Symfony Validator for argument validation.
  */
-class WP_MCP_AI_Tool_Generate_OpenAI_Image_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface {
+class WP_MCP_AI_Tool_Generate_OpenAI_Image_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * The original generate_openai_image tool instance for delegation.
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image_Validated extends WP_MCP_AI_Validated
 	 */
 	public function get_description() {
 		return __( 'Creates an image with OpenAI and stores it in the Media Library with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating an OpenAI image with Symfony Validator enforcement of model, size, quality, and format.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'When validation is unneeded or unavailable; use generate_openai_image.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'generate_openai_image', 'edit_openai_image' ),
+			'notes'           => __( 'Delegates to generate_openai_image after validation and shares its schema.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

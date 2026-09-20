@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Lists files uploaded to OpenAI for the current user or organization.
  */
-class WP_MCP_AI_Tool_List_OpenAI_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_OpenAI_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_List_OpenAI_Files implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Lists files uploaded to OpenAI. Use this to audit uploaded files, find files by purpose (assistants, fine-tune), check file quotas, or clean up old/unused files.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Auditing files uploaded to OpenAI and filtering by purpose such as assistants or fine-tune.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Managing files inside a vector store; use manage_vector_store_files.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'list_batches', 'list_vector_stores', 'manage_vector_store_files' ),
+			'notes'           => __( 'Requires manage_options; paginate with the after cursor.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

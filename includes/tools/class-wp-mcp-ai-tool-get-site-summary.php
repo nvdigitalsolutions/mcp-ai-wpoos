@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides basic site metadata and content statistics.
  */
-class WP_MCP_AI_Tool_Get_Site_Summary implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Ability_Interface {
+class WP_MCP_AI_Tool_Get_Site_Summary implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Ability_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_Get_Site_Summary implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Returns the site name, description, URL, and basic content statistics.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'A quick site name, URL, admin email, and published content/user counts.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Health tests, environment config, or update status; use get_site_health, get_environment_status, or get_update_status.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_site_health', 'get_environment_status', 'get_update_status' ),
+			'notes'           => __( 'No parameters; requires manage_options and returns counts from wp_count_posts.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

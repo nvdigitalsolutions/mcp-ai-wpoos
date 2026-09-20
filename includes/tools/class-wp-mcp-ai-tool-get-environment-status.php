@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Summarises WordPress, PHP, plugin, and assistant state for troubleshooting.
  */
-class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Returns WordPress, PHP, and NV oOS configuration details to accelerate troubleshooting on live sites.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Diagnosing setup issues with a WordPress, PHP, and NV oOS configuration snapshot.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Site Health test results, log tails, or pending updates; use get_site_health, get_system_logs, or get_update_status.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_site_health', 'get_system_logs', 'get_update_status' ),
+			'notes'           => __( 'No parameters; requires manage_options and includes supported-plugin statuses plus assistant warnings.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

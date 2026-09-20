@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -52,6 +52,20 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Track and manage memory version history with audit trail. View change history, compare versions, rollback to previous states, and maintain compliance records for all memory modifications.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reviewing version history, comparing versions, or rolling back agent memory changes.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Routine memory edits; use manage_context_lifecycle instead.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'manage_context_lifecycle', 'retrieve_agent_memory' ),
+			'notes'           => __( 'action is get_history, compare_versions, rollback, get_audit_log, or get_stats.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

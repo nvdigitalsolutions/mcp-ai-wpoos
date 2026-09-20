@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Fetches tropical cyclone and flood events from GDACS.
  */
-class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -47,6 +47,20 @@ class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Retrieves recent tropical cyclone and flood alerts from the Global Disaster Alert and Coordination System (GDACS).', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching global tropical cyclone and flood alerts from GDACS, optionally by date range.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'US hurricane tracking or weather forecasts; use get_nhc_active_storms or get_open_meteo_forecast.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_nhc_active_storms', 'get_open_meteo_forecast', 'reliefweb_reports' ),
+			'notes'           => __( 'from_date and to_date use YYYY-MM-DD; the feed covers event types TC and FL.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Retrieves hourly weather forecast data from Open-Meteo.
  * Supports JSON output or Chart.js visualization.
  */
-class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 
@@ -40,6 +40,20 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Retrieves hourly weather forecast data for a location using the Open-Meteo API. Supports both JSON output and interactive Chart.js visualizations.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Hourly weather forecasts for coordinates, as JSON data or a Chart.js visualization.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Storm alerts or address lookup; use get_nhc_active_storms, get_gdacs_events, or geocode_address.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'geocode_address', 'get_nhc_active_storms', 'get_gdacs_events' ),
+			'notes'           => __( 'Latitude, longitude, and hourly variables are required; forecast_days max is 16.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

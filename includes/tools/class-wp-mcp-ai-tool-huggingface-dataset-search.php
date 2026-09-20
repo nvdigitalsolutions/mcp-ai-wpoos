@@ -20,7 +20,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Search' ) ) {
 	 *
 	 * @since 1.0.0
 	 */
-	class WP_MCP_AI_Tool_Huggingface_Dataset_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	class WP_MCP_AI_Tool_Huggingface_Dataset_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		use WP_MCP_AI_Tool_Chat_Response;
 
@@ -68,6 +68,20 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Search' ) ) {
 		 */
 		public function get_description() {
 			return __( 'Full-text search within a HuggingFace dataset split', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * Get usage guidance for the tool.
+		 *
+		 * @return array
+		 */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Full-text matching of rows inside a known dataset split.', 'mcp-ai-wpoos' ),
+				'when_not_to_use' => __( 'Browsing rows without a query; use huggingface_dataset_preview_rows.', 'mcp-ai-wpoos' ),
+				'related_tools'   => array( 'huggingface_dataset_preview_rows', 'huggingface_dataset_list_splits' ),
+				'notes'           => __( 'query is required; paginate with offset and limit (max 100 per page).', 'mcp-ai-wpoos' ),
+			);
 		}
 
 		/**

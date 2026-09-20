@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.80
  */
-class WP_MCP_AI_Tool_Import_Assistant implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Assistant implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -49,6 +49,20 @@ class WP_MCP_AI_Tool_Import_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Imports one or more AI assistants from a portable JSON bundle (nvoos-assistant format), a legacy CLI export, or a blueprint JSON payload. Supports skip/overwrite/duplicate handling of existing assistants, a dry-run preview, and a forced post status. Credential hashes in the payload are ignored.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Restoring assistants from a portable nvoos-assistant bundle, legacy CLI export, or blueprint JSON.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Exporting an assistant for sharing; use export_assistant.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'export_assistant', 'create_assistant', 'duplicate_assistant' ),
+			'notes'           => __( 'mode is skip, overwrite, or duplicate; dry_run previews the import without writing.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

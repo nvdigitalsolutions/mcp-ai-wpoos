@@ -18,7 +18,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' ) ) {
 	 *
 	 * @since 1.0.0
 	 */
-	class WP_MCP_AI_Tool_Huggingface_Recommended_Datasets implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	class WP_MCP_AI_Tool_Huggingface_Recommended_Datasets implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 		use WP_MCP_AI_Tool_Chat_Response;
 
 		/**
@@ -65,6 +65,20 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' ) ) {
 		 */
 		public function get_description() {
 			return __( 'Get a list of recommended HuggingFace datasets', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * Get usage guidance for the tool.
+		 *
+		 * @return array
+		 */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Picking a well-known dataset for a use case such as moderation, summarization, or categorization.', 'mcp-ai-wpoos' ),
+				'when_not_to_use' => __( 'Inspecting a specific dataset\'s content; use huggingface_dataset_preview_rows or huggingface_dataset_get_statistics.', 'mcp-ai-wpoos' ),
+				'related_tools'   => array( 'huggingface_dataset_is_valid', 'huggingface_dataset_list_splits', 'huggingface_dataset_preview_rows' ),
+				'notes'           => __( 'category accepts nlp, vision, audio, multimodal, or all; limit max 20.', 'mcp-ai-wpoos' ),
+			);
 		}
 
 		/**

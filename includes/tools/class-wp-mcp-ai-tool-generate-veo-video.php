@@ -30,7 +30,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-video-respons
 	 * Note: Veo 2.0 (veo-2.0-generate-001) was deprecated by Google in mid-2026.
 	 * Use Gemini Omni Flash for best results.
 	 */
-class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Async_Metadata_Interface {
+class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Async_Metadata_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_Tool_Video_Response;
@@ -54,6 +54,20 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models. Automatically uses Veo 3.1 (preferred) with fallback to Veo 2.0 if quota limits are reached or the model is unavailable. Supports text-to-video and image-to-video generation with cinematic quality output. Duration: 5-8 second videos (the 5-second minimum works with both Veo 3.1 and Veo 2.0). Note: Veo 3.1 supports up to 1080p resolution; Veo 2.0 supports up to 720p. When 1080p is requested, duration is automatically set to 8 seconds (API requirement). Default is 720p which works with any duration. Audio generation is not currently supported. All generated videos include Google\'s SynthID watermark for AI provenance.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating realistic short videos from text or a reference image via Veo with Omni Flash fallback.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Editing an existing video; use edit_omni_video. For OpenAI Sora models, use generate_sora_video.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'generate_omni_video', 'edit_omni_video', 'generate_sora_video' ),
+			'notes'           => __( 'Duration is 5-8 seconds; 1080p forces 8 seconds. Output carries a SynthID watermark; audio is unsupported.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

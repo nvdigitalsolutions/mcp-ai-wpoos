@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides the JSON summary of active storms from the National Hurricane Center.
  */
-class WP_MCP_AI_Tool_Get_NHC_Active_Storms implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_NHC_Active_Storms implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const ENDPOINT = 'https://www.nhc.noaa.gov/CurrentStorms.json';
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_Get_NHC_Active_Storms implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Retrieves the National Hurricane Center JSON summary for current active storms.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Getting the current NHC summary of active Atlantic and Pacific tropical storms.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Global disaster alerts or forecasts; use get_gdacs_events or get_open_meteo_forecast.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_gdacs_events', 'get_open_meteo_forecast', 'reliefweb_reports' ),
+			'notes'           => __( 'No parameters; data comes from the live NHC CurrentStorms.json feed.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

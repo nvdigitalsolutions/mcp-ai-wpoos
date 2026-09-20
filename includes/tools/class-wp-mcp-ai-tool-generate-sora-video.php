@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-video-respons
 /**
  * Provides a tool for generating videos via OpenAI Sora and storing them as attachments.
  */
-class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Async_Metadata_Interface {
+class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Async_Metadata_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Video_Response;
 
@@ -52,6 +52,20 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Creates a video with OpenAI Sora and stores it in the Media Library. Supports both Sora 2 and Sora 2 Pro models for high-quality video generation.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating videos with OpenAI Sora 2 or Sora 2 Pro and saving them to the Media Library.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Gemini video models; use generate_veo_video or generate_omni_video for Veo and Omni generation.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'generate_veo_video', 'generate_omni_video', 'check_video_status' ),
+			'notes'           => __( 'model accepts sora-2 or sora-2-pro; generation can take minutes, timeout spans 60-600 seconds.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

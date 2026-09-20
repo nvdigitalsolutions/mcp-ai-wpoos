@@ -39,7 +39,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-video-respons
 /**
  * Generate Omni Video Tool.
  */
-class WP_MCP_AI_Tool_Generate_Omni_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Async_Metadata_Interface {
+class WP_MCP_AI_Tool_Generate_Omni_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Async_Metadata_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_Tool_Video_Response;
@@ -63,6 +63,20 @@ class WP_MCP_AI_Tool_Generate_Omni_Video implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Generates high-quality videos from text descriptions using Google Gemini Omni Flash. Supports text, images (up to 5), existing videos, and audio as input. Produces videos up to 10 seconds with native audio. Automatically falls back to Veo when Omni is unavailable. Omni supports multi-turn conversational editing (use edit_omni_video for subsequent edits). All videos include SynthID watermark for AI provenance.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating up to 10-second videos with native audio from text, images, video, or audio via Gemini Omni.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Editing an existing Omni video; use edit_omni_video. For Veo or Sora models, use generate_veo_video or generate_sora_video.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'edit_omni_video', 'generate_veo_video', 'check_video_status' ),
+			'notes'           => __( 'async=true returns a job ID to poll with check_video_status; 1080p requires 16:9 and 8 seconds.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

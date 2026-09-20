@@ -108,6 +108,20 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Batch-converting media library images to AVIF/WebP/JPEG XL with responsive srcset and picture output.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Converting or editing a single image; use convert_image_format or resize_image.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'media_library_optimizer', 'convert_image_format', 'responsive_image_validator' ),
+			'notes'           => __( 'action is convert_batch, generate_srcset, create_picture_element, or validate_support.', 'mcp-ai-wpoos' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @since 1.0.0

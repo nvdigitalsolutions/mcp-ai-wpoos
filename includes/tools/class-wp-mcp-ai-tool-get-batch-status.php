@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -45,6 +45,20 @@ class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Retrieves the status and details of a batch processing job. Use to monitor progress, check completion, get output file IDs, or troubleshoot failed jobs.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Polling an OpenAI batch job by ID to check progress, completion, or output file IDs.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Creating batches, listing all jobs, or live progress; use create_batch, list_batches, or monitor_batch.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_batch', 'list_batches', 'monitor_batch' ),
+			'notes'           => __( 'Requires manage_options plus OpenAI credentials; output_file_id appears only when completed.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

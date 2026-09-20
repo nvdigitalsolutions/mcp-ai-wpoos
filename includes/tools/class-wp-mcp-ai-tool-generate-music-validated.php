@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-generate-music.php';
  * This class extends the original generate_music tool to use
  * Symfony Validator for argument validation.
  */
-class WP_MCP_AI_Tool_Generate_Music_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Music_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * The original generate_music tool instance for delegation.
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_Generate_Music_Validated extends WP_MCP_AI_Validated_Tool i
 	 */
 	public function get_description() {
 		return __( 'Generates instrumental music from a text description using Google Gemini Lyria model and saves it to the Media Library with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating music with Symfony Validator enforcement of duration, genre, mood, bpm, key, and temperature.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'When validation is unneeded or unavailable; use generate_music.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'generate_music', 'generate_openai_speech' ),
+			'notes'           => __( 'Delegates to generate_music after validation and supports instrumentation options.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

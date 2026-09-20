@@ -95,6 +95,20 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Auditing login attempts for brute-force patterns and anomalies over a time window.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'General site health or log triage; use check_site_security or get_system_logs_validated.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'check_site_security', 'get_system_logs_validated' ),
+			'notes'           => __( 'time_period is 1hour, 24hours, 7days, 30days, or custom; requires manage_options.', 'mcp-ai-wpoos' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @since 1.0.0

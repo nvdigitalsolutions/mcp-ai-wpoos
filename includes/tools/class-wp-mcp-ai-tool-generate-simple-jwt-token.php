@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates a Simple JWT Login bearer token for the current user.
  */
-class WP_MCP_AI_Tool_Generate_Simple_JWT_Token implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Simple_JWT_Token implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -123,6 +123,20 @@ class WP_MCP_AI_Tool_Generate_Simple_JWT_Token implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Creates a Simple JWT Login bearer credential for the currently authenticated WordPress user.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Minting a Simple JWT Login bearer token for the current WordPress user with optional custom claims.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Auth0 tokens; use generate_auth0_token. Treat the returned token as a secret and avoid logging it.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'generate_auth0_token' ),
+			'notes'           => __( 'Requires the Simple JWT Login plugin with authentication enabled and signing keys configured.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -21,7 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-audio-respons
 /**
  * Provides a tool for generating royalty-free background music via Mubert API.
  */
-class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Audio_Response;
 
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Generates royalty-free background music from a text description using Mubert API and saves it to the Media Library. Supports 150+ genres and 50+ moods.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating royalty-free background music from a prompt via Mubert and saving it to the Media Library.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Speech or voiceover audio; use generate_openai_speech. Transcribing audio belongs to transcribe_openai_audio.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'generate_openai_speech', 'generate_music_validated' ),
+			'notes'           => __( 'duration is 15-1500 seconds; genre and mood are free-text tags matched against Mubert lists.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

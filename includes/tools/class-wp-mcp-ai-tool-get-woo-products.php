@@ -20,7 +20,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 /**
  * Provides WooCommerce product listings with core merchandising metadata.
  */
-class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Product_Card;
 
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Returns WooCommerce catalog products with pricing and stock details. When include_variations is enabled or stock_status filter is used, variable products are automatically expanded to show their variations with accurate stock quantities. Requires WooCommerce.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading WooCommerce catalog products with pricing, stock, and variation details.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Order data or creating products; use get_woo_recent_orders or create_woo_product.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_woo_recent_orders', 'create_woo_product', 'flowhub_get_products' ),
+			'notes'           => __( 'Requires WooCommerce; include_variations defaults true and expands stock per variation.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

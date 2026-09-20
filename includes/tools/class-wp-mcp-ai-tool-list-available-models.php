@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Lists all OpenAI models available to the configured API key.
  */
-class WP_MCP_AI_Tool_List_Available_Models implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Available_Models implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_List_Available_Models implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Lists all OpenAI models available to the configured API key. Use this to discover new models, check model availability, compare model capabilities, or perform dynamic model selection based on task requirements.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking which OpenAI models the configured API key can access before selecting one for a task.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Auditing uploaded files, batch jobs, or vector stores; use list_openai_files or list_batches.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'list_openai_files', 'list_batches', 'list_vector_stores' ),
+			'notes'           => __( 'filter_by_capability accepts chat, embeddings, images, audio, or moderation.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

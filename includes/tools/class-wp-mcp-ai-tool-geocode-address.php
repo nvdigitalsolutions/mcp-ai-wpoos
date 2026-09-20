@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * Provides a tool for geocoding addresses (address to coordinates) and reverse geocoding.
  * Follows separation of concerns: handles WordPress integration while delegating API calls to client.
  */
-class WP_MCP_AI_Tool_Geocode_Address implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Geocode_Address implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -42,6 +42,20 @@ class WP_MCP_AI_Tool_Geocode_Address implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Convert addresses to geographic coordinates (latitude/longitude) or coordinates to addresses using Google Maps Geocoding API.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Converting an address to coordinates, or coordinates to an address, via Google Maps Geocoding.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Discovering places by name or category; use search_places for location search.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'search_places', 'gemini_geospatial_query', 'get_open_meteo_forecast' ),
+			'notes'           => __( 'Pass address for forward geocoding or both latitude and longitude for reverse; language and region refine results.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

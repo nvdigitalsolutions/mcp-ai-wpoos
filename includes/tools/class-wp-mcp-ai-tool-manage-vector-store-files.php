@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 /**
  * Manages files in OpenAI vector stores.
  */
-class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Chat_Response;
 
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Add, remove, or list files in an OpenAI vector store. Manages the knowledge base contents for RAG applications. Best file formats: PDF, TXT, DOCX, MD, JSON, HTML. Avoid CSV/XLSX (convert to PDF/TXT first for reliable parsing).', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adding, removing, or listing files inside a specific OpenAI vector store.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Discovering vector store IDs; use list_vector_stores first.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'list_vector_stores', 'list_openai_files' ),
+			'notes'           => __( 'action is add, remove, or list; PDF, TXT, DOCX, MD, JSON, and HTML parse best.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

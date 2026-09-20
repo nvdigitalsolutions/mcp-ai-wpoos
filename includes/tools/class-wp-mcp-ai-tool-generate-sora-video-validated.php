@@ -54,4 +54,18 @@ class WP_MCP_AI_Tool_Generate_Sora_Video_Validated extends WP_MCP_AI_Tool_Genera
 			'risk_level'            => 'standard',
 		);
 	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating Sora videos through the validated registry slug with the same behavior as generate_sora_video.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'When the canonical generate_sora_video slug is preferred; no extra validation is layered yet.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'generate_sora_video', 'generate_veo_video' ),
+			'notes'           => __( 'Plain subclass of generate_sora_video with its own slug and definition metadata.', 'mcp-ai-wpoos' ),
+		);
+	}
 }

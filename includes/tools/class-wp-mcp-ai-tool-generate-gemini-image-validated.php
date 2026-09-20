@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-generate-gemini-image.php';
  * This class extends the original generate_gemini_image tool to use
  * Symfony Validator for argument validation.
  */
-class WP_MCP_AI_Tool_Generate_Gemini_Image_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Rules_Interface {
+class WP_MCP_AI_Tool_Generate_Gemini_Image_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Rules_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * The original generate_gemini_image tool instance for delegation.
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image_Validated extends WP_MCP_AI_Validated
 	 */
 	public function get_description() {
 		return __( 'Creates an image with Gemini and stores it in the Media Library with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating a Gemini image when you need Symfony Validator enforcement of prompt, aspect_ratio, and mime_type.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'When the validator is unavailable or unneeded; use generate_gemini_image.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'generate_gemini_image', 'edit_gemini_image' ),
+			'notes'           => __( 'Shares the base tool schema and delegates execution to generate_gemini_image.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
