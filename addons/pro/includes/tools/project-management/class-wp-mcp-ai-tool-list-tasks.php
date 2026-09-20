@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Lists tasks with filtering options.
  */
-class WP_MCP_AI_Tool_List_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_List_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	public function get_description() {
 		return __( 'Lists tasks with optional filtering by project, status, priority, due date, or assigned user. Supports calendar view by filtering tasks with due dates.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding tasks by project, status, priority, assignee, or due-date range, including calendar-style due filters.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Personal worklists or deadline alerts; use get_my_tasks or get_upcoming_deadlines. Dependency graphs; use get_task_dependencies.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_task', 'get_my_tasks', 'get_upcoming_deadlines' ),
+			'notes'           => __( 'Returns up to 200 tasks (default 50), newest first.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

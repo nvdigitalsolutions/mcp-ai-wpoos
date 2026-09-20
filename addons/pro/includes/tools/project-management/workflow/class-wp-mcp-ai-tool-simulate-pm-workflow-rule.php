@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Uses {@see WP_MCP_AI_PM_Workflow_Engine::simulate_rule()} to evaluate
  * conditions without executing actions.
  */
-class WP_MCP_AI_Tool_Simulate_PM_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Simulate_PM_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -42,6 +42,20 @@ class WP_MCP_AI_Tool_Simulate_PM_Workflow_Rule implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Simulate a workflow rule as a dry-run to see which existing entities would match its conditions. Useful for testing automation rules before activating them. No actions are executed during simulation.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Dry-running a rule against existing entities to see how many would match before activation.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating or editing rules; use create_pm_workflow_rule. Enumerating rules; use list_pm_workflow_rules.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_pm_workflow_rule', 'list_pm_workflow_rules' ),
+			'notes'           => __( 'Read-only: no actions are executed. Scans up to 200 entities (default 50) per simulation.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

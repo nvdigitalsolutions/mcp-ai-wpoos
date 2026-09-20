@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Identifies explicit and implicit blockers across projects.
  */
-class WP_MCP_AI_Tool_Identify_Blockers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Identify_Blockers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_Identify_Blockers implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Identify all blocked tasks across projects. Detects both explicitly blocked tasks (status=blocked) and implicitly blocked tasks (unmet dependencies). Each blocker includes duration, project context, and dependency chain information.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding explicitly blocked tasks and tasks whose dependencies are not yet complete, grouped by project.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Stale-task detection; use detect_stale_tasks. Blocked-task risk scoring; use assess_project_risk.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'detect_stale_tasks', 'assess_project_risk', 'get_task_dependencies' ),
+			'notes'           => __( 'Explicit blockers carry block_duration_days; implicit blockers list blocking_task_ids.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

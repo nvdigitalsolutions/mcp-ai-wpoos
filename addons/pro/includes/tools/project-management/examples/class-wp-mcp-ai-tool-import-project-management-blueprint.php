@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_Project_Management_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Project_Management_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR = WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/examples';
@@ -62,6 +62,20 @@ class WP_MCP_AI_Tool_Import_Project_Management_Blueprint implements WP_MCP_AI_To
 	 */
 	public function get_description() {
 		return __( 'Install a curated project management assistant blueprint for project manager or PARA method organizer workflows.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing the curated project-manager or para-organizer assistant blueprint when setting up PM workflows.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Adjusting an existing assistant; this tool only installs the two bundled blueprints.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_project', 'para_weekly_review' ),
+			'notes'           => __( 'Supports overwrite=true to replace an existing assistant with the same name.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * {@inheritdoc}

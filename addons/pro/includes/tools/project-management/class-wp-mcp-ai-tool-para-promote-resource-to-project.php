@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Promote a resource into a new project.
  */
-class WP_MCP_AI_Tool_PARA_Promote_Resource_To_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_PARA_Promote_Resource_To_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Get the tool slug.
@@ -46,6 +46,20 @@ class WP_MCP_AI_Tool_PARA_Promote_Resource_To_Project implements WP_MCP_AI_Tool_
 	 */
 	public function get_description() {
 		return __( 'Promote a PARA Resource into a new actionable Project. Creates a `mcp_ai_project` from the resource title/description and links the new project to the source resource via the `_para_source_resource_id` post meta.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Turning a Resources item into actionable work by creating a linked project from its title and description.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Generic project creation from scratch; use create_project. Plain bucket moves; use para_classify_item.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_project', 'para_classify_item', 'para_move_to_archives' ),
+			'notes'           => __( 'The source post must already be classified as resources; project_status accepts planning or active.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

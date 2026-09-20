@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Create a new Area.
  */
-class WP_MCP_AI_Tool_PARA_Create_Area implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_PARA_Create_Area implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Get the tool slug.
@@ -45,6 +45,20 @@ class WP_MCP_AI_Tool_PARA_Create_Area implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Create a new PARA Area — an ongoing responsibility with a standard to maintain, an owner, and a review cadence (weekly, biweekly, monthly, quarterly, annually). Use Areas for things like Health, Finance, or Team Management — distinct from Projects which have a deadline.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating an ongoing-responsibility Area with an owner, standard, and review cadence.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Deadline-driven work; use create_project. Editing an existing area; use para_update_area.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'para_update_area', 'para_list_areas', 'create_project' ),
+			'notes'           => __( 'Cadence is weekly, biweekly, monthly, quarterly, or annually; the area is auto-classified into the areas bucket.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

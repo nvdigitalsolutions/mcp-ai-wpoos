@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Supports both manual task selection and auto-selection from the project
  * backlog sorted by priority, respecting the sprint's velocity target.
  */
-class WP_MCP_AI_Tool_Plan_Sprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Plan_Sprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Priority ordering for auto-selection (highest first).
@@ -49,6 +49,20 @@ class WP_MCP_AI_Tool_Plan_Sprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Plan a sprint by moving tasks from the project backlog into it. You can specify task IDs manually or let the tool auto-select tasks based on priority and velocity target. Useful for sprint planning ceremonies.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Filling a planning-status sprint with backlog tasks manually or via priority-based auto-selection.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating the sprint itself; use create_sprint. Wrapping up the sprint; use close_sprint.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_sprint', 'close_sprint', 'list_tasks' ),
+			'notes'           => __( 'Auto-selection respects the sprint velocity_target; planning flips the sprint status to active.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

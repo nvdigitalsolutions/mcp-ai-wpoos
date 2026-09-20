@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Saves as mcp_task_template CPT with markdown content generated
  * from the tasks array. Stores category and task count as post meta.
  */
-class WP_MCP_AI_Tool_Create_Task_Template implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Task_Template implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Valid priority levels.
@@ -49,6 +49,20 @@ class WP_MCP_AI_Tool_Create_Task_Template implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Create a reusable task template with structured task definitions. Templates contain task checklists that can be instantiated into projects to quickly set up task boards.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Saving a reusable checklist of task definitions that can be instantiated into projects later.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating live tasks directly; use create_task. Applying a template to a project; use instantiate_task_template.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'instantiate_task_template', 'list_task_templates', 'create_task' ),
+			'notes'           => __( 'Task definitions support title, description, priority, and estimated_hours; content is stored as markdown checkboxes.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

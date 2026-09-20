@@ -26,7 +26,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Capture_Tool_Base' ) ) {
 /**
  * MemPalace capture tool for project management decisions, status, ADRs.
  */
-class WP_MCP_AI_Tool_PM_Capture_Decision extends WP_MCP_AI_Pro_Capture_Tool_Base {
+class WP_MCP_AI_Tool_PM_Capture_Decision extends WP_MCP_AI_Pro_Capture_Tool_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -47,6 +47,20 @@ class WP_MCP_AI_Tool_PM_Capture_Decision extends WP_MCP_AI_Pro_Capture_Tool_Base
 	 */
 	public function get_description() {
 		return __( 'Capture a project decision, status update, or Architecture Decision Record (ADR) into the MemPalace project drawer. Decision-grade records are born tier=core so they are always part of "what this project knows".', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording a project decision, status update, or ADR into the MemPalace project/{project_id} wing.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Recording task or project data into their CPT posts; use create_task or create_project for those records.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_project', 'create_task' ),
+			'notes'           => __( 'Records are born tier=core with importance 0.85 and stored verbatim; room enum is decisions, status, adr.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

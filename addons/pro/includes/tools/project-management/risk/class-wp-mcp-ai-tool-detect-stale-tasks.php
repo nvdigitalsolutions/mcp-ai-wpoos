@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Detects stale tasks with optional auto-flagging.
  */
-class WP_MCP_AI_Tool_Detect_Stale_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Detect_Stale_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -40,6 +40,20 @@ class WP_MCP_AI_Tool_Detect_Stale_Tasks implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Detect tasks that have not been modified within a configurable number of days. Returns stale task details and optionally auto-flags them with stale metadata for dashboards and reporting.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding tasks with no updates in N days, optionally auto-flagging them via _pm_stale meta.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Blocked-task discovery; use identify_blockers. Risk scoring; use assess_project_risk.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'identify_blockers', 'assess_project_risk', 'list_tasks' ),
+			'notes'           => __( 'Default threshold is 14 days; auto_flag=true writes _pm_stale meta to each detected task.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

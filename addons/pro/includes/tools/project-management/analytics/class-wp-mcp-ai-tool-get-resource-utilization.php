@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Computes resource utilization per assignee.
  */
-class WP_MCP_AI_Tool_Get_Resource_Utilization implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Resource_Utilization implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_Get_Resource_Utilization implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Analyze per-assignee task allocation and utilization percentage. Identifies over-allocated, under-allocated, and normally-loaded team members. Optionally filter by project.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking per-assignee workload so over- and under-allocated team members can be rebalanced.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Completion-rate forecasting; use forecast_completion. Overall portfolio scoring; use get_portfolio_health.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_portfolio_health', 'list_tasks', 'update_task' ),
+			'notes'           => __( 'Optionally filter to one project_id; unassigned tasks count against their post author.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

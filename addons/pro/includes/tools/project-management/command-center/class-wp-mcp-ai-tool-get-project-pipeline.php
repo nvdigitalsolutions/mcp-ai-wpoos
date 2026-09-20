@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Returns projects grouped by pipeline stage.
  */
-class WP_MCP_AI_Tool_Get_Project_Pipeline implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Project_Pipeline implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,20 @@ class WP_MCP_AI_Tool_Get_Project_Pipeline implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Returns all projects grouped by lifecycle stage (idea, planning, active, at-risk, on-hold, completed, cancelled, archived). Each stage includes a count and list of projects with their ID, title, status, and task count. Optionally filter by a specific stage slug.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Rendering a pipeline or Kanban view of projects grouped by lifecycle stage, optionally filtered to one stage.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Task-level boards; use list_tasks. Project detail queries; use list_projects.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_projects', 'get_pm_kpis', 'get_portfolio_health' ),
+			'notes'           => __( 'Each stage includes count, probability, and per-project task counts from the PM Engine.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

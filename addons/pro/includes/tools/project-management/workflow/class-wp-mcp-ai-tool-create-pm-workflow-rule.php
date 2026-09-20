@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Saves as mcp_ai_pm_wf_rule CPT with trigger type, conditions,
  * actions, and active flag stored as post meta.
  */
-class WP_MCP_AI_Tool_Create_PM_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_PM_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Valid trigger types.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Create_PM_Workflow_Rule implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Create an automation workflow rule for project management. Rules trigger on events like task status changes, assignments, or project status updates. When conditions match, actions such as updating statuses or sending notifications are executed.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating automation rules that fire on task or project events and run actions when conditions match.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Testing a rule before activation; use simulate_pm_workflow_rule. Reviewing rules; use list_pm_workflow_rules.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_pm_workflow_rules', 'simulate_pm_workflow_rule' ),
+			'notes'           => __( 'Trigger types include task.status_changed, task.assigned, project.status_changed, task.due_date_reached, event.date_reached.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
