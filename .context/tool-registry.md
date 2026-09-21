@@ -297,9 +297,18 @@ iff its parameters schema has property `X`. Scope rule (D2): only
 ID-bearing CRUD families are annotated; generators, search tools, and
 stateless utilities stay contract-less by design.
 
-**Rollout status (Sep 2026):** base families `job_id` (cron), `post_id`,
-`term_id`, `assistant_id`, `vector_store_id`, `batch_id` landed via
-PRs #6729–#6731; Pro `schedule_id` (schedule-manager tools) via #6732.
+**Rollout status (complete, Sep 2026):** all 15 ID-bearing families are
+annotated via PRs #6729–#6738 — `job_id` (cron), `plan_id` (task plans),
+`session_id` (autonomous sessions), `room_id` (webchat), `post_id`, `term_id`,
+`assistant_id`, `vector_store_id`, `batch_id` (base) and `schedule_id`,
+`item_id` (toolkit CPTs), `record_id` (medical records), `member_id`,
+`event_id` (Google Calendar), `snippet_id` (WPCode) (Pro; medical-record
+and member tool mirrors are ported to the CG Pro addon). Verified
+out-of-scope: `workflow_id` (no tool produces it), `profession_id`
+(slug-keyed), `team_id` (nested, unconsumed), `agent_id` (nested
+assistant-ID aliases), plus the by-design exclusions listed in the
+manifest fixture.
+
 The manifest fixture `tests/fixtures/tool-contract-manifest.php` is the
 single source of truth: the L1 honesty suite
 (`tests/test-tool-id-handoff-contract.php`) checks it in both directions
