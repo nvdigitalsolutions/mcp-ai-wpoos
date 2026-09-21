@@ -289,6 +289,26 @@ tool customise the suffix per-request.
 The contract is purely advisory metadata for the model and for downstream
 hint planners; it does **not** validate inputs at runtime.
 
+**Vocabulary rule (D1):** contract names must be the *exact* envelope /
+parameter key names flowing between tools (`job_id`, `post_id`, `term_id`,
+`assistant_id`, `vector_store_id`, `batch_id`, `schedule_id`). A tool
+`produces X` iff its success envelope carries key `X`; a tool `consumes X`
+iff its parameters schema has property `X`. Scope rule (D2): only
+ID-bearing CRUD families are annotated; generators, search tools, and
+stateless utilities stay contract-less by design.
+
+**Rollout status (Sep 2026):** base families `job_id` (cron), `post_id`,
+`term_id`, `assistant_id`, `vector_store_id`, `batch_id` landed via
+PRs #6729–#6731; Pro `schedule_id` (schedule-manager tools) via #6732.
+The manifest fixture `tests/fixtures/tool-contract-manifest.php` is the
+single source of truth: the L1 honesty suite
+(`tests/test-tool-id-handoff-contract.php`) checks it in both directions
+(unvetted annotations fail CI) and the L2 round-trip suite
+(`tests/test-tool-id-handoff-round-trip.php`) executes the
+create → fetch → update → delete chain deterministically. Manifest
+entries must land in the same PR as their annotations. Full plan:
+`docs/project/proposals/P3-data-contract-rollout-plan-2026-09.md`.
+
 ---
 
 ## Non-Loggable Result Fields (capability credentials)
