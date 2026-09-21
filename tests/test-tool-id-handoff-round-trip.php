@@ -86,14 +86,22 @@ class Test_Tool_Id_Handoff_Round_Trip extends WP_UnitTestCase {
 	public function test_id_handoff_round_trip( $family_key ) {
 		$context = array( 'user_id' => $this->admin_id );
 
-		// Pro-scoped families run only when their tools are registered
-		// (CI registers Pro tools; some local matrices do not).
+		// Pro-scoped families run whenever the Pro source tree is present
+		// (drivers require their own tool files); registry registration of
+		// Pro tools is settings-gated and varies per environment.
 		$manifest = require __DIR__ . '/fixtures/tool-contract-manifest.php';
 		$family   = $manifest['families'][ $family_key ];
 		if ( ! empty( $family['scope'] ) && 'pro' === $family['scope'] ) {
-			$producer_slug = $family['produces'][0];
-			if ( null === WP_MCP_AI_Tool_Registry::get_instance()->get_tool( $producer_slug ) ) {
-				$this->markTestSkipped( 'Family ' . $family_key . ' is scoped to Pro tools not registered in this environment.' );
+			$probe_files = array(
+				'schedule_id' => 'orchestration/class-wp-mcp-ai-pro-tool-create-pro-schedule.php',
+				'item_id'     => 'infrastructure/class-wp-mcp-ai-pro-tool-cpt.php',
+				'record_id'   => 'healthcare/wellness/medical-records/class-wp-mcp-ai-tool-create-medical-record.php',
+			);
+			$probe_path  = isset( $probe_files[ $family_key ] )
+				? dirname( __DIR__ ) . '/addons/pro/includes/tools/' . $probe_files[ $family_key ]
+				: '';
+			if ( '' === $probe_path || ! file_exists( $probe_path ) ) {
+				$this->markTestSkipped( 'Family ' . $family_key . ' requires the Pro source tree, which is unavailable in this environment.' );
 			}
 		}
 
@@ -115,6 +123,9 @@ class Test_Tool_Id_Handoff_Round_Trip extends WP_UnitTestCase {
 				break;
 			case 'item_id':
 				$this->run_toolkit_cpt_round_trip( $context );
+				break;
+			case 'record_id':
+				$this->run_medical_record_round_trip( $context );
 				break;
 			default:
 				$this->fail( 'No round-trip driver for family: ' . $family_key );
@@ -413,5 +424,73 @@ class Test_Tool_Id_Handoff_Round_Trip extends WP_UnitTestCase {
 			$context
 		);
 		$this->assert_id_not_found( $missing, 'toolkit_cpt', 'item_id' );
+	}
+
+	/**
+	 * Medical record family: create_medical_record → get_medical_record →
+	 * update_medical_record → delete_medical_record.
+	 *
+	 * @param array $context Tool execution context.
+	 */
+	private function run_medical_record_round_trip( $context ) {
+		update_option( 'wp_mcp_ai_settings', array( 'enable_health_wellness_management' => true ) );
+
+		if ( ! class_exists( 'WP_MCP_AI_Health_Wellness_CPT' ) ) {
+			require_once dirname( __DIR__ ) . '/addons/pro/includes/class-wp-mcp-ai-health-wellness-cpt.php';
+		}
+		WP_MCP_AI_Health_Wellness_CPT::register_post_types();
+
+		$tool_dir = dirname( __DIR__ ) . '/addons/pro/includes/tools/healthcare/wellness/medical-records/';
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Medical_Record' ) ) {
+			require_once $tool_dir . 'class-wp-mcp-ai-tool-create-medical-record.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Get_Medical_Record' ) ) {
+			require_once $tool_dir . 'class-wp-mcp-ai-tool-get-medical-record.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Update_Medical_Record' ) ) {
+			require_once $tool_dir . 'class-wp-mcp-ai-tool-update-medical-record.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Delete_Medical_Record' ) ) {
+			require_once $tool_dir . 'class-wp-mcp-ai-tool-delete-medical-record.php';
+		}
+
+		$member_id = $this->factory->post->create( array( 'post_type' => 'mcp_ai_member' ) );
+
+		$create_tool = new WP_MCP_AI_Tool_Create_Medical_Record();
+		$created     = $create_tool->execute(
+			array(
+				'member_id'   => $member_id,
+				'record_type' => 'diagnosis',
+				'title'       => 'ID handoff record',
+			),
+			$context
+		);
+		$record_id   = $this->assert_produces_key( $created, 'record_id', 'create_medical_record' );
+
+		$get_tool = new WP_MCP_AI_Tool_Get_Medical_Record();
+		$fetched  = $get_tool->execute( array( 'record_id' => $record_id ), $context );
+		$this->assertNotWPError( $fetched, 'get_medical_record should succeed for the produced record_id.' );
+		$this->assertSame( $record_id, $fetched['record']['id'], 'get_medical_record should echo the record id it was given.' );
+
+		$update_tool = new WP_MCP_AI_Tool_Update_Medical_Record();
+		$updated     = $update_tool->execute(
+			array(
+				'record_id' => $record_id,
+				'title'     => 'ID handoff record (updated)',
+			),
+			$context
+		);
+		$this->assertNotWPError( $updated, 'update_medical_record should succeed for the produced record_id.' );
+		$this->assertSame( $record_id, $updated['record']['id'], 'update_medical_record should echo the record id it was given.' );
+
+		$delete_tool = new WP_MCP_AI_Tool_Delete_Medical_Record();
+		$deleted     = $delete_tool->execute( array( 'record_id' => $record_id ), $context );
+		$this->assertNotWPError( $deleted, 'delete_medical_record should succeed for the produced record_id.' );
+
+		// Negative path: a fabricated ID must fail cleanly.
+		$missing = $update_tool->execute( array( 'record_id' => PHP_INT_MAX - 1 ), $context );
+		$this->assert_id_not_found( $missing, 'update_medical_record', 'record_id' );
+
+		wp_delete_post( $member_id, true );
 	}
 }

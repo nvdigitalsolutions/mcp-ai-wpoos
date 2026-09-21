@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates a new medical record.
  */
-class WP_MCP_AI_Tool_Create_Medical_Record implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
+class WP_MCP_AI_Tool_Create_Medical_Record implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -47,7 +47,7 @@ class WP_MCP_AI_Tool_Create_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 			'when_to_use'     => __( 'Creating a lab result, diagnosis, treatment, vaccination, imaging, or procedure record, or updating one via medical_record_id.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Bulk unstructured entry; use parse_health_information. Viewing records; use get_medical_record or search_medical_records.', 'mcp-ai-wpoos-pro' ),
 			'related_tools'   => array( 'update_medical_record', 'get_medical_record', 'parse_health_information' ),
-			'notes'           => __( 'record_type must be one of lab-result, diagnosis, treatment, vaccination, imaging, procedure, or hospitalization.', 'mcp-ai-wpoos-pro' ),
+			'notes'           => __( 'record_type must be one of lab-result, diagnosis, treatment, vaccination, imaging, procedure, or hospitalization. Returns record_id in the response for chaining into get_medical_record, update_medical_record, or delete_medical_record; passing medical_record_id instead updates the existing record.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -125,6 +125,16 @@ class WP_MCP_AI_Tool_Create_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 			),
 			'required'             => array( 'member_id', 'record_type', 'title' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'record_id',
+			'consumes' => null,
 		);
 	}
 
