@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Composio — List connected accounts.
  */
-class WP_MCP_AI_Tool_Composio_List_Connected_Accounts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Composio_List_Connected_Accounts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Envelope;
 
 	/**
@@ -49,6 +49,20 @@ class WP_MCP_AI_Tool_Composio_List_Connected_Accounts implements WP_MCP_AI_Tool_
 	 */
 	public function get_description(): string {
 		return __( 'List the Composio connected accounts (Gmail, Slack, GitHub, ...) with *verified* health, not just Composio\'s stored status. By default each account is probed with a harmless read-only call so a revoked token is reported as broken instead of "active"; every entry carries last_validated_at, last_error, credential expiry and a needs_reconnect flag. Set verify to false for a cheap stored-status-only listing.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Getting a ca_... account nanoid or checking credential health before executing a Composio tool.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Running actions or browsing the catalog; use composio_execute_tool and composio_list_tools.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'composio_execute_tool', 'composio_manage_accounts', 'composio_create_connect_link' ),
+			'notes'           => __( 'Verification probes each account, costing one tool execution; set verify=false for a cheap status-only listing.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

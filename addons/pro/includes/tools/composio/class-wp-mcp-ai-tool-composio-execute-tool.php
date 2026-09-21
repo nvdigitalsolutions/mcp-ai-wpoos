@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Composio — Execute tool.
  */
-class WP_MCP_AI_Tool_Composio_Execute_Tool implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface {
+class WP_MCP_AI_Tool_Composio_Execute_Tool implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Envelope;
 
 	/**
@@ -51,6 +51,20 @@ class WP_MCP_AI_Tool_Composio_Execute_Tool implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description(): string {
 		return __( 'Execute a Composio tool on behalf of a connected account (e.g. send an email, create a GitHub issue). Requires an active connected account for the tool\'s toolkit. Write-class actions are flagged as destructive in the response.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Running one Composio action on a connected account, such as sending an email or creating a GitHub issue.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Discovering tools or checking credentials; use composio_list_tools and composio_list_connected_accounts first.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'composio_get_tool_schema', 'composio_list_tools', 'composio_list_connected_accounts' ),
+			'notes'           => __( 'Fetch the schema with composio_get_tool_schema first; write-class slugs are flagged destructive in the response.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -42,7 +42,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Execute_Shell_Command implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Execute_Shell_Command implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -97,6 +97,20 @@ class WP_MCP_AI_Tool_Execute_Shell_Command implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Execute shell commands within the plugin directory with safety controls. Supports git operations, file operations, build commands, and more. Commands are previewed before execution and dangerous operations are blocked. Similar to GitHub Copilot CLI shell integration.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Running shell commands inside the plugin directory when no dedicated tool covers the task.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Structured git or file work; use git_change, git_inspect, or manage_files instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'git_change', 'git_inspect', 'manage_files' ),
+			'notes'           => __( 'Requires edit_plugins and WP_MCP_AI_ALLOW_SHELL_TOOLS=true; preview=true shows the command without running it.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

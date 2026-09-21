@@ -27,7 +27,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-flowhub-sync-engine.
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Pro_Tool_FlowHub_Sync implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_FlowHub_Sync implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_FlowHub_Connection_Resolver;
 
@@ -50,6 +50,20 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Sync implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Trigger FlowHub inventory sync operations. Use sync_now to pull fresh data from the FlowHub API, sync_status to check the last sync, and clear_cache to remove all cached inventory data.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pulling fresh inventory (sync_now), checking the last sync, or clearing the cached FlowHub inventory.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading cached stock levels; use flowhub_inventory after a successful sync.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'flowhub_inventory', 'flowhub_settings' ),
+			'notes'           => __( 'clear_cache requires confirm=true; scheduled syncs run via Action Scheduler.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

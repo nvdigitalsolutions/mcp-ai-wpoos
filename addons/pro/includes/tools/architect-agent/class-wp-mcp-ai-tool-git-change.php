@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.3.0
  */
-class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Git_Helpers;
 
@@ -56,6 +56,20 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	public function get_description() {
 		return __( 'State-changing git operations: commit (create a commit), add (stage files), checkout (switch branch or restore a file), and stash (save / apply / manage stashed changes). All write operations are logged. For read-only inspection use git_inspect.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'State-changing git work on the plugin repository: commit, add, checkout, or stash.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Read-only queries (status, diff, log, blame, branch); use git_inspect instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'git_inspect', 'execute_shell_command' ),
+			'notes'           => __( 'Requires edit_plugins; use stash_subcommand for stash push/pop/apply/drop/clear and options for extra flags.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	// ------------------------------------------------------------------ //

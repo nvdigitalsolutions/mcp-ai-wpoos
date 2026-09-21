@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-flowhub-cct-manager.
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Pro_Tool_FlowHub_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_FlowHub_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_FlowHub_Connection_Resolver;
 
@@ -49,6 +49,20 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Products implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Browse and search the FlowHub product catalog from the local cache. List all categories, find products by SKU or name, and view product details including descriptions and images.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Browsing the FlowHub catalog, listing categories, or looking up product details by SKU or name.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Checking stock levels; use flowhub_inventory for quantities and stock status per location.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'flowhub_inventory', 'flowhub_analytics' ),
+			'notes'           => __( 'Reads the local CCT cache; run flowhub_sync first when the catalog looks stale.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

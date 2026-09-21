@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Composio — List tools.
  */
-class WP_MCP_AI_Tool_Composio_List_Tools implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Composio_List_Tools implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Envelope;
 
 	/**
@@ -54,6 +54,20 @@ class WP_MCP_AI_Tool_Composio_List_Tools implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description(): string {
 		return __( 'Browse or search the Composio tool catalog (Gmail, Slack, GitHub, Notion and 1,000+ more apps). Search by intent ("send an email"), scope to one toolkit, or set connected_only to see only the tools your authenticated accounts can actually run. Results are grouped by toolkit and each entry lists its required arguments, so you rarely need composio_get_tool_schema first.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Browsing or searching the Composio catalog by intent, toolkit, or connected_only before picking a tool to run.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Fetching a precise parameter schema; use composio_get_tool_schema when listed arguments are not enough.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'composio_execute_tool', 'composio_get_tool_schema' ),
+			'notes'           => __( 'Results are grouped by toolkit, include required arguments, and are cached for 24 hours.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

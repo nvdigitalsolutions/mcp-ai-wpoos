@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Git_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Git_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -53,6 +53,20 @@ class WP_MCP_AI_Tool_Git_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Perform git version control operations on the plugin repository. Supports status, diff, log, branch, commit, stash (with list, push, pop, apply, drop, clear, show, branch subcommands), and more. Read operations are unrestricted; write operations require approval. Similar to GitHub Copilot CLI git integration.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Legacy combined git tool; still available for existing workflows using the git_operations slug.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'New integrations; use git_inspect for read-only queries and git_change for writes.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'git_inspect', 'git_change' ),
+			'notes'           => __( 'Deprecated in favor of git_inspect/git_change; migrate write callers before v1.4.0.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
