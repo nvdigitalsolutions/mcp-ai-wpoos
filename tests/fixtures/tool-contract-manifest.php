@@ -38,18 +38,22 @@
  *  - `template_id` (task-plan templates) — create_template is a legacy
  *    wrapper shared across many slugs; one contract cannot be declared
  *    for the wrapper without mislabeling the rest.
- *  - `session_id`, `workflow_id`, `team_id`, `agent_id`, `snippet_id`,
- *    `event_id` (calendar), `member_id`, `profession_id` — candidates
- *    pending per-key verification of a real cross-tool producer→consumer
- *    chain (calendar events and WPCode snippets carry CG Pro mirrors and
- *    an external API, so they need their own port-aware wave).
- *  - `connection_id` domains (composio, flowhub, ezsuite, oauth) — external
- *    remote-site identifiers; out of scope by design.
- *  - `attachment_id` / `file_id` media chains — one-way analysis chains
- *    without a cross-tool identifier contract yet; out of scope.
- *
- * @package WP_MCP_AI
- */
+	 *  - `session_id`, `workflow_id`, `team_id`, `agent_id`,
+	 *    `member_id`, `profession_id` — candidates
+	 *    pending per-key verification of a real cross-tool producer→consumer
+	 *    chain.
+	 *  - `connection_id` domains (composio, flowhub, ezsuite, oauth) — external
+	 *    remote-site identifiers; out of scope by design.
+	 *  - `attachment_id` / `file_id` media chains — one-way analysis chains
+	 *    without a cross-tool identifier contract yet; out of scope.
+	 *
+	 * Landed with wave 2e: `event_id` (Google Calendar tools) and
+	 * `snippet_id` (WPCode tools) — Pro-only, L1 honesty coverage with
+	 * round_trip=false (external API / plugin dependency); no CG Pro
+	 * mirrors exist for either toolkit, so there is no port obligation.
+	 *
+	 * @package WP_MCP_AI
+	 */
 
 return array(
 	'version'  => 1,
@@ -106,6 +110,18 @@ return array(
 			'produces'   => array( 'create_medical_record' ),
 			'consumes'   => array( 'get_medical_record', 'update_medical_record', 'delete_medical_record' ),
 			'round_trip' => true,
+		),
+		'event_id' => array(
+			'scope'      => 'pro',
+			'produces'   => array( 'create_google_calendar_event', 'update_google_calendar_event', 'quick_add_google_calendar_event' ),
+			'consumes'   => array( 'update_google_calendar_event', 'delete_google_calendar_event' ),
+			'round_trip' => false, // External Google Calendar API; no deterministic L2 driver yet.
+		),
+		'snippet_id' => array(
+			'scope'      => 'pro',
+			'produces'   => array( 'create_wpcode_snippet' ),
+			'consumes'   => array( 'create_wpcode_snippet', 'format_code_prettier' ),
+			'round_trip' => false, // Requires the WPCode plugin; no deterministic L2 driver yet.
 		),
 	),
 );

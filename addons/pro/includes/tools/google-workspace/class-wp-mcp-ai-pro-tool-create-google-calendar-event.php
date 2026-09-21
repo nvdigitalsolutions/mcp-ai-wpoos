@@ -17,7 +17,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Provides an assistant tool that creates events in Google Calendar.
  */
-class WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
+class WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	const DEFAULT_REQUIRED_CAPABILITY = 'manage_options';
 	const TOKEN_GRANT_TYPE            = 'urn:ietf:params:oauth:grant-type:jwt-bearer';
 	const DEFAULT_SCOPE               = 'https://www.googleapis.com/auth/calendar.events';
@@ -171,6 +171,16 @@ class WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_
 	/**
 	 * {@inheritdoc}
 	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'event_id',
+			'consumes' => null,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
@@ -193,7 +203,7 @@ class WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_
 			$this
 		);
 
-		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
+		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) { // phpcs:ignore WordPress.WP.Capabilities.Undetermined -- Capability resolved via the wp_mcp_ai_google_calendar_required_capability filter (default manage_options).
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create calendar events.', 'mcp-ai-wpoos-pro' ), array( 'status' => 403 ) );
 		}
 
@@ -816,6 +826,7 @@ class WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_
 	 * @return string
 	 */
 	protected function base64url_encode( $data ) {
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- RFC 4648 base64url encoding required for the OAuth 2.0 JWT assertion; benign, no code obfuscation.
 		return rtrim( strtr( base64_encode( $data ), '+/', '-_' ), '=' );
 	}
 
