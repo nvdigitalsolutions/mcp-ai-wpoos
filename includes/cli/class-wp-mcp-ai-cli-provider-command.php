@@ -46,6 +46,7 @@ class WP_MCP_AI_CLI_Provider_Command extends WP_MCP_AI_CLI_Base_Command {
 		'huggingface'  => 'Hugging Face',
 		'ollama'       => 'Ollama',
 		'lm_studio'    => 'LM Studio',
+		'typesafe'     => 'TypeSafe (Jev)',
 	);
 
 	/**
@@ -317,6 +318,7 @@ class WP_MCP_AI_CLI_Provider_Command extends WP_MCP_AI_CLI_Base_Command {
 			'huggingface'  => 'WP_MCP_AI_Huggingface_Client',
 			'ollama'       => 'WP_MCP_AI_Ollama_Client',
 			'lm_studio'    => 'WP_MCP_AI_LM_Studio_Client',
+			'typesafe'     => 'WP_MCP_AI_Typesafe_Client',
 		);
 
 		if ( ! isset( $client_map[ $slug ] ) ) {

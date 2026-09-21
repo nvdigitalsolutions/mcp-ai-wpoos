@@ -137,6 +137,14 @@ if ( ! class_exists( 'WP_MCP_AI_WP70_Bridge' ) ) :
 					'method' => 'none',
 				),
 			),
+			'typesafe'     => array(
+				'name'           => 'TypeSafe (Jev)',
+				'description'    => 'TypeSafe Jev System One decision model (NV oOS).',
+				'authentication' => array(
+					'method'          => 'api_key',
+					'credentials_url' => 'https://console.typesafe.ai/settings/keys',
+				),
+			),
 		);
 
 		/**
