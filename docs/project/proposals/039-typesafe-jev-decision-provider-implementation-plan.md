@@ -105,10 +105,12 @@
 
 ## Phase 1 — Pro integrations (separate cluster, post-merge)
 
-- Jev-assisted cascade pre-step in `WP_MCP_AI_Pro_Parallel_Model_Dispatcher` (routing only — never a chat client).
-- `research_eca` / `generate_research_report` internal classification via `typesafe_decide`.
-- NV Cloud passthrough once OpenRouter GA's the Decisions route (`WP_MCP_AI_NV_Cloud_Client` decision method).
-- Content Graph port: interface + client + tool + catalog to `plugins/nvoos-content-graph-ai` per ecosystem-port loop.
+**Status:** ✅ Complete (2026-09-21, commit on `feat/typesafe-jev-decision-provider`)
+
+- ✅ **Jev-assisted cascade pre-step in `WP_MCP_AI_Pro_Parallel_Model_Dispatcher`** — new `classify_prompt()` (task type / complexity / frontier-need) and opt-in `jev_routing` on `dispatch()` that attaches the routing decision to the comparison envelope; REST controller passes `jev_routing` through. Routing only — never a chat client, fully fail-open. Also fixed a pre-existing bug where the dispatcher called the nonexistent `chat_completion()` (now `create_chat_completion()` with a graceful fallback).
+- ✅ **Research classification via Jev** — new Pro service `WP_MCP_AI_Pro_Jev_Classifier` (`addons/pro/includes/services/`) with fail-open `decide()`, `classify_prompt()`, and `filter_sources_by_relevance()` (retrieve-then-judge: score + drop clearly irrelevant search sources, keep_min floor, batched). `research_eca` and `generate_research_report` gained an opt-in `maybe_jev_filter_sources()` seam gated by the new `enable_jev_research_filter` setting (TypeSafe subtab, default off).
+- ⏸ **NV Cloud passthrough** — still blocked on OpenRouter GA'ing its Decisions route (currently alpha). The bridge handles the 404 gracefully; the NV Cloud method lands when the SaaS gateway supports it.
+- ⏸ **Content Graph port** — deferred to the ecosystem-port loop as its own cluster (interface + client + tool + catalog → `plugins/nvoos-content-graph-ai`).
 
 ## Phase 2 — Stretch
 

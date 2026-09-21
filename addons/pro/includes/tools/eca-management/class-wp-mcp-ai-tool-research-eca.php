@@ -275,6 +275,11 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			);
 		}
 
+		// Step 1.5 (optional): filter search sources through the Jev
+		// relevance classifier when the site enables it. Fail-open — on any
+		// error or when Jev is unavailable, the sources pass through untouched.
+		$search_results = $this->maybe_jev_filter_sources( $search_results, $query );
+
 		// Step 2: Build research prompt with gathered information.
 		$prompt = $this->build_research_prompt( $query, $age_group, $depth, $focus_areas, $search_results, $include_curriculum );
 
@@ -322,6 +327,46 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		);
 
 		return $eca_data;
+	}
+
+	/**
+	 * Optionally filter search sources through the Jev relevance classifier.
+	 *
+	 * Gated by the `enable_jev_research_filter` setting and fail-open: when
+	 * the setting is off, Jev is unavailable, or the call errors, the search
+	 * results pass through untouched.
+	 *
+	 * @param array  $search_results Search results array.
+	 * @param string $query          Research query.
+	 * @return array Possibly-filtered search results.
+	 */
+	protected function maybe_jev_filter_sources( $search_results, $query ) {
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ? WP_MCP_AI_Admin_Settings_Base::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
+
+		if ( empty( $settings['enable_jev_research_filter'] ) ) {
+			return $search_results;
+		}
+
+		if ( empty( $search_results['sources'] ) || ! is_array( $search_results['sources'] ) ) {
+			return $search_results;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Jev_Classifier' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-pro-jev-classifier.php';
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Jev_Classifier' ) ) {
+			return $search_results;
+		}
+
+		$filtered = WP_MCP_AI_Pro_Jev_Classifier::filter_sources_by_relevance( $search_results['sources'], $query );
+
+		if ( ! empty( $filtered['used_jev'] ) ) {
+			$search_results['sources']     = $filtered['sources'];
+			$search_results['jev_dropped'] = $filtered['dropped'];
+		}
+
+		return $search_results;
 	}
 
 	/**

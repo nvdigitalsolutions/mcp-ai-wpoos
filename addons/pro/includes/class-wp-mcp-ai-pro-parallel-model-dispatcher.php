@@ -65,6 +65,16 @@ class WP_MCP_AI_Pro_Parallel_Model_Dispatcher {
 
 		// Execute sequentially for reliability.
 		// Upgrade path: curl_multi for true parallelism in future version.
+		$jev_routing = null;
+
+		// Optional Jev routing pre-step: classify the prompt so callers can
+		// decide how to present or gate the comparison. Routing only — Jev
+		// never replaces a chat client here, and failures are silent (the
+		// comparison proceeds unchanged).
+		if ( ! empty( $options['jev_routing'] ) ) {
+			$jev_routing = $this->classify_prompt( $messages );
+		}
+
 		foreach ( $models as $model_config ) {
 			$start_time = microtime( true );
 
@@ -88,15 +98,27 @@ class WP_MCP_AI_Pro_Parallel_Model_Dispatcher {
 				continue;
 			}
 
-			$response = $client->chat_completion(
-				$messages,
-				array(
-					'model'       => $model,
-					'temperature' => $temperature,
-					'max_tokens'  => $max_tokens,
-					'stream'      => false,
-				)
+			// Every base provider client exposes create_chat_completion(); a few
+			// legacy/third-party clients expose chat_completion() instead. Neither
+			// existing means the provider cannot serve chat, so fail that entry
+			// gracefully rather than fataling the whole comparison.
+			if ( ! method_exists( $client, 'create_chat_completion' ) && ! method_exists( $client, 'chat_completion' ) ) {
+				$result['error']   = __( 'Provider client does not support chat completions.', 'mcp-ai-wpoos' );
+				$result['time_ms'] = (int) ( ( microtime( true ) - $start_time ) * 1000 );
+				$results[]         = $result;
+				continue;
+			}
+
+			$request_options = array(
+				'model'       => $model,
+				'temperature' => $temperature,
+				'max_tokens'  => $max_tokens,
+				'stream'      => false,
 			);
+
+			$response = method_exists( $client, 'create_chat_completion' )
+				? $client->create_chat_completion( $messages, $request_options )
+				: $client->chat_completion( $messages, $request_options );
 
 			$result['time_ms'] = (int) ( ( microtime( true ) - $start_time ) * 1000 );
 
@@ -111,7 +133,7 @@ class WP_MCP_AI_Pro_Parallel_Model_Dispatcher {
 			$results[] = $result;
 		}
 
-		return array(
+		$response = array(
 			'success' => true,
 			'message' => sprintf(
 				/* translators: %d: number of models */
@@ -122,6 +144,42 @@ class WP_MCP_AI_Pro_Parallel_Model_Dispatcher {
 				'results' => $results,
 			),
 		);
+
+		// Attach the routing decision when a Jev pre-step ran successfully.
+		if ( is_array( $jev_routing ) && ! is_wp_error( $jev_routing ) ) {
+			$response['data']['routing'] = $jev_routing;
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Classify a chat prompt with the Jev decision classifier.
+	 *
+	 * Cascade pre-step for routing: returns the task type, a complexity
+	 * score, and whether the prompt likely needs a frontier model. Purely
+	 * advisory — callers decide what to do with the decision. Fails open
+	 * with a WP_Error when the classifier is unavailable.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param array $messages Chat messages array.
+	 * @param array $options  Optional classifier options (model, timeout).
+	 * @return array|WP_Error Routing decision or WP_Error.
+	 */
+	public function classify_prompt( $messages, $options = array() ) {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Jev_Classifier' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-pro-jev-classifier.php';
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Jev_Classifier' ) || ! WP_MCP_AI_Pro_Jev_Classifier::is_available() ) {
+			return new WP_Error(
+				'wp_mcp_ai_jev_unavailable',
+				__( 'The Jev decision classifier is not available on this site.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		return WP_MCP_AI_Pro_Jev_Classifier::classify_prompt( $messages, $options );
 	}
 
 	/**

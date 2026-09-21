@@ -139,6 +139,15 @@ Documented by TypeSafe for `jev-1.13`: unreliable counting and arithmetic, date 
 
 ---
 
+## Pro Integrations (cascade routing & research filtering)
+
+When the Pro addon is active, Jev also powers two opt-in decision surfaces:
+
+1. **Cascade routing in model comparison.** `POST /mcp-ai-pro/v1/threads/{id}/compare-models` accepts `jev_routing: true`; the response then carries a `routing` decision (task type, complexity score, frontier-model need) so callers can present or gate comparisons accordingly. Routing only — Jev never answers instead of the models.
+2. **Research source filtering.** Enable **Jev Research Source Filtering** on the TypeSafe subtab and the Pro research tools (`research_eca`, `generate_research_report`) will ask Jev to score each search source's relevance to the query, drop clearly irrelevant ones (never below a 5-source floor), and reorder the survivors most-relevant-first before building their prompts. Every step fails open — on any Jev error the unfiltered sources are used.
+
+---
+
 ## Troubleshooting
 
 | Symptom | Cause / Fix |

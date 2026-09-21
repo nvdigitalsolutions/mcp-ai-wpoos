@@ -1382,6 +1382,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description' => __( 'Custom base URL for TypeSafe API requests. Leave empty to use the default (https://api.typesafe.ai). Useful when proxying through your own gateway.', 'mcp-ai-wpoos' ),
 					'placeholder' => 'https://api.typesafe.ai',
 				),
+				'enable_jev_research_filter'         => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Jev Research Source Filtering', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Filter low-relevance research sources with Jev (Pro research tools)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Pro research tools (research_eca, generate_research_report) will ask Jev to score and drop clearly irrelevant search sources before generating their reports, keeping the most relevant sources first. Fails open when Jev is unreachable.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 
 				// DigitalOcean Serverless Inference Settings.
 				'enable_digitalocean'                => array(
@@ -1623,7 +1630,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'typesafe',
 					'label'  => __( 'TypeSafe (Jev)', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-yes-alt',
-					'fields' => array( 'enable_typesafe', 'typesafe_api_key', 'typesafe_model', 'typesafe_base_url' ),
+					'fields' => array( 'enable_typesafe', 'typesafe_api_key', 'typesafe_model', 'typesafe_base_url', 'enable_jev_research_filter' ),
 				),
 				'digitalocean'         => array(
 					'id'     => 'digitalocean',
