@@ -107,7 +107,7 @@ class WP_MCP_AI_Tool_List_WebChat_Rooms implements WP_MCP_AI_Tool_Interface, WP_
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check availability.
 		if ( ! self::is_available() ) {
-			WP_MCP_AI_Logger::log_activity( 'Tool unavailable: list_webchat_rooms' );
+			WP_MCP_AI_Logger::log_event( 'activity', 'Tool unavailable: list_webchat_rooms' );
 			return new WP_Error( 'wp_mcp_ai_tool_unavailable', self::get_unavailable_reason() );
 		}
 
