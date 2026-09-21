@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a Pro tool for compositing comic panels into a page layout.
  */
-class WP_MCP_AI_Tool_Create_Comic_Layout implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Comic_Layout implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Create_Comic_Layout implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Composites multiple comic panel images into a single page layout image. Accepts a layout grid (e.g., "2x2", "3x2") and panel IDs, then arranges them into a composited page. Requires GD or Imagick for image processing. Returns the composited page image URL.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Compositing finished panel images into a single page image on a grid such as 2x2 or 3x2.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For breaking a script into panels use breakdown_comic_panels; for packaging pages use export_comic_cbz.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'breakdown_comic_panels', 'export_comic_cbz', 'generate_comic_panel' ),
+			'notes'           => __( 'Requires GD or Imagick. Grid is ROWSxCOLS up to 6x6; gutter clamps to 0-50px. Panels need generated artwork.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a Pro tool for exporting a comic to CBZ/CBR archive format.
  */
-class WP_MCP_AI_Tool_Export_Comic_Cbz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Export_Comic_Cbz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Export_Comic_Cbz implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Packages all panel images of a comic into a CBZ (ZIP) archive with a ComicInfo.xml metadata file. Optionally attempts CBR (RAR) format. Creates a downloadable WordPress attachment with the archive.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Packaging a finished comic into a shareable CBZ archive with a ComicInfo.xml metadata file.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For arranging panels into pages use create_comic_layout; for print resolution use upscale_comic_page.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_comic_layout', 'upscale_comic_page', 'generate_comic_panel' ),
+			'notes'           => __( 'CBR falls back to CBZ when the RAR extension is missing. Panels resolve from the _comic_script_id meta link.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

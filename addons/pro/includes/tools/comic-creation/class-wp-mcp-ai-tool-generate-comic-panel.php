@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a Pro tool for generating a single comic panel image.
  */
-class WP_MCP_AI_Tool_Generate_Comic_Panel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Comic_Panel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Generate_Comic_Panel implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Generates AI artwork for a single comic panel based on description, character references, style, camera angle, and dimensions. Updates the panel post with the generated image as a WordPress attachment.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating artwork for one panel from a description or panel ID, optionally referencing character sheets.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For restyling existing art use apply_comic_style; for panels from a script use breakdown_comic_panels.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'breakdown_comic_panels', 'generate_character_sheet', 'apply_comic_style' ),
+			'notes'           => __( 'Dimensions are WxH, clamped to 256-2048. Stores _generated_image_id and _generated_image_url meta.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
