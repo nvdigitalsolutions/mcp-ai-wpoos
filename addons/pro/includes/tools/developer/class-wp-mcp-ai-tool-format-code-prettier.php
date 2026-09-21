@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Format_Code_Prettier implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
+class WP_MCP_AI_Tool_Format_Code_Prettier implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -126,6 +126,16 @@ class WP_MCP_AI_Tool_Format_Code_Prettier implements WP_MCP_AI_Tool_Interface, W
 	/**
 	 * {@inheritdoc}
 	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'snippet_id' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
@@ -160,10 +170,7 @@ class WP_MCP_AI_Tool_Format_Code_Prettier implements WP_MCP_AI_Tool_Interface, W
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate code input.
 		if ( empty( $arguments['code'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Code content is required.', 'mcp-ai-wpoos-pro' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_missing_code', __( 'Code content is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$code = $arguments['code'];
@@ -173,10 +180,7 @@ class WP_MCP_AI_Tool_Format_Code_Prettier implements WP_MCP_AI_Tool_Interface, W
 		$prettier_service = new WP_MCP_AI_Prettier_Service();
 
 		if ( ! $prettier_service->is_available() ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Prettier is not available. Please ensure Node.js and Prettier package are installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_prettier_unavailable', __( 'Prettier is not available. Please ensure Node.js and Prettier package are installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Get language and determine parser.
@@ -198,13 +202,13 @@ class WP_MCP_AI_Tool_Format_Code_Prettier implements WP_MCP_AI_Tool_Interface, W
 		if ( $check_syntax ) {
 			$syntax_check = $prettier_service->check_syntax( $code, $parser );
 			if ( is_wp_error( $syntax_check ) ) {
-				return array(
-					'success' => false,
-					'error'   => sprintf(
+				return new WP_Error(
+					'wp_mcp_ai_syntax_error',
+					sprintf(
 						/* translators: %s: error message */
 						__( 'Syntax error detected: %s', 'mcp-ai-wpoos-pro' ),
 						$syntax_check->get_error_message()
-					),
+					)
 				);
 			}
 		}
@@ -226,13 +230,13 @@ class WP_MCP_AI_Tool_Format_Code_Prettier implements WP_MCP_AI_Tool_Interface, W
 		$formatted_code = $prettier_service->format_code( $code, $format_options );
 
 		if ( is_wp_error( $formatted_code ) ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf(
+			return new WP_Error(
+				'wp_mcp_ai_format_failed',
+				sprintf(
 					/* translators: %s: error message */
 					__( 'Code formatting failed: %s', 'mcp-ai-wpoos-pro' ),
 					$formatted_code->get_error_message()
-				),
+				)
 			);
 		}
 

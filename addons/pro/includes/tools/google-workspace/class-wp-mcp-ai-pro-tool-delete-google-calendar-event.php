@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-c
  * `array( 'already_deleted' => true )`. That is reported as success, because the
  * caller's intent — "this event should not exist" — has been satisfied.
  */
-class WP_MCP_AI_Pro_Tool_Delete_Google_Calendar_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
+class WP_MCP_AI_Pro_Tool_Delete_Google_Calendar_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 
 	/**
 	 * Capability required before the tool talks to the Calendar API.
@@ -115,6 +115,16 @@ class WP_MCP_AI_Pro_Tool_Delete_Google_Calendar_Event implements WP_MCP_AI_Tool_
 	/**
 	 * {@inheritdoc}
 	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'event_id' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
@@ -137,7 +147,7 @@ class WP_MCP_AI_Pro_Tool_Delete_Google_Calendar_Event implements WP_MCP_AI_Tool_
 			$this
 		);
 
-		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
+		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) { // phpcs:ignore WordPress.WP.Capabilities.Undetermined -- Capability resolved via the wp_mcp_ai_google_calendar_required_capability filter (default manage_options).
 			return new WP_Error( 'wp_mcp_ai_calendar_forbidden', __( 'You do not have permission to delete Google Calendar events.', 'mcp-ai-wpoos-pro' ), array( 'status' => 403 ) );
 		}
 

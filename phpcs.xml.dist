@@ -110,6 +110,7 @@
 			<element value="upload_medical_imaging"/>
 			<element value="delete_medical_imaging"/>
 			<element value="manage_medical_imaging"/>
+			<element value="wpcode_edit_snippets"/>
 		</property>
 	</properties>
 </rule>

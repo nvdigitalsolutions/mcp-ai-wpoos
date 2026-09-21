@@ -23,7 +23,7 @@ if ( ! trait_exists( 'WP_MCP_AI_Tool_Restrict_From_Chat_Client' ) ) {
  * This tool is restricted from chat-client by default for security reasons
  * as it allows code execution.
  */
-class WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Context_Restrictions_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
+class WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Context_Restrictions_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
@@ -162,6 +162,16 @@ class WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interfa
 			),
 			'required'             => array( 'code', 'code_type' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'snippet_id',
+			'consumes' => array( 'snippet_id' ),
 		);
 	}
 
@@ -312,6 +322,7 @@ class WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interfa
 
 		$response = array(
 			'id'            => $result,
+			'snippet_id'    => $result,
 			'title'         => $saved_snippet->get_title(),
 			'status'        => $post ? $post->post_status : '',
 			'code_type'     => $saved_snippet->get_code_type(),
