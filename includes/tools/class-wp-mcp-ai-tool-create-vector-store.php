@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 /**
  * Creates OpenAI vector stores.
  */
-class WP_MCP_AI_Tool_Create_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
+class WP_MCP_AI_Tool_Create_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 
 	use WP_MCP_AI_Tool_Chat_Response;
 
@@ -101,6 +101,16 @@ class WP_MCP_AI_Tool_Create_Vector_Store implements WP_MCP_AI_Tool_Interface, WP
 		);
 	}
 
+		/**
+		 * {@inheritdoc}
+		 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'vector_store_id',
+			'consumes' => null,
+		);
+	}
+
 	/**
 	 * Execute the tool.
 	 *
@@ -166,10 +176,10 @@ class WP_MCP_AI_Tool_Create_Vector_Store implements WP_MCP_AI_Tool_Interface, WP
 		);
 
 		return array(
-			'success' => true,
-			'message' => $message,
-			'text'    => $message,
-			'data'    => array(
+			'success'         => true,
+			'message'         => $message,
+			'vector_store_id' => $vector_store_id,
+			'data'            => array(
 				'id'            => $vector_store_id,
 				'name'          => $vector_store_name,
 				'status'        => isset( $result['status'] ) ? $result['status'] : null,

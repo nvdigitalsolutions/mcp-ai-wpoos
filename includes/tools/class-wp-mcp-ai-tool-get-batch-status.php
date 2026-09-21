@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
+class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -75,6 +75,16 @@ class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 			),
 			'required'             => array( 'batch_id' ),
 			'additionalProperties' => false,
+		);
+	}
+
+		/**
+		 * {@inheritdoc}
+		 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'batch_id' ),
 		);
 	}
 

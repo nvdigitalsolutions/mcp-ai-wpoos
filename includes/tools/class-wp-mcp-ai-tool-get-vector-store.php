@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 /**
  * Retrieves OpenAI vector store details.
  */
-class WP_MCP_AI_Tool_Get_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
+class WP_MCP_AI_Tool_Get_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 
 	use WP_MCP_AI_Tool_Chat_Response;
 
@@ -72,6 +72,16 @@ class WP_MCP_AI_Tool_Get_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 			),
 			'required'   => array(),
+		);
+	}
+
+		/**
+		 * {@inheritdoc}
+		 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'vector_store_id' ),
 		);
 	}
 
