@@ -75,5 +75,11 @@ return array(
 			'consumes'   => array( 'update_pro_schedule', 'delete_pro_schedule', 'get_schedule_latest_result', 'get_schedule_run_history', 'dry_run_pro_schedule' ),
 			'round_trip' => true,
 		),
+		'item_id' => array(
+			'scope'      => 'pro',
+			'produces'   => array( 'toolkit_cpt' ),
+			'consumes'   => array( 'toolkit_cpt' ),
+			'round_trip' => true,
+		),
 	),
 );
