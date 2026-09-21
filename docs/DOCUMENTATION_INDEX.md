@@ -1,13 +1,15 @@
 # NV oOS Documentation Index
 
-**Last Updated:** September 18, 2026
-**Plugin Version:** 1.1.82
+**Last Updated:** September 21, 2026
+**Plugin Version:** 1.1.83
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
+
+> **SEPTEMBER 21, 2026 UPDATE (v1.1.83):** TOOL GUIDANCE, PRO BOOTSTRAP HARDENING & UPWORK-WORKFLOW RELEASE. **TOOL DESCRIPTION ENGINEERING** (PRs #6686, #6695, #6687–#6723) — EVERY BASE+PRO TOOL CLASS (~1,487 TOOLS ACROSS 1,584 FILES) NOW CARRIES MODEL-FACING USAGE GUIDANCE: A NEW `WP_MCP_AI_Tool_Usage_Guidance_Interface` (WHEN_TO_USE / WHEN_NOT_TO_USE / RELATED_TOOLS / NOTES) ASSEMBLES A COMPACT `[Usage: …]` SUFFIX ON THE MODEL-FACING PAYLOAD, LEGACY-FORMAT CLASSES OPT IN THROUGH `WP_MCP_AI_Legacy_Tool_Wrapper`, AND THE `WPMCPAI.Tools.ToolDescriptionGuidance` SNIFF IS ENFORCED AT SEVERITY 5 (FULL-TREE GATE 1,584/1,584 FILES, 0 WARNINGS — EVERY NEW TOOL CLASS WITHOUT GUIDANCE SURFACES ON PRs). **OPT-IN ADAPTIVE TOOL CAP** (`wp_mcp_ai_adaptive_tool_cap` + PER-ASSISTANT THREE-STATE OVERRIDE) + **LAZY SCHEMA LOADING** (`tool_slug`/`include_schemas` ON `list_mcp_tools`, PR #6686). **PRO BOOTSTRAP INCOMPLETE-INSTALL GUARD** (PR #6677) — PARTIAL PRO DEPLOYS DEGRADE TO AN ADMIN NOTICE INSTEAD OF A SITE-WIDE FATAL. **TELEGRAM AUTO-CHUNKING** (PR #6677) — `send_telegram_message` SPLITS >4,096-CHAR MESSAGES AT PARAGRAPH → LINE → HARD BOUNDARIES. **UPWORK PIPELINE** (PRs #6678–#6680, #6682, #6684) — WEB_SEARCH-MODE + API CREDENTIAL GATING, CATEGORY-PAGE DROPPING + SERP BUDGET/TYPE/RECENCY EXTRACTION, ALWAYS-ON BROAD SECOND PASS, `sort`/`location` ARGS, AND WORKFLOW DELIVERIES SHIP THE **FULL 50-ITEM RESULT SET** WITH PER-ITEM URLS RENDERED AS ONE PROPERLY NUMBERED LIST; STEPS RENDER AS A COMPACT EXECUTION LOG (PR #6679). **GMAIL `connection_id: "settings"` + SKILL/OKF SELF-CORRECTION** (PR #6677). **PLAYGROUND OLLAMA DEMO** (PR #6683) — PERMALINK SEED FIX ENDS THE FRESH-INSTALL LANDING 404; LOCAL `npx` IS THE PRIMARY TEST PATH. **NPM ADVISORIES CLOSED** (PR #6681 — ADM-ZIP 0.6.1, JS-YAML 4.3.2, COLORD 2.10.0). **FIVE REGULATORY TOOLS MIGRATE TO THE CANONICAL `WP_Error` ENVELOPE** (PR #6689). TOOL COUNT: ~306 BASE + ~1,279 PRO (~1,585 TOTAL; UNCHANGED — NO TOOL REGISTRATIONS IN-WINDOW). STALE 1.1.81 BUILD ZIPS REMOVED (30 FILES), SUPERSEDED BY THE IN-WINDOW 1.1.82 WP.ORG PACKAGES. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE + `docs/features/tool-description-guidelines.md` (IN-WINDOW, #6686).
 
 > **SEPTEMBER 18, 2026 UPDATE (v1.1.82):** PLAYGROUND DEMOS, PRO SPA & HARDENING RELEASE. **TWO ONE-CLICK WORDPRESS PLAYGROUND DEMO BLUEPRINTS** — CONTENT GRAPH "PROJECT ASTERIA" (PR #6662; SEEDED SCI-FI UNIVERSE: 26 POSTS / 5 PAGES / 3 TRUE ORPHANS; DETERMINISTIC BUILD VIA THE PUBLIC `nvoos_content_graph/initial_build` HOOK; 49 NODES / 255 EDGES / 5 COMMUNITIES) AND **NV OOS COMPLETE × LOCAL OLLAMA** (PR #6663; PLAYGROUND RUNS WORDPRESS IN THE BROWSER SO THE PLUGIN'S `localhost:11434` ENDPOINT IS THE USER'S MACHINE — PROVIDER PRE-WIRED, OMA ASSISTANT, TEST LAB PAGE WITH THE `[ollama_status]` BANNER + EMBEDDED PRO SPA). **BLUEPRINT PIN AUTO-DISCOVERY** (PR #6674) — THE GENERATOR PICKS THE NEWEST COMPLETE BUNDLE ZIP AND THE BUILD-ASSETS WORKFLOW REGENERATES THE BLUEPRINT WITH EVERY BUILD; `cron_monitor="0"` ON THE DEMO'S PRO SPA PAGE (PR #6666); README DEMO BUTTON (PR #6673); NEW `docs/user-guides/playground-demo.md` WALKTHROUGH (PR #6671). **PRO SPA FIXES** — `[nvoos_pro_spa cron_monitor="0"]` NO-OPS THE BLOCKING SSE CRON-STATUS STREAM + REST POLL (PR #6665); EMBEDDED MODE SEEDS THE MODEL STORE FROM THE ASSISTANT'S REAL CONFIG INSTEAD OF HARDCODED `gpt-4o` (PR #6672). **TOKEN-TRACKING TABLE HARDENING** (PR #6669) — VERIFY-THEN-VERSION, HOURLY RETRY BACKOFF, QUIET FAILURE, GRACEFUL READS FOR SQLITE-BACKED ENVIRONMENTS; PORTED 1:1 TO `nvoos-content-graph-ai`. **RESULT-DELIVERY DEDUPE** (PR #6661) — `delivery_safe_data()` STRIPS THE DUPLICATED RESPONSE COPY + `assistant_id`/`is_agentic` METADATA; SUMMARY/SMS PREFIX DEDUPE; NO EMPTY `## Details`. **`[ollama_status]` BANNER UNFROZEN** (PR #6668) — FOOTER-ENQUEUED CHECKER REPLACES THE TEXTURIZE-MANGLED INLINE SCRIPT. **PORTABILITY COVERAGE GUARDS REPAIRED** (PR #6645) — PRESET ENTRIES + 9 AJAX TESTS + REGENERATED MANIFESTS. **SKILLS** — NEW 59TH CODING-TIME SKILL `mcp-ai-wpoos-playground-demos` (PR #6664); UPDATES SKILL GAINS THE PR DEFERRED-ITEM SWEEP TRACK C (PR #6656). **DOCS HUB 0.4.7** (PRs #6659/#6667) — THIRD WP.ORG REVIEWER PASS: INVALID PHP HEADER REMOVED, REBUILD CRON ON `init`, DEACTIVATION CLEANUP, THIRD-PARTY + EXTERNAL SERVICES DISCLOSURES, 0 BLOCKING PLUGIN CHECK ERRORS. TOOL COUNT: ~306 BASE + ~1,279 PRO (~1,585 TOTAL; UNCHANGED — NO TOOL REGISTRATIONS IN-WINDOW). STALE 1.1.80 BUILD ZIPS REMOVED (30 FILES) + SUPERSEDED DOCS-HUB 0.4.6 ZIP REMOVED. UPDATED DOCS: THIS PLAN, README/CHANGELOG/readme.txt/QUICK_REFERENCE + NEW `docs/user-guides/playground-demo.md`.
 
@@ -904,6 +906,18 @@ n#### New Audit & Compliance Docs
 - **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.63] section with PR-level detail. (August 23, 2026)
 - **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.63 + changelog entry. (August 23, 2026)
 - **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.63 entry. (August 23, 2026)
+
+## 🆕 September 2026 — v1.1.83: Tool Guidance Everywhere, Pro Bootstrap Guard, Telegram Chunking, Upwork & Workflow Delivery
+
+### New and updated documents (September 21, 2026, v1.1.83)
+
+- **[docs/project/plans/v1.1.83-docs-catch-up.md](project/plans/v1.1.83-docs-catch-up.md)** ⭐ **NEW** — v1.1.83 docs & release catch-up plan (PR window #6677–#6723, no tool-count change, stale 1.1.81 ZIP removal, OI-1 groups 19–21 + group 18 extension recorded). (September 21, 2026)
+- **[docs/features/tool-description-guidelines.md](features/tool-description-guidelines.md)** ⭐ **NEW** (in-window, #6686) — model-facing tool description engineering guidelines: the guidance interface, the `[Usage: …]` suffix, and the enforced guidance sniff. (September 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.83 highlights + latest updates (TDE sweep, adaptive tool cap + lazy schemas, Pro bootstrap guard, Telegram chunking, Upwork/workflow delivery, Playground permalink fix). (September 21, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.83] section with PR-level detail + the Versioning block; date 2026-09-21. (September 21, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.83 + changelog entry. (September 21, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — version + v1.1.83 recent-updates entry. (September 21, 2026)
+- **[docs/project/plans/docs-catch-up-open-items.md](project/plans/docs-catch-up-open-items.md)** ⭐ **UPDATED** — OI-1 groups 19–21 added, group 18 extended, OI-2 label refreshed. (September 21, 2026)
 
 ## 🆕 September 2026 — v1.1.82: WordPress Playground Demos, Pro SPA Fixes, Token-Tracking & Delivery Hardening, Docs Hub 0.4.7
 

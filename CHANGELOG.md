@@ -1,5 +1,59 @@
 # oOS – Changelog
 
+## [1.1.83] - 2026-09-21
+
+### Added — Tool Description Engineering: Model-Facing Usage Guidance for Every Tool (PRs #6686, #6695, #6687–#6723)
+
+- **Every base+pro tool class now carries model-facing usage guidance.** New `WP_MCP_AI_Tool_Usage_Guidance_Interface` declares `when_to_use` / `when_not_to_use` / `related_tools` / `notes`, and `WP_MCP_AI_Tool_Registry::get_model_facing_description()` assembles a compact `[Usage: …]` suffix on the model-facing payload (REST chat path, Tool Service `/tools`, `list_mcp_tools`), mirroring the existing data-contract suffix (PR #6686, backed by the research-grounded `docs/project/proposals/tool-description-engineering-proposal.md`). Legacy-format classes (plain classes without the tool interface) opt in through a `get_usage_guidance()` method or a `usage_guidance` definition key, forwarded at runtime by `WP_MCP_AI_Legacy_Tool_Wrapper` (PR #6695) — no interface migration needed.
+- **The Phase 2 sweep completes the full base+pro tree** — 37 PRs (#6687–#6723: 34 tool clusters + the #6695 wrapper passthrough + the #6723 final gate) add guidance to ~1,487 tools across every toolkit: base content cluster b1 (37), cloudways p1 (60), regulatory p2 (60), chat-channels p3 (51), ecommerce p4 (44), financial-planning p5 (43), orchestration p6 (13), eca p7 (37), calendar-booking p8 (35), document-generation p9 (30), social-media p10 (31), site-creator p11 (32), dietpi p12 (24), image-production p13 (37), dj p14 (23), video p15 (22), PM p16 (44), google-workspace p17 (15), CRM p18a/p18b (59+52), cre-debt p19 (58), healthcare p20 (75), law-firm p21 (63), architectural-design p22 (41), orchestration-legacy p23 (23), dev/builder/math/media p24 (39), comic/analytics p25 (26), places/quiz/multilingual p26 (34), cognition/jetengine/email p27 (27), composio/flowhub/research/architect p28 (25), shopify/ezuite/security/import p29 (22), pro-cleanup p30 (19), base b2/b3/b4 (66+66+96). Destructive, externally-consequential, and authority-facing tools carry explicit notes.
+- **Final enforcement gate (PR #6723)** — the new `WPMCPAI.Tools.ToolDescriptionGuidance` sniff raises to severity 5 in `phpcs.xml.dist` (warnings, so CI error thresholds are unaffected): every future tool class without guidance surfaces on PRs. Full-tree run passes **1,584 / 1,584 files, 0 warnings**. Follow-up noted for owners: ~966 files outside the two swept trees (875 in the `nvoos-content-graph-pro` mirror plus standalone addons and fixtures) still lack guidance.
+
+### Added — Adaptive Tool Cap + Lazy Schema Loading (PR #6686)
+
+- **`WP_MCP_AI_Tool_Payload_Advisor`** caps the tools sent per model context window (40 tools ≤128K, 64 ≤256K, 100 above) — **opt-in, default off**, via the site option `wp_mcp_ai_adaptive_tool_cap` plus a per-assistant three-state override (on / off / inherit) in the assistant edit screen.
+- **`list_mcp_tools` gains `tool_slug`** (single-tool schema on demand) and **`include_schemas`** (lean catalogue mode) — the Anthropic tool-search pattern.
+
+### Added — Pro Bootstrap Incomplete-Install Guard (PR #6677)
+
+- **A partial Pro deploy no longer fatals the whole site.** `mcp-ai-wpoos-pro.php` required `class-wp-mcp-ai-pro-module-registry.php` unconditionally; interrupted extraction or AV/SFTP sync exclusions previously white-screened the site. The require now checks `file_exists` and degrades to an admin notice (`wp_mcp_ai_pro_incomplete_install_notice`) plus a WP_DEBUG log line — the site keeps running on the base plugin.
+
+### Added — Telegram Message Auto-Chunking (PR #6677)
+
+- **`send_telegram_message` auto-chunks messages over 4,096 characters** — split at paragraph boundaries, then line boundaries, then hard character splits. Soft chunks keep `parse_mode` (HTML/Markdown intact); hard-split chunks drop it (a mid-tag break makes Telegram reject the message). Mid-sequence failure returns `wp_mcp_ai_telegram_chunk_error` with the failed chunk index and total count; new `chunk` boolean (default `true`, `false` restores the legacy single-send behavior); short messages return the unchanged legacy shape. The schedule result-delivery path goes through this tool, so "Website Email Summary" deliveries are covered automatically; the CG Pro port mirrors byte-identically.
+
+### Added — Upwork Search Enhancements & Full Workflow Results (PRs #6678, #6679, #6680, #6682)
+
+- **`search_upwork_jobs` gets the mode + credential gates its siblings already had (PR #6678)** — a connection in Web Search mode (or API mode without `client_id`/`client_secret`/`refresh_token`) no longer routes into the GraphQL API and dies on the missing refresh token; it falls back to web search as intended. Byte-identical CG Pro port + a 3-branch regression test.
+- **Fallback search quality (PR #6679)** — drops Upwork category landing pages (keeps `~jobId` postings, reports `filtered_out`), extracts `job_type`/`budget`/`published` from SERP snippets, merges a second broad web-search pass with URL dedupe when the site-restricted pass is thin, and ranks direct postings first. New `sort` arg (`recency` default | `best_match` → GraphQL `RECENCY` sort) and `location` arg folded into `searchExpression`, wired to the settings' existing `default_location`/`default_sort`; API results carry a derived `url`; the `upwork_job_discovery_scan` preset stops sending the invalid `job_type: all` GraphQL filter.
+- **The broad second pass always runs when the first pass yields fewer than `min(limit, 5)` jobs (PR #6680)** — previously skipped entirely when the call had no keyword filters (the preset's default shape). The primary query restricts to `site:upwork.com/freelance-jobs/apply` (individual postings, not category pages), category detection extends to `/apply/{category}/` paths without a `~jobId`, and the broad pass gains a generic recency tail even without filters.
+- **Workflow deliveries now carry the full result set (PR #6682)** — the hard-coded `min( 5, count( $items ) )` cap in `build_workflow_structured_response()` raised to **50** (the search tools' own hard limit); new filter `wp_mcp_ai_pro_workflow_response_item_cap` for integrators who want the brief shape back; each listing's URL ships as an indented line under the item. Digest item lines also append budget, contract type, and recency (PR #6680).
+
+### Fixed — Schedule Result-Delivery Formatting & Digest Ordered Lists (PRs #6679, #6684)
+
+- **Workflow `full`-template deliveries no longer dump raw flattened step payloads (PR #6679)** — step lists render as a compact execution log (`1. Search for new matching jobs (search_upwork_jobs) — completed · 0.94s`, failed steps surface their error), and `envelope_data_to_text()`/`envelope_data_to_markdown()` skip null/empty/blank values.
+- **Digest numbered lists render 1–10 instead of every item as "1." (PR #6684)** — both markdown-to-HTML converters only grouped *consecutive* numbered lines into one `<ol>`, so each indented URL line closed the list. Ordered-list parsing now folds indented continuation lines into their list item with a `<br>`, keeping the digest a single `<ol>` (Pro result-delivery converter + Teams webhook converter).
+
+### Fixed — Gmail `connection_id: "settings"` & Skill/OKF Self-Correction (PR #6677)
+
+- **Assistants pass the literal string `"settings"`** instead of omitting `connection_id` — it is now treated as the settings-based credential fallback in the Pro Gmail client (all four Pro Gmail tools), the Google Drive client, and the base `search_gmail` tool (whose not-found error now points at `list_gmail_connections`).
+- **`load_skill` not-assigned appends `Assigned skills: …`** and **`okf_bundle_not_found` appends `Available bundles: …`** (new `list_bundle_names()` helper) — the model gets self-correcting errors instead of guessing resource names. Mirrored to the CG AI `OkfBundleManager` port.
+
+### Fixed — Playground Ollama Demo Landing 404 + `npx` as Primary Test Path (PR #6683)
+
+- **`/ollama-test-lab/` 404'd on fresh installs** because Playground defaults to plain permalinks — the seed now switches the site to `/%postname%/` and flushes rewrite rules before creating the demo pages. The local CLI server run (`npx -y @wp-playground/cli server`) is now the documented primary way to test (README "Try It on Your PC" restructure with a one-command fastest path, `docs/user-guides/playground-demo.md`, `blueprints/README.md` with a Validation 2026-09-19 section), and `bin/capture-real-page.sh` was rewritten to wait for the lazy background seed via the REST index and follow the auto-login 302 with a cookie jar.
+
+### Fixed — npm Security Advisories (PR #6681)
+
+- **adm-zip 0.6.0 → 0.6.1** (CVE-2026-77301 uncontrolled memory allocation; override `>=0.6.1` across root, saas-controller, pro/assets/spa — also fixes the medium symlink-overwrite advisory), **js-yaml 4.3.1 → 4.3.2** (GHSA-2883-xcg3-v3hh maxTotalMergeKeys CPU DoS, media-worker), **colord 2.9.3 → 2.10.0** (GHSA-2wm5-q62r-hmrv malformed color strings, pro + proactively root/saas-controller/pro-spa). Lock entries hand-edited (version/resolved/integrity from the registry) to avoid whole-file rewrites; `npm install --package-lock-only --dry-run` reports up to date in all 5 directories.
+
+### Changed — Canonical Error Envelope for 5 Regulatory Tools (PR #6689)
+
+- **`renew_registration`, `update_reg_document`, `validate_document_checklist`, `validate_inci_ingredients`, and `validate_reg_product`** migrate from legacy `success=false` failure returns to the canonical `WP_Error` envelope (Unix Theory P1), swept in with the regulatory cluster's guidance pass.
+
+### Versioning
+
+- Bumped to 1.1.83 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.83. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.8** (unchanged; standalone ZIP rebuilt in-window). nvoos-content-graph-ai: **1.0.4** (unchanged; ZIP rebuilt in-window). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — no port waves in-window; the Upwork/Telegram fixes are mirror patches). Checkout API: **0.1.2** (unchanged). Docs Hub addon: **0.4.7** (unchanged). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.09.10** (unchanged — no model PRs in-window). Tool count: **~306 base + ~1,279 Pro (~1,585 total)** — unchanged, no tool registrations in-window; live registry authoritative. Providers: 15. Addons: 27. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: **59** (unchanged — no new skills in-window; the test-suite skill gained pattern 48 and the plugin/design-crm/playground-demos skills were updated in-window). Stale build ZIPs removed: the 1.1.81 set (30 files), superseded by the in-window 1.1.82 wp.org package builds.
+
 ## [1.1.82] - 2026-09-18
 
 ### Added — WordPress Playground Demos: Content Graph "Project Asteria" & NV oOS Complete × Ollama (PRs #6662, #6663, #6666, #6670, #6671, #6673, #6674)

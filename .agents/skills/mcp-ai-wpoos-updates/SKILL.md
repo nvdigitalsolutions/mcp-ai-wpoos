@@ -5,9 +5,9 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.82"
-  plugin-version-tested: "1.1.82"
-  last-updated: "2026-09-18"
+  plugin-version: "1.1.83"
+  plugin-version-tested: "1.1.83"
+  last-updated: "2026-09-21"
 ---
 
 # NV oOS Updates — Docs Catch-Up, Model Catalog & PR Deferred-Item Sweeps
@@ -15,7 +15,7 @@ metadata:
 Playbook for the three recurring update tracks in this repo, distilled from the
 
 executed catch-up plans (`docs/project/plans/v1.1.58-docs-catch-up.md` through
-`v1.1.82-docs-catch-up.md`), the model-catalog process docs (July 2026 and
+`v1.1.83-docs-catch-up.md`), the model-catalog process docs (July 2026 and
 September 2026 runs), and the executed 2026-09-17 PR deferred-item sweep
 (issues #6646–#6655). The workflows implement industry standards — Keep a
 Changelog, SemVer commit separation, and deprecation-driven LLM model lifecycle
@@ -54,14 +54,14 @@ weekly (or on demand), independent of any release.
    every standing open item (OI-1 `@since` reconciliation, OI-2 Docker count
    re-derivation, OI-3 test-suite cross-ref, OI-4 wave residuals). Parked items
    stay parked; new finds get *recorded* there, never fixed in-pass.
-3. **Read the template plans** — the latest executed plan (e.g.
-   `v1.1.82-docs-catch-up.md`) plus `v1.1.58`/`v1.1.59` for the original
+1. **Read the template plans** — the latest executed plan (e.g.
+   `v1.1.83-docs-catch-up.md`) plus `v1.1.58`/`v1.1.59` for the original
    structure.
 4. **Identify the PR window** — everything merged on `alpha-working` after the
    previous catch-up merge. Classify every PR: production-touching (file + change
    table), test-only, docs-only, build-only, closed-unmerged docs PRs.
 5. **Create the plan** `docs/project/plans/[VERSION]-docs-catch-up.md` if none
-   exists, with the v1.1.82 structure:
+   exists, with the v1.1.83 structure:
    1. Context — PR table + scope rules
    2. Work items (P0–P3 + Verify-only)
    3. Execution log (stamped when run)
@@ -96,7 +96,7 @@ weekly (or on demand), independent of any release.
 - **Exclude unrelated working-tree noise** (vendor/, other agents' untracked
   work, backup dirs) from every commit.
 
-### A3. Commit structure (mirror v1.1.58–v1.1.82)
+### A3. Commit structure (mirror v1.1.58–v1.1.83)
 
 Separate commits, in this order:
 
@@ -560,7 +560,7 @@ previous window — the user will usually want it back-dated.
 
 - Plan templates: `docs/project/plans/v1.1.58-docs-catch-up.md`,
   `docs/project/plans/v1.1.59-docs-catch-up.md`,
-  `docs/project/plans/v1.1.82-docs-catch-up.md` (latest executed)
+  `docs/project/plans/v1.1.83-docs-catch-up.md` (latest executed)
 - Standing open items: `docs/project/plans/docs-catch-up-open-items.md`
 - Executed PR deferred-item sweep (2026-09-17): issues #6646–#6655; closed
   #6389 as complete

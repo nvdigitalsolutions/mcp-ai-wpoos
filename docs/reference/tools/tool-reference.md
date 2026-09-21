@@ -1,8 +1,8 @@
 # Built-in tool reference
 
 **Status:** ✅ UPDATED - September 2026
-**Tool Count:** ~306 base tools + ~1,279 Pro tools = ~1,585 total (live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative; unchanged in v1.1.82 — no tool registrations in-window; +13 Pro in v1.1.81 — five CRM tools `bulk_move_deal_stages`, `create_tracked_link`, `record_crm_reply`, `get_crm_handover`, `get_pipeline_digest` from PR #6636 and eight financial tools `market_screener`, `macro_data_fetcher`, `economic_calendar_fetcher`, `earnings_calendar_fetcher`, `options_chain_fetcher`, `crypto_market_data`, `portfolio_transaction_log`, `price_alerts` from PR #6639)
-**Last Updated:** September 18, 2026 (v1.1.82)
+**Tool Count:** ~306 base tools + ~1,279 Pro tools = ~1,585 total (live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative; unchanged in v1.1.83 — no tool registrations in-window, the Tool Description Engineering sweep adds model-facing usage guidance to every tool class without adding slugs; unchanged in v1.1.82 — no tool registrations in-window; +13 Pro in v1.1.81 — five CRM tools `bulk_move_deal_stages`, `create_tracked_link`, `record_crm_reply`, `get_crm_handover`, `get_pipeline_digest` from PR #6636 and eight financial tools `market_screener`, `macro_data_fetcher`, `economic_calendar_fetcher`, `earnings_calendar_fetcher`, `options_chain_fetcher`, `crypto_market_data`, `portfolio_transaction_log`, `price_alerts` from PR #6639)
+**Last Updated:** September 21, 2026 (v1.1.83)
 
 NV oOS registers a suite of default tools through the central registry so every assistant can opt-in without custom code. The registry initialises on `plugins_loaded`, loads the bundled implementations, and exposes extension hooks for third parties to add their own integrations.【F:includes/class-wp-mcp-ai-tool-registry.php†L12-L124】【F:includes/tools/tools-init.php†L12-L14】
 

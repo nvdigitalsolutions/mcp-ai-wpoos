@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.82"
-  plugin-version-tested: "1.1.82"
-  last-updated: "2026-09-19"
+  plugin-version: "1.1.83"
+  plugin-version-tested: "1.1.83"
+  last-updated: "2026-09-21"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -757,6 +757,15 @@ Import external AI conversation exports into the JetEngine
   toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
   dj-management/image-production slices.
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Tool Guidance, Pro Bootstrap Guard, Telegram Chunking & Upwork-Workflow Delivery (v1.1.83)
+
+- **Tool Description Engineering** (PRs #6686/#6695/#6687–#6723) — `WP_MCP_AI_Tool_Usage_Guidance_Interface` (`when_to_use`/`when_not_to_use`/`related_tools`/`notes`) + the assembled `[Usage: …]` suffix in `get_model_facing_description()` (REST chat path, Tool Service `/tools`, `list_mcp_tools`); legacy-format classes opt in via `get_usage_guidance()` or a `usage_guidance` definition key forwarded by `WP_MCP_AI_Legacy_Tool_Wrapper`. The Phase 2 sweep completes the full base+pro tree (~1,487 tools; 1,584/1,584 files) and the `WPMCPAI.Tools.ToolDescriptionGuidance` sniff is enforced at severity 5. Opt-in adaptive tool cap (`WP_MCP_AI_Tool_Payload_Advisor`, site option + per-assistant override) + lazy schema loading (`tool_slug`/`include_schemas` on `list_mcp_tools`).
+- **Pro bootstrap incomplete-install guard** (PR #6677) — `mcp-ai-wpoos-pro.php` `file_exists`-checks the module-registry require and degrades to `wp_mcp_ai_pro_incomplete_install_notice` + a WP_DEBUG line (partial deploys no longer fatal the site). **Telegram auto-chunking** — `send_telegram_message` splits >4,096-char messages (paragraph → line → hard; hard splits drop `parse_mode`; `chunk=false` restores legacy; `wp_mcp_ai_telegram_chunk_error` carries the failed chunk index). **Gmail `connection_id="settings"`** resolves to the settings fallback across the Pro Gmail tools, the Drive client, and base `search_gmail`. **Skill/OKF self-correction** — `load_skill` not-assigned appends `Assigned skills: …`; `okf_bundle_not_found` appends `Available bundles: …` (new `list_bundle_names()`).
+- **Upwork search + workflow delivery** (PRs #6678–#6680/#6682/#6684) — `search_upwork_jobs` gains web_search-mode + API credential gates, drops category landing pages, extracts SERP `job_type`/`budget`/`published`, always runs the broad second pass under `min(limit, 5)` jobs, and accepts `sort`/`location` args; workflow deliveries ship the full 50-item result set (filterable cap) with per-item URLs + budget/contract/recency; both markdown converters fold indented continuation lines into a single `<ol>` (digests render 1–10); `steps` render as a compact execution log.
+- **Playground Ollama demo** (PR #6683) — the seed now sets `/%postname%/` permalinks (fresh-install `/ollama-test-lab/` 404 fixed); local `npx -y @wp-playground/cli server` is the primary test path; `bin/capture-real-page.sh` rewritten (REST-index wait + cookie jar).
+- **npm advisories** (PR #6681) — adm-zip 0.6.1, js-yaml 4.3.2, colord 2.10.0. **Regulatory envelope** (PR #6689) — five regulatory tools migrate to the canonical `WP_Error` envelope.
+- **Tool count** — unchanged: ~306 base + ~1,279 Pro (~1,585 total). Coding-time skills: 59 (unchanged — the test-suite skill gained pattern 48 in-window).
 
 ## WordPress Playground Demos, Pro SPA Fixes & Token-Tracking Hardening (v1.1.82)
 
