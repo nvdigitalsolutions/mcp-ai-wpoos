@@ -69,5 +69,11 @@ return array(
 			'consumes'   => array( 'get_batch_status' ),
 			'round_trip' => false, // External OpenAI API; no deterministic L2 driver yet.
 		),
+		'schedule_id' => array(
+			'scope'      => 'pro', // Asserted only when the Pro tools are registered.
+			'produces'   => array( 'create_pro_schedule', 'update_pro_schedule' ),
+			'consumes'   => array( 'update_pro_schedule', 'delete_pro_schedule', 'get_schedule_latest_result', 'get_schedule_run_history', 'dry_run_pro_schedule' ),
+			'round_trip' => true,
+		),
 	),
 );

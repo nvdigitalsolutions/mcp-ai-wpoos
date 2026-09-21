@@ -67,10 +67,34 @@ class Test_Tool_Id_Handoff_Contract extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Whether a manifest family is active in the current environment.
+	 *
+	 * Families scoped to 'pro' are asserted only when their tools are
+	 * actually registered (the CI matrix registers Pro tools; some local
+	 * runs do not). Base families are always active.
+	 *
+	 * @param string $key    Family key.
+	 * @param array  $family Family manifest entry.
+	 * @return bool True when the family should be asserted.
+	 */
+	protected function family_is_active( $key, $family ) {
+		if ( empty( $family['scope'] ) || 'base' === $family['scope'] ) {
+			return true;
+		}
+
+		$probe = isset( $family['produces'][0] ) ? $family['produces'][0] : ( isset( $family['consumes'][0] ) ? $family['consumes'][0] : '' );
+
+		return '' !== $probe && null !== $this->registry->get_tool( $probe );
+	}
+
+	/**
 	 * Every manifest producer must be registered and declare produces = key.
 	 */
 	public function test_manifest_producers_declare_contract() {
 		foreach ( $this->manifest['families'] as $key => $family ) {
+			if ( ! $this->family_is_active( $key, $family ) ) {
+				continue;
+			}
 			foreach ( $family['produces'] as $slug ) {
 				$tool = $this->registry->get_tool( $slug );
 				$this->assertNotNull( $tool, "Manifest producer {$slug} (family {$key}) is not registered." );
@@ -95,6 +119,9 @@ class Test_Tool_Id_Handoff_Contract extends WP_UnitTestCase {
 	 */
 	public function test_manifest_consumers_accept_key() {
 		foreach ( $this->manifest['families'] as $key => $family ) {
+			if ( ! $this->family_is_active( $key, $family ) ) {
+				continue;
+			}
 			foreach ( $family['consumes'] as $slug ) {
 				$tool = $this->registry->get_tool( $slug );
 				$this->assertNotNull( $tool, "Manifest consumer {$slug} (family {$key}) is not registered." );
