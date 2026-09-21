@@ -269,6 +269,7 @@ wp-mcp-ai-tool-transcribe-openai-audio
 wp-mcp-ai-tool-transcribe-openai-audio-validated
 wp-mcp-ai-tool-trigger-all-export
 wp-mcp-ai-tool-trigger-all-import
+wp-mcp-ai-tool-typesafe-decide
 wp-mcp-ai-tool-update-task-plan
 wp-mcp-ai-tool-update-term
 wp-mcp-ai-tool-user-activity-auditor
