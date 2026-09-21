@@ -2,7 +2,16 @@
 
 **Status:** ✅ UPDATED - September 2026
 **Tool Count:** ~306 base tools + ~1,279 Pro tools = ~1,585 total (live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative; unchanged in v1.1.83 — no tool registrations in-window, the Tool Description Engineering sweep adds model-facing usage guidance to every tool class without adding slugs; unchanged in v1.1.82 — no tool registrations in-window; +13 Pro in v1.1.81 — five CRM tools `bulk_move_deal_stages`, `create_tracked_link`, `record_crm_reply`, `get_crm_handover`, `get_pipeline_digest` from PR #6636 and eight financial tools `market_screener`, `macro_data_fetcher`, `economic_calendar_fetcher`, `earnings_calendar_fetcher`, `options_chain_fetcher`, `crypto_market_data`, `portfolio_transaction_log`, `price_alerts` from PR #6639)
-**Last Updated:** September 21, 2026 (v1.1.83)
+**Last Updated:** September 21, 2026 (v1.1.83 — data-contract rollout: `job_id`, `post_id`, `term_id`, `assistant_id`, `vector_store_id`, and `batch_id` families annotated with `produces`/`consumes` contracts)
+
+## Data contracts (ID handoffs between tools)
+
+Multi-step workflows fail when the identifier a producer returns does not match what the consumer accepts, or when the model never learns the handoff exists. NV oOS addresses both with the optional [`WP_MCP_AI_Tool_Data_Contract_Interface`](../../../includes/interfaces/interface-wp-mcp-ai-tool.php) (`get_data_contract()`), positioned as a data-contract layer alongside the capability flags / rules interfaces.
+
+- **Vocabulary rule (D1):** a contract name is the *exact* envelope / parameter key that flows between tools — `job_id`, `post_id`, `term_id`, `assistant_id`, `vector_store_id`, `batch_id`, `schedule_id`. A tool `produces X` iff its success envelope carries key `X`; a tool `consumes X` iff its parameters schema has property `X`.
+- **Model-facing surface:** `WP_MCP_AI_Tool_Service::build_tools_payload()` appends `[Data contract: produces=X, consumes=A|B]` to the tool description in the OpenAI function-calling payload (strict schema-safe); filter `wp_mcp_ai_tool_data_contract_description_suffix` per-tool.
+- **Scope rule (D2):** only ID-bearing CRUD families are annotated — stateless utilities, generators, and search tools stay contract-less by design.
+- **Enforcement:** the manifest fixture `tests/fixtures/tool-contract-manifest.php` is the single source of truth, checked in both directions by the L1 honesty suite (`tests/test-tool-id-handoff-contract.php`); the deterministic L2 round-trip suite (`tests/test-tool-id-handoff-round-trip.php`) executes create → fetch → update → delete without an LLM. Manifest entries land in the same PR as their tool annotations. Rollout plan: `docs/project/proposals/P3-data-contract-rollout-plan-2026-09.md`.
 
 NV oOS registers a suite of default tools through the central registry so every assistant can opt-in without custom code. The registry initialises on `plugins_loaded`, loads the bundled implementations, and exposes extension hooks for third parties to add their own integrations.【F:includes/class-wp-mcp-ai-tool-registry.php†L12-L124】【F:includes/tools/tools-init.php†L12-L14】
 

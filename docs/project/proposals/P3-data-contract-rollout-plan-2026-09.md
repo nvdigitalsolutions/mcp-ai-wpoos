@@ -1,6 +1,6 @@
 # P3 Data-Contract Rollout — ID-Handoff Verification Plan
 
-**Status:** IN PROGRESS — Phase 0 (inventory + manifest) started 2026-09-21.
+**Status:** IN PROGRESS — Wave 1 (base families) landed via PRs #6729–#6731; Pro `schedule_id` wave (#6732) queued; docs sweep in progress.
 **Related:** [Unix Theory Compliance Enhancement Proposal](UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md) (Phase P3).
 **Problem class:** multi-step MCP workflows fail because state (IDs) does not flow between tool calls — the model compensates by searching for records "another way". The P3 infrastructure (interface + registry helper + description suffix) has shipped, but zero production tools implement it.
 
@@ -32,12 +32,12 @@ Close three gaps:
 
 | Phase | Description | Effort | Status |
 |---|---|---|---|
-| **0** | Inventory + vocabulary + manifest fixture + D1 docblock tweak | S | 🟡 Started 2026-09-21 |
-| **1** | L1 static honesty suite (`tests/test-tool-id-handoff-contract.php`) | S | ⬜ |
-| **2** | Wave 1 rollout — Base families (cron, posts, terms, assistants, vector stores, batches, webchat rooms) + usage-guidance handoff fixes, in 2–3 cluster PRs | S per cluster | ⬜ |
-| **3** | L2 round-trip execution suite + shared assertion trait | S | ⬜ |
-| **4** | Waves 2–3 — remaining Base + Pro families; then byte-identical CG Pro port (see `mcp-ai-wpoos-ecosystem-port` skill) | M | ⬜ |
-| **5** | Docs: `.context/tool-registry.md`, `docs/reference/tools/tool-reference.md`, proposal status update; completeness sweep | XS | ⬜ |
+| **0** | Inventory + vocabulary + manifest fixture + D1 docblock tweak | S | ✅ Done — inventory found and fixed three live asymmetries (`ID` vs `post_id` on posts, `data.id` vs `vector_store_id`, missing handoff notes on cron guidance) |
+| **1** | L1 static honesty suite (`tests/test-tool-id-handoff-contract.php`) | S | ✅ Done (#6729) |
+| **2** | Wave 1 rollout — cron, posts, terms, assistants, vector stores, batches (+ webchat deferred: registration gated behind `enable_webchat_integration`) | S per cluster | ✅ Done (#6729–#6731) |
+| **3** | L2 round-trip execution suite + shared assertion trait | S | ✅ Done (#6729, #6730, #6732 drivers) |
+| **4** | Waves 2–3 — Pro families (`schedule_id` landed in #6732) + remaining toolkit CPTs; byte-identical CG Pro port for any Pro files that have mirrors | M | 🟡 Wave 2a in PR #6732; CG port not needed for schedule tools (not yet ported there) |
+| **5** | Docs: `.context/tool-registry.md`, `docs/reference/tools/tool-reference.md`, proposal status update; completeness sweep | XS | 🟡 Docs landed with this PR; completeness sweep pending |
 
 ## Wave 1 families (Phase 2)
 
