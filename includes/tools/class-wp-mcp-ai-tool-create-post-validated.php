@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-create-post.php';
  * This class extends the original create_post tool to use
  * Symfony Validator for argument validation.
  */
-class WP_MCP_AI_Tool_Create_Post_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
+class WP_MCP_AI_Tool_Create_Post_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 
 	/**
 	 * The original create_post tool instance for delegation.
@@ -80,6 +80,16 @@ class WP_MCP_AI_Tool_Create_Post_Validated extends WP_MCP_AI_Validated_Tool impl
 	public function get_parameters_schema() {
 		// Use the same schema as the original tool.
 		return $this->original_tool->get_parameters_schema();
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'post_id',
+			'consumes' => null,
+		);
 	}
 
 	/**

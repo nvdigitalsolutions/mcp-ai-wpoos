@@ -21,7 +21,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-tool-markdown-converter.php';
 /**
  * Creates a new post or updates an existing one using Symfony Validator.
  */
-class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
+class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Markdown_Converter;
 
@@ -99,6 +99,16 @@ class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implem
 			),
 			'required'             => array( 'content' ),
 			'additionalProperties' => false,
+		);
+	}
+
+		/**
+		 * {@inheritdoc}
+		 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'post_id',
+			'consumes' => array( 'post_id' ),
 		);
 	}
 

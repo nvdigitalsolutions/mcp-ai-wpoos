@@ -593,6 +593,7 @@ require_once __DIR__ . '/helpers/trait-wp-mcp-ai-docx-test-helper.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-rest-test-helper.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-http-test-helper.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-request-context-test-helper.php';
+require_once __DIR__ . '/helpers/trait-wp-mcp-ai-tool-id-handoff-test-helper.php';
 require_once __DIR__ . '/helpers/class-wp-mcp-ai-test-helper.php';
 require_once __DIR__ . '/helpers/class-wp-mcp-ai-job-queue-manager-test-worker.php';
 

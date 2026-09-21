@@ -19,7 +19,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 /**
  * Allows users to get details of a specific WordPress cron job.
  */
-class WP_MCP_AI_Tool_Get_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
+class WP_MCP_AI_Tool_Get_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -51,7 +51,7 @@ class WP_MCP_AI_Tool_Get_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'when_to_use'     => __( 'Inspecting the schedule, arguments, or status of one known cron job ID.', 'mcp-ai-wpoos' ),
 			'when_not_to_use' => __( 'Browsing scheduled jobs when no ID is known; use list_cron_jobs to discover job IDs first.', 'mcp-ai-wpoos' ),
 			'related_tools'   => array( 'list_cron_jobs', 'create_cron_job', 'delete_cron_job' ),
-			'notes'           => __( 'job_id is a 32-character md5 hash; get it from list_cron_jobs before calling this tool.', 'mcp-ai-wpoos' ),
+			'notes'           => __( 'job_id is a 32-character md5 hash returned directly by create_cron_job or create_cron_job_validated, and listed by list_cron_jobs.', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -70,6 +70,16 @@ class WP_MCP_AI_Tool_Get_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			),
 			'required'             => array( 'job_id' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'job_id' ),
 		);
 	}
 
