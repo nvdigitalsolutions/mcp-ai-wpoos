@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Returns a single WordPress post with its metadata and taxonomy terms.
  */
-class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Ability_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
+class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Ability_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -82,6 +82,16 @@ class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	/**
 	 * {@inheritdoc}
 	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'post_id' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
@@ -131,6 +141,7 @@ class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 
 		$result = array(
 			'ID'             => $post->ID,
+			'post_id'        => $post->ID,
 			'post_type'      => esc_html( $post->post_type ),
 			'title'          => get_the_title( $post ),
 			'content'        => wp_kses_post( $post->post_content ),

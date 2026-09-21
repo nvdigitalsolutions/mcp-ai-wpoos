@@ -21,7 +21,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-tool-markdown-converter.php';
  * This is a simplified version of save_post that only handles
  * post creation, not updates. Use save_post for update operations.
  */
-class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
+class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Content_Media;
 	use WP_MCP_AI_Tool_Markdown_Converter;
@@ -55,7 +55,7 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'when_to_use'     => __( 'Creating a brand new WordPress post when no post ID is involved.', 'mcp-ai-wpoos' ),
 			'when_not_to_use' => __( 'Updating or overwriting existing content; use save_post when a post ID is known.', 'mcp-ai-wpoos' ),
 			'related_tools'   => array( 'save_post', 'get_post', 'delete_post', 'get_recent_posts' ),
-			'notes'           => __( 'Status defaults to draft; pass status=publish only when the post is ready to go live.', 'mcp-ai-wpoos' ),
+			'notes'           => __( 'Returns post_id in the response for chaining into get_post, save_post, or delete_post. Status defaults to draft; pass status=publish only when the post is ready to go live.', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -436,6 +436,7 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'message'   => $summary_text, // Chat client display.
 			'summary'   => $summary_text, // Backward compatibility.
 			'ID'        => $created_post->ID,
+			'post_id'   => $created_post->ID,
 			'title'     => get_the_title( $created_post ),
 			'status'    => esc_html( get_post_status( $created_post ) ),
 			'post_type' => esc_html( $created_post->post_type ),
@@ -918,6 +919,16 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				update_post_meta( $post_id, '_elementor_edit_mode', 'builder' );
 			}
 		}
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'post_id',
+			'consumes' => null,
+		);
 	}
 
 	/**

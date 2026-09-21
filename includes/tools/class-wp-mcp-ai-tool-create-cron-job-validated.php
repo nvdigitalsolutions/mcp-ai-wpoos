@@ -24,7 +24,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 /**
  * Allows privileged users to create WP-Cron jobs using Symfony Validator.
  */
-class WP_MCP_AI_Tool_Create_Cron_Job_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
+class WP_MCP_AI_Tool_Create_Cron_Job_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -122,6 +122,16 @@ class WP_MCP_AI_Tool_Create_Cron_Job_Validated extends WP_MCP_AI_Validated_Tool 
 			),
 			'required'             => array( 'hook' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'job_id',
+			'consumes' => null,
 		);
 	}
 

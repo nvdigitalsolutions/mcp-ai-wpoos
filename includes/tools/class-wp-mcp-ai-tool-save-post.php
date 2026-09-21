@@ -17,7 +17,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-tool-markdown-converter.php';
 /**
  * Creates a new post or updates an existing one.
  */
-class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
+class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Markdown_Converter;
 
@@ -50,7 +50,7 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 			'when_to_use'     => __( 'Creating or updating a post in one call, or updating content when the post ID is already known.', 'mcp-ai-wpoos' ),
 			'when_not_to_use' => __( 'Strictly new posts with no update path; create_post is the simpler creation-only alternative.', 'mcp-ai-wpoos' ),
 			'related_tools'   => array( 'create_post', 'get_post', 'delete_post' ),
-			'notes'           => __( 'Omit post_id to create a new post; pass post_id to update the existing one.', 'mcp-ai-wpoos' ),
+			'notes'           => __( 'Omit post_id to create a new post; pass post_id to update the existing one. Returns post_id of the created or updated post for chaining.', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -176,6 +176,16 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 			),
 			'required'             => array( 'content' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'post_id',
+			'consumes' => array( 'post_id' ),
 		);
 	}
 
@@ -390,6 +400,7 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 			'message'   => $summary_text, // Chat client display.
 			'summary'   => $summary_text, // Backward compatibility.
 			'ID'        => $updated_post->ID,
+			'post_id'   => $updated_post->ID,
 			'title'     => get_the_title( $updated_post ),
 			'status'    => get_post_status( $updated_post ),
 			'post_type' => $updated_post->post_type,

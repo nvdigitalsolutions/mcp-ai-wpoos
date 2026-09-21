@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Deletes (trashes or permanently removes) a WordPress post.
  */
-class WP_MCP_AI_Tool_Delete_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
+class WP_MCP_AI_Tool_Delete_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Safety_Profile;
 
@@ -48,7 +48,7 @@ class WP_MCP_AI_Tool_Delete_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'when_to_use'     => __( 'Removing a known post ID, either by moving it to the trash or permanently deleting it.', 'mcp-ai-wpoos' ),
 			'when_not_to_use' => __( 'Unpublishing or hiding content that should stay recoverable; change its status via save_post instead.', 'mcp-ai-wpoos' ),
 			'related_tools'   => array( 'get_post', 'save_post', 'create_post' ),
-			'notes'           => __( 'force_delete=true permanently removes the post; the default trash move is reversible.', 'mcp-ai-wpoos' ),
+			'notes'           => __( 'post_id comes from create_post / save_post responses or get_recent_posts. force_delete=true permanently removes the post; the default trash move is reversible.', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -72,6 +72,16 @@ class WP_MCP_AI_Tool_Delete_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			),
 			'required'             => array( 'post_id' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'post_id' ),
 		);
 	}
 
