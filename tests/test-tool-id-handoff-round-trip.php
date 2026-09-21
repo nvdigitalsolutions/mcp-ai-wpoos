@@ -113,6 +113,9 @@ class Test_Tool_Id_Handoff_Round_Trip extends WP_UnitTestCase {
 			case 'schedule_id':
 				$this->run_pro_schedule_round_trip( $context );
 				break;
+			case 'item_id':
+				$this->run_toolkit_cpt_round_trip( $context );
+				break;
 			default:
 				$this->fail( 'No round-trip driver for family: ' . $family_key );
 		}
@@ -333,5 +336,82 @@ class Test_Tool_Id_Handoff_Round_Trip extends WP_UnitTestCase {
 			$context
 		);
 		$this->assert_id_not_found( $missing, 'update_pro_schedule', 'schedule_id' );
+	}
+
+	/**
+	 * Toolkit CPT family: create_item → get_item → update_item → delete_item
+	 * on a locally registered toolkit post type.
+	 *
+	 * @param array $context Tool execution context.
+	 */
+	private function run_toolkit_cpt_round_trip( $context ) {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_CPT' ) ) {
+			require_once dirname( __DIR__ ) . '/addons/pro/includes/tools/infrastructure/class-wp-mcp-ai-pro-tool-cpt.php';
+		}
+
+		if ( ! post_type_exists( 'mcp_ai_project' ) ) {
+			register_post_type(
+				'mcp_ai_project',
+				array(
+					'public'   => false,
+					'supports' => array( 'title', 'editor', 'custom-fields' ),
+				)
+			);
+		}
+
+		$tool = new WP_MCP_AI_Pro_Tool_CPT();
+
+		$created = $tool->execute(
+			array(
+				'action'    => 'create_item',
+				'post_type' => 'mcp_ai_project',
+				'fields'    => array( 'title' => 'ID handoff project' ),
+			),
+			$context
+		);
+		$item_id = $this->assert_produces_key( $created, 'item_id', 'toolkit_cpt' );
+
+		$fetched = $tool->execute(
+			array(
+				'action'    => 'get_item',
+				'post_type' => 'mcp_ai_project',
+				'item_id'   => $item_id,
+			),
+			$context
+		);
+		$this->assertNotWPError( $fetched, 'toolkit_cpt get_item should succeed for the produced item_id.' );
+		$this->assertSame( $item_id, $fetched['id'], 'toolkit_cpt get_item should echo the item id it was given.' );
+
+		$updated = $tool->execute(
+			array(
+				'action'    => 'update_item',
+				'post_type' => 'mcp_ai_project',
+				'item_id'   => $item_id,
+				'fields'    => array( 'title' => 'ID handoff project (updated)' ),
+			),
+			$context
+		);
+		$this->assert_id_round_trip( $updated, 'item_id', $item_id, 'toolkit_cpt update_item' );
+
+		$deleted = $tool->execute(
+			array(
+				'action'    => 'delete_item',
+				'post_type' => 'mcp_ai_project',
+				'item_id'   => $item_id,
+			),
+			$context
+		);
+		$this->assertNotWPError( $deleted, 'toolkit_cpt delete_item should succeed for the produced item_id.' );
+
+		// Negative path: a fabricated ID must fail cleanly.
+		$missing = $tool->execute(
+			array(
+				'action'    => 'get_item',
+				'post_type' => 'mcp_ai_project',
+				'item_id'   => PHP_INT_MAX - 1,
+			),
+			$context
+		);
+		$this->assert_id_not_found( $missing, 'toolkit_cpt', 'item_id' );
 	}
 }
