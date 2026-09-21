@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Lists available WebChat rooms.
  */
-class WP_MCP_AI_Tool_List_WebChat_Rooms implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_WebChat_Rooms implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Default_Capability;
 
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_List_WebChat_Rooms implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Lists available WebChat rooms with optional filtering by status.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Browsing WebChat rooms, optionally filtered by status.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Inspecting one known room_id; use get_webchat_room.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_webchat_room', 'create_webchat_room' ),
+			'notes'           => __( 'Supports status filtering (active, inactive, archived) and pagination via per_page.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

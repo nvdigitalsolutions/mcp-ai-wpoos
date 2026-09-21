@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates a new member (person or pet).
  */
-class WP_MCP_AI_Tool_Create_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
+class WP_MCP_AI_Tool_Create_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -48,6 +48,18 @@ class WP_MCP_AI_Tool_Create_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Creates a new member (person or pet) or updates an existing one if member_id is provided. Members can have profiles with demographic info, contact details, and emergency contacts.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new member profile (person or pet), or updating one by passing member_id.', 'nvoos-content-graph-pro' ),
+			'when_not_to_use' => __( 'Editing an existing member; use update_member. Finding members; use get_member or list_members.', 'nvoos-content-graph-pro' ),
+			'related_tools'   => array( 'update_member', 'get_member', 'list_members' ),
+			'notes'           => __( 'type defaults to person; species and breed apply to pets only.', 'nvoos-content-graph-pro' ),
+		);
 	}
 
 	/**

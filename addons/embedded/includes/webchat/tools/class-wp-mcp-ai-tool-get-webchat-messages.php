@@ -184,33 +184,48 @@ class WP_MCP_AI_Tool_Get_WebChat_Messages implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		global $wpdb;
-		$table = WP_MCP_AI_JetEngine_WebChat_Messages_CCT::get_table_name();
+		$table = esc_sql( WP_MCP_AI_JetEngine_WebChat_Messages_CCT::get_table_name() );
 
-		// Build query.
-		$where_clauses = array( 'room_id = %d' );
-		$where_values  = array( $room_id );
-
+		// Build the list and count queries with explicit placeholders — phpcs
+		// cannot statically resolve an interpolated WHERE fragment, so the
+		// array-spread prepare() form warns even though it is valid.
 		if ( '' !== $message_type ) {
-			$where_clauses[] = 'message_type = %s';
-			$where_values[]  = $message_type;
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is esc_sql()-escaped.
+			$query       = $wpdb->prepare(
+				"SELECT _ID, room_id, peer_id, user_id, sender_name, message, message_type, is_encrypted, timestamp, metadata, cct_created
+				FROM {$table}
+				WHERE room_id = %d AND message_type = %s
+				ORDER BY cct_created DESC
+				LIMIT %d OFFSET %d",
+				$room_id,
+				$message_type,
+				$limit,
+				$offset
+			);
+			$count_query = $wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table} WHERE room_id = %d AND message_type = %s",
+				$room_id,
+				$message_type
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		} else {
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is esc_sql()-escaped.
+			$query       = $wpdb->prepare(
+				"SELECT _ID, room_id, peer_id, user_id, sender_name, message, message_type, is_encrypted, timestamp, metadata, cct_created
+				FROM {$table}
+				WHERE room_id = %d
+				ORDER BY cct_created DESC
+				LIMIT %d OFFSET %d",
+				$room_id,
+				$limit,
+				$offset
+			);
+			$count_query = $wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table} WHERE room_id = %d",
+				$room_id
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}
-
-		$where_sql    = implode( ' AND ', $where_clauses );
-		$query_values = array_merge( $where_values, array( $limit, $offset ) );
-
-		// Escape table name.
-		$table = esc_sql( $table );
-
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped, $where_sql contains only hardcoded placeholders.
-		$query = $wpdb->prepare(
-			"SELECT _ID, room_id, peer_id, user_id, sender_name, message, message_type, is_encrypted, timestamp, metadata, cct_created
-			FROM {$table}
-			WHERE {$where_sql}
-			ORDER BY cct_created DESC
-			LIMIT %d OFFSET %d",
-			$query_values
-		);
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		WP_MCP_AI_Logger::log_event(
 			'webchat_get_messages',
@@ -229,15 +244,6 @@ class WP_MCP_AI_Tool_Get_WebChat_Messages implements WP_MCP_AI_Tool_Interface, W
 		if ( ! is_array( $rows ) ) {
 			$rows = array();
 		}
-
-		// Get total count.
-		$count_values = $where_values;
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped, $where_sql contains only hardcoded placeholders.
-		$count_query = $wpdb->prepare(
-			"SELECT COUNT(*) FROM {$table} WHERE {$where_sql}",
-			$count_values
-		);
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 		$total = absint( $wpdb->get_var( $count_query ) );
