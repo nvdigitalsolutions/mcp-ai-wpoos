@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -90,6 +90,20 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Query and manage JetEngine Custom Content Type (CCT) items. Use this tool — NOT create_post — when you need to create, read, update, or delete records in any JetEngine CCT such as vitals_log, channel_messages, or any other CCT slug. Supports full CRUD, bulk import, and schema discovery: list_types, get_schema, list_items, get_item, create_item, bulk_create, update_item, delete_item. Always call get_schema first to discover available field names and types before creating or updating items. Use bulk_create to import multiple records in a single call — pass an array of field objects in the "items" parameter.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating, reading, updating, deleting, or bulk-importing records in JetEngine Custom Content Types (CCTs).', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'WordPress posts or pages; use create_post or get_post. Structure changes; use jetengine_create_post_type or jetengine_create_meta_field.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'jetengine_site_context', 'jetengine_create_meta_field' ),
+			'notes'           => __( 'Always call get_schema for the CCT first; bulk_create imports multiple records in one call.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

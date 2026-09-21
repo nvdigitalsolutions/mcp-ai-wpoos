@@ -22,7 +22,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-ext-cog-sensor-access.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Ext_Cog_Manage_Sensor_Permissions implements WP_MCP_AI_Ext_Cog_Tool_Interface {
+class WP_MCP_AI_Tool_Ext_Cog_Manage_Sensor_Permissions implements WP_MCP_AI_Ext_Cog_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Ext_Cog_Sensor_Access;
 
@@ -51,6 +51,20 @@ class WP_MCP_AI_Tool_Ext_Cog_Manage_Sensor_Permissions implements WP_MCP_AI_Ext_
 	 */
 	public function get_description() {
 		return __( 'Check and manage browser permissions for Extended Cognition sensors (camera, microphone, screen, motion).', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking which sensors are enabled or prompting the user for camera, microphone, screen, or motion access.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Actually capturing data; use the capture tools such as ext_cog_capture_visual or ext_cog_capture_audio.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'ext_cog_capture_visual', 'ext_cog_capture_audio', 'ext_cog_capture_screen' ),
+			'notes'           => __( 'Run action=check before captures; action=request requires a session_id.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

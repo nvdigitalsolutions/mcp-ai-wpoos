@@ -21,7 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  *
  * Brevo (formerly Sendinblue) API docs: https://developers.brevo.com/docs/getting-started
  */
-class WP_MCP_AI_Pro_Tool_Manage_Brevo_Contacts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Manage_Brevo_Contacts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	const API_BASE = 'https://api.brevo.com/v3';
 
 	/**
@@ -43,6 +43,20 @@ class WP_MCP_AI_Pro_Tool_Manage_Brevo_Contacts implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Manages contacts and contact lists in Brevo (add, update, remove, list contacts and lists).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating, updating, removing, or listing Brevo contacts, contact lists, and contact-to-list assignments.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Mailjet contact work; use manage_mailjet_contacts. Sending email belongs to send_brevo_email.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_mailjet_contacts', 'send_brevo_email', 'get_brevo_statistics' ),
+			'notes'           => __( 'Action is required; email identifies the contact for get, update, remove, add_to_list, and remove_from_list.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

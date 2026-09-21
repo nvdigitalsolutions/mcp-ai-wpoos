@@ -25,7 +25,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * Send endpoint: https://api.mailgun.net/v3/{domain}/messages  (US region)
  *                https://api.eu.mailgun.net/v3/{domain}/messages (EU region)
  */
-class WP_MCP_AI_Pro_Tool_Send_Mailgun_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Send_Mailgun_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	const API_BASE_US = 'https://api.mailgun.net/v3';
 	const API_BASE_EU = 'https://api.eu.mailgun.net/v3';
 
@@ -48,6 +48,20 @@ class WP_MCP_AI_Pro_Tool_Send_Mailgun_Email implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Sends an email using the configured Mailgun API credentials. Supports transactional and marketing email delivery with tracking and scheduling options.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending transactional or marketing email through Mailgun with tags, tracking, and an optional domain override.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Brevo or Mailjet delivery; use send_brevo_email or send_mailjet_email.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_brevo_email', 'send_mailjet_email' ),
+			'notes'           => __( 'Requires a configured Mailgun domain and From Email; tracking defaults on and up to 3 tags are supported.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

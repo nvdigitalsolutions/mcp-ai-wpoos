@@ -22,7 +22,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-ext-cog-sensor-access.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Ext_Cog_Capture_Screen implements WP_MCP_AI_Ext_Cog_Tool_Interface {
+class WP_MCP_AI_Tool_Ext_Cog_Capture_Screen implements WP_MCP_AI_Ext_Cog_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Ext_Cog_Sensor_Access;
 
@@ -51,6 +51,20 @@ class WP_MCP_AI_Tool_Ext_Cog_Capture_Screen implements WP_MCP_AI_Ext_Cog_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Capture a screenshot of the user\'s screen, browser window, specific tab, or a CSS-selected DOM element (metacognitive mirror).', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Snapshotting the user\'s screen, window, tab, or a DOM element to read the current UI state.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Camera input; use ext_cog_capture_visual. Permission checks; use ext_cog_manage_sensor_permissions.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'ext_cog_capture_visual', 'ext_cog_manage_sensor_permissions', 'ext_cog_analyze_sensory_input' ),
+			'notes'           => __( 'fullscreen, window, and tab modes prompt the user; element mode requires a CSS selector.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

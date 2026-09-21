@@ -19,7 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for retrieving Mailjet email statistics.
  */
-class WP_MCP_AI_Pro_Tool_Get_Mailjet_Statistics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Mailjet_Statistics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	const API_ENDPOINT = 'https://api.mailjet.com/v3/REST/statcounters';
 
 	/**
@@ -41,6 +41,20 @@ class WP_MCP_AI_Pro_Tool_Get_Mailjet_Statistics implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Retrieves email sending statistics and metrics from Mailjet.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching Mailjet send counters scoped to APIKey, Campaign, ContactsList, or User with optional date filters.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Fetching Brevo metrics; use get_brevo_statistics. Contact work belongs to manage_mailjet_contacts.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_brevo_statistics', 'manage_mailjet_contacts', 'send_mailjet_email' ),
+			'notes'           => __( 'Defaults to APIKey source with Message timing; from_ts and to_ts accept UNIX timestamps or ISO 8601 dates.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

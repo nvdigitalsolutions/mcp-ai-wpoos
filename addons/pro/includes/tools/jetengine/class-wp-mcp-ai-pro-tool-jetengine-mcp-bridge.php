@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.1.0
  */
-class WP_MCP_AI_Pro_Tool_JetEngine_MCP_Bridge implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_JetEngine_MCP_Bridge implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -79,6 +79,20 @@ class WP_MCP_AI_Pro_Tool_JetEngine_MCP_Bridge implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Bridge to JetEngine 3.8+ MCP Server. Discover and call JetEngine\'s native MCP tools for managing site structures (CPTs, taxonomies, meta fields, relations) and accessing site context. Use discover_tools to list available tools, call_tool to execute any tool, or get_site_context for a quick site overview.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering JetEngine\'s native MCP tools or calling one that lacks a dedicated NV oOS wrapper.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Common operations; prefer dedicated tools like jetengine, jetengine_create_post_type, and jetengine_prompts.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'jetengine_site_context', 'jetengine_prompts' ),
+			'notes'           => __( 'Requires manage_options; run action=discover_tools before action=call_tool.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
