@@ -30,7 +30,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  * and author assignment. Optionally updates the Paper Store record status
  * to "published" after successful post creation.
  */
-class WP_MCP_AI_Pro_Tool_Create_Post_From_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
+class WP_MCP_AI_Pro_Tool_Create_Post_From_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -362,7 +362,17 @@ class WP_MCP_AI_Pro_Tool_Create_Post_From_Research implements WP_MCP_AI_Tool_Int
 	}
 
 	/**
-	 * Get extended tool definition.
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'post_id',
+			'consumes' => null,
+		);
+	}
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
 	 *
 	 * @return array
 	 */

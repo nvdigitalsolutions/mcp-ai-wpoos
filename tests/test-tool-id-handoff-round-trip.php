@@ -109,6 +109,9 @@ class Test_Tool_Id_Handoff_Round_Trip extends WP_UnitTestCase {
 			case 'job_id':
 				$this->run_cron_round_trip( $context );
 				break;
+			case 'plan_id':
+				$this->run_task_plan_round_trip( $context );
+				break;
 			case 'post_id':
 				$this->run_post_round_trip( $context );
 				break;
@@ -159,6 +162,50 @@ class Test_Tool_Id_Handoff_Round_Trip extends WP_UnitTestCase {
 		// Negative path: a fabricated ID must fail cleanly, not silently.
 		$missing = $get_tool->execute( array( 'job_id' => 'does-not-exist' ), $context );
 		$this->assert_id_not_found( $missing, 'get_cron_job', 'job_id' );
+	}
+
+	/**
+	 * Task plan family: create_task_plan → get_task_plan → update_task_plan.
+	 *
+	 * @param array $context Tool execution context.
+	 */
+	private function run_task_plan_round_trip( $context ) {
+		$create_tool = new WP_MCP_AI_Tool_Create_Task_Plan();
+		$created     = $create_tool->execute(
+			array(
+				'plan_name' => 'ID handoff plan',
+				'goal'      => 'Round-trip the plan id.',
+				'tasks'     => array(
+					array( 'text' => 'First task' ),
+					array( 'text' => 'Second task' ),
+				),
+			),
+			$context
+		);
+		$plan_id     = $this->assert_produces_key( $created, 'plan_id', 'create_task_plan' );
+
+		$get_tool = new WP_MCP_AI_Tool_Get_Task_Plan();
+		$fetched  = $get_tool->execute( array( 'plan_id' => $plan_id ), $context );
+		$this->assert_id_round_trip( $fetched, 'plan_id', $plan_id, 'get_task_plan' );
+
+		$update_tool = new WP_MCP_AI_Tool_Update_Task_Plan();
+		$updated     = $update_tool->execute(
+			array(
+				'plan_id'      => $plan_id,
+				'task_updates' => array(
+					array(
+						'task_index' => 0,
+						'completed'  => true,
+					),
+				),
+			),
+			$context
+		);
+		$this->assert_id_round_trip( $updated, 'plan_id', $plan_id, 'update_task_plan' );
+
+		// Negative path: a fabricated ID must fail cleanly.
+		$missing = $get_tool->execute( array( 'plan_id' => PHP_INT_MAX - 1 ), $context );
+		$this->assert_id_not_found( $missing, 'get_task_plan', 'plan_id' );
 	}
 
 	/**
