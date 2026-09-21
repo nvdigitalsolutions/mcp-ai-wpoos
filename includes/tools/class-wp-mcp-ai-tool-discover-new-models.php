@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  * Queries provider APIs to discover new model releases and
  * recommends models to add to the configuration.
  */
-class WP_MCP_AI_Tool_Discover_New_Models implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Discover_New_Models implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -46,6 +46,20 @@ class WP_MCP_AI_Tool_Discover_New_Models implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Discover newly released AI models from providers by querying their APIs. Compares discovered models against existing configurations and recommends new models to add.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking provider APIs for newly released AI models and comparing them against the current configuration.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'For the configured catalog use list_available_models; for adding a known model use add_model_config.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'list_available_models', 'add_model_config', 'get_model_information' ),
+			'notes'           => __( 'Read-only against provider APIs; auto_research=true fetches specs for newly discovered models.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

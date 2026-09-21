@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for retrieving inventory data from Flowhub cannabis dispensary system.
  */
-class WP_MCP_AI_Tool_Flowhub_Get_Inventory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Flowhub_Get_Inventory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -46,6 +46,20 @@ class WP_MCP_AI_Tool_Flowhub_Get_Inventory implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Retrieve cannabis inventory data from Flowhub dispensary system including packages, quantities, locations, and product details. Supports filtering by room and pagination.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking Flowhub package quantities, locations, and current stock levels.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Product catalog details such as pricing or strain info; use flowhub_get_products.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'flowhub_get_products', 'flowhub_create_order' ),
+			'notes'           => __( 'Filter by room_id; paginate with limit and offset.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

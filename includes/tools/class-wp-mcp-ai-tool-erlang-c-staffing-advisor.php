@@ -31,7 +31,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-erlang-c.php';
  *
  * @since 1.1.8
  */
-class WP_MCP_AI_Tool_Erlang_C_Staffing_Advisor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Erlang_C_Staffing_Advisor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -75,6 +75,20 @@ class WP_MCP_AI_Tool_Erlang_C_Staffing_Advisor implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Multi-channel Erlang C staffing advisor. Calculates required agents per channel (voice, chat, email) with bot-containment-rate adjustment and optional live WFM endpoint integration. Returns a structured staffing recommendation with per-channel breakdowns.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Planning how many agents each contact-centre channel needs to hit a target service level.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Live queue monitoring; use erlang_c_queue_health for real-time SLA checks.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'erlang_c_queue_health', 'erlang_c_concurrency_advisor', 'calculate_erlang_c' ),
+			'notes'           => __( 'Channels accept arrival rate, AHT, concurrency factor, and bot containment rate per channel.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

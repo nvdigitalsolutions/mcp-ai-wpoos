@@ -17,7 +17,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Checks the status of async video generation jobs.
  */
-class WP_MCP_AI_Tool_Check_Video_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Check_Video_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_Check_Video_Status implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Checks the status of an async video generation job. Use this to poll for completion after calling generate_veo_video in async mode.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Polling an async video generation job for completion after starting generate_veo_video in async mode.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Analyzing existing video content; use analyze_video. For batch job status use get_batch_status.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'generate_veo_video', 'analyze_video' ),
+			'notes'           => __( 'Pass the job_id returned by generate_veo_video. Completed jobs return an attachment_id when saved to the media library.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

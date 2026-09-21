@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for creating orders in Flowhub dispensary system.
  */
-class WP_MCP_AI_Tool_Flowhub_Create_Order implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
+class WP_MCP_AI_Tool_Flowhub_Create_Order implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Safety_Profile;
 
@@ -47,6 +47,20 @@ class WP_MCP_AI_Tool_Flowhub_Create_Order implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Create a new order/transaction in Flowhub dispensary system. Supports creating sales orders with customer information, line items, payment details, and compliance tracking.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording a new Flowhub sale with customer, line items, and payment details.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Reading orders or inventory; use flowhub_get_orders or flowhub_get_inventory.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'flowhub_get_orders', 'flowhub_get_customers', 'flowhub_get_inventory' ),
+			'notes'           => __( 'Each line item requires product_id, quantity, and price.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

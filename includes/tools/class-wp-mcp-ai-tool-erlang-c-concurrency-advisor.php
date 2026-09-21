@@ -28,7 +28,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-erlang-c.php';
  *
  * @since 1.1.8
  */
-class WP_MCP_AI_Tool_Erlang_C_Concurrency_Advisor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Erlang_C_Concurrency_Advisor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_Erlang_C_Concurrency_Advisor implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Analyses observed AI chat arrival rates and session durations from this site\'s activity counters, then applies Erlang C queuing theory to recommend the optimal number of concurrent assistant sessions. Helps admins decide how many parallel AI sessions to allow to meet a target response-time SLA. Requires manage_options capability.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Deciding how many concurrent AI chat sessions the site should allow to meet a response-time SLA.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Contact-centre staffing or raw formula math; use erlang_c_staffing_advisor or calculate_erlang_c.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'erlang_c_staffing_advisor', 'erlang_c_queue_health', 'calculate_erlang_c' ),
+			'notes'           => __( 'Requires manage_options. Reads site chat counters or accepts explicit rate and duration overrides.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

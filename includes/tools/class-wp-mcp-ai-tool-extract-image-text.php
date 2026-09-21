@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  * Provides a tool for extracting text from images (OCR) via multiple AI vision providers.
  * Supports OpenAI, Anthropic, Gemini, Unlimited-OCR, and DeepSeek-OCR.
  */
-class WP_MCP_AI_Tool_Extract_Image_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Extract_Image_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Vision_Request_Timeout;
@@ -53,6 +53,20 @@ class WP_MCP_AI_Tool_Extract_Image_Text implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Extracts all visible text from images using AI OCR capabilities from OpenAI, Anthropic, Gemini, Unlimited-OCR, or DeepSeek-OCR. Supports documents, screenshots, handwriting, and complex layouts.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pulling visible text out of screenshots, documents, or handwriting via AI OCR.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Visual questions about image content; use analyze_image instead.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'analyze_image', 'convert_image_format' ),
+			'notes'           => __( 'Providers: openai, anthropic, gemini, unlimited_ocr, deepseek_ocr. The last two need self-hosted vLLM.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

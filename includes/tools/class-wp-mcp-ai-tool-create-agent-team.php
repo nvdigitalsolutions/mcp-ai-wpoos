@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Create_Agent_Team implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Agent_Team implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -47,6 +47,20 @@ class WP_MCP_AI_Tool_Create_Agent_Team implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Creates a specialized multi-agent team for complex tasks. Teams consist of a planner (task decomposition), executors (specialized work), and optionally a critic (validation). The system selects appropriate professions based on task requirements.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Composing a multi-agent team (planner, executors, critic) for a complex task before delegating subtasks.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'For delegating work to a single existing agent use delegate_to_agent; for combining outputs use aggregate_agent_results.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'delegate_to_agent', 'aggregate_agent_results' ),
+			'notes'           => __( 'Use the returned agent_id values when calling delegate_to_agent; teams are stored in transients.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

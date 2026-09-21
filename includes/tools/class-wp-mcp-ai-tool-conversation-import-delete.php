@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Delete conversations previously imported into the transcript CCT.
  */
-class WP_MCP_AI_Tool_Conversation_Import_Delete implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Conversation_Import_Delete implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -64,6 +64,20 @@ class WP_MCP_AI_Tool_Conversation_Import_Delete implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Deletes conversations previously imported into the AI Chat Transcripts CCT, scoped by source platform (chatgpt or gemini). Supports dry-run previews and a safety-capped row limit.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Removing previously imported conversation rows scoped by platform, with a dry-run preview first.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Inspecting or importing conversations; use conversation_import_detect to inspect and conversation_import_run to import.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'conversation_import_detect', 'conversation_import_run', 'conversation_import_status' ),
+			'notes'           => __( 'Irreversible deletion; limit caps at 500 rows per run and dry_run=true previews without deleting.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

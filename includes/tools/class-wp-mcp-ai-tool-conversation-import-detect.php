@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Inspect an external conversation export without importing anything.
  */
-class WP_MCP_AI_Tool_Conversation_Import_Detect implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Conversation_Import_Detect implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -56,6 +56,20 @@ class WP_MCP_AI_Tool_Conversation_Import_Detect implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Inspects an external AI conversation export file (ChatGPT conversations.json, Google Takeout Gemini activity) and reports the detected format and estimated conversation count without importing anything.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Inspecting a ChatGPT or Gemini export file to confirm format and estimate conversations before importing.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Importing or deleting rows; use conversation_import_run to import and conversation_import_delete to remove.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'conversation_import_run', 'conversation_import_status', 'conversation_import_delete' ),
+			'notes'           => __( 'Read-only inspection; accepts an absolute file path or media attachment ID. Requires JetEngine storage.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

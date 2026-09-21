@@ -19,7 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 /**
  * Analyzes if a file is suitable for OpenAI processing.
  */
-class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -78,6 +78,20 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Analyzes if a WordPress attachment file is suitable for OpenAI processing. Checks file size, format, and provides recommendations.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking whether a media attachment meets OpenAI size and format limits before upload for a given purpose.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Analyzing file contents or images; use analyze_image for vision analysis or batch_embed_content for embeddings.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'analyze_image', 'batch_embed_content' ),
+			'notes'           => __( 'purpose enum: assistants, fine-tune, batch, vision, whisper. Set check_content=false for a metadata-only check.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

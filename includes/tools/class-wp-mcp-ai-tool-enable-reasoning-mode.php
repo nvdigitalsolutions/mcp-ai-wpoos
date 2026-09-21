@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.1
  */
-class WP_MCP_AI_Tool_Enable_Reasoning_Mode implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Enable_Reasoning_Mode implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -46,6 +46,20 @@ class WP_MCP_AI_Tool_Enable_Reasoning_Mode implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Activates enhanced reasoning mode for complex multi-step tasks. Analyzes task complexity across 5 indicators (multi-step, logical complexity, code generation, domain expertise, verification needs) and configures chain-of-thought prompting, lower temperature, and verification steps when reasoning score exceeds 0.7 threshold.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Complex multi-step tasks where chain-of-thought prompting and verification would improve output.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Simple lookups or single-step actions; reasoning adds latency for no benefit.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'validate_reasoning_chain' ),
+			'notes'           => __( 'Scores the task across 5 indicators; activates only above the 0.7 threshold.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

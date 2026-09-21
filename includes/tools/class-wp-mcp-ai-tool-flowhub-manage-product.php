@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for creating and updating products in Flowhub.
  */
-class WP_MCP_AI_Tool_Flowhub_Manage_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Flowhub_Manage_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -46,6 +46,20 @@ class WP_MCP_AI_Tool_Flowhub_Manage_Product implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Create or update cannabis products in Flowhub dispensary system. Supports managing product details, pricing, THC/CBD content, categories, and compliance information.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating or updating Flowhub products with pricing, THC/CBD content, and category.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Reading the catalog or stock; use flowhub_get_products or flowhub_get_inventory.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'flowhub_get_products', 'flowhub_get_inventory' ),
+			'notes'           => __( 'Action is create or update; product_id is required for update. strain_type accepts indica, sativa, hybrid, cbd.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
