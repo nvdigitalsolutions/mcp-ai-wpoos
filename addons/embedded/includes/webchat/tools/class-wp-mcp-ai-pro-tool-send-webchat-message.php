@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * broadcasts messages to active rooms on the current site via
  * WebSocket signaling or REST API.
  */
-class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Default_Capability;
 
@@ -66,6 +66,18 @@ class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Sends a message to WebChat P2P rooms on this site. WebChat is a decentralized browser extension for anonymous peer-to-peer chat.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Broadcasting a message to active WebChat rooms via WebSocket signaling or REST.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Persisting a message into a room for later retrieval; use save_webchat_message.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'save_webchat_message', 'get_webchat_messages' ),
+			'notes'           => __( 'room_id is optional — omitting it broadcasts to all active rooms.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
