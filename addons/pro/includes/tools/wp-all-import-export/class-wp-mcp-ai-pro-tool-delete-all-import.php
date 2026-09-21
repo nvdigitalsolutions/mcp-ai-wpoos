@@ -20,7 +20,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 /**
  * Deletes a WP All Import template.
  */
-class WP_MCP_AI_Pro_Tool_Delete_All_Import implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Delete_All_Import implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Determine whether WP All Import is available.
 	 *
@@ -58,6 +58,20 @@ class WP_MCP_AI_Pro_Tool_Delete_All_Import implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Deletes a WP All Import template and its associated files (Pro feature). Requires WP All Import plugin.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently deleting a WP All Import template by import ID, along with its uploaded files and scheduled cron events.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Keeping the template and its recurring schedule; use schedule_all_import instead, or delete_all_export for export templates.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'schedule_all_import', 'delete_all_export' ),
+			'notes'           => __( 'Requires manage_options and an active WP All Import plugin. Deletion is permanent and cannot be undone.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

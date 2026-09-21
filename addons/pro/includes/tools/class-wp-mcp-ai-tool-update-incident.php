@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Update_Incident' ) ) {
 	 *
 	 * @since 1.4.0
 	 */
-	class WP_MCP_AI_Tool_Update_Incident implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	class WP_MCP_AI_Tool_Update_Incident implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		use WP_MCP_AI_Tool_Default_Capability;
 
@@ -45,6 +45,20 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Update_Incident' ) ) {
 				'description'         => __( 'Update the phase of an existing incident and add a timeline entry.', 'mcp-ai-wpoos' ),
 				'required_capability' => 'manage_options',
 				'parameters'          => $this->get_parameters_schema(),
+			);
+		}
+
+		/**
+		 * Get usage guidance for the tool.
+		 *
+		 * @return array
+		 */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Moving an incident through phases (investigating, identified, monitoring) or appending a timeline message.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Creating new incidents (use create_incident); use resolve_incident to close an incident for good.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'create_incident', 'resolve_incident', 'get_service_status' ),
+				'notes'           => __( 'Phase is optional; with only a message, a timeline entry is appended under the current phase.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 

@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/trait-wp-mcp-ai-shop
  *
  * @since 1.3.0
  */
-class WP_MCP_AI_Pro_Tool_Shopify_Sync_Settings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Shopify_Sync_Settings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Shopify_Connection_Resolver;
 	use WP_MCP_AI_Shopify_Sync_Connection_Resolver;
@@ -55,6 +55,20 @@ class WP_MCP_AI_Pro_Tool_Shopify_Sync_Settings implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'View and update Shopify Sync toolkit settings. Check sync status, view GraphQL API cost reports, test connections, and trigger manual syncs.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Configuring the sync toolkit, checking sync status and GraphQL cost budget, testing connections, or triggering a manual sync.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Querying cached data; use shopify_sync_products, shopify_sync_inventory, or shopify_sync_orders instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'shopify_sync_inventory', 'shopify_sync_orders', 'shopify_sync_analytics' ),
+			'notes'           => __( 'update_settings and sync_now require manage_options; sync_now runs a bulk sync costing about 10 GraphQL points.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
