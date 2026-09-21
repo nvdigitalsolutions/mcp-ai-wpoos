@@ -1343,6 +1343,53 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder' => __( 'My WordPress Site', 'mcp-ai-wpoos' ),
 				),
 
+				// TypeSafe (Jev) Decision Model Settings.
+				// Jev is a decision-only provider: it cannot back a chat
+				// assistant, so it is deliberately NOT exposed in the
+				// assistant provider dropdowns. It powers the typesafe_decide
+				// tool and decision surfaces instead.
+				'enable_typesafe'                    => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable TypeSafe Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable TypeSafe (Jev) as a decision provider', 'mcp-ai-wpoos' ),
+					'description'    => __( 'TypeSafe Jev is a decision model, not a chat model: it returns typed, probabilistic decisions (choice / score / yes-no) about supplied state. It powers the typesafe_decide tool and decision surfaces. Billing is input-only ($0.042 per million input tokens, output free).', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'typesafe_api_key'                   => array(
+					'type'         => 'password',
+					'label'        => __( 'TypeSafe API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %1$s: TypeSafe console URL, %2$s: env var name */
+						__( 'Your TypeSafe API key. Early access keys are issued at <a href="%1$s" target="_blank">console.typesafe.ai</a> (waitlisted). You can also set the %2$s environment variable. Alternatively, leave this empty and use your OpenRouter key with the typesafe_decide tool\'s openrouter transport.', 'mcp-ai-wpoos' ),
+						'https://console.typesafe.ai/settings/keys',
+						'<code>TYPESAFE_API_KEY</code>'
+					),
+					'autocomplete' => 'new-password',
+				),
+				'typesafe_model'                     => array(
+					'type'        => 'select',
+					'label'       => __( 'Default TypeSafe Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default Jev model for decision requests. "jev-latest" follows TypeSafe\'s newest release — pin an explicit version such as jev-1.13.0 when you tune confidence thresholds, because answers can change under the moving alias.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'jev-latest' => __( 'Jev Latest (follows newest release)', 'mcp-ai-wpoos' ),
+						'jev-1.13.0' => __( 'Jev 1.13.0 (pinned)', 'mcp-ai-wpoos' ),
+					),
+					'default'     => 'jev-latest',
+				),
+				'typesafe_base_url'                  => array(
+					'type'        => 'url',
+					'label'       => __( 'TypeSafe API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for TypeSafe API requests. Leave empty to use the default (https://api.typesafe.ai). Useful when proxying through your own gateway.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://api.typesafe.ai',
+				),
+				'enable_jev_research_filter'         => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Jev Research Source Filtering', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Filter low-relevance research sources with Jev (Pro research tools)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Pro research tools (research_eca, generate_research_report) will ask Jev to score and drop clearly irrelevant search sources before generating their reports, keeping the most relevant sources first. Fails open when Jev is unreachable.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
 				// DigitalOcean Serverless Inference Settings.
 				'enable_digitalocean'                => array(
 					'type'           => 'checkbox',
@@ -1578,6 +1625,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'  => __( 'OpenRouter', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-randomize',
 					'fields' => array( 'enable_openrouter', 'openrouter_api_key', 'openrouter_model', 'openrouter_base_url', 'openrouter_site_url', 'openrouter_app_title' ),
+				),
+				'typesafe'             => array(
+					'id'     => 'typesafe',
+					'label'  => __( 'TypeSafe (Jev)', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-yes-alt',
+					'fields' => array( 'enable_typesafe', 'typesafe_api_key', 'typesafe_model', 'typesafe_base_url', 'enable_jev_research_filter' ),
 				),
 				'digitalocean'         => array(
 					'id'     => 'digitalocean',

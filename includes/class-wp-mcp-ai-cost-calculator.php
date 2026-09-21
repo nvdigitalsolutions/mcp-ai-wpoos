@@ -431,6 +431,23 @@ class WP_MCP_AI_Cost_Calculator {
 				'output' => 3.00, // $3.00 per 1M tokens (blended average).
 			),
 		),
+		'typesafe'     => array(
+			// TypeSafe Jev (System One decision model) — input-only billing.
+			// Output tokens are free by design. Published rate: $0.042 per 1M
+			// input tokens (September 2026).
+			'jev-latest' => array(
+				'input'  => 0.042,
+				'output' => 0.0,
+			),
+			'jev-1.13.0' => array(
+				'input'  => 0.042,
+				'output' => 0.0,
+			),
+			'default'    => array(
+				'input'  => 0.042,
+				'output' => 0.0,
+			),
+		),
 		'nvidia'       => array(
 			// NVIDIA NIM pricing varies by model. Default to estimated average.
 			'default' => array(

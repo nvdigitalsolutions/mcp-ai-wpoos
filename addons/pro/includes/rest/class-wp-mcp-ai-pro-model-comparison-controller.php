@@ -159,6 +159,9 @@ class WP_MCP_AI_Pro_Model_Comparison_Controller {
 			array(
 				'temperature' => 0.7,
 				'max_tokens'  => 2048,
+				// Opt-in Jev routing pre-step: attaches a routing decision
+				// (task type, complexity, frontier need) to the response.
+				'jev_routing' => ! empty( $request->get_param( 'jev_routing' ) ),
 			)
 		);
 
