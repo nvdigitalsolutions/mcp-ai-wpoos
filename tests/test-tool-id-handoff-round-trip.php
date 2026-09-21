@@ -52,6 +52,8 @@ class Test_Tool_Id_Handoff_Round_Trip extends WP_UnitTestCase {
 	public function tearDown(): void {
 		_set_cron_array( array() );
 		delete_option( WP_MCP_AI_Cron_Manager::OPTION_NAME );
+		delete_option( 'wp_mcp_ai_pro_schedules' );
+		delete_option( 'wp_mcp_ai_pro_schedule_history' );
 		wp_set_current_user( 0 );
 		parent::tearDown();
 	}
@@ -84,6 +86,17 @@ class Test_Tool_Id_Handoff_Round_Trip extends WP_UnitTestCase {
 	public function test_id_handoff_round_trip( $family_key ) {
 		$context = array( 'user_id' => $this->admin_id );
 
+		// Pro-scoped families run only when their tools are registered
+		// (CI registers Pro tools; some local matrices do not).
+		$manifest = require __DIR__ . '/fixtures/tool-contract-manifest.php';
+		$family   = $manifest['families'][ $family_key ];
+		if ( ! empty( $family['scope'] ) && 'pro' === $family['scope'] ) {
+			$producer_slug = $family['produces'][0];
+			if ( null === WP_MCP_AI_Tool_Registry::get_instance()->get_tool( $producer_slug ) ) {
+				$this->markTestSkipped( 'Family ' . $family_key . ' is scoped to Pro tools not registered in this environment.' );
+			}
+		}
+
 		switch ( $family_key ) {
 			case 'job_id':
 				$this->run_cron_round_trip( $context );
@@ -96,6 +109,9 @@ class Test_Tool_Id_Handoff_Round_Trip extends WP_UnitTestCase {
 				break;
 			case 'assistant_id':
 				$this->run_assistant_round_trip( $context );
+				break;
+			case 'schedule_id':
+				$this->run_pro_schedule_round_trip( $context );
 				break;
 			default:
 				$this->fail( 'No round-trip driver for family: ' . $family_key );
@@ -256,5 +272,66 @@ class Test_Tool_Id_Handoff_Round_Trip extends WP_UnitTestCase {
 
 		wp_delete_post( $assistant_id, true );
 		wp_delete_post( $duplicated['assistant_id'], true );
+	}
+
+	/**
+	 * Pro Schedule Manager family: create → update → latest result → delete.
+	 *
+	 * @param array $context Tool execution context.
+	 */
+	private function run_pro_schedule_round_trip( $context ) {
+		$orchestration_dir = dirname( __DIR__ ) . '/addons/pro/includes/tools/orchestration/';
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Create_Pro_Schedule' ) ) {
+			require_once $orchestration_dir . 'class-wp-mcp-ai-pro-tool-create-pro-schedule.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Update_Pro_Schedule' ) ) {
+			require_once $orchestration_dir . 'class-wp-mcp-ai-pro-tool-update-pro-schedule.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Get_Schedule_Latest_Result' ) ) {
+			require_once $orchestration_dir . 'class-wp-mcp-ai-pro-tool-get-schedule-latest-result.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Delete_Pro_Schedule' ) ) {
+			require_once $orchestration_dir . 'class-wp-mcp-ai-pro-tool-delete-pro-schedule.php';
+		}
+
+		$create_tool = new WP_MCP_AI_Pro_Tool_Create_Pro_Schedule();
+		$created     = $create_tool->execute(
+			array(
+				'name'          => 'ID handoff schedule',
+				'schedule_type' => 'task',
+				'hook'          => 'wp_mcp_ai_handoff_test_hook',
+				'schedule'      => 'daily',
+			),
+			$context
+		);
+		$schedule_id = $this->assert_produces_key( $created, 'schedule_id', 'create_pro_schedule' );
+
+		$update_tool = new WP_MCP_AI_Pro_Tool_Update_Pro_Schedule();
+		$updated     = $update_tool->execute(
+			array(
+				'schedule_id' => $schedule_id,
+				'name'        => 'ID handoff schedule (updated)',
+			),
+			$context
+		);
+		$this->assert_id_round_trip( $updated, 'schedule_id', $schedule_id, 'update_pro_schedule' );
+
+		$result_tool = new WP_MCP_AI_Pro_Tool_Get_Schedule_Latest_Result();
+		$latest      = $result_tool->execute( array( 'schedule_id' => $schedule_id ), $context );
+		$this->assert_id_round_trip( $latest, 'schedule_id', $schedule_id, 'get_schedule_latest_result' );
+
+		$delete_tool = new WP_MCP_AI_Pro_Tool_Delete_Pro_Schedule();
+		$deleted     = $delete_tool->execute( array( 'schedule_id' => $schedule_id ), $context );
+		$this->assertNotWPError( $deleted, 'delete_pro_schedule should succeed for the produced schedule_id.' );
+
+		// Negative path: a fabricated ID must fail cleanly.
+		$missing = $update_tool->execute(
+			array(
+				'schedule_id' => 'does-not-exist',
+				'name'        => 'nope',
+			),
+			$context
+		);
+		$this->assert_id_not_found( $missing, 'update_pro_schedule', 'schedule_id' );
 	}
 }
