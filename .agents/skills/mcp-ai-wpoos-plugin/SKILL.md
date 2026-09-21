@@ -7,7 +7,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.83"
   plugin-version-tested: "1.1.83"
-  last-updated: "2026-09-21"
+  last-updated: "2026-09-22"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -47,7 +47,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~306 base / ~1,585 full tools
+     │  Tool Registry     │  ~307 base / ~1,586 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -757,6 +757,15 @@ Import external AI conversation exports into the JetEngine
   toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
   dj-management/image-production slices.
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## TypeSafe Jev Decisions, Assistant Builder, ID-Handoff Contracts & Webchat Fixes (v1.1.83 post)
+
+- **TypeSafe Jev decision provider** (PR #6728) — Jev joins as a first-class *decision* provider deliberately separate from chat: `Interface_WP_MCP_AI_Decision_Client` + `WP_MCP_AI_Typesafe_Client` (typed choice/score/noul over state; 429/`retry-after`; versioned-model logging; `test_connection()`), OpenRouter Decisions bridge (`create_decision()`, filterable endpoint, actionable 404), and the new base tool **`typesafe_decide`** (canonical envelope + two-gate sanitisation, adversarial-state caveat, `manage_options`-gated; `ai_ml` preset + coverage manifest via #6743). Pro: fail-open `WP_MCP_AI_Pro_Jev_Classifier` (`decide()`/`classify_prompt()`/`filter_sources_by_relevance()`), opt-in dispatcher `jev_routing` (REST `compare-models` passthrough), opt-in `enable_jev_research_filter`; fixes the pre-existing dispatcher `chat_completion()` bug. Model catalog → **v2026.09.21** (+3 Jev decision entries).
+- **"The Assistant Builder" meta-assistant** (PR #6727) — pre-configured meta-assistant (7-phase build workflow, 10-component prompt framework) appended to `get_default_assistants()` (roster 6 → 7); idempotent install + one-shot `admin_init` backfill (`wp_mcp_ai_assistant_builder_backfilled`).
+- **P3 ID-handoff data contracts** (PRs #6729–#6738, closure #6739) — every ID-bearing tool family declares `produces`/`consumes` handoffs (post, cron, term, assistant, vector store, batch, Pro schedule, toolkit_cpt, medical record, plan, calendar, WPCode, session, member, webchat room) with the coverage manifest as single source of truth + permanent L1 honesty / L2 round-trip suites. In-wave fixes: `format_code_prettier` envelopes → canonical `WP_Error` (#6737); webchat `log_activity()` → `log_event( 'activity', … )` (#6738).
+- **Usage monitor save fix** (PR #6726) — `handle_save_settings()` now applies the `wp_mcp_ai_admin_settings_sanitize` bridge filter (raw input, pre-sanitize), so the Usage Monitor sub-tab persists again; handlers no-op when their fields are absent.
+- **Webchat close-out** (PR #6740) — `get_webchat_messages` queries rebuilt with explicit placeholders (phpcs warnings gone); the last three webchat tools + CG Pro member mirrors gain usage guidance; the CG interface copy gains `WP_MCP_AI_Tool_Usage_Guidance_Interface` (standalone-resolution fatal fix). Residual CG mirror drift (~957 files) → issue #6741.
+- **Tool count** — +1 base → ~307 base + ~1,279 Pro (~1,586 total). Coding-time skills: 59 (unchanged — the test-suite skill gained patterns 49–50 and the ecosystem-port skill gained the CG interface-port rule, #6742).
 
 ## Tool Guidance, Pro Bootstrap Guard, Telegram Chunking & Upwork-Workflow Delivery (v1.1.83)
 
