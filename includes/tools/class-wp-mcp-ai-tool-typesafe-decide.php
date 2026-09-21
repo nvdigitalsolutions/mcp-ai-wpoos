@@ -76,6 +76,8 @@ class WP_MCP_AI_Tool_Typesafe_Decide implements WP_MCP_AI_Tool_Interface, WP_MCP
 				'state'     => array(
 					'type'        => array( 'string', 'object', 'array' ),
 					'description' => __( 'The content to evaluate: plain text, a structured object, or an array of text. Text only — preprocess images, audio, or video before passing them as state.', 'mcp-ai-wpoos' ),
+					// When state is supplied as an array, it is a list of text chunks.
+					'items'       => array( 'type' => 'string' ),
 				),
 				'questions' => array(
 					'type'                 => 'object',
@@ -91,7 +93,9 @@ class WP_MCP_AI_Tool_Typesafe_Decide implements WP_MCP_AI_Tool_Interface, WP_MCP
 								'type' => 'string',
 							),
 							'criteria'     => array(
-								'type' => array( 'object', 'array' ),
+								'type'  => array( 'object', 'array' ),
+								// Score questions use an ordered array of level descriptions.
+								'items' => array( 'type' => 'string' ),
 							),
 						),
 						'required'   => array( 'type', 'instructions' ),

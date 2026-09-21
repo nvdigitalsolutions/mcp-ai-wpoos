@@ -249,6 +249,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'discover_new_models',
 					'research_model',
 					'export_fine_tune_curriculum',
+					// Decision provider.
+					'typesafe_decide',
 					// Token management.
 					'count_tokens',
 					// Embeddings & vectors.
