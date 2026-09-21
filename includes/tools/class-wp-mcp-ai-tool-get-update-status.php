@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides a structured snapshot of available WordPress updates.
  */
-class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface {
+class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Returns pending core, plugin, and theme updates with version and download details.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing pending core, plugin, and theme updates with versions and download details.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Applying updates or diagnosing errors; updates run via the admin UI, logs via get_system_logs.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_site_health', 'get_environment_status', 'get_system_logs' ),
+			'notes'           => __( 'Optional component_type enum narrows results to core, plugin, or theme.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

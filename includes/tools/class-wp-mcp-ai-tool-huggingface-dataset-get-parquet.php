@@ -20,7 +20,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Parquet' ) ) {
 	 *
 	 * @since 1.0.0
 	 */
-	class WP_MCP_AI_Tool_Huggingface_Dataset_Get_Parquet implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	class WP_MCP_AI_Tool_Huggingface_Dataset_Get_Parquet implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		use WP_MCP_AI_Tool_Chat_Response;
 
@@ -68,6 +68,20 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Parquet' ) ) {
 		 */
 		public function get_description() {
 			return __( 'Get Parquet file URLs for a HuggingFace dataset split', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * Get usage guidance for the tool.
+		 *
+		 * @return array
+		 */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Getting direct Parquet file URLs for bulk download of a dataset split.', 'mcp-ai-wpoos' ),
+				'when_not_to_use' => __( 'Row data or metadata; use huggingface_dataset_get_rows or huggingface_dataset_get_info.', 'mcp-ai-wpoos' ),
+				'related_tools'   => array( 'huggingface_dataset_get_rows', 'huggingface_dataset_get_info', 'huggingface_dataset_get_size' ),
+				'notes'           => __( 'Returns file URLs for efficient bulk access instead of row data.', 'mcp-ai-wpoos' ),
+			);
 		}
 
 		/**

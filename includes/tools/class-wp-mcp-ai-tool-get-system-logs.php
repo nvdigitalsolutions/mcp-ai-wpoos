@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Returns recent log entries from WordPress and NV oOS.
  */
-class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Returns recent log entries from WordPress, NV oOS, and plugin log files for diagnostics.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Tailing recent NV oOS activity, error, and WordPress debug log entries.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Strict argument validation or Site Health checks; use get_system_logs_validated or get_site_health.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_system_logs_validated', 'get_site_health', 'get_environment_status' ),
+			'notes'           => __( 'Limit params cap activity and error entries at 50; debug log lines at 200.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Retrieves detailed information about a specific OpenAI model.
  */
-class WP_MCP_AI_Tool_Get_Model_Information implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Model_Information implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_Get_Model_Information implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Retrieves detailed information about a specific OpenAI model. Use this to check model specifications, verify model exists before use, get model context length, or understand model capabilities.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Verifying an OpenAI model ID exists or checking its owner and creation metadata.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Browsing the catalog or choosing a model for a task; use list_available_models or suggest_best_model.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'list_available_models', 'suggest_best_model', 'research_model' ),
+			'notes'           => __( 'Requires OpenAI credentials; returns metadata for one model per call by exact ID.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

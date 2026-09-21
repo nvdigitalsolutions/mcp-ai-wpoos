@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Generate_Mermaid implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Generate_Mermaid implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -56,6 +56,20 @@ class WP_MCP_AI_Tool_Generate_Mermaid implements WP_MCP_AI_Tool_Interface {
 	 */
 	public function get_description() {
 		return 'Generate diagrams using Mermaid.js (flowchart, sequence, gantt, class diagrams)';
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Rendering flowchart, sequence, gantt, or class diagrams from Mermaid.js code as chat-displayable HTML.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Numeric or statistical charts; use generate_chart or create_chart for data visualizations.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'generate_chart', 'create_chart' ),
+			'notes'           => __( 'type accepts flowchart, sequence, gantt, or class; theme accepts default, forest, dark, or neutral.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Executes Site Health tests and returns aggregated results.
  */
-class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -42,6 +42,20 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Runs WordPress Site Health tests and returns grouped critical, warning, and passing results.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Running WordPress Site Health tests for grouped critical, warning, and pass results.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Quick site metadata, config snapshots, or update lists; use get_site_summary, get_environment_status, or get_update_status.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_site_summary', 'get_environment_status', 'get_update_status' ),
+			'notes'           => __( 'Requires manage_options and runs the full Site Health suite, which can be slow.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

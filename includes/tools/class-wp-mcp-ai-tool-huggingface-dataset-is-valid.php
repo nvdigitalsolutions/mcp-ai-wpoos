@@ -18,7 +18,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Is_Valid' ) ) {
 	 *
 	 * @since 1.0.0
 	 */
-	class WP_MCP_AI_Tool_Huggingface_Dataset_Is_Valid implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	class WP_MCP_AI_Tool_Huggingface_Dataset_Is_Valid implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 		use WP_MCP_AI_Tool_Chat_Response;
 
 		/**
@@ -65,6 +65,20 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Is_Valid' ) ) {
 		 */
 		public function get_description() {
 			return __( 'Check if a HuggingFace dataset exists and is valid', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * Get usage guidance for the tool.
+		 *
+		 * @return array
+		 */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Verifying that a dataset name exists and is accessible before querying it.', 'mcp-ai-wpoos' ),
+				'when_not_to_use' => __( 'Reading rows or statistics; use huggingface_dataset_preview_rows or huggingface_dataset_get_statistics.', 'mcp-ai-wpoos' ),
+				'related_tools'   => array( 'huggingface_dataset_list_splits', 'huggingface_dataset_preview_rows', 'huggingface_dataset_get_statistics' ),
+				'notes'           => __( 'Takes a single dataset name; the HuggingFace Datasets provider must be enabled.', 'mcp-ai-wpoos' ),
+			);
 		}
 
 		/**

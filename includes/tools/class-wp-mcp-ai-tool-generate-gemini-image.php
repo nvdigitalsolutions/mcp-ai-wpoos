@@ -25,7 +25,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-respons
 /**
  * Provides a tool for generating images via Gemini and storing them as attachments.
  */
-class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Rules_Interface {
+class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Rules_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
 	use WP_MCP_AI_SVG_Vectorizer;
 	use WP_MCP_AI_Tool_Chat_Response;
@@ -54,6 +54,20 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Creates an image with Gemini and stores it in the Media Library.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new image from a text prompt with Gemini and storing it in the Media Library.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Modifying an existing image; use edit_gemini_image. For OpenAI models, use generate_openai_image.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'edit_gemini_image', 'generate_openai_image', 'generate_gemini_image_validated' ),
+			'notes'           => __( 'Requires a Gemini API key. aspect_ratio and mime_type are enum-validated; output can be raster or SVG.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

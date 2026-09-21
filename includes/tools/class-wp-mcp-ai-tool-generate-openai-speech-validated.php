@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-generate-openai-speech.php';
  * This class extends the original generate_openai_speech tool to use
  * Symfony Validator for argument validation.
  */
-class WP_MCP_AI_Tool_Generate_OpenAI_Speech_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_OpenAI_Speech_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * The original generate_openai_speech tool instance for delegation.
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech_Validated extends WP_MCP_AI_Validate
 	 */
 	public function get_description() {
 		return __( 'Converts text to speech using OpenAI and stores the audio in the Media Library with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Converting text to speech with Symfony Validator enforcement of text, voice, speed, and format.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'When validation is unneeded or unavailable; use generate_openai_speech.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'generate_openai_speech', 'transcribe_openai_audio' ),
+			'notes'           => __( 'Delegates to generate_openai_speech after validation and shares its providers.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-get-system-logs.php';
  * This class extends the original get_system_logs tool to use
  * Symfony Validator for argument validation.
  */
-class WP_MCP_AI_Tool_Get_System_Logs_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_System_Logs_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * The original get_system_logs tool instance for delegation.
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_Get_System_Logs_Validated extends WP_MCP_AI_Validated_Tool 
 	 */
 	public function get_description() {
 		return __( 'Returns recent log entries from WordPress, NV oOS, and plugin log files for diagnostics using Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Same log tailing as get_system_logs with Symfony Validator checking every argument.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'When validator dependencies are missing or PHP is below 8.0; use get_system_logs.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_system_logs', 'get_site_health', 'get_environment_status' ),
+			'notes'           => __( 'Delegates to get_system_logs after validation; errors when validation is unavailable.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
