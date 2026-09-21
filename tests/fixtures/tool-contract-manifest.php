@@ -42,5 +42,15 @@ return array(
 			'consumes'   => array( 'get_post', 'save_post', 'save_post_validated', 'delete_post' ),
 			'round_trip' => true,
 		),
+		'term_id' => array(
+			'produces'   => array( 'create_term', 'update_term' ),
+			'consumes'   => array( 'update_term' ),
+			'round_trip' => true,
+		),
+		'assistant_id' => array(
+			'produces'   => array( 'create_assistant', 'create_assistant_validated', 'duplicate_assistant' ),
+			'consumes'   => array( 'duplicate_assistant' ),
+			'round_trip' => true,
+		),
 	),
 );
