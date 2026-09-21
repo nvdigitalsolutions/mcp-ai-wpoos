@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_QMS_Sign_Document tool.
  */
-class WP_MCP_AI_Tool_QMS_Sign_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_QMS_Sign_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 
 	/**
@@ -44,6 +44,19 @@ class WP_MCP_AI_Tool_QMS_Sign_Document implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Apply an electronic signature to a controlled document. The signer\'s password is required (re-authentication) and the signature is cryptographically bound to the current document content hash. Intent must be one of: reviewed, approved, witnessed.', 'mcp-ai-wpoos-pro' );
+	}
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Applying reviewed, approved, or witnessed electronic signatures to a controlled document with signer re-authentication.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Changing document workflow state; use qms_submit_for_review, qms_approve_document, or qms_release_document.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'qms_approve_document', 'qms_submit_for_review', 'qms_get_audit_trail' ),
+			'notes'           => __( 'approved intent requires the user to be an assigned approver. Treat password as sensitive input.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 		/**
 		 * Get the parameters schema.

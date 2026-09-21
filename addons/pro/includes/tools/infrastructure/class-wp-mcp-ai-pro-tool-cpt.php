@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 3.6.0
  */
-class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Top-level parameter keys that belong to the tool's own interface and
@@ -119,6 +119,20 @@ class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	 */
 	public function get_description() {
 		return __( 'Query and manage pro toolkit Custom Post Type (CPT) entries directly. Use this tool — instead of get_post / get_recent_posts — when you need to create, read, update, delete, or search records in any pro toolkit CPT such as mcp_ai_prescription, mcp_ai_member, mcp_ai_med_record, mcp_ai_allergy, mcp_ai_checkup, mcp_ai_policy, mcp_ai_place, mcp_ai_project, mcp_ai_task, mcp_ai_event, mcp_ai_company, and many more. Supports full CRUD, bulk import, meta-aware filtering, and schema discovery. Workflow: 1) call get_schema to discover all available meta field keys and types; 2) call list_items with filters to locate specific records and retrieve their post IDs; 3) call get_item, update_item, or delete_item using the returned ID.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'CRUD, bulk import, and meta-aware search on pro toolkit CPT records such as mcp_ai_project or mcp_ai_task.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Plain posts or pages; use get_post, get_recent_posts, or create_post. JetEngine CCTs; use jetengine_mcp.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'jetengine_mcp', 'get_post_type_schema', 'create_post' ),
+			'notes'           => __( 'Always call get_schema before create/update; unknown field keys are stored as post meta.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

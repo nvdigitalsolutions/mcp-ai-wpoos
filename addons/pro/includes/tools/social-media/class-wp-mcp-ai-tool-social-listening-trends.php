@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Social_Listening_Trends implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Social_Listening_Trends implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -96,6 +96,20 @@ class WP_MCP_AI_Tool_Social_Listening_Trends implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Track trending topics, hashtags, keywords, and conversations in your niche across social platforms. Includes sentiment analysis, competitor monitoring, and actionable insights for content strategy.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Monitoring trending topics, hashtags, keywords, and conversations across social platforms with sentiment and competitor insights.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Measuring reach or engagement of specific hashtags; use track_hashtag_performance.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'track_hashtag_performance', 'competitor_analysis', 'monitor_mentions_replies' ),
+			'notes'           => __( 'Requires the social media toolkit to be enabled in plugin settings.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -113,6 +113,20 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Getting AI-recommended page layouts, sections, and widgets for a site type, industry, and goals during site planning.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Building the actual pages; use generate_site_plan, create_homepage_layout, or generate_landing_page.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_site_plan', 'create_homepage_layout', 'generate_landing_page' ),
+			'notes'           => __( 'supports_web_search is true; async-capable with an estimated 3000 tokens.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @since 1.0.0

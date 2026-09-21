@@ -38,7 +38,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Track_Hashtag_Performance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Track_Hashtag_Performance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -106,6 +106,20 @@ class WP_MCP_AI_Tool_Track_Hashtag_Performance implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Analyze hashtag performance across social media platforms. Track reach, engagement, impressions, and identify trending hashtags. Compare hashtag effectiveness, find optimal posting times, and get recommendations for hashtag strategy improvement.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Comparing reach, engagement, and impressions for specific hashtags and finding optimal posting times.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Broad trend or sentiment discovery; use social_listening_trends.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'social_listening_trends', 'get_social_analytics', 'get_cross_platform_analytics' ),
+			'notes'           => __( 'Requires the social media toolkit to be enabled in plugin settings.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_QMS_Submit_For_Review tool.
  */
-class WP_MCP_AI_Tool_QMS_Submit_For_Review implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_QMS_Submit_For_Review implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 
 	/**
@@ -42,6 +42,19 @@ class WP_MCP_AI_Tool_QMS_Submit_For_Review implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Transition a controlled document from draft to in_review state. At least one reviewer must be assigned.', 'mcp-ai-wpoos-pro' );
+	}
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Transitioning a draft controlled document into the in_review state when reviewers are assigned.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Approving or releasing documents; use qms_approve_document or qms_release_document.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'qms_approve_document', 'qms_release_document', 'qms_list_controlled_documents' ),
+			'notes'           => __( 'At least one reviewer must be assigned before submission.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 		/**
 		 * Get the parameters schema.
