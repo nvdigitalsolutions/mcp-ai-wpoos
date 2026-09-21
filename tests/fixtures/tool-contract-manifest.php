@@ -81,5 +81,11 @@ return array(
 			'consumes'   => array( 'toolkit_cpt' ),
 			'round_trip' => true,
 		),
+		'record_id' => array(
+			'scope'      => 'pro',
+			'produces'   => array( 'create_medical_record' ),
+			'consumes'   => array( 'get_medical_record', 'update_medical_record', 'delete_medical_record' ),
+			'round_trip' => true,
+		),
 	),
 );
