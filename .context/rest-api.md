@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: September 21, 2026 (v1.1.83).
+> Last reviewed: September 22, 2026 (v1.1.83 post).
+>
+> **New in v1.1.83 post (no REST surface changes):** no routes added, removed, or re-shaped this window — the TypeSafe Jev provider (#6728) passes `jev_routing` through the existing Pro `compare-models` REST response (argument-level, not route-level); the P3 ID-handoff waves (#6729–#6738) are tool-contract annotations; the usage-monitor fix (#6726) is the existing admin settings save path (no new route); the Assistant Builder seed (#6727) is activation-side. The base `typesafe_decide` tool (#6728) joins the tool surface, not a new REST route.
 >
 > **New in v1.1.83 (no REST surface changes):** no routes added, removed, or re-shaped this window. The Tool Description Engineering program (#6686, #6695, #6687–#6723) changes the **payload** of the REST chat path and the Tool Service `/tools` endpoint (the model-facing descriptions gain the assembled `[Usage: …]` suffix; `list_mcp_tools` gains the `tool_slug` + `include_schemas` arguments) — description/argument-level, not route-level. The Pro bootstrap guard (#6677), Telegram chunking (#6677), Gmail `"settings"` fallback (#6677), Upwork search + workflow-delivery fixes (#6678–#6680/#6682/#6684), and the Playground demo permalink seed (#6683) are tool/service/seed-level. The regulatory envelope migration (#6689) keeps the same tool slugs.
 >

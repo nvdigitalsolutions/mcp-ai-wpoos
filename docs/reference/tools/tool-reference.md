@@ -1,8 +1,8 @@
 # Built-in tool reference
 
 **Status:** ✅ UPDATED - September 2026
-**Tool Count:** ~306 base tools + ~1,279 Pro tools = ~1,585 total (live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative; unchanged in v1.1.83 — no tool registrations in-window, the Tool Description Engineering sweep adds model-facing usage guidance to every tool class without adding slugs; unchanged in v1.1.82 — no tool registrations in-window; +13 Pro in v1.1.81 — five CRM tools `bulk_move_deal_stages`, `create_tracked_link`, `record_crm_reply`, `get_crm_handover`, `get_pipeline_digest` from PR #6636 and eight financial tools `market_screener`, `macro_data_fetcher`, `economic_calendar_fetcher`, `earnings_calendar_fetcher`, `options_chain_fetcher`, `crypto_market_data`, `portfolio_transaction_log`, `price_alerts` from PR #6639)
-**Last Updated:** September 21, 2026 (v1.1.83 — data-contract rollout complete: all 15 ID-bearing families annotated with `produces`/`consumes` contracts via PRs #6729–#6738; see the Data contracts section below)
+**Tool Count:** ~307 base tools + ~1,279 Pro tools = ~1,586 total (live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative; +1 base in v1.1.83 post — `typesafe_decide` from PR #6728, the TypeSafe Jev decision tool; unchanged in v1.1.83 — no tool registrations in-window, the Tool Description Engineering sweep adds model-facing usage guidance to every tool class without adding slugs; unchanged in v1.1.82 — no tool registrations in-window; +13 Pro in v1.1.81 — five CRM tools `bulk_move_deal_stages`, `create_tracked_link`, `record_crm_reply`, `get_crm_handover`, `get_pipeline_digest` from PR #6636 and eight financial tools `market_screener`, `macro_data_fetcher`, `economic_calendar_fetcher`, `earnings_calendar_fetcher`, `options_chain_fetcher`, `crypto_market_data`, `portfolio_transaction_log`, `price_alerts` from PR #6639)
+**Last Updated:** September 22, 2026 (v1.1.83 post — data-contract rollout complete: all 15 ID-bearing families annotated with `produces`/`consumes` contracts via PRs #6729–#6738; see the Data contracts section below)
 
 ## Data contracts (ID handoffs between tools)
 

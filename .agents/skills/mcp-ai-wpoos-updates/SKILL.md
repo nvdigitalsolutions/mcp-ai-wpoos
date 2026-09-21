@@ -15,7 +15,7 @@ metadata:
 Playbook for the three recurring update tracks in this repo, distilled from the
 
 executed catch-up plans (`docs/project/plans/v1.1.58-docs-catch-up.md` through
-`v1.1.83-docs-catch-up.md`), the model-catalog process docs (July 2026 and
+`v1.1.83-post-docs-catch-up.md`), the model-catalog process docs (July 2026 and
 September 2026 runs), and the executed 2026-09-17 PR deferred-item sweep
 (issues #6646–#6655). The workflows implement industry standards — Keep a
 Changelog, SemVer commit separation, and deprecation-driven LLM model lifecycle
@@ -55,13 +55,20 @@ weekly (or on demand), independent of any release.
    re-derivation, OI-3 test-suite cross-ref, OI-4 wave residuals). Parked items
    stay parked; new finds get *recorded* there, never fixed in-pass.
 1. **Read the template plans** — the latest executed plan (e.g.
-   `v1.1.83-docs-catch-up.md`) plus `v1.1.58`/`v1.1.59` for the original
+   `v1.1.83-post-docs-catch-up.md` — the first post-window pass, executed when
+   PRs merged after the catch-up but before the next version bump) plus
+   `v1.1.83-docs-catch-up.md` and `v1.1.58`/`v1.1.59` for the original
    structure.
 4. **Identify the PR window** — everything merged on `alpha-working` after the
    previous catch-up merge. Classify every PR: production-touching (file + change
    table), test-only, docs-only, build-only, closed-unmerged docs PRs.
 5. **Create the plan** `docs/project/plans/[VERSION]-docs-catch-up.md` if none
-   exists, with the v1.1.83 structure:
+   exists — or `[VERSION]-post-docs-catch-up.md` when a catch-up already merged
+   for the current version and a new PR window landed on the same line (the
+   v1.1.83 post pass is the precedent: extend the current-release changelog
+   section in place, re-derive the count delta, and sweep the previous pass's
+   "unchanged" claims — they can be falsified by post-window merges). Use the
+   v1.1.83 structure:
    1. Context — PR table + scope rules
    2. Work items (P0–P3 + Verify-only)
    3. Execution log (stamped when run)
@@ -560,7 +567,9 @@ previous window — the user will usually want it back-dated.
 
 - Plan templates: `docs/project/plans/v1.1.58-docs-catch-up.md`,
   `docs/project/plans/v1.1.59-docs-catch-up.md`,
-  `docs/project/plans/v1.1.83-docs-catch-up.md` (latest executed)
+  `docs/project/plans/v1.1.83-docs-catch-up.md`,
+  `docs/project/plans/v1.1.83-post-docs-catch-up.md` (latest executed — the
+  post-window pass over PRs #6726–#6743)
 - Standing open items: `docs/project/plans/docs-catch-up-open-items.md`
 - Executed PR deferred-item sweep (2026-09-17): issues #6646–#6655; closed
   #6389 as complete
