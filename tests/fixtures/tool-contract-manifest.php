@@ -57,9 +57,9 @@
  *    create_agent_team members and correspond to assistant IDs (covered
  *    by the assistant_id family).
  *
-	 *
-	 * @package WP_MCP_AI
-	 */
+ *
+ * @package WP_MCP_AI
+ */
 
 return array(
 	'version'  => 1,

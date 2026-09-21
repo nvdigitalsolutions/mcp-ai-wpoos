@@ -1,6 +1,6 @@
 # P3 Data-Contract Rollout — ID-Handoff Verification Plan
 
-**Status:** IN PROGRESS — Wave 1 (base families) landed via PRs #6729–#6731; Pro `schedule_id` wave (#6732) queued; docs sweep in progress.
+**Status:** ✅ COMPLETE — all 15 ID-bearing families annotated and verified via PRs #6729–#6738 (waves 1a–2f); completeness sweep closed 2026-09-21. Final inventory below; the manifest fixture stays authoritative.
 **Related:** [Unix Theory Compliance Enhancement Proposal](UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md) (Phase P3).
 **Problem class:** multi-step MCP workflows fail because state (IDs) does not flow between tool calls — the model compensates by searching for records "another way". The P3 infrastructure (interface + registry helper + description suffix) has shipped, but zero production tools implement it.
 
@@ -36,8 +36,41 @@ Close three gaps:
 | **1** | L1 static honesty suite (`tests/test-tool-id-handoff-contract.php`) | S | ✅ Done (#6729) |
 | **2** | Wave 1 rollout — cron, posts, terms, assistants, vector stores, batches (+ webchat deferred: registration gated behind `enable_webchat_integration`) | S per cluster | ✅ Done (#6729–#6731) |
 | **3** | L2 round-trip execution suite + shared assertion trait | S | ✅ Done (#6729, #6730, #6732 drivers) |
-| **4** | Waves 2–3 — Pro families (`schedule_id` landed in #6732) + remaining toolkit CPTs; byte-identical CG Pro port for any Pro files that have mirrors | M | 🟡 Wave 2a in PR #6732; CG port not needed for schedule tools (not yet ported there) |
-| **5** | Docs: `.context/tool-registry.md`, `docs/reference/tools/tool-reference.md`, proposal status update; completeness sweep | XS | 🟡 Docs landed with this PR; completeness sweep pending |
+| **4** | Waves 2–3 — Pro families (`schedule_id`, `item_id`, `record_id`, `event_id`, `snippet_id`, `member_id`, `room_id`) + byte-identical CG Pro port for Pro files that have mirrors | M | ✅ Done — waves 2a–2f via #6732–#6738; CG Pro mirrors updated for medical records (#6735) and members (#6738); calendar/WPCode have no CG mirrors |
+| **5** | Docs: `.context/tool-registry.md`, `docs/reference/tools/tool-reference.md`, proposal status update; completeness sweep | XS | ✅ Done — static sweep confirmed every `WP_MCP_AI_Tool_Data_Contract_Interface` implementation is manifest-vetted; remaining candidates documented as verified out-of-scope |
+
+## Landed families (final inventory, Sep 2026)
+
+The manifest fixture (`tests/fixtures/tool-contract-manifest.php`) is the
+single source of truth; the L1 suite keeps it in lockstep with the registry.
+`L2 ✅` = deterministic round-trip driver; `L1 only` = honesty coverage with
+no deterministic driver (external API or plugin dependency).
+
+| Family | Contract | Produces | Consumes | Round-trip |
+|---|---|---|---|---|
+| Cron | `job_id` | `create_cron_job`, `create_cron_job_validated` | `get_cron_job`, `delete_cron_job` | L2 ✅ |
+| Task plans | `plan_id` | `create_task_plan` | `get_task_plan`, `update_task_plan`, `detect_completion_indicators` | L2 ✅ |
+| Autonomous sessions | `session_id` | `manage_autonomous_session` | `manage_autonomous_session`, `get_session_status`, `analyze_loop_health`, `check_exit_conditions` | L2 ✅ |
+| Webchat rooms | `room_id` | `create_webchat_room` | `get_webchat_room`, `get_webchat_messages`, `save_webchat_message` | L2 ✅ |
+| Posts | `post_id` | `create_post`, `create_post_validated`, `save_post`, `save_post_validated`, `create_post_from_research` | `get_post`, `save_post`, `save_post_validated`, `delete_post`, `auto_categorize_content`, `content_freshness_checker`, `create_text_embeddings` | L2 ✅ |
+| Terms | `term_id` | `create_term`, `update_term` | `update_term` | L2 ✅ |
+| Assistants | `assistant_id` | `create_assistant`, `create_assistant_validated`, `duplicate_assistant` | `duplicate_assistant`, `export_assistant_blueprint`, `export_fine_tune_curriculum` | L2 ✅ |
+| Vector stores | `vector_store_id` | `create_vector_store` | `get_vector_store`, `manage_vector_store_files` | L1 only |
+| Batches | `batch_id` | `create_batch` | `get_batch_status` | L1 only |
+| Pro schedules | `schedule_id` | `create_pro_schedule`, `update_pro_schedule` | `update_pro_schedule`, `delete_pro_schedule`, `get_schedule_latest_result`, `get_schedule_run_history`, `dry_run_pro_schedule` | L2 ✅ |
+| Toolkit CPTs | `item_id` | `toolkit_cpt` | `toolkit_cpt` | L2 ✅ |
+| Medical records | `record_id` | `create_medical_record` | `get_medical_record`, `update_medical_record`, `delete_medical_record` | L2 ✅ |
+| Members | `member_id` | `create_member` | `create_member`, `get_member`, `update_member`, `delete_member` | L2 ✅ |
+| Calendar events | `event_id` | `create_google_calendar_event`, `update_google_calendar_event`, `quick_add_google_calendar_event` | `update_google_calendar_event`, `delete_google_calendar_event` | L1 only |
+| WPCode snippets | `snippet_id` | `create_wpcode_snippet` | `create_wpcode_snippet`, `format_code_prettier` | L1 only |
+
+**Verified out-of-scope** (investigated 2026-09-21, documented in the
+manifest): `workflow_id` (no tool produces it), `profession_id`
+(slug-keyed), `team_id` (nested, unconsumed), `agent_id` (nested
+assistant-ID aliases). By design (D2): `assistant_ids` (plural shape,
+nothing produces it yet), `product_id` (producer-only — no registered
+consumer), `template_id` (legacy wrapper shared across many slugs),
+external `connection_id` domains, and one-way media chains.
 
 ## Wave 1 families (Phase 2)
 
