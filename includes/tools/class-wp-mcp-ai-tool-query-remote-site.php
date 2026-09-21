@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Allows AI assistants to query other WordPress sites running wp-mcp-ai.
  */
-class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Send a prompt to a peer site in the mesh network and receive the response from its AI assistant.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Asking a mesh peer site to answer a question or run a task using its own AI assistant and tools.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Connectivity checks or peer discovery; use probe_remote_mcp to verify a peer before sending prompts.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'probe_remote_mcp', 'query_mesh_intelligent' ),
+			'notes'           => __( 'peer_name must match mesh network settings exactly; responses depend on the peer\'s assistant configuration.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

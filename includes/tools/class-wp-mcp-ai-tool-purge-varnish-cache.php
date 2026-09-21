@@ -22,7 +22,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 /**
  * Provides a tool for purging Varnish cache entries.
  */
-class WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const DEFAULT_TIMEOUT = 30;
@@ -52,6 +52,20 @@ class WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Purges the local Varnish cache. Supports full-cache purges (bans) and specific URL purges.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Purging local Varnish cache entries by URL or a full ban (purge_everything).', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'CDN cache; use purge_cloudflare_cache. Every configured layer; use purge_cache.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'purge_cloudflare_cache', 'purge_cache' ),
+			'notes'           => __( 'Requires enable_varnish_purge in settings. Bans use X-Ban-Regex against the site host.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

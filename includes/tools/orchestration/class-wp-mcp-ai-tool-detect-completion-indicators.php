@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Detect Completion Indicators Tool
  */
-class WP_MCP_AI_Tool_Detect_Completion_Indicators implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Detect_Completion_Indicators implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
@@ -85,6 +85,20 @@ class WP_MCP_AI_Tool_Detect_Completion_Indicators implements WP_MCP_AI_Tool_Inte
 				'required'   => array( 'text' ),
 			),
 			'required_capability' => 'read',
+		);
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scoring text for semantic completion signals before the dual-condition exit gate.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Making the exit decision; use check_exit_conditions. Checking plan progress; use get_task_plan.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'check_exit_conditions', 'get_task_plan', 'analyze_loop_health' ),
+			'notes'           => __( 'Optional plan_id adds one to the score when the plan reaches 100 percent progress; threshold defaults to 2.', 'mcp-ai-wpoos' ),
 		);
 	}
 

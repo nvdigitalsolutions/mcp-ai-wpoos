@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -53,6 +53,20 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	 */
 	public function get_description() {
 		return __( 'AI-powered Excel formula generation and manipulation. Recognizes Excel as a Turing-complete programming language with LAMBDA functions. Generate formulas from natural language, explain complex formulas, debug errors, create custom LAMBDA functions, and document spreadsheet logic.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating, explaining, debugging, documenting, or converting Excel formulas with an AI model.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Non-spreadsheet tasks; every operation consumes AI tokens and calls a model provider.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_chart', 'generate_chart' ),
+			'notes'           => __( 'Operation enum: generate, explain, debug, document, convert, lambda. excel_version=legacy drops LAMBDA syntax.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

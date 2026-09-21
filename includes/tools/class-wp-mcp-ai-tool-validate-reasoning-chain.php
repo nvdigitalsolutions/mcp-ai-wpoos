@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.1
  */
-class WP_MCP_AI_Tool_Validate_Reasoning_Chain implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Validate_Reasoning_Chain implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -46,6 +46,20 @@ class WP_MCP_AI_Tool_Validate_Reasoning_Chain implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Validates logical reasoning chains for coherence and consistency. Checks step-by-step progression, verifies premises, identifies logical gaps, and ensures conclusions follow from reasoning. Returns validation report with coherence score, consistency check, and identified issues.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking a step-by-step reasoning chain for coherence, logical consistency, gaps, and whether conclusions follow from premises.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Generating reasoning or selecting a model; use enable_reasoning_mode for reasoning features and suggest_best_model for models.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'enable_reasoning_mode', 'suggest_best_model' ),
+			'notes'           => __( 'Read-only and local-only; reports coherence and consistency scores plus per-step issues and warnings.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

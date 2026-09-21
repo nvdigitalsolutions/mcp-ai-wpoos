@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-transcribe-openai-audio.php';
  * This class extends the original transcribe_openai_audio tool to use
  * Symfony Validator for argument validation.
  */
-class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * The original transcribe_openai_audio tool instance for delegation.
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio_Validated extends WP_MCP_AI_Validat
 	 */
 	public function get_description() {
 		return __( 'Converts an uploaded audio file into English text using OpenAI transcription or translation with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Transcribing audio when you need Symfony Validator enforcement of arguments before delegating to the transcribe_openai_audio tool.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'When strict argument validation is unnecessary; use transcribe_openai_audio directly for the plain workflow.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'transcribe_openai_audio', 'generate_openai_speech_validated' ),
+			'notes'           => __( 'Validated arguments are converted back to an array and executed by the original tool, so behavior matches transcribe_openai_audio.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

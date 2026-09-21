@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides functionality to list newsletter emails from the Newsletter plugin.
  */
-class WP_MCP_AI_Tool_Newsletter_Get_Emails implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Newsletter_Get_Emails implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -55,6 +55,20 @@ class WP_MCP_AI_Tool_Newsletter_Get_Emails implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Retrieve newsletter email campaigns with filtering options. Requires Newsletter plugin.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing newsletter campaigns, optionally filtered by status (new, sending, sent, paused) or type.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Creating campaigns; use newsletter_create_email. Subscriber data; use newsletter_get_subscribers.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'newsletter_create_email', 'newsletter_get_subscribers' ),
+			'notes'           => __( 'Limit is capped at 50 rows per call; page with offset for older campaigns.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

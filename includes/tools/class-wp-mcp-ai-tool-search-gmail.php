@@ -19,7 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 /**
  * Provides an assistant tool for searching Gmail messages via the Gmail REST API.
  */
-class WP_MCP_AI_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Searches the configured Gmail inbox and returns recent matches, including sender, subject, and snippets.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Locating recent Gmail messages with web-interface query syntax, optional label filters, and thread grouping.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'File storage search; use search_drive for Drive files and search_attachments to list message attachments.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'search_drive', 'send_group_email' ),
+			'notes'           => __( 'Cap output with max_results; use ids_only=true for cheap ID-only passes before reading message bodies.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

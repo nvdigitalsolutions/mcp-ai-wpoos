@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Update Task Plan Tool
  */
-class WP_MCP_AI_Tool_Update_Task_Plan implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Update_Task_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
@@ -95,6 +95,20 @@ class WP_MCP_AI_Tool_Update_Task_Plan implements WP_MCP_AI_Tool_Interface {
 				'required'   => array( 'plan_id' ),
 			),
 			'required_capability' => 'edit_posts',
+		);
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Marking tasks complete or appending new tasks to an existing task plan.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Creating a plan; use create_task_plan. Reading one; use get_task_plan.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_task_plan', 'get_task_plan', 'check_exit_conditions' ),
+			'notes'           => __( 'task_updates uses zero-based task_index; progress reaches 100 only when every checkbox is marked.', 'mcp-ai-wpoos' ),
 		);
 	}
 

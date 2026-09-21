@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Compute the task-class memory scope for an assistant.
  */
-class WP_MCP_AI_Tool_Scope_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Scope_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Reserved task-class buckets recognised by the harness. Other values
@@ -62,6 +62,20 @@ class WP_MCP_AI_Tool_Scope_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Compute the memory scope tags for an assistant and task class. Returns the canonical task_class bucket plus the tag set callers should attach to memory writes (e.g. reflections) so reads can filter accurately.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Computing the task-class and wing tags to attach to memory writes and filter reads.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Storing or fetching memory content; use record_reflection or retrieve_with_provenance.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'record_reflection', 'retrieve_with_provenance' ),
+			'notes'           => __( 'Reserved buckets include general, math, code, qa, rag, research, agentic, this-site, this-user; read-only.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Wait for User tool class.
  */
-class WP_MCP_AI_Tool_Wait_For_User implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Wait_For_User implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
@@ -64,6 +64,20 @@ class WP_MCP_AI_Tool_Wait_For_User implements WP_MCP_AI_Tool_Interface {
 				'properties' => new stdClass(),
 				'required'   => array(),
 			),
+		);
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Ending a voice turn silently when audio is silence, noise, hold music, TV audio, or speech not addressed to the assistant.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Answered or addressed speech; reply directly, or use transcribe_openai_audio first to convert the audio to text.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'transcribe_openai_audio', 'generate_openai_speech' ),
+			'notes'           => __( 'A no-op tool for realtime voice sessions; pairs with prompt instructions per the OpenAI Realtime 2.0 guide.', 'mcp-ai-wpoos' ),
 		);
 	}
 

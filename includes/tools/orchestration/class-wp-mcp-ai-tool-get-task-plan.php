@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get Task Plan Tool
  */
-class WP_MCP_AI_Tool_Get_Task_Plan implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Get_Task_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
@@ -63,6 +63,20 @@ class WP_MCP_AI_Tool_Get_Task_Plan implements WP_MCP_AI_Tool_Interface {
 				'required'   => array( 'plan_id' ),
 			),
 			'required_capability' => 'read',
+		);
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading a task plan with its parsed task list, progress, and completion status.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Creating or updating plans; use create_task_plan or update_task_plan.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_task_plan', 'update_task_plan', 'manage_autonomous_session' ),
+			'notes'           => __( 'include_history defaults to false; tasks are parsed from the stored markdown checkboxes.', 'mcp-ai-wpoos' ),
 		);
 	}
 
