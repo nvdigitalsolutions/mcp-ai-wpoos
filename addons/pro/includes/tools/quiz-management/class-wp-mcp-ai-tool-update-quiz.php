@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Updates an existing quiz with new questions or settings.
  */
-class WP_MCP_AI_Tool_Update_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Update_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Updates an existing quiz with new questions or settings. Only the quiz author or users with edit_others_posts capability can update quizzes.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Editing an existing quiz: title, description, time limit, questions, or passing score.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'New quizzes; use create_quiz. Only the author or editors with edit_others_posts may update.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_quiz', 'get_quiz', 'delete_quiz' ),
+			'notes'           => __( 'Supplying questions replaces the entire question set; omitted fields stay unchanged.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

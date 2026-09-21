@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_RTL_Content_Optimization tool.
  */
-class WP_MCP_AI_Tool_RTL_Content_Optimization implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_RTL_Content_Optimization implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_RTL_Content_Optimization implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Optimize content and layouts for RTL (right-to-left) languages like Arabic and Hebrew.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Preparing posts for RTL languages like Arabic or Hebrew, including image flipping.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'LTR locales or date and currency formatting; use localize_dates_currencies for locale formats.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'localize_dates_currencies', 'auto_translate_content' ),
+			'notes'           => __( 'Set optimize_images=true to flip images; otherwise content direction and layout are adjusted only.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

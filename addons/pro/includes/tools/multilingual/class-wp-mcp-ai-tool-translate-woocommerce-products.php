@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Translate_WooCommerce_Products tool.
  */
-class WP_MCP_AI_Tool_Translate_WooCommerce_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Translate_WooCommerce_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Translate_WooCommerce_Products implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Translate product catalogs including titles, descriptions, attributes, and categories for multiple languages.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Translating WooCommerce product titles, descriptions, attributes, and categories in bulk.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Non-product posts and pages; use auto_translate_content for regular content instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'auto_translate_content', 'detect_content_language', 'translation_quality_check' ),
+			'notes'           => __( 'Variations and categories are included by default; disable either flag to skip them.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Gets a single place with all details.
  */
-class WP_MCP_AI_Tool_Get_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_Get_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	 */
 	public function get_description() {
 		return __( 'Retrieves detailed information about a specific place.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching the full detail record for a single known place ID.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Discovery or filtering; use list_places to search and find_bookable_places when you need availability.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_places', 'update_place', 'enrich_place_details' ),
+			'notes'           => __( 'Returns address, coordinates, contacts, hours, ratings, and social/booking URLs for one place.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

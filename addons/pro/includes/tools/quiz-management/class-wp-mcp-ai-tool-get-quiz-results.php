@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Retrieves detailed results for a quiz submission.
  */
-class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Retrieves detailed results for a graded quiz submission, including answers, grades, and feedback.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reviewing one student submission in detail: per-question answers, points, and feedback.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Aggregates across submissions; use get_quiz_analytics, or get_quiz_submissions to list all submissions.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_quiz_submissions', 'get_quiz_analytics', 'grade_quiz' ),
+			'notes'           => __( 'Students see their own results; the quiz author or editors can view any submission.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
