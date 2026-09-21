@@ -26,6 +26,13 @@
  * Wave PRs update this file in the same commit as their tool annotations
  * (keeps the reverse drift check green).
  *
+ * Pending families (deliberately not yet annotated or listed):
+ *  - `room_id` (webchat tools) — registration is gated behind
+ *    `enable_webchat_integration`, so annotations must land together with
+ *    a manifest entry and a registration-enabled test environment.
+ *  - `assistant_ids` (export_assistant) — plural array shape; nothing
+ *    produces it yet.
+ *
  * @package WP_MCP_AI
  */
 
@@ -51,6 +58,16 @@ return array(
 			'produces'   => array( 'create_assistant', 'create_assistant_validated', 'duplicate_assistant' ),
 			'consumes'   => array( 'duplicate_assistant' ),
 			'round_trip' => true,
+		),
+		'vector_store_id' => array(
+			'produces'   => array( 'create_vector_store' ),
+			'consumes'   => array( 'get_vector_store', 'manage_vector_store_files' ),
+			'round_trip' => false, // External OpenAI API; no deterministic L2 driver yet.
+		),
+		'batch_id' => array(
+			'produces'   => array( 'create_batch' ),
+			'consumes'   => array( 'get_batch_status' ),
+			'round_trip' => false, // External OpenAI API; no deterministic L2 driver yet.
 		),
 	),
 );
