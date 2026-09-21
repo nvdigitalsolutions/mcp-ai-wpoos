@@ -18,9 +18,21 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Retrieves messages from the WebChat messages CCT.
  */
-class WP_MCP_AI_Tool_Get_WebChat_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_WebChat_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 
 	use WP_MCP_AI_Tool_Default_Capability;
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading message history for a known room_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sending messages; use save_webchat_message.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_webchat_room', 'save_webchat_message' ),
+			'notes'           => __( 'room_id comes from create_webchat_room responses.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * Check if this tool is available.
@@ -88,6 +100,16 @@ class WP_MCP_AI_Tool_Get_WebChat_Messages implements WP_MCP_AI_Tool_Interface, W
 			),
 			'required'             => array( 'room_id' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'room_id' ),
 		);
 	}
 

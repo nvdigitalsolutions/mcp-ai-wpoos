@@ -93,12 +93,14 @@ class Test_Tool_Id_Handoff_Round_Trip extends WP_UnitTestCase {
 		$family   = $manifest['families'][ $family_key ];
 		if ( ! empty( $family['scope'] ) && 'pro' === $family['scope'] ) {
 			$probe_files = array(
-				'schedule_id' => 'orchestration/class-wp-mcp-ai-pro-tool-create-pro-schedule.php',
-				'item_id'     => 'infrastructure/class-wp-mcp-ai-pro-tool-cpt.php',
-				'record_id'   => 'healthcare/wellness/medical-records/class-wp-mcp-ai-tool-create-medical-record.php',
+				'schedule_id' => 'addons/pro/includes/tools/orchestration/class-wp-mcp-ai-pro-tool-create-pro-schedule.php',
+				'item_id'     => 'addons/pro/includes/tools/infrastructure/class-wp-mcp-ai-pro-tool-cpt.php',
+				'record_id'   => 'addons/pro/includes/tools/healthcare/wellness/medical-records/class-wp-mcp-ai-tool-create-medical-record.php',
+				'member_id'   => 'addons/pro/includes/tools/healthcare/wellness/members/class-wp-mcp-ai-tool-create-member.php',
+				'room_id'     => 'addons/embedded/includes/webchat/tools/class-wp-mcp-ai-tool-create-webchat-room.php',
 			);
 			$probe_path  = isset( $probe_files[ $family_key ] )
-				? dirname( __DIR__ ) . '/addons/pro/includes/tools/' . $probe_files[ $family_key ]
+				? dirname( __DIR__ ) . '/' . $probe_files[ $family_key ]
 				: '';
 			if ( '' === $probe_path || ! file_exists( $probe_path ) ) {
 				$this->markTestSkipped( 'Family ' . $family_key . ' requires the Pro source tree, which is unavailable in this environment.' );
@@ -111,6 +113,12 @@ class Test_Tool_Id_Handoff_Round_Trip extends WP_UnitTestCase {
 				break;
 			case 'plan_id':
 				$this->run_task_plan_round_trip( $context );
+				break;
+			case 'session_id':
+				$this->run_session_round_trip( $context );
+				break;
+			case 'room_id':
+				$this->run_webchat_room_round_trip( $context );
 				break;
 			case 'post_id':
 				$this->run_post_round_trip( $context );
@@ -129,6 +137,9 @@ class Test_Tool_Id_Handoff_Round_Trip extends WP_UnitTestCase {
 				break;
 			case 'record_id':
 				$this->run_medical_record_round_trip( $context );
+				break;
+			case 'member_id':
+				$this->run_member_round_trip( $context );
 				break;
 			default:
 				$this->fail( 'No round-trip driver for family: ' . $family_key );
@@ -206,6 +217,40 @@ class Test_Tool_Id_Handoff_Round_Trip extends WP_UnitTestCase {
 		// Negative path: a fabricated ID must fail cleanly.
 		$missing = $get_tool->execute( array( 'plan_id' => PHP_INT_MAX - 1 ), $context );
 		$this->assert_id_not_found( $missing, 'get_task_plan', 'plan_id' );
+	}
+
+	/**
+	 * Autonomous session family: manage start → get_session_status → stop.
+	 *
+	 * @param array $context Tool execution context.
+	 */
+	private function run_session_round_trip( $context ) {
+		$manage_tool = new WP_MCP_AI_Tool_Manage_Autonomous_Session();
+		$started     = $manage_tool->execute(
+			array(
+				'action'  => 'start',
+				'plan_id' => 42,
+			),
+			$context
+		);
+		$session_id  = $this->assert_produces_key( $started, 'session_id', 'manage_autonomous_session' );
+
+		$status_tool = new WP_MCP_AI_Tool_Get_Session_Status();
+		$status      = $status_tool->execute( array( 'session_id' => $session_id ), $context );
+		$this->assert_id_round_trip( $status, 'session_id', $session_id, 'get_session_status' );
+
+		$stopped = $manage_tool->execute(
+			array(
+				'action'     => 'stop',
+				'session_id' => $session_id,
+			),
+			$context
+		);
+		$this->assert_id_round_trip( $stopped, 'session_id', $session_id, 'manage_autonomous_session stop' );
+
+		// Negative path: a fabricated ID must fail cleanly.
+		$missing = $status_tool->execute( array( 'session_id' => 'does-not-exist' ), $context );
+		$this->assert_id_not_found( $missing, 'get_session_status', 'session_id' );
 	}
 
 	/**
@@ -539,5 +584,101 @@ class Test_Tool_Id_Handoff_Round_Trip extends WP_UnitTestCase {
 		$this->assert_id_not_found( $missing, 'update_medical_record', 'record_id' );
 
 		wp_delete_post( $member_id, true );
+	}
+
+	/**
+	 * Member family: create_member → get_member → update_member → delete_member.
+	 *
+	 * @param array $context Tool execution context.
+	 */
+	private function run_member_round_trip( $context ) {
+		update_option( 'wp_mcp_ai_settings', array( 'enable_health_wellness_management' => true ) );
+
+		if ( ! class_exists( 'WP_MCP_AI_Health_Wellness_CPT' ) ) {
+			require_once dirname( __DIR__ ) . '/addons/pro/includes/class-wp-mcp-ai-health-wellness-cpt.php';
+		}
+		WP_MCP_AI_Health_Wellness_CPT::register_post_types();
+
+		$tool_dir = dirname( __DIR__ ) . '/addons/pro/includes/tools/healthcare/wellness/members/';
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Member' ) ) {
+			require_once $tool_dir . 'class-wp-mcp-ai-tool-create-member.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Get_Member' ) ) {
+			require_once $tool_dir . 'class-wp-mcp-ai-tool-get-member.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Update_Member' ) ) {
+			require_once $tool_dir . 'class-wp-mcp-ai-tool-update-member.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Delete_Member' ) ) {
+			require_once $tool_dir . 'class-wp-mcp-ai-tool-delete-member.php';
+		}
+
+		$create_tool = new WP_MCP_AI_Tool_Create_Member();
+		$created     = $create_tool->execute( array( 'name' => 'ID handoff member' ), $context );
+		$member_id   = $this->assert_produces_key( $created, 'member_id', 'create_member' );
+
+		$get_tool = new WP_MCP_AI_Tool_Get_Member();
+		$fetched  = $get_tool->execute( array( 'member_id' => $member_id ), $context );
+		$this->assertNotWPError( $fetched, 'get_member should succeed for the produced member_id.' );
+		$this->assertSame( $member_id, $fetched['member']['id'], 'get_member should echo the member id it was given.' );
+
+		$update_tool = new WP_MCP_AI_Tool_Update_Member();
+		$updated     = $update_tool->execute(
+			array(
+				'member_id' => $member_id,
+				'name'      => 'ID handoff member (updated)',
+			),
+			$context
+		);
+		$this->assertNotWPError( $updated, 'update_member should succeed for the produced member_id.' );
+
+		$delete_tool = new WP_MCP_AI_Tool_Delete_Member();
+		$deleted     = $delete_tool->execute( array( 'member_id' => $member_id ), $context );
+		$this->assertNotWPError( $deleted, 'delete_member should succeed for the produced member_id.' );
+
+		// Negative path: a fabricated ID must fail cleanly.
+		$missing = $get_tool->execute( array( 'member_id' => PHP_INT_MAX - 1 ), $context );
+		$this->assert_id_not_found( $missing, 'get_member', 'member_id' );
+	}
+
+	/**
+	 * WebChat room family: create_webchat_room → get_webchat_room.
+	 *
+	 * @param array $context Tool execution context.
+	 */
+	private function run_webchat_room_round_trip( $context ) {
+		update_option( 'wp_mcp_ai_settings', array( 'enable_webchat_integration' => true ) );
+
+		if ( ! post_type_exists( 'mcp_ai_webchat_room' ) ) {
+			register_post_type(
+				'mcp_ai_webchat_room',
+				array(
+					'public'   => false,
+					'supports' => array( 'title' ),
+				)
+			);
+		}
+
+		$tool_dir = dirname( __DIR__ ) . '/addons/embedded/includes/webchat/tools/';
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_WebChat_Room' ) ) {
+			require_once $tool_dir . 'class-wp-mcp-ai-tool-create-webchat-room.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Get_WebChat_Room' ) ) {
+			require_once $tool_dir . 'class-wp-mcp-ai-tool-get-webchat-room.php';
+		}
+
+		$create_tool = new WP_MCP_AI_Tool_Create_WebChat_Room();
+		$created     = $create_tool->execute( array( 'title' => 'ID handoff room' ), $context );
+		$room_id     = $this->assert_produces_key( $created, 'room_id', 'create_webchat_room' );
+
+		$get_tool = new WP_MCP_AI_Tool_Get_WebChat_Room();
+		$fetched  = $get_tool->execute( array( 'room_id' => $room_id ), $context );
+		$this->assert_id_round_trip( $fetched, 'room_id', $room_id, 'get_webchat_room' );
+
+		// Negative path: a fabricated ID must fail cleanly.
+		$missing = $get_tool->execute( array( 'room_id' => PHP_INT_MAX - 1 ), $context );
+		$this->assert_id_not_found( $missing, 'get_webchat_room', 'room_id' );
+
+		wp_delete_post( $room_id, true );
 	}
 }

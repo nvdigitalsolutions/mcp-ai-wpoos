@@ -27,9 +27,6 @@
  * (keeps the reverse drift check green).
  *
  * Pending families (deliberately not yet annotated or listed):
- *  - `room_id` (webchat tools) — registration is gated behind
- *    `enable_webchat_integration`, so annotations must land together with
- *    a manifest entry and a registration-enabled test environment.
  *  - `assistant_ids` (export_assistant) — plural array shape; nothing
  *    produces it yet.
  *  - `product_id` (WooCommerce) — create_woo_product(_validated) produce,
@@ -38,19 +35,28 @@
  *  - `template_id` (task-plan templates) — create_template is a legacy
  *    wrapper shared across many slugs; one contract cannot be declared
  *    for the wrapper without mislabeling the rest.
-	 *  - `session_id`, `workflow_id`, `team_id`, `agent_id`,
-	 *    `member_id`, `profession_id` — candidates
-	 *    pending per-key verification of a real cross-tool producer→consumer
-	 *    chain.
-	 *  - `connection_id` domains (composio, flowhub, ezsuite, oauth) — external
-	 *    remote-site identifiers; out of scope by design.
-	 *  - `attachment_id` / `file_id` media chains — one-way analysis chains
-	 *    without a cross-tool identifier contract yet; out of scope.
-	 *
-	 * Landed with wave 2e: `event_id` (Google Calendar tools) and
-	 * `snippet_id` (WPCode tools) — Pro-only, L1 honesty coverage with
-	 * round_trip=false (external API / plugin dependency); no CG Pro
-	 * mirrors exist for either toolkit, so there is no port obligation.
+ *  - `connection_id` domains (composio, flowhub, ezsuite, oauth) — external
+ *    remote-site identifiers; out of scope by design.
+ *  - `attachment_id` / `file_id` media chains — one-way analysis chains
+ *    without a cross-tool identifier contract yet; out of scope.
+ *
+ * Landed with wave 2e: `event_id` (Google Calendar tools) and
+ * `snippet_id` (WPCode tools) — Pro-only, L1 honesty coverage with
+ * round_trip=false (external API / plugin dependency); no CG Pro
+ * mirrors exist for either toolkit, so there is no port obligation.
+ *
+ * Verified out-of-scope (investigated 2026-09-21):
+ *  - `workflow_id` — no TOOL produces it; workflow IDs originate in the
+ *    Pro Workflow Builder admin UI, REST, and slash-command surfaces.
+ *  - `profession_id` — professions are slug-keyed (get_profession takes
+ *    slug), not ID-keyed; no profession_id key exists.
+ *  - `team_id` — create_agent_team nests it under team.team_id and no
+ *    tool consumes it.
+ *  - `agent_id` — consumed by delegate_to_agent / batch_manage_memory,
+ *    but no tool returns a top-level agent_id; the values are nested in
+ *    create_agent_team members and correspond to assistant IDs (covered
+ *    by the assistant_id family).
+ *
 	 *
 	 * @package WP_MCP_AI
 	 */
@@ -66,6 +72,17 @@ return array(
 		'plan_id' => array(
 			'produces'   => array( 'create_task_plan' ),
 			'consumes'   => array( 'get_task_plan', 'update_task_plan', 'detect_completion_indicators' ),
+			'round_trip' => true,
+		),
+		'session_id' => array(
+			'produces'   => array( 'manage_autonomous_session' ),
+			'consumes'   => array( 'manage_autonomous_session', 'get_session_status', 'analyze_loop_health', 'check_exit_conditions' ),
+			'round_trip' => true,
+		),
+		'room_id' => array(
+			'scope'      => 'pro', // WebChat registration is settings-gated.
+			'produces'   => array( 'create_webchat_room' ),
+			'consumes'   => array( 'get_webchat_room', 'get_webchat_messages', 'save_webchat_message' ),
 			'round_trip' => true,
 		),
 		'post_id' => array(
@@ -122,6 +139,12 @@ return array(
 			'produces'   => array( 'create_wpcode_snippet' ),
 			'consumes'   => array( 'create_wpcode_snippet', 'format_code_prettier' ),
 			'round_trip' => false, // Requires the WPCode plugin; no deterministic L2 driver yet.
+		),
+		'member_id' => array(
+			'scope'      => 'pro',
+			'produces'   => array( 'create_member' ),
+			'consumes'   => array( 'create_member', 'get_member', 'update_member', 'delete_member' ),
+			'round_trip' => true,
 		),
 	),
 );

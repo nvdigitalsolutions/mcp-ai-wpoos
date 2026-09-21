@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates a new WebChat room.
  */
-class WP_MCP_AI_Tool_Create_WebChat_Room implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_WebChat_Room implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 
 	use WP_MCP_AI_Tool_Default_Capability;
 
@@ -24,6 +24,18 @@ class WP_MCP_AI_Tool_Create_WebChat_Room implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_slug() {
 		return 'create_webchat_room';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a WebChat room for peer-to-peer or support conversations.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Joining or messaging an existing room; use get_webchat_room and save_webchat_message.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_webchat_room', 'list_webchat_rooms', 'save_webchat_message' ),
+			'notes'           => __( 'Returns room_id for chaining into get_webchat_room, get_webchat_messages, or save_webchat_message.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
@@ -74,6 +86,16 @@ class WP_MCP_AI_Tool_Create_WebChat_Room implements WP_MCP_AI_Tool_Interface, WP
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'room_id',
+			'consumes' => null,
+		);
+	}
+
+	/**
 	 * Check if tool is available.
 	 *
 	 * @return bool Whether the tool is available.
@@ -109,7 +131,7 @@ class WP_MCP_AI_Tool_Create_WebChat_Room implements WP_MCP_AI_Tool_Interface, WP
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check availability.
 		if ( ! self::is_available() ) {
-			WP_MCP_AI_Logger::log_activity( 'Tool unavailable: create_webchat_room' );
+			WP_MCP_AI_Logger::log_event( 'activity', 'Tool unavailable: create_webchat_room' );
 			return new WP_Error( 'wp_mcp_ai_tool_unavailable', self::get_unavailable_reason() );
 		}
 
@@ -174,7 +196,7 @@ class WP_MCP_AI_Tool_Create_WebChat_Room implements WP_MCP_AI_Tool_Interface, WP
 		// Generate room URL.
 		$room_url = get_permalink( $room_id );
 
-		WP_MCP_AI_Logger::log_activity( sprintf( 'WebChat room created: %s (ID: %d)', $title, $room_id ) );
+		WP_MCP_AI_Logger::log_event( 'activity', sprintf( 'WebChat room created: %s (ID: %d)', $title, $room_id ) );
 
 		return array(
 			'summary'          => sprintf(

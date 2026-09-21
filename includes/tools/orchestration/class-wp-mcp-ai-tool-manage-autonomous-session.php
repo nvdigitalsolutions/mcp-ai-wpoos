@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Manage Autonomous Session Tool
  */
-class WP_MCP_AI_Tool_Manage_Autonomous_Session implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
+class WP_MCP_AI_Tool_Manage_Autonomous_Session implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
@@ -26,6 +26,16 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_required_capability() {
 		return 'edit_posts';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'session_id',
+			'consumes' => array( 'session_id' ),
+		);
 	}
 
 	/**

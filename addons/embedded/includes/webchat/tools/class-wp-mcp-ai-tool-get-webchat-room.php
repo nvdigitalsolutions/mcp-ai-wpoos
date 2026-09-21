@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Retrieves WebChat room details.
  */
-class WP_MCP_AI_Tool_Get_WebChat_Room implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_WebChat_Room implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 
 	use WP_MCP_AI_Tool_Default_Capability;
 
@@ -24,6 +24,18 @@ class WP_MCP_AI_Tool_Get_WebChat_Room implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_slug() {
 		return 'get_webchat_room';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Inspecting one known WebChat room by its room_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Browsing rooms; use list_webchat_rooms.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_webchat_room', 'list_webchat_rooms', 'get_webchat_messages' ),
+			'notes'           => __( 'room_id comes from create_webchat_room responses.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
@@ -55,6 +67,16 @@ class WP_MCP_AI_Tool_Get_WebChat_Room implements WP_MCP_AI_Tool_Interface, WP_MC
 			),
 			'required'             => array( 'room_id' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'room_id' ),
 		);
 	}
 
@@ -94,7 +116,7 @@ class WP_MCP_AI_Tool_Get_WebChat_Room implements WP_MCP_AI_Tool_Interface, WP_MC
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check availability.
 		if ( ! self::is_available() ) {
-			WP_MCP_AI_Logger::log_activity( 'Tool unavailable: get_webchat_room' );
+			WP_MCP_AI_Logger::log_event( 'activity', 'Tool unavailable: get_webchat_room' );
 			return new WP_Error( 'wp_mcp_ai_tool_unavailable', self::get_unavailable_reason() );
 		}
 
