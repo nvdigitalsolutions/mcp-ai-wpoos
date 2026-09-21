@@ -32,6 +32,21 @@
  *    a manifest entry and a registration-enabled test environment.
  *  - `assistant_ids` (export_assistant) — plural array shape; nothing
  *    produces it yet.
+ *  - `product_id` (WooCommerce) — create_woo_product(_validated) produce,
+ *    but no registered tool consumes a Woo product_id (only list tools and
+ *    FlowHub's external connection domain); producer-only per D2.
+ *  - `template_id` (task-plan templates) — create_template is a legacy
+ *    wrapper shared across many slugs; one contract cannot be declared
+ *    for the wrapper without mislabeling the rest.
+ *  - `session_id`, `workflow_id`, `team_id`, `agent_id`, `snippet_id`,
+ *    `event_id` (calendar), `member_id`, `profession_id` — candidates
+ *    pending per-key verification of a real cross-tool producer→consumer
+ *    chain (calendar events and WPCode snippets carry CG Pro mirrors and
+ *    an external API, so they need their own port-aware wave).
+ *  - `connection_id` domains (composio, flowhub, ezsuite, oauth) — external
+ *    remote-site identifiers; out of scope by design.
+ *  - `attachment_id` / `file_id` media chains — one-way analysis chains
+ *    without a cross-tool identifier contract yet; out of scope.
  *
  * @package WP_MCP_AI
  */
@@ -44,9 +59,14 @@ return array(
 			'consumes'   => array( 'get_cron_job', 'delete_cron_job' ),
 			'round_trip' => true,
 		),
+		'plan_id' => array(
+			'produces'   => array( 'create_task_plan' ),
+			'consumes'   => array( 'get_task_plan', 'update_task_plan', 'detect_completion_indicators' ),
+			'round_trip' => true,
+		),
 		'post_id' => array(
-			'produces'   => array( 'create_post', 'create_post_validated', 'save_post', 'save_post_validated' ),
-			'consumes'   => array( 'get_post', 'save_post', 'save_post_validated', 'delete_post' ),
+			'produces'   => array( 'create_post', 'create_post_validated', 'save_post', 'save_post_validated', 'create_post_from_research' ),
+			'consumes'   => array( 'get_post', 'save_post', 'save_post_validated', 'delete_post', 'auto_categorize_content', 'content_freshness_checker', 'create_text_embeddings' ),
 			'round_trip' => true,
 		),
 		'term_id' => array(
@@ -56,7 +76,7 @@ return array(
 		),
 		'assistant_id' => array(
 			'produces'   => array( 'create_assistant', 'create_assistant_validated', 'duplicate_assistant' ),
-			'consumes'   => array( 'duplicate_assistant' ),
+			'consumes'   => array( 'duplicate_assistant', 'export_assistant_blueprint', 'export_fine_tune_curriculum' ),
 			'round_trip' => true,
 		),
 		'vector_store_id' => array(

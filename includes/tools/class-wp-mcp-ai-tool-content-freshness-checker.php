@@ -25,7 +25,7 @@ require_once __DIR__ . '/../traits/trait-wp-mcp-ai-tool-wordpress-native.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Content_Freshness_Checker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
+class WP_MCP_AI_Tool_Content_Freshness_Checker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_WordPress_Native;
 
 	/**
@@ -103,6 +103,16 @@ class WP_MCP_AI_Tool_Content_Freshness_Checker implements WP_MCP_AI_Tool_Interfa
 		);
 	}
 
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'post_id' ),
+		);
+	}
 
 	/**
 
