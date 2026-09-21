@@ -8,8 +8,9 @@
 	<!--
 		Tool Description Engineering — usage guidance on tool classes.
 
-		Run explicitly while the roll-out is in progress (the same sniff is
-		registered at severity 0 in the main phpcs.xml.dist so CI stays green):
+		The sweep is complete (base includes/tools/ and addons/pro/includes/tools/
+		are fully covered) and the sniff is now enforced at severity 5 in the
+		main phpcs.xml.dist. This ruleset remains for targeted explicit runs:
 
 		vendor/bin/phpcs -standard=phpcs/WPMCPAI/ruleset.xml -severity=5 includes/tools addons/pro/includes/tools
 

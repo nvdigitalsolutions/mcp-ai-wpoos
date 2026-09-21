@@ -117,13 +117,19 @@ not a refactor of existing granular tools.
 8. **Docs** — this proposal, `docs/features/tool-description-guidelines.md`,
    `.context/tool-registry.md`, `CLAUDE.md` tool pattern note, presets doc.
 
-### Phase 2 (follow-up, not this branch)
+### Phase 2 (complete — merged into `alpha-working`)
 
-- Sweep the remaining ~1,570 tool classes to the guidance interface, cluster
-  by toolkit (PR clusters against `alpha-working`).
-- Raise the sniff severity from 0 to 5 once the sweep converges.
-- Evaluate raising the count-cap default for small-context models once
-  telemetry on `tools_truncated_for_chat` events is collected.
+- [x] Swept all remaining tool classes to the guidance interface in cluster
+      PRs against `alpha-working` (base `includes/tools/` and
+      `addons/pro/includes/tools/`; legacy-format tools use the
+      `WP_MCP_AI_Legacy_Tool_Wrapper` passthrough). Full-tree gate:
+      `phpcs --standard=phpcs/WPMCPAI/ruleset.xml --severity=5 includes/tools
+      addons/pro/includes/tools` passes 1,584/1,584 files with zero warnings.
+- [x] Raised the sniff severity from 0 to 5 in `phpcs.xml.dist` (warnings,
+      so CI error thresholds are unaffected; new tool classes without
+      guidance now surface on PRs).
+- [ ] Evaluate raising the count-cap default for small-context models once
+      telemetry on `tools_truncated_for_chat` events is collected.
 
 ## 5. Success Criteria
 

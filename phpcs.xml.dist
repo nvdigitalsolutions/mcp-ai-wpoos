@@ -186,18 +186,17 @@
 
 	Warns when a class implements WP_MCP_AI_Tool_Interface without either
 	implementing WP_MCP_AI_Tool_Usage_Guidance_Interface or embedding
-	usage guidance in get_description(). Rolled out at severity 0 (advisory,
-	silent) while the exemplar sweep and the cluster-by-cluster migration to
-	the guidance interface proceed; raise to 5 once the sweep converges.
-
-	Explicit enforcement run:
-	vendor/bin/phpcs -standard=phpcs/WPMCPAI/ruleset.xml -severity=5 includes/tools addons/pro/includes/tools
+	usage guidance in get_description(). Enforced at severity 5 since the
+	cluster-by-cluster sweep completed (base includes/tools/ and
+	addons/pro/includes/tools/ are fully covered). The sniff emits warnings,
+	so it stays advisory for CI error thresholds while surfacing on every
+	PR that touches a tool class.
 
 	See docs/project/proposals/tool-description-engineering-proposal.md and
 	docs/features/tool-description-guidelines.md.
 -->
 <rule ref="./phpcs/WPMCPAI/Sniffs/Tools/ToolDescriptionGuidanceSniff.php">
-	<severity>0</severity>
+	<severity>5</severity>
 </rule>
 
 <file>.</file>
