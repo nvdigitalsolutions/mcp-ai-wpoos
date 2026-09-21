@@ -1,8 +1,8 @@
 # Docs & Release Catch-Up — Standing Open-Items Tracker
 
 > **Purpose:** Single registry of every open item identified (and parked or deferred) by the docs & release catch-up runs, so future passes carry from this file instead of re-copying items between plans.
-> **Last reviewed:** 2026-09-18 (v1.1.82 pass)
-> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.82-docs-catch-up.md`](v1.1.82-docs-catch-up.md).
+> **Last reviewed:** 2026-09-21 (v1.1.83 pass)
+> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.83-docs-catch-up.md`](v1.1.83-docs-catch-up.md).
 > **Rule for future passes:** read this file first; a catch-up plan's "Open items" section should point here and only add new items it introduces.
 
 ---
@@ -34,7 +34,10 @@
 | 15 | `@since 1.1.76` | `includes/admin/class-wp-mcp-ai-onboarding-wizard.php` — `is_graph_tools_active()`, `is_content_graph_detected()`, `get_graphify_tool_slugs()`, `get_knowledge_graph_preset_tools()`, `get_effective_preset_selection()`, 7 instances (PR #6570) + `includes/class-wp-mcp-ai-cost-calculator.php` — `is_peak_time()`, `get_model_pricing_at()`, `calculate_cost_at()`, 4 instances (PR #6555) | 1.1.77 | v1.1.77 plan |
 | 16 | `@since 3.2.0` | `addons/pro/includes/tools/crm/` — 9 files: `class-wp-mcp-ai-crm-{stage-history,identity,link-tracker}.php`, `analytics/class-wp-mcp-ai-tool-get-pipeline-digest.php`, `class-wp-mcp-ai-tool-get-crm-handover.php`, `deals/class-wp-mcp-ai-tool-{bulk-move-deal-stages,create-tracked-link}.php`, `inbound/class-wp-mcp-ai-crm-gmail-reply-poller.php`, `inbound/class-wp-mcp-ai-tool-record-crm-reply.php` (PRs #6636/#6640/#6641; the init.php + `mcp-ai-wpoos-pro.php` registration comments also say "Since 3.2.0") | 1.1.81 | v1.1.81 plan |
 | 17 | `@since 1.1.82` | `addons/pro/includes/tools/ecommerce/trait-wp-mcp-ai-shopify-product-normalizers.php` — 1 instance (PR #6638; ahead of the shipping version) | 1.1.81 | v1.1.81 plan — ✅ **self-resolved by the 1.1.82 ship** (the tag now matches the shipping version; noted by the v1.1.82 pass) |
-| 18 | `@since 1.1.80` | `addons/pro/includes/class-wp-mcp-ai-financial-transaction-cpt.php` + `includes/services/class-wp-mcp-ai-market-data-providers.php` + `class-wp-mcp-ai-technical-indicators.php` + 8 `financial-planning/class-wp-mcp-ai-tool-*.php` files (PR #6639; one version behind the 1.1.81 ship) | 1.1.81 | v1.1.81 plan |
+| 18 | `@since 1.1.80` | `addons/pro/includes/class-wp-mcp-ai-financial-transaction-cpt.php` + `includes/services/class-wp-mcp-ai-market-data-providers.php` + `class-wp-mcp-ai-technical-indicators.php` + 8 `financial-planning/class-wp-mcp-ai-tool-*.php` files (PR #6639; one version behind the 1.1.81 ship). **Extended by the v1.1.83 pass:** the P5 guidance sweep (#6692) re-added `@since 1.1.80` on 3 of the same financial tools (`crypto-market-data`, `earnings-calendar-fetcher`, `economic-calendar-fetcher`) | 1.1.81 | v1.1.81 plan (extension: v1.1.83 plan) |
+| 19 | `@since 1.1.84` | `includes/tools/class-wp-mcp-ai-legacy-tool-wrapper.php` — `get_usage_guidance()` (PR #6695; ahead of the shipping version) | 1.1.83 | v1.1.83 plan |
+| 20 | `@since 1.1.82` | `addons/pro/mcp-ai-wpoos-pro.php` — `wp_mcp_ai_pro_incomplete_install_notice()` + `includes/okf/class-wp-mcp-ai-okf-bundle-manager.php` — `list_bundle_names()` (PR #6677; one version behind the 1.1.83 ship) | 1.1.83 | v1.1.83 plan |
+| 21 | `@since 1.1.0` | `addons/pro/includes/tools/financial-planning/` — 5 files: `cash-flow-analyzer`, `financial-logic-visualizer`, `financial-news-aggregator`, `financial-report-generator`, `financial-search` (PR #6692 P5 guidance sweep tagged swept methods with the wrong version) | 1.1.83 | v1.1.83 plan |
 
 - **Blocked on:** version-jump decision — does the next release stay on 1.1.x or jump to 1.2.0?
 - **Broader drift (new finding, 2026-08-26):** non-1.1.x tags are repo-wide (`@since 1.0.0` ×1,928 · `1.2.0` ×1,707 · `1.1.0` ×1,269 · `1.3.0` ×795 · `1.9.0` ×734, PHP source ex vendor). Many are legitimate history. A full-tree audit is a scripted-sweep project needing explicit sign-off — tracked inside issue #5968, not a catch-up-pass task.
@@ -44,7 +47,7 @@
 - **Status:** 🔒 Parked by user decision. Counts stay delta-derived in catch-up passes.
 - **Issue:** [#5967 — Re-derive live tool counts on a fully provisioned environment](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5967)
 - **What:** run `WP_MCP_AI_Tool_Registry::get_tools()` on a fully provisioned environment (seeded toolkits + optional plugins) and replace the delta-based figure.
-- **Current figure (v1.1.82):** ~306 base + ~1,279 Pro (~1,585 total), live-registry caveat retained on every count surface. (Delta-derived; **no tool registrations in-window** — #6645/#6661/#6665/#6669/#6672 are preset/service/shortcode/DB/SPA-level.)
+- **Current figure (v1.1.83):** ~306 base + ~1,279 Pro (~1,585 total), live-registry caveat retained on every count surface. (Delta-derived; **no tool registrations in-window** — the Tool Description Engineering sweep (#6686/#6695/#6687–#6723) is a contract addition on existing classes, not registrations; #6677–#6684/#6689 keep the same slugs.)
 - **Known attempt:** QA container (`oos-qa-wp`) returns 363 tools because its DB is unprovisioned — not usable as source of truth.
 - **First noted in:** v1.1.59 plan; carried every pass since.
 
