@@ -35,6 +35,9 @@ class Test_Typesafe_Decide_Tool extends WP_UnitTestCase {
 
 		$this->tool = new WP_MCP_AI_Tool_Typesafe_Decide();
 
+		// Retries must not sleep inside the test suite.
+		add_filter( 'wp_mcp_ai_typesafe_retry_sleep', '__return_zero' );
+
 		wp_cache_flush();
 	}
 
@@ -42,6 +45,7 @@ class Test_Typesafe_Decide_Tool extends WP_UnitTestCase {
 	 * Tear down test environment.
 	 */
 	public function tearDown(): void {
+		remove_all_filters( 'wp_mcp_ai_typesafe_retry_sleep' );
 		delete_option( 'wp_mcp_ai_settings' );
 		wp_cache_flush();
 		parent::tearDown();
@@ -329,5 +333,272 @@ class Test_Typesafe_Decide_Tool extends WP_UnitTestCase {
 		$this->assertNotWPError( $result );
 		$this->assertEquals( 'openrouter', $result['provider'] );
 		$this->assertStringContainsString( 'decisions', $captured_url );
+	}
+
+	// -------------------------------------------------------------------------
+	// Phase 0 fidelity — min_confidence, weights, warnings, cache, noul criteria.
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test schema declares min_confidence and weights.
+	 */
+	public function test_schema_declares_confidence_and_weights() {
+		$schema = $this->tool->get_parameters_schema();
+
+		$this->assertArrayHasKey( 'min_confidence', $schema['properties'] );
+		$this->assertArrayHasKey( 'weights', $schema['properties'] );
+	}
+
+	/**
+	 * Test execute() flags answers below their confidence floor without dropping them.
+	 */
+	public function test_execute_flags_answers_below_confidence_floor() {
+		$user_id = $this->set_admin_user();
+		update_option( 'wp_mcp_ai_settings', array( 'typesafe_api_key' => 'sk-ts-test' ) );
+
+		add_filter(
+			'pre_http_request',
+			static function () {
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'model'   => 'jev-1.13.0',
+							'answers' => array(
+								'department' => array(
+									'choice'        => 'billing',
+									'probabilities' => array( 'billing' => 0.5, 'technical' => 0.5 ),
+									'confidence'    => 0.2,
+								),
+								'urgent'     => array( 'noul' => 0.83 ),
+							),
+						)
+					),
+				);
+			},
+			10
+		);
+
+		$result = $this->tool->execute(
+			array(
+				'state'          => 'test',
+				'questions'      => array(
+					'department' => array(
+						'type'         => 'choice',
+						'instructions' => 'Which team?',
+						'criteria'     => array( 'billing' => 'Billing', 'technical' => 'Technical' ),
+					),
+					'urgent'     => array(
+						'type'         => 'noul',
+						'instructions' => 'Urgent?',
+					),
+				),
+				'min_confidence' => array( 'department' => 0.8 ),
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertNotWPError( $result );
+		$this->assertTrue( $result['answers']['department']['below_threshold'] );
+		$this->assertEquals( 'billing', $result['answers']['department']['choice'] );
+	}
+
+	/**
+	 * Test execute() computes the weighted composite locally.
+	 */
+	public function test_execute_computes_weighted_composite() {
+		$user_id = $this->set_admin_user();
+		update_option( 'wp_mcp_ai_settings', array( 'typesafe_api_key' => 'sk-ts-test' ) );
+
+		add_filter(
+			'pre_http_request',
+			static function () {
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'model'   => 'jev-1.13.0',
+							'answers' => array(
+								'clarity'   => array(
+									'score'         => 2.0,
+									'probabilities' => array( 0, 0, 1 ),
+									'confidence'    => 0.9,
+								),
+								'relevance' => array(
+									'score'         => 0.5,
+									'probabilities' => array( 0.5, 0.5, 0 ),
+									'confidence'    => 0.4,
+								),
+							),
+						)
+					),
+				);
+			},
+			10
+		);
+
+		$result = $this->tool->execute(
+			array(
+				'state'     => 'test',
+				'questions' => array(
+					'clarity'   => array(
+						'type'         => 'score',
+						'instructions' => 'Clarity?',
+						'criteria'     => array( 'Low', 'Mid', 'High' ),
+					),
+					'relevance' => array(
+						'type'         => 'score',
+						'instructions' => 'Relevance?',
+						'criteria'     => array( 'Low', 'Mid', 'High' ),
+					),
+				),
+				'weights'   => array( 'clarity' => 0.75, 'relevance' => 0.25 ),
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertNotWPError( $result );
+		$this->assertArrayHasKey( 'composite', $result );
+		$this->assertEqualsWithDelta( ( 2.0 * 0.75 ) + ( 0.5 * 0.25 ), $result['composite'], 0.0001 );
+	}
+
+	/**
+	 * Test execute() warns when the estimated input exceeds the advisory threshold.
+	 */
+	public function test_execute_warns_on_oversized_input() {
+		$user_id = $this->set_admin_user();
+		update_option( 'wp_mcp_ai_settings', array( 'typesafe_api_key' => 'sk-ts-test' ) );
+		add_filter(
+			'wp_mcp_ai_typesafe_warn_tokens',
+			static function () {
+				return 10;
+			}
+		);
+
+		add_filter(
+			'pre_http_request',
+			static function () {
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array( 'model' => 'jev-1.13.0', 'answers' => array( 'q' => array( 'noul' => 0.9 ) ) ) ),
+				);
+			},
+			10
+		);
+
+		$result = $this->tool->execute(
+			array(
+				'state'     => 'A fairly long state string that should push the estimate over the tiny threshold.',
+				'questions' => array(
+					'q' => array(
+						'type'         => 'noul',
+						'instructions' => 'Yes?',
+					),
+				),
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_all_filters( 'pre_http_request' );
+		remove_all_filters( 'wp_mcp_ai_typesafe_warn_tokens' );
+
+		$this->assertNotWPError( $result );
+		$this->assertArrayHasKey( 'warnings', $result );
+	}
+
+	/**
+	 * Test execute() marks cached responses and zeroes their usage.
+	 */
+	public function test_execute_marks_cached_responses() {
+		$user_id = $this->set_admin_user();
+		update_option( 'wp_mcp_ai_settings', array( 'typesafe_api_key' => 'sk-ts-test', 'enable_typesafe_cache' => true ) );
+
+		$calls = 0;
+		add_filter(
+			'pre_http_request',
+			static function () use ( &$calls ) {
+				$calls++;
+
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array( 'model' => 'jev-1.13.0', 'answers' => array( 'q' => array( 'noul' => 0.9 ) ), 'usage' => array( 'input_tokens' => 40 ) ) ),
+				);
+			},
+			10
+		);
+
+		$args = array(
+			'state'     => 'test',
+			'questions' => array(
+				'q' => array(
+					'type'         => 'noul',
+					'instructions' => 'Urgent?',
+				),
+			),
+		);
+
+		$first  = $this->tool->execute( $args, array( 'user_id' => $user_id ) );
+		$second = $this->tool->execute( $args, array( 'user_id' => $user_id ) );
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertEquals( 1, $calls );
+		$this->assertFalse( ! empty( $first['cached'] ) );
+		$this->assertTrue( ! empty( $second['cached'] ) );
+		$this->assertEquals( 0, $second['usage']['input_tokens'] );
+		// Usage aliases keep the tracker result-envelope contract flowing.
+		$this->assertEquals( 0, $second['usage']['prompt_tokens'] );
+	}
+
+	/**
+	 * Test execute() sanitises noul criteria at entry (two-gate rule, gate one).
+	 */
+	public function test_execute_sanitises_noul_criteria_at_entry() {
+		$user_id = $this->set_admin_user();
+		update_option( 'wp_mcp_ai_settings', array( 'typesafe_api_key' => 'sk-ts-test' ) );
+
+		$captured_body = null;
+		add_filter(
+			'pre_http_request',
+			static function ( $preempt, $args ) use ( &$captured_body ) {
+				$captured_body = json_decode( $args['body'], true );
+
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array( 'model' => 'jev-latest', 'answers' => array( 'q' => array( 'noul' => 0.9 ) ) ) ),
+				);
+			},
+			10,
+			2
+		);
+
+		$result = $this->tool->execute(
+			array(
+				'state'     => 'test',
+				'questions' => array(
+					'q' => array(
+						'type'         => 'noul',
+						'instructions' => 'Urgent?',
+						'criteria'     => array(
+							'true'  => 'Explicitly <script>alert(1)</script> time-sensitive.',
+							'false' => 'No urgency expressed.',
+						),
+					),
+				),
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertNotWPError( $result );
+		$this->assertArrayHasKey( 'criteria', $captured_body['questions']['q'] );
+		$this->assertStringNotContainsString( '<script>', $captured_body['questions']['q']['criteria']['true'] );
+		$this->assertStringNotContainsString( 'alert', $captured_body['questions']['q']['criteria']['true'] );
+		$this->assertStringContainsString( 'time-sensitive', $captured_body['questions']['q']['criteria']['true'] );
 	}
 }

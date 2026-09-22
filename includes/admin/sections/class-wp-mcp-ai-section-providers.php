@@ -1371,7 +1371,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'Default TypeSafe Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'The default Jev model for decision requests. "jev-latest" follows TypeSafe\'s newest release — pin an explicit version such as jev-1.13.0 when you tune confidence thresholds, because answers can change under the moving alias.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'jev-latest' => __( 'Jev Latest (follows newest release)', 'mcp-ai-wpoos' ),
+						'jev-latest'  => __( 'Jev Latest (follows newest release)', 'mcp-ai-wpoos' ),
+						'jev-preview' => __( 'Jev Preview (follows preview builds)', 'mcp-ai-wpoos' ),
 						'jev-1.13.0' => __( 'Jev 1.13.0 (pinned)', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'jev-latest',
@@ -1381,6 +1382,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'TypeSafe API Base URL (Optional)', 'mcp-ai-wpoos' ),
 					'description' => __( 'Custom base URL for TypeSafe API requests. Leave empty to use the default (https://api.typesafe.ai). Useful when proxying through your own gateway.', 'mcp-ai-wpoos' ),
 					'placeholder' => 'https://api.typesafe.ai',
+				),
+				'typesafe_endpoint'                  => array(
+					'type'        => 'text',
+					'label'       => __( 'TypeSafe API Endpoint Path (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom endpoint path relative to the base URL. Leave empty to use the default (/v1/systemone). Third-party gateways and resellers may serve Jev on a different route (e.g. /v1/decisions) — verify their terms before switching.', 'mcp-ai-wpoos' ),
+					'placeholder' => '/v1/systemone',
+				),
+				'enable_typesafe_cache'              => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Cache TypeSafe Decisions', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Cache identical decision requests for a short TTL (advisory answers only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Identical (model, state, questions) requests are served from a short-lived transient cache at zero cost and marked cached: true in the response. Decisions are advisory — the cache is never used to gate state-changing operations. Default TTL 5 minutes (filter: wp_mcp_ai_typesafe_cache_ttl).', 'mcp-ai-wpoos' ),
+					'default'        => false,
 				),
 				'enable_jev_research_filter'         => array(
 					'type'           => 'checkbox',
@@ -1630,7 +1644,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'typesafe',
 					'label'  => __( 'TypeSafe (Jev)', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-yes-alt',
-					'fields' => array( 'enable_typesafe', 'typesafe_api_key', 'typesafe_model', 'typesafe_base_url', 'enable_jev_research_filter' ),
+					'fields' => array( 'enable_typesafe', 'typesafe_api_key', 'typesafe_model', 'typesafe_base_url', 'typesafe_endpoint', 'enable_typesafe_cache', 'enable_jev_research_filter' ),
 				),
 				'digitalocean'         => array(
 					'id'     => 'digitalocean',

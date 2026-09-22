@@ -37,6 +37,9 @@ class Test_OpenRouter_Client extends WP_UnitTestCase {
 
 		$this->client = new WP_MCP_AI_OpenRouter_Client();
 
+		// Retries must not sleep inside the test suite.
+		add_filter( 'wp_mcp_ai_typesafe_retry_sleep', '__return_zero' );
+
 		wp_cache_flush();
 	}
 
@@ -44,6 +47,7 @@ class Test_OpenRouter_Client extends WP_UnitTestCase {
 	 * Tear down test environment.
 	 */
 	public function tearDown(): void {
+		remove_all_filters( 'wp_mcp_ai_typesafe_retry_sleep' );
 		delete_option( 'wp_mcp_ai_settings' );
 		wp_cache_flush();
 		parent::tearDown();
@@ -583,11 +587,67 @@ class Test_OpenRouter_Client extends WP_UnitTestCase {
 		$this->assertNotWPError( $result );
 		$this->assertStringContainsString( 'decisions', $captured['url'] );
 		$body = json_decode( $captured['args']['body'], true );
-		$this->assertEquals( 'typesafe/jev-latest', $body['model'] );
+		// OpenRouter serves the versioned id only — the jev-latest alias does
+		// not exist on the decisions route.
+		$this->assertEquals( 'typesafe/jev-1.13', $body['model'] );
 		$this->assertEquals( 'state', $body['state'] );
 		$this->assertArrayHasKey( 'q', $body['questions'] );
 		$this->assertEquals( 'typesafe/jev-1.13', $result['model'] );
 		$this->assertEquals( 'noul', $result['answers']['q']['type'] );
+	}
+
+	/**
+	 * Test create_decision() normalises unprefixed and alias model overrides.
+	 */
+	public function test_create_decision_normalises_model_overrides() {
+		update_option( 'wp_mcp_ai_settings', array( 'openrouter_api_key' => 'sk-or-test' ) );
+
+		$captured_models = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $preempt, $args ) use ( &$captured_models ) {
+				$captured_models[] = json_decode( $args['body'], true )['model'];
+
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'model'   => 'typesafe/jev-1.13',
+							'answers' => array( 'q' => array( 'noul' => 0.9 ) ),
+						)
+					),
+				);
+			},
+			10,
+			2
+		);
+
+		$questions = array(
+			'q' => array(
+				'type'         => 'noul',
+				'instructions' => 'Yes?',
+			),
+		);
+
+		$this->client->create_decision( 'state', $questions, array( 'model' => 'jev-latest' ) );
+		$this->client->create_decision( 'state', $questions, array( 'model' => 'typesafe/jev-1.13' ) );
+		$this->client->create_decision( 'state', $questions, array( 'model' => 'jev-1.13' ) );
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertEquals( 'typesafe/jev-1.13', $captured_models[0] );
+		$this->assertEquals( 'typesafe/jev-1.13', $captured_models[1] );
+		$this->assertEquals( 'typesafe/jev-1.13', $captured_models[2] );
+	}
+
+	/**
+	 * Test normalize_decisions_model() mapping rules directly.
+	 */
+	public function test_normalize_decisions_model_rules() {
+		$this->assertEquals( 'typesafe/jev-1.13', $this->client->normalize_decisions_model( 'jev-latest' ) );
+		$this->assertEquals( 'typesafe/jev-1.13', $this->client->normalize_decisions_model( 'typesafe/jev-1.13' ) );
+		$this->assertEquals( 'typesafe/jev-1.13', $this->client->normalize_decisions_model( 'jev-1.13' ) );
+		$this->assertEquals( 'typesafe/jev-1.13', $this->client->normalize_decisions_model( '' ) );
 	}
 
 	/**

@@ -859,6 +859,16 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 									<code><?php echo esc_html( isset( $settings['typesafe_model'] ) && '' !== $settings['typesafe_model'] ? $settings['typesafe_model'] : 'jev-latest' ); ?></code>
 								</td>
 							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Decision Cache', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['enable_typesafe_cache'] ) ) : ?>
+										<span style="color: green;">&#x2713; <?php esc_html_e( 'Enabled (short TTL, advisory only)', 'mcp-ai-wpoos' ); ?></span>
+									<?php else : ?>
+										<span><?php esc_html_e( 'Disabled', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
 						</tbody>
 					</table>
 

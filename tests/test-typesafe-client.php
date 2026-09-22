@@ -31,6 +31,9 @@ class Test_Typesafe_Client extends WP_UnitTestCase {
 
 		$this->client = new WP_MCP_AI_Typesafe_Client();
 
+		// Retries must not sleep inside the test suite.
+		add_filter( 'wp_mcp_ai_typesafe_retry_sleep', '__return_zero' );
+
 		wp_cache_flush();
 	}
 
@@ -38,6 +41,9 @@ class Test_Typesafe_Client extends WP_UnitTestCase {
 	 * Tear down test environment.
 	 */
 	public function tearDown(): void {
+		remove_all_filters( 'wp_mcp_ai_typesafe_retry_sleep' );
+		remove_all_filters( 'wp_mcp_ai_typesafe_cache_ttl' );
+		remove_all_filters( 'wp_mcp_ai_typesafe_endpoint' );
 		delete_option( 'wp_mcp_ai_settings' );
 		wp_cache_flush();
 		parent::tearDown();
@@ -490,6 +496,311 @@ class Test_Typesafe_Client extends WP_UnitTestCase {
 	}
 
 	// -------------------------------------------------------------------------
+	// Phase 0 fidelity — endpoint, structured fields, noul criteria.
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test get_endpoint() defaults, honours the setting, and is filterable.
+	 */
+	public function test_get_endpoint_defaults_setting_and_filter() {
+		$this->assertEquals( '/v1/systemone', $this->client->get_endpoint() );
+
+		update_option( 'wp_mcp_ai_settings', array( 'typesafe_endpoint' => '/v1/decisions' ) );
+		$this->assertEquals( '/v1/decisions', $this->client->get_endpoint() );
+
+		update_option( 'wp_mcp_ai_settings', array() );
+		add_filter(
+			'wp_mcp_ai_typesafe_endpoint',
+			static function () {
+				return '/custom/route';
+			}
+		);
+		$this->assertEquals( '/custom/route', $this->client->get_endpoint() );
+	}
+
+	/**
+	 * Test decide() serialises noul criteria (true/false boundary descriptions).
+	 */
+	public function test_decide_serialises_noul_criteria() {
+		$this->client->set_api_key( 'sk-ts-test' );
+
+		$captured = null;
+		add_filter(
+			'pre_http_request',
+			static function ( $preempt, $args ) use ( &$captured ) {
+				$captured = json_decode( $args['body'], true );
+
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array( 'model' => 'jev-1.13.0', 'answers' => array( 'q' => array( 'noul' => 0.7 ) ) ) ),
+				);
+			},
+			10,
+			2
+		);
+
+		$result = $this->client->decide(
+			'state',
+			array(
+				'q' => array(
+					'type'         => 'noul',
+					'instructions' => 'Urgent?',
+					'criteria'     => array(
+						'true'  => 'Explicitly time-sensitive.',
+						'false' => 'No urgency expressed.',
+					),
+				),
+			)
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertNotWPError( $result );
+		$this->assertArrayHasKey( 'criteria', $captured['questions']['q'] );
+		$this->assertEquals( 'Explicitly time-sensitive.', $captured['questions']['q']['criteria']['true'] );
+	}
+
+	/**
+	 * Test decide() accepts structured (EntryType) instructions.
+	 */
+	public function test_decide_accepts_structured_fields() {
+		$this->client->set_api_key( 'sk-ts-test' );
+
+		$captured = null;
+		add_filter(
+			'pre_http_request',
+			static function ( $preempt, $args ) use ( &$captured ) {
+				$captured = json_decode( $args['body'], true );
+
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array( 'model' => 'jev-1.13.0', 'answers' => array( 'q' => array( 'noul' => 0.5 ) ) ) ),
+				);
+			},
+			10,
+			2
+		);
+
+		$result = $this->client->decide(
+			'state',
+			array(
+				'q' => array(
+					'type'         => 'noul',
+					'instructions' => array(
+						'question' => 'Is the sender domain legitimate?',
+						'focus'    => array( 'domain', 'display_name' ),
+					),
+				),
+			)
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertNotWPError( $result );
+		$this->assertIsArray( $captured['questions']['q']['instructions'] );
+		$this->assertEquals( 'Is the sender domain legitimate?', $captured['questions']['q']['instructions']['question'] );
+	}
+
+	/**
+	 * Test decide() rejects an empty noul criteria map.
+	 */
+	public function test_decide_rejects_empty_noul_criteria() {
+		$this->client->set_api_key( 'sk-ts-test' );
+
+		$result = $this->client->decide(
+			'state',
+			array(
+				'q' => array(
+					'type'         => 'noul',
+					'instructions' => 'Urgent?',
+					'criteria'     => array(),
+				),
+			)
+		);
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_typesafe_invalid_criteria', $result->get_error_code() );
+	}
+
+	// -------------------------------------------------------------------------
+	// Phase 0 fidelity — retries.
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test decide() retries a 429 and succeeds on the second attempt.
+	 */
+	public function test_decide_retries_then_succeeds() {
+		$this->client->set_api_key( 'sk-ts-test' );
+
+		$calls = 0;
+		add_filter(
+			'pre_http_request',
+			static function () use ( &$calls ) {
+				$calls++;
+
+				if ( 1 === $calls ) {
+					return array(
+						'headers'  => array( 'retry-after' => '1' ),
+						'response' => array( 'code' => 429 ),
+						'body'     => wp_json_encode( array( 'error' => array( 'message' => 'Slow down' ) ) ),
+					);
+				}
+
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array( 'model' => 'jev-1.13.0', 'answers' => array( 'q' => array( 'noul' => 0.9 ) ) ) ),
+				);
+			},
+			10
+		);
+
+		$result = $this->client->decide( 'state', array( 'q' => array( 'type' => 'noul', 'instructions' => 'Yes?' ) ) );
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertNotWPError( $result );
+		$this->assertEquals( 2, $calls );
+	}
+
+	/**
+	 * Test decide() never retries 401 auth errors.
+	 */
+	public function test_decide_does_not_retry_auth_errors() {
+		$this->client->set_api_key( 'sk-ts-bad' );
+
+		$calls = 0;
+		add_filter(
+			'pre_http_request',
+			static function () use ( &$calls ) {
+				$calls++;
+
+				return array(
+					'response' => array( 'code' => 401 ),
+					'body'     => wp_json_encode( array( 'error' => array( 'message' => 'Unauthorized' ) ) ),
+				);
+			},
+			10
+		);
+
+		$result = $this->client->decide( 'state', array( 'q' => array( 'type' => 'noul', 'instructions' => 'Yes?' ) ) );
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_typesafe_auth_error', $result->get_error_code() );
+		$this->assertEquals( 1, $calls );
+	}
+
+	// -------------------------------------------------------------------------
+	// Phase 0 fidelity — opt-in decision cache.
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test decide() serves identical requests from the opt-in cache at zero cost.
+	 */
+	public function test_decide_serves_identical_requests_from_cache() {
+		update_option( 'wp_mcp_ai_settings', array( 'typesafe_api_key' => 'sk-ts-test', 'enable_typesafe_cache' => true ) );
+
+		$calls = 0;
+		add_filter(
+			'pre_http_request',
+			static function () use ( &$calls ) {
+				$calls++;
+
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array( 'model' => 'jev-1.13.0', 'answers' => array( 'q' => array( 'noul' => 0.9 ) ), 'usage' => array( 'input_tokens' => 50 ) ) ),
+				);
+			},
+			10
+		);
+
+		$questions = array( 'q' => array( 'type' => 'noul', 'instructions' => 'Yes?' ) );
+
+		$first  = $this->client->decide( 'state', $questions );
+		$second = $this->client->decide( 'state', $questions );
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertNotWPError( $first );
+		$this->assertNotWPError( $second );
+		$this->assertEquals( 1, $calls );
+
+		$this->assertArrayNotHasKey( 'cached', $first );
+		$this->assertTrue( ! empty( $second['cached'] ) );
+		$this->assertEquals( 0, $second['usage']['input_tokens'] );
+
+		$this->assertTrue( $this->client->cache_enabled() );
+	}
+
+	/**
+	 * Test decide() skips the cache entirely when disabled.
+	 */
+	public function test_decide_skips_cache_when_disabled() {
+		update_option( 'wp_mcp_ai_settings', array( 'typesafe_api_key' => 'sk-ts-test' ) );
+
+		$calls = 0;
+		add_filter(
+			'pre_http_request',
+			static function () use ( &$calls ) {
+				$calls++;
+
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array( 'model' => 'jev-1.13.0', 'answers' => array( 'q' => array( 'noul' => 0.9 ) ) ) ),
+				);
+			},
+			10
+		);
+
+		$questions = array( 'q' => array( 'type' => 'noul', 'instructions' => 'Yes?' ) );
+		$this->client->decide( 'state', $questions );
+		$this->client->decide( 'state', $questions );
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertEquals( 2, $calls );
+		$this->assertFalse( $this->client->cache_enabled() );
+	}
+
+	/**
+	 * Test decide() does not serve expired cache entries.
+	 */
+	public function test_decide_cache_respects_ttl() {
+		update_option( 'wp_mcp_ai_settings', array( 'typesafe_api_key' => 'sk-ts-test', 'enable_typesafe_cache' => true ) );
+		add_filter(
+			'wp_mcp_ai_typesafe_cache_ttl',
+			static function () {
+				return 1;
+			}
+		);
+
+		$calls = 0;
+		add_filter(
+			'pre_http_request',
+			static function () use ( &$calls ) {
+				$calls++;
+
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array( 'model' => 'jev-1.13.0', 'answers' => array( 'q' => array( 'noul' => 0.9 ) ) ) ),
+				);
+			},
+			10
+		);
+
+		$questions = array( 'q' => array( 'type' => 'noul', 'instructions' => 'Yes?' ) );
+		$this->client->decide( 'state', $questions );
+		$this->client->decide( 'state', $questions ); // Cache hit.
+		sleep( 2 );
+		$this->client->decide( 'state', $questions ); // Expired → network call.
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertEquals( 2, $calls );
+	}
+
+	// -------------------------------------------------------------------------
 	// Misc surfaces.
 	// -------------------------------------------------------------------------
 
@@ -502,6 +813,7 @@ class Test_Typesafe_Client extends WP_UnitTestCase {
 		$models = $this->client->list_models();
 
 		$this->assertContains( 'jev-latest', $models );
+		$this->assertContains( 'jev-preview', $models );
 		$this->assertContains( 'jev-1.13.0', $models );
 	}
 
