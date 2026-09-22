@@ -1,7 +1,7 @@
 {
   "$schema": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/schemas/model-catalog.schema.json",
-  "version": "2026.09.21",
-  "updated_at": "2026-09-21",
+  "version": "2026.09.22",
+  "updated_at": "2026-09-22",
   "description": "NV oOS model catalog - canonical source of truth for provider model lineups, rate limits, costs, and status. Override at runtime via the wp_mcp_ai_model_catalog filter or by pointing wp_mcp_ai_model_catalog_source_path at an alternate JSON file.",
   "models": [
     {
@@ -4578,6 +4578,26 @@
       "cost_per_1k_input_tokens": 0.000042,
       "cost_per_1k_output_tokens": 0,
       "notes": "TypeSafe Jev (System One decision model, moving alias - resolves to the newest release). Pin jev-1.13.0 when tuning confidence thresholds. Decision-only: no streaming, no function calling, no text generation. Input-only billing at $0.042/M input tokens.",
+      "status": "active",
+      "tpd_limit": 0,
+      "rpd_limit": 0,
+      "fallback_model": "",
+      "sunset_date": ""
+    },
+    {
+      "model_name": "jev-preview",
+      "provider": "typesafe",
+      "tpm_limit": 0,
+      "rpm_limit": 1200,
+      "context_window": 32768,
+      "max_output_tokens": 0,
+      "tier": "paid",
+      "supports_streaming": false,
+      "supports_function_calling": false,
+      "supports_vision": false,
+      "cost_per_1k_input_tokens": 0.000042,
+      "cost_per_1k_output_tokens": 0,
+      "notes": "TypeSafe Jev preview alias (System One decision model) - follows the most recent release whether or not it is official; moves ahead of jev-latest when a preview build is available. Decision-only. Input-only billing at $0.042/M input tokens.",
       "status": "active",
       "tpd_limit": 0,
       "rpd_limit": 0,

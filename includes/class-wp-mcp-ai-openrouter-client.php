@@ -1252,9 +1252,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 		/**
 		 * Default model id for Jev routed through the decisions endpoint.
 		 *
+		 * OpenRouter currently serves `typesafe/jev-1.13` only — the
+		 * `typesafe/jev-latest` alias is not available there, so the
+		 * confirmed versioned id is the default.
+		 *
 		 * @var string
 		 */
-		const DECISIONS_DEFAULT_MODEL = 'typesafe/jev-latest';
+		const DECISIONS_DEFAULT_MODEL = 'typesafe/jev-1.13';
 
 		/**
 		 * Resolve the decisions endpoint URL.
@@ -1274,6 +1278,35 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 			 * @param string $endpoint Full decisions endpoint URL.
 			 */
 			return apply_filters( 'wp_mcp_ai_openrouter_decisions_endpoint', self::DECISIONS_ENDPOINT );
+		}
+
+		/**
+		 * Normalize a model id for the OpenRouter decisions route.
+		 *
+		 * OpenRouter serves Jev under `typesafe/jev-1.13`; the
+		 * `typesafe/jev-latest` alias does not exist there. Incoming
+		 * overrides get the `typesafe/` prefix and the `jev-latest` alias is
+		 * mapped to the confirmed versioned id.
+		 *
+		 * @param string $model Raw model id.
+		 * @return string Normalized OpenRouter model id.
+		 */
+		public function normalize_decisions_model( $model ) {
+			$model = trim( (string) $model );
+
+			if ( '' === $model ) {
+				return self::DECISIONS_DEFAULT_MODEL;
+			}
+
+			if ( 0 === strpos( $model, 'typesafe/' ) ) {
+				return $model;
+			}
+
+			if ( 'jev-latest' === $model ) {
+				$model = 'jev-1.13';
+			}
+
+			return 'typesafe/' . $model;
 		}
 
 		/**
@@ -1316,6 +1349,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 			}
 
 			$model = ! empty( $options['model'] ) ? sanitize_text_field( $options['model'] ) : self::DECISIONS_DEFAULT_MODEL;
+			$model = $this->normalize_decisions_model( $model );
 
 			$payload = array(
 				'model'     => $model,
@@ -1332,22 +1366,61 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 				'timeout' => $timeout,
 			);
 
-			$response = wp_remote_post( $url, $request_args );
+			// Bounded retry on transient failures (429/5xx), sharing the
+			// native TypeSafe client's retry filters so one policy governs
+			// both transports.
+			$max_attempts = apply_filters( 'wp_mcp_ai_typesafe_retry_attempts', 2 );
+			$max_attempts = max( 1, absint( $max_attempts ) );
 
-			if ( is_wp_error( $response ) ) {
-				if ( class_exists( 'WP_MCP_AI_HTTP' ) ) {
-					return WP_MCP_AI_HTTP::prepare_transport_error(
-						$response,
-						'wp_mcp_ai_http_error',
-						__( 'The OpenRouter decisions request failed to complete.', 'mcp-ai-wpoos' ),
-						__( 'OpenRouter', 'mcp-ai-wpoos' )
-					);
+			$response = null;
+			$code     = 0;
+
+			for ( $attempt = 1; $attempt <= $max_attempts; $attempt++ ) {
+				$response = wp_remote_post( $url, $request_args );
+
+				if ( is_wp_error( $response ) ) {
+					if ( class_exists( 'WP_MCP_AI_HTTP' ) ) {
+						return WP_MCP_AI_HTTP::prepare_transport_error(
+							$response,
+							'wp_mcp_ai_http_error',
+							__( 'The OpenRouter decisions request failed to complete.', 'mcp-ai-wpoos' ),
+							__( 'OpenRouter', 'mcp-ai-wpoos' )
+						);
+					}
+
+					return $response;
 				}
 
-				return $response;
+				$code = wp_remote_retrieve_response_code( $response );
+
+				if ( $code >= 200 && $code < 300 ) {
+					break;
+				}
+
+				if ( ! in_array( $code, array( 429, 500, 502, 503, 504 ), true ) || $attempt >= $max_attempts ) {
+					break;
+				}
+
+				$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
+				$sleep       = ! empty( $retry_after ) ? max( 1, absint( $retry_after ) ) : (int) pow( 2, $attempt - 1 );
+
+				/**
+				 * Filter the sleep (seconds) before retrying an OpenRouter
+				 * decisions request.
+				 *
+				 * @since 2026.09
+				 *
+				 * @param int $sleep   Seconds to sleep.
+				 * @param int $code    HTTP status code that triggered the retry.
+				 * @param int $attempt Current attempt number (1-based).
+				 */
+				$sleep = apply_filters( 'wp_mcp_ai_typesafe_retry_sleep', $sleep, $code, $attempt );
+
+				if ( $sleep > 0 ) {
+					sleep( $sleep );
+				}
 			}
 
-			$code    = wp_remote_retrieve_response_code( $response );
 			$body    = wp_remote_retrieve_body( $response );
 			$decoded = json_decode( $body, true );
 

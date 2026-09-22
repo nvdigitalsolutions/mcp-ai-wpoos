@@ -251,6 +251,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'export_fine_tune_curriculum',
 					// Decision provider.
 					'typesafe_decide',
+					'typesafe_guardrail',
+					// Decision provider (Pro).
+					'typesafe_rerank',
+					'typesafe_eval',
+					'typesafe_skill_select',
 					// Token management.
 					'count_tokens',
 					// Embeddings & vectors.

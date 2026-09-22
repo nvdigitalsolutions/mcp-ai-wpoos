@@ -99,6 +99,34 @@ if ( ! class_exists( 'WP_MCP_AI_Typesafe_Client' ) ) {
 		const MAX_QUESTIONS = 64;
 
 		/**
+		 * Default maximum HTTP attempts per decision request (429/5xx only).
+		 *
+		 * @var int
+		 */
+		const DEFAULT_MAX_ATTEMPTS = 2;
+
+		/**
+		 * HTTP status codes that are safe to retry.
+		 *
+		 * @var int[]
+		 */
+		const RETRYABLE_STATUS_CODES = array( 429, 500, 502, 503, 504 );
+
+		/**
+		 * Transient key prefix for cached decision responses.
+		 *
+		 * @var string
+		 */
+		const CACHE_KEY_PREFIX = 'wp_mcp_ai_ts_dec_';
+
+		/**
+		 * Default TTL (seconds) for cached decision responses.
+		 *
+		 * @var int
+		 */
+		const DEFAULT_CACHE_TTL = 300;
+
+		/**
 		 * In-memory API key override. Set via set_api_key().
 		 *
 		 * @since 2026.09
@@ -177,6 +205,36 @@ if ( ! class_exists( 'WP_MCP_AI_Typesafe_Client' ) ) {
 			return untrailingslashit( $base_url );
 		}
 
+		/**
+		 * Retrieve the System One endpoint path.
+		 *
+		 * Supports gateway / reseller routes via the `typesafe_endpoint`
+		 * setting (e.g. third parties serving Jev on `/v1/decisions`). Falls
+		 * back to {@see API_ENDPOINT}. Filterable via
+		 * `wp_mcp_ai_typesafe_endpoint` for code-level overrides.
+		 *
+		 * @return string Endpoint path with a leading slash.
+		 */
+		public function get_endpoint() {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$endpoint = isset( $settings['typesafe_endpoint'] ) ? trim( (string) $settings['typesafe_endpoint'] ) : '';
+
+			if ( '' === $endpoint ) {
+				$endpoint = self::API_ENDPOINT;
+			}
+
+			/**
+			 * Filter the TypeSafe System One endpoint path.
+			 *
+			 * @since 2026.09
+			 *
+			 * @param string $endpoint Endpoint path (leading slash).
+			 */
+			$endpoint = apply_filters( 'wp_mcp_ai_typesafe_endpoint', $endpoint );
+
+			return '/' . ltrim( $endpoint, '/' );
+		}
+
 		// -------------------------------------------------------------------------
 		// Core methods.
 		// -------------------------------------------------------------------------
@@ -202,12 +260,13 @@ if ( ! class_exists( 'WP_MCP_AI_Typesafe_Client' ) ) {
 		 *
 		 * Enforces the documented question contract:
 		 *  - `type` must be one of choice|score|noul.
-		 *  - `instructions` must be a non-empty string.
+		 *  - `instructions` must be a non-empty string or structured
+		 *    (object/array) per the TypeSafe "Advanced: structure" EntryType.
 		 *  - `choice` requires a non-empty criteria map of name => description.
 		 *  - `score` requires 2–10 ordered level descriptions.
-		 *  - `noul` takes no criteria.
+		 *  - `noul` takes optional criteria with true/false descriptions.
 		 *
-		 * @param string $name   Question name (used in error messages only).
+		 * @param string $name     Question name (used in error messages only).
 		 * @param mixed  $question Question definition.
 		 * @return true|WP_Error
 		 */
@@ -216,7 +275,7 @@ if ( ! class_exists( 'WP_MCP_AI_Typesafe_Client' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_typesafe_invalid_question',
 					sprintf(
-						/* translators: %s: question name */
+					/* translators: %s: question name */
 						__( 'Question "%s" must be an object with type, instructions, and criteria.', 'mcp-ai-wpoos' ),
 						$name
 					)
@@ -228,7 +287,7 @@ if ( ! class_exists( 'WP_MCP_AI_Typesafe_Client' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_typesafe_invalid_question_type',
 					sprintf(
-						/* translators: 1: question name, 2: supported types */
+					/* translators: 1: question name, 2: supported types */
 						__( 'Question "%1$s" has an invalid type. Supported types: %2$s.', 'mcp-ai-wpoos' ),
 						$name,
 						implode( ', ', self::QUESTION_TYPES )
@@ -236,18 +295,34 @@ if ( ! class_exists( 'WP_MCP_AI_Typesafe_Client' ) ) {
 				);
 			}
 
-			if ( empty( $question['instructions'] ) || ! is_string( $question['instructions'] ) ) {
+			$instructions = isset( $question['instructions'] ) ? $question['instructions'] : '';
+			$is_valid     = ( is_string( $instructions ) && '' !== trim( $instructions ) )
+			|| ( is_array( $instructions ) && ! empty( $instructions ) );
+
+			if ( ! $is_valid ) {
 				return new WP_Error(
 					'wp_mcp_ai_typesafe_missing_instructions',
 					sprintf(
-						/* translators: %s: question name */
-						__( 'Question "%s" is missing a non-empty instructions string.', 'mcp-ai-wpoos' ),
+					/* translators: %s: question name */
+						__( 'Question "%s" is missing a non-empty instructions string or structure.', 'mcp-ai-wpoos' ),
 						$name
 					)
 				);
 			}
 
 			if ( 'noul' === $type ) {
+				// Optional criteria with true/false boundary descriptions.
+				if ( isset( $question['criteria'] ) && ( ! is_array( $question['criteria'] ) || empty( $question['criteria'] ) ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_typesafe_invalid_criteria',
+						sprintf(
+						/* translators: %s: question name */
+							__( 'Noul question "%s" criteria must be a non-empty map of true/false descriptions.', 'mcp-ai-wpoos' ),
+							$name
+						)
+					);
+				}
+
 				return true;
 			}
 
@@ -329,11 +404,13 @@ if ( ! class_exists( 'WP_MCP_AI_Typesafe_Client' ) ) {
 
 				$entry = array(
 					'type'         => $question['type'],
-					'instructions' => $question['instructions'],
+					'instructions' => $this->sanitize_entry_value( $question['instructions'] ),
 				);
 
-				if ( isset( $question['criteria'] ) && 'noul' !== $question['type'] ) {
-					$entry['criteria'] = $question['criteria'];
+				// Noul criteria (true/false descriptions) are optional but must
+				// survive the payload when supplied (Advanced: structure).
+				if ( isset( $question['criteria'] ) ) {
+					$entry['criteria'] = $this->sanitize_entry_value( $question['criteria'] );
 				}
 
 				$validated[ $name ] = $entry;
@@ -344,6 +421,40 @@ if ( ! class_exists( 'WP_MCP_AI_Typesafe_Client' ) ) {
 				'state'     => $state,
 				'questions' => $validated,
 			);
+		}
+
+		/**
+		 * Sanitise a structured EntryType value (two-gate rule, gate one).
+		 *
+		 * TypeSafe accepts string|object|array|null for instructions, Choice
+		 * option values, Score level descriptions, and Noul criteria. Strings
+		 * are sanitised with sanitize_text_field (plain text only — no HTML),
+		 * arrays are walked recursively with sanitize_key keys, and scalar
+		 * values pass through unchanged.
+		 *
+		 * @param mixed $value EntryType value.
+		 * @return mixed Sanitised value.
+		 */
+		protected function sanitize_entry_value( $value ) {
+			if ( is_string( $value ) ) {
+				return sanitize_text_field( $value );
+			}
+
+			if ( is_object( $value ) ) {
+				$value = (array) $value;
+			}
+
+			if ( is_array( $value ) ) {
+				$sanitized = array();
+				foreach ( $value as $key => $item ) {
+					$key               = is_string( $key ) ? sanitize_key( $key ) : $key;
+					$sanitized[ $key ] = $this->sanitize_entry_value( $item );
+				}
+
+				return $sanitized;
+			}
+
+			return $value;
 		}
 
 		/**
@@ -383,8 +494,34 @@ if ( ! class_exists( 'WP_MCP_AI_Typesafe_Client' ) ) {
 				return $payload;
 			}
 
-			$url     = $this->get_base_url() . self::API_ENDPOINT;
+			$url     = $this->get_base_url() . $this->get_endpoint();
 			$timeout = isset( $options['timeout'] ) && is_numeric( $options['timeout'] ) ? max( 10, absint( $options['timeout'] ) ) : 30;
+
+			// Opt-in advisory cache: identical (model, state, questions)
+			// requests inside the TTL are served at zero cost. The key embeds
+			// the endpoint/base/model so any settings change invalidates it.
+			$cache_key = $this->get_cache_key( $model, $payload );
+			if ( '' !== $cache_key ) {
+				$cached = get_transient( $cache_key );
+				if ( is_array( $cached ) ) {
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'typesafe_cache_hit',
+							'TypeSafe decision served from cache.',
+							array( 'model' => $model )
+						);
+					}
+
+					// A cache hit bills nothing and must never hide its origin.
+					$cached['cached'] = true;
+					$cached['usage']  = array(
+						'input_tokens'  => 0,
+						'output_tokens' => 0,
+					);
+
+					return $cached;
+				}
+			}
 
 			$request_args = array(
 				'headers' => array(
@@ -407,26 +544,64 @@ if ( ! class_exists( 'WP_MCP_AI_Typesafe_Client' ) ) {
 				);
 			}
 
-			$response = wp_remote_post( $url, $request_args );
+			// Bounded retry on transient failures (429/5xx), honouring
+			// `retry-after` with exponential backoff. Transport errors and
+			// 4xx responses are never retried.
+			$max_attempts = apply_filters( 'wp_mcp_ai_typesafe_retry_attempts', self::DEFAULT_MAX_ATTEMPTS );
+			$max_attempts = max( 1, absint( $max_attempts ) );
 
-			if ( is_wp_error( $response ) ) {
-				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-					WP_MCP_AI_Logger::log_error( 'TypeSafe request failed.', array( 'error' => $response->get_error_message() ) );
+			$response = null;
+			$code     = 0;
+
+			for ( $attempt = 1; $attempt <= $max_attempts; $attempt++ ) {
+				$response = wp_remote_post( $url, $request_args );
+
+				if ( is_wp_error( $response ) ) {
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_error( 'TypeSafe request failed.', array( 'error' => $response->get_error_message() ) );
+					}
+
+					if ( class_exists( 'WP_MCP_AI_HTTP' ) ) {
+						return WP_MCP_AI_HTTP::prepare_transport_error(
+							$response,
+							'wp_mcp_ai_http_error',
+							__( 'The TypeSafe API request failed to complete.', 'mcp-ai-wpoos' ),
+							__( 'TypeSafe', 'mcp-ai-wpoos' )
+						);
+					}
+
+					return $response;
 				}
 
-				if ( class_exists( 'WP_MCP_AI_HTTP' ) ) {
-					return WP_MCP_AI_HTTP::prepare_transport_error(
-						$response,
-						'wp_mcp_ai_http_error',
-						__( 'The TypeSafe API request failed to complete.', 'mcp-ai-wpoos' ),
-						__( 'TypeSafe', 'mcp-ai-wpoos' )
-					);
+				$code = wp_remote_retrieve_response_code( $response );
+
+				if ( $code >= 200 && $code < 300 ) {
+					break;
 				}
 
-				return $response;
+				if ( ! in_array( $code, self::RETRYABLE_STATUS_CODES, true ) || $attempt >= $max_attempts ) {
+					break;
+				}
+
+				$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
+				$sleep       = ! empty( $retry_after ) ? max( 1, absint( $retry_after ) ) : (int) pow( 2, $attempt - 1 );
+
+				/**
+				 * Filter the sleep (seconds) before retrying a TypeSafe request.
+				 *
+				 * @since 2026.09
+				 *
+				 * @param int $sleep   Seconds to sleep.
+				 * @param int $code    HTTP status code that triggered the retry.
+				 * @param int $attempt Current attempt number (1-based).
+				 */
+				$sleep = apply_filters( 'wp_mcp_ai_typesafe_retry_sleep', $sleep, $code, $attempt );
+
+				if ( $sleep > 0 ) {
+					sleep( $sleep );
+				}
 			}
 
-			$code     = wp_remote_retrieve_response_code( $response );
 			$body     = wp_remote_retrieve_body( $response );
 			$decoded  = json_decode( $body, true );
 			$json_err = json_last_error();
@@ -453,7 +628,59 @@ if ( ! class_exists( 'WP_MCP_AI_Typesafe_Client' ) ) {
 				WP_MCP_AI_Logger::log_event( 'typesafe_response', 'TypeSafe decision request completed.', array( 'model' => $normalized['model'] ) );
 			}
 
+			if ( '' !== $cache_key ) {
+				/**
+				 * Filter the TTL (seconds) for cached TypeSafe decisions.
+				 *
+				 * @since 2026.09
+				 *
+				 * @param int $ttl Cache TTL in seconds (0 disables caching).
+				 */
+				$ttl = apply_filters( 'wp_mcp_ai_typesafe_cache_ttl', self::DEFAULT_CACHE_TTL );
+
+				if ( $ttl > 0 ) {
+					set_transient( $cache_key, $normalized, $ttl );
+				}
+			}
+
 			return $normalized;
+		}
+
+		/**
+		 * Whether opt-in decision caching is enabled.
+		 *
+		 * @return bool
+		 */
+		public function cache_enabled() {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			return ! empty( $settings['enable_typesafe_cache'] );
+		}
+
+		/**
+		 * Build the content-addressed cache key for a decision request.
+		 *
+		 * The key embeds the base URL, endpoint, model, and full payload, so
+		 * any settings change or question change naturally invalidates it.
+		 *
+		 * @param string $model   Resolved model id.
+		 * @param array  $payload Validated request payload.
+		 * @return string Cache key, or empty string when caching is disabled.
+		 */
+		protected function get_cache_key( $model, array $payload ) {
+			if ( ! $this->cache_enabled() ) {
+				return '';
+			}
+
+			$context = array(
+				'v'        => 1,
+				'base'     => $this->get_base_url(),
+				'endpoint' => $this->get_endpoint(),
+				'model'    => $model,
+				'payload'  => $payload,
+			);
+
+			return self::CACHE_KEY_PREFIX . md5( wp_json_encode( $context ) );
 		}
 
 		/**
@@ -590,7 +817,7 @@ if ( ! class_exists( 'WP_MCP_AI_Typesafe_Client' ) ) {
 			}
 
 			$response = wp_remote_post(
-				$this->get_base_url() . self::API_ENDPOINT,
+				$this->get_base_url() . $this->get_endpoint(),
 				array(
 					'headers' => array(
 						'Content-Type'  => 'application/json',
@@ -641,7 +868,7 @@ if ( ! class_exists( 'WP_MCP_AI_Typesafe_Client' ) ) {
 		 */
 		public function list_models() {
 			$configured = $this->get_model();
-			$models     = array( 'jev-latest', 'jev-1.13.0' );
+			$models     = array( 'jev-latest', 'jev-preview', 'jev-1.13.0' );
 
 			if ( '' !== $configured && ! in_array( $configured, $models, true ) ) {
 				$models[] = $configured;
