@@ -275,6 +275,15 @@ class NV_oOS_Docs_Hub_Settings {
 			)
 		);
 
+		add_settings_field(
+			'uploads_docs_dir_help',
+			__( 'Uploaded Docs Folder', 'nvoos-docs-hub' ),
+			array( __CLASS__, 'render_uploads_docs_help' ),
+			'nvoos-docs-hub',
+			'nvoos_docs_hub_general',
+			array()
+		);
+
 		// Sources section.
 		add_settings_section(
 			'nvoos_docs_hub_sources',
@@ -313,6 +322,15 @@ class NV_oOS_Docs_Hub_Settings {
 		);
 
 		add_settings_field(
+			'enable_remote_repos',
+			__( 'Enable Remote Repositories', 'nvoos-docs-hub' ),
+			array( __CLASS__, 'render_enable_remote_repos' ),
+			'nvoos-docs-hub',
+			'nvoos_docs_hub_remote',
+			array()
+		);
+
+		add_settings_field(
 			'remote_repos',
 			__( 'Public GitHub Repositories', 'nvoos-docs-hub' ),
 			array( __CLASS__, 'render_remote_repos' ),
@@ -340,7 +358,7 @@ class NV_oOS_Docs_Hub_Settings {
 				<strong><?php esc_html_e( 'Welcome to NV oOS Docs Hub.', 'nvoos-docs-hub' ); ?></strong>
 				<?php
 				esc_html_e(
-					'Configure a remote GitHub repository below to start indexing documentation. Local filesystem sources are off by default — most installs should leave them off.',
+					'Drop Markdown files into wp-content/uploads/docs/, then rebuild the index to publish them. To import documentation from public GitHub repositories instead, enable Remote Repositories below.',
 					'nvoos-docs-hub'
 				);
 				?>
@@ -397,7 +415,7 @@ class NV_oOS_Docs_Hub_Settings {
 				<strong><?php esc_html_e( 'Heads up:', 'nvoos-docs-hub' ); ?></strong>
 				<?php
 				esc_html_e(
-					'You are indexing only local filesystem sources. Most installations should pull docs from a remote GitHub repository instead — use the "Remote Repositories" section below and the new "Browse files" picker to choose exactly what to index.',
+					'You are indexing only legacy local filesystem sources. Most installations should use the Uploaded docs folder instead (wp-content/uploads/docs/), or enable Remote Repositories above to import from GitHub.',
 					'nvoos-docs-hub'
 				);
 				?>
@@ -567,7 +585,7 @@ class NV_oOS_Docs_Hub_Settings {
 		$raw_theme                  = sanitize_text_field( $input['default_theme'] ?? 'auto' );
 		$sanitized['default_theme'] = in_array( $raw_theme, $allowed_themes, true ) ? $raw_theme : 'auto';
 
-		$allowed_sources      = array( 'base', 'addons', 'root', 'context', 'remote' );
+		$allowed_sources      = array( 'base', 'addons', 'root', 'context', 'uploads', 'remote' );
 		$raw_sources          = isset( $input['sources'] ) && is_array( $input['sources'] ) ? $input['sources'] : array();
 		$sanitized['sources'] = array_values(
 			array_filter(
@@ -577,6 +595,25 @@ class NV_oOS_Docs_Hub_Settings {
 				}
 			)
 		);
+
+		$sanitized['enable_remote_repos'] = ! empty( $input['enable_remote_repos'] );
+
+		// Keep the dedicated toggle and the 'remote' source key in sync so
+		// saved settings can never diverge (the scanner gates on both).
+		if ( $sanitized['enable_remote_repos'] ) {
+			if ( ! in_array( 'remote', $sanitized['sources'], true ) ) {
+				$sanitized['sources'][] = 'remote';
+			}
+		} else {
+			$sanitized['sources'] = array_values(
+				array_filter(
+					$sanitized['sources'],
+					static function ( $s ) {
+						return 'remote' !== $s;
+					}
+				)
+			);
+		}
 
 		// Sanitize remote repos.
 		// Build a lookup map of existing tokens keyed by owner|repo so token
@@ -1118,11 +1155,11 @@ class NV_oOS_Docs_Hub_Settings {
 	 */
 	public static function render_sources_checkboxes() {
 		$settings = NV_oOS_Docs_Hub_Plugin::get_settings();
-		$enabled  = isset( $settings['sources'] ) ? (array) $settings['sources'] : array( 'remote' );
+		$enabled  = isset( $settings['sources'] ) ? (array) $settings['sources'] : array( 'uploads' );
 
 		// Primary (recommended) source.
 		$primary = array(
-			'remote' => __( 'Remote GitHub repositories <em>(recommended — configure below)</em>', 'nvoos-docs-hub' ),
+			'uploads' => __( 'Uploaded docs folder (<code>wp-content/uploads/docs/</code>) <em>(recommended)</em>', 'nvoos-docs-hub' ),
 		);
 
 		// Legacy local-filesystem sources. Functional, but most users
@@ -1159,7 +1196,7 @@ class NV_oOS_Docs_Hub_Settings {
 			<p class="description" style="margin-top:8px;">
 				<?php
 				esc_html_e(
-					'These sources index Markdown from the local plugin install. Most installations should leave them OFF and configure a Remote Repository above. They are kept available for local development and monorepo setups.',
+					'These sources index Markdown from the local plugin install. Most installations should leave them OFF and use the Uploaded docs folder above. They are kept available for local development and monorepo setups.',
 					'nvoos-docs-hub'
 				);
 				?>
@@ -1178,6 +1215,60 @@ class NV_oOS_Docs_Hub_Settings {
 	}
 
 	/**
+	 * Render help text for the uploads/docs content folder.
+	 *
+	 * @since 0.5.0
+	 *
+	 * @return void
+	 */
+	public static function render_uploads_docs_help() {
+		$dir  = NV_oOS_Docs_Hub_Plugin::uploads_docs_dir();
+		$path = '<code>' . esc_html( $dir ) . '</code>';
+		echo '<p class="description" style="margin-top:0;">';
+		echo wp_kses(
+			sprintf(
+				/* translators: %s: absolute path to the uploads docs folder. */
+				__( 'Drop Markdown (<code>.md</code>) or text (<code>.txt</code>) files into %s — subfolders become sections. Rebuild the index to publish them.', 'nvoos-docs-hub' ),
+				$path
+			),
+			array( 'code' => array() )
+		);
+		echo '</p>';
+	}
+
+	/**
+	 * Render the "Enable Remote Repositories" opt-in toggle.
+	 *
+	 * Remote import is off by default. It must be enabled here AND at least
+	 * one repository configured below before the plugin makes any request.
+	 *
+	 * @since 0.5.0
+	 *
+	 * @return void
+	 */
+	public static function render_enable_remote_repos() {
+		$settings = NV_oOS_Docs_Hub_Plugin::get_settings();
+		$enabled  = ! empty( $settings['enable_remote_repos'] );
+		?>
+		<label>
+			<input type="checkbox" id="nvoos-dh-enable-remote-repos"
+				name="<?php echo esc_attr( NV_oOS_Docs_Hub_Plugin::OPTION_KEY . '[enable_remote_repos]' ); ?>"
+				value="1"
+				<?php checked( $enabled ); ?> />
+			<?php esc_html_e( 'Import Markdown from public GitHub repositories', 'nvoos-docs-hub' ); ?>
+		</label>
+		<p class="description" style="margin-top:4px; max-width:720px;">
+			<?php
+			esc_html_e(
+				'Off by default — leave it off to run the plugin 100% locally. When enabled, the plugin contacts api.github.com and raw.githubusercontent.com (server-side, over HTTPS) to fetch repository files, and only after you configure at least one repository below and trigger a rebuild. No GitHub account is required.',
+				'nvoos-docs-hub'
+			);
+			?>
+		</p>
+		<?php
+	}
+
+	/**
 	 * Render introductory text for the Remote Repositories section.
 	 *
 	 * @since 1.1.0
@@ -1187,7 +1278,7 @@ class NV_oOS_Docs_Hub_Settings {
 	public static function render_remote_section_intro() {
 		echo '<p>';
 		esc_html_e(
-			'Add public GitHub repositories whose Markdown documentation you want to include in the browser. Files are fetched from the GitHub API over HTTPS and cached locally for 24 hours. Only public repos (or private repos accessible with a Personal Access Token) are supported.',
+			'Import Markdown documentation from public GitHub repositories. Remote import is opt-in: enable it above, then add repositories below. Files are fetched from the GitHub API over HTTPS and cached locally for 24 hours. Only public repos (or private repos accessible with a Personal Access Token) are supported.',
 			'nvoos-docs-hub'
 		);
 		echo '</p>';
@@ -1210,6 +1301,15 @@ class NV_oOS_Docs_Hub_Settings {
 	public static function render_remote_repos() {
 		$settings = NV_oOS_Docs_Hub_Plugin::get_settings();
 		$repos    = isset( $settings['remote_repos'] ) && is_array( $settings['remote_repos'] ) ? $settings['remote_repos'] : array();
+		$enabled  = ! empty( $settings['enable_remote_repos'] );
+
+		// The rows are always rendered (so saving never wipes configured
+		// repos) but hidden until the opt-in toggle is checked.
+		if ( ! $enabled ) {
+			echo '<p class="description" id="nvoos-dh-remote-disabled-hint" style="margin:0 0 8px;">';
+			esc_html_e( 'Remote import is currently disabled. Enable "Remote Repositories" above to add GitHub repositories.', 'nvoos-docs-hub' );
+			echo '</p>';
+		}
 
 		// Always render at least one (empty) row so the UI is usable.
 		if ( empty( $repos ) ) {
@@ -1230,7 +1330,7 @@ class NV_oOS_Docs_Hub_Settings {
 
 		$option_key = NV_oOS_Docs_Hub_Plugin::OPTION_KEY;
 
-		echo '<div id="nvoos-dh-remote-repos-wrap">';
+		echo '<div id="nvoos-dh-remote-repos-wrap"' . ( $enabled ? '' : ' style="display:none;"' ) . '>';
 
 		try {
 			foreach ( $repos as $i => $r ) :

@@ -4,11 +4,11 @@ Tags: documentation, markdown, github
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.4.7
+Stable tag: 0.5.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-A self-contained React documentation browser for WordPress. Index Markdown from any public GitHub repository — no other plugin required.
+A self-contained React documentation browser for WordPress. Drop Markdown files into wp-content/uploads/docs — or optionally import from public GitHub repositories.
 
 == Description ==
 
@@ -17,13 +17,25 @@ GitBook-style single-page app: sidebar navigation, content area, and a
 per-page table of contents. Embed it anywhere on your WordPress site via a
 shortcode or Gutenberg block.
 
-Out of the box it indexes documentation from **any public GitHub repository**
-you configure in the settings — no other plugin required. Configure a repo,
-pick the files or folders to include, and rebuild the index.
+Out of the box it publishes documentation you upload yourself: drop
+Markdown (`.md`) or text (`.txt`) files into `wp-content/uploads/docs/`
+(subfolders become sections), rebuild the index, and they appear in the
+browser. No remote services are involved.
+
+**Optional GitHub import (opt-in, off by default).** Enable *Remote
+Repositories* in the settings to import Markdown from **any public GitHub
+repository** — no GitHub account required. This is a documentation-import
+service: the plugin fetches files server-side, over HTTPS, and only from
+`api.github.com` and `raw.githubusercontent.com`, then stores them in a
+local cache on your server. No requests are made unless you enable the
+setting, configure a repository, and trigger a rebuild. All scripts,
+styles, fonts, and images are bundled locally — nothing is loaded from a
+remote server. See **External Services** below for the full disclosure.
 
 **Key features:**
 
-* Index Markdown from public GitHub repositories with per-repo file/folder selection
+* Publish Markdown uploaded to `wp-content/uploads/docs/` — zero configuration, zero remote calls
+* Optional import from public GitHub repositories with per-repo file/folder selection
 * Full-text search via the REST API with FlexSearch client-side fallback
 * GitHub Flavored Markdown: tables, task lists, fenced code blocks
 * Custom `:::note`, `:::tip`, `:::warning`, `:::danger` callout blocks
@@ -47,8 +59,12 @@ drawer.
 
 1. Upload the `nvoos-docs-hub` folder to `/wp-content/plugins/`.
 2. Activate the plugin through the **Plugins** admin screen.
-3. Go to **Settings → NV oOS Docs Hub**, add a public GitHub repository, and click **Rebuild Index**.
+3. Add your Markdown files to `wp-content/uploads/docs/` (created automatically), go to **Settings → NV oOS Docs Hub**, and click **Rebuild Index**.
 4. Add `[nvoos_docs]` to any page to display the documentation browser.
+
+To import documentation from a public GitHub repository instead, go to
+**Settings → NV oOS Docs Hub → Remote Repositories**, enable the setting,
+and add your repositories.
 
 To also index local NV oOS documentation, activate the NV oOS base plugin and
 enable the `base`, `addons`, or `root` sources under **Settings → NV oOS Docs
@@ -80,16 +96,17 @@ Attributes:
 
 = Does this plugin require the NV oOS base plugin? =
 
-No. Out of the box it indexes documentation from any public GitHub repository
-you configure in the settings. If the NV oOS base plugin is active, additional
+No. Out of the box it publishes Markdown files from
+`wp-content/uploads/docs/`. If the NV oOS base plugin is active, additional
 local sources (the base plugin's `docs/` folder and installed addons) are
 discovered automatically.
 
 = Can I index docs from a GitHub repository? =
 
-Yes. Add a repository under **Settings → NV oOS Docs Hub → Remote Repositories**,
-then either index the whole repository, restrict it to a folder prefix, or use
-the "Browse files in repo…" picker to select individual files and folders.
+Yes. First enable **Remote Repositories** under **Settings → NV oOS Docs
+Hub**, then add a repository and either index the whole repository,
+restrict it to a folder prefix, or use the "Browse files in repo…" picker
+to select individual files and folders.
 
 = Which file types are indexed? =
 
@@ -163,21 +180,25 @@ listed in `package.json` and `package-lock.json` in the public repository.
 
 == External Services ==
 
-This plugin provides a **documentation-import service**: when an
-administrator configures a remote repository, the plugin fetches Markdown
-files from that public GitHub repository, stores them locally in the
-uploads cache, and renders them in the documentation browser. Fetched
-content is cached on your server, so visitors are served from the local
-cache, not from GitHub.
+This plugin provides an optional **documentation-import service**, disabled
+by default: remote requests happen only after an administrator enables
+*Remote Repositories* in the settings, configures at least one repository,
+and triggers a rebuild. When enabled, the plugin fetches Markdown files
+from public GitHub repositories, stores them locally in the uploads cache,
+and renders them in the documentation browser. Fetched content is cached
+on your server, so visitors are served from the local cache, not from
+GitHub.
 
 All requests are made **server-side only, over HTTPS**, and only to the two
 hosts listed below. Every request is restricted to these hosts (all other
 hosts are rejected, including private and reserved IP addresses), carries a
 bounded timeout and a 4 MB response-size cap, and only happens after an
-administrator has configured a repository and a rebuild is triggered —
-manually, via WP-CLI, by the nightly cron, or automatically when the cache
-is invalidated (a related plugin is activated, deactivated, or updated).
-No requests are made if no remote repository is configured.
+administrator has enabled the Remote Repositories setting, configured a
+repository, and a rebuild is triggered — manually, via WP-CLI, by the
+nightly cron, or automatically when the cache is invalidated (a related
+plugin is activated, deactivated, or updated).
+No requests are made unless the Remote Repositories setting is enabled and
+a repository is configured.
 
 **No account is required** for public repositories. An optional GitHub
 personal access token can be saved in the settings to raise GitHub's API
@@ -202,6 +223,15 @@ GitHub Privacy Statement:
 https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement
 
 == Changelog ==
+
+= 0.5.0 =
+* Added: local-first default — the plugin now publishes Markdown files dropped into `wp-content/uploads/docs/` out of the box, with zero remote calls.
+* Added: "Enable Remote Repositories" opt-in setting (off by default). Remote GitHub import now requires enabling the setting, configuring a repository, and triggering a rebuild. Existing installs that already use remote repositories keep them enabled automatically.
+* Changed: remote import is gated server-side (scanner and file-picker endpoint) whenever the setting is off.
+
+= 0.4.8 =
+* Changed: the readme Description now explains the documentation-import service up front — the servers contacted (`api.github.com`, `raw.githubusercontent.com`), that no account is required, that requests happen only on administrator-configured rebuilds, and that no plugin assets are loaded remotely.
+* Changed: the remote-repository fetcher's host allowlist and fetch code now reference the readme's External Services disclosure.
 
 = 0.4.7 =
 * Fixed: removed the "Tested up to" line from the plugin headers — it is declared only in the readme.

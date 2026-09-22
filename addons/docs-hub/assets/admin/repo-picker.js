@@ -32,6 +32,22 @@
 		return;
 	}
 
+	// Opt-in toggle: show/hide the repository rows and the disabled hint.
+	var toggle = document.getElementById( 'nvoos-dh-enable-remote-repos' );
+	var hint   = document.getElementById( 'nvoos-dh-remote-disabled-hint' );
+
+	function syncRemoteVisibility() {
+		var on = toggle && toggle.checked;
+		wrap.style.display = on ? '' : 'none';
+		if ( hint ) {
+			hint.style.display = on ? 'none' : '';
+		}
+	}
+
+	if ( toggle ) {
+		toggle.addEventListener( 'change', syncRemoteVisibility );
+	}
+
 	function reindexFields( row, idx ) {
 		row.querySelectorAll( '[name]' ).forEach( function ( el ) {
 			var n = el.getAttribute( 'name' );

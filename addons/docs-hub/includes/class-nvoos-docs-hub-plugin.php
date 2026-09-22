@@ -45,6 +45,10 @@ class NV_oOS_Docs_Hub_Plugin {
 		add_action( 'deactivated_plugin', array( __CLASS__, 'on_plugin_deactivated' ) );
 		add_action( 'upgrader_process_complete', array( __CLASS__, 'on_upgrader_complete' ), 10, 2 );
 
+		// Activation: create the uploads/docs content folder for the default
+		// local source (with a blank index.html to prevent directory listing).
+		register_activation_hook( NVOOS_DOCS_HUB_FILE, array( __CLASS__, 'on_activate' ) );
+
 		// Deactivation cleanup: drop the daily rebuild cron event and any
 		// pending chunked-rebuild ticks so no ghost events linger while the
 		// plugin is inactive.
@@ -93,6 +97,56 @@ class NV_oOS_Docs_Hub_Plugin {
 	}
 
 	/**
+	 * Activation: ensure the uploads/docs content folder exists.
+	 *
+	 * Creates the default local source directory (wp-content/uploads/docs/)
+	 * with a blank index.html so the folder cannot be directory-listed on
+	 * hosts that expose uploads without an index file.
+	 *
+	 * @since 0.5.0
+	 *
+	 * @return void
+	 */
+	public static function on_activate() {
+		$dir = self::uploads_docs_dir();
+		if ( ! is_dir( $dir ) && ! wp_mkdir_p( $dir ) ) {
+			return;
+		}
+		$guard = $dir . DIRECTORY_SEPARATOR . 'index.html';
+		if ( ! file_exists( $guard ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents, WordPress.PHP.NoSilencedErrors.Discouraged -- tiny empty guard file, best-effort.
+			@file_put_contents( $guard, '' );
+		}
+	}
+
+	/**
+	 * Absolute path to the uploads/docs content directory.
+	 *
+	 * This is the plugin's default local documentation source: site owners
+	 * drop Markdown / text files here and they are published by the
+	 * documentation browser after a rebuild. Filterable so sites that keep
+	 * docs elsewhere (or multi-site setups with custom upload dirs) can
+	 * point the source at a different location.
+	 *
+	 * @since 0.5.0
+	 *
+	 * @return string Absolute directory path.
+	 */
+	public static function uploads_docs_dir() {
+		$info = wp_upload_dir();
+		$dir  = ( isset( $info['basedir'] ) ? (string) $info['basedir'] : '' ) . '/docs';
+
+		/**
+		 * Filter the uploads/docs directory scanned by the default local source.
+		 *
+		 * @since 0.5.0
+		 *
+		 * @param string $dir Absolute directory path.
+		 */
+		return apply_filters( 'nvoos_docs_hub_uploads_docs_dir', $dir );
+	}
+
+	/**
 	 * Check whether the addon is enabled in settings.
 	 *
 	 * @since 1.0.0
@@ -114,14 +168,17 @@ class NV_oOS_Docs_Hub_Plugin {
 	public static function get_settings() {
 		$option = get_option( self::OPTION_KEY, null );
 
-		// Fresh install (option does not yet exist) → remote-first defaults.
+		$has_saved_option = is_array( $option );
+
+		// Fresh install (option does not yet exist) → local-first defaults:
+		// index the uploads/docs folder; remote GitHub import is opt-in (off).
 		// Existing installs keep their saved sources unchanged.
-		$default_sources = ( null === $option )
-			? array( 'remote' )
-			: array( 'base', 'addons', 'root' );
+		$default_sources = $has_saved_option
+			? array( 'base', 'addons', 'root' )
+			: array( 'uploads' );
 
 		$parsed = wp_parse_args(
-			is_array( $option ) ? $option : array(),
+			$has_saved_option ? $option : array(),
 			array(
 				'enabled'               => true,
 				'public_access'         => true,
@@ -134,8 +191,20 @@ class NV_oOS_Docs_Hub_Plugin {
 				'default_home'          => 'readme',
 				'github_repo_url'       => '',
 				'remote_repos'          => array(),
+				'enable_remote_repos'   => false,
 			)
 		);
+
+		// Migration for installs created before 0.5.0: the opt-in remote
+		// toggle did not exist. Installs already using remote repositories
+		// must keep them enabled — default the toggle to ON when saved
+		// settings contain configured remote repos or list 'remote' as a
+		// source. Fresh installs and purely-local installs stay OFF.
+		if ( $has_saved_option && ! isset( $option['enable_remote_repos'] ) ) {
+			$has_remote_config             = ( isset( $parsed['remote_repos'] ) && is_array( $parsed['remote_repos'] ) && ! empty( $parsed['remote_repos'] ) )
+				|| ( isset( $parsed['sources'] ) && is_array( $parsed['sources'] ) && in_array( 'remote', $parsed['sources'], true ) );
+			$parsed['enable_remote_repos'] = $has_remote_config;
+		}
 
 		// Defensive: coerce remote_repos into a list of array rows. Anything that
 		// isn't an array (string / null / scalar from a partial migration) is dropped
@@ -316,12 +385,12 @@ class NV_oOS_Docs_Hub_Plugin {
 	 */
 	public static function on_settings_changed( $old_value, $value ) {
 		// Compare the fields that affect the index.
-		$index_keys = array( 'sources', 'remote_repos', 'context_enabled', 'include_addon_readmes' );
+		$index_keys = array( 'sources', 'remote_repos', 'context_enabled', 'include_addon_readmes', 'enable_remote_repos' );
 		$changed    = false;
 		foreach ( $index_keys as $key ) {
 			$old = isset( $old_value[ $key ] ) ? $old_value[ $key ] : null;
 			$new = isset( $value[ $key ] ) ? $value[ $key ] : null;
-			// phpcs:ignore WordPress.PHP.StrictComparisons.LooseComparison -- arrays may be re-ordered; loose comparison is sufficient.
+			// phpcs:ignore Universal.Operators.StrictComparisons.LooseNotEqual, WordPress.PHP.StrictComparisons.LooseComparison -- arrays may be re-ordered; loose comparison is sufficient.
 			if ( $old != $new ) {
 				$changed = true;
 				break;

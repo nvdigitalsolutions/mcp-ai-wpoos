@@ -87,8 +87,9 @@ class NV_oOS_Docs_Hub_Indexer {
 		'root'    => 0,
 		'base'    => 1,
 		'addons'  => 2,
-		'context' => 3,
-		'remote'  => 4,
+		'uploads' => 3,
+		'context' => 4,
+		'remote'  => 5,
 	);
 
 	/**
