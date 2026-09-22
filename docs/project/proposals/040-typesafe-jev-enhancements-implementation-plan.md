@@ -1,9 +1,9 @@
 # Implementation Plan 040 — TypeSafe Jev: Fidelity, Tooling, Service & Cost Enhancements
 
-**Status:** 📝 Proposed — not started
+**Status:** 🚧 In progress — Phases 0–2 implemented (branch `add/typesafe-jev-enhancements-impl`), Phase 3 partially shipped (spend-visibility aliases + gateway access docs landed with Phases 0/1); extraction tools remain stretch
 **Date:** 2026-09-22
 **Proposal:** [`040-typesafe-jev-enhancements.md`](./040-typesafe-jev-enhancements.md)
-**Branch:** `add/typesafe-jev-enhancement-plan` (PR against `alpha-working` per repo convention)
+**Branch:** `add/typesafe-jev-enhancements-impl` (PR against `alpha-working` per repo convention)
 
 ## Design decisions (locked)
 
@@ -52,7 +52,12 @@
    filter enables them; tokenra.io and the AI gateways are listed as
    reseller access paths with caveats in `docs/features/ai-providers/typesafe.md`.
 
-## Phase 0 — API fidelity fixes (Base)
+## Phase 0 — API fidelity fixes (Base) ✅ Complete
+
+> Implemented on `add/typesafe-jev-enhancements-impl` (commit `3c5a793564`).
+> Deviation: the decision-cache key embeds endpoint/base/model/payload instead
+> of a settings-save version bump — functionally equivalent invalidation, no
+> save-hook surface.
 
 ### 0.1 Changed files
 
@@ -79,7 +84,12 @@
 - `docs/features/ai-providers/typesafe.md`: new sections — structured fields, noul criteria, `min_confidence` + composite scoring, caching, retries, endpoint override, gateway access paths (Vercel AI Gateway, Netlify, AIMLAPI, LiteLLM, tokenra.io with reseller caveats), `jev-preview`, jaggedness link.
 - `docs/reference/tools/tool-reference.md`: update the `typesafe_decide` entry for the new arguments.
 
-## Phase 1 — Base tools
+## Phase 1 — Base tools ✅ Complete
+
+> Implemented on `add/typesafe-jev-enhancements-impl` (commit `5ce809d4e8`).
+> Deviation: the bundled skill ships as `mcp-ai-wpoos-jev-decisions`
+> (plugin-domain naming family, per owner decision) — the sync-script flow is
+> unchanged.
 
 ### 1.1 `typesafe_guardrail` (Base tool)
 
@@ -93,7 +103,14 @@
 - File: `includes/bundled-skills/jev-decisions/SKILL.md` (YAML frontmatter `type: Skill`, name/description per the existing bundled-skill convention; regenerates into the `skill-knowledge` OKF bundle per the existing generator).
 - Content: when to use Jev vs. chat models, question design (explicit `other` option, 2–10 score levels, noul criteria), batching/fan-out (parallel questions ≈ no extra latency), confidence three-path thresholds, pinning, adversarial-state caveat, composite scoring with `weights`.
 
-## Phase 2 — Pro integrations (separate cluster, post-merge)
+## Phase 2 — Pro integrations (separate cluster, post-merge) ✅ Complete
+
+> Implemented on `add/typesafe-jev-enhancements-impl` (commit `cac689951f`).
+> Deviations: the guardrail seam reuses the existing Layer I
+> `wp_mcp_ai_pre_chat_message` pre-screen filter (no new base hook); the eval
+> harness accepts inline labeled examples only (no CPT persistence — report-only);
+> skill selection ships as the `typesafe_skill_select` tool (advisory, used
+> before `load_skill`) instead of modifying the base `load_skill` flow.
 
 | Item | File(s) | Notes |
 |---|---|---|
@@ -104,7 +121,11 @@
 | Citation checking seam | `addons/pro/includes/tools/orchestration/class-wp-mcp-ai-pro-tool-generate-research-report.php` + `eca-management/class-wp-mcp-ai-tool-research-eca.php` | Opt-in setting `enable_jev_citation_check` (default off); one choice question per citation vs. its source passage; failures fail open; results surface in the report envelope. |
 | Extraction tools (stretch) | `typesafe_extract_dates` + pre-parsed value extraction in CRM/medical toolkits | Deferred until the toolkit owners sign off; sketched in the proposal only. |
 
-## Phase 3 — Cost & reach polish (Base)
+## Phase 3 — Cost & reach polish (Base) ✅ Partial
+
+> Spend-visibility aliases (`prompt_tokens`/`completion_tokens` + `cached`
+> zeroed usage) and the gateway access docs shipped with Phases 0/1. The
+> usage-monitor dashboard line item remains release-window work.
 
 | Item | File(s) | Notes |
 |---|---|---|
@@ -142,9 +163,9 @@
 
 ## Sequence & branches
 
-1. This branch: proposal + plan docs (this PR).
-2. Cluster A (Phase 0, Base): client/tool/bridge/catalog/settings/tests — one PR.
-3. Cluster B (Phase 1, Base): `typesafe_guardrail` + bundled skill — one PR.
-4. Cluster C (Phase 2, Pro): guardrail seam, rerank, evals, skill selection, citation check — one PR (Pro-only, post-merge of A/B).
-5. Cluster D (Phase 3 + docs catch-up): spend visibility + access docs — one PR.
+1. ~~This branch: proposal + plan docs (this PR).~~ ✅ PR #6746
+2. ~~Cluster A (Phase 0, Base)~~ ✅ `add/typesafe-jev-enhancements-impl` — commit `3c5a793564`
+3. ~~Cluster B (Phase 1, Base)~~ ✅ same branch — commit `5ce809d4e8`
+4. ~~Cluster C (Phase 2, Pro)~~ ✅ same branch — commit `cac689951f`
+5. Cluster D (Phase 3 remainder: usage-monitor line item + release-note counts) — release-window work.
 6. Deferred sweeps: extraction tools, CG port (fidelity changes included), NV Cloud when OpenRouter GA's.
