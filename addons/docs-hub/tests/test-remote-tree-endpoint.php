@@ -183,12 +183,14 @@ class Test_Docs_Hub_Remote_Tree extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Default settings on a fresh install ship with sources = ['remote'].
+	 * Default settings on a fresh install are local-first: the uploads/docs
+	 * source is on, and the remote import toggle is off.
 	 */
-	public function test_fresh_install_defaults_to_remote_source() {
+	public function test_fresh_install_defaults_to_uploads_source() {
 		delete_option( NV_oOS_Docs_Hub_Plugin::OPTION_KEY );
 		$settings = NV_oOS_Docs_Hub_Plugin::get_settings();
-		$this->assertEquals( array( 'remote' ), $settings['sources'] );
+		$this->assertEquals( array( 'uploads' ), $settings['sources'] );
+		$this->assertFalse( $settings['enable_remote_repos'] );
 	}
 
 	/**
@@ -201,6 +203,70 @@ class Test_Docs_Hub_Remote_Tree extends WP_UnitTestCase {
 		);
 		$settings = NV_oOS_Docs_Hub_Plugin::get_settings();
 		$this->assertEquals( array( 'base', 'addons' ), $settings['sources'] );
+	}
+
+	/**
+	 * Migration: installs from before 0.5.0 that already use remote repos
+	 * keep the import toggle ON (their behavior must not change on upgrade).
+	 */
+	public function test_existing_remote_installs_keep_remote_enabled() {
+		update_option(
+			NV_oOS_Docs_Hub_Plugin::OPTION_KEY,
+			array(
+				'sources'      => array( 'remote' ),
+				'remote_repos' => array(
+					array(
+						'owner' => 'acme',
+						'repo'  => 'widget',
+						'ref'   => 'HEAD',
+					),
+				),
+			)
+		);
+		$settings = NV_oOS_Docs_Hub_Plugin::get_settings();
+		$this->assertTrue( $settings['enable_remote_repos'] );
+		$this->assertEquals( array( 'remote' ), $settings['sources'] );
+	}
+
+	/**
+	 * Migration: existing installs that never used remote repos stay OFF.
+	 */
+	public function test_existing_local_installs_default_toggle_off() {
+		update_option(
+			NV_oOS_Docs_Hub_Plugin::OPTION_KEY,
+			array( 'sources' => array( 'base', 'addons' ) )
+		);
+		$settings = NV_oOS_Docs_Hub_Plugin::get_settings();
+		$this->assertFalse( $settings['enable_remote_repos'] );
+	}
+
+	/**
+	 * The file-picker endpoint refuses to run while the opt-in toggle is off.
+	 */
+	public function test_remote_tree_blocked_when_toggle_off() {
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		update_option(
+			NV_oOS_Docs_Hub_Plugin::OPTION_KEY,
+			array(
+				'sources'             => array( 'uploads' ),
+				'enable_remote_repos' => false,
+				'remote_repos'        => array(
+					array(
+						'owner' => 'acme',
+						'repo'  => 'widget',
+						'ref'   => 'HEAD',
+					),
+				),
+			)
+		);
+
+		$request = new WP_REST_Request( 'GET', '/nvoos-docs/v1/remote/tree' );
+		$request->set_param( 'owner', 'acme' );
+		$request->set_param( 'repo', 'widget' );
+		$response = $this->server->dispatch( $request );
+		$this->assertEquals( 403, $response->get_status() );
 	}
 }
 

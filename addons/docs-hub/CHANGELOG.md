@@ -1,5 +1,44 @@
 # NV oOS Docs Hub — Changelog
 
+## 0.5.0 — 2026-09-22
+
+WordPress.org review response pass (fifth round) — local-first rework.
+
+- **New default local source: `wp-content/uploads/docs/`.** Fresh installs
+  now publish Markdown/`.txt` files dropped into the uploads folder — no
+  configuration and zero remote calls. The folder is created on activation
+  with a blank `index.html` guard.
+- **Remote import is now explicit opt-in.** New `enable_remote_repos`
+  setting, **off by default**. Fetching requires the toggle plus a
+  configured repository plus a rebuild trigger (three deliberate admin
+  actions). The scanner and the admin file-picker REST endpoint both gate
+  server-side on the toggle.
+- **Migration:** installs created before 0.5.0 that already have remote
+  repos configured (or `remote` in their saved sources) keep the toggle ON
+  automatically — their import behavior is unchanged by the upgrade.
+- The toggle stays in sync with the `remote` source key on every settings
+  save so the two signals can never diverge.
+- Admin UI: the repo rows hide until the toggle is enabled, the uploads
+  folder path is shown on the settings page, and the first-run /
+  legacy-source notices now point at the uploads folder.
+- `uploads` source added to the indexer priority table (local uploaded
+  docs outrank remote on slug collisions); `enable_remote_repos` changes
+  trigger an index rebuild.
+
+## 0.4.8 — 2026-09-22
+
+WordPress.org review response pass (fourth round).
+
+- The reviewer flagged the GitHub import fetcher under "calling files
+  remotely". The import is the plugin's core service (the same category as
+  Akismet's spam API or a feed importer): server-side, HTTPS-only,
+  restricted to `api.github.com` and `raw.githubusercontent.com`, and it
+  makes zero requests unless the administrator configures a repository and
+  triggers a rebuild. No fetch code path changed — the readme Description
+  now explains the service, the servers contacted, and that no account is
+  required, and the fetcher's host allowlist and URL builder now reference
+  the External Services disclosure in-code.
+
 ## 0.4.7 — 2026-09-17
 
 WordPress.org review response pass (third round).

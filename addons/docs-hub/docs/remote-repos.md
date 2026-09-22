@@ -1,12 +1,12 @@
 # Remote Repositories
 
-NV oOS Docs Hub indexes Markdown documentation from public (or token-authenticated) GitHub repositories. As of v0.3.0, **remote-first is the default** — fresh installs ship with `sources = ['remote']` and the local filesystem sources are off.
+NV oOS Docs Hub can index Markdown documentation from public (or token-authenticated) GitHub repositories. As of v0.5.0, remote import is **opt-in** — fresh installs are local-first (`sources = ['uploads']`, indexing `wp-content/uploads/docs/`) and the *Enable Remote Repositories* setting is **off by default**. Enabling it, configuring a repository, and triggering a rebuild are all deliberate admin actions; nothing is fetched otherwise.
 
 ## Adding a repository
 
 1. In WordPress admin, open **Settings → NV oOS Docs Hub**.
-2. Scroll to **Remote Repositories** and click **+ Add Repository**.
-3. Fill in:
+2. Scroll to **Remote Repositories** and tick **Enable Remote Repositories** (the repository rows appear once enabled).
+3. Click **+ Add Repository** and fill in:
    - **Owner** *(required)* — GitHub user or organisation, e.g. `nvdigitalsolutions`.
    - **Repository** *(required)* — repo name, e.g. `mcp-ai-wpoos`.
    - **Branch / Tag** — branch name, tag, or commit SHA. Default `HEAD` (latest commit on the default branch).
@@ -69,9 +69,15 @@ Tokens are stored in WordPress options. They are never echoed back to the browse
 
 ## Migration from earlier versions
 
-- **Existing installs** keep their saved `sources` array. Nothing is auto-migrated.
-- **Fresh installs** (no saved option) default to `sources = ['remote']`.
-- A one-time, dismissible admin notice appears for installs that have all three legacy local sources enabled (`base` + `addons` + `root`) and zero remote repos configured, pointing them to the new picker.
+- **Existing installs** keep their saved `sources` array. Installs from
+  before v0.5.0 that already have remote repos configured (or `remote` in
+  their sources) get the `enable_remote_repos` toggle switched ON
+  automatically so their import behavior is unchanged.
+- **Fresh installs** (no saved option) default to `sources = ['uploads']`
+  with the remote toggle OFF.
+- A one-time, dismissible admin notice appears for installs that have all
+  three legacy local sources enabled (`base` + `addons` + `root`) and zero
+  remote repos configured, pointing them to the Uploaded docs folder.
 
 ## Out of scope
 

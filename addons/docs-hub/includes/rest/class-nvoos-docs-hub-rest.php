@@ -710,6 +710,16 @@ class NV_oOS_Docs_Hub_REST {
 			$repos    = isset( $settings['remote_repos'] ) && is_array( $settings['remote_repos'] )
 				? $settings['remote_repos']
 				: array();
+
+			// Remote import is opt-in: when the toggle is off, never contact
+			// the GitHub hosts, even from this admin-only endpoint.
+			if ( empty( $settings['enable_remote_repos'] ) ) {
+				return new WP_Error(
+					'nvoos_docs_hub_remote_disabled',
+					__( 'Remote repositories are disabled. Enable them in Settings → NV oOS Docs Hub to use the file picker.', 'nvoos-docs-hub' ),
+					array( 'status' => 403 )
+				);
+			}
 			// Bounds-check the index against the saved repo list so a tampered request
 			// can't reach into other array keys.
 			if ( $index >= 0
