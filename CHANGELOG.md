@@ -1,5 +1,26 @@
 # oOS – Changelog
 
+## [1.1.84] - 2026-09-22
+
+### Added — TypeSafe Jev Enhancement Wave: API Fidelity, Guardrails & Decision Tools (PRs #6745–#6747)
+
+- **Phase 0 — API fidelity fixes (PR #6747).** Noul criteria (true/false boundary descriptions) and structured EntryType fields (string|object|array instructions and criteria) are accepted with a recursive two-gate sanitisation walk. Bounded retry on 429/5xx honours `retry-after` (filters `wp_mcp_ai_typesafe_retry_attempts`/`wp_mcp_ai_typesafe_retry_sleep`) and is shared by the native client and the OpenRouter decisions bridge — 4xx/transport errors never retry. The OpenRouter bridge defaults to `typesafe/jev-1.13` (the confirmed id; the alias does not exist there) and normalises unprefixed/alias overrides. An opt-in advisory decision cache (`enable_typesafe_cache`, 300 s TTL filter `wp_mcp_ai_typesafe_cache_ttl`) returns `cached: true` with zeroed usage, keyed on endpoint/base/model/payload. New `typesafe_endpoint` setting + `wp_mcp_ai_typesafe_endpoint` filter; a `jev-preview` alias lands in the catalog/settings/`list_models()`; cache state appears in provider diagnostics. `typesafe_decide` gains `min_confidence` (below-threshold flags with values kept), `weights` (local composite scoring), advisory token warnings (`wp_mcp_ai_typesafe_warn_tokens`), and `prompt_tokens`/`completion_tokens` usage aliases for the tracker contract.
+- **Phase 1 — base `typesafe_guardrail` + Jev-decisions skill (PR #6747).** The new base tool batches one noul question per hazard category and thresholds probabilities into advisory pass/review/block verdicts (default hazard set or a custom map); registered in the registry, `ai_ml` preset, coverage manifest, and tool-status. A new bundled skill `mcp-ai-wpoos-jev-decisions` covers question design, batching, thresholds, composite scoring, and guardrails. Bundled skills: 74 → 75 base.
+- **Phase 2 — Pro integrations (PR #6747).** A guest-chat guardrail (`WP_MCP_AI_Pro_Jev_Guardrail` on the Layer I `wp_mcp_ai_pre_chat_message` filter, opt-in `enable_jev_guest_guardrail`) vetoes only high-confidence block verdicts and fails open. Citation checking (`WP_MCP_AI_Pro_Jev_Classifier::check_citations()`) verifies `[n]` markers against source passages (one noul per cited source, cap 10) with opt-in seams in `generate_research_report`/`research_eca` (fail-open, attached as `citation_checks`). Three new Pro tools — `typesafe_rerank` (batched candidate re-ranking, keep-minimum floor), `typesafe_eval` + `WP_MCP_AI_Pro_Jev_Eval` (overall + per-confidence-bucket accuracy on inline labeled examples, report-only), and `typesafe_skill_select` (two-stage rank + re-check over the bundled catalog) — all `manage_options`-gated, both transports, canonical envelope + guidance interfaces.
+- **Deferred (documented in the PR/plan):** extraction tools, the Content Graph port cluster, and NV Cloud passthrough (still gated on OpenRouter GA'ing its Decisions route).
+
+### Fixed — `typesafe_decide` Capability Metadata (PR #6745)
+
+- **Declared metadata now matches the enforced gate.** `get_required_capability()` returned `edit_posts` while `execute()` enforces `manage_options` — the declaration is now admin-only and `test_tool_metadata` pins it, so future drift fails CI. The decision-client interface docblock points at the real implementations directory, and the TypeSafe guide documents the `manage_options` requirement + the `ai_ml` preset. No runtime behavior change.
+
+### Docs — Proposal & Implementation Plan 040 (PR #6746)
+
+- **Proposal 040 + the implementation plan** (`docs/project/proposals/040-typesafe-jev-enhancements*.md`) lock the six API-fidelity fixes, the official TypeSafe patterns as first-class tools/services, and the cost/reach workstreams, with five PR clusters (Phase 0–3), per-phase file/test tables, a risk register, and an explicit NOT-changed list — all sources linked.
+
+### Versioning
+
+- Bumped to 1.1.84 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.84. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.8** (unchanged). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — no port waves in-window). Checkout API: **0.1.2** (unchanged). Docs Hub addon: **0.4.7** (unchanged). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.09.22** (+1 Jev decision entry — `jev-preview`, PR #6747). Tool count: **~308 base + ~1,282 Pro (~1,590 total)** — +1 base (`typesafe_guardrail`) +3 Pro (`typesafe_rerank`, `typesafe_eval`, `typesafe_skill_select`), PR #6747; live registry authoritative. Providers: 15 chat providers (TypeSafe Jev remains a decision-only provider, separate from chat). Addons: 27. Bundled skills: **75 base + 41 Pro** (+1 base `mcp-ai-wpoos-jev-decisions`). Coding-time agent skills: **59** (unchanged — no new skills in-window). Stale build ZIPs: none removed this pass (the 1.1.83 wp.org package set is retained as the current release artifacts; removal moves to the next catch-up after the 1.1.84 packages build).
+
 ## [1.1.83] - 2026-09-21
 
 ### Added — TypeSafe Jev Decision Provider (System One) (PR #6728)

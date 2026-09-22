@@ -568,8 +568,9 @@ previous window — the user will usually want it back-dated.
 - Plan templates: `docs/project/plans/v1.1.58-docs-catch-up.md`,
   `docs/project/plans/v1.1.59-docs-catch-up.md`,
   `docs/project/plans/v1.1.83-docs-catch-up.md`,
-  `docs/project/plans/v1.1.83-post-docs-catch-up.md` (latest executed — the
-  post-window pass over PRs #6726–#6743)
+  `docs/project/plans/v1.1.83-post-docs-catch-up.md`,
+  `docs/project/plans/v1.1.84-docs-catch-up.md` (latest executed — the v1.1.84
+  pass over PRs #6745–#6747, first full version bump since the post-window pass)
 - Standing open items: `docs/project/plans/docs-catch-up-open-items.md`
 - Executed PR deferred-item sweep (2026-09-17): issues #6646–#6655; closed
   #6389 as complete
