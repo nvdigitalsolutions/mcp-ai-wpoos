@@ -102,6 +102,19 @@ weekly (or on demand), independent of any release.
   count derivation are user-deferred — record, never re-attempt.
 - **Exclude unrelated working-tree noise** (vendor/, other agents' untracked
   work, backup dirs) from every commit.
+- **README keeps the last 12 releases in full.** The `## 📜 Release History`
+  section holds exactly the 12 most recent releases. Each new release adds a
+  new `### vX.Y.Z — Date` + `#### Title` entry at the top of that section; the
+  oldest entry is demoted to a one-line row in the `### 📋 Previous Releases`
+  table (newest first). Full per-release detail lives in `CHANGELOG.md` only —
+  the README never grows past 12 detailed entries, and the Overview keeps a
+  single current-release "What's New at a Glance" block. (Adopted 2026-09-22
+  to stop the README's duplicated changelog blocks from growing unboundedly.)
+- **Anchor hygiene:** headings must not carry VS16 (U+FE0F) emoji — GitHub's
+  slugger strips the base emoji but keeps the invisible VS16, producing broken
+  `#...` anchors (e.g. `### ⚠️ Warranty` resolves to `#️-warranty--safe-use`).
+  Use the no-VS16 form (`⚠`, `⚙`, `🗨`, `🛡`) and keep TOC links as the plain
+  `#-slug` form; never add manual `<a id="...">` anchors.
 
 ### A3. Commit structure (mirror v1.1.58–v1.1.83)
 
@@ -147,6 +160,9 @@ Per `AGENTS.md` §6, when adding a skill under `.agents/skills/[slug]/`:
   plans, archive).
 - Verify every claim in the plan (file paths, counts, versions) against the
   actual PRs before marking executed.
+- Re-run the README anchor check: every `](#...)` target must resolve under
+  github-slugger rules (emoji stripped, spaces → hyphens, `&` → `--`), and the
+  Release History section must hold exactly the last 12 releases.
 
 ### A7. Branch + PR (required)
 
