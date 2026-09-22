@@ -310,6 +310,13 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			return $eca_data;
 		}
 
+		// Optional citation verification with Jev. Fail-open — on any error
+		// no checks are attached.
+		$citation_checks = $this->maybe_jev_check_citations( $eca_data, $search_results );
+		if ( ! empty( $citation_checks ) ) {
+			$eca_data['citation_checks'] = $citation_checks;
+		}
+
 		// Cache the results for 24 hours.
 		wp_cache_set( $cache_key, $eca_data, 'wp_mcp_ai_eca_research', DAY_IN_SECONDS );
 
@@ -367,6 +374,53 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 
 		return $search_results;
+	}
+
+	/**
+	 * Optionally verify research citations against their sources with Jev.
+	 *
+	 * Gated by the `enable_jev_citation_check` setting and fail-open: when
+	 * the setting is off, Jev is unavailable, or any check errors, an empty
+	 * list is returned and nothing is attached to the results.
+	 *
+	 * @param array $eca_data       Parsed ECA research data.
+	 * @param array $search_results Search results array.
+	 * @return array Citation checks (empty when disabled or failed).
+	 */
+	protected function maybe_jev_check_citations( $eca_data, $search_results ) {
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ? WP_MCP_AI_Admin_Settings_Base::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
+
+		if ( empty( $settings['enable_jev_citation_check'] ) ) {
+			return array();
+		}
+
+		if ( empty( $search_results['sources'] ) || ! is_array( $search_results['sources'] ) ) {
+			return array();
+		}
+
+		$report_text = '';
+		foreach ( array( 'report', 'content', 'summary', 'research', 'analysis' ) as $key ) {
+			if ( isset( $eca_data[ $key ] ) && is_string( $eca_data[ $key ] ) ) {
+				$report_text = $eca_data[ $key ];
+				break;
+			}
+		}
+
+		if ( '' === $report_text ) {
+			return array();
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Jev_Classifier' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-pro-jev-classifier.php';
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Jev_Classifier' ) ) {
+			return array();
+		}
+
+		$checks = WP_MCP_AI_Pro_Jev_Classifier::check_citations( $report_text, $search_results['sources'] );
+
+		return is_array( $checks ) ? $checks : array();
 	}
 
 	/**

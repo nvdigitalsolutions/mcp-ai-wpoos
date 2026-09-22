@@ -1403,6 +1403,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description'    => __( 'Pro research tools (research_eca, generate_research_report) will ask Jev to score and drop clearly irrelevant search sources before generating their reports, keeping the most relevant sources first. Fails open when Jev is unreachable.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+				'enable_jev_guest_guardrail'         => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Jev Guest-Chat Guardrail', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Screen chat messages with Jev before they reach the model (Pro)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'With the Pro addon, every chat message is screened against the Jev hazard set (prompt injection, harassment, self-harm, sensitive PII, illegal activity) before it reaches the model. Only a high-confidence block verdict vetoes the message; review verdicts pass through advisory. Fails open when Jev is unreachable or unconfigured.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'enable_jev_citation_check'           => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Jev Citation Checking', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Verify report citations against their sources with Jev (Pro research tools)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Pro research tools (research_eca, generate_research_report) ask Jev whether each cited source passage supports the claim it is cited for, and attach the checks to the report envelope. Fails open — on any error the checks are simply omitted.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 
 				// DigitalOcean Serverless Inference Settings.
 				'enable_digitalocean'                => array(
@@ -1644,7 +1658,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'typesafe',
 					'label'  => __( 'TypeSafe (Jev)', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-yes-alt',
-					'fields' => array( 'enable_typesafe', 'typesafe_api_key', 'typesafe_model', 'typesafe_base_url', 'typesafe_endpoint', 'enable_typesafe_cache', 'enable_jev_research_filter' ),
+					'fields' => array( 'enable_typesafe', 'typesafe_api_key', 'typesafe_model', 'typesafe_base_url', 'typesafe_endpoint', 'enable_typesafe_cache', 'enable_jev_research_filter', 'enable_jev_guest_guardrail', 'enable_jev_citation_check' ),
 				),
 				'digitalocean'         => array(
 					'id'     => 'digitalocean',

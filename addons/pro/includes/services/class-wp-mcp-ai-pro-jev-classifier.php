@@ -438,4 +438,144 @@ class WP_MCP_AI_Pro_Jev_Classifier {
 
 		return trim( implode( "\n", $parts ) );
 	}
+
+	/**
+	 * Verify `[n]` citation markers in a report against their sources.
+	 *
+	 * The TypeSafe "double-checking citations" pattern: for each unique
+	 * cited source (bounded by `$max`), extract the sentence containing the
+	 * marker, send it together with the source snippet as state, and ask one
+	 * noul question — "does the source passage support the claim?".
+	 *
+	 * Fail-open: any unavailable transport or per-citation error simply
+	 * skips that citation (returns whatever checks succeeded).
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param string $report_text Report markdown text with [n] markers.
+	 * @param array  $sources     Source list (url/title/snippet entries).
+	 * @param int    $max         Maximum citations to verify (default 10).
+	 * @return array List of { citation, source_title, supported, probability }.
+	 */
+	public static function check_citations( $report_text, $sources, $max = 10 ) {
+		if ( ! is_string( $report_text ) || '' === $report_text || ! is_array( $sources ) || empty( $sources ) ) {
+			return array();
+		}
+
+		if ( ! self::is_available() ) {
+			return array();
+		}
+
+		preg_match_all( '/\[(\d+)\]/', $report_text, $matches, PREG_OFFSET_CAPTURE );
+
+		if ( empty( $matches[1] ) ) {
+			return array();
+		}
+
+		$checks = array();
+		$seen   = array();
+
+		foreach ( $matches[1] as $pair ) {
+			$index  = absint( $pair[0] );
+			$offset = absint( $pair[1] );
+
+			if ( $index < 1 || $index > count( $sources ) || isset( $seen[ $index ] ) ) {
+				continue;
+			}
+
+			$seen[ $index ] = true;
+
+			$source = $sources[ $index - 1 ];
+			$title  = isset( $source['title'] ) ? sanitize_text_field( $source['title'] ) : ( isset( $source['url'] ) ? esc_url_raw( $source['url'] ) : '' );
+			$body   = isset( $source['snippet'] ) ? $source['snippet'] : ( isset( $source['content'] ) ? $source['content'] : '' );
+
+			if ( ! is_string( $body ) || '' === trim( $body ) ) {
+				continue;
+			}
+
+			$claim = self::extract_claim_sentence( $report_text, $offset );
+			if ( '' === $claim ) {
+				continue;
+			}
+
+			$snippet = wp_strip_all_tags( $body );
+			$snippet = function_exists( 'mb_substr' ) ? mb_substr( $snippet, 0, 800 ) : substr( $snippet, 0, 800 );
+
+			$decision = self::decide(
+				array(
+					'claim'  => $claim,
+					'source' => $snippet,
+				),
+				array(
+					'supported' => array(
+						'type'         => 'noul',
+						'instructions' => 'The report makes a claim and cites this source. Does the source passage support the claim?',
+					),
+				)
+			);
+
+			// Fail-open per citation.
+			if ( is_wp_error( $decision ) ) {
+				continue;
+			}
+
+			$probability = isset( $decision['answers']['supported']['noul'] ) ? floatval( $decision['answers']['supported']['noul'] ) : null;
+
+			$checks[] = array(
+				'citation'     => $index,
+				'source_title' => $title,
+				'supported'    => null === $probability ? null : ( $probability >= 0.5 ),
+				'probability'  => $probability,
+			);
+
+			if ( count( $checks ) >= absint( $max ) ) {
+				break;
+			}
+		}
+
+		return $checks;
+	}
+
+	/**
+	 * Extract the sentence containing a given byte offset.
+	 *
+	 * Finds the nearest sentence/line boundaries around the offset and
+	 * returns the bounded sentence (max 500 characters).
+	 *
+	 * @param string $report_text Report text.
+	 * @param int    $offset      Byte offset of the citation marker.
+	 * @return string
+	 */
+	private static function extract_claim_sentence( $report_text, $offset ) {
+		$length = strlen( $report_text );
+
+		if ( $offset >= $length ) {
+			return '';
+		}
+
+		$prefix = substr( $report_text, 0, $offset );
+		$start  = 0;
+
+		foreach ( array( '. ', "\n", "\r" ) as $delimiter ) {
+			$pos = strrpos( $prefix, $delimiter );
+			if ( false !== $pos ) {
+				$start = max( $start, $pos + 1 );
+			}
+		}
+
+		$suffix = substr( $report_text, $offset );
+		$end    = strlen( $suffix );
+
+		foreach ( array( '. ', "\n", "\r" ) as $delimiter ) {
+			$pos = strpos( $suffix, $delimiter );
+			if ( false !== $pos ) {
+				$end = min( $end, $pos );
+			}
+		}
+
+		$sentence = trim( substr( $report_text, $start, ( $offset - $start ) + $end ) );
+		$sentence = function_exists( 'mb_substr' ) ? mb_substr( $sentence, 0, 500 ) : substr( $sentence, 0, 500 );
+
+		return $sentence;
+	}
 }

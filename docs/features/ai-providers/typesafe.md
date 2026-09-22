@@ -22,7 +22,8 @@
 14. [Security Considerations](#security-considerations)
 15. [Known Limitations](#known-limitations)
 16. [Diagnostics & Testing](#diagnostics--testing)
-11. [Troubleshooting](#troubleshooting)
+17. [Pro Integrations (cascade routing, guardrails & decision tools)](#pro-integrations-cascade-routing-guardrails--decision-tools)
+18. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -212,12 +213,15 @@ Documented by TypeSafe for `jev-1.13`: unreliable counting and arithmetic, date 
 
 ---
 
-## Pro Integrations (cascade routing & research filtering)
+## Pro Integrations (cascade routing, guardrails & decision tools)
 
-When the Pro addon is active, Jev also powers two opt-in decision surfaces:
+When the Pro addon is active, Jev also powers several opt-in decision surfaces and three new tools:
 
 1. **Cascade routing in model comparison.** `POST /mcp-ai-pro/v1/threads/{id}/compare-models` accepts `jev_routing: true`; the response then carries a `routing` decision (task type, complexity score, frontier-model need) so callers can present or gate comparisons accordingly. Routing only — Jev never answers instead of the models.
 2. **Research source filtering.** Enable **Jev Research Source Filtering** on the TypeSafe subtab and the Pro research tools (`research_eca`, `generate_research_report`) will ask Jev to score each search source's relevance to the query, drop clearly irrelevant ones (never below a 5-source floor), and reorder the survivors most-relevant-first before building their prompts. Every step fails open — on any Jev error the unfiltered sources are used.
+3. **Guest-chat guardrail.** Enable **Jev Guest-Chat Guardrail** and every chat message is screened against the Jev hazard set (prompt injection, harassment, self-harm, sensitive PII, illegal activity) before it reaches the model. Only a high-confidence `block` verdict vetoes the message; `review` verdicts pass through advisory. Fails open on any Jev error.
+4. **Citation checking.** Enable **Jev Citation Checking** and the Pro research tools ask Jev whether each cited source passage supports the claim it is cited for, attaching the checks to the report envelope (fails open — checks are simply omitted on error).
+5. **Pro decision tools** — `typesafe_rerank` (general candidate re-ranking with a keep-minimum floor), `typesafe_eval` (calibration harness: overall + per-confidence-bucket accuracy on inline labeled examples, report-only), and `typesafe_skill_select` (two-stage rank + re-check over the bundled skill catalog for `load_skill`). All are `manage_options`-gated and use either transport.
 
 ---
 
