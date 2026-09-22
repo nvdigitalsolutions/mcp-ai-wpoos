@@ -64,10 +64,12 @@ class Test_Typesafe_Decide_Tool extends WP_UnitTestCase {
 	 */
 	public function test_tool_metadata() {
 		$this->assertEquals( 'typesafe_decide', $this->tool->get_slug() );
-		$this->assertEquals( 'edit_posts', $this->tool->get_required_capability() );
+		// The declared capability must match the gate enforced in execute().
+		$this->assertEquals( 'manage_options', $this->tool->get_required_capability() );
 		$flags = $this->tool->get_capability_flags();
 		$this->assertContains( 'external-api', $flags );
 		$this->assertContains( 'read-only', $flags );
+		$this->assertContains( 'requires-capability', $flags );
 	}
 
 	/**

@@ -37,6 +37,7 @@ Where it shines:
 ## Prerequisites
 
 - NV oOS base plugin active (the TypeSafe client, catalog entries, and `typesafe_decide` tool are in the **Base** distribution).
+- An **administrator account** — `typesafe_decide` execution is gated on the `manage_options` capability, and its declared capability metadata matches.
 - Either:
   - A **TypeSafe API key** — early access is waitlisted; keys are issued at [console.typesafe.ai](https://console.typesafe.ai/settings/keys) after Google sign-in, **or**
   - An **OpenRouter API key** (use the `openrouter` transport of the tool — see below).
@@ -52,7 +53,7 @@ Where it shines:
 4. Choose a default model — `jev-latest` follows the newest release; pin `jev-1.13.0` when you tune confidence thresholds.
 5. Click **Save Changes**.
 6. Optionally go to **Tools → Provider Diagnostics** and click **Test TypeSafe Connection**.
-7. Assign the `typesafe_decide` tool to an assistant and ask it to classify, score, or make yes/no judgments.
+7. Assign the `typesafe_decide` tool to an assistant — it ships in the **AI/ML Operations** (`ai_ml`) preset — and ask it to classify, score, or make yes/no judgments.
 
 Example tool call:
 

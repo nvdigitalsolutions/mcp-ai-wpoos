@@ -48,7 +48,7 @@ mcp-ai-wpoos/
 ## Key Technologies
 
 - **WordPress Plugin** (PHP 7.4+, WordPress 6.0+)
-- **AI Providers**: OpenAI, Google Gemini, Ollama (local AI)
+- **AI Providers**: OpenAI, Google Gemini, Ollama (local AI), plus TypeSafe Jev (decision-only provider; powers `typesafe_decide`, never a chat provider)
 - **MCP Protocol**: Server-Sent Events, REST API
 - **Optional Integrations**: JetEngine, WooCommerce, Elementor, Rank Math, WPCode
 - **OKF (Open Knowledge Format)**: Google's v0.1 vendor-neutral knowledge format for curated, deterministic knowledge with 6 MCP tools

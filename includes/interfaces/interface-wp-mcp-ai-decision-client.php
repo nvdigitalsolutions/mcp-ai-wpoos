@@ -11,8 +11,9 @@
  * {@see Interface_WP_MCP_AI_Provider_Client}: decision clients cannot
  * back a chat assistant and must never be selected as a chat provider.
  *
- * Concrete implementations live in `includes/infrastructure/providers/`
- * and the underlying HTTP clients in `includes/`.
+ * Concrete decision clients live in `includes/` (e.g.
+ * `class-wp-mcp-ai-typesafe-client.php`); the chat-provider adapters live
+ * in `includes/infrastructure/providers/`.
  *
  * @package WP_MCP_AI
  * @since   1.2.0
