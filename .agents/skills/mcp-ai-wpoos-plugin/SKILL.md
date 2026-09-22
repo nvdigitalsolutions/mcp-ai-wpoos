@@ -5,8 +5,8 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.83"
-  plugin-version-tested: "1.1.83"
+  plugin-version: "1.1.84"
+  plugin-version-tested: "1.1.84"
   last-updated: "2026-09-22"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
@@ -757,6 +757,12 @@ Import external AI conversation exports into the JetEngine
   toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
   dj-management/image-production slices.
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## TypeSafe Jev Enhancement Wave: Fidelity, Guardrails & Decision Tools (v1.1.84)
+
+- **Plan 040 Phases 0–2** (PR #6747) — noul criteria + structured EntryType fields (recursive two-gate walk); bounded 429/5xx retries honouring `retry-after` (native client + OpenRouter bridge; 4xx/transport never retried); the bridge defaults to `typesafe/jev-1.13`; opt-in advisory decision cache (`enable_typesafe_cache`, `cached: true` + zeroed usage); `typesafe_endpoint` setting + filter; `jev-preview` alias; `min_confidence`/`weights`/token warnings + usage aliases on `typesafe_decide`. New base tool **`typesafe_guardrail`** (one noul per hazard category → advisory pass/review/block; `ai_ml` preset + coverage manifest) + bundled skill `mcp-ai-wpoos-jev-decisions` (bundled skills 74 → 75). Pro: fail-open guest-chat guardrail (`enable_jev_guest_guardrail` on the Layer I pre-chat filter), advisory `check_citations()` on `generate_research_report`/`research_eca`, and three new `manage_options`-gated tools — `typesafe_rerank`, `typesafe_eval`, `typesafe_skill_select`.
+- **Capability fix** (PR #6745) — `typesafe_decide`'s declared `manage_options` matches the enforced gate (metadata-only, CI-pinned).
+- **Tool count** — +1 base +3 Pro → ~308 base + ~1,282 Pro (~1,590 total). Model catalog → **v2026.09.22** (+`jev-preview`). Deferred: extraction tools, the CG port cluster, NV Cloud passthrough.
 
 ## TypeSafe Jev Decisions, Assistant Builder, ID-Handoff Contracts & Webchat Fixes (v1.1.83 post)
 
