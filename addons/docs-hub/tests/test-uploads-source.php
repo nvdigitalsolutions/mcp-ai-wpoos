@@ -119,6 +119,34 @@ class Test_Docs_Hub_Uploads_Source extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A symlinked subdirectory inside uploads/docs must not leak files from
+	 * outside the docs root (symlink escape).
+	 */
+	public function test_uploads_source_does_not_follow_symlinks_outside_root() {
+		wp_mkdir_p( $this->test_uploads . '/docs' );
+
+		// External directory with a sentinel Markdown file.
+		$external = sys_get_temp_dir() . '/nvoos-dh-external-' . uniqid();
+		wp_mkdir_p( $external );
+		file_put_contents( $external . '/sentinel.md', '# sentinel' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- test fixture.
+
+		// Symlink inside uploads/docs pointing at the external directory.
+		$link = $this->test_uploads . '/docs/escape';
+		if ( ! @symlink( $external, $link ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- best-effort; skip on platforms without symlink support.
+			$this->remove_directory( $external );
+			$this->markTestSkipped( 'symlink() unavailable on this platform' );
+		}
+
+		$entries = ( new NV_oOS_Docs_Hub_Scanner() )->scan();
+		$paths   = wp_list_pluck( $entries, 'relative_path' );
+
+		unlink( $link );
+		$this->remove_directory( $external );
+
+		$this->assertNotContains( 'escape/sentinel.md', $paths );
+	}
+
+	/**
 	 * With the opt-in toggle OFF, a rebuild makes zero HTTP requests even
 	 * when remote repositories are configured.
 	 */

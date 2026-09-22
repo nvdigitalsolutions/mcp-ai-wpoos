@@ -436,19 +436,27 @@ class NV_oOS_Docs_Hub_Scanner {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string   $real_path     Resolved absolute file path.
+	 * @param string   $real_path     File path to validate.
 	 * @param string[] $allowed_roots List of allowed root directories.
 	 * @return bool
 	 */
 	private function is_path_safe( $real_path, $allowed_roots ) {
+		// Resolve the candidate through realpath() as well: glob() returns
+		// paths that still carry symlinked prefixes, so a symlinked
+		// subdirectory inside an allowed root would otherwise pass the
+		// prefix check while pointing at files outside it.
+		$resolved_path = realpath( $real_path );
+		if ( false === $resolved_path ) {
+			return false;
+		}
 		foreach ( $allowed_roots as $root ) {
 			$real_root = realpath( $root );
 			if ( false === $real_root ) {
 				continue;
 			}
 			// Ensure the file is strictly within the allowed root.
-			if ( 0 === strpos( $real_path, $real_root . DIRECTORY_SEPARATOR )
-				|| $real_path === $real_root ) {
+			if ( 0 === strpos( $resolved_path, $real_root . DIRECTORY_SEPARATOR )
+				|| $resolved_path === $real_root ) {
 				return true;
 			}
 		}

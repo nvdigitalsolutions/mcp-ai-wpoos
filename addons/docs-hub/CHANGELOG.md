@@ -24,6 +24,9 @@ WordPress.org review response pass (fifth round) — local-first rework.
 - `uploads` source added to the indexer priority table (local uploaded
   docs outrank remote on slug collisions); `enable_remote_repos` changes
   trigger an index rebuild.
+- Security hardening: the local-source scanner resolves symlinks before its
+  containment check, so a symlinked subfolder inside a scanned docs folder
+  cannot leak files from outside that folder.
 
 ## 0.4.8 — 2026-09-22
 
