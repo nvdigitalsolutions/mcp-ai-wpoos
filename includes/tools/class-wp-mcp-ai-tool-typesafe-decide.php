@@ -134,7 +134,7 @@ class WP_MCP_AI_Tool_Typesafe_Decide implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * {@inheritdoc}
 	 */
 	public function get_required_capability() {
-		return 'edit_posts';
+		return 'manage_options';
 	}
 
 	/**
