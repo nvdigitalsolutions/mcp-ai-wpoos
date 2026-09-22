@@ -8,7 +8,7 @@ Stable tag: 0.5.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-A self-contained React documentation browser for WordPress. Drop Markdown files into wp-content/uploads/docs — or optionally import from public GitHub repositories.
+Self-contained React docs browser for WordPress. Drop Markdown into wp-content/uploads/docs, or optionally import from public GitHub repos.
 
 == Description ==
 
@@ -227,6 +227,7 @@ https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-s
 = 0.5.0 =
 * Added: local-first default — the plugin now publishes Markdown files dropped into `wp-content/uploads/docs/` out of the box, with zero remote calls.
 * Added: "Enable Remote Repositories" opt-in setting (off by default). Remote GitHub import now requires enabling the setting, configuring a repository, and triggering a rebuild. Existing installs that already use remote repositories keep them enabled automatically.
+* Security: the local-source scanner now resolves symlinks before its containment check, so a symlinked subfolder cannot leak files from outside the docs folder.
 * Changed: remote import is gated server-side (scanner and file-picker endpoint) whenever the setting is off.
 
 = 0.4.8 =
@@ -321,6 +322,9 @@ https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-s
 * Initial release.
 
 == Upgrade Notice ==
+
+= 0.5.0 =
+New local-first default: Markdown dropped into `wp-content/uploads/docs/` is published with zero remote calls, and GitHub import is now opt-in. Existing installs using remote repositories keep them enabled automatically. Recommended for all users.
 
 = 0.4.7 =
 Compatibility release — fixes activation-time notices on WordPress 6.7+ and cleans up cron events on deactivation. Recommended for all users.
