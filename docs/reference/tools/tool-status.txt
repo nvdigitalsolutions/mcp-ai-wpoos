@@ -218,6 +218,7 @@ transcribe_openai_audio = beta
 trigger_all_export = beta
 trigger_all_import = beta
 typesafe_decide = beta
+typesafe_guardrail = beta
 user_activity_auditor = beta
 validate_reasoning_chain = beta
 validate_workflow = beta

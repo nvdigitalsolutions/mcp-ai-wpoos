@@ -10,12 +10,18 @@
 2. [Prerequisites](#prerequisites)
 3. [Quick Start](#quick-start)
 4. [The Three Question Types](#the-three-question-types)
-5. [OpenRouter Transport (no TypeSafe account)](#openrouter-transport-no-typesafe-account)
-6. [Model Pinning](#model-pinning)
-7. [Pricing & Rate Limits](#pricing--rate-limits)
-8. [Security Considerations](#security-considerations)
-9. [Known Limitations](#known-limitations)
-10. [Diagnostics & Testing](#diagnostics--testing)
+5. [Structured Fields & Noul Criteria](#structured-fields--noul-criteria)
+6. [Confidence Floors & Composite Scoring](#confidence-floors--composite-scoring)
+7. [Guardrails (`typesafe_guardrail`)](#guardrails-typesafe_guardrail)
+8. [Decision Cache](#decision-cache)
+9. [Retries](#retries)
+10. [OpenRouter Transport (no TypeSafe account)](#openrouter-transport-no-typesafe-account)
+11. [Endpoint Override & Gateway Access](#endpoint-override--gateway-access)
+12. [Model Pinning](#model-pinning)
+13. [Pricing & Rate Limits](#pricing--rate-limits)
+14. [Security Considerations](#security-considerations)
+15. [Known Limitations](#known-limitations)
+16. [Diagnostics & Testing](#diagnostics--testing)
 11. [Troubleshooting](#troubleshooting)
 
 ---
@@ -90,6 +96,62 @@ Questions are evaluated **in parallel** over the same state, so batching many qu
 
 ---
 
+## Structured Fields & Noul Criteria
+
+Per TypeSafe's "Advanced: structure" documentation, `instructions`, Choice option values, Score level descriptions, and Noul criteria all accept **JSON structure** in addition to plain strings. The client and tool accept and sanitise these recursively (plain JSON only — HTML is stripped at entry).
+
+- **Noul criteria** — optional `true`/`false` boundary descriptions pin down subtle yes/no questions:
+
+```json
+{ "type": "noul", "instructions": "Is this message urgent?",
+  "criteria": { "true": "Explicitly time-sensitive, e.g. deadlines or outages", "false": "No urgency expressed" } }
+```
+
+- **Structured instructions** — label multiple parts of a judgment with keys:
+
+```json
+{ "instructions": { "question": "Does the claimed sender identity conflict with the sending domain?",
+    "compare": ["ticket.sender.display_name", "ticket.sender.email"] } }
+```
+
+- **Structured Choice option values** — walking a taxonomy: each option's value can carry its child subtree so the model sees what lives under a branch before committing (hierarchical classification pattern).
+
+---
+
+## Confidence Floors & Composite Scoring
+
+- **`min_confidence`** — a per-question floor (0–1). Answers below their floor are **not dropped**: they come back flagged `below_threshold: true` so the caller can implement the three-path pattern (high confidence → act; medium → confirm/review; low → human). Noul answers carry no confidence field — gate them on the probability itself.
+- **`weights`** — composite scoring: pass positive weights for score questions and the tool returns a weighted-average `composite` computed locally (no extra API call). TypeSafe's pattern is to keep judgments atomic and combine them in code; this argument codifies it.
+
+---
+
+## Guardrails (`typesafe_guardrail`)
+
+A second base tool screens content for hazards with one noul question per category (batched into a single decision call) and thresholds the probabilities into advisory verdicts:
+
+- `pass` / `review` / `block` per category, plus an `overall` verdict.
+- Default hazard set: prompt injection, harassment, self-harm, sensitive PII, illegal activity — or pass a custom `hazards` map with your own `instructions`, `review`, and `block` floors.
+- **Advisory only**: the tool never blocks or suppresses content itself; enforcement must stay in the caller's code gates. Following TypeSafe's guidance, thresholds should scale with risk (higher block floors for high-stakes surfaces).
+
+---
+
+## Decision Cache
+
+Enable **Cache TypeSafe Decisions** on the TypeSafe subtab to serve identical (model, state, questions) requests from a short-lived transient cache:
+
+- Opt-in, default off. TTL default 300 s (filter `wp_mcp_ai_typesafe_cache_ttl`).
+- Cache hits are marked `cached: true` in the response and record **zero** usage ($0).
+- The cache key embeds the endpoint, base URL, model, and full payload, so any settings or question change invalidates it automatically.
+- Decisions are advisory — the cache is never used to gate state-changing operations.
+
+---
+
+## Retries
+
+Both the native client and the OpenRouter decisions bridge retry transient failures (429/5xx) with bounded attempts (default 2, filter `wp_mcp_ai_typesafe_retry_attempts`), honouring the `retry-after` header with exponential backoff (sleep filterable via `wp_mcp_ai_typesafe_retry_sleep`). 4xx auth errors and transport errors are never retried.
+
+---
+
 ## OpenRouter Transport (no TypeSafe account)
 
 While TypeSafe early access is waitlisted, an existing OpenRouter key reaches Jev through OpenRouter's **Decisions API** (a separate route from chat completions — chat SDKs will not work with it):
@@ -103,11 +165,20 @@ While TypeSafe early access is waitlisted, an existing OpenRouter key reaches Je
 
 ---
 
+## Endpoint Override & Gateway Access
+
+- **`typesafe_endpoint`** setting (or the `wp_mcp_ai_typesafe_endpoint` filter) overrides the endpoint path relative to the base URL. The default is `/v1/systemone`; third-party gateways and resellers may serve Jev on a different route (e.g. `/v1/decisions`). Verify a reseller's terms and pricing before switching — they add their own margin.
+- **Alternative access while TypeSafe early access is waitlisted:** Vercel AI Gateway (reportedly issues keys without the waitlist), Netlify AI Gateway, AIMLAPI, and LiteLLM all list Jev. Documented as access paths, not defaults.
+- **OpenRouter model ids:** the bridge defaults to `typesafe/jev-1.13` — the `typesafe/jev-latest` alias does not exist on OpenRouter. Unprefixed/alias overrides (`jev-latest`, `jev-1.13`) are normalised automatically.
+
+---
+
 ## Model Pinning
 
 - `jev-latest` is a moving alias — answers can change under you when TypeSafe ships a new release.
+- `jev-preview` follows the most recent release whether or not it is official (moves ahead of `jev-latest` when a preview build is available).
 - The response always reports the concrete versioned model id that answered (`model`), so you can audit which version produced a decision.
-- When you tune confidence thresholds, pin `jev-1.13.0` in the provider settings.
+- When you tune confidence thresholds, pin `jev-1.13.0` in the provider settings. See also TypeSafe's [jev-1.13 jaggedness notes](https://docs.typesafe.ai/model-jaggedness/jev-1.13).
 
 ---
 
@@ -135,8 +206,9 @@ Documented by TypeSafe for `jev-1.13`: unreliable counting and arithmetic, date 
 
 ## Diagnostics & Testing
 
-- **Admin:** Tools → Provider Diagnostics → TypeSafe (Jev) card shows enable state, key source (settings / WP 7.0 connector / env var / constant), selected model, and a connection test.
+- **Admin:** Tools → Provider Diagnostics → TypeSafe (Jev) card shows enable state, key source (settings / WP 7.0 connector / env var / constant), selected model, decision-cache state, and a connection test.
 - **CLI:** `wp mcp-ai provider list`, `wp mcp-ai provider test typesafe`, `wp mcp-ai provider models typesafe`.
+- **Large requests:** the tool attaches advisory `warnings` when the estimated input exceeds the threshold (default 24,000 tokens, filter `wp_mcp_ai_typesafe_warn_tokens`) — billing is input-only, so trim state to the fields the questions need.
 
 ---
 
