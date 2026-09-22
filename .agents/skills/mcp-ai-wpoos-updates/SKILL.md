@@ -562,6 +562,14 @@ previous window — the user will usually want it back-dated.
 - Every claim (paths, counts, versions) is verified against the actual PRs.
 - Never commit to `alpha-working` directly; branch + PR; exclude unrelated
   working-tree noise from commits.
+- **README anchor links**: after any `README.md` edit that touches headings or
+  the TOC, run `python3 bin/validate-readme-anchors.py` (also enforced by the
+  `link-check.yml` CI job). TOC links use GitHub's visible slug form: emoji
+  headings keep the leading hyphen (`## 🧩 Overview` → `#-overview`), `&`
+  becomes a double hyphen (`#-warranty--safe-use`), and hyphens are never
+  collapsed or trimmed. Headings whose emoji carries a variation selector or
+  ZWJ (`🛡️`, `🧑‍💻`) only resolve via GitHub's hidden fallback anchors —
+  always link the visible form the validator computes.
 
 ## References
 

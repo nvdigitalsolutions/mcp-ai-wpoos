@@ -32,6 +32,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Validate README anchor links
+        run: |
+          set -euo pipefail
+          python3 bin/validate-readme-anchors.py
+
       - name: Extract URLs from readme.txt
         id: extract
         run: |

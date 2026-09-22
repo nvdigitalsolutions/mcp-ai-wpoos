@@ -45,20 +45,20 @@
 ### Getting Started
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
-- [🛡️ Active Security Monitoring](#active-security-monitoring)
-- [⚠️ Warranty & Safe Use](#warranty--safe-use)
+- [🛡️ Active Security Monitoring](#-active-security-monitoring)
+- [⚠️ Warranty & Safe Use](#-warranty--safe-use)
 - [🏗 System Architecture](#-system-architecture)
 - [🚀 Features](#-features)
 - [📦 Installation](#-installation)
   - [🌱 Try It on Your PC](#-try-it-on-your-pc)
 - [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
-- [⚙️ Configuration Checklist](#configuration-checklist-action-items)
+- [⚙️ Configuration Checklist](#-configuration-checklist-action-items)
 - [📚 Documentation](#-documentation)
 
 ### Core Functionality
 - [🧠 Memory & Tool Stack Overview](#-memory--tool-stack-overview)
 - [🛠 Built-in tools & automations](#-built-in-tools--automations)
-- [🗨️ Front-end chat surfaces](#front-end-chat-surfaces)
+- [🗨️ Front-end chat surfaces](#-front-end-chat-surfaces)
 - [💬 Frontend Shortcode](#-frontend-shortcode)
 
 ### Addons & Extensions
@@ -70,7 +70,7 @@
 - [🏗 System Architecture (covers orchestration, harnessing, MCP servers, memory bridge)](#-system-architecture)
 
 ### AI Providers & Integration
-- [🧠 Language Model Providers](#language-model-providers)
+- [🧠 Language Model Providers](#-language-model-providers-openai-gemini-anthropic-baseten-deepseek-openrouter-kimi-digitalocean-nvidia-nim-ollama-lm-studio-hugging-face-cloudflare)
 - [🧱 ChatKit Integration](#-chatkit-integration)
 - [🌐 Crawl4AI Integration](#-crawl4ai-integration)
 - [📡 Job Notification System](#-job-notification-system)
@@ -102,7 +102,7 @@
 
 ### Development
 - [🐳 Local Development with Docker](#-local-development-with-docker)
-- [🧑‍💻 Development Tooling](#development-tooling)
+- [🧑‍💻 Development Tooling](#-development-tooling)
 - [📦 NPM Packages](#-npm-packages)
 - [🧪 Testing & QA](#-testing--qa)
 - [🧩 Hooks & Filters](#-hooks--filters)
