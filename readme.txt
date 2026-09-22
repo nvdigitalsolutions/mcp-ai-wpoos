@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.83
+Stable tag: 1.1.84
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.84 - September 22, 2026 =
+
+TypeSafe Jev enhancement release. Added: the Jev decision stack lands its plan-040 fidelity fixes — noul criteria and structured EntryType fields with a recursive two-gate sanitisation walk, bounded 429/5xx retries honouring retry-after shared by the native client and the OpenRouter decisions bridge (4xx/transport errors never retried), an opt-in advisory decision cache with zeroed usage on hits, a typesafe_endpoint override, the jev-preview alias, and typesafe_decide gains min_confidence, composite-scoring weights, advisory token warnings, and prompt_tokens/completion_tokens usage aliases (#6747); the new base tool typesafe_guardrail batches one noul question per hazard category into advisory pass/review/block verdicts, alongside a new bundled skill mcp-ai-wpoos-jev-decisions; Pro gains an opt-in fail-open guest-chat Jev guardrail on the Layer I pre-chat filter, citation checking for generate_research_report/research_eca (advisory citation_checks), and three new manage_options-gated tools — typesafe_rerank (batched re-ranking with a keep-minimum floor), typesafe_eval (labeled-example accuracy report), and typesafe_skill_select (two-stage rank + re-check) (#6747). Fixed: typesafe_decide's declared capability now matches its enforced manage_options gate (metadata-only; no runtime change, #6745). Docs: proposal + implementation plan 040 ship with the wave (#6746). Tool count: ~308 base + ~1,282 Pro (~1,590 total; +1 base +3 Pro; live registry authoritative). Model catalog: v2026.09.22 (+1 jev-preview entry).
 
 = 1.1.83 - September 21, 2026 =
 
