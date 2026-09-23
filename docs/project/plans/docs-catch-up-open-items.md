@@ -1,8 +1,8 @@
 # Docs & Release Catch-Up — Standing Open-Items Tracker
 
 > **Purpose:** Single registry of every open item identified (and parked or deferred) by the docs & release catch-up runs, so future passes carry from this file instead of re-copying items between plans.
-> **Last reviewed:** 2026-09-22 (v1.1.84 pass)
-> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.84-docs-catch-up.md`](v1.1.84-docs-catch-up.md).
+> **Last reviewed:** 2026-09-24 (v1.1.85 pass)
+> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.85-docs-catch-up.md`](v1.1.85-docs-catch-up.md).
 > **Rule for future passes:** read this file first; a catch-up plan's "Open items" section should point here and only add new items it introduces.
 
 ---
@@ -41,6 +41,7 @@
 | 22 | `@since 1.9.0` | `addons/pro/includes/services/class-wp-mcp-ai-pro-jev-classifier.php` (8×) + `addons/pro/includes/class-wp-mcp-ai-pro-parallel-model-dispatcher.php` (1×) + `includes/helpers/class-wp-mcp-ai-tool-presets-helper.php` (1×) — new code shipped in 1.1.83 (PRs #6728/#6743). **Extended by the v1.1.84 pass:** +1 in the Jev classifier (`check_citations()`, PR #6747) | 1.1.83 | v1.1.83 post plan (extension: v1.1.84 plan) |
 | 23 | `@since 2026.09` | `includes/class-wp-mcp-ai-openrouter-client.php` (1×) + `includes/class-wp-mcp-ai-typesafe-client.php` (2×) — date-format tags (catalog-version convention) on new Jev code (PR #6728). **Extended by the v1.1.84 pass:** +1 openrouter-client +3 typesafe-client (PR #6747) | 1.1.83 | v1.1.83 post plan (extension: v1.1.84 plan) |
 | 24 | `@since 1.9.0` | New Jev Phase 2 files (PR #6747): `addons/pro/includes/services/class-wp-mcp-ai-pro-jev-eval.php`, `addons/pro/includes/services/class-wp-mcp-ai-pro-jev-guardrail.php`, `addons/pro/includes/tools/jev/class-wp-mcp-ai-pro-tool-typesafe-{eval,rerank,skill-select}.php` — 5 instances | 1.1.84 | v1.1.84 plan |
+| 25 | `@since 1.9.1` / `1.9.2` / `1.9.4` | MCP Apps wave (PRs #6753–#6758) — 26 instances across 6 files: `addons/pro/includes/mcp-apps/class-wp-mcp-ai-mcp-app-client.php` (7), `addons/pro/includes/mcp-apps/class-wp-mcp-ai-mcp-app-registry.php` (9), `addons/pro/includes/mcp-apps/class-wp-mcp-ai-rest-mcp-apps-controller.php` (2), `addons/pro/includes/mcp-apps/mcp-apps-init.php` (4), `includes/assistants/metaboxes/class-wp-mcp-ai-metabox-mcp-apps.php` (2), `includes/class-wp-mcp-ai-rest.php` (2) | 1.1.85 | v1.1.85 plan |
 
 - **Blocked on:** version-jump decision — does the next release stay on 1.1.x or jump to 1.2.0?
 - **Broader drift (new finding, 2026-08-26):** non-1.1.x tags are repo-wide (`@since 1.0.0` ×1,928 · `1.2.0` ×1,707 · `1.1.0` ×1,269 · `1.3.0` ×795 · `1.9.0` ×734, PHP source ex vendor). Many are legitimate history. A full-tree audit is a scripted-sweep project needing explicit sign-off — tracked inside issue #5968, not a catch-up-pass task.
@@ -50,7 +51,7 @@
 - **Status:** 🔒 Parked by user decision. Counts stay delta-derived in catch-up passes.
 - **Issue:** [#5967 — Re-derive live tool counts on a fully provisioned environment](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5967)
 - **What:** run `WP_MCP_AI_Tool_Registry::get_tools()` on a fully provisioned environment (seeded toolkits + optional plugins) and replace the delta-based figure.
-- **Current figure (v1.1.84):** ~308 base + ~1,282 Pro (~1,590 total), live-registry caveat retained on every count surface. (Delta-derived; **+1 base +3 Pro registrations in-window** — `typesafe_guardrail` and the three Pro Jev tools `typesafe_rerank`/`typesafe_eval`/`typesafe_skill_select` from #6747; #6745 is metadata-only and the Phase 0 Jev work adds no slugs.)
+- **Current figure (v1.1.85):** ~308 base + ~1,282 Pro (~1,590 total), live-registry caveat retained on every count surface. (Delta-derived; **no registrations in-window** — the MCP App bridge slugs `mcp_app_<label>_<tool>` are dynamic chat-time registrations via the `wp_mcp_ai_chat_effective_tools` seam and are deliberately not counted.)
 - **Known attempt:** QA container (`oos-qa-wp`) returns 363 tools because its DB is unprovisioned — not usable as source of truth.
 - **First noted in:** v1.1.59 plan; carried every pass since.
 
