@@ -593,8 +593,10 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.59-docs-catch-up.md`,
   `docs/project/plans/v1.1.83-docs-catch-up.md`,
   `docs/project/plans/v1.1.83-post-docs-catch-up.md`,
-  `docs/project/plans/v1.1.84-docs-catch-up.md` (latest executed — the v1.1.84
-  pass over PRs #6745–#6747, first full version bump since the post-window pass)
+  `docs/project/plans/v1.1.84-docs-catch-up.md`,
+  `docs/project/plans/v1.1.85-docs-catch-up.md` (latest executed — the v1.1.85
+  pass over PRs #6749–#6759: the MCP Apps connection/exposure wave, Docs Hub
+  0.5.1, README anchor/consolidation work, and the stale 1.1.83 ZIP removal)
 - Standing open items: `docs/project/plans/docs-catch-up-open-items.md`
 - Executed PR deferred-item sweep (2026-09-17): issues #6646–#6655; closed
   #6389 as complete

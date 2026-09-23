@@ -5,8 +5,8 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.84"
-  plugin-version-tested: "1.1.84"
+  plugin-version: "1.1.85"
+  plugin-version-tested: "1.1.85"
   last-updated: "2026-09-22"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
@@ -757,6 +757,15 @@ Import external AI conversation exports into the JetEngine
   toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
   dj-management/image-production slices.
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## MCP Apps Connection & Exposure Wave, Docs Hub 0.5.1, README Consolidation (v1.1.85)
+
+- **MCP Apps connection diagnostics** (PR #6753) — per-row Test Connection / Discover Tools buttons with inline results (negotiated protocol, handshake type, server info, session state, latency, live tool count, verbatim errors), persisted per-app status badge + tool-count chip, Test All; basic auth end-to-end (raw `user:pass` auto-encoded or pre-encoded base64) with token masking (stored credentials never echoed; empty = keep); `Mcp-Session-Id` capture + echo; legacy-handshake fallback; mcpServers JSON import; loopback detection with a PHP-FPM deadlock warning; **Security Center → MCP App Allowed Hosts** setting (constant hard override → filter + saved setting merged).
+- **Protocol + exposure** (PRs #6754/#6755/#6758) — the client advertises the **negotiated** `protocolVersion` post-initialize and suppresses the `_meta` envelope in legacy sessions; a new `wp_mcp_ai_chat_effective_tools` filter seam (after attention filtering, before capability checks) exposes `mcp_app_<label>_<tool>` bridge slugs to the chat payload, with the resolved assistant ID flowing through `handle_tools_list()`/`handle_tool_request()`/`execute_tool_call_internal()`/the `list_mcp_tools` catalogue.
+- **In-process same-site bridge** (PRs #6756/#6757) — same-origin MCP endpoints dispatch via `rest_do_request()` (no outbound socket/TLS/extra PHP-FPM worker) with outbound-HTTP safety rails and `rest_post_dispatch` re-applied for response-side session headers.
+- **Docs Hub 0.5.1** (PRs #6749/#6750/#6759) — local-first uploads source, opt-in remote import, `is_path_safe()` symlink hardening, slug-named uploads folder + one-time migration (0 blocking Plugin Check errors).
+- **README anchors + consolidation** (PRs #6751/#6752) — VS16-fallback TOC anchors fixed; `bin/validate-readme-anchors.py` repaired to GitHub's real rules + CI enforcement; one 12-release Release History section + complete Previous Releases table.
+- **Tool count** — unchanged: ~308 base + ~1,282 Pro (~1,590 total; bridge slugs are dynamic chat-time registrations). Model catalog stays v2026.09.22.
 
 ## TypeSafe Jev Enhancement Wave: Fidelity, Guardrails & Decision Tools (v1.1.84)
 
