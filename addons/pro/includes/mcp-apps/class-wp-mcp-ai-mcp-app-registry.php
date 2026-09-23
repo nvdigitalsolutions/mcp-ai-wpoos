@@ -500,13 +500,84 @@ class WP_MCP_AI_MCP_App_Registry {
 	 * @return array Array of registered bridge tool slugs.
 	 */
 	public function register_remote_tools( $assistant_id, $registry ) {
+		$registered_slugs = array();
+
+		foreach ( $this->collect_remote_tools( $assistant_id ) as $entry ) {
+			foreach ( $entry['tools'] as $remote_tool ) {
+				$bridge = new WP_MCP_AI_MCP_App_Tool_Bridge( $remote_tool, $entry['app_config'], $entry['label'] );
+				$slug   = $bridge->get_slug();
+
+				// Avoid duplicate registration.
+				if ( $registry->get_tool( $slug ) ) {
+					continue;
+				}
+
+				$registry->register_tool( $bridge );
+				$registered_slugs[] = $slug;
+			}
+
+			// Persist a success status with the live tool count so the metabox
+			// badge reflects reality, not just a successful handshake.
+			$this->record_app_status(
+				$assistant_id,
+				$entry['app_config'],
+				array(
+					'last_status' => 'ok',
+					'last_error'  => '',
+					'tool_count'  => count( $entry['tools'] ),
+				)
+			);
+		}
+
+		return $registered_slugs;
+	}
+
+	/**
+	 * Compute the local bridge tool slugs for an assistant's MCP Apps.
+	 *
+	 * Does not register anything — used to expose bridged tools in the chat
+	 * payload (see the wp_mcp_ai_chat_effective_tools filter in
+	 * mcp-apps-init.php) without depending on registration order.
+	 *
+	 * Discovery results are transient-cached, so repeat calls within the
+	 * cache window are cheap.
+	 *
+	 * @since 1.9.2
+	 * @param int $assistant_id Assistant post ID.
+	 * @return array<int, string> Local bridge tool slugs (e.g. mcp_app_elementor_read_page).
+	 */
+	public function get_remote_tool_slugs( $assistant_id ) {
+		$slugs = array();
+
+		foreach ( $this->collect_remote_tools( $assistant_id ) as $entry ) {
+			foreach ( $entry['tools'] as $remote_tool ) {
+				$bridge  = new WP_MCP_AI_MCP_App_Tool_Bridge( $remote_tool, $entry['app_config'], $entry['label'] );
+				$slugs[] = $bridge->get_slug();
+			}
+		}
+
+		return array_values( array_unique( $slugs ) );
+	}
+
+	/**
+	 * Collect discovered tools from all enabled MCP Apps for an assistant.
+	 *
+	 * Applies the enabled/server_url/allowlist guards, records per-app
+	 * connection status snapshots (errors and empty-tool successes), and
+	 * returns the discovery results grouped per app.
+	 *
+	 * @since 1.9.2
+	 * @param int $assistant_id Assistant post ID.
+	 * @return array<int, array{app_config: array, tools: array, label: string}>
+	 */
+	protected function collect_remote_tools( $assistant_id ) {
 		$apps = $this->get_apps( $assistant_id );
 
 		if ( empty( $apps ) ) {
 			return array();
 		}
 
-		$registered_slugs = array();
+		$collected = array();
 
 		foreach ( $apps as $app_config ) {
 			if ( empty( $app_config['enabled'] ) ) {
@@ -574,35 +645,14 @@ class WP_MCP_AI_MCP_App_Registry {
 				continue;
 			}
 
-			$label = ! empty( $app_config['label'] ) ? $app_config['label'] : wp_parse_url( $app_config['server_url'], PHP_URL_HOST );
-
-			foreach ( $tools as $remote_tool ) {
-				$bridge = new WP_MCP_AI_MCP_App_Tool_Bridge( $remote_tool, $app_config, $label );
-				$slug   = $bridge->get_slug();
-
-				// Avoid duplicate registration.
-				if ( $registry->get_tool( $slug ) ) {
-					continue;
-				}
-
-				$registry->register_tool( $bridge );
-				$registered_slugs[] = $slug;
-			}
-
-			// Persist a success status with the live tool count so the metabox
-			// badge reflects reality, not just a successful handshake.
-			$this->record_app_status(
-				$assistant_id,
-				$app_config,
-				array(
-					'last_status' => 'ok',
-					'last_error'  => '',
-					'tool_count'  => count( $tools ),
-				)
+			$collected[] = array(
+				'app_config' => $app_config,
+				'tools'      => $tools,
+				'label'      => ! empty( $app_config['label'] ) ? $app_config['label'] : wp_parse_url( $app_config['server_url'], PHP_URL_HOST ),
 			);
 		}
 
-		return $registered_slugs;
+		return $collected;
 	}
 
 	/**
