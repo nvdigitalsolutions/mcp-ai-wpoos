@@ -47,6 +47,7 @@ Protocol negotiation: the client attempts the stateless `server/discover` handsh
 - **Cap remote responses at 2 MB** (`MAX_RESPONSE_SIZE`). Truncate and surface an error rather than allocating an arbitrary payload — a remote MCP server is untrusted input.
 - **Cache `tools/list` results in transients keyed by `md5( app_config )`** so a configuration change naturally invalidates the cache; do not hand-build cache keys elsewhere.
 - **Bridged tools are exposed to the LLM automatically.** The `wp_mcp_ai_mcp_apps_expose_tools` callback (registered on the base plugin's `wp_mcp_ai_chat_effective_tools` seam) appends the bridge slugs for the current assistant to the chat payload, because bridge tools are registered at chat time and can never be ticked in the Tools metabox. Capability gating (`edit_posts`) still applies per tool. Use `WP_MCP_AI_MCP_App_Registry::get_remote_tool_slugs( $assistant_id )` to resolve the slugs without registering anything.
+- **Same-site servers are bridged in-process.** When the MCP App URL points at this WordPress site and the derived REST route is registered, `WP_MCP_AI_MCP_App_Client::dispatch_request()` executes the JSON-RPC call through `rest_do_request()` instead of an outbound HTTP call — a self-request over the public hostname can deadlock a small PHP-FPM pool or stall on missing hairpin NAT. The `wp_mcp_ai_mcp_app_disable_inprocess_bridge` filter opts out per deployment.
 
 ## Tests
 
