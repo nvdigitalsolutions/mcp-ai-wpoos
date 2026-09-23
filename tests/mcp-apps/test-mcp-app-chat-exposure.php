@@ -41,7 +41,7 @@ class Test_MCP_App_Chat_Exposure extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Registry' ) ) {
 			require_once WP_MCP_AI_PATH . 'addons/pro/includes/mcp-apps/class-wp-mcp-ai-mcp-app-registry.php';
 		}
-		if ( ! function_exists( 'wp_mcp_ai_mcp_apps_expose_tools' ) ) {
+		if ( ! function_exists( 'wp_mcp_ai_mcp_apps_expose_tools' ) || ! function_exists( 'wp_mcp_ai_mcp_apps_rest_pre_dispatch' ) ) {
 			require_once WP_MCP_AI_PATH . 'addons/pro/includes/mcp-apps/mcp-apps-init.php';
 		}
 
@@ -60,6 +60,11 @@ class Test_MCP_App_Chat_Exposure extends WP_UnitTestCase {
 	public function tearDown(): void {
 		remove_all_filters( 'pre_http_request' );
 		remove_all_filters( 'wp_mcp_ai_chat_effective_tools' );
+
+		// The exposure callback registers bridge tools in the singleton
+		// registry; drop them so they don't leak into other suites.
+		WP_MCP_AI_Tool_Registry::get_instance()->unregister_tool( 'mcp_app_elementor_read_page' );
+
 		wp_set_current_user( 0 );
 		parent::tearDown();
 	}
@@ -129,9 +134,142 @@ class Test_MCP_App_Chat_Exposure extends WP_UnitTestCase {
 
 	/**
 	 * Test the Pro exposure callback merges bridged MCP App slugs for the
-	 * assistant into the effective tool list.
+	 * assistant into the effective tool list and registers the bridge tools.
 	 */
 	public function test_expose_tools_merges_bridged_slugs() {
+		$this->mock_discovery();
+
+		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
+		$registry->save_apps(
+			$this->assistant_id,
+			array(
+				array(
+					'label'      => 'Elementor',
+					'server_url' => 'https://example.com/mcp',
+					'auth_type'  => 'none',
+					'enabled'    => true,
+				),
+			)
+		);
+
+		$effective = wp_mcp_ai_mcp_apps_expose_tools(
+			array( 'get_current_date_time' ),
+			array( 'ID' => $this->assistant_id )
+		);
+
+		$this->assertContains( 'get_current_date_time', $effective, 'Existing tool slugs must be preserved.' );
+		$this->assertContains( 'mcp_app_elementor_read_page', $effective, 'Bridged MCP App slugs must be appended.' );
+
+		$this->assertNotNull(
+			WP_MCP_AI_Tool_Registry::get_instance()->get_tool( 'mcp_app_elementor_read_page' ),
+			'The bridged tool must be registered so payload/execution lookups can resolve it.'
+		);
+	}
+
+	/**
+	 * Test the exposure callback resolves the assistant from the explicit
+	 * third argument (the path used by the chat/tools REST call sites) even
+	 * when the config carries no ID.
+	 */
+	public function test_expose_tools_prefers_explicit_assistant_id() {
+		$this->mock_discovery();
+
+		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
+		$registry->save_apps(
+			$this->assistant_id,
+			array(
+				array(
+					'label'      => 'Elementor',
+					'server_url' => 'https://example.com/mcp',
+					'auth_type'  => 'none',
+					'enabled'    => true,
+				),
+			)
+		);
+
+		$effective = wp_mcp_ai_mcp_apps_expose_tools( array(), array(), $this->assistant_id );
+
+		$this->assertContains( 'mcp_app_elementor_read_page', $effective, 'The explicit assistant ID must drive bridge exposure.' );
+	}
+
+	/**
+	 * Test the REST /tools list surface includes bridged MCP App tools when an
+	 * assistant context is provided.
+	 */
+	public function test_handle_tools_list_includes_bridged_tools() {
+		$this->mock_discovery();
+
+		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
+		$registry->save_apps(
+			$this->assistant_id,
+			array(
+				array(
+					'label'      => 'Elementor',
+					'server_url' => 'https://example.com/mcp',
+					'auth_type'  => 'none',
+					'enabled'    => true,
+				),
+			)
+		);
+
+		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$rest = new WP_MCP_AI_REST( WP_MCP_AI_Tool_Registry::get_instance(), $mock_client );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/tools' );
+		$request->set_param( 'assistant_id', $this->assistant_id );
+
+		$response = $rest->handle_tools_list( $request );
+
+		$this->assertNotWPError( $response );
+
+		$data  = $response->get_data();
+		$names = wp_list_pluck( $data['tools'], 'name' );
+
+		$this->assertContains( 'mcp_app_elementor_read_page', $names, 'The MCP tools/list surface must include bridged tools.' );
+	}
+
+	/**
+	 * Test the rest_pre_dispatch hook registers bridged tools for the POST
+	 * /tools route before REST argument validation runs.
+	 */
+	public function test_rest_pre_dispatch_registers_bridges_for_tools_route() {
+		$this->mock_discovery();
+
+		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
+		$registry->save_apps(
+			$this->assistant_id,
+			array(
+				array(
+					'label'      => 'Elementor',
+					'server_url' => 'https://example.com/mcp',
+					'auth_type'  => 'none',
+					'enabled'    => true,
+				),
+			)
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/tools' );
+		$request->set_param( 'assistant_id', $this->assistant_id );
+
+		$result = apply_filters( 'rest_pre_dispatch', null, rest_get_server(), $request );
+
+		$this->assertNull( $result, 'The pre-dispatch hook must pass through the dispatch result.' );
+		$this->assertNotNull(
+			WP_MCP_AI_Tool_Registry::get_instance()->get_tool( 'mcp_app_elementor_read_page' ),
+			'The pre-dispatch hook must register bridged tools before REST validation.'
+		);
+	}
+
+	/**
+	 * Install a pre_http_request mock that answers the MCP handshake and a
+	 * single read_page tool for tools/list.
+	 *
+	 * @return void
+	 */
+	protected function mock_discovery() {
 		add_filter(
 			'pre_http_request',
 			function ( $pre, $args, $url ) {
@@ -169,27 +307,6 @@ class Test_MCP_App_Chat_Exposure extends WP_UnitTestCase {
 			10,
 			3
 		);
-
-		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
-		$registry->save_apps(
-			$this->assistant_id,
-			array(
-				array(
-					'label'      => 'Elementor',
-					'server_url' => 'https://example.com/mcp',
-					'auth_type'  => 'none',
-					'enabled'    => true,
-				),
-			)
-		);
-
-		$effective = wp_mcp_ai_mcp_apps_expose_tools(
-			array( 'get_current_date_time' ),
-			array( 'ID' => $this->assistant_id )
-		);
-
-		$this->assertContains( 'get_current_date_time', $effective, 'Existing tool slugs must be preserved.' );
-		$this->assertContains( 'mcp_app_elementor_read_page', $effective, 'Bridged MCP App slugs must be appended.' );
 	}
 
 	/**

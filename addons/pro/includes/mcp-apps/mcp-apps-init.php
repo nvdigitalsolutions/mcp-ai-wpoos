@@ -100,28 +100,40 @@ add_action( 'wp_mcp_ai_register_tools', 'wp_mcp_ai_mcp_apps_register_tools', 50 
  * Bridged tools are registered dynamically during the chat request and
  * therefore never appear in the assistant's Tools metabox selection. This
  * filter appends the bridge slugs registered for the current assistant to
- * the effective tool list that build_tools_payload() sends to the LLM.
+ * the effective tool list that build_tools_payload() sends to the LLM — and
+ * registers the bridge tools in the local registry so downstream lookups
+ * (payload building, tool execution, list_mcp_tools) can resolve them.
  * Capability gating is still enforced per tool downstream.
  *
+ * The base plugin applies the same seam in handle_tools_list(),
+ * handle_tool_request(), and execute_tool_call_internal(), each passing the
+ * resolved assistant ID explicitly.
+ *
  * @since 1.9.2
+ * @since 1.9.4 Added $assistant_id parameter and bridge registration.
  * @param array $slugs            Effective tool slugs.
  * @param array $assistant_config Assistant configuration.
+ * @param int   $assistant_id     Resolved assistant post ID (0 when unknown).
  * @return array Effective tool slugs including bridged MCP App tools.
  */
-function wp_mcp_ai_mcp_apps_expose_tools( $slugs, $assistant_config ) {
+function wp_mcp_ai_mcp_apps_expose_tools( $slugs, $assistant_config, $assistant_id = 0 ) {
 	if ( ! class_exists( 'WP_MCP_AI_MCP_App_Registry' ) ) {
 		return $slugs;
 	}
 
 	$slugs = is_array( $slugs ) ? $slugs : array();
 
-	$assistant_id = 0;
+	// Prefer the explicit assistant ID passed by the call site, then the
+	// config keys, then the request context. The raw-body fallback only works
+	// before WP_REST_Request consumes php://input, so it is a last resort.
+	$assistant_id = absint( $assistant_id );
 
-	// Prefer an assistant ID carried on the config, then the request context.
-	if ( isset( $assistant_config['ID'] ) ) {
-		$assistant_id = absint( $assistant_config['ID'] );
-	} elseif ( isset( $assistant_config['id'] ) ) {
-		$assistant_id = absint( $assistant_config['id'] );
+	if ( ! $assistant_id ) {
+		if ( isset( $assistant_config['ID'] ) ) {
+			$assistant_id = absint( $assistant_config['ID'] );
+		} elseif ( isset( $assistant_config['id'] ) ) {
+			$assistant_id = absint( $assistant_config['id'] );
+		}
 	}
 
 	if ( ! $assistant_id && defined( 'REST_REQUEST' ) && REST_REQUEST ) {
@@ -159,6 +171,54 @@ function wp_mcp_ai_mcp_apps_expose_tools( $slugs, $assistant_config ) {
 		return $slugs;
 	}
 
+	// Register the bridged tools in the local registry. The bootstrap-time
+	// registration attempt (wp_mcp_ai_mcp_apps_register_tools) always bails:
+	// it fires before REST_REQUEST exists, so it never sees the assistant ID.
+	// Without registration here, build_tools_payload() and the execution paths
+	// skip the appended slugs as "missing tool". Discovery is transient-cached
+	// (and failures are negatively cached), so repeat calls are cheap.
+	$app_registry->register_remote_tools( $assistant_id, WP_MCP_AI_Tool_Registry::get_instance() );
+
 	return array_values( array_unique( array_merge( $slugs, $bridged ) ) );
 }
-add_filter( 'wp_mcp_ai_chat_effective_tools', 'wp_mcp_ai_mcp_apps_expose_tools', 10, 2 );
+add_filter( 'wp_mcp_ai_chat_effective_tools', 'wp_mcp_ai_mcp_apps_expose_tools', 10, 3 );
+
+/**
+ * Register bridged MCP App tools before REST argument validation runs.
+ *
+ * The POST /tools route validates the requested slug against the registry
+ * before the handler runs, so bridge tools must be registered earlier than
+ * the effective-tools seam can (the seam runs inside the handler). This hook
+ * only covers the timing gap for that one surface; the allow-list gate still
+ * goes through the effective-tools filter in handle_tool_request().
+ *
+ * @since 1.9.4
+ * @param mixed           $result  Pre-dispatch result.
+ * @param WP_REST_Server  $server  REST server instance.
+ * @param WP_REST_Request $request Current REST request.
+ * @return mixed Pass-through result.
+ */
+function wp_mcp_ai_mcp_apps_rest_pre_dispatch( $result, $server, $request ) {
+	if ( ! class_exists( 'WP_MCP_AI_MCP_App_Registry' ) || ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+		return $result;
+	}
+
+	$namespace = class_exists( 'WP_MCP_AI_REST' ) ? WP_MCP_AI_REST::REST_NAMESPACE : 'mcp-ai/v1';
+
+	if ( 0 !== strpos( $request->get_route(), '/' . $namespace . '/tools' ) ) {
+		return $result;
+	}
+
+	$assistant_id = absint( $request->get_param( 'assistant_id' ) );
+	if ( ! $assistant_id ) {
+		return $result;
+	}
+
+	WP_MCP_AI_MCP_App_Registry::get_instance()->register_remote_tools(
+		$assistant_id,
+		WP_MCP_AI_Tool_Registry::get_instance()
+	);
+
+	return $result;
+}
+add_filter( 'rest_pre_dispatch', 'wp_mcp_ai_mcp_apps_rest_pre_dispatch', 10, 3 );
