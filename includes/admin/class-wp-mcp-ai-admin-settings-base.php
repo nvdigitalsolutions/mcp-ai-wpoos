@@ -667,6 +667,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'require_https'                         => false,
 				'enable_security_audit_log'             => true,
 				'cors_allow_origin'                     => 'site',
+				'mcp_app_allowed_hosts'                 => '',
 				// ── Provider failover (Proposal 017, Wave 3) ──
 				'enable_provider_failover'              => false,
 				'provider_failover_priority'            => array( 'gemini', 'anthropic', 'openrouter', 'openai' ),

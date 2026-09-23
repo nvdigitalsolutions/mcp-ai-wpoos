@@ -89,6 +89,16 @@ class WP_MCP_AI_MCP_App_Client {
 	protected $request_id = 0;
 
 	/**
+	 * Session ID issued by sessionful (pre-2026-07-28) Streamable HTTP servers.
+	 *
+	 * Captured from the Mcp-Session-Id response header during the initialize
+	 * handshake and echoed on every subsequent request to the same server.
+	 *
+	 * @var string
+	 */
+	protected $session_id = '';
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 1.8.0
@@ -96,8 +106,8 @@ class WP_MCP_AI_MCP_App_Client {
 	 *     Connection configuration.
 	 *
 	 *     @type string $server_url  Required. Remote MCP server endpoint URL.
-	 *     @type string $auth_type   Authentication type: 'bearer', 'header', 'oauth', or 'none'. Default 'none'.
-	 *     @type string $token       Bearer token, header value, or OAuth access token for authentication.
+	 *     @type string $auth_type   Authentication type: 'bearer', 'basic', 'header', 'oauth', or 'none'. Default 'none'.
+	 *     @type string $token       Bearer token, Basic credential (base64 or raw user:pass), header value, or OAuth access token for authentication.
 	 *     @type string $header_name Custom header name when auth_type is 'header'.
 	 *     @type array  $oauth_data  OAuth token data (access_token, refresh_token, expires_in, issued_at) when auth_type is 'oauth'.
 	 *     @type WP_MCP_AI_MCP_App_OAuth_Client $oauth_client Pre-configured OAuth client instance (optional, used for auto-refresh).
@@ -321,20 +331,69 @@ class WP_MCP_AI_MCP_App_Client {
 			);
 		}
 
-		// Try discover() first; fall back to initialize() for 2025-era servers.
-		$result = $this->discover();
+		$start_time = microtime( true );
+
+		// Try discover() first; fall back to initialize() for sessionful
+		// (pre-2026-07-28) servers.
+		$handshake_method = 'discover';
+		$result           = $this->discover();
 
 		if ( is_wp_error( $result ) ) {
 			$error_data = $result->get_error_data();
 			$rpc_code   = is_array( $error_data ) && isset( $error_data['rpc_code'] ) ? $error_data['rpc_code'] : 0;
-			if ( -32601 === $rpc_code ) {
-				// Method not found - server is pre-2026-07-28, fall back to initialize.
-				return $this->initialize();
+
+			// Fall back to the legacy initialize handshake when the server
+			// does not implement server/discover (-32601) or rejects the
+			// stateless request (e.g. -32600 "Missing Mcp-Session-Id header").
+			$message = strtolower( $result->get_error_message() );
+			if ( -32601 !== $rpc_code && -32600 !== $rpc_code && false === strpos( $message, 'session' ) ) {
+				return $result;
 			}
-			return $result;
+
+			$handshake_method = 'initialize';
+			$result           = $this->initialize();
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
 		}
 
-		return $result;
+		// Normalize the handshake result into a canonical payload. discover()
+		// returns pre-extracted keys while initialize() returns the raw result.
+		if ( 'initialize' === $handshake_method ) {
+			$protocol     = isset( $result['protocolVersion'] ) ? sanitize_text_field( $result['protocolVersion'] ) : '2025-03-26';
+			$server_info  = isset( $result['serverInfo'] ) ? $result['serverInfo'] : array();
+			$capabilities = isset( $result['capabilities'] ) ? $result['capabilities'] : array();
+		} else {
+			$protocol     = self::PROTOCOL_VERSION;
+			$server_info  = isset( $result['server_info'] ) ? $result['server_info'] : array();
+			$capabilities = isset( $result['capabilities'] ) ? $result['capabilities'] : array();
+		}
+
+		// Enumerate tools so the result reflects whether the app can actually
+		// be used, not just whether the handshake succeeded.
+		$tool_count = null;
+		$tool_error = '';
+		$tools      = $this->list_tools();
+
+		if ( is_wp_error( $tools ) ) {
+			$tool_error = $tools->get_error_message();
+		} else {
+			$tool_count = count( $tools );
+		}
+
+		return array(
+			'success'        => true,
+			'handshake'      => $handshake_method,
+			'protocol'       => $protocol,
+			'server_info'    => $server_info,
+			'capabilities'   => $capabilities,
+			'has_tools'      => ! empty( $capabilities['tools'] ),
+			'tool_count'     => $tool_count,
+			'tool_error'     => $tool_error,
+			'session_active' => ! empty( $this->session_id ),
+			'latency_ms'     => (int) round( ( microtime( true ) - $start_time ) * 1000 ),
+		);
 	}
 
 	/**
@@ -352,6 +411,11 @@ class WP_MCP_AI_MCP_App_Client {
 
 		// Inject _meta for every request except initialize and server/discover.
 		if ( ! in_array( $method, array( 'initialize', 'server/discover' ), true ) ) {
+			// list_tools() and friends pass new stdClass() as params; the
+			// _meta envelope requires an array before merging.
+			if ( ! is_array( $params ) ) {
+				$params = array();
+			}
 			$meta   = $this->build_request_meta();
 			$params = array_merge( $params, $meta );
 		}
@@ -402,17 +466,11 @@ class WP_MCP_AI_MCP_App_Client {
 
 		$status_code = wp_remote_retrieve_response_code( $response );
 
-		if ( $status_code < 200 || $status_code >= 300 ) {
-			return new WP_Error(
-				'wp_mcp_ai_mcp_app_http_error',
-				sprintf(
-					/* translators: 1: HTTP status code, 2: Server URL. */
-					__( 'MCP server returned HTTP %1$d from %2$s.', 'mcp-ai-wpoos-pro' ),
-					$status_code,
-					$this->server_url
-				),
-				array( 'status' => $status_code )
-			);
+		// Capture a session ID issued by sessionful (pre-2026-07-28) servers so
+		// subsequent requests can echo it via the Mcp-Session-Id header.
+		$session_id = $this->retrieve_header_case_insensitive( $response, 'Mcp-Session-Id' );
+		if ( ! empty( $session_id ) ) {
+			$this->session_id = sanitize_text_field( $session_id );
 		}
 
 		$body = wp_remote_retrieve_body( $response );
@@ -425,6 +483,34 @@ class WP_MCP_AI_MCP_App_Client {
 		}
 
 		$decoded = json_decode( $body, true );
+
+		if ( $status_code < 200 || $status_code >= 300 ) {
+			// Some servers return a JSON-RPC error with a non-2xx status (e.g.
+			// HTTP 400 "Missing Mcp-Session-Id header"). Surface the RPC code
+			// so callers can apply protocol fallbacks instead of receiving a
+			// generic HTTP error.
+			if ( is_array( $decoded ) && isset( $decoded['error']['code'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_mcp_app_rpc_error',
+					isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unknown MCP server error.', 'mcp-ai-wpoos-pro' ),
+					array(
+						'rpc_code' => (int) $decoded['error']['code'],
+						'status'   => $status_code,
+					)
+				);
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_http_error',
+				sprintf(
+					/* translators: 1: HTTP status code, 2: Server URL. */
+					__( 'MCP server returned HTTP %1$d from %2$s.', 'mcp-ai-wpoos-pro' ),
+					$status_code,
+					$this->server_url
+				),
+				array( 'status' => $status_code )
+			);
+		}
 
 		if ( null === $decoded ) {
 			return new WP_Error(
@@ -497,6 +583,43 @@ class WP_MCP_AI_MCP_App_Client {
 	}
 
 	/**
+	 * Retrieve a response header by name, case-insensitively.
+	 *
+	 * The HTTP API lowercases header keys in real responses (Requests 2.x),
+	 * while pre_http_request-shortcircuited responses may carry arbitrary
+	 * casing. This helper normalizes both shapes so header lookups like
+	 * Mcp-Session-Id never miss on casing.
+	 *
+	 * @since 1.9.1
+	 * @param array|WP_Error $response wp_remote_request()-style response.
+	 * @param string         $name     Header name to look up.
+	 * @return string Header value, empty string when absent.
+	 */
+	protected function retrieve_header_case_insensitive( $response, $name ) {
+		$headers = wp_remote_retrieve_headers( $response );
+
+		if ( is_object( $headers ) ) {
+			if ( method_exists( $headers, 'getAll' ) ) {
+				$headers = $headers->getAll();
+			} else {
+				return '';
+			}
+		}
+
+		if ( ! is_array( $headers ) ) {
+			return '';
+		}
+
+		foreach ( $headers as $key => $value ) {
+			if ( 0 === strcasecmp( $key, $name ) ) {
+				return is_string( $value ) ? $value : '';
+			}
+		}
+
+		return '';
+	}
+
+	/**
 	 * Build request headers including authentication and routing.
 	 *
 	 * @since 1.8.0
@@ -509,9 +632,14 @@ class WP_MCP_AI_MCP_App_Client {
 	protected function get_request_headers( $method = '', $params = array() ) {
 		$headers = array(
 			'Content-Type' => 'application/json',
-			'Accept'       => 'application/json',
+			'Accept'       => 'application/json, text/event-stream',
 			'User-Agent'   => 'NV-oOS-MCP-App-Client/' . ( defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : '1.9.0' ),
 		);
+
+		// Echo the session ID issued by sessionful (pre-2026-07-28) servers.
+		if ( ! empty( $this->session_id ) ) {
+			$headers['Mcp-Session-Id'] = $this->session_id;
+		}
 
 		// MCP 2026-07-28 routing headers (SEP-2243).
 		$headers['MCP-Protocol-Version'] = self::PROTOCOL_VERSION;
@@ -527,6 +655,22 @@ class WP_MCP_AI_MCP_App_Client {
 
 		// Add authentication.
 		switch ( $this->auth['type'] ) {
+			case 'basic':
+				if ( empty( $this->auth['token'] ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_mcp_app_missing_token',
+						__( 'Basic auth credentials are required for authentication.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				$credential = $this->auth['token'];
+				// Accept either a raw "user:password" pair or a pre-encoded
+				// base64 credential. A ':' cannot appear in base64 output.
+				if ( false !== strpos( $credential, ':' ) ) {
+					$credential = base64_encode( $credential ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Basic auth per RFC 7617.
+				}
+				$headers['Authorization'] = 'Basic ' . $credential;
+				break;
+
 			case 'bearer':
 				if ( empty( $this->auth['token'] ) ) {
 					return new WP_Error(
@@ -632,5 +776,15 @@ class WP_MCP_AI_MCP_App_Client {
 	 */
 	public function get_server_url() {
 		return $this->server_url;
+	}
+
+	/**
+	 * Get the captured session ID, if any.
+	 *
+	 * @since 1.9.1
+	 * @return string
+	 */
+	public function get_session_id() {
+		return $this->session_id;
 	}
 }

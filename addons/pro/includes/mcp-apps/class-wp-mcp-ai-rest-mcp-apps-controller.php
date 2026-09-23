@@ -61,35 +61,42 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 					'callback'            => array( $this, 'test_connection' ),
 					'permission_callback' => array( $this, 'check_admin_permissions' ),
 					'args'                => array(
-						'server_url'  => array(
+						'server_url'   => array(
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => 'esc_url_raw',
 							'description'       => __( 'Remote MCP server endpoint URL.', 'mcp-ai-wpoos-pro' ),
 						),
-						'auth_type'   => array(
+						'assistant_id' => array(
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+							'default'           => 0,
+							'description'       => __( 'Assistant ID to persist the connection status against.', 'mcp-ai-wpoos-pro' ),
+						),
+						'auth_type'    => array(
 							'type'              => 'string',
 							'default'           => 'none',
-							'enum'              => array( 'none', 'bearer', 'header', 'oauth' ),
+							'enum'              => array( 'none', 'bearer', 'basic', 'header', 'oauth' ),
 							'sanitize_callback' => 'sanitize_key',
 						),
-						'token'       => array(
+						'token'        => array(
 							'type'              => 'string',
 							'default'           => '',
 							'sanitize_callback' => 'sanitize_text_field',
 						),
-						'header_name' => array(
+						'header_name'  => array(
 							'type'              => 'string',
 							'default'           => '',
 							'sanitize_callback' => 'sanitize_text_field',
 						),
-						'timeout'     => array(
+						'timeout'      => array(
 							'type'    => 'integer',
 							'default' => 30,
 							'minimum' => 1,
 							'maximum' => 120,
 						),
-						'verify_ssl'  => array(
+						'verify_ssl'   => array(
 							'type'    => 'boolean',
 							'default' => true,
 						),
@@ -107,36 +114,47 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 					'callback'            => array( $this, 'discover_tools' ),
 					'permission_callback' => array( $this, 'check_admin_permissions' ),
 					'args'                => array(
-						'server_url'  => array(
+						'server_url'   => array(
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => 'esc_url_raw',
 						),
-						'auth_type'   => array(
+						'assistant_id' => array(
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+							'default'           => 0,
+						),
+						'auth_type'    => array(
 							'type'              => 'string',
 							'default'           => 'none',
-							'enum'              => array( 'none', 'bearer', 'header', 'oauth' ),
+							'enum'              => array( 'none', 'bearer', 'basic', 'header', 'oauth' ),
 							'sanitize_callback' => 'sanitize_key',
 						),
-						'token'       => array(
+						'token'        => array(
 							'type'              => 'string',
 							'default'           => '',
 							'sanitize_callback' => 'sanitize_text_field',
 						),
-						'header_name' => array(
+						'header_name'  => array(
 							'type'              => 'string',
 							'default'           => '',
 							'sanitize_callback' => 'sanitize_text_field',
 						),
-						'timeout'     => array(
+						'timeout'      => array(
 							'type'    => 'integer',
 							'default' => 30,
 							'minimum' => 1,
 							'maximum' => 120,
 						),
-						'verify_ssl'  => array(
+						'verify_ssl'   => array(
 							'type'    => 'boolean',
 							'default' => true,
+						),
+						'refresh'      => array(
+							'type'        => 'boolean',
+							'default'     => false,
+							'description' => __( 'Bypass the cached tool discovery result.', 'mcp-ai-wpoos-pro' ),
 						),
 					),
 				),
@@ -314,7 +332,8 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function test_connection( WP_REST_Request $request ) {
-		$server_url = $request->get_param( 'server_url' );
+		$server_url   = $request->get_param( 'server_url' );
+		$assistant_id = (int) $request->get_param( 'assistant_id' );
 
 		// SSRF protection: validate URL before any outbound HTTP.
 		$url_check = wp_mcp_ai_validate_url( $server_url );
@@ -336,15 +355,92 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 			'timeout'     => $request->get_param( 'timeout' ),
 			'verify_ssl'  => $request->get_param( 'verify_ssl' ),
 		);
+		$config = $this->resolve_stored_token( $assistant_id, $config );
 
 		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
 		$result   = $registry->test_connection( $config );
+
+		if ( $assistant_id ) {
+			if ( is_wp_error( $result ) ) {
+				$registry->record_app_status(
+					$assistant_id,
+					$config,
+					array(
+						'last_status' => 'error',
+						'last_error'  => $result->get_error_message(),
+					)
+				);
+			} else {
+				$registry->record_app_status(
+					$assistant_id,
+					$config,
+					array(
+						'last_status' => 'ok',
+						'last_error'  => isset( $result['tool_error'] ) ? $result['tool_error'] : '',
+						'tool_count'  => isset( $result['tool_count'] ) ? $result['tool_count'] : null,
+						'protocol'    => isset( $result['protocol'] ) ? $result['protocol'] : '',
+						'server_name' => isset( $result['server_info']['name'] ) ? $result['server_info']['name'] : '',
+						'latency_ms'  => isset( $result['latency_ms'] ) ? $result['latency_ms'] : null,
+					)
+				);
+			}
+		}
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
 
+		// Help the UI flag same-server (loopback) connections.
+		$result['same_origin'] = $this->is_same_origin( $server_url );
+
 		return rest_ensure_response( $result );
+	}
+
+	/**
+	 * Check whether a server URL points at this WordPress site (loopback).
+	 *
+	 * @since 1.9.1
+	 * @param string $server_url Remote MCP server URL.
+	 * @return bool True when the host matches the site's own host.
+	 */
+	protected function is_same_origin( $server_url ) {
+		$remote_host = strtolower( (string) wp_parse_url( $server_url, PHP_URL_HOST ) );
+		$site_host   = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+
+		return '' !== $remote_host && $remote_host === $site_host;
+	}
+
+	/**
+	 * Resolve an omitted token from the assistant's saved apps.
+	 *
+	 * The metabox masks stored credentials, so its test requests may omit the
+	 * token. When the submitted URL matches a saved app for the same
+	 * assistant, reuse the stored credential — mirroring the save-time
+	 * "leave blank to keep" semantics.
+	 *
+	 * @since 1.9.1
+	 * @param int   $assistant_id Assistant post ID.
+	 * @param array $config       Connection config from the request.
+	 * @return array Config with the stored token restored when applicable.
+	 */
+	protected function resolve_stored_token( $assistant_id, array $config ) {
+		if ( ! empty( $config['token'] ) || ! $assistant_id ) {
+			return $config;
+		}
+
+		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
+		foreach ( $registry->get_apps( $assistant_id ) as $saved ) {
+			if (
+				isset( $saved['server_url'] ) &&
+				$saved['server_url'] === $config['server_url'] &&
+				! empty( $saved['token'] )
+			) {
+				$config['token'] = $saved['token'];
+				break;
+			}
+		}
+
+		return $config;
 	}
 
 	/**
@@ -355,7 +451,9 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function discover_tools( WP_REST_Request $request ) {
-		$server_url = $request->get_param( 'server_url' );
+		$server_url   = $request->get_param( 'server_url' );
+		$assistant_id = (int) $request->get_param( 'assistant_id' );
+		$refresh      = (bool) $request->get_param( 'refresh' );
 
 		// SSRF protection: validate URL before any outbound HTTP.
 		$url_check = wp_mcp_ai_validate_url( $server_url );
@@ -371,12 +469,35 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 			'timeout'     => $request->get_param( 'timeout' ),
 			'verify_ssl'  => $request->get_param( 'verify_ssl' ),
 		);
+		$config = $this->resolve_stored_token( $assistant_id, $config );
 
 		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
-		$tools    = $registry->discover_tools( $config );
+		$tools    = $registry->discover_tools( $config, $refresh );
 
 		if ( is_wp_error( $tools ) ) {
+			if ( $assistant_id ) {
+				$registry->record_app_status(
+					$assistant_id,
+					$config,
+					array(
+						'last_status' => 'error',
+						'last_error'  => $tools->get_error_message(),
+					)
+				);
+			}
 			return $tools;
+		}
+
+		if ( $assistant_id ) {
+			$registry->record_app_status(
+				$assistant_id,
+				$config,
+				array(
+					'last_status' => 'ok',
+					'last_error'  => '',
+					'tool_count'  => count( $tools ),
+				)
+			);
 		}
 
 		// Format tools for display.
