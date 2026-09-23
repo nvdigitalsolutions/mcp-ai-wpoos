@@ -9248,11 +9248,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return array|WP_Error
 		 */
 		protected function build_tools_payload( array $assistant_config ) {
-			$allowed_tool_slugs = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
-
-			if ( empty( $allowed_tool_slugs ) ) {
-				return array();
-			}
+			$allowed_tool_slugs = isset( $assistant_config['tools'] ) && is_array( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
 
 			/**
 			 * Filter tool slugs before they are converted to LLM function payloads.
@@ -9274,6 +9270,32 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$filtered_slugs = apply_filters( 'wp_mcp_ai_attention_tool_slugs', array(), $allowed_tool_slugs, $assistant_config );
 			if ( ! empty( $filtered_slugs ) && is_array( $filtered_slugs ) ) {
 				$allowed_tool_slugs = array_values( array_intersect( $filtered_slugs, $allowed_tool_slugs ) );
+			}
+
+			/**
+			 * Filter the effective tool slugs sent to the LLM for this chat request.
+			 *
+			 * Runs after attention-based filtering so dynamically registered
+			 * tools — e.g. MCP App bridge tools, which are discovered per
+			 * assistant at chat time and therefore cannot be selected in the
+			 * Tools metabox — can be appended to the payload. Subscribers
+			 * should only ever ADD slugs; the attention filter above is the
+			 * narrowing step. Every appended slug still passes the per-tool
+			 * capability check below before it reaches the model.
+			 *
+			 * @since 1.9.2
+			 *
+			 * @param string[] $allowed_tool_slugs Effective tool slugs.
+			 * @param array    $assistant_config   Full assistant configuration.
+			 */
+			$allowed_tool_slugs = apply_filters( 'wp_mcp_ai_chat_effective_tools', $allowed_tool_slugs, $assistant_config );
+			if ( ! is_array( $allowed_tool_slugs ) ) {
+				$allowed_tool_slugs = array();
+			}
+			$allowed_tool_slugs = array_values( array_unique( array_filter( array_map( 'sanitize_key', $allowed_tool_slugs ) ) ) );
+
+			if ( empty( $allowed_tool_slugs ) ) {
+				return array();
 			}
 
 			$chat_provider = isset( $assistant_config['provider'] ) ? sanitize_key( $assistant_config['provider'] ) : 'openai';
