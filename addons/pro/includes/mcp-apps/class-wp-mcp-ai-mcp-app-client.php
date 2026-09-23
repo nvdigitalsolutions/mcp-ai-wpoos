@@ -739,6 +739,13 @@ class WP_MCP_AI_MCP_App_Client {
 
 		$response = rest_do_request( $request );
 
+		// rest_do_request() skips serve_request(), which is where core applies
+		// the rest_post_dispatch filter when serving over HTTP. Endpoints that
+		// attach response headers through that filter — EMCP Tools registers
+		// Mcp-Session-Id there — never fire during in-process dispatch, so
+		// re-apply the filter to mirror the HTTP behaviour.
+		$response = apply_filters( 'rest_post_dispatch', rest_ensure_response( $response ), rest_get_server(), $request );
+
 		if ( $response instanceof WP_REST_Response ) {
 			$data = $response->get_data();
 			$body = is_string( $data ) ? $data : wp_json_encode( $data );
