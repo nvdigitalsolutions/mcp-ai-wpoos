@@ -32,6 +32,27 @@ class Test_MCP_App_Client_Internal_Bridge extends WP_UnitTestCase {
 	protected static $routed_bodies = array();
 
 	/**
+	 * Sessions created by the EMCP-style route (session id => true).
+	 *
+	 * @var array<string, bool>
+	 */
+	protected static $emcp_sessions = array();
+
+	/**
+	 * Session id awaiting header attachment via rest_post_dispatch.
+	 *
+	 * @var string
+	 */
+	protected static $emcp_pending_session = '';
+
+	/**
+	 * Mcp-Session-Id request headers seen by the EMCP-style route.
+	 *
+	 * @var array<int, string>
+	 */
+	protected static $emcp_req_headers = array();
+
+	/**
 	 * Set up test fixtures.
 	 */
 	public function setUp(): void {
@@ -41,8 +62,11 @@ class Test_MCP_App_Client_Internal_Bridge extends WP_UnitTestCase {
 			require_once WP_MCP_AI_PATH . 'addons/pro/includes/mcp-apps/class-wp-mcp-ai-mcp-app-client.php';
 		}
 
-		self::$saw_authorization = '';
-		self::$routed_bodies     = array();
+		self::$saw_authorization    = '';
+		self::$routed_bodies        = array();
+		self::$emcp_sessions        = array();
+		self::$emcp_pending_session = '';
+		self::$emcp_req_headers     = array();
 
 		add_action( 'rest_api_init', array( $this, 'register_test_route' ) );
 
@@ -58,6 +82,7 @@ class Test_MCP_App_Client_Internal_Bridge extends WP_UnitTestCase {
 	public function tearDown(): void {
 		remove_all_filters( 'pre_http_request' );
 		remove_all_filters( 'wp_mcp_ai_mcp_app_disable_inprocess_bridge' );
+		remove_filter( 'rest_post_dispatch', array( $this, 'attach_emcp_session_header' ) );
 		remove_action( 'rest_api_init', array( $this, 'register_test_route' ) );
 		$GLOBALS['wp_rest_server'] = null;
 		parent::tearDown();
@@ -98,6 +123,99 @@ class Test_MCP_App_Client_Internal_Bridge extends WP_UnitTestCase {
 				},
 			)
 		);
+
+		// EMCP Tools-style route: the Mcp-Session-Id response header is attached
+		// via the rest_post_dispatch filter (never directly on the response), and
+		// tools/list rejects requests that do not echo the session back.
+		register_rest_route(
+			'elementor',
+			'/mcp-emcp',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'permission_callback' => '__return_true',
+				'callback'            => array( $this, 'handle_emcp_style_route' ),
+			)
+		);
+	}
+
+	/**
+	 * Attach the pending EMCP session id as a response header.
+	 *
+	 * Registered on rest_post_dispatch by handle_emcp_style_route() to mirror
+	 * the EMCP Tools server behaviour.
+	 *
+	 * @param WP_REST_Response|WP_HTTP_Response|WP_Error $response REST response.
+	 * @return WP_REST_Response|WP_HTTP_Response|WP_Error
+	 */
+	public function attach_emcp_session_header( $response ) {
+		if ( $response instanceof WP_REST_Response && '' !== self::$emcp_pending_session ) {
+			$response->header( 'Mcp-Session-Id', self::$emcp_pending_session );
+			self::$emcp_pending_session = '';
+		}
+		return $response;
+	}
+
+	/**
+	 * Handle requests to the EMCP-style route.
+	 *
+	 * @param WP_REST_Request $request Incoming REST request.
+	 * @return array JSON-RPC response body.
+	 */
+	public function handle_emcp_style_route( WP_REST_Request $request ) {
+		$body   = json_decode( $request->get_body(), true );
+		$method = isset( $body['method'] ) ? $body['method'] : '';
+		$req_id = isset( $body['id'] ) ? $body['id'] : 1;
+
+		self::$emcp_req_headers[] = (string) $request->get_header( 'Mcp-Session-Id' );
+
+		$error = function ( $message ) use ( $req_id ) {
+			return array(
+				'jsonrpc' => '2.0',
+				'id'      => $req_id,
+				'error'   => array(
+					'code'    => -32600,
+					'message' => $message,
+				),
+			);
+		};
+
+		if ( 'initialize' === $method ) {
+			$session_id                         = wp_generate_password( 24, false );
+			self::$emcp_sessions[ $session_id ] = true;
+			self::$emcp_pending_session         = $session_id;
+
+			add_filter( 'rest_post_dispatch', array( $this, 'attach_emcp_session_header' ) );
+
+			return array(
+				'jsonrpc' => '2.0',
+				'id'      => $req_id,
+				'result'  => array(
+					'protocolVersion' => '2025-11-25',
+					'serverInfo'      => array(
+						'name'    => 'Elementor MCP',
+						'version' => 'v1.0.0',
+					),
+				),
+			);
+		}
+
+		$session_id = $request->get_header( 'Mcp-Session-Id' );
+		if ( 'tools/list' === $method ) {
+			if ( empty( $session_id ) || empty( self::$emcp_sessions[ $session_id ] ) ) {
+				return $error( 'Invalid Request: Missing Mcp-Session-Id header' );
+			}
+			return array(
+				'jsonrpc' => '2.0',
+				'id'      => $req_id,
+				'result'  => array(
+					'tools' => array(
+						array( 'name' => 'read_page' ),
+					),
+				),
+			);
+		}
+
+		return $error( 'Invalid Request: Missing Mcp-Session-Id header' );
 	}
 
 	/**
@@ -231,5 +349,30 @@ class Test_MCP_App_Client_Internal_Bridge extends WP_UnitTestCase {
 			$http_calls,
 			'The disable filter must force outbound HTTP.'
 		);
+	}
+
+	/**
+	 * Test the EMCP session round-trip: servers that attach Mcp-Session-Id via
+	 * the rest_post_dispatch filter must have that filter applied during
+	 * in-process dispatch so tools/list sees the session header.
+	 */
+	public function test_emcp_session_roundtrip_via_rest_post_dispatch() {
+		$client = new WP_MCP_AI_MCP_App_Client(
+			array(
+				'server_url' => home_url( '/wp-json/elementor/mcp-emcp/' ),
+				'auth_type'  => 'none',
+			)
+		);
+
+		$result = $client->test_connection();
+
+		$this->assertNotWPError( $result );
+		$this->assertSame(
+			1,
+			$result['tool_count'],
+			'Tool enumeration must succeed when the session round-trips.'
+		);
+		$this->assertSame( '', $result['tool_error'] );
+		$this->assertTrue( $result['session_active'], 'The negotiated session must be captured and replayed.' );
 	}
 }
