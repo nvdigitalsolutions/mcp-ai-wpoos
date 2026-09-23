@@ -51,11 +51,21 @@ class WP_MCP_AI_MCP_App_Registry {
 	const CACHE_PREFIX = 'wp_mcp_ai_mcp_app_tools_';
 
 	/**
-	 * Cache duration in seconds (5 minutes).
+	 * Cache TTL for successful discovery results.
 	 *
 	 * @var int
 	 */
 	const CACHE_TTL = 300;
+
+	/**
+	 * Negative-cache TTL for failed discovery attempts.
+	 *
+	 * Prevents a down/unreachable app server from stalling every chat request
+	 * with a fresh handshake timeout.
+	 *
+	 * @var int
+	 */
+	const FAILURE_CACHE_TTL = 60;
 
 	/**
 	 * Maximum number of MCP Apps per assistant.
@@ -392,6 +402,12 @@ class WP_MCP_AI_MCP_App_Registry {
 		// Clear cached tools for this assistant.
 		$this->clear_tool_cache( $assistant_id );
 
+		// The /tools REST list cache may hold pre-bridge listings for this
+		// assistant; invalidate it so new apps surface immediately.
+		if ( class_exists( 'WP_MCP_AI_REST_Cache' ) ) {
+			WP_MCP_AI_REST_Cache::invalidate_endpoint( 'tools' );
+		}
+
 		return true;
 	}
 
@@ -677,6 +693,13 @@ class WP_MCP_AI_MCP_App_Registry {
 			if ( false !== $cached ) {
 				return $cached;
 			}
+
+			// Short negative cache: a down/unreachable server must not force
+			// every chat request to wait out a fresh handshake timeout.
+			$failure = get_transient( $cache_key . '_err' );
+			if ( false !== $failure && is_string( $failure ) ) {
+				return new WP_Error( 'wp_mcp_ai_mcp_app_discovery_failed', $failure );
+			}
 		}
 
 		$client = $this->create_client( $app_config );
@@ -692,22 +715,38 @@ class WP_MCP_AI_MCP_App_Registry {
 			if ( -32601 === $rpc_code || -32600 === $rpc_code || false !== strpos( $message, 'session' ) ) {
 				$init_result = $client->initialize();
 				if ( is_wp_error( $init_result ) ) {
+					$this->cache_discovery_failure( $cache_key, $init_result );
 					return $init_result;
 				}
 			} else {
+				$this->cache_discovery_failure( $cache_key, $init_result );
 				return $init_result;
 			}
 		}
 
 		$tools = $client->list_tools();
 		if ( is_wp_error( $tools ) ) {
+			$this->cache_discovery_failure( $cache_key, $tools );
 			return $tools;
 		}
 
 		// Cache the results.
 		set_transient( $cache_key, $tools, self::CACHE_TTL );
+		delete_transient( $cache_key . '_err' );
 
 		return $tools;
+	}
+
+	/**
+	 * Record a discovery failure in the short negative cache.
+	 *
+	 * @since 1.9.4
+	 * @param string   $cache_key Discovery transient key.
+	 * @param WP_Error $error     Discovery error.
+	 * @return void
+	 */
+	protected function cache_discovery_failure( $cache_key, WP_Error $error ) {
+		set_transient( $cache_key . '_err', $error->get_error_message(), self::FAILURE_CACHE_TTL );
 	}
 
 	/**
@@ -727,6 +766,7 @@ class WP_MCP_AI_MCP_App_Registry {
 		foreach ( $apps as $app_config ) {
 			$cache_key = self::CACHE_PREFIX . md5( wp_json_encode( $app_config ) );
 			delete_transient( $cache_key );
+			delete_transient( $cache_key . '_err' );
 		}
 	}
 

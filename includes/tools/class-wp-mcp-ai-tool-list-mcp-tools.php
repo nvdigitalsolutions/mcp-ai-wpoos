@@ -162,6 +162,14 @@ class WP_MCP_AI_Tool_List_MCP_Tools implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 			$allowed_slugs    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
 
+			// Include dynamically registered tools (e.g. MCP App bridges) in
+			// the per-assistant catalogue filter so the listing matches the
+			// tools actually sent to the LLM for this assistant.
+			$allowed_slugs = apply_filters( 'wp_mcp_ai_chat_effective_tools', $allowed_slugs, $assistant_config, $assistant_id );
+			if ( ! is_array( $allowed_slugs ) ) {
+				$allowed_slugs = array();
+			}
+
 			if ( ! empty( $allowed_slugs ) ) {
 				$filtered = array();
 				foreach ( $all_tool_objects as $tool ) {
