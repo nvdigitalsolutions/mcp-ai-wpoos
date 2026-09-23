@@ -615,7 +615,7 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 		$lbl_invalid_json = esc_js( __( 'The pasted text is not valid JSON. Expected a mcpServers block.', 'mcp-ai-wpoos' ) );
 		$lbl_no_servers   = esc_js( __( 'No mcpServers entries found in the pasted JSON.', 'mcp-ai-wpoos' ) );
 		$lbl_import_limit = esc_js( __( 'Importing these servers would exceed the maximum number of MCP Apps.', 'mcp-ai-wpoos' ) );
-		$lbl_loopback     = esc_js( __( 'This server is on this WordPress site (loopback). If requests hang, the PHP-FPM pool may be exhausted — raise pm.max_children or use an in-process bridge.', 'mcp-ai-wpoos' ) );
+		$lbl_loopback     = esc_js( __( 'This server is on this WordPress site. Same-site REST endpoints are routed in-process to avoid TLS loopback deadlocks.', 'mcp-ai-wpoos' ) );
 
 		ob_start();
 		?>

@@ -472,7 +472,7 @@ class WP_MCP_AI_MCP_App_Client {
 		 */
 		$args = apply_filters( 'wp_mcp_ai_mcp_app_request_args', $args, $method, $this->server_url );
 
-		$response = wp_remote_request( $this->server_url, $args );
+		$response = $this->dispatch_request( $payload, $headers, $args );
 
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
@@ -594,13 +594,170 @@ class WP_MCP_AI_MCP_App_Client {
 			'sslverify' => $this->verify_ssl,
 		);
 
-		$response = wp_remote_request( $this->server_url, $args );
+		$response = $this->dispatch_request( $payload, $headers, $args );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
 
 		return true;
+	}
+
+	/**
+	 * Dispatch a JSON-RPC request, in-process for same-site REST routes.
+	 *
+	 * When the server URL points at this WordPress site and the derived REST
+	 * route is registered, the request is executed through the internal REST
+	 * dispatch instead of an outbound HTTP call. A self-request over the
+	 * public hostname can deadlock a small PHP-FPM pool (the outer request
+	 * holds a worker while the inner request waits for one) or stall on a
+	 * missing hairpin NAT — in-process dispatch avoids both.
+	 *
+	 * Falls back to wp_remote_request() when the host is remote, the route is
+	 * not a registered REST route, or the escape-hatch filter disables the
+	 * bridge.
+	 *
+	 * @since 1.9.2
+	 * @param array $payload JSON-RPC payload.
+	 * @param array $headers Outbound request headers.
+	 * @param array $args    wp_remote_request()-style arguments.
+	 * @return array|WP_Error wp_remote_request()-style response array or WP_Error.
+	 */
+	protected function dispatch_request( $payload, $headers, $args ) {
+		/**
+		 * Filters whether the in-process same-origin bridge is disabled.
+		 *
+		 * @since 1.9.2
+		 * @param bool   $disabled   Whether to disable the bridge (default false).
+		 * @param string $server_url MCP server URL.
+		 */
+		$bridge_disabled = apply_filters( 'wp_mcp_ai_mcp_app_disable_inprocess_bridge', false, $this->server_url );
+
+		if ( ! $bridge_disabled && $this->is_internal_same_origin() ) {
+			$internal = $this->dispatch_internal_rest( $payload, $headers );
+
+			// An array (synthesized response) or WP_Error means the route was
+			// handled in-process; false means "not routable" — fall through.
+			if ( is_array( $internal ) || is_wp_error( $internal ) ) {
+				return $internal;
+			}
+		}
+
+		return wp_remote_request( $this->server_url, $args );
+	}
+
+	/**
+	 * Check whether the server URL points at this WordPress site.
+	 *
+	 * @since 1.9.2
+	 * @return bool True when the hosts match (loopback).
+	 */
+	protected function is_internal_same_origin() {
+		$remote_host = strtolower( (string) wp_parse_url( $this->server_url, PHP_URL_HOST ) );
+		$site_host   = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+
+		return '' !== $remote_host && $remote_host === $site_host;
+	}
+
+	/**
+	 * Derive the REST route from a same-site server URL.
+	 *
+	 * Handles both the pretty-permalink form (/wp-json/ns/route) and the
+	 * query-parameter form (?rest_route=/ns/route).
+	 *
+	 * @since 1.9.2
+	 * @return string REST route with a leading slash, empty when not derivable.
+	 */
+	protected function get_internal_rest_route() {
+		$url = $this->server_url;
+
+		$parsed = wp_parse_url( $url );
+		if ( ! is_array( $parsed ) || empty( $parsed['host'] ) ) {
+			return '';
+		}
+
+		$rest_prefix = rest_get_url_prefix();
+
+		// Pretty-permalink form: https://host/wp-json/ns/route.
+		$needle = '/' . $rest_prefix . '/';
+		$pos    = strpos( $url, $needle );
+		if ( false !== $pos ) {
+			$route = substr( $url, $pos + strlen( $needle ) - 1 );
+			$route = preg_replace( '/[?#].*$/', '', $route );
+
+			return '/' . ltrim( $route, '/' );
+		}
+
+		// Query-parameter form: https://host/?rest_route=/ns/route.
+		if ( ! empty( $parsed['query'] ) ) {
+			parse_str( $parsed['query'], $query );
+			if ( isset( $query['rest_route'] ) ) {
+				return '/' . ltrim( (string) $query['rest_route'], '/' );
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Dispatch a request through WordPress' internal REST server.
+	 *
+	 * Only registered REST routes are dispatched in-process; anything else
+	 * returns false so the caller falls back to HTTP.
+	 *
+	 * @since 1.9.2
+	 * @param array $payload JSON-RPC payload.
+	 * @param array $headers Outbound request headers.
+	 * @return array|WP_Error|false Synthesized wp_remote_request()-style response,
+	 *                              WP_Error on dispatch failure, or false when
+	 *                              the route is not registered.
+	 */
+	protected function dispatch_internal_rest( $payload, $headers ) {
+		if ( ! class_exists( 'WP_REST_Request' ) || ! function_exists( 'rest_do_request' ) ) {
+			return false;
+		}
+
+		$route = $this->get_internal_rest_route();
+		if ( '' === $route ) {
+			return false;
+		}
+
+		$server  = rest_get_server();
+		$routes  = $server->get_routes();
+		$trimmed = '/' . trim( $route, '/' );
+		if ( ! isset( $routes[ $trimmed ] ) && ! isset( $routes[ $trimmed . '/' ] ) ) {
+			return false;
+		}
+
+		$request = new WP_REST_Request( 'POST', $trimmed );
+		foreach ( $headers as $name => $value ) {
+			if ( is_string( $name ) && ( is_string( $value ) || is_numeric( $value ) ) ) {
+				$request->set_header( $name, (string) $value );
+			}
+		}
+		$request->set_body( wp_json_encode( $payload ) );
+
+		$response = rest_do_request( $request );
+
+		if ( $response instanceof WP_REST_Response ) {
+			$data = $response->get_data();
+			$body = is_string( $data ) ? $data : wp_json_encode( $data );
+
+			return array(
+				'headers'  => $response->get_headers(),
+				'body'     => $body,
+				'response' => array(
+					'code'    => $response->get_status(),
+					'message' => get_status_header_desc( $response->get_status() ),
+				),
+			);
+		}
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		return false;
 	}
 
 	/**
