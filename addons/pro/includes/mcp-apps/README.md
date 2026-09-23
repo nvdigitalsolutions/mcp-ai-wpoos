@@ -26,7 +26,7 @@ Houses the Pro-only "MCP Apps" subsystem that lets each assistant connect to up 
 
 Storage / protocol constants (stable contract): `WP_MCP_AI_MCP_App_Registry::META_KEY = '_wp_mcp_ai_mcp_apps'`, `WP_MCP_AI_MCP_App_Registry::STATUS_META_KEY = '_wp_mcp_ai_mcp_app_status'` (per-app connection snapshots keyed by `md5(server_url|auth_type|header_name)` — see `record_app_status()` / `get_app_status()`), `MAX_APPS_PER_ASSISTANT = 10`, `CACHE_TTL = 300`, `WP_MCP_AI_MCP_App_Client::PROTOCOL_VERSION = '2026-07-28'` (stateless core per SEP-2575), `MAX_RESPONSE_SIZE = 2 MB`.
 
-Protocol negotiation: the client attempts the stateless `server/discover` handshake first and falls back to the legacy sessionful `initialize` handshake when the server responds with `-32601` (method not found) or `-32600` (e.g. "Missing Mcp-Session-Id header"). Session IDs from the `Mcp-Session-Id` response header are captured and echoed on every subsequent request, so both 2026-07-28 and 2025-era Streamable HTTP servers work. Auth types supported: `none`, `bearer`, `basic` (raw `user:password` or pre-encoded base64 — a `:` in the token triggers encoding), `header`, `oauth`.
+Protocol negotiation: the client attempts the stateless `server/discover` handshake first and falls back to the legacy sessionful `initialize` handshake when the server responds with `-32601` (method not found) or `-32600` (e.g. "Missing Mcp-Session-Id header"). Session IDs from the `Mcp-Session-Id` response header are captured and echoed on every subsequent request, and the version the server negotiated (e.g. `2025-11-25`) is advertised via the `MCP-Protocol-Version` header while the 2026-only `_meta` envelope is suppressed — so both 2026-07-28 and 2025-era Streamable HTTP servers work. Auth types supported: `none`, `bearer`, `basic` (raw `user:password` or pre-encoded base64 — a `:` in the token triggers encoding), `header`, `oauth`.
 
 ## Inputs / Outputs / Neighbors
 
@@ -51,11 +51,13 @@ Protocol negotiation: the client attempts the stateless `server/discover` handsh
 
 ```bash
 vendor/bin/phpunit tests/test-mcp-apps.php
-vendor/bin/phpunit tests/mcp-apps/test-mcp-apps-connection-enhancements.php
+vendor/bin/phpunit tests/mcp-apps/test-mcp-app-client-connection-enhancements.php
+vendor/bin/phpunit tests/mcp-apps/test-mcp-app-registry-connection-enhancements.php
+vendor/bin/phpunit tests/mcp-apps/test-rest-mcp-apps-connection-enhancements.php
 vendor/bin/phpunit addons/pro/tests/test-pro-slash-command-mcp-app.php
 ```
 
-(The base-tree test exercises the registry, client, and tool-bridge; `tests/mcp-apps/` covers basic auth, session capture/fallback, status persistence, and the REST handlers with `pre_http_request` mocks; the Pro-tree test covers the `/mcp-app` slash-command surface that drives this folder from the assistant UI.)
+(The base-tree test exercises the registry, client, and tool-bridge; `tests/mcp-apps/` covers basic auth, session capture/fallback, negotiated protocol headers, status persistence, and the REST handlers with `pre_http_request` mocks — one test class per file because PHPUnit 11 only discovers the first class in a file; the Pro-tree test covers the `/mcp-app` slash-command surface that drives this folder from the assistant UI.)
 
 ## Also Load
 
