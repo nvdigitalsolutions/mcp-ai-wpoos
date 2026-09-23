@@ -357,9 +357,10 @@ class NV_oOS_Docs_Hub_Settings {
 			<p>
 				<strong><?php esc_html_e( 'Welcome to NV oOS Docs Hub.', 'nvoos-docs-hub' ); ?></strong>
 				<?php
-				esc_html_e(
-					'Drop Markdown files into wp-content/uploads/docs/, then rebuild the index to publish them. To import documentation from public GitHub repositories instead, enable Remote Repositories below.',
-					'nvoos-docs-hub'
+				printf(
+					/* translators: %s: absolute path to the uploads content folder. */
+					esc_html__( 'Drop Markdown files into %s, then rebuild the index to publish them. To import documentation from public GitHub repositories instead, enable Remote Repositories below.', 'nvoos-docs-hub' ),
+					esc_html( NV_oOS_Docs_Hub_Plugin::uploads_docs_dir() )
 				);
 				?>
 			</p>
@@ -414,9 +415,10 @@ class NV_oOS_Docs_Hub_Settings {
 			<p>
 				<strong><?php esc_html_e( 'Heads up:', 'nvoos-docs-hub' ); ?></strong>
 				<?php
-				esc_html_e(
-					'You are indexing only legacy local filesystem sources. Most installations should use the Uploaded docs folder instead (wp-content/uploads/docs/), or enable Remote Repositories above to import from GitHub.',
-					'nvoos-docs-hub'
+				printf(
+					/* translators: %s: absolute path to the uploads content folder. */
+					esc_html__( 'You are indexing only legacy local filesystem sources. Most installations should use the Uploaded docs folder instead (%s), or enable Remote Repositories above to import from GitHub.', 'nvoos-docs-hub' ),
+					esc_html( NV_oOS_Docs_Hub_Plugin::uploads_docs_dir() )
 				);
 				?>
 				<a href="<?php echo esc_url( $dismiss_url ); ?>" style="margin-left:8px;">
@@ -1159,7 +1161,11 @@ class NV_oOS_Docs_Hub_Settings {
 
 		// Primary (recommended) source.
 		$primary = array(
-			'uploads' => __( 'Uploaded docs folder (<code>wp-content/uploads/docs/</code>) <em>(recommended)</em>', 'nvoos-docs-hub' ),
+			'uploads' => sprintf(
+				/* translators: %s: absolute path to the uploads content folder, wrapped in <code>. */
+				__( 'Uploaded docs folder (%s) <em>(recommended)</em>', 'nvoos-docs-hub' ),
+				'<code>' . esc_html( NV_oOS_Docs_Hub_Plugin::uploads_docs_dir() ) . '</code>'
+			),
 		);
 
 		// Legacy local-filesystem sources. Functional, but most users
@@ -1215,7 +1221,7 @@ class NV_oOS_Docs_Hub_Settings {
 	}
 
 	/**
-	 * Render help text for the uploads/docs content folder.
+	 * Render help text for the uploads content folder.
 	 *
 	 * @since 0.5.0
 	 *

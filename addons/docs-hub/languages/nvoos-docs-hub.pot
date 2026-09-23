@@ -2,22 +2,22 @@
 # This file is distributed under the GPLv3 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: NV oOS Docs Hub 0.5.0\n"
+"Project-Id-Version: NV oOS Docs Hub 0.5.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/nvoos-docs-hub\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-07T10:35:28+00:00\n"
+"POT-Creation-Date: 2026-09-23T20:18:28+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: nvoos-docs-hub\n"
 
 #. Plugin Name of the plugin
 #: nvoos-docs-hub.php
-#: includes/admin/class-nvoos-docs-hub-settings.php:116
-#: includes/admin/class-nvoos-docs-hub-settings.php:117
+#: includes/admin/class-nvoos-docs-hub-settings.php:145
+#: includes/admin/class-nvoos-docs-hub-settings.php:146
 msgid "NV oOS Docs Hub"
 msgstr ""
 
@@ -59,160 +59,172 @@ msgid "No Markdown files found in this ref / path."
 msgstr ""
 
 #. translators: Loading indicator text.
-#: includes/admin/class-nvoos-docs-hub-settings.php:96
+#: includes/admin/class-nvoos-docs-hub-settings.php:100
 msgid "Importing…"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:97
+#: includes/admin/class-nvoos-docs-hub-settings.php:101
 msgid "Imported. A rebuild will run automatically."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:98
+#: includes/admin/class-nvoos-docs-hub-settings.php:102
 msgid "Import failed."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:99
+#: includes/admin/class-nvoos-docs-hub-settings.php:103
 msgid "Import request failed."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:100
+#: includes/admin/class-nvoos-docs-hub-settings.php:104
 msgid "Invalid JSON file."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:144
+#: includes/admin/class-nvoos-docs-hub-settings.php:173
 msgid "General Settings"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:151
+#: includes/admin/class-nvoos-docs-hub-settings.php:180
 msgid "Enable Addon"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:157
+#: includes/admin/class-nvoos-docs-hub-settings.php:186
 msgid "Enable the Docs Hub documentation browser."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:163
+#: includes/admin/class-nvoos-docs-hub-settings.php:192
 msgid "Allow Public (Guest) Access"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:169
+#: includes/admin/class-nvoos-docs-hub-settings.php:198
 msgid "When enabled, the documentation browser is accessible to all visitors without logging in. Disable to require a WordPress account."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:175
+#: includes/admin/class-nvoos-docs-hub-settings.php:204
 msgid "Default Theme"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:182
+#: includes/admin/class-nvoos-docs-hub-settings.php:211
 msgid "Auto (system preference)"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:183
+#: includes/admin/class-nvoos-docs-hub-settings.php:212
 msgid "Light"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:184
+#: includes/admin/class-nvoos-docs-hub-settings.php:213
 msgid "Dark"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:191
+#: includes/admin/class-nvoos-docs-hub-settings.php:220
 msgid "Enable Search"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:197
+#: includes/admin/class-nvoos-docs-hub-settings.php:226
 msgid "Show the search box in the documentation browser."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:203
+#: includes/admin/class-nvoos-docs-hub-settings.php:232
 msgid "Enable Sidebar"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:209
+#: includes/admin/class-nvoos-docs-hub-settings.php:238
 msgid "Show the navigation sidebar."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:215
+#: includes/admin/class-nvoos-docs-hub-settings.php:244
 msgid "Include per-addon README/CHANGELOG"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:221
+#: includes/admin/class-nvoos-docs-hub-settings.php:250
 msgid "Index each addon's top-level README.md and CHANGELOG.md alongside its docs/ tree. Disable to surface only the plugin-root files."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:227
+#: includes/admin/class-nvoos-docs-hub-settings.php:256
 msgid "Home Page Slug"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:233
+#: includes/admin/class-nvoos-docs-hub-settings.php:262
 msgid "Slug of the page shown by default (e.g. \"readme\")."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:239
+#: includes/admin/class-nvoos-docs-hub-settings.php:268
 msgid "GitHub Repository URL"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:245
+#: includes/admin/class-nvoos-docs-hub-settings.php:274
 msgid "Base URL for \"Edit on GitHub\" links (e.g. https://github.com/org/repo/blob/main)."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:252
+#: includes/admin/class-nvoos-docs-hub-settings.php:280
+msgid "Uploaded Docs Folder"
+msgstr ""
+
+#: includes/admin/class-nvoos-docs-hub-settings.php:290
 msgid "Documentation Sources"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:259
+#: includes/admin/class-nvoos-docs-hub-settings.php:297
 msgid "Enabled Sources"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:268
+#: includes/admin/class-nvoos-docs-hub-settings.php:306
 msgid "Include .context/ Files"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:274
+#: includes/admin/class-nvoos-docs-hub-settings.php:312
 msgid "Include .context/*.md files. Warning: these are only visible to users with manage_options capability."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:281
+#: includes/admin/class-nvoos-docs-hub-settings.php:319
 msgid "Remote Repositories"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:288
+#: includes/admin/class-nvoos-docs-hub-settings.php:326
+msgid "Enable Remote Repositories"
+msgstr ""
+
+#: includes/admin/class-nvoos-docs-hub-settings.php:335
 msgid "Public GitHub Repositories"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:311
+#: includes/admin/class-nvoos-docs-hub-settings.php:358
 msgid "Welcome to NV oOS Docs Hub."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:313
-msgid "Configure a remote GitHub repository below to start indexing documentation. Local filesystem sources are off by default — most installs should leave them off."
-msgstr ""
-
-#: includes/admin/class-nvoos-docs-hub-settings.php:368
-msgid "Heads up:"
-msgstr ""
-
-#: includes/admin/class-nvoos-docs-hub-settings.php:370
-msgid "You are indexing only local filesystem sources. Most installations should pull docs from a remote GitHub repository instead — use the \"Remote Repositories\" section below and the new \"Browse files\" picker to choose exactly what to index."
-msgstr ""
-
-#: includes/admin/class-nvoos-docs-hub-settings.php:376
-msgid "Dismiss"
-msgstr ""
-
-#: includes/admin/class-nvoos-docs-hub-settings.php:404
-msgid "Permission denied."
-msgstr ""
-
-#: includes/admin/class-nvoos-docs-hub-settings.php:411
-msgid "No data received."
+#. translators: %s: absolute path to the uploads content folder.
+#: includes/admin/class-nvoos-docs-hub-settings.php:362
+#, php-format
+msgid "Drop Markdown files into %s, then rebuild the index to publish them. To import documentation from public GitHub repositories instead, enable Remote Repositories below."
 msgstr ""
 
 #: includes/admin/class-nvoos-docs-hub-settings.php:416
+msgid "Heads up:"
+msgstr ""
+
+#. translators: %s: absolute path to the uploads content folder.
+#: includes/admin/class-nvoos-docs-hub-settings.php:420
+#, php-format
+msgid "You are indexing only legacy local filesystem sources. Most installations should use the Uploaded docs folder instead (%s), or enable Remote Repositories above to import from GitHub."
+msgstr ""
+
+#: includes/admin/class-nvoos-docs-hub-settings.php:425
+msgid "Dismiss"
+msgstr ""
+
+#: includes/admin/class-nvoos-docs-hub-settings.php:453
+msgid "Permission denied."
+msgstr ""
+
+#: includes/admin/class-nvoos-docs-hub-settings.php:460
+msgid "No data received."
+msgstr ""
+
+#: includes/admin/class-nvoos-docs-hub-settings.php:465
 msgid "Invalid JSON structure."
 msgstr ""
 
 #. translators: %d: number of remote repos imported
-#: includes/admin/class-nvoos-docs-hub-settings.php:457
+#: includes/admin/class-nvoos-docs-hub-settings.php:506
 #, php-format
 msgid "Imported %d remote repository. A rebuild will run automatically. Refresh the page to see the changes."
 msgid_plural "Imported %d remote repositories. A rebuild will run automatically. Refresh the page to see the changes."
@@ -220,17 +232,17 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: page count, 2: broken link count
-#: includes/admin/class-nvoos-docs-hub-settings.php:497
+#: includes/admin/class-nvoos-docs-hub-settings.php:546
 #, php-format
 msgid "Documentation rebuilt successfully. %1$d pages indexed, %2$d broken links found."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:510
+#: includes/admin/class-nvoos-docs-hub-settings.php:559
 msgid "Documentation rebuild failed. Please check PHP error logs."
 msgstr ""
 
 #. translators: %d: number of rows dropped
-#: includes/admin/class-nvoos-docs-hub-settings.php:637
+#: includes/admin/class-nvoos-docs-hub-settings.php:705
 #, php-format
 msgid "%d remote repository row was dropped because owner or repo was empty."
 msgid_plural "%d remote repository rows were dropped because owner or repo was empty."
@@ -238,332 +250,352 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: number of rows, 2: example owner/repo label
-#: includes/admin/class-nvoos-docs-hub-settings.php:649
+#: includes/admin/class-nvoos-docs-hub-settings.php:717
 #, php-format
 msgid "%1$d remote repository row (e.g. \"%2$s\") was dropped because the owner or repo name contains invalid characters. Only letters, digits, hyphens, underscores, and dots are allowed."
 msgid_plural "%1$d remote repository rows (e.g. \"%2$s\") were dropped because the owner or repo name contains invalid characters. Only letters, digits, hyphens, underscores, and dots are allowed."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:772
+#: includes/admin/class-nvoos-docs-hub-settings.php:840
 msgid "NV oOS Docs Hub Settings"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:775
+#: includes/admin/class-nvoos-docs-hub-settings.php:843
 msgid "Documentation Index Status"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:777
+#: includes/admin/class-nvoos-docs-hub-settings.php:845
 msgid "Last Built:"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:782
+#: includes/admin/class-nvoos-docs-hub-settings.php:850
 msgid "Never"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:787
+#: includes/admin/class-nvoos-docs-hub-settings.php:855
 msgid "Total Pages:"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:791
+#: includes/admin/class-nvoos-docs-hub-settings.php:859
 msgid "Broken Links:"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:794
+#: includes/admin/class-nvoos-docs-hub-settings.php:862
 msgid "View details &amp; fix"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:800
+#: includes/admin/class-nvoos-docs-hub-settings.php:868
 msgid "Rebuild status:"
 msgstr ""
 
 #. translators: 1: processed, 2: total, 3: percentage
-#: includes/admin/class-nvoos-docs-hub-settings.php:808
+#: includes/admin/class-nvoos-docs-hub-settings.php:876
 #, php-format
 msgid "%1$d / %2$d (%3$d%%)"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:818
+#: includes/admin/class-nvoos-docs-hub-settings.php:886
 msgid "Last error:"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:823
+#: includes/admin/class-nvoos-docs-hub-settings.php:891
 msgid "Rebuild Documentation Index"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:826
+#: includes/admin/class-nvoos-docs-hub-settings.php:894
 msgid "Resume"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:829
+#: includes/admin/class-nvoos-docs-hub-settings.php:897
 msgid "Cancel"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:840
+#: includes/admin/class-nvoos-docs-hub-settings.php:908
 msgid "Rebuild now (synchronous)"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:850
+#: includes/admin/class-nvoos-docs-hub-settings.php:918
 msgid "Broken Link Details"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:852
+#: includes/admin/class-nvoos-docs-hub-settings.php:920
 msgid "These internal documentation links could not be resolved. Accept a suggestion to fix the link in the source file, or run a rebuild to refresh the manifest."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:857
+#: includes/admin/class-nvoos-docs-hub-settings.php:925
 msgid "Accept All Suggestions"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:865
+#: includes/admin/class-nvoos-docs-hub-settings.php:933
 msgid "Source Page"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:866
+#: includes/admin/class-nvoos-docs-hub-settings.php:934
 msgid "Broken Target"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:867
+#: includes/admin/class-nvoos-docs-hub-settings.php:935
 msgid "Best Suggestion"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:868
+#: includes/admin/class-nvoos-docs-hub-settings.php:936
 msgid "Confidence"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:869
+#: includes/admin/class-nvoos-docs-hub-settings.php:937
 msgid "Method"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:870
+#: includes/admin/class-nvoos-docs-hub-settings.php:938
 msgid "Action"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:916
+#: includes/admin/class-nvoos-docs-hub-settings.php:984
 msgid "Remote source — fix in the source repository"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:919
+#: includes/admin/class-nvoos-docs-hub-settings.php:987
 msgid "Accept fix"
 msgstr ""
 
 #. translators: %s: CLI command
-#: includes/admin/class-nvoos-docs-hub-settings.php:936
+#: includes/admin/class-nvoos-docs-hub-settings.php:1004
 #, php-format
 msgid "To fix links interactively, run: %s"
 msgstr ""
 
 #. translators: %s: error message
-#: includes/admin/class-nvoos-docs-hub-settings.php:958
+#: includes/admin/class-nvoos-docs-hub-settings.php:1026
 #, php-format
 msgid "Error rendering settings sections: %s"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:979
+#: includes/admin/class-nvoos-docs-hub-settings.php:1047
 msgid "Export / Import Settings"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:981
+#: includes/admin/class-nvoos-docs-hub-settings.php:1049
 msgid "Download your Docs Hub configuration as JSON or restore a previously exported file. Importing overwrites the current settings (a rebuild will be triggered automatically)."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:986
+#: includes/admin/class-nvoos-docs-hub-settings.php:1054
 msgid "Export Settings (JSON)"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:992
+#: includes/admin/class-nvoos-docs-hub-settings.php:1060
 msgid "Import Settings (JSON)"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1005
+#: includes/admin/class-nvoos-docs-hub-settings.php:1073
 msgid "Note: Exported files do NOT include Personal Access Tokens. After importing, re-enter your tokens and save. If your server runs Nginx, add a location rule to deny direct access to the cache directory:"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1096
-msgid "Remote GitHub repositories <em>(recommended — configure below)</em>"
+#. translators: %s: absolute path to the uploads content folder, wrapped in <code>.
+#: includes/admin/class-nvoos-docs-hub-settings.php:1166
+#, php-format
+msgid "Uploaded docs folder (%s) <em>(recommended)</em>"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1102
+#: includes/admin/class-nvoos-docs-hub-settings.php:1174
 msgid "Base Plugin (<code>mcp-ai-wpoos/docs/</code>)"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1103
+#: includes/admin/class-nvoos-docs-hub-settings.php:1175
 msgid "Addons (<code>addons/*/docs/</code> and <code>README.md</code>)"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1104
+#: includes/admin/class-nvoos-docs-hub-settings.php:1176
 msgid "Repository root files (<code>README.md</code>, <code>CHANGELOG.md</code>, etc.)"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1105
+#: includes/admin/class-nvoos-docs-hub-settings.php:1177
 msgid "Context files (<code>.context/*.md</code>) — only visible to manage_options users"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1128
+#: includes/admin/class-nvoos-docs-hub-settings.php:1200
 msgid "Advanced — local filesystem sources (legacy)"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1132
-msgid "These sources index Markdown from the local plugin install. Most installations should leave them OFF and configure a Remote Repository above. They are kept available for local development and monorepo setups."
+#: includes/admin/class-nvoos-docs-hub-settings.php:1204
+msgid "These sources index Markdown from the local plugin install. Most installations should leave them OFF and use the Uploaded docs folder above. They are kept available for local development and monorepo setups."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1160
-msgid "Add public GitHub repositories whose Markdown documentation you want to include in the browser. Files are fetched from the GitHub API over HTTPS and cached locally for 24 hours. Only public repos (or private repos accessible with a Personal Access Token) are supported."
+#. translators: %s: absolute path to the uploads docs folder.
+#: includes/admin/class-nvoos-docs-hub-settings.php:1237
+#, php-format
+msgid "Drop Markdown (<code>.md</code>) or text (<code>.txt</code>) files into %s — subfolders become sections. Rebuild the index to publish them."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1166
+#: includes/admin/class-nvoos-docs-hub-settings.php:1264
+msgid "Import Markdown from public GitHub repositories"
+msgstr ""
+
+#: includes/admin/class-nvoos-docs-hub-settings.php:1268
+msgid "Off by default — leave it off to run the plugin 100% locally. When enabled, the plugin contacts api.github.com and raw.githubusercontent.com (server-side, over HTTPS) to fetch repository files, and only after you configure at least one repository below and trigger a rebuild. No GitHub account is required."
+msgstr ""
+
+#: includes/admin/class-nvoos-docs-hub-settings.php:1286
+msgid "Import Markdown documentation from public GitHub repositories. Remote import is opt-in: enable it above, then add repositories below. Files are fetched from the GitHub API over HTTPS and cached locally for 24 hours. Only public repos (or private repos accessible with a Personal Access Token) are supported."
+msgstr ""
+
+#: includes/admin/class-nvoos-docs-hub-settings.php:1292
 msgid "Pick exactly which files to index:"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1167
+#: includes/admin/class-nvoos-docs-hub-settings.php:1293
 msgid "After entering an Owner and Repository, click \"Browse files in repo…\" to load the file tree, then check the files or folders you want indexed. Switch \"File selection\" to \"Selected files / folders only\" to limit indexing to just those entries."
 msgstr ""
 
+#: includes/admin/class-nvoos-docs-hub-settings.php:1316
+msgid "Remote import is currently disabled. Enable \"Remote Repositories\" above to add GitHub repositories."
+msgstr ""
+
 #. translators: %d: 1-based row index
-#: includes/admin/class-nvoos-docs-hub-settings.php:1215
+#: includes/admin/class-nvoos-docs-hub-settings.php:1350
 #, php-format
 msgid "NV oOS Docs Hub: remote repository row #%d was stored in an unexpected shape and has been reset to defaults. Please re-enter the values and save."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1240
+#: includes/admin/class-nvoos-docs-hub-settings.php:1375
 msgid "Owner *"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1250
+#: includes/admin/class-nvoos-docs-hub-settings.php:1385
 msgid "Repository *"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1260
+#: includes/admin/class-nvoos-docs-hub-settings.php:1395
 msgid "Branch / Tag"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1267
+#: includes/admin/class-nvoos-docs-hub-settings.php:1402
 msgid "Branch name, tag, or commit SHA. Default: HEAD (latest commit on default branch)."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1271
+#: includes/admin/class-nvoos-docs-hub-settings.php:1406
 msgid "Label"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1276
+#: includes/admin/class-nvoos-docs-hub-settings.php:1411
 msgid "e.g. My Plugin Docs"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1278
+#: includes/admin/class-nvoos-docs-hub-settings.php:1413
 msgid "Human-readable name shown in the sidebar."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1282
+#: includes/admin/class-nvoos-docs-hub-settings.php:1417
 msgid "Path prefix"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1289
+#: includes/admin/class-nvoos-docs-hub-settings.php:1424
 msgid "Optional: restrict to a subdirectory (e.g. \"docs\"). Leave blank to index the whole repo."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1293
+#: includes/admin/class-nvoos-docs-hub-settings.php:1428
 msgid "Access Token"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1298
+#: includes/admin/class-nvoos-docs-hub-settings.php:1433
 msgid "(saved — enter new value to change)"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1298
+#: includes/admin/class-nvoos-docs-hub-settings.php:1433
 msgid "Optional GitHub PAT"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1302
+#: includes/admin/class-nvoos-docs-hub-settings.php:1437
 msgid "Optional GitHub Personal Access Token. Raises the rate limit from 60 to 5000 req/hr. Required for private repositories."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1307
+#: includes/admin/class-nvoos-docs-hub-settings.php:1442
 msgid "File selection"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1315
+#: includes/admin/class-nvoos-docs-hub-settings.php:1450
 msgid "All Markdown / .txt files"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1316
+#: includes/admin/class-nvoos-docs-hub-settings.php:1451
 msgid "— index everything (with optional excludes below)."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1323
+#: includes/admin/class-nvoos-docs-hub-settings.php:1458
 msgid "Path prefix only"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1324
+#: includes/admin/class-nvoos-docs-hub-settings.php:1459
 msgid "— restrict to the \"Path prefix\" field above."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1331
+#: includes/admin/class-nvoos-docs-hub-settings.php:1466
 msgid "Selected files / folders only"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1332
+#: includes/admin/class-nvoos-docs-hub-settings.php:1467
 msgid "— pick exactly which files to index."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1337
+#: includes/admin/class-nvoos-docs-hub-settings.php:1472
 msgid "Browse files"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1342
+#: includes/admin/class-nvoos-docs-hub-settings.php:1477
 msgid "Browse files in repo…"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1347
+#: includes/admin/class-nvoos-docs-hub-settings.php:1482
 msgid "Bypass the 10-minute cache and re-fetch from GitHub"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1348
+#: includes/admin/class-nvoos-docs-hub-settings.php:1483
 msgid "Refresh"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1353
+#: includes/admin/class-nvoos-docs-hub-settings.php:1488
 msgid "Verify the owner, repo, and ref are reachable without saving"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1354
+#: includes/admin/class-nvoos-docs-hub-settings.php:1489
 msgid "Test"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1361
+#: includes/admin/class-nvoos-docs-hub-settings.php:1496
 msgid "Tree results are cached for 10 minutes. Click \"Refresh\" to bypass the cache."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1366
+#: includes/admin/class-nvoos-docs-hub-settings.php:1501
 msgid "Selected paths"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1374
+#: includes/admin/class-nvoos-docs-hub-settings.php:1509
 msgid "One repo-relative path per line. Trailing \"/\" includes everything beneath that directory. Used only when \"Selected files / folders only\" is chosen above."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1379
+#: includes/admin/class-nvoos-docs-hub-settings.php:1514
 msgid "Excluded paths"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1387
+#: includes/admin/class-nvoos-docs-hub-settings.php:1522
 msgid "Optional. One repo-relative path per line. Always applied — useful with \"All Markdown / .txt files\" mode."
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1395
+#: includes/admin/class-nvoos-docs-hub-settings.php:1530
 msgid "✕ Remove this repository"
 msgstr ""
 
 #. translators: %s: error message
-#: includes/admin/class-nvoos-docs-hub-settings.php:1408
+#: includes/admin/class-nvoos-docs-hub-settings.php:1543
 #, php-format
 msgid "Error rendering remote repository settings: %s"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1426
+#: includes/admin/class-nvoos-docs-hub-settings.php:1561
 msgid "+ Add Repository"
 msgstr ""
 
-#: includes/admin/class-nvoos-docs-hub-settings.php:1429
+#: includes/admin/class-nvoos-docs-hub-settings.php:1564
 msgid "Fetched files are cached for 24 hours. Click \"Rebuild Documentation Index\" after adding or removing repos to refresh immediately."
 msgstr ""
 
@@ -619,90 +651,90 @@ msgstr ""
 msgid "Failed to replace source file with corrected content."
 msgstr ""
 
-#: includes/class-nvoos-docs-hub-plugin.php:325
+#: includes/class-nvoos-docs-hub-plugin.php:557
 msgid "NV oOS Docs Hub: the NV oOS base plugin is not active. Documentation discovery from the base plugin will be skipped."
 msgstr ""
 
-#: includes/class-nvoos-docs-hub-remote-repo.php:117
+#: includes/class-nvoos-docs-hub-remote-repo.php:122
 msgid "Remote repo config requires owner and repo fields."
 msgstr ""
 
-#: includes/class-nvoos-docs-hub-remote-repo.php:125
+#: includes/class-nvoos-docs-hub-remote-repo.php:130
 msgid "Remote repo owner/repo contains invalid characters."
 msgstr ""
 
-#: includes/class-nvoos-docs-hub-remote-repo.php:370
+#: includes/class-nvoos-docs-hub-remote-repo.php:378
 msgid "Failed to parse GitHub tree API response."
-msgstr ""
-
-#. translators: %s: GitHub API error message
-#: includes/class-nvoos-docs-hub-remote-repo.php:382
-#, php-format
-msgid "GitHub API rate limit reached: %s Add a Personal Access Token in Docs Hub settings for a higher limit (5 000 req/hr)."
 msgstr ""
 
 #. translators: %s: GitHub API error message
 #: includes/class-nvoos-docs-hub-remote-repo.php:390
 #, php-format
+msgid "GitHub API rate limit reached: %s Add a Personal Access Token in Docs Hub settings for a higher limit (5 000 req/hr)."
+msgstr ""
+
+#. translators: %s: GitHub API error message
+#: includes/class-nvoos-docs-hub-remote-repo.php:398
+#, php-format
 msgid "GitHub API error: %s"
 msgstr ""
 
 #. translators: 1: tree item count, 2: owner/repo name
-#: includes/class-nvoos-docs-hub-remote-repo.php:403
+#: includes/class-nvoos-docs-hub-remote-repo.php:411
 #, php-format
 msgid "The Git tree for %2$s is too large (%1$d entries) and was truncated by GitHub. Set a \"Path prefix\" in the repo settings to restrict scanning to a subdirectory (e.g. \"docs\"), or split the repository across multiple rows with different prefixes."
 msgstr ""
 
-#: includes/class-nvoos-docs-hub-remote-repo.php:653
+#: includes/class-nvoos-docs-hub-remote-repo.php:661
 msgid "Owner and repo are required."
 msgstr ""
 
-#: includes/class-nvoos-docs-hub-remote-repo.php:659
+#: includes/class-nvoos-docs-hub-remote-repo.php:667
 msgid "Owner / repo contain invalid characters."
 msgstr ""
 
-#: includes/class-nvoos-docs-hub-remote-repo.php:813
+#: includes/class-nvoos-docs-hub-remote-repo.php:821
 msgid "Only HTTPS URLs are supported for remote repository fetches."
 msgstr ""
 
-#: includes/class-nvoos-docs-hub-remote-repo.php:822
+#: includes/class-nvoos-docs-hub-remote-repo.php:830
 msgid "Could not determine host for remote URL."
 msgstr ""
 
 #. translators: %s: hostname
-#: includes/class-nvoos-docs-hub-remote-repo.php:841
+#: includes/class-nvoos-docs-hub-remote-repo.php:849
 #, php-format
 msgid "Remote host \"%s\" is not in the docs-hub allowlist."
 msgstr ""
 
 #. translators: %s: error message
-#: includes/class-nvoos-docs-hub-remote-repo.php:856
+#: includes/class-nvoos-docs-hub-remote-repo.php:864
 #, php-format
 msgid "DNS resolution error for %s."
 msgstr ""
 
 #. translators: %s: error message
-#: includes/class-nvoos-docs-hub-remote-repo.php:901
+#: includes/class-nvoos-docs-hub-remote-repo.php:910
 #, php-format
 msgid "Remote documentation fetch failed: %s"
 msgstr ""
 
 #. translators: %d: HTTP status code
-#: includes/class-nvoos-docs-hub-remote-repo.php:910
+#: includes/class-nvoos-docs-hub-remote-repo.php:919
 #, php-format
 msgid "Remote documentation host returned HTTP %d."
 msgstr ""
 
-#: includes/class-nvoos-docs-hub-remote-repo.php:919
+#: includes/class-nvoos-docs-hub-remote-repo.php:928
 msgid "Remote documentation response exceeded the size cap."
 msgstr ""
 
-#: includes/class-nvoos-docs-hub-remote-repo.php:951
-#: includes/class-nvoos-docs-hub-remote-repo.php:999
+#: includes/class-nvoos-docs-hub-remote-repo.php:960
+#: includes/class-nvoos-docs-hub-remote-repo.php:1008
 msgid "Remote documentation host resolves to a private or reserved address."
 msgstr ""
 
-#: includes/class-nvoos-docs-hub-remote-repo.php:988
+#: includes/class-nvoos-docs-hub-remote-repo.php:997
 msgid "Remote documentation host did not resolve."
 msgstr ""
 
@@ -712,7 +744,7 @@ msgstr ""
 msgid "Docs Hub rebuild: %s"
 msgstr ""
 
-#: includes/jobs/class-nvoos-docs-hub-rebuild-job.php:117
+#: includes/jobs/class-nvoos-docs-hub-rebuild-job.php:121
 #: includes/jobs/class-nvoos-docs-hub-rebuild-pipeline.php:708
 msgid "Atomic swap failed: staging cache empty or unwritable."
 msgstr ""
@@ -762,24 +794,28 @@ msgstr ""
 msgid "Search query is required."
 msgstr ""
 
-#: includes/rest/class-nvoos-docs-hub-rest.php:508
+#: includes/rest/class-nvoos-docs-hub-rest.php:522
 msgid "Nonce verification failed."
 msgstr ""
 
-#: includes/rest/class-nvoos-docs-hub-rest.php:519
+#: includes/rest/class-nvoos-docs-hub-rest.php:533
 msgid "Documentation rebuild failed."
 msgstr ""
 
-#: includes/rest/class-nvoos-docs-hub-rest.php:593
+#: includes/rest/class-nvoos-docs-hub-rest.php:607
 msgid "You do not have permission to fix links."
 msgstr ""
 
-#: includes/rest/class-nvoos-docs-hub-rest.php:603
+#: includes/rest/class-nvoos-docs-hub-rest.php:617
 msgid "A documentation rebuild is currently in progress. Please wait until it completes before fixing links."
 msgstr ""
 
-#: includes/rest/class-nvoos-docs-hub-rest.php:614
+#: includes/rest/class-nvoos-docs-hub-rest.php:628
 msgid "No fix entries provided."
+msgstr ""
+
+#: includes/rest/class-nvoos-docs-hub-rest.php:719
+msgid "Remote repositories are disabled. Enable them in Settings → NV oOS Docs Hub to use the file picker."
 msgstr ""
 
 #. translators: %s: settings page link

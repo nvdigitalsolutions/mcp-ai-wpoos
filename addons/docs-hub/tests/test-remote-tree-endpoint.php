@@ -183,8 +183,8 @@ class Test_Docs_Hub_Remote_Tree extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Default settings on a fresh install are local-first: the uploads/docs
-	 * source is on, and the remote import toggle is off.
+	 * Default settings on a fresh install are local-first: the uploads
+	 * content-folder source is on, and the remote import toggle is off.
 	 */
 	public function test_fresh_install_defaults_to_uploads_source() {
 		delete_option( NV_oOS_Docs_Hub_Plugin::OPTION_KEY );

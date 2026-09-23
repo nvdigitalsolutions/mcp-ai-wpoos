@@ -1,5 +1,30 @@
 # NV oOS Docs Hub — Changelog
 
+## 0.5.1 — 2026-09-24
+
+WordPress.org review response pass (sixth round) — uploads folder naming
+and remote-service clarification.
+
+- **Uploads content folder renamed to the plugin slug.** The default local
+  source moved from `wp-content/uploads/docs/` (a generic folder name) to
+  `wp-content/uploads/nvoos-docs-hub/content/`, nested inside the plugin's
+  slug-named uploads directory, resolved at runtime via `wp_upload_dir()`.
+  All settings UI strings and help text now show the live path instead of
+  a hard-coded literal.
+- **Automatic one-time migration.** On activation (and once per site on the
+  first admin visit, for upgrades that skip the activation hook) any
+  pre-0.5.1 `uploads/docs` content is moved into the new folder.
+  Best-effort and non-destructive: conflicting files are left in place,
+  symlinks are never followed, and the legacy folder is removed only when
+  it ends up empty.
+- **Remote import service (review item).** No code change was needed for
+  the remote-call finding — the GitHub import is the plugin's opt-in
+  documentation-import service, disclosed under `== External Services ==`
+  in readme.txt: servers called (`api.github.com`,
+  `raw.githubusercontent.com`), no account required, server-side only,
+  admin-triggered. All plugin assets are bundled locally; nothing is
+  loaded from a remote server.
+
 ## 0.5.0 — 2026-09-22
 
 WordPress.org review response pass (fifth round) — local-first rework.

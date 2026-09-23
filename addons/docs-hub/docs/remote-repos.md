@@ -1,6 +1,6 @@
 # Remote Repositories
 
-NV oOS Docs Hub can index Markdown documentation from public (or token-authenticated) GitHub repositories. As of v0.5.0, remote import is **opt-in** — fresh installs are local-first (`sources = ['uploads']`, indexing `wp-content/uploads/docs/`) and the *Enable Remote Repositories* setting is **off by default**. Enabling it, configuring a repository, and triggering a rebuild are all deliberate admin actions; nothing is fetched otherwise.
+NV oOS Docs Hub can index Markdown documentation from public (or token-authenticated) GitHub repositories. As of v0.5.0, remote import is **opt-in** — fresh installs are local-first (`sources = ['uploads']`, indexing `wp-content/uploads/nvoos-docs-hub/content/`) and the *Enable Remote Repositories* setting is **off by default**. Enabling it, configuring a repository, and triggering a rebuild are all deliberate admin actions; nothing is fetched otherwise.
 
 ## Adding a repository
 

@@ -614,12 +614,12 @@ class NV_oOS_Docs_Hub_Scanner {
 	}
 
 	/**
-	 * Scan the uploads/docs directory for documentation files.
+	 * Scan the uploads content directory for documentation files.
 	 *
 	 * The default local source: site owners drop Markdown / text files into
-	 * wp-content/uploads/docs/ and they appear in the documentation browser
-	 * after a rebuild. Purely filesystem-based — no remote requests. The
-	 * directory is created automatically when missing.
+	 * wp-content/uploads/nvoos-docs-hub/content/ and they appear in the
+	 * documentation browser after a rebuild. Purely filesystem-based — no
+	 * remote requests. The directory is created automatically when missing.
 	 *
 	 * @since 0.5.0
 	 *
