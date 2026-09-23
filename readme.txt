@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.84
+Stable tag: 1.1.85
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.85 - September 24, 2026 =
+
+MCP Apps connection and exposure release. Added: the MCP Apps metabox gains per-row Test Connection / Discover Tools buttons with inline results (negotiated protocol, handshake type, server info, session state, latency, live tool count, verbatim errors), a persisted per-app status badge + tool-count chip, and a Test All button; basic auth is supported end-to-end (raw user:pass auto-encoded or pre-encoded base64) with token masking — stored credentials are never echoed into the metabox HTML and empty values mean keep (#6753); the client records the negotiated protocol version and advertises it on post-initialize requests, suppressing the 2026-only _meta envelope once a legacy session is established, so sessionful servers stop rejecting tools/list with "Unsupported protocol version" (#6754); a new wp_mcp_ai_chat_effective_tools filter seam exposes MCP App bridge tools (mcp_app_<label>_<tool>) to the chat payload after attention filtering and before capability checks, so assistants with enabled MCP Apps can finally call the bridged tools (#6755); same-site MCP endpoints now dispatch in-process via rest_do_request() — no outbound socket, no TLS handshake, no second PHP-FPM worker — ending the self-request TLS deadlock, with outbound HTTP kept for remote hosts, unregistered routes, and the disable filter (#6756); the in-process bridge re-applies rest_post_dispatch so response-side session headers reach the client (#6757); the seam carries the resolved assistant ID across handle_tools_list(), handle_tool_request(), execute_tool_call_internal(), and the list_mcp_tools catalogue, with rest_pre_dispatch registration, a 60-second negative discovery cache, and save-time cache invalidation (#6758). The Security Center gains an MCP App Allowed Hosts textarea (constant hard override, then filter + saved setting merged, #6753). Fixed: Docs Hub 0.5.1 — the addon went local-first by default (uploads docs source, zero remote calls) with the GitHub importer as an explicit opt-in service in 0.5.0, is_path_safe() symlink-escape hardening, and a slug-named uploads folder with a one-time non-destructive migration of the legacy uploads/docs path (0 blocking Plugin Check errors, #6749/#6750/#6759). Docs: README TOC anchors fixed and the anchor validator repaired to GitHub's real rules with CI enforcement (#6751); the README release history was consolidated into a single 12-release section plus a complete Previous Releases table (4,423 to 3,301 lines, #6752). Tool count: ~308 base + ~1,282 Pro (~1,590 total; unchanged — the bridge slugs are dynamic chat-time registrations; live registry authoritative). Model catalog: v2026.09.22 (unchanged). Stale build ZIPs removed: the 1.1.83 set (32 files) + the superseded docs-hub 0.4.7/0.5.0 ZIPs.
 
 = 1.1.84 - September 22, 2026 =
 
