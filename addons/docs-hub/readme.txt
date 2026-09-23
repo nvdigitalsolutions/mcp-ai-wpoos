@@ -4,11 +4,11 @@ Tags: documentation, markdown, github
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.5.0
+Stable tag: 0.5.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-Self-contained React docs browser for WordPress. Drop Markdown into wp-content/uploads/docs, or optionally import from public GitHub repos.
+Self-contained docs browser for WordPress. Publish Markdown you upload, or optionally import from public GitHub repos.
 
 == Description ==
 
@@ -18,9 +18,10 @@ per-page table of contents. Embed it anywhere on your WordPress site via a
 shortcode or Gutenberg block.
 
 Out of the box it publishes documentation you upload yourself: drop
-Markdown (`.md`) or text (`.txt`) files into `wp-content/uploads/docs/`
-(subfolders become sections), rebuild the index, and they appear in the
-browser. No remote services are involved.
+Markdown (`.md`) or text (`.txt`) files into
+`wp-content/uploads/nvoos-docs-hub/content/` (subfolders become sections),
+rebuild the index, and they appear in the browser. No remote services are
+involved.
 
 **Optional GitHub import (opt-in, off by default).** Enable *Remote
 Repositories* in the settings to import Markdown from **any public GitHub
@@ -34,7 +35,7 @@ remote server. See **External Services** below for the full disclosure.
 
 **Key features:**
 
-* Publish Markdown uploaded to `wp-content/uploads/docs/` — zero configuration, zero remote calls
+* Publish Markdown uploaded to `wp-content/uploads/nvoos-docs-hub/content/` — zero configuration, zero remote calls
 * Optional import from public GitHub repositories with per-repo file/folder selection
 * Full-text search via the REST API with FlexSearch client-side fallback
 * GitHub Flavored Markdown: tables, task lists, fenced code blocks
@@ -59,7 +60,7 @@ drawer.
 
 1. Upload the `nvoos-docs-hub` folder to `/wp-content/plugins/`.
 2. Activate the plugin through the **Plugins** admin screen.
-3. Add your Markdown files to `wp-content/uploads/docs/` (created automatically), go to **Settings → NV oOS Docs Hub**, and click **Rebuild Index**.
+3. Add your Markdown files to `wp-content/uploads/nvoos-docs-hub/content/` (created automatically), go to **Settings → NV oOS Docs Hub**, and click **Rebuild Index**.
 4. Add `[nvoos_docs]` to any page to display the documentation browser.
 
 To import documentation from a public GitHub repository instead, go to
@@ -97,9 +98,9 @@ Attributes:
 = Does this plugin require the NV oOS base plugin? =
 
 No. Out of the box it publishes Markdown files from
-`wp-content/uploads/docs/`. If the NV oOS base plugin is active, additional
-local sources (the base plugin's `docs/` folder and installed addons) are
-discovered automatically.
+`wp-content/uploads/nvoos-docs-hub/content/`. If the NV oOS base plugin is
+active, additional local sources (the base plugin's `docs/` folder and
+installed addons) are discovered automatically.
 
 = Can I index docs from a GitHub repository? =
 
@@ -224,6 +225,10 @@ https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-s
 
 == Changelog ==
 
+= 0.5.1 =
+* Changed: the uploads content folder moved from `wp-content/uploads/docs/` to `wp-content/uploads/nvoos-docs-hub/content/` — nested inside the plugin's slug-named uploads directory, per the WordPress.org plugin guidelines. Existing content is migrated automatically on activation or first admin visit.
+* Added: automatic one-time migration of the pre-0.5.1 `wp-content/uploads/docs/` folder (best-effort, never overwrites existing files, symlinks are never followed).
+
 = 0.5.0 =
 * Added: local-first default — the plugin now publishes Markdown files dropped into `wp-content/uploads/docs/` out of the box, with zero remote calls.
 * Added: "Enable Remote Repositories" opt-in setting (off by default). Remote GitHub import now requires enabling the setting, configuring a repository, and triggering a rebuild. Existing installs that already use remote repositories keep them enabled automatically.
@@ -322,6 +327,9 @@ https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-s
 * Initial release.
 
 == Upgrade Notice ==
+
+= 0.5.1 =
+The uploads content folder moved from `wp-content/uploads/docs/` to `wp-content/uploads/nvoos-docs-hub/content/`. Existing content is migrated automatically — no action needed.
 
 = 0.5.0 =
 New local-first default: Markdown dropped into `wp-content/uploads/docs/` is published with zero remote calls, and GitHub import is now opt-in. Existing installs using remote repositories keep them enabled automatically. Recommended for all users.
