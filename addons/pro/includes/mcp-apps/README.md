@@ -24,7 +24,9 @@ Houses the Pro-only "MCP Apps" subsystem that lets each assistant connect to up 
 | `WP_MCP_AI_REST_MCP_Apps_Controller` | `class-wp-mcp-ai-rest-mcp-apps-controller.php` | self-registers under namespace `mcp-ai/v1` on `rest_api_init`; includes OAuth endpoints (`/oauth/probe`, `/oauth/init`, `/oauth/callback`, `/oauth/refresh`, `/oauth/revoke`) |
 | `wp_mcp_ai_mcp_apps_register_tools()` | `mcp-apps-init.php` | hooked at priority 50 on `wp_mcp_ai_register_tools` |
 
-Storage / protocol constants (stable contract): `WP_MCP_AI_MCP_App_Registry::META_KEY = '_wp_mcp_ai_mcp_apps'`, `MAX_APPS_PER_ASSISTANT = 10`, `CACHE_TTL = 300`, `WP_MCP_AI_MCP_App_Client::PROTOCOL_VERSION = '2025-03-26'`, `MAX_RESPONSE_SIZE = 2 MB`.
+Storage / protocol constants (stable contract): `WP_MCP_AI_MCP_App_Registry::META_KEY = '_wp_mcp_ai_mcp_apps'`, `WP_MCP_AI_MCP_App_Registry::STATUS_META_KEY = '_wp_mcp_ai_mcp_app_status'` (per-app connection snapshots keyed by `md5(server_url|auth_type|header_name)` — see `record_app_status()` / `get_app_status()`), `MAX_APPS_PER_ASSISTANT = 10`, `CACHE_TTL = 300`, `WP_MCP_AI_MCP_App_Client::PROTOCOL_VERSION = '2026-07-28'` (stateless core per SEP-2575), `MAX_RESPONSE_SIZE = 2 MB`.
+
+Protocol negotiation: the client attempts the stateless `server/discover` handshake first and falls back to the legacy sessionful `initialize` handshake when the server responds with `-32601` (method not found) or `-32600` (e.g. "Missing Mcp-Session-Id header"). Session IDs from the `Mcp-Session-Id` response header are captured and echoed on every subsequent request, so both 2026-07-28 and 2025-era Streamable HTTP servers work. Auth types supported: `none`, `bearer`, `basic` (raw `user:password` or pre-encoded base64 — a `:` in the token triggers encoding), `header`, `oauth`.
 
 ## Inputs / Outputs / Neighbors
 
@@ -39,8 +41,9 @@ Storage / protocol constants (stable contract): `WP_MCP_AI_MCP_App_Registry::MET
 
 - **Per-assistant scope is mandatory.** Every public method on `MCP_App_Registry` takes an `assistant_id`; never read or write the `_wp_mcp_ai_mcp_apps` meta key directly from other folders.
 - **`MAX_APPS_PER_ASSISTANT = 10` is a hard cap.** Enforce it on every save path — UI, REST, CLI, slash command — so a single assistant can never balloon discovery cost.
-- **Remote URLs must pass `WP_MCP_AI_MCP_App_Registry::is_allowed_server_url()`** (HTTPS-only, blocks loopback/private ranges unless explicitly allow-listed). Do not bypass this for "internal" servers — add an allow-list entry instead.
-- **Transport is JSON-RPC 2.0 over Streamable HTTP per the MCP 2025-03-26 spec.** When the spec bumps (e.g. SEP-1865 MCP Apps extension finalises), update `WP_MCP_AI_MCP_App_Client::PROTOCOL_VERSION` and the `initialize` handshake — don't shim older transports inside this folder.
+- **Remote URLs must pass `WP_MCP_AI_MCP_App_Registry::is_allowed_server_url()`** (HTTPS-only, blocks loopback/private ranges unless explicitly allow-listed). The hostname allowlist resolves from three sources: the `WP_MCP_AI_MCP_APP_ALLOWED_HOSTS` constant (hard override when defined), the `wp_mcp_ai_mcp_app_allowed_hosts` filter, and the **Settings → Security Center → Network & Headers → "MCP App Allowed Hosts"** textarea (filter + setting are merged). Do not bypass this for "internal" servers — add an allow-list entry instead.
+- **Transport is JSON-RPC 2.0 over Streamable HTTP per the MCP spec.** When the spec bumps (e.g. SEP-1865 MCP Apps extension finalises), update `WP_MCP_AI_MCP_App_Client::PROTOCOL_VERSION` and the `server/discover` handshake — don't shim older transports inside this folder.
+- **Connection failures are never silent.** `register_remote_tools()` records a per-app status snapshot (`last_status` / `last_error` / `tool_count`) via `record_app_status()` and logs a warning; the metabox renders the snapshots as status badges and the `/mcp-apps/test` + `/mcp-apps/discover` REST endpoints refresh them on demand.
 - **Cap remote responses at 2 MB** (`MAX_RESPONSE_SIZE`). Truncate and surface an error rather than allocating an arbitrary payload — a remote MCP server is untrusted input.
 - **Cache `tools/list` results in transients keyed by `md5( app_config )`** so a configuration change naturally invalidates the cache; do not hand-build cache keys elsewhere.
 
@@ -48,10 +51,11 @@ Storage / protocol constants (stable contract): `WP_MCP_AI_MCP_App_Registry::MET
 
 ```bash
 vendor/bin/phpunit tests/test-mcp-apps.php
+vendor/bin/phpunit tests/mcp-apps/test-mcp-apps-connection-enhancements.php
 vendor/bin/phpunit addons/pro/tests/test-pro-slash-command-mcp-app.php
 ```
 
-(The base-tree test exercises the registry, client, and tool-bridge; the Pro-tree test covers the `/mcp-app` slash-command surface that drives this folder from the assistant UI.)
+(The base-tree test exercises the registry, client, and tool-bridge; `tests/mcp-apps/` covers basic auth, session capture/fallback, status persistence, and the REST handlers with `pre_http_request` mocks; the Pro-tree test covers the `/mcp-app` slash-command surface that drives this folder from the assistant UI.)
 
 ## Also Load
 

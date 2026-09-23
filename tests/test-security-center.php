@@ -310,6 +310,45 @@ class Test_Security_Center extends WP_UnitTestCase {
 	}
 
 	/**
+	 * MCP App Allowed Hosts field lives in the network sub-tab as a textarea.
+	 */
+	public function test_mcp_app_allowed_hosts_field_in_network_subtab() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'security' );
+
+		$ref = new ReflectionMethod( $section, 'get_subtab_groups' );
+		$ref->setAccessible( true );
+		$groups = $ref->invoke( $section );
+
+		$this->assertContains( 'mcp_app_allowed_hosts', $groups['network']['fields'] );
+
+		$fields = $section->get_fields();
+		$this->assertArrayHasKey( 'mcp_app_allowed_hosts', $fields );
+		$this->assertSame( 'textarea', $fields['mcp_app_allowed_hosts']['type'] );
+		$this->assertSame( '', $fields['mcp_app_allowed_hosts']['default'] );
+	}
+
+	/**
+	 * Validation flags entries that do not look like hostnames.
+	 */
+	public function test_validate_flags_invalid_host_entries() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'security' );
+
+		$result = $section->validate(
+			array(
+				'mcp_app_allowed_hosts' => "good.example.com\n*.wild.example.com\nnot a host!!",
+			)
+		);
+
+		$this->assertWPError( $result );
+		$this->assertStringContainsString( 'does not look like a hostname', $result->get_error_message() );
+
+		// Valid entries pass through unchanged.
+		$input  = array( 'mcp_app_allowed_hosts' => "good.example.com\n*.wild.example.com" );
+		$result = $section->validate( $input );
+		$this->assertSame( $input, $result );
+	}
+
+	/**
 	 * Existing option keys (pre-5-subtab refactor) are still present in get_fields().
 	 */
 	public function test_legacy_option_keys_preserved() {
