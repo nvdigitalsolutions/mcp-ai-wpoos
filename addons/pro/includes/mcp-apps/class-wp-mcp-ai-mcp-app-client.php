@@ -99,6 +99,19 @@ class WP_MCP_AI_MCP_App_Client {
 	protected $session_id = '';
 
 	/**
+	 * Protocol version negotiated with a sessionful server via initialize().
+	 *
+	 * Empty while speaking the stateless 2026-07-28 dialect. Once a legacy
+	 * server reports its own protocolVersion (e.g. 2025-11-25), every
+	 * subsequent request must advertise that version instead of the client's
+	 * default — servers reject requests stamped with a version they do not
+	 * implement.
+	 *
+	 * @var string
+	 */
+	protected $negotiated_protocol_version = '';
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 1.8.0
@@ -170,6 +183,12 @@ class WP_MCP_AI_MCP_App_Client {
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
+		}
+
+		// Remember the version the server negotiated so subsequent requests
+		// advertise it instead of the client's 2026-07-28 default.
+		if ( isset( $result['protocolVersion'] ) ) {
+			$this->negotiated_protocol_version = sanitize_text_field( $result['protocolVersion'] );
 		}
 
 		// Send initialized notification (legacy).
@@ -410,7 +429,9 @@ class WP_MCP_AI_MCP_App_Client {
 		++$this->request_id;
 
 		// Inject _meta for every request except initialize and server/discover.
-		if ( ! in_array( $method, array( 'initialize', 'server/discover' ), true ) ) {
+		// The _meta envelope is a 2026-07-28 construct — skip it when a legacy
+		// session negotiated an older protocol version.
+		if ( ! in_array( $method, array( 'initialize', 'server/discover' ), true ) && '' === $this->negotiated_protocol_version ) {
 			// list_tools() and friends pass new stdClass() as params; the
 			// _meta envelope requires an array before merging.
 			if ( ! is_array( $params ) ) {
@@ -641,8 +662,10 @@ class WP_MCP_AI_MCP_App_Client {
 			$headers['Mcp-Session-Id'] = $this->session_id;
 		}
 
-		// MCP 2026-07-28 routing headers (SEP-2243).
-		$headers['MCP-Protocol-Version'] = self::PROTOCOL_VERSION;
+		// MCP 2026-07-28 routing headers (SEP-2243). When a legacy session
+		// negotiated an older protocol version, advertise that version so the
+		// server accepts the request.
+		$headers['MCP-Protocol-Version'] = '' !== $this->negotiated_protocol_version ? $this->negotiated_protocol_version : self::PROTOCOL_VERSION;
 
 		if ( ! empty( $method ) ) {
 			$headers['Mcp-Method'] = $method;
