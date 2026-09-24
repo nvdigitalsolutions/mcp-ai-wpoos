@@ -49,7 +49,7 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 			'when_to_use'     => __( 'Diagnosing setup issues with a WordPress, PHP, and NV oOS configuration snapshot.', 'mcp-ai-wpoos' ),
 			'when_not_to_use' => __( 'Site Health test results, log tails, or pending updates; use get_site_health, get_system_logs, or get_update_status.', 'mcp-ai-wpoos' ),
 			'related_tools'   => array( 'get_site_health', 'get_system_logs', 'get_update_status' ),
-			'notes'           => __( 'No parameters; requires manage_options and includes supported-plugin statuses plus assistant warnings.', 'mcp-ai-wpoos' ),
+			'notes'           => __( 'No parameters; requires manage_options and includes supported-plugin statuses, the effective model for the default provider, and assistant warnings.', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -121,6 +121,11 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 			'logging_enabled'      => ! empty( $settings['enable_logging'] ),
 		);
 
+		// The model chats actually use for the default provider, which lives
+		// under a provider-specific key (e.g. deepseek_model) rather than the
+		// OpenAI-only default_model.
+		$plugin['default_provider_model'] = $this->resolve_provider_model( $plugin['default_provider'], $settings );
+
 		$assistants = $this->summarise_assistants( $settings );
 
 		$supported_plugins = $this->get_supported_plugin_statuses();
@@ -167,7 +172,7 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 			}
 		}
 
-		if ( $default_id ) {
+		if ( $default_id && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			$assistant_post = get_post( $default_id );
 			if ( $assistant_post && WP_MCP_AI_Assistant_CPT::POST_TYPE === $assistant_post->post_type ) {
 				$summary['default_assistant'] = array(
@@ -175,6 +180,8 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 					'title'     => get_the_title( $assistant_post ),
 					'status'    => get_post_status( $assistant_post ),
 					'permalink' => get_permalink( $assistant_post ),
+					'provider'  => (string) get_post_meta( $assistant_post->ID, '_wp_mcp_ai_provider', true ),
+					'model'     => (string) get_post_meta( $assistant_post->ID, '_wp_mcp_ai_model', true ),
 				);
 
 				if ( current_user_can( 'edit_post', $assistant_post->ID ) ) {
@@ -186,6 +193,46 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'environment' => $summary,
 		);
+	}
+
+	/**
+	 * Resolve the effective default model for a provider.
+	 *
+	 * Chat clients read a provider-specific model key (deepseek_model,
+	 * anthropic_model, …) while the generic default_model key only covers
+	 * OpenAI, so reporting default_model alongside a non-OpenAI provider is
+	 * misleading. This mirrors the per-provider keys the provider sections
+	 * and clients use.
+	 *
+	 * @param string $provider Provider slug.
+	 * @param array  $settings Plugin settings.
+	 * @return string Configured model for that provider, or empty string.
+	 */
+	protected function resolve_provider_model( $provider, array $settings ) {
+		$provider_model_keys = array(
+			'openai'       => 'default_model',
+			'gemini'       => 'default_gemini_model',
+			'anthropic'    => 'anthropic_model',
+			'deepseek'     => 'deepseek_model',
+			'ollama'       => 'ollama_model',
+			'lm_studio'    => 'lm_studio_model',
+			'cloudflare'   => 'cloudflare_model',
+			'huggingface'  => 'huggingface_model',
+			'nvidia'       => 'nvidia_model',
+			'openrouter'   => 'openrouter_model',
+			'digitalocean' => 'digitalocean_model',
+			'kimi'         => 'kimi_model',
+			'baseten'      => 'baseten_model',
+			'zai'          => 'zai_model',
+		);
+
+		$key = isset( $provider_model_keys[ $provider ] ) ? $provider_model_keys[ $provider ] : '';
+
+		if ( '' !== $key && isset( $settings[ $key ] ) ) {
+			return $settings[ $key ];
+		}
+
+		return '';
 	}
 
 	/**
@@ -260,10 +307,15 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 
 		$default_provider = isset( $plugin['default_provider'] ) ? $plugin['default_provider'] : '';
 
+		// summarise_assistants() wraps its payload under an 'environment' key to
+		// mirror the top-level snapshot, so unwrap it before reading the counts.
+		$assistant_summary = isset( $assistants['environment'] ) && is_array( $assistants['environment'] ) ? $assistants['environment'] : $assistants;
+
 		$provider_key_map = array(
 			'openai'      => 'openai_api_key',
 			'anthropic'   => 'anthropic_api_key',
 			'gemini'      => 'gemini_api_key',
+			'deepseek'    => 'deepseek_api_key',
 			'huggingface' => 'huggingface_api_key',
 			'nvidia'      => 'nvidia_api_key',
 			'cloudflare'  => 'cloudflare_api_token',
@@ -278,6 +330,7 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 			'openai'      => 'OpenAI',
 			'anthropic'   => 'Anthropic',
 			'gemini'      => 'Gemini',
+			'deepseek'    => 'DeepSeek',
 			'huggingface' => 'Hugging Face',
 			'nvidia'      => 'NVIDIA',
 			'cloudflare'  => 'Cloudflare',
@@ -297,11 +350,11 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 			$warnings[] = sprintf( __( '%s is the default provider but no endpoint URL is configured.', 'mcp-ai-wpoos' ), $label );
 		}
 
-		if ( empty( $assistants['total_assistants'] ) ) {
+		if ( empty( $assistant_summary['total_assistants'] ) ) {
 			$warnings[] = __( 'No assistants are published yet. Create or publish an assistant before exposing the chat surfaces.', 'mcp-ai-wpoos' );
 		}
 
-		if ( ! empty( $assistants['default_assistant_id'] ) && empty( $assistants['default_assistant'] ) ) {
+		if ( ! empty( $assistant_summary['default_assistant_id'] ) && empty( $assistant_summary['default_assistant'] ) ) {
 			$warnings[] = __( 'The configured default assistant could not be loaded. Update the default assistant in Settings → NV oOS.', 'mcp-ai-wpoos' );
 		}
 
