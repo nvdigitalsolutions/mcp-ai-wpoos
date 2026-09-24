@@ -53,6 +53,7 @@ class WP_MCP_AI_Export_Provider_Remote_Sites extends WP_MCP_AI_Export_Provider_B
 		'signing_secret',
 		'public_key',
 		'encryption_key',
+		'mcp_oauth',
 	);
 
 	/**
