@@ -238,8 +238,9 @@ refresh) — Elementor MCP does not use it; use `basic`/`header` instead.
    bundles with missing references are auto-disabled with a warning
    (`wp_mcp_ai_mcp_apps_validate_imported_refs`).
 7. **Restricted-host rejection (Remote Sites)** — the `mcp_server` type runs
-   the manager's private/reserved-range guard; localhost endpoints must use
-   the inline MCP App path (Path B) or an allowlisted hostname.
+   the manager's private/reserved-range guard (no bypass); localhost/private
+   endpoints must use the inline MCP App path (Path B), while the site's own
+   public hostname still routes in-process via the same-site bridge.
 
 ## Security rules (industry + plugin)
 
