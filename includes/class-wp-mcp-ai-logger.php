@@ -729,10 +729,13 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		/**
 		 * Retrieve the most recent error and warning entries.
 		 *
-		 * @param int $limit Maximum number of entries to return.
+		 * @param int    $limit           Maximum number of entries to return.
+		 * @param int    $since_timestamp Optional UTC timestamp; entries older than this are excluded.
+		 * @param array  $levels          Optional severity levels to include (critical, error, warning, notice, deprecated).
+		 * @param string $search          Optional case-insensitive substring filter.
 		 * @return array
 		 */
-		public static function get_recent_error_messages( $limit = 20 ) {
+		public static function get_recent_error_messages( $limit = 20, $since_timestamp = 0, $levels = array(), $search = '' ) {
 			$limit  = max( 1, absint( $limit ) );
 			$recent = get_option( self::RECENT_ERRORS_OPTION, array() );
 
@@ -740,22 +743,44 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 				return array();
 			}
 
-			$recent = array_slice( array_reverse( $recent ), 0, $limit );
+			$since_timestamp = absint( $since_timestamp );
+			$levels          = array_filter( array_map( 'sanitize_key', (array) $levels ) );
+			$search          = trim( (string) $search );
 
-			return array_values( array_map( array( __CLASS__, 'prepare_recent_entry_for_output' ), $recent ) );
+			$recent   = array_reverse( $recent );
+			$filtered = array();
+
+			foreach ( $recent as $entry ) {
+				if ( ! self::entry_matches_filters( $entry, $since_timestamp, $levels, $search ) ) {
+					continue;
+				}
+
+				$filtered[] = self::prepare_recent_entry_for_output( $entry );
+
+				if ( count( $filtered ) >= $limit ) {
+					break;
+				}
+			}
+
+			return $filtered;
 		}
 
 		/**
 		 * Retrieve the most recent activity entries.
 		 *
-		 * @param int   $limit Maximum number of entries to return.
-		 * @param array $types Optional list of event types to include.
+		 * @param int    $limit           Maximum number of entries to return.
+		 * @param array  $types           Optional list of event types to include.
+		 * @param int    $since_timestamp Optional UTC timestamp; entries older than this are excluded.
+		 * @param string $search          Optional case-insensitive substring filter.
 		 * @return array
 		 */
-		public static function get_recent_activity_entries( $limit = 20, $types = array() ) {
+		public static function get_recent_activity_entries( $limit = 20, $types = array(), $since_timestamp = 0, $search = '' ) {
 			$limit = max( 1, absint( $limit ) );
 
 			$types = array_filter( array_map( 'sanitize_key', (array) $types ) );
+
+			$since_timestamp = absint( $since_timestamp );
+			$search          = trim( (string) $search );
 
 			$recent = get_option( self::RECENT_ACTIVITY_OPTION, array() );
 
@@ -777,6 +802,10 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 					continue;
 				}
 
+				if ( ! self::entry_matches_filters( $entry, $since_timestamp, array(), $search ) ) {
+					continue;
+				}
+
 				$filtered[] = self::prepare_activity_entry_for_output( $entry );
 
 				if ( count( $filtered ) >= $limit ) {
@@ -785,6 +814,95 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			}
 
 			return $filtered;
+		}
+
+		/**
+		 * Decide whether a stored buffer entry matches time, level, and search filters.
+		 *
+		 * Timestamps are stored as UTC MySQL datetimes; when a time filter is active,
+		 * entries whose timestamp is missing or unparseable are excluded because their
+		 * age cannot be verified.
+		 *
+		 * @since 1.9.0
+		 *
+		 * @param array  $entry           Stored entry.
+		 * @param int    $since_timestamp UTC cutoff timestamp (0 = no time filter).
+		 * @param array  $levels          Severity levels to include (empty = no level filter).
+		 * @param string $search          Case-insensitive substring ('' = no search filter).
+		 * @return bool
+		 */
+		protected static function entry_matches_filters( $entry, $since_timestamp, $levels, $search ) {
+			if ( ! is_array( $entry ) ) {
+				return false;
+			}
+
+			if ( $since_timestamp > 0 ) {
+				$timestamp = isset( $entry['timestamp'] ) ? (string) $entry['timestamp'] : '';
+
+				if ( '' === $timestamp ) {
+					return false;
+				}
+
+				$parsed = strtotime( $timestamp . ' UTC' );
+
+				if ( false === $parsed || $parsed < $since_timestamp ) {
+					return false;
+				}
+			}
+
+			if ( ! empty( $levels ) ) {
+				$type = isset( $entry['type'] ) ? sanitize_key( $entry['type'] ) : '';
+
+				$matched = false;
+				foreach ( $levels as $level ) {
+					if ( '' !== $level && false !== strpos( $type, $level ) ) {
+						$matched = true;
+						break;
+					}
+				}
+
+				if ( ! $matched ) {
+					return false;
+				}
+			}
+
+			if ( '' !== $search ) {
+				$haystack = ( isset( $entry['message'] ) ? (string) $entry['message'] : '' )
+					. "\n"
+					. ( isset( $entry['type'] ) ? (string) $entry['type'] : '' )
+					. "\n"
+					. ( isset( $entry['context'] ) ? (string) wp_json_encode( $entry['context'] ) : '' );
+
+				if ( ! self::contains_text( $haystack, $search ) ) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		/**
+		 * Case-insensitive substring check with multibyte support when available.
+		 *
+		 * @since 1.9.0
+		 *
+		 * @param string $haystack Text to search within.
+		 * @param string $needle   Text to search for.
+		 * @return bool
+		 */
+		protected static function contains_text( $haystack, $needle ) {
+			$haystack = (string) $haystack;
+			$needle   = (string) $needle;
+
+			if ( '' === $needle ) {
+				return true;
+			}
+
+			if ( function_exists( 'mb_stripos' ) ) {
+				return false !== mb_stripos( $haystack, $needle );
+			}
+
+			return false !== stripos( $haystack, $needle );
 		}
 
 		/**

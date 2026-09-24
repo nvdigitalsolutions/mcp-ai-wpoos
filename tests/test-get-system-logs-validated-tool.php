@@ -220,4 +220,80 @@ class WP_MCP_AI_Get_System_Logs_Validated_Tool_Test extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 		$this->assertSame( 'validation_failed', $result->get_error_code() );
 	}
+
+	/**
+	 * Test tool accepts valid since, levels, and search filters.
+	 */
+	public function test_execute_accepts_since_levels_and_search() {
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$tool   = new WP_MCP_AI_Tool_Get_System_Logs_Validated();
+		$result = $tool->execute(
+			array(
+				'since'               => '2h',
+				'levels'              => array( 'error', 'warning' ),
+				'search'              => 'cache',
+				'include_plugin_logs' => false,
+			),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'filters', $result );
+		$this->assertSame( '2h', $result['filters']['since'] );
+		$this->assertSame( array( 'error', 'warning' ), $result['filters']['levels'] );
+		$this->assertSame( 'cache', $result['filters']['search'] );
+	}
+
+	/**
+	 * Test tool rejects a malformed since value.
+	 */
+	public function test_execute_rejects_invalid_since() {
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$tool   = new WP_MCP_AI_Tool_Get_System_Logs_Validated();
+		$result = $tool->execute(
+			array( 'since' => 'banana' ),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'validation_failed', $result->get_error_code() );
+	}
+
+	/**
+	 * Test tool rejects an unsupported severity level.
+	 */
+	public function test_execute_rejects_invalid_level() {
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$tool   = new WP_MCP_AI_Tool_Get_System_Logs_Validated();
+		$result = $tool->execute(
+			array( 'levels' => array( 'verbose' ) ),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'validation_failed', $result->get_error_code() );
+	}
+
+	/**
+	 * Test tool rejects an overlong search string.
+	 */
+	public function test_execute_rejects_overlong_search() {
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$tool   = new WP_MCP_AI_Tool_Get_System_Logs_Validated();
+		$result = $tool->execute(
+			array( 'search' => str_repeat( 'a', 201 ) ),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'validation_failed', $result->get_error_code() );
+	}
 }
