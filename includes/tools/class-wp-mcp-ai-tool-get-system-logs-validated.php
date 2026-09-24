@@ -72,7 +72,7 @@ class WP_MCP_AI_Tool_Get_System_Logs_Validated extends WP_MCP_AI_Validated_Tool 
 			'when_to_use'     => __( 'Same log tailing as get_system_logs with Symfony Validator checking every argument.', 'mcp-ai-wpoos' ),
 			'when_not_to_use' => __( 'When validator dependencies are missing or PHP is below 8.0; use get_system_logs.', 'mcp-ai-wpoos' ),
 			'related_tools'   => array( 'get_system_logs', 'get_site_health', 'get_environment_status' ),
-			'notes'           => __( 'Delegates to get_system_logs after validation; errors when validation is unavailable.', 'mcp-ai-wpoos' ),
+			'notes'           => __( 'Delegates to get_system_logs after validation; since, levels, and search filters are validated before execution. Errors when validation is unavailable.', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -104,6 +104,9 @@ class WP_MCP_AI_Tool_Get_System_Logs_Validated extends WP_MCP_AI_Validated_Tool 
 			'activity_limit'         => $validated_args->activity_limit,
 			'activity_types'         => $validated_args->activity_types,
 			'error_limit'            => $validated_args->error_limit,
+			'since'                  => $validated_args->since,
+			'levels'                 => $validated_args->levels,
+			'search'                 => $validated_args->search,
 			'include_debug_log'      => $validated_args->include_debug_log,
 			'debug_log_limit'        => $validated_args->debug_log_limit,
 			'debug_log_bytes'        => $validated_args->debug_log_bytes,

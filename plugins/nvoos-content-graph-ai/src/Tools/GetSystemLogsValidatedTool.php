@@ -188,6 +188,74 @@ class GetSystemLogsValidatedTool extends AbstractAiTool {
 			}
 		}
 
+		if ( array_key_exists( 'since', $arguments ) ) {
+			$value = $arguments['since'];
+
+			if ( ! is_string( $value ) ) {
+				$violations[] = array(
+					'field'   => 'since',
+					'message' => 'This value should be of type string.',
+				);
+			} elseif ( 100 < strlen( $value ) ) {
+				$violations[] = array(
+					'field'   => 'since',
+					'message' => 'Since must be at most 100 characters long.',
+				);
+			} elseif ( '' !== trim( $value ) && false === GetSystemLogsTool::parse_since( $value ) ) {
+				$violations[] = array(
+					'field'   => 'since',
+					'message' => 'The "since" value must be a relative window like "2h" or "30 minutes", or an absolute date like "2026-09-24T10:00:00Z".',
+				);
+			}
+		}
+
+		if ( array_key_exists( 'levels', $arguments ) ) {
+			$value = $arguments['levels'];
+
+			if ( ! is_array( $value ) ) {
+				$violations[] = array(
+					'field'   => 'levels',
+					'message' => 'This value should be of type array.',
+				);
+			} else {
+				$allowed = array( 'critical', 'error', 'warning', 'notice', 'deprecated' );
+
+				foreach ( $value as $item ) {
+					if ( ! is_string( $item ) ) {
+						$violations[] = array(
+							'field'   => 'levels',
+							'message' => 'This value should be of type string.',
+						);
+						break;
+					}
+
+					if ( ! in_array( $item, $allowed, true ) ) {
+						$violations[] = array(
+							'field'   => 'levels',
+							'message' => 'Level must be one of: "critical", "error", "warning", "notice", "deprecated".',
+						);
+						break;
+					}
+				}
+			}
+		}
+
+		if ( array_key_exists( 'search', $arguments ) ) {
+			$value = $arguments['search'];
+
+			if ( ! is_string( $value ) ) {
+				$violations[] = array(
+					'field'   => 'search',
+					'message' => 'This value should be of type string.',
+				);
+			} elseif ( 200 < strlen( $value ) ) {
+				$violations[] = array(
+					'field'   => 'search',
+					'message' => 'Search must be at most 200 characters long.',
+				);
+			}
+		}
+
 		return $violations;
 	}
 }

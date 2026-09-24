@@ -58,6 +58,26 @@ class GetSystemLogsTool extends AbstractAiTool {
 					'maximum'     => 50,
 					'default'     => 20,
 				),
+				'since'                  => array(
+					'type'        => 'string',
+					'description' => __( 'Only return entries at or after this time. Accepts relative windows like "2h", "30m", "3d", "45 minutes", or "2 hours ago" (a bare number is minutes), or absolute dates in ISO 8601 ("2026-09-24T10:00:00Z") or "Y-m-d H:i:s" format (UTC). Empty means no time filter.', 'nvoos-content-graph-ai' ),
+					'default'     => '',
+				),
+				'levels'                 => array(
+					'type'        => 'array',
+					'description' => __( 'Optional severity levels to include: critical, error, warning, notice, deprecated. Filters NV oOS error entries by their type and WordPress/PHP log lines by their severity markers (e.g. "PHP Fatal error", "PHP Warning"). Empty means no level filter.', 'nvoos-content-graph-ai' ),
+					'items'       => array(
+						'type' => 'string',
+						'enum' => array( 'critical', 'error', 'warning', 'notice', 'deprecated' ),
+					),
+					'default'     => array(),
+				),
+				'search'                 => array(
+					'type'        => 'string',
+					'description' => __( 'Optional case-insensitive substring filter. Only entries and log lines whose message (or context) contains this text are returned.', 'nvoos-content-graph-ai' ),
+					'maxLength'   => 200,
+					'default'     => '',
+				),
 				'include_debug_log'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to include the WordPress debug log if available.', 'nvoos-content-graph-ai' ),
@@ -144,8 +164,22 @@ class GetSystemLogsTool extends AbstractAiTool {
 
 		$args = $this->prepare_arguments( $arguments );
 
+		$since_timestamp = 0;
+		if ( '' !== $args['since'] ) {
+			$since_timestamp = self::parse_since( $args['since'] );
+
+			if ( false === $since_timestamp ) {
+				return new \WP_Error(
+					'wp_mcp_ai_invalid_since',
+					__( 'The "since" parameter could not be parsed. Use a relative window like "2h" or "30 minutes", or an absolute date like "2026-09-24T10:00:00Z".', 'nvoos-content-graph-ai' )
+				);
+			}
+		}
+		$args['since_timestamp'] = $since_timestamp;
+
 		$result = array(
 			'summary'     => __( 'System logs retrieved successfully', 'nvoos-content-graph-ai' ),
+			'filters'     => $this->describe_filters( $args ),
 			'wp_mcp_ai'   => $this->get_mcp_ai_logs( $args ),
 			'wordpress'   => $this->get_wordpress_logs( $args ),
 			'plugin_logs' => $args['include_plugin_logs'] ? $this->get_plugin_logs( $args ) : array(
@@ -154,6 +188,27 @@ class GetSystemLogsTool extends AbstractAiTool {
 		);
 
 		return $result;
+	}
+
+	/**
+	 * Describe the filters applied to this response (base-identical).
+	 *
+	 * @param array $args Prepared arguments.
+	 * @return array
+	 */
+	private function describe_filters( $args ) {
+		$filters = array(
+			'since'  => $args['since'],
+			'levels' => $args['levels'],
+			'search' => $args['search'],
+		);
+
+		if ( $args['since_timestamp'] > 0 ) {
+			$filters['since_timestamp']  = gmdate( DATE_W3C, $args['since_timestamp'] );
+			$filters['since_age_seconds'] = max( 0, time() - $args['since_timestamp'] );
+		}
+
+		return $filters;
 	}
 
 	/**
@@ -176,6 +231,9 @@ class GetSystemLogsTool extends AbstractAiTool {
 			'plugin_log_bytes'       => 50000,
 			'plugin_log_directories' => array(),
 			'plugin_log_depth'       => 2,
+			'since'                  => '',
+			'levels'                 => array(),
+			'search'                 => '',
 		);
 
 		$parsed = wp_parse_args( $arguments, $defaults );
@@ -191,6 +249,24 @@ class GetSystemLogsTool extends AbstractAiTool {
 			}
 		}
 		$parsed['activity_types'] = array_values( array_unique( $types ) );
+
+		$parsed['since'] = trim( (string) $parsed['since'] );
+
+		$levels = array();
+		foreach ( (array) $parsed['levels'] as $level ) {
+			$level = sanitize_key( $level );
+			if ( in_array( $level, array( 'critical', 'error', 'warning', 'notice', 'deprecated' ), true ) ) {
+				$levels[] = $level;
+			}
+		}
+		$parsed['levels'] = array_values( array_unique( $levels ) );
+
+		$parsed['search'] = trim( (string) $parsed['search'] );
+		if ( function_exists( 'mb_substr' ) ) {
+			$parsed['search'] = mb_substr( $parsed['search'], 0, 200 );
+		} else {
+			$parsed['search'] = substr( $parsed['search'], 0, 200 );
+		}
 
 		$parsed['include_debug_log'] = ! empty( $parsed['include_debug_log'] );
 		$parsed['debug_log_limit']   = $this->clamp_int( $parsed['debug_log_limit'], 1, 200, 50 );
@@ -237,8 +313,8 @@ class GetSystemLogsTool extends AbstractAiTool {
 		);
 
 		if ( $logging_enabled ) {
-			$logs['recent_errors']   = $this->get_recent_error_messages( $args['error_limit'] );
-			$logs['recent_activity'] = $this->get_recent_activity_entries( $args['activity_limit'], $args['activity_types'] );
+			$logs['recent_errors']   = $this->get_recent_error_messages( $args['error_limit'], $args['since_timestamp'], $args['levels'], $args['search'] );
+			$logs['recent_activity'] = $this->get_recent_activity_entries( $args['activity_limit'], $args['activity_types'], $args['since_timestamp'], $args['search'] );
 		} else {
 			$logs['message'] = __( 'NV oOS logging is disabled. Enable logging in the NV oOS settings to capture entries.', 'nvoos-content-graph-ai' );
 		}
@@ -267,12 +343,15 @@ class GetSystemLogsTool extends AbstractAiTool {
 	/**
 	 * Recent NV oOS error entries (per-mode seam; base-identical shaping).
 	 *
-	 * @param int $limit Maximum number of entries to return.
+	 * @param int    $limit           Maximum number of entries to return.
+	 * @param int    $since_timestamp Optional UTC cutoff timestamp.
+	 * @param array  $levels          Optional severity levels to include.
+	 * @param string $search          Optional case-insensitive substring filter.
 	 * @return array
 	 */
-	private function get_recent_error_messages( $limit = 20 ) {
+	private function get_recent_error_messages( $limit = 20, $since_timestamp = 0, $levels = array(), $search = '' ) {
 		if ( defined( 'WP_MCP_AI_PATH' ) && class_exists( 'WP_MCP_AI_Logger' ) ) {
-			return \WP_MCP_AI_Logger::get_recent_error_messages( $limit );
+			return \WP_MCP_AI_Logger::get_recent_error_messages( $limit, $since_timestamp, $levels, $search );
 		}
 
 		$limit  = max( 1, absint( $limit ) );
@@ -282,26 +361,48 @@ class GetSystemLogsTool extends AbstractAiTool {
 			return array();
 		}
 
-		$recent = array_slice( array_reverse( $recent ), 0, $limit );
+		$since_timestamp = absint( $since_timestamp );
+		$levels          = array_filter( array_map( 'sanitize_key', (array) $levels ) );
+		$search          = trim( (string) $search );
 
-		return array_values( array_map( array( $this, 'prepare_log_entry_for_output' ), $recent ) );
+		$recent   = array_reverse( $recent );
+		$filtered = array();
+
+		foreach ( $recent as $entry ) {
+			if ( ! $this->entry_matches_filters( $entry, $since_timestamp, $levels, $search ) ) {
+				continue;
+			}
+
+			$filtered[] = $this->prepare_log_entry_for_output( $entry );
+
+			if ( count( $filtered ) >= $limit ) {
+				break;
+			}
+		}
+
+		return $filtered;
 	}
 
 	/**
 	 * Recent NV oOS activity entries (per-mode seam; base-identical shaping).
 	 *
-	 * @param int   $limit Maximum number of entries to return.
-	 * @param array $types Optional list of event types to include.
+	 * @param int    $limit           Maximum number of entries to return.
+	 * @param array  $types           Optional list of event types to include.
+	 * @param int    $since_timestamp Optional UTC cutoff timestamp.
+	 * @param string $search          Optional case-insensitive substring filter.
 	 * @return array
 	 */
-	private function get_recent_activity_entries( $limit = 20, $types = array() ) {
+	private function get_recent_activity_entries( $limit = 20, $types = array(), $since_timestamp = 0, $search = '' ) {
 		if ( defined( 'WP_MCP_AI_PATH' ) && class_exists( 'WP_MCP_AI_Logger' ) ) {
-			return \WP_MCP_AI_Logger::get_recent_activity_entries( $limit, $types );
+			return \WP_MCP_AI_Logger::get_recent_activity_entries( $limit, $types, $since_timestamp, $search );
 		}
 
 		$limit = max( 1, absint( $limit ) );
 
 		$types = array_filter( array_map( 'sanitize_key', (array) $types ) );
+
+		$since_timestamp = absint( $since_timestamp );
+		$search          = trim( (string) $search );
 
 		$recent = get_option( 'wp_mcp_ai_recent_activity', array() );
 
@@ -323,6 +424,10 @@ class GetSystemLogsTool extends AbstractAiTool {
 				continue;
 			}
 
+			if ( ! $this->entry_matches_filters( $entry, $since_timestamp, array(), $search ) ) {
+				continue;
+			}
+
 			$filtered[] = $this->prepare_log_entry_for_output( $entry );
 
 			if ( count( $filtered ) >= $limit ) {
@@ -331,6 +436,66 @@ class GetSystemLogsTool extends AbstractAiTool {
 		}
 
 		return $filtered;
+	}
+
+	/**
+	 * Decide whether a stored buffer entry matches the active filters
+	 * (base-identical).
+	 *
+	 * @param array  $entry           Stored entry.
+	 * @param int    $since_timestamp UTC cutoff timestamp (0 = no time filter).
+	 * @param array  $levels          Severity levels to include (empty = no level filter).
+	 * @param string $search          Case-insensitive substring ('' = no search filter).
+	 * @return bool
+	 */
+	private function entry_matches_filters( $entry, $since_timestamp, $levels, $search ) {
+		if ( ! is_array( $entry ) ) {
+			return false;
+		}
+
+		if ( $since_timestamp > 0 ) {
+			$timestamp = isset( $entry['timestamp'] ) ? (string) $entry['timestamp'] : '';
+
+			if ( '' === $timestamp ) {
+				return false;
+			}
+
+			$parsed = strtotime( $timestamp . ' UTC' );
+
+			if ( false === $parsed || $parsed < $since_timestamp ) {
+				return false;
+			}
+		}
+
+		if ( ! empty( $levels ) ) {
+			$type = isset( $entry['type'] ) ? sanitize_key( $entry['type'] ) : '';
+
+			$matched = false;
+			foreach ( $levels as $level ) {
+				if ( '' !== $level && false !== strpos( $type, $level ) ) {
+					$matched = true;
+					break;
+				}
+			}
+
+			if ( ! $matched ) {
+				return false;
+			}
+		}
+
+		if ( '' !== $search ) {
+			$haystack = ( isset( $entry['message'] ) ? (string) $entry['message'] : '' )
+				. "\n"
+				. ( isset( $entry['type'] ) ? (string) $entry['type'] : '' )
+				. "\n"
+				. ( isset( $entry['context'] ) ? (string) wp_json_encode( $entry['context'] ) : '' );
+
+			if ( ! $this->contains_case_insensitive( $haystack, $search ) ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**
@@ -370,7 +535,7 @@ class GetSystemLogsTool extends AbstractAiTool {
 
 		if ( $args['include_debug_log'] ) {
 			if ( $debug_path && is_readable( $debug_path ) ) {
-				$wordpress_logs['debug_log'] = $this->prepare_file_log_payload( $debug_path, $args['debug_log_limit'], $args['debug_log_bytes'] );
+				$wordpress_logs['debug_log'] = $this->prepare_file_log_payload( $debug_path, $args['debug_log_limit'], $args['debug_log_bytes'], $args['since_timestamp'], $args['levels'], $args['search'] );
 			} else {
 				$wordpress_logs['debug_log'] = array(
 					'available' => false,
@@ -390,7 +555,7 @@ class GetSystemLogsTool extends AbstractAiTool {
 
 		if ( $error_log_path ) {
 			if ( is_readable( $error_log_path ) ) {
-				$wordpress_logs['php_error_log'] = $this->prepare_file_log_payload( $error_log_path, $args['debug_log_limit'], $args['debug_log_bytes'] );
+				$wordpress_logs['php_error_log'] = $this->prepare_file_log_payload( $error_log_path, $args['debug_log_limit'], $args['debug_log_bytes'], $args['since_timestamp'], $args['levels'], $args['search'] );
 			} else {
 				$wordpress_logs['php_error_log'] = array(
 					'available' => false,
@@ -471,7 +636,7 @@ class GetSystemLogsTool extends AbstractAiTool {
 
 				$seen[ $normalized ] = true;
 
-				$found[] = $this->prepare_file_log_payload( $path, $line_limit, $byte_limit );
+				$found[] = $this->prepare_file_log_payload( $path, $line_limit, $byte_limit, $args['since_timestamp'], $args['levels'], $args['search'] );
 
 				if ( count( $found ) >= $max_files ) {
 					break;
@@ -543,12 +708,15 @@ class GetSystemLogsTool extends AbstractAiTool {
 	/**
 	 * Create a structured representation of a log file (base-identical).
 	 *
-	 * @param string $path       File path.
-	 * @param int    $line_limit Maximum number of lines to return.
-	 * @param int    $byte_limit Maximum number of bytes to inspect.
+	 * @param string $path           File path.
+	 * @param int    $line_limit     Maximum number of lines to return.
+	 * @param int    $byte_limit     Maximum number of bytes to inspect.
+	 * @param int    $since_timestamp Optional UTC cutoff timestamp.
+	 * @param array  $levels         Optional severity levels to include.
+	 * @param string $search         Optional case-insensitive substring filter.
 	 * @return array
 	 */
-	private function prepare_file_log_payload( $path, $line_limit, $byte_limit ) {
+	private function prepare_file_log_payload( $path, $line_limit, $byte_limit, $since_timestamp = 0, $levels = array(), $search = '' ) {
 		$path = $this->normalize_path( $path );
 
 		$payload = array(
@@ -559,7 +727,12 @@ class GetSystemLogsTool extends AbstractAiTool {
 		);
 
 		if ( is_readable( $path ) && $payload['size'] > 0 ) {
-			$payload['entries'] = $this->tail_file( $path, $line_limit, $byte_limit );
+			$tail               = $this->tail_file( $path, $line_limit, $byte_limit, $since_timestamp, $levels, $search );
+			$payload['entries'] = $tail['entries'];
+
+			if ( $tail['filtered_out'] > 0 ) {
+				$payload['filtered_out'] = $tail['filtered_out'];
+			}
 		} else {
 			$payload['message'] = __( 'Log file is empty or not readable.', 'nvoos-content-graph-ai' );
 		}
@@ -570,20 +743,29 @@ class GetSystemLogsTool extends AbstractAiTool {
 	/**
 	 * Tail a file to retrieve the most recent lines (base-identical).
 	 *
-	 * @param string $path       Path to the log file.
-	 * @param int    $line_limit Maximum number of lines.
-	 * @param int    $byte_limit Maximum number of bytes to read from the end of the file.
-	 * @return array
+	 * @param string $path           Path to the log file.
+	 * @param int    $line_limit     Maximum number of lines.
+	 * @param int    $byte_limit     Maximum number of bytes to read from the end of the file.
+	 * @param int    $since_timestamp Optional UTC cutoff timestamp.
+	 * @param array  $levels         Optional severity levels to include.
+	 * @param string $search         Optional case-insensitive substring filter.
+	 * @return array Entry lines plus the number of lines removed by filters.
 	 */
-	private function tail_file( $path, $line_limit, $byte_limit ) {
+	private function tail_file( $path, $line_limit, $byte_limit, $since_timestamp = 0, $levels = array(), $search = '' ) {
 		if ( ! file_exists( $path ) ) {
-			return array();
+			return array(
+				'entries'      => array(),
+				'filtered_out' => 0,
+			);
 		}
 
 		$handle = fopen( $path, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 		if ( ! $handle ) {
-			return array();
+			return array(
+				'entries'      => array(),
+				'filtered_out' => 0,
+			);
 		}
 
 		$line_limit = max( 1, absint( $line_limit ) );
@@ -603,7 +785,10 @@ class GetSystemLogsTool extends AbstractAiTool {
 		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 		if ( '' === $buffer ) {
-			return array();
+			return array(
+				'entries'      => array(),
+				'filtered_out' => 0,
+			);
 		}
 
 		$buffer = str_replace( array( "\r\n", "\r" ), "\n", $buffer );
@@ -613,7 +798,199 @@ class GetSystemLogsTool extends AbstractAiTool {
 			$lines = array_slice( $lines, -1 * $line_limit );
 		}
 
-		return array_values( array_map( array( $this, 'sanitize_log_line' ), $lines ) );
+		$lines = array_values( array_map( array( $this, 'sanitize_log_line' ), $lines ) );
+
+		$filtered_out = 0;
+		if ( $since_timestamp > 0 || ! empty( $levels ) || '' !== trim( (string) $search ) ) {
+			$kept = array();
+			foreach ( $lines as $line ) {
+				if ( $this->line_matches_filters( $line, $since_timestamp, $levels, $search ) ) {
+					$kept[] = $line;
+				} else {
+					$filtered_out++;
+				}
+			}
+			$lines = $kept;
+		}
+
+		return array(
+			'entries'      => $lines,
+			'filtered_out' => $filtered_out,
+		);
+	}
+
+	/**
+	 * Decide whether a log line matches the active filters (base-identical).
+	 *
+	 * @param string $line           Log line.
+	 * @param int    $since_timestamp UTC cutoff timestamp.
+	 * @param array  $levels         Severity levels to include.
+	 * @param string $search         Case-insensitive substring.
+	 * @return bool
+	 */
+	private function line_matches_filters( $line, $since_timestamp, $levels, $search ) {
+		$line = (string) $line;
+
+		if ( $since_timestamp > 0 && preg_match( '/^\s*\[([^\]]+)\]\s*/', $line, $matches ) ) {
+			$parsed = strtotime( $matches[1] );
+
+			if ( false === $parsed ) {
+				$parsed = strtotime( $matches[1] . ' UTC' );
+			}
+
+			if ( false !== $parsed && $parsed < $since_timestamp ) {
+				return false;
+			}
+		}
+
+		if ( ! empty( $levels ) ) {
+			$matched = false;
+			foreach ( $levels as $level ) {
+				if ( $this->line_has_level( $line, $level ) ) {
+					$matched = true;
+					break;
+				}
+			}
+
+			if ( ! $matched ) {
+				return false;
+			}
+		}
+
+		if ( '' !== $search && ! $this->contains_case_insensitive( $line, $search ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Check whether a log line carries a given severity level (base-identical).
+	 *
+	 * @param string $line  Log line.
+	 * @param string $level Severity level (critical, error, warning, notice, deprecated).
+	 * @return bool
+	 */
+	private function line_has_level( $line, $level ) {
+		static $patterns = array(
+			'critical'   => array(
+				'/\b(?:Fatal|Parse) error\b/i',
+				'/\bUncaught\b/i',
+				'/\bE_(?:ERROR|CORE_ERROR|COMPILE_ERROR)\b/',
+			),
+			'error'      => array(
+				'/\b(?:Fatal|Parse) error\b/i',
+				'/\bUncaught\b/i',
+				'/\bE_(?:ERROR|CORE_ERROR|COMPILE_ERROR|RECOVERABLE_ERROR|USER_ERROR)\b/',
+			),
+			'warning'    => array(
+				'/\bWarning\b/i',
+				'/\bE_(?:WARNING|CORE_WARNING|COMPILE_WARNING|USER_WARNING)\b/',
+			),
+			'notice'     => array(
+				'/\bNotice\b/i',
+				'/\bE_(?:NOTICE|USER_NOTICE)\b/',
+			),
+			'deprecated' => array(
+				'/\bDeprecated\b/i',
+				'/\bE_(?:DEPRECATED|USER_DEPRECATED)\b/',
+			),
+		);
+
+		if ( ! isset( $patterns[ $level ] ) ) {
+			return false;
+		}
+
+		foreach ( $patterns[ $level ] as $pattern ) {
+			if ( preg_match( $pattern, $line ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Case-insensitive substring check with multibyte support when available
+	 * (base-identical).
+	 *
+	 * @param string $haystack Text to search within.
+	 * @param string $needle   Text to search for.
+	 * @return bool
+	 */
+	private function contains_case_insensitive( $haystack, $needle ) {
+		$haystack = (string) $haystack;
+		$needle   = (string) $needle;
+
+		if ( '' === $needle ) {
+			return true;
+		}
+
+		if ( function_exists( 'mb_stripos' ) ) {
+			return false !== mb_stripos( $haystack, $needle );
+		}
+
+		return false !== stripos( $haystack, $needle );
+	}
+
+	/**
+	 * Parse the "since" argument into a UTC cutoff timestamp (base-identical).
+	 *
+	 * Supports relative windows ("2h", "30m", "3d", "45 minutes",
+	 * "2 hours ago"; a bare number is minutes) and absolute dates in ISO 8601
+	 * or "Y-m-d H:i:s" format (interpreted as UTC, matching how NV oOS stores
+	 * entry timestamps).
+	 *
+	 * @param string $since Raw since value.
+	 * @return int|false UTC cutoff timestamp, 0 for no filter, or false when unparseable.
+	 */
+	public static function parse_since( $since ) {
+		$since = trim( (string) $since );
+
+		if ( '' === $since ) {
+			return 0;
+		}
+
+		// Relative windows: "2h", "30 minutes", "2 hours ago", bare numbers are minutes.
+		if ( preg_match( '/^\s*(\d+)\s*([a-zA-Z]*)\s*(?:ago)?\s*$/i', $since, $matches ) ) {
+			$amount     = (int) $matches[1];
+			$unit       = strtolower( $matches[2] );
+			$multiplier = 60; // Bare numbers are treated as minutes.
+
+			if ( '' !== $unit ) {
+				$first = substr( $unit, 0, 1 );
+
+				if ( 's' === $first && in_array( $unit, array( 's', 'sec', 'secs', 'second', 'seconds' ), true ) ) {
+					$multiplier = 1;
+				} elseif ( 'm' === $first && in_array( $unit, array( 'm', 'min', 'mins', 'minute', 'minutes' ), true ) ) {
+					$multiplier = 60;
+				} elseif ( 'h' === $first && in_array( $unit, array( 'h', 'hr', 'hrs', 'hour', 'hours' ), true ) ) {
+					$multiplier = 3600;
+				} elseif ( 'd' === $first && in_array( $unit, array( 'd', 'day', 'days' ), true ) ) {
+					$multiplier = 86400;
+				} elseif ( 'w' === $first && in_array( $unit, array( 'w', 'week', 'weeks' ), true ) ) {
+					$multiplier = 604800;
+				} else {
+					return false;
+				}
+			}
+
+			return max( 0, time() - ( $amount * $multiplier ) );
+		}
+
+		// Absolute timestamps: ISO 8601 or "Y-m-d H:i:s" (UTC).
+		$parsed = strtotime( $since );
+
+		if ( false === $parsed ) {
+			$parsed = strtotime( $since . ' UTC' );
+		}
+
+		if ( false === $parsed ) {
+			return false;
+		}
+
+		// Clamp future dates to now.
+		return min( $parsed, time() );
 	}
 
 	/**
