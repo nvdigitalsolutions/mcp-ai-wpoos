@@ -1,7 +1,7 @@
 # Docs & Release Catch-Up — Standing Open-Items Tracker
 
 > **Purpose:** Single registry of every open item identified (and parked or deferred) by the docs & release catch-up runs, so future passes carry from this file instead of re-copying items between plans.
-> **Last reviewed:** 2026-09-24 (v1.1.85 pass)
+> **Last reviewed:** 2026-09-24 (v1.1.85 pass + Track C deferred-item sweep — status comments posted on #6366/#6646/#6724/#6653; OI-6 recorded)
 > **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.85-docs-catch-up.md`](v1.1.85-docs-catch-up.md).
 > **Rule for future passes:** read this file first; a catch-up plan's "Open items" section should point here and only add new items it introduces.
 
@@ -78,6 +78,17 @@
 - **What:** `docs/reference/tools/tool-status.txt` gained the 8 new financial slugs from #6639 (`crypto_market_data`, `earnings_calendar_fetcher`, `economic_calendar_fetcher`, `macro_data_fetcher`, `market_screener`, `options_chain_fetcher`, `portfolio_transaction_log`, `price_alerts`) but not the 5 new CRM slugs from #6636 (`bulk_move_deal_stages`, `create_tracked_link`, `record_crm_reply`, `get_crm_handover`, `get_pipeline_digest`) — the file already carries some CRM entries (`crm_email_search_*`), so the omission is an inconsistency, not a convention.
 - **Suggested owner:** docs workstream — either add the five slugs or document the file's coverage rule.
 - **First noted in:** v1.1.81 plan.
+
+### OI-6 · ICP/PM pinned-bug drift re-verified (recorded 2026-09-24 by the Track C deferred-item sweep)
+
+- **Status:** 🟡 Open — owned by the Pro tools workstream, tracked in issue [#6653](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/6653). Recorded here so future passes don't re-verify from the stale original description.
+- **What:** the 2026-09-24 Track C sweep re-verified #6653's three pinned latent bugs on `alpha-working`. All three are still present (and still byte-identical in the `plugins/nvoos-content-graph-pro` mirrors), but **bug 1's shape has drifted** from the filed description:
+  1. `compute-icp-score` — the int-cast described in the issue is gone (`resolve_profile()` now resolves by slug via `WP_MCP_AI_ICP_Profile::get_by_slug()`); the TypeError persists because `class-wp-mcp-ai-tool-compute-icp-score.php:349` passes `$profile['id']` (string) into `WP_MCP_AI_ICP_Scorer::compute_score()`'s array-typed `$icp_profile` parameter.
+  2. `manage-icp-profile` — unchanged: `handle_create()` never stamps `id` into the sanitised data before `validate_profile()` → `icp_validation_missing_id` on every create.
+  3. `create-pm-workflow-rule` — unchanged: `sanitize_key()` strips the dots from the dotted `VALID_TRIGGER_TYPES` before the validity check, so none can ever pass.
+- **Mirror note:** all three verified byte-identical in `plugins/nvoos-content-graph-pro` (`src/tools/crm/icp/...:349-351`, `...manage-icp-profile.php:605`, `src/tools/project-management/workflow/...:230`) — the fix-first-then-re-port order from #6653 still applies.
+- **Suggested owner:** Pro tools workstream (bug fixes), then the ecosystem-port loop (re-port). Not a docs catch-up task.
+- **First noted in:** 2026-09-24 Track C deferred-item sweep (full detail in the #6653 status comment).
 
 ---
 
