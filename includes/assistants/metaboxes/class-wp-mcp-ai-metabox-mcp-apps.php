@@ -138,6 +138,27 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 					<span class="dashicons dashicons-plus-alt2" style="vertical-align: text-bottom;"></span>
 					<?php esc_html_e( 'Add MCP App', 'mcp-ai-wpoos' ); ?>
 				</button>
+				<?php
+				// Remote Sites integration (Pro): offer centrally managed MCP Server
+				// connections as one-click reference entries.
+				$remote_mcp_connections = array();
+				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+					$remote_mcp_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_mcp_server_connections();
+				}
+				if ( ! empty( $remote_mcp_connections ) ) :
+					?>
+					<select id="wp-mcp-ai-add-from-remote" style="vertical-align: middle; margin-left: 6px;">
+						<?php foreach ( $remote_mcp_connections as $remote_mcp ) : ?>
+							<option value="<?php echo esc_attr( isset( $remote_mcp['id'] ) ? $remote_mcp['id'] : '' ); ?>" data-name="<?php echo esc_attr( isset( $remote_mcp['name'] ) ? $remote_mcp['name'] : '' ); ?>">
+								<?php echo esc_html( ( isset( $remote_mcp['name'] ) ? $remote_mcp['name'] : '' ) . ' (' . ( isset( $remote_mcp['url'] ) ? $remote_mcp['url'] : '' ) . ')' ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+					<button type="button" class="button button-secondary" id="wp-mcp-ai-add-from-remote-btn">
+						<span class="dashicons dashicons-networking" style="vertical-align: text-bottom;"></span>
+						<?php esc_html_e( 'Add from Remote Sites', 'mcp-ai-wpoos' ); ?>
+					</button>
+				<?php endif; ?>
 				<button type="button" class="button button-secondary" id="wp-mcp-ai-test-all-mcp-apps">
 					<span class="dashicons dashicons-update-alt" style="vertical-align: text-bottom;"></span>
 					<?php esc_html_e( 'Test All', 'mcp-ai-wpoos' ); ?>
@@ -186,6 +207,7 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 			. '.wp-mcp-ai-mcp-app-status-unknown{background:#f0f0f1;color:#646970}'
 			. '.wp-mcp-ai-mcp-app-status-unknown .wp-mcp-ai-mcp-app-status-dot{background:#8c8f94}'
 			. '.wp-mcp-ai-mcp-app-tool-count{margin-left:8px;padding:2px 8px;border-radius:8px;background:#eef3fa;color:#1d4ed8;font-size:11px;font-weight:600}'
+			. '.wp-mcp-ai-mcp-app-managed-badge{margin-left:8px;padding:2px 8px;border-radius:8px;background:#eef3fa;color:#1d4ed8;font-size:11px;font-weight:600}'
 		);
 	}
 
@@ -233,7 +255,7 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 				}
 
 				$sanitized = WP_MCP_AI_MCP_App_Registry::sanitize_app_config( $raw_app );
-				if ( ! empty( $sanitized['server_url'] ) ) {
+				if ( ! empty( $sanitized['server_url'] ) || ! empty( $sanitized['connection_ref'] ) ) {
 					$apps[] = $sanitized;
 				}
 			}
@@ -283,15 +305,16 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 		$app = wp_parse_args(
 			$app,
 			array(
-				'label'       => '',
-				'server_url'  => '',
-				'auth_type'   => 'none',
-				'token'       => '',
-				'header_name' => '',
-				'enabled'     => true,
-				'timeout'     => 30,
-				'verify_ssl'  => true,
-				'oauth_data'  => array(),
+				'label'          => '',
+				'server_url'     => '',
+				'auth_type'      => 'none',
+				'token'          => '',
+				'header_name'    => '',
+				'connection_ref' => '',
+				'enabled'        => true,
+				'timeout'        => 30,
+				'verify_ssl'     => true,
+				'oauth_data'     => array(),
 			)
 		);
 
@@ -301,6 +324,59 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 		$status_text  = $has_status && 'ok' === $status['last_status'] ? __( 'Connected', 'mcp-ai-wpoos' ) : ( $has_status ? __( 'Error', 'mcp-ai-wpoos' ) : __( 'Not tested', 'mcp-ai-wpoos' ) );
 		$tool_count   = $has_status && isset( $status['tool_count'] ) && null !== $status['tool_count'] ? (int) $status['tool_count'] : null;
 		$last_error   = $has_status && ! empty( $status['last_error'] ) ? $status['last_error'] : '';
+
+		// Reference rows: the connection lives in Remote Sites (Pro) and the
+		// credentials/URL are managed centrally. Render a read-only row.
+		if ( ! empty( $app['connection_ref'] ) ) :
+			?>
+			<div class="wp-mcp-ai-mcp-app-row" style="border: 1px solid #dcdcde; border-radius: 3px; padding: 15px; margin: 10px 0; background: #fff;">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+					<span>
+						<strong class="wp-mcp-ai-mcp-app-title">
+							<?php echo esc_html( ! empty( $app['label'] ) ? $app['label'] : __( 'MCP App', 'mcp-ai-wpoos' ) ); ?>
+						</strong>
+						<span class="wp-mcp-ai-mcp-app-status-badge wp-mcp-ai-mcp-app-status-<?php echo esc_attr( $status_class ); ?>" <?php echo $last_error ? 'title="' . esc_attr( $last_error ) . '"' : ''; ?>>
+							<span class="wp-mcp-ai-mcp-app-status-dot"></span>
+							<span class="wp-mcp-ai-mcp-app-status-text"><?php echo esc_html( $status_text ); ?></span>
+						</span>
+						<?php if ( null !== $tool_count ) : ?>
+							<span class="wp-mcp-ai-mcp-app-tool-count">
+								<?php
+								printf(
+									/* translators: %d: number of tools. */
+									esc_html( _n( '%d tool', '%d tools', $tool_count, 'mcp-ai-wpoos' ) ),
+									(int) $tool_count
+								);
+								?>
+							</span>
+						<?php endif; ?>
+						<span class="wp-mcp-ai-mcp-app-managed-badge"><?php esc_html_e( 'Managed in Remote Sites', 'mcp-ai-wpoos' ); ?></span>
+					</span>
+					<div>
+						<label style="margin-right: 10px;">
+							<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[enabled]" value="0" />
+							<input type="checkbox" name="<?php echo esc_attr( $prefix ); ?>[enabled]" value="1" <?php checked( $app['enabled'] ); ?> />
+							<?php esc_html_e( 'Enabled', 'mcp-ai-wpoos' ); ?>
+						</label>
+						<button type="button" class="button button-link-delete wp-mcp-ai-remove-mcp-app"><?php esc_html_e( 'Remove', 'mcp-ai-wpoos' ); ?></button>
+					</div>
+				</div>
+				<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[connection_ref]" value="<?php echo esc_attr( $app['connection_ref'] ); ?>" />
+				<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[label]" value="<?php echo esc_attr( $app['label'] ); ?>" />
+				<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[auth_type]" value="none" />
+				<p class="description" style="margin: 0;">
+					<?php
+					printf(
+						/* translators: %s: Remote Sites admin URL. */
+						esc_html__( 'This app connects through a centrally managed MCP Server connection. Credentials and endpoint are managed on the %s page.', 'mcp-ai-wpoos' ),
+						'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ) . '" target="_blank">' . esc_html__( 'Remote Sites', 'mcp-ai-wpoos' ) . '</a>'
+					);
+					?>
+				</p>
+			</div>
+			<?php
+			return;
+		endif;
 		?>
 		<div class="wp-mcp-ai-mcp-app-row" style="border: 1px solid #dcdcde; border-radius: 3px; padding: 15px; margin: 10px 0; background: #fff;">
 			<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -591,6 +667,32 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 				<div class="wp-mcp-ai-mcp-app-result" style="display:none; margin-top: 10px;"></div>
 			</div>
 		</script>
+		<script type="text/html" id="tmpl-wp-mcp-ai-mcp-app-ref-row">
+			<div class="wp-mcp-ai-mcp-app-row" style="border: 1px solid #dcdcde; border-radius: 3px; padding: 15px; margin: 10px 0; background: #fff;">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+					<span>
+						<strong class="wp-mcp-ai-mcp-app-title"><?php esc_html_e( 'Remote Sites MCP Server', 'mcp-ai-wpoos' ); ?></strong>
+						<span class="wp-mcp-ai-mcp-app-status-badge wp-mcp-ai-mcp-app-status-unknown">
+							<span class="wp-mcp-ai-mcp-app-status-dot"></span>
+							<span class="wp-mcp-ai-mcp-app-status-text"><?php esc_html_e( 'Not tested', 'mcp-ai-wpoos' ); ?></span>
+						</span>
+						<span class="wp-mcp-ai-mcp-app-managed-badge"><?php esc_html_e( 'Managed in Remote Sites', 'mcp-ai-wpoos' ); ?></span>
+					</span>
+					<div>
+						<label style="margin-right: 10px;">
+							<input type="hidden" name="wp_mcp_ai_mcp_apps[{{data.index}}][enabled]" value="0" />
+							<input type="checkbox" name="wp_mcp_ai_mcp_apps[{{data.index}}][enabled]" value="1" checked />
+							<?php esc_html_e( 'Enabled', 'mcp-ai-wpoos' ); ?>
+						</label>
+						<button type="button" class="button button-link-delete wp-mcp-ai-remove-mcp-app"><?php esc_html_e( 'Remove', 'mcp-ai-wpoos' ); ?></button>
+					</div>
+				</div>
+				<input type="hidden" name="wp_mcp_ai_mcp_apps[{{data.index}}][connection_ref]" value="" />
+				<input type="hidden" name="wp_mcp_ai_mcp_apps[{{data.index}}][label]" value="" />
+				<input type="hidden" name="wp_mcp_ai_mcp_apps[{{data.index}}][auth_type]" value="none" />
+				<p class="description" style="margin: 0;"><?php esc_html_e( 'This app connects through a centrally managed MCP Server connection. Credentials and endpoint are managed on the Remote Sites page.', 'mcp-ai-wpoos' ); ?></p>
+			</div>
+		</script>
 		<?php
 	}
 
@@ -616,6 +718,7 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 		$lbl_no_servers   = esc_js( __( 'No mcpServers entries found in the pasted JSON.', 'mcp-ai-wpoos' ) );
 		$lbl_import_limit = esc_js( __( 'Importing these servers would exceed the maximum number of MCP Apps.', 'mcp-ai-wpoos' ) );
 		$lbl_loopback     = esc_js( __( 'This server is on this WordPress site. Same-site REST endpoints are routed in-process to avoid TLS loopback deadlocks.', 'mcp-ai-wpoos' ) );
+		$lbl_managed      = esc_js( __( 'Managed in Remote Sites — run Test Connection or Discover Tools from the Remote Sites page.', 'mcp-ai-wpoos' ) );
 
 		ob_start();
 		?>
@@ -635,6 +738,9 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 					var lblNoServers = <?php echo wp_json_encode( $lbl_no_servers ); ?>;
 					var lblImportLimit = <?php echo wp_json_encode( $lbl_import_limit ); ?>;
 					var lblLoopback = <?php echo wp_json_encode( $lbl_loopback ); ?>;
+					var lblManaged = <?php echo wp_json_encode( $lbl_managed ); ?>;
+					var maxAppsMessage = <?php echo wp_json_encode( $max_apps_message ); ?>;
+					var mcpAppLabel = <?php echo wp_json_encode( $mcp_app_label ); ?>;
 
 					function getAssistantId() {
 						var urlParams = new URLSearchParams( window.location.search );
@@ -752,7 +858,16 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 						}
 					}
 
+					function isRefRow( row ) {
+						var refInput = row.querySelector( 'input[name$="[connection_ref]"]' );
+						return !!( refInput && refInput.value );
+					}
+
 					function runTest( row ) {
+						if ( isRefRow( row ) ) {
+							renderResult( row, false, [ lblManaged ] );
+							return;
+						}
 						var cfg = readRowConfig( row );
 						if ( ! cfg.server_url ) {
 							renderResult( row, false, [ lblUrlRequired ] );
@@ -792,6 +907,10 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 					}
 
 					function runDiscover( row ) {
+						if ( isRefRow( row ) ) {
+							renderResult( row, false, [ lblManaged ] );
+							return;
+						}
 						var cfg = readRowConfig( row );
 						if ( ! cfg.server_url ) {
 							renderResult( row, false, [ lblUrlRequired ] );
@@ -903,9 +1022,63 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 						var importJsonEl = document.getElementById( 'wp-mcp-ai-import-mcp-apps-json' );
 						var listEl = document.getElementById( 'wp-mcp-ai-mcp-apps-list' );
 						var emptyEl = document.getElementById( 'wp-mcp-ai-mcp-apps-empty' );
+						var remoteSelect = document.getElementById( 'wp-mcp-ai-add-from-remote' );
+						var remoteBtn = document.getElementById( 'wp-mcp-ai-add-from-remote-btn' );
 
 						if ( ! addBtn || ! listEl ) {
 							return;
+						}
+
+						if ( remoteSelect && remoteBtn ) {
+							remoteBtn.addEventListener( 'click', function() {
+								var rows = listEl.querySelectorAll( '.wp-mcp-ai-mcp-app-row' );
+								if ( rows.length >= maxApps ) {
+									window.alert( maxAppsMessage );
+									return;
+								}
+
+								var opt = remoteSelect.options[ remoteSelect.selectedIndex ];
+								var ref = opt ? opt.value : '';
+								var name = opt ? ( opt.getAttribute( 'data-name' ) || '' ) : '';
+								if ( ! ref ) {
+									return;
+								}
+
+								var tmpl = document.getElementById( 'tmpl-wp-mcp-ai-mcp-app-ref-row' );
+								if ( ! tmpl ) {
+									return;
+								}
+
+								var html = tmpl.innerHTML.replace( /\{\{data\.index\}\}/g, appIndex );
+								appIndex++;
+
+								var wrapper = document.createElement( 'div' );
+								wrapper.innerHTML = html;
+								var row = wrapper.firstElementChild;
+								if ( ! row ) {
+									return;
+								}
+
+								var refInput = row.querySelector( 'input[name$="[connection_ref]"]' );
+								var labelInput = row.querySelector( 'input[name$="[label]"]' );
+								if ( refInput ) {
+									refInput.value = ref;
+								}
+								if ( labelInput ) {
+									labelInput.value = name;
+								}
+
+								var titleEl = row.querySelector( '.wp-mcp-ai-mcp-app-title' );
+								if ( titleEl ) {
+									titleEl.textContent = name || mcpAppLabel;
+								}
+
+								if ( emptyEl ) {
+									emptyEl.style.display = 'none';
+								}
+
+								listEl.appendChild( row );
+							} );
 						}
 
 						addBtn.addEventListener( 'click', function() {

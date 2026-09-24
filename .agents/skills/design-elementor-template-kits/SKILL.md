@@ -25,6 +25,11 @@ All format contracts in this skill were verified against source:
 
 Re-verify against those files when a format breaks after a plugin update.
 
+For connecting an NV oOS assistant to a live Elementor MCP server (editing
+pages at runtime instead of importing kits), see
+`design-elementor-mcp-connection` — kits are offline imports; MCP Apps are
+live tool bridges.
+
 ## When to use this skill
 
 Trigger when ANY of the following is true:

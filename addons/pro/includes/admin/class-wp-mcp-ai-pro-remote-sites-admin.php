@@ -1038,6 +1038,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'custom_post_types'              => isset( $_POST['custom_post_types'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_post_types'] ) ) : '',
 				// JetEngine CCT access controls.
 				'jetengine_cct_access'           => $this->resolve_jetengine_cct_access(),
+				// MCP Server fields (Elementor MCP / WordPress MCP Adapter).
+				'mcp_header_name'                => 'mcp_server' === $connection_type && isset( $_POST['mcp_header_name'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+					? sanitize_text_field( wp_unslash( $_POST['mcp_header_name'] ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized above.
+					: '',
+				'mcp_verify_ssl'                 => 'mcp_server' === $connection_type ? empty( $_POST['mcp_verify_ssl'] ) : true, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked state only.
+				'mcp_timeout'                    => 'mcp_server' === $connection_type && isset( $_POST['mcp_timeout'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+					? absint( $_POST['mcp_timeout'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- absint above.
+					: 30,
 			);
 
 			$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
@@ -2266,6 +2274,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<option value="composio" <?php selected( $connection_type, 'composio' ); ?>>
 								<?php esc_html_e( 'Composio Connect (AI Tool Aggregator)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
+							<option value="mcp_server" <?php selected( $connection_type, 'mcp_server' ); ?>>
+								<?php esc_html_e( 'MCP Server (Elementor MCP / WordPress MCP Adapter)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
 						</select>
 						<p class="description">
 							<?php esc_html_e( 'Select the type of connection. Each type has specific authentication requirements and field configurations.', 'mcp-ai-wpoos-pro' ); ?>
@@ -2285,6 +2296,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<option value="basic_auth" <?php selected( $is_edit ? $connection['auth_type'] : '', 'basic_auth' ); ?>><?php esc_html_e( 'Basic Auth', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="jwt" <?php selected( $is_edit ? $connection['auth_type'] : '', 'jwt' ); ?>><?php esc_html_e( 'JWT Token', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="woocommerce" <?php selected( $is_edit ? $connection['auth_type'] : '', 'woocommerce' ); ?>><?php esc_html_e( 'WooCommerce API Keys (ck_/cs_)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="bearer" <?php selected( $is_edit ? $connection['auth_type'] : '', 'bearer' ); ?>><?php esc_html_e( 'Bearer Token', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="oauth" <?php selected( $is_edit ? $connection['auth_type'] : '', 'oauth' ); ?>><?php esc_html_e( 'OAuth 2.0 (MCP Authorization)', 'mcp-ai-wpoos-pro' ); ?></option>
 						</select>
 						<p class="description"><?php esc_html_e( 'Authentication method for WordPress and Generic API connections.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
@@ -2344,6 +2357,39 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing consumer secret.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
+					</td>
+				</tr>
+
+				<!-- MCP Server specific fields (Elementor MCP, WordPress MCP Adapter, or any Streamable HTTP MCP endpoint). -->
+				<tr class="mcp_server-only-field" id="mcp_header_name_field" style="display: none;">
+					<th scope="row">
+						<label for="mcp_header_name"><?php esc_html_e( 'Header Name', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="mcp_header_name" id="mcp_header_name" class="regular-text" value="<?php echo $is_edit ? esc_attr( isset( $connection['mcp_header_name'] ) ? $connection['mcp_header_name'] : '' ) : ''; ?>" placeholder="Authorization">
+						<p class="description"><?php esc_html_e( 'For custom-header authentication. The header value goes in the token field (e.g. "Bearer user:application-password").', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="mcp_server-only-field" style="display: none;">
+					<th scope="row">
+						<label for="mcp_timeout"><?php esc_html_e( 'Timeout (seconds)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="number" name="mcp_timeout" id="mcp_timeout" class="small-text" min="5" max="120" value="<?php echo $is_edit ? esc_attr( ! empty( $connection['mcp_timeout'] ) ? (int) $connection['mcp_timeout'] : 30 ) : '30'; ?>">
+					</td>
+				</tr>
+
+				<tr class="mcp_server-only-field" style="display: none;">
+					<th scope="row">
+						<label for="mcp_verify_ssl"><?php esc_html_e( 'Verify SSL', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<label>
+							<input type="checkbox" name="mcp_verify_ssl" id="mcp_verify_ssl" value="1" <?php checked( $is_edit ? ! array_key_exists( 'mcp_verify_ssl', $connection ) || ! empty( $connection['mcp_verify_ssl'] ) : true ); ?> />
+							<?php esc_html_e( 'Verify the SSL certificate of the MCP endpoint.', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Elementor MCP endpoints live on your WordPress site at /wp-json/mcp/&lt;server-slug&gt;. Use an application password (Basic Auth) or a bearer token to authenticate.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -7494,21 +7540,31 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var tokenField = document.getElementById('token_field');
 			var consumerKeyField = document.getElementById('consumer_key_field');
 			var consumerSecretField = document.getElementById('consumer_secret_field');
+			var mcpHeaderField = document.getElementById('mcp_header_name_field');
+			var connectionType = document.getElementById('connection_type').value;
 
 			usernameField.style.display = 'none';
 			passwordField.style.display = 'none';
 			tokenField.style.display = 'none';
 			consumerKeyField.style.display = 'none';
 			consumerSecretField.style.display = 'none';
+			if (mcpHeaderField) {
+				mcpHeaderField.style.display = 'none';
+			}
 
 			if (authType === 'application_password' || authType === 'basic_auth') {
 				usernameField.style.display = 'table-row';
 				passwordField.style.display = 'table-row';
-			} else if (authType === 'jwt') {
+			} else if (authType === 'jwt' || authType === 'bearer') {
 				tokenField.style.display = 'table-row';
 			} else if (authType === 'woocommerce') {
 				consumerKeyField.style.display = 'table-row';
 				consumerSecretField.style.display = 'table-row';
+			} else if (authType === 'custom_header') {
+				if (mcpHeaderField && connectionType === 'mcp_server') {
+					mcpHeaderField.style.display = 'table-row';
+				}
+				tokenField.style.display = 'table-row';
 			}
 		}
 
@@ -7544,6 +7600,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var composioFields = document.querySelectorAll('.composio-only-field');
 			var upworkFields = document.querySelectorAll('.upwork-only-field');
 			var linkedinFields = document.querySelectorAll('.linkedin-only-field');
+			var mcpServerFields = document.querySelectorAll('.mcp_server-only-field');
 			var authTypeRow = document.getElementById('auth_type_row');
 			var authTypeSelect = document.getElementById('auth_type');
 			var urlField = document.getElementById('url');
@@ -7644,6 +7701,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			linkedinFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
+			mcpServerFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
 
 			// Reset URL field defaults
 			urlField.readOnly = false;
@@ -7657,7 +7717,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					// toLowerCase() normalises both old and new casing.
 				var ctLower = (connectionType || '').toLowerCase();
 				
-				if (ctLower === <?php echo wp_json_encode( strtolower( 'WordPress' ) ); // phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText ?> || ctLower === 'generic') {
+				if (ctLower === <?php echo wp_json_encode( strtolower( 'WordPress' ) ); // phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText ?> || ctLower === 'generic' || ctLower === 'mcp_server') {
 					authTypeRow.style.display = 'table-row';
 				// Sync the credential fields (username/password/token/consumer keys)
 				// with the current auth_type dropdown value so the correct fields
@@ -7981,6 +8041,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				urlField.style.backgroundColor = '#f0f0f0';
 				urlDescription.style.display = 'none';
 				authTypeSelect.value = 'none';
+			} else if (connectionType === 'mcp_server') {
+				mcpServerFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// MCP servers use the user-supplied URL (e.g. https://site.com/wp-json/mcp/elementor-mcp-server)
+				// and the standard auth_type select; re-apply the header-name row visibility.
+				urlField.readOnly = false;
+				urlField.style.backgroundColor = '';
+				urlDescription.style.display = 'block';
+				if (typeof toggleAuthFields === 'function' && authTypeSelect) {
+					toggleAuthFields(authTypeSelect.value);
+				}
 			}
 		}
 

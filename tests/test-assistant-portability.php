@@ -3,9 +3,10 @@
  * Tests for the assistant portability engine.
  *
  * Covers the canonical nvoos-assistant bundle format: export fidelity
- * (including array-typed meta), credential redaction, legacy CLI + blueprint
- * import compatibility, import modes (skip/overwrite/duplicate), dry-run,
- * and defence-in-depth stripping of credential hashes on import.
+ * (including array-typed meta), credential redaction (assistant credential
+ * hashes and MCP App tokens), legacy CLI + blueprint import compatibility,
+ * import modes (skip/overwrite/duplicate), dry-run, and defence-in-depth
+ * stripping of credential material on import.
  *
  * @package WP_MCP_AI
  * @since   1.1.80
@@ -139,6 +140,298 @@ class Test_Assistant_Portability extends WP_UnitTestCase {
 		$this->assertSame( array( 'web_search', 'get_post' ), get_post_meta( $new_id, '_wp_mcp_ai_tools', true ) );
 		$this->assertSame( array_map( 'absint', $memory_files ), array_map( 'absint', (array) get_post_meta( $new_id, '_wp_mcp_ai_memory_files', true ) ) );
 		$this->assertSame( 'gpt-4.1', get_post_meta( $new_id, '_wp_mcp_ai_model', true ) );
+	}
+
+	/**
+	 * MCP App credentials (`token` / `oauth_data`) are redacted from exports
+	 * while the rest of each app config stays for round-trip fidelity.
+	 */
+	public function test_export_redacts_mcp_app_tokens() {
+		$assistant_id = $this->create_assistant_fixture();
+
+		update_post_meta(
+			$assistant_id,
+			'_wp_mcp_ai_mcp_apps',
+			array(
+				array(
+					'label'       => 'Elementor',
+					'server_url'  => 'https://example.com/wp-json/mcp/elementor-mcp-server',
+					'auth_type'   => 'basic',
+					'token'       => 'admin:secret-app-password',
+					'header_name' => '',
+					'enabled'     => true,
+					'timeout'     => 30,
+					'verify_ssl'  => true,
+				),
+				array(
+					'label'      => 'OAuth App',
+					'server_url' => 'https://api.example.com/mcp',
+					'auth_type'  => 'oauth',
+					'token'      => 'bearer-access-token',
+					'oauth_data' => array(
+						'access_token'  => 'access-secret',
+						'refresh_token' => 'refresh-secret',
+					),
+				),
+			)
+		);
+
+		$bundle = WP_MCP_AI_Assistant_Portability::export_assistants( array( $assistant_id ), array( 'include_a2a' => false ) );
+		$apps   = $bundle['assistants'][0]['meta']['_wp_mcp_ai_mcp_apps'];
+
+		$this->assertIsArray( $apps );
+		$this->assertCount( 2, $apps );
+
+		$this->assertArrayNotHasKey( 'token', $apps[0] );
+		$this->assertArrayNotHasKey( 'token', $apps[1] );
+		$this->assertArrayNotHasKey( 'oauth_data', $apps[1] );
+
+		// Non-credential fields survive for round-trip fidelity.
+		$this->assertSame( 'Elementor', $apps[0]['label'] );
+		$this->assertSame( 'https://example.com/wp-json/mcp/elementor-mcp-server', $apps[0]['server_url'] );
+		$this->assertSame( 'basic', $apps[0]['auth_type'] );
+	}
+
+	/**
+	 * The export redaction can be opted out of for trusted migrations.
+	 */
+	public function test_export_mcp_app_tokens_opt_in_filter() {
+		$assistant_id = $this->create_assistant_fixture();
+
+		update_post_meta(
+			$assistant_id,
+			'_wp_mcp_ai_mcp_apps',
+			array(
+				array(
+					'label'      => 'Elementor',
+					'server_url' => 'https://example.com/mcp',
+					'auth_type'  => 'bearer',
+					'token'      => 'secret-token',
+				),
+			)
+		);
+
+		add_filter( 'wp_mcp_ai_assistant_export_redact_mcp_app_tokens', '__return_false' );
+		$bundle = WP_MCP_AI_Assistant_Portability::export_assistants( array( $assistant_id ), array( 'include_a2a' => false ) );
+		remove_filter( 'wp_mcp_ai_assistant_export_redact_mcp_app_tokens', '__return_false' );
+
+		$apps = $bundle['assistants'][0]['meta']['_wp_mcp_ai_mcp_apps'];
+		$this->assertSame( 'secret-token', $apps[0]['token'] );
+	}
+
+	/**
+	 * Import strips MCP App credentials even from a hand-edited payload.
+	 */
+	public function test_import_redacts_mcp_app_tokens_on_create() {
+		$payload = array(
+			'format'     => 'nvoos-assistant',
+			'assistants' => array(
+				array(
+					'title' => 'MCP App Import',
+					'meta'  => array(
+						'_wp_mcp_ai_mcp_apps' => array(
+							array(
+								'label'      => 'Injected',
+								'server_url' => 'https://example.com/mcp',
+								'auth_type'  => 'bearer',
+								'token'      => 'injected-token',
+							),
+						),
+					),
+				),
+			),
+		);
+
+		$parsed = WP_MCP_AI_Assistant_Portability::parse_import( wp_json_encode( $payload ) );
+		$report = WP_MCP_AI_Assistant_Portability::import_bundle( $parsed );
+
+		$this->assertSame( 1, $report['created'] );
+		$new_id = $report['items'][0]['assistant_id'];
+		$apps   = get_post_meta( $new_id, '_wp_mcp_ai_mcp_apps', true );
+
+		$this->assertIsArray( $apps );
+		$this->assertCount( 1, $apps );
+		$this->assertSame( 'https://example.com/mcp', $apps[0]['server_url'] );
+		$this->assertArrayNotHasKey( 'token', $apps[0] );
+	}
+
+	/**
+	 * The import redaction can be opted out of for trusted migrations.
+	 */
+	public function test_import_mcp_app_tokens_opt_in_filter() {
+		$payload = array(
+			'format'     => 'nvoos-assistant',
+			'assistants' => array(
+				array(
+					'title' => 'MCP App Token Migration',
+					'meta'  => array(
+						'_wp_mcp_ai_mcp_apps' => array(
+							array(
+								'label'      => 'Migrated',
+								'server_url' => 'https://example.com/mcp',
+								'auth_type'  => 'bearer',
+								'token'      => 'migrated-token',
+							),
+						),
+					),
+				),
+			),
+		);
+
+		$parsed = WP_MCP_AI_Assistant_Portability::parse_import( wp_json_encode( $payload ) );
+
+		add_filter( 'wp_mcp_ai_assistant_import_redact_mcp_app_tokens', '__return_false' );
+		$report = WP_MCP_AI_Assistant_Portability::import_bundle( $parsed );
+		remove_filter( 'wp_mcp_ai_assistant_import_redact_mcp_app_tokens', '__return_false' );
+
+		$this->assertSame( 1, $report['created'] );
+		$apps = get_post_meta( $report['items'][0]['assistant_id'], '_wp_mcp_ai_mcp_apps', true );
+
+		$this->assertSame( 'migrated-token', $apps[0]['token'] );
+	}
+
+	/**
+	 * Overwriting an assistant with a redacted bundle keeps stored MCP App
+	 * credentials for matching apps while still applying config changes.
+	 */
+	public function test_import_overwrite_preserves_existing_mcp_app_tokens() {
+		$assistant_id = $this->create_assistant_fixture();
+
+		update_post_meta(
+			$assistant_id,
+			'_wp_mcp_ai_mcp_apps',
+			array(
+				array(
+					'label'      => 'Elementor',
+					'server_url' => 'https://example.com/wp-json/mcp/elementor-mcp-server',
+					'auth_type'  => 'basic',
+					'token'      => 'admin:keep-me',
+					'enabled'    => true,
+				),
+			)
+		);
+
+		$payload = array(
+			'format'     => 'nvoos-assistant',
+			'assistants' => array(
+				array(
+					'title' => 'Portability Test Assistant',
+					'meta'  => array(
+						'_wp_mcp_ai_mcp_apps' => array(
+							array(
+								'label'      => 'Elementor',
+								'server_url' => 'https://example.com/wp-json/mcp/elementor-mcp-server',
+								'auth_type'  => 'basic',
+								'enabled'    => false, // Config change that should land.
+							),
+						),
+					),
+				),
+			),
+		);
+
+		$parsed = WP_MCP_AI_Assistant_Portability::parse_import( wp_json_encode( $payload ) );
+		$report = WP_MCP_AI_Assistant_Portability::import_bundle( $parsed, array( 'mode' => 'overwrite' ) );
+
+		$this->assertSame( 1, $report['updated'] );
+		$apps = get_post_meta( $assistant_id, '_wp_mcp_ai_mcp_apps', true );
+
+		$this->assertIsArray( $apps );
+		$this->assertCount( 1, $apps );
+		$this->assertSame( 'admin:keep-me', $apps[0]['token'] ); // Stored credential preserved.
+		$this->assertFalse( $apps[0]['enabled'] ); // Payload change applied.
+	}
+
+	/**
+	 * Imported MCP App configs are structurally sanitized: unknown auth types
+	 * normalise, tags are stripped, booleans/ints are coerced, junk keys are
+	 * dropped, and entries without a usable endpoint URL are removed.
+	 */
+	public function test_import_sanitizes_mcp_app_structure() {
+		$payload = array(
+			'format'     => 'nvoos-assistant',
+			'assistants' => array(
+				array(
+					'title' => 'Sanitized Apps',
+					'meta'  => array(
+						'_wp_mcp_ai_mcp_apps' => array(
+							array(
+								'label'      => '<b>Evil</b>',
+								'server_url' => 'https://example.com/mcp',
+								'auth_type'  => 'evil',
+								'token'      => 'should-be-stripped',
+								'timeout'    => 9999,
+								'verify_ssl' => 0,
+								'junk'       => 'drop-me',
+							),
+							array(
+								'label'      => 'Bad Scheme',
+								'server_url' => 'javascript:alert(1)',
+								'auth_type'  => 'none',
+							),
+							array(
+								'label' => 'No Endpoint',
+							),
+						),
+					),
+				),
+			),
+		);
+
+		$parsed = WP_MCP_AI_Assistant_Portability::parse_import( wp_json_encode( $payload ) );
+		$report = WP_MCP_AI_Assistant_Portability::import_bundle( $parsed );
+
+		$this->assertSame( 1, $report['created'] );
+		$apps = get_post_meta( $report['items'][0]['assistant_id'], '_wp_mcp_ai_mcp_apps', true );
+
+		$this->assertIsArray( $apps );
+		$this->assertCount( 1, $apps ); // Bad-scheme and endpoint-less entries dropped.
+
+		$app = $apps[0];
+		$this->assertSame( 'Evil', $app['label'] ); // Tags stripped.
+		$this->assertSame( 'https://example.com/mcp', $app['server_url'] );
+		$this->assertSame( 'none', $app['auth_type'] ); // Unknown auth type normalised.
+		$this->assertSame( 120, $app['timeout'] ); // Clamped to the registry ceiling.
+		$this->assertFalse( $app['verify_ssl'] ); // Coerced to bool.
+		$this->assertArrayNotHasKey( 'junk', $app );
+		$this->assertArrayNotHasKey( 'token', $app );
+	}
+
+	/**
+	 * Imported MCP App reference entries survive. Reference entries carry no
+	 * endpoint URL (the reference resolves at chat time) but are non-secret
+	 * pointers, so they must not be dropped as endpoint-less entries.
+	 */
+	public function test_import_preserves_mcp_app_connection_refs() {
+		$payload = array(
+			'format'     => 'nvoos-assistant',
+			'assistants' => array(
+				array(
+					'title' => 'Ref Import',
+					'meta'  => array(
+						'_wp_mcp_ai_mcp_apps' => array(
+							array(
+								'label'          => 'Elementor',
+								'connection_ref' => 'mcp_central',
+								'enabled'        => true,
+							),
+						),
+					),
+				),
+			),
+		);
+
+		$parsed = WP_MCP_AI_Assistant_Portability::parse_import( wp_json_encode( $payload ) );
+		$report = WP_MCP_AI_Assistant_Portability::import_bundle( $parsed );
+
+		$this->assertSame( 1, $report['created'] );
+		$apps = get_post_meta( $report['items'][0]['assistant_id'], '_wp_mcp_ai_mcp_apps', true );
+
+		$this->assertIsArray( $apps );
+		$this->assertCount( 1, $apps );
+		$this->assertSame( 'mcp_central', $apps[0]['connection_ref'] );
+		$this->assertSame( '', $apps[0]['server_url'] );
+		$this->assertSame( '', $apps[0]['token'] ); // No credential material.
 	}
 
 	/**

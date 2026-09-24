@@ -222,3 +222,83 @@ function wp_mcp_ai_mcp_apps_rest_pre_dispatch( $result, $server, $request ) {
 	return $result;
 }
 add_filter( 'rest_pre_dispatch', 'wp_mcp_ai_mcp_apps_rest_pre_dispatch', 10, 3 );
+
+/**
+ * Validate MCP App connection references after an assistant import.
+ *
+ * Assistant bundles carry `connection_ref` pointers (non-secret). When the
+ * target site lacks the referenced Remote Sites connection, the imported app
+ * would be permanently broken — so it is disabled with a status snapshot and
+ * a logged warning instead of failing silently at chat time.
+ *
+ * @since 1.1.85
+ *
+ * @param int   $post_id   Imported assistant post ID.
+ * @param array $assistant Canonical assistant entry applied.
+ * @param bool  $updated   Whether an existing assistant was updated.
+ * @return void
+ */
+function wp_mcp_ai_mcp_apps_validate_imported_refs( $post_id, $assistant, $updated ) {
+	unset( $assistant, $updated ); // Signature mirrors the hook; only the post ID is needed here.
+
+	if ( ! class_exists( 'WP_MCP_AI_MCP_App_Registry' ) ) {
+		return;
+	}
+
+	// Lazy-load the Remote Site Manager — imports can run outside the admin
+	// bootstrap (REST, CLI, AI tools).
+	if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+		$manager_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		if ( file_exists( $manager_file ) ) {
+			require_once $manager_file;
+		}
+	}
+
+	if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+		return;
+	}
+
+	$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
+	$apps     = $registry->get_apps( $post_id );
+	$changed  = false;
+
+	foreach ( $apps as $index => $app ) {
+		if ( ! is_array( $app ) || empty( $app['connection_ref'] ) ) {
+			continue;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $app['connection_ref'] );
+
+		if ( null !== $connection && 'mcp_server' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+			continue;
+		}
+
+		// Unresolvable reference: disable the app and record the failure.
+		$apps[ $index ]['enabled'] = false;
+		$changed                   = true;
+
+		$registry->record_app_status(
+			$post_id,
+			$app,
+			array(
+				'last_status' => 'error',
+				'last_error'  => __( 'connection_ref not found in Remote Sites', 'mcp-ai-wpoos-pro' ),
+			)
+		);
+
+		if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_warning' ) ) {
+			WP_MCP_AI_Logger::log_warning(
+				'Imported MCP App references a Remote Sites connection that does not exist on this site; the app was disabled.',
+				array(
+					'assistant_id'   => $post_id,
+					'connection_ref' => $app['connection_ref'],
+				)
+			);
+		}
+	}
+
+	if ( $changed ) {
+		$registry->save_apps( $post_id, $apps );
+	}
+}
+add_action( 'wp_mcp_ai_assistant_imported', 'wp_mcp_ai_mcp_apps_validate_imported_refs', 10, 3 );

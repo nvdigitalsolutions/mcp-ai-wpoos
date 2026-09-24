@@ -353,6 +353,110 @@ class WP_MCP_AI_MCP_App_Registry {
 	}
 
 	/**
+	 * Resolve an assistant's MCP Apps, expanding global connection references.
+	 *
+	 * Entries carrying `connection_ref` point at a `mcp_server` connection in
+	 * the Pro Remote Sites store. Resolution decrypts the central credential
+	 * on demand (per-request static cache) and merges it into a runtime config
+	 * — the credentials are never written back to post meta.
+	 *
+	 * A reference that cannot be resolved (missing connection, wrong type, or
+	 * Remote Sites unavailable) is skipped and recorded as an error status
+	 * snapshot keyed by the reference identity.
+	 *
+	 * @since 1.1.85
+	 *
+	 * @param int $assistant_id Assistant post ID.
+	 * @return array<int, array> Runtime app configs (resolved).
+	 */
+	public function resolve_apps( $assistant_id ) {
+		$resolved = array();
+
+		foreach ( $this->get_apps( $assistant_id ) as $app ) {
+			if ( ! is_array( $app ) ) {
+				continue;
+			}
+
+			if ( empty( $app['connection_ref'] ) ) {
+				$resolved[] = $app;
+				continue;
+			}
+
+			$ref_app = $this->resolve_connection_ref( $app );
+			if ( null === $ref_app ) {
+				$this->record_app_status(
+					$assistant_id,
+					$app,
+					array(
+						'last_status' => 'error',
+						'last_error'  => __( 'connection_ref not found in Remote Sites', 'mcp-ai-wpoos-pro' ),
+					)
+				);
+				if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_warning' ) ) {
+					WP_MCP_AI_Logger::log_warning(
+						'MCP App reference could not be resolved: connection not found in Remote Sites.',
+						array(
+							'assistant_id'   => $assistant_id,
+							'connection_ref' => isset( $app['connection_ref'] ) ? $app['connection_ref'] : '',
+						)
+					);
+				}
+				continue;
+			}
+
+			$resolved[] = $ref_app;
+		}
+
+		return $resolved;
+	}
+
+	/**
+	 * Resolve a single `connection_ref` entry against the Remote Sites store.
+	 *
+	 * @since 1.1.85
+	 *
+	 * @param array $app Stored MCP App entry with `connection_ref` set.
+	 * @return array|null Resolved runtime config, or null when unresolvable.
+	 */
+	protected function resolve_connection_ref( array $app ) {
+		$ref = isset( $app['connection_ref'] ) ? sanitize_key( (string) $app['connection_ref'] ) : '';
+
+		if ( '' === $ref ) {
+			return null;
+		}
+
+		// Lazy-load the Remote Site Manager — chat-time resolution must not
+		// depend on the admin bootstrap having loaded it earlier.
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$manager_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+			if ( file_exists( $manager_file ) ) {
+				require_once $manager_file;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			return null;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $ref );
+
+		if ( null === $connection || 'mcp_server' !== ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+			return null;
+		}
+
+		$config = WP_MCP_AI_Pro_Remote_Site_Manager::build_mcp_app_config_from_connection( $connection );
+
+		return array_merge(
+			$app,
+			$config,
+			array(
+				'label'          => ! empty( $app['label'] ) ? $app['label'] : ( isset( $connection['name'] ) ? $connection['name'] : $ref ),
+				'connection_ref' => $ref,
+			)
+		);
+	}
+
+	/**
 	 * Save MCP Apps configuration for an assistant.
 	 *
 	 * @since 1.8.0
@@ -374,7 +478,9 @@ class WP_MCP_AI_MCP_App_Registry {
 		$sanitized_apps = array();
 		foreach ( $apps as $app ) {
 			$sanitized = self::sanitize_app_config( $app );
-			if ( ! empty( $sanitized['server_url'] ) ) {
+			// Keep entries with a usable endpoint OR a global connection
+			// reference (reference entries resolve the URL at chat time).
+			if ( ! empty( $sanitized['server_url'] ) || ! empty( $sanitized['connection_ref'] ) ) {
 				$sanitized_apps[] = $sanitized;
 			}
 		}
@@ -441,16 +547,17 @@ class WP_MCP_AI_MCP_App_Registry {
 		}
 
 		$sanitized = array(
-			'label'       => isset( $app['label'] ) ? sanitize_text_field( $app['label'] ) : '',
-			'server_url'  => $server_url,
-			'auth_type'   => isset( $app['auth_type'] ) && in_array( $app['auth_type'], array( 'none', 'bearer', 'basic', 'header', 'oauth' ), true )
+			'label'          => isset( $app['label'] ) ? sanitize_text_field( $app['label'] ) : '',
+			'server_url'     => $server_url,
+			'auth_type'      => isset( $app['auth_type'] ) && in_array( $app['auth_type'], array( 'none', 'bearer', 'basic', 'header', 'oauth' ), true )
 				? $app['auth_type']
 				: 'none',
-			'token'       => isset( $app['token'] ) ? sanitize_text_field( $app['token'] ) : '',
-			'header_name' => isset( $app['header_name'] ) ? sanitize_text_field( $app['header_name'] ) : '',
-			'enabled'     => isset( $app['enabled'] ) ? (bool) $app['enabled'] : true,
-			'timeout'     => isset( $app['timeout'] ) ? max( 1, min( 120, absint( $app['timeout'] ) ) ) : 30,
-			'verify_ssl'  => isset( $app['verify_ssl'] ) ? (bool) $app['verify_ssl'] : true,
+			'token'          => isset( $app['token'] ) ? sanitize_text_field( $app['token'] ) : '',
+			'header_name'    => isset( $app['header_name'] ) ? sanitize_text_field( $app['header_name'] ) : '',
+			'connection_ref' => isset( $app['connection_ref'] ) ? sanitize_key( $app['connection_ref'] ) : '',
+			'enabled'        => isset( $app['enabled'] ) ? (bool) $app['enabled'] : true,
+			'timeout'        => isset( $app['timeout'] ) ? max( 1, min( 120, absint( $app['timeout'] ) ) ) : 30,
+			'verify_ssl'     => isset( $app['verify_ssl'] ) ? (bool) $app['verify_ssl'] : true,
 		);
 
 		// Store OAuth token data when using OAuth auth_type.
@@ -587,7 +694,7 @@ class WP_MCP_AI_MCP_App_Registry {
 	 * @return array<int, array{app_config: array, tools: array, label: string}>
 	 */
 	protected function collect_remote_tools( $assistant_id ) {
-		$apps = $this->get_apps( $assistant_id );
+		$apps = $this->resolve_apps( $assistant_id );
 
 		if ( empty( $apps ) ) {
 			return array();
@@ -797,7 +904,8 @@ class WP_MCP_AI_MCP_App_Registry {
 		return md5(
 			( isset( $app_config['server_url'] ) ? $app_config['server_url'] : '' ) .
 			'|' . ( isset( $app_config['auth_type'] ) ? $app_config['auth_type'] : '' ) .
-			'|' . ( isset( $app_config['header_name'] ) ? $app_config['header_name'] : '' )
+			'|' . ( isset( $app_config['header_name'] ) ? $app_config['header_name'] : '' ) .
+			'|' . ( isset( $app_config['connection_ref'] ) ? $app_config['connection_ref'] : '' )
 		);
 	}
 
@@ -816,7 +924,7 @@ class WP_MCP_AI_MCP_App_Registry {
 	 */
 	public function record_app_status( $assistant_id, array $app_config, array $status ) {
 		$assistant_id = absint( $assistant_id );
-		if ( ! $assistant_id || empty( $app_config['server_url'] ) ) {
+		if ( ! $assistant_id || ( empty( $app_config['server_url'] ) && empty( $app_config['connection_ref'] ) ) ) {
 			return false;
 		}
 
