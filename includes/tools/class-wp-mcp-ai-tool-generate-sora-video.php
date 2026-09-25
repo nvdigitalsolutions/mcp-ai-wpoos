@@ -680,6 +680,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Return video data URL.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Benign use: binary video encoded into a data URL for temporary (non-Media-Library) responses.
 		$video_base64 = base64_encode( $video_data );
 		$data_url     = 'data:video/mp4;base64,' . $video_base64;
 
