@@ -19,7 +19,7 @@ jobs:
         run: |
           git subtree split --prefix=addons/mcp-wordpress-gateway --branch=mcp-wordpress-gateway-split
 
-      - name: Push to mcp-ai-wpoos-mcp-wordpress
+      - name: Push to nvoos-mcp-wordpress
         run: |
           git config --local --unset-all http.https://github.com/.extraheader
-          git push https://x-access-token:${{ secrets.MCP_WORDPRESS_GATEWAY_REPO_TOKEN }}@github.com/nvdigitalsolutions/mcp-ai-wpoos-mcp-wordpress.git mcp-wordpress-gateway-split:main --force
+          git push https://x-access-token:${{ secrets.MCP_WORDPRESS_GATEWAY_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-mcp-wordpress.git mcp-wordpress-gateway-split:main --force

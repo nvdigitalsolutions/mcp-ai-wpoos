@@ -139,7 +139,7 @@ sites; keep one App Password per site.
 
 Mirror `media-worker-velocity-setup.md` §1:
 
-1. **Repo:** standalone mirror `nvdigitalsolutions/mcp-ai-wpoos-mcp-wordpress`
+1. **Repo:** standalone mirror `nvdigitalsolutions/nvoos-mcp-wordpress`
    (subtree sync from `addons/mcp-wordpress-gateway/`), branch `main`.
 2. **Build settings:** Node **22**, npm, root directory = repo root,
    entry = `src/index.js` (or `npm start`).
@@ -223,7 +223,7 @@ not already present.
 monorepo PR (addons/mcp-wordpress-gateway/**)
   → merge to alpha-working/main
   → sync workflow (git subtree split, ~20 min)
-  → force-push main on mcp-ai-wpoos-mcp-wordpress
+  → force-push main on nvoos-mcp-wordpress
   → Velocity auto-deploy
   → CI in standalone repo (node --test, npm audit, dependency pin check)
 ```
