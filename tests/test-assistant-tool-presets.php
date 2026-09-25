@@ -594,6 +594,81 @@ class WP_MCP_AI_Assistant_Tool_Presets_Test extends WP_UnitTestCase {
 			}
 		}
 
+		// Test mcp-wordpress parity WordPress-admin tools in site_management preset.
+		$wp_admin_tools = array(
+			'list_comments',
+			'get_comment',
+			'create_comment',
+			'update_comment',
+			'delete_comment',
+			'list_users',
+			'create_user',
+			'update_user',
+			'delete_user',
+			'get_post_revisions',
+			'get_term',
+			'delete_term',
+			'get_media',
+			'upload_media',
+			'update_media',
+			'delete_media',
+			'get_site_settings',
+			'update_site_settings',
+			'list_application_passwords',
+			'create_application_password',
+			'delete_application_password',
+		);
+
+		if ( isset( $presets['site_management']['tools'] ) ) {
+			foreach ( $wp_admin_tools as $tool ) {
+				$this->assertContains(
+					$tool,
+					$presets['site_management']['tools'],
+					"WordPress-admin tool '{$tool}' should be in site_management preset"
+				);
+			}
+		}
+
+		// Test mcp-wordpress parity SEO toolkit in seo_marketing preset.
+		$parity_seo_tools = array(
+			'seo_analyze_content',
+			'seo_generate_schema',
+			'seo_validate_schema',
+			'seo_bulk_update_metadata',
+			'seo_site_audit',
+			'seo_test_integration',
+			'seo_get_live_data',
+			'seo_track_serp',
+			'seo_keyword_research',
+		);
+
+		if ( isset( $presets['seo_marketing']['tools'] ) ) {
+			foreach ( $parity_seo_tools as $tool ) {
+				$this->assertContains(
+					$tool,
+					$presets['seo_marketing']['tools'],
+					"SEO parity tool '{$tool}' should be in seo_marketing preset"
+				);
+			}
+		}
+
+		// Test application-password tools in authentication_security preset.
+		$app_password_tools = array(
+			'list_application_passwords',
+			'create_application_password',
+			'delete_application_password',
+		);
+
+		if ( isset( $presets['authentication_security']['tools'] ) ) {
+			foreach ( $app_password_tools as $tool ) {
+				$this->assertContains(
+					$tool,
+					$presets['authentication_security']['tools'],
+					"Application-password tool '{$tool}' should be in authentication_security preset"
+				);
+			}
+		}
+
 		// Test harness tools in agentic_workflow preset.
 		$harness_tools = array(
 			'evolve_harness',
