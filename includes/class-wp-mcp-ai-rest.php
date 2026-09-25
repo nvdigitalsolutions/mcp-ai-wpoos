@@ -3787,6 +3787,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Phase 7: Enhanced Token Tracking - Tool-level usage data.
 					if ( ! empty( $tool_usage_info ) ) {
 						$full_tool_message['usage'] = $tool_usage_info;
+
+						// Attach a top-level cost envelope so the chat client can
+						// aggregate per-tool costs into the final response label.
+						// The client reads tool_result.cost alongside tool_result.usage.
+						$tool_cost_info = $this->build_tool_cost_envelope( $tool_usage_info );
+						if ( null !== $tool_cost_info ) {
+							$full_tool_message['cost'] = $tool_cost_info;
+						}
 					}
 
 					// Include capability flags for frontend badge display.
@@ -4738,16 +4746,26 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Sanitize the tool result for display (strips base64 content if tool implements sanitization).
 					$display_result = $this->validator->sanitize_tool_result_for_display( $tool_result, $tool_name, $tool_instance );
 
-					// Stream tool result event.
-					$this->send_sse_event(
-						'tool_execution',
-						array(
-							'type'      => 'tool_result',
-							'tool_name' => $tool_name,
-							'tool_id'   => $tool_call_id,
-							'result'    => $display_result,
-						)
+					// Stream tool result event. Usage/cost are included so the
+					// live tool bubble can render the same model/cost/token badges
+					// as the final assistant response.
+					$tool_result_event = array(
+						'type'      => 'tool_result',
+						'tool_name' => $tool_name,
+						'tool_id'   => $tool_call_id,
+						'result'    => $display_result,
 					);
+
+					if ( ! empty( $tool_usage_info ) ) {
+						$tool_result_event['usage'] = $tool_usage_info;
+
+						$tool_cost_info = $this->build_tool_cost_envelope( $tool_usage_info );
+						if ( null !== $tool_cost_info ) {
+							$tool_result_event['cost'] = $tool_cost_info;
+						}
+					}
+
+					$this->send_sse_event( 'tool_execution', $tool_result_event );
 
 					// G8 Phase 2 — emit a `memory_event` SSE frame mid-stream
 					// when the tool that just ran touched the agent-memory
@@ -4809,6 +4827,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Phase 7: Enhanced Token Tracking - Tool-level usage data.
 					if ( ! empty( $tool_usage_info ) ) {
 						$full_tool_message['usage'] = $tool_usage_info;
+
+						// Attach the top-level cost envelope for final-label aggregation.
+						$tool_cost_info = $this->build_tool_cost_envelope( $tool_usage_info );
+						if ( null !== $tool_cost_info ) {
+							$full_tool_message['cost'] = $tool_cost_info;
+						}
 					}
 
 					// Include capability flags for frontend badge display.
@@ -12654,6 +12678,41 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return $usage_info;
+		}
+
+		/**
+		 * Build a top-level cost envelope from extracted tool usage info.
+		 *
+		 * The chat client aggregates tool_result.cost entries into the final
+		 * response label, so tool responses must carry a cost object shaped
+		 * like the main chat cost payload: cost_usd, is_estimated, provider,
+		 * model. Returns null when the tool result carried no cost figure.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param array $tool_usage_info Usage info from extract_usage_info_from_tool_result().
+		 * @return array|null Cost envelope or null when no cost figure is available.
+		 */
+		protected function build_tool_cost_envelope( $tool_usage_info ) {
+			if ( empty( $tool_usage_info ) || ! isset( $tool_usage_info['cost_usd'] ) ) {
+				return null;
+			}
+
+			$cost_info = array(
+				'cost_usd'     => (float) $tool_usage_info['cost_usd'],
+				'is_estimated' => ! empty( $tool_usage_info['cost_is_estimated'] )
+					|| ! empty( $tool_usage_info['cost_is_calculated'] )
+					|| ! empty( $tool_usage_info['is_estimated'] ),
+			);
+
+			if ( ! empty( $tool_usage_info['provider'] ) ) {
+				$cost_info['provider'] = $tool_usage_info['provider'];
+			}
+			if ( ! empty( $tool_usage_info['model'] ) ) {
+				$cost_info['model'] = $tool_usage_info['model'];
+			}
+
+			return $cost_info;
 		}
 
 		/**
