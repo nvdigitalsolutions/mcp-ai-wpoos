@@ -3511,6 +3511,29 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$user_id = get_current_user_id();
 
 			/**
+			 * Filters the chat messages before they are sent to the language model.
+			 *
+			 * Allows extensions to inspect or augment the message list (e.g.
+			 * surface session-budget warnings from WP_MCP_AI_Tool_Token_Limits).
+			 *
+			 * @since 1.1.85
+			 *
+			 * @param array           $messages         Chat messages.
+			 * @param array           $assistant_config Assistant configuration.
+			 * @param WP_REST_Request $request          REST request instance.
+			 * @param int             $user_id          Current user ID.
+			 * @param string          $session_key      Transcript session key (empty when absent).
+			 */
+			$messages = apply_filters(
+				'wp_mcp_ai_chat_messages',
+				$messages,
+				$assistant_config,
+				$request,
+				$user_id,
+				isset( $transcript_context['session_key'] ) ? $transcript_context['session_key'] : ''
+			);
+
+			/**
 			 * Fires before a chat request is sent to the language model.
 			 *
 			 * @param int              $assistant_id Assistant identifier.
@@ -13182,6 +13205,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					);
 				}
 			}
+
+				// Same session-budget warning seam as the legacy path (see
+				// handle_chat_request): lets extensions like
+				// WP_MCP_AI_Tool_Token_Limits::inject_session_budget_warning()
+				// surface the one-shot budget notice before the orchestrator runs.
+				$messages = apply_filters(
+					'wp_mcp_ai_chat_messages',
+					$messages,
+					$assistant_config,
+					$request,
+					$user_id,
+					isset( $transcript_context['session_key'] ) ? $transcript_context['session_key'] : ''
+				);
 
 										// Merge additional_tools from the client request.
 												$additional_tools = $request->get_param( 'additional_tools' );
