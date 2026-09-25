@@ -38,7 +38,7 @@ class WP_MCP_AI_Tool_Check_Video_Status implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Checks the status of an async video generation job. Use this to poll for completion after calling generate_veo_video in async mode.', 'mcp-ai-wpoos' );
+		return __( 'Checks the status of an async video generation job. Use this to poll for completion after calling generate_veo_video, generate_sora_video, or generate_higgsfield_video in async mode.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -48,10 +48,10 @@ class WP_MCP_AI_Tool_Check_Video_Status implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_usage_guidance() {
 		return array(
-			'when_to_use'     => __( 'Polling an async video generation job for completion after starting generate_veo_video in async mode.', 'mcp-ai-wpoos' ),
+			'when_to_use'     => __( 'Polling an async video generation job for completion after starting generate_veo_video, generate_sora_video, or generate_higgsfield_video in async mode.', 'mcp-ai-wpoos' ),
 			'when_not_to_use' => __( 'Analyzing existing video content; use analyze_video. For batch job status use get_batch_status.', 'mcp-ai-wpoos' ),
-			'related_tools'   => array( 'generate_veo_video', 'analyze_video' ),
-			'notes'           => __( 'Pass the job_id returned by generate_veo_video. Completed jobs return an attachment_id when saved to the media library.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'generate_veo_video', 'generate_sora_video', 'generate_higgsfield_video', 'analyze_video' ),
+			'notes'           => __( 'Pass the job_id returned by the generation tool. Completed jobs return an attachment_id when saved to the media library.', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -97,6 +97,51 @@ class WP_MCP_AI_Tool_Check_Video_Status implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		$job_id = sanitize_text_field( $arguments['job_id'] );
+
+		// Async-executor job IDs (async_* — e.g. generate_higgsfield_video) are
+		// resolved through the tool async executor rather than the Gemini service.
+		if ( 0 === strpos( $job_id, 'async_' ) && class_exists( 'WP_MCP_AI_Tool_Async_Executor' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-async-executor.php';
+
+			$executor = new WP_MCP_AI_Tool_Async_Executor();
+			$result   = $executor->get_result( $job_id );
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			$status = isset( $result['status'] ) ? sanitize_key( $result['status'] ) : 'unknown';
+
+			if ( 'completed' === $status ) {
+				$tool_result = isset( $result['result'] ) ? $result['result'] : array();
+
+				if ( is_array( $tool_result ) && ! empty( $tool_result['attachment_id'] ) ) {
+					return array(
+						'success'       => true,
+						'status'        => 'completed',
+						'job_id'        => $job_id,
+						'attachment_id' => $tool_result['attachment_id'],
+						'url'           => isset( $tool_result['url'] ) ? $tool_result['url'] : wp_get_attachment_url( $tool_result['attachment_id'] ),
+						'message'       => __( 'Video generation completed successfully.', 'mcp-ai-wpoos' ),
+					);
+				}
+
+				return array(
+					'success' => true,
+					'status'  => 'completed',
+					'job_id'  => $job_id,
+					'result'  => isset( $result['result'] ) ? $result['result'] : null,
+					'message' => __( 'Video generation completed successfully.', 'mcp-ai-wpoos' ),
+				);
+			}
+
+			return array(
+				'success' => true,
+				'job_id'  => $job_id,
+				'status'  => $status,
+				'message' => $this->get_status_message( $status ),
+			);
+		}
 
 		// Load the video generation service.
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';

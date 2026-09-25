@@ -241,6 +241,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					'description'      => __( 'Provides access to Google Gemini models when routing assistant conversations.', 'mcp-ai-wpoos' ),
 					'usage'            => __( 'Add credentials once you plan to use Gemini as a provider or fallback.', 'mcp-ai-wpoos' ),
 				),
+				'higgsfield'       => array(
+					'label'            => __( 'Higgsfield', 'mcp-ai-wpoos' ),
+					'required_options' => array( 'higgsfield_api_key_id', 'higgsfield_api_key_secret' ),
+					'fields'           => array(
+						'higgsfield_api_key_id'     => __( 'API Key ID', 'mcp-ai-wpoos' ),
+						'higgsfield_api_key_secret' => __( 'API Key Secret', 'mcp-ai-wpoos' ),
+					),
+					'description'      => __( 'Powers cinematic video generation through the Higgsfield Cinema Studio API, a curated catalog of 50+ video and image models behind one asynchronous endpoint.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Add the two-part credential before using generate_higgsfield_video.', 'mcp-ai-wpoos' ),
+					'docs_url'         => 'https://docs.higgsfield.ai/',
+				),
 				'kimi'             => array(
 					'label'            => __( 'Kimi (Moonshot AI)', 'mcp-ai-wpoos' ),
 					'required_options' => array( 'kimi_api_key' ),
@@ -6493,6 +6504,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				// get_user_meta() caches values under the `{user_id}` key (group
 				// `user_meta`), so clearing `$meta_key` alone leaves stale values
 				// behind until the cache is flushed.
+				// Deliberate bulk clear of the usage-tracker meta across all users:
+				// there is no core API for a meta_key-wide user-meta delete, and a
+				// per-user delete_user_meta() loop would be an N+1 query pattern.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- See above; cache entries are invalidated explicitly below.
 				$user_ids = $wpdb->get_col(
 					$wpdb->prepare(
 						"SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
@@ -6502,7 +6517,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				foreach ( $user_ids as $uid ) {
 					wp_cache_delete( (int) $uid, 'user_meta' );
 				}
-				// Delete from database.
+				// Delete from database (single prepared statement across all users).
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- See above.
 				$wpdb->delete( $wpdb->usermeta, array( 'meta_key' => $meta_key ) );
 				// Clear the WP object cache for the meta key.
 				wp_cache_delete( $meta_key, 'user_meta' );

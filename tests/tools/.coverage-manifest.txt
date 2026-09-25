@@ -21,7 +21,9 @@ wp-mcp-ai-tool-batch-embed-content
 wp-mcp-ai-tool-batch-manage-memory
 wp-mcp-ai-tool-calculate-erlang-c
 wp-mcp-ai-tool-calculate-orchestration-capacity
+wp-mcp-ai-tool-cancel-higgsfield-request
 wp-mcp-ai-tool-check-exit-conditions
+wp-mcp-ai-tool-check-higgsfield-request
 wp-mcp-ai-tool-check-site-security
 wp-mcp-ai-tool-check-video-status
 wp-mcp-ai-tool-check-workflow-health
@@ -91,6 +93,8 @@ wp-mcp-ai-tool-generate-chart
 wp-mcp-ai-tool-generate-cloudflareai-image
 wp-mcp-ai-tool-generate-gemini-image
 wp-mcp-ai-tool-generate-gemini-image-validated
+wp-mcp-ai-tool-generate-higgsfield-image
+wp-mcp-ai-tool-generate-higgsfield-video
 wp-mcp-ai-tool-generate-image-alt-text
 wp-mcp-ai-tool-generate-image-alt-text-validated
 wp-mcp-ai-tool-generate-image-caption
