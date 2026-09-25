@@ -377,7 +377,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 
 		$restriction_count = 0;
 		if ( class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
-			$restriction_count = WP_MCP_AI_Restriction_Registry::count_active();
+			$restriction_count = WP_MCP_AI_Restriction_Registry::count_active_users();
 		}
 		?>
 		<?php if ( $restriction_count > 0 ) : ?>

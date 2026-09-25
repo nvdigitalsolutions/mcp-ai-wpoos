@@ -386,4 +386,132 @@ class Test_Restriction_Registry extends WP_UnitTestCase {
 
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 	}
+
+	/**
+	 * Test that repeated flags for the same user keep a single notice entry.
+	 */
+	public function test_admin_notice_queue_keeps_one_entry_per_user() {
+		WP_MCP_AI_Restriction_Registry::flag( $this->test_user_id, WP_MCP_AI_Restriction_Registry::TYPE_MANUAL );
+		WP_MCP_AI_Restriction_Registry::flag(
+			$this->test_user_id,
+			WP_MCP_AI_Restriction_Registry::TYPE_RATE_LIMIT,
+			array( 'released_at' => time() + 60 )
+		);
+		WP_MCP_AI_Restriction_Registry::flag(
+			$this->test_user_id,
+			WP_MCP_AI_Restriction_Registry::TYPE_TOKEN_OVERAGE,
+			array(
+				'scope'       => 'tool',
+				'tool_slug'   => 'test_tool',
+				'released_at' => time() + 3600,
+			)
+		);
+		WP_MCP_AI_Restriction_Registry::flag( $this->test_user_id, WP_MCP_AI_Restriction_Registry::TYPE_MANUAL );
+
+		$notices = get_option( WP_MCP_AI_Restriction_Registry::NOTICE_OPTION, array() );
+		$this->assertCount( 1, $notices );
+		$this->assertSame( $this->test_user_id, $notices[0]['user_id'] );
+	}
+
+	/**
+	 * Test that the notice queue holds one entry per affected user.
+	 */
+	public function test_admin_notice_queue_counts_unique_users() {
+		$second_user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		WP_MCP_AI_Restriction_Registry::flag( $this->test_user_id, WP_MCP_AI_Restriction_Registry::TYPE_MANUAL );
+		WP_MCP_AI_Restriction_Registry::flag(
+			$this->test_user_id,
+			WP_MCP_AI_Restriction_Registry::TYPE_RATE_LIMIT,
+			array( 'released_at' => time() + 60 )
+		);
+		WP_MCP_AI_Restriction_Registry::flag( $second_user_id, WP_MCP_AI_Restriction_Registry::TYPE_MANUAL );
+
+		$notices = get_option( WP_MCP_AI_Restriction_Registry::NOTICE_OPTION, array() );
+		$this->assertCount( 2, $notices );
+	}
+
+	/**
+	 * Test that count_active_users() counts distinct users, not rows.
+	 */
+	public function test_count_active_users_counts_distinct_users() {
+		WP_MCP_AI_Restriction_Registry::flag( $this->test_user_id, WP_MCP_AI_Restriction_Registry::TYPE_MANUAL );
+		WP_MCP_AI_Restriction_Registry::flag(
+			$this->test_user_id,
+			WP_MCP_AI_Restriction_Registry::TYPE_RATE_LIMIT,
+			array( 'released_at' => time() + 60 )
+		);
+
+		$this->assertSame( 1, WP_MCP_AI_Restriction_Registry::count_active_users() );
+		$this->assertSame( 2, WP_MCP_AI_Restriction_Registry::count_active() );
+	}
+
+	/**
+	 * Test that lifting removes the queued admin notice for the user.
+	 */
+	public function test_lift_removes_queued_admin_notices() {
+		WP_MCP_AI_Restriction_Registry::flag( $this->test_user_id, WP_MCP_AI_Restriction_Registry::TYPE_MANUAL );
+		$this->assertNotEmpty( get_option( WP_MCP_AI_Restriction_Registry::NOTICE_OPTION, array() ) );
+
+		WP_MCP_AI_Restriction_Registry::lift( $this->test_user_id, WP_MCP_AI_Restriction_Registry::TYPE_MANUAL, 1 );
+
+		$this->assertEmpty( get_option( WP_MCP_AI_Restriction_Registry::NOTICE_OPTION, array() ) );
+	}
+
+	/**
+	 * Test that lifting one restriction keeps the notice while others remain.
+	 */
+	public function test_lift_keeps_notice_when_other_restrictions_remain() {
+		WP_MCP_AI_Restriction_Registry::flag( $this->test_user_id, WP_MCP_AI_Restriction_Registry::TYPE_MANUAL );
+		WP_MCP_AI_Restriction_Registry::flag(
+			$this->test_user_id,
+			WP_MCP_AI_Restriction_Registry::TYPE_RATE_LIMIT,
+			array( 'released_at' => time() + 60 )
+		);
+
+		WP_MCP_AI_Restriction_Registry::lift( $this->test_user_id, WP_MCP_AI_Restriction_Registry::TYPE_MANUAL, 1 );
+
+		$this->assertNotEmpty( get_option( WP_MCP_AI_Restriction_Registry::NOTICE_OPTION, array() ) );
+	}
+
+	/**
+	 * Test that the rendered notice hides and prunes expired restrictions.
+	 */
+	public function test_render_admin_notice_hides_expired_restrictions() {
+		wp_set_current_user( 1 );
+
+		// A past release time queues a notice but never lands in the index.
+		WP_MCP_AI_Restriction_Registry::flag(
+			$this->test_user_id,
+			WP_MCP_AI_Restriction_Registry::TYPE_RATE_LIMIT,
+			array( 'released_at' => time() - 10 )
+		);
+
+		ob_start();
+		WP_MCP_AI_Restriction_Registry::render_admin_notice();
+		$output = ob_get_clean();
+
+		$this->assertSame( '', $output );
+		$this->assertEmpty( get_option( WP_MCP_AI_Restriction_Registry::NOTICE_OPTION, array() ) );
+	}
+
+	/**
+	 * Test that the rendered notice reports unique users only.
+	 */
+	public function test_render_admin_notice_reports_unique_users() {
+		wp_set_current_user( 1 );
+
+		WP_MCP_AI_Restriction_Registry::flag( $this->test_user_id, WP_MCP_AI_Restriction_Registry::TYPE_MANUAL );
+		WP_MCP_AI_Restriction_Registry::flag(
+			$this->test_user_id,
+			WP_MCP_AI_Restriction_Registry::TYPE_RATE_LIMIT,
+			array( 'released_at' => time() + 60 )
+		);
+
+		ob_start();
+		WP_MCP_AI_Restriction_Registry::render_admin_notice();
+		$output = ob_get_clean();
+
+		$this->assertStringContainsString( '1 user has been restricted', $output );
+	}
 }
