@@ -58,13 +58,15 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		 * Valid template modes for email delivery.
 		 *
 		 * - `full`: response + execution log (all structured envelope data).
-		 * - `summary`: summary line only (no response or execution log).
+		 * - `summary`: summary line + relevant response excerpt (no execution log).
 		 * - `error`: error message.
 		 * - `response_only`: the substantive response only — no summary, no log.
+		 * - `action_items`: only the actionable section of the response — no
+		 *   roundup intro or informational filler.
 		 *
 		 * @var string[]
 		 */
-		const EMAIL_TEMPLATES = array( 'full', 'summary', 'error', 'response_only' );
+		const EMAIL_TEMPLATES = array( 'full', 'summary', 'error', 'response_only', 'action_items' );
 
 		/**
 		 * Valid presentation formats for email delivery.
@@ -86,10 +88,12 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		 * - `response_only`: the substantive response only.
 		 * - `full`: the complete report — summary, response, and structured
 		 *   data — mirroring the email `full` template.
+		 * - `action_items`: only the actionable section of the response — no
+		 *   roundup intro or informational filler.
 		 *
 		 * @var string[]
 		 */
-		const CHAT_TEMPLATES = array( 'summary', 'error', 'response_only', 'full' );
+		const CHAT_TEMPLATES = array( 'summary', 'error', 'response_only', 'full', 'action_items' );
 
 		/**
 		 * Valid presentation formats for chat delivery.
@@ -460,6 +464,17 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			} elseif ( 'response_only' === $template ) {
 				// Deliver only the substantive AI/tool response — no summary, no log.
 				$body = isset( $shared['response'] ) ? (string) $shared['response'] : $shared['summary'];
+			} elseif ( 'action_items' === $template ) {
+				// Only the actionable section of the response. Roundup intros
+				// and informational filler are noise on a notification, so
+				// when no action section exists fall back to the substantive
+				// response (mirroring response_only) instead of the trimmed
+				// summary.
+				$response = isset( $shared['response'] ) ? (string) $shared['response'] : '';
+				$block    = self::extract_action_items( $response );
+				$body     = '' !== $block
+					? __( 'Action items', 'mcp-ai-wpoos-pro' ) . ":\n" . $block
+					: ( '' !== $response ? $response : $shared['summary'] );
 			} elseif ( 'full' === $template && isset( $envelope['data'] ) ) {
 				// Full mode: include the response prominently, then the data structure.
 				// Assistant-run envelopes derive the summary from the response's
@@ -492,7 +507,30 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 					$body .= $data_text;
 				}
 			} else {
-				$body = $shared['summary'];
+				// Summary template: summary line plus a relevant excerpt of the
+				// response (distillation/action section, or centroid-ranked
+				// sentences) — see select_representative_excerpt(). Assistant-run
+				// summaries are a trim of the response's first words, so skip the
+				// summary line when the response already opens with it.
+				$response = isset( $shared['response'] ) ? (string) $shared['response'] : '';
+				$summary  = (string) $shared['summary'];
+				$is_dup   = '' !== $response && '' !== $summary && self::response_starts_with_summary( $response, $summary );
+				$body     = '';
+				if ( ! $is_dup && '' !== $summary ) {
+					$body = $summary;
+				}
+				if ( '' !== $response ) {
+					$excerpt = self::select_representative_excerpt( $response, 80 );
+					if ( '' !== trim( $excerpt ) ) {
+						if ( '' !== $body ) {
+							$body .= "\n\n---\n\n";
+						}
+						$body .= $excerpt;
+					}
+				}
+				if ( '' === $body ) {
+					$body = $summary;
+				}
 			}
 
 			$manage_url = admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=orchestration' );
@@ -555,6 +593,333 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			// the start of "Wordsmith").
 			$next = mb_substr( $response_norm, mb_strlen( $summary_norm ), 1 );
 			return '' === $next || 1 !== preg_match( '/^[\p{L}\p{N}_]$/u', $next );
+		}
+
+		/**
+		 * Determine whether a response line reads as a section heading.
+		 *
+		 * A line reads as a heading when it is a Markdown heading, a standalone
+		 * bold label (excluding bold list items), or a short label-style line
+		 * that is not a list item and ends with a colon or dash.
+		 *
+		 * @param string $line Response line.
+		 * @return bool True when the line reads as a heading.
+		 */
+		protected static function line_is_heading( $line ) {
+			$trimmed = trim( $line );
+			if ( '' === $trimmed ) {
+				return false;
+			}
+			if ( 1 === preg_match( '/^#+/u', $trimmed ) ) {
+				return true;
+			}
+			if ( 1 === preg_match( '/^\*\*(.+?)\*\*$/u', $trimmed, $m ) ) {
+				// Bold list items (e.g. **1. "Title" — date**) are content.
+				return 1 !== preg_match( '/^\d+[.)]/u', trim( $m[1] ) );
+			}
+			if ( 1 === preg_match( '/^([-*\u{2022}]|\d+[.)])\s/u', $trimmed ) ) {
+				return false;
+			}
+			return ( ! function_exists( 'mb_strlen' ) || mb_strlen( $trimmed ) <= 80 )
+				&& 1 === preg_match( '/[:\x{FF1A}\-\u{2013}\u{2014}]\s*$/u', $trimmed );
+		}
+
+		/**
+		 * Extract the block under the first heading whose label matches a phrase.
+		 *
+		 * Shared engine behind {@see extract_action_items()} and the summary
+		 * template's relevant-block selection. Starts at the first heading whose
+		 * label (the text before a colon, with Markdown markers stripped)
+		 * matches `$phrase` — unless it matches `$negative` — and ends at the
+		 * next section heading. Headings may carry an item on the same line
+		 * after a colon.
+		 *
+		 * @param string $response Response text.
+		 * @param string $phrase   Heading-label phrase pattern (PCRE).
+		 * @param string $negative Optional negative phrase pattern; labels
+		 *                         matching it are ignored.
+		 * @return string Extracted block, or an empty string when no matching
+		 *                heading exists.
+		 */
+		protected static function extract_section_block( $response, $phrase, $negative = '' ) {
+			$text  = wp_strip_all_tags( (string) $response );
+			$lines = preg_split( '/\r\n|\r|\n/', $text );
+
+			if ( ! is_array( $lines ) || empty( $lines ) ) {
+				return '';
+			}
+
+			$block_lines = array();
+			$collecting  = false;
+			foreach ( $lines as $line ) {
+				if ( ! $collecting ) {
+					// List items and prose are not section headings.
+					if ( 1 === preg_match( '/^([-*\u{2022}]|\d+[.)])\s/u', $line ) ) {
+						continue;
+					}
+
+					// Strip Markdown markers so the label can be matched directly.
+					$candidate = trim( preg_replace( '/^#+\s*/u', '', $line ) );
+					$candidate = trim( preg_replace( '/^\*\*/u', '', $candidate ) );
+					$candidate = trim( preg_replace( '/\*\*$/u', '', $candidate ) );
+					$label     = preg_split( '/[:\x{FF1A}]/u', $candidate, 2 );
+					$label     = trim( is_array( $label ) ? $label[0] : $candidate );
+
+					if (
+						'' === $label
+						|| 1 !== preg_match( $phrase, $label )
+						|| ( '' !== $negative && 1 === preg_match( $negative, $label ) )
+					) {
+						continue;
+					}
+
+					// The label must read as a heading: a heading-style line, or a
+					// short standalone phrase (not a prose sentence).
+					if (
+						! self::line_is_heading( $line )
+						&& ( function_exists( 'mb_strlen' ) && mb_strlen( $label ) > 40 )
+					) {
+						continue;
+					}
+
+					$collecting = true;
+					// Headings may carry an item on the same line after a colon.
+					$parts = preg_split( '/[:\x{FF1A}]/u', $candidate, 2 );
+					if ( is_array( $parts ) && isset( $parts[1] ) && '' !== trim( $parts[1] ) ) {
+						$block_lines[] = trim( $parts[1] );
+					}
+					continue;
+				}
+
+				if ( self::line_is_heading( $line ) ) {
+					// Next section heading — the block ends here.
+					break;
+				}
+				$block_lines[] = $line;
+			}
+
+			return trim( implode( "\n", $block_lines ) );
+		}
+
+		/**
+		 * Extract the actionable portion of an assistant response.
+		 *
+		 * Roundup-style responses bury the useful part under an intro, so the
+		 * `action_items` delivery templates forward only the block under the
+		 * first action-signalling heading ("Action Items", "Needs your
+		 * attention", "Next steps", "To-do", "Follow-ups", "Recommendations",
+		 * …). Negative phrasings ("no action needed") are not treated as
+		 * action headings.
+		 *
+		 * @param string $response Substantive response text.
+		 * @return string Extracted block, or an empty string when the response
+		 *                carries no action section.
+		 */
+		protected static function extract_action_items( $response ) {
+			$action_phrase = '/(?:action(?:\s+item)?s?(?:\s+(?:required|needed))?|actionable|needs?\s+(?:your\s+)?attention|follow[\s\-]?ups?|to[\s\-]?do|next\s+steps?|recommendations?)/iu';
+			$negative      = '/(?:no|without)\s+(?:action|follow[\s\-]?ups?|next\s+steps?|recommendations?)/iu';
+
+			return self::extract_section_block( $response, $action_phrase, $negative );
+		}
+
+		/**
+		 * Select the most representative block of a response for an excerpt.
+		 *
+		 * Digest notifications should be concise, prioritised, and scannable,
+		 * so the excerpt leads with the most relevant content instead of the
+		 * first words of the response. Priority order:
+		 *
+		 * 1. The response's own distillation section ("Summary", "TL;DR",
+		 *    "Key points", "Highlights", "Results", …).
+		 * 2. The actionable section (see {@see extract_action_items()}).
+		 * 3. Centroid extraction: sentences are scored by content-word
+		 *    frequency (MEAD-style centrality) weighted by position, and the
+		 *    top-ranked sentences are returned in original order — the
+		 *    position-augmented centrality baseline of extractive
+		 *    summarisation, with a lead trim as the final fallback.
+		 *
+		 * @param string $response    Substantive response text.
+		 * @param int    $word_budget Maximum words in the returned excerpt.
+		 * @return string Representative excerpt.
+		 */
+		protected static function select_representative_excerpt( $response, $word_budget = 80 ) {
+			$word_budget = max( 1, (int) $word_budget );
+			$text        = wp_strip_all_tags( (string) $response );
+
+			// 1. The author's own distillation section.
+			$summary_phrase   = '/(?:tldr|tl;dr|executive\s+summary|summary|overview|highlights?|key\s+points?|takeaways?|findings?|results?|conclusions?|bottom\s+line|recap)/iu';
+			$summary_negative = '/(?:no|without)\s+(?:summary|results?|findings?)/iu';
+			$block            = self::extract_section_block( $text, $summary_phrase, $summary_negative );
+
+			// 2. The actionable section.
+			if ( '' === $block ) {
+				$block = self::extract_action_items( $text );
+			}
+
+			if ( '' !== $block ) {
+				return wp_trim_words( $block, $word_budget, '…' );
+			}
+
+			// 3. Centroid extraction with a positional lead bias.
+			$sentences = preg_split( '/(?<=[.!?\u{2026}])\s+(?=\p{Lu})/u', $text );
+			if ( ! is_array( $sentences ) || count( $sentences ) < 2 ) {
+				return wp_trim_words( $text, $word_budget, '…' );
+			}
+
+			$stopwords = array(
+				'a',
+				'an',
+				'the',
+				'and',
+				'or',
+				'but',
+				'for',
+				'of',
+				'in',
+				'on',
+				'at',
+				'to',
+				'with',
+				'by',
+				'is',
+				'are',
+				'was',
+				'were',
+				'be',
+				'been',
+				'being',
+				'this',
+				'that',
+				'these',
+				'those',
+				'it',
+				'its',
+				'as',
+				'from',
+				'here',
+				'your',
+				'you',
+				'we',
+				'our',
+				'they',
+				'he',
+				'she',
+				'i',
+				'us',
+				'them',
+				'have',
+				'has',
+				'had',
+				'do',
+				'does',
+				'did',
+				'not',
+				'no',
+				'so',
+				'also',
+				'just',
+				'then',
+				'than',
+				'can',
+				'could',
+				'will',
+				'would',
+				'should',
+				'there',
+				'their',
+				'what',
+				'when',
+				'who',
+				'which',
+				'get',
+				'got',
+				'into',
+				'up',
+				'out',
+				'about',
+				'over',
+				'under',
+				'after',
+				'before',
+			);
+			$stop      = array_flip( $stopwords );
+			$lowercase = function_exists( 'mb_strtolower' ) ? 'mb_strtolower' : 'strtolower';
+
+			// Content tokens: stopword-free words of four or more characters.
+			$content_tokens = static function ( $sentence ) use ( $stop, $lowercase ) {
+				$tokens = preg_split( '/[^\p{L}\p{N}]+/u', call_user_func( $lowercase, $sentence ), -1, PREG_SPLIT_NO_EMPTY );
+				if ( ! is_array( $tokens ) ) {
+					return array();
+				}
+				return array_values(
+					array_filter(
+						$tokens,
+						static function ( $token ) use ( $stop ) {
+							return mb_strlen( $token ) >= 4 && ! isset( $stop[ $token ] );
+						}
+					)
+				);
+			};
+
+			// Content-word frequency across the response (centroid weights).
+			$freq = array();
+			foreach ( $sentences as $sentence ) {
+				foreach ( $content_tokens( $sentence ) as $token ) {
+					$freq[ $token ] = isset( $freq[ $token ] ) ? $freq[ $token ] + 1 : 1;
+				}
+			}
+
+			// Score = mean centroid weight × positional decay; the lead sentence
+			// keeps full weight and later sentences decay by 0.85 per position.
+			$scored = array();
+			foreach ( $sentences as $index => $sentence ) {
+				$tokens = $content_tokens( $sentence );
+				$score  = 0.0;
+				if ( ! empty( $tokens ) ) {
+					$sum = 0;
+					foreach ( $tokens as $token ) {
+						$sum += isset( $freq[ $token ] ) ? $freq[ $token ] : 0;
+					}
+					$score = $sum / count( $tokens );
+				}
+				$score   *= pow( 0.85, $index );
+				$scored[] = array(
+					'score' => $score,
+					'index' => $index,
+					'words' => count( preg_split( '/\s+/', trim( $sentence ), -1, PREG_SPLIT_NO_EMPTY ) ),
+				);
+			}
+
+			// Pick the top-ranked sentences, then restore the original order.
+			$order = array_keys( $scored );
+			usort(
+				$order,
+				static function ( $a, $b ) use ( $scored ) {
+					return $scored[ $b ]['score'] <=> $scored[ $a ]['score'];
+				}
+			);
+
+			$selected = array();
+			$used     = 0;
+			foreach ( $order as $index ) {
+				if ( $used > 0 && $used + $scored[ $index ]['words'] > $word_budget ) {
+					continue;
+				}
+				$selected[] = $index;
+				$used      += $scored[ $index ]['words'];
+			}
+			sort( $selected );
+
+			$excerpt = '';
+			foreach ( $selected as $index ) {
+				$excerpt .= ( '' === $excerpt ? '' : ' ' ) . trim( $sentences[ $index ] );
+			}
+
+			if ( '' === trim( $excerpt ) ) {
+				return wp_trim_words( $text, $word_budget, '…' );
+			}
+
+			return wp_trim_words( $excerpt, $word_budget, '…' );
 		}
 
 		/**
@@ -642,6 +1007,27 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				} else {
 					$message .= "\n" . $esc( $shared['summary'] );
 				}
+			} elseif ( 'action_items' === $template ) {
+				// Action items only: forward the actionable section of the
+				// response when one exists — roundup intros and informational
+				// filler are noise on a chat channel. Falls back to the
+				// summary rendering when the response carries no action
+				// section.
+				$response = isset( $shared['response'] ) ? (string) $shared['response'] : '';
+				$block    = self::extract_action_items( $response );
+				if ( '' !== $block ) {
+					$message .= "\n\n\u{1F3AF} " . $bold( $esc( __( 'Action items', 'mcp-ai-wpoos-pro' ) ) ) . "\n";
+					$message .= $esc( $block );
+				} else {
+					$summary = (string) $shared['summary'];
+					$is_dup  = '' !== $response && '' !== $summary && self::response_starts_with_summary( $response, $summary );
+					if ( ! $is_dup && '' !== $summary ) {
+						$message .= "\n" . $esc( wp_trim_words( $summary, 60, '…' ) );
+					}
+					if ( '' !== $response ) {
+						$message .= "\n\n\u{1F4CB} " . $esc( self::select_representative_excerpt( $response, 80 ) );
+					}
+				}
 			} else {
 				// Summary template: summary line plus a response excerpt below.
 				// Assistant-run summaries are a trim of the response's first
@@ -659,12 +1045,16 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 
 			// Include a response excerpt when available — this is the substantive
 			// output the schedule produced and is what recipients actually want.
-			// Only appended in summary/error modes; response_only already includes
-			// the full response and full includes it above.
-			if ( 'full' !== $template && 'response_only' !== $template && 'error' !== $template ) {
+			// The excerpt is the most representative block of the response (a
+			// distillation/action section, or centroid-ranked sentences) rather
+			// than a blind trim of the first words. Only appended in summary
+			// mode; response_only already includes the full response, full
+			// includes it above, and action_items appends its own block (or
+			// falls back to the summary rendering inline).
+			if ( 'full' !== $template && 'response_only' !== $template && 'error' !== $template && 'action_items' !== $template ) {
 				$response = isset( $shared['response'] ) ? (string) $shared['response'] : '';
 				if ( '' !== $response ) {
-					$excerpt  = wp_trim_words( $response, 80, '…' );
+					$excerpt  = self::select_representative_excerpt( $response, 80 );
 					$message .= "\n\n\u{1F4CB} " . $esc( $excerpt );
 				}
 			}
