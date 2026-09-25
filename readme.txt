@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.85
+Stable tag: 1.1.86
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.86 - September 25, 2026 =
+
+MCP Apps as a Remote Sites connection type, Higgsfield media provider, log filters, and delivery-template release. Added: a new mcp_server Remote Sites connection type (Proposal 041, #6761) with AES-256-CBC encrypted central credentials, a real JSON-RPC handshake Test Connection, tool discovery with persisted snapshots, restricted-host enforcement, and auth mapping for Elementor application passwords (basic_auth/application_password to MCP basic, custom_header to header, bearer, oauth); per-assistant connection_ref reference mode resolves credentials decrypt-on-use at chat time (never written back to post meta), missing refs skip with error-status snapshots, and imported bundles with missing refs are auto-disabled with a warning; assistant export/import now redacts MCP App token/oauth_data by default (opt-out filters) and reference entries survive import as non-secret pointers; the metabox gains "Add from Remote Sites" reference rows and read-only "Managed in Remote Sites" rows. Four new base tools (#6772): generate_higgsfield_video (five verified models behind one model parameter), generate_higgsfield_image (SOUL V2 + SOUL Cinema), check_higgsfield_request, and cancel_higgsfield_request, backed by the shared WP_MCP_AI_Higgsfield_Client (two-part Key ID:SECRET auth, submit/status/cancel lifecycle, backoff+jitter polling, immediate download); Higgsfield provider settings section with a settings-env-constants credential chain. get_system_logs gains optional since/levels/search filters over the structured buffers and file logs with a filters summary and filtered_out counts (#6768). Scheduled result digests gain a new action_items delivery template and smarter summary excerpts that prefer the response's own distillation section instead of blind 80-word trims (#6773). Fixed: get_environment_status always-on "no assistants published" warning + dead default-assistant warning branch (envelope-key mismatch, base + CG port) and a new plugin.default_provider_model field resolving the effective per-provider model, with DeepSeek added to the provider warning maps (#6767); tool-execution costs now reach the final response label via a top-level cost envelope on both the agentic loop and SSE streaming, with matching client-side badges on tool bubbles (#6771). Docs & skills: proposals 041/042, remote-sites feature docs, tool-status +4, and the new design-elementor-mcp-connection coding-time skill (59 to 60 coding-time skills). Tool count: ~312 base + ~1,282 Pro (~1,594 total; +4 base Higgsfield; live registry authoritative). Model catalog: v2026.09.22 (unchanged). Stale build ZIPs removed: the 1.1.84 wp.org package set (6 files).
 
 = 1.1.85 - September 24, 2026 =
 
