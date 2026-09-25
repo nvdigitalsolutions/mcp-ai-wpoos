@@ -119,5 +119,10 @@ Porting the genuinely missing tools as native PHP classes gives us:
 
 - Attribution: each ported file carries `@link`/`@credit` tags; the index
   lives in the repo-root [`CREDITS.md`](../../CREDITS.md).
+- Preset wiring: the WordPress-admin tools live in the `site_management`
+  preset, the SEO toolkit in `seo_marketing`, and the application-password
+  tools additionally in `authentication_security`
+  (`WP_MCP_AI_Tool_Presets_Helper::get_presets()`), so no ported tool is
+  orphaned by the `test_all_tools_accounted_for_in_presets` invariant.
 - If upstream adds new tools in a future release, re-run the matrix in this
   file and port only the rows that fall into the "Ported" bucket's categories.
