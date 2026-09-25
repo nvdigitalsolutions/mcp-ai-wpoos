@@ -545,7 +545,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'per_session_token_limit'          => array(
 					'type'        => 'slider',
 					'label'       => __( 'Per-Session Token Limit', 'mcp-ai-wpoos' ),
-					'description' => __( 'Maximum tokens per chat session (cumulative across all tool calls). Set to 0 for unlimited.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum tokens per chat session (cumulative across all tool calls). Enforcement includes a 20% safety buffer, so a session is blocked once it reaches about 80% of this value. Set to 0 for unlimited.', 'mcp-ai-wpoos' ),
 					'min'         => 0,
 					'max'         => 500000,
 					'step'        => 5000,

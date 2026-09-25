@@ -139,12 +139,16 @@ Per-Session Limit: 75,000 tokens
 ┌─────────────────────────────────────────────────────────────┐
 │ ⚠ Session Token Limit Exceeded                              │
 │                                                              │
-│ This session has used 52,345 tokens of the 50,000 token     │
-│ limit. Please start a new session to continue.              │
-│                                                              │
-│ [Start New Session]                                          │
+│ Tool execution blocked. This chat session has reached its    │
+│ tool-token budget (52,345 of 50,000). Start a new chat to    │
+│ continue, or an administrator can reset the budget from the  │
+│ Restricted Users panel.                                      │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+Enforcement includes a 20% safety buffer, so a session is blocked once it
+reaches about 80% of the configured limit. The reported numbers are the
+session's usage and the raw configured limit.
 
 ### When Per-Call Limit is Exceeded (Logged Only)
 

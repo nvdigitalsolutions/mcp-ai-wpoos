@@ -352,6 +352,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						<?php esc_html_e( 'Reset All Users\' Token Usage', 'mcp-ai-wpoos' ); ?>
 					</button>
 				</div>
+				<p class="description">
+					<?php esc_html_e( 'Resets daily token usage only. Per-session chat budgets are blocked separately and are lifted from the Restricted Users panel on the NV oOS Token Manager page.', 'mcp-ai-wpoos' ); ?>
+				</p>
 			<?php endif; ?>
 			<?php
 		}
