@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Updates the rotation status of tracks in a playlist.
  */
-class WP_MCP_AI_Tool_Update_Playlist_Rotation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Playlist_Rotation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -41,6 +41,18 @@ class WP_MCP_AI_Tool_Update_Playlist_Rotation implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Updates the rotation status of tracks in a playlist — promotes, demotes, or removes tracks based on performance metrics. In dry_run mode (default), previews what would change without making modifications. In live mode, updates track metadata to reflect the new rotation status.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Promoting, demoting, or removing tracks from a playlist rotation based on performance, starting with a dry_run preview.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Building a new playlist; use create_playlist. AI-curated set generation; use generate_playlist_ai.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_playlist', 'generate_playlist_ai', 'get_trending_tracks', 'manage_music_library' ),
+			'notes'           => __( 'dry_run defaults to true; pass false to persist rotation status, priority, and history changes.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

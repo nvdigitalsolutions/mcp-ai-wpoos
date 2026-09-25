@@ -19,7 +19,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-pro-google-service-account.php';
 /**
  * Provides a tool for creating Google Chat spaces via the Google Chat API.
  */
-class WP_MCP_AI_Pro_Tool_Create_Google_Chat_Space implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Create_Google_Chat_Space implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Google Chat requests.
 	 */
@@ -60,6 +60,18 @@ class WP_MCP_AI_Pro_Tool_Create_Google_Chat_Space implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Creates a new Google Chat space using the Google Chat API v1.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a brand new Google Chat space or group chat with a display name.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Discovering or messaging existing spaces; use get_google_chat_spaces or send_google_chat_message.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_google_chat_spaces', 'send_google_chat_message', 'add_google_chat_space_member' ),
+			'notes'           => __( 'Creates a real space visible in Google Chat; add members afterwards with add_google_chat_space_member.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -21,7 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  *
  * Brevo (formerly Sendinblue) API docs: https://developers.brevo.com/docs/getting-started
  */
-class WP_MCP_AI_Pro_Tool_Send_Brevo_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Send_Brevo_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	const API_ENDPOINT = 'https://api.brevo.com/v3/smtp/email';
 
 	/**
@@ -43,6 +43,20 @@ class WP_MCP_AI_Pro_Tool_Send_Brevo_Email implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Sends a transactional email using the configured Brevo (formerly Sendinblue) API credentials.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending transactional email through the configured Brevo account with text or HTML bodies, CC, BCC, and reply-to.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Mailgun or Mailjet delivery; use send_mailgun_email or send_mailjet_email. Contact work belongs to manage_brevo_contacts.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_mailgun_email', 'send_mailjet_email', 'manage_brevo_contacts' ),
+			'notes'           => __( 'Requires subject, at least one recipient, and a text or HTML body; sender falls back to the Brevo From Email setting.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

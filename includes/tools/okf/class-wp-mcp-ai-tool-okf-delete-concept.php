@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * OKF — Delete Concept tool.
  */
-class WP_MCP_AI_Tool_OKF_Delete_Concept implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_OKF_Delete_Concept implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -40,6 +40,20 @@ class WP_MCP_AI_Tool_OKF_Delete_Concept implements WP_MCP_AI_Tool_Interface {
 	 */
 	public function get_description() {
 		return __( 'Archives an OKF concept (v0.2) by renaming it with a .deleted extension (recoverable). Prefer setting status: deprecated over deletion when the concept should remain discoverable for historical reference. Use deletion only for genuinely erroneous content.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Removing a genuinely erroneous OKF concept while keeping it recoverable via a .deleted rename.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Retiring content that should stay discoverable; use okf_write_concept with status=deprecated instead.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'okf_write_concept', 'okf_read_concept', 'okf_search' ),
+			'notes'           => __( 'Requires delete_posts and a writable bundle; auto-generated bundles such as skill-knowledge reject deletion.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

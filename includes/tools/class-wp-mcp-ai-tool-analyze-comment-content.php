@@ -17,7 +17,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Analyzes comment content to detect spam, toxicity, and other moderation concerns.
  */
-class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Analyzes comment content for spam, toxicity, and moderation concerns using AI to assist with comment moderation.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Screening comment text for spam, toxicity, and moderation risks with an AI verdict.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Applying moderation actions such as approve, trash, or ban; use moderate_comments to act on what this tool flags.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'moderate_comments', 'get_post' ),
+			'notes'           => __( 'Sensitivity accepts low, medium, or high; requires an AI provider and the moderate_comments capability.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
@@ -364,7 +376,7 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
-		$model = isset( $settings['default_gemini_model'] ) && ! empty( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-2.5-flash';
+		$model        = isset( $settings['default_gemini_model'] ) && ! empty( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-2.5-flash';
 		$request_body = array(
 			'contents'         => array(
 				array(

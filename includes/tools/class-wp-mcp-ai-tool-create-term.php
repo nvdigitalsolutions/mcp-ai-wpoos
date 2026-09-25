@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * This tool provides comprehensive term creation with support for
  * hierarchical taxonomies, term metadata, and descriptions.
  */
-class WP_MCP_AI_Tool_Create_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -40,6 +40,18 @@ class WP_MCP_AI_Tool_Create_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Creates a new taxonomy term (category, tag, or custom taxonomy) with optional parent, description, and metadata.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adding a new category, tag, or custom taxonomy term with optional parent, slug, description, and meta.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Changing an existing term; use update_term. To discover existing terms first, use list_terms.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'update_term', 'list_terms', 'get_post_type_schema' ),
+			'notes'           => __( 'Returns term_id in the response for chaining into update_term. parent only applies to hierarchical taxonomies; duplicate names in the same taxonomy are rejected.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
@@ -80,6 +92,16 @@ class WP_MCP_AI_Tool_Create_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			),
 			'required'             => array( 'name', 'taxonomy' ),
 			'additionalProperties' => false,
+		);
+	}
+
+		/**
+		 * {@inheritdoc}
+		 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'term_id',
+			'consumes' => null,
 		);
 	}
 

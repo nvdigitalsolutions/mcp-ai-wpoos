@@ -131,12 +131,27 @@ if ( ! class_exists( 'WP_MCP_AI_Markdown_Converter' ) ) {
 					continue;
 				}
 
-				// Ordered list.
+				// Ordered list. Indented continuation lines (e.g. a listing URL
+				// indented beneath a job title) are folded into their item with
+				// a line break — otherwise each continuation closes the list and
+				// every remaining entry becomes its own single-item <ol>, which
+				// renders each one as "1.".
 				if ( preg_match( '/^[ \t]{0,3}\d{1,9}[.)][ \t]+(.+)$/', $line ) ) {
 					$items = array();
 					while ( $i < $count && preg_match( '/^[ \t]{0,3}\d{1,9}[.)][ \t]+(.+)$/', $lines[ $i ], $list_item ) ) {
-						$items[] = '<li style="margin:4px 0">' . self::render_inline( $list_item[1], $tokens, $salt ) . '</li>';
+						$content = self::render_inline( $list_item[1], $tokens, $salt );
 						++$i;
+
+						$continuations = array();
+						while ( $i < $count && '' !== trim( $lines[ $i ] ) && preg_match( '/^[ \t]+(.*)$/', $lines[ $i ], $cont ) ) {
+							$continuations[] = self::render_inline( $cont[1], $tokens, $salt );
+							++$i;
+						}
+						if ( ! empty( $continuations ) ) {
+							$content .= '<br>' . implode( '<br>', $continuations );
+						}
+
+						$items[] = '<li style="margin:4px 0">' . $content . '</li>';
 					}
 					$html[] = '<ol style="margin:8px 0 16px;padding-left:24px">' . implode( '', $items ) . '</ol>';
 					continue;

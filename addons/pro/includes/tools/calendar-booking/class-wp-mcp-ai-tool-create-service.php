@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.4.0
  */
-class WP_MCP_AI_Tool_Create_Service implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Service implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Service CPT post type slug.
@@ -69,6 +69,18 @@ class WP_MCP_AI_Tool_Create_Service implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Creates a new bookable service or updates an existing one if service_id is provided. Includes duration, pricing, buffer time, category, and optional place linking for tours/activities.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adding or updating a bookable service record with duration, price, buffer time, and category.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Bulk-loading many services at once; use import_services. Reading JetAppointment services; use get_jetappointment_services.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'import_services', 'get_jetappointment_services', 'create_appointment' ),
+			'notes'           => __( 'Pass service_id to update; image_urls entries are sideloaded into the media library.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

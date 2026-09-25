@@ -27,7 +27,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * ReactionTypeEmoji object. Custom emoji require Telegram Premium for the bot.
  * Supports both regular emoji and custom emoji IDs for lifecycle feedback phases.
  */
-class WP_MCP_AI_Pro_Tool_Add_Telegram_Message_Reaction implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Add_Telegram_Message_Reaction implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default timeout for Telegram API requests.
@@ -64,6 +64,18 @@ class WP_MCP_AI_Pro_Tool_Add_Telegram_Message_Reaction implements WP_MCP_AI_Tool
 	 */
 	public function get_description() {
 		return __( 'Adds an emoji reaction to a Telegram message using the Bot API setMessageReaction method (Bot API 7.0+). Supports regular emoji (e.g. "👍") and custom emoji IDs for processing-phase lifecycle feedback.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reacting to a known Telegram message with a single emoji to signal a processing phase.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sending text or reading incoming updates; use send_telegram_message or get_telegram_updates instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_telegram_message', 'get_telegram_updates' ),
+			'notes'           => __( 'Requires Bot API 7.0+; a bot holds only one active reaction per message at a time.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

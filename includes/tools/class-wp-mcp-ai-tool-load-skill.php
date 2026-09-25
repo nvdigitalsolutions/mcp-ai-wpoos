@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.11.0
  */
-class WP_MCP_AI_Tool_Load_Skill implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Load_Skill implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -63,6 +63,20 @@ class WP_MCP_AI_Tool_Load_Skill implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	public function get_description() {
 		return __( 'Loads the full instructions for one of the assistant\'s assigned Agent Skills. Call this tool when the user\'s request matches a skill listed under "Available Skills" in your system prompt. Pass the exact skill name as the `name` argument. Only skills explicitly assigned to this assistant by an administrator can be loaded.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pulling the full instructions of an assigned skill when the user\'s request matches it.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Loading skills not assigned to this assistant; the load is restricted to the admin allow-list.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'list_skills' ),
+			'notes'           => __( 'Pass the exact skill name from the Available Skills list; read-only.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides a tool for querying Meta Graph API insights endpoints.
  */
-class WP_MCP_AI_Pro_Tool_Get_Facebook_Instagram_Insights implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Facebook_Instagram_Insights implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -58,6 +58,18 @@ class WP_MCP_AI_Pro_Tool_Get_Facebook_Instagram_Insights implements WP_MCP_AI_To
 	 */
 	public function get_description() {
 		return __( 'Fetches insights for Facebook Pages or Instagram business accounts using the Meta Graph API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pulling reach, engagement, or follower metrics for one Facebook Page or Instagram account via the Meta Graph API.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Rolled-up cross-platform reporting or competitor benchmarks; use get_cross_platform_analytics or competitor_analysis.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_google_business_insights', 'get_linkedin_insights', 'get_tiktok_insights', 'get_cross_platform_analytics' ),
+			'notes'           => __( 'One target per call; pass metric names exactly as the Meta Graph API defines them.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

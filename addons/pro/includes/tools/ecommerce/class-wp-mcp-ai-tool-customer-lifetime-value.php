@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Customer_Lifetime_Value implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Customer_Lifetime_Value implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -103,6 +103,20 @@ class WP_MCP_AI_Tool_Customer_Lifetime_Value implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Calculate customer lifetime value (CLV) metrics to identify high-value customers and predict future revenue. Includes historical CLV, predictive estimates, churn risk assessment, and value-based segmentation.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Calculating historical or predictive CLV, churn risk, and value-based segments for WooCommerce customers.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Viewing basic customer records or exporting data; use woo_customers or export_customer_data.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'woo_customers', 'segment_customers', 'export_customer_data' ),
+			'notes'           => __( 'Use customer_id for one customer or segment by value across all; predictive estimates need enough order history.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

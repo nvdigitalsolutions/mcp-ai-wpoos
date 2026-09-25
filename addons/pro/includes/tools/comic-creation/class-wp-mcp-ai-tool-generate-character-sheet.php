@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a Pro tool for generating a character reference sheet.
  */
-class WP_MCP_AI_Tool_Generate_Character_Sheet implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Character_Sheet implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Generate_Character_Sheet implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Generates a character reference image using AI image generation based on a name, description, and style notes. Creates a character post in WordPress and uploads the generated image as an attachment.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a reusable character reference image so panel artwork stays visually consistent.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For the story use generate_comic_script; for panel artwork use generate_comic_panel.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_comic_panel', 'generate_comic_script', 'breakdown_comic_panels' ),
+			'notes'           => __( 'Requires name and description. Creates a mcp_ai_comic_char post panels can reference via character_ids.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

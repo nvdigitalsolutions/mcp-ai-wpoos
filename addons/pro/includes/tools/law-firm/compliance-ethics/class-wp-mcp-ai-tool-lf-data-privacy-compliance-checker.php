@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Checks data privacy regulation compliance for law firm client data handling.
  */
-class WP_MCP_AI_Tool_LF_Data_Privacy_Compliance_Checker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Data_Privacy_Compliance_Checker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -211,6 +211,20 @@ class WP_MCP_AI_Tool_LF_Data_Privacy_Compliance_Checker implements WP_MCP_AI_Too
 	 */
 	public function get_description() {
 		return __( 'Analyzes data types being processed against applicable privacy regulations based on client location and data categories, returning compliance requirements and risk areas.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Mapping data types and client location to applicable regulations such as GDPR, CCPA, BIPA, and HIPAA.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Rule 1.6 confidentiality audits or AI disclosure drafting; use lf_client_confidentiality_auditor or lf_ai_usage_disclosure_generator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_client_confidentiality_auditor', 'lf_ai_usage_disclosure_generator' ),
+			'notes'           => __( 'Requires data_types (personal_info, financial, health, minor, biometric); client_location is optional.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

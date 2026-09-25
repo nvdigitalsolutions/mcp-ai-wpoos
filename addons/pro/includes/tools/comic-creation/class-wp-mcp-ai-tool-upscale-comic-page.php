@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a Pro tool for upscaling a comic page to print resolution.
  */
-class WP_MCP_AI_Tool_Upscale_Comic_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Upscale_Comic_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Upscale_Comic_Page implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Upscales a comic page image to print resolution using AI-powered super-resolution. Supports 2x and 4x scale factors. Delegates to the `upscale_image_ai` tool for processing. Returns the upscaled image URL.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Upscaling a comic page or panel to print resolution at 2x or 4x before export or printing.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For non-comic images use upscale_image_ai; for assembling pages use create_comic_layout.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_comic_layout', 'export_comic_cbz', 'upscale_image_ai' ),
+			'notes'           => __( 'Scale is limited to 2 or 4. Response includes 300-DPI print dimensions and stores _upscaled_image_url meta.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

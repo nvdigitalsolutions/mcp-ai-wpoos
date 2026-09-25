@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates vector embeddings for text using OpenAI's embedding models.
  */
-class WP_MCP_AI_Tool_Create_Text_Embeddings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Text_Embeddings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_Create_Text_Embeddings implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Generates vector embeddings for text using OpenAI\'s embedding models. Use this for semantic search preparation, content similarity comparison, text classification, recommendation systems, or vector database population.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating vector embeddings for semantic search, similarity comparison, classification, or vector store population.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'For bulk embedding at reduced cost use create_batch; for storing vectors use create_vector_store.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_vector_store', 'semantic_content_search', 'batch_embed_content' ),
+			'notes'           => __( 'Input is limited to 8191 tokens for text-embedding-3 models; store_in_meta=true requires post_id.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
@@ -90,6 +104,16 @@ class WP_MCP_AI_Tool_Create_Text_Embeddings implements WP_MCP_AI_Tool_Interface,
 			),
 			'required'             => array( 'input' ),
 			'additionalProperties' => false,
+		);
+	}
+
+		/**
+		 * {@inheritdoc}
+		 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'post_id' ),
 		);
 	}
 

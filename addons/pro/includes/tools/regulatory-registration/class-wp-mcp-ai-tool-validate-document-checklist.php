@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Validates document checklist for a registration.
  */
-class WP_MCP_AI_Tool_Validate_Document_Checklist implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Validate_Document_Checklist implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Validate_Document_Checklist implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Validates that all required documents are present for a product or registration. Returns missing documents and overall compliance status.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When checking which required documents are missing before submission or authority filing.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When reviewing attached documents themselves or validating data fields; use list_reg_documents or validate_reg_product.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'upload_reg_document', 'list_reg_documents', 'submit_registration' ),
+			'notes'           => __( 'Feed the missing-document output into upload_reg_document; a country code applies country-specific requirements.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
@@ -105,10 +117,7 @@ class WP_MCP_AI_Tool_Validate_Document_Checklist implements WP_MCP_AI_Tool_Inter
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Must have either product_id or registration_id.
 		if ( empty( $arguments['product_id'] ) && empty( $arguments['registration_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Either product_id or registration_id must be provided.', 'mcp-ai-wpoos-pro' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_missing_param', __( 'Either product_id or registration_id must be provided.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Determine entity type and ID.
@@ -119,13 +128,13 @@ class WP_MCP_AI_Tool_Validate_Document_Checklist implements WP_MCP_AI_Tool_Inter
 		$post_type = 'registration' === $entity_type ? 'mcp_ai_registration' : 'mcp_ai_reg_product';
 		$entity    = get_post( $entity_id );
 		if ( ! $entity || $post_type !== $entity->post_type ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf(
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				sprintf(
 					/* translators: %s: entity type */
 					__( '%s not found.', 'mcp-ai-wpoos-pro' ),
 					ucfirst( $entity_type )
-				),
+				)
 			);
 		}
 

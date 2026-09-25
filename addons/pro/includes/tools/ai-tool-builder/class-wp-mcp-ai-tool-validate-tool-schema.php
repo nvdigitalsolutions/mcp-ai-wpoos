@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Validate tool parameter schemas for correctness, completeness, and WordPress compatibility. Checks JSON schema structure, type definitions, validation rules, and provides improvement recommendations.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Validating a JSON-schema parameter definition for structure, types, and WordPress compatibility.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Generating schemas from prose; use generate_tool_parameters. Checking code style; use check_tool_compliance.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_tool_parameters', 'check_tool_compliance', 'analyze_tool_security' ),
+			'notes'           => __( 'Read-only and idempotent; pass a schema object or a tool file path, never both.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

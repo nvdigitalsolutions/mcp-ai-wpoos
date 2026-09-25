@@ -20,7 +20,7 @@ require_once __DIR__ . '/../validators/arguments/class-search-content-arguments.
 /**
  * Searches published content using WP_Query with optional filters using Symfony Validator.
  */
-class WP_MCP_AI_Tool_Search_Content_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Search_Content_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Chat_Response;
 
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Search_Content_Validated extends WP_MCP_AI_Validated_Tool i
 	 */
 	public function get_description() {
 		return __( 'Search published posts by keyword, post type, taxonomy terms, and metadata. Uses Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Keyword post search where Symfony Validator should reject bad post types or out-of-range limits before querying.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Unvalidated or semantic searches; use search_content for the plain path or semantic_content_search for meaning-based hits.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'search_content', 'semantic_content_search' ),
+			'notes'           => __( 'Same query surface as search_content with validated arguments; invalid input returns a WP_Error.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

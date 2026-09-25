@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 /**
  * Extracts frames from videos at specific timestamps or intervals for analysis.
  */
-class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
 
 	/**
@@ -42,6 +42,18 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Extracts specific frames from a video file at given timestamps or intervals. Useful for detailed analysis of specific moments or creating thumbnails.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pulling frames at exact timestamps or regular intervals for analysis, previews, or hand-picked thumbnails.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'A ready-made thumbnail set; use generate_video_thumbnails. Technical file facts; use get_video_metadata.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_video_thumbnails', 'get_video_metadata', 'generate_video_captions' ),
+			'notes'           => __( 'frame_count caps at 20 and defaults to 10. Frames are temporary unless save_to_media is true.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

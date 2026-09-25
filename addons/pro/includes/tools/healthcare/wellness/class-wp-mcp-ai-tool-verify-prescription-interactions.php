@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Verify prescription interactions tool.
  */
-class WP_MCP_AI_Tool_Verify_Prescription_Interactions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Verify_Prescription_Interactions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Return the curated baseline interaction pairs.  Each entry uses
@@ -159,6 +159,20 @@ class WP_MCP_AI_Tool_Verify_Prescription_Interactions implements WP_MCP_AI_Tool_
 	 */
 	public function get_description() {
 		return __( 'Screen a list of medications (or all active prescriptions for a member) for known drug-drug interactions using a curated, RxNorm-aligned offline registry. Extend with the wp_mcp_ai_healthcare_interaction_pairs filter for site-specific or external sources.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( "Screening a member's active prescriptions or an ad-hoc medication list for known drug-drug interactions.", 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Allergy screening; use check_member_allergies. Dosage scheduling; use get_medication_schedule.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'check_member_allergies', 'get_medication_schedule', 'list_prescriptions' ),
+			'notes'           => __( 'Ships with a curated offline registry; extend via the wp_mcp_ai_healthcare_interaction_pairs filter.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

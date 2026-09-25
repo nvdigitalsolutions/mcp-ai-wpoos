@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Qualify_Lead_Bant implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Qualify_Lead_Bant implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if the tool is available.
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_Qualify_Lead_Bant implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Assess a lead using the BANT framework (Budget, Authority, Need, Timeline).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Assessing Budget, Authority, Need, and Timeline for a known lead_id from conversation text or notes.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Enterprise accounts; use qualify_lead_meddic. Composite engagement scoring; use score_lead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'qualify_lead_meddic', 'score_lead', 'get_lead' ),
+			'notes'           => __( 'Stores the assessment in bant_assessment meta; is_qualified means overall score >= 50.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

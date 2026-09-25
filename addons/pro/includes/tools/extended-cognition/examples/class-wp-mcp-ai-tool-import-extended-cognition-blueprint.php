@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_Extended_Cognition_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Extended_Cognition_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR = WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/examples';
@@ -53,6 +53,20 @@ class WP_MCP_AI_Tool_Import_Extended_Cognition_Blueprint implements WP_MCP_AI_To
 	 */
 	public function get_description() {
 		return __( 'Install the Sensory Context Analyst assistant blueprint for multi-modal sensory input processing.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing the Sensory Context Analyst assistant blueprint for multi-modal sensory input processing.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Other toolkits; use their own importers such as import_ai_tool_builder_blueprint or import_crm_blueprint.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'ext_cog_analyze_sensory_input', 'ext_cog_manage_sensor_permissions' ),
+			'notes'           => __( 'Requires the Extended Cognition Toolkit enabled; set overwrite=true to replace an existing assistant.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * {@inheritdoc}

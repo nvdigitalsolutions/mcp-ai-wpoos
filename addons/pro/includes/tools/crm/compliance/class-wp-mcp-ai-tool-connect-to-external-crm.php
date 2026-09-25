@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Connect_To_External_Crm implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Connect_To_External_Crm implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_Connect_To_External_Crm implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Configure or test an OAuth connection to an external CRM (HubSpot, Salesforce, Pipedrive). Uses Password Vault for credentials.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Configuring, testing, disconnecting, or checking the status of OAuth connections to HubSpot, Salesforce, or Pipedrive.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Importing records into the CRM; use import_crm_blueprint or import_crm_csv for bulk data.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'import_crm_blueprint', 'import_crm_csv' ),
+			'notes'           => __( 'Credentials come from the Password Vault via api_key_handle; the test action is a stub; requires manage_options.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

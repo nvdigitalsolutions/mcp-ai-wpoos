@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_QMS_Approve_Document tool.
  */
-class WP_MCP_AI_Tool_QMS_Approve_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_QMS_Approve_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 
 	/**
@@ -42,6 +42,19 @@ class WP_MCP_AI_Tool_QMS_Approve_Document implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Mark a controlled document as approved. Document must be in in_review state and have at least one approver assigned.', 'mcp-ai-wpoos-pro' );
+	}
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Moving a controlled document from in_review to approved once review is complete and you are an assigned approver.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating, submitting, releasing, or archiving records; use qms_create_controlled_document, qms_submit_for_review, qms_release_document, or qms_mark_obsolete instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'qms_submit_for_review', 'qms_release_document', 'qms_get_audit_trail' ),
+			'notes'           => __( 'Only assigned approvers (or admins) may approve; the transition is recorded in the immutable audit log.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 		/**
 		 * Get the parameters schema.

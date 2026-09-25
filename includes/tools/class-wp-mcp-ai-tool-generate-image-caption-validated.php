@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-generate-image-caption.php';
  * This class extends the original generate_image_caption tool to use
  * Symfony Validator for argument validation.
  */
-class WP_MCP_AI_Tool_Generate_Image_Caption_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+class WP_MCP_AI_Tool_Generate_Image_Caption_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * The original generate_image_caption tool instance for delegation.
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_Generate_Image_Caption_Validated extends WP_MCP_AI_Validate
 	 */
 	public function get_description() {
 		return __( 'Generates detailed captions for images to provide context and enhance content using AI vision capabilities with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating image captions with Symfony Validator enforcement of the image source arguments.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'When validation is unneeded or unavailable; use generate_image_caption.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'generate_image_caption', 'generate_image_alt_text_validated' ),
+			'notes'           => __( 'Delegates to generate_image_caption after validation and shares its schema.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

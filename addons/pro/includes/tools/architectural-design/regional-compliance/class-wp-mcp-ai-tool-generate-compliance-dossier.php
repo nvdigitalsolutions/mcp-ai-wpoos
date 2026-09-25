@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Generate per-country compliance dossier.
  */
-class WP_MCP_AI_Tool_Generate_Compliance_Dossier implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Compliance_Dossier implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -68,6 +68,20 @@ class WP_MCP_AI_Tool_Generate_Compliance_Dossier implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Assemble a per-country compliance dossier (LK / JM / US) bundling planning, structural (wind + seismic), accessibility, fire-safety and energy results plus the recommended supporting drawings, certifications and statutory submissions for the local authority.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Bundling pre-computed planning, wind, seismic, setbacks, code, sustainability, and thermal results into one dossier for LK, JM, or US.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Running checks; call each checker (check_us_ibc_irc_compliance, calculate_wind_loads, etc.) first and pass its output.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'check_us_ibc_irc_compliance', 'check_uda_planning_compliance', 'check_jnbc_hurricane_compliance' ),
+			'notes'           => __( 'Missing sections are listed as not provided; country_code must be LK, JM, or US.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

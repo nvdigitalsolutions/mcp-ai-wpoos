@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Lists places with filtering options including location-based radius search.
  */
-class WP_MCP_AI_Tool_List_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_List_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Lists saved places with optional filtering by type, location, radius, rating, and tags. Supports geospatial queries to find places near a specific location.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Searching or browsing the saved places directory, with radius or attribute filters.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'One known place ID; use get_place. Use find_bookable_places when real-time booking availability matters.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_place', 'find_bookable_places', 'search_and_save_places' ),
+			'notes'           => __( 'Combine latitude, longitude, and radius for nearby results; cap with limit to keep responses small.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

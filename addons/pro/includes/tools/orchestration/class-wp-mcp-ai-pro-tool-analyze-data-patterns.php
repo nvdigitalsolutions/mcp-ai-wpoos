@@ -59,6 +59,20 @@ class WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns {
 		);
 	}
 
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Detecting trends, outliers, frequency, or correlation signals in a numeric dataset.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use extract_structured_data to pull fields out of raw content before running numeric analysis.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'extract_structured_data', 'aggregate_research_data' ),
+			'notes'           => __( 'Non-numeric values are filtered out and an error is returned when no numeric data remains.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
 
 	/**
 	 * Execute the tool.

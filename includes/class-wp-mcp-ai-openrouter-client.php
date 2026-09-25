@@ -1232,5 +1232,232 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 
 			return $normalized;
 		}
+
+		// -------------------------------------------------------------------------
+		// TypeSafe Jev — Decisions bridge.
+		// -------------------------------------------------------------------------
+
+		/**
+		 * Default endpoint for OpenRouter's Decisions API (TypeSafe Jev).
+		 *
+		 * Jev is NOT served through the OpenAI-compatible chat endpoint: it
+		 * runs on a separate decisions route.  At the time of writing that
+		 * route is still alpha, so the path is filterable and callers should
+		 * handle route-missing (404) responses gracefully.
+		 *
+		 * @var string
+		 */
+		const DECISIONS_ENDPOINT = 'https://openrouter.ai/api/alpha/decisions';
+
+		/**
+		 * Default model id for Jev routed through the decisions endpoint.
+		 *
+		 * OpenRouter currently serves `typesafe/jev-1.13` only — the
+		 * `typesafe/jev-latest` alias is not available there, so the
+		 * confirmed versioned id is the default.
+		 *
+		 * @var string
+		 */
+		const DECISIONS_DEFAULT_MODEL = 'typesafe/jev-1.13';
+
+		/**
+		 * Resolve the decisions endpoint URL.
+		 *
+		 * Filterable via `wp_mcp_ai_openrouter_decisions_endpoint` so sites
+		 * can follow the route as it graduates out of alpha without a code
+		 * change.
+		 *
+		 * @return string
+		 */
+		public function get_decisions_endpoint() {
+			/**
+			 * Filter the OpenRouter decisions endpoint used for TypeSafe Jev.
+			 *
+			 * @since 2026.09
+			 *
+			 * @param string $endpoint Full decisions endpoint URL.
+			 */
+			return apply_filters( 'wp_mcp_ai_openrouter_decisions_endpoint', self::DECISIONS_ENDPOINT );
+		}
+
+		/**
+		 * Normalize a model id for the OpenRouter decisions route.
+		 *
+		 * OpenRouter serves Jev under `typesafe/jev-1.13`; the
+		 * `typesafe/jev-latest` alias does not exist there. Incoming
+		 * overrides get the `typesafe/` prefix and the `jev-latest` alias is
+		 * mapped to the confirmed versioned id.
+		 *
+		 * @param string $model Raw model id.
+		 * @return string Normalized OpenRouter model id.
+		 */
+		public function normalize_decisions_model( $model ) {
+			$model = trim( (string) $model );
+
+			if ( '' === $model ) {
+				return self::DECISIONS_DEFAULT_MODEL;
+			}
+
+			if ( 0 === strpos( $model, 'typesafe/' ) ) {
+				return $model;
+			}
+
+			if ( 'jev-latest' === $model ) {
+				$model = 'jev-1.13';
+			}
+
+			return 'typesafe/' . $model;
+		}
+
+		/**
+		 * Send a decision request for TypeSafe Jev through OpenRouter.
+		 *
+		 * OpenRouter serves Jev via a decisions route rather than chat
+		 * completions: the body is the flat `{ model, state, questions }`
+		 * shape from TypeSafe's System One API, and responses are normalised
+		 * to the same answer shape as {@see WP_MCP_AI_Typesafe_Client}.
+		 *
+		 * This bridge exists so sites with an OpenRouter key (but no
+		 * TypeSafe early-access key) can still use Jev.
+		 *
+		 * @param mixed $state     Content to evaluate (string|object|array).
+		 * @param array $questions Question map (type|instructions|criteria).
+		 * @param array $options   Options: model (string), timeout (int).
+		 * @return array|WP_Error Normalised decision response or WP_Error.
+		 */
+		public function create_decision( $state, $questions, $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_openrouter_api_key',
+					__( 'No OpenRouter API key has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openrouter_api_key' => __( 'Add an OpenRouter API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			if ( ! is_array( $questions ) || empty( $questions ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_typesafe_no_questions',
+					__( 'At least one question is required for an OpenRouter decision request.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$model = ! empty( $options['model'] ) ? sanitize_text_field( $options['model'] ) : self::DECISIONS_DEFAULT_MODEL;
+			$model = $this->normalize_decisions_model( $model );
+
+			$payload = array(
+				'model'     => $model,
+				'state'     => $state,
+				'questions' => $questions,
+			);
+
+			$url     = $this->get_decisions_endpoint();
+			$timeout = max( 60, $this->resolve_timeout( is_array( $options ) ? $options : array() ) );
+
+			$request_args = array(
+				'headers' => $this->build_request_headers( $api_key ),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => $timeout,
+			);
+
+			// Bounded retry on transient failures (429/5xx), sharing the
+			// native TypeSafe client's retry filters so one policy governs
+			// both transports.
+			$max_attempts = apply_filters( 'wp_mcp_ai_typesafe_retry_attempts', 2 );
+			$max_attempts = max( 1, absint( $max_attempts ) );
+
+			$response = null;
+			$code     = 0;
+
+			for ( $attempt = 1; $attempt <= $max_attempts; $attempt++ ) {
+				$response = wp_remote_post( $url, $request_args );
+
+				if ( is_wp_error( $response ) ) {
+					if ( class_exists( 'WP_MCP_AI_HTTP' ) ) {
+						return WP_MCP_AI_HTTP::prepare_transport_error(
+							$response,
+							'wp_mcp_ai_http_error',
+							__( 'The OpenRouter decisions request failed to complete.', 'mcp-ai-wpoos' ),
+							__( 'OpenRouter', 'mcp-ai-wpoos' )
+						);
+					}
+
+					return $response;
+				}
+
+				$code = wp_remote_retrieve_response_code( $response );
+
+				if ( $code >= 200 && $code < 300 ) {
+					break;
+				}
+
+				if ( ! in_array( $code, array( 429, 500, 502, 503, 504 ), true ) || $attempt >= $max_attempts ) {
+					break;
+				}
+
+				$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
+				$sleep       = ! empty( $retry_after ) ? max( 1, absint( $retry_after ) ) : (int) pow( 2, $attempt - 1 );
+
+				/**
+				 * Filter the sleep (seconds) before retrying an OpenRouter
+				 * decisions request.
+				 *
+				 * @since 2026.09
+				 *
+				 * @param int $sleep   Seconds to sleep.
+				 * @param int $code    HTTP status code that triggered the retry.
+				 * @param int $attempt Current attempt number (1-based).
+				 */
+				$sleep = apply_filters( 'wp_mcp_ai_typesafe_retry_sleep', $sleep, $code, $attempt );
+
+				if ( $sleep > 0 ) {
+					sleep( $sleep );
+				}
+			}
+
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				return new WP_Error( 'wp_mcp_ai_openrouter_invalid_response', __( 'The OpenRouter decisions endpoint returned malformed JSON.', 'mcp-ai-wpoos' ) );
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				// The decisions route is still alpha: a 404 means this OpenRouter
+				// account/region does not expose it yet. Offer the native path.
+				if ( 404 === $code ) {
+					return new WP_Error(
+						'wp_mcp_ai_openrouter_decisions_unavailable',
+						__( 'The OpenRouter decisions route is not available on this account yet.', 'mcp-ai-wpoos' ),
+						array(
+							'status'  => 404,
+							'actions' => array(
+								'route_not_available' => __( 'Configure a TypeSafe API key in NV oOS → Providers → TypeSafe to call Jev directly.', 'mcp-ai-wpoos' ),
+							),
+						)
+					);
+				}
+
+				return $this->handle_api_error( $code, is_array( $decoded ) ? $decoded : array(), $response );
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Typesafe_Client' ) ) {
+				$normalized = WP_MCP_AI_Typesafe_Client::normalize_response_payload( is_array( $decoded ) ? $decoded : array() );
+			} else {
+				$normalized = is_array( $decoded ) ? $decoded : array();
+			}
+
+			if ( ! isset( $normalized['model'] ) || '' === $normalized['model'] ) {
+				$normalized['model'] = $model;
+			}
+
+			return $normalized;
+		}
 	}
 }

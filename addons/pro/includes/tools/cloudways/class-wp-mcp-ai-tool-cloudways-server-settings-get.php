@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Settings_Get' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Server_Settings_Get extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Server_Settings_Get extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Settings_Get' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'View server and PHP/MySQL configuration.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Viewing PHP, MySQL, and nginx versions and settings for one server before tuning or troubleshooting.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Runtime service health or capacity; use cloudways_service_status or cloudways_server_monitor_summary.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_get_server', 'cloudways_service_status', 'cloudways_restart_service' ),
+				'notes'           => __( 'Requires a server_id from cloudways_list_servers; read-only and safe to call.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

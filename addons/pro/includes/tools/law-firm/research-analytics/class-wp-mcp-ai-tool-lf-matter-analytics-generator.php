@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates per-matter analytics: time spent, budget status, deadline compliance, and communication.
  */
-class WP_MCP_AI_Tool_LF_Matter_Analytics_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Matter_Analytics_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -68,6 +68,20 @@ class WP_MCP_AI_Tool_LF_Matter_Analytics_Generator implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Generates detailed analytics for a specific matter including time analysis, budget status, deadline compliance, and communication frequency.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating per-matter reports on time spent, budget status, deadline compliance, and communication frequency for a single matter.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Firm-wide or multi-matter overviews; use lf_firm_performance_dashboard or lf_case_status_dashboard.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_matter_budget_manager', 'lf_case_status_dashboard', 'lf_firm_performance_dashboard' ),
+			'notes'           => __( 'matter_id is required. metrics accepts time_spent, budget_status, deadline_compliance, communication_frequency and defaults to all four.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get recent health appointments tool.
  */
-class WP_MCP_AI_Tool_Get_Recent_Health_Appointments implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Recent_Health_Appointments implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -62,6 +62,20 @@ class WP_MCP_AI_Tool_Get_Recent_Health_Appointments implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Retrieves recent health/wellness appointments, optionally filtered by member, provider, or appointment type.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing recent health appointments, optionally filtered by member, provider, or appointment type.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Upcoming scheduled visits; use get_upcoming_checkups. A specific record; use get_checkup.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_upcoming_checkups', 'get_checkup', 'list_checkups' ),
+			'notes'           => __( 'Looks back days_back days (max 365) and returns at most limit (max 500) appointments.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

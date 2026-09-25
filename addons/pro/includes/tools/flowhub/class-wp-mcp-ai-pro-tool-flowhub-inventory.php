@@ -27,7 +27,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-flowhub-cct-manager.
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Pro_Tool_FlowHub_Inventory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_FlowHub_Inventory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_FlowHub_Connection_Resolver;
 
@@ -50,6 +50,20 @@ class WP_MCP_AI_Pro_Tool_FlowHub_Inventory implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Search and retrieve FlowHub inventory levels from the local cache. Supports filtering by category, location, stock status, and full-text search across product names and SKUs. Use refresh action to pull fresh data from the FlowHub API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Searching FlowHub stock by SKU, category, location, or stock status from the local CCT cache.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Aggregating catalog-wide trends; use flowhub_analytics for summaries and velocity.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'flowhub_analytics', 'flowhub_products', 'flowhub_sync' ),
+			'notes'           => __( 'Use action=refresh to pull fresh data from the FlowHub API before reading.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

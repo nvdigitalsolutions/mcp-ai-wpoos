@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Pro_Tool_Shopify_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Shopify_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Shopify_Connection_Resolver;
 
@@ -43,6 +43,18 @@ class WP_MCP_AI_Pro_Tool_Shopify_Orders implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Access and manage orders on a connected Shopify store via the Admin GraphQL API. Supports listing, filtering, and retrieving detailed order information including line items, fulfillments, and transactions. Requires an admin_api mode connection — catalog connections (Storefront/Global Catalog MCP or the deprecated Catalog API) are live product-search modes that do not expose orders; those return a hint pointing at the catalog tools.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing, searching, or retrieving orders with line items, fulfillments, and transactions on a Shopify store.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Refunding or bulk-changing WooCommerce orders; use refund_order_advanced or bulk_order_status_update.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'shopify_customers', 'shopify_products', 'refund_order_advanced' ),
+			'notes'           => __( 'Actions: list, get, and search. Requires an admin_api Shopify connection; use filter syntax like financial_status:paid.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

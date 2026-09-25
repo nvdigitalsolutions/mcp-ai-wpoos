@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Score_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Score_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if the tool is available.
@@ -62,6 +62,20 @@ class WP_MCP_AI_Tool_Score_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	public function get_description() {
 		return __( 'Calculate a composite lead score (0-100) from fit, intent, engagement, and recency factors.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Computing a composite 0-100 lead score with optional factor overrides and persisting the score label.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Qualifying budget or authority; use qualify_lead_bant or qualify_lead_meddic. Reading scores only; use get_lead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_lead', 'qualify_lead_bant', 'list_leads' ),
+			'notes'           => __( 'Factor defaults: fit 40, intent 30, engagement 50, recency 80; result includes score_label (cold/warm/hot).', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

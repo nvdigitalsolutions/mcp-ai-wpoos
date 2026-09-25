@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Market_Comp_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Market_Comp_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -58,6 +58,20 @@ class WP_MCP_AI_Tool_CRE_Market_Comp_Analyzer implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description(): string {
 		return __( 'Analyze comparable property sales against a subject property. Calculates average/median cap rates, price/SF, NOI/SF, premium/discount analysis, and comp quality scores.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Benchmarking a subject property against comparable sales via cap rates, price per SF, NOI per SF, and comp quality.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Property cash-flow valuation; use cre_property_valuation_engine. Rent roll review; use cre_rent_roll_analyzer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_property_valuation_engine', 'cre_rent_roll_analyzer', 'cre_deal_screening_calculator' ),
+			'notes'           => __( 'Requires subject_property_type, subject_sf, subject_noi, subject_price, and comparables. Returns averages, medians, and premium/discount.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

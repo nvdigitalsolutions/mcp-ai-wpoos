@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Underwriting_Memo_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Underwriting_Memo_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_Underwriting_Memo_Generator implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description(): string {
 		return __( 'Generate a structured CRE underwriting / credit committee memo. Takes deal name, property details, loan metrics (DSCR, LTV, debt yield), borrower information, market overview, risk factors with mitigants, and recommendation. Returns a formatted memo ready for review.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Drafting a structured credit committee memo with deal terms, metrics, borrower, risks, mitigants, and recommendation.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Computing the metrics it displays; use cre_noi_calculator, cre_loan_sizer, or cre_stress_test_modeler.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_loan_sizer', 'cre_stress_test_modeler', 'cre_credit_risk_scorer' ),
+			'notes'           => __( 'DSCR, LTV, and debt yield are inputs, not computed; recommendation enum is approve, decline, conditional.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

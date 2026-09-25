@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_Financial_Planning_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Financial_Planning_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR = WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/examples';
@@ -63,6 +63,17 @@ class WP_MCP_AI_Tool_Import_Financial_Planning_Blueprint implements WP_MCP_AI_To
 	 */
 	public function get_description() {
 		return __( 'Install a curated financial planning assistant blueprint for wealth management, retirement planning, or personal budgeting workflows.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'To install a ready-made financial assistant blueprint for wealth, retirement, or budgeting workflows.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For hands-on planning calculations; use budget_planner or retirement_calculator after importing instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'import_ai_tool_builder_blueprint', 'import_analytics_blueprint', 'create_assistant' ),
+			'notes'           => __( 'blueprint enum: wealth-advisor, retirement-planner, budget-coach. Creates mcp_ai_assistant posts; overwrite replaces same-name assistants.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * {@inheritdoc}

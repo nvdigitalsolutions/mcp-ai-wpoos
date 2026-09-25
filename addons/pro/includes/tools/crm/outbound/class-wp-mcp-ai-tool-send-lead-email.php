@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Send_Lead_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Send_Lead_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if the tool is available.
@@ -64,6 +64,20 @@ class WP_MCP_AI_Tool_Send_Lead_Email implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Send an outbound email to a lead. Requires active email consent.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending a one-off outbound email to a lead with subject and body when email consent is on file.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Composing the message first; use draft_lead_reply. SMS or WhatsApp delivery; use send_lead_sms or send_lead_whatsapp.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'draft_lead_reply', 'send_lead_sms', 'send_lead_whatsapp' ),
+			'notes'           => __( 'Body supports HTML; consent, DNC, and suppression gates apply; sequence_id and sequence_step fire sequence hooks.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

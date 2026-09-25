@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Connect / configure DICOMweb tool.
  */
-class WP_MCP_AI_Tool_Connect_DICOMweb implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Connect_DICOMweb implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_Connect_DICOMweb implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Configure or test the DICOMweb (QIDO-RS / WADO-RS / STOW-RS) connection used by Phase D imaging tools. Supports basic and bearer-token auth.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Configuring, testing, reading, or clearing the DICOMweb connection used by the import and export imaging tools.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Moving studies; use import_dicom_study or export_dicom_study. Study metadata; use manage_imaging_studies.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'import_dicom_study', 'export_dicom_study', 'manage_imaging_studies' ),
+			'notes'           => __( 'Actions: configure, test, get, disconnect. Credentials are stored in options and always returned redacted.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

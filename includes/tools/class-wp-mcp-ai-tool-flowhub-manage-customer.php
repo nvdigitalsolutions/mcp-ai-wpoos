@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for creating and updating customer profiles in Flowhub.
  */
-class WP_MCP_AI_Tool_Flowhub_Manage_Customer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Flowhub_Manage_Customer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -46,6 +46,20 @@ class WP_MCP_AI_Tool_Flowhub_Manage_Customer implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Create or update customer profiles in Flowhub dispensary system. Supports managing contact information, medical cannabis credentials, loyalty data, and preferences.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating or updating a Flowhub customer profile, including medical credentials.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Reading customer records; use flowhub_get_customers.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'flowhub_get_customers', 'flowhub_create_order' ),
+			'notes'           => __( 'Action is create or update; customer_id is required for update.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

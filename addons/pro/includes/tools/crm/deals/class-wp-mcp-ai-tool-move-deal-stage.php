@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Move_Deal_Stage implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Move_Deal_Stage implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -84,6 +84,20 @@ class WP_MCP_AI_Tool_Move_Deal_Stage implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Move a deal to a new pipeline stage. Records a machine-readable stage transition (source-attributed), recalculates win probability, and promotes the lead to customer when moving to closed-won. Set "undo" to true to revert the last stage move without recording a new transition.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Moving one deal to a new pipeline stage, recording source-attributed history and promoting the lead on closed-won.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Moving many deals at once; use bulk_move_deal_stages. Editing non-stage fields; use update_deal.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'bulk_move_deal_stages', 'update_deal', 'list_deals' ),
+			'notes'           => __( 'Set undo=true to revert the last move. source accepts tool, agent, workflow, manual, email_reply, or bulk.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

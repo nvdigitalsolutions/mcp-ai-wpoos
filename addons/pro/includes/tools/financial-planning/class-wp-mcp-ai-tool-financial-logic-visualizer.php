@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Financial_Logic_Visualizer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Financial_Logic_Visualizer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -100,6 +100,22 @@ class WP_MCP_AI_Tool_Financial_Logic_Visualizer implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Generate Mermaid diagram markup for financial transmission chains, decision trees, impact flows, and correlation maps. Visualize cause-effect relationships, investment decision paths, and instrument correlations. EDUCATIONAL ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'To generate Mermaid diagrams of financial cause-effect chains, decision trees, or correlation maps.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For portfolio holdings charts or textual reports; use portfolio_visualizer or financial_report_generator instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'portfolio_visualizer', 'financial_report_generator' ),
+			'notes'           => __( 'Requires chain_type (transmission_chain, decision_tree, impact_flow, correlation_map), nodes, and connections arrays.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

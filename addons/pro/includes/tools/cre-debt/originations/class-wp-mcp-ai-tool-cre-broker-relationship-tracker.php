@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Broker_Relationship_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Broker_Relationship_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Performs the operation.
@@ -62,6 +62,20 @@ class WP_MCP_AI_Tool_CRE_Broker_Relationship_Tracker implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description(): string {
 		return __( 'Track mortgage broker relationships, deal referrals, conversion rates, volume attribution, and performance statistics. Supports add, update, list, and get_stats actions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording broker contacts and referred deals, then pulling per-broker conversion rates, volume attribution, and performance stats.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Deal-level pipeline stage moves; use cre_deal_pipeline_manager. Aggregate portfolio volume; use cre_origination_volume_tracker.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_deal_pipeline_manager', 'cre_origination_volume_tracker' ),
+			'notes'           => __( 'Requires action: add, update, list, or get_stats. add and update persist broker data; get_stats returns conversion and volume metrics.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

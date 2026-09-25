@@ -23,7 +23,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-ext-cog-sensor-access.php';
  *
  * @since 1.8.0
  */
-class WP_MCP_AI_Tool_Ext_Cog_Detect_Objects implements WP_MCP_AI_Ext_Cog_Tool_Interface {
+class WP_MCP_AI_Tool_Ext_Cog_Detect_Objects implements WP_MCP_AI_Ext_Cog_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Ext_Cog_Sensor_Access;
 
@@ -52,6 +52,20 @@ class WP_MCP_AI_Tool_Ext_Cog_Detect_Objects implements WP_MCP_AI_Ext_Cog_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Detect and count objects visible in the user\'s camera feed using HuggingFace OWLv2 or a local Ollama vision model. Supports generic object detection (COCO classes), open-vocabulary detection with custom labels, and brand/product classification via FashionCLIP. Returns bounding boxes, confidence scores, and per-object brand assignments.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Detecting and counting objects or brands in the camera feed with bounding boxes and confidence scores.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Fine-grained product identification; use ext_cog_recognize_products. Raw frames; use ext_cog_capture_visual.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'ext_cog_recognize_products', 'ext_cog_capture_visual', 'ext_cog_analyze_video_feed' ),
+			'notes'           => __( 'Use detection_mode objects, brands, or full; auto picks HuggingFace OWLv2 or a local Ollama model.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

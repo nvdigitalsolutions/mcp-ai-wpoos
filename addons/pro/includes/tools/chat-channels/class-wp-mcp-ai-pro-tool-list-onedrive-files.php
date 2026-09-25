@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for listing files and folders from Microsoft OneDrive via the Microsoft Graph API.
  */
-class WP_MCP_AI_Pro_Tool_List_OneDrive_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_List_OneDrive_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Microsoft Graph API requests.
 	 */
@@ -54,6 +54,18 @@ class WP_MCP_AI_Pro_Tool_List_OneDrive_Files implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Lists files and folders from a Microsoft OneDrive account using the Microsoft Graph API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing files and folders in a Microsoft OneDrive account via the Microsoft Graph API.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading a single known file; use get_onedrive_file. Uploading files; use upload_onedrive_file.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_onedrive_file', 'upload_onedrive_file' ),
+			'notes'           => __( 'Requires a Microsoft Graph access token with Files.Read scope.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

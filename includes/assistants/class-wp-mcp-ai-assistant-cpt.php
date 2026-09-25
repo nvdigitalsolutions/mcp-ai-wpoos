@@ -28,6 +28,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		const META_MODEL                   = '_wp_mcp_ai_model';
 		const META_TEMPERATURE             = '_wp_mcp_ai_temperature';
 		const META_SYSTEM_PROMPT           = '_wp_mcp_ai_system_prompt';
+		const META_ADAPTIVE_TOOL_CAP       = '_wp_mcp_ai_adaptive_tool_cap';
 		const META_MEMORY_FILES            = '_wp_mcp_ai_memory_files';
 		const META_VECTOR_STORE_ID         = '_wp_mcp_ai_vector_store_id';
 		const META_CORPUS_NAME             = '_wp_mcp_ai_corpus_name';
@@ -1400,6 +1401,18 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 			register_post_meta(
 				self::POST_TYPE,
+				self::META_ADAPTIVE_TOOL_CAP,
+				array(
+					'type'              => 'string',
+					'single'            => true,
+					'show_in_rest'      => true,
+					'sanitize_callback' => array( __CLASS__, 'sanitize_adaptive_tool_cap_meta' ),
+					'auth_callback'     => $auth_callback,
+				)
+			);
+
+			register_post_meta(
+				self::POST_TYPE,
 				self::META_MEMORY_FILES,
 				array(
 					'type'              => 'array',
@@ -1755,6 +1768,26 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			return $provider;
+		}
+
+		/**
+		 * Sanitize the adaptive tool cap meta value.
+		 *
+		 * Three-state control: '' inherits the site-wide setting, 'on' forces
+		 * the model-aware tool cap for this assistant, 'off' disables it for
+		 * this assistant even when the site default is enabled.
+		 *
+		 * @param mixed $value Raw meta value.
+		 * @return string One of '', 'on', or 'off'.
+		 */
+		public static function sanitize_adaptive_tool_cap_meta( $value ) {
+			$value = is_string( $value ) ? strtolower( trim( $value ) ) : '';
+
+			if ( ! in_array( $value, array( '', 'on', 'off' ), true ) ) {
+				return '';
+			}
+
+			return $value;
 		}
 
 		/**
@@ -5018,6 +5051,14 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$system_prompt = isset( $_POST['wp_mcp_ai_system_prompt'] ) ? self::sanitize_system_prompt_meta( wp_unslash( $_POST['wp_mcp_ai_system_prompt'] ) ) : '';
 				update_post_meta( $post_id, self::META_SYSTEM_PROMPT, $system_prompt );
 
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_adaptive_tool_cap_meta().
+				$adaptive_tool_cap = isset( $_POST['wp_mcp_ai_adaptive_tool_cap'] ) ? self::sanitize_adaptive_tool_cap_meta( wp_unslash( $_POST['wp_mcp_ai_adaptive_tool_cap'] ) ) : '';
+				if ( '' === $adaptive_tool_cap ) {
+					delete_post_meta( $post_id, self::META_ADAPTIVE_TOOL_CAP );
+				} else {
+					update_post_meta( $post_id, self::META_ADAPTIVE_TOOL_CAP, $adaptive_tool_cap );
+				}
+
 				$prompt_caching = ! empty( $_POST['wp_mcp_ai_prompt_caching'] );
 				update_post_meta( $post_id, self::META_PROMPT_CACHING, $prompt_caching );
 			}
@@ -5301,6 +5342,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				'model'                      => get_post_meta( $assistant_id, self::META_MODEL, true ),
 				'temperature'                => get_post_meta( $assistant_id, self::META_TEMPERATURE, true ),
 				'system_prompt'              => get_post_meta( $assistant_id, self::META_SYSTEM_PROMPT, true ),
+				'adaptive_tool_cap'          => get_post_meta( $assistant_id, self::META_ADAPTIVE_TOOL_CAP, true ),
 				'memory_files'               => get_post_meta( $assistant_id, self::META_MEMORY_FILES, true ),
 				'vector_store_id'            => get_post_meta( $assistant_id, self::META_VECTOR_STORE_ID, true ),
 				'corpus_name'                => get_post_meta( $assistant_id, self::META_CORPUS_NAME, true ),

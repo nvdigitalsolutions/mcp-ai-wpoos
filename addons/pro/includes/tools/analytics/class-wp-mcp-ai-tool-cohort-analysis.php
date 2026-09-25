@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -95,6 +95,20 @@ class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Analyze user cohort behavior patterns and retention over time. Track how different groups of customers behave, calculate retention rates, and identify trends across cohorts.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Comparing retention, revenue, orders, or engagement across customer groups formed by signup or first-purchase period.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Scoring individual customers for churn risk; use churn_prediction instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'churn_prediction', 'customer_segmentation_ml', 'funnel_analysis' ),
+			'notes'           => __( 'Cohorts default to monthly first-purchase groups over 6 months; min_cohort_size=10 filters out small cohorts.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

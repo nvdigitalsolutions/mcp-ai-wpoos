@@ -182,6 +182,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						'hsts_max_age',
 						'csp_frame_ancestors',
 						'cors_allow_origin',
+						// MCP App upstream host allowlist (SSRF hardening).
+						'mcp_app_allowed_hosts',
 					),
 				),
 				'ai_safety'     => array(
@@ -640,6 +642,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						'star' => __( 'Allow All — any domain can call the API', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'site',
+				),
+				'mcp_app_allowed_hosts'                    => array(
+					'type'        => 'textarea',
+					'label'       => __( 'MCP App Allowed Hosts', 'mcp-ai-wpoos' ),
+					'description' => __( 'Restrict which remote MCP servers assistants may connect to (SSRF protection). Enter hostnames, one per line. A leading *. matches subdomains (e.g. *.example.com). Leave empty to accept any host (not recommended). The WP_MCP_AI_MCP_APP_ALLOWED_HOSTS constant, when defined, overrides this setting.', 'mcp-ai-wpoos' ),
+					'placeholder' => "victory.nvdigital.solutions\n*.example.com",
+					'default'     => '',
 				),
 
 				// ========================================
@@ -2292,6 +2301,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				if ( is_wp_error( $result ) ) {
 					$errors[] = __( 'HSTS Max Age: ', 'mcp-ai-wpoos' ) . $result->get_error_message();
 				}
+			}
+
+			// Validate MCP App allowed hosts entries look like hostnames.
+			if ( isset( $input['mcp_app_allowed_hosts'] ) && is_string( $input['mcp_app_allowed_hosts'] ) && ! empty( trim( $input['mcp_app_allowed_hosts'] ) ) ) {
+				foreach ( preg_split( '/[\r\n,]+/', $input['mcp_app_allowed_hosts'] ) as $host_entry ) {
+					$host_entry = trim( $host_entry );
+					if ( '' === $host_entry ) {
+						continue;
+					}
+					if ( ! preg_match( '/^(\*\.)?[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i', $host_entry ) ) {
+						$errors[] = sprintf(
+							/* translators: %s: hostname entry. */
+							__( 'MCP App Allowed Hosts: "%s" does not look like a hostname.', 'mcp-ai-wpoos' ),
+							esc_html( $host_entry )
+						);
+					}
+				}
+			}
+
+			// Warn when the constant overrides this UI setting.
+			if ( defined( 'WP_MCP_AI_MCP_APP_ALLOWED_HOSTS' ) ) {
+				$errors[] = __( 'MCP App Allowed Hosts: this setting is overridden by the WP_MCP_AI_MCP_APP_ALLOWED_HOSTS constant.', 'mcp-ai-wpoos' );
 			}
 
 			// Validate IP addresses in whitelist.

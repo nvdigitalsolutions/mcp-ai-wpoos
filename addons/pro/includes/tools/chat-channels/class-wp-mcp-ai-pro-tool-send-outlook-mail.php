@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for sending email messages via Microsoft Outlook using the Microsoft Graph API.
  */
-class WP_MCP_AI_Pro_Tool_Send_Outlook_Mail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Send_Outlook_Mail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Microsoft Graph API requests.
 	 */
@@ -54,6 +54,18 @@ class WP_MCP_AI_Pro_Tool_Send_Outlook_Mail implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Sends an email message via Microsoft Outlook using the Microsoft Graph API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending an email from a Microsoft 365 mailbox through the Microsoft Graph API.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading mailbox messages; use get_outlook_messages.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_outlook_messages', 'send_teams_message', 'unified_channel_broadcast' ),
+			'notes'           => __( 'Sends real external email via Graph sendMail; requires the Mail.Send permission.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

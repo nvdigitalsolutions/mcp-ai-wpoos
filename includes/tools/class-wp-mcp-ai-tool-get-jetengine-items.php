@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides access to JetEngine registered post types.
  */
-class WP_MCP_AI_Tool_Get_JetEngine_Items implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_JetEngine_Items implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -61,6 +61,18 @@ class WP_MCP_AI_Tool_Get_JetEngine_Items implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Returns content items from a JetEngine managed post type. Requires JetEngine.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing content items from a JetEngine-managed custom post type by its slug.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Core post types or field schemas; use get_recent_posts for posts and get_post_type_schema for field definitions.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_post', 'get_recent_posts', 'get_post_type_schema' ),
+			'notes'           => __( 'Requires JetEngine; returns a compact item list rather than full post content.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

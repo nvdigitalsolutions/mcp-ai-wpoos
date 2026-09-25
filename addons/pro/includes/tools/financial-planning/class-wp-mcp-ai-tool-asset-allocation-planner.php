@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Asset_Allocation_Planner implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Asset_Allocation_Planner implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,20 @@ class WP_MCP_AI_Tool_Asset_Allocation_Planner implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Plan optimal asset allocation based on risk tolerance, age, and investment timeline. Recommends diversified portfolio mix across stocks, bonds, and other assets. Provides rebalancing guidance and age-based adjustments.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When the user wants a recommended stock, bond, and cash mix based on age, risk tolerance, and time horizon.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For live market data or trade tracking; use stock_data_fetcher or portfolio_transaction_log instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'rebalancing_analyzer', 'retirement_calculator', 'investment_return_calculator' ),
+			'notes'           => __( 'Requires age, risk_tolerance (conservative, moderate, aggressive), and time_horizon in years.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

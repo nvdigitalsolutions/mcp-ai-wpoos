@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Bulk_Order_Status_Update implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Bulk_Order_Status_Update implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -103,6 +103,20 @@ class WP_MCP_AI_Tool_Bulk_Order_Status_Update implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Update the status of multiple WooCommerce orders at once. Supports customer notifications, custom order notes, filter-based selection, and dry-run preview mode.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Changing the status of many WooCommerce orders at once, with optional customer notifications and notes.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Single-order edits or partial refunds; use woo_orders or refund_order_advanced for individual orders.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'woo_orders', 'refund_order_advanced', 'process_order_workflow' ),
+			'notes'           => __( 'Use dry_run=true to preview the selected orders before applying. Status changes trigger customer emails.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

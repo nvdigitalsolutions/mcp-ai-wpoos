@@ -433,6 +433,19 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$active_view     = isset( $_POST['view'] ) ? sanitize_key( wp_unslash( $_POST['view'] ) ) : '';
 			$save_all_tabs   = isset( $_POST['save_all_tabs'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['save_all_tabs'] ) );
 
+			// ========================================================================
+			// Bridge posted fields to their own option stores.
+			// ========================================================================
+			// Some dashboard fields (e.g. the Security Center Usage Monitor
+			// configuration) are owned by a separate option, not
+			// wp_mcp_ai_settings. Sections intentionally drop these keys, and the
+			// 'wp_mcp_ai_admin_settings_sanitize' filter is the single bridge that
+			// persists them (see WP_MCP_AI_Security_Monitor_Admin). The section-
+			// based sanitize flow below never applies that filter, so apply it
+			// here with the raw posted input; bridge handlers no-op when their
+			// fields are absent from the submission.
+			apply_filters( 'wp_mcp_ai_admin_settings_sanitize', array(), $posted_settings );
+
 			// DEBUG: Log checkbox values in posted data.
 			$existing_for_logging = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 			$enable_logging       = ! empty( $existing_for_logging['enable_logging'] ) || ! empty( $existing_for_logging['enable_extended_logging'] );

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Assign_Lead_To_Owner implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Assign_Lead_To_Owner implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -51,6 +51,20 @@ class WP_MCP_AI_Tool_Assign_Lead_To_Owner implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Assign a lead to a specific owner, or use the automatic routing strategy (round_robin, weighted).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Assigning one lead to a specific owner_id, or letting the round_robin/weighted strategy choose.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Bulk reassignment across many leads; use rotate_leads. Checking owner capacity; use get_owner_workload.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'rotate_leads', 'get_owner_workload', 'update_lead' ),
+			'notes'           => __( 'Omit owner_id (or pass 0) to use the configured routing strategy; returns previous_owner for audit.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

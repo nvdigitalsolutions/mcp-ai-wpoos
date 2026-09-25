@@ -40,7 +40,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-ocr-service
  *
  * @since 1.4.0
  */
-class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Document_Response;
 	use WP_MCP_AI_Attachment_File_Resolver;
@@ -78,6 +78,18 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Advanced AI-powered OCR for PDF and image to text extraction optimized for document creation workflows. Features: multi-page PDF processing, batch image processing, layout preservation, structured output (JSON/Markdown/HTML), confidence scores, and seamless integration with document generation. Supports OpenAI GPT-4o Vision, Google Gemini, Claude vision models, Unlimited-OCR, and DeepSeek-OCR. Built on ISO/IEC 42001:2023 and NIST AI standards.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Converting PDFs or images into structured, formatted text (JSON, Markdown, HTML) with layout preservation and confidence metadata.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'One-shot long-PDF parsing on a self-hosted GPU or queued bulk jobs; use pro_unlimited_ocr or pro_batch_ocr, or ocr_pdf_text for a quick single scan.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'pro_unlimited_ocr', 'pro_batch_ocr', 'ocr_pdf_text' ),
+			'notes'           => __( 'Auto provider picks the best available vision model; cloud providers consume tokens while self-hosted OCR needs a GPU instance.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

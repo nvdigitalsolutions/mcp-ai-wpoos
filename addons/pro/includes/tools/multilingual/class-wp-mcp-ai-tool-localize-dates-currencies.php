@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Localize_Dates_Currencies tool.
  */
-class WP_MCP_AI_Tool_Localize_Dates_Currencies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Localize_Dates_Currencies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Localize_Dates_Currencies implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Format dates, times, numbers, and currencies according to locale standards.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Formatting dates, currency amounts, or phone numbers for a specific locale.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Translating text or detecting language; use auto_translate_content or detect_content_language instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'detect_content_language', 'auto_translate_content' ),
+			'notes'           => __( 'Uses PHP Intl when available and falls back to WordPress formatting; defaults to USD and US.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

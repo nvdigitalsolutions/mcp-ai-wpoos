@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Deletes a project.
  */
-class WP_MCP_AI_Tool_Delete_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Get the tool slug.
 	 *
@@ -41,6 +41,20 @@ class WP_MCP_AI_Tool_Delete_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Deletes a project. Note: This does not delete associated tasks or events.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently removing a project post by project_id after explicit user confirmation.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Archiving or hiding a finished project; use para_move_to_archives for reversible archival. Deleting tasks; use delete_task.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'delete_task', 'para_move_to_archives', 'list_projects' ),
+			'notes'           => __( 'Destructive and irreversible; associated tasks and events are NOT deleted by this tool.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

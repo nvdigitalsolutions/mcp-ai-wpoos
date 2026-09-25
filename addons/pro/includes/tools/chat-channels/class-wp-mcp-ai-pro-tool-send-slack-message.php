@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for sending Slack messages via the Web API.
  */
-class WP_MCP_AI_Pro_Tool_Send_Slack_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Send_Slack_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Slack requests.
 	 */
@@ -54,6 +54,18 @@ class WP_MCP_AI_Pro_Tool_Send_Slack_Message implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Sends a text message to a Slack channel or direct message using the Slack Web API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending a text message to a Slack channel or direct message using the Slack Web API.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading channel history; use get_slack_messages. Listing channels; use get_slack_channels.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_slack_messages', 'get_slack_channels', 'unified_channel_broadcast' ),
+			'notes'           => __( 'Posts real messages; supports Block Kit blocks and threaded replies.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

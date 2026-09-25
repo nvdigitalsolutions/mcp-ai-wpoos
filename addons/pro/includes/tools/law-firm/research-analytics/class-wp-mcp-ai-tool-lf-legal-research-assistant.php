@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Assists with legal research by generating outlines, sources, and search strategies.
  */
-class WP_MCP_AI_Tool_LF_Legal_Research_Assistant implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Legal_Research_Assistant implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -68,6 +68,20 @@ class WP_MCP_AI_Tool_LF_Legal_Research_Assistant implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Assists with legal research by generating research outlines, suggesting primary and secondary sources, and providing search strategies for legal issues.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Building research outlines, suggested primary and secondary sources, and search strategies for a legal question in a jurisdiction.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Analyzing a specific stored case; use lf_case_law_analyzer. Drafting documents; use lf_document_drafter.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_case_law_analyzer', 'lf_legal_citation_checker', 'lf_document_drafter' ),
+			'notes'           => __( 'research_query is required. date_range accepts last_year, last_5_years, or all. Secondary sources are included unless include_secondary_sources is false.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

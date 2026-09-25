@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Audit JNBC 2018 hurricane provisions.
  */
-class WP_MCP_AI_Tool_Check_JNBC_Hurricane_Compliance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Check_JNBC_Hurricane_Compliance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -69,6 +69,20 @@ class WP_MCP_AI_Tool_Check_JNBC_Hurricane_Compliance implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Audit a Jamaica building against JNBC 2018 hurricane provisions: ASCE 7 wind-zone basic speed, impact-rated opening protection, continuous load path / hurricane tie-downs, and essential-facility uplift.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Auditing Jamaica JNBC 2018 hurricane provisions: wind-zone speed, impact-rated openings, tie-downs, essential-facility uplift.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Other jurisdictions; use check_us_ibc_irc_compliance (US) or check_uda_planning_compliance (LK). Load values; use calculate_wind_loads.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'calculate_wind_loads', 'check_us_ibc_irc_compliance', 'generate_compliance_dossier' ),
+			'notes'           => __( 'Returns pass / fail / warning checks with an overall_status; parish councils and the BSJ may add requirements.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

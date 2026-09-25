@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Generate_WooCommerce_Order_Invoice_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_WooCommerce_Order_Invoice_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -104,6 +104,20 @@ class WP_MCP_AI_Tool_Generate_WooCommerce_Order_Invoice_PDF implements WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Generate professional PDF invoices for WooCommerce orders. Includes company branding, order details, line items, taxes, shipping, payment information, and custom notes. Automatically uploads to media library for customer access.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for tool selection.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a branded PDF invoice for one WooCommerce order, optionally uploaded to the media library.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Order data or status changes; use woo_orders to read orders and process_order_workflow for transitions.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'woo_orders', 'process_order_workflow', 'refund_order_advanced' ),
+			'notes'           => __( 'PDF generation requires Node.js on the server; set upload false to skip the media library.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

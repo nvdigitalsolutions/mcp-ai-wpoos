@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager
 /**
  * Provides an AI tool for scheduling recurring or one-off channel broadcasts.
  */
-class WP_MCP_AI_Pro_Tool_Schedule_Channel_Broadcast implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Schedule_Channel_Broadcast implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -45,6 +45,18 @@ class WP_MCP_AI_Pro_Tool_Schedule_Channel_Broadcast implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Schedules a message to be sent to one or more chat channels (Telegram, Slack, Discord, Teams, Messenger, WhatsApp) on a recurring or one-off basis.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scheduling a message for later or recurring delivery to chat channels such as Telegram, Slack, or Discord.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sending immediately (use unified_channel_broadcast) or scheduling non-message work (use create_pro_schedule).', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'unified_channel_broadcast', 'create_pro_schedule', 'list_pro_schedules' ),
+			'notes'           => __( 'Requires the Chat Channels Toolkit (enable_chat_channels_toolkit); use schedule=single plus a timestamp for a one-off send.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

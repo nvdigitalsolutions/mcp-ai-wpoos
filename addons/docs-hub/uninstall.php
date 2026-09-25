@@ -31,6 +31,9 @@ function nvoos_docs_hub_uninstall() {
 	// Remove rebuild state.
 	delete_option( 'nvoos_docs_hub_rebuild_state' );
 
+	// Remove the legacy content-folder migration flag.
+	delete_option( 'nvoos_docs_hub_content_migrated' );
+
 	// Clear known transients.
 	delete_transient( 'nvoos_dh_manifest' );
 	delete_transient( 'nvoos_dh_search' );

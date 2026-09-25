@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Excel_Data_Import implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Excel_Data_Import implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -46,6 +46,18 @@ class WP_MCP_AI_Tool_Excel_Data_Import implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Import data from Excel spreadsheets (.xlsx, .xls). Extract tables, cell values, and formatting for processing or database import. Supports multiple sheets and data validation.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading rows and cells from an uploaded .xlsx or .xls attachment for analysis or processing.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating spreadsheet files; use excel_data_export or generate_excel instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'excel_data_export', 'generate_excel' ),
+			'notes'           => __( 'Returns raw headers and rows only; it never writes imported data to the database.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

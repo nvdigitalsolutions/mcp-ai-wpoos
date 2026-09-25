@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * OKF — Write Concept tool.
  */
-class WP_MCP_AI_Tool_OKF_Write_Concept implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_OKF_Write_Concept implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_OKF_Write_Concept implements WP_MCP_AI_Tool_Interface {
 	 */
 	public function get_description() {
 		return __( 'Creates or updates an OKF concept document in a bundle (OKF v0.2). Requires at minimum a type field in the frontmatter. If the named bundle does not exist yet, it is created on first write (bundle names must be lowercase letters, numbers, hyphens, and underscores). Supports the v0.2 trust/provenance families: status (draft/stable/deprecated), stale_after (ISO 8601), resource, sources (with author/usage_count/last_modified credibility signals), usage_window, and verified ({by, at} list). Use this to curate and maintain the OKF knowledge base programmatically.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating or updating an OKF concept with v0.2 frontmatter such as status, stale_after, sources, and verified.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Removing a concept; use okf_delete_concept. Bulk importing; use okf_import_bundle.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'okf_read_concept', 'okf_delete_concept', 'okf_import_bundle' ),
+			'notes'           => __( 'Creates the bundle on first write; a verified entry with a human actor raises the trust tier to human-reviewed.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Pro_Tool_Shopify_Inventory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Shopify_Inventory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Shopify_Connection_Resolver;
 
@@ -43,6 +43,18 @@ class WP_MCP_AI_Pro_Tool_Shopify_Inventory implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Manage inventory on a connected Shopify store via the Admin GraphQL API. Supports listing inventory levels by location, adjusting available quantities, and listing store locations. Requires an admin_api mode connection — catalog connections (Storefront/Global Catalog MCP or the deprecated Catalog API) are live product-search modes that do not expose inventory; those return a hint pointing at the catalog tools.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking or adjusting Shopify inventory levels per location and listing store locations.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Forecasting or tracking WooCommerce stock; use inventory_forecast or track_inventory_movement for local stock.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'shopify_products', 'inventory_forecast', 'track_inventory_movement' ),
+			'notes'           => __( 'Actions: list_levels, adjust, list_locations, get_shop_info. Adjustments change live stock, so confirm the delta first.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

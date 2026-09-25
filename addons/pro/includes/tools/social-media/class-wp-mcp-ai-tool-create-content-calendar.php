@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Create_Content_Calendar implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Content_Calendar implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -96,6 +96,20 @@ class WP_MCP_AI_Tool_Create_Content_Calendar implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Plan social media content schedule with optimal posting times, platform assignments, and content themes. Generates ICS calendar file for easy import into calendar apps. Includes AI-powered recommendations for best posting times based on platform and audience.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Planning a multi-week, multi-platform content schedule with optimal posting times and ICS export.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Generating individual post ideas; use generate_post_ideas. Scheduling real posts; use schedule_social_post or schedule_social_posts.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_post_ideas', 'schedule_social_post', 'schedule_social_posts', 'get_content_calendar' ),
+			'notes'           => __( 'Planning only: no posts are created or published. Use get_content_calendar to review the resulting schedule.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

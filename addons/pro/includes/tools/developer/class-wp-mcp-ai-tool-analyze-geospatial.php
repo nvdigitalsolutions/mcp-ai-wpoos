@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Media_Worker_Client;
 
 	/**
@@ -47,6 +47,20 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Perform geospatial analysis using Turf.js. Calculate distances between locations, find places within radius, measure areas, determine point-in-polygon relationships, and analyze geographic data. Perfect for location-based services and proximity searches.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Measuring distances, bearings, areas, buffers, or point-in-polygon checks between places and coordinates.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Discovering new places nearby; use search_places. Managing stored places; use create_place or update_place.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'search_places', 'list_places' ),
+			'notes'           => __( 'Operations: distance, buffer, within, area, nearest, bearing. Works with place_id or raw coordinates.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

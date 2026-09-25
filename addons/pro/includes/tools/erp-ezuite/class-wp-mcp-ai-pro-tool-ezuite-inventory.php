@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-ezuite-cct-manager.p
  *
  * @since 1.9.0
  */
-class WP_MCP_AI_Pro_Tool_EZuite_Inventory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_EZuite_Inventory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Product_Card;
 
@@ -57,6 +57,20 @@ class WP_MCP_AI_Pro_Tool_EZuite_Inventory implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Search and filter cached EZuite inventory items from the local CCT cache (zero API cost).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Searching cached EZuite inventory by name, SKU, warehouse, supplier, or stock status with zero ERP API cost.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Fresh or live ERP data; trigger ezuite_sync first, or use ezuite_erp for direct API actions.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'ezuite_sync', 'ezuite_settings', 'ezuite_erp' ),
+			'notes'           => __( 'Reads the JetEngine CCT cache only; freshness depends on the last sync. Rate limited to 30 requests per minute.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

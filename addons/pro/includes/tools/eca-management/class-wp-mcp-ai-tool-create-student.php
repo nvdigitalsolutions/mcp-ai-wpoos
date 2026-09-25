@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates a new student.
  */
-class WP_MCP_AI_Tool_Create_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,18 @@ class WP_MCP_AI_Tool_Create_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Creates a new student or updates an existing one if student_id is provided. Includes personal details, year group, and house information. Students can then be enrolled in Extra-Curricular Activities.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adding a new student record with personal details, year group, and house, or updating one when student_id is supplied.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Looking up an existing student; use list_students or get_student. Importing many records; use sync_students_from_isams.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_students', 'get_student', 'update_student', 'enroll_student_eca' ),
+			'notes'           => __( 'Check list_students first to avoid duplicate records.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

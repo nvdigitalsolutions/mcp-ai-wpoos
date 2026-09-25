@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.80
  */
-class WP_MCP_AI_Tool_Price_Alerts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Price_Alerts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Option name prefix for per-user alert storage.
@@ -111,6 +111,22 @@ class WP_MCP_AI_Tool_Price_Alerts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Create, list, delete, and check price alerts. Triggered alerts fire the wp_mcp_ai_price_alert_triggered hook for delivery integrations. EDUCATIONAL ONLY - Prices are delayed public data. Not investment advice.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating and managing per-user alerts that fire when a ticker crosses an above or below price threshold.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'One-off quote checks; use stock_data_fetcher. Option strike and chain data belong to options_chain_fetcher.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'stock_data_fetcher', 'options_chain_fetcher', 'portfolio_transaction_log' ),
+			'notes'           => __( 'action is required; create needs ticker, condition, and threshold. Alerts are evaluated daily by cron and fire a delivery hook.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

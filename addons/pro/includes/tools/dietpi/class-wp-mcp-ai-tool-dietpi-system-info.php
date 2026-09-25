@@ -16,7 +16,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_System_Info' ) ) {
 	/**
 	 * System Info tool.
 	 */
-	class WP_MCP_AI_Tool_DietPi_System_Info extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_System_Info extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 		public function get_slug() {
@@ -31,6 +31,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_System_Info' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Get detailed system information about the Raspberry Pi including model, OS version, kernel version, DietPi version, and uptime.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Getting static device details: Pi model, OS and DietPi versions, kernel, hostname, and uptime.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Live performance data like CPU load, temperature, or RAM; use dietpi_system_stats.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_system_stats', 'dietpi_health_check', 'dietpi_dashboard_summary' ),
+			);
 		}
 
 		/** {@inheritdoc} */

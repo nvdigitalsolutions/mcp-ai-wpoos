@@ -31,7 +31,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for sending Apple Messages for Business interactive messages.
  */
-class WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default timeout for MSP API requests (seconds).
@@ -83,6 +83,18 @@ class WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive implements WP_MCP_AI_Too
 	 */
 	public function get_description() {
 		return __( 'Sends an Apple Messages for Business interactive message including list pickers, date/time pickers, rich links, and authentication requests through an approved MSP.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending Apple Messages for Business interactive widgets like list pickers, time pickers, rich links, or authentication requests.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Plain text messages; use send_apple_message. Group delivery; use send_apple_message_group.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_apple_message', 'send_apple_message_group' ),
+			'notes'           => __( 'Supported types: list_picker, time_picker, rich_link, authenticate; max 10 sections with 10 items.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

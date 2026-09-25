@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Deletes an allergy record.
  */
-class WP_MCP_AI_Tool_Delete_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Get the tool slug.
 	 *
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Delete_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Permanently deletes an allergy record from the system.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently removing a single allergy record by allergy_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( "Bulk removal of a member's allergies; delete each record individually with this tool.", 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_allergy', 'list_allergies' ),
+			'notes'           => __( 'Deletion is permanent; confirm the ID with get_allergy before calling.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

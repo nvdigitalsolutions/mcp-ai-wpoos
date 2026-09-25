@@ -28,7 +28,17 @@ class Test_OpenRouter_Client extends WP_UnitTestCase {
 
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openrouter-client.php';
 
+		// The decisions bridge normalises via the TypeSafe client's shared
+		// payload normaliser; load it so the normalised shape is exercised.
+		if ( ! class_exists( 'WP_MCP_AI_Typesafe_Client' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-decision-client.php';
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-typesafe-client.php';
+		}
+
 		$this->client = new WP_MCP_AI_OpenRouter_Client();
+
+		// Retries must not sleep inside the test suite.
+		add_filter( 'wp_mcp_ai_typesafe_retry_sleep', '__return_zero' );
 
 		wp_cache_flush();
 	}
@@ -37,6 +47,7 @@ class Test_OpenRouter_Client extends WP_UnitTestCase {
 	 * Tear down test environment.
 	 */
 	public function tearDown(): void {
+		remove_all_filters( 'wp_mcp_ai_typesafe_retry_sleep' );
 		delete_option( 'wp_mcp_ai_settings' );
 		wp_cache_flush();
 		parent::tearDown();
@@ -526,5 +537,183 @@ class Test_OpenRouter_Client extends WP_UnitTestCase {
 		$adapter = new WP_MCP_AI_OpenRouter_Provider_Client( $this->client );
 
 		$this->assertEquals( 'openrouter', $adapter->get_provider_slug() );
+	}
+
+	// -------------------------------------------------------------------------
+	// TypeSafe Jev — decisions bridge.
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test create_decision() defaults to the pinned decisions endpoint and Jev model.
+	 */
+	public function test_create_decision_uses_decisions_endpoint() {
+		update_option( 'wp_mcp_ai_settings', array( 'openrouter_api_key' => 'sk-or-test' ) );
+
+		$captured = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $preempt, $args, $url ) use ( &$captured ) {
+				$captured = array(
+					'url'  => $url,
+					'args' => $args,
+				);
+
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'model'   => 'typesafe/jev-1.13',
+							'answers' => array( 'q' => array( 'noul' => 0.9 ) ),
+						)
+					),
+				);
+			},
+			10,
+			3
+		);
+
+		$result = $this->client->create_decision(
+			'state',
+			array(
+				'q' => array(
+					'type'         => 'noul',
+					'instructions' => 'Yes?',
+				),
+			)
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertNotWPError( $result );
+		$this->assertStringContainsString( 'decisions', $captured['url'] );
+		$body = json_decode( $captured['args']['body'], true );
+		// OpenRouter serves the versioned id only — the jev-latest alias does
+		// not exist on the decisions route.
+		$this->assertEquals( 'typesafe/jev-1.13', $body['model'] );
+		$this->assertEquals( 'state', $body['state'] );
+		$this->assertArrayHasKey( 'q', $body['questions'] );
+		$this->assertEquals( 'typesafe/jev-1.13', $result['model'] );
+		$this->assertEquals( 'noul', $result['answers']['q']['type'] );
+	}
+
+	/**
+	 * Test create_decision() normalises unprefixed and alias model overrides.
+	 */
+	public function test_create_decision_normalises_model_overrides() {
+		update_option( 'wp_mcp_ai_settings', array( 'openrouter_api_key' => 'sk-or-test' ) );
+
+		$captured_models = array();
+		add_filter(
+			'pre_http_request',
+			static function ( $preempt, $args ) use ( &$captured_models ) {
+				$captured_models[] = json_decode( $args['body'], true )['model'];
+
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'model'   => 'typesafe/jev-1.13',
+							'answers' => array( 'q' => array( 'noul' => 0.9 ) ),
+						)
+					),
+				);
+			},
+			10,
+			2
+		);
+
+		$questions = array(
+			'q' => array(
+				'type'         => 'noul',
+				'instructions' => 'Yes?',
+			),
+		);
+
+		$this->client->create_decision( 'state', $questions, array( 'model' => 'jev-latest' ) );
+		$this->client->create_decision( 'state', $questions, array( 'model' => 'typesafe/jev-1.13' ) );
+		$this->client->create_decision( 'state', $questions, array( 'model' => 'jev-1.13' ) );
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertEquals( 'typesafe/jev-1.13', $captured_models[0] );
+		$this->assertEquals( 'typesafe/jev-1.13', $captured_models[1] );
+		$this->assertEquals( 'typesafe/jev-1.13', $captured_models[2] );
+	}
+
+	/**
+	 * Test normalize_decisions_model() mapping rules directly.
+	 */
+	public function test_normalize_decisions_model_rules() {
+		$this->assertEquals( 'typesafe/jev-1.13', $this->client->normalize_decisions_model( 'jev-latest' ) );
+		$this->assertEquals( 'typesafe/jev-1.13', $this->client->normalize_decisions_model( 'typesafe/jev-1.13' ) );
+		$this->assertEquals( 'typesafe/jev-1.13', $this->client->normalize_decisions_model( 'jev-1.13' ) );
+		$this->assertEquals( 'typesafe/jev-1.13', $this->client->normalize_decisions_model( '' ) );
+	}
+
+	/**
+	 * Test create_decision() returns a dedicated error when the route 404s.
+	 */
+	public function test_create_decision_maps_404_to_decisions_unavailable() {
+		update_option( 'wp_mcp_ai_settings', array( 'openrouter_api_key' => 'sk-or-test' ) );
+
+		add_filter(
+			'pre_http_request',
+			static function () {
+				return array(
+					'response' => array( 'code' => 404 ),
+					'body'     => wp_json_encode( array( 'error' => array( 'message' => 'Not found' ) ) ),
+				);
+			},
+			10
+		);
+
+		$result = $this->client->create_decision(
+			'state',
+			array(
+				'q' => array(
+					'type'         => 'noul',
+					'instructions' => 'Yes?',
+				),
+			)
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_openrouter_decisions_unavailable', $result->get_error_code() );
+		$data = $result->get_error_data();
+		$this->assertArrayHasKey( 'actions', $data );
+	}
+
+	/**
+	 * Test create_decision() returns the missing-key error without a configured key.
+	 */
+	public function test_create_decision_requires_api_key() {
+		delete_option( 'wp_mcp_ai_settings' );
+
+		$result = $this->client->create_decision(
+			'state',
+			array(
+				'q' => array(
+					'type'         => 'noul',
+					'instructions' => 'Yes?',
+				),
+			)
+		);
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_missing_openrouter_api_key', $result->get_error_code() );
+	}
+
+	/**
+	 * Test create_decision() rejects an empty question map.
+	 */
+	public function test_create_decision_rejects_empty_questions() {
+		update_option( 'wp_mcp_ai_settings', array( 'openrouter_api_key' => 'sk-or-test' ) );
+
+		$result = $this->client->create_decision( 'state', array() );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_typesafe_no_questions', $result->get_error_code() );
 	}
 }

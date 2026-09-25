@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -82,6 +82,18 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Manage WooCommerce coupons. Create, update, list, and delete discount coupons with flexible restrictions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating, updating, listing, or deleting WooCommerce coupons with discount rules and restrictions.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Launching a campaign with usage limits and expiry; use create_discount_campaign for full campaign settings.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_discount_campaign', 'woo_products', 'abandoned_cart_recovery' ),
+			'notes'           => __( 'Actions: get, list, create, update, and delete. Requires WooCommerce to be active.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

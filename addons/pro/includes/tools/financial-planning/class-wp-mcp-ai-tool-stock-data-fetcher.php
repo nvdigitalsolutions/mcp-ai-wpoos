@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Stock_Data_Fetcher implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Stock_Data_Fetcher implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -99,6 +99,22 @@ class WP_MCP_AI_Tool_Stock_Data_Fetcher implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Fetch stock market data via the YFinance service. Search tickers, get real-time quotes, retrieve historical OHLCV data, and batch-fetch prices for multiple symbols. EDUCATIONAL ONLY - Data may be delayed 15+ minutes. Not investment advice.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Searching tickers and fetching quotes, historical OHLCV, technical indicators, or batch quotes via the yfinance service.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Options chains; use options_chain_fetcher. Whole-market scans belong to market_screener, macro series to macro_data_fetcher.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'options_chain_fetcher', 'market_screener', 'macro_data_fetcher' ),
+			'notes'           => __( 'action is required (search, quote, history, batch_quotes, indicators); data may be delayed 15+ minutes.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

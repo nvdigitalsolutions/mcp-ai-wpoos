@@ -115,6 +115,20 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating, listing, validating, or theme-syncing reusable block patterns.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Publishing posts or pages containing patterns; use create_post or save_post.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_post', 'save_post' ),
+			'notes'           => __( 'The action enum picks generate_pattern, list_patterns, sync_theme_json, or validate_pattern.', 'mcp-ai-wpoos' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @since 1.0.0

@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.10.0
  */
-class WP_MCP_AI_Tool_Import_LinkedIn_Profile implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_LinkedIn_Profile implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Determine whether CRM toolkit is enabled.
@@ -65,6 +65,20 @@ class WP_MCP_AI_Tool_Import_LinkedIn_Profile implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Import a LinkedIn profile into the CRM as a contact or lead record, enriching it with profile data when a LinkedIn connection is configured.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Importing a LinkedIn profile into the CRM as a contact or lead, enriched via the LinkedIn API when a connection is configured.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Editing existing contacts; use manage_crm_contact. Company research; use research_company.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_crm_contact', 'search_linkedin_jobs', 'research_company' ),
+			'notes'           => __( 'import_as accepts contact or lead; API enrichment requires a Remote Sites connection with a refresh token.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

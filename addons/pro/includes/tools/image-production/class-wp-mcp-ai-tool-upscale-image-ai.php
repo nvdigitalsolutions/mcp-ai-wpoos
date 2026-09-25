@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.ph
 /**
  * Upscale images using AI super-resolution.
  */
-class WP_MCP_AI_Tool_Upscale_Image_AI extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Upscale_Image_AI extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,18 @@ class WP_MCP_AI_Tool_Upscale_Image_AI extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	public function get_description() {
 		return __( 'Upscale images using AI super-resolution. Increase resolution by 2x, 4x, or 8x while preserving quality and details.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Increasing image resolution by 2x, 4x, or 8x with super-resolution models while preserving detail and reducing noise.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Plain dimension resize: use resize_image_smart. Shrinking for the web: use optimize_for_web.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'resize_image_smart', 'enhance_image_quality', 'optimize_image_sharp' ),
+			'notes'           => __( 'Model options: real-esrgan, esrgan, anime. Local path falls back to standard scaling when Real-ESRGAN is absent.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

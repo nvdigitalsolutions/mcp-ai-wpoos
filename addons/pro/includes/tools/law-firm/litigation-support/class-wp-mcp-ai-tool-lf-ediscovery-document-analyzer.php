@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Analyzes documents for eDiscovery relevance, privilege, and key terms.
  */
-class WP_MCP_AI_Tool_LF_Ediscovery_Document_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Ediscovery_Document_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -73,6 +73,20 @@ class WP_MCP_AI_Tool_LF_Ediscovery_Document_Analyzer implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Analyzes documents for eDiscovery relevance scoring, privilege flags, and key term identification. Returns relevance score, privilege flags, key terms found, and classification.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scoring one document post for relevance to search terms, privilege flags, key terms, and classification.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Summarizing deposition testimony; use lf_deposition_summary_generator. Storing exhibits; use lf_evidence_catalog_manager.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_evidence_catalog_manager', 'lf_deposition_summary_generator' ),
+			'notes'           => __( 'Requires a document_id post; relevance falls back to word count when search_terms is empty.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

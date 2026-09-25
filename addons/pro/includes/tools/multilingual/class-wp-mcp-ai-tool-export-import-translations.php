@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Export_Import_Translations tool.
  */
-class WP_MCP_AI_Tool_Export_Import_Translations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Export_Import_Translations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Export_Import_Translations implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Export and import translations in XLIFF, PO, or JSON formats for professional translation services.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Exchanging translations with a professional translation service in XLIFF, PO, or JSON format.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Translating content on-site; use auto_translate_content for AI translation instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'auto_translate_content', 'find_untranslated_strings' ),
+			'notes'           => __( 'Pass action export or import with a format of xliff, po, or json and the target language.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

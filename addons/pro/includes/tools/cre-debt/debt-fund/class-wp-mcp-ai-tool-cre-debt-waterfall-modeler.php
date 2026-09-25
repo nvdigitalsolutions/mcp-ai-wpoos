@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Debt_Waterfall_Modeler implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Debt_Waterfall_Modeler implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_Debt_Waterfall_Modeler implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description(): string {
 		return __( 'Model a GP/LP distribution waterfall with return of capital, preferred return, GP catch-up, and promote tiers. Returns tier-by-tier breakdown with amounts distributed to GP and LP.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Modeling how a distribution splits between GP and LP via return of capital, preferred return, catch-up, and promote tiers.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Fund-level IRR and multiples; use cre_fund_return_calculator. Whole-portfolio stress tests; use cre_fund_scenario_modeler.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_fund_return_calculator', 'cre_fund_capital_call_calculator', 'cre_fund_scenario_modeler' ),
+			'notes'           => __( 'Requires distributable_amount, lp_commitment, gp_commitment, and preferred_return_pct. Optional tiers set hurdle_pct and gp_share_pct.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

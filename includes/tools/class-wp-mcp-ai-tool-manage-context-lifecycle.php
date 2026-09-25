@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -48,6 +48,20 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Advanced context lifecycle management: refresh TTL, apply compression, merge related contexts, update memory content, delete specific contexts, and manage retention policies. Implements RAG best practices for memory lifecycle.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Refreshing TTLs, compressing, merging, or pruning an agent\'s stored contexts.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Plain reads or writes of memory; use retrieve_agent_memory or store_agent_context.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'retrieve_agent_memory', 'store_agent_context', 'memory_audit_trail' ),
+			'notes'           => __( 'action is refresh, compress, merge, analyze, prune, update, or delete.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

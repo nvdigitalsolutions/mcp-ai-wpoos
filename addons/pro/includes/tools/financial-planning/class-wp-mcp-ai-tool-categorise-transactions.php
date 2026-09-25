@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.8.0
  */
-class WP_MCP_AI_Tool_Categorise_Transactions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Categorise_Transactions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -46,6 +46,18 @@ class WP_MCP_AI_Tool_Categorise_Transactions implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Assigns categories to financial transactions based on rules, patterns, or explicit transaction IDs. Supports dry_run mode to preview categorisations before applying. Rules include merchant_match, amount_range, and date_pattern for bulk auto-categorisation.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'To assign categories to transactions by ID or via merchant_match, amount_range, or date_pattern rules.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'To only list transactions that need categories without changing them; use get_uncategorised_transactions instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_uncategorised_transactions', 'bank_account_sync', 'expense_tracker' ),
+			'notes'           => __( 'Requires category. dry_run defaults to true so changes are previewed until you set dry_run to false.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

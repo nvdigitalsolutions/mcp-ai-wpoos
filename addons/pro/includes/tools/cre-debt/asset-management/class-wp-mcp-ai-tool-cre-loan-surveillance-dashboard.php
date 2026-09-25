@@ -22,7 +22,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Loan_Surveillance_Dashboard implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Loan_Surveillance_Dashboard implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_CRE_Loan_Surveillance_Dashboard implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description(): string {
 		return __( 'Aggregate loan portfolio metrics for surveillance reporting. Analyzes payment status, DSCR coverage, occupancy, reporting compliance, maturity risk, and inspection schedules across the loan book.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Aggregating portfolio-wide surveillance metrics: payment status, DSCR, occupancy, reporting compliance, maturity risk, and inspections.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'CMBS deal-level monitoring; use cmbs_surveillance_monitor. Single-loan workout modeling; use cre_workout_scenario_modeler.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_watchlist_manager', 'cmbs_surveillance_monitor', 'cmbs_maturity_risk_analyzer' ),
+			'notes'           => __( 'payment_status accepts current, 30day, 60day, 90plus, or default; include maturity_date and last_inspection_date for full risk flags.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

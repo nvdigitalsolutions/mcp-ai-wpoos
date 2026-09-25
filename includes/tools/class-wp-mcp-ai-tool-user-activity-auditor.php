@@ -32,7 +32,7 @@ require_once __DIR__ . '/../traits/trait-wp-mcp-ai-tool-wordpress-native.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_User_Activity_Auditor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_User_Activity_Auditor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_WordPress_Native;
 
 	/**
@@ -54,6 +54,18 @@ class WP_MCP_AI_Tool_User_Activity_Auditor implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Audits user activity including login attempts, role changes, permission escalations, and security events. Generates comprehensive audit logs following 2026 security best practices.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to audit login, role, and permission events for one user or the whole site.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Use login_security_monitor for brute-force analysis or password_strength_analyzer for password scoring.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'login_security_monitor', 'password_strength_analyzer', 'check_site_security' ),
+			'notes'           => __( 'event_type accepts login, role_change, user_deleted, and all; limit is capped at 1000.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

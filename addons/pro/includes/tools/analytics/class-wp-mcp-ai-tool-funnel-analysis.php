@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Funnel_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Funnel_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -95,6 +95,20 @@ class WP_MCP_AI_Tool_Funnel_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Track conversion funnel performance, identify drop-off points at each stage, calculate conversion rates, and get optimization recommendations to improve funnel efficiency.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding which stage of a checkout, registration, or subscription funnel loses the most users and why.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Assigning conversion credit across channels; use attribution_modeling instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'attribution_modeling', 'cohort_analysis', 'real_time_event_tracking' ),
+			'notes'           => __( 'Defaults to the checkout funnel over the last 30 days; custom funnels accept name and event pairs per step.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

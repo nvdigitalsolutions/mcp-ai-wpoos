@@ -28,7 +28,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-erlang-c.php';
  *
  * @since 1.1.8
  */
-class WP_MCP_AI_Tool_Calculate_Erlang_C implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Calculate_Erlang_C implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -50,6 +50,20 @@ class WP_MCP_AI_Tool_Calculate_Erlang_C implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Applies the Erlang C queuing formula to calculate contact-centre or AI-chat staffing. Given an arrival rate, average handle time, and number of agents, returns the probability of waiting, average wait time, agent utilisation, and service-level attainment. Can also find the minimum agents required to meet a target service level (default 80 % answered within 20 s).', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Computing contact-centre staffing metrics: wait probability, service level, utilization, or minimum agents required.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Strategic staffing advice or multi-queue analysis; use erlang_c_staffing_advisor, erlang_c_queue_health, or erlang_c_concurrency_advisor.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'erlang_c_staffing_advisor', 'erlang_c_queue_health', 'erlang_c_concurrency_advisor' ),
+			'notes'           => __( 'Requires arrival_rate and avg_handle_time. Omit num_agents to compute the minimum agents for the target service level.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

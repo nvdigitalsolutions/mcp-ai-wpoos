@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.1.0
  */
-class WP_MCP_AI_Pro_Tool_JetEngine_Prompts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_JetEngine_Prompts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -75,6 +75,20 @@ class WP_MCP_AI_Pro_Tool_JetEngine_Prompts implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Discover and retrieve JetEngine MCP prompt templates. Use list action to see available prompts, or get to render a specific prompt with arguments. Prompts can be used for AI-powered content generation, code review, and site management tasks.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing JetEngine MCP prompt templates or rendering one with arguments.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Calling MCP tools or reading site structure; use jetengine_mcp or jetengine_site_context.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'jetengine_mcp', 'jetengine_site_context' ),
+			'notes'           => __( 'Requires manage_options; use action=get with a prompt name to render a template.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

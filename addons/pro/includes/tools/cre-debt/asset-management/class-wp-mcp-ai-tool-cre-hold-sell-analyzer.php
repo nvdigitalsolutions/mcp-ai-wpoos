@@ -22,7 +22,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Hold_Sell_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Hold_Sell_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_CRE_Hold_Sell_Analyzer implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description(): string {
 		return __( 'Compare hold vs. sell scenarios for a CRE asset by modeling remaining hold period returns against capital redeployment opportunities. Calculates marginal return on equity to support disposition decisions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Comparing hold vs. sell outcomes for a CRE asset using remaining hold returns, exit cap rate, and redeployment return assumptions.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Post-default REO or note sale dispositions; use cre_asset_disposition_analyzer or cre_workout_scenario_modeler.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_asset_disposition_analyzer', 'cre_property_performance_tracker' ),
+			'notes'           => __( 'Pass exit_cap_rate as a decimal (0.06) and percentages as whole numbers (2 for 2%); returns marginal return on equity.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

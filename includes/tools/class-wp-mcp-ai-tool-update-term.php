@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * This tool provides comprehensive term updating with support for
  * changing term properties, parent relationships, and metadata.
  */
-class WP_MCP_AI_Tool_Update_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -40,6 +40,18 @@ class WP_MCP_AI_Tool_Update_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Updates an existing taxonomy term (category, tag, or custom taxonomy) with new properties, parent relationships, and metadata.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to rename, re-parent, or update metadata of an existing taxonomy term.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Use create_term for new terms, list_terms to find term IDs, or list_taxonomies to discover taxonomy names.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_term', 'list_terms', 'list_taxonomies' ),
+			'notes'           => __( 'term_id comes from create_term responses or list_terms. Pass parent=0 to make a term top-level in hierarchical taxonomies.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
@@ -84,6 +96,16 @@ class WP_MCP_AI_Tool_Update_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			),
 			'required'             => array( 'term_id', 'taxonomy' ),
 			'additionalProperties' => false,
+		);
+	}
+
+		/**
+		 * {@inheritdoc}
+		 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'term_id',
+			'consumes' => array( 'term_id' ),
 		);
 	}
 

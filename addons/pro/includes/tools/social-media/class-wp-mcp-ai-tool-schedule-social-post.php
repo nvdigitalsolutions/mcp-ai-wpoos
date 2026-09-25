@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Schedule_Social_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Schedule_Social_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -97,6 +97,20 @@ class WP_MCP_AI_Tool_Schedule_Social_Post implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Schedule social media posts with optimal timing suggestions based on audience engagement patterns. Supports multi-platform scheduling, timezone awareness, recurring posts, and auto-publish.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scheduling one social post for a future time with optimal timing, timezone, recurrence, or media options.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Publishing now; use publish_to_social or post_to_multiple_platforms. Many posts at once; use schedule_social_posts or bulk_schedule_posts.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'publish_to_social', 'schedule_social_posts', 'bulk_schedule_posts', 'get_content_calendar' ),
+			'notes'           => __( 'Creates a real scheduled post auto-published by cron at the chosen time.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

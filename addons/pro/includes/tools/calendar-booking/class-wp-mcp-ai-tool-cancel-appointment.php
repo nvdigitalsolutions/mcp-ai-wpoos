@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.6.0
  */
-class WP_MCP_AI_Tool_Cancel_Appointment implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Cancel_Appointment implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -96,6 +96,20 @@ class WP_MCP_AI_Tool_Cancel_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Cancel appointments with automatic notifications to clients. Supports cancellation reasons and refund processing.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Cancelling a real booked appointment by appointment_id, with optional reason, refund, and client notification.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Moving an appointment to a new time; use reschedule_appointment. Blocking future slots; use block_time_slot.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_appointment_details', 'reschedule_appointment', 'create_appointment' ),
+			'notes'           => __( 'Cancellation is permanent and notifies the client by default; set send_notification=false to cancel silently.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

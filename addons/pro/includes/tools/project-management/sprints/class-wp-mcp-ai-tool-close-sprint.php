@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Moves incomplete tasks back to backlog, calculates completion rate
  * and velocity, and saves the metrics as sprint post meta.
  */
-class WP_MCP_AI_Tool_Close_Sprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Close_Sprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -42,6 +42,20 @@ class WP_MCP_AI_Tool_Close_Sprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Close a sprint, moving incomplete tasks back to the backlog and computing sprint metrics including completion rate and velocity. Useful for sprint review and retrospective ceremonies.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Closing an active sprint at review time: incomplete tasks return to backlog and metrics are computed.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating or scheduling a sprint; use create_sprint. Moving tasks into a sprint; use plan_sprint.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_sprint', 'plan_sprint', 'get_team_velocity' ),
+			'notes'           => __( 'Only sprints with status active can be closed; metrics are stored as _sprint_* post meta.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

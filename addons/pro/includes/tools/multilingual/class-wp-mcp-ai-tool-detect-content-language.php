@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Detect_Content_Language tool.
  */
-class WP_MCP_AI_Tool_Detect_Content_Language implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Detect_Content_Language implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Detect_Content_Language implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Auto-detect content language using AI-powered language detection algorithms.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Determining the language of a text string or post before translating or localizing it.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Translating content itself; use auto_translate_content or translate_woocommerce_products instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'auto_translate_content', 'translate_woocommerce_products', 'translation_quality_check' ),
+			'notes'           => __( 'Returns confidence and alternatives; pass text directly or a post_id to detect from post content.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

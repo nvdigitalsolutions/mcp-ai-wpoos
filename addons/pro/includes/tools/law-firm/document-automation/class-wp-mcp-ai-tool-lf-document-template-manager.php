@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * CRUD manager for document templates used in legal document assembly.
  */
-class WP_MCP_AI_Tool_LF_Document_Template_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Document_Template_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 	const OPTION_KEY = 'wp_mcp_ai_lf_document_templates';
@@ -68,6 +68,20 @@ class WP_MCP_AI_Tool_LF_Document_Template_Manager implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Manages reusable document templates for legal document assembly. Supports create, list, get, and delete operations.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When creating, listing, retrieving, or deleting reusable document templates in the template store.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'To draft a concrete document; use lf_document_drafter to create a saved draft.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_document_drafter', 'lf_clause_library_manager' ),
+			'notes'           => __( 'action must be create, list, get, or delete; get and delete need the template_id returned by create.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

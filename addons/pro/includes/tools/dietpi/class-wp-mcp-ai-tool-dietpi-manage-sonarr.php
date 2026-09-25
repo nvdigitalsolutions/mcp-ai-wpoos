@@ -15,7 +15,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Sonarr' ) ) {
 	/**
 	 * Manages Sonarr via the Sonarr API.
 	 */
-	class WP_MCP_AI_Tool_DietPi_Manage_Sonarr extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_Manage_Sonarr extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 		/**
 		 * {@inheritdoc}
 		 */
@@ -35,6 +35,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Sonarr' ) ) {
 		 */
 		public function get_description() {
 			return __( 'Manage Sonarr: trigger series refresh, rescan episodes, search for missing episodes, monitor/unmonitor series, check download queue, and view system status.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/**
+		 * {@inheritdoc}
+		 */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Running Sonarr maintenance actions: refresh all series, rescan a series, search missing episodes, or monitor or unmonitor a series.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Adding a new series to Sonarr; use dietpi_add_sonarr_series. Browsing the library; use dietpi_list_sonarr_series.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_add_sonarr_series', 'dietpi_list_sonarr_series', 'dietpi_media_request_flow' ),
+				'notes'           => __( 'rescan_series, search_missing, monitor, and unmonitor require series_id; other actions do not.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/**

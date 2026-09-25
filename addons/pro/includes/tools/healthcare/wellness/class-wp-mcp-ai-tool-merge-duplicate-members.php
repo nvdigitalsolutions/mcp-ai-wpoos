@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Merge duplicate members tool.
  */
-class WP_MCP_AI_Tool_Merge_Duplicate_Members implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Merge_Duplicate_Members implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -59,6 +59,20 @@ class WP_MCP_AI_Tool_Merge_Duplicate_Members implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Merge two duplicate member records by re-parenting allergies, prescriptions, checkups, medical records, and vital logs from a source member to a destination member, then trashing or deleting the source.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Consolidating two duplicate member records by re-parenting all health data to the destination member.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Removing a member without keeping history; use delete_member.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'delete_member', 'update_member' ),
+			'notes'           => __( 'Run dry_run=true first to preview; permanent=true skips the trash. Requires delete_others_posts.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

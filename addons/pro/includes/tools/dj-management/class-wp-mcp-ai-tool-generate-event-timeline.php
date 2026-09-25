@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates event timelines for DJ performances.
  */
-class WP_MCP_AI_Tool_Generate_Event_Timeline implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Event_Timeline implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Generate_Event_Timeline implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Generates a detailed event timeline for DJ performances. Includes setup, performance segments, and breakdown schedules.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Building a minute-by-minute schedule with setup, performance segments, and breakdown for an event.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating or changing the booking record; use create_event_booking or update_event_details. Writing the agreement; use generate_dj_contract.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_event_booking', 'update_event_details', 'generate_dj_contract' ),
+			'notes'           => __( 'Pass booking_id to pull date and times from the booking and store the timeline back to it.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

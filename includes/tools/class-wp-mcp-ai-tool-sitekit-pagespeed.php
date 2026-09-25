@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_SiteKit_PageSpeed implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_SiteKit_PageSpeed implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -83,6 +83,20 @@ class WP_MCP_AI_Tool_SiteKit_PageSpeed implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Retrieve PageSpeed Insights performance data including performance scores, Core Web Vitals (LCP, FID, CLS), and optimization recommendations for mobile and desktop.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking a URL performance score, Core Web Vitals (LCP, FID, CLS), and optimization opportunities for mobile or desktop.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Traffic volume, ad revenue, or keyword queries; use sitekit_get_analytics, sitekit_get_adsense, or sitekit_get_search_console instead.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'sitekit_get_analytics', 'sitekit_get_search_console' ),
+			'notes'           => __( 'Defaults to the homepage on mobile; returns Lighthouse scores, vitals, and a list of optimization opportunities. Read-only.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -22,7 +22,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-ext-cog-sensor-access.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Ext_Cog_Remember_Sensory_Context implements WP_MCP_AI_Ext_Cog_Tool_Interface {
+class WP_MCP_AI_Tool_Ext_Cog_Remember_Sensory_Context implements WP_MCP_AI_Ext_Cog_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Ext_Cog_Sensor_Access;
 
@@ -49,6 +49,20 @@ class WP_MCP_AI_Tool_Ext_Cog_Remember_Sensory_Context implements WP_MCP_AI_Ext_C
 	 */
 	public function get_description() {
 		return __( 'Store a labeled sensory snapshot in the assistant\'s persistent extended memory for future retrieval.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Persisting a labeled sensory snapshot (image, transcript, motion, or observation) for later recall.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Fresh captures; capture first with ext_cog_capture_visual, ext_cog_capture_audio, or ext_cog_capture_screen.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'ext_cog_capture_visual', 'ext_cog_capture_audio' ),
+			'notes'           => __( 'Base64 images are stored as media attachments; memories expire after ttl_days.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

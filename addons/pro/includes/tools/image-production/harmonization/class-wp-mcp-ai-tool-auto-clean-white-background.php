@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-harmonization-base.php';
 /**
  * Convert white-background product photos to transparent PNG.
  */
-class WP_MCP_AI_Tool_Auto_Clean_White_Background extends WP_MCP_AI_Tool_Harmonization_Base {
+class WP_MCP_AI_Tool_Auto_Clean_White_Background extends WP_MCP_AI_Tool_Harmonization_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -45,6 +45,18 @@ class WP_MCP_AI_Tool_Auto_Clean_White_Background extends WP_MCP_AI_Tool_Harmoniz
 	 */
 	public function get_description() {
 		return __( 'Convert a white-background product photo into a clean transparent PNG with smart edge anti-aliasing. Optimized for catalog / white-cyc product shots.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to turn a white-cyc or plain white-background product photo into a transparent PNG with soft anti-aliased edges, fast and without AI.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use remove_image_background for complex backgrounds that need AI segmentation, or refine_subject_matte to improve an existing cutout.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'remove_image_background', 'refine_subject_matte', 'harmonize_image_into_background' ),
+			'notes'           => __( 'Requires GD. Raise threshold to remove faint off-white residue; lower feather_radius for harder edges.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

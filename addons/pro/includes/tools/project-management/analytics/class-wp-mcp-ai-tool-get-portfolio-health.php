@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Computes portfolio health score with dimension breakdown.
  */
-class WP_MCP_AI_Tool_Get_Portfolio_Health implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Portfolio_Health implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_Get_Portfolio_Health implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Calculate the overall portfolio health score (0-100) across all active projects. Returns a composite score with dimension breakdown including schedule variance, task completion rate, blocker count, overdue task ratio, and resource utilization.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Getting a composite 0-100 health score across all active projects with a per-dimension breakdown.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Single-project risk detail; use assess_project_risk. High-level dashboard counts; use get_pm_kpis.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'assess_project_risk', 'get_pm_kpis', 'get_resource_utilization' ),
+			'notes'           => __( 'Delegates to WP_MCP_AI_PM_Engine::calculate_portfolio_health(); requires the PM toolkit to be enabled.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Get_Available_Slots tool.
  */
-class WP_MCP_AI_Tool_Get_Available_Slots implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Available_Slots implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Check if tool is available.
 	 *
@@ -56,6 +56,19 @@ class WP_MCP_AI_Tool_Get_Available_Slots implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Get list of available time slots for booking appointments.', 'mcp-ai-wpoos-pro' );
+	}
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing every open time window for a date so a client can pick one.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Checking a single specific window; use check_availability for one-slot verification.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'check_availability', 'create_appointment', 'generate_booking_link' ),
+			'notes'           => __( 'Slots derive from configured business hours; pass provider_id/service_id or instance_id to include external systems.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 		/**
 		 * Get the parameters schema.

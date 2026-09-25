@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Updates an existing place.
  */
-class WP_MCP_AI_Tool_Update_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_Update_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Updates an existing place with new information. Only provided fields will be updated.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Changing one or more fields on an existing place without recreating it.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'New records; use create_place. Bulk edits belong in import_places with update_existing=true.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_place', 'get_place', 'delete_place' ),
+			'notes'           => __( 'Only supplied fields are changed; pass place_id plus the fields to update.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

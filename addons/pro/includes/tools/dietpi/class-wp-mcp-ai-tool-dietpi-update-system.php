@@ -22,7 +22,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Update_System' ) ) {
 	/**
 	 * Update system tool.
 	 */
-	class WP_MCP_AI_Tool_DietPi_Update_System extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_Update_System extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 		public function get_slug() {
@@ -37,6 +37,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Update_System' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Check for available DietPi OS and software updates, and apply them. Supports checking the current version, listing pending updates, and running dietpi-update to upgrade the system. Applying updates requires explicit confirmation.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Checking for DietPi OS and apt updates, listing upgradable packages, and applying updates to the DietPi device.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Installing new software; use dietpi_provision_new_app. Restarting services; use dietpi_control_service.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_provision_new_app', 'dietpi_backup_system', 'dietpi_control_service' ),
+				'notes'           => __( 'apply requires confirm=true and runs dietpi-update; the system may reboot or services may go offline.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

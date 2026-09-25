@@ -17,7 +17,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-content-media
 /**
  * Creates a new quiz with questions.
  */
-class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Content_Media;
 
 	/**
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Create a new quiz or update an existing quiz. If quiz_id is provided, updates the existing quiz instead of creating a new one. Supports multiple choice, true/false, and short answer formats. Optionally includes a time limit. Use this tool for both creating new quizzes and updating existing ones.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new quiz (or updating one when quiz_id is passed) with questions, points, and passing score.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Modifying an existing quiz by ID; prefer update_quiz for targeted edits to keep intent explicit.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_quiz', 'get_quiz', 'list_quizzes' ),
+			'notes'           => __( 'Question types are multiple_choice, true_false, or short_answer; points default to 1 and time_limit 0 means no limit.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

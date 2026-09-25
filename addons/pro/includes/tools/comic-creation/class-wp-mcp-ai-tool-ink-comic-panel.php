@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a Pro tool for inking a comic panel.
  */
-class WP_MCP_AI_Tool_Ink_Comic_Panel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Ink_Comic_Panel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Ink_Comic_Panel implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Refines sketch or pencil artwork into clean inked lines for a comic panel. Supports multiple ink styles (clean-line, brush, rough, manga). Returns the inked image URL.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Refining sketch or pencil artwork into clean, bold inked lines before color or lettering.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For color after inking use colorize_comic_panel; for full style transfer use apply_comic_style.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'colorize_comic_panel', 'apply_comic_style', 'generate_comic_panel' ),
+			'notes'           => __( 'ink_style accepts clean-line, brush, rough, manga, crosshatch, or noir-heavy; invalid styles default to clean-line.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

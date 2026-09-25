@@ -22,7 +22,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CMBS_Surveillance_Monitor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CMBS_Surveillance_Monitor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_CMBS_Surveillance_Monitor implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description(): string {
 		return __( 'Monitor CMBS deal performance including delinquency rates, watchlist analysis, maturity schedules, deteriorating credit metrics, and loans approaching maturity in 12/24 months.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Monitoring CMBS deal performance: delinquency rates, watchlist analysis, maturity schedules, and loans maturing within 12 or 24 months.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Portfolio-wide CRE loan surveillance; use cre_loan_surveillance_dashboard. Per-loan refi feasibility; use cmbs_maturity_risk_analyzer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_loan_surveillance_dashboard', 'cmbs_maturity_risk_analyzer', 'cmbs_investor_reporting_generator' ),
+			'notes'           => __( 'status accepts current, 30day, 60day, 90plus, foreclosure, or reo; pass watchlist_flag to include watchlist analysis.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

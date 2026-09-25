@@ -25,7 +25,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-harmonization-base.php';
 /**
  * End-to-end harmonization orchestrator.
  */
-class WP_MCP_AI_Tool_Harmonize_Image_Into_Background extends WP_MCP_AI_Tool_Harmonization_Base {
+class WP_MCP_AI_Tool_Harmonize_Image_Into_Background extends WP_MCP_AI_Tool_Harmonization_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -46,6 +46,18 @@ class WP_MCP_AI_Tool_Harmonize_Image_Into_Background extends WP_MCP_AI_Tool_Harm
 	 */
 	public function get_description() {
 		return __( 'End-to-end harmonization: takes a subject (transparent PNG or white-BG) and integrates it into either an existing or AI-generated background. Runs color matching, relighting, shadow synthesis, edge refinement, and an optional polish pass. Non-destructive — original subject pixels are the source of truth except where the polish_strength parameter explicitly opts in.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Running the full compositing pipeline: subject into an existing or generated background with color match, relight, shadow, and boundary refinement.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'One isolated stage: use harmonize_color, relight_subject, refine_composite_boundary, or refine_subject_matte. Subject not yet cut out: use remove_background first.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'harmonize_batch', 'harmonize_color', 'relight_subject', 'suggest_placement' ),
+			'notes'           => __( 'Each pipeline stage is toggleable. polish_strength above 0 is the only destructive pass; keep it low.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

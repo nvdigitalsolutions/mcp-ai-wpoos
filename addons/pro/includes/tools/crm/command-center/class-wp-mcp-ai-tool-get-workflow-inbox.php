@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Workflow Command Center Inbox tool — unified queue of things needing attention.
  */
-class WP_MCP_AI_Tool_Get_Workflow_Inbox implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Workflow_Inbox implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Check whether the tool is available.
 	 *
@@ -50,6 +50,20 @@ class WP_MCP_AI_Tool_Get_Workflow_Inbox implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Unified inbox: hot leads, overdue follow-ups, unread replies, and pending approvals.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Aggregating hot leads, overdue follow-ups, active sequences, and unread replies into one attention queue.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Per-owner workload numbers; use get_owner_workload. Per-deal stage board; use get_pipeline_view.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_owner_workload', 'get_pipeline_digest', 'list_crm_activities' ),
+			'notes'           => __( 'per_section caps each section (max 50); addons can inject sections via wp_mcp_ai_crm_command_center_widgets filter.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 	/**
 	 * Get the JSON Schema for the tool parameters.
 	 *

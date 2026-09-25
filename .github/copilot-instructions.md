@@ -25,7 +25,7 @@ mcp-ai-wpoos/
 ├── includes/              # Core plugin classes
 │   ├── admin/            # Admin UI and settings
 │   ├── assistants/       # Assistant CPT and CCT management
-│   ├── tools/            # ~1,585 total built-in tool implementations
+│   ├── tools/            # ~1,590 total built-in tool implementations
 │   ├── security/         # Security infrastructure (10 classes: request guard, security posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, load guard)
 │   ├── elementor/        # Elementor widget integrations
 │   ├── okf/              # OKF v0.2 engine (parser, reader, writer)
@@ -48,7 +48,7 @@ mcp-ai-wpoos/
 ## Key Technologies
 
 - **WordPress Plugin** (PHP 7.4+, WordPress 6.0+)
-- **AI Providers**: OpenAI, Google Gemini, Ollama (local AI)
+- **AI Providers**: OpenAI, Google Gemini, Ollama (local AI), plus TypeSafe Jev (decision-only provider; powers `typesafe_decide`, never a chat provider)
 - **MCP Protocol**: Server-Sent Events, REST API
 - **Optional Integrations**: JetEngine, WooCommerce, Elementor, Rank Math, WPCode
 - **OKF (Open Knowledge Format)**: Google's v0.1 vendor-neutral knowledge format for curated, deterministic knowledge with 6 MCP tools
@@ -283,8 +283,8 @@ class Test_Feature extends WP_UnitTestCase {
 ### Base Version vs Full Version
 
 The plugin has two modes:
-- **Base Version** (default): ~306 core tools, no third-party dependencies
-- **Full Version**: ~1,585 tools (~306 base + ~1,279 pro) including WooCommerce, JetEngine, and Pro addons; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative
+- **Base Version** (default): ~308 core tools, no third-party dependencies
+- **Full Version**: ~1,590 tools (~308 base + ~1,282 pro) including WooCommerce, JetEngine, and Pro addons; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative
 
 Control with: `define( 'WP_MCP_AI_BASE_VERSION', true/false );`
 

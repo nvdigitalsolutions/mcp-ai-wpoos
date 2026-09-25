@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/traits/trait-wp-mcp-ai-relevance-sea
  *
  * @since 2.4.0
  */
-class WP_MCP_AI_Tool_Search_Prescriptions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Search_Prescriptions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_CRM_Relevance_Search;
 
@@ -55,6 +55,20 @@ class WP_MCP_AI_Tool_Search_Prescriptions implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Search and research prescriptions with advanced filtering by member, medication name, prescriber, status, and date ranges. Supports configurable ordering (relevance, title, date, prescribing_doctor, status) and TF-IDF relevance ranking for text searches. Useful for medication reconciliation, refill tracking, and drug interaction checking.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Researching prescriptions by medication name, prescriber, status, or date ranges, with optional TF-IDF ranking.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Simple member listing; use list_prescriptions. Daily dosing schedule; use get_medication_schedule.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_prescriptions', 'get_prescription', 'verify_prescription_interactions' ),
+			'notes'           => __( 'active_only=true returns only active medications; pair with verify_prescription_interactions for safety checks.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

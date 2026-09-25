@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Retrieves quiz details.
  */
-class WP_MCP_AI_Tool_Get_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Get_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	 */
 	public function get_description() {
 		return __( 'Retrieves details of a specific quiz, including questions and settings.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching one quiz with its questions and settings by ID.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Browsing the quiz list; use list_quizzes. Answers are only included for users who can edit the quiz.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_quizzes', 'update_quiz', 'get_quiz_submissions' ),
+			'notes'           => __( 'Set include_answers=true only when the caller has edit capability, otherwise correct answers are stripped.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Connect to EHR tool.
  */
-class WP_MCP_AI_Tool_Connect_To_EHR implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Connect_To_EHR implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Option key.
@@ -64,6 +64,20 @@ class WP_MCP_AI_Tool_Connect_To_EHR implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Manage Epic, Cerner, or generic SMART-on-FHIR EHR connections used by import_fhir_bundle. Supports configure, test (client_credentials token), get (redacted), and disconnect.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Managing Epic, Cerner, or generic SMART-on-FHIR connection credentials (configure, test, get, disconnect) used by import_fhir_bundle.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Importing the FHIR data itself; use import_fhir_bundle once the connection is configured.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'import_fhir_bundle', 'export_fhir_data' ),
+			'notes'           => __( 'Credentials persist in wp_mcp_ai_ehr_connections and are returned redacted; hook wp_mcp_ai_healthcare_ehr_credentials to vault them.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Generate a complete WordPress AI tool class scaffold with proper structure, PHPDoc, interfaces, and method stubs. Creates production-ready boilerplate following WP_MCP_AI tool patterns.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scaffolding a brand-new tool class with interfaces, PHPDoc, and method stubs before filling in real logic.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Writing the execute() body or parameter schema for an existing class; use generate_tool_logic or generate_tool_parameters.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_tool_logic', 'generate_tool_parameters', 'generate_tool_tests' ),
+			'notes'           => __( 'Output is boilerplate for review; run check_tool_compliance on the result before registering the tool.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
@@ -301,7 +315,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 		$parameters       = $config['parameters'];
 
 		// Build interface list.
-		$interface_list = array( 'WP_MCP_AI_Tool_Interface' );
+		$interface_list = array( 'WP_MCP_AI_Tool_Interface', 'WP_MCP_AI_Tool_Usage_Guidance_Interface' );
 		if ( ! empty( $capability_flags ) ) {
 			$interface_list[] = 'WP_MCP_AI_Tool_Capability_Flags_Interface';
 		}
@@ -361,6 +375,17 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 		$scaffold .= "\t/**\n\t * {@inheritdoc}\n\t */\n";
 		$scaffold .= "\tpublic function get_description() {\n";
 		$scaffold .= "\t\treturn __( '{$description}', 'mcp-ai-wpoos-pro' );\n";
+		$scaffold .= "\t}\n\n";
+
+		// get_usage_guidance method.
+		$scaffold .= "\t/**\n\t * {@inheritdoc}\n\t */\n";
+		$scaffold .= "\tpublic function get_usage_guidance() {\n";
+		$scaffold .= "\t\treturn array(\n";
+		$scaffold .= "\t\t\t'when_to_use'     => __( 'Describe when THIS tool is the right pick.', 'mcp-ai-wpoos-pro' ),\n";
+		$scaffold .= "\t\t\t'when_not_to_use' => __( 'Describe when a different tool fits better; name it.', 'mcp-ai-wpoos-pro' ),\n";
+		$scaffold .= "\t\t\t'related_tools'   => array(),\n";
+		$scaffold .= "\t\t\t'notes'           => __( 'Optional operational notes (enums, output size).', 'mcp-ai-wpoos-pro' ),\n";
+		$scaffold .= "\t\t);\n";
 		$scaffold .= "\t}\n\n";
 
 		// get_parameters_schema method.

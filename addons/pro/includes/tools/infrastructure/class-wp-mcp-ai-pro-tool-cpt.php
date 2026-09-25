@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 3.6.0
  */
-class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 
 	/**
 	 * Top-level parameter keys that belong to the tool's own interface and
@@ -122,6 +122,20 @@ class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'CRUD, bulk import, and meta-aware search on pro toolkit CPT records such as mcp_ai_project or mcp_ai_task.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Plain posts or pages; use get_post, get_recent_posts, or create_post. JetEngine CCTs; use jetengine_mcp.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'jetengine_mcp', 'get_post_type_schema', 'create_post' ),
+			'notes'           => __( 'Always call get_schema before create/update; unknown field keys are stored as post meta. create_item and update_item return item_id for chaining into get_item, update_item, or delete_item.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_parameters_schema() {
@@ -212,6 +226,19 @@ class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 				),
 			),
 			'required'   => array( 'action' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'item_id',
+			'consumes' => array( 'item_id' ),
 		);
 	}
 

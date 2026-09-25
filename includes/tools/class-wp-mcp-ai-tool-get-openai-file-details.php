@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Retrieves detailed metadata about a specific OpenAI file.
  */
-class WP_MCP_AI_Tool_Get_OpenAI_File_Details implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_OpenAI_File_Details implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_Get_OpenAI_File_Details implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Retrieves detailed metadata about a specific OpenAI file. Use this to verify file upload success, check file processing status, get file size and format info, or debug file-related issues.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking upload success, processing status, size, or purpose of one OpenAI file by ID.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Discovering file IDs or batch outputs; use list_openai_files or get_batch_status.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'list_openai_files', 'get_batch_status', 'get_vector_store' ),
+			'notes'           => __( 'Requires OpenAI credentials; returns bytes, purpose, status, and status_details.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

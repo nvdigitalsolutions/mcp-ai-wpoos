@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for retrieving Microsoft Teams message history via the Microsoft Graph API.
  */
-class WP_MCP_AI_Pro_Tool_Get_Teams_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Teams_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Microsoft Graph API requests.
 	 */
@@ -54,6 +54,18 @@ class WP_MCP_AI_Pro_Tool_Get_Teams_Messages implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Retrieves message history from a Microsoft Teams channel using the Microsoft Graph API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading message history from a known Teams channel in a known team.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Discovering channel IDs or posting; use get_teams_channels or send_teams_message.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_teams_channels', 'send_teams_message' ),
+			'notes'           => __( 'Requires team_id and channel_id; obtain the channel ID with get_teams_channels first.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

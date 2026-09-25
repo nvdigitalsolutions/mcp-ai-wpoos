@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Monitor_Summary' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_App_Monitor_Summary extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_App_Monitor_Summary extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Monitor_Summary' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'View application-level usage metrics.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Getting a quick overview of requests and bandwidth usage for a known application.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Server-wide metrics; use cloudways_server_monitor_summary for the whole server.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_server_monitor_summary', 'cloudways_app_traffic_analytics', 'cloudways_get_app' ),
+			);
 		}
 
 		/** {@inheritdoc} */

@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager
 /**
  * Provides an AI tool for configuring the Scheduled Result widget binding on a schedule.
  */
-class WP_MCP_AI_Pro_Tool_Configure_Schedule_Widget_Defaults implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Configure_Schedule_Widget_Defaults implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,18 @@ class WP_MCP_AI_Pro_Tool_Configure_Schedule_Widget_Defaults implements WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Updates the display/widget-binding settings on a Pro Schedule (capture mode, public visibility, public-field allow-list, retention, render defaults).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Tuning result capture, public visibility, retention, and widget defaults on an existing schedule without recreating it.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Changing schedule timing, hook, or workflow payload; use update_pro_schedule, or create_pro_schedule for a new schedule.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_pro_schedule', 'render_schedule_result', 'list_pro_schedules' ),
+			'notes'           => __( 'Only the supplied display keys change; the rest keep their current values. Requires manage_options.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

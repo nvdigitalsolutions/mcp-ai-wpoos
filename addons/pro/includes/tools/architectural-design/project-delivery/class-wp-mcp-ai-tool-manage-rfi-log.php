@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Manage RFI log.
  */
-class WP_MCP_AI_Tool_Manage_Rfi_Log implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Manage_Rfi_Log implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 
@@ -76,6 +76,20 @@ class WP_MCP_AI_Tool_Manage_Rfi_Log implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'List / create / update Requests for Information on an architectural project. Stored on the mcp_ai_arch_proj CPT as JSON post-meta. Status workflow: open → in_review → answered → closed | void.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing, creating, updating, or reading RFI entries on an mcp_ai_arch_proj project (statuses: open, in_review, answered, closed, void).', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Tracking shop drawings, product data, or samples; use manage_submittal_log. Project scheduling; use generate_construction_timeline.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_submittal_log', 'generate_construction_timeline' ),
+			'notes'           => __( 'create requires subject and question; update and get require rfi_id.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

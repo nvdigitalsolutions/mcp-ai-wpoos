@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
  * import_vitals tool implementation.
  */
-class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * LOINC code → vitals_log CCT field name.
@@ -305,6 +305,20 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Import vital-sign measurements into the vitals_log CCT from industry-standard formats: FHIR R4 JSON (HL7 Observation Bundle with LOINC codes), CSV (flexible column mapping compatible with Apple Health, Google Fit, CommonHealth, and most EHR portal exports), or a pre-structured JSON array of CCT records (field names matching the vitals_log schema — the simplest format when an AI assistant has already prepared the payload). Supports dry-run validation and returns a per-row import summary.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Bulk-importing vital-sign rows from FHIR R4 JSON, CSV exports (Apple Health, Google Fit, portals), or a pre-structured JSON array.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Logging a single new reading; use log_vital_signs. Importing non-vital FHIR resources; use import_fhir_bundle.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'log_vital_signs', 'import_fhir_bundle', 'analyze_vital_trends' ),
+			'notes'           => __( 'Rows land in the vitals_log CCT plus options fallback storage; pass dry_run=true to validate column mapping before persisting.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

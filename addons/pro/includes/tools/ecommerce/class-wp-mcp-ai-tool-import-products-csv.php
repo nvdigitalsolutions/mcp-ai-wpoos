@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Import_Products_CSV implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Products_CSV implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -104,6 +104,20 @@ class WP_MCP_AI_Tool_Import_Products_CSV implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Import WooCommerce products from CSV or Excel files. Supports creating new products, updating existing ones, variations, attributes, categories, tags, and images. Can handle large imports with progress tracking.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for tool selection.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating or updating many products at once from CSV content with column mapping and SKU matching.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'One product or a live price/stock edit; use create_product_advanced or update_woo_product_price.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_product_advanced', 'bulk_update_products', 'export_products_report' ),
+			'notes'           => __( 'Bulk catalog writes run in batches; updates match by SKU only when update_existing is true.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

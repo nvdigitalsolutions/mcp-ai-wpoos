@@ -110,6 +110,7 @@
 			<element value="upload_medical_imaging"/>
 			<element value="delete_medical_imaging"/>
 			<element value="manage_medical_imaging"/>
+			<element value="wpcode_edit_snippets"/>
 		</property>
 	</properties>
 </rule>
@@ -180,6 +181,24 @@
 	`docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`.
 -->
 <rule ref="./phpcs/WPMCPAI/Sniffs/Tools/SanitizeAtEntrySniff.php"/>
+
+<!--
+	Tool Description Engineering — usage guidance on tool classes.
+
+	Warns when a class implements WP_MCP_AI_Tool_Interface without either
+	implementing WP_MCP_AI_Tool_Usage_Guidance_Interface or embedding
+	usage guidance in get_description(). Enforced at severity 5 since the
+	cluster-by-cluster sweep completed (base includes/tools/ and
+	addons/pro/includes/tools/ are fully covered). The sniff emits warnings,
+	so it stays advisory for CI error thresholds while surfacing on every
+	PR that touches a tool class.
+
+	See docs/project/proposals/tool-description-engineering-proposal.md and
+	docs/features/tool-description-guidelines.md.
+-->
+<rule ref="./phpcs/WPMCPAI/Sniffs/Tools/ToolDescriptionGuidanceSniff.php">
+	<severity>5</severity>
+</rule>
 
 <file>.</file>
 </ruleset>

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Submits registrations to regulatory authorities.
  */
-class WP_MCP_AI_Tool_Submit_To_Authority implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Submit_To_Authority implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
@@ -40,6 +40,18 @@ class WP_MCP_AI_Tool_Submit_To_Authority implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Electronically submits registration application to regulatory authority with all required documents and metadata.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When an application dossier must be filed electronically with the regulatory authority.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When only recording a status change or checking requirements first; use submit_registration or validate_document_checklist.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'submit_registration', 'validate_document_checklist', 'generate_submission_pack' ),
+			'notes'           => __( 'Externally consequential: performs the real filing. submission_type defaults to new; restricted from chat client contexts.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.80
  */
-class WP_MCP_AI_Tool_Export_Assistant_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Export_Assistant_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -45,6 +45,18 @@ class WP_MCP_AI_Tool_Export_Assistant_Blueprint implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Exports a live assistant as a curated blueprint JSON document in the format consumed by the Pro Blueprint Installer and the blueprint admin pages. Use it to freeze a working assistant into a shareable, re-importable blueprint.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Freezing a configured assistant into a shareable, re-importable blueprint JSON document.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Importing or recreating an assistant (use import_assistant) or creating a new one (use create_assistant).', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'export_assistant', 'import_assistant', 'create_assistant' ),
+			'notes'           => __( 'Set save_to_media=true to store the JSON as a media attachment and return its attachment ID.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
@@ -86,6 +98,16 @@ class WP_MCP_AI_Tool_Export_Assistant_Blueprint implements WP_MCP_AI_Tool_Interf
 			),
 			'required'             => array( 'assistant_id' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'assistant_id' ),
 		);
 	}
 

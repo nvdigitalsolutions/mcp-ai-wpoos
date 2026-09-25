@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Drafts jury instructions based on claim type and jurisdiction.
  */
-class WP_MCP_AI_Tool_LF_Jury_Instruction_Drafter implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Jury_Instruction_Drafter implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -71,6 +71,20 @@ class WP_MCP_AI_Tool_LF_Jury_Instruction_Drafter implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Generates draft jury instructions based on claim type, jurisdiction, elements of the claim, and party role. Returns numbered instructions with legal basis citations.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Drafting numbered jury instructions with elements and burden-of-proof text for a claim type and jurisdiction.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Planning the broader trial prep; use lf_trial_preparation_checklist, which includes drafting instructions as an item.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_trial_preparation_checklist', 'lf_document_drafter' ),
+			'notes'           => __( 'Supports negligence, breach_of_contract, fraud, product_liability, defamation; custom elements are merged in.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

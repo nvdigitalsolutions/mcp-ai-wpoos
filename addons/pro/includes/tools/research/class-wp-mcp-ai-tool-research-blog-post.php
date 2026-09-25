@@ -49,7 +49,7 @@ if ( ! trait_exists( 'WP_MCP_AI_Tool_Content_Media' ) ) {
  *
  * @since 3.7.0
  */
-class WP_MCP_AI_Tool_Research_Blog_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Research_Blog_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Research_Template_Analysis;
 	use WP_MCP_AI_Tool_Content_Media;
@@ -167,6 +167,20 @@ class WP_MCP_AI_Tool_Research_Blog_Post implements WP_MCP_AI_Tool_Interface, WP_
 	public function get_description() {
 		// phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText -- Long description kept readable with concatenation.
 		return __( 'Performs comprehensive deep research on a blog post topic, then generates a publish-ready post with rich media — inline images (with captions & alt text), data-driven Chart.js charts, and infographic blocks. Supports Block Editor (Gutenberg), Classic Editor, Elementor, and custom formats. Includes SEO metadata, JSON-LD schema, accessibility (WCAG 2.1 AA), and E-E-A-T compliance. Use the returned content_images and content_charts arrays with create_post to publish immediately.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing a publish-ready blog post with inline images, Chart.js charts, and SEO schema from a researched topic.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Text-only drafts that skip media generation; use research_post for leaner posts and create_post to publish.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'research_post', 'create_post', 'deep_research' ),
+			'notes'           => __( 'Returns content_images and content_charts arrays; requires the AI CPT Management feature to be enabled.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

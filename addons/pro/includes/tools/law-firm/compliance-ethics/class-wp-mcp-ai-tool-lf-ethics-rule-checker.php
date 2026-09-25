@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Checks ABA Model Rules of Professional Conduct for ethical compliance.
  */
-class WP_MCP_AI_Tool_LF_Ethics_Rule_Checker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Ethics_Rule_Checker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -199,6 +199,20 @@ class WP_MCP_AI_Tool_LF_Ethics_Rule_Checker implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Checks ABA Model Rules of Professional Conduct against specific scenarios to identify applicable ethics rules, risk levels, and compliance recommendations.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Evaluating a described scenario against ABA Model Rules categories for applicable rules and risk.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Matter confidentiality control audits or privacy regulation mapping; use lf_client_confidentiality_auditor or lf_data_privacy_compliance_checker.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_client_confidentiality_auditor', 'lf_malpractice_risk_scorer' ),
+			'notes'           => __( 'Requires scenario; rule_category enum covers competence, confidentiality, conflicts, fees, and more.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Updates an existing medical record.
  */
-class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Updates an existing medical record with new information.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Changing title, date, provider, details, notes, or lab metadata on an existing record by record_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating new records; use create_medical_record. Removing records; use delete_medical_record.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_medical_record', 'get_medical_record', 'delete_medical_record' ),
+			'notes'           => __( 'Only provided fields change; create_medical_record can also update records when medical_record_id is passed.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
@@ -101,6 +115,16 @@ class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 			),
 			'required'             => array( 'record_id' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'record_id' ),
 		);
 	}
 

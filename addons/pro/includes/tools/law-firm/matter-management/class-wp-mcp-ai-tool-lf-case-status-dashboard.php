@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates aggregated case status dashboard data.
  */
-class WP_MCP_AI_Tool_LF_Case_Status_Dashboard implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Case_Status_Dashboard implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_LF_Case_Status_Dashboard implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Provides an aggregated dashboard of case statuses across the firm, with counts by status and practice area, upcoming deadlines, and summary statistics. Filterable by practice area, attorney, status, and date range.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Getting a firm-wide overview of matter counts by status and practice area plus upcoming deadlines for a week, month, quarter, or year.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Viewing a single matter in detail; use lf_matter_pipeline_manager with get_summary. Changing matter statuses; use lf_matter_pipeline_manager.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_matter_pipeline_manager', 'lf_matter_analytics_generator', 'lf_court_deadline_tracker' ),
+			'notes'           => __( 'Reads mcp_ai_lf_matter posts. date_range accepts week, month, quarter, year; output caps upcoming deadlines at 20.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

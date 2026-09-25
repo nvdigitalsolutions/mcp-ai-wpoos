@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Compute BMI and growth percentile tool.
  */
-class WP_MCP_AI_Tool_Compute_BMI_And_Growth_Percentile implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Compute_BMI_And_Growth_Percentile implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -56,6 +56,20 @@ class WP_MCP_AI_Tool_Compute_BMI_And_Growth_Percentile implements WP_MCP_AI_Tool
 	 */
 	public function get_description() {
 		return __( 'Compute BMI from weight and height (any common unit), classify into adult or paediatric categories, and return a coarse growth band for ages 2-20.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Calculating BMI from weight and height in any common unit, plus an adult category or a coarse growth band for ages 2-20.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Storing the measurement on a member; use log_vital_signs. Clinical diagnosis; bands are coarse approximations, not exact percentiles.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'log_vital_signs', 'flag_abnormal_vitals' ),
+			'notes'           => __( 'The growth band is an approximation; override it via the wp_mcp_ai_healthcare_growth_percentile filter for exact LMS curves.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Reviews contracts for risk assessment, missing clauses, and ambiguous language.
  */
-class WP_MCP_AI_Tool_LF_Contract_Reviewer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Contract_Reviewer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_LF_Contract_Reviewer implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Analyzes legal documents for risk factors, missing standard clauses, and ambiguous language. Provides risk assessment per ABA Opinion 512 guidelines with mandatory human-review flag.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When checking a saved document for risk flags, missing standard clauses, or ambiguous language before signing.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'To see what changed between two versions; use lf_redline_comparator for a word-level diff.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_redline_comparator', 'lf_document_version_tracker', 'lf_clause_library_manager' ),
+			'notes'           => __( 'Pass a saved document_id; review_focus accepts risk_assessment, missing_clauses, ambiguous_language, or all.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

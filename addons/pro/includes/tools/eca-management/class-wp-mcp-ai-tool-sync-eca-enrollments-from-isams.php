@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Syncs student enrollment data for ECAs from iSAMS into WordPress.
  */
-class WP_MCP_AI_Tool_Sync_ECA_Enrollments_From_ISAMS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Sync_ECA_Enrollments_From_ISAMS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Sync_ECA_Enrollments_From_ISAMS implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Syncs student enrollment data for ECAs from iSAMS School Management System. Imports enrollment records, student assignments, and payment status from iSAMS into WordPress ECA records.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Importing iSAMS enrollment records, student assignments, and payment status into WordPress ECA enrollments.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Importing ECA definitions or students; use sync_ecas_from_isams or sync_students_from_isams. Pushing data out; use sync_ecas_to_isams.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'sync_ecas_from_isams', 'sync_students_from_isams', 'sync_ecas_to_isams' ),
+			'notes'           => __( 'Writes WordPress enrollments from the live iSAMS system; run with dry_run first to preview changes.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

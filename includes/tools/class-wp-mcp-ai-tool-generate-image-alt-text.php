@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-anthropic-client.php';
 /**
  * Generates descriptive alt text for images using AI vision models.
  */
-class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_Vision_Request_Timeout;
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Generates descriptive alt text for images to improve accessibility and SEO using AI vision capabilities.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Writing accessible alt text for an image supplied via URL, base64 content, file ID, or attachment ID.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Editorial captions for posts; use generate_image_caption. Bulk library passes belong to image_alt_text_optimizer.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'generate_image_caption', 'image_alt_text_optimizer', 'analyze_image' ),
+			'notes'           => __( 'Requires a vision-capable model and upload_files capability; provider is OpenAI or Gemini.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

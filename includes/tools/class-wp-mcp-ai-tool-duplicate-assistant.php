@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.80
  */
-class WP_MCP_AI_Tool_Duplicate_Assistant implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Duplicate_Assistant implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -48,6 +48,20 @@ class WP_MCP_AI_Tool_Duplicate_Assistant implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Clones an existing AI assistant into a new draft with a full copy of its configuration (prompts, tools, model settings, skills, datasets). Credential tokens are never copied — the duplicate starts with fresh credentials.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Cloning an existing assistant into a new draft with its prompts, tools, model settings, skills, and datasets.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'For building a new assistant from scratch use create_assistant; for moving between sites use export_assistant and import_assistant.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_assistant', 'export_assistant', 'import_assistant' ),
+			'notes'           => __( 'Credential tokens are never copied; the duplicate starts with fresh credentials. assistant_id comes from create_assistant responses; the response returns the NEW assistant_id for chaining.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
@@ -95,6 +109,16 @@ class WP_MCP_AI_Tool_Duplicate_Assistant implements WP_MCP_AI_Tool_Interface, WP
 			),
 			'required'             => array( 'assistant_id' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'assistant_id',
+			'consumes' => array( 'assistant_id' ),
 		);
 	}
 

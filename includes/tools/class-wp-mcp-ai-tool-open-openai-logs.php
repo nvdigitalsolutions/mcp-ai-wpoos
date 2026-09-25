@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides a link so administrators can inspect OpenAI API logs.
  */
-class WP_MCP_AI_Tool_Open_OpenAI_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Open_OpenAI_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_Open_OpenAI_Logs implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Returns the URL for the OpenAI API logs dashboard so administrators can inspect recent API activity.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Getting the OpenAI platform logs dashboard URL to debug recent API activity.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Local analytics; use openai_usage_analytics. Official billing; use open_openai_usage.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'open_openai_usage', 'openai_usage_analytics' ),
+			'notes'           => __( 'Returns a URL only; no server-side API call is made. Requires manage_options.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

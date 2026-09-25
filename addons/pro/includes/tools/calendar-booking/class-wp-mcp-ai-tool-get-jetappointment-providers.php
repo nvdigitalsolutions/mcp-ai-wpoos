@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.5.0
  */
-class WP_MCP_AI_Tool_Get_JetAppointment_Providers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_JetAppointment_Providers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -61,6 +61,18 @@ class WP_MCP_AI_Tool_Get_JetAppointment_Providers implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'List JetAppointment providers (staff/experts) from the configured provider CPT.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering JetAppointment staff IDs before availability checks or bookings.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Listing bookable services; use get_jetappointment_services. Native NV oOS appointments; use create_appointment.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_jetappointment_services', 'check_availability', 'create_appointment' ),
+			'notes'           => __( 'Requires the JetAppointment adapter; returned provider IDs feed check_availability and create_appointment.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

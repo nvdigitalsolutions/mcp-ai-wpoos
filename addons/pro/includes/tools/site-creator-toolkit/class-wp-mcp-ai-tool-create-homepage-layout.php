@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Create_Homepage_Layout implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Homepage_Layout implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -62,6 +62,18 @@ class WP_MCP_AI_Tool_Create_Homepage_Layout implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Generates modern, conversion-optimized homepage layouts with hero sections, feature showcases, about previews, testimonials, and strategic CTAs. Creates comprehensive first-impression pages that engage visitors and drive action.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating a full homepage layout with hero, features, about, testimonials, blog, and CTA sections.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Single sections; use create_hero_section or build_testimonial_section. Landing pages; use generate_landing_page. Publishing; use site_creator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_landing_page', 'build_about_page', 'create_hero_section' ),
+			'notes'           => __( 'Returns generated page data and HTML; it does not create the WordPress page.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

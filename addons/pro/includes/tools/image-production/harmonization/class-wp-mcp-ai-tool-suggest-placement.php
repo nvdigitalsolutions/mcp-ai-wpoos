@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-harmonization-base.php';
 /**
  * Suggest placement boxes for a subject on a background.
  */
-class WP_MCP_AI_Tool_Suggest_Placement extends WP_MCP_AI_Tool_Harmonization_Base {
+class WP_MCP_AI_Tool_Suggest_Placement extends WP_MCP_AI_Tool_Harmonization_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -45,6 +45,18 @@ class WP_MCP_AI_Tool_Suggest_Placement extends WP_MCP_AI_Tool_Harmonization_Base
 	 */
 	public function get_description() {
 		return __( 'Suggest top-3 placement bounding boxes and scale factors for a subject onto a background using a saliency / uniform-region heuristic. Cheap; no AI call required.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Getting top-3 subject placement boxes and scale suggestions for a background before compositing, without any AI call.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Actually compositing the subject: use harmonize_image_into_background. Generating the background itself: use generate_scene_background.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'harmonize_image_into_background', 'generate_scene_background', 'refine_composite_boundary' ),
+			'notes'           => __( 'Read-only and cheap. Requires the GD extension; returns x, y, w, h, and confidence per candidate.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

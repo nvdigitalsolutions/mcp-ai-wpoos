@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Get_Order_Analytics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Order_Analytics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -104,6 +104,19 @@ class WP_MCP_AI_Tool_Get_Order_Analytics implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Retrieve comprehensive WooCommerce order analytics including revenue trends, top products, customer behavior, status distribution, and payment method breakdown. Supports custom date ranges and grouping by day/week/month.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for tool selection.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Summarizing order revenue, trends, top products, and customer behavior for a date range.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'File exports or KPI dashboards; use export_products_report or sales_performance_dashboard.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'sales_performance_dashboard', 'export_products_report', 'segment_customers' ),
+		);
 	}
 
 	/**

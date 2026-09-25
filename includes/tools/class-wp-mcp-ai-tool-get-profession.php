@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Gets detailed information about a profession.
  */
-class WP_MCP_AI_Tool_Get_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_Get_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Retrieves detailed information about a specific profession including expertise areas, role description, warnings, knowledge base content, and default tools.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading one profession profile by slug: role, expertise, warnings, and default tools.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Browsing professions, writing profiles, or stats; use list_professions, save_profession, or get_profession_stats.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'list_professions', 'get_profession_stats', 'save_profession' ),
+			'notes'           => __( 'Returns profession data from the profession service; slug examples: graphic_designer, data_scientist.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Analyze natural ventilation.
  */
-class WP_MCP_AI_Tool_Analyze_Natural_Ventilation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Analyze_Natural_Ventilation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -68,6 +68,20 @@ class WP_MCP_AI_Tool_Analyze_Natural_Ventilation implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Assess natural-ventilation performance using ASHRAE 62.1-2022 (per-occupant + per-area), SLS 947:2009 (Sri Lanka) and JS 35 (Jamaica). Estimates ACH from cross-flow, stack effect or wind-driven openings against the regional minimum.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking a space against ASHRAE 62.1-2022, SLS 947, or JS 35 ACH targets for cross-flow, stack, or courtyard strategies.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For daylight, solar gain, or energy benchmarks - use analyze_daylight_and_solar_gain or calculate_sustainability_metrics.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'analyze_daylight_and_solar_gain', 'check_building_code_compliance' ),
+			'notes'           => __( 'openings.strategy accepts cross_flow, stack, wind_driven, courtyard, mechanical_assist; supply inlet and outlet areas in sqm.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

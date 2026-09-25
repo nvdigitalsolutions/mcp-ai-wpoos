@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * {@inheritdoc}
  */
-class WP_MCP_AI_Tool_Escalate_Support_Ticket implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Escalate_Support_Ticket implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -54,6 +54,20 @@ class WP_MCP_AI_Tool_Escalate_Support_Ticket implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Escalate a support ticket by bumping priority and optionally notifying the assignee/manager.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Raising a ticket to a higher priority when severity increases and SLA targets must be recalculated.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Lowering priority or making general edits; use update_support_ticket.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_support_ticket', 'resolve_support_ticket' ),
+			'notes'           => __( 'The new priority must rank above the current one. An activity note records the escalation.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

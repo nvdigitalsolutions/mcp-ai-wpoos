@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_LP_Report_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_LP_Report_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_LP_Report_Generator implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description(): string {
 		return __( 'Generate a formatted quarterly LP report with executive summary, fund performance metrics, capital account details, portfolio summary, and market commentary.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating a formatted quarterly LP report with executive summary, performance metrics, capital accounts, portfolio detail, and commentary.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Raw fund return math; use cre_fund_return_calculator. Capital call notices; use cre_fund_capital_call_calculator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_fund_return_calculator', 'cre_fund_portfolio_dashboard', 'cre_fund_capital_call_calculator' ),
+			'notes'           => __( 'Requires fund_name, reporting_period, total_commitments, called_capital, distributions, and nav. Loans need name, balance, and status.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

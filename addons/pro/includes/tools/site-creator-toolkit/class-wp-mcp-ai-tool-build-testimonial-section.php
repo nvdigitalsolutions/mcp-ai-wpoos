@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Build_Testimonial_Section implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Build_Testimonial_Section implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -54,6 +54,18 @@ class WP_MCP_AI_Tool_Build_Testimonial_Section implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Creates customer testimonial sections with quotes, ratings, and author info. Supports slider, grid, and masonry layouts for social proof.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating a social-proof testimonial section with quotes, ratings, and slider, grid, or masonry layout.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Other section types; use create_hero_section, create_cta_section, or build_contact_section.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_hero_section', 'create_cta_section', 'build_contact_section' ),
+			'notes'           => __( 'Returns placeholder testimonial data for assembly; it does not create the page.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Operating_Expense_Benchmarker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Operating_Expense_Benchmarker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_Operating_Expense_Benchmarker implements WP_MCP_AI_Tool
 	 */
 	public function get_description(): string {
 		return __( 'Benchmark a property\'s operating expenses against market data. Provide actual expense categories with amounts and corresponding market benchmarks per SF. Returns per-SF comparison, variance analysis, and savings opportunity estimate.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Comparing actual expense categories against market per-SF benchmarks to flag outliers and savings potential.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Computing NOI from income and expenses; use cre_noi_calculator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_noi_calculator', 'cre_rent_roll_analyzer', 'cre_property_budget_manager' ),
+			'notes'           => __( 'Categories above the 20% threshold are flagged ABOVE BENCHMARK; categories are matched by name.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

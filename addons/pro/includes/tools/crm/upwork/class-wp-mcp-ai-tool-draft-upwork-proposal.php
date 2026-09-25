@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Draft_Upwork_Proposal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Draft_Upwork_Proposal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Determine whether CRM toolkit is enabled.
@@ -109,6 +109,20 @@ class WP_MCP_AI_Tool_Draft_Upwork_Proposal implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Fetches an Upwork job posting and uses AI to draft a personalised proposal tailored to the job requirements and your freelancer profile. Proposals must be submitted manually on Upwork. When no Upwork connection is configured, accepts job_title and job_description text directly.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Drafting a personalised proposal for a known Upwork job posting or pasted job text.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Submitting proposals; they must be sent manually on Upwork. Deciding whether to apply; use score_upwork_job.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'score_upwork_job', 'search_upwork_jobs' ),
+			'notes'           => __( 'freelancer_profile is required. Without an Upwork connection, supply job_title and job_description text.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
@@ -216,7 +230,7 @@ class WP_MCP_AI_Tool_Draft_Upwork_Proposal implements WP_MCP_AI_Tool_Interface, 
 	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		// draft_upwork_proposal
+		// draft_upwork_proposal.
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, $this->get_required_capability() ) ) {

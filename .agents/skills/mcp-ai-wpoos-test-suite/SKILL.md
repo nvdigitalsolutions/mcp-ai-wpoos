@@ -620,6 +620,29 @@ the changed files is the substantive gate; plan CI waits accordingly.
     the type-specific checks; `save_connection()` encrypts
     `refresh_token`/`client_secret` and `get_access_token()` decrypts them,
     so plain fixture credentials round-trip fine.
+49. **`WP_MCP_AI_Logger::log_activity()` does not exist — latent fatal.**
+    Legacy tool code calls the nonexistent static `log_activity()`; the real
+    API is `log_event( $type, $message, $context )` (plus `log_error()`).
+    Because the dead call usually sits in an `is_available()`-false branch,
+    it never fires in happy-path tests — L2-style drivers that exercise an
+    unavailable branch (or a settings-gated tool without its flag) fatal
+    with `Call to undefined method`. Production fix (#6738): route to
+    `log_event( 'activity', ... )` — `'activity'` falls through
+    `should_log_event_type()`'s default allow gate and lands in the recent
+    activity buffer. Grep-replace ALL call sites in the touched family
+    (five webchat tools carried it) — leaving siblings dead for later is
+    the same bug waiting to fire.
+50. **`$wpdb->prepare()` placeholder-count warnings from interpolated
+    WHERE + array-spread args.** phpcs cannot statically resolve an
+    interpolated `{$where_sql}` fragment, so `$wpdb->prepare( $query,
+    $query_values )` (array form) warns "1 replacement, expected 2" and
+    "no valid placeholders found" even though the runtime spread is valid.
+    Fix by branching the query so every placeholder is literal: build the
+    `message_type`-filtered and unfiltered variants as two explicit
+    `prepare()` calls with scalar args, keeping the
+    `phpcs:disable InterpolatedNotPrepared` block for the
+    esc_sql()-escaped `{$table}`. Behavior-identical; also run phpcbf or
+    align `=` spacing manually (WPCS alignment warnings follow).
 
 ## Production fix vs test fix
 
@@ -759,3 +782,13 @@ than trusting an old list.
 - Test-writing patterns & coverage policy: `.context/testing.md`
 - Remaining-fixes tracker: `docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md`
 - Plugin operational guide: `.agents/skills/mcp-ai-wpoos-plugin/SKILL.md`
+- **ID-handoff contract suites (permanent CI infrastructure):**
+  `tests/test-tool-id-handoff-contract.php` (L1 honesty — checks
+  `tests/fixtures/tool-contract-manifest.php` against the live registry in
+  both directions; an unvetted annotation or a missing manifest entry fails
+  CI), `tests/test-tool-id-handoff-round-trip.php` (L2 deterministic
+  create→fetch→update→delete drivers, no LLM). Rollout semantics:
+  `docs/project/proposals/P3-data-contract-rollout-plan-2026-09.md`; the
+  manifest is the single source of truth — new tool annotations land in the
+  same PR as their manifest entry (rollout complete via #6729–#6738; docs
+  closure #6739).

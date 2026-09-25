@@ -343,12 +343,69 @@ interface WP_MCP_AI_Tool_Data_Contract_Interface {
 	 * )
 	 * ```
 	 *
-	 * Implementations should use stable, snake_case identifiers (e.g.
-	 * `post_object`, `attachment_id`, `order_id`, `wc_product_id`).
+	 * Implementations should use stable, snake_case identifiers that match the
+	 * exact parameter / envelope key names flowing between tools (e.g.
+	 * `post_id`, `attachment_id`, `job_id`, `assistant_id`).
 	 *
 	 * @return array{produces?: string|null, consumes?: string|string[]|null}
 	 */
 	public function get_data_contract();
+}
+
+/**
+ * Optional interface for tools that declare model-facing usage guidance.
+ *
+ * Usage guidance is the prompt-engineering layer of a tool description:
+ * when the model should call this tool, when it should NOT, which sibling
+ * tools cover the neighbouring use cases, and operational notes (enum
+ * guidance, output size, pagination). Research (Block's MCP playbook, AWS
+ * tool-design guidance, Anthropic tool-use docs) shows negative guidance —
+ * "do not use this tool when…" — is the single highest-leverage signal for
+ * tool-selection accuracy on large tool surfaces.
+ *
+ * `get_description()` remains the short, admin-UI-facing description.
+ * `WP_MCP_AI_Tool_Registry::get_model_facing_description()` appends the
+ * guidance declared here as a compact `[Usage: …]` suffix on the payload
+ * the LLM actually sees — the same assembly pattern as the data-contract
+ * suffix. Tools that do not implement this interface simply reach the model
+ * with their short description alone; nothing breaks.
+ *
+ * All keys are optional. Return an empty array to declare that the tool
+ * intentionally has no guidance (still satisfies the PHPCS sniff).
+ *
+ * Example:
+ * ```php
+ * public function get_usage_guidance() {
+ *     return array(
+ *         'when_to_use'     => 'Read a single known post by ID.',
+ *         'when_not_to_use' => 'Listing, searching, or discovering posts.',
+ *         'related_tools'   => array( 'get_recent_posts', 'search_content' ),
+ *         'notes'           => 'Set include_meta=false for leaner output.',
+ *     );
+ * }
+ * ```
+ *
+ * @since 1.1.83
+ */
+interface WP_MCP_AI_Tool_Usage_Guidance_Interface {
+	/**
+	 * Retrieve model-facing usage guidance for this tool.
+	 *
+	 * Return shape:
+	 * ```
+	 * array(
+	 *     'when_to_use'     => string,    // Situations that map to THIS tool.
+	 *     'when_not_to_use' => string,    // Situations that map elsewhere; name the alternative if one exists.
+	 *     'related_tools'   => string[],  // Sibling tool slugs that cover neighbouring use cases.
+	 *     'notes'           => string,    // Enum/value hints, output-size notes, provider requirements.
+	 * )
+	 * ```
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array{when_to_use?: string, when_not_to_use?: string, related_tools?: string[], notes?: string}
+	 */
+	public function get_usage_guidance();
 }
 
 /**

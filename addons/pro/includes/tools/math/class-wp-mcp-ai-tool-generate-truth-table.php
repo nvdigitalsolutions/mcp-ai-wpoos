@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.5.0
  */
-class WP_MCP_AI_Tool_Generate_Truth_Table implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Truth_Table implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const MAX_VARIABLES   = 8;
 	const MAX_PARSE_DEPTH = 32;
@@ -47,6 +47,20 @@ class WP_MCP_AI_Tool_Generate_Truth_Table implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Parse a Boolean expression and return its full truth table. Supports keyword operators (AND, OR, NOT, NAND, NOR, XOR, XNOR) and symbolic operators (·, +, \', ⊕, ↑, ↓). Limited to 8 variables.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Enumerating the complete truth table of a Boolean expression across all variable combinations.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Evaluating a single set of gate inputs; use evaluate_logic_gate.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'evaluate_logic_gate', 'evaluate_eml' ),
+			'notes'           => __( 'Capped at 8 variables (256 rows); supports keyword operators and symbolic operators.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.62
  */
-class WP_MCP_AI_Tool_OKF_Validate_Bundle implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_OKF_Validate_Bundle implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -40,6 +40,20 @@ class WP_MCP_AI_Tool_OKF_Validate_Bundle implements WP_MCP_AI_Tool_Interface {
 	 */
 	public function get_description() {
 		return __( 'Validates an OKF bundle for v0.2 conformance: every concept must have parseable YAML frontmatter with a non-empty type field; reserved filenames (index.md, log.md) must follow conventions; status and stale_after values are checked. Also reports advisory broken cross-links and a trust-tier histogram. Returns a conformant flag plus concept, stale, deprecated, and broken-link counts and a list of advisory issues. Per the OKF spec, issues are reported but never block reading.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking a whole bundle for OKF v0.2 conformance: frontmatter, reserved filenames, status, and stale_after.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Validating a single Attested Computation concept; use okf_validate_attestation.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'okf_validate_attestation', 'okf_list_bundles', 'okf_import_bundle' ),
+			'notes'           => __( 'Issues are advisory and never block reading; returns conformant, counts, broken links, and a trust-tier histogram.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

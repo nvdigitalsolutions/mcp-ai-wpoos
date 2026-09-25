@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Apply a media template to a single image.
  */
-class WP_MCP_AI_Tool_Apply_Media_Template implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Apply_Media_Template implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -36,6 +36,20 @@ class WP_MCP_AI_Tool_Apply_Media_Template implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Apply a media template to a single image. Uses the template configuration to process the image via the Graphic Editor Plus tool. Updates template usage statistics and returns the processed image details.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Applying one saved template to a single image attachment, with optional parameter overrides.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Batch processing a collection; use apply_collection_template or process_collection.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_media_template', 'apply_collection_template', 'process_collection' ),
+			'notes'           => __( 'Processes via Graphic Editor Plus and updates template usage stats; use override_params for per-call overrides.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

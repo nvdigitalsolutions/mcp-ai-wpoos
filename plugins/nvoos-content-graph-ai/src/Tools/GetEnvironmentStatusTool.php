@@ -78,6 +78,11 @@ class GetEnvironmentStatusTool extends AbstractAiTool {
 			'logging_enabled'      => ! empty( $settings['enable_logging'] ),
 		);
 
+		// The model chats actually use for the default provider, which lives
+		// under a provider-specific key (e.g. deepseek_model) rather than the
+		// OpenAI-only default_model.
+		$plugin['default_provider_model'] = $this->resolve_provider_model( $plugin['default_provider'], $settings );
+
 		$assistants = $this->summarise_assistants( $settings );
 
 		$supported_plugins = $this->get_supported_plugin_statuses();
@@ -145,6 +150,8 @@ class GetEnvironmentStatusTool extends AbstractAiTool {
 					'title'     => get_the_title( $assistant_post ),
 					'status'    => get_post_status( $assistant_post ),
 					'permalink' => get_permalink( $assistant_post ),
+					'provider'  => (string) get_post_meta( $assistant_post->ID, '_wp_mcp_ai_provider', true ),
+					'model'     => (string) get_post_meta( $assistant_post->ID, '_wp_mcp_ai_model', true ),
 				);
 
 				if ( current_user_can( 'edit_post', $assistant_post->ID ) ) {
@@ -156,6 +163,46 @@ class GetEnvironmentStatusTool extends AbstractAiTool {
 		return array(
 			'environment' => $summary,
 		);
+	}
+
+	/**
+	 * Resolve the effective default model for a provider.
+	 *
+	 * Chat clients read a provider-specific model key (deepseek_model,
+	 * anthropic_model, …) while the generic default_model key only covers
+	 * OpenAI, so reporting default_model alongside a non-OpenAI provider is
+	 * misleading. This mirrors the per-provider keys the provider sections
+	 * and clients use.
+	 *
+	 * @param string $provider Provider slug.
+	 * @param array  $settings Settings array.
+	 * @return string Configured model for that provider, or empty string.
+	 */
+	private function resolve_provider_model( $provider, array $settings ) {
+		$provider_model_keys = array(
+			'openai'       => 'default_model',
+			'gemini'       => 'default_gemini_model',
+			'anthropic'    => 'anthropic_model',
+			'deepseek'     => 'deepseek_model',
+			'ollama'       => 'ollama_model',
+			'lm_studio'    => 'lm_studio_model',
+			'cloudflare'   => 'cloudflare_model',
+			'huggingface'  => 'huggingface_model',
+			'nvidia'       => 'nvidia_model',
+			'openrouter'   => 'openrouter_model',
+			'digitalocean' => 'digitalocean_model',
+			'kimi'         => 'kimi_model',
+			'baseten'      => 'baseten_model',
+			'zai'          => 'zai_model',
+		);
+
+		$key = isset( $provider_model_keys[ $provider ] ) ? $provider_model_keys[ $provider ] : '';
+
+		if ( '' !== $key && isset( $settings[ $key ] ) ) {
+			return $settings[ $key ];
+		}
+
+		return '';
 	}
 
 	/**
@@ -226,6 +273,7 @@ class GetEnvironmentStatusTool extends AbstractAiTool {
 			'openai'      => 'openai_api_key',
 			'anthropic'   => 'anthropic_api_key',
 			'gemini'      => 'gemini_api_key',
+			'deepseek'    => 'deepseek_api_key',
 			'huggingface' => 'huggingface_api_key',
 			'nvidia'      => 'nvidia_api_key',
 			'cloudflare'  => 'cloudflare_api_token',
@@ -238,6 +286,7 @@ class GetEnvironmentStatusTool extends AbstractAiTool {
 			'openai'      => 'OpenAI',
 			'anthropic'   => 'Anthropic',
 			'gemini'      => 'Gemini',
+			'deepseek'    => 'DeepSeek',
 			'huggingface' => 'Hugging Face',
 			'nvidia'      => 'NVIDIA',
 			'cloudflare'  => 'Cloudflare',
@@ -257,11 +306,15 @@ class GetEnvironmentStatusTool extends AbstractAiTool {
 			$warnings[] = sprintf( __( '%s is the default provider but no endpoint URL is configured.', 'nvoos-content-graph-ai' ), $label );
 		}
 
-		if ( empty( $assistants['total_assistants'] ) ) {
+		// summarise_assistants() wraps its payload under an 'environment' key to
+		// mirror the top-level snapshot, so unwrap it before reading the counts.
+		$assistant_summary = isset( $assistants['environment'] ) && is_array( $assistants['environment'] ) ? $assistants['environment'] : $assistants;
+
+		if ( empty( $assistant_summary['total_assistants'] ) ) {
 			$warnings[] = __( 'No assistants are published yet. Create or publish an assistant before exposing the chat surfaces.', 'nvoos-content-graph-ai' );
 		}
 
-		if ( ! empty( $assistants['default_assistant_id'] ) && empty( $assistants['default_assistant'] ) ) {
+		if ( ! empty( $assistant_summary['default_assistant_id'] ) && empty( $assistant_summary['default_assistant'] ) ) {
 			$warnings[] = __( 'The configured default assistant could not be loaded. Update the default assistant in Settings.', 'nvoos-content-graph-ai' );
 		}
 

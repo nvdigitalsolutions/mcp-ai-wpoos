@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Deletes a quiz.
  */
-class WP_MCP_AI_Tool_Delete_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Delete_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Deletes a quiz. Note: This does not automatically delete associated submissions. This action cannot be undone.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently removing a quiz the user confirms should be gone.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reversible changes; use update_quiz to edit. Note submissions survive deletion, so confirm before acting.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_quiz', 'update_quiz', 'list_quizzes' ),
+			'notes'           => __( 'Deletion cannot be undone and does not remove existing submissions.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

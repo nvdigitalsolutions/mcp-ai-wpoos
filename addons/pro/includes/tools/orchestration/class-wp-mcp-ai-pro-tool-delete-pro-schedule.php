@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager
 /**
  * Provides an AI tool for deleting a named pro schedule.
  */
-class WP_MCP_AI_Pro_Tool_Delete_Pro_Schedule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Delete_Pro_Schedule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,18 @@ class WP_MCP_AI_Pro_Tool_Delete_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 	/**
 	 * {@inheritdoc}
 	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently removing a named schedule, its cron event, and its execution history after explicit user confirmation.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Temporarily stopping a schedule; pause it with update_pro_schedule (enabled=false) or preview with dry_run_pro_schedule.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_pro_schedules', 'update_pro_schedule', 'dry_run_pro_schedule' ),
+			'notes'           => __( 'Deletion is irreversible: the schedule, cron event, and run history are gone for good. Requires manage_options.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -56,6 +68,16 @@ class WP_MCP_AI_Pro_Tool_Delete_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 			),
 			'required'             => array( 'schedule_id' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'schedule_id' ),
 		);
 	}
 

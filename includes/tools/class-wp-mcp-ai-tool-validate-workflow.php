@@ -30,7 +30,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
  *
  * @since 1.2.3
  */
-class WP_MCP_AI_Tool_Validate_Workflow implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Validate_Workflow implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -51,6 +51,20 @@ class WP_MCP_AI_Tool_Validate_Workflow implements WP_MCP_AI_Tool_Interface {
 	 */
 	public function get_description() {
 		return __( 'Validates workflow YAML files for correct structure, syntax, and compatibility.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Validating a workflow YAML or JSON file for required fields, step structure, DAG dependencies, and syntax before execution.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Running a workflow; use execute_workflow after validation, or check_workflow_health to monitor a running workflow.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'execute_workflow', 'check_workflow_health' ),
+			'notes'           => __( 'Reads only files inside the uploads or content directories; returns errors, warnings, and a structural summary.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

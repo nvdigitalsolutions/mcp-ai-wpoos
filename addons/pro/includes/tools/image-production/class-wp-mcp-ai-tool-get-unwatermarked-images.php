@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get unwatermarked images tool.
  */
-class WP_MCP_AI_Tool_Get_Unwatermarked_Images implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Unwatermarked_Images implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -61,6 +61,18 @@ class WP_MCP_AI_Tool_Get_Unwatermarked_Images implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Retrieves images that have not been watermarked (no `_is_watermarked` meta).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to list images lacking the _is_watermarked marker so they can be passed to apply_watermark_batch.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use get_unoptimised_images to audit file size or format instead, or get_images_without_alt for missing alt text.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'apply_watermark_batch', 'get_unoptimised_images', 'get_images_without_alt' ),
+			'notes'           => __( 'Filter by mime_type and date range to narrow the list before batch watermarking.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

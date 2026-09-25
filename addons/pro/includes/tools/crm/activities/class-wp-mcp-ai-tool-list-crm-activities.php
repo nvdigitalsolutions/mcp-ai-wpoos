@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @package WP_MCP_AI_Pro
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_List_CRM_Activities implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_CRM_Activities implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Whether this tool is available.
 	 *
@@ -56,6 +56,20 @@ class WP_MCP_AI_Tool_List_CRM_Activities implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'List and filter CRM activities.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing CRM activities with filters for type, related entity, assignee, due date, or completion.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Fetching one known activity; use get_crm_activity. Logging a new one; use create_crm_activity.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_crm_activity', 'create_crm_activity', 'complete_crm_activity' ),
+			'notes'           => __( 'Set completed=true for done items or due_before for upcoming deadlines; paginated with per_page and page.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * Parameters schema.

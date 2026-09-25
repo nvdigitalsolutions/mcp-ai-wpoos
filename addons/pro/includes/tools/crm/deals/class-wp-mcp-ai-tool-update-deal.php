@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Update_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -83,6 +83,20 @@ class WP_MCP_AI_Tool_Update_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Update an existing CRM deal/opportunity. Prevents modification of closed-won or closed-lost deals.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Updating editable deal fields (name, amount, close date, owner, notes) on an open deal.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Changing the pipeline stage; use move_deal_stage. Closed-won and closed-lost deals are rejected.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'move_deal_stage', 'get_deal', 'create_deal' ),
+			'notes'           => __( 'Only provided fields are updated. Stage changes must go through move_deal_stage.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

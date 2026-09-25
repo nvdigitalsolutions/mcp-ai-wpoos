@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.6.0
  */
-class WP_MCP_AI_Tool_Get_Appointment_Details implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Appointment_Details implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -96,6 +96,20 @@ class WP_MCP_AI_Tool_Get_Appointment_Details implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Retrieve comprehensive appointment information including client details, status, history, and metadata.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pulling client, time, and status details for one known appointment_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Discovering which appointments exist; use get_no_show_appointments, get_unconfirmed_bookings, or get_calendar_view.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_appointment', 'reschedule_appointment', 'cancel_appointment' ),
+			'notes'           => __( 'Set include_history=true to include activity logs and cancellation or reschedule history.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

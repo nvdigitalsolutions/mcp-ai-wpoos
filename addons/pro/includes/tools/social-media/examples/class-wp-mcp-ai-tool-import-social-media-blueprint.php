@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_Social_Media_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Social_Media_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR = WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/examples';
@@ -63,6 +63,18 @@ class WP_MCP_AI_Tool_Import_Social_Media_Blueprint implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Install a curated social media assistant blueprint for content strategy, community management, or analytics reporting workflows.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing a curated content-strategist, community-manager, or analytics-reporter assistant blueprint.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Running those workflows directly; use generate_social_captions, moderate_comments, or get_social_analytics.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_social_captions', 'moderate_comments', 'get_social_analytics' ),
+			'notes'           => __( 'Creates real assistant posts; pass overwrite only after reviewing the existing assistant.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * {@inheritdoc}

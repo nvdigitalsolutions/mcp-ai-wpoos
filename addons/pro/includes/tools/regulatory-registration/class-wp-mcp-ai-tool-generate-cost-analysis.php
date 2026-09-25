@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates cost analysis reports.
  */
-class WP_MCP_AI_Tool_Generate_Cost_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Cost_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Generate_Cost_Analysis implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Generates financial cost analysis report tracking registration fees, renewal costs, and budget allocation across countries and products.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Summarizing registration, renewal, and additional fees by country, product, type, or month, with a renewal forecast.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reporting on approval timelines or compliance status; use generate_country_performance or generate_compliance_report.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_country_performance', 'generate_compliance_report', 'generate_expiry_forecast' ),
+			'notes'           => __( 'Reads _registration_fee, _renewal_fee, and _additional_fees post meta; include_forecast=true projects the next 12 months.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

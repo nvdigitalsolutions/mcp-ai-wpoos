@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Withdraws a student from an ECA.
  */
-class WP_MCP_AI_Tool_Withdraw_Student_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Withdraw_Student_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Withdraw_Student_ECA implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Formally withdraws a student from an ECA with optional refund processing and automatic waitlist promotion.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Formally removing a student from an ECA, with optional refund flagging and automatic waitlist promotion.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Waitlist-only adjustments; use manage_eca_waitlist. Removing the ECA itself; use delete_eca.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'enroll_student_eca', 'manage_eca_waitlist', 'get_eca' ),
+			'notes'           => __( 'Changes live enrollments and can auto-promote the next waitlisted student; refunds are flagged, not processed.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

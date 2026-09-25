@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Analyzes matter profitability with revenue, cost, and margin calculations.
  */
-class WP_MCP_AI_Tool_LF_Profitability_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Profitability_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -67,6 +67,19 @@ class WP_MCP_AI_Tool_LF_Profitability_Analyzer implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Analyzes matter profitability by calculating total revenue, costs (hours × cost rate), overhead, profit margin, and realization rate.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Computing matter revenue, costs, overhead, profit margin, and realization rate from time entries and expenses.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Aging receivables or estimating fees; use lf_accounts_receivable_tracker or lf_fee_calculator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_accounts_receivable_tracker', 'lf_fee_calculator', 'lf_invoice_generator' ),
+			'notes'           => __( 'Requires matter_id; cost rate assumes 40 percent of billing rate; overhead_rate defaults to 0.40.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

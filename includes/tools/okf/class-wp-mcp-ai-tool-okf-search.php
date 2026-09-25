@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * OKF — Search tool.
  */
-class WP_MCP_AI_Tool_OKF_Search implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_OKF_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_OKF_Search implements WP_MCP_AI_Tool_Interface {
 	 */
 	public function get_description() {
 		return __( 'Searches an OKF bundle (v0.2) for concepts matching type, tag, lifecycle status, and/or trust tier. Returns concept summaries including OKF v0.2 trust signals: status, trust_tier, and staleness. Use this to filter for human-reviewed concepts only, or to surface deprecated/stale concepts that need attention.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Filtering concepts by type, tag, status, or trust tier, such as human-reviewed concepts only.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Reading a single known concept; use okf_read_concept. Browsing a directory listing; use okf_browse.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'okf_read_concept', 'okf_browse', 'okf_list_bundles' ),
+			'notes'           => __( 'status accepts draft, stable, deprecated; trust_tier accepts unverified, machine-confirmed, human-reviewed; include_stale defaults to true.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

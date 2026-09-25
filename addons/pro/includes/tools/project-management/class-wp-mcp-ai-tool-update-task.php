@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Updates an existing task.
  */
-class WP_MCP_AI_Tool_Update_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -48,6 +48,20 @@ class WP_MCP_AI_Tool_Update_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Updates an existing task. Provide only the fields you want to update.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Changing a known task title, description, status, priority, due date, or assignee.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating tasks; use create_task. Finding task IDs; use list_tasks. Deleting; use delete_task.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_task', 'list_tasks', 'delete_task' ),
+			'notes'           => __( 'Only provided fields are updated; omit a field to leave it unchanged.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

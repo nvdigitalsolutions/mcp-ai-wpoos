@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Allows users to create AI assistants with custom instructions and knowledge base.
  */
-class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -71,6 +71,20 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Creates a new AI assistant. Can be used in two modes: (1) Manual mode - select from predefined professions and regions, or (2) Prompt mode - provide a free-form description and optional custom system prompt. Supports attachment IDs for knowledge base files. The assistant will be saved as a draft.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new AI assistant from professions/regions or a free-form description, optionally with knowledge-base attachments.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'For a copy of an existing assistant use duplicate_assistant; when schema-strict validation is required use create_assistant_validated.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_assistant_validated', 'duplicate_assistant', 'import_assistant' ),
+			'notes'           => __( 'Saves as draft by default; async=true schedules creation via cron and returns immediately. The sync response returns assistant_id for chaining into duplicate_assistant or export tools; the async path returns a cron job_id to poll instead.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
@@ -246,6 +260,16 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 			),
 			'required'             => array( 'title' ),
 			'additionalProperties' => false,
+		);
+	}
+
+		/**
+		 * {@inheritdoc}
+		 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'assistant_id',
+			'consumes' => null,
 		);
 	}
 

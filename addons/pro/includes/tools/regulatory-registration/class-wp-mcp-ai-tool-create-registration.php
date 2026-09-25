@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates a new registration instance.
  */
-class WP_MCP_AI_Tool_Create_Registration implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Context_Restrictions_Interface {
+class WP_MCP_AI_Tool_Create_Registration implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Context_Restrictions_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
@@ -40,6 +40,18 @@ class WP_MCP_AI_Tool_Create_Registration implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Creates a new registration instance for a product with a specific country/authority. Each product can have multiple registrations for different countries (e.g., Sri Lanka NMRA, UAE, Saudi SFDA).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Opening a new registration record for an existing product in a specific country or under an authority.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating the product itself or searching for existing registrations; use create_reg_product or list_registrations.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_reg_product', 'get_registration', 'list_registrations' ),
+			'notes'           => __( 'product_id must reference an mcp_ai_reg_product; status defaults to draft and registration_type to new.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

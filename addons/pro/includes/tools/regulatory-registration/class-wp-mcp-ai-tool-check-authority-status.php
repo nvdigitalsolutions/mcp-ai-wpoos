@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Checks authority status across multiple countries.
  */
-class WP_MCP_AI_Tool_Check_Authority_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Check_Authority_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Check_Authority_Status implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Checks registration status across multiple regulatory authorities and countries, providing unified status updates and tracking information.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reviewing the current status of one or more known registration IDs, with optional country filtering and status history.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Finding registrations you do not have IDs for; run list_registrations or list_registrations_by_country first.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_registration', 'list_registrations', 'sync_with_nmra' ),
+			'notes'           => __( 'Returns NMRA fields for Sri Lanka registrations and MOHAP fields for UAE registrations; set include_history=true for status changes.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

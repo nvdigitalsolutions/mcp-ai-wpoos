@@ -35,6 +35,15 @@ class WP_MCP_AI_MCP_App_Registry {
 	const META_KEY = '_wp_mcp_ai_mcp_apps';
 
 	/**
+	 * Post meta key for per-app connection status (last test results).
+	 *
+	 * Stored as an array keyed by md5( server_url|auth_type|header_name ).
+	 *
+	 * @var string
+	 */
+	const STATUS_META_KEY = '_wp_mcp_ai_mcp_app_status';
+
+	/**
 	 * Transient prefix for cached tool discovery results.
 	 *
 	 * @var string
@@ -42,11 +51,21 @@ class WP_MCP_AI_MCP_App_Registry {
 	const CACHE_PREFIX = 'wp_mcp_ai_mcp_app_tools_';
 
 	/**
-	 * Cache duration in seconds (5 minutes).
+	 * Cache TTL for successful discovery results.
 	 *
 	 * @var int
 	 */
 	const CACHE_TTL = 300;
+
+	/**
+	 * Negative-cache TTL for failed discovery attempts.
+	 *
+	 * Prevents a down/unreachable app server from stalling every chat request
+	 * with a fresh handshake timeout.
+	 *
+	 * @var int
+	 */
+	const FAILURE_CACHE_TTL = 60;
 
 	/**
 	 * Maximum number of MCP Apps per assistant.
@@ -66,12 +85,16 @@ class WP_MCP_AI_MCP_App_Registry {
 	 * 3. **Hostname allowlist** (optional) — when an allowlist is configured
 	 *    via either:
 	 *    - the `WP_MCP_AI_MCP_APP_ALLOWED_HOSTS` constant (comma-separated
-	 *      string of host names), or
+	 *      string of host names; hard override when defined),
 	 *    - the `wp_mcp_ai_mcp_app_allowed_hosts` filter (array of host
-	 *      names),
+	 *      names), or
+	 *    - the "MCP App Allowed Hosts" setting under Settings → Security
+	 *      Center → Network & Headers (newline-separated host names),
 	 *    only URLs whose host is a member of the allowlist are accepted.
 	 *    Allowlist matching is case-insensitive on the hostname only and
-	 *    supports a leading `*.` wildcard (e.g. `*.example.com`).
+	 *    supports a leading `*.` wildcard (e.g. `*.example.com`). The filter
+	 *    output and the saved setting are merged; the constant, when defined,
+	 *    replaces both.
 	 *
 	 *    When the resolved allowlist is empty, the call is permissive
 	 *    (returns `true`) but a warning is logged so operators can spot
@@ -150,16 +173,22 @@ class WP_MCP_AI_MCP_App_Registry {
 	}
 
 	/**
-	 * Build the resolved hostname allowlist from constant + filter.
+	 * Build the resolved hostname allowlist from constant + filter + settings.
+	 *
+	 * The UI setting (Settings → Security Center → Network & Headers) is only
+	 * consulted when the constant is not defined, so operators can hard-cap
+	 * the allowlist regardless of what an admin saves in the UI.
 	 *
 	 * @since 1.8.0
+	 * @since 1.9.1 Added the saved-settings merge.
 	 *
 	 * @return array<int, string> Lower-cased list of host patterns.
 	 */
 	protected static function get_allowed_hosts() {
 		$hosts = array();
 
-		if ( defined( 'WP_MCP_AI_MCP_APP_ALLOWED_HOSTS' ) && is_string( WP_MCP_AI_MCP_APP_ALLOWED_HOSTS ) ) {
+		$constant_defined = defined( 'WP_MCP_AI_MCP_APP_ALLOWED_HOSTS' ) && is_string( WP_MCP_AI_MCP_APP_ALLOWED_HOSTS );
+		if ( $constant_defined ) {
 			foreach ( explode( ',', WP_MCP_AI_MCP_APP_ALLOWED_HOSTS ) as $candidate ) {
 				$candidate = strtolower( trim( $candidate ) );
 				if ( '' !== $candidate ) {
@@ -187,7 +216,16 @@ class WP_MCP_AI_MCP_App_Registry {
 		$hosts = apply_filters( 'wp_mcp_ai_mcp_app_allowed_hosts', $hosts );
 
 		if ( ! is_array( $hosts ) ) {
-			return array();
+			$hosts = array();
+		}
+
+		// Admins can self-serve via the Security Center unless the constant
+		// is defined (hard override).
+		if ( ! $constant_defined ) {
+			$setting_hosts = self::get_allowed_hosts_from_settings();
+			if ( ! empty( $setting_hosts ) ) {
+				$hosts = array_unique( array_merge( $hosts, $setting_hosts ) );
+			}
 		}
 
 		$normalized = array();
@@ -202,6 +240,42 @@ class WP_MCP_AI_MCP_App_Registry {
 		}
 
 		return $normalized;
+	}
+
+	/**
+	 * Read the MCP App Allowed Hosts setting from the plugin settings.
+	 *
+	 * Accepts newline- or comma-separated hostnames as saved by the Security
+	 * Center textarea field.
+	 *
+	 * @since 1.9.1
+	 *
+	 * @return array<int, string> Lower-cased list of host patterns.
+	 */
+	protected static function get_allowed_hosts_from_settings() {
+		$value = '';
+
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			if ( isset( $settings['mcp_app_allowed_hosts'] ) && is_string( $settings['mcp_app_allowed_hosts'] ) ) {
+				$value = $settings['mcp_app_allowed_hosts'];
+			}
+		} else {
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+			if ( is_array( $settings ) && isset( $settings['mcp_app_allowed_hosts'] ) && is_string( $settings['mcp_app_allowed_hosts'] ) ) {
+				$value = $settings['mcp_app_allowed_hosts'];
+			}
+		}
+
+		$hosts = array();
+		foreach ( preg_split( '/[\r\n,]+/', $value ) as $candidate ) {
+			$candidate = strtolower( trim( $candidate ) );
+			if ( '' !== $candidate ) {
+				$hosts[] = $candidate;
+			}
+		}
+
+		return $hosts;
 	}
 
 	/**
@@ -279,6 +353,110 @@ class WP_MCP_AI_MCP_App_Registry {
 	}
 
 	/**
+	 * Resolve an assistant's MCP Apps, expanding global connection references.
+	 *
+	 * Entries carrying `connection_ref` point at a `mcp_server` connection in
+	 * the Pro Remote Sites store. Resolution decrypts the central credential
+	 * on demand (per-request static cache) and merges it into a runtime config
+	 * — the credentials are never written back to post meta.
+	 *
+	 * A reference that cannot be resolved (missing connection, wrong type, or
+	 * Remote Sites unavailable) is skipped and recorded as an error status
+	 * snapshot keyed by the reference identity.
+	 *
+	 * @since 1.1.85
+	 *
+	 * @param int $assistant_id Assistant post ID.
+	 * @return array<int, array> Runtime app configs (resolved).
+	 */
+	public function resolve_apps( $assistant_id ) {
+		$resolved = array();
+
+		foreach ( $this->get_apps( $assistant_id ) as $app ) {
+			if ( ! is_array( $app ) ) {
+				continue;
+			}
+
+			if ( empty( $app['connection_ref'] ) ) {
+				$resolved[] = $app;
+				continue;
+			}
+
+			$ref_app = $this->resolve_connection_ref( $app );
+			if ( null === $ref_app ) {
+				$this->record_app_status(
+					$assistant_id,
+					$app,
+					array(
+						'last_status' => 'error',
+						'last_error'  => __( 'connection_ref not found in Remote Sites', 'mcp-ai-wpoos-pro' ),
+					)
+				);
+				if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_warning' ) ) {
+					WP_MCP_AI_Logger::log_warning(
+						'MCP App reference could not be resolved: connection not found in Remote Sites.',
+						array(
+							'assistant_id'   => $assistant_id,
+							'connection_ref' => isset( $app['connection_ref'] ) ? $app['connection_ref'] : '',
+						)
+					);
+				}
+				continue;
+			}
+
+			$resolved[] = $ref_app;
+		}
+
+		return $resolved;
+	}
+
+	/**
+	 * Resolve a single `connection_ref` entry against the Remote Sites store.
+	 *
+	 * @since 1.1.85
+	 *
+	 * @param array $app Stored MCP App entry with `connection_ref` set.
+	 * @return array|null Resolved runtime config, or null when unresolvable.
+	 */
+	protected function resolve_connection_ref( array $app ) {
+		$ref = isset( $app['connection_ref'] ) ? sanitize_key( (string) $app['connection_ref'] ) : '';
+
+		if ( '' === $ref ) {
+			return null;
+		}
+
+		// Lazy-load the Remote Site Manager — chat-time resolution must not
+		// depend on the admin bootstrap having loaded it earlier.
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$manager_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+			if ( file_exists( $manager_file ) ) {
+				require_once $manager_file;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			return null;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $ref );
+
+		if ( null === $connection || 'mcp_server' !== ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+			return null;
+		}
+
+		$config = WP_MCP_AI_Pro_Remote_Site_Manager::build_mcp_app_config_from_connection( $connection );
+
+		return array_merge(
+			$app,
+			$config,
+			array(
+				'label'          => ! empty( $app['label'] ) ? $app['label'] : ( isset( $connection['name'] ) ? $connection['name'] : $ref ),
+				'connection_ref' => $ref,
+			)
+		);
+	}
+
+	/**
 	 * Save MCP Apps configuration for an assistant.
 	 *
 	 * @since 1.8.0
@@ -300,7 +478,9 @@ class WP_MCP_AI_MCP_App_Registry {
 		$sanitized_apps = array();
 		foreach ( $apps as $app ) {
 			$sanitized = self::sanitize_app_config( $app );
-			if ( ! empty( $sanitized['server_url'] ) ) {
+			// Keep entries with a usable endpoint OR a global connection
+			// reference (reference entries resolve the URL at chat time).
+			if ( ! empty( $sanitized['server_url'] ) || ! empty( $sanitized['connection_ref'] ) ) {
 				$sanitized_apps[] = $sanitized;
 			}
 		}
@@ -311,8 +491,28 @@ class WP_MCP_AI_MCP_App_Registry {
 			update_post_meta( $assistant_id, self::META_KEY, $sanitized_apps );
 		}
 
+		// Prune connection status records for apps that no longer exist.
+		$kept_keys = array();
+		foreach ( $sanitized_apps as $app ) {
+			$kept_keys[] = $this->get_app_status_key( $app );
+		}
+		$kept_keys = array_flip( $kept_keys );
+		$statuses  = $this->get_app_status( $assistant_id );
+		if ( ! empty( $statuses ) ) {
+			$pruned = array_intersect_key( $statuses, $kept_keys );
+			if ( $pruned !== $statuses ) {
+				update_post_meta( $assistant_id, self::STATUS_META_KEY, $pruned );
+			}
+		}
+
 		// Clear cached tools for this assistant.
 		$this->clear_tool_cache( $assistant_id );
+
+		// The /tools REST list cache may hold pre-bridge listings for this
+		// assistant; invalidate it so new apps surface immediately.
+		if ( class_exists( 'WP_MCP_AI_REST_Cache' ) ) {
+			WP_MCP_AI_REST_Cache::invalidate_endpoint( 'tools' );
+		}
 
 		return true;
 	}
@@ -347,16 +547,17 @@ class WP_MCP_AI_MCP_App_Registry {
 		}
 
 		$sanitized = array(
-			'label'       => isset( $app['label'] ) ? sanitize_text_field( $app['label'] ) : '',
-			'server_url'  => $server_url,
-			'auth_type'   => isset( $app['auth_type'] ) && in_array( $app['auth_type'], array( 'none', 'bearer', 'header', 'oauth' ), true )
+			'label'          => isset( $app['label'] ) ? sanitize_text_field( $app['label'] ) : '',
+			'server_url'     => $server_url,
+			'auth_type'      => isset( $app['auth_type'] ) && in_array( $app['auth_type'], array( 'none', 'bearer', 'basic', 'header', 'oauth' ), true )
 				? $app['auth_type']
 				: 'none',
-			'token'       => isset( $app['token'] ) ? sanitize_text_field( $app['token'] ) : '',
-			'header_name' => isset( $app['header_name'] ) ? sanitize_text_field( $app['header_name'] ) : '',
-			'enabled'     => isset( $app['enabled'] ) ? (bool) $app['enabled'] : true,
-			'timeout'     => isset( $app['timeout'] ) ? max( 1, min( 120, absint( $app['timeout'] ) ) ) : 30,
-			'verify_ssl'  => isset( $app['verify_ssl'] ) ? (bool) $app['verify_ssl'] : true,
+			'token'          => isset( $app['token'] ) ? sanitize_text_field( $app['token'] ) : '',
+			'header_name'    => isset( $app['header_name'] ) ? sanitize_text_field( $app['header_name'] ) : '',
+			'connection_ref' => isset( $app['connection_ref'] ) ? sanitize_key( $app['connection_ref'] ) : '',
+			'enabled'        => isset( $app['enabled'] ) ? (bool) $app['enabled'] : true,
+			'timeout'        => isset( $app['timeout'] ) ? max( 1, min( 120, absint( $app['timeout'] ) ) ) : 30,
+			'verify_ssl'     => isset( $app['verify_ssl'] ) ? (bool) $app['verify_ssl'] : true,
 		);
 
 		// Store OAuth token data when using OAuth auth_type.
@@ -422,13 +623,84 @@ class WP_MCP_AI_MCP_App_Registry {
 	 * @return array Array of registered bridge tool slugs.
 	 */
 	public function register_remote_tools( $assistant_id, $registry ) {
-		$apps = $this->get_apps( $assistant_id );
+		$registered_slugs = array();
+
+		foreach ( $this->collect_remote_tools( $assistant_id ) as $entry ) {
+			foreach ( $entry['tools'] as $remote_tool ) {
+				$bridge = new WP_MCP_AI_MCP_App_Tool_Bridge( $remote_tool, $entry['app_config'], $entry['label'] );
+				$slug   = $bridge->get_slug();
+
+				// Avoid duplicate registration.
+				if ( $registry->get_tool( $slug ) ) {
+					continue;
+				}
+
+				$registry->register_tool( $bridge );
+				$registered_slugs[] = $slug;
+			}
+
+			// Persist a success status with the live tool count so the metabox
+			// badge reflects reality, not just a successful handshake.
+			$this->record_app_status(
+				$assistant_id,
+				$entry['app_config'],
+				array(
+					'last_status' => 'ok',
+					'last_error'  => '',
+					'tool_count'  => count( $entry['tools'] ),
+				)
+			);
+		}
+
+		return $registered_slugs;
+	}
+
+	/**
+	 * Compute the local bridge tool slugs for an assistant's MCP Apps.
+	 *
+	 * Does not register anything — used to expose bridged tools in the chat
+	 * payload (see the wp_mcp_ai_chat_effective_tools filter in
+	 * mcp-apps-init.php) without depending on registration order.
+	 *
+	 * Discovery results are transient-cached, so repeat calls within the
+	 * cache window are cheap.
+	 *
+	 * @since 1.9.2
+	 * @param int $assistant_id Assistant post ID.
+	 * @return array<int, string> Local bridge tool slugs (e.g. mcp_app_elementor_read_page).
+	 */
+	public function get_remote_tool_slugs( $assistant_id ) {
+		$slugs = array();
+
+		foreach ( $this->collect_remote_tools( $assistant_id ) as $entry ) {
+			foreach ( $entry['tools'] as $remote_tool ) {
+				$bridge  = new WP_MCP_AI_MCP_App_Tool_Bridge( $remote_tool, $entry['app_config'], $entry['label'] );
+				$slugs[] = $bridge->get_slug();
+			}
+		}
+
+		return array_values( array_unique( $slugs ) );
+	}
+
+	/**
+	 * Collect discovered tools from all enabled MCP Apps for an assistant.
+	 *
+	 * Applies the enabled/server_url/allowlist guards, records per-app
+	 * connection status snapshots (errors and empty-tool successes), and
+	 * returns the discovery results grouped per app.
+	 *
+	 * @since 1.9.2
+	 * @param int $assistant_id Assistant post ID.
+	 * @return array<int, array{app_config: array, tools: array, label: string}>
+	 */
+	protected function collect_remote_tools( $assistant_id ) {
+		$apps = $this->resolve_apps( $assistant_id );
 
 		if ( empty( $apps ) ) {
 			return array();
 		}
 
-		$registered_slugs = array();
+		$collected = array();
 
 		foreach ( $apps as $app_config ) {
 			if ( empty( $app_config['enabled'] ) ) {
@@ -442,6 +714,15 @@ class WP_MCP_AI_MCP_App_Registry {
 			// Defense-in-depth: re-validate against the allowlist in case the
 			// stored config predates the current allowlist configuration.
 			if ( is_wp_error( self::is_url_allowed( $app_config['server_url'] ) ) ) {
+				$message = __( 'Server URL is not on the current allowlist.', 'mcp-ai-wpoos-pro' );
+				$this->record_app_status(
+					$assistant_id,
+					$app_config,
+					array(
+						'last_status' => 'error',
+						'last_error'  => $message,
+					)
+				);
 				if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_warning' ) ) {
 					WP_MCP_AI_Logger::log_warning(
 						'Skipping MCP App tool discovery: server URL is not on the current allowlist.',
@@ -453,62 +734,126 @@ class WP_MCP_AI_MCP_App_Registry {
 
 			$tools = $this->discover_tools( $app_config );
 
-			if ( is_wp_error( $tools ) || empty( $tools ) ) {
+			if ( is_wp_error( $tools ) ) {
+				$this->record_app_status(
+					$assistant_id,
+					$app_config,
+					array(
+						'last_status' => 'error',
+						'last_error'  => $tools->get_error_message(),
+					)
+				);
+				if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_warning' ) ) {
+					WP_MCP_AI_Logger::log_warning(
+						sprintf( 'MCP App tool discovery failed: %s', $tools->get_error_message() ),
+						array(
+							'server_url' => $app_config['server_url'],
+							'label'      => isset( $app_config['label'] ) ? $app_config['label'] : '',
+						)
+					);
+				}
 				continue;
 			}
 
-			$label = ! empty( $app_config['label'] ) ? $app_config['label'] : wp_parse_url( $app_config['server_url'], PHP_URL_HOST );
-
-			foreach ( $tools as $remote_tool ) {
-				$bridge = new WP_MCP_AI_MCP_App_Tool_Bridge( $remote_tool, $app_config, $label );
-				$slug   = $bridge->get_slug();
-
-				// Avoid duplicate registration.
-				if ( $registry->get_tool( $slug ) ) {
-					continue;
-				}
-
-				$registry->register_tool( $bridge );
-				$registered_slugs[] = $slug;
+			if ( empty( $tools ) ) {
+				$this->record_app_status(
+					$assistant_id,
+					$app_config,
+					array(
+						'last_status' => 'ok',
+						'last_error'  => '',
+						'tool_count'  => 0,
+					)
+				);
+				continue;
 			}
+
+			$collected[] = array(
+				'app_config' => $app_config,
+				'tools'      => $tools,
+				'label'      => ! empty( $app_config['label'] ) ? $app_config['label'] : wp_parse_url( $app_config['server_url'], PHP_URL_HOST ),
+			);
 		}
 
-		return $registered_slugs;
+		return $collected;
 	}
 
 	/**
 	 * Discover tools from a single MCP App server.
 	 *
-	 * Uses transient caching to avoid repeated requests.
+	 * Uses transient caching to avoid repeated requests. Attempts the
+	 * stateless server/discover handshake first, falling back to the legacy
+	 * sessionful initialize handshake (which captures Mcp-Session-Id) for
+	 * pre-2026-07-28 servers.
 	 *
 	 * @since 1.8.0
+	 * @since 1.9.1 Added sessionful fallback and $refresh parameter.
 	 * @param array $app_config MCP App configuration.
+	 * @param bool  $refresh    Whether to bypass the transient cache.
 	 * @return array|WP_Error Array of tool definitions or WP_Error.
 	 */
-	public function discover_tools( array $app_config ) {
+	public function discover_tools( array $app_config, $refresh = false ) {
 		$cache_key = self::CACHE_PREFIX . md5( wp_json_encode( $app_config ) );
 
-		$cached = get_transient( $cache_key );
-		if ( false !== $cached ) {
-			return $cached;
+		if ( ! $refresh ) {
+			$cached = get_transient( $cache_key );
+			if ( false !== $cached ) {
+				return $cached;
+			}
+
+			// Short negative cache: a down/unreachable server must not force
+			// every chat request to wait out a fresh handshake timeout.
+			$failure = get_transient( $cache_key . '_err' );
+			if ( false !== $failure && is_string( $failure ) ) {
+				return new WP_Error( 'wp_mcp_ai_mcp_app_discovery_failed', $failure );
+			}
 		}
 
 		$client = $this->create_client( $app_config );
 
-		$init_result = $client->initialize();
+		$init_result = $client->discover();
 		if ( is_wp_error( $init_result ) ) {
-			return $init_result;
+			$error_data = $init_result->get_error_data();
+			$rpc_code   = is_array( $error_data ) && isset( $error_data['rpc_code'] ) ? $error_data['rpc_code'] : 0;
+			$message    = strtolower( $init_result->get_error_message() );
+
+			// Sessionful servers reject server/discover with -32601 (unknown
+			// method) or -32600 (e.g. "Missing Mcp-Session-Id header").
+			if ( -32601 === $rpc_code || -32600 === $rpc_code || false !== strpos( $message, 'session' ) ) {
+				$init_result = $client->initialize();
+				if ( is_wp_error( $init_result ) ) {
+					$this->cache_discovery_failure( $cache_key, $init_result );
+					return $init_result;
+				}
+			} else {
+				$this->cache_discovery_failure( $cache_key, $init_result );
+				return $init_result;
+			}
 		}
 
 		$tools = $client->list_tools();
 		if ( is_wp_error( $tools ) ) {
+			$this->cache_discovery_failure( $cache_key, $tools );
 			return $tools;
 		}
 
 		// Cache the results.
 		set_transient( $cache_key, $tools, self::CACHE_TTL );
+		delete_transient( $cache_key . '_err' );
 
 		return $tools;
+	}
+
+	/**
+	 * Record a discovery failure in the short negative cache.
+	 *
+	 * @since 1.9.4
+	 * @param string   $cache_key Discovery transient key.
+	 * @param WP_Error $error     Discovery error.
+	 * @return void
+	 */
+	protected function cache_discovery_failure( $cache_key, WP_Error $error ) {
+		set_transient( $cache_key . '_err', $error->get_error_message(), self::FAILURE_CACHE_TTL );
 	}
 
 	/**
@@ -528,6 +873,7 @@ class WP_MCP_AI_MCP_App_Registry {
 		foreach ( $apps as $app_config ) {
 			$cache_key = self::CACHE_PREFIX . md5( wp_json_encode( $app_config ) );
 			delete_transient( $cache_key );
+			delete_transient( $cache_key . '_err' );
 		}
 	}
 
@@ -541,5 +887,95 @@ class WP_MCP_AI_MCP_App_Registry {
 	public function test_connection( array $app_config ) {
 		$client = $this->create_client( $app_config );
 		return $client->test_connection();
+	}
+
+	/**
+	 * Build the status-meta key for an app configuration.
+	 *
+	 * Keyed on the connection identity (URL + auth shape) so statuses survive
+	 * row reordering and are invalidated when the connection changes. The
+	 * token is deliberately excluded.
+	 *
+	 * @since 1.9.1
+	 * @param array $app_config MCP App configuration.
+	 * @return string MD5 status key.
+	 */
+	public function get_app_status_key( array $app_config ) {
+		return md5(
+			( isset( $app_config['server_url'] ) ? $app_config['server_url'] : '' ) .
+			'|' . ( isset( $app_config['auth_type'] ) ? $app_config['auth_type'] : '' ) .
+			'|' . ( isset( $app_config['header_name'] ) ? $app_config['header_name'] : '' ) .
+			'|' . ( isset( $app_config['connection_ref'] ) ? $app_config['connection_ref'] : '' )
+		);
+	}
+
+	/**
+	 * Record a connection status snapshot for an app.
+	 *
+	 * Skips the meta write when the meaningful fields are unchanged, so the
+	 * per-chat tool-registration path does not rewrite post meta on every
+	 * request.
+	 *
+	 * @since 1.9.1
+	 * @param int   $assistant_id Assistant post ID.
+	 * @param array $app_config   MCP App configuration.
+	 * @param array $status       Status fields: last_status, last_error, tool_count, protocol, server_name, latency_ms.
+	 * @return bool True when the status was stored.
+	 */
+	public function record_app_status( $assistant_id, array $app_config, array $status ) {
+		$assistant_id = absint( $assistant_id );
+		if ( ! $assistant_id || ( empty( $app_config['server_url'] ) && empty( $app_config['connection_ref'] ) ) ) {
+			return false;
+		}
+
+		$key = $this->get_app_status_key( $app_config );
+		$all = $this->get_app_status( $assistant_id );
+
+		$defaults             = array(
+			'last_status' => '',
+			'last_error'  => '',
+			'tool_count'  => null,
+			'protocol'    => '',
+			'server_name' => '',
+			'latency_ms'  => null,
+			'checked_at'  => 0,
+		);
+		$status               = array_intersect_key( wp_parse_args( $status, $defaults ), $defaults );
+		$status['checked_at'] = time();
+
+		// Skip the write when nothing meaningful changed (e.g. every chat
+		// request re-recording an identical success).
+		if ( isset( $all[ $key ] ) && is_array( $all[ $key ] ) ) {
+			$previous_snap = array_intersect_key( $all[ $key ], $defaults );
+			unset( $previous_snap['checked_at'] );
+			$new_snap = $status;
+			unset( $new_snap['checked_at'] );
+			if ( $previous_snap === $new_snap ) {
+				return true;
+			}
+		}
+
+		$all[ $key ] = $status;
+		update_post_meta( $assistant_id, self::STATUS_META_KEY, $all );
+
+		return true;
+	}
+
+	/**
+	 * Get connection status snapshots for an assistant.
+	 *
+	 * @since 1.9.1
+	 * @param int $assistant_id Assistant post ID.
+	 * @return array Status entries keyed by md5 connection identity.
+	 */
+	public function get_app_status( $assistant_id ) {
+		$assistant_id = absint( $assistant_id );
+		if ( ! $assistant_id ) {
+			return array();
+		}
+
+		$status = get_post_meta( $assistant_id, self::STATUS_META_KEY, true );
+
+		return is_array( $status ) ? $status : array();
 	}
 }

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * List students with pagination and filtering.
  */
-class WP_MCP_AI_Tool_List_Students implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Students implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,18 @@ class WP_MCP_AI_Tool_List_Students implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Lists all students with optional filtering by year group and house. Includes enrollment counts and basic details.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing or searching students by year group, house, or name to locate student post IDs.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Fetching a single student record; use get_student.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_student', 'create_student', 'update_student' ),
+			'notes'           => __( 'Paginated results; resolve names to student post IDs before enrolling or reporting.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

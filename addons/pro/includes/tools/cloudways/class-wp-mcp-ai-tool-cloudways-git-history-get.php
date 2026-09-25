@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Git_History_Get' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Git_History_Get extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Git_History_Get extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Git_History_Get' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Retrieve recent Git deployment history for an application.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Reviewing which commits were deployed to an app and when, for audit or rollback decisions.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Deploying code or listing available branches; use cloudways_git_pull or cloudways_git_branches_get.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_git_pull', 'cloudways_git_clone', 'cloudways_git_branches_get' ),
+			);
 		}
 
 		/** {@inheritdoc} */

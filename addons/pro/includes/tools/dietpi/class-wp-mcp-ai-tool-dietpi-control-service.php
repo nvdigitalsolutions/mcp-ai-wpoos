@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Control_Service' ) ) {
 	/**
 	 * Control DietPi service tool.
 	 */
-	class WP_MCP_AI_Tool_DietPi_Control_Service extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_Control_Service extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 		public function get_slug() {
@@ -36,6 +36,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Control_Service' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Start, stop, or restart a DietPi-managed service (e.g. sonarr, radarr, transmission-daemon, jackett, plexmediaserver, jellyfin). Requires manage_options capability.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Starting, stopping, restarting, or checking the status of one DietPi-managed service by name.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Viewing all service states at once; use dietpi_list_services. Managing torrents; use dietpi_control_transmission.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_list_services', 'dietpi_control_transmission', 'dietpi_dashboard_summary' ),
+				'notes'           => __( 'Stopping or restarting a live service interrupts the media stack; act only on an explicit user request.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

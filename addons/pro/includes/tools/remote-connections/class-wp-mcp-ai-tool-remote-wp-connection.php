@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-mana
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Product_Card;
 
@@ -119,6 +119,18 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Access and manage remote WordPress, WooCommerce, JetEngine Custom Content Type (CCT), and Paper Store sites. Supports reading posts, pages, media, products, orders, JetEngine CCT records, Paper Store collections and records, and other data, plus creating, updating, and deleting content when the connection allows it. IMPORTANT: When using get_wc_products with include_variations enabled (default), variable products are represented ONLY by their variations (not the parent product) to provide accurate stock quantities. Products are automatically sorted with in-stock items first and return only essential fields to optimize token usage. Each variation includes parent_id and parent_name for reference. You do NOT need to make a separate call to get_wc_product_variations unless you want variations for a specific product only. WORKFLOW: Always call with action="list_connections" FIRST to discover available connection IDs, then use those IDs in subsequent calls. Never attempt get_posts, get_media, etc. without first calling list_connections. NOTE: Write operations (create/update/delete) require the connection to have those operations explicitly enabled by the site administrator. NOTE: Paper Store operations (list_paper_store_collections, search_paper_store) allow you to browse and search the remote site\'s Paper Store knowledge base through the same WordPress connections.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Querying or managing content on connected remote WordPress or WooCommerce sites through a known connection.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Working with the local site only; use get_post, get_recent_posts, or search_content for local content.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'remote_shopify_connection', 'paper_store_search', 'paper_store_list' ),
+			'notes'           => __( 'Call action=list_connections first to discover connection IDs; write actions require explicit enablement.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

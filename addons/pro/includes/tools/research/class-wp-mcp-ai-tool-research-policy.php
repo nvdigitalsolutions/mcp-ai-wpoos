@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Uses AI and web search to research comprehensive information about
  * insurance policies and coverage options.
  */
-class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -85,6 +85,20 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Research comprehensive information about an insurance policy type using multi-stage web search and AI analysis. Supports configurable research depth (basic/standard/comprehensive) and focus areas for targeted research. Returns policy name, description, coverage details, requirements, premiums, deductibles, exclusions, and terms ready for creating a policy template.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Researching an insurance policy type (coverage, premiums, exclusions) to prepare a policy template entry.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Non-insurance research; use deep_research for general topics or research_project for project planning.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'toolkit_cpt', 'deep_research', 'research_project' ),
+			'notes'           => __( 'Returns fields ready for a policy template; store the result with toolkit_cpt (mcp_ai_policy).', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

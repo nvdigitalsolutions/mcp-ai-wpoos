@@ -29,7 +29,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-media-worker-clie
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_Media_Worker_Client;
@@ -53,6 +53,18 @@ class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Extract text content from PDF documents. Parse PDF files and retrieve their text for processing, indexing, or analysis. Supports multi-page PDFs and maintains basic formatting. Automatically detects scanned PDFs and applies OCR when needed (if enable_ocr parameter is true).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pulling readable text out of a PDF for indexing, search, or further processing.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating or modifying PDFs; use generate_pdf or add_watermark_to_pdf instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'pro_document_ocr', 'pro_batch_ocr', 'generate_pdf' ),
+			'notes'           => __( 'Pass enable_ocr=true for scanned PDFs; it picks the best available OCR provider automatically.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
@@ -130,7 +142,7 @@ class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MC
 You do not have permission to access files.',
 					'mcp-ai-wpoos-pro'
 				)
-);
+			);
 		}
 
 		// Get PDF file path.
@@ -154,7 +166,7 @@ The PDF file with attachment ID %d could not be found.',
 						),
 						$attachment_id
 					)
-);
+				);
 			}
 		} elseif ( ! empty( $arguments['file_id'] ) ) {
 			// Resolve provider file ID (e.g., OpenAI "file-xxx") to a local path.
@@ -173,7 +185,7 @@ The PDF file with attachment ID %d could not be found.',
 						),
 						$resolved->get_error_message()
 					)
-);
+				);
 			}
 
 			$file_path = $resolved['path'];
@@ -193,7 +205,7 @@ The PDF file with attachment ID %d could not be found.',
 Only http and https URLs are supported.',
 						'mcp-ai-wpoos-pro'
 					)
-);
+				);
 			}
 			$host = wp_parse_url( $url, PHP_URL_HOST );
 			if ( empty( $host ) ) {
@@ -205,7 +217,7 @@ Only http and https URLs are supported.',
 Could not determine host from the provided URL.',
 						'mcp-ai-wpoos-pro'
 					)
-);
+				);
 			}
 			// Resolve the hostname and reject private / reserved IP ranges (SSRF guard).
 			$resolved_ip = gethostbyname( $host );
@@ -218,7 +230,7 @@ Could not determine host from the provided URL.',
 URL hostname could not be resolved.',
 						'mcp-ai-wpoos-pro'
 					)
-);
+				);
 			}
 			if ( false === filter_var( $resolved_ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
 				return new WP_Error(
@@ -229,7 +241,7 @@ URL hostname could not be resolved.',
 URL resolves to a private or reserved address and cannot be fetched.',
 						'mcp-ai-wpoos-pro'
 					)
-);
+				);
 			}
 			// Download PDF to a temp file, pinning the TCP connection to the already-resolved.
 			// IP address to prevent DNS-rebinding SSRF (a second gethostbyname() call inside.
@@ -264,7 +276,7 @@ Failed to download PDF from URL: %s',
 						),
 						$response->get_error_message()
 					)
-);
+				);
 			}
 
 			$response_code = wp_remote_retrieve_response_code( $response );
@@ -281,7 +293,7 @@ The server returned HTTP %d.',
 						),
 						(int) $response_code
 					)
-);
+				);
 			}
 
 			$body = wp_remote_retrieve_body( $response );
@@ -294,7 +306,7 @@ The server returned HTTP %d.',
 The downloaded file is empty.',
 						'mcp-ai-wpoos-pro'
 					)
-);
+				);
 			}
 
 			if ( ! function_exists( 'wp_tempnam' ) ) {
@@ -315,7 +327,7 @@ The downloaded file is empty.',
 Failed to write downloaded PDF to a temporary file.',
 						'mcp-ai-wpoos-pro'
 					)
-);
+				);
 			}
 
 			$file_path = $temp_file;
@@ -328,7 +340,7 @@ Failed to write downloaded PDF to a temporary file.',
 Either `attachment_id`, `file_id`, or `url` parameter is required.',
 					'mcp-ai-wpoos-pro'
 				)
-);
+			);
 		}
 
 		// Validate it's a PDF.
@@ -349,7 +361,7 @@ File is not a valid PDF document (detected: %s).',
 					),
 					$mime_type
 				)
-);
+			);
 		}
 
 		$max_pages    = ! empty( $arguments['max_pages'] ) ? absint( $arguments['max_pages'] ) : 0;
@@ -417,7 +429,7 @@ File is not a valid PDF document (detected: %s).',
 						),
 						$text->get_error_message()
 					)
-);
+				);
 			}
 
 			$word_count = str_word_count( $text );
@@ -490,7 +502,7 @@ Failed to extract text from PDF: %s',
 					),
 					$e->getMessage()
 				)
-);
+			);
 		}
 	}
 

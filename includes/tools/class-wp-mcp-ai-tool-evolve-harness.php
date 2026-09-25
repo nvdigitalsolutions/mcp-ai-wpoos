@@ -57,7 +57,7 @@ if ( file_exists( WP_MCP_AI_PATH . 'includes/agents/class-wp-mcp-ai-agent-harnes
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Evolve_Harness implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+class WP_MCP_AI_Tool_Evolve_Harness implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Chat_Response;
 
@@ -114,6 +114,20 @@ class WP_MCP_AI_Tool_Evolve_Harness implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return __(
 			'Analyse your recent performance and improve your own prompt, skills, memory, and sub-agent roles. Based on Continual Harness (Karten et al., 2026) — a continual learning framework where AI agents refine their own scaffolding over successive interactions. Use "analyze" to detect failure patterns, "evolve" to apply improvements, "status" to review the evolution log, or "bootstrap" to load a previously saved evolved harness.',
 			'mcp-ai-wpoos'
+		);
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Improving your own prompt, skills, memory, or sub-agent roles based on recent performance.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Plain memory reads or writes; use retrieve_agent_memory or store_agent_context instead.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'retrieve_agent_memory', 'store_agent_context', 'memory_audit_trail' ),
+			'notes'           => __( 'Operations: analyze, evolve, status, bootstrap. Evolution log keeps the last 100 entries per assistant.', 'mcp-ai-wpoos' ),
 		);
 	}
 

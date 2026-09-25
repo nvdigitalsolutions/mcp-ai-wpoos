@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Score EDGE certification (energy / water / embodied carbon).
  */
-class WP_MCP_AI_Tool_Score_Edge_Certification implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Score_Edge_Certification implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -68,6 +68,20 @@ class WP_MCP_AI_Tool_Score_Edge_Certification implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Compute IFC EDGE certification scoring (Certified / Advanced / Zero Carbon) from energy, water, and embodied-carbon savings versus a regional baseline. Pass either absolute proposed values or percentages directly. Indicative — final certification requires an EDGE Auditor.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scoring IFC EDGE energy, water, and embodied-carbon savings versus a regional baseline to report Certified / Advanced / Zero Carbon tier.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'LEED submissions; use score_leed_v4_certification. Actual certification; final EDGE ratings require an EDGE Auditor.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'score_leed_v4_certification', 'calculate_sustainability_metrics' ),
+			'notes'           => __( 'Pass absolute values or savings percentages; percentages take precedence when both are given.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

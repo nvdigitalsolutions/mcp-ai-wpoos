@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-r
 /**
  * Retrieves comprehensive metadata about video files including duration, format, dimensions, and codec information.
  */
-class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
 
 	/**
@@ -40,6 +40,18 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Retrieves detailed technical metadata about a video file including duration, dimensions, format, codecs, bitrate, and frame rate.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Inspecting duration, dimensions, codecs, bitrate, or frame rate of one video before editing or transcoding.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Auditing many videos for missing assets; use get_videos_without_thumbnails or get_videos_without_transcripts.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'transcode_video', 'resize_video_resolution', 'trim_video' ),
+			'notes'           => __( 'Requires FFprobe. Set include_streams=false to skip per-track codec details.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

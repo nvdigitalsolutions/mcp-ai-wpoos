@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Create_Discount_Campaign implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Discount_Campaign implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -104,6 +104,20 @@ class WP_MCP_AI_Tool_Create_Discount_Campaign implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Create WooCommerce discount campaigns with coupon codes. Supports percentage and fixed discounts, product/category restrictions, usage limits, expiration dates, and minimum/maximum spend requirements.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Launching a WooCommerce coupon campaign with usage limits, expiry, restrictions, and spend requirements.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Simple coupon CRUD or editing existing coupons; use woo_coupons for ad-hoc changes.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'woo_coupons', 'woo_products', 'segment_customers' ),
+			'notes'           => __( 'The code parameter is required and uppercase. Product and category restrictions reference existing WooCommerce items.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

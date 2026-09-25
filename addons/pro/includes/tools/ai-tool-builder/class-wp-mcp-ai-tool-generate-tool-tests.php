@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Generate comprehensive PHPUnit test suites for AI tools. Creates unit tests, integration tests, edge case coverage, and mocking for external dependencies. Follows WordPress and PHPUnit best practices.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating PHPUnit coverage for a tool class after its logic is implemented.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Fixing failing tests or refactoring code; use refactor_tool_code. Writing the tool itself; use generate_tool_logic.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_tool_logic', 'generate_tool_scaffold', 'benchmark_tool_performance' ),
+			'notes'           => __( 'Requires tool_class; mocks external dependencies by default and targets 80 percent coverage.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

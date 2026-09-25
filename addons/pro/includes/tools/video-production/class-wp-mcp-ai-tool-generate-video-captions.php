@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Generate_Video_Captions tool.
  */
-class WP_MCP_AI_Tool_Generate_Video_Captions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Video_Captions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Generate_Video_Captions implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Auto-generate subtitles and captions using speech-to-text AI with multiple language support.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing timed subtitle files (SRT, VTT, ASS) from a video audio track with language and auto-sync options.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Full text transcripts rather than timed captions; use transcribe_video. Finding uncaptioned videos; use get_videos_without_transcripts.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'transcribe_video', 'get_videos_without_transcripts', 'extract_video_metadata' ),
+			'notes'           => __( 'Caption format defaults to SRT; speech-to-text processing can be slow on long videos.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

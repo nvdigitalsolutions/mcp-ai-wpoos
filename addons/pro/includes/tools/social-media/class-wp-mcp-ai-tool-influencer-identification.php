@@ -39,7 +39,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Influencer_Identification implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Influencer_Identification implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -107,6 +107,19 @@ class WP_MCP_AI_Tool_Influencer_Identification implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Discover and analyze potential brand influencers across social media platforms. Evaluate based on engagement rates, follower count authenticity, content relevance, and audience demographics. Get ranked recommendations with collaboration potential scores and contact information.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering and ranking potential brand influencers by engagement, authenticity, relevance, and collaboration fit.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Measuring your own post performance; use get_social_analytics. Researching competitors; use competitor_analysis.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_social_analytics', 'competitor_analysis', 'social_listening_trends' ),
+		);
 	}
 
 	/**

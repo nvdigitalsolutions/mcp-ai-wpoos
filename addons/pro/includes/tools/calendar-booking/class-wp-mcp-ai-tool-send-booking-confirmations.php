@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.9.0
  */
-class WP_MCP_AI_Tool_Send_Booking_Confirmations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Send_Booking_Confirmations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -47,6 +47,18 @@ class WP_MCP_AI_Tool_Send_Booking_Confirmations implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Sends confirmation emails/notifications for specified bookings. Supports email, SMS, or both delivery methods. Use dry_run mode to preview without sending.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Batch-confirming multiple appointments at once, with dry-run preview before any messages go out.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Confirming or reminding about a single booking; use send_booking_confirmation or send_appointment_reminder.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_booking_confirmation', 'send_appointment_reminder', 'get_unconfirmed_bookings' ),
+			'notes'           => __( 'dry_run defaults to true; set it to false only when ready to send real email or SMS.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

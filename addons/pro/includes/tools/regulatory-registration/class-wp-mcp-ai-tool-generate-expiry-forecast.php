@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates expiry forecast reports.
  */
-class WP_MCP_AI_Tool_Generate_Expiry_Forecast implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Expiry_Forecast implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Generate_Expiry_Forecast implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Generates registration expiry forecast report with renewal timeline, risk assessment, and proactive planning recommendations.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Planning renewals by projecting registration expiries, risk levels, and monthly/country groupings over coming months.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Checking document expiry or listing already-expired registrations only; use check_document_expiry or list_expiring_registrations.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_expiring_registrations', 'check_document_expiry', 'generate_cost_analysis' ),
+			'notes'           => __( 'forecast_months defaults to 12 (max 36); risk_threshold defaults to 90 days before expiry.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

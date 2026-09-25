@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Addon_List' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Addon_List extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Addon_List extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Addon_List' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'List all available Cloudways add-ons with status and pricing.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Listing all available Cloudways add-ons with status and pricing before enabling one.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Turning an add-on on; use cloudways_addon_activate once you have the identifier.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_addon_activate', 'cloudways_copilot_insights_list' ),
+				'notes'           => __( 'Account-wide list; no server_id or app_id is required.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

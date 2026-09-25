@@ -18,9 +18,21 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Retrieves messages from the WebChat messages CCT.
  */
-class WP_MCP_AI_Tool_Get_WebChat_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_WebChat_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 
 	use WP_MCP_AI_Tool_Default_Capability;
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading message history for a known room_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sending messages; use save_webchat_message.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_webchat_room', 'save_webchat_message' ),
+			'notes'           => __( 'room_id comes from create_webchat_room responses.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * Check if this tool is available.
@@ -88,6 +100,16 @@ class WP_MCP_AI_Tool_Get_WebChat_Messages implements WP_MCP_AI_Tool_Interface, W
 			),
 			'required'             => array( 'room_id' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'room_id' ),
 		);
 	}
 
@@ -162,33 +184,48 @@ class WP_MCP_AI_Tool_Get_WebChat_Messages implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		global $wpdb;
-		$table = WP_MCP_AI_JetEngine_WebChat_Messages_CCT::get_table_name();
+		$table = esc_sql( WP_MCP_AI_JetEngine_WebChat_Messages_CCT::get_table_name() );
 
-		// Build query.
-		$where_clauses = array( 'room_id = %d' );
-		$where_values  = array( $room_id );
-
+		// Build the list and count queries with explicit placeholders — phpcs
+		// cannot statically resolve an interpolated WHERE fragment, so the
+		// array-spread prepare() form warns even though it is valid.
 		if ( '' !== $message_type ) {
-			$where_clauses[] = 'message_type = %s';
-			$where_values[]  = $message_type;
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is esc_sql()-escaped.
+			$query       = $wpdb->prepare(
+				"SELECT _ID, room_id, peer_id, user_id, sender_name, message, message_type, is_encrypted, timestamp, metadata, cct_created
+				FROM {$table}
+				WHERE room_id = %d AND message_type = %s
+				ORDER BY cct_created DESC
+				LIMIT %d OFFSET %d",
+				$room_id,
+				$message_type,
+				$limit,
+				$offset
+			);
+			$count_query = $wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table} WHERE room_id = %d AND message_type = %s",
+				$room_id,
+				$message_type
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		} else {
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is esc_sql()-escaped.
+			$query       = $wpdb->prepare(
+				"SELECT _ID, room_id, peer_id, user_id, sender_name, message, message_type, is_encrypted, timestamp, metadata, cct_created
+				FROM {$table}
+				WHERE room_id = %d
+				ORDER BY cct_created DESC
+				LIMIT %d OFFSET %d",
+				$room_id,
+				$limit,
+				$offset
+			);
+			$count_query = $wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table} WHERE room_id = %d",
+				$room_id
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}
-
-		$where_sql    = implode( ' AND ', $where_clauses );
-		$query_values = array_merge( $where_values, array( $limit, $offset ) );
-
-		// Escape table name.
-		$table = esc_sql( $table );
-
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped, $where_sql contains only hardcoded placeholders.
-		$query = $wpdb->prepare(
-			"SELECT _ID, room_id, peer_id, user_id, sender_name, message, message_type, is_encrypted, timestamp, metadata, cct_created
-			FROM {$table}
-			WHERE {$where_sql}
-			ORDER BY cct_created DESC
-			LIMIT %d OFFSET %d",
-			$query_values
-		);
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		WP_MCP_AI_Logger::log_event(
 			'webchat_get_messages',
@@ -207,15 +244,6 @@ class WP_MCP_AI_Tool_Get_WebChat_Messages implements WP_MCP_AI_Tool_Interface, W
 		if ( ! is_array( $rows ) ) {
 			$rows = array();
 		}
-
-		// Get total count.
-		$count_values = $where_values;
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped, $where_sql contains only hardcoded placeholders.
-		$count_query = $wpdb->prepare(
-			"SELECT COUNT(*) FROM {$table} WHERE {$where_sql}",
-			$count_values
-		);
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 		$total = absint( $wpdb->get_var( $count_query ) );

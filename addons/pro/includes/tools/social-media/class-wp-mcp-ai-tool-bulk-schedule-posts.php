@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Bulk_Schedule_Posts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Bulk_Schedule_Posts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -97,6 +97,20 @@ class WP_MCP_AI_Tool_Bulk_Schedule_Posts implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Upload and schedule multiple social media posts from CSV file. Supports platform targeting, validation, preview, and batch processing for large files.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Importing a CSV of posts and scheduling many platform-targeted posts in one batch.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Scheduling a single post or publishing immediately; use schedule_social_post or post_facebook_instagram.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'schedule_social_post', 'create_content_calendar', 'post_to_multiple_platforms' ),
+			'notes'           => __( 'Run with preview_only=true first to validate CSV column mapping before committing the schedule.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

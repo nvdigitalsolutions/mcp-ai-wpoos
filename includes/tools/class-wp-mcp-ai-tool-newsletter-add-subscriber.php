@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides functionality to add/subscribe email addresses to Newsletter plugin.
  */
-class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
+class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Safety_Profile;
 
@@ -56,6 +56,20 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Add a new email subscriber to the Newsletter plugin. Supports name, lists, and custom fields. Requires Newsletter plugin.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adding or updating a single subscriber record in the Newsletter plugin.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Removing subscribers; use newsletter_unsubscribe. Reading subscriber lists; use newsletter_get_subscribers.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'newsletter_get_subscribers', 'newsletter_unsubscribe' ),
+			'notes'           => __( 'Writes directly to the Newsletter table; list IDs are capped at 1-40. Requires the Newsletter plugin and manage_options.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

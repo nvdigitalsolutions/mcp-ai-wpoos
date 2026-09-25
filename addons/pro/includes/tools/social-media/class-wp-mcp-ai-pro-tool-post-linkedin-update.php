@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides a tool for publishing LinkedIn UGC posts via the v2 API.
  */
-class WP_MCP_AI_Pro_Tool_Post_Linkedin_Update implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Post_Linkedin_Update implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -58,6 +58,18 @@ class WP_MCP_AI_Pro_Tool_Post_Linkedin_Update implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Creates a LinkedIn post for a member or organisation via the UGC API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Publishing a text or article-share update to a LinkedIn member or organization profile.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Measuring engagement or posting to other networks; use get_linkedin_insights or post_to_multiple_platforms.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_linkedin_insights', 'post_to_multiple_platforms', 'schedule_social_post' ),
+			'notes'           => __( 'Updates are published to the public network immediately; confirm copy with the user first.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

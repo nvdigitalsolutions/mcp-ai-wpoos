@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_QMS_Schedule_Review tool.
  */
-class WP_MCP_AI_Tool_QMS_Schedule_Review implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_QMS_Schedule_Review implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 
 	/**
@@ -47,6 +47,19 @@ class WP_MCP_AI_Tool_QMS_Schedule_Review implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Schedule a periodic review of a controlled document. Creates a PM Task assigned to the document owner with the requested due date and updates the record\'s next_review_date.', 'mcp-ai-wpoos-pro' );
+	}
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a scheduled review task (PM Task) for a controlled document with a due date, assigned to the document owner.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Immediate review state changes; use qms_submit_for_review to move a draft into review.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'qms_submit_for_review', 'qms_approve_document', 'qms_release_document' ),
+			'notes'           => __( 'due_date must be YYYY-MM-DD. Requires the QMS toolkit to be enabled.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 		/**
 		 * Get the parameters schema.

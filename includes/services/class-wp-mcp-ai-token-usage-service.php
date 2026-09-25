@@ -419,6 +419,7 @@ class WP_MCP_AI_Token_Usage_Service {
 			'digitalocean' => __( 'DigitalOcean GenAI', 'mcp-ai-wpoos' ),
 			'baseten'      => __( 'Baseten', 'mcp-ai-wpoos' ),
 			'nv_hosted'    => __( 'NV oOS Cloud', 'mcp-ai-wpoos' ),
+			'typesafe'     => __( 'TypeSafe (Jev)', 'mcp-ai-wpoos' ),
 		);
 
 		if ( isset( $provider_labels[ $provider ] ) ) {

@@ -341,6 +341,9 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/helpers/c
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-content-format-helper.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-content-format-helper.php';
 }
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-tool-payload-advisor.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-tool-payload-advisor.php';
+}
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-api-context-fix.php';
 
 // ---------------------------------------------------------------------------
@@ -609,6 +612,12 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-
 }
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openrouter-client.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openrouter-client.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-decision-client.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-decision-client.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-typesafe-client.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-typesafe-client.php';
 }
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-digitalocean-client.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-digitalocean-client.php';

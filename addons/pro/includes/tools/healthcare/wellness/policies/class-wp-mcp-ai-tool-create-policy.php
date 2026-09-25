@@ -17,7 +17,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-content-media
 /**
  * Creates a new insurance policy.
  */
-class WP_MCP_AI_Tool_Create_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Content_Media;
 
 	/**
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_Create_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Creates a new insurance policy (health, dental, vision, pet, or life insurance) for a member or updates an existing one if policy_id is provided.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Registering a health, dental, vision, pet, or life insurance policy for a member, or updating one via policy_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Bulk unstructured entry; use parse_health_information. Looking up coverage; use get_policy or search_policies.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_policy', 'get_policy', 'search_policies' ),
+			'notes'           => __( 'policy_type must be one of health-insurance, dental-insurance, vision-insurance, pet-insurance, or life-insurance.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

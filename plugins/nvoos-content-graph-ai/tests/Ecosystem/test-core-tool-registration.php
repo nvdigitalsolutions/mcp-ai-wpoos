@@ -821,6 +821,41 @@ class Test_Core_Tool_Registration extends \WP_UnitTestCase {
 		$this->assertArrayHasKey( 'errors', $violations );
 		$this->assertSame( 'activity_limit', $violations['errors'][0]['field'] );
 		$this->assertStringContainsString( 'between 1 and 50', $violations['errors'][0]['message'] );
+
+		// Search-filter params: valid values flow through to the envelope.
+		$valid_filters = $bridge->tools->execute(
+			'get_system_logs_validated',
+			array(
+				'since'               => '2h',
+				'levels'              => array( 'error' ),
+				'search'              => 'cache',
+				'include_plugin_logs' => false,
+			),
+			$context
+		);
+
+		$this->assertIsArray( $valid_filters );
+		$this->assertArrayHasKey( 'filters', $valid_filters );
+		$this->assertSame( '2h', $valid_filters['filters']['since'] );
+
+		// Malformed since and unsupported levels are rejected identically.
+		$bad_since = $bridge->tools->execute(
+			'get_system_logs_validated',
+			array( 'since' => 'banana' ),
+			$context
+		);
+
+		$this->assertInstanceOf( \WP_Error::class, $bad_since );
+		$this->assertSame( 'validation_failed', $bad_since->get_error_code() );
+
+		$bad_level = $bridge->tools->execute(
+			'get_system_logs_validated',
+			array( 'levels' => array( 'verbose' ) ),
+			$context
+		);
+
+		$this->assertInstanceOf( \WP_Error::class, $bad_level );
+		$this->assertSame( 'validation_failed', $bad_level->get_error_code() );
 	}
 
 	public function test_cluster_2c5_tools_are_registered(): void {

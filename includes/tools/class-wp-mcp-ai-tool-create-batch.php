@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -45,6 +45,20 @@ class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Creates a batch processing job for asynchronous operations with 50% cost reduction. Use for bulk content generation, embeddings creation, or mass content moderation. Supports chat completions, embeddings, and moderations endpoints.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Running bulk chat completions, embeddings, or moderations asynchronously at roughly half the synchronous cost.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'For checking progress use get_batch_status; for listing jobs use list_batches.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_batch_status', 'list_batches', 'list_openai_files' ),
+			'notes'           => __( 'Requires an uploaded JSONL input file ID; results complete within the 24h completion window.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
@@ -76,6 +90,16 @@ class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			),
 			'required'             => array( 'input_file_id', 'endpoint' ),
 			'additionalProperties' => false,
+		);
+	}
+
+		/**
+		 * {@inheritdoc}
+		 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'batch_id',
+			'consumes' => null,
 		);
 	}
 

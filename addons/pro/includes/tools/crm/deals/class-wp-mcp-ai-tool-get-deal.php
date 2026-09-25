@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Get_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -84,6 +84,20 @@ class WP_MCP_AI_Tool_Get_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	 */
 	public function get_description() {
 		return __( 'Retrieve a single CRM deal/opportunity with full details including stage label, win probability, weighted amount, and activity count.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching one deal with stage label, win probability, weighted amount, activity count, and lead summary.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Listing or filtering many deals; use list_deals. A paste-ready briefing; use get_crm_handover.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_deals', 'get_crm_handover', 'update_deal' ),
+			'notes'           => __( 'Read-only; records a deal_viewed audit event. weighted_amount is amount multiplied by win_probability.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

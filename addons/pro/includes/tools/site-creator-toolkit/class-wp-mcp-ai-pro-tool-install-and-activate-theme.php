@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Installs themes from the WordPress.org repository and activates them.
  */
-class WP_MCP_AI_Pro_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -49,6 +49,18 @@ class WP_MCP_AI_Pro_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Installs a theme from the WordPress.org repository and activates it. Requires the theme slug.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing a WordPress.org theme by slug and activating it as the live site theme.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Installing plugins; use install_and_activate_plugin. Generating custom theme files; use scaffold_theme_structure.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'install_and_activate_plugin', 'site_creator', 'scaffold_theme_structure' ),
+			'notes'           => __( 'State-changing: switches the active theme; requires install_themes and switch_themes capabilities.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

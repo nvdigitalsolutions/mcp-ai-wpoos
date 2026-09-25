@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates and emails a participation report to a student's parents.
  */
-class WP_MCP_AI_Tool_Send_ECA_Parent_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Send_ECA_Parent_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Send_ECA_Parent_Report implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Generates and emails a participation report to a student\'s parents. Includes ECA enrollment details, attendance rates, and optional teacher notes.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Emailing one student\'s participation report with attendance rates and teacher notes to their parents.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Batch event notifications; use send_eca_notification. On-screen reports; use generate_eca_participation_report.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_eca_notification', 'generate_eca_participation_report', 'get_student' ),
+			'notes'           => __( 'Sends real email to the parent address on record; review the generated report before sending.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

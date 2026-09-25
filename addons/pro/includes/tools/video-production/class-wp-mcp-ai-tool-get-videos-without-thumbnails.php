@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.8.0
  */
-class WP_MCP_AI_Tool_Get_Videos_Without_Thumbnails implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Videos_Without_Thumbnails implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -41,6 +41,18 @@ class WP_MCP_AI_Tool_Get_Videos_Without_Thumbnails implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Retrieves videos missing thumbnail images.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Auditing the media library for videos that still need a thumbnail or poster image.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading one video\'s technical details; use get_video_metadata.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_video_thumbnails', 'get_videos_without_transcripts', 'extract_video_frames' ),
+			'notes'           => __( 'Pair the returned IDs with generate_video_thumbnails to fill the gaps.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

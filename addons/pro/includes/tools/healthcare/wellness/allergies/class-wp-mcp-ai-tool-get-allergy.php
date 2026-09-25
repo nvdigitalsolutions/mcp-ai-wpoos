@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get a single allergy record.
  */
-class WP_MCP_AI_Tool_Get_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Get the tool slug.
 	 *
@@ -41,6 +41,20 @@ class WP_MCP_AI_Tool_Get_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Retrieves detailed information about a specific allergy record.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching full details for one known allergy_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Searching allergies by allergen name; use check_member_allergies or list_allergies.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_allergies', 'check_member_allergies' ),
+			'notes'           => __( 'Returns severity, reactions, diagnosed date, and the linked member name.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

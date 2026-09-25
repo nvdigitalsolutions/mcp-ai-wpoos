@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-video-respons
 /**
  * Create walkthrough animations.
  */
-class WP_MCP_AI_Tool_Create_Walkthrough_Animation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Walkthrough_Animation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Create_Walkthrough_Animation implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Generate virtual building tours and walkthrough animations. Create immersive visualizations with custom camera paths.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing a video walkthrough or virtual tour from a 3D model with camera paths, speed, narration, format, and resolution options.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Still renders; use render_architectural_view. Generating the model itself; use generate_3d_model.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_3d_model', 'render_architectural_view', 'generate_architectural_drawing' ),
+			'notes'           => __( 'Async / long-running output; keep duration within 10-300 seconds and pick mp4, webm, or mov.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

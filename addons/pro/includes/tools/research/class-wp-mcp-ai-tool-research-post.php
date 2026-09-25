@@ -29,7 +29,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-tool-research-template-analysis.php';
  * Uses AI and web search to research comprehensive information about
  * blog post topics and generate ready-to-publish content.
  */
-class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Research_Template_Analysis;
 
@@ -101,6 +101,20 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Research comprehensive information about a blog post topic using multi-stage web search and AI analysis. Supports configurable research depth (basic/standard/comprehensive) and focus areas for targeted research. Returns title, content, excerpt, SEO metadata, and formatting instructions based on the selected template (Classic Editor, Block Editor, Elementor, or Custom formats like Telegram Mini App). Accepts reference template files (Elementor JSON, Block Editor patterns, or custom JSON layouts) to guide content structure — auto-detects template type and extracts structural summary for smarter AI prompts. Supports output_format option to export research as PDF or Word document.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Researching a blog post topic and generating a draft with title, content, excerpt, and SEO metadata.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Static pages or media-rich posts; use research_page for pages and research_blog_post for images and charts.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'research_blog_post', 'research_page', 'create_post' ),
+			'notes'           => __( 'Supports template files and optional pdf or docx output; publish the draft with create_post.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

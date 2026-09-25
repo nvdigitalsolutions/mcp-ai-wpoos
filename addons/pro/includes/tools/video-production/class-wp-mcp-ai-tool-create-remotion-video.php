@@ -32,7 +32,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
 
 	// ---------------------------------------------------------------------------
@@ -126,6 +126,18 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Render programmatic videos from React/Remotion compositions. Provide composition source code or a named template, set dimensions, frame rate and duration, then download or upload the rendered MP4, WebM or GIF to the media library.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Rendering animated or data-driven videos from React/Remotion compositions, including the built-in title card.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Simple image slideshows; use create_video_from_images. Editing existing footage; use trim_video or merge_videos.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_video_from_images', 'transcode_video', 'optimize_for_platform' ),
+			'notes'           => __( 'Requires Node.js in the server PATH. Outputs mp4, webm, or gif and can upload straight to the media library.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

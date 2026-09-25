@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Imports registrations from Excel files.
  */
-class WP_MCP_AI_Tool_Import_Registrations_From_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Registrations_From_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
@@ -40,6 +40,18 @@ class WP_MCP_AI_Tool_Import_Registrations_From_Excel implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Bulk imports regulatory registrations from Excel file with product linking, status assignment, and validation.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When bulk creating mcp_ai_registration records from an Excel file with product linking and status assignment.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When creating a single registration or importing products; use create_registration or import_products_from_excel instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'validate_excel_import', 'export_registrations_to_excel', 'list_registrations' ),
+			'notes'           => __( 'Rows without product_name and country are reported as errors; keep the file inside the uploads directory.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

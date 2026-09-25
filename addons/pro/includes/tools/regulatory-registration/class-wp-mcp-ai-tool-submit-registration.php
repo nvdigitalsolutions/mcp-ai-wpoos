@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Marks registration as submitted.
  */
-class WP_MCP_AI_Tool_Submit_Registration implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Submit_Registration implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Submit_Registration implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Marks a registration as submitted to the regulatory authority. Updates status to "Submitted" and records submission date.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When recording that a registration has been submitted to its authority and the submission date should be logged.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When performing the electronic filing itself or a different status change; use submit_to_authority or update_registration_status.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'submit_to_authority', 'update_registration_status', 'validate_document_checklist' ),
+			'notes'           => __( 'Externally consequential: this declares the registration submitted. Confirm documents are complete with validate_document_checklist first.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

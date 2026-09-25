@@ -22,7 +22,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Service_Status' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Service_Status extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Service_Status extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -39,6 +39,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Service_Status' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Check the status of all services (nginx, mysql, php-fpm, varnish, redis) on a server.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Checking whether nginx, mysql, php-fpm, varnish, and redis are running on a server during incident triage.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Restarting anything or checking capacity; use cloudways_restart_service or cloudways_server_monitor_summary.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_restart_service', 'cloudways_server_monitor_summary', 'cloudways_get_server' ),
+			);
 		}
 
 		/** {@inheritdoc} */

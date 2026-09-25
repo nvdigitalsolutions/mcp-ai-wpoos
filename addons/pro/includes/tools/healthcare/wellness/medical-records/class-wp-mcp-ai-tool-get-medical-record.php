@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get a single medical record.
  */
-class WP_MCP_AI_Tool_Get_Medical_Record implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Medical_Record implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,20 @@ class WP_MCP_AI_Tool_Get_Medical_Record implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading the full details of one known medical record by record_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Discovering or filtering records; use list_medical_records or search_medical_records.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_medical_records', 'search_medical_records', 'update_medical_record' ),
+			'notes'           => __( 'Returns record_type, date, provider, details, ICD code, and lab values for the record.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_parameters_schema() {
@@ -52,6 +66,16 @@ class WP_MCP_AI_Tool_Get_Medical_Record implements WP_MCP_AI_Tool_Interface, WP_
 			),
 			'required'             => array( 'record_id' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'record_id' ),
 		);
 	}
 

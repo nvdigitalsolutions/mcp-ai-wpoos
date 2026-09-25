@@ -28,7 +28,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-media-worker-clie
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Merge_PDFs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Merge_PDFs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Document_Response;
 	use WP_MCP_AI_Media_Worker_Client;
@@ -52,6 +52,18 @@ class WP_MCP_AI_Tool_Merge_PDFs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	public function get_description() {
 		return __( 'Combine multiple PDF documents into a single file. Maintains page order, preserves formatting, and merges bookmarks. Useful for consolidating reports, documents, or file collections.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Combining two or more existing PDF files into one ordered document without changing their page content.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Authoring new content, editing pages, or converting formats; use pro_pdf_document for AI-generated PDFs, html_to_pdf for HTML sources, or add_watermark_to_pdf for stamps.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'pro_pdf_document', 'html_to_pdf', 'add_watermark_to_pdf' ),
+			'notes'           => __( 'Pass files in the exact page order wanted. Requires shell tools, a Media Worker sidecar, pdftk, or TCPDF on the host.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

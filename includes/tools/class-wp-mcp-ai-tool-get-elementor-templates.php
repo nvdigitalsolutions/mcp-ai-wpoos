@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides Elementor template listings with metadata suitable for assistants.
  */
-class WP_MCP_AI_Tool_Get_Elementor_Templates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Elementor_Templates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -59,6 +59,18 @@ class WP_MCP_AI_Tool_Get_Elementor_Templates implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Returns Elementor template library entries with type, status, and edit links. Requires Elementor (free or Pro).', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering Elementor library entries by type, status, or title, including headers, footers, popups, and pages.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Reading submissions from a form page; use get_elementor_form_submissions after resolving the page ID.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_elementor_form_submissions', 'get_all_form_submissions', 'get_post' ),
+			'notes'           => __( 'Filter with template_type such as header, footer, popup, page, or section.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

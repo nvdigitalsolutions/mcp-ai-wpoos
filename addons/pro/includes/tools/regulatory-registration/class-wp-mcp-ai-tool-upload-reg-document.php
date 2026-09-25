@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Uploads a regulatory document.
  */
-class WP_MCP_AI_Tool_Upload_Reg_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Upload_Reg_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Upload_Reg_Document implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Uploads a document to the regulatory registration system and attaches it to a product or registration. Supports file URL or base64 data.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When adding a new regulatory document and attaching it to a product or registration record.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When fixing metadata of an existing document or checking completeness; use update_reg_document or validate_document_checklist.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_reg_documents', 'validate_document_checklist', 'track_document_version' ),
+			'notes'           => __( 'Provide product_id or registration_id to attach the document; supply file_url or base64 file_data with file_name.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

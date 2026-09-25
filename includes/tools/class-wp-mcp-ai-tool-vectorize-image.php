@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess
 /**
  * Convert raster images to SVG vector format using @neplex/vectorizer.
  */
-class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
 
 	/**
@@ -42,6 +42,18 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 	 */
 	public function get_description() {
 		return __( 'Convert a raster image (PNG, JPEG, WebP, GIF) to SVG vector format with configurable quality settings.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to convert a raster image to SVG with configurable color precision and path simplification.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Use resize_image or rotate_image for raster edits or image_format_batch_converter for AVIF/WebP conversion.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'resize_image', 'rotate_image', 'image_format_batch_converter' ),
+			'notes'           => __( 'color_precision 1-8 trades file size against color fidelity. Requires the Node.js subprocess.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

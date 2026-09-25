@@ -28,7 +28,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Generate a Bill of Quantities.
  */
-class WP_MCP_AI_Tool_Generate_Bill_Of_Quantities implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Bill_Of_Quantities implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Generate_Bill_Of_Quantities implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Generate a Bill of Quantities (BoQ) skeleton in POMI (Sri Lanka), SMM7 / NRM2 (Caribbean / UK), or CSI MasterFormat 2020 (US). Section is auto-selected from country if format is omitted. Supply line items with section + quantity + unit + rate to produce a fully-totalled BoQ.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Building a totalled BoQ skeleton in POMI, SMM7, NRM2, or CSI MasterFormat 2020 from line items with contingency and overheads.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For top-down per-area cost estimates or material takeoffs - use estimate_construction_cost or generate_material_schedule.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'estimate_construction_cost', 'generate_material_schedule' ),
+			'notes'           => __( 'country_code is required and auto-picks the format (POMI for LK, SMM7/NRM2 for JM, CSI for US).', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

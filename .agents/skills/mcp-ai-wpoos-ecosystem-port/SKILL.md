@@ -75,6 +75,16 @@ deviations:
 - Source directories differ per ownership: Pro-owned files come from
   `addons/pro/includes/`; base-owned D8-compat copies (tool interface, traits,
   `WP_MCP_AI_Logger`, image base, etc.) come from `includes/`.
+- **Interface copies track the base file.** When the base
+  `includes/interfaces/interface-wp-mcp-ai-tool.php` gains a new optional
+  interface (e.g. `WP_MCP_AI_Tool_Data_Contract_Interface`,
+  `WP_MCP_AI_Tool_Usage_Guidance_Interface`), port it into the CG copy
+  `src/interfaces/interface-wp-mcp-ai-tool.php` in the SAME relative position
+  BEFORE any CG tool implements it — a CG class implementing an undefined
+  interface is a compile-time fatal in standalone mode (the monorepo root
+  classmap masks it in monolith runs). Precedent: #6740 ported
+  `Usage_Guidance` (interface first, then the member-mirror classes) and
+  synced the copy's stale Data_Contract docblock example with the base.
 - Allowed seams (only where the source requires base-owned files):
   `defined( 'WP_MCP_AI_PATH' )` guards, `file_exists`-gated requires resolving
   to the addon's `src/` copies, `class_exists` re-checks with the byte-identical
@@ -205,3 +215,21 @@ new wiring (documented as a deviation every time):
   hit a 600 s timeout; retry with `timeout_ms` 900000 before investigating.
 - **Trackers are huge**: edit only the row tail (append sub-cluster entry +
   rewrite "Remaining:"), never the historical entries.
+- **Guidance-sweep drift (~957 files, tracked as #6741).** The v1.1.83 Tool
+  Description Engineering sweep added `get_usage_guidance()` to the addon
+  trees but was never ported to the CG mirrors — ~957 files under
+  `src/tools/` whose `addons/pro/includes/tools/` counterpart carries
+  `WP_MCP_AI_Tool_Usage_Guidance_Interface`. Lint-invisible (the CG phpcs
+  standard lacks the `WPMCPAI.Tools.ToolDescriptionGuidance` sniff; the root
+  sniff is warning-severity), so CI stays green. When a guidance-port cluster
+  is picked up, port the guidance block (text domain swapped per the
+  transforms above) + add the interface to the class declaration; the member
+  mirrors (PR #6740) are the precedent. Measurement:
+
+  ```bash
+  for f in $(find plugins/nvoos-content-graph-pro/src/tools -name "*.php" -not -name "init.php"); do
+    grep -q "Usage_Guidance" "$f" && continue
+    addon="addons/pro/includes/tools/${f#plugins/nvoos-content-graph-pro/src/tools/}"
+    [ -f "$addon" ] && grep -q "Usage_Guidance" "$addon" && echo "$f"
+  done
+  ```

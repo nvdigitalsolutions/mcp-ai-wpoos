@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.ph
 /**
  * Smart content-aware image resizing.
  */
-class WP_MCP_AI_Tool_Resize_Image_Smart extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Resize_Image_Smart extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,18 @@ class WP_MCP_AI_Tool_Resize_Image_Smart extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	public function get_description() {
 		return __( 'Intelligently resize images while preserving important content. Uses content-aware algorithms to maintain visual quality.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Resizing to target dimensions with crop, fit, fill, or smart modes and an optional focus area such as face detection.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'AI super-resolution upscaling: use upscale_image_ai. Quality or sharpness fixes: use enhance_image_quality. Format conversion: use convert_image_format.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'upscale_image_ai', 'enhance_image_quality', 'convert_image_format' ),
+			'notes'           => __( 'At least one of width or height is required; the other is derived from the aspect ratio.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

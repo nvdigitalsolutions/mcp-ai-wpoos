@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Useful for self-discovery when an AI agent needs to know what
  * capabilities are available before calling other tools.
  */
-class WP_MCP_AI_Tool_List_MCP_Tools implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_MCP_Tools implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -48,30 +48,51 @@ class WP_MCP_AI_Tool_List_MCP_Tools implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	/**
 	 * {@inheritdoc}
 	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'The model needs to discover available tools, or fetch a single tool schema on demand instead of carrying it in context.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Performing an operation — call the discovered tool itself. Avoid in long-running sessions where the catalogue is already known.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'load_skill', 'get_tool_definition' ),
+			'notes'           => __( 'Use include_schemas=false for a lean name+description catalogue, then tool_slug=<slug> to lazy-load one full schema. Related tools may not exist on every site.', 'mcp-ai-wpoos' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'toolkit' => array(
+				'toolkit'         => array(
 					'type'        => 'string',
 					'description' => __( 'Optional. Filter tools by toolkit namespace (e.g. "paper_store", "wordpress_core", "ecommerce").', 'mcp-ai-wpoos' ),
 				),
-				'search'  => array(
+				'search'          => array(
 					'type'        => 'string',
 					'description' => __( 'Optional. Search tools by name or description (case-insensitive).', 'mcp-ai-wpoos' ),
 				),
-				'limit'   => array(
+				'limit'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of tools to return. Default 50. Max 200.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 200,
 					'default'     => 50,
 				),
-				'offset'  => array(
+				'offset'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Offset for pagination. Default 0.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 					'default'     => 0,
+				),
+				'tool_slug'       => array(
+					'type'        => 'string',
+					'description' => __( 'Optional. Return the full schema of a single tool by slug (lazy loading). When set, other list filters are ignored.', 'mcp-ai-wpoos' ),
+				),
+				'include_schemas' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether to include full parameter schemas in the list. Default true. Set false for a lean name/description catalogue (fetch schemas later with tool_slug).', 'mcp-ai-wpoos' ),
+					'default'     => true,
 				),
 			),
 		);
@@ -93,23 +114,61 @@ class WP_MCP_AI_Tool_List_MCP_Tools implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Gate 1 — Sanitize at entry.
-		$toolkit = isset( $arguments['toolkit'] ) ? sanitize_key( $arguments['toolkit'] ) : '';
-		$search  = isset( $arguments['search'] ) ? sanitize_text_field( $arguments['search'] ) : '';
-		$limit   = isset( $arguments['limit'] ) ? min( absint( $arguments['limit'] ), 200 ) : 50;
-		$offset  = isset( $arguments['offset'] ) ? absint( $arguments['offset'] ) : 0;
+		$toolkit         = isset( $arguments['toolkit'] ) ? sanitize_key( $arguments['toolkit'] ) : '';
+		$search          = isset( $arguments['search'] ) ? sanitize_text_field( $arguments['search'] ) : '';
+		$limit           = isset( $arguments['limit'] ) ? min( absint( $arguments['limit'] ), 200 ) : 50;
+		$offset          = isset( $arguments['offset'] ) ? absint( $arguments['offset'] ) : 0;
+		$tool_slug       = isset( $arguments['tool_slug'] ) ? sanitize_key( $arguments['tool_slug'] ) : '';
+		$include_schemas = isset( $arguments['include_schemas'] ) ? rest_sanitize_boolean( $arguments['include_schemas'] ) : true;
 
 		if ( ! current_user_can( 'read' ) ) {
 			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos' ) );
 		}
 
-		$registry         = WP_MCP_AI_Tool_Registry::get_instance();
-		$assistant_id     = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
+		$registry     = WP_MCP_AI_Tool_Registry::get_instance();
+		$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
+
+		// Lazy-loading mode: return a single tool's full definition on demand
+		// (the Anthropic tool-search pattern). List filters are ignored.
+		if ( '' !== $tool_slug && 'list_mcp_tools' !== $tool_slug ) {
+			$tool = $registry->get_tool( $tool_slug );
+			if ( ! $tool ) {
+				return new WP_Error(
+					'tool_not_found',
+					sprintf(
+						/* translators: %s: tool slug */
+						__( 'Tool "%s" is not registered or not available in this context.', 'mcp-ai-wpoos' ),
+						$tool_slug
+					)
+				);
+			}
+
+			$schema = $tool->get_parameters_schema();
+
+			return $this->format_success_response(
+				__( 'Tool schema retrieved.', 'mcp-ai-wpoos' ),
+				array(
+					'name'        => $tool->get_slug(),
+					'description' => $registry->get_model_facing_description( $tool ),
+					'inputSchema' => is_array( $schema ) ? $schema : array(),
+				)
+			);
+		}
+
 		$all_tool_objects = $registry->get_tools();
 
 		// If assistant context is available, filter to allowed tools only.
 		if ( $assistant_id && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 			$allowed_slugs    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+
+			// Include dynamically registered tools (e.g. MCP App bridges) in
+			// the per-assistant catalogue filter so the listing matches the
+			// tools actually sent to the LLM for this assistant.
+			$allowed_slugs = apply_filters( 'wp_mcp_ai_chat_effective_tools', $allowed_slugs, $assistant_config, $assistant_id );
+			if ( ! is_array( $allowed_slugs ) ) {
+				$allowed_slugs = array();
+			}
 
 			if ( ! empty( $allowed_slugs ) ) {
 				$filtered = array();
@@ -172,13 +231,20 @@ class WP_MCP_AI_Tool_List_MCP_Tools implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					}
 				}
 
-				$result[] = array(
+				// Lean-catalogue mode omits schemas to save context; the model
+				// lazy-loads one schema with tool_slug=<slug> when needed.
+				$entry = array(
 					'name'        => $slug,
-					'description' => $description,
+					'description' => $registry->get_model_facing_description( $tool ),
 					'toolkit'     => $tool_toolkit,
 					'risk_level'  => $risk,
-					'inputSchema' => is_array( $schema ) ? $schema : array(),
 				);
+
+				if ( $include_schemas ) {
+					$entry['inputSchema'] = is_array( $schema ) ? $schema : array();
+				}
+
+				$result[] = $entry;
 				++$total;
 			} catch ( Exception $e ) {
 				continue;

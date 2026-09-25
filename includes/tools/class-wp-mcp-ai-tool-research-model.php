@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - Capabilities (vision, multimodal, function calling)
  * - Provider-specific details
  */
-class WP_MCP_AI_Tool_Research_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Research_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -48,6 +48,20 @@ class WP_MCP_AI_Tool_Research_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Research an AI model\'s specifications and capabilities using AI to extract information from provider documentation and APIs. Returns configuration data needed for orchestration layer integration.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Researching a model\'s specs, pricing, and capabilities from provider docs before integrating it into the orchestration layer.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Cached metadata or catalog listing; use get_model_information for known models and list_available_models to enumerate providers.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_model_information', 'list_available_models', 'suggest_best_model' ),
+			'notes'           => __( 'AI-extracted research, so verify key facts; pass provider and model_id to narrow the lookup.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

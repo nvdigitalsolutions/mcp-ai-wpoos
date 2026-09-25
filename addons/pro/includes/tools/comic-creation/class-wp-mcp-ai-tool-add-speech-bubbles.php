@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a Pro tool for adding speech bubble metadata to a comic panel.
  */
-class WP_MCP_AI_Tool_Add_Speech_Bubbles implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Add_Speech_Bubbles implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Add_Speech_Bubbles implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Adds speech bubble metadata to a comic panel. Accepts a JSON array of bubble definitions with text, position (x, y, w, h), speaker name, and visual style. Stores bubble data as panel post meta for later rendering.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Attaching dialogue or narration bubble metadata to a panel once its artwork exists.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For rendering text onto the image use letter_comic_panel; for writing dialogue use generate_comic_script.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'letter_comic_panel', 'generate_comic_script', 'generate_comic_panel' ),
+			'notes'           => __( 'Stores JSON in _speech_bubbles meta. Styles: speech, thought, shout, whisper, narration; empty-text bubbles are skipped.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

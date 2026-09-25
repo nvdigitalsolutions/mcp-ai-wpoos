@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Link prescription to record tool.
  */
-class WP_MCP_AI_Tool_Link_Prescription_To_Record implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Link_Prescription_To_Record implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -58,6 +58,20 @@ class WP_MCP_AI_Tool_Link_Prescription_To_Record implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Link or unlink a prescription with a medical record. Both posts must reference the same member; the link is stored as bi-directional post-meta arrays.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Linking or unlinking a prescription and the medical record that prompted it, or listing the links on a prescription.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating or editing either post; use create_prescription or update_medical_record.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_prescription', 'update_medical_record', 'get_prescription' ),
+			'notes'           => __( 'action accepts link, unlink, list; both posts must reference the same member.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

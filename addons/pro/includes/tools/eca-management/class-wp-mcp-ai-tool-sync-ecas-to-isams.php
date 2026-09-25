@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Pushes ECA data from WordPress back to iSAMS School Management System.
  */
-class WP_MCP_AI_Tool_Sync_ECAs_To_ISAMS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Sync_ECAs_To_ISAMS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Sync_ECAs_To_ISAMS implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Pushes ECA data from WordPress back to iSAMS School Management System. Updates or creates activities in iSAMS to reflect changes made in the WordPress ECA system.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pushing WordPress ECA changes back to iSAMS, creating or updating activities in the live MIS.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Importing data from iSAMS; use sync_ecas_from_isams or sync_eca_enrollments_from_isams.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'sync_ecas_from_isams', 'sync_eca_enrollments_from_isams', 'update_eca' ),
+			'notes'           => __( 'Writes to the live iSAMS system via the cocurricular activities API; run dry_run first and confirm the ECA list.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

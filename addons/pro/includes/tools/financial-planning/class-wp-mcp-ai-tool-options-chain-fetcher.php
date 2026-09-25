@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.80
  */
-class WP_MCP_AI_Tool_Options_Chain_Fetcher implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Options_Chain_Fetcher implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Cache TTL in seconds.
@@ -99,6 +99,22 @@ class WP_MCP_AI_Tool_Options_Chain_Fetcher implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Fetch an options chain from keyless public market data: calls and puts with strike, bid/ask, volume, open interest, and in-the-money flags, filterable by expiration. EDUCATIONAL ONLY - Data may be delayed. Not investment advice.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pulling calls and puts with strike, bid/ask, volume, and open interest for one ticker, filterable by expiration.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Underlying stock quotes; use stock_data_fetcher. Broad market scans belong to market_screener.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'stock_data_fetcher', 'market_screener', 'price_alerts' ),
+			'notes'           => __( 'Requires ticker; expiration accepts YYYY-MM-DD and limit caps rows per side. Keyless public data, may be delayed.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

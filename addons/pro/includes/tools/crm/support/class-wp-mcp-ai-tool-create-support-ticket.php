@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * {@inheritdoc}
  */
-class WP_MCP_AI_Tool_Create_Support_Ticket implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Support_Ticket implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -54,6 +54,20 @@ class WP_MCP_AI_Tool_Create_Support_Ticket implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Create a new support ticket with priority, contact, category, and source. Calculates SLA targets from priority.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Logging a new customer issue with priority, category, source, and optional assignee.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Changing an existing ticket; use update_support_ticket. Finding tickets; use list_support_tickets.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_support_ticket', 'list_support_tickets', 'classify_support_ticket' ),
+			'notes'           => __( 'SLA targets are computed from the chosen priority. Only subject is required.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

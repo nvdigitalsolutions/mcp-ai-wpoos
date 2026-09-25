@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Gets WebChat integration status.
  */
-class WP_MCP_AI_Tool_Get_WebChat_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_WebChat_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Default_Capability;
 
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Get_WebChat_Status implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Gets WebChat integration status, including enabled state, active rooms count, and total participants.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking whether WebChat is enabled, how many rooms exist, and total participant counts.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Inspecting one room or reading messages; use get_webchat_room and get_webchat_messages.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_webchat_room', 'list_webchat_rooms' ),
+			'notes'           => __( 'Requires enable_webchat_integration in settings.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
@@ -90,7 +102,7 @@ class WP_MCP_AI_Tool_Get_WebChat_Status implements WP_MCP_AI_Tool_Interface, WP_
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check availability.
 		if ( ! self::is_available() ) {
-			WP_MCP_AI_Logger::log_activity( 'Tool unavailable: get_webchat_status' );
+			WP_MCP_AI_Logger::log_event( 'activity', 'Tool unavailable: get_webchat_status' );
 			return new WP_Error( 'wp_mcp_ai_tool_unavailable', self::get_unavailable_reason() );
 		}
 

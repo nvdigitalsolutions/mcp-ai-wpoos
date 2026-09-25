@@ -25,7 +25,7 @@ require_once __DIR__ . '/../traits/trait-wp-mcp-ai-tool-wordpress-native.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_WordPress_Native;
 
 	/**
@@ -47,6 +47,18 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Automatically analyzes post content and suggests relevant categories. Can be used manually or triggered automatically on post save.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Suggesting or auto-assigning categories for a post based on AI analysis of its title and content.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Creating or renaming one known term; use create_term directly instead of relying on create_new.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_term', 'get_post', 'save_post' ),
+			'notes'           => __( 'Set auto_assign=true to apply suggestions; min_confidence and max_categories bound the suggestion set.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
@@ -103,6 +115,16 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 				array( 'required' => array( 'post_id' ) ),
 				array( 'required' => array( 'content' ) ),
 			),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'post_id' ),
 		);
 	}
 

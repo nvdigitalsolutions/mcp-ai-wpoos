@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Checks and validates HS codes.
  */
-class WP_MCP_AI_Tool_Check_HS_Code implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Check_HS_Code implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Check_HS_Code implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Validates Harmonized System (HS) tariff codes for cosmetics and perfume products. Checks format, provides product category information, and suggests corrections.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Validating an HS tariff code format and checking it matches the product type before entering it on a product.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Storing the code on a product record; use create_reg_product or update_reg_product.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_reg_product', 'update_reg_product', 'check_product_compliance' ),
+			'notes'           => __( 'Cosmetic codes normally start with 33; pass product_type to get correction suggestions.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

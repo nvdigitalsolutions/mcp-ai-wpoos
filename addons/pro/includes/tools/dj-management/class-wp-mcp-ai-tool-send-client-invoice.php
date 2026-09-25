@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Sends invoices to DJ clients.
  */
-class WP_MCP_AI_Tool_Send_Client_Invoice implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Send_Client_Invoice implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Send_Client_Invoice implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Generates and sends a professional invoice to the client via email. Includes event details, pricing, and payment information.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Emailing a real invoice to a client after booking details and pricing are final.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Recording payments received; use track_event_payments. Changing pricing first; use update_event_details.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'track_event_payments', 'update_event_details', 'send_event_confirmation', 'generate_dj_contract' ),
+			'notes'           => __( 'Financial document: review contents before sending. Email goes to the booking _client_email immediately.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

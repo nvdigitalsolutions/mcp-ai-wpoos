@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.1.0
  */
-class WP_MCP_AI_Pro_Tool_JetEngine_Site_Context implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_JetEngine_Site_Context implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -75,6 +75,20 @@ class WP_MCP_AI_Pro_Tool_JetEngine_Site_Context implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Get a comprehensive overview of the WordPress site structure from JetEngine\'s MCP Server. Returns registered post types, taxonomies, meta fields, relations, glossaries, and macros. Use this tool first to understand the site\'s content architecture before making structural changes.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Getting an overview of post types, taxonomies, meta fields, and relations before structural work.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'CCT record data; use jetengine. Creating structures; use jetengine_create_post_type or jetengine_create_meta_field.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'jetengine', 'jetengine_manage_relations', 'jetengine_mcp' ),
+			'notes'           => __( 'Requires manage_options; pass include to limit returned sections.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

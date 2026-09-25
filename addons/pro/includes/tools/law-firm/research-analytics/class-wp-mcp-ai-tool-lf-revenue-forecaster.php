@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Forecasts firm revenue using historical billing data, trends, and confidence intervals.
  */
-class WP_MCP_AI_Tool_LF_Revenue_Forecaster implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Revenue_Forecaster implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -68,6 +68,20 @@ class WP_MCP_AI_Tool_LF_Revenue_Forecaster implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Forecasts firm revenue based on historical billing data, current pipeline, and collection trends. Includes confidence intervals and breakdown by source.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Forecasting revenue for a month, quarter, or year from historical time entries, growth trends, collection rates, and active pipeline value.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reviewing past performance only; use lf_firm_performance_dashboard. Comparing against benchmarks; use lf_competitive_benchmarker.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_firm_performance_dashboard', 'lf_competitive_benchmarker', 'lf_profitability_analyzer' ),
+			'notes'           => __( 'forecast_period is required and accepts month, quarter, or year. include_contingency defaults to true; gross forecasts are adjusted by collection rate.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

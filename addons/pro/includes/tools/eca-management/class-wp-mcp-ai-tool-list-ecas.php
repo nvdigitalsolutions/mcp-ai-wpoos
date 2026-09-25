@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Lists ECAs with filtering options.
  */
-class WP_MCP_AI_Tool_List_ECAs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_ECAs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_List_ECAs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	 */
 	public function get_description() {
 		return __( 'Lists Extra-Curricular Activities with comprehensive filtering by type, day, year group, teacher, venue, status, and availability. Supports sorting and returns enrollment counts with capacity utilization.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering or filtering ECAs by type, day, year group, teacher, venue, status, or availability before acting on them.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Fetching a single ECA by ID; use get_eca.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_eca', 'create_eca', 'update_eca' ),
+			'notes'           => __( 'Returns enrollment counts with capacity utilization; use has_availability to find open spots.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

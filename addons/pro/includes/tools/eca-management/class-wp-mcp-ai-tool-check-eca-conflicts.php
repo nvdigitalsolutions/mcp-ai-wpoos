@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Detects scheduling conflicts for students, teachers, or venues across ECAs.
  */
-class WP_MCP_AI_Tool_Check_ECA_Conflicts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Check_ECA_Conflicts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Check_ECA_Conflicts implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Detect scheduling conflicts for students, teachers, or venues across Extra-Curricular Activities. Checks for time overlaps on a given day and returns detailed conflict information.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Verifying that a proposed ECA time slot does not overlap existing commitments for a student, teacher, or venue.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Viewing a full weekly layout; use get_eca_timetable. Changing the schedule itself; use set_eca_schedule.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_eca_timetable', 'set_eca_schedule', 'get_eca' ),
+			'notes'           => __( 'Pass exclude_eca_id when checking a time change for an existing ECA.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

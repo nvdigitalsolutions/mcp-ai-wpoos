@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Deletes a student.
  */
-class WP_MCP_AI_Tool_Delete_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,18 @@ class WP_MCP_AI_Tool_Delete_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Deletes a student. Note: This does not automatically unenroll the student from ECAs. This action cannot be undone.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently removing a student record that has no active enrollments.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Withdrawing a student from a single ECA; use withdraw_student_eca. Changing student details; use update_student.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'withdraw_student_eca', 'get_student', 'list_students', 'update_student' ),
+			'notes'           => __( 'This action cannot be undone and does not unenroll the student from ECAs; withdraw them first.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

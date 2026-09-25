@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Create_Server_Backup' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Create_Server_Backup extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Create_Server_Backup extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Create_Server_Backup' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Create a full backup of a server.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Taking a full server backup before large-scale maintenance or a migration.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Backing up a single app; cloudways_create_app_backup is lighter and app-scoped.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_create_app_backup', 'cloudways_get_server', 'cloudways_get_operation_status' ),
+				'notes'           => __( 'Covers every app on the server and runs asynchronously; track it with cloudways_get_operation_status.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

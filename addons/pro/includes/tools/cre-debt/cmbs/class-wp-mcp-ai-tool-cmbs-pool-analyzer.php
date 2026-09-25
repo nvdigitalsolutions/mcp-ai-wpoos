@@ -22,7 +22,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CMBS_Pool_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CMBS_Pool_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_CMBS_Pool_Analyzer implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description(): string {
 		return __( 'Analyze a CMBS loan pool for weighted average metrics, property type and geographic concentration, top-10 loans, and DSCR/LTV distribution buckets.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Analyzing a CMBS collateral pool: WA DSCR/LTV/rate/maturity, property and geographic concentration, top-10 loans, and distribution buckets.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Projecting tranche-level cash flows; use cmbs_bond_cash_flow_modeler. Building investor reports; use cmbs_investor_reporting_generator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cmbs_bond_cash_flow_modeler', 'cmbs_investor_reporting_generator', 'cmbs_rating_agency_analyzer' ),
+			'notes'           => __( 'Requires loan_name, balance, property_type, dscr, ltv, and rate per loan; state drives geographic concentration and Herfindahl index.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

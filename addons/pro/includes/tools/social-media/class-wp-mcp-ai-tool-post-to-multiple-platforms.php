@@ -35,7 +35,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Post_To_Multiple_Platforms implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Post_To_Multiple_Platforms implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -103,6 +103,20 @@ class WP_MCP_AI_Tool_Post_To_Multiple_Platforms implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Publish content simultaneously to multiple social media platforms (Facebook, Instagram, Twitter/X, LinkedIn, TikTok, Pinterest). Supports text, images, and videos with platform-specific formatting.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Publishing one piece of content to several social platforms at once with per-platform formatting.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Scheduling for later; use schedule_social_post, schedule_social_posts, or bulk_schedule_posts. Single-platform; use publish_to_social.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'publish_to_social', 'schedule_social_post', 'schedule_social_posts', 'bulk_schedule_posts' ),
+			'notes'           => __( 'Posts real public content immediately; verify credentials and content before publishing.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

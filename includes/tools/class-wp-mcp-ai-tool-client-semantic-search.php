@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-restrict-from
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Client_Semantic_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Client_Semantic_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
@@ -45,6 +45,20 @@ class WP_MCP_AI_Tool_Client_Semantic_Search implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Generate text embeddings for semantic search using browser-native AI. Processes instantly without server round-trip. Creates 384-dimensional vectors for similarity search.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating lightweight embeddings in the browser for similarity search without API costs.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Indexing a whole content library; use batch_embed_content for server-side batch indexing.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'batch_embed_content', 'semantic_content_search', 'client_question_answering' ),
+			'notes'           => __( 'Produces 384-dimensional vectors via Transformers.js; client-side only, no tokens consumed.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

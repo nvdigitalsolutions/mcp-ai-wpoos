@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 2.3.0
  * @since 2.4.0 Uses wp_mcp_ai_chat_completion for real AI drafting.
  */
-class WP_MCP_AI_Tool_Draft_Lead_Reply implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Draft_Lead_Reply implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether this tool is available.
@@ -63,6 +63,20 @@ class WP_MCP_AI_Tool_Draft_Lead_Reply implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Generate an AI-assisted reply draft for a lead message using the configured AI provider. Does NOT send — returns the draft for review.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating an AI-assisted reply draft for a lead message to review before sending, with tone templates as fallback.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Actually sending the reply; use send_lead_email, send_lead_sms, or send_lead_whatsapp. Automated rule replies; use auto_reply_inbound.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_lead_email', 'send_lead_sms', 'auto_reply_inbound' ),
+			'notes'           => __( 'Requires incoming_message; tone must be friendly, professional, concise, or urgent. Returns a draft and never sends.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * Parameters schema.

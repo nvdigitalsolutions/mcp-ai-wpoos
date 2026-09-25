@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.80
  */
-class WP_MCP_AI_Tool_Crypto_Market_Data implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Crypto_Market_Data implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Cache TTL in seconds.
@@ -99,6 +99,22 @@ class WP_MCP_AI_Tool_Crypto_Market_Data implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Fetch the crypto market board, per-symbol quotes, or OHLC history from keyless public endpoints (CoinGecko with Binance fallback). EDUCATIONAL ONLY - Data may be delayed. Not investment advice.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @since 1.1.80
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'To fetch the crypto market board, per-symbol quotes, or OHLC history from keyless public endpoints.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For stocks, ETFs, or economic events; use stock_data_fetcher or economic_calendar_fetcher instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'stock_data_fetcher', 'market_sentiment_analyzer', 'price_alerts' ),
+			'notes'           => __( 'Action enum: board, quote, history. quote and history require symbols. Data is cached for 10 minutes and may be delayed.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

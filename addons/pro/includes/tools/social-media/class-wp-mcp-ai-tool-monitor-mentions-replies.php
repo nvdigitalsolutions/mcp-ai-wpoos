@@ -36,7 +36,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Monitor_Mentions_Replies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Monitor_Mentions_Replies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -104,6 +104,20 @@ class WP_MCP_AI_Tool_Monitor_Mentions_Replies implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Track brand mentions and responses across social media platforms (Facebook, Twitter/X, Instagram, LinkedIn). Includes AI-powered sentiment analysis, priority flagging, keyword filtering, and response tracking capabilities.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Tracking brand mentions and replies across platforms with sentiment analysis and priority flagging.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Removing or hiding comments; use moderate_comments. Sending replies; use auto_respond_messages.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'moderate_comments', 'auto_respond_messages', 'get_social_analytics' ),
+			'notes'           => __( 'Read-only: fetches live social data from connected accounts without posting or modifying anything.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

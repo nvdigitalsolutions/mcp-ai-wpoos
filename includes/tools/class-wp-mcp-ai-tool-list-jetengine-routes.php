@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provide reference details for JetEngine REST API routes.
  */
-class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -62,6 +62,18 @@ class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Returns metadata about the REST API routes bundled with JetEngine.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to discover JetEngine REST route paths and methods before invoking one of them.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Use invoke_jetengine_route to actually run a route once you know which one you need.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'invoke_jetengine_route', 'jetengine_mcp' ),
+			'notes'           => __( 'Requires manage_options. Results include JetEngine MCP tool routes when JetEngine 3.8+ is active.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
@@ -139,18 +151,18 @@ class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, 
 	/**
 	 * Format routes array into human-readable text.
 	 *
-	 * @param array  $routes    Array of route definitions.
-	 * @param string $namespace API namespace.
+	 * @param array  $routes        Array of route definitions.
+	 * @param string $api_namespace API namespace.
 	 * @return string Formatted text representation.
 	 */
-	private function format_routes_as_text( array $routes, $namespace ) {
+	private function format_routes_as_text( array $routes, $api_namespace ) {
 		if ( empty( $routes ) ) {
 			return __( 'No JetEngine REST routes found.', 'mcp-ai-wpoos' );
 		}
 
 		$lines = array();
 		/* translators: %s: API namespace */
-		$lines[] = sprintf( __( 'Available JetEngine REST API Routes (%s):', 'mcp-ai-wpoos' ), $namespace );
+		$lines[] = sprintf( __( 'Available JetEngine REST API Routes (%s):', 'mcp-ai-wpoos' ), $api_namespace );
 		$lines[] = '';
 
 		foreach ( $routes as $index => $route ) {

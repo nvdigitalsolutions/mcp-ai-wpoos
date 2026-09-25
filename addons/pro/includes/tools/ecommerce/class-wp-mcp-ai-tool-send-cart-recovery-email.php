@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.8.0
  */
-class WP_MCP_AI_Tool_Send_Cart_Recovery_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Send_Cart_Recovery_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -46,6 +46,18 @@ class WP_MCP_AI_Tool_Send_Cart_Recovery_Email implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Sends cart recovery emails to customers who abandoned their carts. Supports dry_run mode for previewing the recipients and email content without actually sending. Optionally accepts a custom email template and cart session keys to target specific abandoned carts.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Emailing abandoned-cart owners with recovery content after reviewing recipients via dry_run.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Read-only cart review; use get_abandoned_carts or abandoned_cart_recovery for automation.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_abandoned_carts', 'abandoned_cart_recovery', 'segment_customers' ),
+			'notes'           => __( 'dry_run defaults to true; set it false only after previewing recipients and template.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

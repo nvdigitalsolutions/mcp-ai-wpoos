@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Generate_Landing_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Landing_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -62,6 +62,18 @@ class WP_MCP_AI_Tool_Generate_Landing_Page implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Creates high-converting landing pages optimized for specific goals like lead generation, product launches, or event registrations. Includes compelling headlines, CTAs, social proof, feature highlights, and mobile-responsive design.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a conversion-optimized landing page for one goal such as lead generation, product launch, or event registration.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For a multi-page site blueprint use generate_site_plan; for a single service page use create_service_pages.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_site_plan', 'create_service_pages', 'create_cta_section' ),
+			'notes'           => __( 'Returns page structure plus HTML content; it does not publish a WordPress page.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

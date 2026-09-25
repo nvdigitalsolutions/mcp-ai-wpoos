@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.6.0
  */
-class WP_MCP_AI_Tool_Create_Appointment implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Appointment implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -99,6 +99,20 @@ class WP_MCP_AI_Tool_Create_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Create a new appointment or update an existing appointment. If appointment_id is provided, updates the existing appointment instead of creating a new one. Supports client details, time slots, booking information, conflict detection and automatic notifications. Use this tool for both creating new appointments and updating existing ones.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new client booking, or updating one when appointment_id is supplied.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Checking whether a time works first; use check_availability or get_available_slots before booking.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'check_availability', 'get_available_slots', 'get_appointment_details' ),
+			'notes'           => __( 'For JetAppointment also pass provider_id and service_id; for JetBooking pass instance_id and unit_id.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

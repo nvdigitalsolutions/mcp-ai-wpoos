@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Generate_Booking_Link tool.
  */
-class WP_MCP_AI_Tool_Generate_Booking_Link implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface {
+class WP_MCP_AI_Tool_Generate_Booking_Link implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Check if tool is available.
 	 *
@@ -54,6 +54,19 @@ class WP_MCP_AI_Tool_Generate_Booking_Link implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Generate public booking links for appointment scheduling.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a shareable public booking URL so clients can self-schedule an appointment type.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Booking on a client\'s behalf; use create_appointment. Sending confirmations; use send_booking_confirmation.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_appointment', 'send_booking_confirmation', 'get_available_slots' ),
+			'notes'           => __( 'The URL token grants booking access; treat booking_url as sensitive.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 		/**
 		 * Get the parameters schema.
 		 *

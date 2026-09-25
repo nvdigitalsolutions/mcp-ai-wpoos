@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for uploading files to iCloud Drive via a configured gateway API.
  */
-class WP_MCP_AI_Pro_Tool_Upload_Icloud_Drive_File implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Upload_Icloud_Drive_File implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default timeout for iCloud gateway API requests (seconds).
@@ -63,6 +63,18 @@ class WP_MCP_AI_Pro_Tool_Upload_Icloud_Drive_File implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Uploads a file to iCloud Drive via a configured iCloud gateway API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Uploading a file to iCloud Drive via a configured iCloud gateway API.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Listing files; use list_icloud_drive_files. Reading one file; use get_icloud_drive_file.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_icloud_drive_files', 'get_icloud_drive_file' ),
+			'notes'           => __( 'Moves files to an external cloud; content must be base64-encoded for the gateway.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

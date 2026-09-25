@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates complete submission PDF dossier packages.
  */
-class WP_MCP_AI_Tool_Generate_Pdf_Dossier implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Pdf_Dossier implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Generate_Pdf_Dossier implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Generates a complete PDF submission dossier package including all documents, cover letter, table of contents, and metadata for regulatory submission.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Assembling all documents of one registration into a single PDF dossier for an authority, with TOC and optional watermark.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Validating that required documents exist or generating a single certificate; use validate_document_checklist or generate_compliance_certificate.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_submission_pack', 'generate_cover_letter', 'validate_document_checklist' ),
+			'notes'           => __( 'template supports standard, gcc, asean, eu, and fda; the output file is written under uploads/regulatory-dossiers.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

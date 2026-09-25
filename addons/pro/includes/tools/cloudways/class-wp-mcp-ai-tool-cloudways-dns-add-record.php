@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_DNS_Add_Record' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_DNS_Add_Record extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_DNS_Add_Record extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_DNS_Add_Record' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Add a DNS record for a domain.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Adding an A, AAAA, CNAME, MX, TXT, or NS record to a managed domain.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Removing records; use cloudways_dns_delete_record with the record ID from cloudways_dns_list_records.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_dns_list_records', 'cloudways_dns_delete_record', 'cloudways_dns_list_domains' ),
+				'notes'           => __( 'Confirm the domain exists with cloudways_dns_list_domains; changes propagate per the TTL.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

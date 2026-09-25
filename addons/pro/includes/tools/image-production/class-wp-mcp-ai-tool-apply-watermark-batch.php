@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Apply watermark batch tool.
  */
-class WP_MCP_AI_Tool_Apply_Watermark_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Apply_Watermark_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -61,6 +61,18 @@ class WP_MCP_AI_Tool_Apply_Watermark_Batch implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Applies watermark to a batch of images. Supports dry_run mode for preview without applying.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to stamp text or logo watermarks onto a batch of attachment IDs in one pass, with dry_run preview enabled by default.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use get_unwatermarked_images first to find images needing watermarks, or batch_process_images for resize, compress, or format work.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_unwatermarked_images', 'batch_process_images', 'get_images_without_alt' ),
+			'notes'           => __( 'dry_run defaults to true for safety; set it false only after reviewing the preview.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

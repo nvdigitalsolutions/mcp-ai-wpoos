@@ -117,6 +117,20 @@ class WP_MCP_AI_Pro_Tool_Configure_Circuit_Breaker {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adjusting circuit breaker thresholds like error rate, reset timeout, or stagnation cycles for autonomous sessions.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use analyze_loop_health to read a session\'s breaker state; this tool only manages the global configuration.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'analyze_loop_health', 'manage_autonomous_session', 'get_session_status' ),
+			'notes'           => __( 'Requires the manage_options capability; use the view action to read current settings before updating them.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.

@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_QMS_Supersede_Document tool.
  */
-class WP_MCP_AI_Tool_QMS_Supersede_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_QMS_Supersede_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 
 	/**
@@ -43,6 +43,19 @@ class WP_MCP_AI_Tool_QMS_Supersede_Document implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Mark a released controlled document as superseded by a new revision. The new record (successor_post_id) must already exist; the previous record is left in `superseded` state and linked.', 'mcp-ai-wpoos-pro' );
+	}
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Replacing a released controlled document with a newer revision record, linking both via supersedes meta.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Retiring a document with no successor; use qms_mark_obsolete.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'qms_mark_obsolete', 'qms_release_document', 'qms_list_controlled_documents' ),
+			'notes'           => __( 'successor_post_id must be an existing controlled-document record and differ from post_id.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 		/**
 		 * Get the parameters schema.

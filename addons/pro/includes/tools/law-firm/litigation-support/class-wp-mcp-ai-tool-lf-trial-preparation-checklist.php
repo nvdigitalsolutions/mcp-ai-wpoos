@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates and manages trial preparation checklists on matter posts.
  */
-class WP_MCP_AI_Tool_LF_Trial_Preparation_Checklist implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Trial_Preparation_Checklist implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -71,6 +71,20 @@ class WP_MCP_AI_Tool_LF_Trial_Preparation_Checklist implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Generates and manages trial preparation checklists for litigation matters. Supports generating practice-area-specific checklists, retrieving current status, and updating individual items.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating a trial checklist, reading its completion progress, or marking individual items done for a matter.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Drafting the jury instruction text itself; use lf_jury_instruction_drafter.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_evidence_catalog_manager', 'lf_expert_witness_tracker', 'lf_jury_instruction_drafter' ),
+			'notes'           => __( 'generate rebuilds the checklist from scratch; use get to read progress and update_item to toggle completion.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Syncs Extra-Curricular Activity data from SOCS into WordPress.
  */
-class WP_MCP_AI_Tool_Sync_ECAs_From_SOCS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Sync_ECAs_From_SOCS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_SOCS implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Syncs Extra-Curricular Activity data from SOCS (School Online Communication System) into WordPress. Imports activities, schedules, and student assignments from SOCS API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Importing activities, schedules, and student assignments from the SOCS system into WordPress.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'iSAMS-based imports; use sync_ecas_from_isams or sync_eca_enrollments_from_isams.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'sync_ecas_from_isams', 'sync_eca_enrollments_from_isams', 'list_ecas' ),
+			'notes'           => __( 'Supports dry_run; sync_students also imports the enrolled student data for each activity.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

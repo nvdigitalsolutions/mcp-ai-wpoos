@@ -22,7 +22,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Add_Transmission' ) ) {
 	/**
 	 * Add Transmission torrent tool.
 	 */
-	class WP_MCP_AI_Tool_DietPi_Add_Transmission extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_Add_Transmission extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 		public function get_slug() {
@@ -37,6 +37,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Add_Transmission' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Add a new torrent to Transmission by URL, magnet link, or base64-encoded .torrent file. Optionally specify a download directory, whether to start paused, and a label.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Adding one specific torrent to Transmission by URL, magnet link, or base64-encoded .torrent file.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Managing torrents already in Transmission; use dietpi_control_transmission. Finding releases to add; use dietpi_search_jackett.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_control_transmission', 'dietpi_list_transmission', 'dietpi_search_jackett' ),
+				'notes'           => __( 'The torrent starts downloading immediately unless paused=true.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Queries the ReliefWeb API for recent humanitarian reports.
  */
-class WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -42,6 +42,20 @@ class WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Searches the ReliefWeb humanitarian dataset for recent reports filtered by country or disaster type.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Humanitarian situational research: recent ReliefWeb reports filtered by country or disaster type.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Live disaster alerts or general news; use get_gdacs_events for alerts and web_search for broader coverage.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_gdacs_events', 'web_search' ),
+			'notes'           => __( 'Queries the ReliefWeb v1 reports API; apply country and disaster_type filters to keep results focused.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

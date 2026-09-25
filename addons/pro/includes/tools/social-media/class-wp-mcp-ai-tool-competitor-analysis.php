@@ -39,7 +39,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Competitor_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Competitor_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -107,6 +107,19 @@ class WP_MCP_AI_Tool_Competitor_Analysis implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Analyze competitor social media performance across platforms. Track follower counts, engagement rates, posting frequency, and content types. Compare your performance against competitors, identify successful content strategies, and discover opportunities for improvement.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Benchmarking competitor accounts on follower growth, engagement, posting frequency, and top content.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Measuring your own account metrics; use get_social_analytics or get_cross_platform_analytics.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_social_analytics', 'get_cross_platform_analytics', 'social_listening_trends' ),
+		);
 	}
 
 	/**

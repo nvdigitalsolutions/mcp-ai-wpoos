@@ -22,7 +22,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator implements WP_MCP_AI_Tool
 	 */
 	public function get_description(): string {
 		return __( 'Generate a CREFC-style investor reporting template with deal summary, delinquency breakdown, special servicing, loss analysis, credit support, and top-10 loan details.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating a CREFC-style investor report from provided deal, delinquency, special servicing, loss, and credit support figures.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Computing pool statistics; use cmbs_pool_analyzer. Tracking servicing records; use cmbs_special_servicing_tracker.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cmbs_pool_analyzer', 'cmbs_surveillance_monitor', 'cmbs_special_servicing_tracker' ),
+			'notes'           => __( 'Pass aggregate figures (delinquency_summary, losses_to_date, credit_support_pct) plus top_10_loans; the tool formats the report.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -5,9 +5,9 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.82"
-  plugin-version-tested: "1.1.82"
-  last-updated: "2026-09-18"
+  plugin-version: "1.1.83"
+  plugin-version-tested: "1.1.83"
+  last-updated: "2026-09-21"
 ---
 
 # NV oOS Updates — Docs Catch-Up, Model Catalog & PR Deferred-Item Sweeps
@@ -15,7 +15,7 @@ metadata:
 Playbook for the three recurring update tracks in this repo, distilled from the
 
 executed catch-up plans (`docs/project/plans/v1.1.58-docs-catch-up.md` through
-`v1.1.82-docs-catch-up.md`), the model-catalog process docs (July 2026 and
+`v1.1.83-post-docs-catch-up.md`), the model-catalog process docs (July 2026 and
 September 2026 runs), and the executed 2026-09-17 PR deferred-item sweep
 (issues #6646–#6655). The workflows implement industry standards — Keep a
 Changelog, SemVer commit separation, and deprecation-driven LLM model lifecycle
@@ -54,14 +54,21 @@ weekly (or on demand), independent of any release.
    every standing open item (OI-1 `@since` reconciliation, OI-2 Docker count
    re-derivation, OI-3 test-suite cross-ref, OI-4 wave residuals). Parked items
    stay parked; new finds get *recorded* there, never fixed in-pass.
-3. **Read the template plans** — the latest executed plan (e.g.
-   `v1.1.82-docs-catch-up.md`) plus `v1.1.58`/`v1.1.59` for the original
+1. **Read the template plans** — the latest executed plan (e.g.
+   `v1.1.83-post-docs-catch-up.md` — the first post-window pass, executed when
+   PRs merged after the catch-up but before the next version bump) plus
+   `v1.1.83-docs-catch-up.md` and `v1.1.58`/`v1.1.59` for the original
    structure.
 4. **Identify the PR window** — everything merged on `alpha-working` after the
    previous catch-up merge. Classify every PR: production-touching (file + change
    table), test-only, docs-only, build-only, closed-unmerged docs PRs.
 5. **Create the plan** `docs/project/plans/[VERSION]-docs-catch-up.md` if none
-   exists, with the v1.1.82 structure:
+   exists — or `[VERSION]-post-docs-catch-up.md` when a catch-up already merged
+   for the current version and a new PR window landed on the same line (the
+   v1.1.83 post pass is the precedent: extend the current-release changelog
+   section in place, re-derive the count delta, and sweep the previous pass's
+   "unchanged" claims — they can be falsified by post-window merges). Use the
+   v1.1.83 structure:
    1. Context — PR table + scope rules
    2. Work items (P0–P3 + Verify-only)
    3. Execution log (stamped when run)
@@ -95,8 +102,21 @@ weekly (or on demand), independent of any release.
   count derivation are user-deferred — record, never re-attempt.
 - **Exclude unrelated working-tree noise** (vendor/, other agents' untracked
   work, backup dirs) from every commit.
+- **README keeps the last 12 releases in full.** The `## 📜 Release History`
+  section holds exactly the 12 most recent releases. Each new release adds a
+  new `### vX.Y.Z — Date` + `#### Title` entry at the top of that section; the
+  oldest entry is demoted to a one-line row in the `### 📋 Previous Releases`
+  table (newest first). Full per-release detail lives in `CHANGELOG.md` only —
+  the README never grows past 12 detailed entries, and the Overview keeps a
+  single current-release "What's New at a Glance" block. (Adopted 2026-09-22
+  to stop the README's duplicated changelog blocks from growing unboundedly.)
+- **Anchor hygiene:** headings must not carry VS16 (U+FE0F) emoji — GitHub's
+  slugger strips the base emoji but keeps the invisible VS16, producing broken
+  `#...` anchors (e.g. `### ⚠️ Warranty` resolves to `#️-warranty--safe-use`).
+  Use the no-VS16 form (`⚠`, `⚙`, `🗨`, `🛡`) and keep TOC links as the plain
+  `#-slug` form; never add manual `<a id="...">` anchors.
 
-### A3. Commit structure (mirror v1.1.58–v1.1.82)
+### A3. Commit structure (mirror v1.1.58–v1.1.83)
 
 Separate commits, in this order:
 
@@ -140,6 +160,9 @@ Per `AGENTS.md` §6, when adding a skill under `.agents/skills/[slug]/`:
   plans, archive).
 - Verify every claim in the plan (file paths, counts, versions) against the
   actual PRs before marking executed.
+- Re-run the README anchor check: every `](#...)` target must resolve under
+  github-slugger rules (emoji stripped, spaces → hyphens, `&` → `--`), and the
+  Release History section must hold exactly the last 12 releases.
 
 ### A7. Branch + PR (required)
 
@@ -555,12 +578,25 @@ previous window — the user will usually want it back-dated.
 - Every claim (paths, counts, versions) is verified against the actual PRs.
 - Never commit to `alpha-working` directly; branch + PR; exclude unrelated
   working-tree noise from commits.
+- **README anchor links**: after any `README.md` edit that touches headings or
+  the TOC, run `python3 bin/validate-readme-anchors.py` (also enforced by the
+  `link-check.yml` CI job). TOC links use GitHub's visible slug form: emoji
+  headings keep the leading hyphen (`## 🧩 Overview` → `#-overview`), `&`
+  becomes a double hyphen (`#-warranty--safe-use`), and hyphens are never
+  collapsed or trimmed. Headings whose emoji carries a variation selector or
+  ZWJ (`🛡️`, `🧑‍💻`) only resolve via GitHub's hidden fallback anchors —
+  always link the visible form the validator computes.
 
 ## References
 
 - Plan templates: `docs/project/plans/v1.1.58-docs-catch-up.md`,
   `docs/project/plans/v1.1.59-docs-catch-up.md`,
-  `docs/project/plans/v1.1.82-docs-catch-up.md` (latest executed)
+  `docs/project/plans/v1.1.83-docs-catch-up.md`,
+  `docs/project/plans/v1.1.83-post-docs-catch-up.md`,
+  `docs/project/plans/v1.1.84-docs-catch-up.md`,
+  `docs/project/plans/v1.1.85-docs-catch-up.md` (latest executed — the v1.1.85
+  pass over PRs #6749–#6759: the MCP Apps connection/exposure wave, Docs Hub
+  0.5.1, README anchor/consolidation work, and the stale 1.1.83 ZIP removal)
 - Standing open items: `docs/project/plans/docs-catch-up-open-items.md`
 - Executed PR deferred-item sweep (2026-09-17): issues #6646–#6655; closed
   #6389 as complete

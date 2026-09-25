@@ -817,6 +817,85 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<?php endif; ?>
 				</div>
 
+				<!-- TypeSafe (Jev) -->
+				<div class="wp-mcp-ai-provider-card" id="typesafe-card">
+					<h3><?php esc_html_e( 'TypeSafe (Jev) — Decision Model', 'mcp-ai-wpoos' ); ?></h3>
+					<table class="widefat striped" style="margin-bottom: 10px;">
+						<tbody>
+							<tr>
+								<th style="width: 30%;"><?php esc_html_e( 'Provider Enabled', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['enable_typesafe'] ) ) : ?>
+										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+									<?php else : ?>
+										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Enabled', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<?php $typesafe_has_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'typesafe' ) : ! empty( $settings['typesafe_api_key'] ); ?>
+							<tr>
+								<th><?php esc_html_e( 'API Key Configured', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $typesafe_has_key ) : ?>
+										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+									<?php else : ?>
+										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Key Source', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $has_resolver ) : ?>
+										<code><?php echo esc_html( WP_MCP_AI_Credential_Resolver::get_key_source_label( WP_MCP_AI_Credential_Resolver::get_key_source( 'typesafe' ) ) ); ?></code>
+									<?php else : ?>
+										<code><?php esc_html_e( 'NV oOS Settings (Legacy)', 'mcp-ai-wpoos' ); ?></code>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Selected Model', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<code><?php echo esc_html( isset( $settings['typesafe_model'] ) && '' !== $settings['typesafe_model'] ? $settings['typesafe_model'] : 'jev-latest' ); ?></code>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Decision Cache', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['enable_typesafe_cache'] ) ) : ?>
+										<span style="color: green;">&#x2713; <?php esc_html_e( 'Enabled (short TTL, advisory only)', 'mcp-ai-wpoos' ); ?></span>
+									<?php else : ?>
+										<span><?php esc_html_e( 'Disabled', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div id="typesafe-test-result" style="margin: 15px 0;"></div>
+
+					<button
+						type="button"
+						class="button button-primary test-provider"
+						data-provider="typesafe"
+						<?php echo esc_attr( empty( $settings['enable_typesafe'] ) || ! $typesafe_has_key ? 'disabled' : '' ); ?>>
+						<?php esc_html_e( 'Test TypeSafe Connection', 'mcp-ai-wpoos' ); ?>
+					</button>
+
+					<?php if ( empty( $settings['enable_typesafe'] ) || ! $typesafe_has_key ) : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Configure your TypeSafe settings in the Providers tab. You need to enable the provider and set your API key.', 'mcp-ai-wpoos' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=typesafe' ) ); ?>">
+								<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					<?php else : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'TypeSafe Jev is a decision model, not a chat model. It returns typed, probabilistic decisions (choice / score / yes-no) about supplied state for the typesafe_decide tool — billing is input-only.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php endif; ?>
+				</div>
+
 				<!-- DigitalOcean Serverless Inference -->
 				<div class="card">
 					<h2><?php esc_html_e( '11. DigitalOcean Serverless Inference', 'mcp-ai-wpoos' ); ?></h2>
@@ -1457,6 +1536,9 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					if ( ! empty( $settings['enable_openrouter'] ) && ( $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'openrouter' ) : ! empty( $settings['openrouter_api_key'] ) ) ) {
 						$configured[] = 'OpenRouter';
 					}
+					if ( ! empty( $settings['enable_typesafe'] ) && ( $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'typesafe' ) : ! empty( $settings['typesafe_api_key'] ) ) ) {
+						$configured[] = 'TypeSafe (Jev)';
+					}
 					if ( ! empty( $settings['enable_digitalocean'] ) && ( $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'digitalocean' ) : ! empty( $settings['digitalocean_api_key'] ) ) ) {
 						$configured[] = 'DigitalOcean Serverless Inference';
 					}
@@ -1791,6 +1873,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				case 'openrouter':
 					self::test_openrouter( $settings );
+					break;
+
+				case 'typesafe':
+					self::test_typesafe( $settings );
 					break;
 
 				case 'digitalocean':
@@ -2722,6 +2808,75 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 				// Under PHPUnit, wp_send_json_*() terminates via a throwable
 				// WPDieException; converting that into a second error response
 				// would double-die and corrupt the AJAX test harness buffers.
+				if ( self::is_test_die_exception( $e ) ) {
+					throw $e;
+				}
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Test failed: %s', 'mcp-ai-wpoos' ),
+							$e->getMessage()
+						),
+					)
+				);
+			}
+		}
+
+		/**
+		 * Test the TypeSafe (Jev) decision provider connection.
+		 *
+		 * Sends the client's built-in connectivity probe (a single noul
+		 * question) to the System One endpoint.
+		 *
+		 * @param array $settings Plugin settings.
+		 *
+		 * @throws Exception When a PHPUnit die exception must propagate
+		 *                   instead of being converted into a second error
+		 *                   response.
+		 */
+		private static function test_typesafe( $settings ) {
+			if ( empty( $settings['enable_typesafe'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'TypeSafe provider is not enabled.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$has_key = class_exists( 'WP_MCP_AI_Credential_Resolver' )
+				? WP_MCP_AI_Credential_Resolver::has_credentials( 'typesafe' )
+				: ! empty( $settings['typesafe_api_key'] );
+			if ( ! $has_key ) {
+				wp_send_json_error( array( 'message' => __( 'TypeSafe API key is not configured.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Typesafe_Client' ) ) {
+				wp_send_json_error( array( 'message' => __( 'TypeSafe client class not found.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			try {
+				$client = new WP_MCP_AI_Typesafe_Client();
+				$model  = isset( $settings['typesafe_model'] ) && '' !== $settings['typesafe_model']
+					? $settings['typesafe_model']
+					: WP_MCP_AI_Typesafe_Client::DEFAULT_MODEL;
+
+				$result = $client->test_connection();
+
+				if ( is_wp_error( $result ) ) {
+					wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+					return;
+				}
+
+				wp_send_json_success(
+					array(
+						'message' => __( 'TypeSafe connection successful!', 'mcp-ai-wpoos' ),
+						'details' => array(
+							__( 'Model', 'mcp-ai-wpoos' ) => $model,
+							__( 'API Endpoint', 'mcp-ai-wpoos' ) => $client->get_base_url(),
+						),
+					)
+				);
+			} catch ( Exception $e ) {
 				if ( self::is_test_die_exception( $e ) ) {
 					throw $e;
 				}

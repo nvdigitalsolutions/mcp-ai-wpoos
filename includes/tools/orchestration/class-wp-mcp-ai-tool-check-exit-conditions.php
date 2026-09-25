@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Check Exit Conditions Tool
  */
-class WP_MCP_AI_Tool_Check_Exit_Conditions implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Check_Exit_Conditions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
@@ -26,6 +26,16 @@ class WP_MCP_AI_Tool_Check_Exit_Conditions implements WP_MCP_AI_Tool_Interface {
 	 */
 	public function get_required_capability() {
 		return 'edit_posts';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'session_id' ),
+		);
 	}
 
 	/**
@@ -76,6 +86,20 @@ class WP_MCP_AI_Tool_Check_Exit_Conditions implements WP_MCP_AI_Tool_Interface {
 				'required'   => array( 'session_id' ),
 			),
 			'required_capability' => 'read',
+		);
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Deciding whether an autonomous session should exit: completion score plus EXIT_SIGNAL, or hard safety limits.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Detecting completion signals in text; use detect_completion_indicators. Changing session state; use manage_autonomous_session.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'detect_completion_indicators', 'get_session_status', 'manage_autonomous_session' ),
+			'notes'           => __( 'Exits only when completion_indicators_met AND exit_signal are both set, or when a hard limit fires; threshold defaults to 2.', 'mcp-ai-wpoos' ),
 		);
 	}
 

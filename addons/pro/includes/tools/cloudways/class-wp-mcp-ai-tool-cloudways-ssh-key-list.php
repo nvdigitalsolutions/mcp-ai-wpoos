@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_SSH_Key_List' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_SSH_Key_List extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_SSH_Key_List extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_SSH_Key_List' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'List all SSH keys for a server.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Listing SSH keys and their IDs for a server before creating or deleting keys.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Adding or revoking keys; use cloudways_ssh_key_create or cloudways_ssh_key_delete.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_ssh_key_create', 'cloudways_ssh_key_delete', 'cloudways_list_servers' ),
+				'notes'           => __( 'Requires a server_id; the key IDs returned feed cloudways_ssh_key_delete.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

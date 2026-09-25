@@ -1,7 +1,15 @@
 # NV oOS Tool Registry Context
 
 > **GSD Context File** — Load this when working on tool implementations, toolkits, MCP servers, or OKF tools.
-> Last reviewed: September 18, 2026 (v1.1.82).
+> Last reviewed: September 24, 2026 (v1.1.85 — PRs #6749–#6759).
+>
+> **New in v1.1.85 (PRs #6749–#6759, counts unchanged — ~308 base + ~1,282 Pro, ~1,590 total):** the MCP Apps wave is connection/exposure-level, **not registrations** — the bridged slugs (`mcp_app_<label>_<tool>`) are registered **dynamically** at chat time via the new `wp_mcp_ai_chat_effective_tools` filter seam and are deliberately not counted in the static totals. #6753 adds the metabox diagnostics (Test Connection / Discover Tools / status badge / Test All), basic auth, session capture + legacy fallback, the mcpServers import, and the Security Center MCP App Allowed Hosts setting; #6754 pins the negotiated protocol header; #6755 introduces the base `build_tools_payload()` seam + Pro `wp_mcp_ai_mcp_apps_expose_tools()`; #6756/#6757 add the in-process same-site bridge (`rest_do_request()` + `rest_post_dispatch` parity); #6758 carries the resolved assistant ID through `handle_tools_list()`/`handle_tool_request()`/`execute_tool_call_internal()`/the `list_mcp_tools` catalogue and registers bridges via `rest_pre_dispatch`. Every count surface stays ~1,590.
+>
+> **New in v1.1.84 (PRs #6745–#6747, counts move +1 base +3 Pro — ~308 base + ~1,282 Pro, ~1,590 total):** #6747 implements the TypeSafe Jev enhancement plan 040. **One new base registration — `typesafe_guardrail`** (batches one noul question per hazard category into advisory pass/review/block verdicts; `ai_ml` preset + coverage manifest). **Three new Pro registrations** — `typesafe_rerank`, `typesafe_eval` (+ `WP_MCP_AI_Pro_Jev_Eval`), `typesafe_skill_select` (all `manage_options`-gated). The Phase 0 work is decision-side, not registrations: noul criteria + structured EntryType fields (recursive two-gate walk), bounded 429/5xx retries on the native client + OpenRouter bridge, an opt-in advisory decision cache (`enable_typesafe_cache`), `typesafe_endpoint`, the `jev-preview` catalog alias (catalog → v2026.09.22), and `min_confidence`/`weights`/usage aliases on `typesafe_decide`. #6747 also adds the bundled skill `mcp-ai-wpoos-jev-decisions` (runtime bundled skills, not a coding-time skill) — bundled skills 74 → 75 base. #6745 is metadata-only (declared capability aligns with the enforced gate). Every count surface moves to ~1,590.
+>
+> **Post-window (PRs #6726–#6743, counts move +1 base — ~307 base + ~1,279 Pro, ~1,586 total):** #6728 registers **one new base tool, `typesafe_decide`** (TypeSafe Jev "System One" decision provider — decision-only, deliberately excluded from every chat-provider surface; the `Interface_WP_MCP_AI_Decision_Client` contract + `WP_MCP_AI_Typesafe_Client` + OpenRouter Decisions bridge are decision-side, not chat-side). The P3 data-contract waves (#6729–#6738) are **contract annotations on existing tools** (`produces`/`consumes` handoffs via `WP_MCP_AI_Tool_Data_Contract_Interface`; manifest + L1/L2 suites) — no registrations. #6740 closes the guidance gap on the last three webchat-folder tools + ports the member-mirror guidance to the four CG copies and adds the guidance interface to the CG interface copy. #6743 adds `typesafe_decide` to the `ai_ml` preset + coverage manifest and declares `items` on its array-typed schema nodes. #6727 adds an assistant (not a tool) — the Assistant Builder meta-assistant (default roster 6 → 7). Every count surface moves to ~1,586.
+>
+> **New in v1.1.83 (counts unchanged — ~306 base + ~1,279 Pro, ~1,585 total):** no tools added or removed. The window is dominated by the **Tool Description Engineering** program — #6686 adds `WP_MCP_AI_Tool_Usage_Guidance_Interface` (`when_to_use`/`when_not_to_use`/`related_tools`/`notes`) + the `[Usage: …]` suffix in `get_model_facing_description()` (REST chat path, Tool Service `/tools`, `list_mcp_tools`), the opt-in `WP_MCP_AI_Tool_Payload_Advisor` adaptive tool cap, and lazy schema loading (`tool_slug`/`include_schemas`); #6695 forwards guidance through `WP_MCP_AI_Legacy_Tool_Wrapper`; the 37-PR sweep (#6687–#6723) completes guidance across the full base+pro tree (~1,487 tools; 1,584/1,584 files clean) and #6723 enforces the `WPMCPAI.Tools.ToolDescriptionGuidance` sniff at severity 5 — guidance is a **contract addition on existing classes, not new registrations**. #6677 is service/tool-level hardening (Pro bootstrap incomplete-install guard, Telegram chunking, Gmail `"settings"` fallback, skill/OKF self-correction); #6678–#6680/#6682/#6684 are Upwork search + workflow-delivery fixes; #6689 migrates five regulatory tools to the canonical envelope (same slugs). Every count surface stays ~1,585 through this first pass — the post pass adds `typesafe_decide` (see above).
 >
 > **New in v1.1.82 (counts unchanged — ~306 base + ~1,279 Pro, ~1,585 total):** no tools added or removed. #6645 adds the four existing portability slugs (`export_assistant`/`import_assistant`/`duplicate_assistant`/`export_assistant_blueprint`) to the `assistant_management` preset — preset-level, not new registrations. #6661 (`delivery_safe_data()` + summary/SMS dedupe in the result-delivery service), #6665 (the Pro SPA `cron_monitor` shortcode flag), #6669 (token-tracking table verify-then-version/backoff/quiet-failure/graceful-reads), and #6672 (Pro SPA model-store seeding) are service/shortcode/DB/SPA-level. #6662–#6674 are demo blueprints, docs, skills (new `mcp-ai-wpoos-playground-demos`), and build artifacts. Every count surface stays ~1,585.
 >
@@ -34,7 +42,7 @@ Tools are the core extensibility unit of NV oOS. Each tool:
 - Implements `execute( $arguments, $context )`
 - Is registered in `includes/tools-init.php` (base) or `addons/pro/mcp-ai-wpoos-pro.php` (pro)
 
-**Total tools:** ~1,585 (~306 base + ~1,279 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,590 (~308 base + ~1,282 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 **New in v1.1.69:** +1 Pro tool — `analyze_image_objects` (Vision Analysis toolkit, `addons/pro/includes/tools/vision-analysis/`, PR #6267): detects and counts objects per category via HuggingFace OWLv2 / Ollama (`detection`), chat-VLM counting (`vlm`), or hybrid label normalization; `annotate=true` returns a GD box-annotated attachment. Gated by `enable_vision_analysis_toolkit` in the Pro module registry's conditional-toolkit map (off by default; the tool is only registered when enabled). Schema-contract sweep: every argument-less tool now emits `properties: {}` (never `[]`) — DeepSeek rejects empty-array properties with a 400 — across 29 files (`list_gmail_connections`, `list_drive_connections`, Cloudways ×4, DietPi ×7, `wait_for_user`, `okf_list_bundles`, WebChat `get_webchat_status`, graphify `content_gaps`/`graph_stats`, embedded ability `input_schema`s, `ProfessionStatsTool`, content-graph tools); `LegacyToolAdapter` preserves object maps and upgrades empty arrays to `stdClass` instead of normalizing objects back to arrays; the AI Tool Builder scaffold emits `new stdClass()` for parameterless tools (#6272). Model-catalog fixes: `gpt-4o` context limit 128000 in `WP_MCP_AI_Token_Budget_Manager::$model_limits` (prefix match no longer returns 8192), `gemini-2.0-flash` restored to the video-capable list (duplicate `gemini-2.5-flash` typo), `claude-sonnet-4-6`/`gpt-4o` restored to `active`, and two Qwen Hugging Face entries added to `includes/data/model-catalog.json` (#6274). SiteKit tools return string capability-flag arrays instead of the non-existent `CAPABILITY_CAN_USE_IF_ADMIN` constant (metabox crash, #6278).
 
@@ -95,6 +103,20 @@ Tools can be grouped into presets organized in a layered hierarchy:
 - Tools without `tool_call_id` in DeepSeek streaming are now handled: always included in `extract_request_messages` fallback; stripped from conversation when missing.
 
 Reference: `docs/features/tool-presets-system.md`.
+
+---
+
+## Tool Description Engineering (v1.1.83)
+
+Tool descriptions are engineered for the LLM, not just the admin UI:
+
+- **`WP_MCP_AI_Tool_Usage_Guidance_Interface`** — optional tool interface declaring `get_usage_guidance()`, returning `when_to_use` / `when_not_to_use` / `related_tools` / `notes` (all keys optional).
+- **Registry assembly** — `WP_MCP_AI_Tool_Registry::get_model_facing_description()` appends the guidance to the model-facing payload as a compact `[Usage: …]` suffix, mirroring the existing `[Data contract: …]` suffix so strict OpenAI schemas stay valid.
+- **`WPMCPAI.Tools.ToolDescriptionGuidance` sniff** — warns when a tool implements `WP_MCP_AI_Tool_Interface` but neither implements the guidance interface nor embeds usage guidance in `get_description()`. **Sweep complete:** all base (`includes/tools/`) and Pro (`addons/pro/includes/tools/`) tool classes carry guidance — full-tree run passes 1,584/1,584 files with zero warnings (`vendor/bin/phpcs --standard=phpcs/WPMCPAI/ruleset.xml --severity=5 includes/tools addons/pro/includes/tools`). The sniff is now enforced at severity 5 in `phpcs.xml.dist` (warnings, so CI error thresholds are unaffected) so new tool classes without guidance surface on PRs. Legacy-format tools (plain classes without `implements`) opt in via a `get_usage_guidance()` method or a `usage_guidance` key in `get_definition()`, forwarded at runtime by `WP_MCP_AI_Legacy_Tool_Wrapper`.
+- **Adaptive tool cap (opt-in)** — option `wp_mcp_ai_adaptive_tool_cap` (default off) + `WP_MCP_AI_Tool_Payload_Advisor` lower the effective payload cap by model context window: 40 tools ≤128K, 64 ≤256K, 100 above. Per-assistant override: `_wp_mcp_ai_adaptive_tool_cap` meta (`'on'` / `'off'` / `''` inherit) saved from the Assistant edit screen's Default Settings metabox and resolved by `WP_MCP_AI_Tool_Payload_Advisor::is_adaptive_cap_enabled( $assistant_config )`.
+- **`list_mcp_tools` lazy schemas** — new params `tool_slug` (fetch one tool's full schema on demand) and `include_schemas` (default `true`; `false` returns a lean name/description/toolkit/risk catalogue).
+
+Reference: `docs/features/tool-description-guidelines.md`, `docs/project/proposals/tool-description-engineering-proposal.md`.
 
 ---
 
@@ -272,6 +294,35 @@ tool customise the suffix per-request.
 
 The contract is purely advisory metadata for the model and for downstream
 hint planners; it does **not** validate inputs at runtime.
+
+**Vocabulary rule (D1):** contract names must be the *exact* envelope /
+parameter key names flowing between tools (`job_id`, `post_id`, `term_id`,
+`assistant_id`, `vector_store_id`, `batch_id`, `schedule_id`). A tool
+`produces X` iff its success envelope carries key `X`; a tool `consumes X`
+iff its parameters schema has property `X`. Scope rule (D2): only
+ID-bearing CRUD families are annotated; generators, search tools, and
+stateless utilities stay contract-less by design.
+
+**Rollout status (complete, Sep 2026):** all 15 ID-bearing families are
+annotated via PRs #6729–#6738 — `job_id` (cron), `plan_id` (task plans),
+`session_id` (autonomous sessions), `room_id` (webchat), `post_id`, `term_id`,
+`assistant_id`, `vector_store_id`, `batch_id` (base) and `schedule_id`,
+`item_id` (toolkit CPTs), `record_id` (medical records), `member_id`,
+`event_id` (Google Calendar), `snippet_id` (WPCode) (Pro; medical-record
+and member tool mirrors are ported to the CG Pro addon). Verified
+out-of-scope: `workflow_id` (no tool produces it), `profession_id`
+(slug-keyed), `team_id` (nested, unconsumed), `agent_id` (nested
+assistant-ID aliases), plus the by-design exclusions listed in the
+manifest fixture.
+
+The manifest fixture `tests/fixtures/tool-contract-manifest.php` is the
+single source of truth: the L1 honesty suite
+(`tests/test-tool-id-handoff-contract.php`) checks it in both directions
+(unvetted annotations fail CI) and the L2 round-trip suite
+(`tests/test-tool-id-handoff-round-trip.php`) executes the
+create → fetch → update → delete chain deterministically. Manifest
+entries must land in the same PR as their annotations. Full plan:
+`docs/project/proposals/P3-data-contract-rollout-plan-2026-09.md`.
 
 ---
 

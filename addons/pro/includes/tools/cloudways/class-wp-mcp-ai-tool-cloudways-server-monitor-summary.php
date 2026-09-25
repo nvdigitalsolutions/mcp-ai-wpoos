@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Monitor_Summary' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Server_Monitor_Summary extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Server_Monitor_Summary extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Monitor_Summary' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'View server bandwidth and disk usage metrics.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Checking bandwidth and disk usage for one server when investigating capacity or overage concerns.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'App-level metrics or service health; use cloudways_app_monitor_summary or cloudways_service_status.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_get_server', 'cloudways_service_status', 'cloudways_server_scale_volume' ),
+				'notes'           => __( 'Requires a server_id from cloudways_list_servers.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

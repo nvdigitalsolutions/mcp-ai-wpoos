@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Manages expert witness records as post meta on matter posts.
  */
-class WP_MCP_AI_Tool_LF_Expert_Witness_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Expert_Witness_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -71,6 +71,20 @@ class WP_MCP_AI_Tool_LF_Expert_Witness_Tracker implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Manages expert witness records for litigation matters. Supports adding, listing, updating, and searching expert witness profiles stored as post meta.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording or finding expert witnesses with specialty, rate, CV summary, and testimony history for matters.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Cataloging exhibits; use lf_evidence_catalog_manager. Building trial checklists; use lf_trial_preparation_checklist.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_evidence_catalog_manager', 'lf_trial_preparation_checklist' ),
+			'notes'           => __( 'Search with matter_id 0 scans expert records across all matters; add requires expert_name.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Cap_Rate_Sensitivity implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Cap_Rate_Sensitivity implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_Cap_Rate_Sensitivity implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description(): string {
 		return __( 'Run a cap-rate sensitivity analysis. Provide NOI, a base cap rate, BPS offsets, and an optional loan amount. Returns property value, LTV, and equity at each scenario for quick risk assessment.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Stress-testing property value, LTV, and equity across cap rate scenarios expressed as BPS offsets from a base rate.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Full multi-year cash flow valuation; use cre_dcf_modeler. Three-approach reconciliation; use cre_property_valuation_engine.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_property_valuation_engine', 'cre_dcf_modeler', 'cre_debt_yield_analyzer' ),
+			'notes'           => __( 'Optional loan_amount adds LTV and equity per scenario; the zero-BPS row is the base case.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

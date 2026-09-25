@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.1.0
  */
-class WP_MCP_AI_Pro_Tool_JetEngine_Manage_Relations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_JetEngine_Manage_Relations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -75,6 +75,20 @@ class WP_MCP_AI_Pro_Tool_JetEngine_Manage_Relations implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'List and manage JetEngine relations between post types, custom content types, users, and taxonomies. Use list action to see existing relations, or create to set up new ones (one-to-one, one-to-many, many-to-many).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing JetEngine relations or creating one-to-one, one-to-many, and many-to-many relations.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading CCT records; use jetengine. Site structure overview; use jetengine_site_context.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'jetengine_site_context', 'jetengine_mcp' ),
+			'notes'           => __( 'Requires manage_options; create needs name, parent_object, child_object, and relation_type.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

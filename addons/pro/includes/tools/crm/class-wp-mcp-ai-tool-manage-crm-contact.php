@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Data store instance.
@@ -83,6 +83,20 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Comprehensive CRM contact management. Create, read, update, delete, list, and search contacts. Includes email/phone validation and CCT/CPT storage support.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating, reading, updating, deleting, listing, or searching CRM contacts via the action parameter.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Company records; use create_company or get_companies. Deal records; use create_deal or update_deal.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'scan_duplicate_contacts', 'get_contact_interactions' ),
+			'notes'           => __( 'Validates email and phone before create/update. Supported actions: create, read, update, delete, list, search.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

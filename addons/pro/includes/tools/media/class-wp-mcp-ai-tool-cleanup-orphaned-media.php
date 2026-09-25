@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.7.0
  */
-class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -48,6 +48,20 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Removes orphaned media files and broken attachment records from the WordPress media library. Supports dry_run mode to preview changes before executing. Can delete unreferenced attachments, attachment records with missing files, and physical files with no attachment record. Accepts optional lists of attachment IDs to target specific items.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Deleting orphaned media after reviewing a scan_orphaned_media report, or targeting specific attachment IDs.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Detecting orphans without deleting; use scan_orphaned_media.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'scan_orphaned_media' ),
+			'notes'           => __( 'Dry-run defaults to true; unreferenced files are kept unless delete_unreferenced=true. Destructive and irreversible.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

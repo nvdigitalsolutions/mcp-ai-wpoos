@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Lists PM workflow rules with optional filtering.
  */
-class WP_MCP_AI_Tool_List_PM_Workflow_Rules implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_PM_Workflow_Rules implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_List_PM_Workflow_Rules implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'List workflow automation rules with optional filtering by trigger type and active status. Useful for reviewing and auditing automation configurations.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reviewing or auditing workflow automation rules, optionally filtered by trigger_type or active status.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating rules; use create_pm_workflow_rule. Dry-run testing; use simulate_pm_workflow_rule.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_pm_workflow_rule', 'simulate_pm_workflow_rule' ),
+			'notes'           => __( 'Returns up to 100 rules (default 20), newest first, with decoded conditions and actions.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

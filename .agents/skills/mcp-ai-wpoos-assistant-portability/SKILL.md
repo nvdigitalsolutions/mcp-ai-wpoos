@@ -62,7 +62,23 @@ Pro:
    `_wp_mcp_ai_primary_roles`, `_wp_mcp_ai_skills`, `_wp_mcp_ai_mcp_apps`,
    shortcuts and role rules are array/object typed. Never flatten them
    through `sanitize_text_field` on the way out (the pre-1.1.80 CLI did this
-   — that was the fidelity bug).
+   — that was the fidelity bug). **MCP App credentials:** since 1.1.85 the
+   engine redacts the `token` / `oauth_data` fields inside
+   `_wp_mcp_ai_mcp_apps` on export and strips them from import payloads by
+   default; overwriting an assistant preserves the stored credentials of
+   matching apps (matched on `server_url` + `auth_type` + `header_name`,
+   falling back to position). Both directions are filterable for trusted
+   migrations: `wp_mcp_ai_assistant_export_redact_mcp_app_tokens` and
+   `wp_mcp_ai_assistant_import_redact_mcp_app_tokens` (default `true`).
+   Imported app entries are also structurally sanitized mirroring the Pro
+   registry's `sanitize_app_config()` — keep all three layers in sync when
+   the Pro sanitizer changes. **Reference entries:** since 1.1.85 entries may
+   carry `connection_ref` (a Remote Sites `mcp_server` connection ID) instead
+   of inline credentials; the engine keeps reference entries despite the empty
+   `server_url` and exports them as non-secret pointers. The Pro layer
+   validates imported references and disables unresolvable ones
+   (`wp_mcp_ai_mcp_apps_validate_imported_refs`). See the
+   `design-elementor-mcp-connection` skill for the MCP Apps subsystem.
 4. **Import matching is slug-first, then exact title.** Matches the backup
    provider and the Pro Blueprint Installer. Changing matching order changes
    skip/overwrite semantics across surfaces.
@@ -150,6 +166,12 @@ follow the ecosystem-port skill loop with these additions:
 - Format spec + surfaces: `docs/assistant-import-export.md`
 - Engine: `includes/assistants/class-wp-mcp-ai-assistant-portability.php`
 - Folder contract: `includes/assistants/README.md`
+- MCP Apps subsystem + token caveat: `.agents/skills/design-elementor-mcp-connection/SKILL.md`
+- MCP App redaction tests: `test_export_redacts_mcp_app_tokens`,
+  `test_import_redacts_mcp_app_tokens_on_create`,
+  `test_import_overwrite_preserves_existing_mcp_app_tokens`,
+  `test_import_sanitizes_mcp_app_structure` in
+  `tests/test-assistant-portability.php`
 - Test environment: `.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md`
 - Port loop: `.agents/skills/mcp-ai-wpoos-ecosystem-port/SKILL.md`
 - Tool authoring rules: `CLAUDE.md` → "Tool Return Format — Canonical

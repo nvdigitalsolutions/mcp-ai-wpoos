@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager
 /**
  * Provides an AI tool for rendering a Pro schedule's latest result envelope.
  */
-class WP_MCP_AI_Pro_Tool_Render_Schedule_Result implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Render_Schedule_Result implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,18 @@ class WP_MCP_AI_Pro_Tool_Render_Schedule_Result implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Renders the latest run of a Pro Schedule as sanitized HTML using one of six canonical modes (summary-card, list, table, metric, timeline, raw).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Turning a schedule latest result into sanitized HTML to embed in a chat reply or admin tile.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Working with the raw structured envelope (use get_schedule_latest_result) or investigating run history (use get_schedule_run_history).', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_schedule_latest_result', 'get_schedule_run_history' ),
+			'notes'           => __( 'Pick a render_mode from summary-card, list, table, metric, timeline, or raw.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

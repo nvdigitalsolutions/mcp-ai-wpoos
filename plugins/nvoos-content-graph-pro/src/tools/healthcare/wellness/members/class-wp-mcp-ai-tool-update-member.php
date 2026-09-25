@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Updates an existing member.
  */
-class WP_MCP_AI_Tool_Update_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -48,6 +48,18 @@ class WP_MCP_AI_Tool_Update_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Updates an existing member. Provide only the fields you want to update.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Updating fields on an existing member; provide only the fields to change.', 'nvoos-content-graph-pro' ),
+			'when_not_to_use' => __( 'Creating a member; use create_member. Removing a member; use delete_member.', 'nvoos-content-graph-pro' ),
+			'related_tools'   => array( 'create_member', 'get_member' ),
+			'notes'           => __( 'Unprovided fields stay unchanged; email is validated with is_email.', 'nvoos-content-graph-pro' ),
+		);
 	}
 
 	/**
@@ -125,6 +137,16 @@ class WP_MCP_AI_Tool_Update_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			),
 			'required'             => array( 'member_id' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'member_id' ),
 		);
 	}
 

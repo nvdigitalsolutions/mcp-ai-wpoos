@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.9.0
  */
-class WP_MCP_AI_Tool_Send_Reschedule_Invitation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Send_Reschedule_Invitation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -46,6 +46,18 @@ class WP_MCP_AI_Tool_Send_Reschedule_Invitation implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Sends reschedule invitations to clients who missed appointments (no-shows). Supports email and SMS delivery, custom messages, and dry_run mode for previewing outreach before sending.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Inviting clients who missed appointments (no-shows) to rebook, with dry-run preview by default.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Moving an appointment yourself or sending normal confirmations; use reschedule_appointment or send_booking_confirmation.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_no_show_appointments', 'reschedule_appointment', 'send_booking_confirmation' ),
+			'notes'           => __( 'Only appointments with status no_show are invited; dry_run defaults to true.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

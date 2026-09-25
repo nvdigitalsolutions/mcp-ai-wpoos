@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Pro plugin constants.
 if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-	define( 'WP_MCP_AI_PRO_VERSION', '1.1.82' );
+	define( 'WP_MCP_AI_PRO_VERSION', '1.1.85' );
 }
 if ( ! defined( 'WP_MCP_AI_PRO_FILE' ) ) {
 	define( 'WP_MCP_AI_PRO_FILE', __FILE__ );
@@ -583,6 +583,17 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			new WP_MCP_AI_UCP_Agent_Profile_Controller();
 		}
 
+		// Jev guest-chat guardrail (opt-in via enable_jev_guest_guardrail).
+		// Subscribes to the base chat pipeline's wp_mcp_ai_pre_chat_message
+		// pre-screen filter; fail-open by design.
+		$jev_guardrail_file = WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-pro-jev-guardrail.php';
+		if ( file_exists( $jev_guardrail_file ) && ! class_exists( 'WP_MCP_AI_Pro_Jev_Guardrail' ) ) {
+			require_once $jev_guardrail_file;
+		}
+		if ( class_exists( 'WP_MCP_AI_Pro_Jev_Guardrail' ) ) {
+			WP_MCP_AI_Pro_Jev_Guardrail::register();
+		}
+
 		// Register Pro tools when Core fires its registration action.
 		add_action( 'wp_mcp_ai_register_tools', 'wp_mcp_ai_pro_register_tools', 20 );
 
@@ -698,6 +709,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Seed_Template_Library'     => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-seed-template-library.php',
 			// ICS calendar export tool (enhanced with NPM package).
 			'WP_MCP_AI_Tool_Export_Calendar_ICS'           => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-export-calendar-ics.php',
+			// TypeSafe Jev decision enhancements (Pro).
+			'WP_MCP_AI_Pro_Tool_Typesafe_Rerank'           => WP_MCP_AI_PRO_PATH . 'includes/tools/jev/class-wp-mcp-ai-pro-tool-typesafe-rerank.php',
+			'WP_MCP_AI_Pro_Tool_Typesafe_Eval'             => WP_MCP_AI_PRO_PATH . 'includes/tools/jev/class-wp-mcp-ai-pro-tool-typesafe-eval.php',
+			'WP_MCP_AI_Pro_Tool_Typesafe_Skill_Select'     => WP_MCP_AI_PRO_PATH . 'includes/tools/jev/class-wp-mcp-ai-pro-tool-typesafe-skill-select.php',
 			// Calendar Booking Toolkit — service CRUD + bulk import (Pro feature - v1.4.0).
 			'WP_MCP_AI_Tool_Create_Service'                => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-create-service.php',
 			'WP_MCP_AI_Tool_Import_Services'               => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-import-services.php',

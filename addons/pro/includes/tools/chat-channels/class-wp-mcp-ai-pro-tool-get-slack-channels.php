@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for listing Slack channels via the Web API.
  */
-class WP_MCP_AI_Pro_Tool_Get_Slack_Channels implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Slack_Channels implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Slack requests.
 	 */
@@ -54,6 +54,18 @@ class WP_MCP_AI_Pro_Tool_Get_Slack_Channels implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Lists available Slack channels using the Slack Web API. Supports filtering by type and pagination with cursors.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing Slack channels to discover channel IDs before reading or posting messages.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading history once you know the channel ID; use get_slack_messages.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_slack_messages', 'create_slack_channel', 'send_slack_message' ),
+			'notes'           => __( 'Run this first when you only have a token; feed the returned channel ID to get_slack_messages.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

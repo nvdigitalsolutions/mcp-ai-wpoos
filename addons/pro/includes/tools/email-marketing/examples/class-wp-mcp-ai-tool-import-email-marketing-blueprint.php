@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_Email_Marketing_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Email_Marketing_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR = WP_MCP_AI_PRO_PATH . 'includes/tools/email-marketing/examples';
@@ -52,6 +52,20 @@ class WP_MCP_AI_Tool_Import_Email_Marketing_Blueprint implements WP_MCP_AI_Tool_
 	 */
 	public function get_description() {
 		return __( 'Install the Email Campaign Manager assistant blueprint for email marketing workflows.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing the Email Campaign Manager assistant blueprint for email marketing workflows.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Performing email operations directly; use send_brevo_email, send_mailjet_email, or manage_brevo_contacts.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_brevo_email', 'manage_brevo_contacts', 'send_mailjet_email' ),
+			'notes'           => __( 'Only the email-campaign-manager blueprint is available; overwrite replaces an existing assistant.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * {@inheritdoc}

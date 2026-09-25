@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Prioritize_Context implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Prioritize_Context implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -48,6 +48,20 @@ class WP_MCP_AI_Tool_Prioritize_Context implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Prioritizes and filters context items to fit within a token budget. Ranks contexts by relevance to the current task, importance level, and recency. Returns an optimized subset of contexts that maximizes value while respecting token limits.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Ranking context items by relevance, importance, and recency to fit a token budget.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Storing or fetching memory records; use store_agent_context or retrieve_agent_memory.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'retrieve_agent_memory', 'store_agent_context' ),
+			'notes'           => __( 'Token estimates are approximate (4 chars per token). Weights are normalized to sum to 1.0.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

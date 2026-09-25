@@ -21,7 +21,7 @@
             "step": "installPlugin",
             "pluginData": {
                 "resource": "url",
-                "url": "https://raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/alpha-working/build/nvdigital-open-operator-system-oos-complete-1.1.82.zip"
+                "url": "https://raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/alpha-working/build/nvdigital-open-operator-system-oos-complete-1.1.83.zip"
             },
             "options": {
                 "activate": true

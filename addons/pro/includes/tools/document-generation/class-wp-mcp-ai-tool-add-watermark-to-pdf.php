@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-media-worker-clie
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Add_Watermark_To_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Add_Watermark_To_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Document_Response;
 	use WP_MCP_AI_Media_Worker_Client;
@@ -50,6 +50,18 @@ class WP_MCP_AI_Tool_Add_Watermark_To_PDF implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Add text or image watermarks to PDF documents. Perfect for branding, security, copyright protection, or document tracking. Supports custom positioning, opacity, and rotation.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Stamping a text watermark such as CONFIDENTIAL or DRAFT onto an existing PDF before sharing it.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Combining or rearranging PDF pages; use merge_pdfs instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'merge_pdfs', 'generate_pdf', 'extract_pdf_text' ),
+			'notes'           => __( 'Writes the watermarked copy as a new media library attachment and leaves the original PDF untouched.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

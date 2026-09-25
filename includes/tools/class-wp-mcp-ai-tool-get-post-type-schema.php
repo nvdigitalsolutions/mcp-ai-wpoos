@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * when the pro addon is active, the per-field metadata registered by each
  * pro CPT toolkit via the `wp_mcp_ai_post_type_meta_schema` filter.
  */
-class WP_MCP_AI_Tool_Get_Post_Type_Schema implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Post_Type_Schema implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -42,6 +42,18 @@ class WP_MCP_AI_Tool_Get_Post_Type_Schema implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Returns the schema of a registered WordPress post type: labels, capabilities, supported features, registered taxonomies, available statuses, and (when the pro addon is active) the custom meta field definitions used by each pro CPT toolkit.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Inspecting the registered metadata of a post type: labels, capabilities, features, taxonomies, and statuses.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Reading or writing actual posts; use get_post to read content and save_post to write it.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_post', 'save_post', 'get_jetengine_items' ),
+			'notes'           => __( 'Set include_meta_schema=false for leaner output; pro CPT toolkits contribute per-field meta definitions.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates draft legal documents with structured sections and metadata.
  */
-class WP_MCP_AI_Tool_LF_Document_Drafter implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Document_Drafter implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -71,6 +71,20 @@ class WP_MCP_AI_Tool_LF_Document_Drafter implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Drafts legal documents by creating structured templates with sections appropriate for the selected document type, jurisdiction, and practice area.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When creating a saved draft document with structured sections for a document_type, jurisdiction, and parties.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For reusable clauses or templates; use lf_clause_library_manager or lf_document_template_manager instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_document_template_manager', 'lf_clause_library_manager', 'lf_document_version_tracker' ),
+			'notes'           => __( 'document_type must be contract, pleading, motion, brief, memo, letter, agreement, will, trust, or discovery; title is required.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

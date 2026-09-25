@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for sending broadcast messages via the Facebook Messenger Platform API.
  */
-class WP_MCP_AI_Pro_Tool_Create_Messenger_Broadcast implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Create_Messenger_Broadcast implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Facebook Messenger API requests.
 	 */
@@ -54,6 +54,18 @@ class WP_MCP_AI_Pro_Tool_Create_Messenger_Broadcast implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Sends a broadcast message to multiple Facebook Messenger users using the Messenger Platform API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending the same message to many Messenger users at once via the broadcast API.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'A 1:1 reply to one conversation; use send_messenger_message and get_messenger_conversations.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_messenger_message', 'get_messenger_conversations' ),
+			'notes'           => __( 'Broadcasts reach real users; use a custom_label to limit the audience and confirm recipient consent.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -21,7 +21,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-harmonization-base.php';
 /**
  * Re-light a foreground subject.
  */
-class WP_MCP_AI_Tool_Relight_Subject extends WP_MCP_AI_Tool_Harmonization_Base {
+class WP_MCP_AI_Tool_Relight_Subject extends WP_MCP_AI_Tool_Harmonization_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -42,6 +42,18 @@ class WP_MCP_AI_Tool_Relight_Subject extends WP_MCP_AI_Tool_Harmonization_Base {
 	 */
 	public function get_description() {
 		return __( 'Adjust foreground illumination to match background light direction, color temperature, and intensity. Returns the relit subject (alpha preserved).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Matching a subject lighting direction, color temperature, and intensity to a background so shadows and highlights agree.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Color balance only (no light direction): use harmonize_color. Placement advice: use suggest_placement.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'harmonize_color', 'analyze_scene_lighting', 'harmonize_image_into_background' ),
+			'notes'           => __( 'Requires an AI provider. override_lighting accepts direction_deg, kelvin, and intensity.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

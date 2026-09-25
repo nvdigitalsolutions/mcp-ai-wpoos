@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Refactor and improve existing AI tool code. Analyzes code for performance, security, style issues and suggests or applies improvements. Supports WordPress coding standards, optimization, and best practices.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Improving existing tool code for performance, security, or readability.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Security audit with a scored report; use analyze_tool_security. Standards checking; use check_tool_compliance.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'analyze_tool_security', 'check_tool_compliance', 'benchmark_tool_performance' ),
+			'notes'           => __( 'Suggests changes by default; set apply_changes=true with file_path to modify files directly.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

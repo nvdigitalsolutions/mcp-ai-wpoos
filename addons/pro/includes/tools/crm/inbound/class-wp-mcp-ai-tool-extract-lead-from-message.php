@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Extract_Lead_From_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Extract_Lead_From_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if the tool is available.
@@ -63,6 +63,20 @@ class WP_MCP_AI_Tool_Extract_Lead_From_Message implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Extract or match a lead/contact from an inbound message. Creates a new lead if no match found.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Matching an inbound message to an existing lead by email or phone, or creating a new lead when no match exists.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Scoring or qualifying the result; use score_lead or qualify_lead_bant. Full triage; use evaluate_inbound_message.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'evaluate_inbound_message', 'create_lead', 'score_lead' ),
+			'notes'           => __( 'Requires sender_email or sender_phone; new leads get an owner from the routing strategy and source from channel.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

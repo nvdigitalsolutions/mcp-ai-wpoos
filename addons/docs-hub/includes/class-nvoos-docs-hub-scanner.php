@@ -3,7 +3,8 @@
  * NV oOS Docs Hub — Scanner
  *
  * Discovers Markdown documentation files from configured sources
- * (base plugin, addons, repo root, context directory).
+ * (uploads folder, base plugin, addons, repo root, context directory,
+ * remote repositories).
  *
  * @package NV_oOS_Docs_Hub
  * @since   1.0.0
@@ -131,6 +132,10 @@ class NV_oOS_Docs_Hub_Scanner {
 
 		if ( in_array( 'context', $enabled_sources, true ) ) {
 			$entries = array_merge( $entries, $this->scan_context( $settings ) );
+		}
+
+		if ( in_array( 'uploads', $enabled_sources, true ) ) {
+			$entries = array_merge( $entries, $this->scan_uploads() );
 		}
 
 		if ( in_array( 'remote', $enabled_sources, true ) ) {
@@ -431,19 +436,27 @@ class NV_oOS_Docs_Hub_Scanner {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string   $real_path     Resolved absolute file path.
+	 * @param string   $real_path     File path to validate.
 	 * @param string[] $allowed_roots List of allowed root directories.
 	 * @return bool
 	 */
 	private function is_path_safe( $real_path, $allowed_roots ) {
+		// Resolve the candidate through realpath() as well: glob() returns
+		// paths that still carry symlinked prefixes, so a symlinked
+		// subdirectory inside an allowed root would otherwise pass the
+		// prefix check while pointing at files outside it.
+		$resolved_path = realpath( $real_path );
+		if ( false === $resolved_path ) {
+			return false;
+		}
 		foreach ( $allowed_roots as $root ) {
 			$real_root = realpath( $root );
 			if ( false === $real_root ) {
 				continue;
 			}
 			// Ensure the file is strictly within the allowed root.
-			if ( 0 === strpos( $real_path, $real_root . DIRECTORY_SEPARATOR )
-				|| $real_path === $real_root ) {
+			if ( 0 === strpos( $resolved_path, $real_root . DIRECTORY_SEPARATOR )
+				|| $resolved_path === $real_root ) {
 				return true;
 			}
 		}
@@ -601,6 +614,53 @@ class NV_oOS_Docs_Hub_Scanner {
 	}
 
 	/**
+	 * Scan the uploads content directory for documentation files.
+	 *
+	 * The default local source: site owners drop Markdown / text files into
+	 * wp-content/uploads/nvoos-docs-hub/content/ and they appear in the
+	 * documentation browser after a rebuild. Purely filesystem-based — no
+	 * remote requests. The directory is created automatically when missing.
+	 *
+	 * @since 0.5.0
+	 *
+	 * @return array
+	 */
+	private function scan_uploads() {
+		$docs_dir = NV_oOS_Docs_Hub_Plugin::uploads_docs_dir();
+
+		if ( ! is_dir( $docs_dir ) && ! wp_mkdir_p( $docs_dir ) ) {
+			return array();
+		}
+
+		$real_docs = realpath( $docs_dir );
+		if ( false === $real_docs || ! is_dir( $real_docs ) ) {
+			return array();
+		}
+
+		$entries = array();
+		foreach ( self::ALLOWED_EXTENSIONS as $ext ) {
+			$files = $this->glob_recursive( $real_docs, '*.' . $ext );
+			foreach ( $files as $file ) {
+				if ( ! $this->is_path_safe( $file, array( $real_docs ) ) ) {
+					continue;
+				}
+				if ( ! $this->is_allowed_file( $file ) ) {
+					continue;
+				}
+				$relative  = ltrim( str_replace( $real_docs, '', $file ), DIRECTORY_SEPARATOR );
+				$entries[] = array(
+					'path'          => $file,
+					'source'        => 'uploads',
+					'plugin_name'   => 'Uploaded Docs',
+					'relative_path' => str_replace( DIRECTORY_SEPARATOR, '/', $relative ),
+				);
+			}
+		}
+
+		return $entries;
+	}
+
+	/**
 	 * Scan remote repositories configured in the addon settings.
 	 *
 	 * Delegates to NV_oOS_Docs_Hub_Remote_Repo for each configured repo.
@@ -611,6 +671,12 @@ class NV_oOS_Docs_Hub_Scanner {
 	 * @return array
 	 */
 	private function scan_remote_repos( $settings ) {
+		// Remote import is opt-in: when the toggle is off, never contact the
+		// configured hosts, even if repos were previously configured.
+		if ( empty( $settings['enable_remote_repos'] ) ) {
+			return array();
+		}
+
 		$remote_repos = isset( $settings['remote_repos'] ) ? (array) $settings['remote_repos'] : array();
 		if ( empty( $remote_repos ) ) {
 			return array();

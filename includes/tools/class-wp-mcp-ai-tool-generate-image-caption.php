@@ -19,7 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-vision-request-ti
 /**
  * Generates descriptive captions for images using AI vision models.
  */
-class WP_MCP_AI_Tool_Generate_Image_Caption implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+class WP_MCP_AI_Tool_Generate_Image_Caption implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_Vision_Request_Timeout;
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Generate_Image_Caption implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Generates detailed captions for images to provide context and enhance content using AI vision capabilities.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Writing a one-to-two sentence descriptive caption for an image destined for blog or social content.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Accessibility alt text; use generate_image_alt_text. For videos, use generate_video_caption.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'generate_image_alt_text', 'generate_video_caption', 'analyze_image' ),
+			'notes'           => __( 'Accepts image_url, url, attachment_id, file_id, or image_content; vision model and API key required.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

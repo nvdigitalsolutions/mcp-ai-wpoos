@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.5.0
  */
-class WP_MCP_AI_Tool_Evaluate_Logic_Gate implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Evaluate_Logic_Gate implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Supported gate names (uppercase).
@@ -55,6 +55,20 @@ class WP_MCP_AI_Tool_Evaluate_Logic_Gate implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Evaluate a Boolean logic gate (AND, OR, NOT, NAND, NOR, XOR, XNOR) for a given list of inputs. Optionally returns a NAND-only decomposition that demonstrates NAND universality.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Computing the output of a Boolean gate (AND, OR, NOT, NAND, NOR, XOR, XNOR) for concrete inputs.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Enumerating every input combination; use generate_truth_table.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_truth_table', 'evaluate_eml' ),
+			'notes'           => __( 'NOT takes one input, the rest take two or more; decompose_to_nand returns the NAND-only form.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

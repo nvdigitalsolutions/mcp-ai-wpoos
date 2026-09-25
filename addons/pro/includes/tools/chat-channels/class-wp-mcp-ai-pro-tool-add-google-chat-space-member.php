@@ -19,7 +19,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-pro-google-service-account.php';
 /**
  * Provides a tool for adding a member to a Google Chat space via the Google Chat API.
  */
-class WP_MCP_AI_Pro_Tool_Add_Google_Chat_Space_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Add_Google_Chat_Space_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Google Chat requests.
 	 */
@@ -60,6 +60,18 @@ class WP_MCP_AI_Pro_Tool_Add_Google_Chat_Space_Member implements WP_MCP_AI_Tool_
 	 */
 	public function get_description() {
 		return __( 'Adds a user or app as a member of a Google Chat space using the Google Chat API v1.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adding a user or Google Group to an existing Google Chat space once you know its space name.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Listing members or creating the space; use list_google_chat_space_members or create_google_chat_space.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_google_chat_space_members', 'remove_google_chat_space_member', 'get_google_chat_spaces' ),
+			'notes'           => __( 'Sends a real membership change via the Google Chat API and notifies the added member.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

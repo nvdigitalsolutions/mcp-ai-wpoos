@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Retrieves attendance data with analytics for an ECA.
  */
-class WP_MCP_AI_Tool_Get_ECA_Attendance_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_ECA_Attendance_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Get_ECA_Attendance_Report implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Retrieves attendance data with analytics for an ECA. Supports filtering by date range and student, and returns summary or detailed breakdowns with Chart.js-compatible datasets.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reviewing attendance totals, rates, and per-session breakdowns for a single ECA.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Recording attendance; use mark_eca_attendance. Program-level analytics; use generate_eca_analytics.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'mark_eca_attendance', 'generate_eca_analytics', 'get_eca' ),
+			'notes'           => __( 'Use format=detailed for per-session rows; filter with date_from, date_to, or student_id.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

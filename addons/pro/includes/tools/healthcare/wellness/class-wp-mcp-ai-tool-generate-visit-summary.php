@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generate visit summary tool.
  */
-class WP_MCP_AI_Tool_Generate_Visit_Summary implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Visit_Summary implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -55,6 +55,20 @@ class WP_MCP_AI_Tool_Generate_Visit_Summary implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Generate a structured visit / discharge summary for a member, drawing from checkups, prescriptions, vital-sign logs and medical records over a date range.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing a discharge-style visit summary for a member, collating checkups, prescriptions, vital logs, and records over a date range.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Raw chronological event browsing; use get_health_timeline. Headline health stats; use get_member_health_summary.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_health_timeline', 'get_member_health_summary' ),
+			'notes'           => __( 'format=markdown returns a rendered summary; format=structured returns sectioned arrays with totals.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

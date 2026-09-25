@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a Pro tool for colorizing a comic panel.
  */
-class WP_MCP_AI_Tool_Colorize_Comic_Panel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Colorize_Comic_Panel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Colorize_Comic_Panel implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Adds color to line art on a comic panel. Accepts an optional color palette description to guide the colorization style. Delegates to the `colorize_image` tool for processing. Returns the colorized image URL.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adding color to inked line art with an optional palette description such as muted pastels.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For generic non-comic images use colorize_image; for black-and-white inking use ink_comic_panel.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'ink_comic_panel', 'apply_comic_style', 'colorize_image' ),
+			'notes'           => __( 'Empty color_palette defaults to vibrant comic book colors. Stores _colorized_image_url and _color_palette meta.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

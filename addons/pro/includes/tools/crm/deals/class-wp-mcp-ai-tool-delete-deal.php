@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Delete_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -82,6 +82,20 @@ class WP_MCP_AI_Tool_Delete_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Permanently delete a CRM deal/opportunity. Requires explicit confirmation as this action cannot be undone.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently deleting a deal after explicit confirmation (confirm=true); requires manage_options.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Closing a deal without deleting; use move_deal_stage. Editing a deal; use update_deal.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'move_deal_stage', 'update_deal', 'list_deals' ),
+			'notes'           => __( 'Deletion is permanent. Deleting a won deal releases the linked lead back to opportunity when no other win remains.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

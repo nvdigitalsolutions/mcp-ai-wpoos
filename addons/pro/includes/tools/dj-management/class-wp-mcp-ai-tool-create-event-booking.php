@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates DJ event bookings.
  */
-class WP_MCP_AI_Tool_Create_Event_Booking implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Event_Booking implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Create_Event_Booking implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Create a new event booking or update an existing event booking. If booking_id is provided, updates the existing event booking instead of creating a new one. Manages client details, event information, and pricing. Use this tool for both creating new event bookings and updating existing ones.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new event booking or updating an existing one by booking_id with client, venue, times, and pricing.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Changing date or times later; use update_event_details. Drafting the agreement; use generate_dj_contract.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_event_details', 'generate_dj_contract', 'generate_event_timeline', 'create_client_profile' ),
+			'notes'           => __( 'New bookings start with pending status; the client email is validated before saving.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

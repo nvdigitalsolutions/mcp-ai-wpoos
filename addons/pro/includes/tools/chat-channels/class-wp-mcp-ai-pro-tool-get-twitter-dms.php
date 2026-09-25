@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  *
  * @see https://developer.twitter.com/en/docs/twitter-api/direct-messages/lookup/api-reference/get-dm_events
  */
-class WP_MCP_AI_Pro_Tool_Get_Twitter_DMs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Twitter_DMs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default timeout for Twitter API requests.
@@ -60,6 +60,18 @@ class WP_MCP_AI_Pro_Tool_Get_Twitter_DMs implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Retrieves recent Direct Message events from Twitter/X API v2 for the authenticated user.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading recent Twitter/X direct message events for the authenticated user.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Replying to a conversation; use send_twitter_dm instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_twitter_dm', 'manage_twitter_webhook' ),
+			'notes'           => __( 'Requires an OAuth 2.0 token with dm.read scope; filter by dm_conversation_id for one thread.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

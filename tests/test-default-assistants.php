@@ -14,6 +14,22 @@
 class Test_Default_Assistants extends WP_UnitTestCase {
 
 	/**
+	 * Reset any default-assistant state before each test.
+	 *
+	 * Other suites (and the admin_init backfill for the Assistant Builder)
+	 * can leave a committed install-tracking option whose assistant_ids
+	 * reference posts that no longer exist. install() short-circuits when
+	 * that option is present, so wipe it here to keep the install contract
+	 * deterministic.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		WP_MCP_AI_Default_Assistants::uninstall();
+		delete_option( 'wp_mcp_ai_assistant_builder_backfilled' );
+	}
+
+	/**
 	 * Test that default assistants class exists.
 	 */
 	public function test_default_assistants_class_exists() {
@@ -28,7 +44,7 @@ class Test_Default_Assistants extends WP_UnitTestCase {
 
 		$this->assertIsArray( $assistants );
 		$this->assertNotEmpty( $assistants );
-		$this->assertCount( 6, $assistants, 'Should have 6 default assistants' );
+		$this->assertCount( 7, $assistants, 'Should have 7 default assistants (6 agentic roles plus the Assistant Builder meta-assistant)' );
 	}
 
 	/**
@@ -74,7 +90,7 @@ class Test_Default_Assistants extends WP_UnitTestCase {
 		$slugs        = array_column( $assistants, 'slug' );
 		$unique_slugs = array_unique( $slugs );
 
-		$this->assertCount( 6, $unique_slugs, 'All assistants should have unique slugs' );
+		$this->assertCount( 7, $unique_slugs, 'All assistants should have unique slugs' );
 	}
 
 	/**
@@ -91,6 +107,7 @@ class Test_Default_Assistants extends WP_UnitTestCase {
 			'content-drafter',
 			'seo-compliance-auditor',
 			'publisher-terminal',
+			'assistant-builder',
 		);
 
 		foreach ( $expected_slugs as $expected_slug ) {

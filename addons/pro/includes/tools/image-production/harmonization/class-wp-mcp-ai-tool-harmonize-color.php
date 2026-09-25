@@ -20,7 +20,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-harmonization-base.php';
 /**
  * Match foreground color statistics to a background.
  */
-class WP_MCP_AI_Tool_Harmonize_Color extends WP_MCP_AI_Tool_Harmonization_Base {
+class WP_MCP_AI_Tool_Harmonize_Color extends WP_MCP_AI_Tool_Harmonization_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -41,6 +41,18 @@ class WP_MCP_AI_Tool_Harmonize_Color extends WP_MCP_AI_Tool_Harmonization_Base {
 	 */
 	public function get_description() {
 		return __( 'Match the color statistics of a foreground layer to a background using Reinhard mean/std transfer or AI neural matching. Returns the recolored foreground (alpha preserved).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Matching a foreground layer color statistics (white balance, exposure) to a background while preserving alpha.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Mismatched light direction or shadows: use relight_subject. A full composite pass: use harmonize_image_into_background.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'relight_subject', 'harmonize_image_into_background', 'refine_subject_matte' ),
+			'notes'           => __( 'Strategy mean_std_lab and histogram_match run locally; ai_neural requires a configured provider.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

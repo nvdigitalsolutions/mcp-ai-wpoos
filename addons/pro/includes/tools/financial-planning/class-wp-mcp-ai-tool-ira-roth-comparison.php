@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_IRA_Roth_Comparison implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_IRA_Roth_Comparison implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,22 @@ class WP_MCP_AI_Tool_IRA_Roth_Comparison implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Compare Traditional IRA vs Roth IRA tax benefits. Analyzes current vs future tax rates, calculates after-tax values at retirement, and recommends the better option based on your tax situation and timeline.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Deciding between Traditional and Roth IRA contributions based on current versus expected retirement tax rates.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Total retirement readiness; use retirement_calculator. Drawdown planning belongs to withdrawal_strategy_planner.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'retirement_calculator', 'withdrawal_strategy_planner', 'tax_estimator' ),
+			'notes'           => __( 'Requires annual_contribution, years_to_retirement, current_tax_rate, retirement_tax_rate; rates are percentages such as 24.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

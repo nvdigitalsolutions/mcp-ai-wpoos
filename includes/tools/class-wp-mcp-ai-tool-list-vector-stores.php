@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 /**
  * Lists OpenAI vector stores.
  */
-class WP_MCP_AI_Tool_List_Vector_Stores implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Vector_Stores implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Chat_Response;
 
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_List_Vector_Stores implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Lists all OpenAI vector stores with optional filtering and pagination. Use this to discover available knowledge bases.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering available OpenAI vector stores and their IDs for RAG setup.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Adding or removing files inside a store; use manage_vector_store_files.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'manage_vector_store_files', 'list_openai_files' ),
+			'notes'           => __( 'Paginate with after and before cursors; returns first_id and last_id.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

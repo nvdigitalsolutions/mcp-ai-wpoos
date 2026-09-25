@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Build_Contact_Section implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Build_Contact_Section implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -54,6 +54,18 @@ class WP_MCP_AI_Tool_Build_Contact_Section implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Creates contact sections with forms, location info, maps, and social media links. Supports various layouts and integrations.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating a contact section with form, map, and social link blocks for a page being assembled.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Other section types; use create_hero_section, build_testimonial_section, or create_cta_section.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_hero_section', 'create_cta_section', 'build_testimonial_section' ),
+			'notes'           => __( 'Returns section data for assembly; it does not create the page or save a real form.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

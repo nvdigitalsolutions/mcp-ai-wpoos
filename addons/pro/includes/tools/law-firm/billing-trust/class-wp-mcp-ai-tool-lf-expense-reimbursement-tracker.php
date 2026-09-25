@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Manages expense tracking and reimbursement for legal matters.
  */
-class WP_MCP_AI_Tool_LF_Expense_Reimbursement_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Expense_Reimbursement_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -67,6 +67,19 @@ class WP_MCP_AI_Tool_LF_Expense_Reimbursement_Tracker implements WP_MCP_AI_Tool_
 	 */
 	public function get_description() {
 		return __( 'Tracks case-related expenses including filing fees, expert witnesses, travel, and marks reimbursement status.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adding, listing, or marking case expenses reimbursed for a matter, including filing fees and travel.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Moving client trust funds or recording billable time; use lf_trust_account_manager or lf_time_entry_recorder.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_invoice_generator', 'lf_profitability_analyzer', 'lf_trust_account_manager' ),
+			'notes'           => __( 'Requires action (add, list, mark_reimbursed) and matter_id; writes matter meta _lf_expenses.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

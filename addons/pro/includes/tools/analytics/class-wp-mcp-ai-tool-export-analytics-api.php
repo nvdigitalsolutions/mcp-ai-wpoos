@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Export_Analytics_API implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Export_Analytics_API implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -85,6 +85,20 @@ class WP_MCP_AI_Tool_Export_Analytics_API implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Export analytics data via REST API in JSON, CSV, or XML format with filtering and pagination.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pulling a dated snapshot of sales, customers, products, or traffic data as JSON, CSV, or XML.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Streaming data directly into an external warehouse; use data_warehouse_sync instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'data_warehouse_sync', 'create_custom_report', 'generate_executive_dashboard' ),
+			'notes'           => __( 'Format defaults to JSON over the last 30 days; limit caps records at 10000 per export.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Export_Customer_Data implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Export_Customer_Data implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -103,6 +103,20 @@ class WP_MCP_AI_Tool_Export_Customer_Data implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Export customer data in GDPR-compliant format. Includes personal information, order history, addresses, and optional communication records. Supports JSON and CSV formats with automatic media library upload.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing a GDPR-compliant export of a customer\'s personal data, orders, and communication records.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Routine customer analytics; use customer_lifetime_value or segment_customers instead of full exports.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'woo_customers', 'customer_lifetime_value', 'segment_customers' ),
+			'notes'           => __( 'Formats: json and csv. Exports upload to the media library; treat output as sensitive personal data.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Lists events with filtering options optimized for calendar views.
  */
-class WP_MCP_AI_Tool_List_Events implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Events implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_List_Events implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Lists calendar events with optional filtering by date range, project, type, or attendees. Essential for calendar views and scheduling.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Building calendar views or summaries of existing events, optionally filtered by project, type, attendee, or date range.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating or changing events; use create_event or update_event instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_calendar_view', 'create_event', 'update_event', 'delete_event' ),
+			'notes'           => __( 'Returns up to 500 events; use start_after and start_before for range views.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

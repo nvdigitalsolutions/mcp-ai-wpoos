@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.8.0
  */
-class WP_MCP_AI_Tool_Upload_Video_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Upload_Video_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,18 @@ class WP_MCP_AI_Tool_Upload_Video_Batch implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Processes and uploads a batch of videos to configured platforms. Supports dry_run mode.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Queueing multiple local videos for upload to YouTube or Vimeo in a single call.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Preparing the files before upload; use transcode_video or optimize_for_platform.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_queued_videos', 'transcode_video', 'optimize_for_platform' ),
+			'notes'           => __( 'Dry run is the default; set dry_run=false to queue. Platform must be youtube or vimeo.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

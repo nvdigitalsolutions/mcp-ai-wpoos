@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-respons
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Graph_Function implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Graph_Function implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Image_Response;
 
 	/**
@@ -48,6 +48,20 @@ class WP_MCP_AI_Tool_Graph_Function implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Generate 2D graphs of mathematical functions. Supports polynomial, trigonometric, exponential functions with customizable ranges, labels, and accessibility features.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Plotting a 2D graph of a function with custom ranges, title, colors, and grid lines.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Symbolic computation; use calculate_derivative, calculate_integral, or simplify_expression.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'calculate_derivative', 'calculate_integral', 'render_math_equation' ),
+			'notes'           => __( 'Returns an image; width is 400-2000 px and height 300-1500 px.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

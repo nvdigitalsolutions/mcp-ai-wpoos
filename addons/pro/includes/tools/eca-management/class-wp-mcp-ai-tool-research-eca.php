@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Uses AI and web search to research comprehensive information about
  * extra-curricular activities and educational programs.
  */
-class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -85,6 +85,18 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Research comprehensive information about an extra-curricular activity or educational program using multi-stage web search and AI analysis. Supports configurable research depth (basic/standard/comprehensive) and focus areas for targeted research. Returns title, description, category, schedule, materials, learning objectives, and implementation details ready for creating an ECA entry.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Researching a prospective activity before creating it, to get description, schedule, materials, and learning objectives.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'General web research outside the ECA context; use deep_research or web_search. Creating the ECA; use create_eca.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_eca', 'list_ecas', 'deep_research' ),
+			'notes'           => __( 'Returns structured fields ready for create_eca; nothing is saved to the ECA catalog.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
@@ -263,6 +275,11 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			);
 		}
 
+		// Step 1.5 (optional): filter search sources through the Jev
+		// relevance classifier when the site enables it. Fail-open — on any
+		// error or when Jev is unavailable, the sources pass through untouched.
+		$search_results = $this->maybe_jev_filter_sources( $search_results, $query );
+
 		// Step 2: Build research prompt with gathered information.
 		$prompt = $this->build_research_prompt( $query, $age_group, $depth, $focus_areas, $search_results, $include_curriculum );
 
@@ -293,6 +310,13 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			return $eca_data;
 		}
 
+		// Optional citation verification with Jev. Fail-open — on any error
+		// no checks are attached.
+		$citation_checks = $this->maybe_jev_check_citations( $eca_data, $search_results );
+		if ( ! empty( $citation_checks ) ) {
+			$eca_data['citation_checks'] = $citation_checks;
+		}
+
 		// Cache the results for 24 hours.
 		wp_cache_set( $cache_key, $eca_data, 'wp_mcp_ai_eca_research', DAY_IN_SECONDS );
 
@@ -310,6 +334,93 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		);
 
 		return $eca_data;
+	}
+
+	/**
+	 * Optionally filter search sources through the Jev relevance classifier.
+	 *
+	 * Gated by the `enable_jev_research_filter` setting and fail-open: when
+	 * the setting is off, Jev is unavailable, or the call errors, the search
+	 * results pass through untouched.
+	 *
+	 * @param array  $search_results Search results array.
+	 * @param string $query          Research query.
+	 * @return array Possibly-filtered search results.
+	 */
+	protected function maybe_jev_filter_sources( $search_results, $query ) {
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ? WP_MCP_AI_Admin_Settings_Base::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
+
+		if ( empty( $settings['enable_jev_research_filter'] ) ) {
+			return $search_results;
+		}
+
+		if ( empty( $search_results['sources'] ) || ! is_array( $search_results['sources'] ) ) {
+			return $search_results;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Jev_Classifier' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-pro-jev-classifier.php';
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Jev_Classifier' ) ) {
+			return $search_results;
+		}
+
+		$filtered = WP_MCP_AI_Pro_Jev_Classifier::filter_sources_by_relevance( $search_results['sources'], $query );
+
+		if ( ! empty( $filtered['used_jev'] ) ) {
+			$search_results['sources']     = $filtered['sources'];
+			$search_results['jev_dropped'] = $filtered['dropped'];
+		}
+
+		return $search_results;
+	}
+
+	/**
+	 * Optionally verify research citations against their sources with Jev.
+	 *
+	 * Gated by the `enable_jev_citation_check` setting and fail-open: when
+	 * the setting is off, Jev is unavailable, or any check errors, an empty
+	 * list is returned and nothing is attached to the results.
+	 *
+	 * @param array $eca_data       Parsed ECA research data.
+	 * @param array $search_results Search results array.
+	 * @return array Citation checks (empty when disabled or failed).
+	 */
+	protected function maybe_jev_check_citations( $eca_data, $search_results ) {
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ? WP_MCP_AI_Admin_Settings_Base::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
+
+		if ( empty( $settings['enable_jev_citation_check'] ) ) {
+			return array();
+		}
+
+		if ( empty( $search_results['sources'] ) || ! is_array( $search_results['sources'] ) ) {
+			return array();
+		}
+
+		$report_text = '';
+		foreach ( array( 'report', 'content', 'summary', 'research', 'analysis' ) as $key ) {
+			if ( isset( $eca_data[ $key ] ) && is_string( $eca_data[ $key ] ) ) {
+				$report_text = $eca_data[ $key ];
+				break;
+			}
+		}
+
+		if ( '' === $report_text ) {
+			return array();
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Jev_Classifier' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-pro-jev-classifier.php';
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Jev_Classifier' ) ) {
+			return array();
+		}
+
+		$checks = WP_MCP_AI_Pro_Jev_Classifier::check_citations( $report_text, $search_results['sources'] );
+
+		return is_array( $checks ) ? $checks : array();
 	}
 
 	/**

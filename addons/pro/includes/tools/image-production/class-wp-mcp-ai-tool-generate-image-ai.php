@@ -25,7 +25,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.ph
 /**
  * Generate images from text prompts using various AI providers.
  */
-class WP_MCP_AI_Tool_Generate_Image_AI extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Generate_Image_AI extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -46,6 +46,18 @@ class WP_MCP_AI_Tool_Generate_Image_AI extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	public function get_description() {
 		return __( 'Generate high-quality images from text prompts using AI providers like DALL-E, Stable Diffusion, or Midjourney.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to create brand-new images from a text prompt via OpenAI DALL-E or Stability AI, with size, quality, and style controls.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use generate_image_variations to riff on an existing image, or text_to_image_prompt_optimizer to refine a weak prompt first.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_image_variations', 'text_to_image_prompt_optimizer', 'enhance_image_quality' ),
+			'notes'           => __( 'Consumes AI generation tokens and requires a configured provider API key; hd quality is DALL-E 3 only.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

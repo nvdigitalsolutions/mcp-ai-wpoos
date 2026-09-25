@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get health timeline tool.
  */
-class WP_MCP_AI_Tool_Get_Health_Timeline implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Health_Timeline implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -55,6 +55,20 @@ class WP_MCP_AI_Tool_Get_Health_Timeline implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Return a chronological timeline for a member combining medical records, prescriptions, checkups, allergies, and vital-sign logs (newest first by default).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( "Returning one chronological view of a member's records, prescriptions, checkups, allergies, and vital logs, filterable by type and date.", 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Summarizing a visit in narrative form; use generate_visit_summary. Single-record detail; use the matching get_* tool.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_visit_summary', 'list_medical_records', 'get_member_health_summary' ),
+			'notes'           => __( 'event_types enum: medical_record, prescription, checkup, allergy, vital_log; per_page max 200.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Lists task templates with optional search filtering.
  */
-class WP_MCP_AI_Tool_List_Task_Templates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Task_Templates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_List_Task_Templates implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'List available task templates with optional search filtering. Templates contain reusable task checklists that can be instantiated into projects.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Browsing or searching saved task templates before choosing one to instantiate.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating templates; use create_task_template. Creating tasks; use instantiate_task_template.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'instantiate_task_template', 'create_task_template' ),
+			'notes'           => __( 'Supports a search term and limit up to 100; task_count is derived from checkbox lines in the content.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

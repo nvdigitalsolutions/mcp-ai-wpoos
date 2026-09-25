@@ -20,7 +20,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Preview_Rows' ) ) {
 	 *
 	 * @since 1.0.0
 	 */
-	class WP_MCP_AI_Tool_Huggingface_Dataset_Preview_Rows implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	class WP_MCP_AI_Tool_Huggingface_Dataset_Preview_Rows implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		use WP_MCP_AI_Tool_Chat_Response;
 
@@ -68,6 +68,20 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Preview_Rows' ) ) {
 		 */
 		public function get_description() {
 			return __( 'Preview the first few rows of a HuggingFace dataset split', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * Get usage guidance for the tool.
+		 *
+		 * @return array
+		 */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Peeking at the first rows of a split to understand its schema and sample content.', 'mcp-ai-wpoos' ),
+				'when_not_to_use' => __( 'Finding rows by content; use huggingface_dataset_search with a query string.', 'mcp-ai-wpoos' ),
+				'related_tools'   => array( 'huggingface_dataset_search', 'huggingface_dataset_list_splits', 'huggingface_dataset_get_statistics' ),
+				'notes'           => __( 'limit caps at 100 rows; config defaults to "default" when omitted.', 'mcp-ai-wpoos' ),
+			);
 		}
 
 		/**

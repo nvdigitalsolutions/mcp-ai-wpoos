@@ -1033,6 +1033,13 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 					$in_ol    = true;
 				}
 				$output[] = '<li>' . trim( $m[1] ) . '</li>';
+			} elseif ( $in_ol && preg_match( '/^[ \t]+(.*\S.*)$/', $line, $m ) ) {
+				// Indented continuation line (e.g. a listing URL indented beneath
+				// a numbered title) belongs to the current item. Keeping it inside
+				// the <li> prevents the list from splitting into several <ol>
+				// blocks that all restart at 1.
+				$last     = array_pop( $output );
+				$output[] = str_replace( '</li>', '<br>' . trim( $m[1] ) . '</li>', $last );
 			} else {
 				if ( $in_ol ) {
 					$output[] = '</ol>';

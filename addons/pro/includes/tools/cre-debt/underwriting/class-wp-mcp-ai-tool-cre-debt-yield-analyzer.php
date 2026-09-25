@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Debt_Yield_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Debt_Yield_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_Debt_Yield_Analyzer implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description(): string {
 		return __( 'Analyze debt yield under base case and multiple NOI stress scenarios. Provide NOI, loan amount, and an array of NOI adjustment percentages (e.g. -5%, -10%, -15%) to evaluate downside risk on debt yield.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Measuring loan downside risk via debt yield under NOI haircuts against a minimum acceptable threshold.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Loan sizing against LTV/DSCR constraints; use cre_loan_sizer. Full DSCR/LTV scenario runs; use cre_stress_test_modeler.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_loan_sizer', 'cre_stress_test_modeler', 'cre_cap_rate_sensitivity' ),
+			'notes'           => __( 'stress_scenarios are decimals like -0.10; output includes breakeven NOI and cushion versus the threshold.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

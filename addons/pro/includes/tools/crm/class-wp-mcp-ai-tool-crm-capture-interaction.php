@@ -25,7 +25,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Capture_Tool_Base' ) ) {
 /**
  * MemPalace capture tool for CRM interactions.
  */
-class WP_MCP_AI_Tool_CRM_Capture_Interaction extends WP_MCP_AI_Pro_Capture_Tool_Base {
+class WP_MCP_AI_Tool_CRM_Capture_Interaction extends WP_MCP_AI_Pro_Capture_Tool_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Determine whether CRM toolkit and capture base are available.
@@ -67,6 +67,20 @@ class WP_MCP_AI_Tool_CRM_Capture_Interaction extends WP_MCP_AI_Pro_Capture_Tool_
 	 */
 	public function get_description() {
 		return __( 'Capture a CRM interaction, objection, or next-action into the MemPalace account drawer. The record becomes part of "everything we remember about this account" and is automatically surfaced by hierarchical recall.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording an interaction, objection, or next-action in the account drawer so later turns about that account surface it.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Logging a timeline activity on a lead or deal; use create_crm_activity. Reading activity history; use get_contact_interactions.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_crm_activity', 'get_contact_interactions' ),
+			'notes'           => __( 'Requires account_id; room must be one of interactions, objections, or next-actions. Stored as sensitive PII.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

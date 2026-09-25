@@ -21,7 +21,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-harmonization-base.php';
 /**
  * Generate a scene background from a prompt.
  */
-class WP_MCP_AI_Tool_Generate_Scene_Background extends WP_MCP_AI_Tool_Harmonization_Base {
+class WP_MCP_AI_Tool_Generate_Scene_Background extends WP_MCP_AI_Tool_Harmonization_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -42,6 +42,18 @@ class WP_MCP_AI_Tool_Generate_Scene_Background extends WP_MCP_AI_Tool_Harmonizat
 	 */
 	public function get_description() {
 		return __( 'Generate a standalone background image from a text prompt using AI (Gemini/OpenAI). Optional foreground hint biases the scene to leave room for a subject. Saves to the Media Library.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to generate a brand-new standalone background image from a text prompt when no suitable existing background exists.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use adapt_background_for_subject to modify an existing background, or outpaint_background to extend the edges of one.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'adapt_background_for_subject', 'outpaint_background', 'harmonize_image_into_background' ),
+			'notes'           => __( 'Consumes AI image-generation tokens and requires a configured Gemini or OpenAI provider.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -35,7 +35,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Auto_Respond_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Auto_Respond_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -103,6 +103,20 @@ class WP_MCP_AI_Tool_Auto_Respond_Messages implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'AI-powered auto-response system for social media messages and DMs. Analyzes incoming messages, categorizes inquiries, and sends appropriate responses using customizable templates. Supports learning from manual responses and escalation to human agents for complex queries.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Processing incoming social DMs and sending templated AI replies automatically at scale.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'One-off public posts or comment moderation; use post_facebook_instagram or moderate_comments.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'moderate_comments', 'monitor_mentions_replies', 'post_facebook_instagram' ),
+			'notes'           => __( 'Replies go to real people; set auto_send=true only after reviewing templates and thresholds.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

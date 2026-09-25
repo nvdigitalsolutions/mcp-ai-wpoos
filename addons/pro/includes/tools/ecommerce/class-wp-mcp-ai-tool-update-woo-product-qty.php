@@ -35,7 +35,7 @@ if ( ! trait_exists( 'WP_MCP_AI_Woo_Price_Qty_Updater' ) ) {
  *
  * @since 2.2.0
  */
-class WP_MCP_AI_Tool_Update_Woo_Product_Qty implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
+class WP_MCP_AI_Tool_Update_Woo_Product_Qty implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Woo_Price_Qty_Updater;
 	use WP_MCP_AI_Tool_Safety_Profile;
@@ -119,6 +119,20 @@ class WP_MCP_AI_Tool_Update_Woo_Product_Qty implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Updates the stock quantity of a WooCommerce product across all stock-managed product types. Handles simple products, variations, variable products (via variations with automatic parent sync), and grouped products (via child products). Supports set, increase, and decrease operations; stock status and low-stock notifications are handled automatically. Set notify to false to suppress low-stock/no-stock notification emails for bulk or automated restock passes. External/affiliate products are not stock-managed and are rejected.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for tool selection.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Setting, increasing, or decreasing stock for any stock-managed product type.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Price edits; use update_woo_product_price, or sync_product_inventory for multi-location syncs.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_woo_product_price', 'sync_product_inventory', 'low_stock_alert_automation' ),
+			'notes'           => __( 'Set notify false during bulk restocks to suppress low-stock and no-stock emails.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

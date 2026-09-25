@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Execute enhanced multi-agent workflows
  */
-class WP_MCP_AI_Tool_Execute_Workflow implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Execute_Workflow implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -41,6 +41,20 @@ class WP_MCP_AI_Tool_Execute_Workflow implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Creates and executes an enhanced multi-agent workflow with advanced features like parallel execution, dependency management, automatic retries, and state persistence. Use this for complex tasks that benefit from coordinated multi-agent execution.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Running a complex multi-agent task that needs parallel execution, retries, and state persistence.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Designing a team without executing, or checking results; use create_agent_team or check_workflow_health.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_agent_team', 'check_workflow_health', 'validate_workflow' ),
+			'notes'           => __( 'Set return_status_only=true for async execution. Timeout ranges from 60 to 3600 seconds.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
