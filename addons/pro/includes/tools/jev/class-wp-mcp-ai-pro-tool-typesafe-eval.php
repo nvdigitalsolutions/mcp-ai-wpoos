@@ -65,13 +65,17 @@ class WP_MCP_AI_Pro_Tool_Typesafe_Eval implements WP_MCP_AI_Tool_Interface, WP_M
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'examples' => array(
+				'examples'  => array(
 					'type'        => 'array',
 					'description' => __( 'Labeled examples (max 25). Each: { state, questions, expected } where expected maps question name => expected value.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'state'     => array( 'type' => array( 'string', 'object', 'array' ) ),
+							'state'     => array(
+								'type'  => array( 'string', 'object', 'array' ),
+								// Array form: a list of text chunks.
+								'items' => array( 'type' => 'string' ),
+							),
 							'questions' => array( 'type' => 'object' ),
 							'expected'  => array( 'type' => 'object' ),
 						),
