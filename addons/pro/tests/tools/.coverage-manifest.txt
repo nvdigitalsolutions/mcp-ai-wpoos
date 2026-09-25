@@ -228,6 +228,9 @@ wp-mcp-ai-pro-tool-shopify-sync-orders
 wp-mcp-ai-pro-tool-shopify-sync-products
 wp-mcp-ai-pro-tool-shopify-sync-settings
 wp-mcp-ai-pro-tool-site-creator
+wp-mcp-ai-pro-tool-typesafe-eval
+wp-mcp-ai-pro-tool-typesafe-rerank
+wp-mcp-ai-pro-tool-typesafe-skill-select
 wp-mcp-ai-pro-tool-unified-channel-broadcast
 wp-mcp-ai-pro-tool-update-google-calendar-event
 wp-mcp-ai-pro-tool-update-option
