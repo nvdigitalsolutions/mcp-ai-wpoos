@@ -322,7 +322,7 @@ Google's vendor-neutral, Apache 2.0-licensed knowledge format (`includes/okf/`) 
 - **Reader** (`WP_MCP_AI_OKF_Reader`) — bundle navigation, concept reading, cross-link traversal (up to N hops), and search by type/tag.
 - **Writer** (`WP_MCP_AI_OKF_Writer`) — atomic concept creation/deletion via `WP_MCP_AI_Filesystem_Service`, index.md regeneration, conformance validation per spec §9.
 - **6 MCP tools** in `includes/tools/okf/`: `okf_read_concept`, `okf_browse`, `okf_traverse`, `okf_search`, `okf_write_concept` (`edit_posts`), `okf_delete_concept` (`delete_posts`). Follow the two-gate sanitisation rule and canonical return envelope.
-- **Skill conformance:** All 74 bundled skills (`includes/bundled-skills/`) include `type: Skill` in YAML frontmatter — the single required field for OKF v0.1 conformance.
+- **Skill conformance:** All 75 bundled skills (`includes/bundled-skills/`) include `type: Skill` in YAML frontmatter — the single required field for OKF v0.1 conformance.
 - **Bootstrap:** `includes/bootstrap/loader.php` loads `okf-init.php` at priority 32 (after Paper Store at 30).
 - **Bundle root:** `wp-content/uploads/mcp-ai-wpoos/knowledge/` (skill-knowledge, site-knowledge, external-bundles).
 - **Events:** `wp_mcp_ai_okf_bundle_initialized`, `wp_mcp_ai_okf_concept_saved`, `wp_mcp_ai_okf_concept_deleted`.
@@ -349,7 +349,7 @@ Client can close connection to interrupt. Job cancellation supported.
 
 Portable behaviour packages (`SKILL.md` files) that any NV oOS assistant can load on demand. Per the [agentskills.io](https://agentskills.io/specification) spec: a Markdown body with a small YAML frontmatter (`name`, `description`, optional metadata).
 
-- **Discovery — base bundled skills:** `includes/bundled-skills/{slug}/SKILL.md`. **74 bundled skills** (up from 67 in v1.1.54): 29 design-* skills (7 new in v1.1.54: ai-assistant-admin, crm, project-management, communications, services, team-management, vault, security-ops), plus new `mcp-ai-wpoos-plugin` operational guide skill. Copied to `wp-content/uploads/mcp-ai-skills/` on first activation.
+- **Discovery — base bundled skills:** `includes/bundled-skills/{slug}/SKILL.md`. **75 bundled skills** (up from 67 in v1.1.54): 32 design-* skills (7 new in v1.1.54: ai-assistant-admin, crm, project-management, communications, services, team-management, vault, security-ops), plus new `mcp-ai-wpoos-plugin` operational guide skill. Copied to `wp-content/uploads/mcp-ai-skills/` on first activation.
 - **Discovery — Pro bundled skills:** `addons/pro/includes/bundled-skills/{slug}/SKILL.md`. The 28+ WordPress-developer skills curated from `Lonsdale201/wp-agent-skills` live here.
 - **Third-party attribution:** any new bundled skill curated from an upstream catalogue must add an entry to the corresponding `THIRD_PARTY_NOTICES.md` (`includes/bundled-skills/THIRD_PARTY_NOTICES.md` or `addons/pro/includes/bundled-skills/THIRD_PARTY_NOTICES.md`) with attribution + license text.
 - **Progressive disclosure:** assistants with the "Use progressive disclosure" checkbox enabled receive only a short `# Available Skills` catalogue (name + description) in their system prompt. The base-plugin `load_skill({ name })` tool returns the full SKILL.md only when the model decides a skill applies.
