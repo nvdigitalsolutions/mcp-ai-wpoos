@@ -37,8 +37,11 @@
  *    for the wrapper without mislabeling the rest.
  *  - `connection_id` domains (composio, flowhub, ezsuite, oauth) — external
  *    remote-site identifiers; out of scope by design.
- *  - `attachment_id` / `file_id` media chains — one-way analysis chains
- *    without a cross-tool identifier contract yet; out of scope.
+ *  - `attachment_id` / `file_id` media chains — landed in v1.1.87 with the
+ *    mcp-wordpress media port (`attachment_id` family below); remaining
+ *    one-way analysis chains (analyze_image et al.) stay out of scope.
+ *  - `comment_id` / `user_id` — landed in v1.1.87 with the mcp-wordpress
+ *    comment/user CRUD port (families below).
  *
  * Landed with wave 2e: `event_id` (Google Calendar tools) and
  * `snippet_id` (WPCode tools) — Pro-only, L1 honesty coverage with
@@ -87,12 +90,27 @@ return array(
 		),
 		'post_id' => array(
 			'produces'   => array( 'create_post', 'create_post_validated', 'save_post', 'save_post_validated', 'create_post_from_research' ),
-			'consumes'   => array( 'get_post', 'save_post', 'save_post_validated', 'delete_post', 'auto_categorize_content', 'content_freshness_checker', 'create_text_embeddings' ),
+			'consumes'   => array( 'get_post', 'save_post', 'save_post_validated', 'delete_post', 'auto_categorize_content', 'content_freshness_checker', 'create_text_embeddings', 'get_post_revisions', 'upload_media', 'seo_analyze_content', 'seo_generate_schema', 'seo_get_live_data' ),
 			'round_trip' => true,
 		),
 		'term_id' => array(
 			'produces'   => array( 'create_term', 'update_term' ),
-			'consumes'   => array( 'update_term' ),
+			'consumes'   => array( 'update_term', 'get_term', 'delete_term' ),
+			'round_trip' => true,
+		),
+		'comment_id' => array(
+			'produces'   => array( 'create_comment' ),
+			'consumes'   => array( 'get_comment', 'update_comment', 'delete_comment' ),
+			'round_trip' => true,
+		),
+		'user_id' => array(
+			'produces'   => array( 'create_user' ),
+			'consumes'   => array( 'update_user', 'delete_user' ),
+			'round_trip' => true,
+		),
+		'attachment_id' => array(
+			'produces'   => array( 'upload_media' ),
+			'consumes'   => array( 'get_media', 'update_media', 'delete_media' ),
 			'round_trip' => true,
 		),
 		'assistant_id' => array(
