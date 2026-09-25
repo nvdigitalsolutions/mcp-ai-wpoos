@@ -1,0 +1,25 @@
+name: Sync mcp-wordpress-gateway
+
+on:
+  push:
+    branches: [ main, alpha-working ]
+    paths:
+      - 'addons/mcp-wordpress-gateway/**'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Split subtree
+        run: |
+          git subtree split --prefix=addons/mcp-wordpress-gateway --branch=mcp-wordpress-gateway-split
+
+      - name: Push to mcp-ai-wpoos-mcp-wordpress
+        run: |
+          git config --local --unset-all http.https://github.com/.extraheader
+          git push https://x-access-token:${{ secrets.MCP_WORDPRESS_GATEWAY_REPO_TOKEN }}@github.com/nvdigitalsolutions/mcp-ai-wpoos-mcp-wordpress.git mcp-wordpress-gateway-split:main --force
