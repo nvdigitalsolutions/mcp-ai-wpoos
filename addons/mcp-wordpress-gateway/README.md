@@ -122,7 +122,7 @@ npm run check:pins  # dependency pin gate (upstream is version-locked by design)
 monorepo PR (addons/mcp-wordpress-gateway/**)
   → merge to alpha-working/main
   → sync-mcp-wordpress-gateway.yml (git subtree split)
-  → force-push main on nvdigitalsolutions/mcp-ai-wpoos-mcp-wordpress
+  → force-push main on nvdigitalsolutions/nvoos-mcp-wordpress
   → Velocity auto-deploy (Node 22, entry src/index.js, npm ci)
 ```
 
