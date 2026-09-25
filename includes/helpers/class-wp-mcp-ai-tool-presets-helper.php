@@ -314,6 +314,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Image generation.
 					'generate_openai_image',
 					'cloudflareai_text_to_image',
+					'generate_higgsfield_image',
+					// Higgsfield request lifecycle.
+					'check_higgsfield_request',
+					'cancel_higgsfield_request',
 					// Image generation (Pro).
 					'generate_image_ai',
 					'generate_image_variations',
@@ -347,6 +351,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Video generation.
 					'generate_veo_video',
 					'generate_sora_video',
+					'generate_higgsfield_video',
 					// Video production.
 					'create_video_from_images',
 					'add_watermark_to_video',
