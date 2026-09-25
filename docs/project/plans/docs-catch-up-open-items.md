@@ -1,8 +1,8 @@
 # Docs & Release Catch-Up — Standing Open-Items Tracker
 
 > **Purpose:** Single registry of every open item identified (and parked or deferred) by the docs & release catch-up runs, so future passes carry from this file instead of re-copying items between plans.
-> **Last reviewed:** 2026-09-24 (v1.1.85 pass + Track C deferred-item sweep — status comments posted on #6366/#6646/#6724/#6653; OI-6 recorded)
-> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.85-docs-catch-up.md`](v1.1.85-docs-catch-up.md).
+> **Last reviewed:** 2026-09-25 (v1.1.86 pass — OI-1 groups 26–28 recorded; OI-2 label refreshed)
+> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.86-docs-catch-up.md`](v1.1.86-docs-catch-up.md).
 > **Rule for future passes:** read this file first; a catch-up plan's "Open items" section should point here and only add new items it introduces.
 
 ---
@@ -42,6 +42,9 @@
 | 23 | `@since 2026.09` | `includes/class-wp-mcp-ai-openrouter-client.php` (1×) + `includes/class-wp-mcp-ai-typesafe-client.php` (2×) — date-format tags (catalog-version convention) on new Jev code (PR #6728). **Extended by the v1.1.84 pass:** +1 openrouter-client +3 typesafe-client (PR #6747) | 1.1.83 | v1.1.83 post plan (extension: v1.1.84 plan) |
 | 24 | `@since 1.9.0` | New Jev Phase 2 files (PR #6747): `addons/pro/includes/services/class-wp-mcp-ai-pro-jev-eval.php`, `addons/pro/includes/services/class-wp-mcp-ai-pro-jev-guardrail.php`, `addons/pro/includes/tools/jev/class-wp-mcp-ai-pro-tool-typesafe-{eval,rerank,skill-select}.php` — 5 instances | 1.1.84 | v1.1.84 plan |
 | 25 | `@since 1.9.1` / `1.9.2` / `1.9.4` | MCP Apps wave (PRs #6753–#6758) — 26 instances across 6 files: `addons/pro/includes/mcp-apps/class-wp-mcp-ai-mcp-app-client.php` (7), `addons/pro/includes/mcp-apps/class-wp-mcp-ai-mcp-app-registry.php` (9), `addons/pro/includes/mcp-apps/class-wp-mcp-ai-rest-mcp-apps-controller.php` (2), `addons/pro/includes/mcp-apps/mcp-apps-init.php` (4), `includes/assistants/metaboxes/class-wp-mcp-ai-metabox-mcp-apps.php` (2), `includes/class-wp-mcp-ai-rest.php` (2) | 1.1.85 | v1.1.85 plan |
+| 26 | `@since 1.1.85` | MCP Server remote-sites wave (PR #6761) — 15 instances across 6 files: `addons/pro/includes/class-wp-mcp-ai-pro-remote-site-manager.php` (4), `includes/assistants/class-wp-mcp-ai-assistant-portability.php` (6), `addons/pro/includes/mcp-apps/class-wp-mcp-ai-mcp-app-registry.php` (2), `addons/pro/includes/mcp-apps/mcp-apps-init.php` (1), plus test files `addons/pro/tests/test-remote-site-manager-mcp-server.php` (1) + `tests/mcp-apps/test-mcp-app-connection-refs.php` (1) | 1.1.86 | v1.1.86 plan |
+| 27 | `@since 1.1.0` | Higgsfield quartet (PR #6772) — 4 instances (`includes/tools/class-wp-mcp-ai-tool-{generate-higgsfield-video,generate-higgsfield-image,check-higgsfield-request,cancel-higgsfield-request}.php`, 1 each) + `includes/class-wp-mcp-ai-rest.php` — `build_tool_cost_envelope()` (1, PR #6771) | 1.1.86 | v1.1.86 plan |
+| 28 | `@since 1.9.0` | `includes/class-wp-mcp-ai-logger.php` — filter args on `get_recent_error_messages()`/`get_recent_activity_entries()` + `entry_matches_filters()`, 2 instances (PR #6768) | 1.1.86 | v1.1.86 plan |
 
 - **Blocked on:** version-jump decision — does the next release stay on 1.1.x or jump to 1.2.0?
 - **Broader drift (new finding, 2026-08-26):** non-1.1.x tags are repo-wide (`@since 1.0.0` ×1,928 · `1.2.0` ×1,707 · `1.1.0` ×1,269 · `1.3.0` ×795 · `1.9.0` ×734, PHP source ex vendor). Many are legitimate history. A full-tree audit is a scripted-sweep project needing explicit sign-off — tracked inside issue #5968, not a catch-up-pass task.
@@ -51,7 +54,7 @@
 - **Status:** 🔒 Parked by user decision. Counts stay delta-derived in catch-up passes.
 - **Issue:** [#5967 — Re-derive live tool counts on a fully provisioned environment](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5967)
 - **What:** run `WP_MCP_AI_Tool_Registry::get_tools()` on a fully provisioned environment (seeded toolkits + optional plugins) and replace the delta-based figure.
-- **Current figure (v1.1.85):** ~308 base + ~1,282 Pro (~1,590 total), live-registry caveat retained on every count surface. (Delta-derived; **no registrations in-window** — the MCP App bridge slugs `mcp_app_<label>_<tool>` are dynamic chat-time registrations via the `wp_mcp_ai_chat_effective_tools` seam and are deliberately not counted.)
+- **Current figure (v1.1.86):** ~312 base + ~1,282 Pro (~1,594 total), live-registry caveat retained on every count surface. (Delta-derived; **+4 base in-window** — the Higgsfield quartet, PR #6772; the `lib/core` wrappers are the core registry's own tools and are not counted.)
 - **Known attempt:** QA container (`oos-qa-wp`) returns 363 tools because its DB is unprovisioned — not usable as source of truth.
 - **First noted in:** v1.1.59 plan; carried every pass since.
 
@@ -89,6 +92,13 @@
 - **Mirror note:** all three verified byte-identical in `plugins/nvoos-content-graph-pro` (`src/tools/crm/icp/...:349-351`, `...manage-icp-profile.php:605`, `src/tools/project-management/workflow/...:230`) — the fix-first-then-re-port order from #6653 still applies.
 - **Suggested owner:** Pro tools workstream (bug fixes), then the ecosystem-port loop (re-port). Not a docs catch-up task.
 - **First noted in:** 2026-09-24 Track C deferred-item sweep (full detail in the #6653 status comment).
+
+### OI-7 · `tool-reference.md` missing the four Higgsfield tool entries (recorded 2026-09-25 by the v1.1.86 pass)
+
+- **Status:** 🟡 Open. Recorded, not fixed (doc-file gap left by the introducing PR).
+- **What:** PR #6772 added the Higgsfield quartet to `docs/tool-status.txt` (+4) and the `design-video-creation` skill but **not** to `docs/reference/tools/tool-reference.md` — the "Media generation and transcription" section documents the other video/image tools (`generate_sora_video`, `generate_openai_image`, …) and the Tool Count header now counts the +4 base, so the omission is an inconsistency, not a convention. Also `get_system_logs`' new filters (#6768) are not reflected in that doc's operational section.
+- **Suggested owner:** docs workstream — add the four `generate_higgsfield_video`/`generate_higgsfield_image`/`check_higgsfield_request`/`cancel_higgsfield_request` entries (and the `get_system_logs` filter paragraph) to the tool reference.
+- **First noted in:** v1.1.86 plan.
 
 ---
 
