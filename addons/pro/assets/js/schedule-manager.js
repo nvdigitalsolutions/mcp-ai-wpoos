@@ -994,14 +994,14 @@
 		 * and any extra configuration fields needed for the edit modal.
 		 */
 		CHANNEL_DEFS: {
-			email:       { label: 'Email',           fields: ['to'],                         templates: ['full','summary','error','response_only'], formats: ['both','html','markdown'], group: 'direct' },
-			slack:       { label: 'Slack',           fields: ['channel'],                    templates: ['summary','full','error','response_only'], formats: ['markdown','plain'], group: 'chat' },
-			telegram:    { label: 'Telegram',        fields: ['chat_id'],                    templates: ['summary','full','error','response_only'], formats: ['html','markdown','markdown_v2','plain'], group: 'chat' },
-			discord:     { label: 'Discord',         fields: ['channel_id'],                 templates: ['summary','full','error','response_only'], formats: ['markdown','plain'], group: 'chat' },
-			teams:       { label: 'Microsoft Teams', fields: ['team_id','channel_id'],       templates: ['summary','full','error','response_only'], formats: ['markdown','plain'], group: 'chat' },
-			messenger:   { label: 'Messenger',       fields: ['recipient_id'],               templates: ['summary','full','error','response_only'], formats: ['plain'], group: 'chat' },
-			whatsapp:    { label: 'WhatsApp',        fields: ['to'],                         templates: ['summary','full','error','response_only'], formats: ['markdown','plain'], group: 'chat' },
-			google_chat: { label: 'Google Chat',     fields: ['space_id'],                   templates: ['summary','full','error','response_only'], formats: ['plain'], group: 'chat' },
+			email:       { label: 'Email',           fields: ['to'],                         templates: ['summary','action_items','full','error','response_only'], formats: ['both','html','markdown'], group: 'direct' },
+			slack:       { label: 'Slack',           fields: ['channel'],                    templates: ['summary','action_items','full','error','response_only'], formats: ['markdown','plain'], group: 'chat' },
+			telegram:    { label: 'Telegram',        fields: ['chat_id'],                    templates: ['summary','action_items','full','error','response_only'], formats: ['html','markdown','markdown_v2','plain'], group: 'chat' },
+			discord:     { label: 'Discord',         fields: ['channel_id'],                 templates: ['summary','action_items','full','error','response_only'], formats: ['markdown','plain'], group: 'chat' },
+			teams:       { label: 'Microsoft Teams', fields: ['team_id','channel_id'],       templates: ['summary','action_items','full','error','response_only'], formats: ['markdown','plain'], group: 'chat' },
+			messenger:   { label: 'Messenger',       fields: ['recipient_id'],               templates: ['summary','action_items','full','error','response_only'], formats: ['plain'], group: 'chat' },
+			whatsapp:    { label: 'WhatsApp',        fields: ['to'],                         templates: ['summary','action_items','full','error','response_only'], formats: ['markdown','plain'], group: 'chat' },
+			google_chat: { label: 'Google Chat',     fields: ['space_id'],                   templates: ['summary','action_items','full','error','response_only'], formats: ['plain'], group: 'chat' },
 			sms:         { label: 'SMS',             fields: ['to'],                         templates: ['summary','error'],       group: 'direct' },
 			webhook:     { label: 'Webhook',         fields: ['url'],                        templates: [],                        group: 'automation' },
 			paper_store: { label: 'Paper Store',     fields: ['collection'],                 templates: [],                        group: 'automation', extra: ['driver','retention'] },
