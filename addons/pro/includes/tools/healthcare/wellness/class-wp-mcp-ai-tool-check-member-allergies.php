@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Check member allergies tool.
  */
-class WP_MCP_AI_Tool_Check_Member_Allergies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Check_Member_Allergies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -55,6 +55,20 @@ class WP_MCP_AI_Tool_Check_Member_Allergies implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Determine whether a member has known allergies matching the supplied allergen names or substrings, and return severity, reactions, and diagnosed dates for any matches.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking whether a known member is allergic to specific allergens before prescribing or advising, with severity and reactions returned.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( "Browsing a member's full allergy history; use list_allergies. Aggregated history across types; use get_health_timeline.", 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_allergies', 'get_health_timeline', 'verify_prescription_interactions' ),
+			'notes'           => __( 'Matches allergen names or substrings case-insensitively; unmatched query names come back in unmatched_queries.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

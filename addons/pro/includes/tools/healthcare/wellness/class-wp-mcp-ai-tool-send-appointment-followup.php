@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Send appointment follow-up tool.
  */
-class WP_MCP_AI_Tool_Send_Appointment_Followup implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Send_Appointment_Followup implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -62,6 +62,20 @@ class WP_MCP_AI_Tool_Send_Appointment_Followup implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Sends follow-up messages to patients/members after appointments. Supports dry_run mode for preview without sending.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending follow-up messages by email or SMS for one or more checkup/appointment IDs.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reviewing appointment data; use get_recent_health_appointments. Scheduling visits; use create_checkup.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_recent_health_appointments', 'create_checkup' ),
+			'notes'           => __( 'dry_run defaults to true for safety; SMS needs a hook on wp_mcp_ai_healthcare_send_sms_followup.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 /**
  * Run Gemini Managed Agent Tool.
  */
-class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -48,6 +48,20 @@ class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Creates and runs tasks with a managed AI agent powered by Gemini 3.5 Flash. The agent operates in an isolated Linux container with persistent files, code execution (Python, JavaScript, and shell), and access to all NV oOS tools. It can plan, iterate, write code, call tools, and complete complex multi-step workflows. Sessions persist for 24 hours — continue work by passing the session_id. Use the "create" operation first to set up a session, then "run" to execute tasks, "status" to check, or "terminate" to clean up.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Long multi-step tasks needing code execution, persistent files, and tool access in an isolated container; create, then run.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'One-shot OpenAI actions; use run_openai_external_action for predefined OpenAI workflows or delegate_to_agent for local assistants.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'run_openai_external_action', 'delegate_to_agent' ),
+			'notes'           => __( 'Sessions persist 24 hours; pass session_id to continue work and use terminate to clean up when finished.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

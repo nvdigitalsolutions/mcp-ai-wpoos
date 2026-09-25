@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Move a post to PARA archives.
  */
-class WP_MCP_AI_Tool_PARA_Move_To_Archives implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_PARA_Move_To_Archives implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Get the tool slug.
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_PARA_Move_To_Archives implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Archive a project, task, event, area, or document by moving it to the PARA Archives bucket. A reason string is recorded for audit purposes.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Archiving a finished or inactive item into the Archives bucket with a recorded audit reason.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Deleting content permanently; use delete_project or delete_task. Other bucket moves; use para_classify_item.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'para_classify_item', 'para_weekly_review', 'delete_project' ),
+			'notes'           => __( 'Requires post_id and reason; the move is reversible via para_classify_item.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

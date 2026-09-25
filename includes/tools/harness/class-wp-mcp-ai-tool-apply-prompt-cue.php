@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Apply prompt cues to an existing system prompt.
  */
-class WP_MCP_AI_Tool_Apply_Prompt_Cue implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Apply_Prompt_Cue implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -40,6 +40,20 @@ class WP_MCP_AI_Tool_Apply_Prompt_Cue implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Prepend one or more prompt cues to a system prompt. Cues augment, never replace, the existing prompt. Returns the augmented prompt and the list of cues that were applied.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Augmenting an existing system prompt by prepending one or more prompt cues in order.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Choosing which cue fits a task; use select_prompt_cue. Listing available cues; use list_prompt_cues.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'select_prompt_cue', 'list_prompt_cues' ),
+			'notes'           => __( 'The original prompt is preserved verbatim; unknown cue slugs are returned in skipped_cues.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

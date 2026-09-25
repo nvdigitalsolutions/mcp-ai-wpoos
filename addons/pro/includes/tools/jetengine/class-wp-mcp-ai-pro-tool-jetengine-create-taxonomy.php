@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.1.0
  */
-class WP_MCP_AI_Pro_Tool_JetEngine_Create_Taxonomy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_JetEngine_Create_Taxonomy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -75,6 +75,20 @@ class WP_MCP_AI_Pro_Tool_JetEngine_Create_Taxonomy implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Create a new JetEngine custom taxonomy via the MCP Server. Provide a slug, labels, and specify which post types to attach it to. Supports hierarchical configuration.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Registering a new JetEngine taxonomy and attaching it to post types via the MCP server.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Post types or meta fields; use jetengine_create_post_type or jetengine_create_meta_field. Terms; use jetengine.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'jetengine_create_post_type', 'jetengine_create_meta_field', 'jetengine_manage_relations' ),
+			'notes'           => __( 'Requires manage_options; the slug must be 32 characters or fewer.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

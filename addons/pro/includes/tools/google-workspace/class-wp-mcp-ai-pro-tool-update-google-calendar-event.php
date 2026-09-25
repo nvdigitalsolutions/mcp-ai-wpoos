@@ -33,7 +33,7 @@ require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-c
  * omitted shared properties as "reset to default" and Google answers with
  * `forbiddenForNonOrganizer`.
  */
-class WP_MCP_AI_Pro_Tool_Update_Google_Calendar_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Update_Google_Calendar_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 
 	/**
 	 * Capability required before the tool talks to the Calendar API.
@@ -109,6 +109,20 @@ class WP_MCP_AI_Pro_Tool_Update_Google_Calendar_Event implements WP_MCP_AI_Tool_
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Editing title, description, location, time, or status of an existing event found via list_google_calendar_events.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating new events or removing them; use create_google_calendar_event or delete_google_calendar_event.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_google_calendar_events', 'create_google_calendar_event', 'delete_google_calendar_event' ),
+			'notes'           => __( 'Default strategy replays the fetched event via events.update; set partial true when you are not the organiser.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_parameters_schema() {
@@ -175,6 +189,16 @@ class WP_MCP_AI_Pro_Tool_Update_Google_Calendar_Event implements WP_MCP_AI_Tool_
 	/**
 	 * {@inheritdoc}
 	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'event_id',
+			'consumes' => array( 'event_id' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
@@ -197,7 +221,7 @@ class WP_MCP_AI_Pro_Tool_Update_Google_Calendar_Event implements WP_MCP_AI_Tool_
 			$this
 		);
 
-		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
+		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) { // phpcs:ignore WordPress.WP.Capabilities.Undetermined -- Capability resolved via the wp_mcp_ai_google_calendar_required_capability filter (default manage_options).
 			return new WP_Error( 'wp_mcp_ai_calendar_forbidden', __( 'You do not have permission to update Google Calendar events.', 'mcp-ai-wpoos-pro' ), array( 'status' => 403 ) );
 		}
 

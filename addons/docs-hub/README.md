@@ -33,9 +33,9 @@ This directory is subtree-synced to its standalone repository [`nvdigitalsolutio
 - **WordPress** 6.0+
 - **PHP** 7.4+
 - **NV oOS base plugin** — *optional*. Required only for the local
-  `base`/`addons`/`root` sources. Fresh installs default to remote-only
-  sources (`sources = ['remote']`) and index any public GitHub repository
-  with no base plugin installed.
+  `base`/`addons`/`root` sources. Fresh installs are local-first: they
+  index `wp-content/uploads/nvoos-docs-hub/content/` out of the box
+  (`sources = ['uploads']`) with remote GitHub import opt-in (off by default).
 
 ---
 
@@ -43,9 +43,10 @@ This directory is subtree-synced to its standalone repository [`nvdigitalsolutio
 
 1. Copy `addons/docs-hub/` into `wp-content/plugins/nvoos-docs-hub/`.
 2. Activate **NV oOS Docs Hub** in the WordPress plugins admin.
-3. Go to **Settings → NV oOS Docs Hub**, add a remote GitHub repository
-   (or enable local sources if the base plugin is active) and click
-   **Rebuild Index**.
+3. Drop Markdown files into `wp-content/uploads/nvoos-docs-hub/content/`
+   (created on activation), go to **Settings → NV oOS Docs Hub**, and click
+   **Rebuild Index**. To import from a public GitHub repository instead,
+   enable **Remote Repositories** there and add your repositories.
 4. Add `[nvoos_docs]` to any page to display the browser.
 
 ---

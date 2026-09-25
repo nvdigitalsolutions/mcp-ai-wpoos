@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Flag abnormal vitals tool.
  */
-class WP_MCP_AI_Tool_Flag_Abnormal_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Flag_Abnormal_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available in the current install.
@@ -64,6 +64,20 @@ class WP_MCP_AI_Tool_Flag_Abnormal_Vitals implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Review a member\'s recent vital-sign readings and flag values that fall outside age, sex, or species-aware reference ranges. Returns a per-metric breakdown of high/low/in-range counts plus the most recent flagged readings.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reviewing a member\'s recent readings and flagging values outside age-, sex-, or species-aware reference ranges.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Computing min/max/mean trend statistics; use analyze_vital_trends. Logging new readings; use log_vital_signs.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'log_vital_signs', 'analyze_vital_trends' ),
+			'notes'           => __( 'Reads history via the log_vital_signs get_history action and applies engine reference ranges; returns high/low/in-range counts per metric.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

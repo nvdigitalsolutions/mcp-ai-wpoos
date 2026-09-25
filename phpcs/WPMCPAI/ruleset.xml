@@ -1,4 +1,36 @@
 <?xml version="1.0"?>
 <ruleset name="WPMCPAI">
 	<description>NV oOS project-specific PHPCS sniffs that enforce conventions documented in docs/proposals/.</description>
+
+	<arg value="p"/>
+	<arg name="extensions" value="php"/>
+
+	<!--
+		Tool Description Engineering — usage guidance on tool classes.
+
+		The sweep is complete (base includes/tools/ and addons/pro/includes/tools/
+		are fully covered) and the sniff is now enforced at severity 5 in the
+		main phpcs.xml.dist. This ruleset remains for targeted explicit runs:
+
+		vendor/bin/phpcs -standard=phpcs/WPMCPAI/ruleset.xml -severity=5 includes/tools addons/pro/includes/tools
+
+		See docs/project/proposals/tool-description-engineering-proposal.md.
+	-->
+	<rule ref="phpcs/WPMCPAI/Sniffs/Tools/ToolDescriptionGuidanceSniff.php">
+		<severity>5</severity>
+	</rule>
+
+	<!--
+		PHPCS auto-registers sibling sniffs from this standard's Sniffs/
+		tree, which would surface pre-existing CanonicalReturnEnvelope and
+		SanitizeAtEntry findings. This ruleset is the guidance-only gate
+		for the sweep; the other two sniffs stay enforced through the main
+		phpcs.xml.dist.
+	-->
+	<rule ref="phpcs/WPMCPAI/Sniffs/Tools/CanonicalReturnEnvelopeSniff.php">
+		<severity>0</severity>
+	</rule>
+	<rule ref="phpcs/WPMCPAI/Sniffs/Tools/SanitizeAtEntrySniff.php">
+		<severity>0</severity>
+	</rule>
 </ruleset>

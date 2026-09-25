@@ -36,7 +36,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Moderate_Comments implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Moderate_Comments implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -104,6 +104,20 @@ class WP_MCP_AI_Tool_Moderate_Comments implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Bulk comment moderation across social media platforms. Features AI-powered spam detection, keyword-based filtering, sentiment analysis, automated moderation rules, and whitelist/blacklist management. Supports approve, delete, hide, and report actions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scanning social comments for spam or negative sentiment and approving, deleting, hiding, or reporting them.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Watching mentions or replying to comments; use monitor_mentions_replies or auto_respond_messages.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'monitor_mentions_replies', 'auto_respond_messages' ),
+			'notes'           => __( 'Approve, delete, hide, and report act on real comments; run a scan with auto_moderate disabled to preview first.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

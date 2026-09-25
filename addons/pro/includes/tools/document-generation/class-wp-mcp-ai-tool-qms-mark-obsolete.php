@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_QMS_Mark_Obsolete tool.
  */
-class WP_MCP_AI_Tool_QMS_Mark_Obsolete implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_QMS_Mark_Obsolete implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 
 	/**
@@ -42,6 +42,19 @@ class WP_MCP_AI_Tool_QMS_Mark_Obsolete implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Mark a controlled document as obsolete. The record is preserved (never destroyed) and moved to PARA archives if PARA is enabled.', 'mcp-ai-wpoos-pro' );
+	}
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Retiring a controlled document while preserving the record and moving it to PARA archives.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Replacing a live document with a new revision; use qms_supersede_document to link revisions or qms_release_document to keep a document in force.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'qms_supersede_document', 'qms_release_document', 'qms_get_audit_trail' ),
+			'notes'           => __( 'The record is never destroyed; obsolete documents stay visible in the register and audit trail.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 		/**
 		 * Get the parameters schema.

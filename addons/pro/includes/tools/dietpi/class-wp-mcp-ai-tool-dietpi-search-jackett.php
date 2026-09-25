@@ -16,7 +16,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Search_Jackett' ) ) {
 	/**
 	 * Search Jackett tool.
 	 */
-	class WP_MCP_AI_Tool_DietPi_Search_Jackett extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_Search_Jackett extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 		public function get_slug() {
@@ -31,6 +31,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Search_Jackett' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Search across all configured Jackett torrent indexers simultaneously. Supports filtering by category and search type. Returns torrent title, size, seeds, peers, tracker name, and download link.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Searching all configured Jackett indexers at once for torrents by title, category, or search type.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Downloading a found torrent; use dietpi_add_transmission or dietpi_media_request_flow.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_list_jackett_indexers', 'dietpi_add_transmission', 'dietpi_media_request_flow' ),
+			);
 		}
 
 		/** {@inheritdoc} */

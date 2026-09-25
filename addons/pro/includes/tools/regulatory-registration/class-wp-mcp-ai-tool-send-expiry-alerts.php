@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Sends expiry alert emails.
  */
-class WP_MCP_AI_Tool_Send_Expiry_Alerts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Send_Expiry_Alerts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
@@ -40,6 +40,18 @@ class WP_MCP_AI_Tool_Send_Expiry_Alerts implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Sends automated expiry warning emails for registrations nearing expiration with customizable thresholds and recipient lists.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When emails about registrations nearing expiry should actually go out to configured recipients.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When you only need to see what is expiring or want recurring setup; use list_expiring_registrations or configure_email_notifications.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_expiring_registrations', 'configure_email_notifications' ),
+			'notes'           => __( 'Sends real emails unless test_mode is true, which produces a report without sending.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

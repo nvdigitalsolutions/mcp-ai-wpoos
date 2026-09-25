@@ -49,7 +49,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * additionally requires a vision-capable AI provider (OpenAI gpt-4.1 /
  * Gemini 1.5 Pro or later).
  */
-class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Maximum pixel dimension (longest edge) for the preview PNG.
@@ -97,6 +97,20 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Analyses a stored DICOM medical imaging study and returns an AI-generated interpretation including modality context, series completeness, image quality notes, and clinical workflow guidance. Use action "interpret" with a study_uid. Optionally set include_pixel_preview to true to include a single-frame grayscale image in the analysis (requires a vision-capable AI model). All outputs include a mandatory disclaimer that this is not a medical diagnosis.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'AI-assisted quality, completeness, and clinical workflow review of a stored DICOM study.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Listing or summarising metadata; use manage_imaging_studies. Comparing studies; use compare_imaging_studies.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_imaging_studies', 'compare_imaging_studies', 'attach_radiology_report' ),
+			'notes'           => __( 'Set include_pixel_preview=true only with a vision-capable model. Output always carries a not-a-diagnosis disclaimer.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

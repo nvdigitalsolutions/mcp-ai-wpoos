@@ -38,7 +38,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Export an assistant's curriculum (selected eval suites) as fine-tune JSONL.
  */
-class WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Data_Contract_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Hard cap on the number of rows emitted in a single export. Keeps
@@ -82,6 +82,18 @@ class WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum implements WP_MCP_AI_Tool_Inter
 	/**
 	 * {@inheritdoc}
 	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Distilling an assistant\'s harness eval suites into an OpenAI-compatible JSONL fine-tune corpus.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Migrating or sharing an assistant; use export_assistant_blueprint. Improving the eval suites themselves; use evolve_harness or the harness eval tools.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'export_assistant_blueprint', 'evolve_harness' ),
+			'notes'           => __( 'Use dry_run to preview row counts before writing; exports land under wp-content/uploads/mcp-ai/harness-curriculum/. Requires manage_options.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -119,6 +131,16 @@ class WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum implements WP_MCP_AI_Tool_Inter
 				),
 			),
 			'required'   => array( 'assistant_id' ),
+		);
+	}
+
+		/**
+		 * {@inheritdoc}
+		 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'assistant_id' ),
 		);
 	}
 

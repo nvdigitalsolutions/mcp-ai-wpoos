@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates embeddings for multiple WordPress posts in batch.
  */
-class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -45,6 +45,20 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Generates embeddings for multiple posts/pages in batch. Use this to prepare semantic search, index content library, build recommendation systems, or initialize vector databases.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Indexing multiple posts or pages into embeddings to power semantic search or recommendation pipelines.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Embedding a single text string; use create_text_embeddings. In-browser embedding uses client_semantic_search.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_text_embeddings', 'semantic_content_search' ),
+			'notes'           => __( 'Stores vectors in post meta by default; set update_existing=true to re-embed. limit is capped at 100 posts per run.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

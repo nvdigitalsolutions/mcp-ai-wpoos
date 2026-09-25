@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-restrict-from
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Client_Translate_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Client_Translate_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
@@ -45,6 +45,20 @@ class WP_MCP_AI_Tool_Client_Translate_Text implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Translate text between 200+ languages using browser-native AI. Processes instantly without server round-trip. Supports major world languages.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Translating short text between languages in the browser without API calls.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'High-accuracy translation of long documents; the browser model is best suited to short passages.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'client_summarize_text', 'client_analyze_sentiment' ),
+			'notes'           => __( 'Language codes use NLLB format (e.g. eng_Latn, fra_Latn). Defaults: English to French.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

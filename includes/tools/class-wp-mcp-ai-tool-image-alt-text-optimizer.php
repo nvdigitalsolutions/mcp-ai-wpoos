@@ -26,7 +26,7 @@ require_once __DIR__ . '/../traits/trait-wp-mcp-ai-tool-wordpress-native.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Image_Alt_Text_Optimizer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Image_Alt_Text_Optimizer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_WordPress_Native;
 
 	/**
@@ -48,6 +48,18 @@ class WP_MCP_AI_Tool_Image_Alt_Text_Optimizer implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Generates SEO-optimized and accessible alt text for images using AI vision models. Creates descriptive, natural alt text that improves both accessibility and image SEO.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to generate SEO-optimized, accessible alt text for one image or to batch-rewrite images missing alt text via AI vision.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Use resize_image or image_format_batch_converter for dimension and format changes; those do not edit alt text.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'seo_meta_optimizer', 'suggest_internal_links', 'search_attachments' ),
+			'notes'           => __( 'Requires a vision-capable model. Set auto_save=true with an attachment_id to write alt text back to the library.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Gets a regulatory registration by ID.
  */
-class WP_MCP_AI_Tool_Get_Registration implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Registration implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Get_Registration implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Gets detailed information about a specific registration including status, dates, documents, and product details.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading one known registration with status, dates, expiry flags, and optional product or document data.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Searching registrations without an ID or analyzing them in aggregate; use list_registrations or generate_pipeline_report.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_registrations', 'get_registration_timeline', 'update_registration_status' ),
+			'notes'           => __( 'include_product and include_documents default to false; days_to_expiry is computed when expiry_date is set.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

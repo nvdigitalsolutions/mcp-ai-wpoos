@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager
 /**
  * Provides an AI tool for listing all pro managed schedules.
  */
-class WP_MCP_AI_Pro_Tool_List_Pro_Schedules implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_List_Pro_Schedules implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -39,6 +39,18 @@ class WP_MCP_AI_Pro_Tool_List_Pro_Schedules implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Lists all pro managed scheduled tasks, workflows, and assistant runs with their status and next run times.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering which Pro Schedules exist and their status, next run, and tags before reading or changing one.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading a specific result or history (use get_schedule_latest_result or get_schedule_run_history) or creating schedules (use create_pro_schedule).', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_pro_schedule', 'get_schedule_latest_result', 'update_pro_schedule' ),
+			'notes'           => __( 'Filter with enabled_only, schedule_type (task, workflow, assistant_run), or tag to keep large lists manageable.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

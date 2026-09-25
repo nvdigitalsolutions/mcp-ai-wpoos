@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.80
  */
-class WP_MCP_AI_Tool_Macro_Data_Fetcher implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Macro_Data_Fetcher implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Cache TTL in seconds.
@@ -117,6 +117,22 @@ class WP_MCP_AI_Tool_Macro_Data_Fetcher implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Fetch macro market data from FRED without an API key: Treasury yields (2Y/10Y/30Y), yield-curve spread, VIX, fed funds rate, CPI, unemployment, and major index proxies. EDUCATIONAL ONLY - Data may be delayed. Not investment advice.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching Treasury yields, yield-curve spread, VIX, fed funds rate, CPI, and unemployment from FRED.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Company quotes or options; use stock_data_fetcher or options_chain_fetcher. Events belong to economic_calendar_fetcher.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'economic_calendar_fetcher', 'stock_data_fetcher', 'market_screener' ),
+			'notes'           => __( 'Keyless public FRED endpoint; only allowlisted series IDs are accepted and results are cached for one hour.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.1.0
  */
-class WP_MCP_AI_Pro_Tool_JetEngine_Create_Meta_Field implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_JetEngine_Create_Meta_Field implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -75,6 +75,20 @@ class WP_MCP_AI_Pro_Tool_JetEngine_Create_Meta_Field implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Create a new meta field for a JetEngine custom post type, taxonomy, or user via the MCP Server. Specify the field name, label, type (text, number, select, media, etc.), and the context where it should appear.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adding a new JetEngine meta field to a post type, taxonomy, or user via the JetEngine 3.8+ MCP server.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'CCT record data; use jetengine. New post types or taxonomies; use jetengine_create_post_type or jetengine_create_taxonomy.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'jetengine_create_post_type', 'jetengine_create_taxonomy', 'jetengine_mcp' ),
+			'notes'           => __( 'Requires manage_options and the JetEngine MCP Server; field types are validated.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

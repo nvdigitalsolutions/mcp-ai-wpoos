@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Generate_Tool_Logic implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Tool_Logic implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_Generate_Tool_Logic implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Generate execute() method implementation for AI tools. Uses AI to create production-ready code with error handling, validation, WordPress integration, and security best practices. Supports various tool types and integration patterns.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating an execute() method body for a new or stubbed tool from a written spec.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Designing the parameter schema; use generate_tool_parameters. Writing the class scaffold; use generate_tool_scaffold.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_tool_scaffold', 'generate_tool_parameters', 'generate_tool_tests' ),
+			'notes'           => __( 'Output is AI-generated draft code; review and lint it with check_tool_compliance before use.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

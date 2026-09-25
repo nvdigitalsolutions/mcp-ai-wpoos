@@ -28,7 +28,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-pro-gmail-client.php';
 /**
  * Provides an assistant tool for modifying Gmail message labels.
  */
-class WP_MCP_AI_Pro_Tool_Modify_Gmail_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Modify_Gmail_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -51,6 +51,20 @@ class WP_MCP_AI_Pro_Tool_Modify_Gmail_Message implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Modifies labels on a Gmail message: add or remove labels, mark read or unread, or archive. Never deletes messages. This is a state-changing operation — the site may require an explicit confirm_destructive=true argument before it executes.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Changing labels, read state, or archive status of a known message_id from search_gmail results.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Deleting messages (unsupported by design) or reading message bodies; use get_gmail_message.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'search_gmail', 'get_gmail_message', 'list_gmail_connections' ),
+			'notes'           => __( 'State-changing: sites with destructive-op confirmation enabled require confirm_destructive=true.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

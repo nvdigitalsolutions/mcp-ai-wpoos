@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Gets student details with enrollment information.
  */
-class WP_MCP_AI_Tool_Get_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Get_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Retrieves detailed information about a student including personal details, year group, house, and all enrolled Extra-Curricular Activities with schedules.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching a known student profile including personal details and all enrolled ECAs.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Discovering or filtering students; use list_students. Engagement analytics for one student; use get_student_participation_summary.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_students', 'get_student_participation_summary', 'update_student', 'enroll_student_eca' ),
+			'notes'           => __( 'include_schedule defaults to true and adds the weekly ECA timetable to the response.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

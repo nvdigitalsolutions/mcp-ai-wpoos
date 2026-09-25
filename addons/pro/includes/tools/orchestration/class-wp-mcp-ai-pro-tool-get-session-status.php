@@ -59,6 +59,20 @@ class WP_MCP_AI_Pro_Tool_Get_Session_Status {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking the live state of an autonomous session - health, iteration and token progress, timing, and exit signals.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Historical aggregate performance; use get_loop_metrics for success rates and error trends across calls.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_loop_metrics', 'manage_autonomous_session', 'analyze_loop_health' ),
+			'notes'           => __( 'include_plan=true also loads the linked task plan. Sessions are stored in transients, so state expires.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @param array $arguments Tool arguments.

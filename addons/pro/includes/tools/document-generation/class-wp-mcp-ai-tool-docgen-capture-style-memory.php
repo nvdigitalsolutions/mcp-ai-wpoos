@@ -28,7 +28,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Capture_Tool_Base' ) ) {
 /**
  * MemPalace capture tool for Document Generation style memory & drafts.
  */
-class WP_MCP_AI_Tool_DocGen_Capture_Style_Memory extends WP_MCP_AI_Pro_Capture_Tool_Base {
+class WP_MCP_AI_Tool_DocGen_Capture_Style_Memory extends WP_MCP_AI_Pro_Capture_Tool_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -49,6 +49,18 @@ class WP_MCP_AI_Tool_DocGen_Capture_Style_Memory extends WP_MCP_AI_Pro_Capture_T
 	 */
 	public function get_description() {
 		return __( 'Capture a user writing-style preference or draft into the MemPalace user drawer. This is one of only two toolkits allowed to provide a summary alongside the verbatim source — the original is kept at tier=archival, the summary becomes the tier=recall representative.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Saving a user writing-style preference or draft into MemPalace so later documents match their voice.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Producing the document itself; use generate_word or generate_pdf for output.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_word', 'generate_pdf', 'generate_email_template' ),
+			'notes'           => __( 'Stores under the user/{user_id} wing with rooms "style" and "drafts".', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

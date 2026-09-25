@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Gets a regulatory product by ID.
  */
-class WP_MCP_AI_Tool_Get_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Get_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Gets detailed information about a specific product in the regulatory registration system, including all metadata, ingredients, and associated registrations.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading one product master record with metadata, categories, and optional registration list.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Finding products by name or browsing the catalog; use search_reg_products or list_reg_products.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'search_reg_products', 'list_reg_products', 'update_reg_product' ),
+			'notes'           => __( 'include_registrations=true appends the product registrations with status, dates, and COS numbers.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Find_Untranslated_Strings tool.
  */
-class WP_MCP_AI_Tool_Find_Untranslated_Strings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Find_Untranslated_Strings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Find_Untranslated_Strings implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Scan website for missing translations and untranslated strings across all languages.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Auditing which content still needs translation for a target language before a translation pass.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Checking the quality of existing translations; use translation_quality_check instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'translation_quality_check', 'export_import_translations', 'auto_translate_content' ),
+			'notes'           => __( 'Limit the scan with scope (posts, products, theme, plugins, all) and a max string count.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

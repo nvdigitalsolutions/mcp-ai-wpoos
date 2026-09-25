@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Manage Autonomous Session Tool
  */
-class WP_MCP_AI_Tool_Manage_Autonomous_Session implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Manage_Autonomous_Session implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
@@ -26,6 +26,16 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_required_capability() {
 		return 'edit_posts';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'session_id',
+			'consumes' => array( 'session_id' ),
+		);
 	}
 
 	/**
@@ -117,6 +127,20 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session implements WP_MCP_AI_Tool_Interfa
 				'required'   => array( 'action' ),
 			),
 			'required_capability' => 'edit_posts',
+		);
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Starting, pausing, resuming, stopping, or updating an autonomous orchestration session.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Reading session metrics; use get_session_status. Health analysis; use analyze_loop_health.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_session_status', 'analyze_loop_health', 'check_exit_conditions' ),
+			'notes'           => __( 'action=start requires plan_id; config defaults to max_iterations 25 and token_budget 10000.', 'mcp-ai-wpoos' ),
 		);
 	}
 

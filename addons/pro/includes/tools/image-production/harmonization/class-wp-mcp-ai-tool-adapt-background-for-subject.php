@@ -21,7 +21,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-harmonization-base.php';
 /**
  * Adapt an existing background for legibility.
  */
-class WP_MCP_AI_Tool_Adapt_Background_For_Subject extends WP_MCP_AI_Tool_Harmonization_Base {
+class WP_MCP_AI_Tool_Adapt_Background_For_Subject extends WP_MCP_AI_Tool_Harmonization_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -42,6 +42,18 @@ class WP_MCP_AI_Tool_Adapt_Background_For_Subject extends WP_MCP_AI_Tool_Harmoni
 	 */
 	public function get_description() {
 		return __( 'Adjust an existing background image so a foreground subject reads clearly: targeted blur, brightness/contrast retargeting, vignette, desaturation, or AI inpaint of a landing zone. Non-destructive — saves a new attachment.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to rework an existing background (blur, brightness, vignette, desaturate, or AI inpaint) so a foreground subject reads clearly.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use generate_scene_background to create a new background from a prompt, or harmonize_image_into_background to integrate the subject.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_scene_background', 'harmonize_image_into_background', 'suggest_placement' ),
+			'notes'           => __( 'Requires Imagick or GD; the ai_inpaint_zone operation needs a configured Gemini or OpenAI provider.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

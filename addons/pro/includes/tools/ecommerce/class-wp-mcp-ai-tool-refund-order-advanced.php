@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Refund_Order_Advanced implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Refund_Order_Advanced implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -103,6 +103,20 @@ class WP_MCP_AI_Tool_Refund_Order_Advanced implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Process order refunds with automatic inventory restoration. Supports full and partial refunds, reason tracking, stock level adjustments, and customer notifications. Includes refund history and audit trail.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for tool selection.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Processing full or partial refunds with restocking and optional customer notification.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Status-only changes; use process_order_workflow or bulk_order_status_update without refunds.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'woo_orders', 'process_order_workflow', 'track_inventory_movement' ),
+			'notes'           => __( 'Refunds are irreversible and may trigger real payment reversals; confirm amounts first.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

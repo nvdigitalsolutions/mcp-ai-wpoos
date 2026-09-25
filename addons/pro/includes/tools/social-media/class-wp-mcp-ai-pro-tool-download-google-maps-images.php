@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Pro_Tool_Download_Google_Maps_Images implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface {
+class WP_MCP_AI_Pro_Tool_Download_Google_Maps_Images implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -97,6 +97,20 @@ class WP_MCP_AI_Pro_Tool_Download_Google_Maps_Images implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Downloads business listing photos from Google Maps using the Places API (New). Retrieves place photos by place_id or text search query, imports them to the WordPress Media Library with proper attribution metadata. Supports limiting the number of images and optional ZIP bundle export.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Importing Google Business listing photos into the Media Library for location pages or local SEO.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading listing metrics or publishing updates; use get_google_business_insights or post_google_business_update.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'download_facebook_page_images', 'download_instagram_page_images', 'auto_optimize_images' ),
+			'notes'           => __( 'Google Places photos carry attribution requirements and must not be scraped without permission.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

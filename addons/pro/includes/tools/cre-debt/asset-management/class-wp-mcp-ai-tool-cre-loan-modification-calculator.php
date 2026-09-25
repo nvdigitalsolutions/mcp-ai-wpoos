@@ -22,7 +22,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Loan_Modification_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Loan_Modification_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_CRE_Loan_Modification_Calculator implements WP_MCP_AI_Tool_
 	 */
 	public function get_description(): string {
 		return __( 'Calculate the financial impact of loan modifications including rate changes, term extensions, principal forbearance, and A/B note splits. Compares original vs modified debt service and DSCR.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Quantifying modification impact: rate changes, term extensions, principal forbearance, and A/B note splits against original terms.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Ranking multiple workout strategies such as foreclosure or note sale; use cre_workout_scenario_modeler.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_workout_scenario_modeler', 'cmbs_special_servicing_tracker', 'cre_loan_surveillance_dashboard' ),
+			'notes'           => __( 'Rates are decimals (0.055); set ab_note_split true to model an A/B split with a_note_pct defaulting to 70.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

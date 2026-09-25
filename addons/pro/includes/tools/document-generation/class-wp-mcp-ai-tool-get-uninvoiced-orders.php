@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.9.0
  */
-class WP_MCP_AI_Tool_Get_Uninvoiced_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Uninvoiced_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,18 @@ class WP_MCP_AI_Tool_Get_Uninvoiced_Orders implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Retrieves WooCommerce orders that have not yet been invoiced, optionally filtered by date range, customer, or minimum order amount. Requires WooCommerce to be active.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding WooCommerce orders that still need an invoice before running a billing pass.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating or sending the invoices themselves; use generate_invoice_batch for that.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_invoice_batch', 'generate_invoice_pdf' ),
+			'notes'           => __( 'Requires WooCommerce; matches orders on the _invoiced meta flag and respects date, customer, and amount filters.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

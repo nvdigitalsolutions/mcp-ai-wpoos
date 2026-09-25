@@ -21,7 +21,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 /**
  * Provides a summary of recent WooCommerce orders.
  */
-class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Returns recent WooCommerce orders with totals and statuses. Requires WooCommerce.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reviewing the latest WooCommerce orders with totals and statuses.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Product catalogs or POS order systems; use get_woo_products or flowhub_get_orders.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_woo_products', 'flowhub_get_orders', 'payhere_get_payment' ),
+			'notes'           => __( 'Requires WooCommerce; limit is capped at 20 and status accepts one order status.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

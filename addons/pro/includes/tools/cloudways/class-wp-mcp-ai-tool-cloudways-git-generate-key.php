@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Git_Generate_Key' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Git_Generate_Key extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Git_Generate_Key extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Git_Generate_Key' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Generate a fresh SSH deploy key for an application.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Creating a fresh SSH deploy key when Git deployments fail or the current key is compromised.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Reading the current public key or checking deployments; use cloudways_git_key_get or cloudways_git_history_get.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_git_key_get', 'cloudways_git_clone', 'cloudways_git_pull' ),
+				'notes'           => __( 'Regenerating invalidates the previous key; add the new public key to your Git provider.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

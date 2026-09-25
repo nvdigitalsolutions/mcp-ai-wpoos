@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Update an existing Area.
  */
-class WP_MCP_AI_Tool_PARA_Update_Area implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_PARA_Update_Area implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Get the tool slug.
@@ -44,6 +44,20 @@ class WP_MCP_AI_Tool_PARA_Update_Area implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Update an existing PARA Area. Only provided fields are changed. Set `mark_reviewed` to true to update the last-reviewed timestamp to now.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Changing an existing Area title, description, standard, owner, or cadence, or marking it reviewed.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating a new area; use para_create_area. Discovering areas; use para_list_areas.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'para_create_area', 'para_list_areas', 'para_weekly_review' ),
+			'notes'           => __( 'Only provided fields change; mark_reviewed=true stamps the last-reviewed timestamp to now.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

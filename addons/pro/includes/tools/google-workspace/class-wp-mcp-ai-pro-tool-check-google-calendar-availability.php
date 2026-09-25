@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-c
  * request at 50 calendars in `items`, so that limit is enforced locally with an
  * actionable error rather than surfaced as a raw 400.
  */
-class WP_MCP_AI_Pro_Tool_Check_Google_Calendar_Availability implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Check_Google_Calendar_Availability implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Capability required before the tool talks to the Calendar API.
@@ -68,6 +68,20 @@ class WP_MCP_AI_Pro_Tool_Check_Google_Calendar_Availability implements WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Checks free/busy availability across up to 50 Google Calendars for a given time window and returns the busy intervals per calendar, plus an all_free flag. Use this to find a meeting slot before creating an event; it returns availability only, never event titles or attendees.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking whether a time window is free across up to 50 Google Calendars before creating a meeting or event.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading event titles, attendees, or details; use list_google_calendar_events. Creating events; use create_google_calendar_event.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_google_calendar_event', 'list_google_calendar_events', 'list_google_calendars' ),
+			'notes'           => __( 'Accepts at most 50 calendar IDs per call. Returns busy intervals and an all_free flag only, never event content.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

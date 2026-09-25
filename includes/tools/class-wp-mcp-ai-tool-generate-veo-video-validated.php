@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-generate-veo-video.php';
  * This class extends the original generate_veo_video tool to use
  * Symfony Validator for argument validation.
  */
-class WP_MCP_AI_Tool_Generate_Veo_Video_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Async_Metadata_Interface {
+class WP_MCP_AI_Tool_Generate_Veo_Video_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Async_Metadata_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * The original generate_veo_video tool instance for delegation.
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_Generate_Veo_Video_Validated extends WP_MCP_AI_Validated_To
 	 */
 	public function get_description() {
 		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating Veo videos with Symfony Validator enforcement of duration, resolution, and reference inputs.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'When validation is unneeded or unavailable; use generate_veo_video.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'generate_veo_video', 'generate_omni_video' ),
+			'notes'           => __( 'Delegates to generate_veo_video after validation and shares its model fallbacks.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

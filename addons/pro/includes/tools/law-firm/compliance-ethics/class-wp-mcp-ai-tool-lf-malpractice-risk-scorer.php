@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Scores malpractice risk for legal matters based on practice area, deadlines,
  * communication frequency, and complexity factors.
  */
-class WP_MCP_AI_Tool_LF_Malpractice_Risk_Scorer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Malpractice_Risk_Scorer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -92,6 +92,20 @@ class WP_MCP_AI_Tool_LF_Malpractice_Risk_Scorer implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Calculates a malpractice risk score (0-100) for a legal matter based on practice area risk, deadline proximity, communication frequency, and case complexity.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scoring malpractice risk 0-100 for a matter from practice area, deadlines, communication, and complexity.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Ethics rule analysis or confidentiality audits; use lf_ethics_rule_checker or lf_client_confidentiality_auditor.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_ethics_rule_checker', 'lf_client_confidentiality_auditor' ),
+			'notes'           => __( 'Requires matter_id; weighs practice area risk plus deadline proximity and case complexity.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Calculate seismic base shear and storey forces for the supplied country/zone.
  */
-class WP_MCP_AI_Tool_Calculate_Seismic_Loads implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Calculate_Seismic_Loads implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -68,6 +68,20 @@ class WP_MCP_AI_Tool_Calculate_Seismic_Loads implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Calculate seismic base shear and per-storey forces using the simplified Equivalent Lateral Force method. Supports Sri Lanka (IS 1893 referenced), Jamaica (JNBC / ASCE 7 Caribbean) and the United States (ASCE 7-22). Analytical only — engage a chartered structural engineer for design.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Computing seismic base shear and per-storey forces via the simplified ASCE 7 Equivalent Lateral Force method for LK, JM, or US projects.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Wind loading; use calculate_wind_loads. Detailed member design; engage a chartered structural engineer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'calculate_wind_loads', 'check_us_ibc_irc_compliance', 'generate_compliance_dossier' ),
+			'notes'           => __( 'Optional sds_override bypasses the registry zone lookup, e.g. with USGS Seismic Design Maps values.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

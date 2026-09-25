@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Optimize space layouts using AI.
  */
-class WP_MCP_AI_Tool_Optimize_Space_Layout implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Optimize_Space_Layout implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -72,6 +72,20 @@ class WP_MCP_AI_Tool_Optimize_Space_Layout implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Optimize room layouts for functionality and flow. Analyzes traffic patterns, furniture placement, and suggests improvements for better space utilization.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Improving an existing floor plan for traffic_flow, space_efficiency, natural_light, accessibility, or privacy, honouring fixed walls.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For creating new plans or variations - use generate_floor_plan or create_floor_plan_variations.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_floor_plan_variations', 'generate_floor_plan' ),
+			'notes'           => __( 'Pass floor_plan as the JSON output of generate_floor_plan; constraints.fixed_walls and priority_rooms sharpen suggestions.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Cloudflare_Details' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Cloudflare_Details extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Cloudflare_Details extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Cloudflare_Details' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'View Cloudflare CDN status, configuration, and usage for an app.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Reviewing Cloudflare CDN status, enabled state, and DNS configuration for an app.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Enabling CDN for a new domain; use cloudways_cloudflare_add_domain.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_cloudflare_add_domain', 'cloudways_purge_app_cache', 'cloudways_get_app' ),
+			);
 		}
 
 		/** {@inheritdoc} */

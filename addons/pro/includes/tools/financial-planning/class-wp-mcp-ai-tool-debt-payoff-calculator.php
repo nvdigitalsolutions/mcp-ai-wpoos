@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Debt_Payoff_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Debt_Payoff_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,20 @@ class WP_MCP_AI_Tool_Debt_Payoff_Calculator implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Calculate debt payoff strategies using avalanche or snowball methods. Compare total interest paid, payoff timelines, and monthly payment schedules. Helps optimize debt elimination plans.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'To compare avalanche versus snowball payoff strategies and estimate interest and time savings.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For mortgages or loan affordability analysis; use mortgage_calculator instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'credit_score_tracker', 'budget_planner', 'mortgage_calculator' ),
+			'notes'           => __( 'Requires a debts array with name, balance, interest_rate, and minimum_payment per debt. strategy can be avalanche, snowball, or compare.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

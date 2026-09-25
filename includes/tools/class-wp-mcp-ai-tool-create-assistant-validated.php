@@ -25,7 +25,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-create-assistant.php';
  * Symfony Validator for argument validation, delegating the actual
  * creation logic to the parent class.
  */
-class WP_MCP_AI_Tool_Create_Assistant_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Assistant_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 
 	/**
 	 * The original create_assistant tool instance for delegation.
@@ -61,6 +61,30 @@ class WP_MCP_AI_Tool_Create_Assistant_Validated extends WP_MCP_AI_Validated_Tool
 	 */
 	public function get_description() {
 		return __( 'Creates a new AI assistant using Symfony Validator for argument validation. Can be used in two modes: (1) Manual mode - select from predefined professions and regions, or (2) Prompt mode - provide a free-form description and optional custom system prompt. Supports attachment IDs for knowledge base files. The assistant will be saved as a draft.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating an AI assistant when strict Symfony Validator argument validation is preferred over manual checks.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'When validation overhead is unneeded use create_assistant; for cloning an existing assistant use duplicate_assistant.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_assistant', 'duplicate_assistant' ),
+			'notes'           => __( 'Same parameters and creation logic as create_assistant; delegates execution to the original tool.', 'mcp-ai-wpoos' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'assistant_id',
+			'consumes' => null,
+		);
 	}
 
 	/**

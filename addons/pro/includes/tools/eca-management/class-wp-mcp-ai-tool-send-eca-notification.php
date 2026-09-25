@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Sends email notifications to students and parents about ECA events.
  */
-class WP_MCP_AI_Tool_Send_ECA_Notification implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Send_ECA_Notification implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Send_ECA_Notification implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Sends email notifications to students and parents about ECA events including enrollment confirmations, waitlist updates, schedule changes, cancellations, reminders, and payment notices.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Emailing enrolled, waitlisted, or specific students (and optionally parents) about ECA events such as cancellations, reminders, or schedule changes.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Periodic parent reports; use send_eca_parent_report. Automated notification rules; use configure_eca_notifications.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_eca_parent_report', 'configure_eca_notifications', 'get_eca' ),
+			'notes'           => __( 'Sends real email via wp_mail to students and parents; confirm recipients before sending.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

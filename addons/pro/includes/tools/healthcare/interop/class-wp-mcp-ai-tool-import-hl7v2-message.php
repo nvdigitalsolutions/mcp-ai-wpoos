@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Import HL7 v2 message tool.
  */
-class WP_MCP_AI_Tool_Import_HL7v2_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_HL7v2_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -62,6 +62,20 @@ class WP_MCP_AI_Tool_Import_HL7v2_Message implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Parse a pipe-delimited HL7 v2.x ER7 message (ADT^A04, ADT^A08, ORU^R01) and upsert the patient and observations into local CPTs.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Ingesting pipe-delimited HL7 v2.x ER7 messages (ADT^A04, ADT^A08, ORU^R01) into local members and observation records.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Importing FHIR resources; use import_fhir_bundle instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'import_fhir_bundle', 'import_vitals', 'log_vital_signs' ),
+			'notes'           => __( 'OBX segments become observation medical records on the matched member; use dry_run=true to preview without persisting.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

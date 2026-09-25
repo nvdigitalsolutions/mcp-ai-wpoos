@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Legacy_Tool_Wrapper implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface {
+class WP_MCP_AI_Legacy_Tool_Wrapper implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
@@ -154,5 +154,41 @@ class WP_MCP_AI_Legacy_Tool_Wrapper implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		return array();
+	}
+
+	/**
+	 * Forward usage guidance from the wrapped legacy tool.
+	 *
+	 * Legacy-format tools opt into model-facing usage guidance through either
+	 * of two entry points, so they never need to migrate to the interface
+	 * just to declare guidance:
+	 *
+	 *  1. a `get_usage_guidance()` method on the inner class, returning the
+	 *     standard `when_to_use` / `when_not_to_use` / `related_tools` /
+	 *     `notes` shape (same contract as
+	 *     {@see WP_MCP_AI_Tool_Usage_Guidance_Interface}); or
+	 *  2. a `usage_guidance` key inside `get_definition()`.
+	 *
+	 * The method wins when both are present. The registry normalises the
+	 * returned array before appending the `[Usage: …]` suffix, so legacy
+	 * tools reach the model with the same assembled description as
+	 * interface-based tools.
+	 *
+	 * @since 1.1.84
+	 *
+	 * @return array{when_to_use?: string, when_not_to_use?: string, related_tools?: string[], notes?: string} Guidance declaration, empty when absent.
+	 */
+	public function get_usage_guidance() {
+		if ( method_exists( $this->inner, 'get_usage_guidance' ) ) {
+			$guidance = $this->inner->get_usage_guidance();
+
+			return is_array( $guidance ) ? $guidance : array();
+		}
+
+		$definition = $this->get_definition();
+
+		return ( isset( $definition['usage_guidance'] ) && is_array( $definition['usage_guidance'] ) )
+			? $definition['usage_guidance']
+			: array();
 	}
 }

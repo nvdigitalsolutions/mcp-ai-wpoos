@@ -22,7 +22,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-ext-cog-sensor-access.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Ext_Cog_Get_Motion_Context implements WP_MCP_AI_Ext_Cog_Tool_Interface {
+class WP_MCP_AI_Tool_Ext_Cog_Get_Motion_Context implements WP_MCP_AI_Ext_Cog_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Ext_Cog_Sensor_Access;
 
@@ -51,6 +51,20 @@ class WP_MCP_AI_Tool_Ext_Cog_Get_Motion_Context implements WP_MCP_AI_Ext_Cog_Too
 	 */
 	public function get_description() {
 		return __( 'Read device orientation and motion state for understanding the user\'s physical context.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading device orientation, acceleration, and inferred activity to understand the user\'s physical context.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Visual or audio context; use ext_cog_capture_visual, ext_cog_capture_screen, or ext_cog_capture_audio.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'ext_cog_analyze_sensory_input', 'ext_cog_manage_sensor_permissions' ),
+			'notes'           => __( 'Desktop browsers may not emit device motion events; returns alpha/beta/gamma orientation angles.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

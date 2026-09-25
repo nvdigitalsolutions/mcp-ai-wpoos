@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Exports ECA data to CSV format with filtering and date range support.
  */
-class WP_MCP_AI_Tool_Export_ECA_Data implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Export_ECA_Data implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Export_ECA_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Exports ECA data to CSV format. Supports exporting ECAs, students, enrollments, attendance, or financial data with optional filters and date ranges.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing CSV exports of ECAs, students, enrollments, attendance, or financial data for external tools or record keeping.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'In-platform analytics or dashboards; use generate_eca_analytics or generate_eca_participation_report instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_eca_analytics', 'generate_eca_participation_report', 'get_eca_attendance_report' ),
+			'notes'           => __( 'Narrow large exports with the filters and date_range arguments.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

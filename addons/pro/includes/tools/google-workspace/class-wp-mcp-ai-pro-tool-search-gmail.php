@@ -19,7 +19,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-pro-gmail-client.php';
 /**
  * Provides an assistant tool for searching Gmail messages via the Gmail REST API.
  */
-class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 	const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1';
 
@@ -42,6 +42,18 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Searches the configured Gmail inbox and returns recent matches with sender, subject, timestamps, snippets, and attachment names. Results are sorted newest-first and can be collapsed per thread (thread_group), reduced to bare IDs (ids_only), or have snippets trimmed or omitted (snippet_length). Use get_gmail_message or get_gmail_thread to read full bodies.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding emails by Gmail query syntax when you need sender, subject, and snippet metadata at a glance.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading a message body or full conversation; use get_gmail_message or get_gmail_thread after searching.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_gmail_message', 'get_gmail_thread', 'list_gmail_connections' ),
+			'notes'           => __( 'Supports Gmail query operators like from:, subject:, and label:; max_results caps at 50 per page.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -21,7 +21,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-harmonization-base.php';
 /**
  * Refine the boundary of a final composite.
  */
-class WP_MCP_AI_Tool_Refine_Composite_Boundary extends WP_MCP_AI_Tool_Harmonization_Base {
+class WP_MCP_AI_Tool_Refine_Composite_Boundary extends WP_MCP_AI_Tool_Harmonization_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -42,6 +42,18 @@ class WP_MCP_AI_Tool_Refine_Composite_Boundary extends WP_MCP_AI_Tool_Harmonizat
 	 */
 	public function get_description() {
 		return __( 'Refine the foreground/background boundary of a final composite: edge feathering for transparent inputs, plus an optional low-strength AI pass that unifies grain and micro-contrast around the subject edge.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finishing a composite so the foreground and background read as one photo: edge feathering plus optional grain and micro-contrast unification.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Cleaning the subject cutout before compositing: use refine_subject_matte. Lighting mismatch: use relight_subject.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'refine_subject_matte', 'harmonize_image_into_background', 'harmonize_color' ),
+			'notes'           => __( 'use_ai_polish adds a low-strength AI pass on the boundary band only; the subject itself is left untouched.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

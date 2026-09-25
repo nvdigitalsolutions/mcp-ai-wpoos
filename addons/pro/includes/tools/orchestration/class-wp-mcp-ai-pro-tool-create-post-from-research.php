@@ -30,7 +30,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  * and author assignment. Optionally updates the Paper Store record status
  * to "published" after successful post creation.
  */
-class WP_MCP_AI_Pro_Tool_Create_Post_From_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Create_Post_From_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -52,6 +52,18 @@ class WP_MCP_AI_Pro_Tool_Create_Post_From_Research implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Creates a WordPress draft post from a Paper Store research record or raw research data. Converts stored research into a WordPress post with configurable type, status, category, tags, and author. Optionally updates the Paper Store record status to "published" after creation.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Converting a Paper Store research record or raw research data into a real WordPress draft or pending post.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Writing posts without research data or editing existing posts; use create_post or update_post instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_research_report', 'verify_information', 'create_post' ),
+			'notes'           => __( 'Creates real posts, so review the draft in wp-admin before publishing; post_status accepts draft or pending only.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
@@ -350,7 +362,17 @@ class WP_MCP_AI_Pro_Tool_Create_Post_From_Research implements WP_MCP_AI_Tool_Int
 	}
 
 	/**
-	 * Get extended tool definition.
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'post_id',
+			'consumes' => null,
+		);
+	}
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
 	 *
 	 * @return array
 	 */

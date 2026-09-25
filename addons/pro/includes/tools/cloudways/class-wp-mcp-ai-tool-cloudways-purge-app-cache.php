@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Purge_App_Cache' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Purge_App_Cache extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Purge_App_Cache extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Purge_App_Cache' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Clear all cache layers for an application (Varnish, object cache, etc.).', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Clearing stale Varnish and object cache when an app serves outdated pages after a deploy or content update.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Diagnosing performance or outages; investigate with cloudways_app_monitor_summary or cloudways_service_status first.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_git_pull', 'cloudways_service_status', 'cloudways_restart_service' ),
+				'notes'           => __( 'Only cache layers are cleared; expect a brief cache-miss period while pages rebuild.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

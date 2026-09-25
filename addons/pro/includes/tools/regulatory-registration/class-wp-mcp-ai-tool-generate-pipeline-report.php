@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates pipeline analytics reports.
  */
-class WP_MCP_AI_Tool_Generate_Pipeline_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Pipeline_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Generate_Pipeline_Report implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Generates registration pipeline analytics report showing progress, bottlenecks, stage distribution, and workflow efficiency metrics.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Analyzing where registrations sit in the workflow, average stage times, bottlenecks, and 6-month volume trends.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Per-country comparison or expiry planning; use generate_country_performance or generate_expiry_forecast.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_country_performance', 'generate_compliance_report', 'list_registrations' ),
+			'notes'           => __( 'grouping supports status, country, product, and month; bottlenecks flag the 3 slowest stages.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

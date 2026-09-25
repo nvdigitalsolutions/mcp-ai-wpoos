@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Exports products to Excel files.
  */
-class WP_MCP_AI_Tool_Export_Products_To_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Export_Products_To_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Export_Products_To_Excel implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Exports regulatory products to Excel file with custom filters, field selection, and formatting options.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing a downloadable spreadsheet of products, filtered by brand, manufacturer, or category, for offline work.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Exporting registrations instead of products, or reading data for analysis in a chat; use export_registrations_to_excel or list_reg_products.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'export_registrations_to_excel', 'list_reg_products', 'import_products_from_excel' ),
+			'notes'           => __( 'Limit the fields array to keep the file lean; the file is written under wp-content/uploads/exports.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

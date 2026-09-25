@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Manages CLE credit records for attorneys via user meta.
  */
-class WP_MCP_AI_Tool_LF_CLE_Credit_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_CLE_Credit_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -77,6 +77,20 @@ class WP_MCP_AI_Tool_LF_CLE_Credit_Tracker implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Manages Continuing Legal Education (CLE) credit records for attorneys, including adding, listing, summarizing, and deleting credit entries stored in user meta.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adding, listing, summarizing, or deleting CLE credit entries per attorney in user meta.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Looking up state CLE requirements or deadlines; use lf_bar_deadline_monitor.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_bar_deadline_monitor' ),
+			'notes'           => __( 'Action accepts add, list, get_summary, delete; category enum includes ethics and technology.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

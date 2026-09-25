@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Delete_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -81,6 +81,20 @@ class WP_MCP_AI_Tool_Delete_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Delete a lead from the CRM system. Requires an explicit confirmation parameter to prevent accidental deletions. This action cannot be undone.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently removing a lead after the user explicitly confirms with confirmation_required=true.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Staging or archiving instead of removal; use archive_stale_contacts. Bulk cleanup without per-lead confirmation.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_lead', 'list_leads', 'archive_stale_contacts' ),
+			'notes'           => __( 'Requires manage_options capability; deletion cannot be undone.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

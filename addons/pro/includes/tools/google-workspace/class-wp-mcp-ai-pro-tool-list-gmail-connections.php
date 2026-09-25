@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php
 /**
  * Provides an assistant tool for discovering Gmail connections.
  */
-class WP_MCP_AI_Pro_Tool_List_Gmail_Connections implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_List_Gmail_Connections implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -52,6 +52,20 @@ class WP_MCP_AI_Pro_Tool_List_Gmail_Connections implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Lists configured Gmail connections (Remote Sites roster plus the settings-based fallback) with their connection IDs, names, types, enabled state, and user emails. Use the returned IDs as connection_id for search_gmail, get_gmail_message, get_gmail_thread, and modify_gmail_message. Credentials are never returned.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering valid connection_id values before calling search_gmail, get_gmail_message, get_gmail_thread, or modify_gmail_message.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Searching or reading messages; use search_gmail to find and get_gmail_message to read a specific message.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'search_gmail', 'get_gmail_message', 'get_gmail_thread' ),
+			'notes'           => __( 'Credentials are never returned; the settings row appears only when settings-based Gmail credentials exist.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

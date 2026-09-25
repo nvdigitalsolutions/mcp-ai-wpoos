@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_SSH_Key_Delete' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_SSH_Key_Delete extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_SSH_Key_Delete extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_SSH_Key_Delete' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Delete a previously added SSH key by its ID.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Revoking access by removing an SSH key that is no longer trusted, identified by its key ID.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Discovering key IDs or removing all access; run cloudways_ssh_key_list first.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_ssh_key_list', 'cloudways_ssh_key_create' ),
+				'notes'           => __( 'Permanent: deleting a key immediately revokes access for everyone using it and cannot be undone.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

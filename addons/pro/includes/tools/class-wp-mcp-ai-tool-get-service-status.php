@@ -22,7 +22,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Get_Service_Status' ) ) {
 	 *
 	 * @since 1.4.0
 	 */
-	class WP_MCP_AI_Tool_Get_Service_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	class WP_MCP_AI_Tool_Get_Service_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		use WP_MCP_AI_Tool_Default_Capability;
 
@@ -45,6 +45,20 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Get_Service_Status' ) ) {
 				'name'        => __( 'Get Service Status', 'mcp-ai-wpoos' ),
 				'description' => __( 'Query the current status of one or all monitored service components.', 'mcp-ai-wpoos' ),
 				'parameters'  => $this->get_parameters_schema(),
+			);
+		}
+
+		/**
+		 * Get usage guidance for the tool.
+		 *
+		 * @return array
+		 */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Checking the current status of a single service component or all monitored components.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Managing incidents (use create_incident, update_incident, resolve_incident) or scheduling maintenance.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'create_incident', 'schedule_maintenance', 'resolve_incident' ),
+				'notes'           => __( 'Omit component_slug to return overall status plus every public component; unknown slugs error.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 

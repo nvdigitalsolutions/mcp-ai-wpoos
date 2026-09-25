@@ -23,7 +23,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Provision_New_App' ) ) {
 	/**
 	 * Provision new app tool.
 	 */
-	class WP_MCP_AI_Tool_DietPi_Provision_New_App extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_Provision_New_App extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 		public function get_slug() {
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Provision_New_App' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Install and configure new software on the DietPi device using dietpi-software. Search for available software packages, install one or more packages by DietPi software ID or name, and check installation status. Installing software requires explicit confirmation. Supports the 200+ software titles available in the DietPi optimized software catalogue.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Searching the DietPi software catalogue and installing new applications by software ID on the DietPi device.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Updating already-installed software; use dietpi_update_system. Managing a service after install; use dietpi_control_service.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_update_system', 'dietpi_control_service', 'dietpi_send_ssh_command' ),
+				'notes'           => __( 'install requires confirm=true, runs dietpi-software, and can take several minutes; search and status are read-only.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

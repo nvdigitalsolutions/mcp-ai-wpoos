@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Export DICOM study tool.
  */
-class WP_MCP_AI_Tool_Export_DICOM_Study implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Export_DICOM_Study implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_Export_DICOM_Study implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Export a locally stored imaging study to the configured DICOMweb endpoint via STOW-RS. Runs through the imaging export filter so a de-identifier can scrub PHI before transmission.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pushing a locally stored imaging study to the configured DICOMweb endpoint via STOW-RS.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Pulling remote studies into WordPress; use import_dicom_study. Connection setup; use connect_dicomweb.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'import_dicom_study', 'connect_dicomweb', 'manage_imaging_studies' ),
+			'notes'           => __( 'Metadata-only by default. deidentify defaults to true; the export filter applies the PHI scrub.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

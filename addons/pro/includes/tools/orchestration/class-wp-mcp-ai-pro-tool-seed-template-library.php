@@ -51,6 +51,20 @@ class WP_MCP_AI_Pro_Tool_Seed_Template_Library {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'First-time setup that populates the library with built-in research, content, data analysis, and marketing templates.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Authoring your own templates; use create_template. Browsing existing ones belongs to list_templates.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_template', 'list_templates', 'instantiate_template' ),
+			'notes'           => __( 'Skips templates whose names already exist unless overwrite=true, so repeated runs are safe.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @param array $arguments Tool arguments.

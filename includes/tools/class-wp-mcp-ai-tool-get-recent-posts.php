@@ -19,7 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-relevance-search.
  *
  * @since 2.4.0 Added search, orderby, order params with TF-IDF relevance.
  */
-class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Relevance_Search;
 
@@ -50,6 +50,18 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Returns recent published posts with optional keyword search, configurable sort order (date, title), and TF-IDF relevance ranking via orderby=relevance.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing or discovering posts without a known ID, or ranking candidates by keyword relevance.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Fetching one specific known post; use get_post for the full content and meta of a single ID.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_post', 'search_content', 'create_post' ),
+			'notes'           => __( 'Use orderby=relevance with a search term for TF-IDF ranking; keep limit low to bound output size.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

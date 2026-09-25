@@ -41,7 +41,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/traits/trait-wp-mcp-ai-relevance-sea
  * @since 2.1.0
  * @since 2.4.0 — Added TF-IDF relevance search, configurable orderby/order parameters.
  */
-class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_CRM_Relevance_Search;
 
@@ -158,6 +158,20 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Search CRM contacts for accounting and service-tracking emails with TF-IDF free-text relevance scoring. Supports industry-standard transaction types (invoice, payment, quote, reminder, dispute), billing-status filtering, invoice-amount ranges, service categories, compliance audit metadata, and configurable sort order (relevance, invoice_amount, days_overdue, date, name, company). Results are cached for efficient throughout-the-day querying and can be auto-refreshed on a WP Cron schedule.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding contacts by accounting email signals: invoices, payments, quotes, disputes, overdue amounts, or fiscal periods.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'General customer conversations; use crm_email_search_correspondence. New inbound leads; use crm_email_search_leads.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'crm_email_search_correspondence', 'crm_email_search_leads' ),
+			'notes'           => __( 'Use action=get_cached for repeat queries and action=schedule for cron refresh. Set include_audit_meta=true for compliance fields.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

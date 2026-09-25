@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Media_Worker_Client;
 
 	/**
@@ -47,6 +47,20 @@ class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Generate interactive health data visualizations using Chart.js. Create charts for patient vitals, medication schedules, health trends, and analytics. HIPAA-compliant with anonymized data handling. Supports line, bar, pie, and radar charts with responsive design.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Visualizing vital-sign trends, medication schedules, or checkup history as line, bar, pie, radar, or doughnut charts.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Raw data or narrative summaries; use compile_health_research_data or get_member_health_summary.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'compile_health_research_data', 'get_member_health_summary', 'get_medication_schedule' ),
+			'notes'           => __( 'return_format can be html, config, or image (PNG); anonymize_data defaults to true.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

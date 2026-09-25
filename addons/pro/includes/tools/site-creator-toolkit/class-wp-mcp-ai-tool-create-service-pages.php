@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Create_Service_Pages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Service_Pages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -54,6 +54,18 @@ class WP_MCP_AI_Tool_Create_Service_Pages implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Generates service or product pages with descriptions, benefits, pricing tables, FAQs, and strategic CTAs. Creates conversion-optimized pages for showcasing offerings.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Building a conversion-focused service or product page with hero, benefits, pricing, FAQ, and CTA sections for one offering.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For a single-goal campaign page use generate_landing_page; for a multi-page site blueprint use generate_site_plan.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_landing_page', 'generate_site_plan', 'create_cta_section' ),
+			'notes'           => __( 'Returns page structure data only; it does not create WordPress pages.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Returns a single WordPress post with its metadata and taxonomy terms.
  */
-class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Ability_Interface {
+class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Ability_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	 */
 	public function get_description() {
 		return __( 'Retrieves a single WordPress post by ID, including its content, metadata, and taxonomy terms.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'You know a specific post ID and need its full content, meta, and taxonomy terms.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Listing, searching, or discovering posts when no ID is known; use get_recent_posts or search_content instead.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_recent_posts', 'search_content', 'create_post', 'save_post' ),
+			'notes'           => __( 'Set include_meta=false and include_taxonomies=false for a leaner response when only title and content are needed.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
@@ -64,6 +76,16 @@ class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 			),
 			'required'             => array( 'post_id' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'post_id' ),
 		);
 	}
 
@@ -119,6 +141,7 @@ class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 
 		$result = array(
 			'ID'             => $post->ID,
+			'post_id'        => $post->ID,
 			'post_type'      => esc_html( $post->post_type ),
 			'title'          => get_the_title( $post ),
 			'content'        => wp_kses_post( $post->post_content ),

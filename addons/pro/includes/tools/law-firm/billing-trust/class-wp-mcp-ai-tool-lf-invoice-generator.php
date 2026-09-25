@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates invoices from recorded time entries for a matter.
  */
-class WP_MCP_AI_Tool_LF_Invoice_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Invoice_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -67,6 +67,19 @@ class WP_MCP_AI_Tool_LF_Invoice_Generator implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Generates invoices from time entries for a matter with optional LEDES format and expense inclusion.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Building standard or LEDES invoices from billable time entries and optional matter expenses for a date range.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Recording time entries or auditing billing rules; use lf_time_entry_recorder or lf_billing_compliance_checker.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_time_entry_recorder', 'lf_billing_compliance_checker', 'lf_expense_reimbursement_tracker' ),
+			'notes'           => __( 'Requires matter_id; format accepts standard or ledes; include_expenses defaults to true.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

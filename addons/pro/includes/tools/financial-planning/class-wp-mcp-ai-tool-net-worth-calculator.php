@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Net_Worth_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Net_Worth_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -82,6 +82,22 @@ class WP_MCP_AI_Tool_Net_Worth_Calculator implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Track net worth over time by calculating total assets minus liabilities. Monitor changes, set growth goals, and visualize net worth trends.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Totaling assets minus liabilities for a point-in-time net worth snapshot with category breakdowns.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Monthly cash-flow analysis; use cash_flow_analyzer. Debt payoff sequencing belongs to debt_payoff_calculator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cash_flow_analyzer', 'budget_planner', 'financial_health_score' ),
+			'notes'           => __( 'Requires assets and liabilities arrays; each asset needs a value and each liability a balance.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

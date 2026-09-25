@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates DJ client profiles.
  */
-class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Create a new client profile or update an existing client profile. If client_id is provided, updates the existing client profile instead of creating a new one. Stores contact information, preferences, and booking history. Use this tool for both creating new client profiles and updating existing ones.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new client profile or updating an existing one by client_id with contact info and preferences.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Logging an interaction with the client; use client_communication_log. Booking their event; use create_event_booking.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'client_communication_log', 'create_event_booking', 'send_client_invoice' ),
+			'notes'           => __( 'Emails must be unique; an existing email is rejected during creation.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

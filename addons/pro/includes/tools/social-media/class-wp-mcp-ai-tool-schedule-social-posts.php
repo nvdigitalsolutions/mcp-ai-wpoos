@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.8.0
  */
-class WP_MCP_AI_Tool_Schedule_Social_Posts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Schedule_Social_Posts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,18 @@ class WP_MCP_AI_Tool_Schedule_Social_Posts implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Schedules social media posts for publication. Accepts post data and scheduling parameters.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scheduling several social posts in one call, each with its own platform, content, and future time.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'A single recurring post; use schedule_social_post. Publishing immediately; use publish_to_social or post_to_multiple_platforms.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'schedule_social_post', 'bulk_schedule_posts', 'publish_to_social', 'get_content_calendar' ),
+			'notes'           => __( 'Creates real scheduled posts auto-published later; dry_run defaults to true for previewing first.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

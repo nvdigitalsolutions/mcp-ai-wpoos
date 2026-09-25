@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager
 /**
  * Read-only "what would this schedule do" inspector.
  */
-class WP_MCP_AI_Pro_Tool_Dry_Run_Pro_Schedule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Dry_Run_Pro_Schedule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -48,6 +48,18 @@ class WP_MCP_AI_Pro_Tool_Dry_Run_Pro_Schedule implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * {@inheritdoc}
 	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Previewing what a schedule would do and its upcoming run times before enabling, editing, or deleting it.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Executing a schedule or reading real results; use get_schedule_latest_result or get_schedule_run_history after an actual run.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_pro_schedule', 'update_pro_schedule', 'get_schedule_latest_result' ),
+			'notes'           => __( 'Read-only: no hook, network call, or run record is produced. Warnings explain why a schedule would not fire.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -66,6 +78,16 @@ class WP_MCP_AI_Pro_Tool_Dry_Run_Pro_Schedule implements WP_MCP_AI_Tool_Interfac
 			),
 			'required'             => array( 'schedule_id' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'schedule_id' ),
 		);
 	}
 

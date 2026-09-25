@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Manage_Template_Versions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Manage_Template_Versions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -53,6 +53,18 @@ class WP_MCP_AI_Tool_Manage_Template_Versions implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Manages template versioning with history tracking, rollback capabilities, and version comparison.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing, creating, rolling back, or comparing revisions of a saved wp_site_template by template_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'To create the template itself use save_site_template; to apply one to the site use import_site_template.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'save_site_template', 'import_site_template', 'export_template_kit' ),
+			'notes'           => __( 'Requires an existing wp_site_template post ID; rollback overwrites the current version meta.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

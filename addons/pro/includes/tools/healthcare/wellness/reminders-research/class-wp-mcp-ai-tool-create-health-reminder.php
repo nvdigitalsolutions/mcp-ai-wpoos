@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates health reminders and notifications.
  */
-class WP_MCP_AI_Tool_Create_Health_Reminder implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Health_Reminder implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_Create_Health_Reminder implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Creates health reminders and notifications for medications, checkups, prescription refills, and other health events. Supports recurring reminders with customizable frequency. Integrates with WordPress cron system for reliable delivery.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scheduling medication, checkup, refill, lab test, vaccination, or follow-up reminders, including recurring ones.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading existing medication times; use get_medication_schedule. Sending visit follow-ups; use send_appointment_followup.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_medication_schedule', 'send_appointment_followup', 'get_upcoming_checkups' ),
+			'notes'           => __( 'Delivered via WordPress cron through notification_methods such as email, sms, push, or in-app.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

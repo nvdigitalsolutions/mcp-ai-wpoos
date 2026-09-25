@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-respons
 /**
  * Render architectural views.
  */
-class WP_MCP_AI_Tool_Render_Architectural_View implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Render_Architectural_View implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Render_Architectural_View implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Generate photorealistic renderings from 3D models. Supports various camera angles, lighting, and environmental conditions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating photorealistic still renderings from a 3D model with camera angle, time of day, weather, quality, and resolution controls.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Animated tours; use create_walkthrough_animation. Building the model; use generate_3d_model. 2D drawings; use generate_architectural_drawing.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_3d_model', 'create_walkthrough_animation', 'generate_architectural_drawing' ),
+			'notes'           => __( 'Async output; quality ranges from draft to ultra and resolution from 1080p to 4k.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Deal_Pipeline_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Deal_Pipeline_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Performs the operation.
@@ -63,6 +63,20 @@ class WP_MCP_AI_Tool_CRE_Deal_Pipeline_Manager implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description(): string {
 		return __( 'Track and manage CRE loan origination deals through pipeline stages (sourced → screened → LOI → IC review → approved → closing → closed). Supports create, update, list, get, and delete operations.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating, updating, listing, or deleting deals as they move through origination pipeline stages.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Aggregate volume and conversion stats; use cre_origination_volume_tracker. Single-deal screening scores; use cre_deal_screening_calculator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_origination_volume_tracker', 'cre_deal_screening_calculator', 'cre_closing_checklist_manager' ),
+			'notes'           => __( 'Requires action: create, update, list, get, or delete. Stage is sourced, screened, loi, ic_review, approved, closing, closed, or dead.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

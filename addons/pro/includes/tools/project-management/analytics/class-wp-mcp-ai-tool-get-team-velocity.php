@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Computes team velocity metrics.
  */
-class WP_MCP_AI_Tool_Get_Team_Velocity implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Team_Velocity implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_Get_Team_Velocity implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Compute team velocity across recent periods (weeks or sprints). Returns tasks completed and optional story points per period, along with a rolling average. Optionally filter by project or assignee.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Measuring tasks or story points completed per week with a rolling average for sprint planning.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Day-by-day burn tracking; use get_burndown_chart. End-date forecasts; use forecast_completion.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'forecast_completion', 'get_burndown_chart', 'plan_sprint' ),
+			'notes'           => __( 'Story points appear only when the toolkit estimation_method is story_points; otherwise tasks are counted.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

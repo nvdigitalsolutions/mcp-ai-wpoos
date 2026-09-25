@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Retrieves Rank Math SEO insights for a single post.
  */
-class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -64,6 +64,18 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Returns Rank Math SEO details for a specific post, including focus keywords, SEO score, schema configuration, and Pro features (Content AI, Analytics, Link Counter, Image SEO) if Rank Math Pro is installed.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reviewing Rank Math SEO data for one post: focus keywords, SEO score, schema, and Pro analytics.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Editing SEO values; apply changes with save_post. For generic content reads, use get_post.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_post', 'save_post', 'get_recent_posts' ),
+			'notes'           => __( 'Provide post_id or url; requires Rank Math, with Pro features gated on Rank Math Pro.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
@@ -254,22 +266,22 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 	 *
 	 * @param string $key          Meta key (either with or without the `rank_math_` prefix).
 	 * @param int    $post_id      Post ID.
-	 * @param mixed  $default      Default value when meta is not set.
+	 * @param mixed  $default_value Default value when meta is not set.
 	 * @param bool   $auto_prefix  Whether to automatically prepend the Rank Math prefix when missing.
 	 *
 	 * @return mixed
 	 */
-	protected function get_meta_value( $key, $post_id, $default = '', $auto_prefix = true ) {
+	protected function get_meta_value( $key, $post_id, $default_value = '', $auto_prefix = true ) {
 		$value = null;
 
 		$helper_callable = array( '\\RankMath\\Helper', 'get_post_meta' );
 
 		if ( is_callable( $helper_callable ) ) {
 			if ( $auto_prefix && 0 !== strpos( $key, 'rank_math_' ) ) {
-				$value = call_user_func( $helper_callable, $key, $post_id, $default );
+				$value = call_user_func( $helper_callable, $key, $post_id, $default_value );
 			} else {
 				$trimmed_key = 0 === strpos( $key, 'rank_math_' ) ? substr( $key, strlen( 'rank_math_' ) ) : $key;
-				$value       = call_user_func( $helper_callable, $trimmed_key, $post_id, $default );
+				$value       = call_user_func( $helper_callable, $trimmed_key, $post_id, $default_value );
 			}
 		}
 
@@ -284,7 +296,7 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		if ( null === $value || '' === $value ) {
-			return $default;
+			return $default_value;
 		}
 
 		if ( is_string( $value ) ) {

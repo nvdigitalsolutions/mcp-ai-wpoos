@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * {@inheritdoc}
  */
-class WP_MCP_AI_Tool_Classify_Support_Ticket implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Classify_Support_Ticket implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -54,6 +54,20 @@ class WP_MCP_AI_Tool_Classify_Support_Ticket implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'AI categorisation: suggests category and priority for a support ticket based on content analysis.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Suggesting category and priority for a ticket from its body text.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Persisting your own field values; use update_support_ticket or create_support_ticket instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_support_ticket', 'create_support_ticket' ),
+			'notes'           => __( 'Suggestions come from keyword heuristics. Set apply_results=true to save them to the ticket.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

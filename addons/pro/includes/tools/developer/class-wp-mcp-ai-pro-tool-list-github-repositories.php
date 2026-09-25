@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-github-clie
 /**
  * Provides an assistant tool for listing GitHub repositories.
  */
-class WP_MCP_AI_Pro_Tool_List_Github_Repositories implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_List_Github_Repositories implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,20 @@ class WP_MCP_AI_Pro_Tool_List_Github_Repositories implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Lists GitHub repositories for the authenticated user.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( "Discovering the authenticated user's GitHub repositories before branching or editing files.", 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating branches or editing file contents; use github_repository_operations.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'github_repository_operations', 'manage_github_codespace' ),
+			'notes'           => __( 'Filter with type (all, owner, public, private, member); page through results with per_page.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

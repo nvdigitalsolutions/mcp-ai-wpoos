@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Log_Call_Outcome implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Log_Call_Outcome implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if the tool is available.
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_Log_Call_Outcome implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Record a call outcome with disposition, notes, and optional recording URL.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording a call disposition, notes, duration, and recording URL against a lead after a phone conversation.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Scheduling a callback; use schedule_follow_up. Logging generic activity; use create_crm_activity.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'schedule_follow_up', 'create_crm_activity', 'get_crm_activity' ),
+			'notes'           => __( 'Dispositions qualified and demo_scheduled mark the lead qualified and set lead_score to 80.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

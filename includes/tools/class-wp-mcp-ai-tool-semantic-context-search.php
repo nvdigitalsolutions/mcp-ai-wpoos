@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -46,6 +46,20 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Search agent contexts using semantic similarity based on vector embeddings. More accurate than keyword matching for understanding context relevance. Requires OpenAI API key for embedding generation.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Ranking agent contexts by semantic similarity when keyword matching misses meaning; filter by agent and context type.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Hierarchical recall; use recall_memory for wing/room recall or retrieve_agent_memory for context IDs and filters.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'retrieve_agent_memory', 'recall_memory', 'semantic_content_search' ),
+			'notes'           => __( 'Requires an OpenAI API key for embeddings; scope with agent_id and filters to keep results relevant.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

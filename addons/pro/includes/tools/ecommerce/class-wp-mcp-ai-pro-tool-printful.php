@@ -22,7 +22,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Printful' ) ) {
 	 *
 	 * @since 1.0.0
 	 */
-	class WP_MCP_AI_Pro_Tool_Printful implements WP_MCP_AI_Tool_Interface {
+	class WP_MCP_AI_Pro_Tool_Printful implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/**
 		 * {@inheritdoc}
@@ -43,6 +43,18 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Printful' ) ) {
 		 */
 		public function get_description() {
 			return __( 'Access and manage Printful print-on-demand services. Browse the product catalog, manage store products and variants, create and track orders, generate mockups, calculate shipping rates, and view store statistics. IMPORTANT: Always call with action="list_connections" FIRST to discover available Printful connection IDs, then use those IDs in subsequent calls. WORFKLOW: Use get_catalog_products and get_catalog_variant to browse available products, create_sync_product to add products to your store, then create_order to place orders with those products.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/**
+		 * {@inheritdoc}
+		 */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Managing Printful print-on-demand work: catalog browsing, sync products, orders, mockups, shipping rates, and store stats.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Managing WooCommerce or Shopify stores; use woo_products, woo_orders, or the shopify_* tools instead.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'woo_products', 'woo_orders', 'shopify_products' ),
+				'notes'           => __( 'Always call with action=list_connections first to discover Printful connection IDs; create_order needs recipient and items.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/**

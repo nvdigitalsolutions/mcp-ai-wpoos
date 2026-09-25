@@ -15,7 +15,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_List_Jackett_Indexers' ) ) {
 	/**
 	 * Lists Jackett indexers via the Jackett API.
 	 */
-	class WP_MCP_AI_Tool_DietPi_List_Jackett_Indexers extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_List_Jackett_Indexers extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 		/**
 		 * {@inheritdoc}
 		 */
@@ -35,6 +35,17 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_List_Jackett_Indexers' ) ) {
 		 */
 		public function get_description() {
 			return __( 'List all configured Jackett indexers with their names, capabilities, and supported categories.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/**
+		 * {@inheritdoc}
+		 */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Listing configured Jackett indexers with their names and supported categories.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Searching for releases across indexers; use dietpi_search_jackett.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_search_jackett', 'dietpi_list_radarr_movies', 'dietpi_list_sonarr_series' ),
+			);
 		}
 
 		/**

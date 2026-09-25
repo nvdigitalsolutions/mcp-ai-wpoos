@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.5.0
  */
-class WP_MCP_AI_Tool_OKF_Validate_Attestation implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_OKF_Validate_Attestation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -65,6 +65,20 @@ class WP_MCP_AI_Tool_OKF_Validate_Attestation implements WP_MCP_AI_Tool_Interfac
 		return __(
 			'Validates an OKF v0.2 Attested Computation concept without executing it. Confirms the concept has the required structure (type, runtime, executor, attester), checks trust signals (status, trust tier, staleness), and verifies that referenced attester/executor files exist within the bundle. Returns the sanctioned computation body and a verdict on whether the computation is ready to be trusted. Use this before relying on a computed value — always validate the definition before accepting its output.',
 			'mcp-ai-wpoos'
+		);
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Verifying an Attested Computation concept is structurally sound before trusting its output.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Executing the computation or checking whole-bundle conformance; use okf_validate_bundle for conformance.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'okf_validate_bundle', 'okf_read_concept' ),
+			'notes'           => __( 'Does not run the computation; the verdict is ready=false for missing fields, deprecation, staleness, or draft status.', 'mcp-ai-wpoos' ),
 		);
 	}
 

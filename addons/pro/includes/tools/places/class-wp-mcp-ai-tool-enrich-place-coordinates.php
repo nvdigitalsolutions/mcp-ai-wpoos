@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.4.2
  */
-class WP_MCP_AI_Tool_Enrich_Place_Coordinates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Enrich_Place_Coordinates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -57,6 +57,20 @@ class WP_MCP_AI_Tool_Enrich_Place_Coordinates implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Geocode a place to fill in missing latitude and longitude. Uses Google Maps if a key is configured, otherwise falls back to the free Nominatim (OpenStreetMap) service. Supports single place or batch mode.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Filling in missing latitude/longitude for existing places, one place or a batch.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Fetching ratings or contact data; use enrich_place_details for Google Places fields.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'enrich_place_details', 'get_place', 'list_places' ),
+			'notes'           => __( 'Provider auto uses Google when a key exists, otherwise free Nominatim; use dry_run=true to preview before saving.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

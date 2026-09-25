@@ -29,7 +29,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-ext-cog-sensor-access.php';
  *
  * @since 1.8.0
  */
-class WP_MCP_AI_Tool_Ext_Cog_Recognize_Products implements WP_MCP_AI_Ext_Cog_Tool_Interface {
+class WP_MCP_AI_Tool_Ext_Cog_Recognize_Products implements WP_MCP_AI_Ext_Cog_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Ext_Cog_Sensor_Access;
 
@@ -58,6 +58,20 @@ class WP_MCP_AI_Tool_Ext_Cog_Recognize_Products implements WP_MCP_AI_Ext_Cog_Too
 	 */
 	public function get_description() {
 		return __( 'Identify fashion, luxury, and retail products visible in the user\'s camera feed using FashionCLIP zero-shot classification, OWLv2 object detection, or DINOv2 feature extraction. Designed for shelf-stocking scenarios: count items per brand, identify specific products, and find similar-looking items. Supports HuggingFace Inference API and local Ollama vision models.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Identifying fashion, luxury, or retail products and brands in a single camera snapshot.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Generic object counts; use ext_cog_detect_objects. Video streams; use ext_cog_analyze_video_feed.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'ext_cog_detect_objects', 'ext_cog_analyze_video_feed', 'ext_cog_capture_visual' ),
+			'notes'           => __( 'Use search_mode similarity to extract a DINOv2 embedding for vector search.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

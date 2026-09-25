@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Tax_Loss_Harvesting_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Tax_Loss_Harvesting_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,22 @@ class WP_MCP_AI_Tool_Tax_Loss_Harvesting_Tracker implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Track tax-loss harvesting opportunities to offset capital gains. Identifies positions with unrealized losses, ensures wash sale rule compliance, and estimates potential tax savings. EDUCATIONAL ONLY - Not tax advice.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding unrealized losses worth harvesting with 30-day wash-sale checks and estimated tax savings.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Overall liability estimates; use tax_estimator. Recording the actual sale belongs to portfolio_transaction_log.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'tax_estimator', 'portfolio_transaction_log', 'portfolio_visualizer' ),
+			'notes'           => __( 'Requires holdings with ticker, shares, cost_basis, current_price; purchase_date enables wash-sale checks.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

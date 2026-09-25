@@ -47,7 +47,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.8.0
  */
-class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -87,6 +87,20 @@ class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Analyse an email for spam, promotional/newsletter content, priority signals, and automated notifications. Returns a hygiene score (0–100) and classification tags to help the import pipeline auto-filter noise and auto-prioritise important mail.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scoring an incoming email for spam, promotional, priority, and notification signals before it enters the import pipeline.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Managing the exclude and priority lists themselves; use manage_email_hygiene. Deleting spam or stale leads; use prune_crm_messages.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_email_hygiene', 'prune_crm_messages', 'import_gmail_to_crm' ),
+			'notes'           => __( 'Returns a hygiene score (0-100) with classification tags; gmail_labels and headers improve accuracy.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

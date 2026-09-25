@@ -19,7 +19,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 /**
  * Allows privileged users to create WP-Cron jobs.
  */
-class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
+class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Safety_Profile;
 
@@ -42,6 +42,20 @@ class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Schedules a WordPress cron event for a given hook, schedule, and arguments.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scheduling a WordPress cron event for a hook with an optional recurrence schedule and arguments.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'For inspecting or cancelling existing jobs use get_cron_job, list_cron_jobs, or delete_cron_job.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_cron_job_validated', 'get_cron_job', 'delete_cron_job' ),
+			'notes'           => __( 'Requires manage_options; use schedule=single for one-off events and provide a future timestamp.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
@@ -106,6 +120,16 @@ class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP
 			),
 			'required'             => array( 'hook' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'job_id',
+			'consumes' => null,
 		);
 	}
 

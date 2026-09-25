@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_QMS_List_Controlled_Documents tool.
  */
-class WP_MCP_AI_Tool_QMS_List_Controlled_Documents implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_QMS_List_Controlled_Documents implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 
 	/**
@@ -43,6 +43,18 @@ class WP_MCP_AI_Tool_QMS_List_Controlled_Documents implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Master document register. List controlled documents with filters for status (draft/in_review/approved/released/superseded/obsolete), doc type, owner, or review-due-by date.', 'mcp-ai-wpoos-pro' );
+	}
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing the controlled-document register with filters for status, doc type, owner, or review-due date.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Auditing history or changing state; use qms_get_audit_trail for events and the qms_* transition tools to act.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'qms_get_audit_trail', 'qms_create_controlled_document', 'qms_schedule_review' ),
+		);
 	}
 		/**
 		 * Get the parameters schema.

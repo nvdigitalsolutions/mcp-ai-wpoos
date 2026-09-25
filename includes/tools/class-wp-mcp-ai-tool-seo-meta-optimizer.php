@@ -28,7 +28,7 @@ require_once __DIR__ . '/../traits/trait-wp-mcp-ai-tool-wordpress-native.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_SEO_Meta_Optimizer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_SEO_Meta_Optimizer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_WordPress_Native;
 
 	/**
@@ -50,6 +50,18 @@ class WP_MCP_AI_Tool_SEO_Meta_Optimizer implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Generates SEO-optimized meta tags following 2026 industry standards. Creates compelling title tags (50-60 chars), meta descriptions (140-160 chars), and schema markup recommendations.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to generate SEO title tags, meta descriptions, and schema markup recommendations for a post.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Use image_alt_text_optimizer for image alt text or suggest_internal_links for internal link opportunities.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'image_alt_text_optimizer', 'suggest_internal_links', 'save_post_validated' ),
+			'notes'           => __( 'auto_save requires Rank Math or Yoast. Titles target 50-60 chars and descriptions 140-160.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Manages budgets and budget tracking for legal matters.
  */
-class WP_MCP_AI_Tool_LF_Matter_Budget_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Matter_Budget_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_LF_Matter_Budget_Manager implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Manages budgets for legal matters including setting initial budgets, tracking utilization against time entries, and updating budget allocations with optional category breakdown.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Setting, updating, or checking a matter budget and its utilization against stored time entries, with optional category breakdown.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Analyzing time or communication trends; use lf_matter_analytics_generator. Recording time entries; use lf_time_entry_recorder.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_matter_analytics_generator', 'lf_time_entry_recorder', 'lf_matter_pipeline_manager' ),
+			'notes'           => __( 'action accepts set_budget, get_status, or update_budget. get_status flags at_risk at 80% utilization and over_budget at 100%.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

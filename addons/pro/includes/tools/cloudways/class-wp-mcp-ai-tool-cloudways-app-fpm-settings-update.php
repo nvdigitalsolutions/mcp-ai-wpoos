@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_FPM_Settings_Update' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_App_FPM_Settings_Update extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_App_FPM_Settings_Update extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_FPM_Settings_Update' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Configure PHP-FPM settings (workers, max children, request memory).', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Tuning PHP-FPM workers or memory limits when PHP analytics show slow pages or exhausted limits.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Reading current values; call cloudways_app_fpm_settings_get first so updates are informed.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_app_fpm_settings_get', 'cloudways_app_php_analytics', 'cloudways_restart_service' ),
+				'notes'           => __( 'Only provided fields change; pass at least one of max_children, max_requests, or memory_limit.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

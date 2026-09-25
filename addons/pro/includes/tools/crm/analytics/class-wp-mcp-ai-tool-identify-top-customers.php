@@ -43,7 +43,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.7.0
  */
-class WP_MCP_AI_Tool_Identify_Top_Customers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Identify_Top_Customers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -86,6 +86,20 @@ class WP_MCP_AI_Tool_Identify_Top_Customers implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Identify your most valuable customer relationships by cross-referencing lead quality, deal pipeline value, activity volume, and lifecycle progression. Answers the question "who is worth the most to my business?" — ranks by revenue potential, not contact frequency. For contact-frequency ranking, use identify_top_clients instead.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Ranking your most valuable customer relationships by lead quality, deal pipeline value, activity volume, and lifecycle.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Contact-frequency ranking; use identify_top_clients, which scores engagement volume and recency instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'identify_top_clients', 'list_customers', 'recalculate_engagement_scores' ),
+			'notes'           => __( 'Ranks by revenue potential, not contact frequency; include_customers_only restricts to converted leads.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

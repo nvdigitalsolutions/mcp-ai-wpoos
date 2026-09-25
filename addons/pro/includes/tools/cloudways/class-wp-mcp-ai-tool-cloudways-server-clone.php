@@ -22,7 +22,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Clone' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Server_Clone extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Server_Clone extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -39,6 +39,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Clone' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Clone an existing server to a new server with the same applications and optionally settings, domains, cron jobs, and SSL certificates.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Duplicating an existing server with its apps into a new server, for staging or failover.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Empty new servers or app-only copies; use cloudways_server_create or cloudways_app_clone.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_server_create', 'cloudways_get_server', 'cloudways_list_servers' ),
+				'notes'           => __( 'Creates a newly billed server; track the async result with cloudways_get_operation_status.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

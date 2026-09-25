@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager
 /**
  * Provides an AI tool for creating pro scheduled tasks.
  */
-class WP_MCP_AI_Pro_Tool_Create_Pro_Schedule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Create_Pro_Schedule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -39,6 +39,18 @@ class WP_MCP_AI_Pro_Tool_Create_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Creates a named, managed scheduled task with retry logic, failure notifications, execution history, and enable/disable control.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new managed schedule (task, workflow, assistant_run, or channel_broadcast) with retries and failure notifications.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Changing an existing schedule; use update_pro_schedule, or plan_schedules_from_workflow to derive schedules from a workflow.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_pro_schedules', 'update_pro_schedule', 'dry_run_pro_schedule' ),
+			'notes'           => __( 'Validate new configurations with dry_run_pro_schedule before enabling; use schedule "single" for one-shot runs.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
@@ -258,7 +270,16 @@ class WP_MCP_AI_Pro_Tool_Create_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'schedule_id',
+			'consumes' => null,
+		);
+	}
 
+	/**
 	 * Get the required capability.
 	 *
 	 * @return string

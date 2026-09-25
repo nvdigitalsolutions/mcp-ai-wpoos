@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for sending Discord messages via the Discord Bot API.
  */
-class WP_MCP_AI_Pro_Tool_Send_Discord_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Send_Discord_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Discord requests.
 	 */
@@ -54,6 +54,18 @@ class WP_MCP_AI_Pro_Tool_Send_Discord_Message implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Sends a text message to a Discord channel using the Discord Bot API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending a text message to a Discord channel using a bot token.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading channel history; use get_discord_messages. Listing channels; use get_discord_channels.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_discord_messages', 'get_discord_channels', 'unified_channel_broadcast' ),
+			'notes'           => __( 'Posts real messages to Discord; the bot must be able to send in the target channel.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

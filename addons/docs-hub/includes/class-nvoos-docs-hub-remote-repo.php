@@ -36,7 +36,12 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 	/**
 	 * Allowed fetch hosts (domain allowlist).
 	 *
-	 * Only these hosts may be contacted at runtime.
+	 * Only these hosts may be contacted at runtime, and only while serving
+	 * the documentation-import service: an administrator-triggered index
+	 * rebuild, or the settings-page file picker, for a configured remote
+	 * repository. No requests are made unless the administrator configures
+	 * one. This service is disclosed in readme.txt under "External
+	 * Services".
 	 *
 	 * @var string[]
 	 */
@@ -190,6 +195,9 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 			$local_content = $force ? false : $this->get_cached_content( $cache_key );
 
 			if ( false === $local_content ) {
+				// Server-side fetch for the documentation-import service — runs
+				// only during an administrator-triggered rebuild and is
+				// disclosed in readme.txt under "External Services".
 				// $full_repo_path segments come from the GitHub tree API and are already URL-safe.
 				$raw_url = 'https://raw.githubusercontent.com/'
 					. rawurlencode( $owner ) . '/'

@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * {@inheritdoc}
  */
-class WP_MCP_AI_Tool_Update_Support_Ticket implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Support_Ticket implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -54,6 +54,20 @@ class WP_MCP_AI_Tool_Update_Support_Ticket implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Update a support ticket: change status, assignee, priority, category, add internal note, update body.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Changing status, priority, assignee, category, tags, subject, body, or adding an internal note.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating tickets; use create_support_ticket. Priority escalation with SLA recalc; use escalate_support_ticket.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_support_ticket', 'escalate_support_ticket', 'merge_support_tickets' ),
+			'notes'           => __( 'Only fields present in arguments are changed. A note argument is stored as a CRM activity.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

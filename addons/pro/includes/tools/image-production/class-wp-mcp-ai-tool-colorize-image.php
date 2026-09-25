@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.ph
 /**
  * Colorize black and white images using AI.
  */
-class WP_MCP_AI_Tool_Colorize_Image extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Colorize_Image extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,18 @@ class WP_MCP_AI_Tool_Colorize_Image extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	public function get_description() {
 		return __( 'Colorize black and white or grayscale images using AI. Automatically detects and applies realistic colors.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to add realistic color to black-and-white or grayscale photos with AI, choosing auto, vibrant, or subtle color modes.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use enhance_image_quality to correct color and contrast on already-color images, or apply_artistic_style for artistic recoloring.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'enhance_image_quality', 'apply_artistic_style', 'generate_image_variations' ),
+			'notes'           => __( 'Set use_remote=true to prefer GPU processing when available.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

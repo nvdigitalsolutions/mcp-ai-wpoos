@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_DJ_Management_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_DJ_Management_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR = WP_MCP_AI_PRO_PATH . 'includes/tools/dj-management/examples';
@@ -62,6 +62,18 @@ class WP_MCP_AI_Tool_Import_DJ_Management_Blueprint implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Install a curated DJ management assistant blueprint for business management or event booking coordination workflows.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing one of the curated DJ assistant blueprints (dj-business-manager or event-booking-coordinator) as a new assistant.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating or editing individual DJ business records; use create_client_profile, create_event_booking, or manage_music_library.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_event_booking', 'create_client_profile', 'generate_dj_contract' ),
+			'notes'           => __( 'Blueprint slugs: dj-business-manager, event-booking-coordinator. Set overwrite true to replace an existing assistant.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * {@inheritdoc}

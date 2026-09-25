@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_Multilingual_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Multilingual_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR  = WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/examples';
@@ -49,6 +49,19 @@ class WP_MCP_AI_Tool_Import_Multilingual_Blueprint implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Install the Translation & Localization Manager assistant blueprint.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing or re-installing the Translation and Localization Manager assistant blueprint.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Running translation tasks directly; use auto_translate_content or translate_woocommerce_products instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'auto_translate_content', 'translate_woocommerce_products' ),
+			'notes'           => __( 'The only blueprint is translation-localization-manager; set overwrite=true to replace an existing assistant.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 	/**
 	 * {@inheritdoc}
 	 */

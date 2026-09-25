@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-respons
 /**
  * Generate floor plans using AI.
  */
-class WP_MCP_AI_Tool_Generate_Floor_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Floor_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Generate_Floor_Plan implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Generate floor plans from natural language requirements. Supports residential, commercial, and custom building types with room specifications and dimensions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating a floor plan from natural-language requirements with building type, area, floors, style, and optional furniture placement.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For sketch conversion or alternative layouts - use convert_sketch_to_floor_plan or create_floor_plan_variations.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_floor_plan_variations', 'optimize_space_layout' ),
+			'notes'           => __( 'output_format accepts svg, png, dxf, or json; building_type accepts residential, commercial, industrial, or mixed-use.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

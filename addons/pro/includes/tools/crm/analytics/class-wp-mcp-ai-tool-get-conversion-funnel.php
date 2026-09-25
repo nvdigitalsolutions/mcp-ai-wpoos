@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
 
 /** Conversion Funnel — stage-to-stage conversion rates. */
-class WP_MCP_AI_Tool_Get_Conversion_Funnel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Conversion_Funnel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Whether this tool is available.
 	 *
@@ -51,6 +51,20 @@ class WP_MCP_AI_Tool_Get_Conversion_Funnel implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Stage-to-stage conversion rates and weighted funnel analysis.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Measuring stage-to-stage conversion rates and the overall win rate for the configured pipeline stages.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Forecasting revenue amounts; use forecast_pipeline_revenue. Per-deal stage listings; use get_pipeline_view.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'forecast_pipeline_revenue', 'get_pipeline_view', 'get_pipeline_digest' ),
+			'notes'           => __( 'Conversion is null for the first open stage; date filters apply to the deal creation date.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * Parameters schema.

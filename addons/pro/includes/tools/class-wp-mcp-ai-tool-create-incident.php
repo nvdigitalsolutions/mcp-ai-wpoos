@@ -22,7 +22,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Incident' ) ) {
 	 *
 	 * @since 1.4.0
 	 */
-	class WP_MCP_AI_Tool_Create_Incident implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	class WP_MCP_AI_Tool_Create_Incident implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		use WP_MCP_AI_Tool_Default_Capability;
 
@@ -46,6 +46,20 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Incident' ) ) {
 				'description'         => __( 'Create a new operational incident for tracking service disruptions.', 'mcp-ai-wpoos' ),
 				'required_capability' => 'manage_options',
 				'parameters'          => $this->get_parameters_schema(),
+			);
+		}
+
+		/**
+		 * Get usage guidance for the tool.
+		 *
+		 * @return array
+		 */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Creating a new operational incident when service degradation or an outage is detected.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Updating an existing incident (use update_incident) or closing one (use resolve_incident).', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'update_incident', 'resolve_incident', 'get_service_status' ),
+				'notes'           => __( 'Severity defaults to minor (minor, major, critical); associate affected components via service slugs.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 

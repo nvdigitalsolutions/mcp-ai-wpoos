@@ -21,7 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Export to gbXML.
  */
-class WP_MCP_AI_Tool_Export_To_Gbxml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Export_To_Gbxml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 
@@ -75,6 +75,20 @@ class WP_MCP_AI_Tool_Export_To_Gbxml implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Generate a gbXML 6.01 XML document from a normalised floor plan. Output is a valid gbXML body for import into EnergyPlus / OpenStudio for whole-building energy modelling.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Emitting a gbXML 6.01 body for whole-building energy modelling in EnergyPlus or OpenStudio from a normalised floor plan.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Native BIM exchange with authoring tools; use export_to_ifc for the IFC entity graph instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'import_dwg_floor_plan', 'import_ifc_model', 'export_to_ifc' ),
+			'notes'           => __( 'Output is geometry summary only; add surfaces and constructions in EnergyPlus or OpenStudio.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

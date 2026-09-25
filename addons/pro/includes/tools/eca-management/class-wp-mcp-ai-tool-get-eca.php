@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get details of a single Extra-Curricular Activity.
  */
-class WP_MCP_AI_Tool_Get_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,18 @@ class WP_MCP_AI_Tool_Get_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	 */
 	public function get_description() {
 		return __( 'Gets detailed information about a specific Extra-Curricular Activity including schedule, venue, capacity, enrollment breakdown, and teacher assignments. Optionally returns the list of enrolled students.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching full details of one known ECA, including schedule, capacity, and enrollment breakdown.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Discovering or filtering ECAs; use list_ecas. Multi-ECA weekly views; use get_eca_timetable.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_ecas', 'update_eca', 'get_eca_timetable', 'get_eca_attendance_report' ),
+			'notes'           => __( 'Set include_enrollments to true to also return the enrolled student list.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

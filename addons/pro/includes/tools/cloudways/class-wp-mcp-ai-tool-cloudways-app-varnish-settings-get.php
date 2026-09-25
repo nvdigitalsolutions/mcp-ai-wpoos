@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Varnish_Settings_Get' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_App_Varnish_Settings_Get extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_App_Varnish_Settings_Get extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Varnish_Settings_Get' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Retrieve Varnish configuration (TTL, cacheable paths, exclusions) for an application.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Reviewing current Varnish TTL, enabled state, cacheable paths, and exclusions for an app.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Changing cache behavior; use cloudways_app_varnish_settings_update to write new values.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_app_varnish_settings_update', 'cloudways_purge_app_cache', 'cloudways_get_app' ),
+			);
 		}
 
 		/** {@inheritdoc} */

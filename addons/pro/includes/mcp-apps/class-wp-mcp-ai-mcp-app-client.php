@@ -89,6 +89,29 @@ class WP_MCP_AI_MCP_App_Client {
 	protected $request_id = 0;
 
 	/**
+	 * Session ID issued by sessionful (pre-2026-07-28) Streamable HTTP servers.
+	 *
+	 * Captured from the Mcp-Session-Id response header during the initialize
+	 * handshake and echoed on every subsequent request to the same server.
+	 *
+	 * @var string
+	 */
+	protected $session_id = '';
+
+	/**
+	 * Protocol version negotiated with a sessionful server via initialize().
+	 *
+	 * Empty while speaking the stateless 2026-07-28 dialect. Once a legacy
+	 * server reports its own protocolVersion (e.g. 2025-11-25), every
+	 * subsequent request must advertise that version instead of the client's
+	 * default — servers reject requests stamped with a version they do not
+	 * implement.
+	 *
+	 * @var string
+	 */
+	protected $negotiated_protocol_version = '';
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 1.8.0
@@ -96,8 +119,8 @@ class WP_MCP_AI_MCP_App_Client {
 	 *     Connection configuration.
 	 *
 	 *     @type string $server_url  Required. Remote MCP server endpoint URL.
-	 *     @type string $auth_type   Authentication type: 'bearer', 'header', 'oauth', or 'none'. Default 'none'.
-	 *     @type string $token       Bearer token, header value, or OAuth access token for authentication.
+	 *     @type string $auth_type   Authentication type: 'bearer', 'basic', 'header', 'oauth', or 'none'. Default 'none'.
+	 *     @type string $token       Bearer token, Basic credential (base64 or raw user:pass), header value, or OAuth access token for authentication.
 	 *     @type string $header_name Custom header name when auth_type is 'header'.
 	 *     @type array  $oauth_data  OAuth token data (access_token, refresh_token, expires_in, issued_at) when auth_type is 'oauth'.
 	 *     @type WP_MCP_AI_MCP_App_OAuth_Client $oauth_client Pre-configured OAuth client instance (optional, used for auto-refresh).
@@ -160,6 +183,12 @@ class WP_MCP_AI_MCP_App_Client {
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
+		}
+
+		// Remember the version the server negotiated so subsequent requests
+		// advertise it instead of the client's 2026-07-28 default.
+		if ( isset( $result['protocolVersion'] ) ) {
+			$this->negotiated_protocol_version = sanitize_text_field( $result['protocolVersion'] );
 		}
 
 		// Send initialized notification (legacy).
@@ -321,20 +350,69 @@ class WP_MCP_AI_MCP_App_Client {
 			);
 		}
 
-		// Try discover() first; fall back to initialize() for 2025-era servers.
-		$result = $this->discover();
+		$start_time = microtime( true );
+
+		// Try discover() first; fall back to initialize() for sessionful
+		// (pre-2026-07-28) servers.
+		$handshake_method = 'discover';
+		$result           = $this->discover();
 
 		if ( is_wp_error( $result ) ) {
 			$error_data = $result->get_error_data();
 			$rpc_code   = is_array( $error_data ) && isset( $error_data['rpc_code'] ) ? $error_data['rpc_code'] : 0;
-			if ( -32601 === $rpc_code ) {
-				// Method not found - server is pre-2026-07-28, fall back to initialize.
-				return $this->initialize();
+
+			// Fall back to the legacy initialize handshake when the server
+			// does not implement server/discover (-32601) or rejects the
+			// stateless request (e.g. -32600 "Missing Mcp-Session-Id header").
+			$message = strtolower( $result->get_error_message() );
+			if ( -32601 !== $rpc_code && -32600 !== $rpc_code && false === strpos( $message, 'session' ) ) {
+				return $result;
 			}
-			return $result;
+
+			$handshake_method = 'initialize';
+			$result           = $this->initialize();
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
 		}
 
-		return $result;
+		// Normalize the handshake result into a canonical payload. discover()
+		// returns pre-extracted keys while initialize() returns the raw result.
+		if ( 'initialize' === $handshake_method ) {
+			$protocol     = isset( $result['protocolVersion'] ) ? sanitize_text_field( $result['protocolVersion'] ) : '2025-03-26';
+			$server_info  = isset( $result['serverInfo'] ) ? $result['serverInfo'] : array();
+			$capabilities = isset( $result['capabilities'] ) ? $result['capabilities'] : array();
+		} else {
+			$protocol     = self::PROTOCOL_VERSION;
+			$server_info  = isset( $result['server_info'] ) ? $result['server_info'] : array();
+			$capabilities = isset( $result['capabilities'] ) ? $result['capabilities'] : array();
+		}
+
+		// Enumerate tools so the result reflects whether the app can actually
+		// be used, not just whether the handshake succeeded.
+		$tool_count = null;
+		$tool_error = '';
+		$tools      = $this->list_tools();
+
+		if ( is_wp_error( $tools ) ) {
+			$tool_error = $tools->get_error_message();
+		} else {
+			$tool_count = count( $tools );
+		}
+
+		return array(
+			'success'        => true,
+			'handshake'      => $handshake_method,
+			'protocol'       => $protocol,
+			'server_info'    => $server_info,
+			'capabilities'   => $capabilities,
+			'has_tools'      => ! empty( $capabilities['tools'] ),
+			'tool_count'     => $tool_count,
+			'tool_error'     => $tool_error,
+			'session_active' => ! empty( $this->session_id ),
+			'latency_ms'     => (int) round( ( microtime( true ) - $start_time ) * 1000 ),
+		);
 	}
 
 	/**
@@ -351,7 +429,14 @@ class WP_MCP_AI_MCP_App_Client {
 		++$this->request_id;
 
 		// Inject _meta for every request except initialize and server/discover.
-		if ( ! in_array( $method, array( 'initialize', 'server/discover' ), true ) ) {
+		// The _meta envelope is a 2026-07-28 construct — skip it when a legacy
+		// session negotiated an older protocol version.
+		if ( ! in_array( $method, array( 'initialize', 'server/discover' ), true ) && '' === $this->negotiated_protocol_version ) {
+			// list_tools() and friends pass new stdClass() as params; the
+			// _meta envelope requires an array before merging.
+			if ( ! is_array( $params ) ) {
+				$params = array();
+			}
 			$meta   = $this->build_request_meta();
 			$params = array_merge( $params, $meta );
 		}
@@ -387,7 +472,7 @@ class WP_MCP_AI_MCP_App_Client {
 		 */
 		$args = apply_filters( 'wp_mcp_ai_mcp_app_request_args', $args, $method, $this->server_url );
 
-		$response = wp_remote_request( $this->server_url, $args );
+		$response = $this->dispatch_request( $payload, $headers, $args );
 
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
@@ -402,17 +487,11 @@ class WP_MCP_AI_MCP_App_Client {
 
 		$status_code = wp_remote_retrieve_response_code( $response );
 
-		if ( $status_code < 200 || $status_code >= 300 ) {
-			return new WP_Error(
-				'wp_mcp_ai_mcp_app_http_error',
-				sprintf(
-					/* translators: 1: HTTP status code, 2: Server URL. */
-					__( 'MCP server returned HTTP %1$d from %2$s.', 'mcp-ai-wpoos-pro' ),
-					$status_code,
-					$this->server_url
-				),
-				array( 'status' => $status_code )
-			);
+		// Capture a session ID issued by sessionful (pre-2026-07-28) servers so
+		// subsequent requests can echo it via the Mcp-Session-Id header.
+		$session_id = $this->retrieve_header_case_insensitive( $response, 'Mcp-Session-Id' );
+		if ( ! empty( $session_id ) ) {
+			$this->session_id = sanitize_text_field( $session_id );
 		}
 
 		$body = wp_remote_retrieve_body( $response );
@@ -425,6 +504,34 @@ class WP_MCP_AI_MCP_App_Client {
 		}
 
 		$decoded = json_decode( $body, true );
+
+		if ( $status_code < 200 || $status_code >= 300 ) {
+			// Some servers return a JSON-RPC error with a non-2xx status (e.g.
+			// HTTP 400 "Missing Mcp-Session-Id header"). Surface the RPC code
+			// so callers can apply protocol fallbacks instead of receiving a
+			// generic HTTP error.
+			if ( is_array( $decoded ) && isset( $decoded['error']['code'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_mcp_app_rpc_error',
+					isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unknown MCP server error.', 'mcp-ai-wpoos-pro' ),
+					array(
+						'rpc_code' => (int) $decoded['error']['code'],
+						'status'   => $status_code,
+					)
+				);
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_http_error',
+				sprintf(
+					/* translators: 1: HTTP status code, 2: Server URL. */
+					__( 'MCP server returned HTTP %1$d from %2$s.', 'mcp-ai-wpoos-pro' ),
+					$status_code,
+					$this->server_url
+				),
+				array( 'status' => $status_code )
+			);
+		}
 
 		if ( null === $decoded ) {
 			return new WP_Error(
@@ -487,13 +594,214 @@ class WP_MCP_AI_MCP_App_Client {
 			'sslverify' => $this->verify_ssl,
 		);
 
-		$response = wp_remote_request( $this->server_url, $args );
+		$response = $this->dispatch_request( $payload, $headers, $args );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
 
 		return true;
+	}
+
+	/**
+	 * Dispatch a JSON-RPC request, in-process for same-site REST routes.
+	 *
+	 * When the server URL points at this WordPress site and the derived REST
+	 * route is registered, the request is executed through the internal REST
+	 * dispatch instead of an outbound HTTP call. A self-request over the
+	 * public hostname can deadlock a small PHP-FPM pool (the outer request
+	 * holds a worker while the inner request waits for one) or stall on a
+	 * missing hairpin NAT — in-process dispatch avoids both.
+	 *
+	 * Falls back to wp_remote_request() when the host is remote, the route is
+	 * not a registered REST route, or the escape-hatch filter disables the
+	 * bridge.
+	 *
+	 * @since 1.9.2
+	 * @param array $payload JSON-RPC payload.
+	 * @param array $headers Outbound request headers.
+	 * @param array $args    wp_remote_request()-style arguments.
+	 * @return array|WP_Error wp_remote_request()-style response array or WP_Error.
+	 */
+	protected function dispatch_request( $payload, $headers, $args ) {
+		/**
+		 * Filters whether the in-process same-origin bridge is disabled.
+		 *
+		 * @since 1.9.2
+		 * @param bool   $disabled   Whether to disable the bridge (default false).
+		 * @param string $server_url MCP server URL.
+		 */
+		$bridge_disabled = apply_filters( 'wp_mcp_ai_mcp_app_disable_inprocess_bridge', false, $this->server_url );
+
+		if ( ! $bridge_disabled && $this->is_internal_same_origin() ) {
+			$internal = $this->dispatch_internal_rest( $payload, $headers );
+
+			// An array (synthesized response) or WP_Error means the route was
+			// handled in-process; false means "not routable" — fall through.
+			if ( is_array( $internal ) || is_wp_error( $internal ) ) {
+				return $internal;
+			}
+		}
+
+		return wp_remote_request( $this->server_url, $args );
+	}
+
+	/**
+	 * Check whether the server URL points at this WordPress site.
+	 *
+	 * @since 1.9.2
+	 * @return bool True when the hosts match (loopback).
+	 */
+	protected function is_internal_same_origin() {
+		$remote_host = strtolower( (string) wp_parse_url( $this->server_url, PHP_URL_HOST ) );
+		$site_host   = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+
+		return '' !== $remote_host && $remote_host === $site_host;
+	}
+
+	/**
+	 * Derive the REST route from a same-site server URL.
+	 *
+	 * Handles both the pretty-permalink form (/wp-json/ns/route) and the
+	 * query-parameter form (?rest_route=/ns/route).
+	 *
+	 * @since 1.9.2
+	 * @return string REST route with a leading slash, empty when not derivable.
+	 */
+	protected function get_internal_rest_route() {
+		$url = $this->server_url;
+
+		$parsed = wp_parse_url( $url );
+		if ( ! is_array( $parsed ) || empty( $parsed['host'] ) ) {
+			return '';
+		}
+
+		$rest_prefix = rest_get_url_prefix();
+
+		// Pretty-permalink form: https://host/wp-json/ns/route.
+		$needle = '/' . $rest_prefix . '/';
+		$pos    = strpos( $url, $needle );
+		if ( false !== $pos ) {
+			$route = substr( $url, $pos + strlen( $needle ) - 1 );
+			$route = preg_replace( '/[?#].*$/', '', $route );
+
+			return '/' . ltrim( $route, '/' );
+		}
+
+		// Query-parameter form: https://host/?rest_route=/ns/route.
+		if ( ! empty( $parsed['query'] ) ) {
+			parse_str( $parsed['query'], $query );
+			if ( isset( $query['rest_route'] ) ) {
+				return '/' . ltrim( (string) $query['rest_route'], '/' );
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Dispatch a request through WordPress' internal REST server.
+	 *
+	 * Only registered REST routes are dispatched in-process; anything else
+	 * returns false so the caller falls back to HTTP.
+	 *
+	 * @since 1.9.2
+	 * @param array $payload JSON-RPC payload.
+	 * @param array $headers Outbound request headers.
+	 * @return array|WP_Error|false Synthesized wp_remote_request()-style response,
+	 *                              WP_Error on dispatch failure, or false when
+	 *                              the route is not registered.
+	 */
+	protected function dispatch_internal_rest( $payload, $headers ) {
+		if ( ! class_exists( 'WP_REST_Request' ) || ! function_exists( 'rest_do_request' ) ) {
+			return false;
+		}
+
+		$route = $this->get_internal_rest_route();
+		if ( '' === $route ) {
+			return false;
+		}
+
+		$server  = rest_get_server();
+		$routes  = $server->get_routes();
+		$trimmed = '/' . trim( $route, '/' );
+		if ( ! isset( $routes[ $trimmed ] ) && ! isset( $routes[ $trimmed . '/' ] ) ) {
+			return false;
+		}
+
+		$request = new WP_REST_Request( 'POST', $trimmed );
+		foreach ( $headers as $name => $value ) {
+			if ( is_string( $name ) && ( is_string( $value ) || is_numeric( $value ) ) ) {
+				$request->set_header( $name, (string) $value );
+			}
+		}
+		$request->set_body( wp_json_encode( $payload ) );
+
+		$response = rest_do_request( $request );
+
+		// rest_do_request() skips serve_request(), which is where core applies
+		// the rest_post_dispatch filter when serving over HTTP. Endpoints that
+		// attach response headers through that filter — EMCP Tools registers
+		// Mcp-Session-Id there — never fire during in-process dispatch, so
+		// re-apply the filter to mirror the HTTP behaviour.
+		$response = apply_filters( 'rest_post_dispatch', rest_ensure_response( $response ), rest_get_server(), $request );
+
+		if ( $response instanceof WP_REST_Response ) {
+			$data = $response->get_data();
+			$body = is_string( $data ) ? $data : wp_json_encode( $data );
+
+			return array(
+				'headers'  => $response->get_headers(),
+				'body'     => $body,
+				'response' => array(
+					'code'    => $response->get_status(),
+					'message' => get_status_header_desc( $response->get_status() ),
+				),
+			);
+		}
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Retrieve a response header by name, case-insensitively.
+	 *
+	 * The HTTP API lowercases header keys in real responses (Requests 2.x),
+	 * while pre_http_request-shortcircuited responses may carry arbitrary
+	 * casing. This helper normalizes both shapes so header lookups like
+	 * Mcp-Session-Id never miss on casing.
+	 *
+	 * @since 1.9.1
+	 * @param array|WP_Error $response wp_remote_request()-style response.
+	 * @param string         $name     Header name to look up.
+	 * @return string Header value, empty string when absent.
+	 */
+	protected function retrieve_header_case_insensitive( $response, $name ) {
+		$headers = wp_remote_retrieve_headers( $response );
+
+		if ( is_object( $headers ) ) {
+			if ( method_exists( $headers, 'getAll' ) ) {
+				$headers = $headers->getAll();
+			} else {
+				return '';
+			}
+		}
+
+		if ( ! is_array( $headers ) ) {
+			return '';
+		}
+
+		foreach ( $headers as $key => $value ) {
+			if ( 0 === strcasecmp( $key, $name ) ) {
+				return is_string( $value ) ? $value : '';
+			}
+		}
+
+		return '';
 	}
 
 	/**
@@ -509,12 +817,19 @@ class WP_MCP_AI_MCP_App_Client {
 	protected function get_request_headers( $method = '', $params = array() ) {
 		$headers = array(
 			'Content-Type' => 'application/json',
-			'Accept'       => 'application/json',
+			'Accept'       => 'application/json, text/event-stream',
 			'User-Agent'   => 'NV-oOS-MCP-App-Client/' . ( defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : '1.9.0' ),
 		);
 
-		// MCP 2026-07-28 routing headers (SEP-2243).
-		$headers['MCP-Protocol-Version'] = self::PROTOCOL_VERSION;
+		// Echo the session ID issued by sessionful (pre-2026-07-28) servers.
+		if ( ! empty( $this->session_id ) ) {
+			$headers['Mcp-Session-Id'] = $this->session_id;
+		}
+
+		// MCP 2026-07-28 routing headers (SEP-2243). When a legacy session
+		// negotiated an older protocol version, advertise that version so the
+		// server accepts the request.
+		$headers['MCP-Protocol-Version'] = '' !== $this->negotiated_protocol_version ? $this->negotiated_protocol_version : self::PROTOCOL_VERSION;
 
 		if ( ! empty( $method ) ) {
 			$headers['Mcp-Method'] = $method;
@@ -527,6 +842,22 @@ class WP_MCP_AI_MCP_App_Client {
 
 		// Add authentication.
 		switch ( $this->auth['type'] ) {
+			case 'basic':
+				if ( empty( $this->auth['token'] ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_mcp_app_missing_token',
+						__( 'Basic auth credentials are required for authentication.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				$credential = $this->auth['token'];
+				// Accept either a raw "user:password" pair or a pre-encoded
+				// base64 credential. A ':' cannot appear in base64 output.
+				if ( false !== strpos( $credential, ':' ) ) {
+					$credential = base64_encode( $credential ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Basic auth per RFC 7617.
+				}
+				$headers['Authorization'] = 'Basic ' . $credential;
+				break;
+
 			case 'bearer':
 				if ( empty( $this->auth['token'] ) ) {
 					return new WP_Error(
@@ -632,5 +963,15 @@ class WP_MCP_AI_MCP_App_Client {
 	 */
 	public function get_server_url() {
 		return $this->server_url;
+	}
+
+	/**
+	 * Get the captured session ID, if any.
+	 *
+	 * @since 1.9.1
+	 * @return string
+	 */
+	public function get_session_id() {
+		return $this->session_id;
 	}
 }

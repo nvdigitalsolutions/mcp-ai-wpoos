@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Collect_Custom_Metrics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Collect_Custom_Metrics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -94,6 +94,20 @@ class WP_MCP_AI_Tool_Collect_Custom_Metrics implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Track custom business metrics and KPIs. Record events with values, metadata, and timestamps for analysis and reporting.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording a custom KPI or business metric value so it can be analyzed and reported on later.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading or exporting stored metrics; consume them with export_analytics_api or generate_executive_dashboard.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'real_time_event_tracking', 'export_analytics_api', 'data_warehouse_sync' ),
+			'notes'           => __( 'Persists to the mcp_ai_custom_metrics table; metric_name and metric_value are required and unit defaults to count.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

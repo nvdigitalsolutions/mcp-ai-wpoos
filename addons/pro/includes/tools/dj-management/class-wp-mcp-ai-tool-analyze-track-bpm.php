@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Analyzes track BPM and musical key.
  */
-class WP_MCP_AI_Tool_Analyze_Track_BPM implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Analyze_Track_BPM implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Analyze_Track_BPM implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Analyzes or records BPM (beats per minute) and musical key for DJ tracks. Helps with harmonic mixing and tempo matching.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording or updating the BPM and musical key for a known track_id to enable harmonic mixing.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Editing the track record itself; use manage_music_library. Planning a transition between two tracks; use mix_transition_planner.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_music_library', 'mix_transition_planner', 'create_playlist' ),
+			'notes'           => __( 'BPM must be between 1 and 300; the key powers the compatible_keys output.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

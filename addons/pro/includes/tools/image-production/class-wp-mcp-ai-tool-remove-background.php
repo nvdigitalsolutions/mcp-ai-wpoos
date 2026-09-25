@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/tools/image-production/remove-backgr
 /**
  * Remove background from images using free (rembg) or paid (remove.bg API) methods.
  */
-class WP_MCP_AI_Tool_Remove_Background extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Remove_Background extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,18 @@ class WP_MCP_AI_Tool_Remove_Background extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	public function get_description() {
 		return __( 'Remove the background from an image, making it transparent. Supports free (rembg) and paid (remove.bg API) methods.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Cutting a subject out of its background into a transparent PNG using the free rembg library or the paid remove.bg API.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Masked region edits: use image_inpainting. Keeping the background and extending it: use outpaint_background.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'remove_image_background', 'refine_subject_matte', 'harmonize_image_into_background' ),
+			'notes'           => __( 'Method auto tries free first, then paid. Free needs Python plus rembg; paid needs the removebg_api_key setting.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

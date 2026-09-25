@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Deletes an insurance policy.
  */
-class WP_MCP_AI_Tool_Delete_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Delete_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Deletes an insurance policy. This action cannot be undone.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently removing an insurance policy by policy_id when it must be purged.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Ending coverage; use update_policy to set status to cancelled or expired. Deletion cannot be undone.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_policy', 'get_policy' ),
+			'notes'           => __( 'Requires delete_posts capability; the policy is deleted permanently, not trashed.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

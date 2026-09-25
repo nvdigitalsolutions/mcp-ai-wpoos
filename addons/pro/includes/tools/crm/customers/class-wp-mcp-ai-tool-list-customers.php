@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.6.0
  */
-class WP_MCP_AI_Tool_List_Customers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Customers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -56,6 +56,20 @@ class WP_MCP_AI_Tool_List_Customers implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'List customers with pagination, filtering by lifecycle stage, owner, or search query.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing or searching customers with pagination and filters by lifecycle stage or contact owner.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading a single known record; use get_customer. Ranking your best accounts; use identify_top_customers.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_customer', 'identify_top_customers' ),
+			'notes'           => __( 'Use action=search with search_query to match name, email, or company; filters combine via meta query.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

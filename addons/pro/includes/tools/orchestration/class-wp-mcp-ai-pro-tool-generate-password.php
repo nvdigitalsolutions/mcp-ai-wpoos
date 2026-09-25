@@ -90,6 +90,20 @@ class WP_MCP_AI_Pro_Tool_Generate_Password {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating strong random passwords for new accounts or password rotation, with control over length and character sets.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Storing or retrieving existing credentials; use vault_manage to save passwords and vault_access to read them back.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'vault_manage', 'vault_access' ),
+			'notes'           => __( 'Length is clamped to 12-128 and count to 1-10; results include a strength score per password.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @param array $arguments Tool arguments.

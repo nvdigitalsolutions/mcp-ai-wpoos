@@ -21,7 +21,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-tool-markdown-converter.php';
 /**
  * Creates a new post or updates an existing one using Symfony Validator.
  */
-class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Markdown_Converter;
 
@@ -44,6 +44,18 @@ class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implem
 	 */
 	public function get_description() {
 		return __( 'Creates a new post or updates an existing one with the supplied content. Uses Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to create a new post or update an existing one with Symfony Validator argument checks.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Use create_post for strict creation without updates; use get_post for read-only retrieval.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_post', 'get_post', 'update_term' ),
+			'notes'           => __( 'Defaults to draft status. Pass post_id to update an existing post; leave it empty to create one.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
@@ -87,6 +99,16 @@ class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implem
 			),
 			'required'             => array( 'content' ),
 			'additionalProperties' => false,
+		);
+	}
+
+		/**
+		 * {@inheritdoc}
+		 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'post_id',
+			'consumes' => array( 'post_id' ),
 		);
 	}
 

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates detailed ECA participation reports scoped by ECA, student, year group, or school.
  */
-class WP_MCP_AI_Tool_Generate_ECA_Participation_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_ECA_Participation_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Generate_ECA_Participation_Report implements WP_MCP_AI_Tool
 	 */
 	public function get_description() {
 		return __( 'Generates a detailed participation report scoped to an ECA, student, year group, or entire school. Returns structured data for embedding in documents or dashboards.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Building a participation report for a specific ECA, student, year group, or the whole school.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Chart-ready analytics; use generate_eca_analytics. An engagement summary for one student; use get_student_participation_summary.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_eca_analytics', 'get_student_participation_summary', 'get_eca_attendance_report', 'export_eca_data' ),
+			'notes'           => __( 'Provide scope_id for eca, student, and year_group scopes; omit for school scope. Output is JSON or markdown.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -33,7 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Create_Social_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Social_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -184,6 +184,20 @@ class WP_MCP_AI_Tool_Create_Social_Video implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Generate platform-specific video formats with appropriate dimensions, codecs, and optimization. Supports format conversion, compression, audio management, and thumbnail generation.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Converting or optimizing an existing video into platform-specific formats, sizes, and thumbnails.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Publishing or scheduling the finished video; use post_to_multiple_platforms or schedule_social_post.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'post_to_multiple_platforms', 'publish_to_social', 'schedule_social_post' ),
+			'notes'           => __( 'Processes videos locally and returns file URLs; it never uploads or publishes content itself.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

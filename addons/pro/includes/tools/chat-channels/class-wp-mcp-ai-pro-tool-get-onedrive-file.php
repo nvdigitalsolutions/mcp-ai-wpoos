@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for retrieving metadata and download URL for a file from Microsoft OneDrive via the Microsoft Graph API.
  */
-class WP_MCP_AI_Pro_Tool_Get_OneDrive_File implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_OneDrive_File implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Microsoft Graph API requests.
 	 */
@@ -54,6 +54,18 @@ class WP_MCP_AI_Pro_Tool_Get_OneDrive_File implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Retrieves metadata and download URL for a file from Microsoft OneDrive using the Microsoft Graph API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching metadata and a download URL for a OneDrive file by item ID or path.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Discovering files or uploading; use list_onedrive_files or upload_onedrive_file.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_onedrive_files', 'upload_onedrive_file' ),
+			'notes'           => __( 'Provide item_id or file_path; run list_onedrive_files first when you only have a name or folder.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

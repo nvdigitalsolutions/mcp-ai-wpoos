@@ -64,6 +64,20 @@ class WP_MCP_AI_Pro_Tool_Convert_Html_To_Markdown {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Converting HTML content into clean Markdown for research notes, templates, or task plan content.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use extract_structured_data to pull specific fields from HTML instead of converting the whole document.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'extract_structured_data', 'aggregate_research_data', 'create_post_from_research' ),
+			'notes'           => __( 'Conversion is regex-based, so complex or malformed HTML may convert imperfectly.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Execute tool
 	 *
 	 * @param array $arguments Tool arguments.

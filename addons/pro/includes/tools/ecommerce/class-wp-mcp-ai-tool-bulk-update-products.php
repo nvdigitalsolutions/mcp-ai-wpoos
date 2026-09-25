@@ -34,7 +34,7 @@ if ( ! trait_exists( 'WP_MCP_AI_Woo_Price_Qty_Updater' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Woo_Price_Qty_Updater;
 
@@ -121,6 +121,20 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Update multiple WooCommerce products at once. Supports updating pricing, stock, categories, status, and other product attributes. Use product IDs or query filters to select products to update. By default (scope "all"), price and stock updates expand variable products to their variations and grouped products to their children, then re-sync variable parents; use scope "product" to update only the exact selected IDs.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Updating pricing, stock, categories, or status across many WooCommerce products selected by IDs or filters.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Single-product edits; use woo_products or update_woo_product_price for targeted changes.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'woo_products', 'update_woo_product_price', 'update_woo_product_qty' ),
+			'notes'           => __( 'Default scope expands variable and grouped products to their variations and children; use scope product for exact IDs.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

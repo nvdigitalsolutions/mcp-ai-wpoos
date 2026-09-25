@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Manages care plans for comprehensive health management.
  */
-class WP_MCP_AI_Tool_Manage_Care_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Manage_Care_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,20 @@ class WP_MCP_AI_Tool_Manage_Care_Plan implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Create and manage comprehensive care plans with health goals, care tasks, progress tracking, and collaborative care coordination. Supports chronic disease management, post-acute care, and wellness programs. Integrates with medical records, checkups, and medications for holistic care management.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( "Creating or managing a member's care plan with health goals and care tasks via the action parameter.", 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sending appointment messages; use send_appointment_followup. Reading health history; use get_health_timeline.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_appointment_followup', 'get_health_timeline' ),
+			'notes'           => __( 'action switches behavior: create, update, get, list, add_goal, update_goal, add_task, complete_task.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Tracks vaccinations and immunization records.
  */
-class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Comprehensive vaccination tracking for members (humans and pets). Log vaccination history, track immunization schedules, manage boosters, and ensure compliance with healthcare requirements. Supports both person and pet vaccination protocols.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recording, listing, updating, or deleting a member\'s vaccination history and checking compliance for humans and pets.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Looking up recommended doses for an age and species; use get_vaccination_schedule.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_vaccination_schedule', 'list_medical_records' ),
+			'notes'           => __( 'Vaccinations are stored as medical record posts; actions add, get, list, schedule, check_compliance, update, and delete are supported.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

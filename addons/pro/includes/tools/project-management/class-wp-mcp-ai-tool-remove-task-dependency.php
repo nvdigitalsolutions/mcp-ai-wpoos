@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Removes a dependency link between two tasks.
  */
-class WP_MCP_AI_Tool_Remove_Task_Dependency implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Remove_Task_Dependency implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -62,6 +62,20 @@ class WP_MCP_AI_Tool_Remove_Task_Dependency implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Removes an existing dependency between two tasks. After calling this tool the blocked task can proceed regardless of the blocking task status.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Removing an existing blocks/depends_on link between two tasks when sequencing is no longer needed.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating links; use add_task_dependency. Inspecting links; use get_task_dependencies.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'add_task_dependency', 'get_task_dependencies', 'list_tasks' ),
+			'notes'           => __( 'Idempotent; returns was_removed=false when the link did not exist.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

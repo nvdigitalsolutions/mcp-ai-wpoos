@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Analyzes client satisfaction through communication, payment, and outcome metrics.
  */
-class WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -68,6 +68,20 @@ class WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Analyzes client satisfaction by evaluating communication responsiveness, payment timeliness, matter outcomes, and retention risk with a 0-100 satisfaction score.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scoring a client 0-100 on satisfaction and retention risk from communication responsiveness, payment timeliness, and matter outcomes.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Analyzing metrics for a single matter; use lf_matter_analytics_generator. Profiling a new client; use lf_client_profile_analyzer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_client_profile_analyzer', 'lf_matter_analytics_generator', 'lf_firm_performance_dashboard' ),
+			'notes'           => __( 'client_id is required and must be a WordPress user ID. Four 25-point components combine into the score; risk is high below 40 and medium below 65.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

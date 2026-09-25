@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Market_Forecast_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Market_Forecast_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -101,6 +101,22 @@ class WP_MCP_AI_Tool_Market_Forecast_Analyzer implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Generate statistical time-series forecasts from historical data using linear regression, moving average, or exponential smoothing. Includes confidence intervals and optional sentiment adjustments. EDUCATIONAL ONLY - Forecasts are statistical projections and not predictions. Not investment advice.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Projecting a supplied historical series forward with linear regression, moving average, or exponential smoothing.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Live quotes or fundamentals; use stock_data_fetcher. News-tone scoring belongs to market_sentiment_analyzer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'stock_data_fetcher', 'market_sentiment_analyzer', 'investment_return_calculator' ),
+			'notes'           => __( 'Requires historical_data date/value pairs; method and forecast_periods tune the projection. Statistical only, not a prediction.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

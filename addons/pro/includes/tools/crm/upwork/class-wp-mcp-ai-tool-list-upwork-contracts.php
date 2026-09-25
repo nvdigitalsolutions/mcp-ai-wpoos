@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.10.0
  */
-class WP_MCP_AI_Tool_List_Upwork_Contracts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Upwork_Contracts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * GraphQL query for listing contracts.
@@ -98,6 +98,20 @@ class WP_MCP_AI_Tool_List_Upwork_Contracts implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'List active, completed, and pending Upwork contracts for the authenticated freelancer or agency account.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing active, completed, or pending Upwork contracts with budget and client info.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Searching the job marketplace; use search_upwork_jobs. Importing contract milestones; use sync_upwork_tasks.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'sync_upwork_tasks', 'search_upwork_jobs' ),
+			'notes'           => __( 'Requires an Upwork connection. Status accepts active, completed, cancelled, pending, or all.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

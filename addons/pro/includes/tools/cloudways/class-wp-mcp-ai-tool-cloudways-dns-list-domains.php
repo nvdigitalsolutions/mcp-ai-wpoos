@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_DNS_List_Domains' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_DNS_List_Domains extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_DNS_List_Domains extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_DNS_List_Domains' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'List all managed domains in DNS Made Easy.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Listing domains managed in DNS Made Easy when you need a domain name for record work.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Viewing records inside a domain; use cloudways_dns_list_records with a specific domain.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_dns_list_records', 'cloudways_dns_add_record', 'cloudways_dns_delete_record' ),
+			);
 		}
 
 		/** {@inheritdoc} */

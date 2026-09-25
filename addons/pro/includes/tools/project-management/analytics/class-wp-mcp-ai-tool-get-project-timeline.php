@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates project timeline data including critical path.
  */
-class WP_MCP_AI_Tool_Get_Project_Timeline implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Project_Timeline implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -40,6 +40,20 @@ class WP_MCP_AI_Tool_Get_Project_Timeline implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Generate project timeline / Gantt chart data for a project. Returns tasks sorted by start date with dependency edges, milestone markers, and a computed critical path. Each task includes duration, status, and dependency relationships.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Building Gantt-style timelines with dependency edges, milestone markers, and a computed critical path.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Completion date estimates; use forecast_completion. Task-level dependency lookup; use get_task_dependencies.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_task_dependencies', 'get_burndown_chart', 'list_tasks' ),
+			'notes'           => __( 'Requires project_id; tasks without a start date fall back to their post date.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

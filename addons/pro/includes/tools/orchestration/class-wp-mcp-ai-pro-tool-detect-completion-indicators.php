@@ -81,6 +81,20 @@ class WP_MCP_AI_Pro_Tool_Detect_Completion_Indicators {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scoring a response for completion signals before an autonomous loop decides whether to stop.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use check_exit_conditions to apply the full dual-condition gate; this tool only scores the text.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'check_exit_conditions', 'get_task_plan' ),
+			'notes'           => __( 'Pass plan_id to fold task-plan progress into the score; the threshold defaults to 2 indicators.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @param array $arguments Tool arguments.

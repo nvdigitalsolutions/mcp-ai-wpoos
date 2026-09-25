@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.3.0
  */
-class WP_MCP_AI_Tool_Git_Inspect implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Git_Inspect implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Git_Helpers;
 
@@ -56,6 +56,20 @@ class WP_MCP_AI_Tool_Git_Inspect implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Read-only git inspection — query repository state without modifying it. Supports status (working-tree summary), diff (show changes), log (commit history), show (inspect a commit), blame (line-level history), and branch (list branches). For write operations (commit, add, checkout, stash) use git_change.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Read-only git queries on the plugin repository: status, diff, log, show, blame, or branch.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Write operations (commit, add, checkout, stash); use git_change instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'git_change', 'execute_shell_command' ),
+			'notes'           => __( 'The legacy git_operations slug resolves to this tool via the deprecated-alias registry.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	// ------------------------------------------------------------------ //

@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Attribution_Modeling implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Attribution_Modeling implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -96,6 +96,20 @@ class WP_MCP_AI_Tool_Attribution_Modeling implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Analyze multi-touch attribution across customer journey touchpoints. Apply different attribution models (first-touch, last-touch, linear, time-decay) to understand channel contribution to conversions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Comparing how much credit each channel, campaign, source, or medium earns for conversions across attribution models.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Diagnosing drop-off within a single conversion path; use funnel_analysis instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'funnel_analysis', 'cohort_analysis', 'revenue_forecast' ),
+			'notes'           => __( 'Defaults to the linear model with a 30-day lookback; set compare_models=true to see all five models side by side.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

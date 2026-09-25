@@ -22,7 +22,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Get_Server' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Get_Server extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Get_Server extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -39,6 +39,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Get_Server' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Get detailed information about a specific server including configuration and hosted apps.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Inspecting one server\'s status, region, IP, RAM, and instance type when you already know its server_id.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Discovering server IDs or comparing the fleet; run cloudways_list_servers first.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_list_servers', 'cloudways_list_apps', 'cloudways_server_monitor_summary', 'cloudways_server_settings_get' ),
+				'notes'           => __( 'Requires a server_id from cloudways_list_servers; read-only.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

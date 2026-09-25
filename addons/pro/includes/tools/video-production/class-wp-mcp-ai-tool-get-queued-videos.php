@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.8.0
  */
-class WP_MCP_AI_Tool_Get_Queued_Videos implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Queued_Videos implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -41,6 +41,18 @@ class WP_MCP_AI_Tool_Get_Queued_Videos implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Retrieves videos queued for processing/upload, optionally filtered by status or platform.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing media library videos queued for processing or upload, filtered by status or target platform.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Finding thumbnail or transcript gaps; use get_videos_without_thumbnails or get_videos_without_transcripts. Starting uploads; use upload_video_batch.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'upload_video_batch', 'get_videos_without_thumbnails', 'get_videos_without_transcripts' ),
+			'notes'           => __( 'Status values are pending, processing, ready, failed; platforms are youtube, vimeo, local.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Create_Product_Advanced implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Product_Advanced implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -105,6 +105,20 @@ class WP_MCP_AI_Tool_Create_Product_Advanced implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Create a WooCommerce product with comprehensive settings including variations, attributes, galleries, stock management, and all product meta data. Supports simple and variable products.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a WooCommerce product with variations, attributes, galleries, stock, and full meta in one call.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Editing existing products or bulk imports; use woo_products to update and import_products_csv for CSV files.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'woo_products', 'import_products_csv', 'bulk_update_products' ),
+			'notes'           => __( 'Supports simple and variable products; variation data requires the product type to be variable.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

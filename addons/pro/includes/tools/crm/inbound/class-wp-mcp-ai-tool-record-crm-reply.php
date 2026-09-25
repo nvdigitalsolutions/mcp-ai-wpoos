@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 3.2.0
  */
-class WP_MCP_AI_Tool_Record_CRM_Reply implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Record_CRM_Reply implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -78,6 +78,20 @@ class WP_MCP_AI_Tool_Record_CRM_Reply implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Record an inbound email reply against a lead and its open deals (last-received timestamp, snippet, sentiment). Can advance a deal to the next open pipeline stage with source "email_reply" when the reply is a buying signal.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Logging an inbound email reply against a lead and its open deals, optionally advancing one open deal stage.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sending an automated reply; use auto_reply_inbound. Editing lead fields; use update_lead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_lead', 'auto_reply_inbound', 'move_deal_stage' ),
+			'notes'           => __( 'Closed deals are never advanced; sentiment must be positive, neutral, negative, mixed, or unknown.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

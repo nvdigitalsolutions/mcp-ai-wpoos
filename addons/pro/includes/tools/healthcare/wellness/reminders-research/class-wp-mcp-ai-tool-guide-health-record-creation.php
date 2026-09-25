@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides intelligent guidance for health record creation.
  */
-class WP_MCP_AI_Tool_Guide_Health_Record_Creation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Guide_Health_Record_Creation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,20 @@ class WP_MCP_AI_Tool_Guide_Health_Record_Creation implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Analyzes a member\'s current health profile and provides intelligent, step-by-step guidance on what health records should be added or completed next. Covers all USCDI data classes: demographics, allergies, immunizations/vaccinations, vital signs, medications, medical records, checkups, and insurance policies. Identifies gaps in existing records (e.g. missing ICD-10 codes, NDC codes, allergy types, policy group numbers) and suggests priority actions aligned with HL7 FHIR and HIPAA best practices.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Identifying gaps in a member\'s USCDI health profile and getting prioritized next steps for completing records.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating records; use create_medical_record, create_prescription, or parse_health_information.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'parse_health_information', 'get_member_health_summary', 'create_medical_record' ),
+			'notes'           => __( 'The focus argument can narrow the audit to one USCDI data class, such as demographics or vaccinations.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

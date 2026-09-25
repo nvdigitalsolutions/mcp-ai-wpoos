@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Paper Store — Update tool.
  */
-class WP_MCP_AI_Tool_Paper_Store_Update implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Paper_Store_Update implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Paper_Store_Remote;
 
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_Paper_Store_Update implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Updates an existing record in a Paper Store collection. Only the fields you provide will be changed; omitted fields are left unchanged. The record ID cannot be changed.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Changing specific fields of an existing record without touching the rest.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'New records; use paper_store_write. Removal; use paper_store_delete.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'paper_store_write', 'paper_store_delete', 'paper_store_read' ),
+			'notes'           => __( 'Only provided fields change and the record ID is immutable; tags replace the existing set.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

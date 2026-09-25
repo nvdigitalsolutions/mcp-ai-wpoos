@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Auto-Route Inbound Message tool — workload-aware routing.
  */
-class WP_MCP_AI_Tool_Auto_Route_Inbound_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Auto_Route_Inbound_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Check whether the tool is available.
 	 *
@@ -49,6 +49,20 @@ class WP_MCP_AI_Tool_Auto_Route_Inbound_Message implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Automatically assign a new lead to the best owner using the configured routing strategy and workload.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Assigning a new inbound lead to the best owner automatically using the configured routing strategy and workload.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Assigning to a specific chosen owner; use assign_lead_to_owner. Reviewing pool balance first; use get_owner_workload.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'assign_lead_to_owner', 'get_owner_workload', 'auto_reply_inbound' ),
+			'notes'           => __( 'Overwrites contact_owner on the lead and records a lead_auto_routed audit entry; strategy: auto, round_robin, or weighted.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 	/**
 	 * Get the JSON Schema for the tool parameters.
 	 *

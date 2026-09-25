@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Track_Inventory_Movement implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Track_Inventory_Movement implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -103,6 +103,20 @@ class WP_MCP_AI_Tool_Track_Inventory_Movement implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Track and audit inventory movements across your store. Monitor stock changes, location transfers, order fulfillment, and manual adjustments. Maintains complete audit trail for compliance and analysis.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for tool selection.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Logging and auditing stock movements like sales, restocks, transfers, and adjustments.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Changing stock levels; use update_woo_product_qty or sync_product_inventory for writes.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'sync_product_inventory', 'update_woo_product_qty', 'low_stock_alert_automation' ),
+			'notes'           => __( 'History and reports are read-only; date and movement_type filters narrow the audit trail.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

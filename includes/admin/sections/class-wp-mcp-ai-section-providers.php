@@ -1343,6 +1343,81 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder' => __( 'My WordPress Site', 'mcp-ai-wpoos' ),
 				),
 
+				// TypeSafe (Jev) Decision Model Settings.
+				// Jev is a decision-only provider: it cannot back a chat
+				// assistant, so it is deliberately NOT exposed in the
+				// assistant provider dropdowns. It powers the typesafe_decide
+				// tool and decision surfaces instead.
+				'enable_typesafe'                    => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable TypeSafe Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable TypeSafe (Jev) as a decision provider', 'mcp-ai-wpoos' ),
+					'description'    => __( 'TypeSafe Jev is a decision model, not a chat model: it returns typed, probabilistic decisions (choice / score / yes-no) about supplied state. It powers the typesafe_decide tool and decision surfaces. Billing is input-only ($0.042 per million input tokens, output free).', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'typesafe_api_key'                   => array(
+					'type'         => 'password',
+					'label'        => __( 'TypeSafe API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %1$s: TypeSafe console URL, %2$s: env var name */
+						__( 'Your TypeSafe API key. Early access keys are issued at <a href="%1$s" target="_blank">console.typesafe.ai</a> (waitlisted). You can also set the %2$s environment variable. Alternatively, leave this empty and use your OpenRouter key with the typesafe_decide tool\'s openrouter transport.', 'mcp-ai-wpoos' ),
+						'https://console.typesafe.ai/settings/keys',
+						'<code>TYPESAFE_API_KEY</code>'
+					),
+					'autocomplete' => 'new-password',
+				),
+				'typesafe_model'                     => array(
+					'type'        => 'select',
+					'label'       => __( 'Default TypeSafe Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default Jev model for decision requests. "jev-latest" follows TypeSafe\'s newest release — pin an explicit version such as jev-1.13.0 when you tune confidence thresholds, because answers can change under the moving alias.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'jev-latest'  => __( 'Jev Latest (follows newest release)', 'mcp-ai-wpoos' ),
+						'jev-preview' => __( 'Jev Preview (follows preview builds)', 'mcp-ai-wpoos' ),
+						'jev-1.13.0' => __( 'Jev 1.13.0 (pinned)', 'mcp-ai-wpoos' ),
+					),
+					'default'     => 'jev-latest',
+				),
+				'typesafe_base_url'                  => array(
+					'type'        => 'url',
+					'label'       => __( 'TypeSafe API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for TypeSafe API requests. Leave empty to use the default (https://api.typesafe.ai). Useful when proxying through your own gateway.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://api.typesafe.ai',
+				),
+				'typesafe_endpoint'                  => array(
+					'type'        => 'text',
+					'label'       => __( 'TypeSafe API Endpoint Path (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom endpoint path relative to the base URL. Leave empty to use the default (/v1/systemone). Third-party gateways and resellers may serve Jev on a different route (e.g. /v1/decisions) — verify their terms before switching.', 'mcp-ai-wpoos' ),
+					'placeholder' => '/v1/systemone',
+				),
+				'enable_typesafe_cache'              => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Cache TypeSafe Decisions', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Cache identical decision requests for a short TTL (advisory answers only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Identical (model, state, questions) requests are served from a short-lived transient cache at zero cost and marked cached: true in the response. Decisions are advisory — the cache is never used to gate state-changing operations. Default TTL 5 minutes (filter: wp_mcp_ai_typesafe_cache_ttl).', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'enable_jev_research_filter'         => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Jev Research Source Filtering', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Filter low-relevance research sources with Jev (Pro research tools)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Pro research tools (research_eca, generate_research_report) will ask Jev to score and drop clearly irrelevant search sources before generating their reports, keeping the most relevant sources first. Fails open when Jev is unreachable.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'enable_jev_guest_guardrail'         => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Jev Guest-Chat Guardrail', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Screen chat messages with Jev before they reach the model (Pro)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'With the Pro addon, every chat message is screened against the Jev hazard set (prompt injection, harassment, self-harm, sensitive PII, illegal activity) before it reaches the model. Only a high-confidence block verdict vetoes the message; review verdicts pass through advisory. Fails open when Jev is unreachable or unconfigured.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'enable_jev_citation_check'           => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Jev Citation Checking', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Verify report citations against their sources with Jev (Pro research tools)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Pro research tools (research_eca, generate_research_report) ask Jev whether each cited source passage supports the claim it is cited for, and attach the checks to the report envelope. Fails open — on any error the checks are simply omitted.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
 				// DigitalOcean Serverless Inference Settings.
 				'enable_digitalocean'                => array(
 					'type'           => 'checkbox',
@@ -1578,6 +1653,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'  => __( 'OpenRouter', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-randomize',
 					'fields' => array( 'enable_openrouter', 'openrouter_api_key', 'openrouter_model', 'openrouter_base_url', 'openrouter_site_url', 'openrouter_app_title' ),
+				),
+				'typesafe'             => array(
+					'id'     => 'typesafe',
+					'label'  => __( 'TypeSafe (Jev)', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-yes-alt',
+					'fields' => array( 'enable_typesafe', 'typesafe_api_key', 'typesafe_model', 'typesafe_base_url', 'typesafe_endpoint', 'enable_typesafe_cache', 'enable_jev_research_filter', 'enable_jev_guest_guardrail', 'enable_jev_citation_check' ),
 				),
 				'digitalocean'         => array(
 					'id'     => 'digitalocean',

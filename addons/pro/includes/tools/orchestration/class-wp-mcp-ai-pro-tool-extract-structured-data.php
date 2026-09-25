@@ -64,6 +64,20 @@ class WP_MCP_AI_Pro_Tool_Extract_Structured_Data {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pulling named fields out of HTML or text using CSS selectors or regex patterns for scraping and mining.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use convert_html_to_markdown to convert whole documents, and aggregate_research_data to merge multiple sources.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'convert_html_to_markdown', 'aggregate_research_data', 'analyze_data_patterns' ),
+			'notes'           => __( 'Selector-like strings are treated as HTML tags; anything else is applied as a regular expression.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Execute tool
 	 *
 	 * @param array $arguments Tool arguments.

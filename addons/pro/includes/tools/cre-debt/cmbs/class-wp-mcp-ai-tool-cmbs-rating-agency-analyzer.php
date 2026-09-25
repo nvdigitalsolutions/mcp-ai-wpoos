@@ -22,7 +22,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CMBS_Rating_Agency_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CMBS_Rating_Agency_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Base subordination levels as starting points.
@@ -90,6 +90,20 @@ class WP_MCP_AI_Tool_CMBS_Rating_Agency_Analyzer implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description(): string {
 		return __( 'Estimate required subordination levels for each rating (AAA through B) using a simplified rating agency methodology. Considers LTV, DSCR, property type mix, geographic diversity, and sponsor quality.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Estimating required subordination per rating (AAA through B) from WA LTV, DSCR, property mix, geographic diversity, and sponsor quality.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sizing and pricing the actual deal capital stack; use cmbs_deal_structurer. Official ratings come from the agencies.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cmbs_deal_structurer', 'cmbs_pool_analyzer' ),
+			'notes'           => __( 'Scores for geographic_diversity_score and sponsor_quality_score range 1 to 10; output is a simplified methodology estimate.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

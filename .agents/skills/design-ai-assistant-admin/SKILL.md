@@ -274,6 +274,10 @@ WRONG — exposing a credential in a Zed config file or chat log
 - Run `wp-security-audit` on any assistant-facing endpoint — exposed
   assistants are attack surfaces.
 - Run `wp-security-secrets` to audit credential handling.
+- Run `design-elementor-mcp-connection` to connect Elementor MCP servers to
+  an assistant via the MCP Apps metabox/slash-command (per-assistant remote
+  MCP tool bridging) — this skill covers assistant config, not MCP app
+  connections.
 
 ## What This Skill Does NOT Cover
 
@@ -287,6 +291,8 @@ WRONG — exposing a credential in a Zed config file or chat log
 - Peer wire protocol (SSE, message format) — this skill covers peer
   *configuration*, not the transport.
 - Multi-site WordPress network administration — `remote_wp_connection`.
+- MCP App connections to remote MCP servers (e.g. Elementor MCP) —
+  `design-elementor-mcp-connection`.
 
 ## References
 

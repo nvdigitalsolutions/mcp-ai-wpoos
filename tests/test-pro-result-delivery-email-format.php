@@ -181,6 +181,30 @@ class Test_Pro_Result_Delivery_Email_Format extends WP_UnitTestCase {
 		$this->assertSame( '', WP_MCP_AI_Markdown_Converter::to_html( " \n\n " ) );
 	}
 
+	/**
+	 * Test that numbered entries with indented continuation lines stay in a
+	 * single ordered list.
+	 *
+	 * Workflow digests ship each listing URL as an indented line under its
+	 * numbered title. If the converter closes the list at those lines, every
+	 * entry becomes its own <ol> and the whole digest renders as "1.".
+	 */
+	public function test_converter_keeps_indented_continuations_in_one_ordered_list() {
+		$md = "## Search for new matching jobs\n\n10 results found.\n\n"
+			. "1. Job Alpha — Hourly\n   https://upwork.example/jobs/alpha\n"
+			. "2. Job Beta — Hourly\n   https://upwork.example/jobs/beta\n"
+			. "3. Job Gamma — Fixed-price\n   https://upwork.example/jobs/gamma";
+
+		$html = WP_MCP_AI_Markdown_Converter::to_html( $md );
+
+		$this->assertSame( 1, substr_count( $html, '<ol' ), 'All entries must share one ordered list.' );
+		$this->assertSame( 3, substr_count( $html, '<li' ), 'Each entry must remain its own list item.' );
+		$this->assertStringContainsString( 'Job Alpha', $html );
+		$this->assertStringContainsString( 'Job Gamma', $html );
+		$this->assertStringContainsString( 'https://upwork.example/jobs/alpha', $html );
+		$this->assertStringContainsString( '<br>', $html );
+	}
+
 	// -------------------------------------------------------------------------
 	// format_email() / build_email_html()
 	// -------------------------------------------------------------------------

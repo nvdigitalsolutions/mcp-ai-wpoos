@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Create_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -84,6 +84,20 @@ class WP_MCP_AI_Tool_Create_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Create a new lead in the CRM system. Validates email, assigns a lifecycle stage from the configured default, sets initial lead score to 0, and routes the lead to a contact owner via the active routing strategy.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new lead record with email validation, dedupe refusal, lifecycle stage, and owner routing.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Matching inbound senders; use extract_lead_from_message. Editing an existing record; use update_lead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_lead', 'list_leads', 'extract_lead_from_message' ),
+			'notes'           => __( 'Duplicate emails are refused by default; pass allow_duplicate=true to override; contact_owner defaults to routing strategy.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

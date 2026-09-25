@@ -36,7 +36,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-html-formatter.php';
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Document_Response;
 	use WP_MCP_AI_Media_Worker_Client;
@@ -74,6 +74,18 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	 */
 	public function get_description() {
 		return __( 'AI-powered Word document (.docx) generation. Create professional Word documents from natural language descriptions. Generate structured documents with sections, headings, tables, and rich formatting. Supports multi-page documents, custom styles, and Office-compatible output.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating an Office-compatible Word document with AI-written content, headings, tables, and rich formatting from a description.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'PDFs, spreadsheets, or plain quick output; use pro_pdf_document or pro_excel_document for those formats, or generate_word for a basic .docx.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'pro_pdf_document', 'pro_excel_document', 'generate_word' ),
+			'notes'           => __( 'The template operation needs a predefined document template; rendering runs through the Media Worker sidecar or a local Node setup.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

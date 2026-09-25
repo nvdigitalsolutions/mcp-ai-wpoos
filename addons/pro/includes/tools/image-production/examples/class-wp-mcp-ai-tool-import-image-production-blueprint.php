@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_Image_Production_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Image_Production_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR = WP_MCP_AI_PRO_PATH . 'includes/tools/image-production/examples';
@@ -53,6 +53,18 @@ class WP_MCP_AI_Tool_Import_Image_Production_Blueprint implements WP_MCP_AI_Tool
 	 */
 	public function get_description() {
 		return __( 'Install the Creative Image Producer assistant blueprint for AI-powered image generation, editing, and optimization workflows.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing the Creative Image Producer assistant blueprint so an assistant gains the curated image production workflow.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Running an image task directly: call the image tools themselves (generate_image_ai, harmonize_image_into_background, optimize_for_web).', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_image_ai', 'harmonize_image_into_background', 'optimize_for_web' ),
+			'notes'           => __( 'Blueprint slugs: creative-image-producer. Set overwrite=true to replace an existing assistant of the same name.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * {@inheritdoc}

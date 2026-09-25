@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates structured deposition summaries with key admissions and contradictions.
  */
-class WP_MCP_AI_Tool_LF_Deposition_Summary_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Deposition_Summary_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -71,6 +71,20 @@ class WP_MCP_AI_Tool_LF_Deposition_Summary_Generator implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Generates structured summaries from deposition transcript text. Identifies key admissions, contradictions, and suggested follow-up questions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Turning a deposition transcript into section summaries, key admissions, contradictions, and follow-up questions.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Scoring discovery documents for relevance or privilege; use lf_ediscovery_document_analyzer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_ediscovery_document_analyzer', 'lf_evidence_catalog_manager' ),
+			'notes'           => __( 'Detection is keyword-based; contradictions require overlapping terms between a denial and an admission.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

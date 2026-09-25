@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Import FHIR bundle tool.
  */
-class WP_MCP_AI_Tool_Import_FHIR_Bundle implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_FHIR_Bundle implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -58,6 +58,20 @@ class WP_MCP_AI_Tool_Import_FHIR_Bundle implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Parse a FHIR R4 Bundle and upsert its Patient / AllergyIntolerance / Condition / MedicationStatement / Immunization resources into the local healthcare records.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Ingesting a FHIR R4 Bundle JSON into local members, allergies, conditions, medications, and vaccination records.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Importing HL7 v2 ER7 messages; use import_hl7v2_message. Setting up EHR credentials; use connect_to_ehr.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'connect_to_ehr', 'export_fhir_data', 'import_hl7v2_message' ),
+			'notes'           => __( 'Unregistered resource types are skipped and reported; pass dry_run=true to preview the parse before persisting.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.10.0
  */
-class WP_MCP_AI_Tool_Sync_Upwork_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Sync_Upwork_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * GraphQL query for fetching contract milestones/tasks.
@@ -95,6 +95,20 @@ class WP_MCP_AI_Tool_Sync_Upwork_Tasks implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Sync milestones and tasks from an Upwork contract into the CRM as Task records for tracking and follow-up.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Mirroring milestones and tasks from a known Upwork contract_id into CRM task records.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Listing which contracts exist; use list_upwork_contracts.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_upwork_contracts', 'import_upwork_project' ),
+			'notes'           => __( 'Requires an Upwork connection and a contract_id. Syncs up to limit tasks (default 25).', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

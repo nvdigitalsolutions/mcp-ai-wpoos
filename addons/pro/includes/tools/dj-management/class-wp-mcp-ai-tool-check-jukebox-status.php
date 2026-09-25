@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-jukebox-ser
 /**
  * Provides a tool for checking OpenAI Jukebox installation status.
  */
-class WP_MCP_AI_Tool_Check_Jukebox_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Check_Jukebox_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Check_Jukebox_Status implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Checks if OpenAI Jukebox is installed and properly configured on the server. Returns installation status, Python path, and Jukebox installation path.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Verifying that OpenAI Jukebox is installed and configured on the server before generating music.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Producing music; use generate_jukebox_music once this check confirms the installation.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_jukebox_music', 'manage_music_library' ),
+			'notes'           => __( 'Requires manage_options; reports the Python path, install path, and available models.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

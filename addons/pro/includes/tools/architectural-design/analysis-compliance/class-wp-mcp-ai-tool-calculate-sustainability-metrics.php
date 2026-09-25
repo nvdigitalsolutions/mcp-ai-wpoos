@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Calculate sustainability metrics.
  */
-class WP_MCP_AI_Tool_Calculate_Sustainability_Metrics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Calculate_Sustainability_Metrics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -72,6 +72,20 @@ class WP_MCP_AI_Tool_Calculate_Sustainability_Metrics implements WP_MCP_AI_Tool_
 	 */
 	public function get_description() {
 		return __( 'Analyze energy efficiency and environmental impact. Estimates EUI, embodied carbon, and certification scoring against LEED v4 BD+C and IFC EDGE for tropical (LK/JM) and US projects. Backed by the architectural sustainability engine.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Estimating EUI, embodied carbon, water use, and EDGE or LEED v4 BD+C scores for a floor plan in LK, JM, or US.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For single-factor daylight or ventilation checks - use analyze_daylight_and_solar_gain or analyze_natural_ventilation.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'analyze_daylight_and_solar_gain', 'propose_value_engineering_options' ),
+			'notes'           => __( 'certification_target accepts leed, edge, energy_star, passive_house, living_building; LEED output points to the credit-map scorer.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

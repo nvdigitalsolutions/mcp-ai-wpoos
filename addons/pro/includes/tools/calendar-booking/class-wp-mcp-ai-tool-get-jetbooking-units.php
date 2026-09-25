@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.5.0
  */
-class WP_MCP_AI_Tool_Get_JetBooking_Units implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_JetBooking_Units implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -61,6 +61,18 @@ class WP_MCP_AI_Tool_Get_JetBooking_Units implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'List JetBooking units for a booking instance. Includes optional availability for a date range.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing units for a known instance_id, optionally with availability for a check-in/check-out range.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Finding instance IDs; use get_jetbooking_instances first. Booking appointments; use create_appointment.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_jetbooking_instances', 'check_availability', 'create_appointment' ),
+			'notes'           => __( 'Pass check_in and check_out to enrich each unit with an is_available flag.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

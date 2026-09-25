@@ -1021,7 +1021,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 
 			$definition = array(
 				'name'        => $tool->get_slug(),
-				'description' => $tool->get_description(),
+				'description' => $this->get_model_facing_description( $tool ),
 				'parameters'  => $tool->get_parameters_schema(),
 			);
 
@@ -1086,6 +1086,135 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			}
 
 			return $normalised;
+		}
+
+		/**
+		 * Retrieve the normalised usage guidance for a specific tool.
+		 *
+		 * Tools that implement {@see WP_MCP_AI_Tool_Usage_Guidance_Interface}
+		 * declare model-facing selection hints (when to use / when NOT to use /
+		 * related tools / notes). The registry normalises and sanitises the
+		 * declaration so payload builders can append it to the model-facing
+		 * description without further handling.
+		 *
+		 * Returns an empty array when the tool does not implement the interface
+		 * or when every declared key is null/empty.
+		 *
+		 * @since 1.1.83
+		 *
+		 * @param WP_MCP_AI_Tool_Interface $tool Tool instance.
+		 * @return array{when_to_use?: string, when_not_to_use?: string, related_tools?: string[], notes?: string} Normalised guidance.
+		 */
+		public function get_usage_guidance( $tool ) {
+			if ( ! is_object( $tool ) || ! ( $tool instanceof WP_MCP_AI_Tool_Usage_Guidance_Interface ) ) {
+				return array();
+			}
+
+			$guidance = $tool->get_usage_guidance();
+			if ( ! is_array( $guidance ) ) {
+				return array();
+			}
+
+			$normalised = array();
+
+			// Free-text fields: sanitise as plain text; guidance is model-facing,
+			// never rendered as HTML.
+			foreach ( array( 'when_to_use', 'when_not_to_use', 'notes' ) as $text_key ) {
+				if ( isset( $guidance[ $text_key ] ) && is_string( $guidance[ $text_key ] ) && '' !== trim( $guidance[ $text_key ] ) ) {
+					$normalised[ $text_key ] = trim( sanitize_text_field( $guidance[ $text_key ] ) );
+				}
+			}
+
+			if ( isset( $guidance['related_tools'] ) && is_array( $guidance['related_tools'] ) ) {
+				$related = array();
+				foreach ( $guidance['related_tools'] as $related_slug ) {
+					if ( is_string( $related_slug ) && '' !== $related_slug ) {
+						$related[] = sanitize_key( $related_slug );
+					}
+				}
+				if ( ! empty( $related ) ) {
+					$normalised['related_tools'] = array_values( array_unique( $related ) );
+				}
+			}
+
+			return $normalised;
+		}
+
+		/**
+		 * Assemble the model-facing description for a tool.
+		 *
+		 * The model-facing description is the short `get_description()` plus,
+		 * when the tool declares usage guidance, a compact `[Usage: …]`
+		 * suffix. The suffix mirrors the existing data-contract suffix pattern
+		 * so OpenAI strict function schemas stay valid (hints live in the
+		 * description string, never as extra schema keys).
+		 *
+		 * Consumers that build provider payloads (`WP_MCP_AI_REST::build_tools_payload()`,
+		 * `WP_MCP_AI_Tool_Service::build_tools_payload()` via `get_tool_definition()`,
+		 * and the `list_mcp_tools` discovery tool) all route through this method
+		 * so the LLM sees one consistent description across surfaces.
+		 *
+		 * @since 1.1.83
+		 *
+		 * @param WP_MCP_AI_Tool_Interface $tool Tool instance.
+		 * @return string Model-facing description.
+		 */
+		public function get_model_facing_description( $tool ) {
+			$description = is_object( $tool ) && method_exists( $tool, 'get_description' ) ? (string) $tool->get_description() : '';
+
+			$guidance = $this->get_usage_guidance( $tool );
+			if ( empty( $guidance ) ) {
+				return $description;
+			}
+
+			$suffix_parts = array();
+
+			if ( ! empty( $guidance['when_to_use'] ) ) {
+				$suffix_parts[] = sprintf( 'use when %s', $guidance['when_to_use'] );
+			}
+
+			if ( ! empty( $guidance['when_not_to_use'] ) ) {
+				$suffix_parts[] = sprintf( 'do NOT use when %s', $guidance['when_not_to_use'] );
+			}
+
+			if ( ! empty( $guidance['related_tools'] ) ) {
+				$suffix_parts[] = sprintf( 'related: %s', implode( ', ', $guidance['related_tools'] ) );
+			}
+
+			if ( ! empty( $guidance['notes'] ) ) {
+				$suffix_parts[] = $guidance['notes'];
+			}
+
+			if ( empty( $suffix_parts ) ) {
+				return $description;
+			}
+
+			$suffix = '[Usage: ' . implode( '. ', $suffix_parts ) . ']';
+
+			/**
+			 * Filter the usage-guidance suffix appended to a tool's model-facing
+			 * description.
+			 *
+			 * Return an empty string to suppress the suffix for a specific tool.
+			 *
+			 * @since 1.1.83
+			 *
+			 * @param string                  $suffix    Default suffix (e.g. `[Usage: use when …]`).
+			 * @param WP_MCP_AI_Tool_Interface $tool      Tool instance.
+			 * @param array                   $guidance  Normalised guidance array.
+			 */
+			$suffix = (string) apply_filters( 'wp_mcp_ai_tool_usage_guidance_description_suffix', $suffix, $tool, $guidance );
+
+			if ( '' === $suffix ) {
+				return $description;
+			}
+
+			$description = rtrim( $description );
+			if ( '' !== $description && ! preg_match( '/[.!?]$/', $description ) ) {
+				$description .= '.';
+			}
+
+			return $description . ' ' . $suffix;
 		}
 
 		/**
@@ -1734,6 +1863,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Get_Model_Information'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-model-information.php',
 				'WP_MCP_AI_Tool_Research_Model'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-model.php',
 				'WP_MCP_AI_Tool_Add_Model_Config'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-add-model-config.php',
+				'WP_MCP_AI_Tool_Typesafe_Decide'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-typesafe-decide.php',
+				'WP_MCP_AI_Tool_Typesafe_Guardrail'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-typesafe-guardrail.php',
 				'WP_MCP_AI_Tool_Discover_New_Models'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-discover-new-models.php',
 				'WP_MCP_AI_Tool_Create_Text_Embeddings'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-text-embeddings.php',
 				// OpenAI API Integration - Phase 2 Tools.

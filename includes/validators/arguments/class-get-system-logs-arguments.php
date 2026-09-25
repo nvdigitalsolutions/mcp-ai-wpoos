@@ -12,6 +12,7 @@
 namespace WP_MCP_AI\Tools\Arguments;
 
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -62,6 +63,48 @@ class GetSystemLogsArguments {
 		notInRangeMessage: 'Error limit must be between {{ min }} and {{ max }}.'
 	)]
 	public $error_limit = 20;
+
+	/**
+	 * Time window lower bound (relative or absolute, UTC).
+	 *
+	 * @var string
+	 */
+	#[Assert\Type( type: 'string' )]
+	#[Assert\Length(
+		max: 100,
+		maxMessage: 'Since must be at most {{ limit }} characters long.'
+	)]
+	#[Assert\Callback( callback: array( self::class, 'validate_since' ) )]
+	public $since = '';
+
+	/**
+	 * Optional severity levels to include.
+	 *
+	 * @var array
+	 */
+	#[Assert\Type( type: 'array' )]
+	#[Assert\All(
+		array(
+			new Assert\Type( 'string' ),
+			new Assert\Choice(
+				choices: array( 'critical', 'error', 'warning', 'notice', 'deprecated' ),
+				message: 'Level must be one of: {{ choices }}.'
+			),
+		)
+	)]
+	public $levels = array();
+
+	/**
+	 * Optional case-insensitive substring filter.
+	 *
+	 * @var string
+	 */
+	#[Assert\Type( type: 'string' )]
+	#[Assert\Length(
+		max: 200,
+		maxMessage: 'Search must be at most {{ limit }} characters long.'
+	)]
+	public $search = '';
 
 	/**
 	 * Whether to include the WordPress debug log if available.
@@ -169,4 +212,28 @@ class GetSystemLogsArguments {
 		notInRangeMessage: 'Plugin log depth must be between {{ min }} and {{ max }}.'
 	)]
 	public $plugin_log_depth = 2;
+
+	/**
+	 * Callback validator for the "since" value.
+	 *
+	 * Delegates to the canonical parser on the base tool so the validated and
+	 * non-validated tools can never drift apart on accepted formats.
+	 *
+	 * @param mixed                     $value   Value to validate.
+	 * @param ExecutionContextInterface $context Validation context.
+	 */
+	public static function validate_since( $value, ExecutionContextInterface $context ) {
+		if ( null === $value || '' === $value ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Get_System_Logs' ) ) {
+			return;
+		}
+
+		if ( false === \WP_MCP_AI_Tool_Get_System_Logs::parse_since( (string) $value ) ) {
+			$context->buildViolation( 'The "since" value must be a relative window like "2h" or "30 minutes", or an absolute date like "2026-09-24T10:00:00Z".' )
+				->addViolation();
+		}
+	}
 }

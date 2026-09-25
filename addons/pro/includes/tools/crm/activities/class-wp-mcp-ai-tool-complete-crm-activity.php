@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @package WP_MCP_AI_Pro
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Complete_CRM_Activity implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Complete_CRM_Activity implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Whether this tool is available.
 	 *
@@ -56,6 +56,20 @@ class WP_MCP_AI_Tool_Complete_CRM_Activity implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Mark a CRM activity as completed.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Marking an existing CRM activity done, with an optional outcome note recorded on the activity.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Postponing instead of finishing; use snooze_crm_activity. Adding a new activity; use create_crm_activity.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'snooze_crm_activity', 'create_crm_activity', 'get_crm_activity' ),
+			'notes'           => __( 'Requires activity_id. Stores completed=1, completed_at, and optional outcome meta on the activity.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * Parameters schema.

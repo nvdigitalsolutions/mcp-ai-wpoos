@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Origination_Volume_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Origination_Volume_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -58,6 +58,20 @@ class WP_MCP_AI_Tool_CRE_Origination_Volume_Tracker implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description(): string {
 		return __( 'Analyze a set of origination deals to calculate total pipeline volume, stage-by-stage breakdown, conversion rates, average deal size, average time-to-close, and top originator rankings.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Summarizing pipeline volume, stage breakdown, conversion rates, deal size, time-to-close, and originator rankings.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Per-deal stage management; use cre_deal_pipeline_manager. Single-deal screening; use cre_deal_screening_calculator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_deal_pipeline_manager', 'cre_broker_relationship_tracker', 'cre_fund_portfolio_dashboard' ),
+			'notes'           => __( 'Requires deals with amount, stage, originator, and dates. Computes aggregate statistics only; nothing is persisted.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

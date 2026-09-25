@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -58,6 +58,18 @@ class WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Creates a post on a Facebook Page or Instagram business account using the Meta Graph API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Publishing one Facebook Page post or one Instagram business image post right now.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Scheduling, bulk CSV imports, or multi-platform batches; use schedule_social_post or post_to_multiple_platforms.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'schedule_social_post', 'post_to_multiple_platforms', 'get_facebook_instagram_insights' ),
+			'notes'           => __( 'Posts go live on the public platform immediately; confirm content with the user before calling.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * After calling this tool, `blocked_task_id` is blocked by `blocking_task_id`
  * (i.e. the blocking task must finish first).
  */
-class WP_MCP_AI_Tool_Add_Task_Dependency implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Add_Task_Dependency implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -75,6 +75,20 @@ class WP_MCP_AI_Tool_Add_Task_Dependency implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Creates a dependency between two tasks so that the blocking task must be completed before the blocked task can start. Use get_task_dependencies to view existing links.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sequencing two existing tasks so the blocking task must be completed before the blocked one can start.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reviewing or auditing links; use get_task_dependencies. Removing a link; use remove_task_dependency.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_task_dependencies', 'remove_task_dependency', 'list_tasks' ),
+			'notes'           => __( 'Self-links and circular chains are rejected; repeating an existing link returns already_existed=true.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

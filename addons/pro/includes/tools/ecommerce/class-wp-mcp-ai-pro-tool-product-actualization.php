@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface {
+class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -83,6 +83,18 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Integrate a product image into a generated scene or short video using AI-powered scene fusion. In AI integration mode (default), the product is naturally embedded into the generated environment using AI image editing — matching lighting, shadows, reflections, and depth — rather than being mechanically layered on top. Works with Gemini (preferred) or OpenAI. Image mode creates static integrated images; video mode uses Google Gemini VEO to animate the scene around the product. Perfect for lifestyle marketing shots, social ads, and product visualization.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Compositing a product image into an AI-generated scene or short video for lifestyle marketing shots.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Checking whether a photo will work for placement; use validate_image_for_product before actualizing.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'validate_image_for_product', 'validate_image_for_vehicle' ),
+			'notes'           => __( 'Requires Imagick or GD. Mode image uses Gemini or OpenAI; mode video uses Google Veo.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

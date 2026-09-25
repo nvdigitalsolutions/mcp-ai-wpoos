@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_MySQL_Analytics' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_App_MySQL_Analytics extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_App_MySQL_Analytics extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_MySQL_Analytics' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Analyze MySQL queries and performance for an application.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Investigating database-side slowness via slow query and query volume counts.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'PHP or traffic issues; use cloudways_app_php_analytics or cloudways_app_traffic_analytics.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_app_php_analytics', 'cloudways_app_traffic_analytics', 'cloudways_app_monitor_summary' ),
+			);
 		}
 
 		/** {@inheritdoc} */

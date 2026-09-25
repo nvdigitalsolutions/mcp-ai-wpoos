@@ -22,7 +22,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 /**
  * Provides a tool for purging Cloudflare cache entries.
  */
-class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const DEFAULT_TIMEOUT = 30;
@@ -50,6 +50,20 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Requests a cache purge for the configured Cloudflare zone.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Purging the Cloudflare zone cache by URLs, hosts, tags, or purge_everything.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Local Varnish cache; use purge_varnish_cache. All configured layers; use purge_cache.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'purge_varnish_cache', 'purge_cache' ),
+			'notes'           => __( 'Requires a configured API token and zone ID. purge_everything invalidates the whole zone.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

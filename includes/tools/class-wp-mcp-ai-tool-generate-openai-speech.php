@@ -33,7 +33,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-audio-respons
  * Note: Class name remains WP_MCP_AI_Tool_Generate_OpenAI_Speech for backward compatibility,
  * but the tool now supports OpenAI, Google/Gemini, Cloudflare, and Hugging Face providers.
  */
-class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Audio_Response;
 
@@ -102,6 +102,20 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Converts text to speech using AI TTS and stores the audio in the Media Library. Supports OpenAI (tts-1, tts-1-hd), Google/Gemini (Neural2 voices), and Hugging Face (facebook/mms-tts-eng, microsoft/speecht5_tts, etc.) providers. Falls back to OpenAI for providers without TTS support (Ollama, Cloudflare).', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Converting text to spoken audio and storing the file in the Media Library.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Transcribing audio to text; use transcribe_openai_audio. For music tracks, use generate_music.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'transcribe_openai_audio', 'generate_music', 'generate_openai_speech_validated' ),
+			'notes'           => __( 'Supports OpenAI, Gemini, Cloudflare, and Hugging Face TTS with OpenAI fallback; speed is 0.25-4.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

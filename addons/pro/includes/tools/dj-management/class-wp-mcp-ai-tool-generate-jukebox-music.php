@@ -21,7 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-audio-respons
 /**
  * Provides a tool for generating music via locally-installed OpenAI Jukebox.
  */
-class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Audio_Response;
 
 	/**
@@ -43,6 +43,18 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Generates music with vocals from a text description using locally-installed OpenAI Jukebox model and saves it to the Media Library. Requires Jukebox to be installed on the server. Supports artist style emulation, genre specification, and custom lyrics.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating music with vocals from a text prompt via the local OpenAI Jukebox and saving it to the Media Library.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Checking the installation first; use check_jukebox_status. Building sets from existing tracks; use generate_playlist_ai.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'check_jukebox_status', 'generate_playlist_ai' ),
+			'notes'           => __( 'Each run consumes music-generation tokens and heavy GPU time; keep sample_length short while testing.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

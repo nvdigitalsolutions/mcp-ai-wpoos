@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_Site_Creator_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Site_Creator_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR  = WP_MCP_AI_PRO_PATH . 'includes/tools/site-creator-toolkit/examples';
@@ -49,6 +49,17 @@ class WP_MCP_AI_Tool_Import_Site_Creator_Blueprint implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Install a site creator assistant blueprint. Available blueprints: wordpress-site-builder (AI-assisted site creation) and remote-site-administrator (full remote/local WordPress/WooCommerce site management with JetEngine, JetFormBuilder, and REST API control).', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing a prebuilt site creator assistant blueprint such as wordpress-site-builder or remote-site-administrator.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'To save or apply site layout templates use save_site_template and import_site_template; this tool only installs assistants.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'site_creator', 'save_site_template', 'import_site_template' ),
+			'notes'           => __( 'Set overwrite=true to replace an existing assistant with the same blueprint slug.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 	/**
 	 * {@inheritdoc}
 	 */

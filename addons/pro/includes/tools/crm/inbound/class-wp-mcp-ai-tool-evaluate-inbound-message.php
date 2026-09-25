@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if the tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Full inbound triage pipeline: classify intent, detect buying signals, extract/upsert lead, score, qualify, and optionally auto-reply.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Running the full inbound triage pipeline for one message, from classification through lead upsert to follow-up task.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Isolated steps when only one signal is needed; use classify_message_intent, detect_buying_signals, or score_lead directly.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'classify_message_intent', 'extract_lead_from_message', 'score_lead' ),
+			'notes'           => __( 'auto_reply=true sends a canned reply; qualification_framework accepts bant or meddic; existing_contact_id skips extraction.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.80
  */
-class WP_MCP_AI_Tool_Economic_Calendar_Fetcher implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Economic_Calendar_Fetcher implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Cache TTL in seconds.
@@ -99,6 +99,22 @@ class WP_MCP_AI_Tool_Economic_Calendar_Fetcher implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Fetch the economic events calendar (Fed, ECB, CPI, NFP and more) with consensus forecast and previous reading from keyless public feeds. Filter by country, currency, impact, and date. EDUCATIONAL ONLY - Data may be delayed. Not investment advice.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @since 1.1.80
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'To list economic events (CPI, NFP, Fed, ECB) with forecast and previous readings.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For company earnings dates; use earnings_calendar_fetcher instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'earnings_calendar_fetcher', 'macro_data_fetcher', 'financial_news_aggregator' ),
+			'notes'           => __( 'Uses the keyless Forex Factory public feed. Filter by currency, country, impact, or date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

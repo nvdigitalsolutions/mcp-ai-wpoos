@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_NOI_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_NOI_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_NOI_Calculator implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description(): string {
 		return __( 'Calculate Net Operating Income (NOI) for a commercial property. Takes potential gross income, vacancy, concessions, other income, operating expenses, management fee percentage, replacement reserves per unit, and unit count. Returns full income waterfall from PGI through NOI with key ratios.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Computing NOI from PGI with the full EGI waterfall: vacancy, concessions, other income, opex, management fee, reserves.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Benchmarking those expenses against market; use cre_operating_expense_benchmarker.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_operating_expense_benchmarker', 'cre_dcf_modeler', 'cre_loan_sizer' ),
+			'notes'           => __( 'Management fee applies to EGI; reserves multiply the per-unit amount by num_units.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

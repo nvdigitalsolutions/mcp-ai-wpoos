@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Abandoned_Cart_Recovery implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Abandoned_Cart_Recovery implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -103,6 +103,20 @@ class WP_MCP_AI_Tool_Abandoned_Cart_Recovery implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Identify and recover abandoned carts with automated email campaigns. Includes cart analytics, recovery rate tracking, and optional discount incentives. Supports custom email templates and multi-step recovery sequences.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Running abandoned-cart campaigns: identify carts, send recovery emails, and track recovery analytics.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Listing carts or sending one manual email; use get_abandoned_carts or send_cart_recovery_email.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_abandoned_carts', 'send_cart_recovery_email', 'woo_coupons' ),
+			'notes'           => __( 'Actions: identify, send_recovery, and get_analytics. Emails go to real customers, so review campaign settings first.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

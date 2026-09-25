@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for retrieving Apple Messages for Business conversation history via an MSP.
  */
-class WP_MCP_AI_Pro_Tool_Get_Apple_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Apple_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default timeout for MSP API requests (seconds).
@@ -68,6 +68,18 @@ class WP_MCP_AI_Pro_Tool_Get_Apple_Messages implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Retrieves Apple Messages for Business conversation history from your Messaging Service Provider (MSP). Supports filtering by conversation ID, date range, and pagination.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading Apple Messages for Business conversation history through an approved MSP gateway.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Replying to a customer; use send_apple_message or send_apple_message_group instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_apple_message', 'send_apple_message_group', 'send_apple_message_interactive' ),
+			'notes'           => __( 'Requires an approved MSP API; omit conversation_id to list recent open conversations instead.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

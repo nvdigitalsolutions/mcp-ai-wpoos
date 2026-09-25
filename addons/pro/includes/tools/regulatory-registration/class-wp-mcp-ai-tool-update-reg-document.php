@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Updates a regulatory document.
  */
-class WP_MCP_AI_Tool_Update_Reg_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Reg_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Update_Reg_Document implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Updates a document in the regulatory registration system. Only provided fields will be updated.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When updating document metadata such as title, type, issue or expiry dates, version, and status.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When attaching a new file or reading version history; use upload_reg_document or track_document_version instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'upload_reg_document', 'track_document_version', 'list_reg_documents' ),
+			'notes'           => __( 'Only provided fields are changed; status accepts draft, pending, approved, or rejected.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
@@ -123,10 +135,7 @@ class WP_MCP_AI_Tool_Update_Reg_Document implements WP_MCP_AI_Tool_Interface, WP
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['document_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Document ID is required.', 'mcp-ai-wpoos-pro' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_missing_param', __( 'Document ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$document_id = absint( $arguments['document_id'] );
@@ -134,10 +143,7 @@ class WP_MCP_AI_Tool_Update_Reg_Document implements WP_MCP_AI_Tool_Interface, WP
 		// Verify document exists.
 		$document = get_post( $document_id );
 		if ( ! $document || 'mcp_ai_reg_document' !== $document->post_type ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Document not found.', 'mcp-ai-wpoos-pro' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_not_found', __( 'Document not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$updated_fields = array();

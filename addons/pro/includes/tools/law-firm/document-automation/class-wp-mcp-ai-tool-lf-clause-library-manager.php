@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Manages a clause library stored in WordPress options for reuse across documents.
  */
-class WP_MCP_AI_Tool_LF_Clause_Library_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Clause_Library_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -72,6 +72,20 @@ class WP_MCP_AI_Tool_LF_Clause_Library_Manager implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Manages a reusable library of legal clauses for document assembly. Supports adding, searching, listing, and deleting clauses by type, practice area, and tags.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When adding, searching, listing, or deleting reusable legal clauses by type, practice area, and tags.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For reusable whole documents; use lf_document_template_manager to store document templates.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_document_template_manager', 'lf_document_drafter' ),
+			'notes'           => __( 'action must be add, search, list, or delete; delete needs the clause_id returned by add.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

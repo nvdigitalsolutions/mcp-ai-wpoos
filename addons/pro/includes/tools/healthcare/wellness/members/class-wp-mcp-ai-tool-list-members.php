@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Lists members (people and pets).
  */
-class WP_MCP_AI_Tool_List_Members implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Members implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_List_Members implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Lists members (people and pets) in the health and wellness system. Supports filtering by type and search by name.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing members (people and pets) with optional type filter and name search.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( "One member's full profile; use get_member. Health rollup; use get_member_health_summary.", 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_member', 'get_member_health_summary' ),
+			'notes'           => __( 'type accepts person or pet; users without edit_posts see only members they created.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

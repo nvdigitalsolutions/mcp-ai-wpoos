@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Pro_Tool_Shopify_Customers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Shopify_Customers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Shopify_Connection_Resolver;
 
@@ -43,6 +43,18 @@ class WP_MCP_AI_Pro_Tool_Shopify_Customers implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Access and manage customers on a connected Shopify store via the Admin GraphQL API. Supports listing, filtering by email/name/tags, and retrieving detailed customer profiles including order history and marketing consent. Requires an admin_api mode connection — catalog connections (Storefront/Global Catalog MCP or the deprecated Catalog API) are live product-search modes that do not expose customers; those return a hint pointing at the catalog tools.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing, searching, or retrieving customer profiles and order history on a connected Shopify store.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Managing customer orders or segmentation; use shopify_orders for orders and segment_customers for WooCommerce audiences.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'shopify_orders', 'shopify_products', 'segment_customers' ),
+			'notes'           => __( 'Actions: list, get, and search. Requires an admin_api Shopify connection; catalog connections cannot expose customers.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

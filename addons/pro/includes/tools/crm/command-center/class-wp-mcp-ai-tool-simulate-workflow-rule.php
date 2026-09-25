@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Simulate Workflow Rule tool — dry-run against historical messages.
  */
-class WP_MCP_AI_Tool_Simulate_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Simulate_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Check whether the tool is available.
 	 *
@@ -49,6 +49,20 @@ class WP_MCP_AI_Tool_Simulate_Workflow_Rule implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Dry-run a workflow rule against a sample message to see what would happen without executing.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Dry-running an existing rule against a sample message to preview which actions would fire, without executing them.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating or editing rules; use create_crm_workflow_rule or manage_workflow_rules.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_crm_workflow_rule', 'manage_workflow_rules' ),
+			'notes'           => __( 'Only inbound_message_received triggers currently match; inactive rules report that no actions would fire.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 	/**
 	 * Get the JSON Schema for the tool parameters.
 	 *

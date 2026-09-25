@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -103,6 +103,19 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Comprehensive sales analytics dashboard with revenue trends, top products, customer metrics, and KPIs. Filter by date range, categories, and product types. Export reports in multiple formats.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for tool selection.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Building a KPI view of revenue, orders, customers, and top products for a date range.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Order-level trends or file exports; use get_order_analytics or export_products_report.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_order_analytics', 'export_products_report', 'customer_lifetime_value' ),
+		);
 	}
 
 	/**

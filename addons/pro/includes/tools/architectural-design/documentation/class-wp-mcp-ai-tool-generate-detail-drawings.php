@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-respons
 /**
  * Generate detail drawings.
  */
-class WP_MCP_AI_Tool_Generate_Detail_Drawings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Detail_Drawings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Generate_Detail_Drawings implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Create construction detail sheets for specific building components. Includes close-up views, assembly instructions, and material specifications.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing close-up construction detail sheets for wall_section, foundation, roof_detail, window, door, or stair components.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For whole-building blueprint sets or concept imagery - use generate_construction_drawings or generate_architectural_drawing.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_construction_drawings', 'generate_architectural_drawing' ),
+			'notes'           => __( 'component_type is required and accepts wall_section, foundation, roof_detail, window, door, stair; detail scale takes 1/2, 1, 3, or 6.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

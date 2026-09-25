@@ -22,7 +22,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Delete' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Server_Delete extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Server_Delete extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -39,6 +39,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Delete' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Permanently delete a server and all its data. THIS ACTION IS IRREVERSIBLE.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Permanently removing a server, all its apps, and all its data when the server is truly obsolete.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Temporary shutdown or pausing; use cloudways_server_stop first and verify backups with cloudways_create_server_backup.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_list_servers', 'cloudways_create_server_backup', 'cloudways_server_stop' ),
+				'notes'           => __( 'Irreversible and permanent: apps, databases, and files are destroyed; confirm=true is mandatory.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

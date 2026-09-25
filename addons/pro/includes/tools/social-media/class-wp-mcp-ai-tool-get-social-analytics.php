@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.7.0
  */
-class WP_MCP_AI_Tool_Get_Social_Analytics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Social_Analytics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -49,6 +49,19 @@ class WP_MCP_AI_Tool_Get_Social_Analytics implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Retrieve unified cross-platform social media analytics including engagement, reach, follower growth, top posts, hashtag performance, competitor analysis, and influencer insights. Supports Meta (Facebook/Instagram), Twitter/X, LinkedIn, TikTok, and Google Business Profile. Returns normalized data with Chart.js visualization support.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching unified cross-platform reports with engagement, reach, growth, and optional hashtag, competitor, or influencer sections.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For per-platform detail use get_cross_platform_analytics. Capturing observations; use social_capture_post_performance.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_cross_platform_analytics', 'track_hashtag_performance', 'competitor_analysis', 'influencer_identification' ),
+		);
 	}
 
 	/**

@@ -24,7 +24,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-pro-gmail-client.php';
 /**
  * Provides an assistant tool for reading a full Gmail thread.
  */
-class WP_MCP_AI_Pro_Tool_Get_Gmail_Thread implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Gmail_Thread implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -47,6 +47,20 @@ class WP_MCP_AI_Pro_Tool_Get_Gmail_Thread implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Reads a full Gmail thread by thread ID and returns all messages newest-first with plain text (default) or sanitised HTML bodies, up to max_messages. Use thread IDs from search_gmail results. Bodies longer than max_chars are truncated at a word boundary with the truncated flag set.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading an entire Gmail conversation by thread ID, newest first, to absorb invoice, support, or notification chains in one call.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading a single message; use get_gmail_message. Finding threads; use search_gmail. Label or read-state changes; use modify_gmail_message.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'search_gmail', 'get_gmail_message', 'modify_gmail_message' ),
+			'notes'           => __( 'Returns up to max_messages (1-50, default 10) with each body capped at max_chars; message_count vs returned_count shows truncation.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -17,7 +17,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 /**
  * Provides functionality to get Newsletter plugin subscriber statistics.
  */
-class WP_MCP_AI_Tool_Newsletter_Get_Subscriber_Stats implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Newsletter_Get_Subscriber_Stats implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -57,6 +57,20 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscriber_Stats implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Get statistical overview of Newsletter plugin subscribers including counts by status and lists. Requires Newsletter plugin.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Summarizing subscriber counts by status and per list for reports or dashboards.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Fetching individual subscriber records; use newsletter_get_subscribers.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'newsletter_get_subscribers' ),
+			'notes'           => __( 'include_lists=true adds up to 40 per-list counts, which costs one query per list.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

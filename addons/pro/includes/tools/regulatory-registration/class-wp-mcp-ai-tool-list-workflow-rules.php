@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Lists workflow automation rules.
  */
-class WP_MCP_AI_Tool_List_Workflow_Rules implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Workflow_Rules implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_List_Workflow_Rules implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Lists all configured workflow automation rules with execution statistics and status information.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When reviewing configured automation rules and their rule IDs, for example before editing or testing a rule.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When investigating whether a rule ran or changing its config; use get_workflow_execution_log or update_workflow_rule.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'test_workflow_rule', 'update_workflow_rule', 'get_workflow_execution_log' ),
+			'notes'           => __( 'Returns rule IDs needed by test_workflow_rule and update_workflow_rule; include_stats is enabled by default.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

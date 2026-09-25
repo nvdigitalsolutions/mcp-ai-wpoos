@@ -25,7 +25,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * Provides a tool for retrieving payment transaction details from PayHere.
  * Follows separation of concerns: handles WordPress integration while delegating API calls to client.
  */
-class WP_MCP_AI_Tool_PayHere_Get_Payment implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_PayHere_Get_Payment implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -47,6 +47,20 @@ class WP_MCP_AI_Tool_PayHere_Get_Payment implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Retrieve payment transaction details from PayHere payment gateway by order ID. Returns payment status, customer details, amounts, fees, and payment method information.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Retrieving a single PayHere payment by order ID for reconciliation or support queries.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Listing recent orders; use get_woo_recent_orders. This tool reads one payment only.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_woo_recent_orders' ),
+			'notes'           => __( 'Needs PayHere credentials from settings or a Remote Sites connection. Requires manage_woocommerce or manage_options.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

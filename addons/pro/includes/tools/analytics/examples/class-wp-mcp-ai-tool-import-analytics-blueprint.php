@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_Analytics_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Analytics_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR = WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/examples';
@@ -53,6 +53,20 @@ class WP_MCP_AI_Tool_Import_Analytics_Blueprint implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Install the Business Intelligence Analyst assistant blueprint for data analytics and reporting workflows.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing the Business Intelligence Analyst assistant blueprint to bootstrap analytics workflows.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Running an individual analysis or report; call the analytics tools directly once the blueprint is installed.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_executive_dashboard', 'create_custom_report', 'export_analytics_api' ),
+			'notes'           => __( 'Blueprint must be business-intelligence-analyst; set overwrite=true to replace an existing assistant with the same name.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * {@inheritdoc}

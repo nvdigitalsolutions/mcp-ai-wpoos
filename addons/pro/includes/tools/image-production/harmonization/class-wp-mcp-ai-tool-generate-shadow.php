@@ -20,7 +20,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-harmonization-base.php';
 /**
  * Generate a shadow layer for a transparent subject.
  */
-class WP_MCP_AI_Tool_Generate_Shadow extends WP_MCP_AI_Tool_Harmonization_Base {
+class WP_MCP_AI_Tool_Generate_Shadow extends WP_MCP_AI_Tool_Harmonization_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -41,6 +41,18 @@ class WP_MCP_AI_Tool_Generate_Shadow extends WP_MCP_AI_Tool_Harmonization_Base {
 	 */
 	public function get_description() {
 		return __( 'Generate a physically plausible contact + cast shadow layer (transparent PNG) for a subject given a light direction. Auto-detects direction from a background if one is provided.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to render a physically plausible contact and cast shadow layer for a transparent subject, with optional light direction auto-detection.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use generate_reflection for glossy-surface reflections, or harmonize_image_into_background for full scene integration.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_reflection', 'analyze_scene_lighting', 'relight_subject' ),
+			'notes'           => __( 'Output is a transparent PNG layer; softness, opacity, and length accept 0-1 values.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

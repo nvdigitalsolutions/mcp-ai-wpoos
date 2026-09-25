@@ -20,7 +20,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Info' ) ) {
 	 *
 	 * @since 1.0.0
 	 */
-	class WP_MCP_AI_Tool_Huggingface_Dataset_Get_Info implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	class WP_MCP_AI_Tool_Huggingface_Dataset_Get_Info implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		use WP_MCP_AI_Tool_Chat_Response;
 
@@ -68,6 +68,20 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Info' ) ) {
 		 */
 		public function get_description() {
 			return __( 'Get metadata and information about a HuggingFace dataset', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * Get usage guidance for the tool.
+		 *
+		 * @return array
+		 */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Reading description, features, and metadata for one HuggingFace dataset.', 'mcp-ai-wpoos' ),
+				'when_not_to_use' => __( 'Row data or split names; use huggingface_dataset_get_rows or huggingface_dataset_list_splits.', 'mcp-ai-wpoos' ),
+				'related_tools'   => array( 'huggingface_dataset_list_splits', 'huggingface_dataset_get_size', 'huggingface_dataset_search' ),
+				'notes'           => __( 'Takes one dataset name and returns its metadata from the HuggingFace Hub.', 'mcp-ai-wpoos' ),
+			);
 		}
 
 		/**

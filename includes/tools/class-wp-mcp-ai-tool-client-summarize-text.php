@@ -25,7 +25,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-restrict-from
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Client_Summarize_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Client_Summarize_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
@@ -47,6 +47,20 @@ class WP_MCP_AI_Tool_Client_Summarize_Text implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Generate a concise summary of the provided text using browser-native AI. Processes instantly in the browser without server round-trip. Best for summarizing articles, documents, or long content.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Summarizing articles or long text instantly in the browser without server round-trip.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'High-fidelity summaries of very long documents; prefer a provider-backed model for quality at scale.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'client_translate_text', 'client_analyze_sentiment' ),
+			'notes'           => __( 'min_length and max_length bound the summary in tokens (defaults 30 and 130). Client-side only.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

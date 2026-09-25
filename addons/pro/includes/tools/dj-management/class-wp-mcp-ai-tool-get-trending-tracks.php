@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Lists trending/popular tracks from the DJ music library.
  */
-class WP_MCP_AI_Tool_Get_Trending_Tracks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Trending_Tracks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -41,6 +41,18 @@ class WP_MCP_AI_Tool_Get_Trending_Tracks implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Lists trending/popular tracks from the DJ music library, optionally filtered by genre, BPM range, or time period. Returns structured results with title, artist, BPM, genre, play count, and last played date.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding which library tracks are most popular by genre, BPM range, or time period before building sets or playlists.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Adding or editing tracks; use manage_music_library. Checking a single track tempo; use analyze_track_bpm.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_music_library', 'analyze_track_bpm', 'create_playlist', 'generate_playlist_ai' ),
+			'notes'           => __( 'Read-only. Results order by play count; returns a setup hint when no dj_track posts exist.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

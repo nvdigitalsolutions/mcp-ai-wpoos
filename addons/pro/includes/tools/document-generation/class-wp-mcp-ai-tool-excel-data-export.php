@@ -25,7 +25,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Excel_Data_Export implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Excel_Data_Export implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Document_Response;
 
@@ -48,6 +48,18 @@ class WP_MCP_AI_Tool_Excel_Data_Export implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Export data to Excel spreadsheets (.xlsx). Create formatted Excel files from arrays, database results, or structured data. Perfect for reports, data sharing, and analytics.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Writing a structured row-and-column dataset to an .xlsx file for reports or sharing.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading an existing spreadsheet; use excel_data_import. For quick JSON/CSV input, use generate_excel.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'excel_data_import', 'generate_excel', 'pro_excel_document' ),
+			'notes'           => __( 'Falls back to CSV when PhpSpreadsheet is missing; uploads the finished file to the media library.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

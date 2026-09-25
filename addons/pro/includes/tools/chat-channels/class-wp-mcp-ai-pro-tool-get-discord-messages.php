@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for retrieving Discord message history via the Discord Bot API.
  */
-class WP_MCP_AI_Pro_Tool_Get_Discord_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Discord_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Discord requests.
 	 */
@@ -54,6 +54,18 @@ class WP_MCP_AI_Pro_Tool_Get_Discord_Messages implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Retrieves message history from a Discord channel using the Discord Bot API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading recent message history from a known Discord channel ID.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Discovering the channel ID or reacting; use get_discord_channels or add_discord_message_reaction.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_discord_channels', 'send_discord_message', 'add_discord_message_reaction' ),
+			'notes'           => __( 'Requires a channel ID; get it with get_discord_channels first. Up to 100 messages per call.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Send_Lead_Dm implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Send_Lead_Dm implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if the tool is available.
@@ -62,6 +62,20 @@ class WP_MCP_AI_Tool_Send_Lead_Dm implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Send a direct message via LinkedIn or existing chat-channels integration. Stub — returns instructions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending a direct message to a lead on LinkedIn, Telegram, or webchat via a chat-channel integration.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Email or SMS; use send_lead_email or send_lead_sms. This stub does not deliver; real delivery needs the Chat Channels toolkit.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_lead_email', 'send_lead_sms', 'send_lead_whatsapp' ),
+			'notes'           => __( 'Consent and DNC gates apply; without a chat-channel transport the message is only logged as an activity.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

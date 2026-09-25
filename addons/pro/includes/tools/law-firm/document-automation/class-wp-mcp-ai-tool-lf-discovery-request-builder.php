@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Builds structured discovery requests for litigation matters.
  */
-class WP_MCP_AI_Tool_LF_Discovery_Request_Builder implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Discovery_Request_Builder implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -71,6 +71,20 @@ class WP_MCP_AI_Tool_LF_Discovery_Request_Builder implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Generates discovery requests including interrogatories, requests for production, requests for admission, and deposition notices with standard instructions and definitions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When generating interrogatories, requests for production, admissions, or deposition notices with FRCP-based instructions.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'To save the generated requests as a document post; use lf_document_drafter to persist a draft.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_document_drafter', 'lf_pleading_generator', 'lf_ediscovery_document_analyzer' ),
+			'notes'           => __( 'discovery_type is required; num_requests is capped at 25 and topic_areas rotate across the generated items.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

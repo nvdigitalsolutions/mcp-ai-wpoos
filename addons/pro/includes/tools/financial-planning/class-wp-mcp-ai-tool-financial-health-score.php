@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Financial_Health_Score implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Financial_Health_Score implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,20 @@ class WP_MCP_AI_Tool_Financial_Health_Score implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Assess overall financial health with a comprehensive 0-100 score. Evaluates savings, debt management, budgeting, credit, insurance, and retirement readiness. Provides actionable recommendations for improvement.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'To score overall financial wellness from savings, debt, credit, budget, and insurance inputs.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For a single metric such as credit score or emergency fund sizing; use credit_score_tracker or emergency_fund_calculator instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'emergency_fund_calculator', 'credit_score_tracker', 'debt_payoff_calculator', 'budget_planner' ),
+			'notes'           => __( 'Requires monthly_income and monthly_expenses. Optional inputs such as credit_score, age, and coverage flags raise score accuracy.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Analyzes case law including holdings, reasoning, dissent, and downstream impact.
  */
-class WP_MCP_AI_Tool_LF_Case_Law_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Case_Law_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -67,6 +67,20 @@ class WP_MCP_AI_Tool_LF_Case_Law_Analyzer implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Analyzes case law for holdings, reasoning, dissent, and impact. Supports comparison with other cases.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Analyzing stored case records for holdings, reasoning, dissents, citing matters, and comparisons with other cited cases.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Planning broad research and source strategies; use lf_legal_research_assistant. Checking citation formatting; use lf_legal_citation_checker.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_legal_research_assistant', 'lf_legal_citation_checker' ),
+			'notes'           => __( 'case_citation is required and matched with LIKE against _lf_case_citation. analysis_type accepts holding, reasoning, dissent, impact, or all.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

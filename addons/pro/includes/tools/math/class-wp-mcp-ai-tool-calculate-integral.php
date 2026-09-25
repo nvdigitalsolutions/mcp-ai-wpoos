@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-math-response
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Calculate_Integral implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Calculate_Integral implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Math_Response;
 
 	/**
@@ -48,6 +48,20 @@ class WP_MCP_AI_Tool_Calculate_Integral implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Calculate definite and indefinite integrals of mathematical functions. Supports polynomial, trigonometric, exponential, and logarithmic functions with LaTeX rendering.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Computing definite or indefinite symbolic integrals of a function.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Differentiating a function; use calculate_derivative.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'calculate_derivative', 'simplify_expression', 'solve_equation' ),
+			'notes'           => __( 'type=definite requires lower_limit and upper_limit.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

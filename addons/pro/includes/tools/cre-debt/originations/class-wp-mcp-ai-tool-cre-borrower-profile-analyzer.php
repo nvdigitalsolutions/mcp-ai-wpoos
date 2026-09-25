@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Borrower_Profile_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Borrower_Profile_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -58,6 +58,20 @@ class WP_MCP_AI_Tool_CRE_Borrower_Profile_Analyzer implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description(): string {
 		return __( 'Assess borrower/sponsor financial strength by analyzing net worth, liquidity, leverage, experience, and credit score to produce a composite strength rating (strong/acceptable/weak/unacceptable).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Rating sponsor strength from net worth, liquidity, leverage, experience, and credit score for an underwriting decision.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Property-level deal screening; use cre_deal_screening_calculator. Loan-level credit risk; use cre_credit_risk_scorer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_deal_screening_calculator', 'cre_credit_risk_scorer', 'cre_execution_strategy_advisor' ),
+			'notes'           => __( 'Requires borrower_name, net_worth, liquidity, total_debt, annual_income, years_experience, and credit_score. Returns a strength rating.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

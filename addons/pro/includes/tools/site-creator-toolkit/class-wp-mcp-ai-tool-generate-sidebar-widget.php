@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Generate_Sidebar_Widget implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Sidebar_Widget implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -54,6 +54,18 @@ class WP_MCP_AI_Tool_Generate_Sidebar_Widget implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Creates sidebar widgets with dynamic content including recent posts, categories, tags, search, and custom areas.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating a sidebar widget configuration such as recent posts, categories, tags, search, custom HTML, or newsletter.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'To build the layout around the widget use generate_blog_layout or create_homepage_layout.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_blog_layout', 'create_custom_widget', 'create_footer_widget' ),
+			'notes'           => __( 'Returns widget settings data only; registering the widget in a widget area is a separate step.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

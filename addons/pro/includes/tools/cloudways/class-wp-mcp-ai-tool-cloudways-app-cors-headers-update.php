@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_CORS_Headers_Update' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_App_CORS_Headers_Update extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_App_CORS_Headers_Update extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_CORS_Headers_Update' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Update CORS (cross-origin resource sharing) headers for an application.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Adjusting which origins, methods, or headers may call an application from the browser.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Checking app health or performance; use cloudways_get_app or cloudways_app_monitor_summary.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_get_app', 'cloudways_app_cname_update' ),
+				'notes'           => __( 'allowed_origins accepts a comma-separated list or "*"; methods and headers are optional.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

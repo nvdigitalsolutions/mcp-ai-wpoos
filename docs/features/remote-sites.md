@@ -19,6 +19,26 @@ The system supports managing WordPress posts, WooCommerce products/orders, JetEn
 - Connection health testing and status indicators
 - Remote site discovery via the `list_connections` action
 
+### MCP Server Connections (v1.1.85)
+
+The Remote Sites screen also manages **MCP Server** connections — Elementor MCP,
+WordPress MCP Adapter endpoints, or any JSON-RPC 2.0 Streamable HTTP MCP server:
+
+- **Connection type `mcp_server`** with auth types `none`, `basic_auth` /
+  `application_password` (Elementor MCP application passwords), `custom_header`
+  (header name + value), `bearer`, and `oauth`.
+- **Test Connection** performs a real MCP handshake (`server/discover` with the
+  legacy `initialize` fallback) and reports protocol, server info, and tool count.
+- **Discover Tools** (via `WP_MCP_AI_Pro_Remote_Site_Manager::discover_mcp_server_tools()`)
+  enumerates the remote tools and persists the snapshot (`mcp_tool_count`,
+  `mcp_discovered_at`, `mcp_last_test`) on the connection.
+- Credentials are **encrypted at rest** like every other remote-site secret
+  (the OAuth blob `mcp_oauth` is a credential field too).
+- Per-assistant **MCP Apps** can reference a central connection
+  (`connection_ref`) instead of duplicating credentials — see
+  `docs/assistant-import-export.md` (redaction policy) and the MCP Apps
+  metabox on the assistant editor.
+
 ### Post Type Access Controls (v1.1.52 Update)
 
 The admin interface for remote connection post type access has been enhanced:

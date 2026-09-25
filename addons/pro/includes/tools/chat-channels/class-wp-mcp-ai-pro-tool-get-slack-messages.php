@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for retrieving Slack conversation history via the Web API.
  */
-class WP_MCP_AI_Pro_Tool_Get_Slack_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Slack_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Slack requests.
 	 */
@@ -54,6 +54,18 @@ class WP_MCP_AI_Pro_Tool_Get_Slack_Messages implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Retrieves conversation history from a Slack channel using the Slack Web API. Supports pagination with cursors.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading conversation history from a known Slack channel ID.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Discovering the channel ID or posting; use get_slack_channels or send_slack_message.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_slack_channels', 'send_slack_message' ),
+			'notes'           => __( 'Requires a channel ID; get it with get_slack_channels first. Supports cursors and time ranges.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -22,7 +22,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Lease_Expiration_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Lease_Expiration_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_CRE_Lease_Expiration_Manager implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description(): string {
 		return __( 'Analyze lease expiration schedules with renewal probability modeling, mark-to-market analysis, and tenant improvement / leasing commission exposure calculations.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Analyzing lease expiration schedules with renewal probabilities, mark-to-market rent, downtime costs, and TI/leasing commission exposure.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Rent roll data extraction or tenant mix analysis for underwriting; use cre_rent_roll_analyzer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_rent_roll_analyzer', 'cre_tenant_credit_analyzer', 'cre_property_budget_manager' ),
+			'notes'           => __( 'Pass market_rent_per_sf to enable mark-to-market analysis; defaults are 70% renewal probability, 3 downtime months, and 20 TI per SF.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

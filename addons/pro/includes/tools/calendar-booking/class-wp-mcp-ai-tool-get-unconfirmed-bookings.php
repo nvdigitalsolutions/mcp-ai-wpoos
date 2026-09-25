@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.9.0
  */
-class WP_MCP_AI_Tool_Get_Unconfirmed_Bookings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Unconfirmed_Bookings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -47,6 +47,18 @@ class WP_MCP_AI_Tool_Get_Unconfirmed_Bookings implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Retrieves bookings awaiting confirmation, with optional date range and service filters. Useful for reviewing pending bookings that require approval or follow-up.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing pending or unconfirmed bookings that need approval or follow-up.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Missed appointments; use get_no_show_appointments. Confirming bookings; use send_booking_confirmations.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_no_show_appointments', 'send_booking_confirmations', 'get_appointment_details' ),
+			'notes'           => __( 'Matches bookings without a confirmation timestamp whose status is unconfirmed, pending, or empty.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

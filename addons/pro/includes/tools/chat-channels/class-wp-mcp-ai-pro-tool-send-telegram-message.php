@@ -29,7 +29,7 @@ if ( ! trait_exists( 'WP_MCP_AI_Tool_Restrict_From_Chat_Client' ) ) {
  * agentic runs). Sites that want to allow this can pass
  * `allow_sensitive_tools=true` in the shortcode/widget settings.
  */
-class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Context_Restrictions_Interface {
+class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Context_Restrictions_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
@@ -72,6 +72,18 @@ class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Sends a text message to a Telegram chat using the Bot API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending a text message to a Telegram chat or channel using a bot token.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading incoming updates; use get_telegram_updates. Registering commands; use manage_telegram_commands.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_telegram_updates', 'manage_telegram_commands', 'manage_telegram_webhook' ),
+			'notes'           => __( 'Restricted from the public chat client by default; delivers real messages to Telegram users.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

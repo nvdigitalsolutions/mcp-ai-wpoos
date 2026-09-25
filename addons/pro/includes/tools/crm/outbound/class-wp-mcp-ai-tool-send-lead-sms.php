@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 2.3.0
  * @since 2.4.0 Wired to real Twilio and notify.lk APIs; stub removed.
  */
-class WP_MCP_AI_Tool_Send_Lead_SMS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Send_Lead_SMS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Twilio API base URL.
@@ -78,6 +78,20 @@ class WP_MCP_AI_Tool_Send_Lead_SMS implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Send an outbound SMS to a lead via Twilio or notify.lk. Requires active SMS consent. Respects TCPA quiet hours.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending an outbound SMS to a lead via Twilio or notify.lk when SMS consent is on file.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Email or WhatsApp; use send_lead_email or send_lead_whatsapp. Drafting the message; use draft_lead_reply.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_lead_email', 'send_lead_whatsapp', 'draft_lead_reply' ),
+			'notes'           => __( 'Provider is selected in CRM integrations settings; requires Twilio or notify.lk credentials. Respects TCPA quiet hours.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * Parameters schema.

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Create a new media collection via AI.
  */
-class WP_MCP_AI_Tool_Create_Media_Collection implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Media_Collection implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -36,6 +36,20 @@ class WP_MCP_AI_Tool_Create_Media_Collection implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Create a new media collection or update an existing collection. If collection_id is provided, updates the existing collection instead of creating a new one. Collections are used for grouping images and applying templates in batch. Collections can contain multiple images and have templates assigned for consistent processing. Returns the collection ID and details. Use this tool for both creating new collections and updating existing ones.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating or updating a media collection to group images for batch template processing.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Running templates over a collection; use apply_collection_template or process_collection.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_media_template', 'apply_collection_template', 'process_collection' ),
+			'notes'           => __( 'Pass collection_id to update an existing collection; assign template_ids here or via apply_collection_template.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates automated workflow rules for ECA management.
  */
-class WP_MCP_AI_Tool_Create_ECA_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_ECA_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Create_ECA_Workflow_Rule implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Creates automated workflow rules for ECA management. Rules trigger actions based on events like enrollment changes, capacity thresholds, attendance patterns, and schedule conflicts.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Automating ECA operations such as emailing staff when enrollment fills up or attendance drops below a threshold.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'One-off notifications for a single ECA; use configure_eca_notifications or send_eca_notification instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'configure_eca_notifications', 'send_eca_notification', 'manage_eca_term' ),
+			'notes'           => __( 'Rules can target all ECAs or a single eca_id.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for retrieving customer profiles from Flowhub.
  */
-class WP_MCP_AI_Tool_Flowhub_Get_Customers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Flowhub_Get_Customers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -46,6 +46,20 @@ class WP_MCP_AI_Tool_Flowhub_Get_Customers implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Retrieve customer profiles from Flowhub dispensary system including contact information, purchase history, loyalty data, and medical cannabis credentials. Supports search and pagination.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Looking up Flowhub customer profiles, purchase history, or medical credentials.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Creating or updating customer records; use flowhub_manage_customer.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'flowhub_manage_customer', 'flowhub_get_orders' ),
+			'notes'           => __( 'Supports search by name, email, or phone, with limit and offset pagination.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

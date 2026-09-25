@@ -35,7 +35,7 @@ if ( ! trait_exists( 'WP_MCP_AI_Woo_Price_Qty_Updater' ) ) {
  *
  * @since 2.2.0
  */
-class WP_MCP_AI_Tool_Update_Woo_Product_Price implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
+class WP_MCP_AI_Tool_Update_Woo_Product_Price implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Woo_Price_Qty_Updater;
 	use WP_MCP_AI_Tool_Safety_Profile;
@@ -119,6 +119,20 @@ class WP_MCP_AI_Tool_Update_Woo_Product_Price implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Updates the price of a WooCommerce product across all product types. Handles simple, variable (via variations), grouped (via child products), and external products, with regular price, sale price, scheduled sale dates, and sale clearing. For variable products use scope "variations" or "all" — the parent price range is re-synced automatically.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for tool selection.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Changing regular or sale prices, including scheduled sales, for any product type.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Stock changes; use update_woo_product_qty, or import_products_csv for bulk catalog edits.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_woo_product_qty', 'bulk_update_products', 'import_products_csv' ),
+			'notes'           => __( 'Prices go live immediately; variable parents re-sync after variation updates.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

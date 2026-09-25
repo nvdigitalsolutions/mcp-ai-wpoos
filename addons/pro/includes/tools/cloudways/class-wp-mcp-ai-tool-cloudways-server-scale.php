@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Scale' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Server_Scale extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Server_Scale extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Scale' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Upgrade or downgrade server size (CPU/RAM).', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Changing CPU/RAM size to match sustained load changes or to adjust hosting cost.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Disk space shortages; use cloudways_server_scale_volume instead.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_server_scale_volume', 'cloudways_server_monitor_summary', 'cloudways_get_server', 'cloudways_get_operation_status' ),
+				'notes'           => __( 'Billing changes with the new size; the resize runs async, so verify with cloudways_get_operation_status.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

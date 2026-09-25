@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * reason about "all form submissions" regardless of which form
  * builder generated them.
  */
-class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -79,6 +79,16 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 	/** {@inheritdoc} */
 	public function get_description() {
 		return __( 'Retrieves recent form submissions from all available sources (JetFormBuilder, Elementor Pro, and configured remote data connections) in a unified format. IMPORTANT: When looking up a specific form ID, call get_jetformbuilder_forms or get_elementor_templates FIRST to discover which forms exist and what type they are. This tool auto-detects form types when a form_id is provided, but discovery tools provide richer context about available forms and their field structures.', 'mcp-ai-wpoos' );
+	}
+
+	/** {@inheritdoc} */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pulling recent submissions across JetFormBuilder, Elementor Pro, and remote connections in one unified list.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'One known form source; use get_jetformbuilder_submissions or get_elementor_form_submissions for source-specific fields.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_jetformbuilder_forms', 'get_jetformbuilder_submissions', 'get_elementor_templates', 'get_elementor_form_submissions' ),
+			'notes'           => __( 'Run get_jetformbuilder_forms or get_elementor_templates first to resolve form IDs; limit applies per source.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/** {@inheritdoc} */

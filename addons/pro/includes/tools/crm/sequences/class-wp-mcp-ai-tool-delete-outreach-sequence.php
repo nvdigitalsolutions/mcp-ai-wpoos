@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Delete_Outreach_Sequence implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Outreach_Sequence implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -51,6 +51,20 @@ class WP_MCP_AI_Tool_Delete_Outreach_Sequence implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Permanently remove an outreach sequence and its step definitions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Removing an outreach sequence definition by sequence_id once no leads need it.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Stopping an enrollment; use manage_sequence_state. Editing the definition; use update_outreach_sequence.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_outreach_sequence', 'manage_sequence_state', 'create_outreach_sequence' ),
+			'notes'           => __( 'Requires manage_options; the sequence is moved to trash and a sequence_deleted audit event is recorded.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

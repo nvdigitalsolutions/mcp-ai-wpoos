@@ -27,7 +27,7 @@ require_once WP_MCP_AI_PATH . 'includes/markup/interface-wp-mcp-ai-markup-aware-
  * rasterized to a `crop_rect` artifact, denormalized to pixel
  * coordinates if necessary, and fed back into `execute()`.
  */
-class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Markup_Aware_Tool_Interface {
+class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Markup_Aware_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -48,6 +48,18 @@ class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base implements WP_
 	 */
 	public function get_description() {
 		return __( 'Crop an image to a specific region defined by coordinates and dimensions, or to a target aspect ratio.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Cutting a specific pixel region or enforcing an aspect ratio on an image, or letting the user paint the crop area in chat.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Resizing to target dimensions without cropping; use resize_image. Format changes belong to convert_image_format.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'resize_image', 'convert_image_format', 'graphic_editor_plus' ),
+			'notes'           => __( 'Set request_user_crop=true without coordinates to pause and let the user draw the crop region.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

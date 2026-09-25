@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager
 /**
  * Plans a batch of pro schedules from a free-form workflow list.
  */
-class WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -45,6 +45,18 @@ class WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow implements WP_MCP_AI_Tool_
 	 */
 	public function get_description() {
 		return __( 'Turns a free-form list of recurring responsibilities (e.g. "Respond to emails", "Weekly sales updates") into a batch of Pro Schedules. Each item becomes a managed schedule with inferred cadence, time, priority, and tags. Supports a dry_run preview mode.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Converting a free-form list of recurring responsibilities into multiple Pro Schedules in a single call.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating or editing one schedule precisely (use create_pro_schedule or update_pro_schedule) or scheduling channel broadcasts (use schedule_channel_broadcast).', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_pro_schedule', 'update_pro_schedule', 'list_pro_schedules' ),
+			'notes'           => __( 'Set dry_run=true to preview the parsed plan without persisting any schedules.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

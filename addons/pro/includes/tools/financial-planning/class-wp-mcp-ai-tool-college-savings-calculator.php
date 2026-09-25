@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_College_Savings_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_College_Savings_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,20 @@ class WP_MCP_AI_Tool_College_Savings_Calculator implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Calculate 529 plan savings needs for college education. Projects future tuition costs with inflation, calculates monthly contributions needed, and estimates investment growth. Supports public/private school scenarios.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'To estimate 529 savings targets, tuition inflation, and required monthly contributions for college.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For generic savings goals or retirement projections; use savings_goal_planner or retirement_calculator instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'savings_goal_planner', 'investment_return_calculator' ),
+			'notes'           => __( 'Requires child_age and school_type. Costs use 2024 annual averages adjusted by tuition_inflation_rate.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

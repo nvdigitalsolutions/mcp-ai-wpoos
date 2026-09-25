@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.5.0
  */
-class WP_MCP_AI_Tool_Find_Bookable_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Find_Bookable_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_Find_Bookable_Places implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Find places near a location that have available booking slots. Combines geospatial search with real-time availability from JetAppointment and JetBooking.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Finding places near coordinates that actually have bookable slots for a given date and duration.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'General browsing of the places directory; use list_places for plain filtering without availability checks.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_places', 'get_place', 'search_and_save_places' ),
+			'notes'           => __( 'Requires latitude and longitude; availability comes from JetAppointment/JetBooking adapters, so results are empty when those are inactive.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

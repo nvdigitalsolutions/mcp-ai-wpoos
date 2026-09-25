@@ -25,7 +25,7 @@ require_once __DIR__ . '/../traits/trait-wp-mcp-ai-tool-wordpress-native.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Content_Freshness_Checker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Content_Freshness_Checker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_WordPress_Native;
 
 	/**
@@ -47,6 +47,18 @@ class WP_MCP_AI_Tool_Content_Freshness_Checker implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Analyzes content to identify outdated posts that need updates. Checks for time-sensitive information, broken links, and stale data.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Auditing one post or a batch of posts for outdated, time-sensitive content and optional broken-link checks.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Applying the fixes; after the audit, use save_post to update the posts this tool flags.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_post', 'get_recent_posts', 'save_post' ),
+			'notes'           => __( 'Bulk runs are capped at 100 posts; age_threshold_days defaults to 365 and check_links is off by default.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
@@ -91,6 +103,16 @@ class WP_MCP_AI_Tool_Content_Freshness_Checker implements WP_MCP_AI_Tool_Interfa
 		);
 	}
 
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'post_id' ),
+		);
+	}
 
 	/**
 

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Cash_Flow_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Cash_Flow_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -82,6 +82,22 @@ class WP_MCP_AI_Tool_Cash_Flow_Analyzer implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Analyze income vs expenses with monthly forecasting. Track cash flow trends, identify surplus/deficit months, and project future cash positions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return array Usage guidance.
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'To project monthly income versus expenses forward and spot surplus or deficit months.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For a static category budget or logged expense history; use budget_planner or expense_tracker instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'budget_planner', 'expense_tracker', 'financial_health_score' ),
+			'notes'           => __( 'Requires monthly_income and monthly_expenses. Optional income_growth_rate and expense_inflation_rate refine the forecast.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

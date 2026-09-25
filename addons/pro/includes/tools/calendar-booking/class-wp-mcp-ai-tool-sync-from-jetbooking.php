@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.5.0
  */
-class WP_MCP_AI_Tool_Sync_From_JetBooking implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Sync_From_JetBooking implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -64,6 +64,18 @@ class WP_MCP_AI_Tool_Sync_From_JetBooking implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Import bookings from JetBooking into the NV oOS calendar. Uses _jetbooking_id meta to prevent duplicate imports.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pulling JetBooking bookings into the NV oOS calendar (import direction), idempotently.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Browsing JetBooking units or instances without importing; use get_jetbooking_units or get_jetbooking_instances.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_jetbooking_units', 'get_jetbooking_instances', 'sync_from_jetappointment' ),
+			'notes'           => __( 'Maps daily bookings to multi-day appointments and requires the JetBooking adapter.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

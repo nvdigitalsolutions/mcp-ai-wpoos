@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Term_Sheet_Comparator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Term_Sheet_Comparator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_Term_Sheet_Comparator implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description(): string {
 		return __( 'Compare multiple lender term sheets side-by-side. Calculates all-in cost, DSCR, LTV, total interest, flexibility score, and produces a ranked recommendation.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Comparing competing lender term sheets on all-in cost, leverage, total interest, and flexibility to rank the best option.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Generating one new quote; use cre_loan_quote_generator. Execution path suitability; use cre_execution_strategy_advisor.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_loan_quote_generator', 'cre_execution_strategy_advisor', 'cre_market_comp_analyzer' ),
+			'notes'           => __( 'Requires loan_amount, noi, property_value, and term_sheets with rate, term, amortization, and fees. Returns a ranked recommendation.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

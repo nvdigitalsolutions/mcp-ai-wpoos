@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Validates Excel import files.
  */
-class WP_MCP_AI_Tool_Validate_Excel_Import implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Validate_Excel_Import implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Validate_Excel_Import implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Pre-validates Excel import file for data quality, required fields, format errors, and duplicate detection before actual import.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When checking an Excel workbook for errors, required fields, and duplicates before running an import.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When actually importing records or validating one product; use import_products_from_excel, import_registrations_from_excel, or validate_reg_product.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'import_products_from_excel', 'import_registrations_from_excel' ),
+			'notes'           => __( 'import_type must be products or registrations; pass the same field_mapping and start_row you plan to import with.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

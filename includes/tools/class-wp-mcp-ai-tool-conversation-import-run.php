@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Import external AI conversations into the ai_chat_transcripts CCT.
  */
-class WP_MCP_AI_Tool_Conversation_Import_Run implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Conversation_Import_Run implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -56,6 +56,20 @@ class WP_MCP_AI_Tool_Conversation_Import_Run implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Imports an external AI conversation export (ChatGPT conversations.json, Google Takeout Gemini activity, Claude conversations.jsonl, ShareGPT datasets, OpenAI fine-tuning JSONL, or a ZIP archive containing them) into the JetEngine AI Chat Transcripts CCT — one CCT row per conversation. Supports dry-run previews, skip/refresh dedupe policies, image sideloading, and resumable runs.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Importing ChatGPT, Gemini, Claude, ShareGPT, or OpenAI JSONL exports into the JetEngine AI Chat Transcripts CCT.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'For checking progress or resuming an ongoing import use conversation_import_status.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'conversation_import_status', 'conversation_import_delete', 'conversation_import_detect' ),
+			'notes'           => __( 'Use dry_run=true to preview before writing; pass resume_token from a previous run to continue after interruption.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

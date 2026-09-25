@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Composio — Get tool schema.
  */
-class WP_MCP_AI_Tool_Composio_Get_Tool_Schema implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Composio_Get_Tool_Schema implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Envelope;
 
 	/**
@@ -40,6 +40,20 @@ class WP_MCP_AI_Tool_Composio_Get_Tool_Schema implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description(): string {
 		return __( 'Fetch the input and output schema for a Composio tool (SCREAMING_SNAKE slug such as GMAIL_SEND_EMAIL). Use before calling composio_execute_tool to construct valid arguments.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching the exact input and output schema for a SCREAMING_SNAKE slug before calling composio_execute_tool.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Browsing or searching the catalog; composio_list_tools already lists required arguments for each tool.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'composio_execute_tool', 'composio_list_tools' ),
+			'notes'           => __( 'Only needed when the argument list from composio_list_tools is not detailed enough.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

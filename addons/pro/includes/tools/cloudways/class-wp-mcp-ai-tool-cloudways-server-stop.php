@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Stop' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Server_Stop extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Server_Stop extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Stop' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Stop a running Cloudways server.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Taking a server offline, for example before a clone or during planned maintenance.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Permanent removal or single-service downtime; use cloudways_server_delete or cloudways_restart_service.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_server_start', 'cloudways_server_restart', 'cloudways_server_delete' ),
+				'notes'           => __( 'All hosted apps become unavailable until the server is started again; confirm=true is required.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

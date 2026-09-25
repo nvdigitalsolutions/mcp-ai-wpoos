@@ -32,7 +32,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Hierarchical, tier-aware, bi-temporal recall over MemPalace memory.
  */
-class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -53,6 +53,20 @@ class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Hierarchical MemPalace recall. Filters by wing (project / client / matter / patient / deal) and optional room before semantic ranking, then always includes every core-tier memory of that wing. Supports bi-temporal queries via as_of (Zep). Use this when you want "everything we remember about <wing>" instead of a flat keyword search.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Recalling everything a wing remembers across tiers and rooms, including all core-tier memories, with optional as_of time travel.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Flat similarity lookups across wings; use retrieve_agent_memory for generic search and semantic_context_search for raw embedding queries.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'retrieve_agent_memory', 'semantic_context_search', 'store_agent_context' ),
+			'notes'           => __( 'Every core-tier memory of the requested wing is always included; as_of enables bi-temporal (Zep) queries.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Tests workflow rules in dry-run mode.
  */
-class WP_MCP_AI_Tool_Test_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Test_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Test_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Performs dry-run validation of workflow rule to test trigger conditions and actions without executing them.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When checking that a rule fires for given input before enabling or changing it, without executing actions.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When editing the rule or reviewing real executions; use update_workflow_rule or get_workflow_execution_log instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_workflow_rules', 'update_workflow_rule', 'get_workflow_execution_log' ),
+			'notes'           => __( 'Read-only dry run; supply test_data with a registration_id or event_type to simulate a trigger.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Update_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -82,6 +82,20 @@ class WP_MCP_AI_Tool_Update_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Update an existing lead record. Validates email/phone when provided, enforces lifecycle stage progression, and fires hooks for automation integrations.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Modifying an existing lead\'s contact fields, lifecycle stage, score, owner, or BANT fields.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating new records; use create_lead. Bulk owner reassignment; use rotate_leads.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_lead', 'get_lead', 'assign_lead_to_owner' ),
+			'notes'           => __( 'Only supplied fields are updated; lifecycle stages are validated; inbound email reply signals (last_email_*) are supported.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

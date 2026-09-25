@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Exports health data in FHIR-compliant format.
  */
-class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,20 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Export member health records in HL7 FHIR (Fast Healthcare Interoperability Resources) format for seamless interoperability with other healthcare systems and EHRs. Supports FHIR R4 standard with JSON format. Includes Patient, Observation, MedicationStatement, AllergyIntolerance, Condition, and Immunization resources. HIPAA-compliant with audit trails.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Exporting a member\'s FHIR R4 JSON resources (Patient, Observation, MedicationStatement, AllergyIntolerance, Condition, Immunization).', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Producing a human-readable care document; use export_ccda_document or generate_visit_summary.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'export_ccda_document', 'import_fhir_bundle', 'connect_to_ehr' ),
+			'notes'           => __( 'Filter resource_types and date_from/date_to to limit exported PHI; every export is recorded in the audit log.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

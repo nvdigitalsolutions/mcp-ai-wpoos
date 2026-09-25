@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates a new regulatory product.
  */
-class WP_MCP_AI_Tool_Create_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Context_Restrictions_Interface {
+class WP_MCP_AI_Tool_Create_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Context_Restrictions_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
@@ -40,6 +40,18 @@ class WP_MCP_AI_Tool_Create_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Creates a new product in the regulatory registration system. Products can include perfumes, skincare, haircare, makeup, and other cosmetic items with detailed information like INCI ingredients, HS codes, barcodes, and origin country.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adding a new cosmetic product master record with brand, ingredients, HS code, and barcode data.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reusing an existing product for a variant; consider duplicate_reg_product instead, or search_reg_products to find one.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'duplicate_reg_product', 'get_reg_product', 'create_registration' ),
+			'notes'           => __( 'Only product_name is required; category is limited to skincare, haircare, makeup, perfumes, or cosmetics.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

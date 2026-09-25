@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.10.0
  */
-class WP_MCP_AI_Tool_Import_Upwork_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Upwork_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Determine whether CRM toolkit and Upwork client are available.
@@ -65,6 +65,20 @@ class WP_MCP_AI_Tool_Import_Upwork_Project implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Import an Upwork job posting into the CRM as a Deal, Project, or Task for pipeline tracking.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a CRM deal, project, or task record from an Upwork job posting.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Evaluating whether a job is worth pursuing; use score_upwork_job. Writing proposals; use draft_upwork_proposal.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'score_upwork_job', 'draft_upwork_proposal', 'search_upwork_jobs' ),
+			'notes'           => __( 'With job_id and an Upwork connection, details are fetched via API. save_as defaults to deal.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

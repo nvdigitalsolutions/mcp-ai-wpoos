@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Pension_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Pension_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,22 @@ class WP_MCP_AI_Tool_Pension_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Analyze pension payout options to determine the best choice. Compares lump sum vs annuity payments, calculates present values, break-even ages, and considers survivor benefits and investment scenarios.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Comparing a lump-sum pension offer against monthly annuity payments with present-value and break-even analysis.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Social Security claiming decisions; use social_security_optimizer. Ongoing drawdown belongs to withdrawal_strategy_planner.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'social_security_optimizer', 'withdrawal_strategy_planner', 'retirement_calculator' ),
+			'notes'           => __( 'Requires lump_sum_offer, monthly_annuity, current_age; annuity_type covers single_life and joint survivor options.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

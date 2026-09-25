@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Add_Radarr_Movie' ) ) {
 	/**
 	 * Add Radarr movie tool.
 	 */
-	class WP_MCP_AI_Tool_DietPi_Add_Radarr_Movie extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_Add_Radarr_Movie extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 		public function get_slug() {
@@ -36,6 +36,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Add_Radarr_Movie' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Add a new movie to Radarr. Supports lookup by TMDB ID, IMDb ID, or title search.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Adding a movie to Radarr so it is monitored and downloaded, identified by TMDB ID, IMDb ID, or title.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Reviewing or changing movies already in Radarr; use dietpi_list_radarr_movies or dietpi_manage_radarr.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_list_radarr_movies', 'dietpi_manage_radarr', 'dietpi_media_request_flow' ),
+				'notes'           => __( 'This queues a real download in Radarr; call only when the user explicitly asked to add the movie.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

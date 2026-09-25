@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Create_Custom_Widget implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Custom_Widget implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -54,6 +54,18 @@ class WP_MCP_AI_Tool_Create_Custom_Widget implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Generates custom WordPress widgets with dynamic content, settings panel, and responsive design. Creates widget code and configuration.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating a custom widget definition with type, settings panel, and output code for a site build.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sidebar-specific widgets; use generate_sidebar_widget. Footer layouts; use create_footer_widget. Navigation; use build_navigation_menu.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_sidebar_widget', 'create_footer_widget', 'build_navigation_menu' ),
+			'notes'           => __( 'Returns widget code and configuration; it does not register the widget.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

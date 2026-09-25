@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Emergency_Fund_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Emergency_Fund_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,20 @@ class WP_MCP_AI_Tool_Emergency_Fund_Calculator implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Calculate emergency fund needs based on monthly expenses. Recommends 3-6 months of expenses based on income stability and family situation. Helps build financial safety net.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'To size an emergency fund in months of expenses and measure the gap to current savings.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For general savings goals or retirement readiness; use savings_goal_planner or retirement_calculator instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'budget_planner', 'financial_health_score', 'savings_goal_planner' ),
+			'notes'           => __( 'Requires monthly_expenses. employment_type, dependents, and industry_stability adjust the recommended months.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

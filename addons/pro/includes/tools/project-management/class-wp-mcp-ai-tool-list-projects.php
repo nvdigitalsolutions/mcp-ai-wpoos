@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Lists projects with filtering options.
  */
-class WP_MCP_AI_Tool_List_Projects implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Projects implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_List_Projects implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Lists projects with optional filtering by status, date range, or assigned user. Useful for project management and calendar views.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering project IDs and details, filtered by status, assigned user, or start/end date range.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Finding tasks or deadlines; use list_tasks or get_upcoming_deadlines. Portfolio-wide health; use get_portfolio_health.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_project', 'list_tasks', 'get_portfolio_health' ),
+			'notes'           => __( 'Returns up to 100 projects (default 20), newest first.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

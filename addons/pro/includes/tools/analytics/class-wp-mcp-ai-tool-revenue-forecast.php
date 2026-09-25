@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -95,6 +95,20 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Predict future revenue based on historical trends using time series analysis. Supports linear regression, moving averages, seasonal decomposition, and confidence intervals.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Projecting future revenue with confidence intervals for budgeting and planning.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Explaining past conversion or funnel problems; use attribution_modeling or funnel_analysis instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'attribution_modeling', 'generate_executive_dashboard', 'cohort_analysis' ),
+			'notes'           => __( 'Method defaults to linear over 365 days; returns insufficient_data when no revenue rows exist in the window.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

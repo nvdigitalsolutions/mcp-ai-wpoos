@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  *
  * @see https://developer.twitter.com/en/docs/twitter-api/enterprise/account-activity-api/api-reference
  */
-class WP_MCP_AI_Pro_Tool_Manage_Twitter_Webhook implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Manage_Twitter_Webhook implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default timeout for Twitter API requests.
@@ -60,6 +60,18 @@ class WP_MCP_AI_Pro_Tool_Manage_Twitter_Webhook implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Registers or removes a Twitter/X Account Activity API webhook URL and manages event subscriptions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Registering, deleting, subscribing, or listing Twitter/X Account Activity API webhooks.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sending a DM; use send_twitter_dm. Reading DMs; use get_twitter_dms.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_twitter_dm', 'get_twitter_dms' ),
+			'notes'           => __( 'Alters live inbound webhook integrations and requires all four OAuth 1.0a credentials.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

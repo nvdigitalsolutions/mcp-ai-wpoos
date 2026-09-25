@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager
 /**
  * Provides an AI tool for reading the latest result of a Pro schedule.
  */
-class WP_MCP_AI_Pro_Tool_Get_Schedule_Latest_Result implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Schedule_Latest_Result implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -48,6 +48,18 @@ class WP_MCP_AI_Pro_Tool_Get_Schedule_Latest_Result implements WP_MCP_AI_Tool_In
 	/**
 	 * {@inheritdoc}
 	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading the most recent run result of a specific Pro Schedule, including its summary and data payload.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Needing full run history with failure details (use get_schedule_run_history) or display-ready HTML (use render_schedule_result).', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'render_schedule_result', 'get_schedule_run_history', 'list_pro_schedules' ),
+			'notes'           => __( 'Returns a structured envelope; hand its result to render_schedule_result when you need HTML for chat.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -60,6 +72,16 @@ class WP_MCP_AI_Pro_Tool_Get_Schedule_Latest_Result implements WP_MCP_AI_Tool_In
 			),
 			'required'             => array( 'schedule_id' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'schedule_id' ),
 		);
 	}
 

@@ -99,6 +99,20 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Bulk compression, format conversion, unused detection, or lazy loading across the media library.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Responsive srcset or picture markup generation; use image_format_batch_converter.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'image_format_batch_converter', 'convert_image_format' ),
+			'notes'           => __( 'action is analyze, compress, convert, detect_unused, or configure_lazy_loading.', 'mcp-ai-wpoos' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @since 1.0.0

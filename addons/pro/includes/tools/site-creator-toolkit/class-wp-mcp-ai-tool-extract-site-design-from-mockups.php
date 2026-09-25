@@ -37,7 +37,7 @@ require_once dirname( __DIR__, 2 ) . '/site-creator-toolkit/class-wp-mcp-ai-desi
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,18 @@ class WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups implements WP_MCP_AI_Tool_
 		return __(
 			'Analyze mockup images, HTML/CSS reference files and/or live URLs to extract a design system (palette, typography, spacing, radii, shadows, motion, JFB form skin) and emit a single install-ready PHP "site design snippet" that runs on top of WordPress, Elementor, and JetFormBuilder. Optionally persists as a WPCode snippet, a Site Template CPT row, and/or a theme.json partial.',
 			'mcp-ai-wpoos-pro'
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Turning mockup images, reference HTML/CSS, or live URLs into a design system plus an install-ready PHP snippet via AI vision.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For page structure and copy use generate_landing_page or create_homepage_layout; this tool only extracts design tokens.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_site_plan', 'create_homepage_layout', 'save_site_template' ),
+			'notes'           => __( 'Requires the Design Extractor opt-in (enable_design_extractor) and consumes vision tokens.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

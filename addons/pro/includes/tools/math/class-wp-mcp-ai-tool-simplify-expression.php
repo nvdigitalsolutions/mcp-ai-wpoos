@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-math-response
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Simplify_Expression implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Simplify_Expression implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Math_Response;
 
 	/**
@@ -48,6 +48,20 @@ class WP_MCP_AI_Tool_Simplify_Expression implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Simplify algebraic expressions. Combines like terms, applies algebraic rules, and presents expressions in simplest form with LaTeX rendering.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Combining like terms and applying algebraic rules to rewrite an expression in simplest form.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Differentiating or integrating; use calculate_derivative or calculate_integral.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'solve_equation', 'calculate_derivative' ),
+			'notes'           => __( 'rules accepts default, all, collect, or distribute.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

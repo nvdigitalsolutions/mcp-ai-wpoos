@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Import DICOM study tool.
  */
-class WP_MCP_AI_Tool_Import_DICOM_Study implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_DICOM_Study implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Whether the tool is available.
@@ -57,6 +57,20 @@ class WP_MCP_AI_Tool_Import_DICOM_Study implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Import a DICOM study from the configured DICOMweb endpoint by StudyInstanceUID. Mirrors metadata only (no pixel data) into the local imaging study CPT.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Mirroring a remote DICOM study into the local imaging study CPT by StudyInstanceUID.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sending local studies out; use export_dicom_study. Connection setup; use connect_dicomweb.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'connect_dicomweb', 'export_dicom_study', 'manage_imaging_studies' ),
+			'notes'           => __( 'Metadata only; pixel data is never downloaded. Use overwrite=true to refresh an existing study.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

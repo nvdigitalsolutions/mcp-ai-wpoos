@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Lists expiring registrations.
  */
-class WP_MCP_AI_Tool_List_Expiring_Registrations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Expiring_Registrations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_List_Expiring_Registrations implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Gets a list of registrations that are expiring soon or have already expired. Critical for proactive renewal management.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When you need a read-only view of registrations expiring soon or already expired, to plan renewals.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When you need all registrations or want emails sent; use list_registrations or send_expiry_alerts instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'renew_registration', 'send_expiry_alerts', 'generate_expiry_forecast' ),
+			'notes'           => __( 'Read-only; defaults to a 90-day warning window and includes expired registrations unless disabled.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

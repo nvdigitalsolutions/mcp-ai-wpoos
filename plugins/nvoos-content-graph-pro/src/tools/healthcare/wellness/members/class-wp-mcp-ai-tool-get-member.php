@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get details of a single member.
  */
-class WP_MCP_AI_Tool_Get_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -53,6 +53,18 @@ class WP_MCP_AI_Tool_Get_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	/**
 	 * {@inheritdoc}
 	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( "Fetching one member's full profile, including contact and emergency details.", 'nvoos-content-graph-pro' ),
+			'when_not_to_use' => __( 'Browsing many members; use list_members. Health overview; use get_member_health_summary.', 'nvoos-content-graph-pro' ),
+			'related_tools'   => array( 'list_members', 'get_member_health_summary' ),
+			'notes'           => __( 'Pet records include species and breed fields; person records include demographic data.', 'nvoos-content-graph-pro' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -65,6 +77,16 @@ class WP_MCP_AI_Tool_Get_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			),
 			'required'             => array( 'member_id' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'member_id' ),
 		);
 	}
 

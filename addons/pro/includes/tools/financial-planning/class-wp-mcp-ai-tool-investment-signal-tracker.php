@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Investment_Signal_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Investment_Signal_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -101,6 +101,22 @@ class WP_MCP_AI_Tool_Investment_Signal_Tracker implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Track and manage investment signals with thesis, direction, confidence, and price targets. Evaluate how new market information impacts existing signals. Includes P&L tracking and confidence adjustment. EDUCATIONAL ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Tracking and re-evaluating a thesis-driven price signal (bullish, bearish, neutral) when new market information arrives.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'One-off quotes or history; use stock_data_fetcher. Lot-level portfolio accounting belongs to portfolio_transaction_log.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'portfolio_transaction_log', 'stock_data_fetcher', 'price_alerts' ),
+			'notes'           => __( 'action is required; evaluate needs signal_id plus new_information and current_price. Educational only.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

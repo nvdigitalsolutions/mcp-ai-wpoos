@@ -19,7 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 /**
  * Generates descriptive captions for videos using AI vision models with video understanding.
  */
-class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_Tool_Chat_Response;
 
@@ -42,6 +42,20 @@ class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Generates concise, descriptive captions for videos to provide context and enhance accessibility using AI vision models with video understanding capabilities.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Writing a concise descriptive caption for an MP4 or QuickTime video from a URL or attachment.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Still-image captions; use generate_image_caption. For audio transcripts, use transcribe_openai_audio.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'generate_image_caption', 'analyze_video', 'transcribe_openai_audio' ),
+			'notes'           => __( 'max_length is clamped to 50-500 characters and defaults to 200; a video-capable model is required.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

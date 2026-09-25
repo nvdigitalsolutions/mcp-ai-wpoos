@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for listing iCloud Drive files and folders via a configured gateway API.
  */
-class WP_MCP_AI_Pro_Tool_List_Icloud_Drive_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_List_Icloud_Drive_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default timeout for iCloud gateway API requests (seconds).
@@ -68,6 +68,18 @@ class WP_MCP_AI_Pro_Tool_List_Icloud_Drive_Files implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Lists files and folders from an iCloud Drive account via a configured iCloud gateway API. iCloud does not provide a direct third-party REST API; this tool communicates with a gateway service that bridges to Apple CloudKit or iCloud services.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing files and folders in an iCloud Drive account to find a file before downloading or uploading.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading a single known file; use get_icloud_drive_file. Writing files; use upload_icloud_drive_file.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_icloud_drive_file', 'upload_icloud_drive_file' ),
+			'notes'           => __( 'Requires a configured iCloud gateway URL and key; Apple exposes no direct third-party REST API.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Get_Sequence_Performance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Sequence_Performance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -51,6 +51,20 @@ class WP_MCP_AI_Tool_Get_Sequence_Performance implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Returns enrollment counts, completion rates, and step-level metrics for a sequence.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Pulling active enrollment counts and a performance snapshot for one sequence_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Finding sequence IDs; use list_outreach_sequences. Checking a single lead; use get_lead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_outreach_sequences', 'enroll_lead_in_sequence', 'manage_sequence_state' ),
+			'notes'           => __( 'Returns active_enrollments from the _active_sequence_id meta; completion metrics are approximate snapshots.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

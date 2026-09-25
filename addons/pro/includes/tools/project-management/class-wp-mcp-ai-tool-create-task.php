@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates a new task.
  */
-class WP_MCP_AI_Tool_Create_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_Create_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Creates a new task or updates an existing one if task_id is provided. Tasks can be associated with projects, assigned to users, and have due dates for calendar tracking.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Adding a new task to a project, or updating one when task_id is passed, with status, priority, assignee, due date, and effort.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Editing one field of a known task; use update_task. Discovering tasks or project IDs; use list_tasks and list_projects.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_task', 'list_tasks', 'add_task_dependency' ),
+			'notes'           => __( 'Valid statuses are todo, in-progress, review, completed, cancelled; priorities are low, medium, high, urgent.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

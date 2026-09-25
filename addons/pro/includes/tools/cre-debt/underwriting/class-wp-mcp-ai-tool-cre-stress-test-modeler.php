@@ -22,7 +22,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Stress_Test_Modeler implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Stress_Test_Modeler implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_CRE_Stress_Test_Modeler implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description(): string {
 		return __( 'Run independent stress tests on a CRE loan: vacancy shock, interest rate increase, operating expense inflation, and cap rate expansion. Returns DSCR, LTV, debt yield, and property value under each scenario compared to base case.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Testing vacancy, rate, opex, and cap rate shocks to see DSCR, LTV, debt yield, and value impact.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Debt yield with NOI haircuts only; use cre_debt_yield_analyzer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_debt_yield_analyzer', 'cre_loan_sizer', 'cre_cap_rate_sensitivity' ),
+			'notes'           => __( 'Scenarios are independent, not stacked; defaults are +10% vacancy, +200 bps rate, +10% opex, +100 bps cap.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

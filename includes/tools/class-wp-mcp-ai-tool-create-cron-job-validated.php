@@ -24,7 +24,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 /**
  * Allows privileged users to create WP-Cron jobs using Symfony Validator.
  */
-class WP_MCP_AI_Tool_Create_Cron_Job_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Cron_Job_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -46,6 +46,18 @@ class WP_MCP_AI_Tool_Create_Cron_Job_Validated extends WP_MCP_AI_Validated_Tool 
 	 */
 	public function get_description() {
 		return __( 'Schedules a WordPress cron event for a given hook, schedule, and arguments. Uses Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Scheduling one-off or recurring WP-Cron events with validated hook, schedule, and arguments.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Recurring content or campaign work; prefer Pro Schedules (create_pro_schedule) over raw WP-Cron events.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'create_cron_job', 'list_cron_jobs', 'get_cron_job', 'delete_cron_job' ),
+			'notes'           => __( 'Use schedule=single for one-off events; omitting timestamp schedules about 20 seconds from now.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**
@@ -110,6 +122,16 @@ class WP_MCP_AI_Tool_Create_Cron_Job_Validated extends WP_MCP_AI_Validated_Tool 
 			),
 			'required'             => array( 'hook' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'job_id',
+			'consumes' => null,
 		);
 	}
 

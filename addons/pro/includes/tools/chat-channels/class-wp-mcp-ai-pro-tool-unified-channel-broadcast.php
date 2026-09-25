@@ -29,7 +29,7 @@ if ( ! trait_exists( 'WP_MCP_AI_Tool_Restrict_From_Chat_Client' ) ) {
  * allow this can pass `allow_sensitive_tools=true` in the shortcode/widget
  * settings.
  */
-class WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Context_Restrictions_Interface {
+class WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Context_Restrictions_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
@@ -62,6 +62,18 @@ class WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Broadcasts a message across multiple chat channels (Telegram, Slack, Discord, Teams, Messenger, WhatsApp) simultaneously.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Broadcasting one message to several chat channels (Telegram, Slack, Discord, Teams, Messenger, WhatsApp, Google Chat) at once.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'One channel with custom formatting; use send_telegram_message, send_slack_message, or send_discord_message.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_telegram_message', 'send_slack_message', 'send_discord_message', 'schedule_channel_broadcast' ),
+			'notes'           => __( 'External communication: fans out real messages to every supplied channel and is restricted from the public chat client.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

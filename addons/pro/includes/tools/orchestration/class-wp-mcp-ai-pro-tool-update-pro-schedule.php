@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager
 /**
  * Provides an AI tool for updating an existing pro scheduled task.
  */
-class WP_MCP_AI_Pro_Tool_Update_Pro_Schedule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Update_Pro_Schedule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -39,6 +39,18 @@ class WP_MCP_AI_Pro_Tool_Update_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Updates an existing named pro schedule. Supports partial updates: only provided fields are modified.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Changing fields of an existing Pro Schedule, such as cadence, next run time, enabled state, or delivery options.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating a new schedule (use create_pro_schedule) or removing one (use delete_pro_schedule).', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_pro_schedule', 'delete_pro_schedule', 'list_pro_schedules' ),
+			'notes'           => __( 'Only provided fields are modified, so partial updates are safe; tags replace the existing list entirely.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
@@ -178,6 +190,16 @@ class WP_MCP_AI_Pro_Tool_Update_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 			),
 			'required'             => array( 'schedule_id' ),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'schedule_id',
+			'consumes' => array( 'schedule_id' ),
 		);
 	}
 

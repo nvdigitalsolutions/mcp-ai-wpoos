@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Generate material schedules.
  */
-class WP_MCP_AI_Tool_Generate_Material_Schedule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Material_Schedule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -72,6 +72,20 @@ class WP_MCP_AI_Tool_Generate_Material_Schedule implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Create detailed bill of materials from floor plans. Includes quantities, specifications, and ordering information.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Extracting a bill of materials from a floor plan for framing, roofing, siding, interior, mechanical, electrical, or plumbing categories.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For priced BoQ documents or cost totals - use generate_bill_of_quantities or estimate_construction_cost.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_bill_of_quantities', 'estimate_construction_cost' ),
+			'notes'           => __( 'include_waste_factor adds a 10 percent overage to quantities; output_format accepts detailed, summary, csv, or excel.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

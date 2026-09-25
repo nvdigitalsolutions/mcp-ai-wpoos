@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Simulate thermal comfort using PMV / adaptive models.
  */
-class WP_MCP_AI_Tool_Simulate_Thermal_Comfort implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Simulate_Thermal_Comfort implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -69,6 +69,20 @@ class WP_MCP_AI_Tool_Simulate_Thermal_Comfort implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Estimate thermal comfort via ASHRAE 55-2020 (PMV/PPD analytic and adaptive models). Tropical (LK/JM) defaults to the adaptive model; US defaults to PMV. Returns predicted mean vote, percentage dissatisfied, and per-country compliance status.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Estimating PMV / PPD or adaptive comfort (ASHRAE 55-2020) for a room state; tropical LK/JM defaults to adaptive, US to PMV.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Energy or daylight studies; use analyze_daylight_and_solar_gain or calculate_sustainability_metrics. Detailed CFD; use specialist tools.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'analyze_daylight_and_solar_gain', 'analyze_natural_ventilation', 'calculate_sustainability_metrics' ),
+			'notes'           => __( 'The adaptive model requires outdoor_running_mean_c; PMV needs air temperature and relative humidity.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

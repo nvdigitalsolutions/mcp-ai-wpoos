@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Updates or creates WordPress options in the wp_options table.
  */
-class WP_MCP_AI_Pro_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Option names that are safe for AI tools to modify.
@@ -120,6 +120,18 @@ class WP_MCP_AI_Pro_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Updates a WordPress option value. Can also be used to create a new option.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Writing a single live WordPress option such as blogname, posts_per_page, or show_on_front.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating real pages or posts; use create_post. Whole-site provisioning with options and content; use site_creator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'site_creator', 'install_and_activate_theme' ),
+			'notes'           => __( 'State-changing and allowlisted: only safe core options, wp_mcp_ai_* names, and theme_mods_* are accepted.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -2178,7 +2178,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
-			if ( $capability && ! current_user_can( $capability ) ) {
+			if ( $capability && ! current_user_can( $capability ) ) { // phpcs:ignore WordPress.WP.Capabilities.Undetermined -- Route-declared capability resolved per endpoint (e.g. edit_posts, public); dynamic by design.
 				return $this->insufficient_permissions_error( $capability );
 			}
 
@@ -2186,7 +2186,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Enforce capability check for non-admin users authenticated via WP nonce.
 			// Admin users bypass this check; all others must have the required capability.
-			if ( $requires_authenticated_user && ! current_user_can( 'administrator' ) && ! current_user_can( $capability ) ) { // phpcs:ignore WordPress.WP.Capabilities.RoleFound -- Intentional super-admin bypass; 'administrator' role is checked as a gate for admin users who always hold all capabilities.
+			if ( $requires_authenticated_user && ! current_user_can( 'administrator' ) && ! current_user_can( $capability ) ) { // phpcs:ignore WordPress.WP.Capabilities.RoleFound, WordPress.WP.Capabilities.Undetermined -- Intentional super-admin bypass; 'administrator' role is checked as a gate for admin users who always hold all capabilities. The second check uses the route-declared capability, which is dynamic by design.
 				return $this->insufficient_permissions_error( $capability );
 			}
 
@@ -3466,7 +3466,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$assistant_config = $this->ensure_tool_in_config( $assistant_config, self::DOCUMENT_PROMPT_TOOL_SLUG );
 			}
 
-			$tools = $this->build_tools_payload( $assistant_config );
+			$tools = $this->build_tools_payload( $assistant_config, isset( $assistant_id ) ? (int) $assistant_id : 0 );
 			if ( is_wp_error( $tools ) ) {
 				return $tools;
 			}
@@ -5981,6 +5981,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 					$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
 
+					// Append dynamically registered tools (e.g. MCP App bridge
+					// tools) so the MCP tools/list surface reflects everything
+					// the assistant can actually use.
+					$allowed_tools = apply_filters( 'wp_mcp_ai_chat_effective_tools', $allowed_tools, $assistant_config, $assistant_id );
+					if ( ! is_array( $allowed_tools ) ) {
+						$allowed_tools = array();
+					}
+
 					$tools = array();
 					foreach ( $allowed_tools as $tool_slug ) {
 						$tool = $this->registry->get_tool( $tool_slug );
@@ -6124,6 +6132,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Refresh allowed_tools if any utility tools were added.
 			if ( $tools_added ) {
 				$allowed_tools = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+			}
+
+			// Append dynamically registered tools (e.g. MCP App bridge tools)
+			// so direct tool calls through the REST/MCP bridge can resolve and
+			// pass the assistant allow-list gate.
+			$allowed_tools = apply_filters( 'wp_mcp_ai_chat_effective_tools', $allowed_tools, $assistant_config, $assistant_id );
+			if ( ! is_array( $allowed_tools ) ) {
+				$allowed_tools = array();
 			}
 
 			$tool_slug = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
@@ -9245,14 +9261,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * Build the tool payload to send to OpenAI.
 		 *
 		 * @param array $assistant_config Assistant configuration array.
+		 * @param int   $assistant_id     Resolved assistant post ID (0 when unknown).
 		 * @return array|WP_Error
 		 */
-		protected function build_tools_payload( array $assistant_config ) {
-			$allowed_tool_slugs = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
-
-			if ( empty( $allowed_tool_slugs ) ) {
-				return array();
-			}
+		protected function build_tools_payload( array $assistant_config, $assistant_id = 0 ) {
+			$allowed_tool_slugs = isset( $assistant_config['tools'] ) && is_array( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
 
 			/**
 			 * Filter tool slugs before they are converted to LLM function payloads.
@@ -9276,6 +9289,38 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$allowed_tool_slugs = array_values( array_intersect( $filtered_slugs, $allowed_tool_slugs ) );
 			}
 
+			/**
+			 * Filter the effective tool slugs sent to the LLM for this chat request.
+			 *
+			 * Runs after attention-based filtering so dynamically registered
+			 * tools — e.g. MCP App bridge tools, which are discovered per
+			 * assistant at chat time and therefore cannot be selected in the
+			 * Tools metabox — can be appended to the payload. Subscribers
+			 * should only ever ADD slugs; the attention filter above is the
+			 * narrowing step. Every appended slug still passes the per-tool
+			 * capability check below before it reaches the model.
+			 *
+			 * The same seam is applied in handle_tools_list(), handle_tool_request(),
+			 * execute_tool_call_internal(), and the list_mcp_tools catalogue so
+			 * dynamic tools behave consistently across every tool surface.
+			 *
+			 * @since 1.9.2
+			 * @since 1.9.4 Added the $assistant_id parameter.
+			 *
+			 * @param string[] $allowed_tool_slugs Effective tool slugs.
+			 * @param array    $assistant_config   Full assistant configuration.
+			 * @param int      $assistant_id       Resolved assistant post ID (0 when unknown).
+			 */
+			$allowed_tool_slugs = apply_filters( 'wp_mcp_ai_chat_effective_tools', $allowed_tool_slugs, $assistant_config, absint( $assistant_id ) );
+			if ( ! is_array( $allowed_tool_slugs ) ) {
+				$allowed_tool_slugs = array();
+			}
+			$allowed_tool_slugs = array_values( array_unique( array_filter( array_map( 'sanitize_key', $allowed_tool_slugs ) ) ) );
+
+			if ( empty( $allowed_tool_slugs ) ) {
+				return array();
+			}
+
 			$chat_provider = isset( $assistant_config['provider'] ) ? sanitize_key( $assistant_config['provider'] ) : 'openai';
 
 			$tools_payload = array();
@@ -9296,6 +9341,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				 */
 				$max_tools = (int) apply_filters( 'wp_mcp_ai_max_chat_tools', 100 );
 				$max_tools = max( 1, min( 128, $max_tools ) ); // Clamp to 1-128.
+
+				// Adaptive (model-aware) tool cap — opt-in via the payload advisor.
+				// When enabled (per-assistant override or site default), the cap is
+				// lowered for small-context models following the industry ~40-tool
+				// rule of thumb (see MCP Toolbox style guide and
+				// docs/project/proposals/tool-description-engineering-proposal.md).
+				// The advisor only lowers the cap, never raises it.
+			if ( class_exists( 'WP_MCP_AI_Tool_Payload_Advisor' ) && WP_MCP_AI_Tool_Payload_Advisor::is_adaptive_cap_enabled( $assistant_config ) ) {
+				$assistant_model = isset( $assistant_config['model'] ) ? sanitize_text_field( $assistant_config['model'] ) : '';
+				$adaptive_cap    = WP_MCP_AI_Tool_Payload_Advisor::recommended_cap_for_model( $assistant_model );
+				if ( $adaptive_cap > 0 ) {
+					$max_tools = max( 1, min( $max_tools, $adaptive_cap ) );
+				}
+			}
 
 				/**
 				 * Maximum combined token budget for tool definitions within a chat payload.
@@ -9367,7 +9426,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// If the tool requires a specific capability, only include it if the current user has that capability.
 				if ( method_exists( $tool, 'get_required_capability' ) ) {
 					$required_capability = $tool->get_required_capability();
-					if ( ! empty( $required_capability ) && ! current_user_can( $required_capability ) ) {
+					if ( ! empty( $required_capability ) && ! current_user_can( $required_capability ) ) { // phpcs:ignore WordPress.WP.Capabilities.Undetermined -- Per-tool declared capability from tool metadata; dynamic by design.
 						WP_MCP_AI_Logger::log_event(
 							'tool_filtered_by_capability',
 							sprintf( 'Tool "%s" filtered from payload - user lacks required capability: %s', $slug, $required_capability ),
@@ -9420,7 +9479,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						$schema['properties'] = new stdClass();
 					}
 
-					$description = $tool->get_description();
+					// Use the model-facing description (short description + usage
+					// guidance suffix) so the LLM sees selection hints alongside
+					// the data-contract hints assembled by the registry.
+					$description = $this->registry->get_model_facing_description( $tool );
 
 					// Add provider-specific fallback text for tools that require a different provider.
 					$description = $this->maybe_add_provider_fallback_text( $tool, $description, $chat_provider );
@@ -11964,6 +12026,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
 					}
 				}
+			}
+
+			// Append dynamically registered tools (e.g. MCP App bridge tools)
+			// so the agentic loop can execute them when the LLM calls one.
+			$allowed_tools = apply_filters( 'wp_mcp_ai_chat_effective_tools', $allowed_tools, $assistant_config, $assistant_id );
+			if ( ! is_array( $allowed_tools ) ) {
+				$allowed_tools = array();
 			}
 
 			$tool_slug = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );

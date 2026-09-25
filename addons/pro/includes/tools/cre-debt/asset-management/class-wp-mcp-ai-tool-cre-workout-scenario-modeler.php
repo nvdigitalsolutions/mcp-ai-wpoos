@@ -22,7 +22,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Workout_Scenario_Modeler implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Workout_Scenario_Modeler implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Performs the operation.
@@ -65,6 +65,20 @@ class WP_MCP_AI_Tool_CRE_Workout_Scenario_Modeler implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description(): string {
 		return __( 'Model and compare loan workout strategies including extension, modification, restructure, note sale, foreclosure, and REO disposition. Ranks scenarios by NPV of recovery.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Modeling and ranking workout strategies (extension, modification, note sale, foreclosure, REO) by NPV of recovery.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Quantifying one modification and its debt service and DSCR impact; use cre_loan_modification_calculator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_loan_modification_calculator', 'cre_asset_disposition_analyzer', 'cmbs_special_servicing_tracker' ),
+			'notes'           => __( 'strategy accepts extension, modification, restructure, note_sale, foreclosure, or reo_disposition; ranks by NPV at a 10% discount rate.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

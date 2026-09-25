@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get Owner Workload tool — active leads + overdue tasks + response SLA.
  */
-class WP_MCP_AI_Tool_Get_Owner_Workload implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Owner_Workload implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Check whether the tool is available.
 	 *
@@ -49,6 +49,20 @@ class WP_MCP_AI_Tool_Get_Owner_Workload implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'View active lead count, overdue tasks, and response SLAs per owner.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking active lead counts and overdue tasks per owner to balance routing, review SLAs, or plan reassignment.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Unified cross-section attention queue; use get_workflow_inbox. Assigning a lead; use auto_route_inbound_message or assign_lead_to_owner.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'auto_route_inbound_message', 'get_workflow_inbox', 'assign_lead_to_owner' ),
+			'notes'           => __( 'Omit owner_id to report on the whole routing pool; falls back to users with the edit_posts capability.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 	/**
 	 * Get the JSON Schema for the tool parameters.
 	 *

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates compliance dashboard reports.
  */
-class WP_MCP_AI_Tool_Generate_Compliance_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Compliance_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,18 @@ class WP_MCP_AI_Tool_Generate_Compliance_Report implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Generates comprehensive compliance dashboard report with registration status metrics, expiry warnings, and compliance overview across all countries.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing a dashboard-style overview of registration status, expiry warnings, and approval metrics across countries.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Deep analysis of one registration or per-country performance; use get_registration or generate_country_performance.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_country_performance', 'generate_pipeline_report', 'generate_expiry_forecast' ),
+			'notes'           => __( 'format supports json, pdf, and excel; date_range defaults to all.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Pro_Tool_Download_Facebook_Page_Images implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface {
+class WP_MCP_AI_Pro_Tool_Download_Facebook_Page_Images implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -103,6 +103,20 @@ class WP_MCP_AI_Pro_Tool_Download_Facebook_Page_Images implements WP_MCP_AI_Tool
 	 */
 	public function get_description() {
 		return __( 'Downloads photos from a Facebook Business Page using the Graph API. Retrieves page photos with highest available resolution, imports them to the WordPress Media Library with metadata. Supports cursor-based pagination and optional ZIP bundle export.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Importing photos from a known Facebook Business Page into the WordPress Media Library.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Publishing or analyzing Facebook content; use post_facebook_instagram or get_facebook_instagram_insights.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'download_instagram_page_images', 'download_google_maps_images', 'auto_optimize_images' ),
+			'notes'           => __( 'Fetches external page photos via the Graph API; confirm usage rights before republishing them.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

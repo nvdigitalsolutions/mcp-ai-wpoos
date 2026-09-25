@@ -27,7 +27,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * voice_states array, which lists every user currently in that channel along
  * with their mute/deaf status, stream state, and video state.
  */
-class WP_MCP_AI_Pro_Tool_Get_Discord_Voice_Channel_Members implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Discord_Voice_Channel_Members implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default timeout for Discord API requests.
@@ -69,6 +69,18 @@ class WP_MCP_AI_Pro_Tool_Get_Discord_Voice_Channel_Members implements WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Retrieves the list of users currently present in a Discord voice channel, including their mute, deaf, stream, and video states. Requires the bot to have VIEW_CHANNEL permission on the target channel.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking who is currently present in a Discord voice channel before joining or announcing.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Listing guild channels or reading text history; use get_discord_channels or get_discord_messages.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_discord_channels', 'get_discord_messages' ),
+			'notes'           => __( 'The target channel must be a voice channel; the bot needs the View Channel permission.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

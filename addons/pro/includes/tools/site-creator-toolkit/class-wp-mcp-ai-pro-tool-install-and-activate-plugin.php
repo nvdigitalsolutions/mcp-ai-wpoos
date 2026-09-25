@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Installs plugins from the WordPress.org repository and activates them.
  */
-class WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -49,6 +49,18 @@ class WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Installs a plugin from the WordPress.org repository and activates it. Requires the plugin slug.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing a WordPress.org plugin by slug and activating it on the live site.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Installing themes; use install_and_activate_theme. Multi-step setup with pages and options; use site_creator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'install_and_activate_theme', 'site_creator', 'update_option' ),
+			'notes'           => __( 'State-changing: installs and activates on the live site; requires install_plugins and activate_plugins capabilities.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.82"
-  plugin-version-tested: "1.1.82"
-  last-updated: "2026-09-19"
+  plugin-version: "1.1.85"
+  plugin-version-tested: "1.1.85"
+  last-updated: "2026-09-22"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -47,7 +47,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~306 base / ~1,585 full tools
+     │  Tool Registry     │  ~308 base / ~1,590 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -757,6 +757,39 @@ Import external AI conversation exports into the JetEngine
   toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
   dj-management/image-production slices.
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## MCP Apps Connection & Exposure Wave, Docs Hub 0.5.1, README Consolidation (v1.1.85)
+
+- **MCP Apps connection diagnostics** (PR #6753) — per-row Test Connection / Discover Tools buttons with inline results (negotiated protocol, handshake type, server info, session state, latency, live tool count, verbatim errors), persisted per-app status badge + tool-count chip, Test All; basic auth end-to-end (raw `user:pass` auto-encoded or pre-encoded base64) with token masking (stored credentials never echoed; empty = keep); `Mcp-Session-Id` capture + echo; legacy-handshake fallback; mcpServers JSON import; loopback detection with a PHP-FPM deadlock warning; **Security Center → MCP App Allowed Hosts** setting (constant hard override → filter + saved setting merged).
+- **Protocol + exposure** (PRs #6754/#6755/#6758) — the client advertises the **negotiated** `protocolVersion` post-initialize and suppresses the `_meta` envelope in legacy sessions; a new `wp_mcp_ai_chat_effective_tools` filter seam (after attention filtering, before capability checks) exposes `mcp_app_<label>_<tool>` bridge slugs to the chat payload, with the resolved assistant ID flowing through `handle_tools_list()`/`handle_tool_request()`/`execute_tool_call_internal()`/the `list_mcp_tools` catalogue.
+- **In-process same-site bridge** (PRs #6756/#6757) — same-origin MCP endpoints dispatch via `rest_do_request()` (no outbound socket/TLS/extra PHP-FPM worker) with outbound-HTTP safety rails and `rest_post_dispatch` re-applied for response-side session headers.
+- **Docs Hub 0.5.1** (PRs #6749/#6750/#6759) — local-first uploads source, opt-in remote import, `is_path_safe()` symlink hardening, slug-named uploads folder + one-time migration (0 blocking Plugin Check errors).
+- **README anchors + consolidation** (PRs #6751/#6752) — VS16-fallback TOC anchors fixed; `bin/validate-readme-anchors.py` repaired to GitHub's real rules + CI enforcement; one 12-release Release History section + complete Previous Releases table.
+- **Tool count** — unchanged: ~308 base + ~1,282 Pro (~1,590 total; bridge slugs are dynamic chat-time registrations). Model catalog stays v2026.09.22.
+
+## TypeSafe Jev Enhancement Wave: Fidelity, Guardrails & Decision Tools (v1.1.84)
+
+- **Plan 040 Phases 0–2** (PR #6747) — noul criteria + structured EntryType fields (recursive two-gate walk); bounded 429/5xx retries honouring `retry-after` (native client + OpenRouter bridge; 4xx/transport never retried); the bridge defaults to `typesafe/jev-1.13`; opt-in advisory decision cache (`enable_typesafe_cache`, `cached: true` + zeroed usage); `typesafe_endpoint` setting + filter; `jev-preview` alias; `min_confidence`/`weights`/token warnings + usage aliases on `typesafe_decide`. New base tool **`typesafe_guardrail`** (one noul per hazard category → advisory pass/review/block; `ai_ml` preset + coverage manifest) + bundled skill `mcp-ai-wpoos-jev-decisions` (bundled skills 74 → 75). Pro: fail-open guest-chat guardrail (`enable_jev_guest_guardrail` on the Layer I pre-chat filter), advisory `check_citations()` on `generate_research_report`/`research_eca`, and three new `manage_options`-gated tools — `typesafe_rerank`, `typesafe_eval`, `typesafe_skill_select`.
+- **Capability fix** (PR #6745) — `typesafe_decide`'s declared `manage_options` matches the enforced gate (metadata-only, CI-pinned).
+- **Tool count** — +1 base +3 Pro → ~308 base + ~1,282 Pro (~1,590 total). Model catalog → **v2026.09.22** (+`jev-preview`). Deferred: extraction tools, the CG port cluster, NV Cloud passthrough.
+
+## TypeSafe Jev Decisions, Assistant Builder, ID-Handoff Contracts & Webchat Fixes (v1.1.83 post)
+
+- **TypeSafe Jev decision provider** (PR #6728) — Jev joins as a first-class *decision* provider deliberately separate from chat: `Interface_WP_MCP_AI_Decision_Client` + `WP_MCP_AI_Typesafe_Client` (typed choice/score/noul over state; 429/`retry-after`; versioned-model logging; `test_connection()`), OpenRouter Decisions bridge (`create_decision()`, filterable endpoint, actionable 404), and the new base tool **`typesafe_decide`** (canonical envelope + two-gate sanitisation, adversarial-state caveat, `manage_options`-gated; `ai_ml` preset + coverage manifest via #6743). Pro: fail-open `WP_MCP_AI_Pro_Jev_Classifier` (`decide()`/`classify_prompt()`/`filter_sources_by_relevance()`), opt-in dispatcher `jev_routing` (REST `compare-models` passthrough), opt-in `enable_jev_research_filter`; fixes the pre-existing dispatcher `chat_completion()` bug. Model catalog → **v2026.09.21** (+3 Jev decision entries).
+- **"The Assistant Builder" meta-assistant** (PR #6727) — pre-configured meta-assistant (7-phase build workflow, 10-component prompt framework) appended to `get_default_assistants()` (roster 6 → 7); idempotent install + one-shot `admin_init` backfill (`wp_mcp_ai_assistant_builder_backfilled`).
+- **P3 ID-handoff data contracts** (PRs #6729–#6738, closure #6739) — every ID-bearing tool family declares `produces`/`consumes` handoffs (post, cron, term, assistant, vector store, batch, Pro schedule, toolkit_cpt, medical record, plan, calendar, WPCode, session, member, webchat room) with the coverage manifest as single source of truth + permanent L1 honesty / L2 round-trip suites. In-wave fixes: `format_code_prettier` envelopes → canonical `WP_Error` (#6737); webchat `log_activity()` → `log_event( 'activity', … )` (#6738).
+- **Usage monitor save fix** (PR #6726) — `handle_save_settings()` now applies the `wp_mcp_ai_admin_settings_sanitize` bridge filter (raw input, pre-sanitize), so the Usage Monitor sub-tab persists again; handlers no-op when their fields are absent.
+- **Webchat close-out** (PR #6740) — `get_webchat_messages` queries rebuilt with explicit placeholders (phpcs warnings gone); the last three webchat tools + CG Pro member mirrors gain usage guidance; the CG interface copy gains `WP_MCP_AI_Tool_Usage_Guidance_Interface` (standalone-resolution fatal fix). Residual CG mirror drift (~957 files) → issue #6741.
+- **Tool count** — +1 base → ~307 base + ~1,279 Pro (~1,586 total). Coding-time skills: 59 (unchanged — the test-suite skill gained patterns 49–50 and the ecosystem-port skill gained the CG interface-port rule, #6742).
+
+## Tool Guidance, Pro Bootstrap Guard, Telegram Chunking & Upwork-Workflow Delivery (v1.1.83)
+
+- **Tool Description Engineering** (PRs #6686/#6695/#6687–#6723) — `WP_MCP_AI_Tool_Usage_Guidance_Interface` (`when_to_use`/`when_not_to_use`/`related_tools`/`notes`) + the assembled `[Usage: …]` suffix in `get_model_facing_description()` (REST chat path, Tool Service `/tools`, `list_mcp_tools`); legacy-format classes opt in via `get_usage_guidance()` or a `usage_guidance` definition key forwarded by `WP_MCP_AI_Legacy_Tool_Wrapper`. The Phase 2 sweep completes the full base+pro tree (~1,487 tools; 1,584/1,584 files) and the `WPMCPAI.Tools.ToolDescriptionGuidance` sniff is enforced at severity 5. Opt-in adaptive tool cap (`WP_MCP_AI_Tool_Payload_Advisor`, site option + per-assistant override) + lazy schema loading (`tool_slug`/`include_schemas` on `list_mcp_tools`).
+- **Pro bootstrap incomplete-install guard** (PR #6677) — `mcp-ai-wpoos-pro.php` `file_exists`-checks the module-registry require and degrades to `wp_mcp_ai_pro_incomplete_install_notice` + a WP_DEBUG line (partial deploys no longer fatal the site). **Telegram auto-chunking** — `send_telegram_message` splits >4,096-char messages (paragraph → line → hard; hard splits drop `parse_mode`; `chunk=false` restores legacy; `wp_mcp_ai_telegram_chunk_error` carries the failed chunk index). **Gmail `connection_id="settings"`** resolves to the settings fallback across the Pro Gmail tools, the Drive client, and base `search_gmail`. **Skill/OKF self-correction** — `load_skill` not-assigned appends `Assigned skills: …`; `okf_bundle_not_found` appends `Available bundles: …` (new `list_bundle_names()`).
+- **Upwork search + workflow delivery** (PRs #6678–#6680/#6682/#6684) — `search_upwork_jobs` gains web_search-mode + API credential gates, drops category landing pages, extracts SERP `job_type`/`budget`/`published`, always runs the broad second pass under `min(limit, 5)` jobs, and accepts `sort`/`location` args; workflow deliveries ship the full 50-item result set (filterable cap) with per-item URLs + budget/contract/recency; both markdown converters fold indented continuation lines into a single `<ol>` (digests render 1–10); `steps` render as a compact execution log.
+- **Playground Ollama demo** (PR #6683) — the seed now sets `/%postname%/` permalinks (fresh-install `/ollama-test-lab/` 404 fixed); local `npx -y @wp-playground/cli server` is the primary test path; `bin/capture-real-page.sh` rewritten (REST-index wait + cookie jar).
+- **npm advisories** (PR #6681) — adm-zip 0.6.1, js-yaml 4.3.2, colord 2.10.0. **Regulatory envelope** (PR #6689) — five regulatory tools migrate to the canonical `WP_Error` envelope.
+- **Tool count** — unchanged: ~306 base + ~1,279 Pro (~1,585 total). Coding-time skills: 59 (unchanged — the test-suite skill gained pattern 48 in-window).
 
 ## WordPress Playground Demos, Pro SPA Fixes & Token-Tracking Hardening (v1.1.82)
 

@@ -1027,3 +1027,27 @@ add_action(
 	},
 	20
 );
+
+// One-shot upgrade routine (1.1.84): backfill the Assistant Builder assistant
+// for sites whose default roster was installed before it was added. Idempotent
+// (create_assistant() returns the existing post when the slug already exists)
+// and tracked by an option so it does not rely on version comparisons.
+add_action(
+	'admin_init',
+	function () {
+		if ( get_option( 'wp_mcp_ai_assistant_builder_backfilled' ) ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Default_Assistants' ) ) {
+			return;
+		}
+
+		$result = WP_MCP_AI_Default_Assistants::install_assistant_builder_assistant();
+
+		// Store truthy/falsy so a failed attempt retries on a later admin load
+		// (self-healing), while a success never runs again.
+		update_option( 'wp_mcp_ai_assistant_builder_backfilled', ! is_wp_error( $result ), false );
+	},
+	20
+);

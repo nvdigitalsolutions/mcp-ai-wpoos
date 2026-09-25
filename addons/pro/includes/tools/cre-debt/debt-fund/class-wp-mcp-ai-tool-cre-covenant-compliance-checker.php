@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Covenant_Compliance_Checker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Covenant_Compliance_Checker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_Covenant_Compliance_Checker implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description(): string {
 		return __( 'Check fund-level financial covenant compliance (minimum/maximum thresholds with warning bands) and reporting deadline status. Identifies breaches, warnings, and overdue reports.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Testing fund financial covenants against minimum/maximum thresholds and checking whether required reports are past due.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Portfolio concentration policy limits; use cre_concentration_limit_monitor. Sponsor financial strength; use cre_borrower_profile_analyzer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_concentration_limit_monitor', 'cre_credit_risk_scorer', 'cre_lp_report_generator' ),
+			'notes'           => __( 'Covenants need name, type, threshold, and current_value; reports need report_name, due_date, and submitted.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

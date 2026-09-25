@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for sending Microsoft Teams messages via the Microsoft Graph API.
  */
-class WP_MCP_AI_Pro_Tool_Send_Teams_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Send_Teams_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Microsoft Graph API requests.
 	 */
@@ -54,6 +54,18 @@ class WP_MCP_AI_Pro_Tool_Send_Teams_Message implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Sends a text message to a Microsoft Teams channel using the Microsoft Graph API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending a text message to a Microsoft Teams channel via the Microsoft Graph API.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading team messages; use get_teams_messages. Listing channels; use get_teams_channels.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_teams_messages', 'get_teams_channels', 'unified_channel_broadcast' ),
+			'notes'           => __( 'Posts real messages to Teams; requires a Graph token with ChannelMessage.Send.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -25,7 +25,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-pro-google-drive-client.php';
 /**
  * Provides an assistant tool for reading a single Google Drive file or folder.
  */
-class WP_MCP_AI_Pro_Tool_Get_Drive_File implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Drive_File implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -48,6 +48,20 @@ class WP_MCP_AI_Pro_Tool_Get_Drive_File implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Reads a single Google Drive file or folder by ID. Google Docs, Sheets, and Slides are exported to plain text (capped at max_chars with a truncated flag). Folders return their direct children. Binary files return metadata and links only. Use file IDs from search_drive results.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading a known Drive file or folder by ID: Docs, Sheets, and Slides export to text; folders list children; binary files return metadata.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Discovering files by name or query; use search_drive. Discovering connection IDs; use list_drive_connections.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'search_drive', 'list_drive_connections' ),
+			'notes'           => __( 'Docs text is capped at max_chars (100-50000, default 4000). Binary files return metadata and links only, never content.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Create_Hero_Section implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Hero_Section implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -61,6 +61,18 @@ class WP_MCP_AI_Tool_Create_Hero_Section implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Generates hero sections with compelling headlines, CTAs, and media. Supports multiple layout styles including centered, split, full-width, and minimal designs optimized for conversion.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating the opening hero section with headline, subheadline, CTAs, media, and layout style for a page.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Mid-page sections; use generate_feature_section, build_testimonial_section, or create_cta_section. A full page; use create_homepage_layout.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_feature_section', 'create_cta_section', 'create_homepage_layout' ),
+			'notes'           => __( 'Returns section data for assembly; it does not create the page.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

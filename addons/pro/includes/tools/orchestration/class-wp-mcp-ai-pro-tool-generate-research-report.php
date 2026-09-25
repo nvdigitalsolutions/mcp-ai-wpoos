@@ -176,6 +176,21 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing a researched, cited report (AIA, NCS, CSI, or general) from a topic, or formatting pre-written sections.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Quick fact checks on a single claim; use verify_information. Combining existing findings belongs to aggregate_research_data.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'verify_information', 'aggregate_research_data', 'create_post_from_research' ),
+			'notes'           => __( 'Research mode needs topic; formatting mode needs title and sections. Can save to Paper Store or create a draft post.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -259,6 +274,11 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 			);
 		}
 
+		// Step 1.5 (optional): filter search sources through the Jev
+		// relevance classifier when the site enables it. Fail-open — on any
+		// error or when Jev is unavailable, the sources pass through untouched.
+		$search_results = $this->maybe_jev_filter_sources( $search_results, $topic );
+
 		// Step 2: Build research prompt with gathered information.
 		$prompt = $this->build_research_prompt( $topic, $report_type, $depth, $focus_areas, $search_results );
 
@@ -285,6 +305,13 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 				array( 'topic' => $topic )
 			);
 			return $report_data;
+		}
+
+		// Step 4.5 (optional): verify report citations against their sources
+		// with Jev. Fail-open — on any error no checks are attached.
+		$citation_checks = $this->maybe_jev_check_citations( $report_data, $search_results );
+		if ( ! empty( $citation_checks ) ) {
+			$report_data['citation_checks'] = $citation_checks;
 		}
 
 		// Log success.
@@ -397,6 +424,93 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 			'word_count'    => str_word_count( $report ),
 			'section_count' => count( $sections ),
 		);
+	}
+
+	/**
+	 * Optionally filter search sources through the Jev relevance classifier.
+	 *
+	 * Gated by the `enable_jev_research_filter` setting and fail-open: when
+	 * the setting is off, Jev is unavailable, or the call errors, the search
+	 * results pass through untouched.
+	 *
+	 * @param array  $search_results Search results array.
+	 * @param string $topic          Research topic.
+	 * @return array Possibly-filtered search results.
+	 */
+	protected function maybe_jev_filter_sources( $search_results, $topic ) {
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ? WP_MCP_AI_Admin_Settings_Base::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
+
+		if ( empty( $settings['enable_jev_research_filter'] ) ) {
+			return $search_results;
+		}
+
+		if ( empty( $search_results['sources'] ) || ! is_array( $search_results['sources'] ) ) {
+			return $search_results;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Jev_Classifier' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-pro-jev-classifier.php';
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Jev_Classifier' ) ) {
+			return $search_results;
+		}
+
+		$filtered = WP_MCP_AI_Pro_Jev_Classifier::filter_sources_by_relevance( $search_results['sources'], $topic );
+
+		if ( ! empty( $filtered['used_jev'] ) ) {
+			$search_results['sources']     = $filtered['sources'];
+			$search_results['jev_dropped'] = $filtered['dropped'];
+		}
+
+		return $search_results;
+	}
+
+	/**
+	 * Optionally verify report citations against their sources with Jev.
+	 *
+	 * Gated by the `enable_jev_citation_check` setting and fail-open: when
+	 * the setting is off, Jev is unavailable, or any check errors, an empty
+	 * list is returned and nothing is attached to the report.
+	 *
+	 * @param array $report_data    Parsed report data.
+	 * @param array $search_results Search results array.
+	 * @return array Citation checks (empty when disabled or failed).
+	 */
+	protected function maybe_jev_check_citations( $report_data, $search_results ) {
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ? WP_MCP_AI_Admin_Settings_Base::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
+
+		if ( empty( $settings['enable_jev_citation_check'] ) ) {
+			return array();
+		}
+
+		if ( empty( $search_results['sources'] ) || ! is_array( $search_results['sources'] ) ) {
+			return array();
+		}
+
+		$report_text = '';
+		foreach ( array( 'report', 'content', 'summary' ) as $key ) {
+			if ( isset( $report_data[ $key ] ) && is_string( $report_data[ $key ] ) ) {
+				$report_text = $report_data[ $key ];
+				break;
+			}
+		}
+
+		if ( '' === $report_text ) {
+			return array();
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Jev_Classifier' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-pro-jev-classifier.php';
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Jev_Classifier' ) ) {
+			return array();
+		}
+
+		$checks = WP_MCP_AI_Pro_Jev_Classifier::check_citations( $report_text, $search_results['sources'] );
+
+		return is_array( $checks ) ? $checks : array();
 	}
 
 	/**

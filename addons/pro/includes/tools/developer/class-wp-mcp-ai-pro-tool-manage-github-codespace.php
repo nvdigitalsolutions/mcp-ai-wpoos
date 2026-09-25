@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-github-clie
 /**
  * Provides an assistant tool for managing GitHub Codespaces.
  */
-class WP_MCP_AI_Pro_Tool_Manage_Github_Codespace implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Manage_Github_Codespace implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,6 +38,20 @@ class WP_MCP_AI_Pro_Tool_Manage_Github_Codespace implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Create, start, stop, or list GitHub Codespaces for repository development.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating, starting, stopping, listing, getting, or deleting GitHub Codespaces for a repository.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading or writing repository files; use github_repository_operations.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'github_repository_operations', 'list_github_repositories' ),
+			'notes'           => __( 'create needs owner and repo; start, stop, get, and delete need codespace_name.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

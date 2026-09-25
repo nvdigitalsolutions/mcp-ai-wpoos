@@ -15,7 +15,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Radarr' ) ) {
 	/**
 	 * Manages Radarr via the Radarr API.
 	 */
-	class WP_MCP_AI_Tool_DietPi_Manage_Radarr extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_Manage_Radarr extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 		/**
 		 * {@inheritdoc}
 		 */
@@ -35,6 +35,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Radarr' ) ) {
 		 */
 		public function get_description() {
 			return __( 'Manage Radarr: trigger movie refresh, search for movies, check queue, view system status, or see upcoming releases calendar.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/**
+		 * {@inheritdoc}
+		 */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Running Radarr maintenance actions: refresh the movie library, search all movies, or check queue, status, calendar, and disk space.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Adding a specific movie to Radarr; use dietpi_add_radarr_movie. Browsing the library; use dietpi_list_radarr_movies.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_add_radarr_movie', 'dietpi_list_radarr_movies', 'dietpi_media_request_flow' ),
+				'notes'           => __( 'refresh_all and search_all trigger library-wide commands; queue, system_status, calendar, and diskspace are read-only.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/**

@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Classify_Message_Intent implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Classify_Message_Intent implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if the tool is available.
@@ -62,6 +62,20 @@ class WP_MCP_AI_Tool_Classify_Message_Intent implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Classify an inbound message for intent, sentiment, buying signals, and spam probability.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Categorising a raw inbound message into intent, sentiment, buying signals, and spam probability.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Full triage or lead creation; use evaluate_inbound_message. Keyword-only scan; use detect_buying_signals.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'evaluate_inbound_message', 'detect_buying_signals', 'extract_lead_from_message' ),
+			'notes'           => __( 'Set channel (default email) to match the message source for tuned spam and intent heuristics.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -21,7 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  *
  * Brevo (formerly Sendinblue) API docs: https://developers.brevo.com/docs/getting-started
  */
-class WP_MCP_AI_Pro_Tool_Get_Brevo_Statistics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Brevo_Statistics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	const API_BASE = 'https://api.brevo.com/v3';
 
 	/**
@@ -43,6 +43,20 @@ class WP_MCP_AI_Pro_Tool_Get_Brevo_Statistics implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Retrieves email campaign statistics and transactional email metrics from Brevo.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching Brevo campaign lists, per-campaign reports, or SMTP transactional aggregates for reporting.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Fetching Mailjet metrics instead of Brevo; use get_mailjet_statistics. Sending email belongs to send_brevo_email.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_mailjet_statistics', 'send_brevo_email', 'manage_brevo_contacts' ),
+			'notes'           => __( 'Type campaigns lists campaign stats and supports campaign_id for one report; transactional returns SMTP aggregates.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

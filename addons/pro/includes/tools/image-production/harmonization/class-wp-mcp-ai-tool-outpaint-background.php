@@ -20,7 +20,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-harmonization-base.php';
 /**
  * Outpaint a background image to a new aspect ratio.
  */
-class WP_MCP_AI_Tool_Outpaint_Background extends WP_MCP_AI_Tool_Harmonization_Base {
+class WP_MCP_AI_Tool_Outpaint_Background extends WP_MCP_AI_Tool_Harmonization_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -41,6 +41,18 @@ class WP_MCP_AI_Tool_Outpaint_Background extends WP_MCP_AI_Tool_Harmonization_Ba
 	 */
 	public function get_description() {
 		return __( 'Extend a background image to a new aspect ratio without cropping the subject by using AI outpainting. Saves a new attachment.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Extending a background canvas to a target aspect ratio without cropping, continuing the existing scene seamlessly.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'A brand new scene: use generate_scene_background. Blending a finished composite edge: use refine_composite_boundary.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_scene_background', 'adapt_background_for_subject', 'harmonize_image_into_background' ),
+			'notes'           => __( 'Requires a configured AI provider. extend_direction: auto, horizontal, vertical, or all.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Manages task assignments on legal matters.
  */
-class WP_MCP_AI_Tool_LF_Task_Assignment_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Task_Assignment_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -71,6 +71,20 @@ class WP_MCP_AI_Tool_LF_Task_Assignment_Manager implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'Assigns, lists, completes, and tracks workload for tasks on legal matters. Supports assignees, due dates, and priority levels.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Assigning, listing, completing, or viewing workload for tasks on a matter, with assignees, due dates, and priorities.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Tracking court-imposed deadlines; use lf_court_deadline_tracker. Reviewing billable-hour utilization; use lf_attorney_utilization_tracker.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_court_deadline_tracker', 'lf_attorney_utilization_tracker', 'lf_case_timeline_generator' ),
+			'notes'           => __( 'action accepts assign, list, complete, or get_workload. get_workload requires assignee_id and scans all matters. Writes require manage_options.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

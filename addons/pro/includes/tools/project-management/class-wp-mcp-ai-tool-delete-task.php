@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Deletes a task.
  */
-class WP_MCP_AI_Tool_Delete_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -48,6 +48,20 @@ class WP_MCP_AI_Tool_Delete_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Deletes a task permanently.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Permanently removing a task by task_id after explicit user confirmation.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Closing out a task; set status via update_task instead. Removing projects; use delete_project.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'update_task', 'delete_project', 'list_tasks' ),
+			'notes'           => __( 'Destructive and irreversible; dependency links stored on other tasks are not cleaned up.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

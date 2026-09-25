@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Updates an existing checkup/appointment.
  */
-class WP_MCP_AI_Tool_Update_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_Update_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_description() {
 		return __( 'Updates an existing checkup or appointment with new information.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Updating fields on an existing checkup or appointment by checkup_id.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Creating a new appointment; use create_checkup.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_checkup', 'get_checkup' ),
+			'notes'           => __( 'Only provided fields are changed; status accepts scheduled, completed, cancelled, no-show.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

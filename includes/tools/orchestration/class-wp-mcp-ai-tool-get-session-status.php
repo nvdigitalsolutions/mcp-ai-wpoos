@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get Session Status Tool
  */
-class WP_MCP_AI_Tool_Get_Session_Status implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Get_Session_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
@@ -26,6 +26,16 @@ class WP_MCP_AI_Tool_Get_Session_Status implements WP_MCP_AI_Tool_Interface {
 	 */
 	public function get_required_capability() {
 		return 'edit_posts';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => null,
+			'consumes' => array( 'session_id' ),
+		);
 	}
 
 	/**
@@ -63,6 +73,20 @@ class WP_MCP_AI_Tool_Get_Session_Status implements WP_MCP_AI_Tool_Interface {
 				'required'   => array( 'session_id' ),
 			),
 			'required_capability' => 'read',
+		);
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading live autonomous session health, progress, resources, and timing metrics.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Changing session state; use manage_autonomous_session. Exit decisions; use check_exit_conditions.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'manage_autonomous_session', 'check_exit_conditions', 'analyze_loop_health' ),
+			'notes'           => __( 'Set include_plan=true to embed the linked task plan; sessions expire after 24 hours.', 'mcp-ai-wpoos' ),
 		);
 	}
 

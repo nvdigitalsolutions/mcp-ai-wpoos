@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Schedule_Maintenance' ) ) {
 	 *
 	 * @since 1.4.0
 	 */
-	class WP_MCP_AI_Tool_Schedule_Maintenance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	class WP_MCP_AI_Tool_Schedule_Maintenance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		use WP_MCP_AI_Tool_Default_Capability;
 
@@ -41,6 +41,20 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Schedule_Maintenance' ) ) {
 				'description'         => __( 'Schedule a new maintenance window.', 'mcp-ai-wpoos' ),
 				'required_capability' => 'manage_options',
 				'parameters'          => $this->get_parameters_schema(),
+			);
+		}
+
+		/**
+		 * Get usage guidance for the tool.
+		 *
+		 * @return array
+		 */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Scheduling a maintenance window with ISO 8601 start and end times and affected service slugs.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Reporting live outages (use create_incident) or checking component health (use get_service_status).', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'create_incident', 'get_service_status', 'update_incident' ),
+				'notes'           => __( 'End must be after start; the window is stored as scheduled and enables a maintenance banner.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 

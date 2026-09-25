@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Validates legal citation formatting per Bluebook or ALWD standards.
  */
-class WP_MCP_AI_Tool_LF_Legal_Citation_Checker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Legal_Citation_Checker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -67,6 +67,20 @@ class WP_MCP_AI_Tool_LF_Legal_Citation_Checker implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Extracts and validates legal citations from text, checking Bluebook or ALWD format compliance with ABA Opinion 512 hallucination warnings.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When extracting citations from text and checking Bluebook or ALWD formatting before filing a document.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For substantive case research; use lf_case_law_analyzer or lf_legal_research_assistant to analyze law.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_case_law_analyzer', 'lf_legal_research_assistant', 'lf_document_drafter' ),
+			'notes'           => __( 'Regex-based: detects US Reports, F.3d, F. Supp., state reporter, and U.S.C. patterns; citation_format accepts bluebook or alwd.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

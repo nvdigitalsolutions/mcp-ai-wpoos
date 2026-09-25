@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Estimate construction costs.
  */
-class WP_MCP_AI_Tool_Estimate_Construction_Cost implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Estimate_Construction_Cost implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -72,6 +72,20 @@ class WP_MCP_AI_Tool_Estimate_Construction_Cost implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description() {
 		return __( 'AI-powered construction cost estimation. Includes materials, labor, equipment, and location-based adjustments.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing a location-based construction cost estimate from a floor plan and area, with quality level, construction type, and contingency.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For itemised BoQ documents or material lists - use generate_bill_of_quantities or generate_material_schedule.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_bill_of_quantities', 'generate_material_schedule' ),
+			'notes'           => __( 'country_code drives the rate table and default currency (LKR, JMD, USD); area_unit defaults to sqft for US and sqm otherwise.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

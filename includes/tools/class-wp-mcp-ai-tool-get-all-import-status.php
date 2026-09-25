@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 /**
  * Gets the status of a WP All Import operation.
  */
-class WP_MCP_AI_Tool_Get_All_Import_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_All_Import_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -62,6 +62,20 @@ class WP_MCP_AI_Tool_Get_All_Import_Status implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_description() {
 		return __( 'Gets the status and progress of a WP All Import operation. Requires WP All Import plugin.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Checking the progress and stats of a known WP All Import operation by import ID.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Starting an import; use trigger_all_import. Browsing templates belongs to list_all_import_templates.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'trigger_all_import', 'list_all_import_templates', 'trigger_all_export' ),
+			'notes'           => __( 'Requires the WP All Import plugin and manage_options; status is idle, processing, or completed.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

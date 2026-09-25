@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.10.0
  */
-class WP_MCP_AI_Tool_Save_LinkedIn_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Save_LinkedIn_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Determine whether CRM toolkit is enabled.
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_Save_LinkedIn_Job implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Save a LinkedIn job posting as a CRM Deal or Project for pipeline tracking and follow-up.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Saving a LinkedIn job posting as a CRM deal, project, or task for pipeline tracking and follow-up.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Scoring the posting first; use score_linkedin_job. Discovering postings; use search_linkedin_jobs.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'score_linkedin_job', 'search_linkedin_jobs', 'create_deal' ),
+			'notes'           => __( 'save_as accepts deal, project, or task; requires job_title and defaults to the first configured pipeline stage.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

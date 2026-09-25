@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_Comic_Creation_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Comic_Creation_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR  = WP_MCP_AI_PRO_PATH . 'includes/tools/comic-creation/examples';
@@ -49,6 +49,19 @@ class WP_MCP_AI_Tool_Import_Comic_Creation_Blueprint implements WP_MCP_AI_Tool_I
 	 */
 	public function get_description() {
 		return __( 'Install the Comic Artist assistant blueprint for AI-assisted comic creation workflows.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing or refreshing the Comic Artist assistant blueprint for the Comic Creation Toolkit.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For running comic tasks, use tools such as generate_comic_script instead of reinstalling the blueprint.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_comic_script', 'generate_comic_panel', 'breakdown_comic_panels' ),
+			'notes'           => __( 'Blueprint enum only supports "comic-artist". Set overwrite=true to replace an existing assistant.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 	/**
 	 * {@inheritdoc}
 	 */

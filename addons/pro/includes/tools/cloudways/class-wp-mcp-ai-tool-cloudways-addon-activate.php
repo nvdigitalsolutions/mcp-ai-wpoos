@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Addon_Activate' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Addon_Activate extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Addon_Activate extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Addon_Activate' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Activate an add-on on your Cloudways account.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Enabling a Cloudways add-on when you already know its add-on identifier.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Discovering which add-ons exist or their cost; use cloudways_addon_list first.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_addon_list', 'cloudways_copilot_insights_list' ),
+				'notes'           => __( 'The addon argument is the Cloudways identifier; list valid values with cloudways_addon_list.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

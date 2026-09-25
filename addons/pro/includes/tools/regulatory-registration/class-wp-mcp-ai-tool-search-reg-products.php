@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Searches regulatory products.
  */
-class WP_MCP_AI_Tool_Search_Reg_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Search_Reg_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Search_Reg_Products implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Advanced search for products by name, brand, manufacturer, ingredients, HS code, or other criteria.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'When finding products by keyword across name, brand, manufacturer, INCI ingredients, or HS code.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'When a simple filtered listing is enough; use list_reg_products for category and brand browsing.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_reg_products', 'get_reg_product', 'validate_inci_ingredients' ),
+			'notes'           => __( 'Paginated via page and per_page; match results against product IDs for follow-up reads or updates.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

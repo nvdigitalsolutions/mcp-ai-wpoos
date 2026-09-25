@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Gets a regulatory document.
  */
-class WP_MCP_AI_Tool_Get_Reg_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Reg_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Get_Reg_Document implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Retrieves detailed information about a specific document in the regulatory registration system.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading one known document record with version, expiry status, and optional product or registration details.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Discovering which documents exist for a registration; use list_reg_documents first, or get_registration with include_documents.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_reg_documents', 'get_registration', 'update_reg_document' ),
+			'notes'           => __( 'Set include_product or include_registration true to resolve related records in the same call.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

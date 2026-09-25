@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Calculates fees for hourly, contingency, flat, blended, and lodestar models.
  */
-class WP_MCP_AI_Tool_LF_Fee_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_Fee_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -67,6 +67,19 @@ class WP_MCP_AI_Tool_LF_Fee_Calculator implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Calculates legal fees using hourly, contingency, flat fee, blended rate, or lodestar methods.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Estimating fee amounts and breakdowns using hourly, contingency, flat fee, blended, or lodestar models.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Recording actual time entries or generating invoices; use lf_time_entry_recorder or lf_invoice_generator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_time_entry_recorder', 'lf_invoice_generator', 'lf_profitability_analyzer' ),
+			'notes'           => __( 'Requires fee_type; read-only math, no data is stored. Contingency uses pre_filing stage by default.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 
 	/**

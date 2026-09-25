@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Composio — Create Connect Link.
  */
-class WP_MCP_AI_Tool_Composio_Create_Connect_Link implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface {
+class WP_MCP_AI_Tool_Composio_Create_Connect_Link implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Envelope;
 
 	/**
@@ -40,6 +40,20 @@ class WP_MCP_AI_Tool_Composio_Create_Connect_Link implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description(): string {
 		return __( 'Create a one-time Composio Connect Link so a user can authenticate their own app account (Gmail, Slack, GitHub, ...). Returns a hosted URL; the user completes the flow on Composio and their credentials stay with Composio.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Onboarding a user when no connected account exists yet for a toolkit such as gmail, slack, or github.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Repairing a broken credential; use composio_manage_accounts reconnect to re-authorize the same account.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'composio_list_connected_accounts', 'composio_manage_accounts' ),
+			'notes'           => __( 'The returned URL is a bearer capability, so share it only with the intended user.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

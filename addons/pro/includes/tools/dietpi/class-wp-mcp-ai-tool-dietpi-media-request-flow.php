@@ -16,7 +16,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Media_Request_Flow' ) ) {
 	/**
 	 * Media Request Flow tool.
 	 */
-	class WP_MCP_AI_Tool_DietPi_Media_Request_Flow extends WP_MCP_AI_Tool_DietPi_Base {
+	class WP_MCP_AI_Tool_DietPi_Media_Request_Flow extends WP_MCP_AI_Tool_DietPi_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 		public function get_slug() {
@@ -31,6 +31,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Media_Request_Flow' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( '🔑 End-to-end media automation workflow: search for a TV show or movie across all Jackett indexers, add the best-matching torrent to Transmission, and ensure the series/movie is monitored in Sonarr or Radarr. Specify the media_type (tv or movie) and the title or ID to retrieve.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Running the full end-to-end media request: search Jackett, add the best torrent to Transmission, and monitor it in Sonarr or Radarr.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Step-by-step manual control; use dietpi_search_jackett and dietpi_add_transmission separately.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'dietpi_search_jackett', 'dietpi_add_transmission', 'dietpi_add_sonarr_series', 'dietpi_add_radarr_movie' ),
+				'notes'           => __( 'Adds the torrent and the Arr entry in one pass; set add_to_arr=false to skip Sonarr or Radarr, paused=true to start paused.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

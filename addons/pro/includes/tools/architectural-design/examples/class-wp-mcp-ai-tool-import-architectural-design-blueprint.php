@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.1
  */
-class WP_MCP_AI_Tool_Import_Architectural_Design_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Architectural_Design_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR = WP_MCP_AI_PRO_PATH . 'includes/tools/architectural-design/examples';
@@ -63,6 +63,20 @@ class WP_MCP_AI_Tool_Import_Architectural_Design_Blueprint implements WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Install a curated architectural design assistant blueprint for residential, commercial, or hurricane-resilient design workflows.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Installing a curated architectural design assistant blueprint: residential-architect, commercial-architect, hurricane-resilient-specialist.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For design or analysis work itself - use generate_floor_plan, generate_architectural_drawing, or analysis tools after import.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_floor_plan', 'generate_architectural_drawing' ),
+			'notes'           => __( 'blueprint must be one of the three blueprint slugs (enum-checked); overwrite replaces an existing assistant with the same name.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * {@inheritdoc}

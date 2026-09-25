@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.ph
 /**
  * Resize images to specific dimensions or scale proportionally.
  */
-class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	public function get_description() {
 		return __( 'Resize an image to specific dimensions or scale proportionally while maintaining aspect ratio.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to resize an image to exact pixel dimensions or scale it proportionally, optionally cropping.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Use rotate_image for orientation changes, vectorize_image to convert to SVG, or image_format_batch_converter for bulk format work.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'rotate_image', 'vectorize_image', 'image_format_batch_converter' ),
+			'notes'           => __( 'maintain_ratio=true fits the image inside the box; crop=true forces exact dimensions.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

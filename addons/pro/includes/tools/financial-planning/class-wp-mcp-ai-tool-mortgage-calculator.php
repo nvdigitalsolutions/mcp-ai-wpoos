@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Mortgage_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Mortgage_Calculator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,22 @@ class WP_MCP_AI_Tool_Mortgage_Calculator implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_description() {
 		return __( 'Calculate mortgage payments and analyze refinancing options. Includes amortization schedules, total interest costs, PMI, property taxes, and break-even analysis for refinancing decisions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the usage guidance.
+	 *
+	 * @since 1.1.83
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Estimating monthly payments, amortization, and total interest for a mortgage or a refinance comparison.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Monthly budget fit; use budget_planner. Down-payment or purchase savings goals belong to savings_goal_planner.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'savings_goal_planner', 'debt_payoff_calculator', 'net_worth_calculator' ),
+			'notes'           => __( 'Requires loan_amount and interest_rate; refinance_analysis=true needs current_balance, new_interest_rate, and closing_costs.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

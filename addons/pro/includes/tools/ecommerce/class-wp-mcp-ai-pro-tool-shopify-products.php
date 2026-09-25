@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Shopify_Connection_Resolver;
 	use WP_MCP_AI_Tool_Product_Card;
@@ -46,6 +46,18 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Manage products on a connected Shopify store. Mode-aware: with an admin_api connection this tool lists, searches, retrieves, creates, and updates products via the Admin GraphQL API. With a Storefront Catalog MCP or Global Catalog MCP connection (keyless UCP, live agent-query mode) it performs live catalog queries only — search_catalog, lookup_catalog, get_product — and rejects create/update with a hint; UCP usage guidelines prohibit caching catalog results, so every call is live and nothing is stored. With the deprecated REST catalog_api connection it performs live Catalog API search and lookup. Every product result includes image URLs (images[]) and a chat-rendered product card with the product image.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing, searching, creating, or updating products on a connected Shopify store via the Admin API.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Live cross-merchant catalog discovery; use shopify_catalog, and shopify_inventory for stock levels.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'shopify_catalog', 'shopify_inventory', 'shopify_orders' ),
+			'notes'           => __( 'Actions: list, get, create, update, search. Admin writes need an admin_api connection; UCP catalog modes stay read-only.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

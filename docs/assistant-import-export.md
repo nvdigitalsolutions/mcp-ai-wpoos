@@ -58,12 +58,24 @@ One engine, every surface:
 
 ### Redaction policy (never exported)
 
-Credential hashes and site-specific pointers are excluded from every export
+Credential material and site-specific pointers are excluded from every export
 and stripped from every import:
 
 - `_wp_mcp_ai_credentials` — hashed assistant bearer tokens
 - `_wp_mcp_ai_external_action_id` / `_wp_mcp_ai_external_action_type`
 - `_edit_lock`, `_edit_last`, `_wp_old_slug` (core bookkeeping)
+- The `token` and `oauth_data` fields inside `_wp_mcp_ai_mcp_apps` entries —
+  MCP App credentials are redacted from exports (the remaining config fields
+  survive for round-trip fidelity) and stripped from imports by default. On
+  overwrite, stored credentials are preserved for matching apps (matched on
+  `server_url` + `auth_type` + `header_name`, falling back to position) so a
+  redacted bundle cannot blank live connections. Both directions are
+  filterable for explicitly trusted migrations:
+  `wp_mcp_ai_assistant_export_redact_mcp_app_tokens` and
+  `wp_mcp_ai_assistant_import_redact_mcp_app_tokens` (default `true`).
+  Imported app entries are also structurally sanitized (auth type whitelist,
+  tag stripping, timeout clamp, bool coercion, unknown-key drop) mirroring
+  the Pro registry's `sanitize_app_config()`.
 
 Only plugin-owned meta keys are eligible for export: `_wp_mcp_ai_*`,
 `mcp_ai_*`, and (when Pro is active) `_wp_mcp_ai_pro_*`. Extend the rules
@@ -152,6 +164,8 @@ file in the Media Library). Responses wrap the bundle/report in
 | `wp_mcp_ai_assistant_import_data` | filter | Normalise/migrate the parsed bundle before applying |
 | `wp_mcp_ai_assistant_export_meta_denylist` | filter | Extend the never-exported meta key list |
 | `wp_mcp_ai_assistant_export_meta_prefixes` | filter | Extend the eligible meta key prefixes |
+| `wp_mcp_ai_assistant_export_redact_mcp_app_tokens` | filter | Opt out of MCP App token/oauth_data redaction on export (default `true` = redact) |
+| `wp_mcp_ai_assistant_import_redact_mcp_app_tokens` | filter | Opt out of MCP App token/oauth_data stripping on import (default `true` = strip) |
 | `wp_mcp_ai_assistant_to_blueprint_json` | filter | Enrich blueprint exports (Pro integrations) |
 | `wp_mcp_ai_assistant_imported` | action | Fires per imported assistant `( $post_id, $assistant, $updated )` |
 
@@ -159,6 +173,11 @@ file in the Media Library). Responses wrap the bundle/report in
 
 - Credential hashes are redacted on export **and** stripped from import
   payloads (defence in depth).
+- MCP App credentials (`token` / `oauth_data` inside `_wp_mcp_ai_mcp_apps`)
+  are redacted from exports and stripped from imports by default; overwriting
+  an assistant preserves the stored credentials of matching apps so a
+  redacted bundle cannot blank live connections. Opt out only for trusted
+  migrations (see the Redaction policy above).
 - Imports are validated against a JSON-Schema-style definition using
   WordPress' `rest_validate_value_from_schema()` — no external dependency.
 - Every admin handler verifies the `wp_mcp_ai_assistant_portability` nonce

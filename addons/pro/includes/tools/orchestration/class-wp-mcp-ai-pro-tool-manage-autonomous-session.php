@@ -113,6 +113,20 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Starting, pausing, resuming, or stopping an autonomous session and recording its lifecycle metrics.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Read-only inspection of a running session; use get_session_status for health and progress.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_session_status', 'get_loop_metrics', 'get_task_plan' ),
+			'notes'           => __( 'start requires plan_id and accepts config with max_iterations, token_budget, and assistant_id.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @param array $arguments Tool arguments.

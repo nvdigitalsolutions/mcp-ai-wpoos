@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Composio — Manage triggers.
  */
-class WP_MCP_AI_Tool_Composio_Manage_Triggers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface {
+class WP_MCP_AI_Tool_Composio_Manage_Triggers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Envelope;
 
 	/**
@@ -45,6 +45,20 @@ class WP_MCP_AI_Tool_Composio_Manage_Triggers implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description(): string {
 		return __( 'Manage Composio triggers: discover trigger types, list active triggers, and create, enable, disable or delete trigger instances. Trigger events are delivered to this site via the Composio webhook receiver.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Discovering trigger types or creating, enabling, disabling, and deleting Composio trigger instances.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Executing one-off actions or checking accounts; use composio_execute_tool or composio_list_connected_accounts.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'composio_list_connected_accounts', 'composio_execute_tool' ),
+			'notes'           => __( 'Trigger events arrive via the site Composio webhook receiver; upsert can pin a ca_... account.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

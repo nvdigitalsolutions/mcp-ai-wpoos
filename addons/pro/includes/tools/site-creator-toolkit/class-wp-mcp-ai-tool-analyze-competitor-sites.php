@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Analyze_Competitor_Sites implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Analyze_Competitor_Sites implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -62,6 +62,17 @@ class WP_MCP_AI_Tool_Analyze_Competitor_Sites implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Analyze competitor or reference websites to extract design patterns, features, structure, and best practices. Provides insights on page layout, navigation, content organization, and technology stack for inspiration in site creation.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Studying competitor or reference sites to extract design, structure, and content patterns for inspiration.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Turning findings into a build plan; use generate_site_plan. Ingesting mockup images or HTML; use extract_site_design_from_mockups.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'research_site_best_practices', 'generate_site_plan', 'extract_site_design_from_mockups', 'suggest_template_patterns' ),
+		);
 	}
 
 	/**

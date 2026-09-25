@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Credit_Score_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Credit_Score_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -94,6 +94,20 @@ class WP_MCP_AI_Tool_Credit_Score_Tracker implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Track credit score over time and monitor key factors. Log score updates, analyze trends, and get personalized recommendations for credit improvement. Supports multiple credit bureaus.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for this tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'To log credit scores, view score history, analyze factors, or get improvement recommendations.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For overall financial wellness scoring across many factors; use financial_health_score instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'financial_health_score', 'debt_payoff_calculator' ),
+			'notes'           => __( 'Action enum: log_score, get_history, analyze, get_recommendations. Score must be between 300 and 850.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

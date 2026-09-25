@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates AI usage disclosure text compliant with ABA Formal Opinion 512.
  */
-class WP_MCP_AI_Tool_LF_AI_Usage_Disclosure_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_LF_AI_Usage_Disclosure_Generator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
@@ -70,6 +70,20 @@ class WP_MCP_AI_Tool_LF_AI_Usage_Disclosure_Generator implements WP_MCP_AI_Tool_
 	 */
 	public function get_description() {
 		return __( 'Generates AI usage disclosure text compliant with ABA Formal Opinion 512, covering informed consent, confidentiality, competence, and supervision obligations when AI tools are used in legal practice.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Drafting ABA Formal Opinion 512 compliant AI usage disclosures for initial, matter-specific, or general notice.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Evaluating ethics scenarios or privacy regulations; use lf_ethics_rule_checker or lf_data_privacy_compliance_checker.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'lf_ethics_rule_checker', 'lf_data_privacy_compliance_checker' ),
+			'notes'           => __( 'Requires ai_tools_used, purpose, and client_name; disclosure_type defaults to matter_specific.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

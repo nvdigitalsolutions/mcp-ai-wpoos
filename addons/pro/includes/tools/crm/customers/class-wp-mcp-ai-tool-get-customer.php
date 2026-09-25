@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.6.0
  */
-class WP_MCP_AI_Tool_Get_Customer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Customer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -56,6 +56,20 @@ class WP_MCP_AI_Tool_Get_Customer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Retrieve a single customer record by ID with full contact details, billing data, and source attribution.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching one known customer_id with full contact details, billing data, and source attribution.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Browsing or searching without a known ID; use list_customers with action=search.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_customers', 'update_customer' ),
+			'notes'           => __( 'Read-only; returns the mcp_ai_customer post fields plus the contact owner display name.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

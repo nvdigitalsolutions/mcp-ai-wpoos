@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Batch enrollment of multiple students in an ECA.
  */
-class WP_MCP_AI_Tool_Bulk_Enroll_Students implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Bulk_Enroll_Students implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,18 @@ class WP_MCP_AI_Tool_Bulk_Enroll_Students implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Batch enrollment of multiple students in an ECA.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Enrolling many students in one ECA in a single call, such as an intake list or year group signup.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Single enrollments or withdrawals; use enroll_student_eca or withdraw_student_eca instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_ecas', 'list_students', 'enroll_student_eca', 'manage_eca_waitlist' ),
+			'notes'           => __( 'Look up eca_id and student_id with list_ecas and list_students first; full ECAs waitlist overflow unless skip_capacity_check is set.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

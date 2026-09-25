@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Export architectural documents.
  */
-class WP_MCP_AI_Tool_Export_Architectural_Documents implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Export_Architectural_Documents implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -72,6 +72,20 @@ class WP_MCP_AI_Tool_Export_Architectural_Documents implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Export floor plans and models to various CAD and BIM formats including PDF, DWG, DXF, IFC, and Revit.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Converting document data (floor plans, models, drawings) into CAD or BIM formats: pdf, dwg, dxf, ifc, revit, or sketchup.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For creating new drawings or schedules - use generate_construction_drawings, generate_detail_drawings, or generate_material_schedule.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_construction_drawings', 'generate_detail_drawings' ),
+			'notes'           => __( 'units accepts imperial or metric; layer_organization takes by_type, by_floor, or by_discipline.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

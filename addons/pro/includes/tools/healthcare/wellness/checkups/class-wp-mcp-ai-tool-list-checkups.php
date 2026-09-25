@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * List checkups/appointments.
  */
-class WP_MCP_AI_Tool_List_Checkups implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Checkups implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -35,6 +35,20 @@ class WP_MCP_AI_Tool_List_Checkups implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_description() {
 		return __( 'Lists checkups and appointments with optional filtering by member and status.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Listing checkups and appointments with optional member_id and status filters.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Upcoming visits only; use get_upcoming_checkups. One record; use get_checkup.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_checkup', 'get_upcoming_checkups' ),
+			'notes'           => __( 'status filter accepts scheduled, completed, cancelled, no-show; sorted by datetime ascending.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

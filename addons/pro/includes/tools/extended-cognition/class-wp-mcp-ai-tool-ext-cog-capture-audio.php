@@ -22,7 +22,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-ext-cog-sensor-access.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Ext_Cog_Capture_Audio implements WP_MCP_AI_Ext_Cog_Tool_Interface {
+class WP_MCP_AI_Tool_Ext_Cog_Capture_Audio implements WP_MCP_AI_Ext_Cog_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Ext_Cog_Sensor_Access;
 
@@ -51,6 +51,20 @@ class WP_MCP_AI_Tool_Ext_Cog_Capture_Audio implements WP_MCP_AI_Ext_Cog_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Record audio from the user\'s microphone for transcription and ambient sound classification.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Capturing a microphone recording for speech transcription or ambient sound classification.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Visual or motion input; use ext_cog_capture_visual, ext_cog_capture_screen, or ext_cog_get_motion_context.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'ext_cog_analyze_sensory_input', 'ext_cog_manage_sensor_permissions' ),
+			'notes'           => __( 'Requires HTTPS, an active session, and the microphone sensor enabled; capture is rate-limited.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

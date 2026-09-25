@@ -24,7 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const DEFAULT_MODEL = 'omni-moderation-latest';
@@ -48,6 +48,18 @@ class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Analyzes text or images for potentially harmful content using OpenAI Moderation API. Checks for violations across multiple categories including sexual content, hate speech, harassment, self-harm, and violence.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to screen text or images for harmful content categories before publishing or replying.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Use moderate_comments to review WordPress comments; this tool does not act on posts.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'moderate_comments', 'check_site_security', 'user_activity_auditor' ),
+			'notes'           => __( 'Uses the OpenAI Moderation API and requires an OpenAI key. Models: omni-moderation-latest or text-moderation-latest.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

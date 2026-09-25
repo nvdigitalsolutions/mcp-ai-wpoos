@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Amortization_Scheduler implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Amortization_Scheduler implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_Amortization_Scheduler implements WP_MCP_AI_Tool_Interf
 	 */
 	public function get_description(): string {
 		return __( 'Generate a full loan amortization schedule with IO period, P&I amortization, balloon payment, and optional prepayment cost analysis (defeasance or yield maintenance).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating a full loan amortization schedule with IO period, balloon balance, and optional prepayment cost analysis.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sizing a loan against LTV/DSCR constraints; use cre_loan_sizer. Debt yield stress runs; use cre_debt_yield_analyzer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_loan_sizer', 'cre_debt_yield_analyzer', 'cmbs_defeasance_calculator' ),
+			'notes'           => __( 'Set prepayment_type and treasury_rate for defeasance or yield maintenance costs; results are ANALYSIS ONLY.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

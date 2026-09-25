@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides a tool for querying LinkedIn organizational insights.
  */
-class WP_MCP_AI_Pro_Tool_Get_Linkedin_Insights implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Linkedin_Insights implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -58,6 +58,17 @@ class WP_MCP_AI_Pro_Tool_Get_Linkedin_Insights implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_description() {
 		return __( 'Fetches share statistics for a LinkedIn organization using the LinkedIn Marketing API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Fetching share statistics such as impressions, clicks, and engagement for a LinkedIn organization.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Publishing company updates; use post_linkedin_update instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'post_linkedin_update', 'get_cross_platform_analytics', 'competitor_analysis' ),
+		);
 	}
 
 	/**

@@ -27,7 +27,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for sending Apple Messages for Business group messages through an MSP.
  */
-class WP_MCP_AI_Pro_Tool_Send_Apple_Message_Group implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Send_Apple_Message_Group implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Default timeout for MSP API requests (seconds).
@@ -74,6 +74,18 @@ class WP_MCP_AI_Pro_Tool_Send_Apple_Message_Group implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Sends a message to an Apple Messages for Business group conversation or creates a new group conversation with specified participants through an approved MSP.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Sending a message to an Apple Messages for Business group conversation or creating a new group.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'One-to-one conversations; use send_apple_message. Interactive widgets; use send_apple_message_interactive.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_apple_message', 'send_apple_message_interactive', 'get_apple_messages' ),
+			'notes'           => __( 'Group conversations cap at 32 participants and 2000 characters per message.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

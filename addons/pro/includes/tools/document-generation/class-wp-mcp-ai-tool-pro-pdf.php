@@ -36,7 +36,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-html-formatter.php';
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Document_Response;
 	use WP_MCP_AI_Media_Worker_Client;
@@ -74,6 +74,18 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	 */
 	public function get_description() {
 		return __( 'AI-powered PDF document generation. Create professional PDF documents from natural language descriptions. Generate structured documents with sections, headings, tables, and formatting. Supports multi-page documents, custom fonts, colors, and layouts.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Generating a styled, multi-page PDF with AI-written content from a natural-language description or section list.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Combining existing files or extracting text; use merge_pdfs to concatenate, extract_pdf_text to read PDFs, or html_to_pdf to convert HTML.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'pro_word_document', 'pro_excel_document', 'html_to_pdf' ),
+			'notes'           => __( 'Pick the generate operation for freeform content or structure for sectioned documents; rendering needs pdfkit or a Media Worker sidecar.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

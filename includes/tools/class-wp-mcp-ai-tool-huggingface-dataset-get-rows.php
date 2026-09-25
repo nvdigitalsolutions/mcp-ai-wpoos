@@ -20,7 +20,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Rows' ) ) {
 	 *
 	 * @since 1.0.0
 	 */
-	class WP_MCP_AI_Tool_Huggingface_Dataset_Get_Rows implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	class WP_MCP_AI_Tool_Huggingface_Dataset_Get_Rows implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		use WP_MCP_AI_Tool_Chat_Response;
 
@@ -68,6 +68,20 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Rows' ) ) {
 		 */
 		public function get_description() {
 			return __( 'Retrieve rows from a HuggingFace dataset split', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * Get usage guidance for the tool.
+		 *
+		 * @return array
+		 */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Reading pages of raw rows from a dataset split with offset and length.', 'mcp-ai-wpoos' ),
+				'when_not_to_use' => __( 'Conditional filtering or size checks; use huggingface_dataset_filter or huggingface_dataset_get_size.', 'mcp-ai-wpoos' ),
+				'related_tools'   => array( 'huggingface_dataset_filter', 'huggingface_dataset_preview_rows', 'huggingface_dataset_get_size' ),
+				'notes'           => __( 'length is capped at 100 rows; offset is 0-based; split is required.', 'mcp-ai-wpoos' ),
+			);
 		}
 
 		/**

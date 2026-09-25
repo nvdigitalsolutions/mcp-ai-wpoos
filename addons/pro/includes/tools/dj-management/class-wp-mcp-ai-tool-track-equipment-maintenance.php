@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Tracks equipment maintenance schedules and history.
  */
-class WP_MCP_AI_Tool_Track_Equipment_Maintenance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Track_Equipment_Maintenance implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Track_Equipment_Maintenance implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __( 'Records and tracks maintenance activities for DJ equipment. Logs maintenance dates, types, and schedules future maintenance.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Logging maintenance work performed on an equipment item and scheduling its next service date.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reserving gear for events; use reserve_equipment. Stock overview; use equipment_inventory_report.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'reserve_equipment', 'add_equipment_item', 'equipment_inventory_report' ),
+			'notes'           => __( 'State-changing: appends to _maintenance_history meta. Types: cleaning, repair, inspection, calibration, replacement, upgrade.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

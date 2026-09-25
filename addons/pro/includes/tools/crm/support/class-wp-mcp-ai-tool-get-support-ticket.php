@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * {@inheritdoc}
  */
-class WP_MCP_AI_Tool_Get_Support_Ticket implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Support_Ticket implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Envelope;
 
@@ -54,6 +54,20 @@ class WP_MCP_AI_Tool_Get_Support_Ticket implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Retrieve full support ticket details including SLA status, timeline, related records, and resolution data.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Reading one known ticket_id with SLA status, contact, assignee, and resolution data.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Finding tickets by filter or search; use list_support_tickets. Aggregate metrics; use get_ticket_sla_report.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_support_tickets', 'get_ticket_sla_report', 'update_support_ticket' ),
+			'notes'           => __( 'Only meta fields present on the ticket are returned.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

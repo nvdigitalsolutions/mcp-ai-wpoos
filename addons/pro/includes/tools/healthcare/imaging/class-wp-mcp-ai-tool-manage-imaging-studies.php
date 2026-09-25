@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * AI tool for querying and summarizing DICOM imaging study metadata.
  */
-class WP_MCP_AI_Tool_Manage_Imaging_Studies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Manage_Imaging_Studies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -48,6 +48,20 @@ class WP_MCP_AI_Tool_Manage_Imaging_Studies implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Lists, retrieves, and summarizes DICOM medical imaging study metadata. Supports PET/CT, MR, and other modalities. Use action "list" to browse studies, "get" to fetch a specific study by UID, "summarize" to produce a plain-English study overview, or "audit" to view recent access events.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Browsing, fetching, or summarising local DICOM study metadata with actions list, get, summarize, or audit.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'AI-assisted reading; use interpret_imaging_study. Moving studies; use import_dicom_study or export_dicom_study.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'interpret_imaging_study', 'import_dicom_study', 'compare_imaging_studies' ),
+			'notes'           => __( 'Metadata only; never exposes pixel data or PHI. The audit action requires the manage_medical_imaging capability.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

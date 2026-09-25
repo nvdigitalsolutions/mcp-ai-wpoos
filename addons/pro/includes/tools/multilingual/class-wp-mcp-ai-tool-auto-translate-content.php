@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_MCP_AI_Tool_Auto_Translate_Content tool.
  */
-class WP_MCP_AI_Tool_Auto_Translate_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Auto_Translate_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if tool is available.
@@ -74,6 +74,20 @@ class WP_MCP_AI_Tool_Auto_Translate_Content implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'AI-powered translation of posts and pages. Supports multiple languages with context-aware translation.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Translating a post or page into another language and saving the result as a new draft.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Bulk product catalogs; use translate_woocommerce_products for WooCommerce products instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'detect_content_language', 'translate_woocommerce_products', 'translation_quality_check' ),
+			'notes'           => __( 'Creates a draft duplicate by default; set create_duplicate=false to overwrite the original. Uses OpenAI when configured.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

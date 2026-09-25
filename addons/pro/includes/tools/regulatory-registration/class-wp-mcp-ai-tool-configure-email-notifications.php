@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Configures email notification rules.
  */
-class WP_MCP_AI_Tool_Configure_Email_Notifications implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Configure_Email_Notifications implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
@@ -40,6 +40,18 @@ class WP_MCP_AI_Tool_Configure_Email_Notifications implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_description() {
 		return __( 'Configures automated email notification rules for registration events, expiry alerts, and status changes with recipient management.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Enabling, disabling, or changing recipients and trigger conditions for automated registration emails.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Sending a one-off email or reviewing what was already sent; use send_status_change_notification or get_notification_history.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_notification_history', 'send_status_change_notification', 'send_expiry_alerts' ),
+			'notes'           => __( 'Requires manage_options; choose notification_type from expiry_alert, status_change, submission_confirmation, or approval_notice.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

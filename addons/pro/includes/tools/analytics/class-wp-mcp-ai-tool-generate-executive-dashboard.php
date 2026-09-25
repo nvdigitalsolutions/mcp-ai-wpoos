@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Generate_Executive_Dashboard implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Executive_Dashboard implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -95,6 +95,20 @@ class WP_MCP_AI_Tool_Generate_Executive_Dashboard implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description() {
 		return __( 'Generate CEO-level analytics dashboard with key business metrics, revenue trends, customer insights, and strategic recommendations for executive decision-making.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Producing a high-level business snapshot with trends, forecasts, alerts, and strategic recommendations for leadership.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Focused single-topic investigations; use funnel_analysis, cohort_analysis, or churn_prediction instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_custom_report', 'revenue_forecast', 'export_analytics_api' ),
+			'notes'           => __( 'Period defaults to monthly with previous-period comparison; executive_summary_only=true returns a condensed summary.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

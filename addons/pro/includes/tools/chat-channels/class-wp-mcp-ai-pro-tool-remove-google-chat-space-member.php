@@ -19,7 +19,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-pro-google-service-account.php';
 /**
  * Provides a tool for removing a member from a Google Chat space via the Google Chat API.
  */
-class WP_MCP_AI_Pro_Tool_Remove_Google_Chat_Space_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Remove_Google_Chat_Space_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Google Chat requests.
 	 */
@@ -60,6 +60,18 @@ class WP_MCP_AI_Pro_Tool_Remove_Google_Chat_Space_Member implements WP_MCP_AI_To
 	 */
 	public function get_description() {
 		return __( 'Removes a member from a Google Chat space using the Google Chat API v1.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Removing a member from a Google Chat space by membership resource name.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Adding a member; use add_google_chat_space_member. Listing members; use list_google_chat_space_members.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'add_google_chat_space_member', 'list_google_chat_space_members', 'send_google_chat_message' ),
+			'notes'           => __( 'Membership must use the spaces/SPACE_ID/members/MEMBER_ID format.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

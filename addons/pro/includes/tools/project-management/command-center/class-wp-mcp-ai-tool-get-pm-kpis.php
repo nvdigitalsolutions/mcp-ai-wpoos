@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Returns PM KPIs for the command center dashboard.
  */
-class WP_MCP_AI_Tool_Get_PM_KPIs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_PM_KPIs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -39,6 +39,20 @@ class WP_MCP_AI_Tool_Get_PM_KPIs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_description() {
 		return __( 'Returns key performance indicators for the project portfolio: active projects, open tasks, upcoming events (next 7 days), overdue tasks, blocked tasks, portfolio health score and breakdown, and tasks completed this week.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Assembling a command-center dashboard with portfolio counts and the health score in one call.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Deep dives into a single metric; use dedicated analytics tools such as get_portfolio_health.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_portfolio_health', 'get_upcoming_deadlines', 'get_project_pipeline' ),
+			'notes'           => __( 'Requires no arguments; upcoming events count is based on the next 7 days.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

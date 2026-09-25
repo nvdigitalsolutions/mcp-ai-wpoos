@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Schedule_Follow_Up implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Schedule_Follow_Up implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if the tool is available.
@@ -61,6 +61,20 @@ class WP_MCP_AI_Tool_Schedule_Follow_Up implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_description() {
 		return __( 'Create a follow-up task for a lead at +N business days from now.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a follow-up task for a lead due in N business days, with optional notes and assignee.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Recording a completed call; use log_call_outcome. Creating non-CRM tasks; use create_crm_activity.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'log_call_outcome', 'create_crm_activity', 'get_crm_activity' ),
+			'notes'           => __( 'days is clamped to 1-30; without assigned_to the lead contact_owner is assigned.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

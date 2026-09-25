@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Create_App_Backup' ) ) {
 	/**
 	 * {@inheritdoc}
 	 */
-	class WP_MCP_AI_Tool_Cloudways_Create_App_Backup extends WP_MCP_AI_Tool_Cloudways_Base {
+	class WP_MCP_AI_Tool_Cloudways_Create_App_Backup extends WP_MCP_AI_Tool_Cloudways_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 		/** {@inheritdoc} */
 
@@ -38,6 +38,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Create_App_Backup' ) ) {
 		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Create a backup of an application.', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
+		public function get_usage_guidance() {
+			return array(
+				'when_to_use'     => __( 'Taking an on-demand app backup before deployments, restores, or other risky changes.', 'mcp-ai-wpoos-pro' ),
+				'when_not_to_use' => __( 'Restoring a backup; use cloudways_app_restore after the backup completes.', 'mcp-ai-wpoos-pro' ),
+				'related_tools'   => array( 'cloudways_app_restore', 'cloudways_app_restore_rollback', 'cloudways_get_operation_status' ),
+				'notes'           => __( 'Backups run asynchronously; poll cloudways_get_operation_status to confirm completion.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		/** {@inheritdoc} */

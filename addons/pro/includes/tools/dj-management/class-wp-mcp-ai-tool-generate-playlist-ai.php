@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * AI-generates playlists by mood and genre.
  */
-class WP_MCP_AI_Tool_Generate_Playlist_AI implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Playlist_AI implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -39,6 +39,18 @@ class WP_MCP_AI_Tool_Generate_Playlist_AI implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'AI-generates a playlist based on mood, genre, energy level, and event type. Intelligently selects tracks from the music library.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Auto-building a playlist from the music library by mood, genre, energy, BPM range, and target duration.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Using a specific hand-picked track list; use create_playlist. Scheduling rotation of an existing playlist; use update_playlist_rotation.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_playlist', 'update_playlist_rotation', 'manage_music_library', 'get_trending_tracks' ),
+			'notes'           => __( 'Selection is randomized from matching library tracks and stops once the target duration is reached.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

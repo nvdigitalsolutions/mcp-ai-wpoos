@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -73,6 +73,20 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Retrieves the top-N most-relevant memories for an agent and returns them as a compact, labeled text block ready to prepend to the system prompt at session boot. Optionally scoped to a wing/room. Honours a token budget so it never blows past TPM limits.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Preloading the top-N most relevant memories at session start as a compact block for the system prompt.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'On-demand memory lookups; use retrieve_agent_memory for query-time retrieval and store_agent_context to persist memories.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'retrieve_agent_memory', 'store_agent_context', 'memory_audit_trail' ),
+			'notes'           => __( 'Honours wing/room filters and an 800-token default budget; truncation is reported in the response.', 'mcp-ai-wpoos' ),
+		);
 	}
 
 	/**

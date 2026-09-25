@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Leverage_Return_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Leverage_Return_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_Leverage_Return_Analyzer implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_description(): string {
 		return __( 'Compare leveraged vs unleveraged investment returns. Takes purchase price, NOI, exit NOI/cap rate, hold years, and loan terms. Returns leveraged and unleveraged IRR, equity multiple, and year-by-year cash-on-cash returns.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Comparing leveraged vs unleveraged IRR, equity multiple, and cash-on-cash returns for an acquisition hold.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Valuing the property itself; use cre_dcf_modeler or cre_property_valuation_engine.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_dcf_modeler', 'cre_loan_sizer', 'cre_amortization_scheduler' ),
+			'notes'           => __( 'Requires purchase price, NOI, exit NOI/cap rate, hold years, and loan terms; equity must be positive.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

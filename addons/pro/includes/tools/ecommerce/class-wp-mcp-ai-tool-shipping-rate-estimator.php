@@ -33,7 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -105,6 +105,20 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_description() {
 		return __( 'Estimate shipping rates by packing items into optimal boxes and rate-shopping across carriers via ShipStation API (formerly ShipEngine) or legacy ShipStation V1 API. Supports USPS Priority Mail cubic and flat-rate pricing. Provide items with dimensions and a destination address to get per-package rate estimates with packing plans. ShipStation API is the recommended default.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for tool selection.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Rate-shopping carrier prices for packed items or an order via ShipStation or ShipEngine.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Box planning only; use shipping_box_packer when a packing plan without prices is enough.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'shipping_box_packer', 'woo_orders', 'woo_products' ),
+			'notes'           => __( 'Calls external carrier APIs with connection credentials; results are estimates.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

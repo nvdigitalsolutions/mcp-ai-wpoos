@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.ph
 /**
  * Compress images with quality preservation.
  */
-class WP_MCP_AI_Tool_Compress_Image extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Compress_Image extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -44,6 +44,18 @@ class WP_MCP_AI_Tool_Compress_Image extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	public function get_description() {
 		return __( 'Compress images while preserving quality. Reduces file size significantly with minimal visual degradation.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to shrink a single image\'s file size with a chosen quality (1-100) and optional max_size_kb target while preserving visual quality.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Use optimize_image_sharp for Sharp-powered work, optimize_for_web for a web-ready pipeline, or optimise_images_batch for bulk jobs.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'optimize_image_sharp', 'optimize_for_web', 'optimise_images_batch', 'get_unoptimised_images' ),
+			'notes'           => __( 'For WebP/AVIF conversion with compression, combine with convert_image_format or use optimize_for_web.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

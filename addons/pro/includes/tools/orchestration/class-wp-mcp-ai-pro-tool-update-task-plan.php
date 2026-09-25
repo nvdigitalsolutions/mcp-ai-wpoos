@@ -91,6 +91,20 @@ class WP_MCP_AI_Pro_Tool_Update_Task_Plan {
 	}
 
 	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Marking tasks complete or adding new tasks to an existing plan during autonomous workflows.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Reading plan progress; use get_task_plan. New plans come from create_task_plan or instantiate_template.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_task_plan', 'create_task_plan', 'manage_autonomous_session' ),
+			'notes'           => __( 'task_index is zero-based; new_tasks accepts priority values high, medium, or low.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Execute the tool
 	 *
 	 * @param array $arguments Tool arguments.

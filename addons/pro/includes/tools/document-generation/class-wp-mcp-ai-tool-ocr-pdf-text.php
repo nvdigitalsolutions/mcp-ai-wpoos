@@ -30,7 +30,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-ocr-service
  *
  * @since 1.3.0
  */
-class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -52,6 +52,18 @@ class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_description() {
 		return __( 'Extract text from scanned or image-only PDF documents using OCR (Optical Character Recognition). Supports multiple OCR providers including OpenAI Vision, Google Gemini, Ollama, and Tesseract. Automatically detects if PDF needs OCR and applies image preprocessing for better accuracy.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Extracting text from a single scanned or image-only PDF using cloud vision providers or local Tesseract.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Batch, long-document, or structured output; use pro_document_ocr for rich formats, pro_unlimited_ocr for long PDFs, pro_batch_ocr for queued bulk jobs, or extract_pdf_text for PDFs with a text layer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'pro_document_ocr', 'pro_unlimited_ocr', 'extract_pdf_text' ),
+			'notes'           => __( 'Defaults to 10 pages because OCR is resource-intensive; pass max_pages to raise the cap.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
@@ -130,7 +142,7 @@ class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 You do not have permission to access files. The workflow will continue with other tasks.',
 					'mcp-ai-wpoos-pro'
 				)
-);
+			);
 		}
 
 		// Get PDF file path.
@@ -156,7 +168,7 @@ The PDF file with attachment ID %d could not be found. This may be due to an inc
 						),
 						$attachment_id
 					)
-);
+				);
 			}
 		} elseif ( ! empty( $arguments['url'] ) ) {
 			// Validate the URL to prevent SSRF before downloading.
@@ -173,7 +185,7 @@ Only http and https URLs are supported.
 ✅ The workflow will continue with other tasks.',
 						'mcp-ai-wpoos-pro'
 					)
-);
+				);
 			}
 			$host = wp_parse_url( $url, PHP_URL_HOST );
 			if ( empty( $host ) ) {
@@ -187,7 +199,7 @@ Could not determine host from the provided URL.
 ✅ The workflow will continue with other tasks.',
 						'mcp-ai-wpoos-pro'
 					)
-);
+				);
 			}
 			// Resolve the hostname and reject private / reserved IP ranges (SSRF guard).
 			$resolved_ip = gethostbyname( $host );
@@ -202,7 +214,7 @@ URL hostname could not be resolved.
 ✅ The workflow will continue with other tasks.',
 						'mcp-ai-wpoos-pro'
 					)
-);
+				);
 			}
 			if ( false === filter_var( $resolved_ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
 				return new WP_Error(
@@ -215,7 +227,7 @@ URL resolves to a private or reserved address and cannot be fetched.
 ✅ The workflow will continue with other tasks.',
 						'mcp-ai-wpoos-pro'
 					)
-);
+				);
 			}
 			// Download PDF to a temp file, pinning the TCP connection to the already-resolved.
 			// IP address to prevent DNS-rebinding SSRF (a second gethostbyname() call inside.
@@ -252,7 +264,7 @@ Failed to download PDF from URL: %s
 						),
 						$response->get_error_message()
 					)
-);
+				);
 			}
 
 			$response_code = wp_remote_retrieve_response_code( $response );
@@ -271,7 +283,7 @@ The server returned HTTP %d.
 						),
 						(int) $response_code
 					)
-);
+				);
 			}
 
 			$body = wp_remote_retrieve_body( $response );
@@ -286,7 +298,7 @@ The downloaded file is empty.
 ✅ The workflow will continue with other tasks.',
 						'mcp-ai-wpoos-pro'
 					)
-);
+				);
 			}
 
 			if ( ! function_exists( 'wp_tempnam' ) ) {
@@ -309,7 +321,7 @@ Failed to write downloaded PDF to a temporary file.
 ✅ The workflow will continue with other tasks.',
 						'mcp-ai-wpoos-pro'
 					)
-);
+				);
 			}
 
 			$file_path = $temp_file;
@@ -324,7 +336,7 @@ Either `attachment_id` or `url` parameter is required. Please provide one of the
 ✅ The workflow will continue with other tasks.',
 					'mcp-ai-wpoos-pro'
 				)
-);
+			);
 		}
 
 		// Validate it's a PDF.
@@ -349,7 +361,7 @@ The file is not a valid PDF document (detected type: %s). Please provide a PDF f
 					),
 					$mime_type
 				)
-);
+			);
 		}
 
 		// Prepare OCR options.
@@ -397,7 +409,7 @@ This may be due to:
 						),
 						$text->get_error_message()
 					)
-);
+				);
 			}
 
 			$word_count = str_word_count( $text );
@@ -462,7 +474,7 @@ OCR extraction encountered an unexpected error: %s
 					),
 					$e->getMessage()
 				)
-);
+			);
 		}
 	}
 

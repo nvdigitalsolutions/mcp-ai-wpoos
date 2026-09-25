@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
 
 /** Pipeline View — Kanban-style snapshot grouped by deal stage. */
-class WP_MCP_AI_Tool_Get_Pipeline_View implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Pipeline_View implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Whether this tool is available.
 	 *
@@ -51,6 +51,20 @@ class WP_MCP_AI_Tool_Get_Pipeline_View implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Kanban-style pipeline snapshot grouped by deal stage with weighted amounts.', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Getting a kanban-style snapshot of deals grouped by stage with amounts, probabilities, and weighted totals.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Revenue forecasting over time; use forecast_pipeline_revenue. Compact digest text; use get_pipeline_digest.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'forecast_pipeline_revenue', 'get_pipeline_digest', 'get_conversion_funnel' ),
+			'notes'           => __( 'per_stage caps deals per stage (default 50, max 200); totals include weighted_amount by stage probability.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
 	/**
 	 * Parameters schema.

@@ -21,7 +21,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Rent_Roll_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Rent_Roll_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -60,6 +60,20 @@ class WP_MCP_AI_Tool_CRE_Rent_Roll_Analyzer implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description(): string {
 		return __( 'Analyze a commercial rent roll: weighted average lease term (WALT), tenant income concentration, lease rollover by year, and mark-to-market analysis comparing in-place rents to market rents per SF.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Analyzing WALT, tenant concentration, lease rollover, and mark-to-market from a tenant rent roll.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Valuing the property; use cre_dcf_modeler. NOI waterfall math; use cre_noi_calculator.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_dcf_modeler', 'cre_noi_calculator', 'cre_tenant_credit_analyzer' ),
+			'notes'           => __( 'WALT weights remaining lease term by annual rent; market_rent_per_sf enables mark-to-market rows.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

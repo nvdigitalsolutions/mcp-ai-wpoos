@@ -27,7 +27,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-math-response
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Media_Worker_Client;
 	use WP_MCP_AI_Tool_Math_Response;
 
@@ -50,6 +50,20 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_description() {
 		return __( 'Render LaTeX math equations using KaTeX. Supports both display and inline math modes, complex mathematical notation, and generates SEO-friendly HTML output. Perfect for quiz questions, educational content, and scientific documentation.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Turning LaTeX math into HTML or MathML for posts, quizzes, and educational content.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Computing math results; use calculate_derivative, solve_equation, or matrix_operations.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'calculate_derivative', 'solve_equation' ),
+			'notes'           => __( 'KaTeX-based; output_format html, mathml, or html_and_mathml. display_mode controls inline vs centered.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

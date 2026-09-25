@@ -22,7 +22,7 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_CRE_Property_Budget_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_CRE_Property_Budget_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Performs the operation.
@@ -65,6 +65,20 @@ class WP_MCP_AI_Tool_CRE_Property_Budget_Manager implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description(): string {
 		return __( 'Manage property-level operating budgets with revenue, OpEx, and CapEx tracking. Supports create, update, get, and list actions with variance analysis.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating, updating, or listing property-level operating budgets with revenue, OpEx, and CapEx lines plus actual vs. budget variance.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Multi-year capital reserve planning; use cre_capex_reserve_planner. Period NOI trends; use cre_property_performance_tracker.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'cre_capex_reserve_planner', 'cre_property_performance_tracker' ),
+			'notes'           => __( 'action accepts create, update, get, or list; budget_id is required for update and get. Budgets persist in wp_options.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

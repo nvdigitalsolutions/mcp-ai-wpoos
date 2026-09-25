@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Analyze structural feasibility.
  */
-class WP_MCP_AI_Tool_Analyze_Structural_Feasibility implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Analyze_Structural_Feasibility implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 	/**
@@ -72,6 +72,20 @@ class WP_MCP_AI_Tool_Analyze_Structural_Feasibility implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Perform basic structural analysis and load calculations. Identifies potential structural issues and suggests solutions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'First-pass structural checks on a floor plan: gravity loads, spans, foundation, and lateral loads by construction type.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For building-code verdicts or detailed engineering - use check_building_code_compliance or engage a chartered structural engineer.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'check_building_code_compliance', 'estimate_construction_cost' ),
+			'notes'           => __( 'construction_type accepts wood_frame, steel, concrete, masonry; analysis_type accepts gravity_loads, lateral_loads, foundation, spans.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Create controlled document tool.
  */
-class WP_MCP_AI_Tool_QMS_Create_Controlled_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_QMS_Create_Controlled_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Get the tool slug.
@@ -45,6 +45,20 @@ class WP_MCP_AI_Tool_QMS_Create_Controlled_Document implements WP_MCP_AI_Tool_In
 	 */
 	public function get_description() {
 		return __( 'Create a new controlled-document record under ISO 9001 Clause 7.5 (Documented Information). Provide a stable document_id (e.g. SOP-001), revision (e.g. 1.0), title, content, document type, owner, reviewers, approvers, retention years, and disposition. The new record starts in `draft` state.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Registering a new ISO 9001 controlled document with document_id, revision, owner, reviewers, and approvers before review starts.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Advancing an existing record or reading the register; use qms_submit_for_review for the next state and qms_list_controlled_documents to list records.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'qms_submit_for_review', 'qms_list_controlled_documents', 'qms_get_audit_trail' ),
+			'notes'           => __( 'New records start in draft state; pick a stable document_id such as SOP-001 because it appears in audit trails.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 

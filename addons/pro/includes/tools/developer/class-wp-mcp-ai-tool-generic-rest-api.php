@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-mana
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Connect to any REST API with full support for custom endpoints, headers, and authentication. Includes caching, retry logic, health monitoring, and request deduplication.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Calling any REST API through a saved connection with caching, retries, health monitoring, and request deduplication.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'One-off raw requests without a saved connection; use generic_rest.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generic_rest' ),
+			'notes'           => __( 'Call list_connections first to discover connection IDs before test_connection or make_request.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

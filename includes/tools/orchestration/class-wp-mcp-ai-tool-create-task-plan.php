@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Create Task Plan Tool
  */
-class WP_MCP_AI_Tool_Create_Task_Plan implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Create_Task_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
@@ -26,6 +26,16 @@ class WP_MCP_AI_Tool_Create_Task_Plan implements WP_MCP_AI_Tool_Interface {
 	 */
 	public function get_required_capability() {
 		return 'edit_posts';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_data_contract() {
+		return array(
+			'produces' => 'plan_id',
+			'consumes' => null,
+		);
 	}
 
 	/**
@@ -89,6 +99,20 @@ class WP_MCP_AI_Tool_Create_Task_Plan implements WP_MCP_AI_Tool_Interface {
 				'required'   => array( 'plan_name', 'goal', 'tasks' ),
 			),
 			'required_capability' => 'edit_posts',
+		);
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new markdown task plan with prioritized checkbox tasks for autonomous progress tracking.', 'mcp-ai-wpoos' ),
+			'when_not_to_use' => __( 'Changing an existing plan; use update_task_plan. Reading progress; use get_task_plan.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'get_task_plan', 'update_task_plan', 'manage_autonomous_session' ),
+			'notes'           => __( 'Requires plan_name, goal, and tasks; stores in a JetEngine CCT when use_cct_storage is enabled, otherwise the mcp_task_plan CPT.', 'mcp-ai-wpoos' ),
 		);
 	}
 

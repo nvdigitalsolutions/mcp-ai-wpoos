@@ -24,6 +24,10 @@
  * Security:
  *   - Credential hashes (`_wp_mcp_ai_credentials`) are never exported and are
  *     stripped from any import payload (defence in depth).
+ *   - MCP App credentials (the `token` / `oauth_data` fields inside
+ *     `_wp_mcp_ai_mcp_apps`) are redacted from exports and stripped from
+ *     imports by default; on update, stored credentials are preserved for
+ *     matching apps so a redacted bundle cannot blank live connections.
  *   - The meta denylist is filterable via `wp_mcp_ai_assistant_export_meta_denylist`.
  *   - Import payloads are validated against a JSON-Schema-style definition
  *     using WordPress' own `rest_validate_value_from_schema()`.
@@ -246,6 +250,13 @@ class WP_MCP_AI_Assistant_Portability {
 			$meta[ $meta_key ] = 1 === count( $meta_values )
 				? maybe_unserialize( $meta_values[0] )
 				: array_map( 'maybe_unserialize', $meta_values );
+
+			// MCP App credentials never leave the site: strip token material
+			// from `_wp_mcp_ai_mcp_apps` while keeping the rest of each app
+			// config so bundles stay round-trip faithful.
+			if ( '_wp_mcp_ai_mcp_apps' === $meta_key ) {
+				$meta[ $meta_key ] = self::prepare_mcp_apps_for_export( $meta[ $meta_key ] );
+			}
 		}
 
 		return $meta;
@@ -680,6 +691,12 @@ class WP_MCP_AI_Assistant_Portability {
 				continue;
 			}
 
+			// MCP App configs get structural sanitization, credential
+			// stripping, and stored-credential preservation on update.
+			if ( '_wp_mcp_ai_mcp_apps' === $meta_key ) {
+				$meta_value = self::prepare_mcp_apps_for_import( $meta_value, $post_id, $updated );
+			}
+
 			update_post_meta( $post_id, $meta_key, self::sanitize_meta_value( $meta_key, $meta_value ) );
 		}
 
@@ -724,6 +741,214 @@ class WP_MCP_AI_Assistant_Portability {
 			default:
 				return sanitize_text_field( (string) $meta_value );
 		}
+	}
+
+	/**
+	 * Prepare MCP App configs for an export bundle.
+	 *
+	 * Strips the `token` and `oauth_data` credential fields from every app
+	 * entry while keeping the remaining config shape intact. A non-array
+	 * value (a config stored as a string, which the MCP Apps subsystem never
+	 * reads anyway) is replaced with an empty array under redaction so it can
+	 * never leak credentials. Opt out only for explicitly trusted migrations.
+	 *
+	 * @since 1.1.85
+	 *
+	 * @param mixed $apps Raw `_wp_mcp_ai_mcp_apps` value.
+	 * @return mixed Credential-redacted value (array, or the original value
+	 *               when redaction is disabled).
+	 */
+	public static function prepare_mcp_apps_for_export( $apps ) {
+		/**
+		 * Filter whether MCP App credentials are redacted from export bundles.
+		 *
+		 * @since 1.1.85
+		 *
+		 * @param bool $redact Whether to strip `token` / `oauth_data` from
+		 *                     `_wp_mcp_ai_mcp_apps` entries. Default true.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_assistant_export_redact_mcp_app_tokens', true ) ) {
+			return $apps;
+		}
+
+		return self::redact_mcp_app_credentials( is_array( $apps ) ? $apps : array() );
+	}
+
+	/**
+	 * Strip credential fields from MCP App config entries.
+	 *
+	 * Shared by the export and import paths. Removes `token` and `oauth_data`
+	 * (OAuth access/refresh material) from each entry; every identity and
+	 * behaviour field (`label`, `server_url`, `auth_type`, `header_name`,
+	 * `enabled`, `timeout`, `verify_ssl`) survives. A missing `token` is
+	 * equivalent to an empty credential throughout the MCP Apps subsystem —
+	 * the metabox treats a blank token as "preserve the stored value".
+	 *
+	 * @since 1.1.85
+	 *
+	 * @param array $apps MCP App config array.
+	 * @return array Config array with credential fields removed.
+	 */
+	public static function redact_mcp_app_credentials( array $apps ) {
+		foreach ( $apps as $index => $app ) {
+			if ( ! is_array( $app ) ) {
+				continue;
+			}
+
+			unset( $apps[ $index ]['token'], $apps[ $index ]['oauth_data'] );
+		}
+
+		return $apps;
+	}
+
+	/**
+	 * Prepare imported MCP App configs for storage.
+	 *
+	 * Three layers:
+	 *
+	 * 1. **Structural sanitization** of each entry (mirrors the Pro registry's
+	 *    `sanitize_app_config()` without the Pro class dependency — the base
+	 *    engine must stay standalone).
+	 * 2. **Credential stripping** — `token` / `oauth_data` never arrive via an
+	 *    import payload, the same rule as `_wp_mcp_ai_credentials` (defence in
+	 *    depth). Opt out with the import redaction filter.
+	 * 3. **Update preservation** — overwriting an assistant with a redacted
+	 *    bundle must not blank its live connections, so stored credentials are
+	 *    restored for matching apps (identity: `server_url` + `auth_type` +
+	 *    `header_name`, falling back to the positional index), mirroring the
+	 *    MCP Apps metabox save behaviour.
+	 *
+	 * @since 1.1.85
+	 *
+	 * @param mixed $mcp_apps Raw `_wp_mcp_ai_mcp_apps` value from the payload.
+	 * @param int   $post_id  Target assistant post ID.
+	 * @param bool  $updated  Whether the post already existed.
+	 * @return array Sanitized, credential-stripped config array.
+	 */
+	protected static function prepare_mcp_apps_for_import( $mcp_apps, $post_id, $updated ) {
+		$apps = is_array( $mcp_apps ) ? array_values( $mcp_apps ) : array();
+
+		foreach ( $apps as $index => $app ) {
+			if ( ! is_array( $app ) ) {
+				unset( $apps[ $index ] );
+				continue;
+			}
+
+			$auth_type = isset( $app['auth_type'] ) && in_array( $app['auth_type'], array( 'none', 'bearer', 'basic', 'header', 'oauth' ), true )
+				? $app['auth_type']
+				: 'none';
+
+			$apps[ $index ] = array(
+				'label'          => isset( $app['label'] ) ? sanitize_text_field( $app['label'] ) : '',
+				'server_url'     => isset( $app['server_url'] ) ? esc_url_raw( $app['server_url'] ) : '',
+				'auth_type'      => $auth_type,
+				'token'          => isset( $app['token'] ) ? sanitize_text_field( $app['token'] ) : '',
+				'header_name'    => isset( $app['header_name'] ) ? sanitize_text_field( $app['header_name'] ) : '',
+				'connection_ref' => isset( $app['connection_ref'] ) ? sanitize_key( $app['connection_ref'] ) : '',
+				'enabled'        => isset( $app['enabled'] ) ? (bool) $app['enabled'] : true,
+				'timeout'        => isset( $app['timeout'] ) ? max( 1, min( 120, absint( $app['timeout'] ) ) ) : 30,
+				'verify_ssl'     => isset( $app['verify_ssl'] ) ? (bool) $app['verify_ssl'] : true,
+			);
+
+			// OAuth token data rides along only for OAuth apps.
+			if ( 'oauth' === $auth_type && ! empty( $app['oauth_data'] ) && is_array( $app['oauth_data'] ) ) {
+				$apps[ $index ]['oauth_data'] = array(
+					'access_token'  => isset( $app['oauth_data']['access_token'] ) ? sanitize_text_field( $app['oauth_data']['access_token'] ) : '',
+					'refresh_token' => isset( $app['oauth_data']['refresh_token'] ) ? sanitize_text_field( $app['oauth_data']['refresh_token'] ) : '',
+					'token_type'    => isset( $app['oauth_data']['token_type'] ) ? sanitize_text_field( $app['oauth_data']['token_type'] ) : 'Bearer',
+					'expires_in'    => isset( $app['oauth_data']['expires_in'] ) ? absint( $app['oauth_data']['expires_in'] ) : 3600,
+					'scope'         => isset( $app['oauth_data']['scope'] ) ? sanitize_text_field( $app['oauth_data']['scope'] ) : '',
+					'issued_at'     => isset( $app['oauth_data']['issued_at'] ) ? absint( $app['oauth_data']['issued_at'] ) : time(),
+				);
+			}
+
+			// Entries without a usable endpoint are dropped, matching the Pro
+			// registry's save behaviour — unless they carry a global connection
+			// reference (the URL is resolved at chat time).
+			if ( '' === $apps[ $index ]['server_url'] && '' === $apps[ $index ]['connection_ref'] ) {
+				unset( $apps[ $index ] );
+			}
+		}
+
+		$apps = array_values( $apps );
+
+		/**
+		 * Filter whether MCP App credentials are stripped from import payloads.
+		 *
+		 * Disable only when migrating credentials between explicitly trusted
+		 * deployments.
+		 *
+		 * @since 1.1.85
+		 *
+		 * @param bool $strip Whether to strip `token` / `oauth_data` from
+		 *                    incoming `_wp_mcp_ai_mcp_apps` entries. Default true.
+		 */
+		if ( apply_filters( 'wp_mcp_ai_assistant_import_redact_mcp_app_tokens', true ) ) {
+			$apps = self::redact_mcp_app_credentials( $apps );
+		}
+
+		// On update, restore stored credentials for matching apps so a
+		// redacted bundle cannot blank live connections.
+		if ( $updated && $post_id ) {
+			$existing = get_post_meta( $post_id, '_wp_mcp_ai_mcp_apps', true );
+			$existing = is_array( $existing ) ? array_values( $existing ) : array();
+
+			foreach ( $apps as $index => $app ) {
+				if ( ! is_array( $app ) || 'none' === $app['auth_type'] ) {
+					continue;
+				}
+
+				$stored = self::find_stored_mcp_app( $app, $existing, $index );
+				if ( null === $stored ) {
+					continue;
+				}
+
+				if ( empty( $app['token'] ) && ! empty( $stored['token'] ) ) {
+					$apps[ $index ]['token'] = $stored['token'];
+				}
+				if ( empty( $app['oauth_data'] ) && ! empty( $stored['oauth_data'] ) ) {
+					$apps[ $index ]['oauth_data'] = $stored['oauth_data'];
+				}
+			}
+		}
+
+		return $apps;
+	}
+
+	/**
+	 * Locate the stored MCP App matching an incoming entry.
+	 *
+	 * Matches on the connection identity (`server_url` + `auth_type` +
+	 * `header_name` — the same triple the registry uses for status snapshots)
+	 * and falls back to the positional index for reordered bundles.
+	 *
+	 * @since 1.1.85
+	 *
+	 * @param array $app           Incoming sanitized app entry.
+	 * @param array $existing_apps Stored app configs.
+	 * @param int   $index         Position of the incoming entry.
+	 * @return array|null Matching stored entry or null.
+	 */
+	protected static function find_stored_mcp_app( $app, $existing_apps, $index ) {
+		if ( ! empty( $app['server_url'] ) ) {
+			foreach ( $existing_apps as $stored ) {
+				if ( ! is_array( $stored ) ) {
+					continue;
+				}
+
+				if (
+					isset( $stored['server_url'] ) && $stored['server_url'] === $app['server_url'] &&
+					( isset( $stored['auth_type'] ) ? $stored['auth_type'] : 'none' ) === $app['auth_type'] &&
+					( isset( $stored['header_name'] ) ? $stored['header_name'] : '' ) === $app['header_name']
+				) {
+					return $stored;
+				}
+			}
+		}
+
+		return isset( $existing_apps[ $index ] ) && is_array( $existing_apps[ $index ] )
+			? $existing_apps[ $index ]
+			: null;
 	}
 
 	/**

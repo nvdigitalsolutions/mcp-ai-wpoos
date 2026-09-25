@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Upsell_Recommendations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Upsell_Recommendations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -103,6 +103,19 @@ class WP_MCP_AI_Tool_Upsell_Recommendations implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'AI-powered product recommendation engine. Generates personalized upsell and cross-sell suggestions based on purchase history, cart contents, product relationships, and customer behavior patterns.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for tool selection.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Suggesting upsell or cross-sell products from product, customer, or cart context.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Campaigns or discounts; use create_discount_campaign to turn suggestions into offers.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'create_discount_campaign', 'woo_products', 'segment_customers' ),
+		);
 	}
 
 	/**

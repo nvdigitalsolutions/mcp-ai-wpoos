@@ -35,7 +35,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 *
 	 * @var array<string>
 	 */
-	const AUTH_TYPES = array( 'application_password', 'basic_auth', 'jwt', 'woocommerce', 'custom_header', 'none' );
+	const AUTH_TYPES = array( 'application_password', 'basic_auth', 'jwt', 'woocommerce', 'custom_header', 'bearer', 'oauth', 'none' );
 
 	/**
 	 * Fields within a connection array that contain secrets.
@@ -66,6 +66,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		'signing_secret',
 		'public_key',
 		'encryption_key',
+		'mcp_oauth',
 	);
 
 	/**
@@ -238,6 +239,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['token'] = $existing_connection['token'];
 				// Mark as already encrypted only if it actually is.
 				$connection_data['_token_encrypted'] = self::is_value_encrypted( $existing_connection['token'] );
+			}
+
+			// Preserve existing MCP OAuth blob when the (masked) field is omitted.
+			if ( empty( $connection_data['mcp_oauth'] ) && ! empty( $existing_connection['mcp_oauth'] ) ) {
+				$connection_data['mcp_oauth']            = $existing_connection['mcp_oauth'];
+				$connection_data['_mcp_oauth_encrypted'] = self::is_value_encrypted( $existing_connection['mcp_oauth'] );
 			}
 
 			// Preserve existing consumer_key if not provided.
@@ -795,6 +802,17 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'custom_post_types'              => isset( $connection_data['custom_post_types'] ) ? sanitize_text_field( $connection_data['custom_post_types'] ) : '',
 			// JetEngine CCT granular access controls.
 			'jetengine_cct_access'           => self::sanitize_access_controls( isset( $connection_data['jetengine_cct_access'] ) ? $connection_data['jetengine_cct_access'] : array() ),
+			// MCP Server connection fields (Elementor MCP, WordPress MCP Adapter,
+			// or any JSON-RPC 2.0 Streamable HTTP MCP endpoint).
+			'mcp_header_name'                => isset( $connection_data['mcp_header_name'] ) ? sanitize_text_field( $connection_data['mcp_header_name'] ) : '',
+			'mcp_verify_ssl'                 => array_key_exists( 'mcp_verify_ssl', $connection_data ) ? (bool) $connection_data['mcp_verify_ssl'] : true,
+			'mcp_timeout'                    => isset( $connection_data['mcp_timeout'] ) ? max( 5, min( 120, absint( $connection_data['mcp_timeout'] ) ) ) : 30,
+			'mcp_oauth'                      => isset( $connection_data['mcp_oauth'] ) ? $connection_data['mcp_oauth'] : '',
+			'mcp_protocol_version'           => isset( $connection_data['mcp_protocol_version'] ) ? sanitize_text_field( $connection_data['mcp_protocol_version'] ) : '',
+			'mcp_server_name'                => isset( $connection_data['mcp_server_name'] ) ? sanitize_text_field( $connection_data['mcp_server_name'] ) : '',
+			'mcp_tool_count'                 => isset( $connection_data['mcp_tool_count'] ) ? absint( $connection_data['mcp_tool_count'] ) : 0,
+			'mcp_discovered_at'              => isset( $connection_data['mcp_discovered_at'] ) ? absint( $connection_data['mcp_discovered_at'] ) : 0,
+			'mcp_last_test'                  => isset( $connection_data['mcp_last_test'] ) && is_array( $connection_data['mcp_last_test'] ) ? $connection_data['mcp_last_test'] : array(),
 		);
 
 		// Encrypt sensitive data (only if not already encrypted).
@@ -848,6 +866,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		if ( ! empty( $connection['webhook_secret'] ) && empty( $connection_data['_webhook_secret_encrypted'] ) ) {
 			$connection['webhook_secret'] = self::encrypt_value( $connection['webhook_secret'] );
+		}
+
+		// MCP OAuth token blob (access/refresh material) is a secret like any other.
+		if ( ! empty( $connection['mcp_oauth'] ) && empty( $connection_data['_mcp_oauth_encrypted'] ) ) {
+			$connection['mcp_oauth'] = self::encrypt_value( $connection['mcp_oauth'] );
 		}
 
 		$connections[ $connection_id ] = $connection;
@@ -1236,6 +1259,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return self::test_composio_connection( $connection );
 		}
 
+		// Handle MCP Server connections separately — a real JSON-RPC handshake
+		// (Elementor MCP, WordPress MCP Adapter, or any Streamable HTTP MCP endpoint).
+		if ( 'mcp_server' === $connection_type ) {
+			return self::test_mcp_server_connection( $connection );
+		}
+
 		// Pre-flight DNS reachability check (non-blocking diagnostic).
 		$parsed_url = wp_parse_url( $connection['url'] );
 		$host       = isset( $parsed_url['host'] ) ? $parsed_url['host'] : '';
@@ -1292,6 +1321,244 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Map a stored MCP Server connection onto an MCP App client config.
+	 *
+	 * Decrypts the stored credential material and translates the remote-sites
+	 * auth vocabulary into the MCP Apps client vocabulary:
+	 *
+	 *   application_password | basic_auth → basic (user:password)
+	 *   custom_header                     → header (header_name + raw token)
+	 *   bearer                            → bearer
+	 *   oauth                             → oauth (with the encrypted blob)
+	 *   none                              → none
+	 *
+	 * @since 1.1.85
+	 *
+	 * @param array $connection Stored connection array.
+	 * @return array MCP App client config.
+	 */
+	public static function build_mcp_app_config_from_connection( $connection ) {
+		$auth_type = isset( $connection['auth_type'] ) ? $connection['auth_type'] : 'none';
+
+		$config = array(
+			'server_url'  => isset( $connection['url'] ) ? $connection['url'] : '',
+			'auth_type'   => 'none',
+			'token'       => '',
+			'header_name' => isset( $connection['mcp_header_name'] ) ? $connection['mcp_header_name'] : '',
+			'verify_ssl'  => array_key_exists( 'mcp_verify_ssl', $connection ) ? (bool) $connection['mcp_verify_ssl'] : true,
+			'timeout'     => ! empty( $connection['mcp_timeout'] ) ? (int) $connection['mcp_timeout'] : 30,
+		);
+
+		switch ( $auth_type ) {
+			case 'application_password':
+			case 'basic_auth':
+				$config['auth_type'] = 'basic';
+				$username            = isset( $connection['username'] ) ? (string) $connection['username'] : '';
+				$password            = isset( $connection['password'] ) ? self::decrypt_value( (string) $connection['password'] ) : '';
+				$config['token']     = $username . ':' . $password;
+				break;
+
+			case 'custom_header':
+				$config['auth_type'] = 'header';
+				$config['token']     = isset( $connection['token'] ) ? self::decrypt_value( (string) $connection['token'] ) : '';
+				break;
+
+			case 'bearer':
+				$config['auth_type'] = 'bearer';
+				$config['token']     = isset( $connection['token'] ) ? self::decrypt_value( (string) $connection['token'] ) : '';
+				break;
+
+			case 'oauth':
+				$config['auth_type'] = 'oauth';
+				$oauth_blob          = isset( $connection['mcp_oauth'] ) ? self::decrypt_value( (string) $connection['mcp_oauth'] ) : '';
+				if ( '' !== $oauth_blob ) {
+					$decoded = json_decode( $oauth_blob, true );
+					if ( is_array( $decoded ) ) {
+						$config['oauth_data'] = $decoded;
+						if ( ! empty( $decoded['access_token'] ) ) {
+							$config['token'] = $decoded['access_token'];
+						}
+					}
+				}
+				break;
+
+			default:
+				break;
+		}
+
+		return $config;
+	}
+
+	/**
+	 * Test an MCP Server connection with a real JSON-RPC handshake.
+	 *
+	 * For OAuth connections without stored tokens yet, returns a
+	 * saved-credentials acknowledgement matching the Gmail/Drive pattern.
+	 *
+	 * @since 1.1.85
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_mcp_server_connection( $connection ) {
+		$config = self::build_mcp_app_config_from_connection( $connection );
+
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
+			$client_file = WP_MCP_AI_PRO_PATH . 'includes/mcp-apps/class-wp-mcp-ai-mcp-app-client.php';
+			if ( file_exists( $client_file ) ) {
+				require_once $client_file;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_mcp_client_missing',
+				__( 'The MCP App client is not available.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( 'oauth' === $config['auth_type'] && empty( $config['token'] ) ) {
+			return array(
+				'success'    => true,
+				'mcp_server' => true,
+				'message'    => __( 'MCP OAuth credentials saved. Complete the OAuth flow via an assistant MCP App connection to finish setup.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		$client = new WP_MCP_AI_MCP_App_Client( $config );
+		$result = $client->test_connection();
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return array(
+			'success'     => true,
+			'mcp_server'  => true,
+			'message'     => __( 'MCP server handshake successful.', 'mcp-ai-wpoos-pro' ),
+			'handshake'   => isset( $result['handshake'] ) ? $result['handshake'] : '',
+			'protocol'    => isset( $result['protocol'] ) ? $result['protocol'] : '',
+			'server_info' => isset( $result['server_info'] ) ? $result['server_info'] : array(),
+			'tool_count'  => isset( $result['tool_count'] ) ? $result['tool_count'] : null,
+			'latency_ms'  => isset( $result['latency_ms'] ) ? $result['latency_ms'] : null,
+		);
+	}
+
+	/**
+	 * Discover tools from an MCP Server connection and persist the snapshot.
+	 *
+	 * Discovery results are transient-cached under a key derived from the
+	 * endpoint identity only (never from credential material). The tool count,
+	 * discovery timestamp, and last-test snapshot are persisted on the
+	 * connection record so the Remote Sites list can render them.
+	 *
+	 * @since 1.1.85
+	 *
+	 * @param array|string $connection Connection data or connection ID.
+	 * @param bool         $refresh    Whether to bypass the discovery cache.
+	 * @return array|WP_Error Tool list or error.
+	 */
+	public static function discover_mcp_server_tools( $connection, $refresh = false ) {
+		if ( is_string( $connection ) ) {
+			$connection = self::get_connection( $connection );
+		}
+
+		if ( ! is_array( $connection ) || empty( $connection['id'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_invalid_connection',
+				__( 'Connection not found.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$config = self::build_mcp_app_config_from_connection( $connection );
+
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
+			$client_file = WP_MCP_AI_PRO_PATH . 'includes/mcp-apps/class-wp-mcp-ai-mcp-app-client.php';
+			if ( file_exists( $client_file ) ) {
+				require_once $client_file;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_mcp_client_missing',
+				__( 'The MCP App client is not available.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$cache_key = 'wp_mcp_ai_mcp_server_tools_' . md5( $config['server_url'] . '|' . $config['auth_type'] . '|' . $config['header_name'] );
+
+		if ( ! $refresh ) {
+			$cached = get_transient( $cache_key );
+			if ( false !== $cached && is_array( $cached ) ) {
+				return $cached;
+			}
+		}
+
+		$client = new WP_MCP_AI_MCP_App_Client( $config );
+		$tools  = $client->list_tools();
+
+		if ( ! is_wp_error( $tools ) ) {
+			set_transient( $cache_key, $tools, 300 );
+		}
+
+		// Persist the snapshot on the stored connection.
+		$connections = self::get_all_connections();
+		if ( isset( $connections[ $connection['id'] ] ) ) {
+			if ( is_wp_error( $tools ) ) {
+				$connections[ $connection['id'] ]['mcp_last_test'] = array(
+					'success' => false,
+					'message' => $tools->get_error_message(),
+					'at'      => time(),
+				);
+			} else {
+				$connections[ $connection['id'] ]['mcp_tool_count']    = count( $tools );
+				$connections[ $connection['id'] ]['mcp_discovered_at'] = time();
+				$connections[ $connection['id'] ]['mcp_last_test']     = array(
+					'success' => true,
+					'message' => '',
+					'at'      => time(),
+				);
+			}
+			update_option( self::OPTION_NAME, $connections );
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_event' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'activity',
+				is_wp_error( $tools ) ? 'MCP Server tool discovery failed' : 'MCP Server tools discovered',
+				array(
+					'connection_id'   => $connection['id'],
+					'connection_type' => 'mcp_server',
+					'url'             => isset( $connection['url'] ) ? $connection['url'] : '',
+					'tool_count'      => is_wp_error( $tools ) ? 0 : count( $tools ),
+				)
+			);
+		}
+
+		return $tools;
+	}
+
+	/**
+	 * List stored MCP Server connections.
+	 *
+	 * @since 1.1.85
+	 *
+	 * @return array<int, array> MCP Server connection arrays.
+	 */
+	public static function get_mcp_server_connections() {
+		$mcp = array();
+
+		foreach ( self::get_all_connections() as $connection ) {
+			if ( is_array( $connection ) && 'mcp_server' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+				$mcp[] = $connection;
+			}
+		}
+
+		return $mcp;
 	}
 
 	/**
@@ -3303,6 +3570,25 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			}
 		}
 
+		// MCP Server auth-specific requirements. The generic basic/application
+		// password check above covers the Elementor MCP application-password
+		// flow; bearer and custom-header MCP auth need their own checks.
+		if ( 'mcp_server' === $connection_type ) {
+			if ( 'custom_header' === $auth_type && ( empty( $connection['mcp_header_name'] ) || empty( $connection['token'] ) ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_mcp_header',
+					__( 'Header name and header value are required for custom header authentication on MCP Server connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			if ( 'bearer' === $auth_type && empty( $connection['token'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_mcp_bearer',
+					__( 'A bearer token is required for bearer authentication on MCP Server connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		}
+
 		// Validate connection type specific requirements.
 		if ( 'ezuite_erp' === $connection_type ) {
 			if ( empty( $connection['api_key'] ) ) {
@@ -3559,6 +3845,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'ezuite_erp',
 			'shipengine',
 			'shipstation',
+			'mcp_server',
 		);
 
 		if ( ! in_array( $connection_type, $enforced_types, true ) ) {

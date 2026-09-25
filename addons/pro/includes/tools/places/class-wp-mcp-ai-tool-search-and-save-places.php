@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Search places via Google Maps API with option to save results.
  */
-class WP_MCP_AI_Tool_Search_And_Save_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Search_And_Save_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -37,6 +37,20 @@ class WP_MCP_AI_Tool_Search_And_Save_Places implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_description() {
 		return __( 'Searches for places using Google Places API and optionally saves the results to the database for future reference. This enhances geospatial capabilities by building a local database of places.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Searching Google Places for new candidates and optionally persisting them into the local database.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Searching only local records; use list_places for the saved directory.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_places', 'create_place', 'research_place' ),
+			'notes'           => __( 'Set save_results=false to preview without writing; skip_existing avoids duplicate records.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

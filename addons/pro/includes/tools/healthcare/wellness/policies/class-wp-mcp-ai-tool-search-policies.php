@@ -23,7 +23,7 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/traits/trait-wp-mcp-ai-relevance-sea
  *
  * @since 2.4.0
  */
-class WP_MCP_AI_Tool_Search_Policies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Search_Policies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_CRM_Relevance_Search;
 
 	/**
@@ -53,6 +53,20 @@ class WP_MCP_AI_Tool_Search_Policies implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_description() {
 		return __( 'Search and research insurance policies with advanced filtering by member, policy type, provider, status, coverage dates, and free-text search with optional TF-IDF relevance ranking. Supports ordering by relevance, title, date, provider, or status.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Researching policies by policy number, name, provider, status, or coverage dates, with optional TF-IDF ranking.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Simple member or type enumeration; use list_policies. One known policy_id; use get_policy.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'list_policies', 'get_policy' ),
+			'notes'           => __( 'active_only=true returns only currently active policies; orderby=relevance needs a search term.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

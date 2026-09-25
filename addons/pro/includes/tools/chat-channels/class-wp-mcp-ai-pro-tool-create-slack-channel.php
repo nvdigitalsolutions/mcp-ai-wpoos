@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for creating Slack channels via the Web API.
  */
-class WP_MCP_AI_Pro_Tool_Create_Slack_Channel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Create_Slack_Channel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
 	 * Default timeout for Slack requests.
 	 */
@@ -54,6 +54,18 @@ class WP_MCP_AI_Pro_Tool_Create_Slack_Channel implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'Creates a new Slack channel (public or private) using the Slack Web API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Creating a new public or private Slack channel with a given name.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Listing channels or posting a message; use get_slack_channels or send_slack_message.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_slack_channels', 'send_slack_message', 'get_slack_messages' ),
+			'notes'           => __( 'The channel is immediately visible in the workspace; the token needs the channels:manage scope.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

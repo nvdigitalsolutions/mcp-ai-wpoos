@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -95,6 +95,20 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_description() {
 		return __( 'Identify customers at risk of churning using behavioral analysis and RFM scoring. Provides risk scores, intervention recommendations, and customer retention strategies.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Ranking customers by churn risk to prioritize retention outreach and intervention recommendations.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Grouping customers into segments for broad messaging; use customer_segmentation_ml instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'customer_segmentation_ml', 'cohort_analysis', 'funnel_analysis' ),
+			'notes'           => __( 'Defaults to a minimum risk score of 50 over a 90-day lookback; results are sorted by highest risk first and capped by limit.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

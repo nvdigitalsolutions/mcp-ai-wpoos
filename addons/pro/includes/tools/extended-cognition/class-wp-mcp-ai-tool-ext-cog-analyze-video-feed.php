@@ -29,7 +29,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-ext-cog-sensor-access.php';
  *
  * @since 1.8.0
  */
-class WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed implements WP_MCP_AI_Ext_Cog_Tool_Interface {
+class WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed implements WP_MCP_AI_Ext_Cog_Tool_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Ext_Cog_Sensor_Access;
 
@@ -80,6 +80,20 @@ class WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed implements WP_MCP_AI_Ext_Cog_Too
 	 */
 	public function get_description() {
 		return __( 'Analyze a video feed (camera stream, uploaded video, or external URL) frame-by-frame to identify products, brands, and objects. Tracks items across frames, counts changes over time, and returns a time-series summary of product appearances. Long videos are dispatched to background processing via Action Scheduler.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Analyzing a video (camera stream, media attachment, or external URL) frame-by-frame for products and brands.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Single-frame recognition; use ext_cog_recognize_products or ext_cog_detect_objects.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'ext_cog_recognize_products', 'ext_cog_detect_objects' ),
+			'notes'           => __( 'Long videos are dispatched to Action Scheduler and return an action_id to poll.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

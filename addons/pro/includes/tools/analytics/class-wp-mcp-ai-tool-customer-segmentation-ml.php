@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * Check if this tool is available.
@@ -93,6 +93,20 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_description() {
 		return __( 'ML-based customer segmentation using clustering algorithms. Identifies distinct customer groups based on RFM analysis, purchase behavior, and engagement patterns.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Clustering customers into distinct segments for profiling, targeting, and campaign planning.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Predicting which individual customers will leave; use churn_prediction instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'churn_prediction', 'cohort_analysis', 'attribution_modeling' ),
+			'notes'           => __( 'Method defaults to rfm with 5 segments over 365 days; min_orders=2 keeps low-activity customers out.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

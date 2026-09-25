@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a Pro tool for applying a comic art style to a panel image.
  */
-class WP_MCP_AI_Tool_Apply_Comic_Style implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Apply_Comic_Style implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -43,6 +43,20 @@ class WP_MCP_AI_Tool_Apply_Comic_Style implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_description() {
 		return __( 'Applies a comic art style preset to an existing panel image. Supports styles like manga, american-comic, noir, silver-age, golden-age, euro-comic, and webtoon. Uses AI style transfer to transform the image. Returns the styled image URL.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Restyling an existing panel image into a preset comic art style such as manga, noir, or webtoon.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'For new artwork use generate_comic_panel; for line cleanup use ink_comic_panel; for color use colorize_comic_panel.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'generate_comic_panel', 'ink_comic_panel', 'colorize_comic_panel' ),
+			'notes'           => __( 'Ten style presets are accepted; unknown styles fall back to american-comic. Stores _applied_style meta.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

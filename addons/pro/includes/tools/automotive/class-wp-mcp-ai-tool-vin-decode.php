@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 2.2.0
  */
-class WP_MCP_AI_Tool_VIN_Decode implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_VIN_Decode implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	use WP_MCP_AI_Tool_Chat_Response;
 
@@ -95,6 +95,20 @@ class WP_MCP_AI_Tool_VIN_Decode implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	public function get_description() {
 		return __( 'Validates and decodes a Vehicle Identification Number (VIN) using the NHTSA vPIC API. Returns year, make, model, trim, body style, engine, and other vehicle details.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get usage guidance for the tool.
+	 *
+	 * @return array
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Validating and decoding a 17-character VIN into year, make, model, trim, engine, and safety-feature data via the NHTSA vPIC API.', 'mcp-ai-wpoos-pro' ),
+			'when_not_to_use' => __( 'Pricing repair damage or detailing work; use vehicle_repair_estimate or vehicle_cleaning_estimate instead.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'vehicle_repair_estimate', 'vehicle_cleaning_estimate' ),
+			'notes'           => __( 'Successful decodes are cached for 24 hours. Pass model_year when the VIN alone is ambiguous.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
