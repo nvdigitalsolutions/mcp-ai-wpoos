@@ -1,7 +1,7 @@
 # Addon Inventory
 
 > **Purpose:** One-stop reference for every addon in this monorepo — its status, version, license, dependencies, and whether it's production-ready.
-> **Last Updated:** September 25, 2026 (v1.1.86)
+> **Last Updated:** September 27, 2026 (v1.1.87 — new `mcp-wordpress-gateway` addon row 29)
 
 ---
 
@@ -76,6 +76,7 @@
 |---|---|---|---|---|---|
 | 27 | **Cloud Worker** | `addons/cloud-worker/` | 🗂️ Reference | Cloudflare Worker | SaaS backend for NV oOS Cloud. Inference proxy, Stripe billing, D1 ledger. Deployed independently on Cloudflare — never runs inside WordPress. Shipped in monorepo for review/reference only. |
 | 28 | **Tenant Router** | `addons/tenant-router/` | 🗂️ Reference | Cloudflare Worker | Edge-level routing worker for Schedule Anything multi-tenant SaaS. Maps subdomain requests to correct WordPress Multisite tenant via Cloudflare KV with REST API fallback. |
+| 29 | **mcp-wordpress Gateway** | `addons/mcp-wordpress-gateway/` | 0.1.0 | ✅ Production | Proprietary (pinned MIT upstream) | None (Node 22, Cloudways Velocity) | Auth-gated Streamable HTTP MCP server on pinned docdyhr/mcp-wordpress internals — no stdio/child processes. Express `/healthz` + `/mcp` with timing-safe `X-MCP-Token` auth (≥32 chars, rotation overlap) and a 1 MB body cap; `MCP_TOOLS_ALLOW`/`MCP_TOOLS_DENY` policy at tool registration (deny wins). Deploys via the media-worker subtree-split pattern to the `nvdigitalsolutions/nvoos-mcp-wordpress` mirror; connects to NV oOS assistants through the Remote Sites → MCP Server connection type. Follow-ups documented: per-IP rate limits, multi-site config, deploy-secret setup. |
 
 ---
 
