@@ -77,6 +77,7 @@ Parameters:
 
 | Provider | Model | Best For | Access |
 |---|---|---|---|
+| **Higgsfield** | Cinema Studio 4.0 | Cinematic text/image-to-video, native audio, granular camera controls | API (`generate_higgsfield_video` MCP tool) |
 | **Runway** | Gen-3 Alpha | Cinematic, high-quality clips | Web + API |
 | **Pika** | Pika 1.0 | Short creative clips, animations | Web |
 | **Replicate** | Stable Video Diffusion | Open-source, self-hostable | API |
@@ -84,6 +85,47 @@ Parameters:
 | **Kling** | Kling 1.5 | Ultra-realistic, long clips | Web (China) |
 
 > AI video generation requires external API keys and is handled through the media worker or direct provider APIs.
+
+### Higgsfield via MCP (built-in tools)
+
+Higgsfield (https://docs.higgsfield.ai) is integrated as a first-class
+provider with four tools sharing one two-part credential:
+
+| Tool | Purpose |
+|---|---|
+| `generate_higgsfield_video` | Text/reference-to-video across 5 verified models (below) |
+| `generate_higgsfield_image` | Styled stills via SOUL workflows (`soul-2`, `soul-cinema`) |
+| `check_higgsfield_request` | Poll any `request_id` (queued/in_progress/completed/failed/nsfw/canceled) |
+| `cancel_higgsfield_request` | Cancel queued work that has not started |
+
+**Video models** (`model` param on `generate_higgsfield_video`):
+`cinema-studio-4.0` (default — camera/genre/era controls), `seedance-2.5`
+(4-30s), `seedance-2.0` (4-15s, up to 4k), `wan-3.0` (2-30s, 1080p,
+adaptive aspect, seed), `kling-3.0` (3-15s, multi-shot, no refs).
+
+- **Auth:** two-part credential — Key ID + Secret → `Authorization: Key {ID}:{SECRET}`.
+  Configure via **NV oOS → Providers → Higgsfield** or the
+  `HIGGSFIELD_API_KEY_ID` / `HIGGSFIELD_API_KEY_SECRET` env vars (a combined
+  `HIGGSFIELD_API_KEY` with `ID:SECRET` also works).
+- **Lifecycle:** async — submit returns a `request_id` + `status_url`; the
+  shared client polls with backoff (2s → 10s) until `completed`, `failed`,
+  `nsfw`, or `canceled`, then downloads and saves to the Media Library.
+  On timeout the `request_id` is returned — poll it with
+  `check_higgsfield_request`.
+- **Params (video):** `prompt`, `model`, `duration`, `resolution`,
+  `aspect_ratio`, `generate_audio`, `camera_movement`, `genre`, `era`,
+  `seed`, `reference_image_id` / `reference_image_url` /
+  `reference_video_url` / `reference_audio_url` (public URLs),
+  `save_to_media`, `async`, `timeout`. Values are clamped per model.
+- **Params (image):** `prompt`, `model`, `aspect_ratio`, `resolution`,
+  `enhance_prompt`, `seed` (1-1000000), `batch_size` (1|4), `style_id`
+  (soul-2 only), `save_to_media`, `async`, `timeout`.
+- **Retention:** Higgsfield keeps outputs ≥7 days — the tools download
+  immediately so nothing is lost.
+- **Cost:** billed per second of video / per image from a prepaid balance;
+  the tools report `cost` with `is_estimated` when local pricing is
+  unavailable.
+- **Status:** poll async jobs with `check_video_status` (supports `async_*` job IDs).
 
 ## Social media video specs
 

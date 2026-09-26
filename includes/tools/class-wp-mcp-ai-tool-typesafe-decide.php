@@ -91,12 +91,14 @@ class WP_MCP_AI_Tool_Typesafe_Decide implements WP_MCP_AI_Tool_Interface, WP_MCP
 							),
 							'instructions' => array(
 								'type'  => array( 'string', 'object', 'array' ),
-								'items' => array( 'type' => array( 'string', 'object', 'array' ) ),
+								// Array form: a list of text chunks or structured EntryType objects.
+								'items' => array( 'type' => array( 'string', 'object' ) ),
 							),
 							'criteria'     => array(
 								'type'  => array( 'object', 'array' ),
-								// Score questions use an ordered array of level descriptions.
-								'items' => array( 'type' => array( 'string', 'object', 'array' ) ),
+								// Score questions use an ordered array of level descriptions
+								// (strings or structured objects).
+								'items' => array( 'type' => array( 'string', 'object' ) ),
 							),
 						),
 						'required'   => array( 'type', 'instructions' ),
@@ -477,6 +479,7 @@ class WP_MCP_AI_Tool_Typesafe_Decide implements WP_MCP_AI_Tool_Interface, WP_MCP
 		);
 
 		if ( false === $json ) {
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize -- Benign fallback: used only to estimate input token count (strlen/4); never stored, transmitted, or unserialized.
 			$json = serialize(
 				array(
 					'state'     => $state,

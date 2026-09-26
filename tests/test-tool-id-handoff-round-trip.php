@@ -141,6 +141,15 @@ class Test_Tool_Id_Handoff_Round_Trip extends WP_UnitTestCase {
 			case 'member_id':
 				$this->run_member_round_trip( $context );
 				break;
+			case 'comment_id':
+				$this->run_comment_round_trip( $context );
+				break;
+			case 'user_id':
+				$this->run_user_round_trip( $context );
+				break;
+			case 'attachment_id':
+				$this->run_attachment_round_trip( $context );
+				break;
 			default:
 				$this->fail( 'No round-trip driver for family: ' . $family_key );
 		}
@@ -680,5 +689,150 @@ class Test_Tool_Id_Handoff_Round_Trip extends WP_UnitTestCase {
 		$this->assert_id_not_found( $missing, 'get_webchat_room', 'room_id' );
 
 		wp_delete_post( $room_id, true );
+	}
+
+	/**
+	 * Comment family: create_comment → get_comment → update_comment → delete_comment.
+	 *
+	 * @param array $context Tool execution context.
+	 */
+	private function run_comment_round_trip( $context ) {
+		$post_id = self::factory()->post->create();
+
+		$create_tool = new WP_MCP_AI_Tool_Create_Comment();
+		$created     = $create_tool->execute(
+			array(
+				'post_id' => $post_id,
+				'content' => 'ID handoff comment.',
+			),
+			$context
+		);
+		$comment_id  = $this->assert_produces_key( $created, 'comment_id', 'create_comment' );
+
+		$get_tool = new WP_MCP_AI_Tool_Get_Comment();
+		$fetched  = $get_tool->execute( array( 'comment_id' => $comment_id ), $context );
+		$this->assert_id_round_trip( $fetched, 'comment_id', $comment_id, 'get_comment' );
+
+		$update_tool = new WP_MCP_AI_Tool_Update_Comment();
+		$updated     = $update_tool->execute(
+			array(
+				'comment_id' => $comment_id,
+				'status'     => 'approve',
+			),
+			$context
+		);
+		$this->assert_id_round_trip( $updated, 'comment_id', $comment_id, 'update_comment' );
+
+		$delete_tool = new WP_MCP_AI_Tool_Delete_Comment();
+		$deleted     = $delete_tool->execute(
+			array(
+				'comment_id' => $comment_id,
+				'force'      => true,
+			),
+			$context
+		);
+		$this->assert_id_round_trip( $deleted, 'comment_id', $comment_id, 'delete_comment' );
+
+		// Negative path: a fabricated ID must fail cleanly.
+		$missing = $get_tool->execute( array( 'comment_id' => PHP_INT_MAX - 1 ), $context );
+		$this->assert_id_not_found( $missing, 'get_comment', 'comment_id' );
+	}
+
+	/**
+	 * User family: create_user → update_user → delete_user.
+	 *
+	 * @param array $context Tool execution context.
+	 */
+	private function run_user_round_trip( $context ) {
+		$create_tool = new WP_MCP_AI_Tool_Create_User();
+		$created     = $create_tool->execute(
+			array(
+				'username' => 'id_handoff_user',
+				'email'    => 'id-handoff@example.com',
+				'password' => 'Handoff-Pass-123!',
+			),
+			$context
+		);
+		$user_id     = $this->assert_produces_key( $created, 'user_id', 'create_user' );
+
+		$update_tool = new WP_MCP_AI_Tool_Update_User();
+		$updated     = $update_tool->execute(
+			array(
+				'user_id'      => $user_id,
+				'display_name' => 'ID Handoff User',
+			),
+			$context
+		);
+		$this->assert_id_round_trip( $updated, 'user_id', $user_id, 'update_user' );
+
+		$delete_tool = new WP_MCP_AI_Tool_Delete_User();
+		$deleted     = $delete_tool->execute( array( 'user_id' => $user_id ), $context );
+		$this->assert_id_round_trip( $deleted, 'user_id', $user_id, 'delete_user' );
+
+		// Negative path: a fabricated ID must fail cleanly.
+		$missing = $update_tool->execute(
+			array(
+				'user_id'      => PHP_INT_MAX - 1,
+				'display_name' => 'Nobody',
+			),
+			$context
+		);
+		$this->assert_id_not_found( $missing, 'update_user', 'user_id' );
+	}
+
+	/**
+	 * Attachment family: upload_media → get_media → update_media → delete_media.
+	 *
+	 * @param array $context Tool execution context.
+	 */
+	private function run_attachment_round_trip( $context ) {
+		$upload_tool   = new WP_MCP_AI_Tool_Upload_Media();
+		$uploaded      = $upload_tool->execute(
+			array(
+				'base64'   => base64_encode( $this->tiny_png_bytes() ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Test fixture.
+				'filename' => 'id-handoff-attachment.png',
+			),
+			$context
+		);
+		$attachment_id = $this->assert_produces_key( $uploaded, 'attachment_id', 'upload_media' );
+
+		$get_tool = new WP_MCP_AI_Tool_Get_Media();
+		$fetched  = $get_tool->execute( array( 'attachment_id' => $attachment_id ), $context );
+		$this->assert_id_round_trip( $fetched, 'attachment_id', $attachment_id, 'get_media' );
+
+		$update_tool = new WP_MCP_AI_Tool_Update_Media();
+		$updated     = $update_tool->execute(
+			array(
+				'attachment_id' => $attachment_id,
+				'alt_text'      => 'ID handoff alt text',
+			),
+			$context
+		);
+		$this->assert_id_round_trip( $updated, 'attachment_id', $attachment_id, 'update_media' );
+
+		$delete_tool = new WP_MCP_AI_Tool_Delete_Media();
+		$deleted     = $delete_tool->execute(
+			array(
+				'attachment_id' => $attachment_id,
+				'force'         => true,
+			),
+			$context
+		);
+		$this->assert_id_round_trip( $deleted, 'attachment_id', $attachment_id, 'delete_media' );
+
+		// Negative path: a fabricated ID must fail cleanly.
+		$missing = $get_tool->execute( array( 'attachment_id' => PHP_INT_MAX - 1 ), $context );
+		$this->assert_id_not_found( $missing, 'get_media', 'attachment_id' );
+	}
+
+	/**
+	 * Smallest valid PNG payload (1x1 transparent) for the attachment driver.
+	 *
+	 * @return string
+	 */
+	private function tiny_png_bytes() {
+		$bytes = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Test fixture.
+
+		return (string) $bytes;
 	}
 }

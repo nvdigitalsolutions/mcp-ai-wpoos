@@ -281,6 +281,10 @@ function wp_mcp_ai_oos_orchestrator() {
 	$tool_registry->register( new Nvoos\Core\Tool\GenerateVeoVideoTool( $error_factory, $settings, $http_client ) );
 	$tool_registry->register( new Nvoos\Core\Tool\GenerateOmniVideoTool( $error_factory, $settings, $http_client ) );
 	$tool_registry->register( new Nvoos\Core\Tool\EditOmniVideoTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateHiggsfieldVideoTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateHiggsfieldImageTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\CheckHiggsfieldRequestTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\CancelHiggsfieldRequestTool( $error_factory, $settings, $http_client ) );
 
 	// Image generation and analysis tools.
 	$tool_registry->register( new Nvoos\Core\Tool\GenerateOpenAIImageTool( $error_factory, $settings, $http_client ) );

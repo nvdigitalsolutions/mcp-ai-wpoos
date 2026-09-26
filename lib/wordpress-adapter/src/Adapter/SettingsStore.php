@@ -87,6 +87,20 @@ class SettingsStore implements SettingsStoreInterface {
 	}
 
 	public function getApiKey( string $provider ): ?string {
+		// Higgsfield uses a two-part credential (Key ID + Secret). The combined
+		// `KEY_ID:KEY_SECRET` string is returned so the core tool can build the
+		// `Authorization: Key {ID}:{SECRET}` header.
+		if ( 'higgsfield' === $provider ) {
+			$keyId  = $this->get( 'higgsfield_api_key_id' );
+			$secret = $this->get( 'higgsfield_api_key_secret' );
+
+			if ( is_string( $keyId ) && '' !== $keyId && is_string( $secret ) && '' !== $secret ) {
+				return $keyId . ':' . $secret;
+			}
+
+			return null;
+		}
+
 		$keyMap = array(
 			'openai'             => 'openai_api_key',
 			'openai_huggingface' => 'huggingface_api_key',

@@ -232,6 +232,23 @@ $data = WP_MCP_AI_Tool_Token_Limits::get_session_data( $user_id, $session_id );
 WP_MCP_AI_Tool_Token_Limits::reset_session_usage( $user_id, $session_id );
 ```
 
+`reset_session_usage()` is also invoked automatically when an administrator
+lifts a `session_limit` restriction: the per-session block is recorded in the
+Restriction Registry, and lifting it (Admin → NV oOS → Token Manager →
+Restricted Users, or `wp mcp-ai restrictions lift <user_id>
+--type=session_limit`) clears the session transient. Note that the "Reset"
+buttons on the Token Manager tab clear **daily** usage only — they do not
+unblock a session that has hit its per-session budget.
+
+### Approaching-Budget Warning
+
+When a session crosses 75% of its limit, the
+`wp_mcp_ai_session_limit_approaching` action fires. The plugin listens to it,
+logs a `per_session_limit_approaching` event, and flags the session so a
+one-shot system notice is appended to the next chat turn (via the
+`wp_mcp_ai_chat_messages` filter), letting the assistant throttle before the
+budget blocks tool calls.
+
 ## Hooks and Filters
 
 ### Action: wp_mcp_ai_per_call_limit_exceeded

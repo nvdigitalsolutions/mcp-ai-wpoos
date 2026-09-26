@@ -647,6 +647,22 @@ and [`AGENTS.md`](AGENTS.md) for fuller context.
 
 ---
 
+## Ported Tool Surfaces (code-derived)
+
+The following tool implementations in `includes/tools/` were ported from, or
+modelled on, upstream open-source MCP servers. Each ported file carries
+`@link` and `@credit` tags in its file-level PHPDoc; this table is the
+repo-wide index.
+
+| Upstream project | License | Ported into | Tools |
+|------------------|---------|-------------|-------|
+| **mcp-wordpress** by Aionda GmbH | MIT | `includes/tools/` (Base) | 30 tools: comment CRUD (`list_comments`, `get_comment`, `create_comment`, `update_comment`, `delete_comment`), user CRUD (`list_users`, `create_user`, `update_user`, `delete_user`), content/media/terms (`get_post_revisions`, `get_term`, `delete_term`, `get_media`, `upload_media`, `update_media`, `delete_media`), site settings & application passwords (`get_site_settings`, `update_site_settings`, `list_application_passwords`, `create_application_password`, `delete_application_password`), SEO toolkit (`seo_analyze_content`, `seo_generate_schema`, `seo_validate_schema`, `seo_bulk_update_metadata`, `seo_site_audit`, `seo_test_integration`, `seo_get_live_data`, `seo_track_serp`, `seo_keyword_research`) | <https://github.com/docdyhr/mcp-wordpress> |
+
+Behaviour parity notes and the full gap matrix against the upstream 71-tool
+surface live in [`docs/developer/mcp-wordpress-tool-parity.md`](docs/developer/mcp-wordpress-tool-parity.md).
+
+---
+
 ## Optional Third-Party WordPress Plugins
 
 NV oOS integrates with — but does not bundle or redistribute — these

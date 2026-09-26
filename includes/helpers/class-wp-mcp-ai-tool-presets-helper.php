@@ -314,6 +314,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Image generation.
 					'generate_openai_image',
 					'cloudflareai_text_to_image',
+					'generate_higgsfield_image',
+					// Higgsfield request lifecycle.
+					'check_higgsfield_request',
+					'cancel_higgsfield_request',
 					// Image generation (Pro).
 					'generate_image_ai',
 					'generate_image_variations',
@@ -347,6 +351,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Video generation.
 					'generate_veo_video',
 					'generate_sora_video',
+					'generate_higgsfield_video',
 					// Video production.
 					'create_video_from_images',
 					'add_watermark_to_video',
@@ -552,6 +557,31 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_environment_status',
 					'check_site_security',
 					'research_site_best_practices',
+					// Comment moderation (ported from docdyhr/mcp-wordpress, MIT).
+					'list_comments',
+					'get_comment',
+					'create_comment',
+					'update_comment',
+					'delete_comment',
+					// User management (ported from docdyhr/mcp-wordpress, MIT).
+					'list_users',
+					'create_user',
+					'update_user',
+					'delete_user',
+					// Revisions, terms & media (ported from docdyhr/mcp-wordpress, MIT).
+					'get_post_revisions',
+					'get_term',
+					'delete_term',
+					'get_media',
+					'upload_media',
+					'update_media',
+					'delete_media',
+					// Site settings & application passwords (ported from docdyhr/mcp-wordpress, MIT).
+					'get_site_settings',
+					'update_site_settings',
+					'list_application_passwords',
+					'create_application_password',
+					'delete_application_password',
 					// Caching.
 					'purge_cache',
 					'purge_cloudflare_cache',
@@ -607,6 +637,16 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'seo_meta_optimizer',
 					'get_rankmath_seo',
 					'multilingual_seo_audit',
+					// SEO toolkit (ported from docdyhr/mcp-wordpress, MIT).
+					'seo_analyze_content',
+					'seo_generate_schema',
+					'seo_validate_schema',
+					'seo_bulk_update_metadata',
+					'seo_site_audit',
+					'seo_test_integration',
+					'seo_get_live_data',
+					'seo_track_serp',
+					'seo_keyword_research',
 					// Content optimization for SEO.
 					'generate_post_excerpt',
 					'suggest_internal_links',
@@ -1052,6 +1092,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Token generation.
 					'generate_auth0_token',
 					'generate_simple_jwt_token',
+					// Application passwords (ported from docdyhr/mcp-wordpress, MIT).
+					'list_application_passwords',
+					'create_application_password',
+					'delete_application_password',
 					// Security checks.
 					'check_site_security',
 					'get_site_health',

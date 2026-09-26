@@ -11,7 +11,7 @@ This repo is developed by multiple AI agents. Before doing work, be aware of:
 - **`.github/agents/*.agent.md`** — GitHub Custom Agents auto-discovered by Copilot Coding Agent and compatible runtimes. Each file declares one role-specific agent (its scope, tools, triggers). Per the layering rule in [`AGENTS.md` §2](../AGENTS.md), these files are intentionally slim — they **do not** restate naming/security/PHP-compat rules, so always cross-reference `AGENTS.md` + `CLAUDE.md` + `.context/` for those.
 - **`.context/*.md`** — subsystem context files loaded on-demand by all agents (conventions, security checklist, REST API, tool registry, chat UI, testing, Pro vs Base).
 - **`.bmad/agents/*.yaml`** — internal BMAD workflow agents that run inside NV oOS assistants (not coding-time agents).
-- **`.agents/skills/*.md`** — 59 coding-time agent skills for Zed editor: 20 wp-* WordPress plugin development patterns (wp-abilities-api, wp-action-scheduler, wp-html-api, wp-i18n-audit, wp-plugin-*, wp-query-cache, wp-rest-api, wp-security-*, wp-utf8-text), 32 design-* skills, the mcp-ai-wpoos-plugin operational guide, the mcp-ai-wpoos-test-suite repair guide, the mcp-ai-wpoos-updates maintenance guide, the mcp-ai-wpoos-wporg-submission wp.org readiness guide, the mcp-ai-wpoos-ecosystem-port base+pro→CG Pro port guide, the mcp-ai-wpoos-assistant-portability export/import guide, and the mcp-ai-wpoos-playground-demos Playground demo blueprint guide.
+- **`.agents/skills/*.md`** — 60 coding-time agent skills for Zed editor: 20 wp-* WordPress plugin development patterns (wp-abilities-api, wp-action-scheduler, wp-html-api, wp-i18n-audit, wp-plugin-*, wp-query-cache, wp-rest-api, wp-security-*, wp-utf8-text), 33 design-* skills, the mcp-ai-wpoos-plugin operational guide, the mcp-ai-wpoos-test-suite repair guide, the mcp-ai-wpoos-updates maintenance guide, the mcp-ai-wpoos-wporg-submission wp.org readiness guide, the mcp-ai-wpoos-ecosystem-port base+pro→CG Pro port guide, the mcp-ai-wpoos-assistant-portability export/import guide, and the mcp-ai-wpoos-playground-demos Playground demo blueprint guide.
 
 When making changes, check `git log` first — another agent may have already addressed part of the task. Do not duplicate scopes that are owned by an agent declared in `.github/agents/` or in the `AGENTS.md` inventory.
 
@@ -25,7 +25,7 @@ mcp-ai-wpoos/
 ├── includes/              # Core plugin classes
 │   ├── admin/            # Admin UI and settings
 │   ├── assistants/       # Assistant CPT and CCT management
-│   ├── tools/            # ~1,590 total built-in tool implementations
+│   ├── tools/            # ~1,594 total built-in tool implementations
 │   ├── security/         # Security infrastructure (10 classes: request guard, security posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, load guard)
 │   ├── elementor/        # Elementor widget integrations
 │   ├── okf/              # OKF v0.2 engine (parser, reader, writer)
@@ -39,7 +39,7 @@ mcp-ai-wpoos/
 ├── tests/                # PHPUnit test suite (including tests/security/)
 ├── docs/                 # Comprehensive documentation (~1,600 files)
 ├── bin/                  # Development scripts
-├── .agents/skills/       # 59 coding-time agent skills for Zed editor (20 wp-* + 32 design-* + mcp-ai-wpoos-plugin + mcp-ai-wpoos-test-suite + mcp-ai-wpoos-updates + mcp-ai-wpoos-wporg-submission + mcp-ai-wpoos-ecosystem-port + mcp-ai-wpoos-assistant-portability + mcp-ai-wpoos-playground-demos)
+├── .agents/skills/       # 60 coding-time agent skills for Zed editor (20 wp-* + 33 design-* + mcp-ai-wpoos-plugin + mcp-ai-wpoos-test-suite + mcp-ai-wpoos-updates + mcp-ai-wpoos-wporg-submission + mcp-ai-wpoos-ecosystem-port + mcp-ai-wpoos-assistant-portability + mcp-ai-wpoos-playground-demos)
 ├── .bmad/                # 6 BMAD workflow agent YAML definitions
 ├── .context/             # Subsystem context files for AI agent sessions
 └── languages/            # Translation files
@@ -283,8 +283,8 @@ class Test_Feature extends WP_UnitTestCase {
 ### Base Version vs Full Version
 
 The plugin has two modes:
-- **Base Version** (default): ~308 core tools, no third-party dependencies
-- **Full Version**: ~1,590 tools (~308 base + ~1,282 pro) including WooCommerce, JetEngine, and Pro addons; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative
+- **Base Version** (default): ~312 core tools, no third-party dependencies
+- **Full Version**: ~1,594 tools (~312 base + ~1,282 pro) including WooCommerce, JetEngine, and Pro addons; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative
 
 Control with: `define( 'WP_MCP_AI_BASE_VERSION', true/false );`
 

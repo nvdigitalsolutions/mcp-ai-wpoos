@@ -416,4 +416,103 @@ class Test_Per_Call_And_Session_Limits extends WP_UnitTestCase {
 		$this->assertGreaterThanOrEqual( 7500, $logged_data['usage'] );
 		$this->assertEquals( 10000, $logged_data['limit'] );
 	}
+
+	/**
+	 * Test that the approaching-budget hooks are registered on init.
+	 */
+	public function test_session_budget_warning_hooks_are_registered() {
+		$this->assertNotFalse(
+			has_action( 'wp_mcp_ai_session_limit_approaching', array( 'WP_MCP_AI_Tool_Token_Limits', 'handle_session_limit_approaching' ) ),
+			'Approaching-budget action should be registered on init.'
+		);
+		$this->assertNotFalse(
+			has_filter( 'wp_mcp_ai_chat_messages', array( 'WP_MCP_AI_Tool_Token_Limits', 'inject_session_budget_warning' ) ),
+			'Chat-messages warning injector should be registered on init.'
+		);
+	}
+
+	/**
+	 * Test that the approaching handler flags the session once.
+	 */
+	public function test_session_limit_approaching_handler_flags_session_once() {
+		$session_id = 'test-session-' . time();
+
+		// Seed the session transient as if usage had been recorded.
+		set_transient(
+			"wp_mcp_ai_session_{$this->test_user_id}_{$session_id}",
+			array(
+				'total_tokens' => 7600,
+				'tool_calls'   => array(),
+				'started_at'   => time(),
+				'over_budget'  => false,
+			),
+			DAY_IN_SECONDS
+		);
+
+		// First crossing logs and flags the session.
+		WP_MCP_AI_Tool_Token_Limits::handle_session_limit_approaching( $this->test_user_id, $session_id, 7600, 10000 );
+		$session_data = WP_MCP_AI_Tool_Token_Limits::get_session_data( $this->test_user_id, $session_id );
+		$this->assertTrue( $session_data['warning_issued'] );
+
+		// Second crossing is a no-op (one-shot flag).
+		WP_MCP_AI_Tool_Token_Limits::handle_session_limit_approaching( $this->test_user_id, $session_id, 7700, 10000 );
+		$session_data = WP_MCP_AI_Tool_Token_Limits::get_session_data( $this->test_user_id, $session_id );
+		$this->assertTrue( $session_data['warning_issued'] );
+		$this->assertArrayNotHasKey( 'warning_surfaced', $session_data );
+	}
+
+	/**
+	 * Test that the budget warning is injected into chat messages only once.
+	 */
+	public function test_inject_session_budget_warning_appends_once() {
+		$session_id = 'test-session-' . time();
+
+		WP_MCP_AI_Settings_Registry::update_setting( 'per_session_token_limit', 10000 );
+
+		// Seed the session transient with a pending warning flag.
+		set_transient(
+			"wp_mcp_ai_session_{$this->test_user_id}_{$session_id}",
+			array(
+				'total_tokens'   => 7600,
+				'tool_calls'     => array(),
+				'started_at'     => time(),
+				'over_budget'    => false,
+				'warning_issued' => true,
+			),
+			DAY_IN_SECONDS
+		);
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Continue the build.',
+			),
+		);
+
+		// First injection appends the one-shot system notice.
+		$injected = WP_MCP_AI_Tool_Token_Limits::inject_session_budget_warning(
+			$messages,
+			array(),
+			new WP_REST_Request(),
+			$this->test_user_id,
+			$session_id
+		);
+
+		$this->assertCount( 2, $injected );
+		$this->assertEquals( 'system', $injected[1]['role'] );
+		$this->assertStringContainsString( 'tool-token budget', $injected[1]['content'] );
+
+		$session_data = WP_MCP_AI_Tool_Token_Limits::get_session_data( $this->test_user_id, $session_id );
+		$this->assertTrue( $session_data['warning_surfaced'] );
+
+		// Second injection is a no-op.
+		$injected_again = WP_MCP_AI_Tool_Token_Limits::inject_session_budget_warning(
+			$injected,
+			array(),
+			new WP_REST_Request(),
+			$this->test_user_id,
+			$session_id
+		);
+		$this->assertCount( 2, $injected_again );
+	}
 }

@@ -115,6 +115,25 @@ weekly (or on demand), independent of any release.
   `#...` anchors (e.g. `### ⚠️ Warranty` resolves to `#️-warranty--safe-use`).
   Use the no-VS16 form (`⚠`, `⚙`, `🗨`, `🛡`) and keep TOC links as the plain
   `#-slug` form; never add manual `<a id="...">` anchors.
+- **Provider-count figure tracks model-catalog chat providers only.**
+  Media-generation providers (Sora, Veo, Runway, Higgsfield, …) are **not**
+  counted in the "N providers" versioning line — that figure follows the
+  model catalog (`WP_MCP_AI_Model_Config::get_all_provider_slugs()`), and media
+  providers live outside the catalog. When a media-provider PR lands, verify
+  the catalog is untouched and keep the provider count unchanged (the v1.1.86
+  Higgsfield pass is the precedent).
+- **Dual-layer tool PRs count the plugin registry only.** When a PR registers
+  the same tools in `includes/class-wp-mcp-ai-tool-registry.php` **and** adds
+  framework-agnostic wrappers under `lib/core/src/Tool/` via
+  `includes/bootstrap/oos-bridge.php`, the base/Pro count delta is the
+  **registry** registration count — `lib/core` keeps its own registry and its
+  tools are never counted in the base/Pro totals (the v1.1.86 Higgsfield
+  pass: +4 base, not +8).
+- **Release-sync PRs are build-classified.** "Merge alpha-working into main
+  (squashed)" PRs are tree-identical to `alpha-working` — classify them
+  build/release-only (no production file table); their only real effect is
+  dropping already-stale build ZIPs (the v1.1.86 pass's #6770 is the
+  precedent).
 
 ### A3. Commit structure (mirror v1.1.58–v1.1.83)
 
@@ -148,9 +167,15 @@ Per `AGENTS.md` §6, when adding a skill under `.agents/skills/[slug]/`:
   map row. (The 2026-09-07 `mcp-ai-wpoos-wporg-submission` skill is the
   example — wp.org submission/PCP/screenshot playbook; see that skill for
   the submission track itself.)
-- Fold the new skill + count into the **next** release's changelog/README
-  "Versioning" line (do not post-hoc edit an executed release entry).
-- Leave historical per-version count lines untouched.
+- **The introducing PR may skip the count bookkeeping — fold it into the
+  release.** Feature PRs sometimes add a new skill without the `AGENTS.md` §1 /
+  `.github/copilot-instructions.md` / `README.md` repo-map count updates (the
+  v1.1.86 pass: #6761 added `design-elementor-mcp-connection` without them).
+  During orientation, diff the introducing PR's file list against the count
+  surfaces; the catch-up pass owns the fold-in and states it in the
+  changelog's Versioning line (never post-hoc edit an executed release entry).
+- **Leave historical per-version count lines untouched** — old release entries
+  keep the counts they shipped with.
 
 ### A6. Validation
 
@@ -594,9 +619,13 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.83-docs-catch-up.md`,
   `docs/project/plans/v1.1.83-post-docs-catch-up.md`,
   `docs/project/plans/v1.1.84-docs-catch-up.md`,
-  `docs/project/plans/v1.1.85-docs-catch-up.md` (latest executed — the v1.1.85
-  pass over PRs #6749–#6759: the MCP Apps connection/exposure wave, Docs Hub
-  0.5.1, README anchor/consolidation work, and the stale 1.1.83 ZIP removal)
+  `docs/project/plans/v1.1.85-docs-catch-up.md`,
+  `docs/project/plans/v1.1.86-docs-catch-up.md` (latest executed — the v1.1.86
+  pass over PRs #6761–#6773: MCP Apps as a Remote Sites connection type +
+  reference mode, the Higgsfield media provider (+4 base tools), the
+  get_system_logs since/levels/search filters, tool-cost response labels,
+  action-items delivery templates, and the stale 1.1.84 ZIP removal; also the
+  first pass to fold a skipped skill-count bookkeeping into the release)
 - Standing open items: `docs/project/plans/docs-catch-up-open-items.md`
 - Executed PR deferred-item sweep (2026-09-17): issues #6646–#6655; closed
   #6389 as complete

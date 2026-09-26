@@ -307,6 +307,12 @@ if ( ! class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
 			update_user_meta( $user_id, self::USER_META_KEY, $records );
 			self::rebuild_index_for_user( $user_id, $records );
 
+			// Drop queued admin notices when no restriction remains for the
+			// user, so the banner disappears as soon as the lift happens.
+			if ( ! self::is_restricted( $user_id ) ) {
+				self::remove_notices_for_user( $user_id );
+			}
+
 			if ( class_exists( 'WP_MCP_AI_Security_Audit_Logger' ) ) {
 				WP_MCP_AI_Security_Audit_Logger::log_event(
 					'wp_mcp_ai_restriction_lifted',
@@ -598,6 +604,28 @@ if ( ! class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
 		}
 
 		/**
+		 * Count users with at least one active restriction.
+		 *
+		 * Unlike count_active(), which counts user:type rows, this returns
+		 * the number of distinct affected users.
+		 *
+		 * @since 1.2.0
+		 * @return int
+		 */
+		public static function count_active_users() {
+			self::maybe_expire();
+
+			$users = array();
+			foreach ( self::get_index() as $row ) {
+				if ( isset( $row['user_id'] ) ) {
+					$users[ absint( $row['user_id'] ) ] = true;
+				}
+			}
+
+			return count( $users );
+		}
+
+		/**
 		 * Read the active-restriction index.
 		 *
 		 * @since 1.2.0
@@ -738,7 +766,17 @@ if ( ! class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
 				$notices = array();
 			}
 
-			$user      = get_userdata( $user_id );
+			$user = get_userdata( $user_id );
+
+			// One entry per user: re-flagging the same user refreshes its entry
+			// instead of inflating the queue (and the rendered user count).
+			foreach ( $notices as $index => $notice ) {
+				if ( isset( $notice['user_id'] ) && absint( $notice['user_id'] ) === $user_id ) {
+					unset( $notices[ $index ] );
+				}
+			}
+			$notices = array_values( $notices );
+
 			$notices[] = array(
 				'user_id'      => $user_id,
 				'display_name' => $user ? $user->display_name : (string) $user_id,
@@ -767,6 +805,28 @@ if ( ! class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
 				return;
 			}
 
+			// Sweep elapsed windows so expired restrictions are not reported.
+			self::maybe_expire();
+
+			// Keep a single entry per user who is still restricted, so lifted
+			// or expired restrictions stop being counted and displayed.
+			$active = array();
+			foreach ( $notices as $notice ) {
+				$user_id = isset( $notice['user_id'] ) ? absint( $notice['user_id'] ) : 0;
+				if ( $user_id > 0 && self::is_restricted( $user_id ) ) {
+					$active[ $user_id ] = $notice;
+				}
+			}
+			$active = array_values( $active );
+
+			if ( count( $active ) !== count( $notices ) ) {
+				update_option( self::NOTICE_OPTION, $active, false );
+			}
+
+			if ( empty( $active ) ) {
+				return;
+			}
+
 			$url = admin_url( 'admin.php?page=wp-mcp-ai-token-manager' );
 			?>
 			<div class="notice notice-warning is-dismissible wp-mcp-ai-restriction-notice">
@@ -778,10 +838,10 @@ if ( ! class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
 							_n(
 								'%d user has been restricted by rate limits or token budgets.',
 								'%d users have been restricted by rate limits or token budgets.',
-								count( $notices ),
+								count( $active ),
 								'mcp-ai-wpoos'
 							),
-							count( $notices )
+							count( $active )
 						)
 					);
 					?>
@@ -801,6 +861,33 @@ if ( ! class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
 		 */
 		public static function clear_notices() {
 			delete_option( self::NOTICE_OPTION );
+		}
+
+		/**
+		 * Remove queued admin notices for a single user.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param int $user_id Affected user ID.
+		 * @return void
+		 */
+		private static function remove_notices_for_user( $user_id ) {
+			$user_id = absint( $user_id );
+			$notices = get_option( self::NOTICE_OPTION, array() );
+			if ( ! is_array( $notices ) || empty( $notices ) ) {
+				return;
+			}
+
+			$filtered = array();
+			foreach ( $notices as $notice ) {
+				if ( isset( $notice['user_id'] ) && absint( $notice['user_id'] ) !== $user_id ) {
+					$filtered[] = $notice;
+				}
+			}
+
+			if ( count( $filtered ) !== count( $notices ) ) {
+				update_option( self::NOTICE_OPTION, $filtered, false );
+			}
 		}
 
 		/**

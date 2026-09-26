@@ -413,6 +413,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'kimi_api_key',
 				'anthropic_api_key',
 				'huggingface_api_key',
+				'higgsfield_api_key_id',
+				'higgsfield_api_key_secret',
 			);
 		}
 
@@ -440,6 +442,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'gemini_api_key'                        => '',
 				'gemini_api_key_type'                   => 'standard',
 				'gemini_base_url'                       => '',
+				'higgsfield_api_key_id'                 => '',
+				'higgsfield_api_key_secret'             => '',
+				'higgsfield_video_resolution'           => '720p',
+				'higgsfield_video_aspect_ratio'         => '16:9',
+				'higgsfield_video_duration'             => 5,
+				'higgsfield_video_generate_audio'       => true,
 				'anthropic_api_key_type'                => 'standard',
 				'anthropic_base_url'                    => '',
 				'ollama_endpoint_url'                   => '',
