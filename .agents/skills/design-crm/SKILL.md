@@ -201,23 +201,34 @@ Freelancer sourcing uses the Upwork CRM tools (`search_upwork_jobs`,
 `score_upwork_job`, `draft_upwork_proposal`). Key behaviour:
 
 - **Args:** `query`, `location` (folded into the GraphQL `searchExpression`,
-  e.g. `wordpress developer (Remote)`), `job_type` (`hourly`/`fixed`),
-  `experience_level`, `skills`, `budget_min/max`, `sort` (`recency` default —
-  sends GraphQL `sortAttributes: [{field: RECENCY}]`; `best_match`),
-  `limit`, `cursor`. Omitted filters resolve from **CRM Settings → Upwork →
-  Search Defaults** (`default_search_keywords`, `default_location`, …).
+  e.g. `wordpress developer (Remote)`), `job_type` (`hourly`/`fixed`/`all` —
+  `all` or omitted = no filter), `experience_level`
+  (`entry`/`intermediate`/`expert`/`all`), `skills`, `budget_min/max`,
+  `exclude_keywords` (API: boolean `NOT (a OR b)`; fallback: `-"a"`
+  operators), `sort` (`recency` default — sends GraphQL
+  `sortAttributes: [{field: RECENCY}]`; `best_match`), `limit`, `cursor`.
+  Omitted filters resolve from **CRM Settings → Upwork → Search Defaults**
+  (`default_search_keywords`, `default_location`, …). `"all"` sentinels are
+  normalised away, so preset steps carrying `job_type: "all"` never leak the
+  literal into the GraphQL filter.
+- **Every response echoes its criteria** — `criteria` (the effective
+  query/location/skills/filters/sort/limit after defaults) and
+  `criteria_provided` (false = unfiltered noise search) — so workflow digests
+  can tell weak filters from a missing Upwork connection.
 - **API mode** (Remote Sites connection with OAuth creds): returns structured
   jobs including a derived `url` (`https://www.upwork.com/jobs/<slug>_~<id>/`).
 - **Fallback mode** (no connection): two-pass web search — site-restricted
   Upwork pass, then a broader pass merged with URL dedupe. Upwork category
   landing pages (`/freelance-jobs/{slug}/` — no `~jobId`) are filtered out
   and reported in `filtered_out`; snippets are parsed for `job_type`,
-  `budget`, and `published`; direct postings rank first.
+  `budget`/`budget_max` (ranges), `tier` (Entry level/Intermediate/Expert),
+  and `published`; `skills` build a quoted OR group; direct postings rank first.
 - **The fallback needs a real search provider.** With the default
   DuckDuckGo provider the fallback returns 0 results (Instant Answer API
   has no SERPs). Set a Brave/Tavily key in plugin Settings → Web Search.
-- A bare query (no keywords, no defaults) returns the guidance notice —
-  configure default keywords or pass `query` for targeted results.
+- A bare query (no keywords, no defaults) returns the guidance notice
+  ("unfiltered marketplace noise") — configure default keywords or pass
+  `query`/`skills` for targeted results.
 
 ### Reading records
 
