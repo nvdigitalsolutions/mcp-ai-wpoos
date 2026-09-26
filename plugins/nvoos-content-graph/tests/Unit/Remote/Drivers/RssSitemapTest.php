@@ -39,7 +39,12 @@ class RssSitemapTest extends WP_UnitTestCase {
 		add_filter( Schema::FILTER_ALLOW_PRIVATE_URLS, '__return_true' );
 		add_filter(
 			'pre_http_request',
-			static function () use ( $body, $status ) {
+			static function ( $preempt, $args, $url ) use ( $body, $status ) {
+				// Only mock the fixture feed — WordPress fires its own
+				// update-check requests during admin_init.
+				if ( false === strpos( (string) $url, 'feeds.test' ) ) {
+					return new \WP_Error( 'http_request_failed', 'Not mocked.' );
+				}
 				return array(
 					'response' => array(
 						'code'    => $status,
@@ -47,7 +52,9 @@ class RssSitemapTest extends WP_UnitTestCase {
 					),
 					'body'     => $body,
 				);
-			}
+			},
+			10,
+			3
 		);
 	}
 

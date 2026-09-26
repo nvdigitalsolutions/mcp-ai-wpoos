@@ -43,6 +43,11 @@ class SparqlTest extends WP_UnitTestCase {
 		add_filter(
 			'pre_http_request',
 			static function ( $preempt, $args, $url ) use ( $self, $handler ) {
+				// Only mock the fixture endpoint — WordPress fires its own
+				// update-check requests during admin_init.
+				if ( false === strpos( (string) $url, 'query.test' ) ) {
+					return new \WP_Error( 'http_request_failed', 'Not mocked.' );
+				}
 				$self->urls[] = (string) $url;
 				$body         = $handler( (string) $url );
 				return array(
@@ -258,7 +263,10 @@ class SparqlTest extends WP_UnitTestCase {
 		add_filter( Schema::FILTER_ALLOW_PRIVATE_URLS, '__return_true' );
 		add_filter(
 			'pre_http_request',
-			static function () {
+			static function ( $preempt, $args, $url ) {
+				if ( false === strpos( (string) $url, 'query.test' ) ) {
+					return new \WP_Error( 'http_request_failed', 'Not mocked.' );
+				}
 				return array(
 					'response' => array(
 						'code'    => 404,
@@ -266,7 +274,9 @@ class SparqlTest extends WP_UnitTestCase {
 					),
 					'body'     => '',
 				);
-			}
+			},
+			10,
+			3
 		);
 
 		$this->assertSame( array(), $this->driver()->fetchNodes() );

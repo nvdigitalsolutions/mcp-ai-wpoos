@@ -103,6 +103,22 @@ timing-safe (`hash_equals`).
 
 ---
 
+## Testing connections from the UI
+
+Two ways, both admin-only:
+
+- **Add Source modal** — the *Test Connection* button probes the config
+  typed into the form **before it is saved** (nothing is persisted).
+- **Configured Sources table** — the *Test* button probes a saved source
+  and shows the driver's message inline (item counts, path errors,
+  HTTP status). Saved sources can be tested **while disabled** — testing
+  is the step you take before enabling an untrusted endpoint.
+
+Both paths run the driver's `testConnection()` with the same sanitized
+config and return the probe message verbatim.
+
+---
+
 ## Verification status
 
 Each driver's behavior is pinned by PHPUnit tests under

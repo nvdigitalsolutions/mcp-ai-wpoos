@@ -118,10 +118,49 @@
 	} );
 
 	// ── Test button ──────────────────────────────────────────────
+	// Inline status per row: the driver's probe message (item counts,
+	// path errors) is shown instead of a bare OK/Error alert.
 	$( '.nvoos-test-source-btn' ).on( 'click', function () {
 		const slug = $( this ).data( 'slug' );
+		const btn = $( this ).prop( 'disabled', true );
+		const $status = $( '#nvoos-source-row-' + slug ).find( '.nvoos-source-row-status' );
+		$status.text( cfg.i18n.testing ).removeClass( 'ok error' );
 		$.post( cfg.ajaxurl, { action: 'nvoos_content_graph_test_remote_source', nonce: cfg.nonce, slug: slug }, function ( res ) {
-			window.alert( res.success ? cfg.i18n.connectionOk : ( 'Error: ' + ( res.data || 'unknown' ) ) );
+			btn.prop( 'disabled', false );
+			if ( res && res.success && res.data && res.data.message ) {
+				$status.text( res.data.message ).addClass( 'ok' );
+			} else {
+				$status.text( cfg.i18n.testFailed + ': ' + ( ( res && res.data ) || 'unknown' ) ).addClass( 'error' );
+			}
+		} ).fail( function () {
+			btn.prop( 'disabled', false );
+			$status.text( cfg.i18n.testFailed ).addClass( 'error' );
+		} );
+	} );
+
+	// ── Test from the Add Source modal (unsaved config) ─────────
+	$( '#nvoos-modal-test' ).on( 'click', function () {
+		const btn = $( this ).prop( 'disabled', true );
+		const $msg = $( '#nvoos-modal-message' );
+		const data = {
+			action: 'nvoos_content_graph_test_remote_source',
+			nonce: cfg.nonce,
+			driver: $( '#nvoos-source-driver' ).val(),
+		};
+		$( '#nvoos-source-config-fields' ).find( 'input, select, textarea' ).serializeArray().forEach( function ( f ) {
+			data[ f.name ] = f.value;
+		} );
+		$msg.text( cfg.i18n.testing ).removeClass( 'ok error' );
+		$.post( cfg.ajaxurl, data, function ( res ) {
+			btn.prop( 'disabled', false );
+			if ( res && res.success && res.data && res.data.message ) {
+				$msg.text( res.data.message ).addClass( 'ok' );
+			} else {
+				$msg.text( cfg.i18n.testFailed + ': ' + ( ( res && res.data ) || 'unknown' ) ).addClass( 'error' );
+			}
+		} ).fail( function () {
+			btn.prop( 'disabled', false );
+			$msg.text( cfg.i18n.testFailed ).addClass( 'error' );
 		} );
 	} );
 

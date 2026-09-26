@@ -44,6 +44,12 @@ class GenericRestTest extends WP_UnitTestCase {
 		add_filter(
 			'pre_http_request',
 			static function ( $preempt, $args, $url ) use ( $self, $handler ) {
+				// Never mock hosts other than the fixture — WordPress fires its
+				// own update-check POSTs during admin_init, and a valid-looking
+				// JSON body without the expected shape corrupts them.
+				if ( false === strpos( (string) $url, '.test' ) ) {
+					return new \WP_Error( 'http_request_failed', 'Not mocked.' );
+				}
 				$self->requests[] = array(
 					'url'  => (string) $url,
 					'args' => (array) $args,
@@ -460,7 +466,10 @@ class GenericRestTest extends WP_UnitTestCase {
 		add_filter( Schema::FILTER_ALLOW_PRIVATE_URLS, '__return_true' );
 		add_filter(
 			'pre_http_request',
-			static function () {
+			static function ( $preempt, $args, $url ) {
+				if ( false === strpos( (string) $url, '.test' ) ) {
+					return new \WP_Error( 'http_request_failed', 'Not mocked.' );
+				}
 				return array(
 					'response' => array(
 						'code'    => 404,
@@ -468,7 +477,9 @@ class GenericRestTest extends WP_UnitTestCase {
 					),
 					'body'     => '{"items":[]}',
 				);
-			}
+			},
+			10,
+			3
 		);
 
 		$this->assertSame( array(), $this->driver( array( 'path_results' => 'items' ) )->fetchNodes() );

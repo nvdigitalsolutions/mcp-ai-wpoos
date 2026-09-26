@@ -164,6 +164,7 @@ class RemoteAdmin {
 										data-nonce="<?php echo esc_attr( wp_create_nonce( 'nvoos_content_graph_remote_action' ) ); ?>">
 										<?php esc_html_e( 'Delete', 'nvoos-content-graph' ); ?>
 									</button>
+									<span class="nvoos-source-row-status" aria-live="polite"></span>
 								</td>
 							</tr>
 							<?php if ( ! empty( $source->last_error ) ) : ?>
@@ -240,30 +241,14 @@ class RemoteAdmin {
 			wp_send_json_error( __( 'Permission denied.', 'nvoos-content-graph' ) );
 		}
 
-        // phpcs:disable WordPress.Security.NonceVerification.Missing -- already checked above.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- already checked above.
 		$slug    = sanitize_key( isset( $_POST['slug'] ) ? wp_unslash( $_POST['slug'] ) : '' );
 		$driver  = sanitize_key( isset( $_POST['driver'] ) ? wp_unslash( $_POST['driver'] ) : '' );
 		$label   = sanitize_text_field( isset( $_POST['label'] ) ? wp_unslash( $_POST['label'] ) : '' );
 		$enabled = ! empty( $_POST['enabled'] ) ? 1 : 0;
-		$config  = array();
+		// phpcs:enable
 
-		if ( ! empty( $_POST['config'] ) && is_array( $_POST['config'] ) ) {
-            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized per key below.
-			$raw_config = wp_unslash( $_POST['config'] );
-			foreach ( $raw_config as $k => $v ) {
-				$key = sanitize_key( (string) $k );
-				if ( '' === $key ) {
-					continue;
-				}
-				if ( is_array( $v ) ) {
-					$config[ $key ] = map_deep( $v, 'sanitize_text_field' );
-				} elseif ( is_string( $v ) ) {
-					$config[ $key ] = sanitize_text_field( $v );
-				}
-				// Non-string, non-array values from crafted requests are dropped.
-			}
-		}
-        // phpcs:enable
+		$config = $this->sanitizeConfigInput();
 
 		if ( empty( $slug ) || empty( $driver ) || empty( $label ) ) {
 			wp_send_json_error( __( 'slug, driver, and label are required.', 'nvoos-content-graph' ) );
@@ -290,6 +275,42 @@ class RemoteAdmin {
 		}
 
 		wp_send_json_success( array( 'slug' => $slug ) );
+	}
+
+	/**
+	 * Read and sanitize the posted `config[...]` input.
+	 *
+	 * Shared by the save and test handlers so both accept the exact same
+	 * payload shape. Strings (and arrays of strings) are sanitized;
+	 * everything else from a crafted request is dropped.
+	 *
+	 * @since 1.0.9
+	 *
+	 * @return array<string,mixed>
+	 */
+	private function sanitizeConfigInput(): array {
+		$config = array();
+
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- checked by the callers.
+		if ( ! empty( $_POST['config'] ) && is_array( $_POST['config'] ) ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized per key below.
+			$raw_config = wp_unslash( $_POST['config'] );
+			foreach ( $raw_config as $k => $v ) {
+				$key = sanitize_key( (string) $k );
+				if ( '' === $key ) {
+					continue;
+				}
+				if ( is_array( $v ) ) {
+					$config[ $key ] = map_deep( $v, 'sanitize_text_field' );
+				} elseif ( is_string( $v ) ) {
+					$config[ $key ] = sanitize_text_field( $v );
+				}
+				// Non-string, non-array values from crafted requests are dropped.
+			}
+		}
+		// phpcs:enable
+
+		return $config;
 	}
 
 	/**
@@ -327,17 +348,41 @@ class RemoteAdmin {
 			wp_send_json_error( __( 'Permission denied.', 'nvoos-content-graph' ) );
 		}
 
-		$slug = sanitize_key( $_POST['slug'] ?? '' ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked above.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- checked above.
+		$slug     = sanitize_key( isset( $_POST['slug'] ) ? wp_unslash( $_POST['slug'] ) : '' );
+		$driverId = sanitize_key( isset( $_POST['driver'] ) ? wp_unslash( $_POST['driver'] ) : '' );
+		// phpcs:enable
+
+		$registry = Plugin::instance()->getRemoteRegistry();
+
+		// Unsaved-config path: the Add Source modal tests the config typed
+		// into the form before anything is persisted.
+		if ( '' === $slug && '' !== $driverId ) {
+			if ( ! $registry->getDriver( $driverId ) ) {
+				wp_send_json_error( __( 'Unknown driver.', 'nvoos-content-graph' ) );
+			}
+
+			$config                = $this->sanitizeConfigInput();
+			$config['_slug']       = 'test_' . $driverId;
+			$config['_rate_limit'] = 0;
+
+			$driver = $registry->getDriverInstance( $driverId, $config );
+			if ( ! $driver ) {
+				wp_send_json_error( __( 'Driver not registered.', 'nvoos-content-graph' ) );
+			}
+
+			self::sendTestResult( $driver->testConnection() );
+		}
+
 		if ( empty( $slug ) ) {
 			wp_send_json_error( __( 'slug is required.', 'nvoos-content-graph' ) );
 		}
 
 		$dbSource = \NvoosContentGraph\Graph\Db::getRemoteSource( $slug );
-		if ( ! $dbSource || empty( $dbSource->enabled ) ) {
-			wp_send_json_error( __( 'Source not found or not enabled.', 'nvoos-content-graph' ) );
+		if ( ! $dbSource ) {
+			wp_send_json_error( __( 'Source not found.', 'nvoos-content-graph' ) );
 		}
 
-		$registry = Plugin::instance()->getRemoteRegistry();
 		$driverId = sanitize_key( $dbSource->driver ?? '' );
 		if ( ! $registry->getDriver( $driverId ) ) {
 			wp_send_json_error( __( 'Driver not registered.', 'nvoos-content-graph' ) );
@@ -354,9 +399,30 @@ class RemoteAdmin {
 			wp_send_json_error( __( 'Driver not registered.', 'nvoos-content-graph' ) );
 		}
 
-		$result = $driver->testConnection();
+		self::sendTestResult( $driver->testConnection() );
+	}
+
+	/**
+	 * Send a driver's testConnection() result with a consistent envelope.
+	 *
+	 * Drivers return array( 'success' => bool, 'message' => string ) — a
+	 * failed probe must be an error payload, not a success envelope
+	 * carrying success=false inside the data.
+	 *
+	 * @since 1.0.9
+	 *
+	 * @param array<string,mixed>|\WP_Error $result Probe result.
+	 * @return void
+	 */
+	private static function sendTestResult( $result ): void {
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( $result->get_error_message() );
+		}
+		if ( ! is_array( $result ) || empty( $result['success'] ) ) {
+			$message = is_array( $result ) && ! empty( $result['message'] )
+				? $result['message']
+				: __( 'Connection test failed.', 'nvoos-content-graph' );
+			wp_send_json_error( $message );
 		}
 		wp_send_json_success( $result );
 	}
@@ -632,6 +698,7 @@ class RemoteAdmin {
 						<div id="nvoos-source-config-fields"></div>
 						<p class="submit">
 							<button type="submit" class="button button-primary"><?php esc_html_e( 'Save Source', 'nvoos-content-graph' ); ?></button>
+							<button type="button" class="button button-secondary" id="nvoos-modal-test"><?php esc_html_e( 'Test Connection', 'nvoos-content-graph' ); ?></button>
 							<button type="button" class="button button-secondary" id="nvoos-modal-cancel"><?php esc_html_e( 'Cancel', 'nvoos-content-graph' ); ?></button>
 						</p>
 					</form>
@@ -675,6 +742,9 @@ class RemoteAdmin {
 				'i18n'    => array(
 					'addSource'     => \__( 'Add Remote Source', 'nvoos-content-graph' ),
 					'sync'          => \__( 'Sync', 'nvoos-content-graph' ),
+					'test'          => \__( 'Test', 'nvoos-content-graph' ),
+					'testing'       => \__( 'Testing…', 'nvoos-content-graph' ),
+					'testFailed'    => \__( 'Test failed', 'nvoos-content-graph' ),
 					'connectionOk'  => \__( 'Connection OK', 'nvoos-content-graph' ),
 					'deleteConfirm' => \__( 'Delete this source?', 'nvoos-content-graph' ),
 					'reindexing'    => \__( 'Reindexing…', 'nvoos-content-graph' ),

@@ -25,8 +25,16 @@
   schema never exposed; the field is now a select (auto/rss/atom/sitemap)
 - **Add Source modal** — the slug field is auto-generated from the label
   (editable), and driver schemas now support `select` fields
+- **Connection testing UX** — a *Test Connection* button in the modal
+  probes the unsaved config, and the table's Test button shows the
+  driver's message inline instead of a bare `alert()`; failed probes
+  now return a proper error envelope (they previously reported
+  `success: true` with the failure buried in the payload), and saved
+  sources can be tested while disabled
 - **Tests** — new `tests/Unit/Remote/Drivers/` suite (45 tests, 128
-  assertions) pins every driver's behavior with mocked HTTP
+  assertions) pins every driver's behavior with mocked HTTP, and
+  `tests/Unit/Admin/RemoteAdminTest.php` (6 tests) covers the
+  connection-test AJAX endpoint
 
 ## Unreleased (explorer motion — merged in #6782)
 

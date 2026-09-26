@@ -43,6 +43,11 @@ class WikidataTest extends WP_UnitTestCase {
 		add_filter(
 			'pre_http_request',
 			static function ( $preempt, $args, $url ) use ( $self, $handler ) {
+				// Only mock the Wikidata endpoint — WordPress fires its own
+				// update-check requests during admin_init.
+				if ( false === strpos( (string) $url, 'wikidata.org' ) ) {
+					return new \WP_Error( 'http_request_failed', 'Not mocked.' );
+				}
 				$self->urls[] = (string) $url;
 				$body         = $handler( (string) $url );
 				return array(
