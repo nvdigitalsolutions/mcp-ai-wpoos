@@ -213,7 +213,7 @@ If you have limited budget for a review, focus on this order:
 ### Phase 2: Architecture review (~3-4 hours)
 4. **Plugin architecture** — DI container usage, class loading, lifecycle hooks (60+), singleton patterns
 5. **Base/Pro separation** — Verify no pro feature gating in base plugin
-6. **Tool registry** — How ~1,594 tools are registered and discovered
+6. **Tool registry** — How ~1,634 tools are registered and discovered
 7. **lib/core extraction** — Hexagonal Architecture (32 domain contracts, 21 WordPress adapters), agentic loop, provider routing, 109+ migrated tools. `includes/bridge/` adapters.
 
 ### Phase 3: Deep dives (~4-6 hours, if budget allows)

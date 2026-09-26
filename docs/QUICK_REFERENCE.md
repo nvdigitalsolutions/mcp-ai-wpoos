@@ -719,7 +719,7 @@ Discovery endpoint: `GET /.well-known/mcp` (returns JSON array of all enabled to
 ### Full Documentation
 - [Complete README](../README.md) - 1,027 lines of comprehensive docs
 - [Documentation Index](DOCUMENTATION_INDEX.md) - All 39 documentation files
-- [Tool Reference](reference/tools/tool-reference.md) - All ~1,594 tools detailed (~312 base + ~1,282 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- [Tool Reference](reference/tools/tool-reference.md) - All ~1,634 tools detailed (~347 base + ~1,287 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - [REST API Guide](reference/api/rest-api.md) - Complete API documentation
 - [Orchestration Budget Enforcement](developer/architecture/orchestration/orchestration-budget-enforcement.md) - Budget prediction and adjustment
 
