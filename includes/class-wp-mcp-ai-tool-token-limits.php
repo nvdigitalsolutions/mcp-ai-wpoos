@@ -143,6 +143,10 @@ class WP_MCP_AI_Tool_Token_Limits {
 		// Image analysis.
 		'vision_object_localization'        => 2.0,
 		'vision_product_search'             => 2.0,
+		'detect_image_content'              => 2.0,
+		'find_similar_media'                => 1.0,		'get_image_metadata'                => 1.0,
+		'describe_image_layout'             => 1.0,
+		'identify_image'                    => 2.0,
 		'analyze_image'                     => 2.0,
 		'extract_image_text'                => 1.5,
 		'generate_image_alt_text'           => 1.5,

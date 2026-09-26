@@ -28,6 +28,7 @@ VLM is only used to rename/verify labels, never to recount.
 | Symbol | File | Used by |
 |---|---|---|
 | `WP_MCP_AI_Tool_Analyze_Image_Objects` | `class-wp-mcp-ai-tool-analyze-image-objects.php` | tool registry |
+| `WP_MCP_AI_Tool_Search_Similar_Images` | `class-wp-mcp-ai-tool-search-similar-images.php` | tool registry, `identify_image` web-search rung |
 | `WP_MCP_AI_Vision_Count_Normalizer` | `class-wp-mcp-ai-vision-count-normalizer.php` | tool, HF vision service, tests |
 | `WP_MCP_AI_Vision_VLM_Client` | `class-wp-mcp-ai-vision-vlm-client.php` | tool |
 | `WP_MCP_AI_Vision_Annotator` | `class-wp-mcp-ai-vision-annotator.php` | tool |

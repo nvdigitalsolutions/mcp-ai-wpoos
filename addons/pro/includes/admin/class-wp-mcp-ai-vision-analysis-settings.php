@@ -215,6 +215,59 @@ class WP_MCP_AI_Vision_Analysis_Settings {
 				'description' => __( 'Maximum base64 payload sent to inference providers. Oversized images are downscaled first. Default: 5242880 (5 MB).', 'mcp-ai-wpoos-pro' ),
 			)
 		);
+
+		// Reverse-image web search section (search_similar_images tool).
+		add_settings_section(
+			'wp_mcp_ai_va_web_search',
+			__( 'Reverse-Image Web Search', 'mcp-ai-wpoos-pro' ),
+			function () {
+				echo '<p>' . esc_html__( 'Credentials for the search_similar_images tool (Bing Visual Search / SerpApi Google Lens). Image bytes are sent to the selected provider when the tool is used.', 'mcp-ai-wpoos-pro' ) . '</p>';
+			},
+			self::PAGE_SLUG
+		);
+
+		add_settings_field(
+			'va_reverse_search_provider',
+			__( 'Search Provider', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_select' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_va_web_search',
+			array(
+				'setting_key' => 'va_reverse_search_provider',
+				'description' => __( 'Preferred reverse-image search provider. "Auto" uses Bing when its key is configured, then SerpApi.', 'mcp-ai-wpoos-pro' ),
+				'options'     => array(
+					'auto'    => __( 'Auto', 'mcp-ai-wpoos-pro' ),
+					'bing'    => 'Bing Visual Search',
+					'serpapi' => 'SerpApi Google Lens',
+				),
+			)
+		);
+
+		add_settings_field(
+			'va_bing_visual_search_key',
+			__( 'Bing Visual Search Key', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_text' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_va_web_search',
+			array(
+				'setting_key' => 'va_bing_visual_search_key',
+				'description' => __( 'Azure Bing Search resource key (Ocp-Apim-Subscription-Key). Enables the Bing provider.', 'mcp-ai-wpoos-pro' ),
+				'placeholder' => '',
+			)
+		);
+
+		add_settings_field(
+			'va_serpapi_api_key',
+			__( 'SerpApi Key', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_text' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_va_web_search',
+			array(
+				'setting_key' => 'va_serpapi_api_key',
+				'description' => __( 'SerpApi API key. Enables the Google Lens provider, which requires a publicly reachable image URL.', 'mcp-ai-wpoos-pro' ),
+				'placeholder' => '',
+			)
+		);
 	}
 
 	/**
@@ -254,6 +307,20 @@ class WP_MCP_AI_Vision_Analysis_Settings {
 		$current['va_max_image_bytes'] = isset( $input['va_max_image_bytes'] )
 			? max( 1048576, min( 10485760, absint( $input['va_max_image_bytes'] ) ) )
 			: 5242880;
+
+		$allowed_search_providers              = array( 'auto', 'bing', 'serpapi' );
+		$submitted_search_provider             = isset( $input['va_reverse_search_provider'] ) ? $input['va_reverse_search_provider'] : 'auto';
+		$current['va_reverse_search_provider'] = in_array( $submitted_search_provider, $allowed_search_providers, true )
+			? sanitize_text_field( $submitted_search_provider )
+			: 'auto';
+
+		$current['va_bing_visual_search_key'] = isset( $input['va_bing_visual_search_key'] )
+			? sanitize_text_field( $input['va_bing_visual_search_key'] )
+			: '';
+
+		$current['va_serpapi_api_key'] = isset( $input['va_serpapi_api_key'] )
+			? sanitize_text_field( $input['va_serpapi_api_key'] )
+			: '';
 
 		return $current;
 	}

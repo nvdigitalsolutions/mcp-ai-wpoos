@@ -73,7 +73,9 @@ wp-mcp-ai-tool-delete-media
 wp-mcp-ai-tool-delete-post
 wp-mcp-ai-tool-delete-term
 wp-mcp-ai-tool-delete-user
+wp-mcp-ai-tool-describe-image-layout
 wp-mcp-ai-tool-detect-completion-indicators
+wp-mcp-ai-tool-detect-image-content
 wp-mcp-ai-tool-discover-new-models
 wp-mcp-ai-tool-duplicate-assistant
 wp-mcp-ai-tool-edit-gemini-image
@@ -88,6 +90,7 @@ wp-mcp-ai-tool-evolve-harness
 wp-mcp-ai-tool-execute-workflow
 wp-mcp-ai-tool-export-assistant
 wp-mcp-ai-tool-extract-image-text
+wp-mcp-ai-tool-find-similar-media
 wp-mcp-ai-tool-flowhub-create-order
 wp-mcp-ai-tool-flowhub-get-customers
 wp-mcp-ai-tool-flowhub-get-inventory
@@ -132,14 +135,15 @@ wp-mcp-ai-tool-get-elementor-form-submissions
 wp-mcp-ai-tool-get-elementor-templates
 wp-mcp-ai-tool-get-environment-status
 wp-mcp-ai-tool-get-gdacs-events
+wp-mcp-ai-tool-get-image-metadata
 wp-mcp-ai-tool-get-jetengine-items
 wp-mcp-ai-tool-get-jetformbuilder-forms
 wp-mcp-ai-tool-get-jetformbuilder-submissions
 wp-mcp-ai-tool-get-media
 wp-mcp-ai-tool-get-model-information
 wp-mcp-ai-tool-get-nhc-active-storms
-wp-mcp-ai-tool-get-open-meteo-forecast
 wp-mcp-ai-tool-get-openai-file-details
+wp-mcp-ai-tool-get-open-meteo-forecast
 wp-mcp-ai-tool-get-post
 wp-mcp-ai-tool-get-post-revisions
 wp-mcp-ai-tool-get-post-type-schema
@@ -174,6 +178,7 @@ wp-mcp-ai-tool-huggingface-dataset-list-splits
 wp-mcp-ai-tool-huggingface-dataset-preview-rows
 wp-mcp-ai-tool-huggingface-dataset-search
 wp-mcp-ai-tool-huggingface-recommended-datasets
+wp-mcp-ai-tool-identify-image
 wp-mcp-ai-tool-image-alt-text-optimizer
 wp-mcp-ai-tool-image-base
 wp-mcp-ai-tool-image-format-batch-converter
@@ -209,8 +214,8 @@ wp-mcp-ai-tool-monitor-batch
 wp-mcp-ai-tool-newsletter-add-subscriber
 wp-mcp-ai-tool-newsletter-create-email
 wp-mcp-ai-tool-newsletter-get-emails
-wp-mcp-ai-tool-newsletter-get-subscriber-stats
 wp-mcp-ai-tool-newsletter-get-subscribers
+wp-mcp-ai-tool-newsletter-get-subscriber-stats
 wp-mcp-ai-tool-newsletter-unsubscribe
 wp-mcp-ai-tool-okf-browse
 wp-mcp-ai-tool-okf-delete-concept
@@ -222,9 +227,9 @@ wp-mcp-ai-tool-okf-traverse
 wp-mcp-ai-tool-okf-validate-attestation
 wp-mcp-ai-tool-okf-validate-bundle
 wp-mcp-ai-tool-okf-write-concept
+wp-mcp-ai-tool-openai-usage-analytics
 wp-mcp-ai-tool-open-openai-logs
 wp-mcp-ai-tool-open-openai-usage
-wp-mcp-ai-tool-openai-usage-analytics
 wp-mcp-ai-tool-paper-store-delete
 wp-mcp-ai-tool-paper-store-list
 wp-mcp-ai-tool-paper-store-read
@@ -235,9 +240,9 @@ wp-mcp-ai-tool-password-strength-analyzer
 wp-mcp-ai-tool-payhere-get-payment
 wp-mcp-ai-tool-performance-optimizer-assistant
 wp-mcp-ai-tool-prioritize-context
-wp-mcp-ai-tool-pro-excel
 wp-mcp-ai-tool-probe-chat
 wp-mcp-ai-tool-probe-remote-mcp
+wp-mcp-ai-tool-pro-excel
 wp-mcp-ai-tool-profession-stats
 wp-mcp-ai-tool-purge-cache
 wp-mcp-ai-tool-purge-cloudflare-cache
