@@ -282,6 +282,127 @@
 	padding-left: 18px;
 }
 
+/* ---- Loading skeleton ---- */
+.nvoos-cg-loading {
+	padding: 28px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	align-items: center;
+	justify-content: center;
+	min-height: 140px;
+}
+
+.nvoos-cg-loading-bar {
+	width: min( 420px, 70% );
+	height: 12px;
+	border-radius: 6px;
+	background: linear-gradient( 90deg, var( --nvoos-cg-surface ) 25%, var( --nvoos-cg-border ) 50%, var( --nvoos-cg-surface ) 75% );
+	background-size: 200% 100%;
+	animation: nvoos-cg-shimmer 1.4s ease-in-out infinite;
+}
+
+.nvoos-cg-loading-bar:nth-child( 2 ) {
+	width: min( 340px, 56% );
+	animation-delay: 0.15s;
+}
+
+.nvoos-cg-loading-bar:nth-child( 3 ) {
+	width: min( 260px, 42% );
+	animation-delay: 0.3s;
+}
+
+.nvoos-cg-loading-text {
+	margin: 6px 0 0;
+	font-size: 12px;
+	color: var( --nvoos-cg-muted );
+}
+
+@keyframes nvoos-cg-shimmer {
+	0% {
+		background-position: 200% 0;
+	}
+	100% {
+		background-position: -200% 0;
+	}
+}
+
+/* ---- Search match badge ---- */
+.nvoos-cg-search-count {
+	font-size: 11px;
+	color: var( --nvoos-cg-muted, #50575e );
+	background: var( --nvoos-cg-surface, #fff );
+	border: 1px solid var( --nvoos-cg-border, #ccd );
+	border-radius: 10px;
+	padding: 1px 8px;
+	white-space: nowrap;
+}
+
+/* ---- Hover tooltip (follows the cursor, single shared element) ---- */
+.nvoos-cg-tooltip {
+	position: absolute;
+	z-index: 20;
+	pointer-events: none;
+	max-width: 240px;
+	background: var( --nvoos-cg-surface );
+	color: var( --nvoos-cg-label );
+	border: 1px solid var( --nvoos-cg-border );
+	border-radius: 6px;
+	padding: 6px 10px;
+	font-size: 11px;
+	line-height: 1.45;
+	box-shadow: 0 4px 16px rgba( 0, 0, 0, 0.35 );
+	transform: translate( -50%, calc( -100% - 16px ) );
+	transition: opacity 0.12s ease;
+}
+
+.nvoos-cg-tooltip[hidden] {
+	display: none;
+}
+
+.nvoos-cg-tooltip strong {
+	display: block;
+	font-size: 12px;
+	margin-bottom: 1px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.nvoos-cg-tooltip-meta {
+	display: block;
+	color: var( --nvoos-cg-muted );
+}
+
+/* ---- Hover cursor + entrance reveal ---- */
+#nvoos-content-graph-explorer.nvoos-cg-node-hover {
+	cursor: pointer;
+}
+
+#nvoos-content-graph-explorer.nvoos-cg-pending {
+	opacity: 0;
+}
+
+#nvoos-content-graph-explorer.nvoos-cg-revealed {
+	opacity: 1;
+	transition: opacity 0.26s ease;
+}
+
+/* ---- Reduced motion ---- */
+@media ( prefers-reduced-motion: reduce ) {
+	.nvoos-cg-loading-bar {
+		animation: none;
+	}
+
+	.nvoos-cg-tooltip {
+		transition: none;
+	}
+
+	#nvoos-content-graph-explorer.nvoos-cg-revealed {
+		transition: none;
+	}
+}
+
 /* ----------------------------------------------------------------------------
    Addon purchase modal (Stripe Payment Element)
    ---------------------------------------------------------------------------- */

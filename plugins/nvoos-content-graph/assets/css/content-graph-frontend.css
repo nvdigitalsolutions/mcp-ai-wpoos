@@ -115,6 +115,66 @@
 	font-style: italic;
 }
 
+/* ---- Hover tooltip (follows the cursor, single shared element) ---- */
+.nvoos-cg-tooltip {
+	position: absolute;
+	z-index: 20;
+	pointer-events: none;
+	max-width: 240px;
+	background: var( --nvoos-cg-surface );
+	color: var( --nvoos-cg-label );
+	border: 1px solid var( --nvoos-cg-border );
+	border-radius: 6px;
+	padding: 6px 10px;
+	font-size: 11px;
+	line-height: 1.45;
+	box-shadow: 0 4px 16px rgba( 0, 0, 0, 0.2 );
+	transform: translate( -50%, calc( -100% - 16px ) );
+	transition: opacity 0.12s ease;
+}
+
+.nvoos-cg-tooltip[hidden] {
+	display: none;
+}
+
+.nvoos-cg-tooltip strong {
+	display: block;
+	font-size: 12px;
+	margin-bottom: 1px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.nvoos-cg-tooltip-meta {
+	display: block;
+	color: var( --nvoos-cg-muted );
+}
+
+/* ---- Hover cursor + entrance reveal ---- */
+.nvoos-content-graph-embed.nvoos-cg-node-hover {
+	cursor: pointer;
+}
+
+.nvoos-content-graph-embed.nvoos-cg-pending {
+	opacity: 0;
+}
+
+.nvoos-content-graph-embed.nvoos-cg-revealed {
+	opacity: 1;
+	transition: opacity 0.26s ease;
+}
+
+@media ( prefers-reduced-motion: reduce ) {
+	.nvoos-cg-tooltip {
+		transition: none;
+	}
+
+	.nvoos-content-graph-embed.nvoos-cg-revealed {
+		transition: none;
+	}
+}
+
 /* ---- Related content widget ---- */
 .nvoos-content-graph-related {
 	margin-top: 28px;

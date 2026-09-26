@@ -126,6 +126,11 @@
 
 		var tokens = theme.tokens( visual );
 
+		// Entrance fade (skipped under reduced motion).
+		if ( theme.motionAllowed( visual ) ) {
+			$container.addClass( 'nvoos-cg-pending' );
+		}
+
 		// Resolve colors/icons/shapes/sizes up front.
 		$.each( elements, function ( _, el ) {
 			var d = el.data;
@@ -149,11 +154,29 @@
 			pixelRatio: 1,
 			textureOnViewport: true,
 			hideEdgesOnViewport: true,
+			motionBlur: true,
 			layout:    theme.layoutPresets( visual )[ 'fcose-balanced' ].options
 		} );
 
 		cy.style( theme.buildStylesheet( visual, { cy: cy } ) );
 		theme.applyChrome( $container[ 0 ], visual );
+
+		// Reveal after the first paint (motion-gated above).
+		if ( $container.hasClass( 'nvoos-cg-pending' ) ) {
+			if ( window.requestAnimationFrame ) {
+				window.requestAnimationFrame( function () {
+					$container.removeClass( 'nvoos-cg-pending' ).addClass( 'nvoos-cg-revealed' );
+				} );
+			} else {
+				$container.removeClass( 'nvoos-cg-pending' ).addClass( 'nvoos-cg-revealed' );
+			}
+		}
+
+		// Hover focus + tooltip (Bloom-style spotlight, motion-independent
+		// except for the dim, which is static per-frame).
+		if ( visual.hover_focus !== false ) {
+			bindHoverFocus( $container, cy, config );
+		}
 
 		// Legend (client-side; the graph itself is JS-only, so a no-JS
 		// legend fallback would have nothing to annotate).
@@ -179,6 +202,74 @@
 				cy.elements().removeClass( 'faded highlighted' );
 			}
 		} );
+	}
+
+	/**
+	 * Wire up hover focus + a lightweight quick-info tooltip for one embed.
+	 */
+	function bindHoverFocus( $container, cy, config ) {
+		var tooltip = null;
+
+		function esc( value ) {
+			return $( '<div/>' ).text( value || '' ).html();
+		}
+
+		function hide() {
+			if ( tooltip ) {
+				tooltip.hidden = true;
+			}
+		}
+
+		function show( node, e ) {
+			if ( ! tooltip ) {
+				tooltip = document.createElement( 'div' );
+				tooltip.className = 'nvoos-cg-tooltip';
+				tooltip.setAttribute( 'role', 'status' );
+				tooltip.hidden = true;
+				$container[ 0 ].appendChild( tooltip );
+			}
+			var d = node.data();
+			tooltip.innerHTML = '<strong>' + esc( d.label || d.id ) + '</strong>' +
+				'<span class="nvoos-cg-tooltip-meta">' + esc( d.type || '' ) +
+				' &bull; ' + ( parseInt( d.degree, 10 ) || 0 ) + ' ' +
+				esc( ( config.i18n && config.i18n.connections ) || 'connections' ) + '</span>';
+			if ( e && e.renderedPosition ) {
+				tooltip.style.left = Math.round( e.renderedPosition.x ) + 'px';
+				tooltip.style.top  = Math.round( e.renderedPosition.y ) + 'px';
+			}
+			tooltip.hidden = false;
+		}
+
+		function clear() {
+			hide();
+			cy.batch( function () {
+				cy.elements().removeClass( 'hover-dimmed hover-focus hover-strong' );
+			} );
+			$container.removeClass( 'nvoos-cg-node-hover' );
+		}
+
+		cy.on( 'mouseover', 'node', function ( e ) {
+			var node = e.target;
+			cy.batch( function () {
+				cy.elements().addClass( 'hover-dimmed' ).removeClass( 'hover-focus hover-strong' );
+				node.closedNeighborhood().removeClass( 'hover-dimmed' );
+				node.connectedEdges().addClass( 'hover-strong' );
+				node.addClass( 'hover-focus' );
+			} );
+			$container.addClass( 'nvoos-cg-node-hover' );
+			show( node, e );
+		} );
+
+		cy.on( 'mousemove', 'node', function ( e ) {
+			if ( tooltip && e.renderedPosition ) {
+				tooltip.style.left = Math.round( e.renderedPosition.x ) + 'px';
+				tooltip.style.top  = Math.round( e.renderedPosition.y ) + 'px';
+			}
+		} );
+
+		cy.on( 'mouseout', 'node', clear );
+		cy.on( 'zoom pan', hide );
+		cy.on( 'tap', 'node', hide );
 	}
 
 	/**
