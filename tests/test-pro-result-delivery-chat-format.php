@@ -276,7 +276,8 @@ class Test_Pro_Result_Delivery_Chat_Format extends WP_UnitTestCase {
 	/**
 	 * The summary chat template must not print the summary line when the
 	 * response already opens with it — assistant-run summaries are a trim of
-	 * the response's first words, so the excerpt subsumes the summary line.
+	 * the response's first words. The excerpt now carries the substantive
+	 * "Result" distillation block instead of the roundup intro.
 	 */
 	public function test_format_chat_summary_skips_summary_prefix_of_response() {
 		$response           = "Here's your 6-hour email review 👀\n\nWindow reviewed: 13:52 – 19:52 UTC (Wed, Sep 9).\nResult: 2 actionable emails landed in the window, both unread, with the rest being Pinterest promos or earlier messages.";
@@ -290,8 +291,9 @@ class Test_Pro_Result_Delivery_Chat_Format extends WP_UnitTestCase {
 			array( $shared, 'summary', 'plain', array() )
 		);
 
-		// The triage header appears exactly once — inside the excerpt only.
-		$this->assertSame( 1, substr_count( $payload['message'], '6-hour email review' ) );
+		// The roundup intro is gone (deduped summary line + relevant excerpt).
+		$this->assertStringNotContainsString( '6-hour email review', $payload['message'] );
+		$this->assertStringNotContainsString( 'Window reviewed', $payload['message'] );
 		$this->assertStringContainsString( '📋', $payload['message'] );
 		$this->assertStringContainsString( 'Pinterest promos', $payload['message'] );
 	}
@@ -312,6 +314,237 @@ class Test_Pro_Result_Delivery_Chat_Format extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'All tasks completed successfully.', $payload['message'] );
 		// The summary line appears exactly once — the excerpt does not repeat it.
 		$this->assertSame( 1, substr_count( $payload['message'], 'Generated 5 posts.' ) );
+	}
+
+	// -------------------------------------------------------------------------
+	// Action-items template
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Must return the block under the first action-signalling heading and stop
+	 * at the next section heading.
+	 */
+	public function test_extract_action_items_returns_needs_attention_block() {
+		$response = "Here's your inbox roundup for the last 6 hours.\n\n"
+			. "## 📥 Inbound — needs your attention\n"
+			. "**1. \"Men's eau de toilette\" — Fri, 25 Sep**\n"
+			. "- From: The Parfumerie Store\n"
+			. "- Snippet: Brand new perfume for sale.\n\n"
+			. "## 📤 Sent — informational\n"
+			. "1. Order confirmation\n\n"
+			. "That's the roundup!";
+
+		$block = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'extract_action_items',
+			array( $response )
+		);
+
+		$this->assertStringContainsString( "Men's eau de toilette", $block );
+		$this->assertStringContainsString( 'The Parfumerie Store', $block );
+		$this->assertStringNotContainsString( 'Order confirmation', $block );
+		$this->assertStringNotContainsString( 'inbox roundup', $block );
+		$this->assertStringNotContainsString( 'roundup!', $block );
+	}
+
+	/**
+	 * Must recognise bold and bare action headings, including items carried on
+	 * the heading line after a colon.
+	 */
+	public function test_extract_action_items_supports_bold_and_inline_headings() {
+		$response = "Digest complete.\n\n"
+			. "**Action Items**: Reply to the supplier\n\n"
+			. "To-do\n"
+			. "- Restock men's eau de toilette\n\n"
+			. "### Notes\n"
+			. 'Traffic was up.';
+
+		$block = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'extract_action_items',
+			array( $response )
+		);
+
+		$this->assertStringContainsString( 'Reply to the supplier', $block );
+		$this->assertStringContainsString( "Restock men's eau de toilette", $block );
+		$this->assertStringNotContainsString( 'Digest complete', $block );
+		$this->assertStringNotContainsString( 'Traffic was up', $block );
+	}
+
+	/**
+	 * Must return an empty string when the response carries no action section,
+	 * and must ignore negative phrasings.
+	 */
+	public function test_extract_action_items_returns_empty_without_action_section() {
+		$quiet  = "All quiet on the inbox front.\n\nNothing to report today.";
+		$no_act = "All quiet.\n\nNo action needed from you.\n\nNext: nothing.";
+
+		foreach ( array( $quiet, $no_act ) as $response ) {
+			$block = $this->invoke_static(
+				'WP_MCP_AI_Result_Delivery_Service',
+				'extract_action_items',
+				array( $response )
+			);
+			$this->assertSame( '', $block );
+		}
+	}
+
+	/**
+	 * The action_items chat template must forward only the action block — the
+	 * roundup intro, informational sections, and the summary excerpt are all
+	 * noise the template exists to drop.
+	 */
+	public function test_format_chat_action_items_sends_only_actions() {
+		$response           = "Here's your inbox roundup for the last 6 hours.\n\n"
+			. "**Action Items**\n"
+			. "- Reply to the perfume supplier\n"
+			. "- Restock men's eau de toilette\n\n"
+			. "### Notes\n"
+			. 'Traffic was up this week.';
+		$shared             = $this->chat_shared();
+		$shared['summary']  = wp_trim_words( wp_strip_all_tags( $response ), 25, '…' );
+		$shared['response'] = $response;
+
+		$payload = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'format_chat',
+			array( $shared, 'action_items', 'html', array() )
+		);
+
+		$this->assertStringContainsString( 'Action items', $payload['message'] );
+		$this->assertStringContainsString( 'Reply to the perfume supplier', $payload['message'] );
+		// esc_html() in the html format escapes the apostrophe.
+		$this->assertStringContainsString( 'Restock men&#039;s eau de toilette', $payload['message'] );
+		$this->assertStringNotContainsString( 'inbox roundup', $payload['message'] );
+		$this->assertStringNotContainsString( 'Traffic was up', $payload['message'] );
+		// No response excerpt is appended on top of the action block.
+		$this->assertStringNotContainsString( '📋', $payload['message'] );
+	}
+
+	/**
+	 * The action_items chat template must fall back to the summary rendering
+	 * (summary line + response excerpt) when the response has no action section.
+	 */
+	public function test_format_chat_action_items_falls_back_to_summary() {
+		$payload = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'format_chat',
+			array( $this->chat_shared(), 'action_items', 'plain', array() )
+		);
+
+		$this->assertStringNotContainsString( 'Action items', $payload['message'] );
+		$this->assertStringContainsString( 'Generated 5 posts.', $payload['message'] );
+		$this->assertStringContainsString( '📋', $payload['message'] );
+		$this->assertStringContainsString( 'All tasks completed successfully.', $payload['message'] );
+	}
+
+	// -------------------------------------------------------------------------
+	// Representative excerpt selection
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Must prefer the response's own distillation section ("Summary",
+	 * "TL;DR", "Key points", "Results", …) over the roundup intro and
+	 * trailing detail sections.
+	 */
+	public function test_select_representative_excerpt_prefers_summary_section() {
+		$response = "Intro text here.\n\n"
+			. "## Summary\n"
+			. "Orders up 12%, two flagged for review.\n\n"
+			. "## Details\n"
+			. 'Order 4412 delayed.';
+
+		$excerpt = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'select_representative_excerpt',
+			array( $response, 80 )
+		);
+
+		$this->assertStringContainsString( 'Orders up 12%', $excerpt );
+		$this->assertStringNotContainsString( 'Intro text', $excerpt );
+		$this->assertStringNotContainsString( 'Order 4412', $excerpt );
+	}
+
+	/**
+	 * Must prefer the actionable section when no distillation section exists.
+	 */
+	public function test_select_representative_excerpt_prefers_action_block() {
+		$response = "Roundup intro here.\n\n"
+			. "**Action Items**\n"
+			. "- Do the thing\n\n"
+			. "### Notes\n"
+			. 'Extra info.';
+
+		$excerpt = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'select_representative_excerpt',
+			array( $response, 80 )
+		);
+
+		$this->assertStringContainsString( 'Do the thing', $excerpt );
+		$this->assertStringNotContainsString( 'Roundup intro', $excerpt );
+		$this->assertStringNotContainsString( 'Extra info', $excerpt );
+	}
+
+	/**
+	 * Must fall back to centroid extraction: sentences are ranked by
+	 * content-word centrality with a positional lead bias, keeping the
+	 * top-ranked sentences in original order within the word budget.
+	 */
+	public function test_select_representative_excerpt_centroid_ranking() {
+		$response = 'Here is the roundup. Shipment delay confirmed for order 4412 and refund initiated by finance. Signing off.';
+
+		$excerpt = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'select_representative_excerpt',
+			array( $response, 15 )
+		);
+
+		// Lead sentence kept, high-value sentence in, trailing boilerplate out.
+		$this->assertStringContainsString( 'Here is the roundup', $excerpt );
+		$this->assertStringContainsString( 'Shipment delay confirmed', $excerpt );
+		$this->assertStringNotContainsString( 'Signing off', $excerpt );
+	}
+
+	/**
+	 * Must fall back to a plain lead-word trim for short, unstructured
+	 * responses (the classic extractive baseline).
+	 */
+	public function test_select_representative_excerpt_falls_back_to_lead_trim() {
+		$response = 'Single line with no sections at all.';
+
+		$excerpt = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'select_representative_excerpt',
+			array( $response, 80 )
+		);
+
+		$this->assertStringContainsString( 'Single line with no sections', $excerpt );
+	}
+
+	/**
+	 * The summary chat template must excerpt the relevant distillation block,
+	 * not the roundup intro or the trailing detail sections.
+	 */
+	public function test_format_chat_summary_excerpts_relevant_block() {
+		$response           = "Here's the roundup.\n\n"
+			. "**Summary**\n"
+			. "Two orders need attention and one invoice is due.\n\n"
+			. "## Details\n"
+			. 'Order 4412 delayed.';
+		$shared             = $this->chat_shared();
+		$shared['summary']  = wp_trim_words( wp_strip_all_tags( $response ), 25, '…' );
+		$shared['response'] = $response;
+
+		$payload = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'format_chat',
+			array( $shared, 'summary', 'plain', array() )
+		);
+
+		$this->assertStringContainsString( 'Two orders need attention', $payload['message'] );
+		$this->assertStringNotContainsString( 'Order 4412 delayed', $payload['message'] );
+		$this->assertStringContainsString( '📋', $payload['message'] );
 	}
 
 	/**
@@ -563,5 +796,34 @@ class Test_Pro_Result_Delivery_Chat_Format extends WP_UnitTestCase {
 
 		$sanitized = WP_MCP_AI_Pro_Schedule_Manager::sanitize_result_delivery( $delivery );
 		$this->assertSame( 'full', $sanitized['on_success']['channels']['slack']['template'] );
+	}
+
+	/**
+	 * Sanitize_result_delivery() must accept the action_items template for
+	 * both email and chat channels.
+	 */
+	public function test_sanitize_result_delivery_accepts_action_items_template() {
+		$delivery = array(
+			'on_success' => array(
+				'channels' => array(
+					'telegram' => array(
+						'enabled'  => true,
+						'template' => 'action_items',
+					),
+					'email'    => array(
+						'enabled'  => true,
+						'template' => 'action_items',
+						'to'       => 'ops@example.com',
+					),
+				),
+			),
+			'on_failure' => array(
+				'channels' => array(),
+			),
+		);
+
+		$sanitized = WP_MCP_AI_Pro_Schedule_Manager::sanitize_result_delivery( $delivery );
+		$this->assertSame( 'action_items', $sanitized['on_success']['channels']['telegram']['template'] );
+		$this->assertSame( 'action_items', $sanitized['on_success']['channels']['email']['template'] );
 	}
 }

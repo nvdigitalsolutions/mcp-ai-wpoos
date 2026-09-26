@@ -143,6 +143,10 @@ class WP_MCP_AI_Tool_Token_Limits {
 		// Image analysis.
 		'vision_object_localization'        => 2.0,
 		'vision_product_search'             => 2.0,
+		'detect_image_content'              => 2.0,
+		'find_similar_media'                => 1.0,		'get_image_metadata'                => 1.0,
+		'describe_image_layout'             => 1.0,
+		'identify_image'                    => 2.0,
 		'analyze_image'                     => 2.0,
 		'extract_image_text'                => 1.5,
 		'generate_image_alt_text'           => 1.5,
@@ -177,6 +181,12 @@ class WP_MCP_AI_Tool_Token_Limits {
 
 		// Hook into tier changes for audit logging.
 		add_action( 'wp_mcp_ai_user_tier_changed', array( __CLASS__, 'log_tier_change' ), 10, 4 );
+
+		// Surface an early warning when a session approaches its token budget.
+		add_action( 'wp_mcp_ai_session_limit_approaching', array( __CLASS__, 'handle_session_limit_approaching' ), 10, 4 );
+
+		// Inject the pending session-budget warning into the next chat turn.
+		add_filter( 'wp_mcp_ai_chat_messages', array( __CLASS__, 'inject_session_budget_warning' ), 10, 5 );
 
 		// Clean up cron on plugin deactivation.
 		register_deactivation_hook( WP_MCP_AI_PATH . 'mcp-ai-wpoos.php', array( __CLASS__, 'deactivate' ) );
@@ -980,7 +990,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 					esc_html(
 						sprintf(
 							/* translators: 1: Session token usage (formatted number), 2: Session token limit (formatted number) */
-							__( 'Tool execution blocked. This session used %1$s of the %2$s token limit. Please start a new session to continue.', 'mcp-ai-wpoos' ),
+							__( 'Tool execution blocked. This chat session has reached its tool-token budget (%1$s of %2$s). Start a new chat to continue, or an administrator can reset the budget from the Restricted Users panel (wp mcp-ai restrictions lift <user_id> --type=session_limit).', 'mcp-ai-wpoos' ),
 							number_format_i18n( $session_usage ),
 							number_format_i18n( $limit )
 						)
@@ -1071,7 +1081,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 					esc_html(
 						sprintf(
 							/* translators: 1: Session token usage (formatted number), 2: Session token limit (formatted number) */
-							__( 'Tool execution blocked. This session used %1$s of the %2$s token limit. Please start a new session to continue.', 'mcp-ai-wpoos' ),
+							__( 'Tool execution blocked. This chat session has reached its tool-token budget (%1$s of %2$s). Start a new chat to continue, or an administrator can reset the budget from the Restricted Users panel (wp mcp-ai restrictions lift <user_id> --type=session_limit).', 'mcp-ai-wpoos' ),
 							number_format_i18n( $session_usage ),
 							number_format_i18n( $limit )
 						)
@@ -1209,6 +1219,112 @@ class WP_MCP_AI_Tool_Token_Limits {
 	public static function reset_session_usage( $user_id, $session_id ) {
 		$session_id = sanitize_text_field( $session_id );
 		return delete_transient( "wp_mcp_ai_session_{$user_id}_{$session_id}" );
+	}
+
+	/**
+	 * Handle a session approaching its per-session token budget.
+	 *
+	 * Listens to the wp_mcp_ai_session_limit_approaching action fired at 75%
+	 * of the configured limit. Logs the event once and flags the session so
+	 * the warning is surfaced in the next chat turn via
+	 * inject_session_budget_warning().
+	 *
+	 * @since 1.1.85
+	 *
+	 * @param int    $user_id    User ID.
+	 * @param string $session_id Session identifier.
+	 * @param int    $usage      Current session token usage.
+	 * @param int    $limit      Session token limit.
+	 * @return void
+	 */
+	public static function handle_session_limit_approaching( $user_id, $session_id, $usage, $limit ) {
+		$user_id    = absint( $user_id );
+		$session_id = sanitize_text_field( $session_id );
+
+		if ( ! $user_id || '' === $session_id ) {
+			return;
+		}
+
+		$session_data = self::get_session_data( $user_id, $session_id );
+		if ( null === $session_data ) {
+			return;
+		}
+
+		// One-shot flag: log and surface the warning once per session.
+		if ( ! empty( $session_data['warning_issued'] ) ) {
+			return;
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'per_session_limit_approaching',
+			'Session approaching its per-session token limit (75% threshold).',
+			array(
+				'user_id'    => $user_id,
+				'session_id' => $session_id,
+				'usage'      => absint( $usage ),
+				'limit'      => absint( $limit ),
+			)
+		);
+
+		$session_data['warning_issued'] = true;
+		set_transient( "wp_mcp_ai_session_{$user_id}_{$session_id}", $session_data, DAY_IN_SECONDS );
+	}
+
+	/**
+	 * Inject the pending session-budget warning into chat messages.
+	 *
+	 * Reads the one-shot warning flag set by handle_session_limit_approaching()
+	 * and appends a system message so the assistant can throttle before the
+	 * session budget blocks tool calls. The warning is surfaced only once.
+	 *
+	 * @since 1.1.85
+	 *
+	 * @param array           $messages         Chat messages.
+	 * @param array           $assistant_config Assistant configuration.
+	 * @param WP_REST_Request $request          REST request instance.
+	 * @param int             $user_id          User ID.
+	 * @param string          $session_key      Transcript session key.
+	 * @return array Chat messages, possibly with the warning appended.
+	 */
+	public static function inject_session_budget_warning( $messages, $assistant_config, $request, $user_id, $session_key ) {
+		if ( ! is_array( $messages ) ) {
+			return $messages;
+		}
+
+		$user_id    = absint( $user_id );
+		$session_id = sanitize_text_field( (string) $session_key );
+
+		if ( ! $user_id || '' === $session_id ) {
+			return $messages;
+		}
+
+		$session_data = self::get_session_data( $user_id, $session_id );
+		if ( null === $session_data ) {
+			return $messages;
+		}
+
+		// Only surface the warning flagged by the approaching hook, and only once.
+		if ( empty( $session_data['warning_issued'] ) || ! empty( $session_data['warning_surfaced'] ) ) {
+			return $messages;
+		}
+
+		$limit = absint( WP_MCP_AI_Settings_Registry::get_setting( 'per_session_token_limit', 50000 ) );
+		$usage = isset( $session_data['total_tokens'] ) ? (int) $session_data['total_tokens'] : 0;
+
+		$messages[] = array(
+			'role'    => 'system',
+			'content' => sprintf(
+				/* translators: 1: Session token usage (formatted number), 2: Session token limit (formatted number) */
+				__( 'Tool budget notice: this chat session has used %1$s of its %2$s tool-token budget. Tool calls may soon be blocked. Keep responses concise, avoid token-heavy tool calls, or suggest starting a new chat session.', 'mcp-ai-wpoos' ),
+				number_format_i18n( $usage ),
+				number_format_i18n( $limit )
+			),
+		);
+
+		$session_data['warning_surfaced'] = true;
+		set_transient( "wp_mcp_ai_session_{$user_id}_{$session_id}", $session_data, DAY_IN_SECONDS );
+
+		return $messages;
 	}
 
 	/**

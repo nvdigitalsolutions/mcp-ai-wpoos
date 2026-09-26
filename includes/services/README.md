@@ -25,6 +25,7 @@ The chat path and the tool execution path are the two services every other folde
 | `WP_MCP_AI_Tool_Async_Executor` | `class-wp-mcp-ai-tool-async-executor.php` | WP-Cron, REST async polling |
 | `WP_MCP_AI_Assistant_Service` | `class-wp-mcp-ai-assistant-service.php` | REST assistants, admin UI |
 | `WP_MCP_AI_File_Service` (+ `_Factory`, Gemini/OpenAI variants) | `class-wp-mcp-ai-file-service*.php` | upload handlers, tools |
+| `WP_MCP_AI_Cloud_Vision_Client` | `class-wp-mcp-ai-cloud-vision-client.php` | vision tools (`vision_object_localization`, `detect_image_content`) — shared key resolution, request, and error mapping for `images:annotate` |
 | `WP_MCP_AI_Memory_*` (capture, manager, tier manager) | `class-wp-mcp-ai-memory-*.php` | chat service, mine-memory tool |
 | `WP_MCP_AI_Agent_Identity_Resolver` | `class-wp-mcp-ai-agent-identity-resolver.php` | store/recall memory tools, chat-memory REST controller (virtual-key → canonical agent ID bridging) |
 | `WP_MCP_AI_Cost_Tracking_Service`, `WP_MCP_AI_Error_Tracking_Service`, `WP_MCP_AI_Performance_*`, `WP_MCP_AI_Token_*` | telemetry classes | chat service, admin dashboard, Pro Dashboard |

@@ -1,5 +1,52 @@
 # oOS – Changelog
 
+## [1.1.86] - 2026-09-25
+
+### Added — MCP Apps as a Remote Sites Connection Type (Proposal 041, PR #6761)
+
+- **`mcp_server` Remote Sites connection type.** Central credentials are stored encrypted (AES-256-CBC, including the `mcp_oauth` blob) and resolved decrypt-on-use; **Test Connection** performs a real JSON-RPC handshake, **Discover Tools** persists tool snapshots, restricted-host enforcement and activity logging apply, and auth types map cleanly onto MCP (`basic_auth`/`application_password` → `basic` for Elementor application passwords, `custom_header` → `header`, `bearer`, `oauth`).
+- **Per-assistant reference mode.** Assistant MCP App entries can carry a `connection_ref` pointing at a central connection instead of inline credentials — resolved at chat time with credentials never written back to post meta. Missing refs skip with error-status snapshots, and imported bundles whose refs point nowhere are auto-disabled with a warning (`wp_mcp_ai_mcp_apps_validate_imported_refs`).
+- **Assistant portability hardening.** `_wp_mcp_ai_mcp_apps` `token`/`oauth_data` are redacted on export and stripped on import (default on; opt-out filters), stored credentials survive overwrite imports, and reference entries cross the export/import boundary as non-secret pointers.
+- **Metabox additions.** "Add from Remote Sites" creates reference rows without credentials ever reaching the DOM; centrally managed apps render as read-only "Managed in Remote Sites" rows.
+- **Deferred (tracked in proposal 041):** Phase 3.2 server-card discovery (`.well-known/mcp`), Phase 3.3 full admin OAuth flow, and Phase 4 "Adopt into Remote Sites".
+
+### Added — Higgsfield Video & Image Generation Provider (Proposal 042, PR #6772)
+
+- **Four new base tools** (available in base-only and base+Pro installs): `generate_higgsfield_video` (five verified models — Cinema Studio 4.0, Seedance 2.5/2.0, Wan 3.0, Kling 3.0 — behind one `model` parameter with per-model payload mapping/clamping, image/video/audio reference inputs, and cinematic controls), `generate_higgsfield_image` (SOUL V2 + SOUL Cinema workflows, batch 1|4, `style_id` gating), `check_higgsfield_request`, and `cancel_higgsfield_request` (queued/in_progress/completed/failed/nsfw/canceled contract).
+- **Shared `WP_MCP_AI_Higgsfield_Client`** — two-part `Key ID:SECRET` auth, submit/status/cancel lifecycle, backoff+jitter polling (2s→10s), immediate download against the provider's 7-day retention, and a credential chain (settings → env → constants). Provider settings section (key ID/secret + video defaults), connector definition, sensitive-fields, SettingsStore mapping, and a 480 s async-executor timeout override; `check_video_status` now resolves `async_*` executor job IDs.
+- **Dual-layer parity** — the same four tools ship as framework-agnostic `lib/core` wrappers registered via `oos-bridge` (core registry; not counted in the base/Pro totals).
+- **Also in the PR:** TypeSafe tool schemas fixed (`typesafe_decide`/`typesafe_eval` array-item `items` declarations) + Pro coverage-manifest entries (resolves the failing registry-coverage gate), and a benign `base64_encode` phpcs suppression in the Sora tool.
+
+### Added — `get_system_logs` Filters: since / levels / search (PR #6768)
+
+- **Three optional AND-combined filters** over the structured NV oOS buffers and file logs (debug.log, PHP error log, plugin logs): `since` (relative "2h"/"30m"/"3d"/"45 minutes"/"2 hours ago" — bare number = minutes — or absolute ISO 8601 / `Y-m-d H:i:s` UTC; malformed values return `wp_mcp_ai_invalid_since`), `levels` (critical/error/warning/notice/deprecated, matching NV oOS entry types and PHP log-line markers), and `search` (case-insensitive, 200-char cap, mb-safe).
+- **Responses gain a filters summary** (resolved UTC cutoff) so callers can verify what was applied; file payloads report `filtered_out` counts; timestamp-less lines (e.g. stack-trace continuations) are kept conservatively under time filtering. `parse_since()` is the public static canonical parser shared by the Symfony-validated variant (no drift); the Content Graph AI ports are base-identical.
+
+### Added — Action-Items Template & Smart Summary Excerpts (PR #6773)
+
+- **Scheduled result digests no longer blind-trim the first 80 words** (usually the roundup intro). New `action_items` delivery template (email + chat) sends only the actionable section of the response ("Action Items", "Needs your attention", "Next steps", …) with graceful fallbacks when no section exists.
+- **The `summary` template excerpt now prefers the response's own distillation** ("Summary", "TL;DR", "Key points", "Results"), then the action block, then centroid-ranked sentences (MEAD-style word-frequency centrality × positional decay), with a lead trim as final fallback — for both chat and email. Shared extraction engine (`line_is_heading()` + `extract_section_block()`; `extract_action_items()` is a thin wrapper); schedule UI dropdowns, sanitizer allowlists, and REST docs updated.
+
+### Fixed — Environment Status Warnings & Model Data (PR #6767)
+
+- **The "no assistants published" warning fired unconditionally** and the "default assistant could not be loaded" warning could never fire — `summarise_assistants()` wraps its payload under an `environment` key while `build_warnings()` read flat keys. The builder now unwraps before reading (base tool + CG port kept in sync), and DeepSeek joined the provider key/label warning maps.
+- **New `plugin.default_provider_model` field** resolves the effective model for the configured default provider (`deepseek_model`, `default_gemini_model`, …) instead of implying the OpenAI-only `default_model`; the default assistant entry now carries its `_wp_mcp_ai_provider`/`_wp_mcp_ai_model` meta so per-assistant overrides are visible.
+
+### Fixed — Tool Costs in Final Response Labels (PR #6771)
+
+- **Tool-execution costs never reached the assistant's final response label** — the server nested `cost_usd` inside the tool message's usage object while the client aggregated a top-level `toolResult.cost` object the server never sent. New `build_tool_cost_envelope()` emits the top-level shape (`cost_usd`, `is_estimated`, `provider`, `model`) on both the non-streaming agentic loop and the SSE streaming path (live `tool_execution` `tool_result` events now carry usage/cost mid-stream).
+- **The chat client's shared `aggregateToolUsageBadgeData()`** replaces the two duplicated aggregation loops, aggregates the cost envelope (falling back to nested `cost_usd` and the legacy content-nested shape for old transcripts), and carries tool model/provider into the final badge (fixing the streaming drop); tool bubbles render the same usage/cost badges across append/SSE/async/restore paths.
+
+### Docs & Skills
+
+- **Proposal 041 + 042 ship with the window** (`docs/project/proposals/041-mcp-apps-remote-sites-connection-type.md`, `042-higgsfield-video-provider-integration.md`) along with the remote-sites feature docs, the mcp-apps folder contract, and `tool-status.txt` (+4 Higgsfield slugs).
+- **New coding-time skill `design-elementor-mcp-connection`** (PR #6761) codifies the two Elementor MCP connection paths (MCP Apps + Remote Sites `mcp_server`); `design-ai-assistant-admin`, `design-elementor-template-kits`, `design-video-creation` (Higgsfield), and `mcp-ai-wpoos-assistant-portability` (reference-mode rules) updated in-window.
+- **OI-6 recorded** (PR #6766, docs-only): the 2026-09-24 Track C deferred-item sweep's re-verification of the three pinned ICP/PM bugs in the open-items tracker.
+
+### Versioning
+
+- Bumped to 1.1.86 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.86. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.8** (unchanged). nvoos-content-graph-ai: **1.0.4** (unchanged — ZIP rebuilt in-window, ports touched on its own track by #6767/#6768). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — no port waves in-window). Checkout API: **0.1.2** (unchanged). Docs Hub addon: **0.5.1** (unchanged). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.09.22** (unchanged — no model PRs in-window). Tool count: **~312 base + ~1,282 Pro (~1,594 total)** — +4 base (the Higgsfield quartet, #6772); the `lib/core` wrappers are the core registry's own tools and are not counted; live registry authoritative. Providers: 15 chat providers (unchanged — Higgsfield is a media-generation provider, not a model-catalog provider). Addons: 27. Bundled skills: **75 base + 41 Pro** (unchanged). Coding-time agent skills: **59 → 60** (new `design-elementor-mcp-connection`, #6761; count bookkeeping folded into this release). Stale build ZIPs removed: the 1.1.84 wp.org package set (6 files: 3 ZIPs + 3 `.sha256` in `build/`); the 1.1.85 package set is retained as the current release artifacts.
+
 ## [1.1.85] - 2026-09-24
 
 ### Added — MCP Apps Connection & Exposure Wave (PRs #6753–#6758)

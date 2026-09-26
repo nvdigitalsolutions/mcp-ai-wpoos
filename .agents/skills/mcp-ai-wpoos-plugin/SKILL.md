@@ -5,8 +5,8 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.85"
-  plugin-version-tested: "1.1.85"
+  plugin-version: "1.1.86"
+  plugin-version-tested: "1.1.86"
   last-updated: "2026-09-22"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
@@ -47,7 +47,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~308 base / ~1,590 full tools
+     │  Tool Registry     │  ~312 base / ~1,594 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -757,6 +757,16 @@ Import external AI conversation exports into the JetEngine
   toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
   dj-management/image-production slices.
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## MCP Server Connections, Higgsfield Media, Log Filters & Delivery Templates (v1.1.86)
+
+- **MCP Apps as a Remote Sites connection type** (PR #6761, Proposal 041) — new `mcp_server` connection type with AES-256-CBC-encrypted central credentials (incl. `mcp_oauth`), real JSON-RPC handshake Test Connection, tool-discovery snapshots, restricted-host enforcement, activity logging; auth mapping (`basic_auth`/`application_password` → MCP `basic`, `custom_header` → `header`, `bearer`, `oauth`). Per-assistant `connection_ref` reference mode resolves decrypt-on-use at chat time (credentials never written back to post meta); missing refs skip with error snapshots; imported bundles with missing refs auto-disable. Export/import redacts MCP App `token`/`oauth_data` (opt-out filters). New coding-time skill `design-elementor-mcp-connection` (59 → 60).
+- **Higgsfield video/image provider** (PR #6772, Proposal 042) — four new base tools (`generate_higgsfield_video`, `generate_higgsfield_image`, `check_higgsfield_request`, `cancel_higgsfield_request`) on the shared `WP_MCP_AI_Higgsfield_Client` (two-part `Key ID:SECRET` auth, submit/status/cancel lifecycle, backoff+jitter polling, immediate download; settings → env → constants credential chain); provider settings section; `check_video_status` resolves `async_*` job IDs; `lib/core` dual-layer wrappers via `oos-bridge` (not counted). Also fixes the TypeSafe tool schemas + Pro coverage manifest.
+- **`get_system_logs` filters** (PR #6768) — optional `since`/`levels`/`search` filters over the structured buffers + file logs (filters summary + `filtered_out` counts; `parse_since()` is the shared canonical parser; CG AI ports base-identical).
+- **Action-items template + smart excerpts** (PR #6773) — scheduled digests send only the actionable section (`action_items`, email + chat) and prefer the response's own Summary/TL;DR/action sections over blind 80-word trims.
+- **Tool costs in final labels** (PR #6771) — top-level `toolResult.cost` envelope on the agentic loop + SSE streaming; client-side tool-bubble badges.
+- **Environment status fixed** (PR #6767) — always-on "no assistants published" warning + dead default-assistant branch repaired; `plugin.default_provider_model` resolves the effective per-provider model.
+- **Tool count** — +4 base → ~312 base + ~1,282 Pro (~1,594 total). Model catalog stays v2026.09.22. Stale 1.1.84 build ZIPs removed.
 
 ## MCP Apps Connection & Exposure Wave, Docs Hub 0.5.1, README Consolidation (v1.1.85)
 

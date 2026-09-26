@@ -47,12 +47,15 @@ function wp_mcp_ai_vision_analysis_get_settings() {
 	$all = get_option( 'wp_mcp_ai_settings', array() );
 
 	return array(
-		'enabled'          => ! empty( $all['enable_vision_analysis_toolkit'] ),
-		'detection_model'  => isset( $all['va_detection_model'] ) && '' !== $all['va_detection_model'] ? sanitize_text_field( $all['va_detection_model'] ) : 'google/owlv2-base-patch16',
-		'min_confidence'   => isset( $all['va_min_confidence'] ) ? (float) $all['va_min_confidence'] : 0.5,
-		'vlm_provider'     => isset( $all['va_vlm_provider'] ) ? sanitize_text_field( $all['va_vlm_provider'] ) : 'auto',
-		'vlm_model'        => isset( $all['va_vlm_model'] ) ? sanitize_text_field( $all['va_vlm_model'] ) : '',
-		'annotate_default' => ! empty( $all['va_annotate_default'] ),
-		'max_image_bytes'  => isset( $all['va_max_image_bytes'] ) ? absint( $all['va_max_image_bytes'] ) : 5242880,
+		'enabled'                 => ! empty( $all['enable_vision_analysis_toolkit'] ),
+		'detection_model'         => isset( $all['va_detection_model'] ) && '' !== $all['va_detection_model'] ? sanitize_text_field( $all['va_detection_model'] ) : 'google/owlv2-base-patch16',
+		'min_confidence'          => isset( $all['va_min_confidence'] ) ? (float) $all['va_min_confidence'] : 0.5,
+		'vlm_provider'            => isset( $all['va_vlm_provider'] ) ? sanitize_text_field( $all['va_vlm_provider'] ) : 'auto',
+		'vlm_model'               => isset( $all['va_vlm_model'] ) ? sanitize_text_field( $all['va_vlm_model'] ) : '',
+		'annotate_default'        => ! empty( $all['va_annotate_default'] ),
+		'max_image_bytes'         => isset( $all['va_max_image_bytes'] ) ? absint( $all['va_max_image_bytes'] ) : 5242880,
+		'reverse_search_provider' => isset( $all['va_reverse_search_provider'] ) ? sanitize_text_field( $all['va_reverse_search_provider'] ) : 'auto',
+		'bing_visual_search_key'  => isset( $all['va_bing_visual_search_key'] ) ? sanitize_text_field( $all['va_bing_visual_search_key'] ) : '',
+		'serpapi_api_key'         => isset( $all['va_serpapi_api_key'] ) ? sanitize_text_field( $all['va_serpapi_api_key'] ) : '',
 	);
 }

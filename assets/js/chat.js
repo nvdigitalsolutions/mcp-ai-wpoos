@@ -11533,8 +11533,16 @@
             attachments: attachments
         };
 
+        // Carry usage/cost through so async tool bubbles get the same badges.
+        const toolUsage = result && result.usage && typeof result.usage === 'object' ? result.usage : null;
+        const toolCost = result && result.cost && typeof result.cost === 'object' ? result.cost : null;
+
         // Display the tool result with attachments
-        const messageElement = appendMessage(state.messagesEl, 'tool', displayPayload, false, { state: state });
+        const messageElement = appendMessage(state.messagesEl, 'tool', displayPayload, false, {
+            state: state,
+            usage: toolUsage,
+            cost: toolCost
+        });
 
         // Add tool result to conversation state for agentic flow continuity
         // This ensures the tool result is available for subsequent AI messages
@@ -12688,7 +12696,15 @@
                     toolPayload = { text: '[Tool result]' };
                 }
                 
-                appendMessage(state.messagesEl, 'tool', toolPayload, false, { state: state });
+                // Preserve usage/cost badges on restored tool bubbles.
+                const toolUsage = display && display.usage ? display.usage : null;
+                const toolCost = display && display.cost ? display.cost : null;
+
+                appendMessage(state.messagesEl, 'tool', toolPayload, false, {
+                    state: state,
+                    usage: toolUsage,
+                    cost: toolCost
+                });
                 return;
             }
 
@@ -14605,83 +14621,12 @@
                                 if (!toolResult) {
                                     return;
                                 }
-                                
-                                // Aggregate usage data from tool results
-                                let toolUsage = null;
-                                let toolCost = null;
-                                
-                                // Try direct usage field first
-                                if (toolResult.usage && typeof toolResult.usage === 'object') {
-                                    toolUsage = toolResult.usage;
-                                }
-                                
-                                // Try direct cost field
-                                if (toolResult.cost && typeof toolResult.cost === 'object') {
-                                    toolCost = toolResult.cost;
-                                }
-                                
-                                // Fall back to parsing content for usage and cost data
-                                if ((!toolUsage || !toolCost) && toolResult.content) {
-                                    let parsedContent = toolResult.content;
-                                    if (typeof parsedContent === 'string') {
-                                        try {
-                                            parsedContent = JSON.parse(parsedContent);
-                                        } catch (e) {
-                                            parsedContent = null;
-                                        }
-                                    }
-                                    
-                                    if (parsedContent && typeof parsedContent === 'object') {
-                                        if (!toolUsage && parsedContent.usage && typeof parsedContent.usage === 'object') {
-                                            toolUsage = parsedContent.usage;
-                                        }
-                                        if (!toolCost && parsedContent.cost && typeof parsedContent.cost === 'object') {
-                                            toolCost = parsedContent.cost;
-                                        }
-                                    }
-                                }
-                                
-                                // Aggregate usage data if found
-                                if (toolUsage) {
-                                    if (!aggregatedUsage) {
-                                        aggregatedUsage = {
-                                            prompt_tokens: 0,
-                                            completion_tokens: 0,
-                                            total_tokens: 0
-                                        };
-                                    }
-                                    
-                                    aggregatedUsage.prompt_tokens = (aggregatedUsage.prompt_tokens || 0) + (toolUsage.prompt_tokens || 0);
-                                    aggregatedUsage.completion_tokens = (aggregatedUsage.completion_tokens || 0) + (toolUsage.completion_tokens || 0);
-                                    aggregatedUsage.total_tokens = (aggregatedUsage.total_tokens || 0) + (toolUsage.total_tokens || 0);
-                                    
-                                    if (toolUsage.is_estimated) {
-                                        aggregatedUsage.is_estimated = true;
-                                    }
-                                }
-                                
-                                // Aggregate cost data if found
-                                if (toolCost && typeof toolCost.cost_usd === 'number') {
-                                    if (!aggregatedCost) {
-                                        aggregatedCost = {
-                                            cost_usd: 0
-                                        };
-                                    }
-                                    
-                                    aggregatedCost.cost_usd = (aggregatedCost.cost_usd || 0) + toolCost.cost_usd;
-                                    
-                                    if (toolCost.is_estimated) {
-                                        aggregatedCost.is_estimated = true;
-                                    }
-                                    
-                                    if (!aggregatedCost.provider && toolCost.provider) {
-                                        aggregatedCost.provider = toolCost.provider;
-                                    }
-                                    if (!aggregatedCost.model && toolCost.model) {
-                                        aggregatedCost.model = toolCost.model;
-                                    }
-                                }
-                                
+
+                                // Aggregate usage/cost/model data into the final badge totals.
+                                const merged = aggregateToolUsageBadgeData(toolResult, aggregatedUsage, aggregatedCost);
+                                aggregatedUsage = merged.usage;
+                                aggregatedCost = merged.cost;
+
                                 // Extract capability flags if present
                                 if (toolResult.capability_flags && Array.isArray(toolResult.capability_flags)) {
                                     toolResult.capability_flags.forEach(function (flag) {
@@ -15745,8 +15690,17 @@
                 displayPayload.chartHeight = normalized.chartHeight || 350;
             }
             
+            // Carry usage/cost from the SSE event so the tool bubble can render
+            // the same model/cost/token badges as the final assistant response.
+            const toolUsage = data && data.usage && typeof data.usage === 'object' ? data.usage : null;
+            const toolCost = data && data.cost && typeof data.cost === 'object' ? data.cost : null;
+
             // Display the tool result with attachments if available
-            const messageElement = appendMessage(state.messagesEl, messageType, displayPayload, false, { state: state });
+            const messageElement = appendMessage(state.messagesEl, messageType, displayPayload, false, {
+                state: state,
+                usage: toolUsage,
+                cost: toolCost
+            });
             
             // Add tool result to conversation state for persistence
             // This ensures tool results are saved to localStorage and CCT
@@ -15771,8 +15725,11 @@
                     contentForApi = String(result);
                 }
 
-                // Extract display metadata for proper UI restoration
-                const displayMetadata = extractDisplayMetadata(messageElement, displayPayload);
+                // Extract display metadata for proper UI restoration (including badges)
+                const displayMetadata = extractDisplayMetadata(messageElement, displayPayload, {
+                    usage: toolUsage,
+                    cost: toolCost
+                });
 
                 // Determine the tool_call_id to use for this tool result.
                 // Use the toolCallId from event data if provided and valid,
@@ -16320,122 +16277,10 @@
                         return;
                     }
 
-                    // Phase 7: Enhanced Token Tracking - Check for usage data in two locations:
-                    // 1. Direct usage field on the tool result (new method, preferred)
-                    // 2. Inside parsed content (legacy method, for backwards compatibility)
-                    let toolUsage = null;
-                    let toolCost = null;
-                    let toolModel = null;
-                    let toolProvider = null;
-
-                    // Try direct usage field first (added in Phase 7)
-                    if (toolResult.usage && typeof toolResult.usage === 'object') {
-                        toolUsage = toolResult.usage;
-                        toolModel = toolUsage.model || null;
-                        toolProvider = toolUsage.provider || null;
-                    }
-
-                    // Try direct cost field (for tools that provide cost estimates like generate_openai_image)
-                    if (toolResult.cost && typeof toolResult.cost === 'object') {
-                        toolCost = toolResult.cost;
-                        if (!toolModel && toolCost.model) {
-                            toolModel = toolCost.model;
-                        }
-                        if (!toolProvider && toolCost.provider) {
-                            toolProvider = toolCost.provider;
-                        }
-                    }
-
-                    // Fall back to parsing content for usage and cost data (legacy support)
-                    if ((!toolUsage || !toolCost) && toolResult.content) {
-                        let parsedContent = toolResult.content;
-                        if (typeof parsedContent === 'string') {
-                            try {
-                                parsedContent = JSON.parse(parsedContent);
-                            } catch (e) {
-                                parsedContent = null;
-                            }
-                        }
-
-                        if (parsedContent && typeof parsedContent === 'object') {
-                            if (!toolUsage && parsedContent.usage && typeof parsedContent.usage === 'object') {
-                                toolUsage = parsedContent.usage;
-                            }
-                            if (!toolCost && parsedContent.cost && typeof parsedContent.cost === 'object') {
-                                toolCost = parsedContent.cost;
-                            }
-                            // Extract model and provider from parsed content
-                            if (parsedContent.model && !toolModel) {
-                                toolModel = parsedContent.model;
-                            }
-                            if (parsedContent.provider && !toolProvider) {
-                                toolProvider = parsedContent.provider;
-                            }
-                        }
-                    }
-
-                    // Aggregate usage data if found
-                    if (toolUsage) {
-                        // Initialize aggregated usage if not present
-                        if (!aggregatedUsage) {
-                            aggregatedUsage = {
-                                prompt_tokens: 0,
-                                completion_tokens: 0,
-                                total_tokens: 0
-                            };
-                        }
-
-                        // Aggregate token counts
-                        aggregatedUsage.prompt_tokens = (aggregatedUsage.prompt_tokens || 0) + (toolUsage.prompt_tokens || 0);
-                        aggregatedUsage.completion_tokens = (aggregatedUsage.completion_tokens || 0) + (toolUsage.completion_tokens || 0);
-                        aggregatedUsage.total_tokens = (aggregatedUsage.total_tokens || 0) + (toolUsage.total_tokens || 0);
-                        
-                        // Preserve is_estimated flag if any tool usage is estimated
-                        if (toolUsage.is_estimated) {
-                            aggregatedUsage.is_estimated = true;
-                        }
-                    }
-
-                    // Aggregate cost data if found
-                    if (toolCost && typeof toolCost.cost_usd === 'number') {
-                        // Initialize aggregated cost if not present
-                        if (!aggregatedCost) {
-                            aggregatedCost = {
-                                cost_usd: 0
-                            };
-                        }
-
-                        // Aggregate cost amounts
-                        aggregatedCost.cost_usd = (aggregatedCost.cost_usd || 0) + toolCost.cost_usd;
-
-                        // Preserve is_estimated flag if any tool cost is estimated
-                        if (toolCost.is_estimated) {
-                            aggregatedCost.is_estimated = true;
-                        }
-
-                        // Preserve provider and model from first tool with cost
-                        if (!aggregatedCost.provider && toolCost.provider) {
-                            aggregatedCost.provider = toolCost.provider;
-                        }
-                        if (!aggregatedCost.model && toolCost.model) {
-                            aggregatedCost.model = toolCost.model;
-                        }
-                    }
-
-                    // Include model and provider in aggregated usage
-                    if (toolModel || toolProvider) {
-                        if (!aggregatedUsage) {
-                            aggregatedUsage = {};
-                        }
-                        
-                        // Prefer tool's explicit model/provider over defaults
-                        if (toolModel && !aggregatedUsage.model) {
-                            aggregatedUsage.model = toolModel;
-                        }
-                        if (toolProvider && !aggregatedUsage.provider) {
-                            aggregatedUsage.provider = toolProvider;
-                        }
-                    }
+                    // Aggregate usage/cost/model data into the final badge totals.
+                    const merged = aggregateToolUsageBadgeData(toolResult, aggregatedUsage, aggregatedCost);
+                    aggregatedUsage = merged.usage;
+                    aggregatedCost = merged.cost;
                 });
             }
 
@@ -17659,6 +17504,143 @@
     }
 
     /**
+     * Aggregate a single tool result's usage/cost/model data into the final
+     * assistant response badge totals.
+     *
+     * The server attaches two shapes to each tool_result message:
+     * - usage: {prompt_tokens, completion_tokens, total_tokens, model, provider, cost_usd, ...}
+     * - cost:  {cost_usd, is_estimated, provider, model}
+     * Both are supported, plus the legacy usage/cost-nested-inside-content shape,
+     * so the final response label reflects every token and dollar spent by tools.
+     *
+     * @param {Object|null} toolResult - Tool result message from the API payload.
+     * @param {Object|null} aggregatedUsage - Accumulated usage {prompt_tokens, completion_tokens, total_tokens, model, provider, is_estimated}.
+     * @param {Object|null} aggregatedCost - Accumulated cost {cost_usd, is_estimated, provider, model}.
+     * @return {Object} { usage, cost } with the new accumulated values.
+     */
+    function aggregateToolUsageBadgeData(toolResult, aggregatedUsage, aggregatedCost) {
+        if (!toolResult) {
+            return { usage: aggregatedUsage, cost: aggregatedCost };
+        }
+
+        let toolUsage = null;
+        let toolCost = null;
+        let toolModel = null;
+        let toolProvider = null;
+
+        // 1. Direct usage field (preferred; attached by the server since Phase 7).
+        if (toolResult.usage && typeof toolResult.usage === 'object') {
+            toolUsage = toolResult.usage;
+            toolModel = toolUsage.model || null;
+            toolProvider = toolUsage.provider || null;
+        }
+
+        // 2. Direct cost field (tools that provide cost estimates, e.g. image generation).
+        if (toolResult.cost && typeof toolResult.cost === 'object') {
+            toolCost = toolResult.cost;
+            if (!toolModel && toolCost.model) {
+                toolModel = toolCost.model;
+            }
+            if (!toolProvider && toolCost.provider) {
+                toolProvider = toolCost.provider;
+            }
+        }
+
+        // 3. Legacy: usage/cost nested inside parsed content.
+        if ((!toolUsage || !toolCost) && toolResult.content) {
+            let parsedContent = toolResult.content;
+            if (typeof parsedContent === 'string') {
+                try {
+                    parsedContent = JSON.parse(parsedContent);
+                } catch (e) {
+                    parsedContent = null;
+                }
+            }
+
+            if (parsedContent && typeof parsedContent === 'object') {
+                if (!toolUsage && parsedContent.usage && typeof parsedContent.usage === 'object') {
+                    toolUsage = parsedContent.usage;
+                }
+                if (!toolCost && parsedContent.cost && typeof parsedContent.cost === 'object') {
+                    toolCost = parsedContent.cost;
+                }
+                if (parsedContent.model && !toolModel) {
+                    toolModel = parsedContent.model;
+                }
+                if (parsedContent.provider && !toolProvider) {
+                    toolProvider = parsedContent.provider;
+                }
+            }
+        }
+
+        // 4. Server fallback: cost_usd nested inside the usage object.
+        if (!toolCost && toolUsage && typeof toolUsage.cost_usd === 'number') {
+            toolCost = {
+                cost_usd: toolUsage.cost_usd,
+                is_estimated: !!(toolUsage.cost_is_estimated || toolUsage.is_estimated),
+                provider: toolUsage.provider || '',
+                model: toolUsage.model || ''
+            };
+        }
+
+        // Aggregate token counts.
+        if (toolUsage) {
+            if (!aggregatedUsage) {
+                aggregatedUsage = {
+                    prompt_tokens: 0,
+                    completion_tokens: 0,
+                    total_tokens: 0
+                };
+            }
+
+            aggregatedUsage.prompt_tokens = (aggregatedUsage.prompt_tokens || 0) + (toolUsage.prompt_tokens || 0);
+            aggregatedUsage.completion_tokens = (aggregatedUsage.completion_tokens || 0) + (toolUsage.completion_tokens || 0);
+            aggregatedUsage.total_tokens = (aggregatedUsage.total_tokens || 0) + (toolUsage.total_tokens || 0);
+
+            if (toolUsage.is_estimated) {
+                aggregatedUsage.is_estimated = true;
+            }
+        }
+
+        // Aggregate cost amounts.
+        if (toolCost && typeof toolCost.cost_usd === 'number') {
+            if (!aggregatedCost) {
+                aggregatedCost = {
+                    cost_usd: 0
+                };
+            }
+
+            aggregatedCost.cost_usd = (aggregatedCost.cost_usd || 0) + toolCost.cost_usd;
+
+            if (toolCost.is_estimated) {
+                aggregatedCost.is_estimated = true;
+            }
+
+            if (!aggregatedCost.provider && toolCost.provider) {
+                aggregatedCost.provider = toolCost.provider;
+            }
+            if (!aggregatedCost.model && toolCost.model) {
+                aggregatedCost.model = toolCost.model;
+            }
+        }
+
+        // Merge model/provider into the aggregated usage for badge display.
+        if (toolModel || toolProvider) {
+            if (!aggregatedUsage) {
+                aggregatedUsage = {};
+            }
+            if (toolModel && !aggregatedUsage.model) {
+                aggregatedUsage.model = toolModel;
+            }
+            if (toolProvider && !aggregatedUsage.provider) {
+                aggregatedUsage.provider = toolProvider;
+            }
+        }
+
+        return { usage: aggregatedUsage, cost: aggregatedCost };
+    }
+
+    /**
      * Attach usage and cost badges to an assistant message element.
      * Phase 7 Week 5-6: Enhanced Token Tracking with Real-Time Cost Attribution
      * 
@@ -18191,6 +18173,14 @@
                     speechState.voiceChatModeActive = false;
                 }, 300);
             }
+        }
+        
+        // Attach usage and cost badges to tool response bubbles so each tool
+        // shows the same model/cost/token info as the final assistant response.
+        if (role === 'tool') {
+            const usage = options && options.usage ? options.usage : null;
+            const costData = options && options.cost ? options.cost : null;
+            attachUsageBadges(entry, usage, costData);
         }
         
         // Attach delete button for user messages

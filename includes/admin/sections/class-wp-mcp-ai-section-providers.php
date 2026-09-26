@@ -911,6 +911,79 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder' => 'https://generativelanguage.googleapis.com/v1beta',
 				),
 
+				// Higgsfield Settings.
+				'enable_higgsfield'                  => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Higgsfield Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Higgsfield as an available video/image generation provider', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Higgsfield (higgsfield.ai) is an AI-native creative suite exposing a curated catalog of 50+ video and image models through one asynchronous API. Disabled by default; enable after adding your API credentials.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'higgsfield_api_key_id'              => array(
+					'type'        => 'password',
+					'label'       => __( 'Higgsfield API Key ID', 'mcp-ai-wpoos' ),
+					'description' => sprintf(
+						/* translators: %1$s: Higgsfield Console URL, %2$s: env var name */
+						__( 'Your Higgsfield API key ID (first half of the two-part credential). Create credentials in the <a href="%1$s" target="_blank">Higgsfield Console</a>. You can also set the %2$s environment variable. The key is shown only once at creation.', 'mcp-ai-wpoos' ),
+						'https://console.higgsfield.ai',
+						'<code>HIGGSFIELD_API_KEY_ID</code>'
+					),
+				),
+				'higgsfield_api_key_secret'          => array(
+					'type'        => 'password',
+					'label'       => __( 'Higgsfield API Key Secret', 'mcp-ai-wpoos' ),
+					'description' => sprintf(
+						/* translators: %1$s: env var name */
+						__( 'Your Higgsfield API key secret (second half of the two-part credential). Requests authenticate with "Key {ID}:{Secret}". You can also set the %1$s environment variable. Keep this value server-side — never expose it in browser or mobile code.', 'mcp-ai-wpoos' ),
+						'<code>HIGGSFIELD_API_KEY_SECRET</code>'
+					),
+				),
+				'higgsfield_video_resolution'        => array(
+					'type'        => 'select',
+					'label'       => __( 'Higgsfield Video Resolution', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default resolution for Higgsfield Cinema Studio videos.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'720p' => '720p (Recommended)',
+						'480p' => '480p (Faster, cheaper)',
+					),
+					'default'     => '720p',
+				),
+				'higgsfield_video_aspect_ratio'      => array(
+					'type'        => 'select',
+					'label'       => __( 'Higgsfield Video Aspect Ratio', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default aspect ratio for Higgsfield Cinema Studio videos.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'16:9' => '16:9 (Widescreen)',
+						'9:16' => '9:16 (Vertical/Stories)',
+						'1:1'  => '1:1 (Square)',
+						'4:3'  => '4:3 (Classic)',
+						'3:4'  => '3:4 (Portrait)',
+						'21:9' => '21:9 (CinemaScope)',
+					),
+					'default'     => '16:9',
+				),
+				'higgsfield_video_duration'          => array(
+					'type'        => 'select',
+					'label'       => __( 'Higgsfield Video Duration', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default duration for Higgsfield Cinema Studio videos in seconds (4-30). Video is billed per second of output from your prepaid balance.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'4'  => '4 seconds',
+						'5'  => '5 seconds (Default)',
+						'8'  => '8 seconds',
+						'10' => '10 seconds',
+						'15' => '15 seconds',
+						'30' => '30 seconds (Max)',
+					),
+					'default'     => '5',
+				),
+				'higgsfield_video_generate_audio'    => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Generate Audio with Higgsfield Videos', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Generate audio alongside video (Cinema Studio 4.0)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, Higgsfield Cinema Studio generates a soundtrack with the video. Disable for silent clips.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+
 				// Ollama Settings.
 				'enable_ollama'                      => array(
 					'type'           => 'checkbox',
@@ -1373,7 +1446,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'options'     => array(
 						'jev-latest'  => __( 'Jev Latest (follows newest release)', 'mcp-ai-wpoos' ),
 						'jev-preview' => __( 'Jev Preview (follows preview builds)', 'mcp-ai-wpoos' ),
-						'jev-1.13.0' => __( 'Jev 1.13.0 (pinned)', 'mcp-ai-wpoos' ),
+						'jev-1.13.0'  => __( 'Jev 1.13.0 (pinned)', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'jev-latest',
 				),
@@ -1410,7 +1483,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description'    => __( 'With the Pro addon, every chat message is screened against the Jev hazard set (prompt injection, harassment, self-harm, sensitive PII, illegal activity) before it reaches the model. Only a high-confidence block verdict vetoes the message; review verdicts pass through advisory. Fails open when Jev is unreachable or unconfigured.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'enable_jev_citation_check'           => array(
+				'enable_jev_citation_check'          => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Jev Citation Checking', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Verify report citations against their sources with Jev (Pro research tools)', 'mcp-ai-wpoos' ),
@@ -1605,6 +1678,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'  => __( 'Google Gemini', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
 					'fields' => array( 'enable_gemini', 'gemini_api_key_type', 'gemini_api_key', 'default_gemini_model', 'gemini_fallback_model', 'gemini_thinking_budget_tokens', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'enable_gemini_api_caching', 'gemini_model_list_cache_ttl', 'gemini_embedding_cache_ttl', 'gemini_token_count_cache_ttl', 'gemini_audio_language', 'gemini_speech_voice', 'gemini_base_url' ),
+				),
+				'higgsfield'           => array(
+					'id'     => 'higgsfield',
+					'label'  => __( 'Higgsfield', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-video-alt3',
+					'fields' => array( 'enable_higgsfield', 'higgsfield_api_key_id', 'higgsfield_api_key_secret', 'higgsfield_video_resolution', 'higgsfield_video_aspect_ratio', 'higgsfield_video_duration', 'higgsfield_video_generate_audio' ),
 				),
 				'ollama'               => array(
 					'id'     => 'ollama',

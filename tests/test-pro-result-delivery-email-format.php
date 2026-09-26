@@ -366,6 +366,183 @@ class Test_Pro_Result_Delivery_Email_Format extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The action_items email template must deliver only the actionable section
+	 * of the response — the roundup intro and informational sections are dropped.
+	 */
+	public function test_format_email_action_items_extracts_section() {
+		$response = "Inbox roundup.\n\n"
+			. "## Needs your attention\n"
+			. "1. Call supplier\n"
+			. "2. Pay invoice\n\n"
+			. "## Informational\n"
+			. 'Nothing else.';
+		$shared   = array(
+			'schedule_name' => 'Inbox Digest',
+			'summary'       => wp_trim_words( wp_strip_all_tags( $response ), 25, '…' ),
+			'response'      => $response,
+			'status'        => 'success',
+			'is_success'    => true,
+			'generated_at'  => time(),
+			'schedule_type' => 'assistant_run',
+		);
+		$envelope = array(
+			'summary'      => $shared['summary'],
+			'response'     => $response,
+			'status'       => 'success',
+			'generated_at' => time(),
+		);
+
+		$payload = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'format_email',
+			array( $shared, $envelope, 'action_items' )
+		);
+
+		$this->assertStringContainsString( 'Action items', $payload['plain'] );
+		$this->assertStringContainsString( 'Call supplier', $payload['plain'] );
+		$this->assertStringContainsString( 'Pay invoice', $payload['plain'] );
+		$this->assertStringNotContainsString( 'Inbox roundup', $payload['plain'] );
+		$this->assertStringNotContainsString( 'Nothing else', $payload['plain'] );
+	}
+
+	/**
+	 * The action_items email template must fall back to the substantive response
+	 * when the response carries no action section (never the trimmed summary).
+	 */
+	public function test_format_email_action_items_falls_back_to_response() {
+		$shared   = array(
+			'schedule_name' => 'Inbox Digest',
+			'summary'       => 'All clear.',
+			'response'      => 'All quiet on the inbox front.',
+			'status'        => 'success',
+			'is_success'    => true,
+			'generated_at'  => time(),
+			'schedule_type' => 'assistant_run',
+		);
+		$envelope = array(
+			'summary'      => 'All clear.',
+			'response'     => 'All quiet on the inbox front.',
+			'status'       => 'success',
+			'generated_at' => time(),
+		);
+
+		$payload = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'format_email',
+			array( $shared, $envelope, 'action_items' )
+		);
+
+		$this->assertStringNotContainsString( 'Action items', $payload['plain'] );
+		$this->assertStringContainsString( 'All quiet on the inbox front.', $payload['plain'] );
+	}
+
+	/**
+	 * The summary email template must include a relevant excerpt of the
+	 * response (the distillation section, not the roundup intro or trailing
+	 * detail sections).
+	 */
+	public function test_format_email_summary_includes_relevant_excerpt() {
+		$response = "Here's the roundup.\n\n"
+			. "## Summary\n"
+			. "Two orders need attention.\n\n"
+			. "## Details\n"
+			. 'Order 4412 delayed.';
+		$shared   = array(
+			'schedule_name' => 'Inbox Digest',
+			'summary'       => wp_trim_words( wp_strip_all_tags( $response ), 25, '…' ),
+			'response'      => $response,
+			'status'        => 'success',
+			'is_success'    => true,
+			'generated_at'  => time(),
+			'schedule_type' => 'assistant_run',
+		);
+		$envelope = array(
+			'summary'      => $shared['summary'],
+			'response'     => $response,
+			'status'       => 'success',
+			'generated_at' => time(),
+		);
+
+		$payload = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'format_email',
+			array( $shared, $envelope, 'summary' )
+		);
+
+		$this->assertStringContainsString( 'Two orders need attention', $payload['plain'] );
+		$this->assertStringNotContainsString( 'Order 4412 delayed', $payload['plain'] );
+		$this->assertStringNotContainsString( 'roundup', $payload['plain'] );
+	}
+
+	/**
+	 * The summary email template must not print the summary line when the
+	 * response already opens with it — assistant-run summaries are a trim of
+	 * the response's first words.
+	 */
+	public function test_format_email_summary_skips_summary_prefix_of_response() {
+		$response = "Here's your 6-hour email review 👀\n\nWindow reviewed: 13:52 – 19:52 UTC (Wed, Sep 9).\nResult: 2 actionable emails landed in the window, both unread, with the rest being Pinterest promos or earlier messages.";
+		$summary  = wp_trim_words( wp_strip_all_tags( $response ), 25, '…' );
+		$shared   = array(
+			'schedule_name' => 'Inbox Digest',
+			'summary'       => $summary,
+			'response'      => $response,
+			'status'        => 'success',
+			'is_success'    => true,
+			'generated_at'  => time(),
+			'schedule_type' => 'assistant_run',
+		);
+		$envelope = array(
+			'summary'      => $summary,
+			'response'     => $response,
+			'status'       => 'success',
+			'generated_at' => time(),
+		);
+
+		$payload = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'format_email',
+			array( $shared, $envelope, 'summary' )
+		);
+
+		$this->assertStringNotContainsString( '6-hour email review', $payload['plain'] );
+		$this->assertStringNotContainsString( 'Window reviewed', $payload['plain'] );
+		$this->assertStringContainsString( '2 actionable emails', $payload['plain'] );
+		$this->assertStringContainsString( 'Pinterest promos', $payload['plain'] );
+	}
+
+	/**
+	 * A summary that is not derived from the response must still lead the
+	 * summary email, followed by the relevant excerpt.
+	 */
+	public function test_format_email_summary_keeps_non_prefix_summary_line() {
+		$shared   = array(
+			'schedule_name' => 'Inbox Digest',
+			'summary'       => 'Generated 5 posts.',
+			'response'      => 'All tasks completed successfully.',
+			'status'        => 'success',
+			'is_success'    => true,
+			'generated_at'  => time(),
+			'schedule_type' => 'workflow',
+		);
+		$envelope = array(
+			'summary'      => 'Generated 5 posts.',
+			'response'     => 'All tasks completed successfully.',
+			'status'       => 'success',
+			'generated_at' => time(),
+		);
+
+		$payload = $this->invoke_static(
+			'WP_MCP_AI_Result_Delivery_Service',
+			'format_email',
+			array( $shared, $envelope, 'summary' )
+		);
+
+		$this->assertStringStartsWith( 'Generated 5 posts.', $payload['plain'] );
+		$this->assertStringContainsString( 'All tasks completed successfully.', $payload['plain'] );
+		$this->assertStringContainsString( '---', $payload['plain'] );
+	}
+
+	/**
 	 * Workflow envelopes store the step log under `data.steps`; the full email
 	 * template must render it as a compact execution log — never as a
 	 * flattened dot-notation dump of the nested step results.

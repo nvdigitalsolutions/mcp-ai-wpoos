@@ -3210,8 +3210,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		 */
 		protected static function sanitize_delivery_channels( array $channels ) {
 			$allowed         = array( 'email', 'slack', 'telegram', 'discord', 'teams', 'messenger', 'whatsapp', 'google_chat', 'sms', 'paper_store', 'webhook', 'wordpress' );
-			$email_templates = array( 'full', 'summary', 'error', 'response_only' );
-			$chat_templates  = array( 'summary', 'error', 'response_only', 'full' );
+			$email_templates = array( 'full', 'summary', 'error', 'response_only', 'action_items' );
+			$chat_templates  = array( 'summary', 'error', 'response_only', 'full', 'action_items' );
 			$chat_formats    = array(
 				'telegram'    => array( 'html', 'markdown', 'markdown_v2', 'plain' ),
 				'whatsapp'    => array( 'markdown', 'plain' ),

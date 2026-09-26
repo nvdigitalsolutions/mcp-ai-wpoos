@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-cloud-vision-client.php';
 
 /**
  * Provides an assistant tool that detects and localizes objects using Vision API.
@@ -140,104 +141,28 @@ class WP_MCP_AI_Tool_Vision_Object_Localization implements WP_MCP_AI_Tool_Interf
 		}
 
 		// Build the image source object.
-		$image = array();
-		if ( ! empty( $arguments['image_url'] ) ) {
-			$image['source'] = array(
-				'imageUri' => esc_url_raw( $arguments['image_url'] ),
-			);
-		} elseif ( ! empty( $arguments['image_content'] ) ) {
-			$image['content'] = sanitize_text_field( $arguments['image_content'] );
-		}
+		$client = new WP_MCP_AI_Cloud_Vision_Client();
+		$image  = $client->build_image_source(
+			isset( $arguments['image_url'] ) ? $arguments['image_url'] : '',
+			isset( $arguments['image_content'] ) ? $arguments['image_content'] : ''
+		);
 
 		$max_results = isset( $arguments['max_results'] ) ? min( 100, max( 1, absint( $arguments['max_results'] ) ) ) : 10;
 
-		// Build the request body.
-		$request_body = array(
-			'requests' => array(
+		// Delegate the request, error mapping, and response decoding to the
+		// shared Cloud Vision client (same endpoint, key, and timeout filters).
+		return $client->annotate(
+			array(
 				array(
-					'image'    => $image,
-					'features' => array(
-						array(
-							'type'       => 'OBJECT_LOCALIZATION',
-							'maxResults' => $max_results,
-						),
-					),
+					'type'       => 'OBJECT_LOCALIZATION',
+					'maxResults' => $max_results,
 				),
 			),
-		);
-
-		$timeout = apply_filters( 'wp_mcp_ai_vision_request_timeout', 30, $context, $arguments, $this );
-
-		// Retrieve the Google Cloud API key (reuses the Gemini key; override via filter).
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		$api_key  = apply_filters(
-			'wp_mcp_ai_vision_api_key',
-			isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '',
+			$image,
 			$context,
-			$arguments
+			$arguments,
+			$this
 		);
-
-		if ( empty( $api_key ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_vision_missing_api_key',
-				__( 'A Google Cloud API key with the Cloud Vision API enabled is required. Configure a Gemini API key in NV oOS settings, or supply one via the wp_mcp_ai_vision_api_key filter.', 'mcp-ai-wpoos' ),
-				array( 'status' => 400 )
-			);
-		}
-
-		$response = wp_remote_post(
-			add_query_arg( 'key', $api_key, self::VISION_API_ENDPOINT ),
-			array(
-				'headers' => array(
-					'Content-Type' => 'application/json',
-				),
-				'body'    => wp_json_encode( $request_body ),
-				'timeout' => max( 5, absint( $timeout ) ),
-			)
-		);
-
-		if ( is_wp_error( $response ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_vision_request_failed',
-				sprintf(
-					/* translators: %s: error message */
-					__( 'Vision API request failed: %s', 'mcp-ai-wpoos' ),
-					$response->get_error_message()
-				),
-				array( 'status' => 500 )
-			);
-		}
-
-		$status_code = wp_remote_retrieve_response_code( $response );
-		$body        = wp_remote_retrieve_body( $response );
-		$decoded     = json_decode( $body, true );
-
-		// Handle API errors.
-		if ( $status_code >= 400 ) {
-			$error_message = __( 'Vision API returned an error.', 'mcp-ai-wpoos' );
-			if ( is_array( $decoded ) && isset( $decoded['error']['message'] ) ) {
-				$error_message = $decoded['error']['message'];
-			}
-
-			return new WP_Error(
-				'wp_mcp_ai_vision_api_error',
-				$error_message,
-				array(
-					'status'       => $status_code,
-					'api_response' => $decoded,
-				)
-			);
-		}
-
-		if ( ! is_array( $decoded ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_vision_invalid_response',
-				__( 'Vision API returned an invalid response.', 'mcp-ai-wpoos' ),
-				array( 'status' => 500 )
-			);
-		}
-
-		return $decoded;
 	}
 
 

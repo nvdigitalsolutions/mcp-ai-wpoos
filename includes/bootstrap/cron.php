@@ -419,6 +419,37 @@ if ( ! function_exists( 'wp_mcp_ai_init_async_executor' ) ) {
 	}
 }
 
+if ( ! has_action( 'wp_mcp_ai_bootstrapped', 'wp_mcp_ai_init_async_tool_timeout_overrides' ) ) {
+	add_action( 'wp_mcp_ai_bootstrapped', 'wp_mcp_ai_init_async_tool_timeout_overrides', 4 );
+}
+
+if ( ! function_exists( 'wp_mcp_ai_init_async_tool_timeout_overrides' ) ) {
+	/**
+	 * Register per-tool timeout overrides for the async tool executor.
+	 *
+	 * Long-running generative tools (e.g. Higgsfield video generation) poll an
+	 * external provider for completion and can exceed the executor's default
+	 * 180-second tool timeout. Called before the executor initialises so the
+	 * filter is always active when async jobs execute.
+	 */
+	function wp_mcp_ai_init_async_tool_timeout_overrides() {
+		add_filter(
+			'wp_mcp_ai_async_tool_timeout',
+			static function ( $timeout, $tool_slug ) {
+				// Higgsfield Cinema Studio generations poll up to ~8 minutes
+				// (submission + backoff polling + download).
+				if ( in_array( $tool_slug, array( 'generate_higgsfield_video', 'generate_higgsfield_image' ), true ) ) {
+					return 480;
+				}
+
+				return $timeout;
+			},
+			10,
+			2
+		);
+	}
+}
+
 // Initialize transcript mining job during plugin bootstrap so its cron tick
 // handler is always registered — including during WP-Cron requests where the
 // REST controller (the only other loader) is never instantiated.
