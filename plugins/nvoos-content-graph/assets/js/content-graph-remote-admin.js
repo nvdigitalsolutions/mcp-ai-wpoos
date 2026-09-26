@@ -25,7 +25,29 @@
 		$( '#nvoos-modal-title' ).text( cfg.i18n.addSource + ': ' + label );
 		$( '#nvoos-source-config-fields' ).html( buildFields( schema ) );
 		$( '#nvoos-remote-source-modal' ).show();
+		// Auto-derive the slug from the label until the user edits it.
+		$( '#nvoos-source-slug' ).data( 'touched', false ).val( '' );
+		$( '#nvoos-source-label' ).val( '' ).trigger( 'focus' );
 	} );
+
+	// Auto-generate the slug while the label is typed (WordPress-style),
+	// but stop the moment the user edits the slug themselves.
+	$( '#nvoos-source-label' ).on( 'input', function () {
+		const $slug = $( '#nvoos-source-slug' );
+		if ( $slug.data( 'touched' ) ) { return; }
+		$slug.val( slugify( $( this ).val() ) );
+	} );
+	$( '#nvoos-source-slug' ).on( 'input', function () {
+		$( this ).data( 'touched', $( this ).val().length > 0 );
+	} );
+
+	function slugify( value ) {
+		return ( value || '' )
+			.toLowerCase()
+			.replace( /[^a-z0-9\s_-]+/g, '' )
+			.trim()
+			.replace( /[\s_]+/g, '-' );
+	}
 
 	$( '#nvoos-modal-cancel' ).on( 'click', function () {
 		$( '#nvoos-remote-source-modal' ).hide();
@@ -169,6 +191,15 @@
 
 			if ( 'password' === type ) {
 				control = '<input type="password" name="config[' + escKey + ']" class="regular-text" autocomplete="new-password"' + ( field.required ? ' required' : '' ) + '>';
+			} else if ( 'select' === type ) {
+				const options = field.options || {};
+				let opts = '';
+				Object.keys( options ).forEach( function ( optValue ) {
+					const selected = String( field.default ) === String( optValue ) ? ' selected' : '';
+					opts += '<option value="' + $( '<div/>' ).text( optValue ).html() + '"' + selected + '>' +
+						$( '<div/>' ).text( options[ optValue ] ).html() + '</option>';
+				} );
+				control = '<select name="config[' + escKey + ']">' + opts + '</select>';
 			} else if ( 'textarea' === type ) {
 				control = '<textarea name="config[' + escKey + ']" class="large-text" rows="4"' + ( field.required ? ' required' : '' ) + '></textarea>';
 			} else if ( 'checkbox' === type ) {
