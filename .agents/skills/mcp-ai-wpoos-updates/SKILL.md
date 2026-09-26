@@ -134,6 +134,25 @@ weekly (or on demand), independent of any release.
   build/release-only (no production file table); their only real effect is
   dropping already-stale build ZIPs (the v1.1.86 pass's #6770 is the
   precedent).
+- **The stale-ZIP set follows the full build set, not just the wp.org root.**
+  When a release ships, remove the whole previous-version artifact set — root
+  `build/` ZIPs + `.sha256` pairs **plus** `build/optional-components/` and
+  `build/toolkit-addons/` (the v1.1.85 pass's "30 files" shape — 9 + 2 + 19 —
+  repeated by the v1.1.87 pass for the 1.1.85 set).
+- **An introducing PR may pre-stage the readme.txt release entry.** A feature
+  PR can add a `= X.Y.Z - Unreleased =` changelog paragraph before the
+  catch-up runs (the v1.1.87 window's #6780 did) — the catch-up converts it
+  into the dated release entry and extends it with the rest of the window;
+  never keep two entries for the same version.
+- **Sub-project window PRs are flagged-not-edited even when they carry their
+  own changelog surfaces.** PRs that update `plugins/nvoos-content-graph`'s
+  own CHANGELOG.md/readme.txt/.pot (the v1.1.87 window's #6782/#6783) keep
+  their own version track (1.0.8) — the catch-up notes them in the plan and
+  the changelog's sub-project paragraph but edits nothing under `plugins/`.
+- **Wrong-version `@since` groups with unusual tags record like any other OI-1
+  group.** The v1.1.87 window shipped `@since 2.12.0` ×139 (outbound-booking
+  toolkit + Upwork files) — record the group with its counts and locations;
+  parked reconciliation (OI-1) still applies, no in-pass fixes.
 
 ### A3. Commit structure (mirror v1.1.58–v1.1.83)
 
@@ -620,12 +639,14 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.83-post-docs-catch-up.md`,
   `docs/project/plans/v1.1.84-docs-catch-up.md`,
   `docs/project/plans/v1.1.85-docs-catch-up.md`,
-  `docs/project/plans/v1.1.86-docs-catch-up.md` (latest executed — the v1.1.86
-  pass over PRs #6761–#6773: MCP Apps as a Remote Sites connection type +
-  reference mode, the Higgsfield media provider (+4 base tools), the
-  get_system_logs since/levels/search filters, tool-cost response labels,
-  action-items delivery templates, and the stale 1.1.84 ZIP removal; also the
-  first pass to fold a skipped skill-count bookkeeping into the release)
+  `docs/project/plans/v1.1.86-docs-catch-up.md`,
+  `docs/project/plans/v1.1.87-docs-catch-up.md` (latest executed — the v1.1.87
+  pass over PRs #6776–#6786: the mcp-wordpress parity suite (+30 base tools),
+  the non-LLM image identification ladder (+5 base +2 Pro), the outbound
+  appointment booking toolkit (+3 Pro), the mcp-wordpress gateway addon
+  (27 → 28 addons), session-budget warnings + bundled Elementor skills,
+  the restriction-notice fix, Upwork search refinements, the stale 1.1.85
+  build-set removal (30 files), and the readme.txt Unreleased-entry conversion)
 - Standing open items: `docs/project/plans/docs-catch-up-open-items.md`
 - Executed PR deferred-item sweep (2026-09-17): issues #6646–#6655; closed
   #6389 as complete

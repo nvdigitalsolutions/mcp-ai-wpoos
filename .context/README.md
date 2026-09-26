@@ -30,6 +30,7 @@ These context files solve that problem by giving agents a fast, focused referenc
 | `cross-platform-extraction.md` | Working on the cross-platform extraction engine (Laravel/Craft CMS adapters) |
 | `settings-storage.md` | Working on plugin options, transients, or custom table storage |
 | `media-worker.md` | Working on the media worker sidecar, the plugin client trait, or worker-routed Pro services |
+| `image-identification.md` | Working on the image identification ladder (`identify_image` + Cloud Vision / perceptual-hash / OCR tools) |
 | `oos-engine.md` | Working on the OOS engine (`includes/oos/`, `oos-bridge.php`, lib/core orchestrator, Pro composition) |
 
 ## Subdirectories

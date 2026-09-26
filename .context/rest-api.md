@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: September 22, 2026 (v1.1.83 post).
+> Last reviewed: September 27, 2026 (v1.1.87).
+>
+> **New in v1.1.87 (no base REST route changes):** the parity suite (#6777) and the image ladder (#6780) are tool-level registrations; #6779 is registry-level; #6776 adds the `wp_mcp_ai_chat_messages` filter on the chat paths (message-level, not route-level); #6784 documents `workflow_steps` on the existing Pro schedule REST docs. Pro-level additions to be aware of: #6786 registers a **public booking REST endpoint** (rate-limited, honeypotted, consent-gated — creating `mcp_appointment` records) and #6784's schedule `workflow_steps` flows through the existing `mcp-ai-pro/v1/schedules` surface. The mcp-wordpress gateway addon (#6778) serves its own `/healthz` + `/mcp` Streamable HTTP surface — a standalone Node addon, not a WordPress REST route.
 >
 > **New in v1.1.83 post (no REST surface changes):** no routes added, removed, or re-shaped this window — the TypeSafe Jev provider (#6728) passes `jev_routing` through the existing Pro `compare-models` REST response (argument-level, not route-level); the P3 ID-handoff waves (#6729–#6738) are tool-contract annotations; the usage-monitor fix (#6726) is the existing admin settings save path (no new route); the Assistant Builder seed (#6727) is activation-side. The base `typesafe_decide` tool (#6728) joins the tool surface, not a new REST route.
 >

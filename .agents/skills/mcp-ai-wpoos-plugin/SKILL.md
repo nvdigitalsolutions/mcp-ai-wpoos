@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.86"
-  plugin-version-tested: "1.1.86"
-  last-updated: "2026-09-22"
+  plugin-version: "1.1.87"
+  plugin-version-tested: "1.1.87"
+  last-updated: "2026-09-27"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -757,6 +757,16 @@ Import external AI conversation exports into the JetEngine
   toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
   dj-management/image-production slices.
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Parity Suite, Image Identification & Outbound Booking (v1.1.87)
+
+- **mcp-wordpress parity suite (PR #6777)** — 30 new base tools: comment/user CRUD, content/media/terms, site settings + application passwords (log-masked), 9-tool SEO toolkit — capability checks + multisite guards; gap matrix `docs/developer/mcp-wordpress-tool-parity.md`.
+- **Image identification ladder (PR #6780 + #6785, Proposal 043)** — `identify_image` + 4 companions (`get_image_metadata`, `find_similar_media`, `detect_image_content`, `describe_image_layout`) in the Media Generation preset; Pro `ocr_image_classic` + `search_similar_images`; key-gated, fails closed, never a vision LLM.
+- **Outbound appointment booking toolkit (PR #6786, Proposal 044)** — Pro toolkit gated by `enable_outbound_booking_toolkit`; 3 new Pro tools (`outbound_get_pipeline_stats`, `outbound_import_leads`, `outbound_manage_angle`); booking shortcode + public REST endpoint.
+- **mcp-wordpress gateway addon (PR #6778)** — Streamable HTTP MCP server for Cloudways Velocity; connects via Remote Sites → MCP Server.
+- **Session-budget warnings (PR #6776)** — blocked-session messages point at the reset path; `wp_mcp_ai_chat_messages` filter on both chat paths. **Restriction notice fix (PR #6779)** — distinct-user counting + render-time sweep.
+- **Upwork refinements (PR #6784)** — `update_pro_schedule` edits `workflow_steps` in place; `search_upwork_jobs` gains `exclude_keywords`/tier/budget parsing.
+- **Tool counts:** ~347 base + ~1,287 Pro (~1,634 total). Addons 27 → 28.
 
 ## MCP Server Connections, Higgsfield Media, Log Filters & Delivery Templates (v1.1.86)
 
