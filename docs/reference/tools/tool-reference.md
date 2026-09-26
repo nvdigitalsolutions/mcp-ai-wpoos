@@ -392,12 +392,22 @@ Perfect for construction workflows where accurate dimensions, code compliance, a
 
 - **Vision Product Search** (`vision_product_search`) searches for similar products using Google Cloud Vision API Product Search feature. Requires proper Google Cloud authentication credentials to succeed.【F:includes/tools/class-wp-mcp-ai-tool-vision-product-search.php†L17-L200】
 - **Vision Object Localization** (`vision_object_localization`) detects and localizes multiple objects in an image using Google Cloud Vision API. Returns bounding boxes and labels for identified objects. Requires proper Google Cloud authentication credentials.【F:includes/tools/class-wp-mcp-ai-tool-vision-object-localization.php†L17-L200】
+- **Detect Image Content** (`detect_image_content`) runs classic (non-LLM) Google Cloud Vision features — labels, visible text, web entities, logos, landmarks, faces, and safe-search signals — and returns a normalized, deterministic envelope. The cheap third rung of the image identification ladder; requires a Google Cloud key (reuses the Gemini key).【F:includes/tools/class-wp-mcp-ai-tool-detect-image-content.php†L17-L300】
+- **Identify Image** (`identify_image`) orchestrates the cheap-first, non-LLM identification ladder: WordPress metadata → perceptual-hash media lookup → classic Cloud Vision detection → layout description → optional reverse-image web search. Never calls a vision LLM; returns a confidence score and an escalation hint telling the model when to fall back to `analyze_image`.【F:includes/tools/class-wp-mcp-ai-tool-identify-image.php†L17-L300】
+- **Find Similar Media** (`find_similar_media`) finds visually similar images already in the WordPress media library using a pure-PHP perceptual hash (dHash). Free, local, deterministic; hashes are cached in post meta with a daily backfill.【F:includes/tools/class-wp-mcp-ai-tool-find-similar-media.php†L17-L300】
+- **Get Image Metadata** (`get_image_metadata`) reads all WordPress metadata for an image — alt text, title, caption, description, EXIF/IPTC, dimensions, MIME, filename, and URL — with no external calls. The first rung of the identification ladder.【F:includes/tools/class-wp-mcp-ai-tool-get-image-metadata.php†L17-L250】
+- **Describe Image Layout** (`describe_image_layout`) converts object bounding boxes (from `vision_object_localization` or `analyze_image_objects`, or via `auto_detect`) into a deterministic text layout description — grid quadrants, relative positions, size buckets — so text-only models can reason about image structure without vision tokens.【F:includes/tools/class-wp-mcp-ai-tool-describe-image-layout.php†L17-L300】
 
 ## Product data extraction
 
 - **Scrape Product** (`scrape_product`) scrapes product information (title, subtitle, description, images) from a product URL or saved HTML file. Downloads highest resolution images to WordPress media library. Enhanced with Schema.org JSON-LD extraction for automatic parsing of product schemas. Extracts offers, pricing, availability, and identifiers (SKU, GTIN, brand, model, MPN). Supports multiple extraction methods with fallbacks. Multi-currency support (USD, EUR, GBP). Useful for e-commerce content migration and product data integration.【F:includes/tools/class-wp-mcp-ai-tool-scrape-product.php†L17-L200】
 
 ## Pro addon tools
+
+### Vision Analysis (Pro)
+
+- **Search Similar Images** (`search_similar_images`) identifies an image by reverse-image web search — Bing Visual Search (official API, accepts uploads and URLs) or SerpApi Google Lens (requires a public URL). Returns best-guess labels and visual matches with source URLs; sends image bytes to the selected provider and requires configured credentials (Pro → Vision Analysis settings).【F:addons/pro/includes/tools/vision-analysis/class-wp-mcp-ai-tool-search-similar-images.php†L17-L300】
+- **Classic OCR Image** (`ocr_image_classic`) extracts text with classic tesseract OCR (media-worker tesseract.js first, system tesseract fallback) — deterministic and free, no vision language model. The cheap text rung of the identification ladder.【F:addons/pro/includes/tools/media/class-wp-mcp-ai-tool-ocr-image-classic.php†L17-L250】
 
 ### Product Actualization (Pro)
 

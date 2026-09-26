@@ -28,7 +28,7 @@ The folder's external contract is the **tool slug** registered with `WP_MCP_AI_T
 Tool categories (illustrative — see [`docs/reference/tools/tool-reference.md`](../../docs/reference/tools/tool-reference.md) for the full catalogue):
 
 - **Content** — `create_post`, `save_post`, `delete_post`, `search_content`, `get_recent_posts`, `update_term`, `create_term`, `list_terms`, `list_taxonomies`
-- **Media / vision** — `generate_openai_image`, `generate_gemini_image`, `analyze_image`, `crop_image`, `resize_image`, `vectorize_image`, `extract_image_text`
+- **Media / vision** — `generate_openai_image`, `generate_gemini_image`, `analyze_image`, `crop_image`, `resize_image`, `vectorize_image`, `extract_image_text`, `detect_image_content`, `identify_image`, `find_similar_media`, `get_image_metadata`, `describe_image_layout`, `vision_object_localization`, `vision_product_search` (non-LLM ladder: `identify_image` → `find_similar_media`/`get_image_metadata`/`detect_image_content`/`describe_image_layout`/`search_similar_images`/`ocr_image_classic`)
 - **Audio / video** — `transcribe_openai_audio`, `generate_openai_speech`, `generate_music`, `generate_veo_video`, `generate_sora_video`, `generate_higgsfield_video`, `generate_higgsfield_image`, `check_higgsfield_request`, `cancel_higgsfield_request`, `generate_omni_video`, `check_video_status`
 - **WordPress ops** — `get_site_health`, `get_system_logs`, `purge_cache`, `list_cron_jobs`, `create_cron_job`
 - **Agentic / orchestration** (`orchestration/`) — `create_task_plan`, `manage_autonomous_session`, `check_exit_conditions`, `analyze_loop_health`
@@ -77,6 +77,7 @@ Coverage manifest: [`tests/tools/.coverage-manifest.txt`](../../tests/tools/.cov
 - [`.context/conventions.md`](../../.context/conventions.md) — naming + style (always)
 - [`.context/security-checklist.md`](../../.context/security-checklist.md) — sanitiser/escaper rules (always)
 - [`.context/tool-registry.md`](../../.context/tool-registry.md) — canonical return envelope, slug rules, capability gating
+- [`.context/image-identification.md`](../../.context/image-identification.md) — the non-LLM image identification ladder (when editing image/vision tools)
 - [`.context/testing.md`](../../.context/testing.md) — how to add a tool test
 - [`docs/reference/tools/tool-reference.md`](../../docs/reference/tools/tool-reference.md) — authoritative tool catalogue (live count via `WP_MCP_AI_Tool_Registry::get_tools()`)
 

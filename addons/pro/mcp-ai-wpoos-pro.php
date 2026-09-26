@@ -1367,6 +1367,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				// Orphaned media management tools.
 				'WP_MCP_AI_Tool_Scan_Orphaned_Media'       => WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-scan-orphaned-media.php',
 				'WP_MCP_AI_Tool_Cleanup_Orphaned_Media'    => WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-cleanup-orphaned-media.php',
+				// Classic (non-LLM) tesseract OCR for the image identification ladder.
+				'WP_MCP_AI_Tool_Ocr_Image_Classic'        => WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-ocr-image-classic.php',
 			);
 			$pro_tools           = array_merge( $pro_tools, $media_toolkit_tools );
 		}
@@ -2052,6 +2054,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		if ( ! empty( $settings['enable_vision_analysis_toolkit'] ) ) {
 			$vision_analysis_tools = array(
 				'WP_MCP_AI_Tool_Analyze_Image_Objects' => WP_MCP_AI_PRO_PATH . 'includes/tools/vision-analysis/class-wp-mcp-ai-tool-analyze-image-objects.php',
+				'WP_MCP_AI_Tool_Search_Similar_Images' => WP_MCP_AI_PRO_PATH . 'includes/tools/vision-analysis/class-wp-mcp-ai-tool-search-similar-images.php',
 			);
 			$pro_tools             = array_merge( $pro_tools, $vision_analysis_tools );
 		}
