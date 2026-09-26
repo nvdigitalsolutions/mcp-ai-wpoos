@@ -46,10 +46,10 @@ class WP_MCP_AI_Pro_Tool_Update_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_usage_guidance() {
 		return array(
-			'when_to_use'     => __( 'Changing fields of an existing Pro Schedule, such as cadence, next run time, enabled state, or delivery options.', 'mcp-ai-wpoos-pro' ),
+			'when_to_use'     => __( 'Changing fields of an existing Pro Schedule, such as cadence, next run time, enabled state, delivery options, or the workflow_steps of a workflow-type schedule.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Creating a new schedule (use create_pro_schedule) or removing one (use delete_pro_schedule).', 'mcp-ai-wpoos-pro' ),
 			'related_tools'   => array( 'create_pro_schedule', 'delete_pro_schedule', 'list_pro_schedules' ),
-			'notes'           => __( 'Only provided fields are modified, so partial updates are safe; tags replace the existing list entirely.', 'mcp-ai-wpoos-pro' ),
+			'notes'           => __( 'Only provided fields are modified, so partial updates are safe; tags and workflow_steps replace the existing lists entirely. workflow_steps only applies to workflow-type schedules.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -165,6 +165,27 @@ class WP_MCP_AI_Pro_Tool_Update_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 									'minimum' => 0,
 									'maximum' => 3600,
 								),
+							),
+						),
+					),
+				),
+				'workflow_steps'    => array(
+					'type'        => 'array',
+					'description' => __( 'Replaces the ordered list of tool calls for "workflow" type schedules, so step arguments can be edited in place (e.g. correcting a search_upwork_jobs query). Each step: {tool_slug, arguments, label}. Only applies to workflow-type schedules.', 'mcp-ai-wpoos-pro' ),
+					'items'       => array(
+						'type'       => 'object',
+						'properties' => array(
+							'tool_slug' => array(
+								'type'        => 'string',
+								'description' => __( 'Registered tool slug to call at this step.', 'mcp-ai-wpoos-pro' ),
+							),
+							'arguments' => array(
+								'type'        => 'object',
+								'description' => __( 'Arguments to pass to the tool.', 'mcp-ai-wpoos-pro' ),
+							),
+							'label'     => array(
+								'type'        => 'string',
+								'description' => __( 'Optional human-readable label for this step.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
 					),

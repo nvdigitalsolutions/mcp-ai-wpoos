@@ -175,13 +175,18 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'job_type'           => array(
 					'type'        => 'string',
-					'enum'        => array( 'hourly', 'fixed' ),
-					'description' => __( 'Job type filter.', 'nvoos-content-graph-pro' ),
+					'enum'        => array( 'hourly', 'fixed', 'all' ),
+					'description' => __( 'Job type filter. "all" (or omitting the argument) applies no filter.', 'nvoos-content-graph-pro' ),
 				),
 				'experience_level'   => array(
 					'type'        => 'string',
-					'enum'        => array( 'entry', 'intermediate', 'expert' ),
-					'description' => __( 'Required experience level.', 'nvoos-content-graph-pro' ),
+					'enum'        => array( 'entry', 'intermediate', 'expert', 'all' ),
+					'description' => __( 'Required experience level. "all" (or omitting the argument) applies no filter.', 'nvoos-content-graph-pro' ),
+				),
+				'exclude_keywords'   => array(
+					'type'        => 'array',
+					'items'       => array( 'type' => 'string' ),
+					'description' => __( 'Keywords to exclude from results (e.g. "homework", "essay"). Mapped to Upwork boolean NOT for the API path and minus operators for the web-search fallback.', 'nvoos-content-graph-pro' ),
 				),
 				'duration_weeks_min' => array(
 					'type'        => 'number',
@@ -255,12 +260,39 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 		// Resolve defaults from CRM toolkit settings when arguments are omitted.
 		$arguments = $this->apply_defaults( $arguments );
 
+		// Normalise "all" sentinel filters to "no filter" so workflow presets
+		// carrying job_type/experience_level "all" never leak the literal into
+		// the GraphQL filter or the fallback query string.
+		if ( isset( $arguments['job_type'] ) && ( '' === $arguments['job_type'] || 'all' === $arguments['job_type'] ) ) {
+			unset( $arguments['job_type'] );
+		}
+		if ( isset( $arguments['experience_level'] ) && ( '' === $arguments['experience_level'] || 'all' === $arguments['experience_level'] ) ) {
+			unset( $arguments['experience_level'] );
+		}
+
+		// Echo the effective criteria back to the caller so workflow digests
+		// can distinguish weak filters from a missing Upwork connection.
+		$criteria          = array(
+			'query'            => isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '',
+			'location'         => isset( $arguments['location'] ) ? sanitize_text_field( $arguments['location'] ) : '',
+			'skills'           => isset( $arguments['skills'] ) && is_array( $arguments['skills'] ) ? array_map( 'sanitize_text_field', $arguments['skills'] ) : array(),
+			'category2'        => isset( $arguments['category2'] ) ? sanitize_text_field( $arguments['category2'] ) : '',
+			'job_type'         => isset( $arguments['job_type'] ) ? sanitize_key( $arguments['job_type'] ) : '',
+			'experience_level' => isset( $arguments['experience_level'] ) ? sanitize_key( $arguments['experience_level'] ) : '',
+			'budget_min'       => isset( $arguments['budget_min'] ) ? (float) $arguments['budget_min'] : null,
+			'budget_max'       => isset( $arguments['budget_max'] ) ? (float) $arguments['budget_max'] : null,
+			'exclude_keywords' => isset( $arguments['exclude_keywords'] ) && is_array( $arguments['exclude_keywords'] ) ? array_map( 'sanitize_text_field', $arguments['exclude_keywords'] ) : array(),
+			'sort'             => isset( $arguments['sort'] ) ? sanitize_key( $arguments['sort'] ) : 'recency',
+			'limit'            => isset( $arguments['limit'] ) ? min( 50, max( 1, absint( $arguments['limit'] ) ) ) : 10,
+		);
+		$criteria_provided = ( '' !== $criteria['query'] || '' !== $criteria['location'] || ! empty( $criteria['skills'] ) || '' !== $criteria['category2'] || '' !== $criteria['job_type'] || '' !== $criteria['experience_level'] || null !== $criteria['budget_min'] || null !== $criteria['budget_max'] );
+
 		// Determine whether the Upwork API is available.
 		$use_api = $this->has_valid_connection( $arguments );
 
 		// Fall back to web search when the Upwork connection is not configured.
 		if ( ! $use_api ) {
-			return $this->execute_fallback( $arguments, $context );
+			return $this->execute_fallback( $arguments, $context, $criteria, $criteria_provided );
 		}
 
 		$connection_id = sanitize_text_field( $arguments['connection_id'] );
@@ -282,6 +314,22 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 				$search_expression = $location;
 			} else {
 				$search_expression .= ' (' . $location . ')';
+			}
+		}
+		if ( ! empty( $arguments['exclude_keywords'] ) && is_array( $arguments['exclude_keywords'] ) && '' !== $search_expression ) {
+			// Exclusions use Upwork's documented boolean NOT (uppercase, with
+			// parentheses for groups) — the official alternative to the "-"
+			// operator, which Upwork search does not support.
+			$excludes = array();
+			foreach ( $arguments['exclude_keywords'] as $exclude ) {
+				$exclude = sanitize_text_field( $exclude );
+				if ( '' === $exclude ) {
+					continue;
+				}
+				$excludes[] = false !== strpos( $exclude, ' ' ) ? '"' . $exclude . '"' : $exclude;
+			}
+			if ( ! empty( $excludes ) ) {
+				$search_expression .= ' NOT (' . implode( ' OR ', $excludes ) . ')';
 			}
 		}
 		if ( '' !== $search_expression ) {
@@ -410,14 +458,16 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 		$jobs = $this->apply_result_format( $jobs );
 
 		return array(
-			'success'       => true,
-			'mode'          => 'api',
-			'total_count'   => $total,
-			'count'         => count( $jobs ),
-			'jobs'          => $jobs,
-			'page_info'     => $page_info,
-			'has_next_page' => isset( $page_info['hasNextPage'] ) ? (bool) $page_info['hasNextPage'] : false,
-			'end_cursor'    => isset( $page_info['endCursor'] ) ? $page_info['endCursor'] : null,
+			'success'           => true,
+			'mode'              => 'api',
+			'total_count'       => $total,
+			'count'             => count( $jobs ),
+			'jobs'              => $jobs,
+			'page_info'         => $page_info,
+			'has_next_page'     => isset( $page_info['hasNextPage'] ) ? (bool) $page_info['hasNextPage'] : false,
+			'end_cursor'        => isset( $page_info['endCursor'] ) ? $page_info['endCursor'] : null,
+			'criteria'          => $criteria,
+			'criteria_provided' => $criteria_provided,
 		);
 	}
 
@@ -472,9 +522,11 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
+	 * @param array $criteria  Effective search criteria echo (see execute()).
+	 * @param bool  $criteria_provided Whether any narrowing criteria were supplied.
 	 * @return array|WP_Error Fallback results or error.
 	 */
-	private function execute_fallback( array $arguments, array $context ) {
+	private function execute_fallback( array $arguments, array $context, array $criteria = array(), $criteria_provided = false ) {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			// Deviation: wave-proof guard — the base plugin owns the tool
 			// registry (root classmap); real standalone installs degrade to
@@ -551,7 +603,11 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			foreach ( $results as $idx => $result ) {
 				$title   = isset( $result['title'] ) ? $result['title'] : '';
 				$snippet = isset( $result['snippet'] ) ? $result['snippet'] : '';
-				$url     = isset( $result['url'] ) ? $result['url'] : '';
+				// Canonicalise Upwork SERP URLs (search engines index the
+				// /freelance-jobs/apply/ SEO form) into the marketplace's
+				// canonical job URL (/jobs/<slug>_~<jobId>/) — the format that
+				// reliably resolves to the listing regardless of slug truncation.
+				$url = isset( $result['url'] ) ? $this->normalize_upwork_job_url( $result['url'] ) : '';
 
 				// Best-effort structured fields extracted from the snippet, since
 				// the web search fallback has no API payload to normalise.
@@ -570,12 +626,13 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 					'engagement'    => '',
 					'duration'      => '',
 					'budget'        => $meta['budget'],
+					'budget_max'    => $meta['budget_max'],
 					'hourly_budget' => null,
 					'skills'        => array(),
 					'category'      => '',
 					'subcategory'   => '',
 					'applicants'    => 0,
-					'tier'          => '',
+					'tier'          => $meta['tier'],
 					'client'        => array(
 						'feedback'         => null,
 						'total_hires'      => null,
@@ -606,10 +663,13 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 		$jobs = array_slice( $jobs, 0, $limit );
 
 		$notice = __( 'Results obtained via web search because no Upwork connection is configured. Data is less structured than the Upwork API. Configure an Upwork connection in Remote Sites for full access to job details, client history, and pagination.', 'nvoos-content-graph-pro' );
+		if ( ! $criteria_provided ) {
+			$notice .= ' ' . __( 'No search criteria were supplied and no CRM search defaults are configured, so results are unfiltered marketplace noise. Pass a query keyword or skills, or set default search keywords in CRM settings, to narrow this search.', 'nvoos-content-graph-pro' );
+		}
 		if ( $filtered_out > 0 ) {
 			$notice .= ' ' . sprintf(
 				/* translators: %d: number of excluded results */
-				_n( '%d result was excluded because it was an Upwork category page rather than an individual job posting.', '%d results were excluded because they were Upwork category pages rather than individual job postings.', $filtered_out, 'nvoos-content-graph-pro' ),
+				_n( '%d result was excluded because it was an Upwork category page, help-centre page, or other non-job listing.', '%d results were excluded because they were Upwork category pages, help-centre pages, or other non-job listings.', $filtered_out, 'nvoos-content-graph-pro' ),
 				$filtered_out
 			);
 		}
@@ -621,17 +681,19 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		return array(
-			'success'       => true,
-			'mode'          => 'fallback',
-			'source'        => 'web_search',
-			'total_count'   => count( $jobs ),
-			'count'         => count( $jobs ),
-			'jobs'          => $jobs,
-			'page_info'     => array(),
-			'has_next_page' => false,
-			'end_cursor'    => null,
-			'filtered_out'  => $filtered_out,
-			'notice'        => $notice,
+			'success'           => true,
+			'mode'              => 'fallback',
+			'source'            => 'web_search',
+			'total_count'       => count( $jobs ),
+			'count'             => count( $jobs ),
+			'jobs'              => $jobs,
+			'page_info'         => array(),
+			'has_next_page'     => false,
+			'end_cursor'        => null,
+			'filtered_out'      => $filtered_out,
+			'criteria'          => $criteria,
+			'criteria_provided' => $criteria_provided,
+			'notice'            => $notice,
 		);
 	}
 
@@ -668,18 +730,31 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		if ( ! empty( $arguments['skills'] ) && is_array( $arguments['skills'] ) ) {
-			$parts[] = implode( ' ', array_map( 'sanitize_text_field', array_slice( $arguments['skills'], 0, 5 ) ) );
+			// Skills are alternatives for discovery (Upwork's "Any of these
+			// words" semantics), so group them as a quoted OR expression — the
+			// web-search standard — instead of an implicit AND of bare terms.
+			$skill_terms = array();
+			foreach ( array_slice( $arguments['skills'], 0, 5 ) as $skill ) {
+				$skill = sanitize_text_field( $skill );
+				if ( '' === $skill ) {
+					continue;
+				}
+				$skill_terms[] = '"' . $skill . '"';
+			}
+			if ( ! empty( $skill_terms ) ) {
+				$parts[] = '(' . implode( ' OR ', $skill_terms ) . ')';
+			}
 		}
 
 		if ( ! empty( $arguments['location'] ) ) {
 			$parts[] = sanitize_text_field( $arguments['location'] );
 		}
 
-		if ( ! empty( $arguments['job_type'] ) ) {
+		if ( ! empty( $arguments['job_type'] ) && 'all' !== $arguments['job_type'] ) {
 			$parts[] = sanitize_text_field( $arguments['job_type'] );
 		}
 
-		if ( ! empty( $arguments['experience_level'] ) ) {
+		if ( ! empty( $arguments['experience_level'] ) && 'all' !== $arguments['experience_level'] ) {
 			$parts[] = sanitize_text_field( $arguments['experience_level'] ) . ' level';
 		}
 
@@ -696,6 +771,18 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			}
 			if ( $budget_str ) {
 				$parts[] = $budget_str;
+			}
+		}
+
+		// Exclusions become minus operators — the web-search standard for
+		// removing noise (e.g. academic-help postings) from the SERP.
+		if ( ! empty( $arguments['exclude_keywords'] ) && is_array( $arguments['exclude_keywords'] ) ) {
+			foreach ( $arguments['exclude_keywords'] as $exclude ) {
+				$exclude = sanitize_text_field( $exclude );
+				if ( '' === $exclude ) {
+					continue;
+				}
+				$parts[] = '-"' . $exclude . '"';
 			}
 		}
 
@@ -770,10 +857,11 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			$title = isset( $job['title'] ) ? strtolower( (string) $job['title'] ) : '';
 			$desc  = isset( $job['description'] ) ? strtolower( (string) $job['description'] ) : '';
 
-			// Direct Upwork job postings carry the ~jobId suffix.
-			if ( false !== strpos( $url, 'upwork.com' ) && false !== strpos( $url, '~' ) ) {
+			// Direct Upwork job postings carry the ~jobId suffix on the
+			// marketplace host; other Upwork subdomains never host listings.
+			if ( $this->is_upwork_marketplace_host( $url ) && false !== strpos( $url, '~' ) ) {
 				$score += 100;
-			} elseif ( false !== strpos( $url, 'upwork.com' ) ) {
+			} elseif ( $this->is_upwork_marketplace_host( $url ) ) {
 				$score += 30;
 			}
 
@@ -858,6 +946,102 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	/**
+	 * Whether a URL's host is the Upwork job marketplace proper.
+	 *
+	 * Only `upwork.com` and `www.upwork.com` carry job postings; other
+	 * Upwork subdomains (`community.upwork.com`, `support.upwork.com`)
+	 * never resolve to a listing, so links to them must not be delivered
+	 * as job URLs.
+	 *
+	 * @param string $url Result URL.
+	 * @return bool True when the host is the Upwork marketplace.
+	 */
+	private function is_upwork_marketplace_host( $url ) {
+		$host = wp_parse_url( trim( (string) $url ), PHP_URL_HOST );
+		if ( ! is_string( $host ) ) {
+			return false;
+		}
+		$host = strtolower( $host );
+		return ( 'upwork.com' === $host || 'www.upwork.com' === $host );
+	}
+
+	/**
+	 * Whether a URL's host belongs to the upwork.com domain family.
+	 *
+	 * @param string $url Result URL.
+	 * @return bool True when the host is upwork.com or any of its subdomains.
+	 */
+	private function is_upwork_host( $url ) {
+		$host = wp_parse_url( trim( (string) $url ), PHP_URL_HOST );
+		return is_string( $host ) && false !== stripos( $host, 'upwork.com' );
+	}
+
+	/**
+	 * Normalise an Upwork marketplace URL to the canonical job URL.
+	 *
+	 * Search engines index Upwork postings under the SEO form
+	 * `/freelance-jobs/apply/<slug>_~<jobId>/` (and sometimes truncate the
+	 * slug), while the canonical, reliably-resolving form is
+	 * `https://www.upwork.com/jobs/<slug>_~<jobId>/`. Upwork resolves by the
+	 * `~<jobId>` suffix, so a truncated slug still lands on the listing.
+	 * Non-marketplace URLs (aggregators, community links) pass through
+	 * unchanged.
+	 *
+	 * @param string $url Raw search-result URL.
+	 * @return string Canonical job URL, or the original URL when not a marketplace posting.
+	 */
+	private function normalize_upwork_job_url( $url ) {
+		$url = trim( (string) $url );
+		if ( '' === $url || ! $this->is_upwork_marketplace_host( $url ) ) {
+			return $url;
+		}
+
+		$path = wp_parse_url( $url, PHP_URL_PATH );
+		if ( ! is_string( $path ) ) {
+			return $url;
+		}
+
+		// A job posting URL ends with <slug>_~<jobId>/; the ~jobId suffix is
+		// the part Upwork resolves. Slug characters stay URL-safe (percent
+		// encodings are preserved).
+		if ( ! preg_match( '#/([a-z0-9%\-\.]+)_(~[a-z0-9]+)/?$#i', $path, $m ) ) {
+			return $url;
+		}
+
+		return 'https://www.upwork.com/jobs/' . $m[1] . '_' . $m[2] . '/';
+	}
+
+	/**
+	 * Whether a title is an Upwork category, help-centre, or community page
+	 * title rather than an individual job posting.
+	 *
+	 * Search engines occasionally merge a category page's title with a job
+	 * URL (or vice versa); those entries read like jobs in the digest but
+	 * lead to landing pages, so they are dropped.
+	 *
+	 * @param string $title Search-result title.
+	 * @return bool True when the title is a non-job Upwork page title.
+	 */
+	private function is_upwork_landing_title( $title ) {
+		$title = trim( (string) $title );
+		if ( '' === $title ) {
+			return false;
+		}
+
+		if ( 0 === stripos( $title, 'Freelance Jobs on Upwork' ) ) {
+			return true;
+		}
+		if ( false !== stripos( $title, 'Work Remote & Earn Online' ) ) {
+			return true;
+		}
+		if ( 0 === stripos( $title, 'Upwork Customer Service' ) || false !== stripos( $title, ' | Upwork Help' ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Drop non-job results from the web search fallback list.
 	 *
 	 * Keeps only entries that have a title and URL and are not Upwork
@@ -886,6 +1070,18 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 				continue;
 			}
 
+			// Upwork subdomains other than the marketplace (community.,
+			// support.) never host job listings.
+			if ( $this->is_upwork_host( $url ) && ! $this->is_upwork_marketplace_host( $url ) ) {
+				continue;
+			}
+
+			// Category/help-centre titles merged onto job URLs read as jobs in
+			// the digest but lead to landing pages.
+			if ( $this->is_upwork_landing_title( $title ) ) {
+				continue;
+			}
+
 			$filtered[] = $result;
 		}
 
@@ -896,20 +1092,23 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 	 * Extract best-effort structured fields from a search result snippet.
 	 *
 	 * Upwork SERP snippets embed the job type ("Fixed-price", "Hourly"),
-	 * a budget figure, and a "Posted … ago" recency label. Parsing them
-	 * gives the fallback the same shape of data the GraphQL API returns
-	 * natively, without any scraping — only the snippet text is read.
+	 * a budget figure (optionally a range), an experience tier, and a
+	 * "Posted … ago" recency label. Parsing them gives the fallback the same
+	 * shape of data the GraphQL API returns natively, without any scraping —
+	 * only the snippet text is read.
 	 *
 	 * @param string $snippet Search result snippet.
-	 * @return array{job_type:string,budget:float|null,published:string} Extracted metadata.
+	 * @return array{job_type:string,budget:float|null,budget_max:float|null,tier:string,published:string} Extracted metadata.
 	 */
 	private function extract_snippet_metadata( $snippet ) {
 		$snippet = wp_strip_all_tags( (string) $snippet );
 
 		$meta = array(
-			'job_type'  => '',
-			'budget'    => null,
-			'published' => '',
+			'job_type'   => '',
+			'budget'     => null,
+			'budget_max' => null,
+			'tier'       => '',
+			'published'  => '',
 		);
 
 		// Job type — Upwork snippets label "Hourly" or "Fixed-price" contracts.
@@ -919,9 +1118,29 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			$meta['job_type'] = 'fixed';
 		}
 
-		// Budget — the first currency amount in the snippet.
-		if ( preg_match( '/\$\s?([\d,]+(?:\.\d+)?)/', $snippet, $m ) ) {
+		// Budget — the first currency amount in the snippet, plus the upper
+		// bound when the snippet carries a range ("$25.00-$45.00",
+		// "$500-$1,000"). A range requires either a second dollar sign or a
+		// decimal in the first amount, so year-like numbers ("-2024") never
+		// false-positive as an upper bound.
+		if ( preg_match( '/\$\s?([\d,]+(?:\.\d+)?)\s*[-–—‐]\s*\$\s?([\d,]+(?:\.\d+)?)/', $snippet, $m )
+			|| preg_match( '/\$\s?([\d,]+\.\d+)\s*[-–—‐]\s*([\d,]+(?:\.\d+)?)/', $snippet, $m ) ) {
+			$meta['budget']     = (float) str_replace( ',', '', $m[1] );
+			$meta['budget_max'] = (float) str_replace( ',', '', $m[2] );
+		} elseif ( preg_match( '/\$\s?([\d,]+(?:\.\d+)?)/', $snippet, $m ) ) {
 			$meta['budget'] = (float) str_replace( ',', '', $m[1] );
+		}
+
+		// Experience tier — Upwork snippets prefix the posting with
+		// "Entry level", "Intermediate", or "Expert" (optionally with
+		// "Experience level"). Anchored to the level wording so a description
+		// phrase like "seeking an expert" can't false-positive.
+		if ( preg_match( '/entry\s+(?:experience\s+)?level/i', $snippet ) ) {
+			$meta['tier'] = 'Entry level';
+		} elseif ( preg_match( '/intermediate\s+(?:experience\s+)?level/i', $snippet ) ) {
+			$meta['tier'] = 'Intermediate';
+		} elseif ( preg_match( '/expert\s+(?:experience\s+)?level/i', $snippet ) ) {
+			$meta['tier'] = 'Expert';
 		}
 
 		// Recency — "Posted 2 days ago" style labels.

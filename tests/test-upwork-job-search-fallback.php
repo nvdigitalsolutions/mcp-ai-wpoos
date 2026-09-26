@@ -150,6 +150,70 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 		$this->assertSame( 'Remote designer openings this week', $filtered[1]['title'] );
 	}
 
+	/**
+	 * Upwork subdomains outside the marketplace (community., support.) and
+	 * category/help-centre page titles are not job listings and are dropped.
+	 */
+	public function test_filter_drops_non_marketplace_subdomains_and_landing_titles() {
+		$results = array(
+			array(
+				'title' => 'GoHighLevel Support Specialist needed - Upwork',
+				'url'   => 'https://www.upwork.com/freelance-jobs/GoHighLevel-Support-Specialist_~02123456789abcdef/',
+			),
+			array(
+				'title' => 'Upwork Customer Service & Support | Upwork Help',
+				'url'   => 'https://community.upwork.com/freelance-jobs/apply/Job-Opportunity-GoHighLevel-Support-Specialist_~021858547840711428684',
+			),
+			array(
+				'title' => 'Freelance Jobs on Upwork: Work Remote & Earn Online',
+				'url'   => 'https://upwork.com/freelance-jobs/apply/GoHighLevel-Genius-Specialist_~021897098866256708419',
+			),
+			array(
+				'title' => 'Social Media Marketing Freelance Jobs: Work Remote & Earn Online',
+				'url'   => 'https://www.upwork.com/freelance-jobs/apply/Entry-Level-Part-Time-SOCIAL-MEDIA-MANAGER_~021841086971326511150/',
+			),
+			array(
+				'title' => 'Implementing Go High Level and Guidance',
+				'url'   => 'https://upwork.com/freelance-jobs/apply/Implementing-High-Level-and-Guidance_~022043791294383826569',
+			),
+		);
+
+		$filtered = $this->invoke_private( 'filter_upwork_job_results', array( $results ) );
+
+		$this->assertCount( 2, $filtered );
+		$this->assertSame( 'GoHighLevel Support Specialist needed - Upwork', $filtered[0]['title'] );
+		$this->assertSame( 'Implementing Go High Level and Guidance', $filtered[1]['title'] );
+	}
+
+	/**
+	 * SERP job URLs are canonicalised to the marketplace /jobs/ form, while
+	 * non-marketplace URLs pass through untouched.
+	 */
+	public function test_normalize_upwork_job_url_canonicalizes_postings() {
+		$cases = array(
+			'https://www.upwork.com/freelance-jobs/apply/help-set-whop-GHL-affilate-link_~022098856874446209160/'
+				=> 'https://www.upwork.com/jobs/help-set-whop-GHL-affilate-link_~022098856874446209160/',
+			'https://www.upwork.com/freelance-jobs/WordPress-Developer_~01d7d03bb39cc7daec/'
+				=> 'https://www.upwork.com/jobs/WordPress-Developer_~01d7d03bb39cc7daec/',
+			'https://upwork.com/freelance-jobs/apply/Implementing-High-Level-and-Guidance_~022043791294383826569'
+				=> 'https://www.upwork.com/jobs/Implementing-High-Level-and-Guidance_~022043791294383826569/',
+			// Non-marketplace hosts (aggregators, community) stay untouched.
+			'https://remoteok.com/remote-wordpress-jobs' => 'https://remoteok.com/remote-wordpress-jobs',
+			'https://community.upwork.com/freelance-jobs/apply/Foo_~021234/' => 'https://community.upwork.com/freelance-jobs/apply/Foo_~021234/',
+			// No ~jobId suffix — category pages and landing pages stay untouched.
+			'https://www.upwork.com/freelance-jobs/web-development/' => 'https://www.upwork.com/freelance-jobs/web-development/',
+			''                                           => '',
+		);
+
+		foreach ( $cases as $input => $expected ) {
+			$this->assertSame(
+				$expected,
+				$this->invoke_private( 'normalize_upwork_job_url', array( $input ) ),
+				"Unexpected canonicalisation for: $input"
+			);
+		}
+	}
+
 	// -------------------------------------------------------------------------
 	// Snippet metadata extraction
 	// -------------------------------------------------------------------------
@@ -189,6 +253,40 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 		$this->assertSame( '', $meta['job_type'] );
 		$this->assertNull( $meta['budget'] );
 		$this->assertSame( '', $meta['published'] );
+	}
+
+	/**
+	 * Snippets with an hourly range and an experience tier yield budget_max
+	 * and tier fields.
+	 */
+	public function test_extract_snippet_metadata_parses_tier_and_budget_range() {
+		$meta = $this->invoke_private( 'extract_snippet_metadata', array( 'Intermediate Experience level · Hourly: $25.00-$45.00 · Posted 1 hour ago' ) );
+
+		$this->assertSame( 'hourly', $meta['job_type'] );
+		$this->assertSame( 25.0, $meta['budget'] );
+		$this->assertSame( 45.0, $meta['budget_max'] );
+		$this->assertSame( 'Intermediate', $meta['tier'] );
+		$this->assertSame( '1 hour ago', $meta['published'] );
+
+		// Fixed-price range with an explicit second dollar sign.
+		$meta = $this->invoke_private( 'extract_snippet_metadata', array( 'Entry level · Fixed-price · $500-$1,000 · Posted 3 hours ago' ) );
+
+		$this->assertSame( 'fixed', $meta['job_type'] );
+		$this->assertSame( 500.0, $meta['budget'] );
+		$this->assertSame( 1000.0, $meta['budget_max'] );
+		$this->assertSame( 'Entry level', $meta['tier'] );
+	}
+
+	/**
+	 * A year-like number after a dash is never taken as a budget upper bound,
+	 * and a bare "expert" phrase without level wording never sets the tier.
+	 */
+	public function test_extract_snippet_metadata_guards_year_like_and_bare_expert() {
+		$meta = $this->invoke_private( 'extract_snippet_metadata', array( 'Fixed-price · Budget $500 - 2024 forecast · We need an expert' ) );
+
+		$this->assertSame( 500.0, $meta['budget'] );
+		$this->assertNull( $meta['budget_max'] );
+		$this->assertSame( '', $meta['tier'] );
 	}
 
 	// -------------------------------------------------------------------------
@@ -302,11 +400,12 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 		$this->assertSame( 3, $result['filtered_out'] );
 
 		// The first-pass job posting plus the broad-pass aggregator listing —
-		// the duplicated job posting is deduped, not repeated.
+		// the duplicated job posting is deduped, not repeated. The Upwork
+		// posting's URL is canonicalised to the /jobs/ form.
 		$this->assertCount( 2, $result['jobs'] );
 
 		$urls = wp_list_pluck( $result['jobs'], 'url' );
-		$this->assertContains( 'https://www.upwork.com/freelance-jobs/WordPress-Developer_~01d7d03bb39cc7daec/', $urls );
+		$this->assertContains( 'https://www.upwork.com/jobs/WordPress-Developer_~01d7d03bb39cc7daec/', $urls );
 		$this->assertContains( 'https://remoteok.com/remote-wordpress-jobs', $urls );
 
 		$job = $result['jobs'][0];
@@ -433,7 +532,7 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 		$this->assertCount( 2, $result['jobs'] );
 		$this->assertStringContainsString( 'expanded second search', $result['notice'] );
 		$urls = wp_list_pluck( $result['jobs'], 'url' );
-		$this->assertContains( 'https://www.upwork.com/freelance-jobs/apply/WordPress-Developer-for-Block-Based-Theme_~022048801956531499628/', $urls );
+		$this->assertContains( 'https://www.upwork.com/jobs/WordPress-Developer-for-Block-Based-Theme_~022048801956531499628/', $urls );
 		$this->assertContains( 'https://remoteok.com/remote-wordpress-jobs', $urls );
 	}
 
@@ -480,6 +579,72 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'No individual job postings were found', $result['notice'] );
 	}
 
+	/**
+	 * The fallback envelope echoes the effective criteria so callers can tell
+	 * weak filters from a missing Upwork connection, and flags unfiltered
+	 * searches in the notice.
+	 */
+	public function test_execute_fallback_echoes_criteria_and_flags_missing_filters() {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->register_tool( new WP_MCP_AI_Tool_Web_Search() );
+
+		$body = wp_json_encode(
+			array(
+				'RelatedTopics' => array(
+					array(
+						'Text'     => 'WordPress Developer for Block-Based Theme - Upwork',
+						'FirstURL' => 'https://www.upwork.com/freelance-jobs/apply/WordPress-Developer-for-Block-Based-Theme_~022048801956531499628/',
+						'Result'   => 'Hourly: $25.00-$45.00 · Posted 1 hour ago',
+					),
+				),
+			)
+		);
+
+		$http_stub = static function ( $preempt, $args, $url ) use ( $body ) {
+			if ( false !== strpos( $url, 'duckduckgo.com' ) ) {
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => $body,
+				);
+			}
+			return $preempt;
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		// With criteria: the criteria echo carries them and the noise warning stays away.
+		$result = $this->tool->execute(
+			array(
+				'query'  => 'WordPress developer',
+				'skills' => array( 'Elementor' ),
+				'limit'  => 5,
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		$this->assertTrue( $result['criteria_provided'] );
+		$this->assertSame( 'WordPress developer', $result['criteria']['query'] );
+		$this->assertSame( array( 'Elementor' ), $result['criteria']['skills'] );
+		$this->assertSame( 5, $result['criteria']['limit'] );
+		$this->assertStringNotContainsString( 'unfiltered marketplace noise', $result['notice'] );
+
+		// Without criteria: criteria_provided is false and the notice explains the noise.
+		$result = $this->tool->execute(
+			array( 'limit' => 10 ),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertFalse( $result['criteria_provided'] );
+		$this->assertSame( '', $result['criteria']['query'] );
+		$this->assertStringContainsString( 'unfiltered marketplace noise', $result['notice'] );
+		$this->assertSame( 10, $result['criteria']['limit'] );
+	}
+
 	// -------------------------------------------------------------------------
 	// Query building + ranking helpers
 	// -------------------------------------------------------------------------
@@ -511,6 +676,29 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 		$broad_plain = $this->invoke_private( 'build_fallback_query', array( array(), true ) );
 		$this->assertStringContainsString( 'upwork', $broad_plain );
 		$this->assertStringContainsString( 'recently posted freelance job openings', $broad_plain );
+	}
+
+	/**
+	 * Skills group into a quoted OR expression, exclusions become minus
+	 * operators, and "all" sentinel filters never leak into the query.
+	 */
+	public function test_build_fallback_query_groups_skills_and_applies_exclusions() {
+		$args = array(
+			'query'            => 'WordPress developer',
+			'skills'           => array( 'Elementor', 'WooCommerce' ),
+			'exclude_keywords' => array( 'homework', 'essay' ),
+			'job_type'         => 'all',
+			'experience_level' => 'all',
+		);
+
+		$query = $this->invoke_private( 'build_fallback_query', array( $args ) );
+
+		$this->assertStringContainsString( 'site:upwork.com/freelance-jobs/apply', $query );
+		$this->assertStringContainsString( '"WordPress developer"', $query );
+		$this->assertStringContainsString( '("Elementor" OR "WooCommerce")', $query );
+		$this->assertStringContainsString( '-"homework"', $query );
+		$this->assertStringContainsString( '-"essay"', $query );
+		$this->assertStringNotContainsString( 'all', $query );
 	}
 
 	/**
@@ -732,5 +920,108 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 		);
 		$this->assertSame( array( 'WordPress' ), $job['skills'] );
 		$this->assertSame( 'United States', $job['client']['country'] );
+	}
+
+	/**
+	 * "all" sentinel filters must never leak into the GraphQL filter, and
+	 * exclude_keywords must fold into the searchExpression as boolean NOT.
+	 */
+	public function test_execute_api_mode_normalises_all_sentinels_and_applies_exclusions() {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Upwork Test',
+				'connection_type' => 'upwork',
+				'url'             => 'https://www.upwork.com',
+				'enabled'         => 1,
+				'client_id'       => 'client-id-123',
+				'client_secret'   => 'client-secret-123',
+				'refresh_token'   => 'refresh-token-123',
+			)
+		);
+
+		$captured_graphql = null;
+
+		$http_stub = static function ( $preempt, $args, $url ) use ( &$captured_graphql ) {
+			if ( false !== strpos( $url, 'api/v3/oauth2/token' ) ) {
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'access_token' => 'tkn-123',
+							'expires_in'   => 3600,
+						)
+					),
+				);
+			}
+			if ( false !== strpos( $url, 'api.upwork.com/graphql' ) ) {
+				$captured_graphql = json_decode( isset( $args['body'] ) ? $args['body'] : '{}', true );
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'data' => array(
+								'marketplaceJobPostingsSearch' => array(
+									'totalCount' => 0,
+									'edges'      => array(),
+									'pageInfo'   => array(
+										'endCursor'   => null,
+										'hasNextPage' => false,
+									),
+								),
+							),
+						)
+					),
+				);
+			}
+			return $preempt;
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $this->tool->execute(
+			array(
+				'connection_id'    => $connection_id,
+				'query'            => 'WordPress developer',
+				'job_type'         => 'all',
+				'experience_level' => 'all',
+				'exclude_keywords' => array( 'homework', 'essay writing' ),
+				'limit'            => 10,
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		// Cleanup: connection option + cached access token.
+		$connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+		unset( $connections[ $connection_id ] );
+		update_option( WP_MCP_AI_Pro_Remote_Site_Manager::OPTION_NAME, $connections );
+		delete_transient( 'wp_mcp_ai_upwork_at_' . md5( $connection_id ) );
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertSame( 'api', $result['mode'] );
+
+		$filter = isset( $captured_graphql['variables']['marketPlaceJobFilter'] )
+			? $captured_graphql['variables']['marketPlaceJobFilter']
+			: array();
+
+		// The "all" sentinels are normalised away — no jobType/contractorTier keys.
+		$this->assertArrayNotHasKey( 'jobType', $filter );
+		$this->assertArrayNotHasKey( 'contractorTier', $filter );
+
+		// Exclusions fold into the searchExpression as uppercase boolean NOT.
+		$this->assertSame(
+			'WordPress developer NOT (homework OR "essay writing")',
+			$filter['searchExpression']
+		);
+
+		// The criteria echo reports the normalised filters.
+		$this->assertTrue( $result['criteria_provided'] );
+		$this->assertSame( '', $result['criteria']['job_type'] );
+		$this->assertSame( array( 'homework', 'essay writing' ), $result['criteria']['exclude_keywords'] );
 	}
 }
