@@ -348,6 +348,12 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'image_alt_text_optimizer',
 					'vision_object_localization',
 					'vision_product_search',
+					// Non-LLM image identification ladder (Proposal 043).
+					'detect_image_content',
+					'find_similar_media',
+					'get_image_metadata',
+					'describe_image_layout',
+					'identify_image',
 					// Video generation.
 					'generate_veo_video',
 					'generate_sora_video',
