@@ -11,8 +11,8 @@ NV oOS has two distribution modes:
 
 | Mode | Constant | Tools | Description |
 |------|---------|-------|-------------|
-| **Base** | `WP_MCP_AI_BASE_VERSION = true` | ~312 core tools | Open-source, WordPress.org compatible |
-| **Full (Pro)** | `WP_MCP_AI_BASE_VERSION = false` | ~1,594 tools (~312 base + ~1,282 Pro) | Premium addon with third-party integrations |
+| **Base** | `WP_MCP_AI_BASE_VERSION = true` | ~347 core tools | Open-source, WordPress.org compatible |
+| **Full (Pro)** | `WP_MCP_AI_BASE_VERSION = false` | ~1,634 tools (~347 base + ~1,287 Pro) | Premium addon with third-party integrations |
 
 ---
 

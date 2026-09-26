@@ -1,5 +1,63 @@
 # oOS – Changelog
 
+## [1.1.87] - 2026-09-27
+
+### Added — mcp-wordpress Parity Tool Suite: 30 Native Base Tools (PR #6777)
+
+- **Comment CRUD** — `list_comments`, `get_comment`, `create_comment`, `update_comment` (status incl. approve/spam), `delete_comment`.
+- **User CRUD** — `list_users`, `create_user`, `update_user`, `delete_user`.
+- **Content / media / terms** — `get_post_revisions`, `get_term`, `delete_term`, `get_media`, `upload_media` (URL / uploads-contained path / base64), `update_media`, `delete_media`.
+- **Site settings & app passwords** — `get_site_settings`, `update_site_settings` (allowlist-only), `list_application_passwords`, `create_application_password` (log-masked), `delete_application_password`.
+- **SEO toolkit** — `seo_analyze_content`, `seo_generate_schema`, `seo_validate_schema`, `seo_bulk_update_metadata` (dry-run default), `seo_site_audit`, `seo_test_integration`, `seo_get_live_data`, `seo_track_serp`, `seo_keyword_research`.
+- **Design notes** — base plugin, PHP 7.4, WordPress core APIs only, no new dependencies (the two network SEO tools reuse the existing Brave key); capability checks, multisite guards, canonical envelope, chat-client restriction trait on sensitive write tools; new `comment_id`/`user_id`/`attachment_id` ID-handoff families in the data-contract manifest; `@link`/`@credit` attribution + a new `CREDITS.md` section. The gap matrix lives in `docs/developer/mcp-wordpress-tool-parity.md` (upstream auth/cache/performance tools have no native equivalent — out of scope by design).
+
+### Added — Non-LLM Image Identification Ladder (Proposal 043, PRs #6780 + #6785)
+
+- **Five new base tools** — `identify_image` (cheap-first orchestration: WordPress metadata → pure-PHP dHash media-library lookup → classic Cloud Vision detection → deterministic layout description → optional reverse-image web search; confidence score + escalation hint, never calls a vision LLM), `get_image_metadata` (alt/title/caption/EXIF/dimensions, pure WP), `find_similar_media` (perceptual-hash lookup with post-meta caching + daily backfill cron), `detect_image_content` (Cloud Vision labels/text/web entities/logos/landmarks/faces/safe search in a normalized envelope), and `describe_image_layout` (bounding boxes → deterministic text layout description). All five join the Media Generation preset's image-analysis group (#6785).
+- **Two new Pro tools** — `ocr_image_classic` (tesseract-only OCR via the shared OCR service — worker tesseract.js → system tesseract, never a VLM) and `search_similar_images` (Bing Visual Search / SerpApi Google Lens reverse-image search with new Vision Analysis settings keys `va_bing_visual_search_key` / `va_serpapi_api_key` / `va_reverse_search_provider`).
+- **Shared `WP_MCP_AI_Cloud_Vision_Client`** extracted from `vision_object_localization` (behavior-neutral delegate refactor); registry category maps, token limits, and recommendations updated; both coverage manifests regenerated.
+- **Security** — every external rung is key-gated and fails closed: missing credentials are reported as skipped (never an error, never an HTTP request) and image bytes never leave the server without configured keys; web search is opt-in per call; SSRF guard on all server-side URL fetches.
+
+### Added — Outbound Appointment Booking Toolkit (Proposal 044, PR #6786)
+
+- **New Pro toolkit gated by `enable_outbound_booking_toolkit`** — composes existing Pro infrastructure (CRM leads/sequences/ICP scorer/audit, calendar-booking appointments) into an outbound engine for booked sales calls: ICP list building (CSV import → `mcp_ai_lead`, email-deduped, ICP-scored, optional sequence enrollment), an hourly cron engine advancing enrolled leads through `mcp_ai_sequence` steps with send windows / daily caps / consent attestation, email auto-send + LinkedIn/Instagram DM channels (human approval board or webhook hand-off to Make/n8n/Instantly-style automation), the `mcp_ai_oa_angle` CPT angle bank with per-channel variants + champion/challenger A/B tests + a weekly promotion cron, and booking links (`mcp_ai_oa_booking`, external Calendly/Cal.com or internal form) with a `[nvoos_oa_booking]` shortcode and a rate-limited, honeypotted, consent-gated public REST endpoint creating `mcp_appointment` records.
+- **Three new Pro tools** — `outbound_get_pipeline_stats`, `outbound_import_leads`, `outbound_manage_angle` — plus a pipeline dashboard (funnel, approval board, test leaderboard, import, settings), Slack notifications, and a daily digest.
+- **Safety rails** — manual approval default for DMs, daily caps, send windows, consent gates, token-authenticated reply webhook. Deferred (in the PR + proposal 044): CLI toolkit listings, AI first-line personalization via `wp_mcp_ai_oa_render_template`, internal-booking availability engine.
+
+### Added — mcp-wordpress Gateway Addon for Cloudways Velocity (PR #6778)
+
+- **New `addons/mcp-wordpress-gateway/` addon** — an auth-gated **Streamable HTTP** MCP server built on pinned [docdyhr/mcp-wordpress](https://github.com/docdyhr/mcp-wordpress) (MIT) internals for deployment on Cloudways Velocity and connection to NV oOS assistants via the Remote Sites → MCP Server connection type. Single Node process: `gateway-server.js` (stateless Streamable HTTP, no stdio/child processes — resolves the Velocity PM2 question) + Express `/healthz` + `/mcp` with timing-safe `X-MCP-Token` auth (≥32 chars, rotation-window overlap) and a 1 MB body cap; per-request tool policy at two layers (plugin-side per-assistant gating + gateway `MCP_TOOLS_ALLOW`/`MCP_TOOLS_DENY` wildcards applied at tool registration — denied tools are absent from tools/list and rejected on tools/call, deny wins). Deployment via the media-worker subtree-split pattern to the `nvdigitalsolutions/nvoos-mcp-wordpress` mirror. Follow-ups documented in the PR: `express-rate-limit` per-IP limits, multi-site `mcp-wordpress.config.json`, deploy-secret setup.
+
+### Fixed — Per-Session Budget Warnings in Chat (PR #6776)
+
+- **The session budget was invisible until a tool call was blocked**, the blocked error read like a live counter (it is a frozen snapshot), and the remedy never mentioned the reset path that actually exists. Both `check_per_session_limit()` message sites now report session state and point at the real reset path (Restriction Registry → Restricted Users panel / `wp mcp-ai restrictions lift`).
+- **The dormant 75% hook is wired** — `wp_mcp_ai_session_limit_approaching` now drives `handle_session_limit_approaching()` (logs once, flags the session) and `inject_session_budget_warning()` (a one-shot system notice on the next chat turn). New `wp_mcp_ai_chat_messages` filter on both the legacy and OOS chat paths (messages, assistant config, request, user ID, session key). Token Manager Reset buttons clarify they reset daily usage only; the `per_session_token_limit` description documents the 20% safety buffer (~80% effective block point).
+
+### Fixed — Restriction Admin Notice User Count & Stale Display (PR #6779)
+
+- **The "N users have been restricted" notice miscounted** (one queue entry per flag call, `count($notices)` as the user count — a single user re-flagging showed as "8 users") and lingered after restrictions were lifted. `queue_admin_notice()` now keeps one entry per user (re-flag refreshes), `render_admin_notice()` sweeps expired windows / drops unrestricted users / dedupes legacy inflated queues / prunes the stored option / renders nothing when empty, and `lift()` removes the user's queued notices on full lift (partial lifts keep it). New `count_active_users()` (distinct users) also fixes the Pro agent command-center banner's rows-as-users bug. Existing sites self-heal on the next admin page load.
+
+### Changed — Upwork Job Search Refinement & In-Place Workflow Step Editing (PR #6784)
+
+- **`update_pro_schedule` now edits workflow steps in place** — `workflow_steps` (tool_slug/arguments/label, replace semantics) closes the blocker that forced delete-and-recreate to correct a `search_upwork_jobs` query; invalid_schedule_type / invalid_workflow_steps errors on non-workflow schedules / empty sanitized steps.
+- **`search_upwork_jobs` search quality** — new `exclude_keywords` arg (Upwork boolean NOT, uppercase + parenthesized; `-"term"` minus operators in the web-search fallback), an `all` sentinel normalization for job_type/experience_level, quoted-OR fallback skills (Upwork's "Any of these words" semantics), tier (Entry/Intermediate/Expert) + budget-range snippet parsing with a year-number guard, criteria echoing (`criteria_provided` + an explicit "unfiltered marketplace noise" notice with remediation guidance). The `upwork_job_discovery_scan` preset carries academic-noise exclusions.
+- **The Pro → CG Pro port is byte-identical** (documented transforms only); the `design-pro-schedule-manager` and `design-crm` coding-time skills are updated in-window.
+
+### Docs & Skills
+
+- **The two untracked Elementor bundled skills are committed** (PR #6776) — `includes/bundled-skills/design-elementor-mcp-connection/SKILL.md` + `design-elementor-template-kits/SKILL.md`, byte-identical to their `.agents/skills/` copies; the base bundle is now genuinely **75 tracked skills**. `docs/features/agent-skills.md`'s stale "45 bundled skills" figure is corrected to 75 in this release.
+- **Proposals 043 + 044 ship with the window** (`docs/project/proposals/043-non-llm-image-identification.md` + implementation plan, `044-outbound-appointment-booking.md`), alongside the parity gap matrix, the Velocity deployment guide, the session-limit feature docs, and the new `.context/image-identification.md` subsystem context.
+
+### Sub-project tracks (flagged, own tracks — not edited here)
+
+- **nvoos-content-graph 1.0.8 (unchanged)** — the explorer gained Bloom-style hover focus + tooltips, an eased animated camera, debounced live search, opt-in edge-flow animation, and the Okabe-Ito CVD-safe palette + `ensure_contrast()` gamut-walk fix (pure-black/white type colors now actually reach WCAG 3:1), with its own CHANGELOG/readme.txt/.pot updated (#6782); the Remote Sources drivers were audited and fixed (Generic REST edge-mapping fields + pagination + honest Test probe, Wikidata/SPARQL double-encoding, SPARQL `LIMIT 1` probe, proper failure envelopes, select-field rendering + label-to-slug autofill, unsaved/disabled connection testing) with a new `docs/remote-sources.md` guide (#6783).
+- **nvoos-content-graph-pro** — the `search-upwork-jobs` refinement ported byte-identical (#6784).
+- **nvoos-content-graph-ai** — the #6776 session-budget message/warning mirror is deferred to the ecosystem-port track (recorded as OI-9 in the open-items tracker).
+
+### Versioning
+
+- Bumped to 1.1.87 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.87. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.8** (unchanged — CHANGELOG/readme.txt/.pot updated in-window on its own track). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — one byte-identical tool port in-window). Checkout API: **0.1.2** (unchanged). Docs Hub addon: **0.5.1** (unchanged). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.09.22** (unchanged — no model PRs in-window). Tool count: **~347 base + ~1,287 Pro (~1,634 total)** — +35 base (30 parity, #6777 + 5 image ladder, #6780) and +5 Pro (2 image, #6780 + 3 outbound, #6786); live registry authoritative. Providers: 15 chat providers (unchanged). Addons: **27 → 28** (new `mcp-wordpress-gateway`, #6778). Bundled skills: **75 base + 41 Pro** (unchanged counts — the two Elementor copies are now genuinely tracked). Coding-time agent skills: **60** (unchanged — no new skills; #6784 updated `design-pro-schedule-manager` + `design-crm` in place). Stale build ZIPs removed: the 1.1.85 build set (30 files: 9 in `build/` incl. 3 `.sha256`, 2 in `build/optional-components/`, 19 in `build/toolkit-addons/`); the 1.1.86 wp.org package set is the current release artifact set.
+
 ## [1.1.86] - 2026-09-25
 
 ### Added — MCP Apps as a Remote Sites Connection Type (Proposal 041, PR #6761)

@@ -1,8 +1,8 @@
 # Docs & Release Catch-Up — Standing Open-Items Tracker
 
 > **Purpose:** Single registry of every open item identified (and parked or deferred) by the docs & release catch-up runs, so future passes carry from this file instead of re-copying items between plans.
-> **Last reviewed:** 2026-09-25 (v1.1.86 pass — OI-1 groups 26–28 recorded; OI-2 label refreshed)
-> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.86-docs-catch-up.md`](v1.1.86-docs-catch-up.md).
+> **Last reviewed:** 2026-09-27 (v1.1.87 pass — OI-1 groups 29–31 recorded; OI-2 label refreshed; OI-8/OI-9/OI-10 added)
+> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.87-docs-catch-up.md`](v1.1.87-docs-catch-up.md).
 > **Rule for future passes:** read this file first; a catch-up plan's "Open items" section should point here and only add new items it introduces.
 
 ---
@@ -45,6 +45,9 @@
 | 26 | `@since 1.1.85` | MCP Server remote-sites wave (PR #6761) — 15 instances across 6 files: `addons/pro/includes/class-wp-mcp-ai-pro-remote-site-manager.php` (4), `includes/assistants/class-wp-mcp-ai-assistant-portability.php` (6), `addons/pro/includes/mcp-apps/class-wp-mcp-ai-mcp-app-registry.php` (2), `addons/pro/includes/mcp-apps/mcp-apps-init.php` (1), plus test files `addons/pro/tests/test-remote-site-manager-mcp-server.php` (1) + `tests/mcp-apps/test-mcp-app-connection-refs.php` (1) | 1.1.86 | v1.1.86 plan |
 | 27 | `@since 1.1.0` | Higgsfield quartet (PR #6772) — 4 instances (`includes/tools/class-wp-mcp-ai-tool-{generate-higgsfield-video,generate-higgsfield-image,check-higgsfield-request,cancel-higgsfield-request}.php`, 1 each) + `includes/class-wp-mcp-ai-rest.php` — `build_tool_cost_envelope()` (1, PR #6771) | 1.1.86 | v1.1.86 plan |
 | 28 | `@since 1.9.0` | `includes/class-wp-mcp-ai-logger.php` — filter args on `get_recent_error_messages()`/`get_recent_activity_entries()` + `entry_matches_filters()`, 2 instances (PR #6768) | 1.1.86 | v1.1.86 plan |
+| 29 | `@since 2.12.0` | The outbound-booking toolkit — 13 files under `addons/pro/includes/tools/outbound-booking/` (PR #6786) — plus 4 Upwork/CRM files touched by #6784: `addons/pro/includes/class-wp-mcp-ai-upwork-client.php` (5), `addons/pro/includes/tools/crm/upwork/class-wp-mcp-ai-tool-search-upwork-jobs.php` (2), `addons/pro/includes/tools/crm/class-wp-mcp-ai-tool-crm-email-search-leads.php` (1), `addons/pro/includes/tools/crm/linkedin/class-wp-mcp-ai-tool-search-linkedin-jobs.php` (2) — 139 instances total in the window diff | 1.1.87 | v1.1.87 plan |
+| 30 | `@since 1.1.85` | `includes/class-wp-mcp-ai-rest.php` (1, the `wp_mcp_ai_chat_messages` filter) + `includes/class-wp-mcp-ai-tool-token-limits.php` (2, the session-budget warning handlers) — 3 instances (PR #6776; one version behind the 1.1.87 ship) | 1.1.87 | v1.1.87 plan |
+| 31 | `@since 1.2.0` | `includes/class-wp-mcp-ai-restriction-registry.php` — 2 instances (PR #6779, the notice dedupe/prune + `count_active_users()` methods) | 1.1.87 | v1.1.87 plan |
 
 - **Blocked on:** version-jump decision — does the next release stay on 1.1.x or jump to 1.2.0?
 - **Broader drift (new finding, 2026-08-26):** non-1.1.x tags are repo-wide (`@since 1.0.0` ×1,928 · `1.2.0` ×1,707 · `1.1.0` ×1,269 · `1.3.0` ×795 · `1.9.0` ×734, PHP source ex vendor). Many are legitimate history. A full-tree audit is a scripted-sweep project needing explicit sign-off — tracked inside issue #5968, not a catch-up-pass task.
@@ -54,7 +57,7 @@
 - **Status:** 🔒 Parked by user decision. Counts stay delta-derived in catch-up passes.
 - **Issue:** [#5967 — Re-derive live tool counts on a fully provisioned environment](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5967)
 - **What:** run `WP_MCP_AI_Tool_Registry::get_tools()` on a fully provisioned environment (seeded toolkits + optional plugins) and replace the delta-based figure.
-- **Current figure (v1.1.86):** ~312 base + ~1,282 Pro (~1,594 total), live-registry caveat retained on every count surface. (Delta-derived; **+4 base in-window** — the Higgsfield quartet, PR #6772; the `lib/core` wrappers are the core registry's own tools and are not counted.)
+- **Current figure (v1.1.87):** ~347 base + ~1,287 Pro (~1,634 total), live-registry caveat retained on every count surface. (Delta-derived; **+35 base +5 Pro in-window** — the 30-tool parity suite #6777, the 5-tool image ladder #6780, the Pro `ocr_image_classic`/`search_similar_images` #6780, and the 3 outbound tools #6786.)
 - **Known attempt:** QA container (`oos-qa-wp`) returns 363 tools because its DB is unprovisioned — not usable as source of truth.
 - **First noted in:** v1.1.59 plan; carried every pass since.
 
@@ -99,6 +102,28 @@
 - **What:** PR #6772 added the Higgsfield quartet to `docs/tool-status.txt` (+4) and the `design-video-creation` skill but **not** to `docs/reference/tools/tool-reference.md` — the "Media generation and transcription" section documents the other video/image tools (`generate_sora_video`, `generate_openai_image`, …) and the Tool Count header now counts the +4 base, so the omission is an inconsistency, not a convention. Also `get_system_logs`' new filters (#6768) are not reflected in that doc's operational section.
 - **Suggested owner:** docs workstream — add the four `generate_higgsfield_video`/`generate_higgsfield_image`/`check_higgsfield_request`/`cancel_higgsfield_request` entries (and the `get_system_logs` filter paragraph) to the tool reference.
 - **First noted in:** v1.1.86 plan.
+
+### OI-8 · `tool-status.txt` missing all 40 new window slugs + stale header totals (recorded 2026-09-27 by the v1.1.87 pass)
+
+- **Status:** 🟡 Open. Recorded, not fixed (doc-file gap left by three introducing PRs).
+- **What:** none of #6777's 30 parity tools, #6780's 5 base + 2 Pro image tools, or #6786's 3 outbound tools were added to `docs/reference/tools/tool-status.txt` (the v1.1.86 window's #6772 did add its Higgsfield slugs, so the omission is an inconsistency, not a convention). The file's own header is also stale — "Last Updated: April 30, 2026 · Total Tools: 912 (Base: 224, Pro: 688)" vs the current ~1,634/~347/~1,287. Note: `tool-reference.md` gained the `identify_image` entry in-window (#6780), but the parity suite + outbound tools are undocumented there too (header note added by the v1.1.87 pass).
+- **Suggested owner:** docs workstream — add the 40 slugs (and re-derive or drop the stale header totals).
+- **First noted in:** v1.1.87 plan.
+
+### OI-9 · CG AI `ToolTokenLimits` mirror missing the #6776 session-budget changes (recorded 2026-09-27 by the v1.1.87 pass)
+
+- **Status:** 🟡 Open — owned by the ecosystem-port workstream (port-tracker row **D3f**'s "byte-identical" claim is now stale).
+- **What:** PR #6776's Notes explicitly defer the mirror: `plugins/nvoos-content-graph-ai/src/Analytics/ToolTokenLimits.php` still carries the old blocked-session message and no warning handler (the base plugin gained the reworded message + `handle_session_limit_approaching()`/`inject_session_budget_warning()` + the `wp_mcp_ai_chat_messages` filter). Verified on `alpha-working` 2026-09-27: the CG AI file fires `wp_mcp_ai_session_limit_approaching` (line 1139) but has no handler wiring.
+- **Related:** #6784 ported `search-upwork-jobs` to CG Pro byte-identical in-feature — the tracker's Wave F has no upwork row, so the port isn't reflected there either (note for the port workstream, not a new tracker row).
+- **Suggested owner:** ecosystem-port workstream — mirror the three changes into the CG AI copy + refresh the D3f row.
+- **First noted in:** v1.1.87 plan.
+
+### OI-10 · `addons/pro/README.md` toolkit count + missing outbound-booking toolkit page (recorded 2026-09-27 by the v1.1.87 pass)
+
+- **Status:** 🟡 Open. Recorded, not fixed (needs a real toolkit section + `docs/toolkits/` page, not a count stub).
+- **What:** #6786 registered the gated `enable_outbound_booking_toolkit` module but did not update `addons/pro/README.md` (still "31 specialized professional toolkits") nor add a `docs/toolkits/` page for it.
+- **Suggested owner:** Pro docs workstream — add the toolkit to the README's numbered enumeration (31 → 32, or re-derive) + a `docs/toolkits/outbound-booking.md` overview page.
+- **First noted in:** v1.1.87 plan.
 
 ---
 
@@ -149,5 +174,6 @@ Open items recorded in docs **outside** the catch-up plans (audits, TODO files, 
 1. **Parked items stay parked** until the user re-opens them — a catch-up pass must not re-attempt OI-1/OI-2.
 2. **Historical entries stay** — old changelog/README per-version blocks and their tool counts are never rewritten.
 3. **Tool counts use "~"** with the live-registry caveat; delta-derived from the last published baseline.
-4. **Media Worker keeps its own version track** (3.2.0); nvoos-content-graph its own (1.0.3).
+4. **Media Worker keeps its own version track** (3.2.0); nvoos-content-graph its own (1.0.8). Sub-project window PRs are flagged-not-edited even when they carry their own changelog surfaces.
 5. **New items get added here**, and the introducing plan's "Open items" section points at this file.
+6. **The stale-ZIP set follows the full build set** — root `build/` ZIPs + `.sha256` pairs plus `build/optional-components/` + `build/toolkit-addons/` (the "30 files" shape).
