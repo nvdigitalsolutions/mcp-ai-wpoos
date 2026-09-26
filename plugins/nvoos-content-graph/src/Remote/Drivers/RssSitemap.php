@@ -65,6 +65,18 @@ class RssSitemap implements RemoteSource {
 				'description' => __( 'RSS 2.0, Atom 1.0, or XML sitemap URL.', 'nvoos-content-graph' ),
 				'required'    => true,
 			),
+			'feed_type' => array(
+				'type'        => 'select',
+				'label'       => __( 'Feed Type', 'nvoos-content-graph' ),
+				'description' => __( 'Auto-detect reads the XML root element. Override when the source is ambiguous.', 'nvoos-content-graph' ),
+				'options'     => array(
+					''        => __( 'Auto-detect', 'nvoos-content-graph' ),
+					'rss'     => __( 'RSS 2.0', 'nvoos-content-graph' ),
+					'atom'    => __( 'Atom 1.0', 'nvoos-content-graph' ),
+					'sitemap' => __( 'XML Sitemap', 'nvoos-content-graph' ),
+				),
+				'default'     => '',
+			),
 			'node_type' => array(
 				'type'        => 'text',
 				'label'       => __( 'Node Type', 'nvoos-content-graph' ),

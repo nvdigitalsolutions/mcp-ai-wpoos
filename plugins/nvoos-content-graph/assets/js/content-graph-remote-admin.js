@@ -25,7 +25,29 @@
 		$( '#nvoos-modal-title' ).text( cfg.i18n.addSource + ': ' + label );
 		$( '#nvoos-source-config-fields' ).html( buildFields( schema ) );
 		$( '#nvoos-remote-source-modal' ).show();
+		// Auto-derive the slug from the label until the user edits it.
+		$( '#nvoos-source-slug' ).data( 'touched', false ).val( '' );
+		$( '#nvoos-source-label' ).val( '' ).trigger( 'focus' );
 	} );
+
+	// Auto-generate the slug while the label is typed (WordPress-style),
+	// but stop the moment the user edits the slug themselves.
+	$( '#nvoos-source-label' ).on( 'input', function () {
+		const $slug = $( '#nvoos-source-slug' );
+		if ( $slug.data( 'touched' ) ) { return; }
+		$slug.val( slugify( $( this ).val() ) );
+	} );
+	$( '#nvoos-source-slug' ).on( 'input', function () {
+		$( this ).data( 'touched', $( this ).val().length > 0 );
+	} );
+
+	function slugify( value ) {
+		return ( value || '' )
+			.toLowerCase()
+			.replace( /[^a-z0-9\s_-]+/g, '' )
+			.trim()
+			.replace( /[\s_]+/g, '-' );
+	}
 
 	$( '#nvoos-modal-cancel' ).on( 'click', function () {
 		$( '#nvoos-remote-source-modal' ).hide();
@@ -96,10 +118,49 @@
 	} );
 
 	// ── Test button ──────────────────────────────────────────────
+	// Inline status per row: the driver's probe message (item counts,
+	// path errors) is shown instead of a bare OK/Error alert.
 	$( '.nvoos-test-source-btn' ).on( 'click', function () {
 		const slug = $( this ).data( 'slug' );
+		const btn = $( this ).prop( 'disabled', true );
+		const $status = $( '#nvoos-source-row-' + slug ).find( '.nvoos-source-row-status' );
+		$status.text( cfg.i18n.testing ).removeClass( 'ok error' );
 		$.post( cfg.ajaxurl, { action: 'nvoos_content_graph_test_remote_source', nonce: cfg.nonce, slug: slug }, function ( res ) {
-			window.alert( res.success ? cfg.i18n.connectionOk : ( 'Error: ' + ( res.data || 'unknown' ) ) );
+			btn.prop( 'disabled', false );
+			if ( res && res.success && res.data && res.data.message ) {
+				$status.text( res.data.message ).addClass( 'ok' );
+			} else {
+				$status.text( cfg.i18n.testFailed + ': ' + ( ( res && res.data ) || 'unknown' ) ).addClass( 'error' );
+			}
+		} ).fail( function () {
+			btn.prop( 'disabled', false );
+			$status.text( cfg.i18n.testFailed ).addClass( 'error' );
+		} );
+	} );
+
+	// ── Test from the Add Source modal (unsaved config) ─────────
+	$( '#nvoos-modal-test' ).on( 'click', function () {
+		const btn = $( this ).prop( 'disabled', true );
+		const $msg = $( '#nvoos-modal-message' );
+		const data = {
+			action: 'nvoos_content_graph_test_remote_source',
+			nonce: cfg.nonce,
+			driver: $( '#nvoos-source-driver' ).val(),
+		};
+		$( '#nvoos-source-config-fields' ).find( 'input, select, textarea' ).serializeArray().forEach( function ( f ) {
+			data[ f.name ] = f.value;
+		} );
+		$msg.text( cfg.i18n.testing ).removeClass( 'ok error' );
+		$.post( cfg.ajaxurl, data, function ( res ) {
+			btn.prop( 'disabled', false );
+			if ( res && res.success && res.data && res.data.message ) {
+				$msg.text( res.data.message ).addClass( 'ok' );
+			} else {
+				$msg.text( cfg.i18n.testFailed + ': ' + ( ( res && res.data ) || 'unknown' ) ).addClass( 'error' );
+			}
+		} ).fail( function () {
+			btn.prop( 'disabled', false );
+			$msg.text( cfg.i18n.testFailed ).addClass( 'error' );
 		} );
 	} );
 
@@ -169,6 +230,15 @@
 
 			if ( 'password' === type ) {
 				control = '<input type="password" name="config[' + escKey + ']" class="regular-text" autocomplete="new-password"' + ( field.required ? ' required' : '' ) + '>';
+			} else if ( 'select' === type ) {
+				const options = field.options || {};
+				let opts = '';
+				Object.keys( options ).forEach( function ( optValue ) {
+					const selected = String( field.default ) === String( optValue ) ? ' selected' : '';
+					opts += '<option value="' + $( '<div/>' ).text( optValue ).html() + '"' + selected + '>' +
+						$( '<div/>' ).text( options[ optValue ] ).html() + '</option>';
+				} );
+				control = '<select name="config[' + escKey + ']">' + opts + '</select>';
 			} else if ( 'textarea' === type ) {
 				control = '<textarea name="config[' + escKey + ']" class="large-text" rows="4"' + ( field.required ? ' required' : '' ) + '></textarea>';
 			} else if ( 'checkbox' === type ) {
