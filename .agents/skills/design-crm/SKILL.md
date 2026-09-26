@@ -220,9 +220,16 @@ Freelancer sourcing uses the Upwork CRM tools (`search_upwork_jobs`,
 - **Fallback mode** (no connection): two-pass web search — site-restricted
   Upwork pass, then a broader pass merged with URL dedupe. Upwork category
   landing pages (`/freelance-jobs/{slug}/` — no `~jobId`) are filtered out
-  and reported in `filtered_out`; snippets are parsed for `job_type`,
-  `budget`/`budget_max` (ranges), `tier` (Entry level/Intermediate/Expert),
-  and `published`; `skills` build a quoted OR group; direct postings rank first.
+  and reported in `filtered_out`, as are non-marketplace Upwork subdomains
+  (`community.upwork.com`, `support.upwork.com`) and category/help-centre
+  page titles; snippets are parsed for `job_type`, `budget`/`budget_max`
+  (ranges), `tier` (Entry level/Intermediate/Expert), and `published`;
+  `skills` build a quoted OR group; direct postings rank first.
+- **Fallback URLs are canonicalised.** SERP URLs in the SEO form
+  (`/freelance-jobs/apply/<slug>_~<jobId>/`) are rewritten to the canonical
+  `https://www.upwork.com/jobs/<slug>_~<jobId>/` format, which resolves to
+  the listing even when the search engine truncated the slug. Non-Upwork
+  aggregator links pass through unchanged.
 - **The fallback needs a real search provider.** With the default
   DuckDuckGo provider the fallback returns 0 results (Instant Answer API
   has no SERPs). Set a Brave/Tavily key in plugin Settings → Web Search.

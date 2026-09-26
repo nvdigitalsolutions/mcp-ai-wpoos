@@ -150,6 +150,70 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 		$this->assertSame( 'Remote designer openings this week', $filtered[1]['title'] );
 	}
 
+	/**
+	 * Upwork subdomains outside the marketplace (community., support.) and
+	 * category/help-centre page titles are not job listings and are dropped.
+	 */
+	public function test_filter_drops_non_marketplace_subdomains_and_landing_titles() {
+		$results = array(
+			array(
+				'title' => 'GoHighLevel Support Specialist needed - Upwork',
+				'url'   => 'https://www.upwork.com/freelance-jobs/GoHighLevel-Support-Specialist_~02123456789abcdef/',
+			),
+			array(
+				'title' => 'Upwork Customer Service & Support | Upwork Help',
+				'url'   => 'https://community.upwork.com/freelance-jobs/apply/Job-Opportunity-GoHighLevel-Support-Specialist_~021858547840711428684',
+			),
+			array(
+				'title' => 'Freelance Jobs on Upwork: Work Remote & Earn Online',
+				'url'   => 'https://upwork.com/freelance-jobs/apply/GoHighLevel-Genius-Specialist_~021897098866256708419',
+			),
+			array(
+				'title' => 'Social Media Marketing Freelance Jobs: Work Remote & Earn Online',
+				'url'   => 'https://www.upwork.com/freelance-jobs/apply/Entry-Level-Part-Time-SOCIAL-MEDIA-MANAGER_~021841086971326511150/',
+			),
+			array(
+				'title' => 'Implementing Go High Level and Guidance',
+				'url'   => 'https://upwork.com/freelance-jobs/apply/Implementing-High-Level-and-Guidance_~022043791294383826569',
+			),
+		);
+
+		$filtered = $this->invoke_private( 'filter_upwork_job_results', array( $results ) );
+
+		$this->assertCount( 2, $filtered );
+		$this->assertSame( 'GoHighLevel Support Specialist needed - Upwork', $filtered[0]['title'] );
+		$this->assertSame( 'Implementing Go High Level and Guidance', $filtered[1]['title'] );
+	}
+
+	/**
+	 * SERP job URLs are canonicalised to the marketplace /jobs/ form, while
+	 * non-marketplace URLs pass through untouched.
+	 */
+	public function test_normalize_upwork_job_url_canonicalizes_postings() {
+		$cases = array(
+			'https://www.upwork.com/freelance-jobs/apply/help-set-whop-GHL-affilate-link_~022098856874446209160/'
+				=> 'https://www.upwork.com/jobs/help-set-whop-GHL-affilate-link_~022098856874446209160/',
+			'https://www.upwork.com/freelance-jobs/WordPress-Developer_~01d7d03bb39cc7daec/'
+				=> 'https://www.upwork.com/jobs/WordPress-Developer_~01d7d03bb39cc7daec/',
+			'https://upwork.com/freelance-jobs/apply/Implementing-High-Level-and-Guidance_~022043791294383826569'
+				=> 'https://www.upwork.com/jobs/Implementing-High-Level-and-Guidance_~022043791294383826569/',
+			// Non-marketplace hosts (aggregators, community) stay untouched.
+			'https://remoteok.com/remote-wordpress-jobs' => 'https://remoteok.com/remote-wordpress-jobs',
+			'https://community.upwork.com/freelance-jobs/apply/Foo_~021234/' => 'https://community.upwork.com/freelance-jobs/apply/Foo_~021234/',
+			// No ~jobId suffix — category pages and landing pages stay untouched.
+			'https://www.upwork.com/freelance-jobs/web-development/' => 'https://www.upwork.com/freelance-jobs/web-development/',
+			''                                           => '',
+		);
+
+		foreach ( $cases as $input => $expected ) {
+			$this->assertSame(
+				$expected,
+				$this->invoke_private( 'normalize_upwork_job_url', array( $input ) ),
+				"Unexpected canonicalisation for: $input"
+			);
+		}
+	}
+
 	// -------------------------------------------------------------------------
 	// Snippet metadata extraction
 	// -------------------------------------------------------------------------
@@ -336,11 +400,12 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 		$this->assertSame( 3, $result['filtered_out'] );
 
 		// The first-pass job posting plus the broad-pass aggregator listing —
-		// the duplicated job posting is deduped, not repeated.
+		// the duplicated job posting is deduped, not repeated. The Upwork
+		// posting's URL is canonicalised to the /jobs/ form.
 		$this->assertCount( 2, $result['jobs'] );
 
 		$urls = wp_list_pluck( $result['jobs'], 'url' );
-		$this->assertContains( 'https://www.upwork.com/freelance-jobs/WordPress-Developer_~01d7d03bb39cc7daec/', $urls );
+		$this->assertContains( 'https://www.upwork.com/jobs/WordPress-Developer_~01d7d03bb39cc7daec/', $urls );
 		$this->assertContains( 'https://remoteok.com/remote-wordpress-jobs', $urls );
 
 		$job = $result['jobs'][0];
@@ -467,7 +532,7 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 		$this->assertCount( 2, $result['jobs'] );
 		$this->assertStringContainsString( 'expanded second search', $result['notice'] );
 		$urls = wp_list_pluck( $result['jobs'], 'url' );
-		$this->assertContains( 'https://www.upwork.com/freelance-jobs/apply/WordPress-Developer-for-Block-Based-Theme_~022048801956531499628/', $urls );
+		$this->assertContains( 'https://www.upwork.com/jobs/WordPress-Developer-for-Block-Based-Theme_~022048801956531499628/', $urls );
 		$this->assertContains( 'https://remoteok.com/remote-wordpress-jobs', $urls );
 	}
 
@@ -553,7 +618,7 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 		// With criteria: the criteria echo carries them and the noise warning stays away.
 		$result = $this->tool->execute(
 			array(
-				'query'  => 'wordpress developer',
+				'query'  => 'WordPress developer',
 				'skills' => array( 'Elementor' ),
 				'limit'  => 5,
 			),
@@ -561,7 +626,7 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 		);
 
 		$this->assertTrue( $result['criteria_provided'] );
-		$this->assertSame( 'wordpress developer', $result['criteria']['query'] );
+		$this->assertSame( 'WordPress developer', $result['criteria']['query'] );
 		$this->assertSame( array( 'Elementor' ), $result['criteria']['skills'] );
 		$this->assertSame( 5, $result['criteria']['limit'] );
 		$this->assertStringNotContainsString( 'unfiltered marketplace noise', $result['notice'] );

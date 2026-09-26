@@ -590,7 +590,11 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			foreach ( $results as $idx => $result ) {
 				$title   = isset( $result['title'] ) ? $result['title'] : '';
 				$snippet = isset( $result['snippet'] ) ? $result['snippet'] : '';
-				$url     = isset( $result['url'] ) ? $result['url'] : '';
+				// Canonicalise Upwork SERP URLs (search engines index the
+				// /freelance-jobs/apply/ SEO form) into the marketplace's
+				// canonical job URL (/jobs/<slug>_~<jobId>/) — the format that
+				// reliably resolves to the listing regardless of slug truncation.
+				$url = isset( $result['url'] ) ? $this->normalize_upwork_job_url( $result['url'] ) : '';
 
 				// Best-effort structured fields extracted from the snippet, since
 				// the web search fallback has no API payload to normalise.
@@ -652,7 +656,7 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 		if ( $filtered_out > 0 ) {
 			$notice .= ' ' . sprintf(
 				/* translators: %d: number of excluded results */
-				_n( '%d result was excluded because it was an Upwork category page rather than an individual job posting.', '%d results were excluded because they were Upwork category pages rather than individual job postings.', $filtered_out, 'mcp-ai-wpoos-pro' ),
+				_n( '%d result was excluded because it was an Upwork category page, help-centre page, or other non-job listing.', '%d results were excluded because they were Upwork category pages, help-centre pages, or other non-job listings.', $filtered_out, 'mcp-ai-wpoos-pro' ),
 				$filtered_out
 			);
 		}
@@ -840,10 +844,11 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			$title = isset( $job['title'] ) ? strtolower( (string) $job['title'] ) : '';
 			$desc  = isset( $job['description'] ) ? strtolower( (string) $job['description'] ) : '';
 
-			// Direct Upwork job postings carry the ~jobId suffix.
-			if ( false !== strpos( $url, 'upwork.com' ) && false !== strpos( $url, '~' ) ) {
+			// Direct Upwork job postings carry the ~jobId suffix on the
+			// marketplace host; other Upwork subdomains never host listings.
+			if ( $this->is_upwork_marketplace_host( $url ) && false !== strpos( $url, '~' ) ) {
 				$score += 100;
-			} elseif ( false !== strpos( $url, 'upwork.com' ) ) {
+			} elseif ( $this->is_upwork_marketplace_host( $url ) ) {
 				$score += 30;
 			}
 
@@ -928,6 +933,102 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	/**
+	 * Whether a URL's host is the Upwork job marketplace proper.
+	 *
+	 * Only `upwork.com` and `www.upwork.com` carry job postings; other
+	 * Upwork subdomains (`community.upwork.com`, `support.upwork.com`)
+	 * never resolve to a listing, so links to them must not be delivered
+	 * as job URLs.
+	 *
+	 * @param string $url Result URL.
+	 * @return bool True when the host is the Upwork marketplace.
+	 */
+	private function is_upwork_marketplace_host( $url ) {
+		$host = wp_parse_url( trim( (string) $url ), PHP_URL_HOST );
+		if ( ! is_string( $host ) ) {
+			return false;
+		}
+		$host = strtolower( $host );
+		return ( 'upwork.com' === $host || 'www.upwork.com' === $host );
+	}
+
+	/**
+	 * Whether a URL's host belongs to the upwork.com domain family.
+	 *
+	 * @param string $url Result URL.
+	 * @return bool True when the host is upwork.com or any of its subdomains.
+	 */
+	private function is_upwork_host( $url ) {
+		$host = wp_parse_url( trim( (string) $url ), PHP_URL_HOST );
+		return is_string( $host ) && false !== stripos( $host, 'upwork.com' );
+	}
+
+	/**
+	 * Normalise an Upwork marketplace URL to the canonical job URL.
+	 *
+	 * Search engines index Upwork postings under the SEO form
+	 * `/freelance-jobs/apply/<slug>_~<jobId>/` (and sometimes truncate the
+	 * slug), while the canonical, reliably-resolving form is
+	 * `https://www.upwork.com/jobs/<slug>_~<jobId>/`. Upwork resolves by the
+	 * `~<jobId>` suffix, so a truncated slug still lands on the listing.
+	 * Non-marketplace URLs (aggregators, community links) pass through
+	 * unchanged.
+	 *
+	 * @param string $url Raw search-result URL.
+	 * @return string Canonical job URL, or the original URL when not a marketplace posting.
+	 */
+	private function normalize_upwork_job_url( $url ) {
+		$url = trim( (string) $url );
+		if ( '' === $url || ! $this->is_upwork_marketplace_host( $url ) ) {
+			return $url;
+		}
+
+		$path = wp_parse_url( $url, PHP_URL_PATH );
+		if ( ! is_string( $path ) ) {
+			return $url;
+		}
+
+		// A job posting URL ends with <slug>_~<jobId>/; the ~jobId suffix is
+		// the part Upwork resolves. Slug characters stay URL-safe (percent
+		// encodings are preserved).
+		if ( ! preg_match( '#/([a-z0-9%\-\.]+)_(~[a-z0-9]+)/?$#i', $path, $m ) ) {
+			return $url;
+		}
+
+		return 'https://www.upwork.com/jobs/' . $m[1] . '_' . $m[2] . '/';
+	}
+
+	/**
+	 * Whether a title is an Upwork category, help-centre, or community page
+	 * title rather than an individual job posting.
+	 *
+	 * Search engines occasionally merge a category page's title with a job
+	 * URL (or vice versa); those entries read like jobs in the digest but
+	 * lead to landing pages, so they are dropped.
+	 *
+	 * @param string $title Search-result title.
+	 * @return bool True when the title is a non-job Upwork page title.
+	 */
+	private function is_upwork_landing_title( $title ) {
+		$title = trim( (string) $title );
+		if ( '' === $title ) {
+			return false;
+		}
+
+		if ( 0 === stripos( $title, 'Freelance Jobs on Upwork' ) ) {
+			return true;
+		}
+		if ( false !== stripos( $title, 'Work Remote & Earn Online' ) ) {
+			return true;
+		}
+		if ( 0 === stripos( $title, 'Upwork Customer Service' ) || false !== stripos( $title, ' | Upwork Help' ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Drop non-job results from the web search fallback list.
 	 *
 	 * Keeps only entries that have a title and URL and are not Upwork
@@ -953,6 +1054,18 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			}
 
 			if ( $this->is_upwork_category_page( $url ) ) {
+				continue;
+			}
+
+			// Upwork subdomains other than the marketplace (community.,
+			// support.) never host job listings.
+			if ( $this->is_upwork_host( $url ) && ! $this->is_upwork_marketplace_host( $url ) ) {
+				continue;
+			}
+
+			// Category/help-centre titles merged onto job URLs read as jobs in
+			// the digest but lead to landing pages.
+			if ( $this->is_upwork_landing_title( $title ) ) {
 				continue;
 			}
 
