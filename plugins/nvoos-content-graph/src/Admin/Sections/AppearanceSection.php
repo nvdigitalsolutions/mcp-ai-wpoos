@@ -195,6 +195,18 @@ class AppearanceSection extends Section {
 				'description' => __( 'Animate node positions during layout. Always disabled when the OS requests reduced motion.', 'nvoos-content-graph' ),
 				'default'     => 1,
 			),
+			'visual_hover_focus'     => array(
+				'type'        => 'checkbox',
+				'label'       => __( 'Hover focus', 'nvoos-content-graph' ),
+				'description' => __( 'Dim the rest of the graph and show a quick-info tooltip while hovering a node, so its neighborhood stands out. Disabled during reduced motion.', 'nvoos-content-graph' ),
+				'default'     => 1,
+			),
+			'visual_edge_flow'       => array(
+				'type'        => 'checkbox',
+				'label'       => __( 'Edge flow animation', 'nvoos-content-graph' ),
+				'description' => __( 'Animate dashes along arrowed or tapered edges to show direction. Off by default — the continuous redraw is heavier on dense graphs (applies up to 300 edges).', 'nvoos-content-graph' ),
+				'default'     => 0,
+			),
 		);
 	}
 

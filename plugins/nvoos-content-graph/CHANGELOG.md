@@ -1,5 +1,29 @@
 # NV oOS Content Graph — Changelog
 
+## Unreleased
+
+### Changed — Explorer interaction & motion polish
+
+- **Hover focus + tooltip** (new Appearance setting *Hover focus*, default
+  on) — hovering a node now spotlights its closed neighborhood (Bloom-style
+  dim-out), brightens the incident edges, and follows the cursor with a
+  quick-info tooltip (label, type, degree, community). Same gesture works on
+  front-end embeds; auto-disabled under reduced motion
+- **Animated camera** — search-Enter, arrow-key navigation, and the Fit
+  button now glide the viewport with eased animation instead of jumping;
+  instant under reduced motion or with animations off
+- **Search UX** — debounced highlighting, a live match-count badge, and
+  Enter-to-focus on the first match
+- **Edge flow animation** (new Appearance setting *Edge flow animation*,
+  default off) — marching dashes along arrowed/tapered edges convey
+  direction; capped at 300 edges and paused while the tab is hidden
+- **Entrance & loading polish** — skeleton loading state, fade-in reveal
+  after first paint, and `motionBlur` for smoother frame transitions on
+  both admin and front-end graphs
+- **CVD-safe fallback palette** — unknown node types now draw from the
+  Okabe-Ito 8-color palette (colorblind-safe by design) instead of a
+  hashed hue wheel; still contrast-corrected per theme
+
 ## 1.0.8 — 2026-09-13
 
 ### Fixed — Stripe checkout failed for non-EU buyers

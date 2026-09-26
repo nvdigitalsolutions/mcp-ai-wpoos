@@ -167,7 +167,9 @@
 
 	/**
 	 * Mirror of Tokens::ensure_contrast() — adjusts lightness until the
-	 * color meets the minimum ratio against the canvas.
+	 * color meets the minimum ratio against the canvas. Stops only when the
+	 * next step would leave the RGB gamut, so pure black/white inputs are
+	 * corrected to the nearest passing lightness instead of bailing early.
 	 */
 	function ensureContrast( hex, canvas, min ) {
 		min = min || MIN_CONTRAST;
@@ -181,10 +183,11 @@
 		var hsl = rgbToHsl( rgb );
 		var step = luminance( canvas ) < 0.5 ? 0.015 : -0.015;
 		for ( var i = 0; i < 40; i++ ) {
-			hsl[ 2 ] += step;
-			if ( hsl[ 2 ] <= 0.02 || hsl[ 2 ] >= 0.98 ) {
-				break;
+			var nextL = hsl[ 2 ] + step;
+			if ( nextL < 0 || nextL > 1 ) {
+				break; // Would leave the RGB gamut — keep the last valid value.
 			}
+			hsl[ 2 ] = nextL;
 			var next = rgbToHex( hslToRgb( hsl ) );
 			if ( contrastRatio( next, canvas ) >= min ) {
 				return next;
@@ -232,15 +235,20 @@
 
 	/**
 	 * Deterministic algorithmic color for an unknown type slug.
+	 *
+	 * Unknown types hash onto the Okabe-Ito categorical palette (colorblind
+	 * safe by design, 8 colors) instead of an arbitrary hue wheel, so
+	 * protanopia/deuteranopia/tritanopia viewers keep stable distinctions.
+	 * Every result is contrast-corrected against the active canvas.
 	 */
 	function fallbackColor( type, visual ) {
 		var t = tokensFor( visual );
-		var hue = hashHue( type );
-		var dark = resolveTheme( visual ) === 'dark';
-		var sat = dark ? 0.62 : 0.55;
-		var lit = dark ? 0.52 : 0.42;
-		var base = rgbToHex( hslToRgb( [ hue / 360, sat, lit ] ) );
-		return ensureContrast( base, t.canvas );
+		var palette = ( visual && visual.fallback_palette ) || [
+			'#E69F00', '#56B4E9', '#009E73', '#F0E442',
+			'#0072B2', '#D55E00', '#CC79A7', '#000000'
+		];
+		var idx = Math.floor( hash01( type ) * palette.length ) % palette.length;
+		return ensureContrast( palette[ idx ], t.canvas );
 	}
 
 	/**
@@ -480,6 +488,37 @@
 			{
 				selector: '.highlighted',
 				style: { 'opacity': 1 }
+			},
+			{
+				// Hover focus (Neo4j Bloom-style neighborhood spotlight):
+				// everything outside the hovered node's closed neighborhood
+				// drops away, the node gets a focus ring, its incident edges
+				// brighten and thicken.
+				selector: '.hover-dimmed',
+				style: { 'opacity': 0.08 }
+			},
+			{
+				selector: 'node.hover-focus',
+				style: {
+					'border-width': 2.5,
+					'border-color': t.selection
+				}
+			},
+			{
+				selector: 'edge.hover-strong',
+				style: {
+					'opacity': 1,
+					'width': 2.5
+				}
+			},
+			{
+				// Marching dashes for the edge-flow animation (direction cue
+				// on arrowed/tapered edges; toggled by the app).
+				selector: 'edge.edge-flow',
+				style: {
+					'line-style': 'solid',
+					'line-dash-pattern': [ 6, 4 ]
+				}
 			}
 		];
 	}
@@ -550,6 +589,16 @@
 	}
 
 	/**
+	 * Whether motion is allowed for this visual config: the site setting
+	 * must enable animation AND the OS must not request reduced motion.
+	 * Every new animation (camera pans, edge flow, entrance fades) gates on
+	 * this helper so WCAG 2.3.3 stays satisfied.
+	 */
+	function motionAllowed( visual ) {
+		return ! ( visual && visual.anim_enabled === false ) && ! reducedMotion();
+	}
+
+	/**
 	 * Node size from degree with a sqrt ramp (hubs dominate less than a
 	 * linear map).
 	 */
@@ -580,6 +629,7 @@
 		applyChrome: applyChrome,
 		layoutPresets: layoutPresets,
 		reducedMotion: reducedMotion,
+		motionAllowed: motionAllowed,
 		nodeSize: nodeSize
 	};
 }() );
