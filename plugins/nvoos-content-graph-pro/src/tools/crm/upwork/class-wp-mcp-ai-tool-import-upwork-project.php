@@ -234,10 +234,13 @@ class WP_MCP_AI_Tool_Import_Upwork_Project implements WP_MCP_AI_Tool_Interface, 
 			);
 		}
 
-		// Include Upwork job URL.
+		// Include Upwork job URL (current /freelance-jobs/apply/ form — the
+		// legacy /jobs/ route is deprecated).
 		$upwork_url = '';
 		if ( ! empty( $job_id ) ) {
-			$upwork_url   = 'https://www.upwork.com/jobs/' . $job_id;
+			$slug       = sanitize_title( $job_title );
+			$job_ref    = ( '' !== $slug ? $slug . '_' : '' ) . ( 0 === strpos( $job_id, '~' ) ? $job_id : '~' . $job_id );
+			$upwork_url = 'https://www.upwork.com/freelance-jobs/apply/' . $job_ref . '/';
 			$description .= sprintf(
 				/* translators: %s: Upwork job URL */
 				__( 'Upwork URL: %s', 'nvoos-content-graph-pro' ) . "\n",

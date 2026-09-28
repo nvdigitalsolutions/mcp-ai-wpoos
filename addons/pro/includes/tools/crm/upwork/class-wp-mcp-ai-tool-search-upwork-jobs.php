@@ -590,10 +590,11 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			foreach ( $results as $idx => $result ) {
 				$title   = isset( $result['title'] ) ? $result['title'] : '';
 				$snippet = isset( $result['snippet'] ) ? $result['snippet'] : '';
-				// Canonicalise Upwork SERP URLs (search engines index the
-				// /freelance-jobs/apply/ SEO form) into the marketplace's
-				// canonical job URL (/jobs/<slug>_~<jobId>/) — the format that
-				// reliably resolves to the listing regardless of slug truncation.
+				// Canonicalise Upwork SERP URLs: search engines index the
+				// /freelance-jobs/apply/ SEO form, often with tracking query
+				// strings (referrer_url_path) that Upwork's SPA mishandles. The
+				// normaliser keeps the current canonical
+				// /freelance-jobs/apply/<slug>_~<jobId>/ form and drops the query.
 				$url = isset( $result['url'] ) ? $this->normalize_upwork_job_url( $result['url'] ) : '';
 
 				// Best-effort structured fields extracted from the snippet, since
@@ -788,8 +789,10 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 	 *
 	 * Upwork resolves job URLs by the `~<jobId>` suffix; the title slug is
 	 * cosmetic (the server redirects on a mismatched slug), so this works
-	 * without an extra API round trip. Matches the shape Upwork itself uses:
-	 * `https://www.upwork.com/jobs/<slug>_~<id>/`.
+	 * without an extra API round trip. Uses the current public job-page form
+	 * `https://www.upwork.com/freelance-jobs/apply/<slug>_~<id>/` — the legacy
+	 * `/jobs/` route is deprecated (Upwork's robots.txt blocks it as an old
+	 * static route).
 	 *
 	 * @param array $node GraphQL job node.
 	 * @return string Job URL, or empty string when the node lacks an id/title.
@@ -807,7 +810,7 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			return '';
 		}
 
-		return 'https://www.upwork.com/jobs/' . $slug . '_' . $id . '/';
+		return 'https://www.upwork.com/freelance-jobs/apply/' . $slug . '_' . $id . '/';
 	}
 
 	/**
@@ -893,9 +896,11 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 	 * Upwork job post URLs carry a `~<jobId>` suffix (e.g.
 	 * `/freelance-jobs/Some-Title_~01d7d03bb39cc7daec/`), while category pages
 	 * are bare `/freelance-jobs/{category}/`, `/freelance-jobs/apply/{category}/`,
-	 * or `/hire/{category}/` paths. Web search engines index the category
-	 * pages heavily, so the fallback must recognise and drop them — they
-	 * describe a job family, not a bidding opportunity.
+	 * or `/hire/{category}/` paths. Login-walled SPA search surfaces
+	 * (`/nx/…`, `/o/jobs/…`, `/r/…`) are also treated as category pages: they
+	 * never resolve to an individual posting. Web search engines index the
+	 * category pages heavily, so the fallback must recognise and drop them —
+	 * they describe a job family, not a bidding opportunity.
 	 *
 	 * @param string $url Result URL.
 	 * @return bool True when the URL is an Upwork category page.
@@ -926,6 +931,12 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			return true;
 		}
 		if ( preg_match( '#^/hire/[a-z0-9\-]+$#', $path ) ) {
+			return true;
+		}
+
+		// SPA app routes are login-walled search surfaces, not job listings —
+		// links to them never resolve to a posting.
+		if ( preg_match( '#^/nx/#', $path ) || preg_match( '#^/o/jobs/#', $path ) || preg_match( '#^/r/#', $path ) ) {
 			return true;
 		}
 
@@ -967,12 +978,14 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 	 * Normalise an Upwork marketplace URL to the canonical job URL.
 	 *
 	 * Search engines index Upwork postings under the SEO form
-	 * `/freelance-jobs/apply/<slug>_~<jobId>/` (and sometimes truncate the
-	 * slug), while the canonical, reliably-resolving form is
-	 * `https://www.upwork.com/jobs/<slug>_~<jobId>/`. Upwork resolves by the
-	 * `~<jobId>` suffix, so a truncated slug still lands on the listing.
-	 * Non-marketplace URLs (aggregators, community links) pass through
-	 * unchanged.
+	 * `/freelance-jobs/apply/<slug>_~<jobId>/` — which is also the form
+	 * Upwork currently serves job pages under (the legacy `/jobs/` route is
+	 * deprecated: robots.txt blocks it as an old static route). SERP URLs
+	 * often carry tracking query strings (`referrer_url_path`, `utm_*`) that
+	 * Upwork's SPA mishandles, so the rebuilt URL drops the query string
+	 * entirely. Upwork resolves by the `~<jobId>` suffix, so a truncated slug
+	 * still lands on the listing. Non-marketplace URLs (aggregators, community
+	 * links) pass through unchanged.
 	 *
 	 * @param string $url Raw search-result URL.
 	 * @return string Canonical job URL, or the original URL when not a marketplace posting.
@@ -995,7 +1008,7 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			return $url;
 		}
 
-		return 'https://www.upwork.com/jobs/' . $m[1] . '_' . $m[2] . '/';
+		return 'https://www.upwork.com/freelance-jobs/apply/' . $m[1] . '_' . $m[2] . '/';
 	}
 
 	/**

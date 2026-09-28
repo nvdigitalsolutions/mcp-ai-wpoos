@@ -207,7 +207,9 @@ Freelancer sourcing uses the Upwork CRM tools (`search_upwork_jobs`,
   `limit`, `cursor`. Omitted filters resolve from **CRM Settings → Upwork →
   Search Defaults** (`default_search_keywords`, `default_location`, …).
 - **API mode** (Remote Sites connection with OAuth creds): returns structured
-  jobs including a derived `url` (`https://www.upwork.com/jobs/<slug>_~<id>/`).
+  jobs including a derived `url`
+  (`https://www.upwork.com/freelance-jobs/apply/<slug>_~<id>/` — the current
+  public job-page form; the legacy `/jobs/` route is deprecated).
 - **Fallback mode** (no connection): two-pass web search — site-restricted
   Upwork pass, then a broader pass merged with URL dedupe. Upwork category
   landing pages (`/freelance-jobs/{slug}/` — no `~jobId`) are filtered out
