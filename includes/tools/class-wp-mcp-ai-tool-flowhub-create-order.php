@@ -18,7 +18,12 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-flowhub-client.php';
+
+// Guard the client require so a missing/corrupt install (e.g. incomplete
+// update) degrades to "tool unavailable" instead of fataling the whole site.
+if ( file_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-flowhub-client.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-flowhub-client.php';
+}
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 
 /**
@@ -197,7 +202,16 @@ class WP_MCP_AI_Tool_Flowhub_Create_Order implements WP_MCP_AI_Tool_Interface, W
 		// credentials, configured sync connections, or the first enabled
 		// FlowHub connection in Remote Sites.
 		if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-flowhub-connection-helper.php';
+			$helper_file = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-flowhub-connection-helper.php';
+			if ( file_exists( $helper_file ) ) {
+				require_once $helper_file;
+			}
+		}
+		if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_flowhub_helper_missing',
+				__( 'The Flowhub connection helper is not available on this site.', 'mcp-ai-wpoos' )
+			);
 		}
 		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : null;
 		$resolved      = WP_MCP_AI_FlowHub_Connection_Helper::resolve_connection( $connection_id );
@@ -213,7 +227,16 @@ class WP_MCP_AI_Tool_Flowhub_Create_Order implements WP_MCP_AI_Tool_Interface, W
 
 		// Use the base client class, passing connection_id for lazy credential resolution.
 		if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-flowhub-client.php';
+			$client_file = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-flowhub-client.php';
+			if ( file_exists( $client_file ) ) {
+				require_once $client_file;
+			}
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_flowhub_client_missing',
+				__( 'The Flowhub client is not available on this site.', 'mcp-ai-wpoos' )
+			);
 		}
 		$client     = new WP_MCP_AI_Flowhub_Client( $connection_id );
 		$order_data = array(
