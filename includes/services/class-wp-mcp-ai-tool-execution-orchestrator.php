@@ -97,7 +97,7 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 	 * These are now filterable via `wp_mcp_ai_capacity_thresholds`.
 	 * Constants are kept as defaults for backward compatibility.
 	 *
-	 * @since 1.2.0
+	 * @since 2026.09
 	 */
 	const CAPACITY_THRESHOLD_CRITICAL = 15;  // Queue if capacity < 15%.
 	const CAPACITY_THRESHOLD_WARNING  = 30;  // Consider queueing if capacity < 30%.
@@ -106,7 +106,7 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 	/**
 	 * Get filterable capacity thresholds.
 	 *
-	 * @since 1.2.0
+	 * @since 2026.09
 	 * @return array Thresholds array.
 	 */
 	protected function get_capacity_thresholds() {
@@ -120,7 +120,7 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 		/**
 		 * Filter capacity thresholds for load-based routing.
 		 *
-		 * @since 1.2.0
+		 * @since 2026.09
 		 *
 		 * @param array $defaults Default thresholds.
 		 */
@@ -284,7 +284,25 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 		// Determine orchestration tier based on capacity and confidence from context.
 		$capacity   = isset( $context['capacity'] ) ? (float) $context['capacity'] : 0.0;
 		$confidence = isset( $context['confidence'] ) ? (float) $context['confidence'] : 0.0;
-		$tier       = $depth_scheduler->determine_tier( $capacity, $confidence );
+
+		/**
+		 * Filter the confidence signal before depth-tier determination.
+		 *
+		 * Add-ons may replace a zero (unset) confidence with a semantic
+		 * signal (e.g. a Jev decision-model complexity read) so the depth
+		 * scheduler sees real information instead of a neutral default.
+		 * Caller-supplied non-zero confidence must be treated as authoritative
+		 * by listeners.
+		 *
+		 * @since 2026.09
+		 *
+		 * @param float  $confidence Confidence signal (0.0 when unset).
+		 * @param array  $context    Execution context.
+		 * @param string $tool_slug  Tool being executed.
+		 */
+		$confidence = apply_filters( 'wp_mcp_ai_execution_depth_confidence', $confidence, $context, $tool_slug );
+
+		$tier = $depth_scheduler->determine_tier( $capacity, $confidence );
 
 		// Get tier configuration.
 		$tier_config = $depth_scheduler->get_tier_config( $tier );
