@@ -18,7 +18,12 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-payhere-client.php';
+
+// Guard the client require so a missing/corrupt install (e.g. incomplete
+// update) degrades to "tool unavailable" instead of fataling the whole site.
+if ( file_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-payhere-client.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-payhere-client.php';
+}
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 
 /**
@@ -188,6 +193,15 @@ class WP_MCP_AI_Tool_PayHere_Get_Payment implements WP_MCP_AI_Tool_Interface, WP
 					)
 				);
 			}
+		}
+
+		// The registry gates registration via is_available(), but guard direct
+		// invocation too in case the client file is missing from this install.
+		if ( ! class_exists( 'WP_MCP_AI_PayHere_Client' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_payhere_client_missing',
+				__( 'The PayHere client is not available on this site.', 'mcp-ai-wpoos' )
+			);
 		}
 
 		$order_id = sanitize_text_field( $arguments['order_id'] );
