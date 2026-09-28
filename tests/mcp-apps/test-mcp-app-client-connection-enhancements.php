@@ -117,6 +117,37 @@ class Test_MCP_App_Client_Connection_Enhancements extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Count the captured requests sent for a JSON-RPC method.
+	 *
+	 * @param string $method JSON-RPC method name.
+	 * @return int Number of matching captured requests.
+	 */
+	protected function count_requests( $method ) {
+		$count = 0;
+		foreach ( $this->captured as $args ) {
+			$payload = json_decode( isset( $args['body'] ) ? $args['body'] : '', true );
+			if ( is_array( $payload ) && isset( $payload['method'] ) && $method === $payload['method'] ) {
+				++$count;
+			}
+		}
+		return $count;
+	}
+
+	/**
+	 * Detach any installed HTTP mock, reset the capture buffer, and install
+	 * a fresh mock — used to phase a multi-step scenario without stale
+	 * filters double-capturing requests.
+	 *
+	 * @param array $responses Map of JSON-RPC method => response payload.
+	 * @return void
+	 */
+	protected function reset_http_mock( array $responses ) {
+		remove_all_filters( 'pre_http_request' );
+		$this->captured = array();
+		$this->install_http_mock( $responses );
+	}
+
+	/**
 	 * Test basic auth encodes raw user:password credentials.
 	 */
 	public function test_basic_auth_raw_credentials_encoded() {
@@ -701,5 +732,180 @@ class Test_MCP_App_Client_Connection_Enhancements extends WP_UnitTestCase {
 		$this->assertEquals( 2, $result['tool_count'] );
 		$this->assertSame( '', $result['tool_error'] );
 		$this->assertTrue( $result['session_active'] );
+	}
+
+	/**
+	 * Test the legacy-dialect hint skips the discover probe on the next
+	 * connection.
+	 *
+	 * The first connection observes the fallback (bare HTTP 400) and records
+	 * the hint; a fresh client for the same URL must open with initialize()
+	 * directly, with no server/discover probe on the wire.
+	 */
+	public function test_legacy_hint_skips_discover_probe_on_second_connection() {
+		$responses = array(
+			'server/discover' => array(
+				'code' => 400,
+				'body' => 'Bad Request',
+			),
+			'initialize'      => array(
+				'headers' => array( 'mcp-session-id' => 'sess-hint' ),
+				'body'    => $this->rpc_result(
+					array(
+						'protocolVersion' => '2025-03-26',
+						'serverInfo'      => array(
+							'name'    => 'Upwork MCP',
+							'version' => '1.0.0',
+						),
+						'capabilities'    => array( 'tools' => new stdClass() ),
+					)
+				),
+			),
+			'tools/list'      => array(
+				'body' => $this->rpc_result(
+					array(
+						'tools' => array(
+							array( 'name' => 'search_jobs' ),
+						),
+					)
+				),
+			),
+		);
+
+		$this->install_http_mock( $responses );
+
+		// First connection: probe + fallback; records the hint.
+		$first = new WP_MCP_AI_MCP_App_Client(
+			array(
+				'server_url' => 'https://mcp.upwork.com/mcp',
+				'auth_type'  => 'none',
+			)
+		);
+
+		$result = $first->test_connection();
+
+		$this->assertNotWPError( $result );
+		$this->assertEquals( 'initialize', $result['handshake'] );
+		$this->assertSame( 1, $this->count_requests( 'server/discover' ) );
+
+		// Second connection: the hint must suppress the probe entirely.
+		$this->reset_http_mock( $responses );
+
+		$second = new WP_MCP_AI_MCP_App_Client(
+			array(
+				'server_url' => 'https://mcp.upwork.com/mcp',
+				'auth_type'  => 'none',
+			)
+		);
+
+		$result = $second->test_connection();
+
+		$this->assertNotWPError( $result );
+		$this->assertEquals( 'initialize', $result['handshake'] );
+		$this->assertSame( 0, $this->count_requests( 'server/discover' ) );
+
+		// The first request of the hinted connection is initialize itself.
+		$first_payload = json_decode( $this->captured[0]['body'], true );
+		$this->assertSame( 'initialize', $first_payload['method'] );
+	}
+
+	/**
+	 * Test a stale legacy hint self-heals by falling forward to discover.
+	 *
+	 * When initialize() is rejected with a stateless signature (-32601), the
+	 * hint must be cleared and the stateless probe retried.
+	 */
+	public function test_stale_legacy_hint_falls_forward_to_discover() {
+		$this->install_http_mock(
+			array(
+				'initialize'      => array(
+					'code' => 400,
+					'body' => wp_json_encode(
+						array(
+							'jsonrpc' => '2.0',
+							'id'      => 1,
+							'error'   => array(
+								'code'    => -32601,
+								'message' => 'Method not found',
+							),
+						)
+					),
+				),
+				'server/discover' => array(
+					'body' => $this->rpc_result(
+						array(
+							'serverInfo'   => array(
+								'name'    => 'Modern MCP',
+								'version' => '2.0.0',
+							),
+							'capabilities' => array( 'tools' => array() ),
+						)
+					),
+				),
+				'tools/list'      => array(
+					'body' => $this->rpc_result(
+						array(
+							'tools' => array(
+								array( 'name' => 'ping' ),
+							),
+						)
+					),
+				),
+			)
+		);
+
+		// Seed the hint directly for the URL this client will use. The key
+		// mirrors WP_MCP_AI_MCP_App_Client::legacy_hint_key() — the server
+		// URL passes through esc_url_raw() unchanged for a plain https URL.
+		$hint_key = 'wp_mcp_ai_mcp_app_legacy_' . md5( 'https://upgraded.example.com/mcp' );
+		set_transient( $hint_key, 1, DAY_IN_SECONDS );
+
+		$client = new WP_MCP_AI_MCP_App_Client(
+			array(
+				'server_url' => 'https://upgraded.example.com/mcp',
+				'auth_type'  => 'none',
+			)
+		);
+
+		$result = $client->test_connection();
+
+		$this->assertNotWPError( $result );
+		$this->assertEquals( 'discover', $result['handshake'] );
+		$this->assertEquals( '2026-07-28', $result['protocol'] );
+
+		// The stale hint must be cleared so the next handshake probes first.
+		$this->assertFalse( get_transient( $hint_key ) );
+	}
+
+	/**
+	 * Test a hinted connection keeps the hint when initialize fails in a way
+	 * that does not imply a dialect change (the server is unreachable).
+	 */
+	public function test_legacy_hint_kept_on_non_stateless_failure() {
+		add_filter(
+			'pre_http_request',
+			function () {
+				return new WP_Error( 'http_request_failed', 'Connection refused' );
+			},
+			10,
+			0
+		);
+
+		$hint_key = 'wp_mcp_ai_mcp_app_legacy_' . md5( 'https://down.example.com/mcp' );
+		set_transient( $hint_key, 1, DAY_IN_SECONDS );
+
+		$client = new WP_MCP_AI_MCP_App_Client(
+			array(
+				'server_url' => 'https://down.example.com/mcp',
+				'auth_type'  => 'none',
+			)
+		);
+
+		$result = $client->test_connection();
+
+		$this->assertWPError( $result );
+
+		// The hint must survive — the server is down, not upgraded.
+		$this->assertNotFalse( get_transient( $hint_key ) );
 	}
 }

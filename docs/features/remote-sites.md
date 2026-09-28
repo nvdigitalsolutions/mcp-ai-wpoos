@@ -29,6 +29,9 @@ WordPress MCP Adapter endpoints, or any JSON-RPC 2.0 Streamable HTTP MCP server:
   (header name + value), `bearer`, and `oauth`.
 - **Test Connection** performs a real MCP handshake (`server/discover` with the
   legacy `initialize` fallback) and reports protocol, server info, and tool count.
+  Once a server is observed rejecting the stateless probe, a 24h dialect hint
+  skips it on subsequent tests/connects (see the MCP Apps protocol-negotiation
+  docs).
 - **Discover Tools** (via `WP_MCP_AI_Pro_Remote_Site_Manager::discover_mcp_server_tools()`)
   enumerates the remote tools and persists the snapshot (`mcp_tool_count`,
   `mcp_discovered_at`, `mcp_last_test`) on the connection.
