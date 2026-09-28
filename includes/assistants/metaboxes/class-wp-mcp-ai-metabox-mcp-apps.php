@@ -498,9 +498,9 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 								<?php echo ! $has_oauth ? 'style="display:none;"' : ''; ?>>
 								<?php esc_html_e( 'Re-authenticate', 'mcp-ai-wpoos' ); ?>
 							</button>
-							<div class="wp-mcp-ai-oauth-manual" style="display:none; margin-top: 10px;">
+							<div class="wp-mcp-ai-oauth-manual" style="<?php echo $has_oauth ? 'display:none;' : ''; ?>margin-top: 10px;">
 								<p class="description">
-									<?php esc_html_e( 'This server only allows "localhost" callback URLs. After logging in, the new tab will fail to load a localhost page — copy the full URL from its address bar and paste it below.', 'mcp-ai-wpoos' ); ?>
+									<?php esc_html_e( 'Some servers (e.g. Upwork) only allow "localhost" callback URLs, so the login tab ends on a localhost address that does not load. If that happens: copy the full address from the login tab\'s address bar, paste it below, and click Complete Login.', 'mcp-ai-wpoos' ); ?>
 								</p>
 								<a href="#" class="wp-mcp-ai-oauth-open-link" target="_blank" rel="noopener noreferrer" style="display: block; margin-bottom: 6px;"><?php esc_html_e( 'Open the login page', 'mcp-ai-wpoos' ); ?></a>
 								<input type="text" class="regular-text wp-mcp-ai-oauth-callback-url" placeholder="http://localhost:PORT/callback?code=...&state=..." />
@@ -508,7 +508,7 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 								<span class="spinner wp-mcp-ai-oauth-complete-spinner" style="display:none; float:none; margin: 0 0 0 6px;"></span>
 							</div>
 							<?php
-							foreach ( array( 'access_token', 'refresh_token', 'token_type', 'expires_in', 'scope', 'issued_at' ) as $field ) {
+							foreach ( array( 'access_token', 'refresh_token', 'token_type', 'expires_in', 'scope', 'issued_at', 'client_id' ) as $field ) {
 								$value = isset( $app['oauth_data'][ $field ] ) ? $app['oauth_data'][ $field ] : '';
 								?>
 								<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[oauth_data][<?php echo esc_attr( $field ); ?>]" value="<?php echo esc_attr( (string) $value ); ?>" />
@@ -633,9 +633,9 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 							<button type="button" class="button wp-mcp-ai-reconnect-oauth" style="display:none;">
 								<?php esc_html_e( 'Re-authenticate', 'mcp-ai-wpoos' ); ?>
 							</button>
-							<div class="wp-mcp-ai-oauth-manual" style="display:none; margin-top: 10px;">
+							<div class="wp-mcp-ai-oauth-manual" style="margin-top: 10px;">
 								<p class="description">
-									<?php esc_html_e( 'This server only allows "localhost" callback URLs. After logging in, the new tab will fail to load a localhost page — copy the full URL from its address bar and paste it below.', 'mcp-ai-wpoos' ); ?>
+									<?php esc_html_e( 'Some servers (e.g. Upwork) only allow "localhost" callback URLs, so the login tab ends on a localhost address that does not load. If that happens: copy the full address from the login tab\'s address bar, paste it below, and click Complete Login.', 'mcp-ai-wpoos' ); ?>
 								</p>
 								<a href="#" class="wp-mcp-ai-oauth-open-link" target="_blank" rel="noopener noreferrer" style="display: block; margin-bottom: 6px;"><?php esc_html_e( 'Open the login page', 'mcp-ai-wpoos' ); ?></a>
 								<input type="text" class="regular-text wp-mcp-ai-oauth-callback-url" placeholder="http://localhost:PORT/callback?code=...&state=..." />
@@ -643,7 +643,7 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 								<span class="spinner wp-mcp-ai-oauth-complete-spinner" style="display:none; float:none; margin: 0 0 0 6px;"></span>
 							</div>
 							<?php
-							foreach ( array( 'access_token', 'refresh_token', 'token_type', 'expires_in', 'scope', 'issued_at' ) as $field ) {
+							foreach ( array( 'access_token', 'refresh_token', 'token_type', 'expires_in', 'scope', 'issued_at', 'client_id' ) as $field ) {
 								?>
 								<input type="hidden" name="wp_mcp_ai_mcp_apps[{{data.index}}][oauth_data][<?php echo esc_attr( $field ); ?>]" value="" />
 								<?php
@@ -1225,6 +1225,15 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 									var discoverRow = event.target.closest( '.wp-mcp-ai-mcp-app-row' );
 									if ( discoverRow ) {
 										runDiscover( discoverRow );
+									}
+									return;
+								}
+
+								if ( event.target.closest( '.wp-mcp-ai-oauth-open-link' ) ) {
+									var openLink = event.target.closest( '.wp-mcp-ai-oauth-open-link' );
+									if ( ! openLink.getAttribute( 'href' ) || openLink.getAttribute( 'href' ) === '#' ) {
+										event.preventDefault();
+										window.alert( 'Click "Connect via Web Login" first to start the login.' );
 									}
 									return;
 								}
