@@ -41,7 +41,7 @@ name, no instructions field, no model hints).
 `Admin → NV oOS Settings → Orchestration → MCP Servers` or via the `/mcp-server enable <slug>` slash command.
 
 **Assigning to an assistant** — on the assistant edit screen, the  
-**Toolkit MCP Servers** metabox lets you restrict which servers that assistant may invoke (empty = allow all enabled servers).
+**Toolkit MCP Servers** metabox lets you grant which servers that assistant may invoke. Grants are deny-by-default: unchecked servers reject assistant-scoped JSON-RPC calls.
 
 **Audit log** — cross-mount reads are recorded in a 200-entry ring buffer  
 (`wp_mcp_ai_toolkit_mcp_audit_log` option). Query via  
