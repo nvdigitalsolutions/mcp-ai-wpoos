@@ -239,6 +239,121 @@ class Test_Toolkit_Server_Execution extends WP_UnitTestCase {
 		$this->assertSame( -32601, $data['error']['code'] );
 	}
 
+	/** Test assistant-scoped tools call is rejected when the assistant has no grant.
+	 *
+	 * Deny-by-default: an assistant with an empty allowlist (no checked
+	 * servers in the Toolkit MCP Servers metabox) must not invoke the server.
+	 */
+	public function test_tools_call_rejected_for_ungranted_assistant() {
+		$assistant_id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_assistant' ) );
+
+		$data = $this->rpc(
+			'crm',
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 11,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'assistant_id' => $assistant_id,
+					'name'         => 'toolkit_mcp_test_echo',
+					'arguments'    => array(),
+				),
+			)
+		);
+
+		$this->assertArrayHasKey( 'error', $data, wp_json_encode( $data ) );
+		$this->assertSame( -32601, $data['error']['code'] );
+		$this->assertSame( $assistant_id, $data['error']['data']['assistant_id'] );
+		$this->assertSame( 'crm', $data['error']['data']['server'] );
+	}
+
+	/** Test assistant-scoped tools call succeeds when the assistant holds a grant.
+	 */
+	public function test_tools_call_allowed_for_granted_assistant() {
+		$assistant_id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_assistant' ) );
+		update_post_meta( $assistant_id, '_wp_mcp_ai_pro_allowed_mcp_servers', array( 'crm' ) );
+
+		$data = $this->rpc(
+			'crm',
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 12,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'assistant_id' => $assistant_id,
+					'name'         => 'toolkit_mcp_test_echo',
+					'arguments'    => array( 'msg' => 'granted' ),
+				),
+			)
+		);
+
+		$this->assertArrayHasKey( 'result', $data, wp_json_encode( $data ) );
+		$payload = json_decode( $data['result']['content'][0]['text'], true );
+		$this->assertSame( 'granted', $payload['echo'] );
+	}
+
+	/** Test non-assistant-scoped calls bypass the grant gate (backward compat).
+	 */
+	public function test_tools_call_without_assistant_id_bypasses_grant_gate() {
+		$data = $this->rpc(
+			'crm',
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 13,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'toolkit_mcp_test_echo',
+					'arguments' => array( 'msg' => 'plain-client' ),
+				),
+			)
+		);
+
+		$this->assertArrayHasKey( 'result', $data, wp_json_encode( $data ) );
+		$payload = json_decode( $data['result']['content'][0]['text'], true );
+		$this->assertSame( 'plain-client', $payload['echo'] );
+	}
+
+	/** Test initialize lists only granted servers in toolkitServers metadata.
+	 */
+	public function test_initialize_toolkit_servers_metadata_reflects_grants() {
+		$assistant_id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_assistant' ) );
+		update_post_meta( $assistant_id, '_wp_mcp_ai_pro_allowed_mcp_servers', array( 'crm' ) );
+
+		$data = $this->rpc(
+			'crm',
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 14,
+				'method'  => 'initialize',
+				'params'  => array( 'assistant_id' => $assistant_id ),
+			)
+		);
+
+		$this->assertArrayHasKey( 'result', $data, wp_json_encode( $data ) );
+		$this->assertArrayHasKey( 'toolkitServers', $data['result'] );
+		$slugs = wp_list_pluck( $data['result']['toolkitServers'], 'slug' );
+		$this->assertSame( array( 'crm' ), $slugs );
+	}
+
+	/** Test initialize returns an empty toolkitServers list when the assistant has no grants.
+	 */
+	public function test_initialize_toolkit_servers_metadata_empty_without_grants() {
+		$assistant_id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_assistant' ) );
+
+		$data = $this->rpc(
+			'crm',
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 15,
+				'method'  => 'initialize',
+				'params'  => array( 'assistant_id' => $assistant_id ),
+			)
+		);
+
+		$this->assertArrayHasKey( 'result', $data, wp_json_encode( $data ) );
+		$this->assertSame( array(), $data['result']['toolkitServers'] );
+	}
+
 	/** Test resources read returns descriptor for native uri.
 	 */
 	public function test_resources_read_returns_descriptor_for_native_uri() {
