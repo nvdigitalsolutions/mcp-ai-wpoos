@@ -379,7 +379,13 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 			return new WP_Error(
 				'wp_mcp_ai_mcp_app_oauth_registration_error',
 				$error_desc,
-				array( 'status' => $status_code )
+				array(
+					'status'      => $status_code,
+					// Surface the OAuth error code (e.g. invalid_redirect_uri)
+					// so callers can react, e.g. by falling back to a loopback
+					// redirect URI for providers like Upwork.
+					'oauth_error' => isset( $data['error'] ) ? sanitize_key( $data['error'] ) : '',
+				)
 			);
 		}
 
@@ -519,18 +525,7 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 			'resource'      => $this->server_url,
 		);
 
-		$response = wp_remote_post(
-			$token_endpoint,
-			array(
-				'timeout'   => $this->timeout,
-				'sslverify' => $this->verify_ssl,
-				'headers'   => array(
-					'Content-Type' => 'application/json',
-					'Accept'       => 'application/json',
-				),
-				'body'      => wp_json_encode( $body ),
-			)
-		);
+		$response = $this->post_token_endpoint( $token_endpoint, $body );
 
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
@@ -596,18 +591,7 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 			'resource'      => $this->server_url,
 		);
 
-		$response = wp_remote_post(
-			$token_endpoint,
-			array(
-				'timeout'   => $this->timeout,
-				'sslverify' => $this->verify_ssl,
-				'headers'   => array(
-					'Content-Type' => 'application/json',
-					'Accept'       => 'application/json',
-				),
-				'body'      => wp_json_encode( $body ),
-			)
-		);
+		$response = $this->post_token_endpoint( $token_endpoint, $body );
 
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
@@ -673,17 +657,7 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 			return false;
 		}
 
-		$response = wp_remote_post(
-			$revocation_endpoint,
-			array(
-				'timeout'   => $this->timeout,
-				'sslverify' => $this->verify_ssl,
-				'headers'   => array(
-					'Content-Type' => 'application/json',
-				),
-				'body'      => wp_json_encode( array( 'token' => $token ) ),
-			)
-		);
+		$response = $this->post_token_endpoint( $revocation_endpoint, array( 'token' => $token ) );
 
 		return ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response );
 	}
@@ -819,9 +793,87 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 		$this->client_id = sanitize_key( $client_id );
 	}
 
+	/**
+	 * Set the redirect URI.
+	 *
+	 * Used to restore the flow-specific redirect URI during the callback
+	 * exchange (which runs in a fresh request). Required for manual loopback
+	 * flows where the authorize request used a localhost URI that differs
+	 * from the default REST callback URL.
+	 *
+	 * @since 1.9.0
+	 * @param string $redirect_uri Redirect URI.
+	 * @return void
+	 */
+	public function set_redirect_uri( $redirect_uri ) {
+		$this->redirect_uri = esc_url_raw( $redirect_uri );
+	}
+
+	/**
+	 * Set the OAuth state value.
+	 *
+	 * The callback exchange runs in a fresh request, so the CSRF state
+	 * generated during initiation must be restored before the code exchange
+	 * validates it.
+	 *
+	 * @since 1.9.0
+	 * @param string $state State value.
+	 * @return void
+	 */
+	public function set_state( $state ) {
+		$this->state = sanitize_text_field( $state );
+	}
+
 	// -----------------------------------------------------------------------
 	// Utility Methods
 	// -----------------------------------------------------------------------
+
+	/**
+	 * POST to an OAuth endpoint with content negotiation.
+	 *
+	 * OAuth 2.0 token/revocation requests are specified as form-encoded, but
+	 * some providers only accept JSON while others (e.g. Upwork) reject JSON
+	 * with HTTP 415. Send JSON first to preserve existing behaviour, then
+	 * retry with form-encoding when the endpoint refuses the media type.
+	 *
+	 * @since 1.9.0
+	 * @param string $endpoint Endpoint URL.
+	 * @param array  $body     Request parameters.
+	 * @return array|WP_Error Response array or WP_Error from wp_remote_post.
+	 */
+	protected function post_token_endpoint( $endpoint, array $body ) {
+		$response = wp_remote_post(
+			$endpoint,
+			array(
+				'timeout'   => $this->timeout,
+				'sslverify' => $this->verify_ssl,
+				'headers'   => array(
+					'Content-Type' => 'application/json',
+					'Accept'       => 'application/json',
+				),
+				'body'      => wp_json_encode( $body ),
+			)
+		);
+
+		if ( ! is_wp_error( $response ) && 415 === wp_remote_retrieve_response_code( $response ) ) {
+			// The endpoint does not accept JSON. Retry with form-encoded
+			// parameters, which WordPress encodes from the array body.
+			$response = wp_remote_post(
+				$endpoint,
+				array(
+					'timeout'   => $this->timeout,
+					'sslverify' => $this->verify_ssl,
+					'headers'   => array(
+						'Content-Type' => 'application/x-www-form-urlencoded',
+						'Accept'       => 'application/json',
+					),
+					'body'      => $body,
+				)
+			);
+		}
+
+		return $response;
+	}
 
 	/**
 	 * Compute PKCE S256 challenge from verifier.
