@@ -611,6 +611,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( ! isset( $connection_data['upwork_mode'] ) && isset( $existing_connection['upwork_mode'] ) ) {
 				$connection_data['upwork_mode'] = $existing_connection['upwork_mode'];
 			}
+			if ( ! isset( $connection_data['upwork_mcp_url'] ) && isset( $existing_connection['upwork_mcp_url'] ) ) {
+				$connection_data['upwork_mcp_url'] = $existing_connection['upwork_mcp_url'];
+			}
+			if ( ! isset( $connection_data['upwork_org_uid'] ) && isset( $existing_connection['upwork_org_uid'] ) ) {
+				$connection_data['upwork_org_uid'] = $existing_connection['upwork_org_uid'];
+			}
 			if ( ! isset( $connection_data['upwork_search_query'] ) && isset( $existing_connection['upwork_search_query'] ) ) {
 				$connection_data['upwork_search_query'] = $existing_connection['upwork_search_query'];
 			}
@@ -805,13 +811,18 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'shipstation_carrier_code'       => isset( $connection_data['shipstation_carrier_code'] )
 				? sanitize_text_field( $connection_data['shipstation_carrier_code'] )
 				: 'stamps_com',
-			// Upwork/LinkedIn operation mode: 'api' (OAuth) or 'web_search' (AI-powered web search).
+			// Upwork operation mode: 'api' (GraphQL OAuth), 'web_search' (AI-powered
+			// web search), or 'mcp' (the official Upwork MCP gateway).
 			// The Upwork account username/display name is stored here, not in
 			// user_email (which is sanitized as an email address).
 			'upwork_username'                => isset( $connection_data['upwork_username'] ) ? sanitize_text_field( $connection_data['upwork_username'] ) : '',
-			'upwork_mode'                    => isset( $connection_data['upwork_mode'] ) && in_array( $connection_data['upwork_mode'], array( 'api', 'web_search' ), true )
+			'upwork_mode'                    => isset( $connection_data['upwork_mode'] ) && in_array( $connection_data['upwork_mode'], array( 'api', 'web_search', 'mcp' ), true )
 				? $connection_data['upwork_mode']
 				: 'api',
+			'upwork_mcp_url'                 => isset( $connection_data['upwork_mcp_url'] ) && '' !== trim( (string) $connection_data['upwork_mcp_url'] )
+				? esc_url_raw( $connection_data['upwork_mcp_url'] )
+				: 'https://mcp.upwork.com/mcp',
+			'upwork_org_uid'                 => isset( $connection_data['upwork_org_uid'] ) ? sanitize_text_field( $connection_data['upwork_org_uid'] ) : '',
 			'upwork_search_query'            => isset( $connection_data['upwork_search_query'] ) ? sanitize_text_field( $connection_data['upwork_search_query'] ) : '',
 			'upwork_search_category'         => isset( $connection_data['upwork_search_category'] ) ? sanitize_text_field( $connection_data['upwork_search_category'] ) : '',
 			'upwork_search_job_type'         => isset( $connection_data['upwork_search_job_type'] ) && in_array( $connection_data['upwork_search_job_type'], array( 'hourly', 'fixed', '' ), true )
@@ -990,11 +1001,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		$connection = $connections[ $connection_id ];
 
-		// Only OAuth MCP Server connections carry an mcp_oauth blob.
-		if (
-			'mcp_server' !== ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ||
-			'oauth' !== ( isset( $connection['auth_type'] ) ? $connection['auth_type'] : '' )
-		) {
+		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : '';
+		$auth_type       = isset( $connection['auth_type'] ) ? $connection['auth_type'] : '';
+
+		// Only OAuth MCP Server connections and Upwork connections in MCP mode
+		// carry an mcp_oauth blob.
+		$is_mcp_server = 'mcp_server' === $connection_type && 'oauth' === $auth_type;
+		$is_upwork_mcp = 'upwork' === $connection_type && 'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' );
+		if ( ! $is_mcp_server && ! $is_upwork_mcp ) {
 			return false;
 		}
 
@@ -1034,7 +1048,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 					'MCP Server OAuth token refresh could not be persisted',
 					array(
 						'connection_id'   => $connection_id,
-						'connection_type' => 'mcp_server',
+						'connection_type' => $connection_type,
 					)
 				);
 			}
@@ -1051,7 +1065,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				'MCP Server OAuth token refreshed',
 				array(
 					'connection_id'         => $connection_id,
-					'connection_type'       => 'mcp_server',
+					'connection_type'       => $connection_type,
 					'url'                   => isset( $connection['url'] ) ? $connection['url'] : '',
 					'scope'                 => isset( $merged['scope'] ) ? sanitize_text_field( $merged['scope'] ) : '',
 					'expires_in'            => isset( $merged['expires_in'] ) ? absint( $merged['expires_in'] ) : 0,
@@ -1363,6 +1377,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		// Handle Upwork connections separately.
 		if ( 'upwork' === $connection_type ) {
+			$upwork_mode = isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : 'api';
+			if ( 'mcp' === $upwork_mode ) {
+				return self::test_upwork_mcp_connection( $connection );
+			}
+
 			return array(
 				'success' => true,
 				'upwork'  => true,
@@ -1525,6 +1544,108 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		return $config;
+	}
+
+	/**
+	 * Map a stored Upwork connection (MCP mode) onto an MCP App client config.
+	 *
+	 * The Upwork MCP gateway authenticates via the MCP OAuth 2.1 flow; the
+	 * token blob lives in the encrypted `mcp_oauth` field like any other MCP
+	 * Server connection. The endpoint defaults to the official gateway.
+	 *
+	 * @since 1.1.88
+	 *
+	 * @param array $connection Stored Upwork connection array.
+	 * @return array MCP App client config.
+	 */
+	public static function build_upwork_mcp_app_config( $connection ) {
+		$server_url = isset( $connection['upwork_mcp_url'] ) && '' !== trim( (string) $connection['upwork_mcp_url'] )
+			? esc_url_raw( $connection['upwork_mcp_url'] )
+			: 'https://mcp.upwork.com/mcp';
+
+		$config = array(
+			'server_url' => $server_url,
+			'auth_type'  => 'oauth',
+			'token'      => '',
+			'timeout'    => 30,
+			'verify_ssl' => true,
+		);
+
+		$oauth_blob = isset( $connection['mcp_oauth'] ) ? self::decrypt_value( (string) $connection['mcp_oauth'] ) : '';
+		if ( '' !== $oauth_blob ) {
+			$decoded = json_decode( $oauth_blob, true );
+			if ( is_array( $decoded ) ) {
+				$config['oauth_data'] = $decoded;
+				if ( ! empty( $decoded['access_token'] ) ) {
+					$config['token'] = $decoded['access_token'];
+				}
+			}
+		}
+
+		// Route automatic OAuth refreshes back to the central store.
+		if ( ! empty( $connection['id'] ) ) {
+			$config['connection_ref'] = $connection['id'];
+		}
+
+		return $config;
+	}
+
+	/**
+	 * Test an Upwork MCP-mode connection with a real JSON-RPC handshake.
+	 *
+	 * Mirrors {@see test_mcp_server_connection()} for the freelance
+	 * marketplace connection type: without stored tokens the result is a
+	 * saved-credentials acknowledgement instead of a failed handshake.
+	 *
+	 * @since 1.1.88
+	 *
+	 * @param array $connection Stored Upwork connection array.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_upwork_mcp_connection( $connection ) {
+		$config = self::build_upwork_mcp_app_config( $connection );
+
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
+			$client_file = WP_MCP_AI_PRO_PATH . 'includes/mcp-apps/class-wp-mcp-ai-mcp-app-client.php';
+			if ( file_exists( $client_file ) ) {
+				require_once $client_file;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_mcp_client_missing',
+				__( 'The MCP App client is not available.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( empty( $config['token'] ) ) {
+			return array(
+				'success' => true,
+				'upwork'  => true,
+				'mcp'     => true,
+				'message' => __( 'Upwork MCP credentials saved. Connect your Upwork account via the MCP login button to finish setup.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		$client = new WP_MCP_AI_MCP_App_Client( $config );
+		$result = $client->test_connection();
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return array(
+			'success'     => true,
+			'upwork'      => true,
+			'mcp'         => true,
+			'message'     => __( 'Upwork MCP handshake successful.', 'mcp-ai-wpoos-pro' ),
+			'handshake'   => isset( $result['handshake'] ) ? $result['handshake'] : '',
+			'protocol'    => isset( $result['protocol'] ) ? $result['protocol'] : '',
+			'server_info' => isset( $result['server_info'] ) ? $result['server_info'] : array(),
+			'tool_count'  => isset( $result['tool_count'] ) ? $result['tool_count'] : null,
+			'latency_ms'  => isset( $result['latency_ms'] ) ? $result['latency_ms'] : null,
+		);
 	}
 
 	/**
@@ -3938,10 +4059,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
 					return new WP_Error(
 						'wp_mcp_ai_pro_missing_upwork_credentials',
-						__( 'OAuth Client ID and client secret are required for Upwork API connections. Switch to Web Search mode to use without OAuth credentials.', 'mcp-ai-wpoos-pro' )
+						__( 'OAuth Client ID and client secret are required for Upwork API connections. Switch to Web Search or MCP mode to use without API OAuth credentials.', 'mcp-ai-wpoos-pro' )
 					);
 				}
 			}
+			// MCP mode authenticates via the MCP OAuth flow; the token blob is
+			// optional at save time (connect afterwards via the edit form).
 			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow.
 		}
 

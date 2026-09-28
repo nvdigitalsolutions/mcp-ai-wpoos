@@ -294,6 +294,13 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 
 		$connection_id = sanitize_text_field( $arguments['connection_id'] );
 
+		// MCP-mode connections search the official Upwork MCP gateway instead
+		// of the GraphQL API.
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		if ( is_array( $connection ) && 'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' ) ) {
+			return $this->execute_mcp_search( $arguments, $context, $criteria, $criteria_provided, $connection );
+		}
+
 		// Build GraphQL variables.
 		$filter = array();
 
@@ -502,12 +509,145 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			return false;
 		}
 
+		// MCP mode requires the OAuth token blob (acquired via the MCP login
+		// button on the Remote Sites edit form).
+		if ( 'mcp' === $mode ) {
+			return ! empty( $connection['mcp_oauth'] );
+		}
+
 		// API mode: require OAuth credentials.
 		if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) || empty( $connection['refresh_token'] ) ) {
 			return false;
 		}
 
 		return true;
+	}
+
+	/**
+	 * Search Upwork jobs through the official Upwork MCP gateway.
+	 *
+	 * Opens the sessionful gateway session, resolves the org_uid (stored on
+	 * the connection or discovered via list_accounts), calls
+	 * upwork__find_jobs action=search, and normalizes the gateway payload
+	 * into the same job envelope the GraphQL API path returns.
+	 *
+	 * @param array $arguments         Tool arguments.
+	 * @param array $context           Execution context.
+	 * @param array $criteria          Effective search criteria echo.
+	 * @param bool  $criteria_provided Whether narrowing criteria were supplied.
+	 * @param array $connection        Stored Upwork connection array (MCP mode).
+	 * @return array|WP_Error MCP search results or error.
+	 */
+	private function execute_mcp_search( array $arguments, array $context, array $criteria, $criteria_provided, array $connection ) {
+		unset( $context );
+
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/crm/upwork/class-wp-mcp-ai-upwork-mcp-bridge.php';
+
+		$client = WP_MCP_AI_Upwork_MCP_Bridge::build_client( $connection );
+		if ( is_wp_error( $client ) ) {
+			return $client;
+		}
+
+		$init = WP_MCP_AI_Upwork_MCP_Bridge::initialize( $client );
+		if ( is_wp_error( $init ) ) {
+			return $init;
+		}
+
+		$org_uid = WP_MCP_AI_Upwork_MCP_Bridge::resolve_org_uid( $client, $connection );
+		if ( is_wp_error( $org_uid ) ) {
+			return $org_uid;
+		}
+
+		// Map the tool's own criteria onto the gateway's search params. The
+		// gateway caps results at 10 per page.
+		$params = array();
+		if ( ! empty( $arguments['query'] ) ) {
+			$params['query'] = sanitize_text_field( $arguments['query'] );
+		}
+		if ( ! empty( $arguments['location'] ) ) {
+			$params['location'] = sanitize_text_field( $arguments['location'] );
+		}
+		if ( ! empty( $arguments['job_type'] ) ) {
+			$params['job_type'] = sanitize_key( $arguments['job_type'] );
+		}
+		if ( ! empty( $arguments['experience_level'] ) ) {
+			$params['experience_level'] = sanitize_key( $arguments['experience_level'] );
+		}
+		if ( isset( $arguments['budget_min'] ) ) {
+			$params['budget_min'] = (float) $arguments['budget_min'];
+		}
+		if ( isset( $arguments['budget_max'] ) ) {
+			$params['budget_max'] = (float) $arguments['budget_max'];
+		}
+		if ( ! empty( $arguments['sort'] ) ) {
+			$params['sort'] = sanitize_key( $arguments['sort'] );
+		}
+		if ( ! empty( $arguments['cursor'] ) ) {
+			$params['cursor'] = sanitize_text_field( $arguments['cursor'] );
+		}
+		$params['limit'] = min( 10, max( 1, absint( isset( $arguments['limit'] ) ? $arguments['limit'] : 10 ) ) );
+
+		$payload = WP_MCP_AI_Upwork_MCP_Bridge::call(
+			$client,
+			WP_MCP_AI_Upwork_MCP_Bridge::TOOL_FIND_JOBS,
+			array(
+				'action'  => 'search',
+				'org_uid' => $org_uid,
+				'params'  => $params,
+			)
+		);
+		if ( is_wp_error( $payload ) ) {
+			return $payload;
+		}
+
+		$jobs = array();
+		foreach ( $this->extract_mcp_jobs( $payload ) as $raw_job ) {
+			if ( ! is_array( $raw_job ) ) {
+				continue;
+			}
+			$jobs[] = WP_MCP_AI_Upwork_MCP_Bridge::normalize_job( $raw_job );
+		}
+
+		$jobs = $this->apply_result_format( $jobs );
+
+		$page_info = isset( $payload['pageInfo'] ) && is_array( $payload['pageInfo'] ) ? $payload['pageInfo'] : array();
+
+		return array(
+			'success'           => true,
+			'mode'              => 'mcp',
+			'total_count'       => isset( $payload['total_count'] ) ? (int) $payload['total_count'] : count( $jobs ),
+			'count'             => count( $jobs ),
+			'jobs'              => $jobs,
+			'page_info'         => $page_info,
+			'has_next_page'     => isset( $page_info['hasNextPage'] ) ? (bool) $page_info['hasNextPage'] : false,
+			'end_cursor'        => isset( $page_info['endCursor'] ) ? $page_info['endCursor'] : null,
+			'criteria'          => $criteria,
+			'criteria_provided' => $criteria_provided,
+		);
+	}
+
+	/**
+	 * Extract the job list from a gateway search payload.
+	 *
+	 * The gateway response shape is not stable, so the known envelope keys
+	 * are tried in order and a bare list payload is accepted directly.
+	 *
+	 * @param array $payload Decoded gateway payload.
+	 * @return array List of raw job arrays.
+	 */
+	private function extract_mcp_jobs( array $payload ) {
+		foreach ( array( 'jobs', 'results', 'items', 'postings', 'job_postings', 'data' ) as $key ) {
+			if ( isset( $payload[ $key ] ) && is_array( $payload[ $key ] ) ) {
+				return $payload[ $key ];
+			}
+		}
+
+		// A bare list payload (no envelope key) is accepted directly.
+		if ( ! empty( $payload ) && array_keys( $payload ) === range( 0, count( $payload ) - 1 ) ) {
+			return $payload;
+		}
+
+		return array();
 	}
 
 	/**

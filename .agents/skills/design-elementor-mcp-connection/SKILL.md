@@ -273,7 +273,13 @@ refresh) — Elementor MCP does not use it; use `basic`/`header` instead.
    400, which older client builds never fell back from. Verified fix (client
    + registry fallback on 400/404/405/501, legacy-header omission) shipped in
    the mcp-apps cluster — deploy it and re-run Test Connection / Discover
-   Tools. Diagnostics caveat: Upwork binds OAuth access tokens to the
+   Tools. **Remote Sites freelance-marketplace mode:** Upwork connections
+   (`connection_type: upwork`) also accept `upwork_mode: mcp`, which drives
+   the CRM search/import tools through the same gateway (`upwork__find_jobs`
+   action `search`/`get`, `upwork__list_accounts` for `org_uid`); the login
+   flow is the MCP Apps REST flow with `connection_ref` set to the Upwork
+   connection ID, persisting tokens to its encrypted `mcp_oauth` field.
+   Diagnostics caveat: Upwork binds OAuth access tokens to the
    originating server IP, so reproducing the handshake with `curl` from
    another machine returns 401 even with a valid token — validate on the site
    itself (the HTTP-error `WP_Error` data now includes a 400-char response
