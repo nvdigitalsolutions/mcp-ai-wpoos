@@ -8,6 +8,8 @@ tests/
 composer.lock
 .editorconfig
 .eslintrc.json
+jest-unit.config.js
+jest-transform.cjs
 .wrangler/
 assets/src/
 worker/src/

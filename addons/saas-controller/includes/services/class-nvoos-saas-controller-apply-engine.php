@@ -126,6 +126,16 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 	const DEFAULT_COMPATIBILITY_DATE = '2024-12-30';
 
 	/**
+	 * Default compatibility flags for the deployed Worker. The production
+	 * bundle embeds the Stripe Node SDK, which requires `nodejs_compat`
+	 * (matching `addons/cloud-worker/wrangler.toml`). Filterable via
+	 * `nvoos_saas_controller_worker_compatibility_flags`.
+	 *
+	 * @var string[]
+	 */
+	const DEFAULT_COMPATIBILITY_FLAGS = array( 'nodejs_compat' );
+
+	/**
 	 * Default relative path inside the addon to the built ESM Worker
 	 * bundle. Filterable via `nvoos_saas_controller_worker_dist_path`.
 	 *
@@ -1120,10 +1130,29 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 			self::DEFAULT_COMPATIBILITY_DATE
 		);
 
+		/**
+		 * Compatibility flags for the deployed Worker.
+		 *
+		 * The production bundle embeds the Stripe Node SDK, which needs
+		 * `nodejs_compat` — matching `addons/cloud-worker/wrangler.toml`,
+		 * so a Worker deployed through the Apply step behaves identically
+		 * to one deployed with wrangler.
+		 *
+		 * @since 0.2.0
+		 *
+		 * @param string[] $flags Compatibility flags.
+		 */
+		$compat_flags = (array) apply_filters(
+			'nvoos_saas_controller_worker_compatibility_flags',
+			self::DEFAULT_COMPATIBILITY_FLAGS
+		);
+		$compat_flags = array_values( array_filter( array_map( 'strval', $compat_flags ) ) );
+
 		$metadata = array(
-			'main_module'        => 'index.js',
-			'compatibility_date' => $compat_date,
-			'bindings'           => $bindings,
+			'main_module'         => 'index.js',
+			'compatibility_date'  => $compat_date,
+			'compatibility_flags' => $compat_flags,
+			'bindings'            => $bindings,
 		);
 
 		/**
