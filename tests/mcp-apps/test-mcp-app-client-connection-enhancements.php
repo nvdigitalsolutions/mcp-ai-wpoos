@@ -225,9 +225,10 @@ class Test_MCP_App_Client_Connection_Enhancements extends WP_UnitTestCase {
 		$this->assertSame( 'sess-abc-123', $this->captured[1]['headers']['Mcp-Session-Id'] );
 		$this->assertSame( 'sess-abc-123', $this->captured[2]['headers']['Mcp-Session-Id'] );
 
-		// Post-negotiation requests must advertise the server's protocol
-		// version, not the client's 2026-07-28 default.
-		$this->assertSame( '2025-11-25', $this->captured[2]['headers']['MCP-Protocol-Version'] );
+		// Post-negotiation requests to a legacy sessionful server must look
+		// like a 2025-era client: no SEP-2243 routing headers.
+		$this->assertArrayNotHasKey( 'MCP-Protocol-Version', $this->captured[2]['headers'] );
+		$this->assertArrayNotHasKey( 'Mcp-Method', $this->captured[2]['headers'] );
 
 		// The _meta envelope is a 2026-07-28 construct and must not be sent
 		// to a legacy sessionful server.
@@ -350,7 +351,107 @@ class Test_MCP_App_Client_Connection_Enhancements extends WP_UnitTestCase {
 		}
 		$this->assertNotNull( $tools_list_request );
 		$this->assertSame( 'sess-fallback', $tools_list_request['headers']['Mcp-Session-Id'] );
-		$this->assertSame( '2025-11-25', $tools_list_request['headers']['MCP-Protocol-Version'] );
+		$this->assertArrayNotHasKey( 'MCP-Protocol-Version', $tools_list_request['headers'] );
+		$this->assertArrayNotHasKey( 'Mcp-Method', $tools_list_request['headers'] );
+
+		// The fallback initialize handshake itself must look like a 2025-era
+		// client — strict gateways reject the 2026-07-28 routing headers with
+		// a bare HTTP 400 before any JSON-RPC handling.
+		$initialize_request = null;
+		foreach ( $this->captured as $args ) {
+			$payload = json_decode( $args['body'], true );
+			if ( isset( $payload['method'] ) && 'initialize' === $payload['method'] ) {
+				$initialize_request = $args;
+				break;
+			}
+		}
+		$this->assertNotNull( $initialize_request );
+		$this->assertArrayNotHasKey( 'MCP-Protocol-Version', $initialize_request['headers'] );
+		$this->assertArrayNotHasKey( 'Mcp-Method', $initialize_request['headers'] );
+	}
+
+	/**
+	 * Test test_connection falls back to initialize when the server answers
+	 * the discover probe with a bare HTTP 400 and no JSON-RPC error body.
+	 *
+	 * Strict 2025-era gateways (e.g. Upwork) behave exactly this way, and the
+	 * fallback must trigger on the HTTP status alone.
+	 */
+	public function test_test_connection_falls_back_on_bare_http_400() {
+		$this->install_http_mock(
+			array(
+				'server/discover' => array(
+					'code' => 400,
+					'body' => 'Bad Request',
+				),
+				'initialize'      => array(
+					'headers' => array( 'mcp-session-id' => 'sess-upwork' ),
+					'body'    => $this->rpc_result(
+						array(
+							'protocolVersion' => '2025-03-26',
+							'serverInfo'      => array(
+								'name'    => 'Upwork MCP',
+								'version' => '1.0.0',
+							),
+							'capabilities'    => array( 'tools' => new stdClass() ),
+						)
+					),
+				),
+				'tools/list'      => array(
+					'body' => $this->rpc_result(
+						array(
+							'tools' => array(
+								array( 'name' => 'search_jobs' ),
+							),
+						)
+					),
+				),
+			)
+		);
+
+		$client = new WP_MCP_AI_MCP_App_Client(
+			array(
+				'server_url' => 'https://mcp.upwork.com/mcp',
+				'auth_type'  => 'oauth',
+				'token'      => 'test-token',
+			)
+		);
+
+		$result = $client->test_connection();
+
+		$this->assertNotWPError( $result );
+		$this->assertEquals( 'initialize', $result['handshake'] );
+		$this->assertEquals( 'Upwork MCP', $result['server_info']['name'] );
+		$this->assertEquals( 1, $result['tool_count'] );
+		$this->assertTrue( $result['session_active'] );
+
+		// The fallback initialize handshake must carry no 2026-07-28 routing
+		// headers — strict gateways reject them before JSON-RPC handling.
+		$initialize_request = null;
+		foreach ( $this->captured as $args ) {
+			$payload = json_decode( $args['body'], true );
+			if ( isset( $payload['method'] ) && 'initialize' === $payload['method'] ) {
+				$initialize_request = $args;
+				break;
+			}
+		}
+		$this->assertNotNull( $initialize_request );
+		$this->assertArrayNotHasKey( 'MCP-Protocol-Version', $initialize_request['headers'] );
+		$this->assertArrayNotHasKey( 'Mcp-Method', $initialize_request['headers'] );
+		$this->assertSame( 'Bearer test-token', $initialize_request['headers']['Authorization'] );
+
+		// Post-negotiation requests to the legacy session omit them too.
+		$tools_list_request = null;
+		foreach ( $this->captured as $args ) {
+			$payload = json_decode( $args['body'], true );
+			if ( isset( $payload['method'] ) && 'tools/list' === $payload['method'] ) {
+				$tools_list_request = $args;
+				break;
+			}
+		}
+		$this->assertNotNull( $tools_list_request );
+		$this->assertArrayNotHasKey( 'MCP-Protocol-Version', $tools_list_request['headers'] );
+		$this->assertSame( 'sess-upwork', $tools_list_request['headers']['Mcp-Session-Id'] );
 	}
 
 	/**
