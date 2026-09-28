@@ -498,6 +498,15 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 								<?php echo ! $has_oauth ? 'style="display:none;"' : ''; ?>>
 								<?php esc_html_e( 'Re-authenticate', 'mcp-ai-wpoos' ); ?>
 							</button>
+							<div class="wp-mcp-ai-oauth-manual" style="display:none; margin-top: 10px;">
+								<p class="description">
+									<?php esc_html_e( 'This server only allows "localhost" callback URLs. After logging in, the new tab will fail to load a localhost page — copy the full URL from its address bar and paste it below.', 'mcp-ai-wpoos' ); ?>
+								</p>
+								<a href="#" class="wp-mcp-ai-oauth-open-link" target="_blank" rel="noopener noreferrer" style="display: block; margin-bottom: 6px;"><?php esc_html_e( 'Open the login page', 'mcp-ai-wpoos' ); ?></a>
+								<input type="text" class="regular-text wp-mcp-ai-oauth-callback-url" placeholder="http://localhost:PORT/callback?code=...&state=..." />
+								<button type="button" class="button button-primary wp-mcp-ai-complete-oauth"><?php esc_html_e( 'Complete Login', 'mcp-ai-wpoos' ); ?></button>
+								<span class="spinner wp-mcp-ai-oauth-complete-spinner" style="display:none; float:none; margin: 0 0 0 6px;"></span>
+							</div>
 							<?php
 							foreach ( array( 'access_token', 'refresh_token', 'token_type', 'expires_in', 'scope', 'issued_at' ) as $field ) {
 								$value = isset( $app['oauth_data'][ $field ] ) ? $app['oauth_data'][ $field ] : '';
@@ -624,6 +633,15 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 							<button type="button" class="button wp-mcp-ai-reconnect-oauth" style="display:none;">
 								<?php esc_html_e( 'Re-authenticate', 'mcp-ai-wpoos' ); ?>
 							</button>
+							<div class="wp-mcp-ai-oauth-manual" style="display:none; margin-top: 10px;">
+								<p class="description">
+									<?php esc_html_e( 'This server only allows "localhost" callback URLs. After logging in, the new tab will fail to load a localhost page — copy the full URL from its address bar and paste it below.', 'mcp-ai-wpoos' ); ?>
+								</p>
+								<a href="#" class="wp-mcp-ai-oauth-open-link" target="_blank" rel="noopener noreferrer" style="display: block; margin-bottom: 6px;"><?php esc_html_e( 'Open the login page', 'mcp-ai-wpoos' ); ?></a>
+								<input type="text" class="regular-text wp-mcp-ai-oauth-callback-url" placeholder="http://localhost:PORT/callback?code=...&state=..." />
+								<button type="button" class="button button-primary wp-mcp-ai-complete-oauth"><?php esc_html_e( 'Complete Login', 'mcp-ai-wpoos' ); ?></button>
+								<span class="spinner wp-mcp-ai-oauth-complete-spinner" style="display:none; float:none; margin: 0 0 0 6px;"></span>
+							</div>
 							<?php
 							foreach ( array( 'access_token', 'refresh_token', 'token_type', 'expires_in', 'scope', 'issued_at' ) as $field ) {
 								?>
@@ -1211,6 +1229,65 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 									return;
 								}
 
+								if ( event.target.closest( '.wp-mcp-ai-complete-oauth' ) ) {
+									event.preventDefault();
+									var completeBtn = event.target.closest( '.wp-mcp-ai-complete-oauth' );
+									var completeRow = completeBtn.closest( '.wp-mcp-ai-mcp-app-row' );
+									var urlField = completeRow ? completeRow.querySelector( '.wp-mcp-ai-oauth-callback-url' ) : null;
+									var callbackUrl = urlField ? urlField.value.trim() : '';
+									if ( ! callbackUrl ) {
+										window.alert( 'Paste the full localhost URL from the address bar of the login tab first.' );
+										return;
+									}
+
+									// Extract the state from the pasted URL so it always
+									// agrees with the value embedded in the callback.
+									var stateMatch = ( callbackUrl.split( '?' )[ 1 ] || '' ).match( /(^|&)state=([^&]*)/ );
+									if ( ! stateMatch ) {
+										window.alert( 'The pasted URL is missing the state parameter. Copy the full address bar URL.' );
+										return;
+									}
+									var stateParam = decodeURIComponent( stateMatch[ 2 ] );
+
+									var spinner = completeRow ? completeRow.querySelector( '.wp-mcp-ai-oauth-complete-spinner' ) : null;
+									completeBtn.disabled = true;
+									if ( spinner ) {
+										spinner.style.display = 'inline-block';
+									}
+
+									var cxhr = new XMLHttpRequest();
+									cxhr.open( 'POST', '<?php echo esc_url_raw( rest_url( 'mcp-ai/v1/mcp-apps/oauth/complete' ) ); ?>' );
+									cxhr.setRequestHeader( 'Content-Type', 'application/json' );
+									cxhr.setRequestHeader( 'X-WP-Nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_rest' ) ); ?> );
+									cxhr.onload = function() {
+										var cdata = {};
+										try {
+											cdata = JSON.parse( cxhr.responseText );
+										} catch ( e ) {
+											cdata = {};
+										}
+										if ( cxhr.status === 200 && cdata.success ) {
+											window.alert( cdata.message || 'MCP App connected successfully.' );
+											window.location.reload();
+										} else {
+											window.alert( cdata.message || 'Failed to complete the OAuth login. Please try again.' );
+											completeBtn.disabled = false;
+											if ( spinner ) {
+												spinner.style.display = 'none';
+											}
+										}
+									};
+									cxhr.onerror = function() {
+										window.alert( 'Network error. Please try again.' );
+										completeBtn.disabled = false;
+										if ( spinner ) {
+											spinner.style.display = 'none';
+										}
+									};
+									cxhr.send( JSON.stringify( { state: stateParam, callback_url: callbackUrl } ) );
+									return;
+								}
+
 								if ( event.target.closest( '.wp-mcp-ai-connect-oauth' ) || event.target.closest( '.wp-mcp-ai-reconnect-oauth' ) ) {
 									event.preventDefault();
 									var btn = event.target.closest( '.wp-mcp-ai-connect-oauth' ) || event.target.closest( '.wp-mcp-ai-reconnect-oauth' );
@@ -1242,12 +1319,29 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 										if ( xhr.status === 200 ) {
 											var data = JSON.parse( xhr.responseText );
 											if ( data.authorization_url ) {
-												window.location.href = data.authorization_url;
+												if ( data.redirect_mode === 'manual_loopback' ) {
+													// Providers like Upwork only accept localhost redirect
+												// URIs: open the login in a new tab and let the admin
+												// paste the resulting callback URL back here.
+													window.open( data.authorization_url, '_blank' );
+													if ( row ) {
+														var manualBox = row.querySelector( '.wp-mcp-ai-oauth-manual' );
+														if ( manualBox ) {
+															manualBox.style.display = '';
+														}
+														var openLink = row.querySelector( '.wp-mcp-ai-oauth-open-link' );
+														if ( openLink ) {
+															openLink.href = data.authorization_url;
+														}
+													}
+												} else {
+													window.location.href = data.authorization_url;
+												}
 											} else {
 												window.alert( 'Failed to start OAuth flow.' );
-												btn.disabled = false;
-												btn.textContent = btn.classList.contains( 'wp-mcp-ai-reconnect-oauth' ) ? 'Re-authenticate' : 'Connect via Web Login';
 											}
+											btn.disabled = false;
+											btn.textContent = btn.classList.contains( 'wp-mcp-ai-reconnect-oauth' ) ? 'Re-authenticate' : 'Connect via Web Login';
 										} else {
 											// Surface the REST error message (e.g. the OAuth
 											// discovery failure) so the admin can act on it
