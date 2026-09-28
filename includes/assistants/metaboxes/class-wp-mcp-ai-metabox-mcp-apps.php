@@ -1249,7 +1249,19 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 												btn.textContent = btn.classList.contains( 'wp-mcp-ai-reconnect-oauth' ) ? 'Re-authenticate' : 'Connect via Web Login';
 											}
 										} else {
-											window.alert( 'OAuth initiation failed. Check the server URL and try again.' );
+											// Surface the REST error message (e.g. the OAuth
+											// discovery failure) so the admin can act on it
+											// instead of guessing at the generic hint.
+											var message = 'OAuth initiation failed. Check the server URL and try again.';
+											try {
+												var errData = JSON.parse( xhr.responseText );
+												if ( errData && errData.message ) {
+													message = errData.message;
+												}
+											} catch ( e ) {
+												// Non-JSON error body — keep the generic message.
+											}
+											window.alert( message );
 											btn.disabled = false;
 											btn.textContent = btn.classList.contains( 'wp-mcp-ai-reconnect-oauth' ) ? 'Re-authenticate' : 'Connect via Web Login';
 										}

@@ -242,13 +242,16 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 					'callback'            => array( $this, 'handle_oauth_callback' ),
 					'permission_callback' => '__return_true',
 					'args'                => array(
+						// Deliberately NOT required: authorization servers redirect
+						// back with only ?error=...&error_description=... on denial,
+						// and the handler renders a human-facing page for that case.
+						// Marking them required would make REST validation reject the
+						// request before the handler runs, showing a raw JSON error.
 						'code'  => array(
-							'type'     => 'string',
-							'required' => true,
+							'type' => 'string',
 						),
 						'state' => array(
-							'type'     => 'string',
-							'required' => true,
+							'type' => 'string',
 						),
 					),
 				),
