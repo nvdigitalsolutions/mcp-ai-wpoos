@@ -1,7 +1,7 @@
 # Addon Inventory
 
 > **Purpose:** One-stop reference for every addon in this monorepo — its status, version, license, dependencies, and whether it's production-ready.
-> **Last Updated:** September 27, 2026 (v1.1.87 — new `mcp-wordpress-gateway` addon row 29)
+> **Last Updated:** September 28, 2026 (v1.1.88 — SaaS Controller 0.1.0 → 0.3.0 on its own track, row 11 updated in-window)
 
 ---
 
