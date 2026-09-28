@@ -1,0 +1,55 @@
+# NV oOS Cloud Worker — local / dry-run config for the SaaS Controller.
+#
+# This config exists so `npm run worker:dryrun` (wrangler deploy --dry-run)
+# can validate the production bundle without credentials. Real deployments
+# go through the SaaS Controller's HITL-gated Apply step, which uploads
+# worker/dist/index.js with metadata derived from the Deployment tab —
+# including the bindings below (use these exact binding names in the
+# Deployment tab so the deployed Worker matches this file).
+#
+# To run the Worker locally from this directory:
+#   npx wrangler d1 execute nvoos-cloud-prod --file=./schema.sql --local
+#   npx wrangler dev --config=worker/wrangler.toml
+# Secrets go in a .dev.vars next to this file (gitignored in the monorepo
+# via the addon-level .gitignore — see addons/cloud-worker/.dev.vars.example).
+
+name = "nvoos-cloud-worker"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Placeholder IDs — fine for --dry-run; replace them (or rely on the SaaS
+# Controller's Apply step) for any real deploy from this directory.
+[[d1_databases]]
+binding = "NVOOS_DB"
+database_name = "nvoos-cloud-prod"
+database_id = "REPLACE_WITH_DATABASE_ID"
+
+[[kv_namespaces]]
+binding = "RATE_KV"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+[[kv_namespaces]]
+binding = "TENANT_KV"
+id = "REPLACE_WITH_TENANT_KV_NAMESPACE_ID"
+
+[vars]
+WORKER_VERSION = "1.0.0"
+DEFAULT_CURRENCY = "usd"
+MARKUP_RATE = "0.07"
+MIN_TOPUP_USD = "25"
+LOW_BALANCE_THRESHOLD_USD = "2"
+STRIPE_FEE_PERCENT = "0.029"
+STRIPE_FEE_FIXED_USD = "0.30"
+PLATFORM_ORIGIN = "https://scheduleanything.com"
+
+# Secrets — set via `wrangler secret put` (or the Cloudflare dashboard) for
+# any real deploy:
+#   OPENROUTER_API_KEY     — master OpenRouter key (never exposed)
+#   STRIPE_SECRET_KEY      — Stripe restricted key (Checkout + Customers)
+#   STRIPE_WEBHOOK_SECRET  — `whsec_...` from Stripe webhook endpoint
+#   CF_AI_GATEWAY_URL      — https://gateway.ai.cloudflare.com/v1/<acct>/<gw>/openrouter
+#   SAAS_API_KEY           — shared secret between Cloud Worker and WP platform plugin
+
+[observability]
+enabled = true

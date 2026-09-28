@@ -431,7 +431,7 @@ the Pro plugin module that ships in `addons/pro/`. Deployed independently to
 
 | Package | License | Purpose |
 |---|---|---|
-| [`hono`](https://hono.dev/) ^4.12.4 | MIT | Edge-friendly HTTP router. |
+| [`hono`](https://hono.dev/) ^4.13.7 | MIT | Edge-friendly HTTP router (cloud-worker runtime; bundled into the SaaS Controller worker). |
 | [`stripe`](https://github.com/stripe/stripe-node) ^17.4.0 | MIT | Type definitions only — at request-time we use the bare HTTPS API to keep the bundle small. |
 | [`@cloudflare/workers-types`](https://github.com/cloudflare/workerd) ^4 | Apache-2.0 | Type definitions for the Workers runtime. |
 | [`wrangler`](https://github.com/cloudflare/workers-sdk) ^3.114.17 | MIT OR Apache-2.0 | Build / deploy CLI. |

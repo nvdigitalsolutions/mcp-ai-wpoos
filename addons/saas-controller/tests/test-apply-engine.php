@@ -586,6 +586,8 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertContains( 'd1', $types );
 		$this->assertContains( 'kv_namespace', $types );
 		$this->assertContains( 'plain_text', $types );
+		$this->assertArrayHasKey( 'compatibility_flags', $call_meta );
+		$this->assertContains( 'nodejs_compat', $call_meta['compatibility_flags'] );
 	}
 
 	/**

@@ -1,6 +1,6 @@
 # NV oOS SaaS Controller
 
-**Version:** 0.1.0  
+**Version:** 0.2.0  
 **Location:** `addons/saas-controller/`  
 **Requires:** WordPress 6.0+, PHP 7.4+, NV oOS base plugin (active)  
 **Admin entry point:** `WP-Admin → NV oOS SaaS` (`manage_options`)
@@ -28,7 +28,7 @@ A top-level **NV oOS SaaS** menu item is added for any user with `manage_options
 
 ## Implemented Phases
 
-All phases (2–11) are shipped in v0.1.0.
+All phases (2–11) shipped in v0.1.0; the v0.2.0 pass swaps the scaffold Worker bundle for the production NV oOS Cloud handler (ported from `addons/cloud-worker/src/`) and adds `compatibility_flags` to the Apply upload metadata.
 
 | Phase | What shipped |
 |-------|-------------|
@@ -91,7 +91,8 @@ All routes require `manage_options` + REST nonce **except** `POST /webhooks/stri
 | `nvoos_saas_controller_webhook_events_max_entries` | `200` | Maximum entries in the webhook event ring buffer |
 | `nvoos_saas_controller_apply_job_state_ttl` | `21600` (6 h) | TTL in seconds for background apply job state transient |
 | `nvoos_saas_controller_worker_dist_path` | `worker/dist/index.js` | Filesystem path of the Worker bundle to upload |
-| `nvoos_saas_controller_worker_compatibility_date` | `2025-01-01` | Cloudflare Worker compatibility date sent on upload |
+| `nvoos_saas_controller_worker_compatibility_date` | `2024-12-30` | Cloudflare Worker compatibility date sent on upload |
+| `nvoos_saas_controller_worker_compatibility_flags` | `['nodejs_compat']` | Cloudflare Worker compatibility flags sent on upload (the bundle embeds the Stripe Node SDK, which requires `nodejs_compat`) |
 | `nvoos_saas_controller_worker_upload_metadata` | — | Merge additional fields into the Worker upload metadata |
 
 ---
@@ -126,6 +127,28 @@ npm run check:drift-manifest  # CI check — verifies manifest is stamped withou
 ```
 
 The repo-wide `bin/build-addon-zips.sh` orchestrates this for releases and emits `build/nvoos-saas-controller-vX.Y.Z.zip`. `node_modules/` is never shipped; only `assets/build/` and `worker/dist/` are included.
+
+## Worker bundle
+
+`worker/src/` holds the **production NV oOS Cloud handler** (ported
+byte-identically from `addons/cloud-worker/src/`): inference proxy →
+Cloudflare AI Gateway → OpenRouter, D1 wallet/ledger billing, Stripe
+top-ups & webhooks, connect tokens, and the tenant/subscription surface.
+The Apply step uploads the esbuild output (`worker/dist/index.js`) with
+bindings taken from the Deployment tab — use the same binding names as
+`addons/cloud-worker/wrangler.toml` (`NVOOS_DB`, `RATE_KV`, `TENANT_KV`)
+so deployed Workers behave identically to wrangler deploys.
+
+- `worker/wrangler.toml` — local/dev config backing `npm run worker:dryrun`.
+- `worker/schema.sql` — D1 schema; apply after the first Apply run with
+  `npx wrangler d1 execute nvoos-cloud-prod --file=worker/schema.sql`.
+- `worker/tests/` — jest suites for the worker helpers (16 tests, run via
+  `npm test`).
+
+Worker **secrets** (`OPENROUTER_API_KEY`, `STRIPE_SECRET_KEY`,
+`STRIPE_WEBHOOK_SECRET`, `CF_AI_GATEWAY_URL`, `SAAS_API_KEY`) are never part
+of upload metadata — set them via `wrangler secret put` or the Cloudflare
+dashboard after Apply.
 
 ---
 

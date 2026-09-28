@@ -4,7 +4,7 @@
 
 This addon is the operator-side counterpart to `addons/cloud-worker/`. Where `cloud-worker` is the deployed runtime, the **SaaS Controller** is the WordPress plugin that lets a maintainer **provision, plan/apply changes to, drift-check, and audit** that runtime — without leaving WP-Admin.
 
-> **Status:** v0.1.0 — Phases 2, 3, 4, 5a, 5b, 5c, 5d, 6, 7, 8, 9, 10 & 11 landed (WP-Admin & REST plumbing + credentials wizard with live preflight + read-only Reconcile-Plan generator + audit log & smoke tester + HITL-gated Apply step + drift detector + Worker upload + Stripe / OpenRouter mutating surfaces + Stripe webhook receiver + background async Apply + orphan cleanup + webhook events admin UI).
+> **Status:** v0.2.0 — Phases 2, 3, 4, 5a, 5b, 5c, 5d, 6, 7, 8, 9, 10 & 11 landed (WP-Admin & REST plumbing + credentials wizard with live preflight + read-only Reconcile-Plan generator + audit log & smoke tester + HITL-gated Apply step + drift detector + Worker upload + Stripe / OpenRouter mutating surfaces + Stripe webhook receiver + background async Apply + orphan cleanup + webhook events admin UI). The shipped Worker bundle (`worker/dist/index.js`) is the **production NV oOS Cloud handler** ported from `addons/cloud-worker/src/` (inference proxy, D1 ledger, Stripe top-ups, connect tokens, tenant subscriptions) — Apply now deploys the real SaaS backend, not a scaffold.
 
 ## What's available today (Phases 2 / 3 / 4 / 5a / 5b / 5c / 5d / 6 / 7 / 8 / 9 / 10 / 11)
 
@@ -77,7 +77,7 @@ Every npm dependency in this addon falls into one of three buckets:
 
 | Bucket | Where it lives | Ships in distribution ZIP? |
 |---|---|---|
-| **A. Worker build-time** | `worker/src/` → bundled to `worker/dist/index.js` via esbuild | Built artifact only — `node_modules/` excluded |
+| **A. Worker build-time** | `worker/src/` → bundled to `worker/dist/index.js` via esbuild (includes the runtime deps `hono` + `stripe`, embedded into the bundle) | Built artifact only — `node_modules/` excluded |
 | **B. Admin UI runtime** | `assets/src/` → built to `assets/build/` via `@wordpress/scripts` | Built bundle only — sources excluded |
 | **C. Dev tooling** | `devDependencies` in `package.json` | Never |
 
@@ -92,10 +92,17 @@ npm run build           # builds both Worker and Admin UI bundles
 npm run build:worker    # esbuild → worker/dist/index.js
 npm run build:admin     # @wordpress/scripts → assets/build/
 npm run typecheck       # tsc --noEmit
-npm run lint:js         # eslint via @wordpress/scripts
+npm run lint:js         # eslint (flat config: eslint.config.cjs)
 npm run test            # jest via @wordpress/scripts
 npm run worker:dryrun   # wrangler deploy --dry-run (no live publish)
 ```
+
+`worker:dryrun` validates the production bundle against
+`worker/wrangler.toml` — the local/dev config that mirrors the binding
+names (`NVOOS_DB`, `RATE_KV`, `TENANT_KV`) the Deployment tab should
+use. `worker/schema.sql` is the D1 schema the Apply step creates databases
+for; apply it via `npx wrangler d1 execute nvoos-cloud-prod --file=worker/schema.sql`
+after the first Apply run.
 
 The repo-wide `bin/build-addon-zips.sh` orchestrates this for releases and emits `build/nvoos-saas-controller-vX.Y.Z.zip`.
 
@@ -110,6 +117,8 @@ This addon bundles the following third-party JavaScript libraries at runtime. Fu
 | [`diff`](https://github.com/kpdecker/jsdiff) | BSD-3-Clause | Plan-preview before/after rendering. |
 | [`date-fns`](https://date-fns.org/) | MIT | Audit-log timestamps and "last checked X ago" labels. |
 | [`clsx`](https://github.com/lukeed/clsx) | MIT | Conditional className helper. |
+| [`hono`](https://hono.dev/) | MIT | HTTP router for the Worker bundle (`worker/dist/index.js`). |
+| [`stripe`](https://github.com/stripe/stripe-node) | MIT | Stripe subscriptions/tenant lifecycle in the Worker bundle. |
 
 WordPress core externals (`@wordpress/element`, `@wordpress/components`, `@wordpress/api-fetch`, `@wordpress/i18n`, `@wordpress/data`, `@wordpress/icons`, `@wordpress/url`) are loaded from WP-Admin and are not bundled.
 

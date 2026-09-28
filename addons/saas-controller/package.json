@@ -1,6 +1,6 @@
 {
   "name": "nvoos-saas-controller",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "NV oOS SaaS Controller — operator-side toolkit to deploy and manage the NV oOS Cloud control plane (Cloudflare Workers + D1 + KV + AI Gateway, Stripe billing, OpenRouter).",
   "license": "UNLICENSED",
@@ -16,16 +16,18 @@
     "check:drift-manifest": "node scripts/stamp-drift-manifest.mjs --check",
     "build:admin": "wp-scripts build --webpack-src-dir=assets/src --output-path=assets/build",
     "start": "wp-scripts start --webpack-src-dir=assets/src --output-path=assets/build",
-    "lint:js": "wp-scripts lint-js assets/src worker/src",
+    "lint:js": "eslint assets/src worker/src",
     "test": "wp-scripts test-unit-js",
     "typecheck": "tsc --noEmit",
-    "worker:dryrun": "wrangler deploy --dry-run --outdir=worker/dist"
+    "worker:dryrun": "wrangler deploy --dry-run --config=worker/wrangler.toml --outdir=.wrangler/dry-run"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "diff": "^9.0.0",
+    "hono": "^4.13.7",
+    "stripe": "^17.4.0",
     "zod": "^3.24.1"
   },
   "overrides": {
@@ -45,7 +47,7 @@
     "ws": ">=8.21.0",
     "js-yaml": ">=4.3.0",
     "form-data": ">=4.0.6",
-    "@babel/core": ">=7.29.0",
+    "@babel/core": "^7.29.0",
     "@opentelemetry/core": ">=2.8.0",
     "postcss": ">=8.5.18",
     "cross-spawn": ">=6.0.6",
@@ -68,7 +70,10 @@
     "@cloudflare/workers-types": "^4.20260617.1",
     "@types/diff": "^8.0.0",
     "@types/wordpress__components": "^23.8.0",
-    "@wordpress/eslint-plugin": "^21.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.4.1",
+    "@typescript-eslint/parser": "^6.4.1",
+    "@wordpress/eslint-plugin": "^23.0.0",
+    "eslint": "^8.57.1",
     "@wordpress/jest-preset-default": "^12.0.0",
     "@wordpress/prettier-config": "^4.48.1",
     "@wordpress/scripts": "^32.1.0",
