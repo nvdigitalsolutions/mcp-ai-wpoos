@@ -870,9 +870,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'scope_profile'                  => isset( $_POST['google_calendar_scope_profile'] ) ? sanitize_key( wp_unslash( $_POST['google_calendar_scope_profile'] ) ) : '',
 				// Upwork-specific fields.
 				'upwork_username'                => isset( $_POST['upwork_user_email'] ) ? sanitize_text_field( wp_unslash( $_POST['upwork_user_email'] ) ) : '',
-				'upwork_mode'                    => isset( $_POST['upwork_mode'] ) && in_array( $_POST['upwork_mode'], array( 'api', 'web_search' ), true )
+				'upwork_mode'                    => isset( $_POST['upwork_mode'] ) && in_array( $_POST['upwork_mode'], array( 'api', 'web_search', 'mcp' ), true )
 					? sanitize_key( wp_unslash( $_POST['upwork_mode'] ) )
 					: 'api',
+				'upwork_mcp_url'                 => isset( $_POST['upwork_mcp_url'] ) ? esc_url_raw( wp_unslash( $_POST['upwork_mcp_url'] ) ) : '',
+				'upwork_org_uid'                 => isset( $_POST['upwork_org_uid'] ) ? sanitize_text_field( wp_unslash( $_POST['upwork_org_uid'] ) ) : '',
 				'upwork_search_query'            => isset( $_POST['upwork_search_query'] ) ? sanitize_text_field( wp_unslash( $_POST['upwork_search_query'] ) ) : '',
 				'upwork_search_category'         => isset( $_POST['upwork_search_category'] ) ? sanitize_text_field( wp_unslash( $_POST['upwork_search_category'] ) ) : '',
 				'upwork_search_job_type'         => isset( $_POST['upwork_search_job_type'] ) && in_array( $_POST['upwork_search_job_type'], array( 'hourly', 'fixed' ), true )
@@ -3919,8 +3921,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<select name="upwork_mode" id="upwork_mode" onchange="toggleUpworkMode(this.value)">
 							<option value="api" <?php selected( $saved_upwork_mode, 'api' ); ?>><?php esc_html_e( 'API — direct Upwork GraphQL access (requires OAuth)', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="web_search" <?php selected( $saved_upwork_mode, 'web_search' ); ?>><?php esc_html_e( 'Web Search — AI-powered job discovery (no OAuth needed)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="mcp" <?php selected( $saved_upwork_mode, 'mcp' ); ?>><?php esc_html_e( 'MCP — official Upwork MCP gateway (agentic access, OAuth login)', 'mcp-ai-wpoos-pro' ); ?></option>
 						</select>
-						<p class="description"><?php esc_html_e( 'API mode uses the Upwork GraphQL API for real-time results. Web Search mode uses AI-powered web search for job discovery without requiring OAuth credentials.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'API mode uses the Upwork GraphQL API for real-time results. Web Search mode uses AI-powered web search for job discovery without requiring OAuth credentials. MCP mode talks to the official Upwork MCP server (mcp.upwork.com) and imports results into the CRM pipeline.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -4060,6 +4063,53 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</span>
 						<?php endif; ?>
 						<p class="description"><?php esc_html_e( 'Click to authorize this plugin to access your Upwork account via OAuth 2.0.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<?php endif; ?>
+
+				<!-- Upwork MCP-mode fields (shown when mode is mcp) -->
+				<tr class="upwork-only-field upwork-mcp-field" style="display: none;">
+					<th scope="row">
+						<label for="upwork_mcp_url"><?php esc_html_e( 'MCP Server URL', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="upwork_mcp_url" id="upwork_mcp_url" class="large-text code" value="<?php echo $is_edit && ! empty( $connection['upwork_mcp_url'] ) ? esc_url( $connection['upwork_mcp_url'] ) : esc_url( 'https://mcp.upwork.com/mcp' ); ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'The official Upwork MCP gateway endpoint. Leave the default unless Upwork documents a new one.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr class="upwork-only-field upwork-mcp-field" style="display: none;">
+					<th scope="row">
+						<label for="upwork_org_uid"><?php esc_html_e( 'Organization ID (org_uid)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="upwork_org_uid" id="upwork_org_uid" class="regular-text" value="<?php echo $is_edit && ! empty( $connection['upwork_org_uid'] ) ? esc_attr( $connection['upwork_org_uid'] ) : ''; ?>" autocomplete="off" placeholder="e.g. 1234567890123456">
+						<p class="description"><?php esc_html_e( 'Optional — resolved automatically from your account list when left empty.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<?php if ( $is_edit && 'upwork' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+				<tr class="upwork-only-field upwork-mcp-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Connect Upwork MCP Account', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<button type="button" class="button button-primary" id="upwork_mcp_connect">
+							<?php esc_html_e( '🔗 Connect via Upwork Login', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<?php if ( ! empty( $connection['mcp_oauth'] ) ) : ?>
+							<span class="dashicons dashicons-yes" style="color: green; vertical-align: middle; margin-left: 8px;"></span>
+							<span style="color: green;"><?php esc_html_e( 'Connected', 'mcp-ai-wpoos-pro' ); ?></span>
+						<?php endif; ?>
+						<div id="upwork_mcp_oauth_paste" style="display: none; margin-top: 10px;">
+							<p class="description">
+								<?php esc_html_e( 'Upwork only allows localhost callback URLs, so the login tab ends on an address that does not load. Copy the full address from that tab’s address bar, paste it below, and click Complete Login.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<input type="text" id="upwork_mcp_callback_url" class="large-text code" placeholder="http://localhost:NNNNN/callback?code=…&state=…" autocomplete="off">
+							<p style="margin-top: 8px;">
+								<button type="button" class="button button-primary" id="upwork_mcp_complete">
+									<?php esc_html_e( 'Complete Login', 'mcp-ai-wpoos-pro' ); ?>
+								</button>
+							</p>
+						</div>
+						<p id="upwork_mcp_status" class="description"></p>
+						<p class="description"><?php esc_html_e( 'Connects your Upwork account to the official MCP gateway (OAuth 2.1). Jobs searched in this mode flow through the usual CRM search → score → import pipeline.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 				<?php endif; ?>
@@ -8133,22 +8183,116 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		/**
-		 * Show/hide Upwork API vs Web Search sub-fields based on the selected mode.
+		 * Show/hide Upwork API vs Web Search vs MCP sub-fields based on the selected mode.
 		 *
-		 * @param {string} mode 'api' or 'web_search'
+		 * @param {string} mode 'api', 'web_search', or 'mcp'
 		 */
 		function toggleUpworkMode(mode) {
-			var apiFields   = document.querySelectorAll('.upwork-api-field');
+			var apiFields    = document.querySelectorAll('.upwork-api-field');
 			var searchFields = document.querySelectorAll('.upwork-web-search-field');
+			var mcpFields    = document.querySelectorAll('.upwork-mcp-field');
 
 			if (mode === 'web_search') {
 				apiFields.forEach(function(f) { f.style.display = 'none'; });
 				searchFields.forEach(function(f) { f.style.display = 'table-row'; });
+				mcpFields.forEach(function(f) { f.style.display = 'none'; });
+			} else if (mode === 'mcp') {
+				apiFields.forEach(function(f) { f.style.display = 'none'; });
+				searchFields.forEach(function(f) { f.style.display = 'none'; });
+				mcpFields.forEach(function(f) { f.style.display = 'table-row'; });
 			} else {
 				apiFields.forEach(function(f) { f.style.display = 'table-row'; });
 				searchFields.forEach(function(f) { f.style.display = 'none'; });
+				mcpFields.forEach(function(f) { f.style.display = 'none'; });
 			}
 		}
+
+		/**
+		 * Wire the Upwork MCP OAuth connect flow: initiate via the MCP Apps
+		 * REST endpoint (with the connection_ref), open the login tab, and
+		 * complete the manual loopback flow by pasting the callback URL.
+		 */
+		(function () {
+			var connectBtn  = document.getElementById('upwork_mcp_connect');
+			var completeBtn = document.getElementById('upwork_mcp_complete');
+			if (!connectBtn) { return; }
+
+			var nonce     = <?php echo wp_json_encode( wp_create_nonce( 'wp_rest' ) ); ?>;
+			var initUrl   = <?php echo wp_json_encode( rest_url( 'mcp-ai/v1/mcp-apps/oauth/init' ) ); ?>;
+			var completeUrl = <?php echo wp_json_encode( rest_url( 'mcp-ai/v1/mcp-apps/oauth/complete' ) ); ?>;
+			var connId    = <?php echo wp_json_encode( isset( $connection['id'] ) ? $connection['id'] : '' ); ?>;
+			var state     = '';
+
+			function setStatus(msg, isError) {
+				var el = document.getElementById('upwork_mcp_status');
+				if (!el) { return; }
+				el.textContent = msg;
+				el.style.color = isError ? '#b32d2e' : '#0a7d18';
+			}
+
+			connectBtn.addEventListener('click', function () {
+				var urlInput = document.getElementById('upwork_mcp_url');
+				var serverUrl = urlInput ? urlInput.value.trim() : 'https://mcp.upwork.com/mcp';
+				setStatus('Starting Upwork login…', false);
+
+				fetch(initUrl, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-WP-Nonce': nonce
+					},
+					body: JSON.stringify({ server_url: serverUrl, connection_ref: connId })
+				})
+				.then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+				.then(function (res) {
+					if (!res.ok || !res.data.success) {
+						var msg = res.data && res.data.message ? res.data.message : 'Could not start the Upwork login flow.';
+						setStatus(msg, true);
+						return;
+					}
+					state = res.data.state;
+					window.open(res.data.authorization_url, '_blank');
+					document.getElementById('upwork_mcp_oauth_paste').style.display = 'block';
+					setStatus('Login tab opened — paste the address from that tab below.', false);
+				})
+				.catch(function () {
+					setStatus('Network error while starting the Upwork login flow.', true);
+				});
+			});
+
+			if (completeBtn) {
+				completeBtn.addEventListener('click', function () {
+					var callbackUrl = document.getElementById('upwork_mcp_callback_url').value.trim();
+					if (!callbackUrl) {
+						setStatus('Paste the login tab address first.', true);
+						return;
+					}
+					setStatus('Completing login…', false);
+
+					fetch(completeUrl, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'X-WP-Nonce': nonce
+						},
+						body: JSON.stringify({ state: state, callback_url: callbackUrl })
+					})
+					.then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+					.then(function (res) {
+						if (!res.ok || !res.data.success) {
+							var msg = res.data && res.data.message ? res.data.message : 'Could not complete the Upwork login.';
+							setStatus(msg, true);
+							return;
+						}
+						document.getElementById('upwork_mcp_oauth_paste').style.display = 'none';
+						setStatus('Upwork MCP account connected — save the connection to keep it.', false);
+					})
+					.catch(function () {
+						setStatus('Network error while completing the Upwork login.', true);
+					});
+				});
+			}
+		})();
 
 		/**
 		 * Show/hide LinkedIn API vs Web Search sub-fields based on the selected mode.

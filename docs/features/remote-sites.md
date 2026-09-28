@@ -39,6 +39,30 @@ WordPress MCP Adapter endpoints, or any JSON-RPC 2.0 Streamable HTTP MCP server:
   `docs/assistant-import-export.md` (redaction policy) and the MCP Apps
   metabox on the assistant editor.
 
+### Upwork (Freelance Marketplace) Connection Modes (v1.1.88)
+
+Upwork connections accept three operation modes (`upwork_mode`):
+
+| Mode | Transport | Credentials |
+|---|---|---|
+| `api` | Upwork GraphQL API (`https://api.upwork.com/graphql`) | OAuth client ID + secret + refresh token |
+| `web_search` | AI-powered web search (no Upwork access) | none |
+| `mcp` | Official Upwork MCP gateway (`https://mcp.upwork.com/mcp`) | MCP OAuth 2.1 (DCR + PKCE, login button on the edit form) |
+
+MCP mode routes the CRM Upwork tools (`search_upwork_jobs`,
+`import_upwork_project`) through the MCP Apps client: a sessionful
+`initialize` handshake against the gateway, `upwork__find_jobs`
+(action `search`/`get`) for discovery and details, and
+`upwork__list_accounts` for `org_uid` resolution (stored on the
+connection when provided). Results normalize into the same job envelope
+as API mode, so the CRM refresh pipeline (search → score → import) works
+unchanged and imported deals/projects still carry `_external_source_id` /
+`_external_source_platform = upwork` dedupe meta. The OAuth login flow
+reuses the MCP Apps REST endpoints (`/mcp-apps/oauth/init` +
+`/complete`) with `connection_ref` pointing at the Upwork connection, so
+tokens persist to the encrypted central store (`mcp_oauth`, auto-refresh
+via `update_mcp_oauth()`).
+
 ### Post Type Access Controls (v1.1.52 Update)
 
 The admin interface for remote connection post type access has been enhanced:

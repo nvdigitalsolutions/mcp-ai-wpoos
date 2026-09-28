@@ -210,21 +210,27 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 					'callback'            => array( $this, 'initiate_oauth' ),
 					'permission_callback' => array( $this, 'check_admin_permissions' ),
 					'args'                => array(
-						'server_url'   => array(
+						'server_url'     => array(
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => 'esc_url_raw',
 						),
-						'assistant_id' => array(
+						'assistant_id'   => array(
 							'type'              => 'integer',
 							'required'          => false,
 							'sanitize_callback' => 'absint',
 							'default'           => 0,
 						),
-						'scope'        => array(
+						'scope'          => array(
 							'type'              => 'string',
 							'required'          => false,
 							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'connection_ref' => array(
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => 'sanitize_key',
+							'description'       => __( 'Optional central Remote Sites connection ID; tokens persist to its encrypted store instead of assistant meta.', 'mcp-ai-wpoos-pro' ),
 						),
 					),
 				),
@@ -690,9 +696,10 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function initiate_oauth( WP_REST_Request $request ) {
-		$server_url   = $request->get_param( 'server_url' );
-		$assistant_id = $request->get_param( 'assistant_id' );
-		$scope        = $request->get_param( 'scope' );
+		$server_url     = $request->get_param( 'server_url' );
+		$assistant_id   = $request->get_param( 'assistant_id' );
+		$scope          = $request->get_param( 'scope' );
+		$connection_ref = $request->get_param( 'connection_ref' );
 
 		if ( ! class_exists( 'WP_MCP_AI_MCP_App_OAuth_Client' ) ) {
 			return new WP_Error(
@@ -761,15 +768,16 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 
 		// Store flow state in a transient for the callback.
 		$flow_state = array(
-			'server_url'    => $server_url,
-			'assistant_id'  => absint( $assistant_id ),
-			'code_verifier' => $oauth_client->get_code_verifier(),
-			'client_id'     => $oauth_client->get_client_id(),
-			'redirect_uri'  => $oauth_client->get_redirect_uri(),
-			'redirect_mode' => $redirect_mode,
-			'state'         => $state,
-			'scope'         => $scope,
-			'created_at'    => time(),
+			'server_url'     => $server_url,
+			'assistant_id'   => absint( $assistant_id ),
+			'connection_ref' => ! empty( $connection_ref ) ? sanitize_key( $connection_ref ) : '',
+			'code_verifier'  => $oauth_client->get_code_verifier(),
+			'client_id'      => $oauth_client->get_client_id(),
+			'redirect_uri'   => $oauth_client->get_redirect_uri(),
+			'redirect_mode'  => $redirect_mode,
+			'state'          => $state,
+			'scope'          => $scope,
+			'created_at'     => time(),
 		);
 
 		set_transient( self::OAUTH_STATE_TRANSIENT . $state, $flow_state, self::OAUTH_STATE_TTL );
@@ -881,13 +889,32 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 	 * @return void
 	 */
 	protected function finalize_oauth_flow( $flow_state, $token_data ) {
+		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
+
+		// Upwork MCP tokens persist the dynamic client ID so auto-refresh can
+		// identify itself (providers such as Upwork reject refresh requests
+		// that lack it).
+		$token_data = array_merge(
+			$token_data,
+			array(
+				'client_id' => isset( $flow_state['client_id'] ) ? $flow_state['client_id'] : '',
+			)
+		);
+
+		// Centrally managed connections (Remote Sites, e.g. an Upwork
+		// freelance-marketplace connection in MCP mode) persist to the
+		// encrypted central store via their connection_ref.
+		if ( ! empty( $flow_state['connection_ref'] ) ) {
+			$registry->update_app_oauth_data( 0, $flow_state['server_url'], $token_data, $flow_state['connection_ref'] );
+			return;
+		}
+
 		// If an assistant ID was provided, auto-save the OAuth config.
 		$assistant_id = absint( $flow_state['assistant_id'] );
 		if ( ! $assistant_id ) {
 			return;
 		}
 
-		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
 		$existing = $registry->get_apps( $assistant_id );
 
 		// Build app config with OAuth data.
@@ -898,15 +925,7 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 			'enabled'    => true,
 			'timeout'    => 30,
 			'verify_ssl' => true,
-			// Persist the dynamic client ID so auto-refresh can identify
-			// itself (providers such as Upwork reject refresh requests that
-			// lack it).
-			'oauth_data' => array_merge(
-				$token_data,
-				array(
-					'client_id' => isset( $flow_state['client_id'] ) ? $flow_state['client_id'] : '',
-				)
-			),
+			'oauth_data' => $token_data,
 		);
 
 		// Check for existing app with same URL to update.

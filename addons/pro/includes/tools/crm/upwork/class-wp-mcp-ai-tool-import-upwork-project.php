@@ -359,6 +359,16 @@ class WP_MCP_AI_Tool_Import_Upwork_Project implements WP_MCP_AI_Tool_Interface, 
 			? sanitize_text_field( $arguments['connection_id'] )
 			: '';
 
+		// MCP-mode connections fetch details through the official Upwork MCP
+		// gateway (upwork__find_jobs action=get) instead of GraphQL.
+		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+			if ( is_array( $connection ) && 'upwork' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' )
+				&& 'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' ) ) {
+				return $this->fetch_job_details_via_mcp( $connection, sanitize_text_field( $arguments['job_id'] ) );
+			}
+		}
+
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-upwork-client.php';
 		$client = new WP_MCP_AI_Upwork_Client( $connection_id );
 
@@ -388,5 +398,57 @@ class WP_MCP_AI_Tool_Import_Upwork_Project implements WP_MCP_AI_Tool_Interface, 
 		';
 
 		return $client->graphql( $query, array( 'id' => $job_id ) );
+	}
+
+	/**
+	 * Fetch job details via the official Upwork MCP gateway.
+	 *
+	 * Calls upwork__find_jobs action=get with the job ID and normalizes the
+	 * gateway payload into the same shape the GraphQL fetch returns so the
+	 * CRM entity builder needs no mode-specific handling.
+	 *
+	 * @param array  $connection Stored Upwork connection array (MCP mode).
+	 * @param string $job_id     Upwork job posting ID.
+	 * @return array|WP_Error Normalized job data or WP_Error.
+	 */
+	protected function fetch_job_details_via_mcp( array $connection, $job_id ) {
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/crm/upwork/class-wp-mcp-ai-upwork-mcp-bridge.php';
+
+		$client = WP_MCP_AI_Upwork_MCP_Bridge::build_client( $connection );
+		if ( is_wp_error( $client ) ) {
+			return $client;
+		}
+
+		$init = WP_MCP_AI_Upwork_MCP_Bridge::initialize( $client );
+		if ( is_wp_error( $init ) ) {
+			return $init;
+		}
+
+		$org_uid = WP_MCP_AI_Upwork_MCP_Bridge::resolve_org_uid( $client, $connection );
+		if ( is_wp_error( $org_uid ) ) {
+			return $org_uid;
+		}
+
+		$payload = WP_MCP_AI_Upwork_MCP_Bridge::call(
+			$client,
+			WP_MCP_AI_Upwork_MCP_Bridge::TOOL_FIND_JOBS,
+			array(
+				'action'  => 'get',
+				'org_uid' => $org_uid,
+				'params'  => array( 'id' => $job_id ),
+			)
+		);
+		if ( is_wp_error( $payload ) ) {
+			return $payload;
+		}
+
+		$details = WP_MCP_AI_Upwork_MCP_Bridge::normalize_job_details( $payload );
+
+		// The execute() contract treats an empty fetch as "no API data".
+		if ( empty( $details['title'] ) && empty( $details['description'] ) ) {
+			return array();
+		}
+
+		return $details;
 	}
 }
