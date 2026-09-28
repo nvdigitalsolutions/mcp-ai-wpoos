@@ -62,6 +62,7 @@ const buildEmptyFields = (): Record< string, FieldState > => ( {
 	stripe_secret_key: emptyField(),
 	stripe_webhook_secret: emptyField(),
 	openrouter_api_key: emptyField(),
+	saas_api_key: emptyField(),
 } );
 
 /**
@@ -326,6 +327,32 @@ export default function Wizard(): JSX.Element {
 							value={ fields.openrouter_api_key.value }
 							onChange={ ( v ) =>
 								setField( 'openrouter_api_key', v )
+							}
+							type="password"
+							autoComplete="off"
+						/>
+
+						<h3>
+							{ __(
+								'Worker / SaaS platform (optional)',
+								'nvoos-saas-controller'
+							) }
+						</h3>
+						<p>
+							{ __(
+								'Optional shared secret between the Cloud Worker and the WordPress platform plugin (tenant provisioning / usage heartbeat). Pushed to the Worker as SAAS_API_KEY only when set.',
+								'nvoos-saas-controller'
+							) }
+						</p>
+						<TextControl
+							label={ __( 'SaaS API key', 'nvoos-saas-controller' ) }
+							help={
+								formErrors.saas_api_key ||
+								renderStatus( 'saas_api_key' )
+							}
+							value={ fields.saas_api_key.value }
+							onChange={ ( v ) =>
+								setField( 'saas_api_key', v )
 							}
 							type="password"
 							autoComplete="off"

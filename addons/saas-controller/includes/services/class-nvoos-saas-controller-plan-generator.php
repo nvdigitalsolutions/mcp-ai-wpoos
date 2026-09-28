@@ -27,7 +27,7 @@
  * Cloudflare API in this phase — Cloudflare's binding metadata lives on the
  * Worker script settings endpoint, which is fetched lazily only when a
  * Worker with the desired name already exists. This keeps the plan run
- * cheap (4 list calls) for the common "first deployment" flow.
+ * cheap (5 list calls) for the common "first deployment" flow.
  *
  * @package NV_oOS_SaaS_Controller
  * @since   0.1.0
@@ -50,6 +50,17 @@ class NVOOS_SaaS_Controller_Plan_Generator {
 	 * @var NVOOS_SaaS_Controller_Cloudflare_Client
 	 */
 	protected $client;
+
+	/**
+	 * Live D1 database list (name => uuid) cached by plan_d1() for reuse by
+	 * plan_d1_schema() so a single plan run makes one D1 list call. Null
+	 * when the list failed or has not been fetched.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @var array|null
+	 */
+	protected $live_d1 = null;
 
 	/**
 	 * Optional Stripe client (Phase 6). When null, the Stripe section of
@@ -110,6 +121,8 @@ class NVOOS_SaaS_Controller_Plan_Generator {
 		$plan = $this->plan_stripe_products( $desired, $plan );
 		$plan = $this->plan_stripe_prices( $desired, $plan );
 		$plan = $this->plan_openrouter_keys( $desired, $plan );
+		$plan = $this->plan_worker_secrets( $desired, $plan );
+		$plan = $this->plan_d1_schema( $desired, $plan );
 
 		$plan['summary'] = array(
 			'creates' => count( $plan['creates'] ),
@@ -133,11 +146,21 @@ class NVOOS_SaaS_Controller_Plan_Generator {
 		$desired_dbs = isset( $desired['d1_databases'] ) ? (array) $desired['d1_databases'] : array();
 		$live        = $this->client->list_d1_databases();
 		if ( is_wp_error( $live ) ) {
+			$this->live_d1    = null;
 			$plan['errors'][] = array(
 				'kind'    => 'd1',
 				'message' => $live->get_error_message(),
 			);
 			return $plan;
+		}
+
+		// Cache name => uuid for plan_d1_schema() so one plan run issues a
+		// single D1 list call.
+		$this->live_d1 = array();
+		foreach ( $live as $row ) {
+			if ( is_array( $row ) && ! empty( $row['name'] ) && ! empty( $row['uuid'] ) ) {
+				$this->live_d1[ (string) $row['name'] ] = (string) $row['uuid'];
+			}
 		}
 
 		$by_name = array();
@@ -514,6 +537,167 @@ class NVOOS_SaaS_Controller_Plan_Generator {
 					$entry['limit_usd'] = (float) $row['limit_usd'];
 				}
 				$plan['creates'][] = $entry;
+			}
+		}
+
+			return $plan;
+	}
+
+		/**
+		 * Worker secrets plan section (Phase 12).
+		 *
+		 * Secrets never carry values in the plan: rows reference the credential
+		 * store by `source` key and the Apply engine resolves the plaintext at
+		 * run time. A secret present on the Worker is emitted as an `updates[]`
+		 * row so Apply re-pushes it — this is what makes credential rotation
+		 * converge (change the stored credential → Apply → Worker secret
+		 * overwritten).
+		 *
+		 * @param array $desired Desired config.
+		 * @param array $plan    Plan accumulator.
+		 * @return array
+		 */
+	protected function plan_worker_secrets( array $desired, array $plan ) {
+		$worker_name = isset( $desired['worker_name'] ) ? (string) $desired['worker_name'] : '';
+		$managed     = $this->managed_worker_secrets( $desired );
+		if ( '' === $worker_name || empty( $managed ) ) {
+			return $plan;
+		}
+
+		$live = $this->client->list_worker_secrets( $worker_name );
+		if ( is_wp_error( $live ) ) {
+			$plan['errors'][] = array(
+				'kind'    => 'worker_secret',
+				'message' => $live->get_error_message(),
+			);
+			return $plan;
+		}
+
+		$present = array();
+		foreach ( $live as $row ) {
+			if ( is_array( $row ) && ! empty( $row['name'] ) ) {
+				$present[ (string) $row['name'] ] = true;
+			}
+		}
+
+		foreach ( $managed as $secret_name => $source ) {
+			$row = array(
+				'kind'   => 'worker_secret',
+				'name'   => $secret_name,
+				'source' => $source,
+				'worker' => $worker_name,
+			);
+			if ( empty( $present[ $secret_name ] ) ) {
+				$plan['creates'][] = $row;
+			} else {
+				$row['reason']     = __( 'Secret exists; re-pushed on Apply to converge with the credential store.', 'nvoos-saas-controller' );
+				$plan['updates'][] = $row;
+			}
+		}
+
+		return $plan;
+	}
+
+		/**
+		 * Map Worker secret binding names to credential-store sources.
+		 *
+		 * Only secrets whose source credential is configured are included, so an
+		 * operator who never set Stripe/OpenRouter credentials gets no secret
+		 * rows. `CF_AI_GATEWAY_URL` is derived from the account id + AI Gateway
+		 * slug rather than stored as a credential.
+		 *
+		 * @since 0.3.0
+		 *
+		 * @param array $desired Desired config.
+		 * @return array<string,string> `secret name => source`.
+		 */
+	protected function managed_worker_secrets( array $desired ) {
+		$creds = NVOOS_SaaS_Controller_Credential_Store::instance()->get_all();
+		$map   = array();
+
+		$pairs = array(
+			'OPENROUTER_API_KEY'    => 'openrouter_api_key',
+			'STRIPE_SECRET_KEY'     => 'stripe_secret_key',
+			'STRIPE_WEBHOOK_SECRET' => 'stripe_webhook_secret',
+			'SAAS_API_KEY'          => 'saas_api_key',
+		);
+		foreach ( $pairs as $secret_name => $source ) {
+			if ( ! empty( $creds[ $source ] ) ) {
+				$map[ $secret_name ] = $source;
+			}
+		}
+
+		$slug       = isset( $desired['ai_gateway_slug'] ) ? (string) $desired['ai_gateway_slug'] : '';
+		$account_id = isset( $creds['cloudflare_account_id'] ) ? (string) $creds['cloudflare_account_id'] : '';
+		if ( '' !== $slug && '' !== $account_id ) {
+			$map['CF_AI_GATEWAY_URL'] = 'gateway:' . $slug;
+		}
+
+		return $map;
+	}
+
+		/**
+		 * D1 schema plan section (Phase 12).
+		 *
+		 * The Apply step creates D1 databases but never applied `schema.sql`;
+		 * this section emits an idempotent `d1_schema` create row per desired
+		 * database whose live instance lacks the `wallets` table (probed via
+		 * `sqlite_master`). Databases that don't exist yet are skipped here —
+		 * their creation row lands earlier in the plan and the schema row
+		 * appears on the next plan run.
+		 *
+		 * @param array $desired Desired config.
+		 * @param array $plan    Plan accumulator.
+		 * @return array
+		 */
+	protected function plan_d1_schema( array $desired, array $plan ) {
+		$desired_dbs = isset( $desired['d1_databases'] ) && is_array( $desired['d1_databases'] ) ? $desired['d1_databases'] : array();
+		if ( empty( $desired_dbs ) ) {
+			return $plan;
+		}
+
+		// plan_d1() lists D1 first in every plan run; null here means that
+		// fetch failed and the error is already recorded under kind `d1`.
+		if ( null === $this->live_d1 ) {
+			return $plan;
+		}
+		$by_name = $this->live_d1;
+
+		foreach ( $desired_dbs as $row ) {
+			if ( ! is_array( $row ) || empty( $row['name'] ) ) {
+				continue;
+			}
+			$name = (string) $row['name'];
+			if ( empty( $by_name[ $name ] ) ) {
+				continue; // Database not created yet; its create row handles it.
+			}
+
+			$uuid    = $by_name[ $name ];
+			$probe   = $this->client->query_d1(
+				$uuid,
+				"SELECT COUNT(*) AS c FROM sqlite_master WHERE type = 'table' AND name = 'wallets'"
+			);
+			$applied = false;
+			if ( is_wp_error( $probe ) ) {
+				// Probe failure (fresh DB, transient API error): assume the
+				// schema is missing — applying is idempotent either way.
+				$applied = false;
+			} elseif ( is_array( $probe ) && isset( $probe[0]['results']['rows'][0][0] ) ) {
+				$applied = (int) $probe[0]['results']['rows'][0][0] > 0;
+			}
+
+			if ( $applied ) {
+				$plan['noops'][] = array(
+					'kind' => 'd1_schema',
+					'name' => $name,
+					'uuid' => $uuid,
+				);
+			} else {
+				$plan['creates'][] = array(
+					'kind' => 'd1_schema',
+					'name' => $name,
+					'uuid' => $uuid,
+				);
 			}
 		}
 

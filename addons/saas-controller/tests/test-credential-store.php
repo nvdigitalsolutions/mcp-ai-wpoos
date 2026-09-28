@@ -34,6 +34,7 @@ class Test_NVOOS_SaaS_Controller_Credential_Store extends WP_UnitTestCase {
 			'stripe_webhook_secret'       => 'whsec_xxxxxxxxxxxxxxxxxxxx',
 			'openrouter_api_key'          => 'or_key_zzzzzzzzzzzzz',
 			'openrouter_provisioning_key' => 'or_pk_provisioning_yyyyy',
+			'saas_api_key'                => 'saas_shared_secret_zzzz',
 		);
 		$this->assertTrue( $store->set( $input ) );
 

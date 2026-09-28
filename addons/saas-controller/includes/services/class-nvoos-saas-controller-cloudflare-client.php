@@ -186,6 +186,84 @@ class NVOOS_SaaS_Controller_Cloudflare_Client {
 	}
 
 	/**
+	 * GET /accounts/{account_id}/workers/scripts/{name}/secrets
+	 *
+	 * Lists the **names** of secrets bound to a Worker script. Values are
+	 * never returned by the Cloudflare API — this is a name-only probe used
+	 * by the Phase 12 plan section to decide create-vs-update rows.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param string $name Worker script name (slug).
+	 * @return array<int,array{name:string,type:string}>|WP_Error
+	 */
+	public function list_worker_secrets( $name ) {
+		$slug = (string) $name;
+		if ( '' === $slug ) {
+			return new WP_Error(
+				'missing_worker_name',
+				__( 'A non-empty Worker script name is required.', 'nvoos-saas-controller' )
+			);
+		}
+
+		$response = $this->get(
+			'/accounts/' . rawurlencode( $this->account_id ) . '/workers/scripts/' . rawurlencode( $slug ) . '/secrets'
+		);
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$out = array();
+		foreach ( (array) $response as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			$secret_name = isset( $row['name'] ) ? (string) $row['name'] : '';
+			if ( '' !== $secret_name ) {
+				$out[] = array(
+					'name' => $secret_name,
+					'type' => isset( $row['type'] ) ? (string) $row['type'] : 'secret_text',
+				);
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * GET /accounts/{account_id}/d1/database/{database_id}/query
+	 *
+	 * Run a single read-only SQL statement against a D1 database. Used by
+	 * the Phase 12 schema-plan section to probe whether the schema has
+	 * already been applied (`sqlite_master` table probe).
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param string $database_id D1 database uuid.
+	 * @param string $sql         Single SQL statement (read-only).
+	 * @return array|WP_Error Cloudflare `result` array (list of statement objects).
+	 */
+	public function query_d1( $database_id, $sql ) {
+		$uuid = (string) $database_id;
+		if ( '' === $uuid ) {
+			return new WP_Error(
+				'missing_database_id',
+				__( 'A D1 database uuid is required.', 'nvoos-saas-controller' )
+			);
+		}
+		$sql = (string) $sql;
+		if ( '' === $sql ) {
+			return new WP_Error(
+				'missing_sql',
+				__( 'A SQL statement is required.', 'nvoos-saas-controller' )
+			);
+		}
+
+		return $this->get(
+			'/accounts/' . rawurlencode( $this->account_id ) . '/d1/database/' . rawurlencode( $uuid ) . '/query?sql=' . rawurlencode( $sql )
+		);
+	}
+
+	/**
 	 * GET /accounts/{account_id}/workers/scripts/{name}
 	 *
 	 * Fetches the deployed Worker script body and the Cloudflare-supplied

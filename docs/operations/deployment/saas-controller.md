@@ -91,6 +91,7 @@ All routes require `manage_options` + REST nonce **except** `POST /webhooks/stri
 | `nvoos_saas_controller_webhook_events_max_entries` | `200` | Maximum entries in the webhook event ring buffer |
 | `nvoos_saas_controller_apply_job_state_ttl` | `21600` (6 h) | TTL in seconds for background apply job state transient |
 | `nvoos_saas_controller_worker_dist_path` | `worker/dist/index.js` | Filesystem path of the Worker bundle to upload |
+| `nvoos_saas_controller_worker_schema_path` | `worker/schema.sql` | Filesystem path of the D1 schema file applied by `d1_schema` plan rows |
 | `nvoos_saas_controller_worker_compatibility_date` | `2024-12-30` | Cloudflare Worker compatibility date sent on upload |
 | `nvoos_saas_controller_worker_compatibility_flags` | `['nodejs_compat']` | Cloudflare Worker compatibility flags sent on upload (the bundle embeds the Stripe Node SDK, which requires `nodejs_compat`) |
 | `nvoos_saas_controller_worker_upload_metadata` | — | Merge additional fields into the Worker upload metadata |
