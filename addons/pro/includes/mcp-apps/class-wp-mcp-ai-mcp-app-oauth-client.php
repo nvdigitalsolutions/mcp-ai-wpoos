@@ -332,7 +332,8 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 		if ( empty( $registration_endpoint ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_mcp_app_oauth_no_registration',
-				__( 'The remote MCP server does not support dynamic client registration.', 'mcp-ai-wpoos-pro' )
+				__( 'The remote MCP server does not support dynamic client registration.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
 			);
 		}
 
@@ -364,7 +365,8 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 					/* translators: %s: Error message. */
 					__( 'Failed to register OAuth client: %s', 'mcp-ai-wpoos-pro' ),
 					$response->get_error_message()
-				)
+				),
+				array( 'status' => 502 )
 			);
 		}
 
@@ -384,11 +386,16 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 		if ( ! is_array( $data ) || empty( $data['client_id'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_mcp_app_oauth_registration_invalid',
-				__( 'Invalid registration response from remote server.', 'mcp-ai-wpoos-pro' )
+				__( 'Invalid registration response from remote server.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 502 )
 			);
 		}
 
-		$this->client_id = sanitize_key( $data['client_id'] );
+		// Preserve the client ID verbatim — dynamic-registration client IDs
+		// are opaque strings that may carry characters sanitize_key() would
+		// strip (underscores, dots, case), which would break the callback
+		// exchange. sanitize_text_field() only removes HTML/whitespace noise.
+		$this->client_id = sanitize_text_field( $data['client_id'] );
 
 		return $data;
 	}

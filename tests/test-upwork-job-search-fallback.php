@@ -79,7 +79,7 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 	 * Bare /freelance-jobs/{slug}/, /freelance-jobs/apply/{category}/, and
 	 * /hire/{slug}/ paths are category pages, as are login-walled SPA search
 	 * surfaces (/nx/…, /o/jobs/…, /r/…); job post URLs carry a ~jobId suffix
-	 * (or live under /jobs/).
+	 * (or live under /jobs/), and the SPA job-detail route is a posting.
 	 */
 	public function test_is_upwork_category_page_classifies_urls() {
 		$category_pages = array(
@@ -101,6 +101,7 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 			'https://www.upwork.com/freelance-jobs/WordPress-Developer_~01d7d03bb39cc7daec/',
 			'https://www.upwork.com/freelance-jobs/apply/WordPress-Developer-for-Elementor-Website_~022091870001775728249/',
 			'https://www.upwork.com/jobs/wordpress-dev_~0123456789abcdef/',
+			'https://www.upwork.com/nx/search/jobs/details/~022092991749944972395',
 		);
 		foreach ( $job_postings as $url ) {
 			$this->assertFalse( $this->invoke_private( 'is_upwork_category_page', array( $url ) ), "Expected job posting: $url" );
@@ -190,24 +191,25 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 	}
 
 	/**
-	 * SERP job URLs are canonicalised to the marketplace's current public
-	 * /freelance-jobs/apply/<slug>_~<jobId>/ form (tracking query strings are
-	 * dropped), while non-marketplace URLs pass through untouched.
+	 * SERP job URLs are canonicalised to the marketplace /jobs/ form (tracking
+	 * query strings are dropped, SPA detail links are rebuilt from the bare
+	 * ~jobId), while non-marketplace URLs pass through untouched.
 	 */
 	public function test_normalize_upwork_job_url_canonicalizes_postings() {
 		$cases = array(
 			'https://www.upwork.com/freelance-jobs/apply/help-set-whop-GHL-affilate-link_~022098856874446209160/'
-				=> 'https://www.upwork.com/freelance-jobs/apply/help-set-whop-GHL-affilate-link_~022098856874446209160/',
+				=> 'https://www.upwork.com/jobs/help-set-whop-GHL-affilate-link_~022098856874446209160/',
 			'https://www.upwork.com/freelance-jobs/WordPress-Developer_~01d7d03bb39cc7daec/'
-				=> 'https://www.upwork.com/freelance-jobs/apply/WordPress-Developer_~01d7d03bb39cc7daec/',
+				=> 'https://www.upwork.com/jobs/WordPress-Developer_~01d7d03bb39cc7daec/',
 			'https://upwork.com/freelance-jobs/apply/Implementing-High-Level-and-Guidance_~022043791294383826569'
-				=> 'https://www.upwork.com/freelance-jobs/apply/Implementing-High-Level-and-Guidance_~022043791294383826569/',
-			// Legacy /jobs/ route (deprecated by Upwork) rewrites to the current form.
-			'https://www.upwork.com/jobs/wordpress-dev_~0123456789abcdef/'
-				=> 'https://www.upwork.com/freelance-jobs/apply/wordpress-dev_~0123456789abcdef/',
+				=> 'https://www.upwork.com/jobs/Implementing-High-Level-and-Guidance_~022043791294383826569/',
 			// Tracking query strings (referrer_url_path) are stripped.
 			'https://www.upwork.com/freelance-jobs/apply/Website-Builder-Developer-Designer-Word-Press-Wix_~022092991749944972395/?referrer_url_path=%2Fnx%2Fsearch%2Fjobs%2Fdetails%2F~022092991749944972395'
-				=> 'https://www.upwork.com/freelance-jobs/apply/Website-Builder-Developer-Designer-Word-Press-Wix_~022092991749944972395/',
+				=> 'https://www.upwork.com/jobs/Website-Builder-Developer-Designer-Word-Press-Wix_~022092991749944972395/',
+			// SPA job-detail links carry only the ~jobId and are rebuilt to the
+			// bare-id form (the shape upwork-mcp normalises to).
+			'https://www.upwork.com/nx/search/jobs/details/~022092991749944972395'
+				=> 'https://www.upwork.com/jobs/~022092991749944972395/',
 			// Non-marketplace hosts (aggregators, community) stay untouched.
 			'https://remoteok.com/remote-wordpress-jobs' => 'https://remoteok.com/remote-wordpress-jobs',
 			'https://community.upwork.com/freelance-jobs/apply/Foo_~021234/' => 'https://community.upwork.com/freelance-jobs/apply/Foo_~021234/',
@@ -412,11 +414,11 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 
 		// The first-pass job posting plus the broad-pass aggregator listing —
 		// the duplicated job posting is deduped, not repeated. The Upwork
-		// posting's URL is canonicalised to the /freelance-jobs/apply/ form.
+		// posting's URL is canonicalised to the /jobs/ form.
 		$this->assertCount( 2, $result['jobs'] );
 
 		$urls = wp_list_pluck( $result['jobs'], 'url' );
-		$this->assertContains( 'https://www.upwork.com/freelance-jobs/apply/WordPress-Developer_~01d7d03bb39cc7daec/', $urls );
+		$this->assertContains( 'https://www.upwork.com/jobs/WordPress-Developer_~01d7d03bb39cc7daec/', $urls );
 		$this->assertContains( 'https://remoteok.com/remote-wordpress-jobs', $urls );
 
 		$job = $result['jobs'][0];
@@ -543,7 +545,7 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 		$this->assertCount( 2, $result['jobs'] );
 		$this->assertStringContainsString( 'expanded second search', $result['notice'] );
 		$urls = wp_list_pluck( $result['jobs'], 'url' );
-		$this->assertContains( 'https://www.upwork.com/freelance-jobs/apply/WordPress-Developer-for-Block-Based-Theme_~022048801956531499628/', $urls );
+		$this->assertContains( 'https://www.upwork.com/jobs/WordPress-Developer-for-Block-Based-Theme_~022048801956531499628/', $urls );
 		$this->assertContains( 'https://remoteok.com/remote-wordpress-jobs', $urls );
 	}
 
@@ -763,8 +765,23 @@ class Test_Upwork_Job_Search_Fallback extends WP_UnitTestCase {
 		);
 
 		$this->assertSame(
-			'https://www.upwork.com/freelance-jobs/apply/wordpress-developer-needed-for-agency_~01d7d03bb39cc7daec/',
+			'https://www.upwork.com/jobs/wordpress-developer-needed-for-agency_~01d7d03bb39cc7daec/',
 			$this->invoke_private( 'build_job_url', array( $node ) )
+		);
+
+		// A bare id (no ~ prefix) still yields a resolvable URL — the ~ is
+		// added defensively so the id never reads as part of the slug.
+		$this->assertSame(
+			'https://www.upwork.com/jobs/wordpress-developer-needed-for-agency_~01d7d03bb39cc7daec/',
+			$this->invoke_private(
+				'build_job_url',
+				array(
+					array(
+						'id'    => '01d7d03bb39cc7daec',
+						'title' => 'WordPress Developer needed for agency',
+					),
+				)
+			)
 		);
 
 		$this->assertSame(
