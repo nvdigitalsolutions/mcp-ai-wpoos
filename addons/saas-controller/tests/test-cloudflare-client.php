@@ -254,4 +254,58 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Client extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 		$this->assertSame( 'missing_credentials', $result->get_error_code() );
 	}
+
+	/**
+	 * list_worker_secrets returns name/type pairs only.
+	 *
+	 * @return void
+	 */
+	public function test_list_worker_secrets_returns_names_only() {
+		$this->canned['/workers/scripts/my-worker/secrets'] = $this->ok(
+			array(
+				array(
+					'name' => 'OPENROUTER_API_KEY',
+					'type' => 'secret_text',
+				),
+				array(
+					'name' => 'STRIPE_SECRET_KEY',
+					'type' => 'secret_text',
+				),
+			)
+		);
+		$client = new NVOOS_SaaS_Controller_Cloudflare_Client( 'acct-123', 'tok-123' );
+		$result = $client->list_worker_secrets( 'my-worker' );
+		$this->assertSame(
+			array(
+				array( 'name' => 'OPENROUTER_API_KEY', 'type' => 'secret_text' ),
+				array( 'name' => 'STRIPE_SECRET_KEY', 'type' => 'secret_text' ),
+			),
+			$result
+		);
+	}
+
+	/**
+	 * query_d1 passes the SQL through the query string and returns the result.
+	 *
+	 * @return void
+	 */
+	public function test_query_d1_probes_sqlite_master() {
+		$this->canned['/d1/database/db-123/query'] = $this->ok(
+			array(
+				array(
+					'meta'    => array(),
+					'results' => array(
+						'columns' => array( 'c' ),
+						'rows'    => array( array( 1 ) ),
+					),
+					'success' => true,
+				),
+			)
+		);
+		$client = new NVOOS_SaaS_Controller_Cloudflare_Client( 'acct-123', 'tok-123' );
+		$result = $client->query_d1( 'db-123', "SELECT COUNT(*) AS c FROM sqlite_master" );
+		$this->assertIsArray( $result );
+		$this->assertSame( 1, (int) $result[0]['results']['rows'][0][0] );
+		$this->assertStringContainsString( 'sqlite_master', $this->captured[0]['url'] );
+	}
 }

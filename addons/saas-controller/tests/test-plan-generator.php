@@ -88,6 +88,47 @@ class NVOOS_SaaS_Stub_Cloudflare_Client extends NVOOS_SaaS_Controller_Cloudflare
 	public function list_ai_gateways() {
 		return isset( $this->errors['ai_gateways'] ) ? $this->errors['ai_gateways'] : $this->ai_gateways;
 	}
+
+	/**
+	 * Canned Worker secrets list.
+	 *
+	 * @var array
+	 */
+	public $secrets = array();
+
+	/**
+	 * Canned D1 query result.
+	 *
+	 * @var array|WP_Error
+	 */
+	public $d1_probe = array(
+		array(
+			'meta'    => array(),
+			'results' => array(
+				'columns' => array( 'c' ),
+				'rows'    => array( array( 0 ) ),
+			),
+			'success' => true,
+		),
+	);
+
+	/**
+	 * List Worker secrets.
+	 *
+	 * @return array|WP_Error
+	 */
+	public function list_worker_secrets( $name ) {
+		return isset( $this->errors['secrets'] ) ? $this->errors['secrets'] : $this->secrets;
+	}
+
+	/**
+	 * Probe D1.
+	 *
+	 * @return array|WP_Error
+	 */
+	public function query_d1( $database_id, $sql ) {
+		return isset( $this->errors['d1_probe'] ) ? $this->errors['d1_probe'] : $this->d1_probe;
+	}
 }
 
 /**
@@ -150,6 +191,18 @@ class Test_NVOOS_SaaS_Controller_Plan_Generator extends WP_UnitTestCase {
 				'slug' => 'router',
 			),
 		);
+		// Phase 12: the schema probe reports the `wallets` table exists, so
+		// the d1_schema section contributes a noop rather than a create.
+		$stub->d1_probe = array(
+			array(
+				'meta'    => array(),
+				'results' => array(
+					'columns' => array( 'c' ),
+					'rows'    => array( array( 1 ) ),
+				),
+				'success' => true,
+			),
+		);
 
 		$desired = array_merge(
 			NVOOS_SaaS_Controller_Deployment_Config::defaults(),
@@ -172,7 +225,7 @@ class Test_NVOOS_SaaS_Controller_Plan_Generator extends WP_UnitTestCase {
 		$plan = ( new NVOOS_SaaS_Controller_Plan_Generator( $stub ) )->generate( $desired );
 
 		$this->assertSame( 0, $plan['summary']['creates'] );
-		$this->assertSame( 3, $plan['summary']['noops'] );
+		$this->assertSame( 4, $plan['summary']['noops'] );
 		$this->assertSame( 0, $plan['summary']['orphans'] );
 	}
 
@@ -519,6 +572,140 @@ class Test_NVOOS_SaaS_Controller_Plan_Generator extends WP_UnitTestCase {
 		$plan = ( new NVOOS_SaaS_Controller_Plan_Generator( $stub, $stripe, null ) )->generate( $desired );
 		$this->assertSame( 1, $plan['summary']['errors'] );
 		$this->assertSame( 'stripe_product', $plan['errors'][0]['kind'] );
+	}
+
+	/**
+	 * Secrets are planned from the credential store (no values in the plan).
+	 *
+	 * @return void
+	 */
+	public function test_plan_worker_secrets_emits_create_and_update_rows() {
+		NVOOS_SaaS_Controller_Credential_Store::instance()->clear_all();
+		NVOOS_SaaS_Controller_Credential_Store::instance()->set(
+			array(
+				'cloudflare_account_id' => 'abcd1234abcd1234abcd1234abcd1234',
+				'openrouter_api_key'    => 'sk-or-zzzzzzzzzzzzzzzzzzzz',
+				'stripe_secret_key'     => 'sk_test_zzzzzzzzzzzzzzzzzzzz',
+				'stripe_webhook_secret' => 'whsec_zzzzzzzzzzzzzzzzzzzz',
+				'saas_api_key'          => 'saas-shared-secret',
+			)
+		);
+
+		$stub          = new NVOOS_SaaS_Stub_Cloudflare_Client();
+		$stub->secrets = array(
+			array( 'name' => 'OPENROUTER_API_KEY', 'type' => 'secret_text' ),
+		);
+
+		$generator = new NVOOS_SaaS_Controller_Plan_Generator( $stub );
+		$plan      = $generator->generate(
+			array(
+				'worker_name'     => 'mcp-oos-worker',
+				'ai_gateway_slug' => 'mcp-gw',
+				'd1_databases'    => array(),
+				'kv_namespaces'   => array(),
+			)
+		);
+
+		$kinds   = array_column( $plan['creates'], 'kind' );
+		$secrets = array_filter(
+			$plan['creates'],
+			function ( $row ) {
+				return 'worker_secret' === $row['kind'];
+			}
+		);
+		$this->assertContains( 'worker_secret', $kinds );
+
+		$names = array_column( $secrets, 'name' );
+		$this->assertContains( 'STRIPE_SECRET_KEY', $names );
+		$this->assertContains( 'STRIPE_WEBHOOK_SECRET', $names );
+		$this->assertContains( 'SAAS_API_KEY', $names );
+		$this->assertContains( 'CF_AI_GATEWAY_URL', $names );
+		$this->assertNotContains( 'OPENROUTER_API_KEY', $names ); // Present → update row.
+
+		$updates = array_filter(
+			$plan['updates'],
+			function ( $row ) {
+				return 'worker_secret' === $row['kind'];
+			}
+		);
+		$this->assertSame( 1, count( $updates ) );
+
+		// No secret VALUE may appear anywhere in the plan.
+		$this->assertStringNotContainsString( 'sk-or-', wp_json_encode( $plan ) );
+		$this->assertStringNotContainsString( 'saas-shared-secret', wp_json_encode( $plan ) );
+	}
+
+	/**
+	 * No credentials → no secret rows.
+	 *
+	 * @return void
+	 */
+	public function test_plan_worker_secrets_skips_without_credentials() {
+		NVOOS_SaaS_Controller_Credential_Store::instance()->clear_all();
+		$stub      = new NVOOS_SaaS_Stub_Cloudflare_Client();
+		$generator = new NVOOS_SaaS_Controller_Plan_Generator( $stub );
+		$plan      = $generator->generate( array( 'worker_name' => 'mcp-oos-worker' ) );
+
+		$kinds = array_column( $plan['creates'], 'kind' );
+		$this->assertNotContains( 'worker_secret', $kinds );
+		$kinds = array_column( $plan['updates'], 'kind' );
+		$this->assertNotContains( 'worker_secret', $kinds );
+	}
+
+	/**
+	 * A fresh D1 database yields a d1_schema create row; an applied one a noop.
+	 *
+	 * @return void
+	 */
+	public function test_plan_d1_schema_create_and_noop() {
+		$stub       = new NVOOS_SaaS_Stub_Cloudflare_Client();
+		$stub->d1   = array(
+			array( 'uuid' => 'db-111', 'name' => 'mcp-oos' ),
+			array( 'uuid' => 'db-222', 'name' => 'mcp-archive' ),
+		);
+		$generator  = new NVOOS_SaaS_Controller_Plan_Generator( $stub );
+		$desired    = array(
+			'd1_databases' => array(
+				array( 'name' => 'mcp-oos', 'binding' => 'NVOOS_DB' ),
+				array( 'name' => 'mcp-archive', 'binding' => 'ARCHIVE_DB' ),
+			),
+		);
+		$plan       = $generator->generate( $desired );
+
+		$schema_creates = array_filter(
+			$plan['creates'],
+			function ( $row ) {
+				return 'd1_schema' === $row['kind'];
+			}
+		);
+		// Both probes return count 0 → both create rows.
+		$this->assertSame( 2, count( $schema_creates ) );
+
+		$stub->d1_probe = array(
+			array(
+				'meta'    => array(),
+				'results' => array(
+					'columns' => array( 'c' ),
+					'rows'    => array( array( 1 ) ),
+				),
+				'success' => true,
+			),
+		);
+		$plan = $generator->generate( $desired );
+		$schema_creates = array_filter(
+			$plan['creates'],
+			function ( $row ) {
+				return 'd1_schema' === $row['kind'];
+			}
+		);
+		$schema_noops = array_filter(
+			$plan['noops'],
+			function ( $row ) {
+				return 'd1_schema' === $row['kind'];
+			}
+		);
+		$this->assertSame( 0, count( $schema_creates ) );
+		$this->assertSame( 2, count( $schema_noops ) );
 	}
 }
 

@@ -444,4 +444,92 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 		$this->assertWPError( $result );
 		$this->assertSame( 'invalid_slug', $result->get_error_code() );
 	}
+
+	/**
+	 * Test that put_worker_secret PUTs the secret_text body and records audit.
+	 *
+	 * @return void
+	 */
+	public function test_put_worker_secret_success_records_audit_entry() {
+		$this->canned = array(
+			'/workers/scripts/my-worker/secrets' => $this->ok(
+				array(
+					'name' => 'OPENROUTER_API_KEY',
+					'type' => 'secret_text',
+				)
+			),
+		);
+
+		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct-123', 'tok-123' );
+		$result = $client->put_worker_secret( 'my-worker', 'OPENROUTER_API_KEY', 'sk-or-super-secret' );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'OPENROUTER_API_KEY', $result['name'] );
+		$this->assertSame( 'secret_text', $result['type'] );
+
+		$call = $this->captured[0];
+		$this->assertSame( 'PUT', $call['args']['method'] );
+		$body = json_decode( $call['args']['body'], true );
+		$this->assertSame( 'OPENROUTER_API_KEY', $body['name'] );
+		$this->assertSame( 'secret_text', $body['type'] );
+		$this->assertSame( 'sk-or-super-secret', $body['text'] );
+
+		// The audit message must never contain the secret value.
+		$entries = NVOOS_SaaS_Controller_Audit_Log::instance()->get_recent( 1 );
+		$this->assertNotEmpty( $entries );
+		$this->assertStringNotContainsString( 'sk-or-super-secret', wp_json_encode( $entries ) );
+	}
+
+	/**
+	 * Empty secret values are rejected without an HTTP call.
+	 *
+	 * @return void
+	 */
+	public function test_put_worker_secret_rejects_empty_value() {
+		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct-123', 'tok-123' );
+		$result = $client->put_worker_secret( 'my-worker', 'OPENROUTER_API_KEY', '' );
+		$this->assertWPError( $result );
+		$this->assertSame( 'empty_secret', $result->get_error_code() );
+		$this->assertCount( 0, $this->captured );
+	}
+
+	/**
+	 * Test that execute_d1_sql posts to the /raw endpoint and records audit.
+	 *
+	 * @return void
+	 */
+	public function test_execute_d1_sql_success() {
+		$this->canned = array(
+			'/d1/database/db-123/raw' => $this->ok(
+				array(
+					array(
+						'meta'    => array( 'changed_db' => true ),
+						'success' => true,
+					),
+				)
+			),
+		);
+
+		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct-123', 'tok-123' );
+		$result = $client->execute_d1_sql( 'db-123', 'CREATE TABLE IF NOT EXISTS wallets (id TEXT PRIMARY KEY);' );
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( isset( $result[0]['success'] ) && $result[0]['success'] );
+		$call = $this->captured[0];
+		$this->assertSame( 'POST', $call['args']['method'] );
+		$this->assertStringContainsString( 'CREATE TABLE', $call['args']['body'] );
+	}
+
+	/**
+	 * Empty SQL is rejected without an HTTP call.
+	 *
+	 * @return void
+	 */
+	public function test_execute_d1_sql_rejects_empty_sql() {
+		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct-123', 'tok-123' );
+		$result = $client->execute_d1_sql( 'db-123', '' );
+		$this->assertWPError( $result );
+		$this->assertSame( 'empty_sql', $result->get_error_code() );
+		$this->assertCount( 0, $this->captured );
+	}
 }
