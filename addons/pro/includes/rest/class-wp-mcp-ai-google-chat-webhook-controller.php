@@ -389,6 +389,18 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 				? sanitize_text_field( $body['space']['name'] )
 				: '';
 			$connection            = $this->get_active_google_chat_connection( $space_name_for_lookup );
+
+			// The generic lookup reads the raw store; decrypt the webhook
+			// secret fields (the per-connection branch above already returns
+			// decrypted values from get_connection()).
+			if ( is_array( $connection ) ) {
+				if ( ! empty( $connection['verification_token'] ) ) {
+					$connection['verification_token'] = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( (string) $connection['verification_token'] );
+				}
+				if ( ! empty( $connection['verify_token'] ) ) {
+					$connection['verify_token'] = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( (string) $connection['verify_token'] );
+				}
+			}
 		}
 
 		// When OIDC verification is disabled for this connection, require a

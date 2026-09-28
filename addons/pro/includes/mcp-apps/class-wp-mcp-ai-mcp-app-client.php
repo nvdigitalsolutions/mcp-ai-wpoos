@@ -68,6 +68,27 @@ class WP_MCP_AI_MCP_App_Client {
 	protected $oauth_client = null;
 
 	/**
+	 * Assistant post ID the app belongs to.
+	 *
+	 * When non-zero, a successful automatic OAuth token refresh is
+	 * persisted back to the assistant's stored app config so rotated
+	 * credentials survive the current request.
+	 *
+	 * @var int
+	 */
+	protected $assistant_id = 0;
+
+	/**
+	 * Central Remote Sites connection ID for reference entries.
+	 *
+	 * When non-empty, automatic OAuth refreshes persist to the encrypted
+	 * Remote Sites store (mcp_server connections) instead of post meta.
+	 *
+	 * @var string
+	 */
+	protected $connection_ref = '';
+
+	/**
 	 * Request timeout in seconds.
 	 *
 	 * @var int
@@ -124,6 +145,8 @@ class WP_MCP_AI_MCP_App_Client {
 	 *     @type string $header_name Custom header name when auth_type is 'header'.
 	 *     @type array  $oauth_data  OAuth token data (access_token, refresh_token, expires_in, issued_at) when auth_type is 'oauth'.
 	 *     @type WP_MCP_AI_MCP_App_OAuth_Client $oauth_client Pre-configured OAuth client instance (optional, used for auto-refresh).
+	 *     @type int    $assistant_id Assistant post ID for persisting automatic OAuth refreshes. Default 0.
+	 *     @type string $connection_ref Central Remote Sites connection ID for persisting automatic OAuth refreshes of reference entries. Default ''.
 	 *     @type int    $timeout     Request timeout in seconds. Default 30.
 	 *     @type bool   $verify_ssl  Whether to verify SSL. Default true.
 	 * }
@@ -149,6 +172,8 @@ class WP_MCP_AI_MCP_App_Client {
 		);
 		$this->timeout    = max( 1, min( 120, absint( $config['timeout'] ) ) );
 		$this->verify_ssl = (bool) $config['verify_ssl'];
+		$this->assistant_id = isset( $config['assistant_id'] ) ? absint( $config['assistant_id'] ) : 0;
+		$this->connection_ref = isset( $config['connection_ref'] ) ? sanitize_key( (string) $config['connection_ref'] ) : '';
 
 		// Attach OAuth client if provided.
 		if ( isset( $config['oauth_client'] ) && $config['oauth_client'] instanceof WP_MCP_AI_MCP_App_OAuth_Client ) {
@@ -919,11 +944,59 @@ class WP_MCP_AI_MCP_App_Client {
 	protected function resolve_oauth_token() {
 		// If we have an OAuth client with auto-refresh capability, use it.
 		if ( null !== $this->oauth_client ) {
-			return $this->oauth_client->get_access_token();
+			$before = $this->oauth_client->get_token_data();
+			$token  = $this->oauth_client->get_access_token();
+
+			if ( ! is_wp_error( $token ) ) {
+				$after = $this->oauth_client->get_token_data();
+
+				// A refresh rotated the token data — keep the in-flight client
+				// current and persist the new credentials so subsequent
+				// requests (and tool calls sharing this request) reuse them
+				// instead of re-refreshing with a stale refresh token.
+				if ( is_array( $after ) && $after !== $before ) {
+					$this->update_oauth_token( $after );
+					$this->persist_oauth_token( $after );
+				}
+			}
+
+			return $token;
 		}
 
 		// Fallback: use static token from config.
 		return $this->auth['token'];
+	}
+
+	/**
+	 * Persist refreshed OAuth credentials.
+	 *
+	 * Reference entries persist to the encrypted Remote Sites store
+	 * (needing no assistant context); inline apps persist to the assistant's
+	 * stored app config. No-op when neither context is available.
+	 *
+	 * @since 1.9.x
+	 * @param array $token_data Fresh token data from the OAuth client.
+	 * @return void
+	 */
+	protected function persist_oauth_token( array $token_data ) {
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Registry' ) ) {
+			return;
+		}
+
+		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
+
+		// Central Remote Sites connections carry their credentials in the
+		// encrypted store — no assistant meta is involved.
+		if ( '' !== $this->connection_ref ) {
+			$registry->update_app_oauth_data( 0, '', $token_data, $this->connection_ref );
+			return;
+		}
+
+		if ( ! $this->assistant_id || empty( $this->server_url ) ) {
+			return;
+		}
+
+		$registry->update_app_oauth_data( $this->assistant_id, $this->server_url, $token_data );
 	}
 
 	/**

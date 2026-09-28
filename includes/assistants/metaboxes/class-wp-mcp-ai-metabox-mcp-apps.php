@@ -254,6 +254,18 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 					$raw_app['token'] = $existing_apps[ $index ]['token'];
 				}
 
+				// OAuth credentials are never echoed back into the form (they
+				// are stored encrypted at rest). Restore the stored blob when
+				// the submitted fields are blank so saving the page cannot
+				// wipe an authenticated app.
+				if (
+					'oauth' === ( isset( $raw_app['auth_type'] ) ? $raw_app['auth_type'] : '' ) &&
+					empty( $raw_app['oauth_data']['access_token'] ) &&
+					! empty( $existing_apps[ $index ]['oauth_data']['access_token'] )
+				) {
+					$raw_app['oauth_data'] = $existing_apps[ $index ]['oauth_data'];
+				}
+
 				$sanitized = WP_MCP_AI_MCP_App_Registry::sanitize_app_config( $raw_app );
 				if ( ! empty( $sanitized['server_url'] ) || ! empty( $sanitized['connection_ref'] ) ) {
 					$apps[] = $sanitized;
@@ -508,10 +520,11 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 								<span class="spinner wp-mcp-ai-oauth-complete-spinner" style="display:none; float:none; margin: 0 0 0 6px;"></span>
 							</div>
 							<?php
+							// Secrets are stored encrypted and never echoed back into the page.
+							// Blank submissions preserve the stored credentials (see save()).
 							foreach ( array( 'access_token', 'refresh_token', 'token_type', 'expires_in', 'scope', 'issued_at', 'client_id' ) as $field ) {
-								$value = isset( $app['oauth_data'][ $field ] ) ? $app['oauth_data'][ $field ] : '';
 								?>
-								<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[oauth_data][<?php echo esc_attr( $field ); ?>]" value="<?php echo esc_attr( (string) $value ); ?>" />
+								<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[oauth_data][<?php echo esc_attr( $field ); ?>]" value="" />
 								<?php
 							}
 							?>

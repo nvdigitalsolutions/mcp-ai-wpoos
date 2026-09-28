@@ -77,6 +77,16 @@ class WP_MCP_AI_MCP_App_Tool_Bridge implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	protected $app_label;
 
 	/**
+	 * Assistant post ID the bridged app belongs to.
+	 *
+	 * Used to re-hydrate the stored OAuth credentials at execution time
+	 * and to persist automatic token refreshes. Zero when unknown.
+	 *
+	 * @var int
+	 */
+	protected $assistant_id;
+
+	/**
 	 * UI resource URI if the tool has an associated MCP App UI.
 	 *
 	 * @var string
@@ -87,11 +97,12 @@ class WP_MCP_AI_MCP_App_Tool_Bridge implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * Constructor.
 	 *
 	 * @since 1.8.0
-	 * @param array  $remote_tool Remote tool definition from MCP server.
-	 * @param array  $app_config  MCP App connection configuration.
-	 * @param string $app_label   Human-readable app label.
+	 * @param array  $remote_tool  Remote tool definition from MCP server.
+	 * @param array  $app_config   MCP App connection configuration.
+	 * @param string $app_label    Human-readable app label.
+	 * @param int    $assistant_id Assistant post ID the app belongs to.
 	 */
-	public function __construct( array $remote_tool, array $app_config, $app_label = '' ) {
+	public function __construct( array $remote_tool, array $app_config, $app_label = '', $assistant_id = 0 ) {
 		$this->remote_tool_name  = isset( $remote_tool['name'] ) ? sanitize_text_field( $remote_tool['name'] ) : '';
 		$this->slug              = 'mcp_app_' . sanitize_key( $app_label ) . '_' . sanitize_key( $this->remote_tool_name );
 		$this->name              = isset( $remote_tool['name'] ) ? sanitize_text_field( $remote_tool['name'] ) : $this->slug;
@@ -99,6 +110,7 @@ class WP_MCP_AI_MCP_App_Tool_Bridge implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$this->parameters_schema = isset( $remote_tool['inputSchema'] ) ? $remote_tool['inputSchema'] : array( 'type' => 'object' );
 		$this->app_config        = $app_config;
 		$this->app_label         = $app_label;
+		$this->assistant_id      = absint( $assistant_id );
 
 		// Extract UI resource URI from tool metadata (SEP-1865).
 		$this->ui_resource_uri = '';
@@ -182,7 +194,36 @@ class WP_MCP_AI_MCP_App_Tool_Bridge implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		// Use the registry's client factory to support OAuth auto-refresh.
 		if ( class_exists( 'WP_MCP_AI_MCP_App_Registry' ) ) {
 			$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
-			$client   = $registry->create_client( $this->app_config );
+			$config   = $this->app_config;
+
+			// The bridge holds a registration-time snapshot of the app config.
+			// Re-hydrate the OAuth credentials before executing so a refresh
+			// persisted by an earlier call (this request or a previous one) is
+			// not lost to the stale snapshot.
+			if ( $this->assistant_id && 'oauth' === ( isset( $config['auth_type'] ) ? $config['auth_type'] : '' ) && ! empty( $config['server_url'] ) ) {
+				if ( ! empty( $config['connection_ref'] ) ) {
+					// Centrally managed reference: re-resolve the decrypted
+					// credentials from the Remote Sites store.
+					foreach ( $registry->resolve_apps( $this->assistant_id ) as $resolved ) {
+						if (
+							isset( $resolved['connection_ref'] ) &&
+							$resolved['connection_ref'] === $config['connection_ref'] &&
+							! empty( $resolved['oauth_data']['access_token'] )
+						) {
+							$config['oauth_data'] = $resolved['oauth_data'];
+							$config['token']      = $resolved['oauth_data']['access_token'];
+							break;
+						}
+					}
+				} else {
+					$stored = $registry->get_stored_oauth_data( $this->assistant_id, $config['server_url'] );
+					if ( is_array( $stored ) && ! empty( $stored['access_token'] ) ) {
+						$config['oauth_data'] = $stored;
+					}
+				}
+			}
+
+			$client = $registry->create_client( $config, $this->assistant_id );
 		} else {
 			$client = new WP_MCP_AI_MCP_App_Client( $this->app_config );
 		}
