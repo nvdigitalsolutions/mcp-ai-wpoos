@@ -594,6 +594,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			WP_MCP_AI_Pro_Jev_Guardrail::register();
 		}
 
+		// Jev tier-routing signal (opt-in via enable_jev_tier_routing).
+		// Feeds the decision-model complexity read into the base
+		// wp_mcp_ai_tiered_model_selection and
+		// wp_mcp_ai_execution_depth_confidence filters; fail-open by design.
+		$jev_tier_routing_file = WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-pro-jev-tier-routing.php';
+		if ( file_exists( $jev_tier_routing_file ) && ! class_exists( 'WP_MCP_AI_Pro_Jev_Tier_Routing' ) ) {
+			require_once $jev_tier_routing_file;
+		}
+		if ( class_exists( 'WP_MCP_AI_Pro_Jev_Tier_Routing' ) ) {
+			WP_MCP_AI_Pro_Jev_Tier_Routing::register();
+		}
+
 		// Register Pro tools when Core fires its registration action.
 		add_action( 'wp_mcp_ai_register_tools', 'wp_mcp_ai_pro_register_tools', 20 );
 
@@ -1368,7 +1380,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Scan_Orphaned_Media'       => WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-scan-orphaned-media.php',
 				'WP_MCP_AI_Tool_Cleanup_Orphaned_Media'    => WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-cleanup-orphaned-media.php',
 				// Classic (non-LLM) tesseract OCR for the image identification ladder.
-				'WP_MCP_AI_Tool_Ocr_Image_Classic'        => WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-ocr-image-classic.php',
+				'WP_MCP_AI_Tool_Ocr_Image_Classic'         => WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-ocr-image-classic.php',
 			);
 			$pro_tools           = array_merge( $pro_tools, $media_toolkit_tools );
 		}
