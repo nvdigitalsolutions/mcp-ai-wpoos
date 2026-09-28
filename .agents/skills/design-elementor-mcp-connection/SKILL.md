@@ -222,8 +222,14 @@ refresh) — Elementor MCP does not use it; use `basic`/`header` instead.
    handshake and every request inside a legacy session omit the 2026-only
    `MCP-Protocol-Version`/`Mcp-Method` routing headers and the `_meta`
    envelope, so they look exactly like a 2025-era client (Claude Desktop /
-   Cursor shape). A bare "connection failed" with a 2xx response usually
-   means the URL points at the wrong route slug — re-check against the
+   Cursor shape). Once a legacy fallback succeeds, a per-URL **dialect hint**
+   (transient `wp_mcp_ai_mcp_app_legacy_<md5>`, 24h) skips the doomed probe on
+   subsequent tests/connects (saves one round trip per connect cycle; visible
+   as `Handshake: initialize` with no `server/discover` on the wire). A stale
+   hint self-heals: if `initialize` is rejected with a stateless signature
+   (`-32601`/`-32600` or HTTP 400/404/405/501), the hint is cleared and
+   `discover()` is retried. A bare "connection failed" with a 2xx response
+   usually means the URL points at the wrong route slug — re-check against the
    generated prompt.
 3. **Tools discovered but missing from chat** — bridged tools require the
    `edit_posts` capability check at execution and are only appended when the

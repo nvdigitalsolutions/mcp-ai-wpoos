@@ -1033,13 +1033,16 @@ class WP_MCP_AI_MCP_App_Registry {
 	/**
 	 * Discover tools from a single MCP App server.
 	 *
-	 * Uses transient caching to avoid repeated requests. Attempts the
-	 * stateless server/discover handshake first, falling back to the legacy
+	 * Uses transient caching to avoid repeated requests. Dialect negotiation
+	 * is delegated to {@see WP_MCP_AI_MCP_App_Client::handshake()}: the
+	 * stateless server/discover probe runs first, falling back to the legacy
 	 * sessionful initialize handshake (which captures Mcp-Session-Id) for
-	 * pre-2026-07-28 servers.
+	 * pre-2026-07-28 servers. A cached legacy-dialect hint skips the probe
+	 * once the server is known to reject it.
 	 *
 	 * @since 1.8.0
 	 * @since 1.9.1 Added sessionful fallback and $refresh parameter.
+	 * @since 1.9.5 Handshake delegated to the client's handshake() (legacy-dialect hint).
 	 * @param array $app_config   MCP App configuration.
 	 * @param bool  $refresh      Whether to bypass the transient cache.
 	 * @param int   $assistant_id Assistant post ID (0 = no refresh persistence).
@@ -1064,30 +1067,13 @@ class WP_MCP_AI_MCP_App_Registry {
 
 		$client = $this->create_client( $app_config, $assistant_id );
 
-		$init_result = $client->discover();
-		if ( is_wp_error( $init_result ) ) {
-			$error_data = $init_result->get_error_data();
-			$rpc_code   = is_array( $error_data ) && isset( $error_data['rpc_code'] ) ? $error_data['rpc_code'] : 0;
-			$http_code  = is_array( $error_data ) && isset( $error_data['status'] ) ? (int) $error_data['status'] : 0;
-			$message    = strtolower( $init_result->get_error_message() );
+		// The client's handshake() encapsulates the probe/fallback logic and
+		// the cached legacy-dialect hint, so discovery here is a single call.
+		$handshake = $client->handshake();
 
-			// Sessionful servers reject server/discover with -32601 (unknown
-			// method) or -32600 (e.g. "Missing Mcp-Session-Id header"). Strict
-			// 2025-era gateways (e.g. Upwork) instead answer a bare HTTP
-			// 400/404/405/501 without a JSON-RPC error envelope — treat those
-			// the same way and let initialize() take over.
-			$fallback_http_codes = array( 400, 404, 405, 501 );
-
-			if ( -32601 === $rpc_code || -32600 === $rpc_code || false !== strpos( $message, 'session' ) || in_array( $http_code, $fallback_http_codes, true ) ) {
-				$init_result = $client->initialize();
-				if ( is_wp_error( $init_result ) ) {
-					$this->cache_discovery_failure( $cache_key, $init_result );
-					return $init_result;
-				}
-			} else {
-				$this->cache_discovery_failure( $cache_key, $init_result );
-				return $init_result;
-			}
+		if ( is_wp_error( $handshake ) ) {
+			$this->cache_discovery_failure( $cache_key, $handshake );
+			return $handshake;
 		}
 
 		$tools = $client->list_tools();

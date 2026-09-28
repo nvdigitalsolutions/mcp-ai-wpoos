@@ -47,6 +47,30 @@ class WP_MCP_AI_MCP_App_Client {
 	const PROTOCOL_VERSION = '2026-07-28';
 
 	/**
+	 * Transient key prefix caching a per-server "legacy dialect" hint.
+	 *
+	 * When a server is observed rejecting the stateless server/discover
+	 * probe and completing the legacy initialize() handshake instead, the
+	 * hint lets subsequent connections skip the doomed probe and open with
+	 * initialize() directly — saving a full HTTP round trip on strict
+	 * 2025-era gateways (e.g. Upwork's Envoy AI Gateway answers the probe
+	 * with a bare HTTP 400).
+	 *
+	 * @var string
+	 */
+	const LEGACY_HINT_PREFIX = 'wp_mcp_ai_mcp_app_legacy_';
+
+	/**
+	 * Time to live for the legacy dialect hint.
+	 *
+	 * Dialect changes on a deployed server are rare, so a day is a safe
+	 * default; a stale hint self-heals (see handshake()).
+	 *
+	 * @var int
+	 */
+	const LEGACY_HINT_TTL = DAY_IN_SECONDS;
+
+	/**
 	 * Server endpoint URL.
 	 *
 	 * @var string
@@ -278,6 +302,165 @@ class WP_MCP_AI_MCP_App_Client {
 	}
 
 	/**
+	 * Perform the connection handshake, negotiating the dialect per server.
+	 *
+	 * Order of operations:
+	 *
+	 * 1. A cached legacy-dialect hint skips the stateless server/discover
+	 *    probe entirely — the probe is doomed on strict 2025-era gateways
+	 *    (e.g. Upwork) that answer it with a bare HTTP 400, and skipping it
+	 *    saves a full round trip.
+	 * 2. Otherwise probe with server/discover (2026-07-28). When the server
+	 *    answers with a legacy rejection signature, fall back to initialize()
+	 *    and record the hint.
+	 * 3. A stale hint self-heals: if initialize() is itself rejected with a
+	 *    stateless signature (the server was upgraded), clear the hint and
+	 *    fall forward to discover().
+	 *
+	 * @since 1.9.5
+	 * @return array|WP_Error On success, array with `method` (discover or
+	 *                         initialize) and `result` (the raw handshake
+	 *                         result); WP_Error when both paths fail.
+	 */
+	public function handshake() {
+		if ( $this->has_legacy_hint() ) {
+			$result = $this->initialize();
+
+			if ( ! is_wp_error( $result ) ) {
+				// Refresh the hint TTL while the server keeps accepting the
+				// legacy handshake.
+				$this->set_legacy_hint();
+
+				return array(
+					'method' => 'initialize',
+					'result' => $result,
+				);
+			}
+
+			if ( ! $this->is_stateless_rejection( $result ) ) {
+				// The server is unreachable or errored without implying a
+				// dialect change — keep the hint and surface the error.
+				return $result;
+			}
+
+			// Stale hint: the server no longer implements initialize().
+			$this->clear_legacy_hint();
+		}
+
+		$result = $this->discover();
+
+		if ( ! is_wp_error( $result ) ) {
+			return array(
+				'method' => 'discover',
+				'result' => $result,
+			);
+		}
+
+		if ( ! $this->is_legacy_rejection( $result ) ) {
+			return $result;
+		}
+
+		$init_result = $this->initialize();
+
+		if ( is_wp_error( $init_result ) ) {
+			return $init_result;
+		}
+
+		$this->set_legacy_hint();
+
+		return array(
+			'method' => 'initialize',
+			'result' => $init_result,
+		);
+	}
+
+	/**
+	 * Whether a handshake error is the signature of a sessionful (legacy,
+	 * pre-2026-07-28) server rejecting the stateless server/discover probe.
+	 *
+	 * Matches JSON-RPC -32601/-32600 codes, "session" in the error message,
+	 * or a bare HTTP 400/404/405/501 without a JSON-RPC error envelope —
+	 * strict 2025-era gateways (e.g. Upwork) answer the unknown probe method
+	 * with a bare HTTP 400.
+	 *
+	 * @since 1.9.5
+	 * @param WP_Error $error Handshake error.
+	 * @return bool True when the error implies a legacy sessionful server.
+	 */
+	protected function is_legacy_rejection( WP_Error $error ) {
+		$data      = $error->get_error_data();
+		$rpc_code  = is_array( $data ) && isset( $data['rpc_code'] ) ? $data['rpc_code'] : 0;
+		$http_code = is_array( $data ) && isset( $data['status'] ) ? (int) $data['status'] : 0;
+		$message   = strtolower( $error->get_error_message() );
+
+		return in_array( $rpc_code, array( -32601, -32600 ), true )
+			|| false !== strpos( $message, 'session' )
+			|| in_array( $http_code, array( 400, 404, 405, 501 ), true );
+	}
+
+	/**
+	 * Whether an initialize() error is the signature of a stateless
+	 * (2026-07-28) server that no longer implements the legacy handshake —
+	 * i.e. the cached legacy hint has gone stale.
+	 *
+	 * Deliberately does not treat a "session" message as a stateless
+	 * signature: a sessionful server complaining about its session is still
+	 * a legacy server.
+	 *
+	 * @since 1.9.5
+	 * @param WP_Error $error Handshake error.
+	 * @return bool True when the error implies the server upgraded dialects.
+	 */
+	protected function is_stateless_rejection( WP_Error $error ) {
+		$data      = $error->get_error_data();
+		$rpc_code  = is_array( $data ) && isset( $data['rpc_code'] ) ? $data['rpc_code'] : 0;
+		$http_code = is_array( $data ) && isset( $data['status'] ) ? (int) $data['status'] : 0;
+
+		return in_array( $rpc_code, array( -32601, -32600 ), true )
+			|| in_array( $http_code, array( 400, 404, 405, 501 ), true );
+	}
+
+	/**
+	 * Build the transient key for this server's legacy-dialect hint.
+	 *
+	 * @since 1.9.5
+	 * @return string Transient key (prefix + md5 of the server URL).
+	 */
+	protected function legacy_hint_key() {
+		return self::LEGACY_HINT_PREFIX . md5( $this->server_url );
+	}
+
+	/**
+	 * Whether a legacy-dialect hint is cached for this server.
+	 *
+	 * @since 1.9.5
+	 * @return bool True when the hint is present and unexpired.
+	 */
+	protected function has_legacy_hint() {
+		return false !== get_transient( $this->legacy_hint_key() );
+	}
+
+	/**
+	 * Record a legacy-dialect hint for this server.
+	 *
+	 * @since 1.9.5
+	 * @return void
+	 */
+	protected function set_legacy_hint() {
+		set_transient( $this->legacy_hint_key(), 1, self::LEGACY_HINT_TTL );
+	}
+
+	/**
+	 * Clear the legacy-dialect hint for this server.
+	 *
+	 * @since 1.9.5
+	 * @return void
+	 */
+	protected function clear_legacy_hint() {
+		delete_transient( $this->legacy_hint_key() );
+	}
+
+	/**
 	 * Discover available tools from the remote MCP server.
 	 *
 	 * @since 1.8.0
@@ -352,10 +535,12 @@ class WP_MCP_AI_MCP_App_Client {
 	/**
 	 * Test connectivity to the remote MCP server.
 	 *
-	 * Performs a server/discover probe with initialize() fallback.
+	 * Performs a server/discover probe with initialize() fallback and the
+	 * cached legacy-dialect hint (see handshake()).
 	 *
 	 * @since 1.8.0
 	 * @since 1.9.0 Uses discover() for 2026-07-28 servers with initialize() fallback.
+	 * @since 1.9.5 Handshake delegated to handshake() with legacy-dialect hint.
 	 * @return array|WP_Error Connection test result on success, WP_Error on failure.
 	 */
 	public function test_connection() {
@@ -377,35 +562,16 @@ class WP_MCP_AI_MCP_App_Client {
 
 		$start_time = microtime( true );
 
-		// Try discover() first; fall back to initialize() for sessionful
-		// (pre-2026-07-28) servers.
-		$handshake_method = 'discover';
-		$result           = $this->discover();
+		// handshake() encapsulates the probe/fallback negotiation and the
+		// cached legacy-dialect hint.
+		$handshake = $this->handshake();
 
-		if ( is_wp_error( $result ) ) {
-			$error_data = $result->get_error_data();
-			$rpc_code   = is_array( $error_data ) && isset( $error_data['rpc_code'] ) ? $error_data['rpc_code'] : 0;
-			$http_code  = is_array( $error_data ) && isset( $error_data['status'] ) ? (int) $error_data['status'] : 0;
-
-			// Fall back to the legacy initialize handshake when the server
-			// does not implement server/discover (-32601) or rejects the
-			// stateless request (e.g. -32600 "Missing Mcp-Session-Id header").
-			// Strict 2025-era gateways (e.g. Upwork) instead answer a bare
-			// HTTP 400/404/405/501 without a JSON-RPC error envelope — treat
-			// those the same way and let initialize() take over.
-			$fallback_http_codes = array( 400, 404, 405, 501 );
-			$message             = strtolower( $result->get_error_message() );
-			if ( -32601 !== $rpc_code && -32600 !== $rpc_code && false === strpos( $message, 'session' ) && ! in_array( $http_code, $fallback_http_codes, true ) ) {
-				return $result;
-			}
-
-			$handshake_method = 'initialize';
-			$result           = $this->initialize();
-
-			if ( is_wp_error( $result ) ) {
-				return $result;
-			}
+		if ( is_wp_error( $handshake ) ) {
+			return $handshake;
 		}
+
+		$handshake_method = $handshake['method'];
+		$result           = $handshake['result'];
 
 		// Normalize the handshake result into a canonical payload. discover()
 		// returns pre-extracted keys while initialize() returns the raw result.
