@@ -533,6 +533,25 @@ class WP_MCP_AI_MCP_App_Client {
 			);
 		}
 
+		// Sessionful (2025-era) Streamable HTTP servers may answer any
+		// post-initialize request with an SSE stream instead of a JSON body —
+		// the Envoy AI Gateway does this for tools/list and tools/call. The
+		// client advertises Accept: text/event-stream, so it must actually
+		// speak it: extract the JSON-RPC message from the SSE payload before
+		// decoding.
+		if ( $this->is_sse_response( $response, $body ) ) {
+			$sse_payload = $this->parse_sse_payload( $body );
+
+			if ( '' === $sse_payload ) {
+				return new WP_Error(
+					'wp_mcp_ai_mcp_app_empty_sse',
+					__( 'MCP server returned an SSE stream without a JSON-RPC message.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$body = $sse_payload;
+		}
+
 		$decoded = json_decode( $body, true );
 
 		if ( $status_code < 200 || $status_code >= 300 ) {
@@ -835,6 +854,94 @@ class WP_MCP_AI_MCP_App_Client {
 			if ( 0 === strcasecmp( $key, $name ) ) {
 				return is_string( $value ) ? $value : '';
 			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Check whether an HTTP response is an SSE (Server-Sent Events) stream.
+	 *
+	 * Trusts the Content-Type header first and falls back to sniffing the
+	 * body for `data:` framing — some gateways send SSE despite labeling the
+	 * response application/json, so an SSE-framed body is treated as SSE
+	 * regardless of the header.
+	 *
+	 * @since 1.9.3
+	 * @param array|WP_Error $response wp_remote_request()-style response.
+	 * @param string         $body     Raw response body.
+	 * @return bool True when the response is an SSE stream.
+	 */
+	protected function is_sse_response( $response, $body ) {
+		$content_type = wp_remote_retrieve_header( $response, 'content-type' );
+
+		if ( is_string( $content_type ) && false !== stripos( $content_type, 'text/event-stream' ) ) {
+			return true;
+		}
+
+		foreach ( preg_split( '/\r\n|\r|\n/', $body ) as $line ) {
+			if ( 0 === strpos( $line, 'data:' ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Extract the JSON-RPC message payload from an SSE stream body.
+	 *
+	 * Per the MCP Streamable HTTP transport, the JSON-RPC response arrives as
+	 * the `data` field of a `message` event. Comment lines (keep-alive pings),
+	 * `event:` / `id:` / `retry:` fields, and blank-line event separators are
+	 * handled per the SSE spec; multi-line data fields are joined with
+	 * newlines. The first `message` event wins — one request yields exactly
+	 * one JSON-RPC response.
+	 *
+	 * @since 1.9.3
+	 * @param string $body Raw SSE stream body.
+	 * @return string JSON payload of the message event, empty string when none.
+	 */
+	protected function parse_sse_payload( $body ) {
+		$lines = preg_split( '/\r\n|\r|\n/', $body );
+		$data  = array();
+		$event = 'message';
+
+		foreach ( $lines as $line ) {
+			if ( '' === $line ) {
+				// Blank line dispatches the pending event.
+				if ( 'message' === $event && ! empty( $data ) ) {
+					return implode( "\n", $data );
+				}
+
+				$data  = array();
+				$event = 'message';
+				continue;
+			}
+
+			if ( 0 === strpos( $line, ':' ) ) {
+				continue; // Comment line.
+			}
+
+			if ( 0 === strpos( $line, 'event:' ) ) {
+				$event = trim( substr( $line, 6 ) );
+				continue;
+			}
+
+			if ( 0 === strpos( $line, 'data:' ) ) {
+				// Strip the single optional space after "data:".
+				$payload = substr( $line, 5 );
+				if ( 0 === strpos( $payload, ' ' ) ) {
+					$payload = substr( $payload, 1 );
+				}
+				$data[] = $payload;
+			}
+			// id: and retry: fields carry no JSON-RPC payload — ignored.
+		}
+
+		// Streams may end without a trailing blank line.
+		if ( 'message' === $event && ! empty( $data ) ) {
+			return implode( "\n", $data );
 		}
 
 		return '';
