@@ -532,4 +532,174 @@ class Test_MCP_App_Client_Connection_Enhancements extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 		$this->assertEquals( 'wp_mcp_ai_mcp_app_http_error', $result->get_error_code() );
 	}
+
+	/**
+	 * Test an SSE tools/list response (text/event-stream) is parsed into the
+	 * JSON-RPC payload — the Envoy AI Gateway responds this way after a
+	 * sessionful initialize handshake.
+	 */
+	public function test_sse_tools_list_response_is_parsed() {
+		$this->install_http_mock(
+			array(
+				'initialize' => array(
+					'headers' => array( 'mcp-session-id' => 'sess-sse-123' ),
+					'body'    => $this->rpc_result(
+						array(
+							'protocolVersion' => '2025-06-18',
+							'serverInfo'      => array(
+								'name'    => 'envoy-ai-gateway',
+								'version' => 'v1.1.0',
+							),
+							'capabilities'    => array( 'tools' => new stdClass() ),
+						)
+					),
+				),
+				'tools/list' => array(
+					'headers' => array( 'content-type' => 'text/event-stream' ),
+					'body'    => "event: message\nid: 550e8400-e29b-41d4-a716-446655440000\ndata: " . $this->rpc_result(
+						array(
+							'tools' => array(
+								array( 'name' => 'search_upwork_jobs' ),
+								array( 'name' => 'score_upwork_job' ),
+							),
+						)
+					) . "\n\n",
+				),
+			)
+		);
+
+		$client = new WP_MCP_AI_MCP_App_Client(
+			array(
+				'server_url' => 'https://example.com/mcp',
+				'auth_type'  => 'none',
+			)
+		);
+
+		$client->initialize();
+		$this->assertSame( 'sess-sse-123', $client->get_session_id() );
+
+		$tools = $client->list_tools();
+		$this->assertIsArray( $tools );
+		$this->assertCount( 2, $tools );
+		$this->assertSame( 'search_upwork_jobs', $tools[0]['name'] );
+	}
+
+	/**
+	 * Test SSE bodies are sniffed even when the Content-Type header is missing
+	 * or mislabeled as application/json.
+	 */
+	public function test_sse_body_sniffed_without_content_type_header() {
+		$this->install_http_mock(
+			array(
+				'tools/list' => array(
+					'body' => ": keep-alive ping\n\nevent: message\ndata: " . $this->rpc_result(
+						array( 'tools' => array( array( 'name' => 'ping' ) ) )
+					) . "\n\n",
+				),
+			)
+		);
+
+		$client = new WP_MCP_AI_MCP_App_Client(
+			array(
+				'server_url' => 'https://example.com/mcp',
+				'auth_type'  => 'none',
+			)
+		);
+
+		$tools = $client->list_tools();
+		$this->assertIsArray( $tools );
+		$this->assertCount( 1, $tools );
+		$this->assertSame( 'ping', $tools[0]['name'] );
+	}
+
+	/**
+	 * Test an SSE stream without a message event surfaces a dedicated error
+	 * instead of the generic invalid-JSON failure.
+	 */
+	public function test_sse_stream_without_message_event_errors() {
+		$this->install_http_mock(
+			array(
+				'tools/list' => array(
+					'headers' => array( 'content-type' => 'text/event-stream' ),
+					'body'    => ": only keep-alive pings\n\n: nothing else\n\n",
+				),
+			)
+		);
+
+		$client = new WP_MCP_AI_MCP_App_Client(
+			array(
+				'server_url' => 'https://example.com/mcp',
+				'auth_type'  => 'none',
+			)
+		);
+
+		$result = $client->list_tools();
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_mcp_app_empty_sse', $result->get_error_code() );
+	}
+
+	/**
+	 * Test test_connection reports the tool count when the sessionful server
+	 * answers tools/list with an SSE stream.
+	 */
+	public function test_test_connection_counts_tools_from_sse_stream() {
+		$this->install_http_mock(
+			array(
+				'server/discover' => array(
+					'code' => 400,
+					'body' => wp_json_encode(
+						array(
+							'jsonrpc' => '2.0',
+							'id'      => 1,
+							'error'   => array(
+								'code'    => -32601,
+								'message' => 'Method not found: server/discover',
+							),
+						)
+					),
+				),
+				'initialize'      => array(
+					'headers' => array( 'mcp-session-id' => 'sess-envoy' ),
+					'body'    => $this->rpc_result(
+						array(
+							'protocolVersion' => '2025-06-18',
+							'serverInfo'      => array(
+								'name'    => 'envoy-ai-gateway',
+								'version' => 'v1.1.0',
+							),
+							'capabilities'    => array( 'tools' => new stdClass() ),
+						)
+					),
+				),
+				'tools/list'      => array(
+					'headers' => array( 'content-type' => 'text/event-stream' ),
+					'body'    => "event: message\ndata: " . $this->rpc_result(
+						array(
+							'tools' => array(
+								array( 'name' => 'search_upwork_jobs' ),
+								array( 'name' => 'score_upwork_job' ),
+							),
+						)
+					) . "\n\n",
+				),
+			)
+		);
+
+		$client = new WP_MCP_AI_MCP_App_Client(
+			array(
+				'server_url' => 'https://example.com/mcp',
+				'auth_type'  => 'none',
+			)
+		);
+
+		$result = $client->test_connection();
+
+		$this->assertNotWPError( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertEquals( 'initialize', $result['handshake'] );
+		$this->assertEquals( '2025-06-18', $result['protocol'] );
+		$this->assertEquals( 2, $result['tool_count'] );
+		$this->assertSame( '', $result['tool_error'] );
+		$this->assertTrue( $result['session_active'] );
+	}
 }
