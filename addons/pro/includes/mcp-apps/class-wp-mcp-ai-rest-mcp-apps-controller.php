@@ -389,7 +389,7 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 		$config = $this->resolve_stored_token( $assistant_id, $config );
 
 		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
-		$result   = $registry->test_connection( $config );
+		$result   = $registry->test_connection( $config, $assistant_id );
 
 		if ( $assistant_id ) {
 			if ( is_wp_error( $result ) ) {
@@ -455,20 +455,35 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 	 * @return array Config with the stored token restored when applicable.
 	 */
 	protected function resolve_stored_token( $assistant_id, array $config ) {
-		if ( ! empty( $config['token'] ) || ! $assistant_id ) {
+		if ( ! $assistant_id ) {
 			return $config;
 		}
 
 		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
 		foreach ( $registry->get_apps( $assistant_id ) as $saved ) {
-			if (
-				isset( $saved['server_url'] ) &&
-				$saved['server_url'] === $config['server_url'] &&
-				! empty( $saved['token'] )
-			) {
-				$config['token'] = $saved['token'];
-				break;
+			if ( ! isset( $saved['server_url'] ) || $saved['server_url'] !== $config['server_url'] ) {
+				continue;
 			}
+
+			// Bearer/basic/header credentials are masked in the UI, so a test
+			// payload may omit them. Restore the stored token when the caller
+			// did not submit one.
+			if ( empty( $config['token'] ) && ! empty( $saved['token'] ) ) {
+				$config['token'] = $saved['token'];
+			}
+
+			// OAuth apps keep their credentials in oauth_data, which is never
+			// sent back to the browser. Restore the stored OAuth blob so the
+			// OAuth client can resolve an access token (and refresh it when
+			// expired) instead of failing with "no access token available".
+			if ( empty( $config['oauth_data'] ) && ! empty( $saved['oauth_data']['access_token'] ) ) {
+				$config['oauth_data'] = $saved['oauth_data'];
+				if ( empty( $config['token'] ) ) {
+					$config['token'] = $saved['oauth_data']['access_token'];
+				}
+			}
+
+			break;
 		}
 
 		return $config;
@@ -503,7 +518,7 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 		$config = $this->resolve_stored_token( $assistant_id, $config );
 
 		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
-		$tools    = $registry->discover_tools( $config, $refresh );
+		$tools    = $registry->discover_tools( $config, $refresh, $assistant_id );
 
 		if ( is_wp_error( $tools ) ) {
 			if ( $assistant_id ) {

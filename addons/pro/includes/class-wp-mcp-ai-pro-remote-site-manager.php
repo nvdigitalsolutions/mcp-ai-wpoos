@@ -67,6 +67,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		'public_key',
 		'encryption_key',
 		'mcp_oauth',
+		'verify_token',
+		'verification_token',
 	);
 
 	/**
@@ -85,11 +87,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * false so they will be encrypted on the next save.
 	 *
 	 * @since 1.1.35
+	 * @since 1.9.x Made public so the MCP Apps registry can reuse the same
+	 *              detection before encrypting inline app credentials.
 	 *
 	 * @param string $value Stored credential value.
 	 * @return bool True if the value appears already encrypted.
 	 */
-	private static function is_value_encrypted( $value ) {
+	public static function is_value_encrypted( $value ) {
 		if ( '' === $value ) {
 			return false;
 		}
@@ -148,7 +152,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	/**
 	 * Get a specific remote site connection by ID.
 	 *
+	 * The webhook verify/shared-secret tokens (`verify_token`,
+	 * `verification_token`) are decrypted here so every consumer reads the
+	 * plaintext values transparently. Other secret fields keep the
+	 * established decrypt-on-use pattern.
+	 *
 	 * @since 1.0.0
+	 * @since 1.9.x Central decryption for verify_token/verification_token.
 	 *
 	 * @param string $connection_id Connection ID.
 	 * @return array|null Connection data or null if not found.
@@ -158,7 +168,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$connection_id = sanitize_key( $connection_id );
 
 		if ( isset( $connections[ $connection_id ] ) ) {
-			return $connections[ $connection_id ];
+			$connection = $connections[ $connection_id ];
+
+			if ( ! empty( $connection['verify_token'] ) ) {
+				$connection['verify_token'] = self::decrypt_value( (string) $connection['verify_token'] );
+			}
+			if ( ! empty( $connection['verification_token'] ) ) {
+				$connection['verification_token'] = self::decrypt_value( (string) $connection['verification_token'] );
+			}
+
+			return $connection;
 		}
 
 		return null;
@@ -330,6 +349,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['_webhook_secret_encrypted'] = self::is_value_encrypted( $existing_connection['webhook_secret'] );
 			}
 
+			// Preserve existing verification_token (Google Chat shared secret) if not provided.
+			if ( empty( $connection_data['verification_token'] ) && ! empty( $existing_connection['verification_token'] ) ) {
+				$connection_data['verification_token']            = $existing_connection['verification_token'];
+				$connection_data['_verification_token_encrypted'] = self::is_value_encrypted( $existing_connection['verification_token'] );
+			}
+
 			// Preserve existing upwork_username (Upwork) if not provided.
 			if ( empty( $connection_data['upwork_username'] ) && ! empty( $existing_connection['upwork_username'] ) ) {
 				$connection_data['upwork_username'] = $existing_connection['upwork_username'];
@@ -416,11 +441,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// For Google Chat the Audience URL (verify_token) is an optional field that is always
 			// rendered and submitted in the edit form, so allow the user to clear it.
 			// For WhatsApp and Messenger the verify_token is a required webhook secret; preserve
-			// the stored value when the submitted field is empty to avoid accidental erasure.
+			// Preserve the stored value when the submitted field is empty to avoid accidental erasure.
 			$saved_connection_type = isset( $connection_data['connection_type'] ) ? $connection_data['connection_type'] : '';
 			if ( empty( $connection_data['verify_token'] ) && ! empty( $existing_connection['verify_token'] )
 				&& 'google_chat' !== $saved_connection_type ) {
-				$connection_data['verify_token'] = $existing_connection['verify_token'];
+				$connection_data['verify_token']            = $existing_connection['verify_token'];
+				$connection_data['_verify_token_encrypted'] = self::is_value_encrypted( $existing_connection['verify_token'] );
 			}
 
 			if ( empty( $connection_data['graph_api_version'] ) && ! empty( $existing_connection['graph_api_version'] ) ) {
@@ -873,6 +899,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			$connection['mcp_oauth'] = self::encrypt_value( $connection['mcp_oauth'] );
 		}
 
+		// Webhook verify token (WhatsApp/Messenger verification handshake).
+		if ( ! empty( $connection['verify_token'] ) && empty( $connection_data['_verify_token_encrypted'] ) ) {
+			$connection['verify_token'] = self::encrypt_value( $connection['verify_token'] );
+		}
+
+		// Google Chat shared-secret fallback token (OIDC bypass authentication).
+		if ( ! empty( $connection['verification_token'] ) && empty( $connection_data['_verification_token_encrypted'] ) ) {
+			$connection['verification_token'] = self::encrypt_value( $connection['verification_token'] );
+		}
+
 		$connections[ $connection_id ] = $connection;
 
 		$updated = update_option( self::OPTION_NAME, $connections );
@@ -926,6 +962,105 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$connections[ $connection_id ]['api_key'] = self::encrypt_value( $new_token );
 
 		return (bool) update_option( self::OPTION_NAME, $connections );
+	}
+
+	/**
+	 * Merge refreshed OAuth token data into an MCP Server connection's
+	 * stored token blob.
+	 *
+	 * Lightweight alternative to save_connection() for the automatic-refresh
+	 * path: it touches only the encrypted `mcp_oauth` field of an existing
+	 * `mcp_server` connection, so no other stored credential is re-processed
+	 * and no validation can reject the write.
+	 *
+	 * @since 1.9.x
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param array  $oauth_data    Fresh token data (access_token, refresh_token,
+	 *                              token_type, expires_in, scope, issued_at).
+	 * @return bool True when the blob was updated (or was already current).
+	 */
+	public static function update_mcp_oauth( $connection_id, array $oauth_data ) {
+		$connections   = self::get_all_connections();
+		$connection_id = sanitize_key( $connection_id );
+
+		if ( ! isset( $connections[ $connection_id ] ) || empty( $oauth_data['access_token'] ) ) {
+			return false;
+		}
+
+		$connection = $connections[ $connection_id ];
+
+		// Only OAuth MCP Server connections carry an mcp_oauth blob.
+		if (
+			'mcp_server' !== ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ||
+			'oauth' !== ( isset( $connection['auth_type'] ) ? $connection['auth_type'] : '' )
+		) {
+			return false;
+		}
+
+		// Decrypt and decode the stored blob (a JSON string at rest).
+		$stored_blob = isset( $connection['mcp_oauth'] ) ? self::decrypt_value( (string) $connection['mcp_oauth'] ) : '';
+		$existing    = array();
+		if ( '' !== $stored_blob ) {
+			$decoded = json_decode( $stored_blob, true );
+			if ( is_array( $decoded ) ) {
+				$existing = $decoded;
+			}
+		}
+
+		// Some providers omit scope from the refresh response; keep the
+		// previously stored value in that case.
+		$incoming = $oauth_data;
+		if ( empty( $incoming['scope'] ) && ! empty( $existing['scope'] ) ) {
+			$incoming['scope'] = $existing['scope'];
+		}
+
+		$merged = array_merge( $existing, $incoming );
+
+		// No-op when nothing changed.
+		if ( $merged == $existing ) { // phpcs:ignore Universal.Operators.StrictComparisons.LooseEqual -- Loose comparison ignores key order.
+			return true;
+		}
+
+		$connections[ $connection_id ]['mcp_oauth'] = self::encrypt_value( wp_json_encode( $merged ) );
+
+		$written = update_option( self::OPTION_NAME, $connections );
+
+		if ( false === $written ) {
+			// The in-flight request still uses the refreshed token; surface the
+			// persistence failure for operators without failing the refresh.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_error' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'MCP Server OAuth token refresh could not be persisted',
+					array(
+						'connection_id'   => $connection_id,
+						'connection_type' => 'mcp_server',
+					)
+				);
+			}
+
+			return false;
+		}
+
+		// Give operators visibility into automatic token rotation. The event type
+		// is allowlisted in the recent-activity buffer; never log the credential
+		// material itself — only rotation metadata.
+		if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_event' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'mcp_oauth_refresh',
+				'MCP Server OAuth token refreshed',
+				array(
+					'connection_id'         => $connection_id,
+					'connection_type'       => 'mcp_server',
+					'url'                   => isset( $connection['url'] ) ? $connection['url'] : '',
+					'scope'                 => isset( $merged['scope'] ) ? sanitize_text_field( $merged['scope'] ) : '',
+					'expires_in'            => isset( $merged['expires_in'] ) ? absint( $merged['expires_in'] ) : 0,
+					'refresh_token_rotated' => ( ! empty( $incoming['refresh_token'] ) && ( isset( $existing['refresh_token'] ) ? $existing['refresh_token'] : '' ) !== $incoming['refresh_token'] ),
+				)
+			);
+		}
+
+		return true;
 	}
 
 	/**
@@ -1406,6 +1541,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	protected static function test_mcp_server_connection( $connection ) {
 		$config = self::build_mcp_app_config_from_connection( $connection );
 
+		// Route automatic OAuth refreshes back to the central store.
+		if ( ! empty( $connection['id'] ) ) {
+			$config['connection_ref'] = $connection['id'];
+		}
+
 		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
 			$client_file = WP_MCP_AI_PRO_PATH . 'includes/mcp-apps/class-wp-mcp-ai-mcp-app-client.php';
 			if ( file_exists( $client_file ) ) {
@@ -1474,6 +1614,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		$config = self::build_mcp_app_config_from_connection( $connection );
+
+		// Route automatic OAuth refreshes back to the central store.
+		if ( ! empty( $connection['id'] ) ) {
+			$config['connection_ref'] = $connection['id'];
+		}
 
 		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
 			$client_file = WP_MCP_AI_PRO_PATH . 'includes/mcp-apps/class-wp-mcp-ai-mcp-app-client.php';

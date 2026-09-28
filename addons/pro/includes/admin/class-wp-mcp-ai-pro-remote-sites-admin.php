@@ -5182,7 +5182,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<label for="whatsapp_verify_token"><?php esc_html_e( 'Verify Token', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
-						<input type="text" name="whatsapp_verify_token" id="whatsapp_verify_token" class="regular-text" value="<?php echo $is_edit && isset( $connection['verify_token'] ) ? esc_attr( $connection['verify_token'] ) : ''; ?>" autocomplete="off">
+						<input type="text" name="whatsapp_verify_token" id="whatsapp_verify_token" class="regular-text" value="" autocomplete="off" placeholder="<?php echo $is_edit && isset( $connection['verify_token'] ) ? esc_attr__( '•••••••• (unchanged)', 'mcp-ai-wpoos-pro' ) : ''; ?>">
 						<p class="description"><?php esc_html_e( 'Use this token when setting up webhooks in WhatsApp Business settings.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
@@ -6187,7 +6187,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<label for="messenger_verify_token"><?php esc_html_e( 'Verify Token', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
-						<input type="text" name="messenger_verify_token" id="messenger_verify_token" class="regular-text" value="<?php echo $is_edit && isset( $connection['verify_token'] ) ? esc_attr( $connection['verify_token'] ) : ''; ?>" autocomplete="off">
+						<input type="text" name="messenger_verify_token" id="messenger_verify_token" class="regular-text" value="" autocomplete="off" placeholder="<?php echo $is_edit && isset( $connection['verify_token'] ) ? esc_attr__( '•••••••• (unchanged)', 'mcp-ai-wpoos-pro' ) : ''; ?>">
 						<p class="description"><?php esc_html_e( 'Use this when setting up webhook subscription in Messenger settings.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
@@ -6554,7 +6554,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<label for="google_chat_verification_token"><?php esc_html_e( 'Verification Token', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
-						<input type="text" name="google_chat_verification_token" id="google_chat_verification_token" class="regular-text" value="<?php echo $is_edit && isset( $connection['verification_token'] ) && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr( $connection['verification_token'] ) : ''; ?>" autocomplete="off">
+						<input type="text" name="google_chat_verification_token" id="google_chat_verification_token" class="regular-text" value="" autocomplete="off" placeholder="<?php echo $is_edit && isset( $connection['verification_token'] ) && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr__( '•••••••• (unchanged)', 'mcp-ai-wpoos-pro' ) : ''; ?>">
 						<p class="description"><?php esc_html_e( 'Shared-secret token used to authenticate webhook requests when OIDC Verification is disabled above. Requests must include it via the ?token= URL parameter or the X-Google-Chat-Token header.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
