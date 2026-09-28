@@ -525,6 +525,13 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 			'resource'      => $this->server_url,
 		);
 
+		// Public clients (token_endpoint_auth_method=none) still identify
+		// themselves in the token request; providers such as Upwork reject
+		// the exchange without it ("Missing parameters: client_id").
+		if ( ! empty( $this->client_id ) ) {
+			$body['client_id'] = $this->client_id;
+		}
+
 		$response = $this->post_token_endpoint( $token_endpoint, $body );
 
 		if ( is_wp_error( $response ) ) {
@@ -590,6 +597,12 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 			'refresh_token' => $refresh_token,
 			'resource'      => $this->server_url,
 		);
+
+		// Same as the code exchange: providers such as Upwork require the
+		// client ID for public clients on refresh as well.
+		if ( ! empty( $this->client_id ) ) {
+			$body['client_id'] = $this->client_id;
+		}
 
 		$response = $this->post_token_endpoint( $token_endpoint, $body );
 

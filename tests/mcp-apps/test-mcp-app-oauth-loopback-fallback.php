@@ -362,6 +362,8 @@ class Test_MCP_App_OAuth_Loopback_Fallback extends WP_UnitTestCase {
 			: $token_calls[1]['args']['body'];
 		$this->assertStringContainsString( 'code_verifier=verifier123', $form_body );
 		$this->assertStringContainsString( 'redirect_uri=' . rawurlencode( 'http://localhost:5123/callback' ), $form_body );
+		// Public clients (e.g. Upwork) require the client ID in the exchange.
+		$this->assertStringContainsString( 'client_id=upwork-client-123', $form_body );
 
 		// Tokens must be persisted onto the assistant's MCP Apps config.
 		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
@@ -371,5 +373,36 @@ class Test_MCP_App_OAuth_Loopback_Fallback extends WP_UnitTestCase {
 		$this->assertSame( 'oauth', $app['auth_type'] );
 		$this->assertSame( 'tok-abc', $app['oauth_data']['access_token'] );
 		$this->assertSame( 'ref-abc', $app['oauth_data']['refresh_token'] );
+		// The dynamic client ID must persist so auto-refresh can identify itself.
+		$this->assertSame( 'upwork-client-123', $app['oauth_data']['client_id'] );
+	}
+
+	/**
+	 * The registry restores the dynamic client ID onto the attached OAuth
+	 * client so automatic refresh can identify itself with providers like
+	 * Upwork.
+	 */
+	public function test_registry_restores_client_id_for_auto_refresh() {
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
+			require_once WP_MCP_AI_PATH . 'addons/pro/includes/mcp-apps/class-wp-mcp-ai-mcp-app-client.php';
+		}
+
+		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
+		$client   = $registry->create_client(
+			array(
+				'server_url' => 'https://example.com/mcp',
+				'auth_type'  => 'oauth',
+				'oauth_data' => array(
+					'access_token'  => 'tok',
+					'refresh_token' => 'ref',
+					'client_id'     => 'upwork-client-123',
+				),
+			)
+		);
+
+		$this->assertInstanceOf( 'WP_MCP_AI_MCP_App_Client', $client );
+		$oauth = $client->get_oauth_client();
+		$this->assertInstanceOf( 'WP_MCP_AI_MCP_App_OAuth_Client', $oauth );
+		$this->assertSame( 'upwork-client-123', $oauth->get_client_id() );
 	}
 }

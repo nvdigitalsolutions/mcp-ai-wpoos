@@ -569,6 +569,9 @@ class WP_MCP_AI_MCP_App_Registry {
 				'expires_in'    => isset( $app['oauth_data']['expires_in'] ) ? absint( $app['oauth_data']['expires_in'] ) : 3600,
 				'scope'         => isset( $app['oauth_data']['scope'] ) ? sanitize_text_field( $app['oauth_data']['scope'] ) : '',
 				'issued_at'     => isset( $app['oauth_data']['issued_at'] ) ? absint( $app['oauth_data']['issued_at'] ) : time(),
+				// Dynamic client ID required for public-client token/refresh
+				// requests (e.g. Upwork).
+				'client_id'     => isset( $app['oauth_data']['client_id'] ) ? sanitize_text_field( $app['oauth_data']['client_id'] ) : '',
 			);
 		} elseif ( 'oauth' === $sanitized['auth_type'] ) {
 			// Preserve existing oauth_data from previous config if not being updated.
@@ -602,6 +605,11 @@ class WP_MCP_AI_MCP_App_Registry {
 				$oauth_client = new WP_MCP_AI_MCP_App_OAuth_Client( $config['server_url'] );
 				if ( ! empty( $config['oauth_data'] ) && is_array( $config['oauth_data'] ) ) {
 					$oauth_client->set_token_data( $config['oauth_data'] );
+					// Public clients (e.g. Upwork) require the client ID in
+					// token/refresh requests.
+					if ( ! empty( $config['oauth_data']['client_id'] ) ) {
+						$oauth_client->set_client_id( $config['oauth_data']['client_id'] );
+					}
 				}
 				$config['oauth_client'] = $oauth_client;
 				$config['oauth_data']   = isset( $config['oauth_data'] ) ? $config['oauth_data'] : array();

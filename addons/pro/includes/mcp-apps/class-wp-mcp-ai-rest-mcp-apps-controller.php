@@ -883,7 +883,15 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 			'enabled'    => true,
 			'timeout'    => 30,
 			'verify_ssl' => true,
-			'oauth_data' => $token_data,
+			// Persist the dynamic client ID so auto-refresh can identify
+			// itself (providers such as Upwork reject refresh requests that
+			// lack it).
+			'oauth_data' => array_merge(
+				$token_data,
+				array(
+					'client_id' => isset( $flow_state['client_id'] ) ? $flow_state['client_id'] : '',
+				)
+			),
 		);
 
 		// Check for existing app with same URL to update.
@@ -980,7 +988,7 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 		if ( ! is_array( $flow_state ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_mcp_app_oauth_state_expired',
-				__( 'OAuth state has expired or is invalid. Please try again.', 'mcp-ai-wpoos-pro' ),
+				__( 'This login link has expired or is no longer valid. Click "Connect via Web Login" again and paste the new callback URL from the login tab.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 400 )
 			);
 		}
