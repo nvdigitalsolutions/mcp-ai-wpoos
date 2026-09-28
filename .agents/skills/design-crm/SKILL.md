@@ -217,8 +217,8 @@ Freelancer sourcing uses the Upwork CRM tools (`search_upwork_jobs`,
   can tell weak filters from a missing Upwork connection.
 - **API mode** (Remote Sites connection with OAuth creds): returns structured
   jobs including a derived `url`
-  (`https://www.upwork.com/freelance-jobs/apply/<slug>_~<id>/` — the current
-  public job-page form; the legacy `/jobs/` route is deprecated).
+  (`https://www.upwork.com/jobs/<slug>_~<id>/` — the canonical marketplace
+  job-page form).
 - **Fallback mode** (no connection): two-pass web search — site-restricted
   Upwork pass, then a broader pass merged with URL dedupe. Upwork category
   landing pages (`/freelance-jobs/{slug}/` — no `~jobId`) are filtered out
@@ -230,10 +230,12 @@ Freelancer sourcing uses the Upwork CRM tools (`search_upwork_jobs`,
 - **Fallback URLs are canonicalised.** SERP URLs (the
   `/freelance-jobs/apply/<slug>_~<jobId>/` SEO form, often with tracking query
   strings like `referrer_url_path` that Upwork's SPA mishandles) are rewritten
-  to the clean `https://www.upwork.com/freelance-jobs/apply/<slug>_~<jobId>/`
-  form with the query string dropped — the legacy `/jobs/` route is
-  deprecated (robots.txt blocks it). Login-walled SPA surfaces (`/nx/…`,
-  `/o/jobs/…`, `/r/…`) are filtered out. Non-Upwork aggregator links pass
+  to the canonical `https://www.upwork.com/jobs/<slug>_~<jobId>/` marketplace
+  form with the query string dropped — the form that reliably resolves to the
+  listing (verified against the vanooo/upwork-mcp live-SPA scraper, which
+  keeps only `/jobs/` links). Login-walled SPA surfaces (`/nx/…`, `/o/jobs/…`,
+  `/r/…`) are dropped as non-listings, except `/nx/search/jobs/details/~<jobId>`
+  which is rebuilt to the bare-ID form. Non-Upwork aggregator links pass
   through unchanged.
 - **The fallback needs a real search provider.** With the default
   DuckDuckGo provider the fallback returns 0 results (Instant Answer API

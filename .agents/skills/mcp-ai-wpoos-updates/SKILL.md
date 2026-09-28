@@ -153,6 +153,29 @@ weekly (or on demand), independent of any release.
   group.** The v1.1.87 window shipped `@since 2.12.0` ×139 (outbound-booking
   toolkit + Upwork files) — record the group with its counts and locations;
   parked reconciliation (OI-1) still applies, no in-pass fixes.
+- **A PR merged between the previous plan's window map and its catch-up merge
+  belongs to the new window when the previous changelog never covered it.**
+  The tree diff alone misses such PRs (they sit inside the previous catch-up's
+  tree). Cross-check the previous changelog for the PR number during
+  orientation — the v1.1.88 window's #6787 (gateway express bump) merged
+  24 min before the #6788 catch-up and was absent from the 1.1.87 changelog.
+- **A PR may explicitly defer its own changelog entry to the catch-up.** The
+  v1.1.88 window's #6792 (decision-model Phase A) carried a "CHANGELOG entry
+  at merge time (v1.1.88+ window)" note — grep PR bodies for
+  changelog/release-note deferrals during orientation; the catch-up owns the
+  entry.
+- **Addon sub-projects with their own version tracks may update `ADDON_INVENTORY.md`
+  in-window** (the v1.1.88 window's #6797 set the saas-controller row to 0.3.0)
+  — the pass refreshes only the header stamp, and the addon's versioning goes
+  in the changelog's sub-project paragraph, not a new inventory row.
+- **In-window skill updates are not proof the skills are current.** The v1.1.88
+  window updated `design-crm` (#6790) and `design-elementor-mcp-connection`
+  (#6799) in place, yet #6793 then reverted the URL canonical form #6790 had
+  just documented, the bundled `design-crm` copy was two windows behind the
+  Zed copy, and the elementor skill's security rules still claimed inline
+  secrets were plaintext after #6798 encrypted them. After mapping the window,
+  diff each updated skill against the code it documents and `diff -q` the
+  Zed/bundled pairs — the catch-up owns the reconciliation.
 
 ### A3. Commit structure (mirror v1.1.58–v1.1.83)
 
@@ -640,13 +663,17 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.84-docs-catch-up.md`,
   `docs/project/plans/v1.1.85-docs-catch-up.md`,
   `docs/project/plans/v1.1.86-docs-catch-up.md`,
-  `docs/project/plans/v1.1.87-docs-catch-up.md` (latest executed — the v1.1.87
-  pass over PRs #6776–#6786: the mcp-wordpress parity suite (+30 base tools),
-  the non-LLM image identification ladder (+5 base +2 Pro), the outbound
-  appointment booking toolkit (+3 Pro), the mcp-wordpress gateway addon
-  (27 → 28 addons), session-budget warnings + bundled Elementor skills,
-  the restriction-notice fix, Upwork search refinements, the stale 1.1.85
-  build-set removal (30 files), and the readme.txt Unreleased-entry conversion)
+  `docs/project/plans/v1.1.87-docs-catch-up.md`,
+  `docs/project/plans/v1.1.88-docs-catch-up.md` (latest executed — the v1.1.88
+  pass over PRs #6787 + #6789–#6801: decision-model orchestration Phase A
+  (proposal 045), the MCP Apps OAuth/credential-hardening wave (#6794/#6795/
+  #6798), toolkit-MCP grant gating (#6796), MCP App transport fixes
+  (#6799/#6800), the Upwork URL canonicalisation round-trip (#6790/#6793),
+  PayHere/Flowhub guarded requires (#6801), SaaS Controller 0.1.0 → 0.3.0
+  (#6791/#6797), the gateway express bump (#6787), two skill reconciliations
+  (design-crm bundled-copy sync + canonical-form fix, design-elementor
+  encryption/troubleshooting updates), the stale 1.1.86 build-set removal
+  (30 files), and zero tool-count changes)
 - Standing open items: `docs/project/plans/docs-catch-up-open-items.md`
 - Executed PR deferred-item sweep (2026-09-17): issues #6646–#6655; closed
   #6389 as complete

@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.87
+Stable tag: 1.1.88
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.88 - September 28, 2026 =
+
+Decision-model orchestration and MCP Apps hardening release. Added: decision-model orchestration Phase A (Proposal 045, #6792) — the base WP_MCP_AI_Verification_Cascade implements the TypeSafe SDE-cascade pattern (per-field noul battery, max aggregation, single-rung escalation behind a filterable threshold, injectable decision client) plus a new wp_mcp_ai_execution_depth_confidence filter seam, Pro gains the opt-in enable_jev_tier_routing tier-routing signal ((2 - complexity)/2 confidence with a neutral fallback) and the enable_jev_citation_escalation citation cascade wired into research_eca / generate_research_report — fail-open everywhere, off by default, Jev never sees more than the first user message; the MCP Apps OAuth hardening wave for Upwork (#6794/#6795/#6798) — loopback-only redirect URIs supported via a manual paste-back flow (new POST mcp-ai/v1/mcp-apps/oauth/complete endpoint, 10-minute state TTL, JSON-first with form-encoded retry on 415), client_id sent in token-exchange/refresh bodies, and inline MCP App secrets plus Remote Sites verify_token/verification_token now encrypted at rest (AES-256-CBC) with persisted OAuth refresh rotation and mcp_oauth_refresh activity events. Security: toolkit MCP servers are now gated on per-assistant grants (deny-by-default, #6796) — assistant-scoped calls to non-granted servers return -32601, initialize/ping stay open, and the toolkitServers handshake always reflects the exact grant list. Fixed: strict 2025-era gateways that reject the server/discover probe with a bare HTTP 400 now fall back to the legacy initialize handshake without the 2026-only headers (#6799); SSE-answering gateways no longer fail tool enumeration with invalid JSON — the client parses event-stream responses from the message event (#6800); Upwork job links are canonicalised to the /jobs/<slug>_~<jobId>/ marketplace form (the #6790 /freelance-jobs/apply/ form still produced wrong links, #6793), with login-walled SPA surfaces filtered and tracking query strings dropped; the PayHere + Flowhub tools no longer fatal when a client file is missing — guarded requires with graceful self-reporting (#6801). Sub-projects: SaaS Controller 0.1.0 to 0.3.0 — 0.2.0 ships the production NV oOS Cloud worker (byte-identical port from cloud-worker) plus the repaired lint stack, 0.3.0 (Phase 12) folds Worker secrets + D1 schema into the Plan/Apply flow so the whole cloud deployment runs from WP-Admin (#6791/#6797); the mcp-wordpress gateway bumps express to 4.22.3 closing four Dependabot alerts (#6787). Tool count: ~347 base + ~1,287 Pro (~1,634 total; unchanged; live registry authoritative). Model catalog: v2026.09.22 (unchanged). Stale build ZIPs removed: the 1.1.86 build set (30 files).
 
 = 1.1.87 - September 27, 2026 =
 
