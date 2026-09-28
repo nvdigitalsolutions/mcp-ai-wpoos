@@ -5,8 +5,8 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.87"
-  plugin-version-tested: "1.1.87"
+  plugin-version: "1.1.88"
+  plugin-version-tested: "1.1.88"
   last-updated: "2026-09-27"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
@@ -757,6 +757,15 @@ Import external AI conversation exports into the JetEngine
   toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
   dj-management/image-production slices.
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Decision-Model Orchestration, MCP Apps Hardening & SaaS Controller 0.3.0 (v1.1.88)
+
+- **Decision-model orchestration Phase A (PR #6792, Proposal 045)** — base `WP_MCP_AI_Verification_Cascade` (SDE-cascade battery, max aggregation, single-rung escalation, injectable decision client) + `wp_mcp_ai_execution_depth_confidence` seam; Pro opt-in Jev tier routing (`enable_jev_tier_routing`) + citation cascade (`enable_jev_citation_escalation`) in `research_eca`/`generate_research_report`; fail-open, off by default.
+- **MCP Apps OAuth + credential hardening (PRs #6794/#6795/#6798)** — loopback-only redirect URIs via manual paste-back (`POST mcp-ai/v1/mcp-apps/oauth/complete`, 10-min state TTL); `client_id` in token exchange; inline MCP App secrets + Remote Sites verify tokens now encrypted at rest (AES-256-CBC) with persisted OAuth refresh rotation; `mcp_oauth_refresh` activity events.
+- **Toolkit MCP grant gating (PR #6796)** — deny-by-default per-assistant grants (`-32601` for non-granted servers; `toolkitServers` always reflects the grant list). **Transport fixes (PRs #6799/#6800)** — legacy `initialize` fallback on bare HTTP 400; SSE response parsing.
+- **Upwork job links (PRs #6790/#6793)** — canonical `/jobs/<slug>_~<jobId>/` form restored; **PayHere/Flowhub guarded requires (PR #6801)** — missing client files self-report instead of fataling.
+- **SaaS Controller 0.1.0 → 0.3.0 (PRs #6791/#6797)** — production NV oOS Cloud worker + Phase 12 Plan/Apply Worker-secrets/D1-schema; gateway express 4.22.3 (PR #6787).
+- **Tool counts** — unchanged: ~347 base + ~1,287 Pro (~1,634 total).
 
 ## Parity Suite, Image Identification & Outbound Booking (v1.1.87)
 

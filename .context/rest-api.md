@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: September 27, 2026 (v1.1.87).
+> Last reviewed: September 28, 2026 (v1.1.88).
+>
+> **New in v1.1.88:** no new **base** routes in-window (the verification cascade / tier routing are service-level, #6792; the mcp-apps transport fixes are client-level, #6799/#6800; #6801 is tool-file-level). Pro-level: a new admin-gated `POST mcp-ai/v1/mcp-apps/oauth/complete` (PR #6794) completes the manual loopback OAuth flow (10-minute state TTL); the `GET mcp-ai/v1/mcp-apps/oauth/callback` route now declares code/state **optional** so auth-server denials (`?error=access_denied`) reach the friendly error page instead of REST validation (PR #6793). The toolkit-MCP grant gate (PR #6796) is JSON-RPC-level (`-32601` on non-granted servers), not a WP REST route change.
 >
 > **New in v1.1.87 (no base REST route changes):** the parity suite (#6777) and the image ladder (#6780) are tool-level registrations; #6779 is registry-level; #6776 adds the `wp_mcp_ai_chat_messages` filter on the chat paths (message-level, not route-level); #6784 documents `workflow_steps` on the existing Pro schedule REST docs. Pro-level additions to be aware of: #6786 registers a **public booking REST endpoint** (rate-limited, honeypotted, consent-gated — creating `mcp_appointment` records) and #6784's schedule `workflow_steps` flows through the existing `mcp-ai-pro/v1/schedules` surface. The mcp-wordpress gateway addon (#6778) serves its own `/healthz` + `/mcp` Streamable HTTP surface — a standalone Node addon, not a WordPress REST route.
 >
