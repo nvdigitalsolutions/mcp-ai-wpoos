@@ -147,16 +147,20 @@ export async function verifyWebhook(
 	}
 	const parts = signatureHeader.split(',').reduce<Record<string, string[]>>((acc, part) => {
 		const eq = part.indexOf('=');
-		if (eq === -1) return acc;
+		if (eq === -1) {
+			return acc;
+		}
 		const key = part.slice(0, eq).trim();
 		const val = part.slice(eq + 1).trim();
-		if (!acc[key]) acc[key] = [];
+		if (!acc[key]) {
+			acc[key] = [];
+		}
 		acc[key]!.push(val);
 		return acc;
 	}, {});
 
-	const timestamp = parts['t']?.[0];
-	const signatures = parts['v1'] ?? [];
+	const timestamp = parts.t?.[0];
+	const signatures = parts.v1 ?? [];
 	if (!timestamp || signatures.length === 0) {
 		throw new Error('malformed_signature');
 	}

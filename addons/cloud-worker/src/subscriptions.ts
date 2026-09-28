@@ -5,12 +5,15 @@
  * Mounted under /v1/subscriptions and /v1/tenants.
  */
 
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import type { Env } from './types';
 import { errorResponse } from './utils';
 import Stripe from 'stripe';
 
 const subscriptions = new Hono<{ Bindings: Env }>();
+
+/** Hono context used by the subscription webhook handlers. */
+type SubscriptionContext = Context<{ Bindings: Env }>;
 
 // ---------------------------------------------------------------------------
 // Stripe webhook — handles subscription lifecycle events
@@ -71,7 +74,7 @@ subscriptions.post('/webhook', async (c) => {
 /**
  * Handle checkout.session.completed — provision a new tenant workspace.
  */
-async function handleCheckoutCompleted(c: any, session: Stripe.Checkout.Session) {
+async function handleCheckoutCompleted(c: SubscriptionContext, session: Stripe.Checkout.Session) {
   const metadata = session.metadata || {};
   const tenantSlug = metadata.tenant_slug;
   const tier = metadata.tier || 'starter';
@@ -140,7 +143,9 @@ async function handleCheckoutCompleted(c: any, session: Stripe.Checkout.Session)
       return errorResponse(502, 'provisioning_failed', 'WordPress provisioning returned an error.');
     }
 
-    const result = await provisioningResult.json() as any;
+    const result = (await provisioningResult.json()) as {
+      tenant?: { site_url?: string; blog_id?: number; login_url?: string };
+    };
     const siteUrl = result.tenant?.site_url || '';
 
     // Update tenant with WP origin URL and set active
@@ -172,7 +177,7 @@ async function handleCheckoutCompleted(c: any, session: Stripe.Checkout.Session)
 /**
  * Handle invoice.paid — ensure tenant is active.
  */
-async function handleInvoicePaid(c: any, invoice: Stripe.Invoice) {
+async function handleInvoicePaid(c: SubscriptionContext, invoice: Stripe.Invoice) {
   const customerId = invoice.customer as string;
   const now = Math.floor(Date.now() / 1000);
 
@@ -186,7 +191,7 @@ async function handleInvoicePaid(c: any, invoice: Stripe.Invoice) {
 /**
  * Handle invoice.payment_failed — suspend the tenant.
  */
-async function handlePaymentFailed(c: any, invoice: Stripe.Invoice) {
+async function handlePaymentFailed(c: SubscriptionContext, invoice: Stripe.Invoice) {
   const customerId = invoice.customer as string;
   const now = Math.floor(Date.now() / 1000);
 
@@ -200,7 +205,7 @@ async function handlePaymentFailed(c: any, invoice: Stripe.Invoice) {
 /**
  * Handle customer.subscription.deleted — offboard the tenant.
  */
-async function handleSubscriptionDeleted(c: any, subscription: Stripe.Subscription) {
+async function handleSubscriptionDeleted(c: SubscriptionContext, subscription: Stripe.Subscription) {
   const customerId = subscription.customer as string;
 
   const tenant = await c.env.NVOOS_DB.prepare(
@@ -242,7 +247,7 @@ async function handleSubscriptionDeleted(c: any, subscription: Stripe.Subscripti
 /**
  * Handle customer.subscription.updated — track tier changes.
  */
-async function handleSubscriptionUpdated(c: any, subscription: Stripe.Subscription) {
+async function handleSubscriptionUpdated(c: SubscriptionContext, subscription: Stripe.Subscription) {
   const customerId = subscription.customer as string;
   const now = Math.floor(Date.now() / 1000);
 

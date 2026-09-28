@@ -10,8 +10,7 @@
 import { Hono, type Context } from 'hono';
 import { getAuth, requireToken, type AuthEnv } from './auth';
 import { billingHeaders, computeBilling, debitAndLog } from './billing';
-import type { PricingMath } from './types';
-import { errorResponse, getRequestId, microToUsd } from './utils';
+import { errorResponse, getRequestId } from './utils';
 
 const inferenceApp = new Hono<AuthEnv>();
 
@@ -84,13 +83,13 @@ async function proxy(ctx: Context<AuthEnv>, path: string): Promise<Response> {
 
 	const upstreamRes = await fetch(upstreamReq);
 
-	const requestId = getRequestId(ctx.req.raw);
-	const isStream = upstreamRes.headers.get('content-type')?.includes('text/event-stream');
-
 	if (path === '/models' || method === 'GET') {
 		// No billing for catalogue fetches.
 		return passthrough(upstreamRes, ctx.env.WORKER_VERSION);
 	}
+
+	const requestId = getRequestId(ctx.req.raw);
+	const isStream = upstreamRes.headers.get('content-type')?.includes('text/event-stream');
 
 	if (isStream) {
 		return handleStream(ctx, upstreamRes, model, requestId);
@@ -189,11 +188,11 @@ function handleStream(
 	model: string | null,
 	requestId: string
 ): Response {
-	const auth = getAuth(ctx);
 	if (!upstreamRes.body) {
 		return passthrough(upstreamRes, ctx.env.WORKER_VERSION);
 	}
 
+	const auth = getAuth(ctx);
 	const decoder = new TextDecoder();
 	let buffer = '';
 	let promptTokens = 0;
@@ -210,9 +209,13 @@ function handleStream(
 				const event = buffer.slice(0, nlIdx);
 				buffer = buffer.slice(nlIdx + 2);
 				const dataLine = event.split('\n').find((l) => l.startsWith('data:'));
-				if (!dataLine) continue;
+				if (!dataLine) {
+					continue;
+				}
 				const payload = dataLine.slice(5).trim();
-				if (payload === '[DONE]' || payload === '') continue;
+				if (payload === '[DONE]' || payload === '') {
+					continue;
+				}
 				try {
 					const parsed = JSON.parse(payload) as {
 						usage?: {

@@ -40,7 +40,6 @@ import {
 	type PreflightResult,
 } from './validation';
 
-const TEXT_DOMAIN = 'nvoos-saas-controller';
 
 type Step = 1 | 2 | 3;
 
@@ -140,8 +139,8 @@ function ResultRow( { label, result }: ResultRowProps ): JSX.Element {
 					} }
 				>
 					{ result.ok
-						? __( '✓ OK', TEXT_DOMAIN )
-						: __( '✗ Failed', TEXT_DOMAIN ) }
+						? __( '✓ OK', 'nvoos-saas-controller' )
+						: __( '✗ Failed', 'nvoos-saas-controller' ) }
 				</span>{ ' ' }
 				<span style={ { color: '#666' } }>
 					({ result.latency_ms } ms)
@@ -205,7 +204,7 @@ export default function Wizard(): JSX.Element {
 			setSavedNotice(
 				__(
 					'Nothing to save — all fields were left blank.',
-					TEXT_DOMAIN
+					'nvoos-saas-controller'
 				)
 			);
 			return;
@@ -215,7 +214,7 @@ export default function Wizard(): JSX.Element {
 				setSavedNotice(
 					__(
 						'Credentials saved (encrypted at rest).',
-						TEXT_DOMAIN
+						'nvoos-saas-controller'
 					)
 				);
 				// Reset the typed values so they don't linger in DOM.
@@ -231,22 +230,22 @@ export default function Wizard(): JSX.Element {
 			return '';
 		}
 		return m.configured
-			? `${ __( 'Stored:', TEXT_DOMAIN ) } ${ m.masked }`
-			: __( 'Not configured.', TEXT_DOMAIN );
+			? `${ __( 'Stored:', 'nvoos-saas-controller' ) } ${ m.masked }`
+			: __( 'Not configured.', 'nvoos-saas-controller' );
 	};
 
 	return (
 		<Card style={ { maxWidth: 780, marginBottom: 24 } }>
 			<CardHeader>
 				<h2 style={ { margin: 0 } }>
-					{ __( 'Credentials Wizard', TEXT_DOMAIN ) }
+					{ __( 'Credentials Wizard', 'nvoos-saas-controller' ) }
 				</h2>
 			</CardHeader>
 			<CardBody>
 				<p>
 					{ __(
 						'Paste each provider credential below. Empty fields are left untouched (use the Disconnect button to clear all). Live preflight is run before save.',
-						TEXT_DOMAIN
+						'nvoos-saas-controller'
 					) }
 				</p>
 
@@ -262,9 +261,9 @@ export default function Wizard(): JSX.Element {
 
 				{ 1 === step && (
 					<>
-						<h3>{ __( 'Cloudflare', TEXT_DOMAIN ) }</h3>
+						<h3>{ __( 'Cloudflare', 'nvoos-saas-controller' ) }</h3>
 						<TextControl
-							label={ __( 'Account ID', TEXT_DOMAIN ) }
+							label={ __( 'Account ID', 'nvoos-saas-controller' ) }
 							help={
 								formErrors.cloudflare_account_id ||
 								renderStatus( 'cloudflare_account_id' )
@@ -276,7 +275,7 @@ export default function Wizard(): JSX.Element {
 							autoComplete="off"
 						/>
 						<TextControl
-							label={ __( 'API token', TEXT_DOMAIN ) }
+							label={ __( 'API token', 'nvoos-saas-controller' ) }
 							help={
 								formErrors.cloudflare_api_token ||
 								renderStatus( 'cloudflare_api_token' )
@@ -289,9 +288,9 @@ export default function Wizard(): JSX.Element {
 							autoComplete="off"
 						/>
 
-						<h3>{ __( 'Stripe', TEXT_DOMAIN ) }</h3>
+						<h3>{ __( 'Stripe', 'nvoos-saas-controller' ) }</h3>
 						<TextControl
-							label={ __( 'Secret key', TEXT_DOMAIN ) }
+							label={ __( 'Secret key', 'nvoos-saas-controller' ) }
 							help={
 								formErrors.stripe_secret_key ||
 								renderStatus( 'stripe_secret_key' )
@@ -304,7 +303,7 @@ export default function Wizard(): JSX.Element {
 							autoComplete="off"
 						/>
 						<TextControl
-							label={ __( 'Webhook signing secret', TEXT_DOMAIN ) }
+							label={ __( 'Webhook signing secret', 'nvoos-saas-controller' ) }
 							help={
 								formErrors.stripe_webhook_secret ||
 								renderStatus( 'stripe_webhook_secret' )
@@ -317,9 +316,9 @@ export default function Wizard(): JSX.Element {
 							autoComplete="off"
 						/>
 
-						<h3>{ __( 'OpenRouter', TEXT_DOMAIN ) }</h3>
+						<h3>{ __( 'OpenRouter', 'nvoos-saas-controller' ) }</h3>
 						<TextControl
-							label={ __( 'API key', TEXT_DOMAIN ) }
+							label={ __( 'API key', 'nvoos-saas-controller' ) }
 							help={
 								formErrors.openrouter_api_key ||
 								renderStatus( 'openrouter_api_key' )
@@ -344,7 +343,7 @@ export default function Wizard(): JSX.Element {
 								onClick={ goValidate }
 								disabled={ test.isPending }
 							>
-								{ __( 'Validate', TEXT_DOMAIN ) }
+								{ __( 'Validate', 'nvoos-saas-controller' ) }
 							</Button>
 							<Button
 								variant="tertiary"
@@ -352,7 +351,7 @@ export default function Wizard(): JSX.Element {
 								onClick={ () => clear.mutate() }
 								disabled={ clear.isPending }
 							>
-								{ __( 'Disconnect (clear all)', TEXT_DOMAIN ) }
+								{ __( 'Disconnect (clear all)', 'nvoos-saas-controller' ) }
 							</Button>
 						</div>
 					</>
@@ -360,13 +359,13 @@ export default function Wizard(): JSX.Element {
 
 				{ 2 === step && (
 					<>
-						<h3>{ __( 'Preflight results', TEXT_DOMAIN ) }</h3>
+						<h3>{ __( 'Preflight results', 'nvoos-saas-controller' ) }</h3>
 						{ test.isPending && (
 							<p>
 								<Spinner />{ ' ' }
 								{ __(
 									'Running preflight against Cloudflare, Stripe, OpenRouter…',
-									TEXT_DOMAIN
+									'nvoos-saas-controller'
 								) }
 							</p>
 						) }
@@ -380,13 +379,13 @@ export default function Wizard(): JSX.Element {
 								<thead>
 									<tr>
 										<th>
-											{ __( 'Provider', TEXT_DOMAIN ) }
+											{ __( 'Provider', 'nvoos-saas-controller' ) }
 										</th>
 										<th>
-											{ __( 'Result', TEXT_DOMAIN ) }
+											{ __( 'Result', 'nvoos-saas-controller' ) }
 										</th>
 										<th>
-											{ __( 'Detail', TEXT_DOMAIN ) }
+											{ __( 'Detail', 'nvoos-saas-controller' ) }
 										</th>
 									</tr>
 								</thead>
@@ -417,7 +416,7 @@ export default function Wizard(): JSX.Element {
 								variant="secondary"
 								onClick={ () => setStep( 1 ) }
 							>
-								{ __( 'Back', TEXT_DOMAIN ) }
+								{ __( 'Back', 'nvoos-saas-controller' ) }
 							</Button>
 							<Button
 								variant="primary"
@@ -427,10 +426,10 @@ export default function Wizard(): JSX.Element {
 								}
 							>
 								{ test.data?.ok
-									? __( 'Save credentials', TEXT_DOMAIN )
+									? __( 'Save credentials', 'nvoos-saas-controller' )
 									: __(
 											'Fix errors before saving',
-											TEXT_DOMAIN
+											'nvoos-saas-controller'
 									  ) }
 							</Button>
 						</div>
@@ -442,7 +441,7 @@ export default function Wizard(): JSX.Element {
 						<Notice status="success" isDismissible={ false }>
 							{ __(
 								'Credentials saved. The static status table below now reflects them.',
-								TEXT_DOMAIN
+								'nvoos-saas-controller'
 							) }
 						</Notice>
 						<Button
@@ -450,7 +449,7 @@ export default function Wizard(): JSX.Element {
 							onClick={ () => setStep( 1 ) }
 							style={ { marginTop: 16 } }
 						>
-							{ __( 'Edit credentials again', TEXT_DOMAIN ) }
+							{ __( 'Edit credentials again', 'nvoos-saas-controller' ) }
 						</Button>
 					</>
 				) }

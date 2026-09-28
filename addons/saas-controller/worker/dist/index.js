@@ -4896,15 +4896,19 @@ async function verifyWebhook(rawBody, signatureHeader, secret) {
   }
   const parts = signatureHeader.split(",").reduce((acc, part) => {
     const eq = part.indexOf("=");
-    if (eq === -1) return acc;
+    if (eq === -1) {
+      return acc;
+    }
     const key = part.slice(0, eq).trim();
     const val = part.slice(eq + 1).trim();
-    if (!acc[key]) acc[key] = [];
+    if (!acc[key]) {
+      acc[key] = [];
+    }
     acc[key].push(val);
     return acc;
   }, {});
-  const timestamp = parts["t"]?.[0];
-  const signatures = parts["v1"] ?? [];
+  const timestamp = parts.t?.[0];
+  const signatures = parts.v1 ?? [];
   if (!timestamp || signatures.length === 0) {
     throw new Error("malformed_signature");
   }
@@ -5281,11 +5285,11 @@ async function proxy(ctx, path) {
     body: bodyText
   });
   const upstreamRes = await fetch(upstreamReq);
-  const requestId = getRequestId(ctx.req.raw);
-  const isStream = upstreamRes.headers.get("content-type")?.includes("text/event-stream");
   if (path === "/models" || method === "GET") {
     return passthrough(upstreamRes, ctx.env.WORKER_VERSION);
   }
+  const requestId = getRequestId(ctx.req.raw);
+  const isStream = upstreamRes.headers.get("content-type")?.includes("text/event-stream");
   if (isStream) {
     return handleStream(ctx, upstreamRes, model, requestId);
   }
@@ -5347,10 +5351,10 @@ async function handleJson(ctx, upstreamRes, model, requestId) {
   });
 }
 function handleStream(ctx, upstreamRes, model, requestId) {
-  const auth = getAuth(ctx);
   if (!upstreamRes.body) {
     return passthrough(upstreamRes, ctx.env.WORKER_VERSION);
   }
+  const auth = getAuth(ctx);
   const decoder = new TextDecoder();
   let buffer = "";
   let promptTokens = 0;
@@ -5365,9 +5369,13 @@ function handleStream(ctx, upstreamRes, model, requestId) {
         const event = buffer.slice(0, nlIdx);
         buffer = buffer.slice(nlIdx + 2);
         const dataLine = event.split("\n").find((l) => l.startsWith("data:"));
-        if (!dataLine) continue;
+        if (!dataLine) {
+          continue;
+        }
         const payload = dataLine.slice(5).trim();
-        if (payload === "[DONE]" || payload === "") continue;
+        if (payload === "[DONE]" || payload === "") {
+          continue;
+        }
         try {
           const parsed = JSON.parse(payload);
           if (parsed.usage) {

@@ -92,7 +92,7 @@ npm run build           # builds both Worker and Admin UI bundles
 npm run build:worker    # esbuild → worker/dist/index.js
 npm run build:admin     # @wordpress/scripts → assets/build/
 npm run typecheck       # tsc --noEmit
-npm run lint:js         # eslint via @wordpress/scripts
+npm run lint:js         # eslint (flat config: eslint.config.cjs)
 npm run test            # jest via @wordpress/scripts
 npm run worker:dryrun   # wrangler deploy --dry-run (no live publish)
 ```
