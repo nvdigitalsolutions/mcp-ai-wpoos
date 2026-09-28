@@ -216,7 +216,9 @@ Freelancer sourcing uses the Upwork CRM tools (`search_upwork_jobs`,
   `criteria_provided` (false = unfiltered noise search) — so workflow digests
   can tell weak filters from a missing Upwork connection.
 - **API mode** (Remote Sites connection with OAuth creds): returns structured
-  jobs including a derived `url` (`https://www.upwork.com/jobs/<slug>_~<id>/`).
+  jobs including a derived `url`
+  (`https://www.upwork.com/freelance-jobs/apply/<slug>_~<id>/` — the current
+  public job-page form; the legacy `/jobs/` route is deprecated).
 - **Fallback mode** (no connection): two-pass web search — site-restricted
   Upwork pass, then a broader pass merged with URL dedupe. Upwork category
   landing pages (`/freelance-jobs/{slug}/` — no `~jobId`) are filtered out
@@ -225,11 +227,14 @@ Freelancer sourcing uses the Upwork CRM tools (`search_upwork_jobs`,
   page titles; snippets are parsed for `job_type`, `budget`/`budget_max`
   (ranges), `tier` (Entry level/Intermediate/Expert), and `published`;
   `skills` build a quoted OR group; direct postings rank first.
-- **Fallback URLs are canonicalised.** SERP URLs in the SEO form
-  (`/freelance-jobs/apply/<slug>_~<jobId>/`) are rewritten to the canonical
-  `https://www.upwork.com/jobs/<slug>_~<jobId>/` format, which resolves to
-  the listing even when the search engine truncated the slug. Non-Upwork
-  aggregator links pass through unchanged.
+- **Fallback URLs are canonicalised.** SERP URLs (the
+  `/freelance-jobs/apply/<slug>_~<jobId>/` SEO form, often with tracking query
+  strings like `referrer_url_path` that Upwork's SPA mishandles) are rewritten
+  to the clean `https://www.upwork.com/freelance-jobs/apply/<slug>_~<jobId>/`
+  form with the query string dropped — the legacy `/jobs/` route is
+  deprecated (robots.txt blocks it). Login-walled SPA surfaces (`/nx/…`,
+  `/o/jobs/…`, `/r/…`) are filtered out. Non-Upwork aggregator links pass
+  through unchanged.
 - **The fallback needs a real search provider.** With the default
   DuckDuckGo provider the fallback returns 0 results (Instant Answer API
   has no SERPs). Set a Brave/Tavily key in plugin Settings → Web Search.
