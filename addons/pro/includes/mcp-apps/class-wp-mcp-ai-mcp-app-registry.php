@@ -1068,11 +1068,17 @@ class WP_MCP_AI_MCP_App_Registry {
 		if ( is_wp_error( $init_result ) ) {
 			$error_data = $init_result->get_error_data();
 			$rpc_code   = is_array( $error_data ) && isset( $error_data['rpc_code'] ) ? $error_data['rpc_code'] : 0;
+			$http_code  = is_array( $error_data ) && isset( $error_data['status'] ) ? (int) $error_data['status'] : 0;
 			$message    = strtolower( $init_result->get_error_message() );
 
 			// Sessionful servers reject server/discover with -32601 (unknown
-			// method) or -32600 (e.g. "Missing Mcp-Session-Id header").
-			if ( -32601 === $rpc_code || -32600 === $rpc_code || false !== strpos( $message, 'session' ) ) {
+			// method) or -32600 (e.g. "Missing Mcp-Session-Id header"). Strict
+			// 2025-era gateways (e.g. Upwork) instead answer a bare HTTP
+			// 400/404/405/501 without a JSON-RPC error envelope — treat those
+			// the same way and let initialize() take over.
+			$fallback_http_codes = array( 400, 404, 405, 501 );
+
+			if ( -32601 === $rpc_code || -32600 === $rpc_code || false !== strpos( $message, 'session' ) || in_array( $http_code, $fallback_http_codes, true ) ) {
 				$init_result = $client->initialize();
 				if ( is_wp_error( $init_result ) ) {
 					$this->cache_discovery_failure( $cache_key, $init_result );

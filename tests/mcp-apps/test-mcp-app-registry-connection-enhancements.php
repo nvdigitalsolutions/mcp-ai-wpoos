@@ -375,4 +375,110 @@ class Test_MCP_App_Registry_Connection_Enhancements extends WP_UnitTestCase {
 		$this->assertContains( 'initialize', $requests );
 		$this->assertContains( 'tools/list', $requests );
 	}
+
+	/**
+	 * Test discover_tools falls back to initialize when the discover probe is
+	 * rejected with a bare HTTP 400 and no JSON-RPC error body (Upwork-style
+	 * strict gateway).
+	 */
+	public function test_discover_tools_bare_http_400_fallback() {
+		$requests = array();
+		add_filter(
+			'pre_http_request',
+			function ( $pre, $args, $url ) use ( &$requests ) {
+				unset( $pre, $url );
+				$payload    = json_decode( isset( $args['body'] ) ? $args['body'] : '', true );
+				$method     = is_array( $payload ) && isset( $payload['method'] ) ? $payload['method'] : '';
+				$requests[] = $method;
+
+				if ( 'server/discover' === $method ) {
+					return array(
+						'headers'  => array(),
+						'body'     => 'Bad Request',
+						'response' => array(
+							'code'    => 400,
+							'message' => 'Bad Request',
+						),
+					);
+				}
+
+				if ( 'initialize' === $method ) {
+					return array(
+						'headers'  => array( 'mcp-session-id' => 'sess-registry-400' ),
+						'body'     => wp_json_encode(
+							array(
+								'jsonrpc' => '2.0',
+								'id'      => 1,
+								'result'  => array(
+									'protocolVersion' => '2025-03-26',
+									'serverInfo'      => array( 'name' => 'Upwork MCP' ),
+									'capabilities'    => array( 'tools' => new stdClass() ),
+								),
+							)
+						),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+					);
+				}
+
+				if ( 'tools/list' === $method ) {
+					return array(
+						'headers'  => array(),
+						'body'     => wp_json_encode(
+							array(
+								'jsonrpc' => '2.0',
+								'id'      => 1,
+								'result'  => array(
+									'tools' => array(
+										array( 'name' => 'search_jobs' ),
+									),
+								),
+							)
+						),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+					);
+				}
+
+				return array(
+					'headers'  => array(),
+					'body'     => wp_json_encode(
+						array(
+							'jsonrpc' => '2.0',
+							'id'      => 1,
+							'result'  => new stdClass(),
+						)
+					),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+				);
+			},
+			10,
+			3
+		);
+
+		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
+		$tools    = $registry->discover_tools(
+			array(
+				'server_url' => 'https://mcp.upwork.com/mcp',
+				'auth_type'  => 'none',
+			),
+			true
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertIsArray( $tools );
+		$this->assertCount( 1, $tools );
+		$this->assertEquals( 'search_jobs', $tools[0]['name'] );
+		$this->assertContains( 'server/discover', $requests );
+		$this->assertContains( 'initialize', $requests );
+		$this->assertContains( 'tools/list', $requests );
+	}
 }

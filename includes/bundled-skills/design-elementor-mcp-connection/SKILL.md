@@ -215,11 +215,16 @@ refresh) — Elementor MCP does not use it; use `basic`/`header` instead.
    open to arbitrary upstream servers. Recommend always configuring one.
 2. **Test Connection fails on an older server** — the client first attempts
    the stateless `server/discover` handshake (protocol `2026-07-28`) and
-   auto-falls back to the legacy sessionful `initialize` handshake
-   (echoing `Mcp-Session-Id`, advertising the negotiated version) when the
-   server returns `-32601`/`-32600`. A bare "connection failed" with a 2xx
-   response usually means the URL points at the wrong route slug — re-check
-   against the generated prompt.
+   auto-falls back to the legacy sessionful `initialize` handshake when the
+   server returns `-32601`/`-32600`/`session` errors **or a bare HTTP
+   400/404/405/501 without a JSON-RPC error envelope** (strict 2025-era
+   gateways reject the unknown method that way). The fallback `initialize`
+   handshake and every request inside a legacy session omit the 2026-only
+   `MCP-Protocol-Version`/`Mcp-Method` routing headers and the `_meta`
+   envelope, so they look exactly like a 2025-era client (Claude Desktop /
+   Cursor shape). A bare "connection failed" with a 2xx response usually
+   means the URL points at the wrong route slug — re-check against the
+   generated prompt.
 3. **Tools discovered but missing from chat** — bridged tools require the
    `edit_posts` capability check at execution and are only appended when the
    effective-tools seam resolves the assistant ID. Check: app `enabled` is
@@ -241,6 +246,21 @@ refresh) — Elementor MCP does not use it; use `basic`/`header` instead.
    the manager's private/reserved-range guard (no bypass); localhost/private
    endpoints must use the inline MCP App path (Path B), while the site's own
    public hostname still routes in-process via the same-site bridge.
+8. **Upwork MCP (`https://mcp.upwork.com/mcp`) returns "HTTP 400"** — Upwork's
+   gateway rejects the 2026-07-28 `server/discover` probe with a bare HTTP
+   400, which older client builds never fell back from. Verified fix (client
+   + registry fallback on 400/404/405/501, legacy-header omission) shipped in
+   the mcp-apps cluster — deploy it and re-run Test Connection / Discover
+   Tools. Diagnostics caveat: Upwork binds OAuth access tokens to the
+   originating server IP, so reproducing the handshake with `curl` from
+   another machine returns 401 even with a valid token — validate on the site
+   itself (the HTTP-error `WP_Error` data now includes a 400-char response
+   body snippet). Upwork auth is OAuth 2.1 with DCR and **loopback-only
+   redirect URIs**: the login tab ends on
+   `http://localhost:<port>/callback?code=...&state=...` that never loads —
+   paste that URL into the metabox's manual paste field and click **Complete
+   Login** within the 10-minute state TTL. An expired state returns "This
+   login link has expired" — re-initiate and paste the new URL.
 
 ## Security rules (industry + plugin)
 

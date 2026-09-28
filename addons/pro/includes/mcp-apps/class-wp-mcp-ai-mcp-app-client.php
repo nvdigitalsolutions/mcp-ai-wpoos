@@ -385,12 +385,17 @@ class WP_MCP_AI_MCP_App_Client {
 		if ( is_wp_error( $result ) ) {
 			$error_data = $result->get_error_data();
 			$rpc_code   = is_array( $error_data ) && isset( $error_data['rpc_code'] ) ? $error_data['rpc_code'] : 0;
+			$http_code  = is_array( $error_data ) && isset( $error_data['status'] ) ? (int) $error_data['status'] : 0;
 
 			// Fall back to the legacy initialize handshake when the server
 			// does not implement server/discover (-32601) or rejects the
 			// stateless request (e.g. -32600 "Missing Mcp-Session-Id header").
-			$message = strtolower( $result->get_error_message() );
-			if ( -32601 !== $rpc_code && -32600 !== $rpc_code && false === strpos( $message, 'session' ) ) {
+			// Strict 2025-era gateways (e.g. Upwork) instead answer a bare
+			// HTTP 400/404/405/501 without a JSON-RPC error envelope — treat
+			// those the same way and let initialize() take over.
+			$fallback_http_codes = array( 400, 404, 405, 501 );
+			$message             = strtolower( $result->get_error_message() );
+			if ( -32601 !== $rpc_code && -32600 !== $rpc_code && false === strpos( $message, 'session' ) && ! in_array( $http_code, $fallback_http_codes, true ) ) {
 				return $result;
 			}
 
@@ -554,7 +559,13 @@ class WP_MCP_AI_MCP_App_Client {
 					$status_code,
 					$this->server_url
 				),
-				array( 'status' => $status_code )
+				array(
+					'status' => $status_code,
+					// Include a truncated body snippet for diagnostics (e.g. the
+					// gateway's 400 explanation), without leaking it into the
+					// user-facing error message.
+					'body'   => substr( $body, 0, 400 ),
+				)
 			);
 		}
 
@@ -851,17 +862,27 @@ class WP_MCP_AI_MCP_App_Client {
 			$headers['Mcp-Session-Id'] = $this->session_id;
 		}
 
-		// MCP 2026-07-28 routing headers (SEP-2243). When a legacy session
-		// negotiated an older protocol version, advertise that version so the
-		// server accepts the request.
-		$headers['MCP-Protocol-Version'] = '' !== $this->negotiated_protocol_version ? $this->negotiated_protocol_version : self::PROTOCOL_VERSION;
+		// MCP 2026-07-28 routing headers (SEP-2243). These headers exist only
+		// in the 2026-07-28 dialect: send them for the stateless discover
+		// handshake and everything that follows it. The legacy initialize
+		// handshake — and any session a pre-2026-07-28 server negotiated —
+		// must look exactly like a 2025-era client: no MCP-Protocol-Version,
+		// no Mcp-Method. Strict 2025-era gateways (e.g. Upwork) reject
+		// unknown methods and routing headers with a bare HTTP 400 that never
+		// carries a JSON-RPC error code, so sending them can turn a working
+		// fallback handshake into another opaque failure.
+		$is_legacy_dialect = '' !== $this->negotiated_protocol_version && self::PROTOCOL_VERSION !== $this->negotiated_protocol_version;
 
-		if ( ! empty( $method ) ) {
-			$headers['Mcp-Method'] = $method;
+		if ( 'initialize' !== $method && ! $is_legacy_dialect ) {
+			$headers['MCP-Protocol-Version'] = self::PROTOCOL_VERSION;
 
-			// Mcp-Name required for tools/call, resources/read, prompts/get.
-			if ( in_array( $method, array( 'tools/call', 'resources/read', 'prompts/get' ), true ) ) {
-				$headers['Mcp-Name'] = isset( $params['name'] ) ? $params['name'] : '';
+			if ( ! empty( $method ) ) {
+				$headers['Mcp-Method'] = $method;
+
+				// Mcp-Name required for tools/call, resources/read, prompts/get.
+				if ( in_array( $method, array( 'tools/call', 'resources/read', 'prompts/get' ), true ) ) {
+					$headers['Mcp-Name'] = isset( $params['name'] ) ? $params['name'] : '';
+				}
 			}
 		}
 
