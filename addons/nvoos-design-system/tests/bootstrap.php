@@ -60,11 +60,18 @@ require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/integrations/class-nvoos-nds-i
 require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/integrations/class-nvoos-nds-integration-jfb.php';
 require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/integrations/class-nvoos-nds-integration-elementor.php';
 require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/integrations/class-nvoos-nds-integration-woocommerce.php';
-require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/tools/class-nvoos-nds-tool-list-email-templates.php';
-require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/tools/class-nvoos-nds-tool-preview-email-template.php';
-require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/tools/class-nvoos-nds-tool-audit-email-template.php';
-require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/tools/class-nvoos-nds-tool-set-active-email-template.php';
-require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/tools/class-nvoos-nds-tool-test-send-email.php';
-require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/tools/class-nvoos-nds-tool-generate-email-template.php';
-require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/tools/class-nvoos-nds-tool-export-email-template.php';
-require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/tools/class-nvoos-nds-tool-import-email-template.php';
+
+// The tool classes implement the NV oOS tool contracts (interface + trait),
+// which live in the base plugin and may be absent in standalone suites that
+// boot through the shared root bootstrap. Load them only when the contracts
+// exist; the tools test skips itself in the same situation.
+if ( interface_exists( 'WP_MCP_AI_Tool_Interface' ) && trait_exists( 'WP_MCP_AI_Tool_Default_Capability' ) ) {
+	require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/tools/class-nvoos-nds-tool-list-email-templates.php';
+	require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/tools/class-nvoos-nds-tool-preview-email-template.php';
+	require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/tools/class-nvoos-nds-tool-audit-email-template.php';
+	require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/tools/class-nvoos-nds-tool-set-active-email-template.php';
+	require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/tools/class-nvoos-nds-tool-test-send-email.php';
+	require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/tools/class-nvoos-nds-tool-generate-email-template.php';
+	require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/tools/class-nvoos-nds-tool-export-email-template.php';
+	require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/tools/class-nvoos-nds-tool-import-email-template.php';
+}

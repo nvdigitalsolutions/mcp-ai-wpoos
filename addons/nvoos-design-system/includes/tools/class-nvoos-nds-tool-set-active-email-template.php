@@ -10,6 +10,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// The NV oOS tool contracts (interface, capability-flags interface, and the
+// default-capability trait) live in the base plugin. Guard so the addon stays
+// loadable — and its autoloader stays safe — when it runs standalone without
+// the base plugin active.
+if ( ! interface_exists( 'WP_MCP_AI_Tool_Interface' ) || ! trait_exists( 'WP_MCP_AI_Tool_Default_Capability' ) ) {
+	return;
+}
+
 /**
  * Activates an email template, gated by publish status and the audit.
  *

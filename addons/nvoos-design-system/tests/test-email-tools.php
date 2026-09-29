@@ -28,6 +28,19 @@ class Test_Email_Tools extends WP_UnitTestCase {
 	);
 
 	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		parent::setUp();
+
+		if ( ! interface_exists( 'WP_MCP_AI_Tool_Interface' ) ) {
+			$this->markTestSkipped( 'The NV oOS tool contracts are not loaded in this environment.' );
+		}
+	}
+
+	/**
 	 * Every tool implements the NV oOS tool interface (when the base plugin
 	 * is loaded) and exposes the admin capability.
 	 *
