@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: September 28, 2026 (v1.1.88).
+> Last reviewed: September 29, 2026 (v1.1.89).
+>
+> **New in v1.1.89:** one new **base** route in-window: `POST/GET mcp-ai/v1/google-classroom/webhook` (PR #6809) — the Pub/Sub push receiver (shared-secret verified, ack-fast, deferral to a one-off `wp_mcp_ai_google_classroom_notification` cron event; guarded by `google-classroom-init.php`). Pro-level: `/mcp-apps/oauth/init` gains an optional `connection_ref` parameter (PR #6804) so the Upwork `mcp`-mode Remote Sites connection reuses the MCP Apps OAuth flow (tokens persist to the encrypted central `mcp_oauth` store via `update_mcp_oauth()`). #6802/#6805/#6807/#6806/#6810 are client/service/security/addon-level — no WP REST route changes (the Design System addon's tools and the Classroom foundation register tools, not routes).
 >
 > **New in v1.1.88:** no new **base** routes in-window (the verification cascade / tier routing are service-level, #6792; the mcp-apps transport fixes are client-level, #6799/#6800; #6801 is tool-file-level). Pro-level: a new admin-gated `POST mcp-ai/v1/mcp-apps/oauth/complete` (PR #6794) completes the manual loopback OAuth flow (10-minute state TTL); the `GET mcp-ai/v1/mcp-apps/oauth/callback` route now declares code/state **optional** so auth-server denials (`?error=access_denied`) reach the friendly error page instead of REST validation (PR #6793). The toolkit-MCP grant gate (PR #6796) is JSON-RPC-level (`-32601` on non-granted servers), not a WP REST route change.
 >

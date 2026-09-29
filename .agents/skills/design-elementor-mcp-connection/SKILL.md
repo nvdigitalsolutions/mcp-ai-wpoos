@@ -6,16 +6,16 @@ license: Proprietary. See LICENSE.txt
 metadata:
   type: Skill
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.88"
-  plugin-version-tested: "1.1.88"
-  last-updated: "2026-09-28"
+  plugin-version: "1.1.89"
+  plugin-version-tested: "1.1.89"
+  last-updated: "2026-09-29"
 ---
 
 # Elementor MCP Connections — MCP Apps on NV oOS Assistants
 
 Operational guide for connecting Elementor MCP servers (remote WordPress +
 Elementor sites) to NV oOS assistants through the Pro "MCP Apps" subsystem.
-Verified against plugin v1.1.88 source (`addons/pro/includes/mcp-apps/`,
+Verified against plugin v1.1.89 source (`addons/pro/includes/mcp-apps/`,
 `includes/assistants/metaboxes/class-wp-mcp-ai-metabox-mcp-apps.php`,
 `addons/pro/includes/slash-commands/`) and the Elementor MCP / WordPress MCP
 Adapter public documentation (2026-09).
@@ -330,7 +330,7 @@ refresh) — Elementor MCP does not use it; use `basic`/`header` instead.
   any other tool; MCP Server test/discover events are activity-logged; review
   logs after Elementor write operations.
 
-## Code map (verified, v1.1.88)
+## Code map (verified, v1.1.89)
 
 | Concern | Location |
 |---|---|

@@ -176,6 +176,41 @@ weekly (or on demand), independent of any release.
   secrets were plaintext after #6798 encrypted them. After mapping the window,
   diff each updated skill against the code it documents and `diff -q` the
   Zed/bundled pairs — the catch-up owns the reconciliation.
+- **A PR may pre-stage a `## [Unreleased]` CHANGELOG section, not just a
+  readme.txt entry.** The v1.1.89 window's #6809 added an `[Unreleased]`
+  block (the Google Classroom content) at the top of `CHANGELOG.md` before the
+  catch-up ran — the catch-up converts it into the dated release section and
+  extends it with the rest of the window; never keep two entries for the same
+  version (the same rule as the readme.txt pre-staging).
+- **Verify addon rows in `ADDON_INVENTORY.md` against the addon's own version
+  constant.** The v1.1.89 window's #6810 updated the Design System row
+  in-window but wrote **0.2.0** while the addon's header + `NVOOS_DESIGN_SYSTEM_VERSION`
+  + PR body say **0.3.0** (the proposals README even said "v0.2.0 → v0.3.0").
+  The catch-up corrects a factually wrong in-window row version in-pass (the
+  "refreshes only the header stamp" rule assumes the row was right).
+- **Addon-level wrong-version `@since` waves record like any other OI-1 group.**
+  #6810 shipped 33 × `@since 0.2.0` across the renamed/new
+  `addons/nvoos-design-system/` files while the addon shipped **0.3.0** (2
+  files correctly tagged 0.3.0) — the addon-version convention (SaaS Controller
+  precedent) requires tags to match the shipped addon version. Record the
+  group with its counts; parked reconciliation applies.
+- **Tools registered by standalone addons via `wp_mcp_ai_register_tools` are
+  described in the changelog but never counted in base/Pro totals.** The
+  v1.1.89 window's 8 `nds_*` email tools (Design System addon) join the same
+  registry the algorave/embedded/graphify/page-agent addon tools use — the
+  base/Pro count lines track plugin + `addons/pro` registrations only (the
+  algorave "9 tools" entry is the precedent: described, not counted).
+- **Folder/file `@since` conventions override the wrong-version rule.** The new
+  `includes/google/` Classroom files carry `@since 1.0.0` ×71 like their
+  Calendar siblings (which already had 31), and the Pro remote-site files'
+  `@since 1.0.0` additions follow each file's dominant pre-existing tag —
+  local convention, not a new OI-1 group.
+- **Track B: the migration-trigger line now covers per-provider settings keys.**
+  #6805 extended `WP_MCP_AI_Model_Catalog_Migration` to rewrite
+  `deepseek_model`/`default_gemini_model`/`anthropic_model`/`kimi_model`
+  alongside `default_model` — the rewrite still only runs on a catalog
+  version bump, so a migration-behavior change without a bump is dormant until
+  the next one.
 
 ### A3. Commit structure (mirror v1.1.58–v1.1.83)
 
@@ -280,7 +315,9 @@ Per `AGENTS.md` §6, when adding a skill under `.agents/skills/[slug]/`:
   `status`, `sunset_date`, `notes`.
 - **Migration trigger:** `WP_MCP_AI_Model_Catalog_Migration` runs once per
   catalog `version` bump and rewrites stored references (`wp_mcp_ai_model_configs`
-  option, assistant `_wp_mcp_ai_model` meta, `wp_mcp_ai_settings.default_model`).
+  option, assistant `_wp_mcp_ai_model` meta, `wp_mcp_ai_settings.default_model`
+  plus the per-provider keys `deepseek_model`/`default_gemini_model`/
+  `anthropic_model`/`kimi_model` since #6805).
   **Always bump `version` + `updated_at` when editing the JSON.**
 - **Discovery is suggestion-only:** the daily `wp_mcp_ai_model_catalog_discovery`
   cron writes diffs to the Suggestions panel — they are **never** auto-applied.
@@ -664,16 +701,19 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.85-docs-catch-up.md`,
   `docs/project/plans/v1.1.86-docs-catch-up.md`,
   `docs/project/plans/v1.1.87-docs-catch-up.md`,
-  `docs/project/plans/v1.1.88-docs-catch-up.md` (latest executed — the v1.1.88
-  pass over PRs #6787 + #6789–#6801: decision-model orchestration Phase A
-  (proposal 045), the MCP Apps OAuth/credential-hardening wave (#6794/#6795/
-  #6798), toolkit-MCP grant gating (#6796), MCP App transport fixes
-  (#6799/#6800), the Upwork URL canonicalisation round-trip (#6790/#6793),
-  PayHere/Flowhub guarded requires (#6801), SaaS Controller 0.1.0 → 0.3.0
-  (#6791/#6797), the gateway express bump (#6787), two skill reconciliations
-  (design-crm bundled-copy sync + canonical-form fix, design-elementor
-  encryption/troubleshooting updates), the stale 1.1.86 build-set removal
-  (30 files), and zero tool-count changes)
+  `docs/project/plans/v1.1.88-docs-catch-up.md`,
+  `docs/project/plans/v1.1.89-docs-catch-up.md` (latest executed — the v1.1.89
+  pass over PRs #6802 + #6804–#6810: the Google Classroom ECA integration
+  (proposal 046, 12 flag-gated Pro tools + base foundation + new webhook
+  route), the Design System addon rename + token-driven email module
+  (proposal 047/048, 8 addon-provided nds tools, 0.1.0 → 0.3.0), the Upwork
+  MCP connection mode (#6804), the vision/remote/EZuite live-site fixes
+  (#6805), the MCP legacy-dialect handshake cache (#6802), the CodeQL closure
+  + dependency advisory patches (#6807/#6806), the coverage-manifest repair
+  (#6808), three skill reconciliations (design-elementor-mcp-connection
+  bundled sync + stamps, design-email-marketing bundled sync, design-crm MCP
+  mode), the in-window ADDON_INVENTORY version correction (0.2.0 → 0.3.0),
+  the stale 1.1.87 build-set removal (30 files), and +12 Pro tool-count)
 - Standing open items: `docs/project/plans/docs-catch-up-open-items.md`
 - Executed PR deferred-item sweep (2026-09-17): issues #6646–#6655; closed
   #6389 as complete

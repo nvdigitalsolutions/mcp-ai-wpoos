@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.88"
-  plugin-version-tested: "1.1.88"
-  last-updated: "2026-09-27"
+  plugin-version: "1.1.89"
+  plugin-version-tested: "1.1.89"
+  last-updated: "2026-09-29"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -757,6 +757,16 @@ Import external AI conversation exports into the JetEngine
   toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
   dj-management/image-production slices.
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## Google Classroom ECA, Design System Rename + Email Templates & Upwork MCP Mode (v1.1.89)
+
+- **Google Classroom integration for the ECA toolkit (PR #6809, Proposal 046)** — shared `includes/google/` Classroom foundation (restricted scopes, Pub/Sub push with shared-secret verification); `google_classroom` Remote Sites connection type; **12 new ECA tools** (`list_classroom_courses` … `manage_classroom_push_watch`) behind `enable_eca_classroom_integration` (default off); nightly sync engine; new base REST route `mcp-ai/v1/google-classroom/webhook`.
+- **Design System addon rename + token-driven email templates (PR #6810, Proposals 047/048)** — `addons/crocoblock-ds/` → `addons/nvoos-design-system/` (**0.1.0 → 0.3.0**, zero-breakage shims); 5 built-in accessible email templates + global `wp_mail` wrapper + WCAG/EMC audit gates; **8 admin-gated `nds_*` tools** (addon-provided, not counted in base/Pro totals).
+- **Upwork MCP connection mode (PR #6804)** — third `upwork_mode` (`mcp`) against the official Upwork MCP gateway via a sessionful bridge (`upwork__find_jobs`/`upwork__list_accounts`); `org_uid` resolution; OAuth via `connection_ref` with tokens in the encrypted central `mcp_oauth` store.
+- **Vision + remote + EZuite fixes (PR #6805)** — `submit_document_prompt` routes images through the `input_image` vision segment path (DeepSeek `deepseek-flash` native vision); remote-connection canonical slug mapping; EZuite `item_code` enforcement; per-provider model-setting migration.
+- **Handshake cache (PR #6802)** — 24h per-URL legacy-dialect hint skips the doomed `server/discover` probe (Upwork Test Connection ~24.9s → ~8.5s).
+- **Security (PRs #6807/#6806)** — 0 open CodeQL alerts; ip-address/undici/multer advisory patches.
+- **Tool counts** — ~347 base + ~1,299 Pro (~1,646 total; +12 Pro — the classroom tools; the 8 `nds_*` tools are addon-provided and not counted).
 
 ## Decision-Model Orchestration, MCP Apps Hardening & SaaS Controller 0.3.0 (v1.1.88)
 

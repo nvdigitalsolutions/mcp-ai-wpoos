@@ -6,16 +6,16 @@ license: Proprietary. See LICENSE.txt
 metadata:
   type: Skill
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.88"
-  plugin-version-tested: "1.1.88"
-  last-updated: "2026-09-28"
+  plugin-version: "1.1.89"
+  plugin-version-tested: "1.1.89"
+  last-updated: "2026-09-29"
 ---
 
 # Elementor MCP Connections — MCP Apps on NV oOS Assistants
 
 Operational guide for connecting Elementor MCP servers (remote WordPress +
 Elementor sites) to NV oOS assistants through the Pro "MCP Apps" subsystem.
-Verified against plugin v1.1.88 source (`addons/pro/includes/mcp-apps/`,
+Verified against plugin v1.1.89 source (`addons/pro/includes/mcp-apps/`,
 `includes/assistants/metaboxes/class-wp-mcp-ai-metabox-mcp-apps.php`,
 `addons/pro/includes/slash-commands/`) and the Elementor MCP / WordPress MCP
 Adapter public documentation (2026-09).
@@ -223,8 +223,14 @@ refresh) — Elementor MCP does not use it; use `basic`/`header` instead.
    handshake and every request inside a legacy session omit the 2026-only
    `MCP-Protocol-Version`/`Mcp-Method` routing headers and the `_meta`
    envelope, so they look exactly like a 2025-era client (Claude Desktop /
-   Cursor shape). A bare "connection failed" with a 2xx response usually
-   means the URL points at the wrong route slug — re-check against the
+   Cursor shape). Once a legacy fallback succeeds, a per-URL **dialect hint**
+   (transient `wp_mcp_ai_mcp_app_legacy_<md5>`, 24h) skips the doomed probe on
+   subsequent tests/connects (saves one round trip per connect cycle; visible
+   as `Handshake: initialize` with no `server/discover` on the wire). A stale
+   hint self-heals: if `initialize` is rejected with a stateless signature
+   (`-32601`/`-32600` or HTTP 400/404/405/501), the hint is cleared and
+   `discover()` is retried. A bare "connection failed" with a 2xx response
+   usually means the URL points at the wrong route slug — re-check against the
    generated prompt.
 3. **Tools discovered but missing from chat** — bridged tools require the
    `edit_posts` capability check at execution and are only appended when the
@@ -267,7 +273,13 @@ refresh) — Elementor MCP does not use it; use `basic`/`header` instead.
    400, which older client builds never fell back from. Verified fix (client
    + registry fallback on 400/404/405/501, legacy-header omission) shipped in
    the mcp-apps cluster — deploy it and re-run Test Connection / Discover
-   Tools. Diagnostics caveat: Upwork binds OAuth access tokens to the
+   Tools. **Remote Sites freelance-marketplace mode:** Upwork connections
+   (`connection_type: upwork`) also accept `upwork_mode: mcp`, which drives
+   the CRM search/import tools through the same gateway (`upwork__find_jobs`
+   action `search`/`get`, `upwork__list_accounts` for `org_uid`); the login
+   flow is the MCP Apps REST flow with `connection_ref` set to the Upwork
+   connection ID, persisting tokens to its encrypted `mcp_oauth` field.
+   Diagnostics caveat: Upwork binds OAuth access tokens to the
    originating server IP, so reproducing the handshake with `curl` from
    another machine returns 401 even with a valid token — validate on the site
    itself (the HTTP-error `WP_Error` data now includes a 400-char response
@@ -318,7 +330,7 @@ refresh) — Elementor MCP does not use it; use `basic`/`header` instead.
   any other tool; MCP Server test/discover events are activity-logged; review
   logs after Elementor write operations.
 
-## Code map (verified, v1.1.88)
+## Code map (verified, v1.1.89)
 
 | Concern | Location |
 |---|---|
