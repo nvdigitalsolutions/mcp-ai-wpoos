@@ -1,11 +1,11 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 48 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 51 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates, addon-tool standalone contract fatals), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-09-19"
+  last-updated: "2026-09-29"
 ---
 
 # NV oOS Test Suite — Repair & Triage Guide
@@ -643,6 +643,37 @@ the changed files is the substantive gate; plan CI waits accordingly.
     `phpcs:disable InterpolatedNotPrepared` block for the
     esc_sql()-escaped `{$table}`. Behavior-identical; also run phpcbf or
     align `=` spacing manually (WPCS alignment warnings follow).
+
+51. **Addon tool classes fatal in standalone suites (trait/interface not found).**
+    `Trait "WP_MCP_AI_Tool_Default_Capability" not found` / `Interface
+    "WP_MCP_AI_Tool_Interface" not found` in the `test (standalone)` jobs
+    (`plugins/nvoos-content-graph-{ai,ai-platform,pro}/phpunit.xml.dist`).
+    Cause: an addon's `tests/bootstrap.php` — loaded from the shared root
+    bootstrap — requires tool classes that `implements
+    WP_MCP_AI_Tool_Interface` + `use WP_MCP_AI_Tool_Default_Capability`,
+    contracts that only exist when the base plugin is loaded; the
+    standalone matrixes boot through the root bootstrap WITHOUT the base
+    plugin, so the require fatals before any test runs. Fix (three layers,
+    as in `addons/nvoos-design-system`, PR #6810):
+
+    - **Self-guard the production files** — after the ABSPATH guard:
+      `if ( ! interface_exists( 'WP_MCP_AI_Tool_Interface' ) ||
+      ! trait_exists( 'WP_MCP_AI_Tool_Default_Capability' ) ) { return; }`.
+      This also keeps the addon's autoloader safe standalone (class_exists
+      returns false instead of fataling).
+    - **Guard the addon's tests/bootstrap.php** requires with the same
+      interface/trait check.
+    - **`markTestSkipped()`** in the dependent test when the contracts are
+      absent.
+    Verify in two ISOLATED processes: no-contracts (require tools + entry →
+    no fatal, tool classes undefined, core classes load) and with-contracts
+    (tools load, capability correct).
+
+    **Gotcha:** PHP binds unconditional top-level `interface`/`trait`
+    declarations at COMPILE time — defining the contracts later in the same
+    file/process makes them exist from line 1, silently invalidating a
+    "contracts absent" harness. Always simulate the standalone state in a
+    separate process (`php -r` or a second file).
 
 ## Production fix vs test fix
 
