@@ -45,6 +45,7 @@
 ### Tests
 
 - **PR #6808** regenerates the Pro tool-coverage manifest (`wp-mcp-ai-upwork-mcp-bridge` +1) — fixes the CI coverage-contract failure #6804 left behind; base manifest unchanged.
+- **PR #6813** (post-window CI repair) — the addon suite's first real PHPUnit run surfaced two failures: the WooCommerce integration tests constructed a second real `WooCommerce` under CI (booting `WC_CLI` into a `WP_CLI` stub lacking `add_hook()` — now the suite drives the real singleton mailer and restores stock WC hooks in tearDown, plus the Pro CLI stub gains a no-op `add_hook()`), and the email-wrapper test asserted the recipient name in rendered output although the built-in templates never render `{{to_name}}` (now asserted on the `nds_email_context` merge context). Both recorded as test-suite skill pattern 52.
 
 ### Docs & Skills
 
