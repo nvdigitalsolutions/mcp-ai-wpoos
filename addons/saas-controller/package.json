@@ -31,7 +31,7 @@
     "zod": "^3.24.1"
   },
   "overrides": {
-    "ip-address": ">=10.4.0",
+    "ip-address": ">=10.7.2",
         "fast-uri": ">=4.1.4",
     "sharp": ">=0.35.4",
     "qs": ">=6.16.0",
@@ -53,7 +53,7 @@
     "cross-spawn": ">=6.0.6",
     "brace-expansion@^5": ">=5.0.8",
     "brace-expansion@^2": "2.1.4",
-    "undici": ">=8.10.0",
+    "undici": ">=8.10.2",
     "http-proxy-middleware": ">=2.0.10",
     "websocket-driver": ">=0.7.5",
     "adm-zip": ">=0.6.1",
