@@ -20,6 +20,7 @@ class Test_Email_Wrapper extends WP_UnitTestCase {
 	protected function tearDown(): void {
 		parent::tearDown();
 		remove_all_filters( 'nds_email_skip' );
+		remove_all_filters( 'nds_email_context' );
 		remove_filter( 'wp_mail_content_type', array( 'NV_oOS_Design_System_Email_Wrapper', 'force_html_content_type_once' ), 99 );
 	}
 
@@ -119,9 +120,20 @@ class Test_Email_Wrapper extends WP_UnitTestCase {
 	/**
 	 * A plain-text body is wrapped in the active template.
 	 *
+	 * The built-in templates do not render a {{to_name}} greeting line, so
+	 * the recipient-name extraction is asserted on the merge context the
+	 * wrapper builds (the same context templates receive).
+	 *
 	 * @return void
 	 */
 	public function test_plain_body_is_wrapped() {
+		$captured = null;
+		$capture  = function ( $context ) use ( &$captured ) {
+			$captured = $context;
+			return $context;
+		};
+		add_filter( 'nds_email_context', $capture );
+
 		$atts = array(
 			'to'      => 'Test User <test@example.com>',
 			'subject' => 'Hello subject',
@@ -133,7 +145,8 @@ class Test_Email_Wrapper extends WP_UnitTestCase {
 		$this->assertStringContainsString( '<!-- nds-email-wrapper:', $result['message'] );
 		$this->assertStringContainsString( '<!DOCTYPE html>', $result['message'] );
 		$this->assertStringContainsString( 'Hello there, this is the body.', $result['message'] );
-		$this->assertStringContainsString( 'Test User', $result['message'], 'Recipient name should be extracted from the To header.' );
+		$this->assertIsArray( $captured, 'The merge context should be passed through the nds_email_context filter.' );
+		$this->assertSame( 'Test User', $captured['to_name'], 'Recipient name should be extracted from the To header.' );
 		$this->assertStringContainsString( 'Hello subject', $result['message'] );
 
 		// The one-shot content-type filter must be registered for this send.

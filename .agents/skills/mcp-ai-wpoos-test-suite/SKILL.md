@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 51 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates, addon-tool standalone contract fatals), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 52 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates, addon-tool standalone contract fatals, WP_CLI stub constant leak), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -674,6 +674,34 @@ the changed files is the substantive gate; plan CI waits accordingly.
     file/process makes them exist from line 1, silently invalidating a
     "contracts absent" harness. Always simulate the standalone state in a
     separate process (`php -r` or a second file).
+
+52. **`Call to undefined method WP_CLI::add_hook()` when a test constructs
+    real WooCommerce (stub constant leak).** A suite that instantiates the
+    real `WooCommerce` class fatals because another test file's **file-scope**
+    `WP_CLI` stub — loaded eagerly during PHPUnit discovery, before any test
+    runs — defines the `WP_CLI` constant + a minimal class without
+    `add_hook()` (the `addons/pro/tests/test-pro-cli-mcp-server-command.php`
+    stub is the in-repo offender). WooCommerce's `WC_CLI` then passes its
+    `defined('WP_CLI') && WP_CLI` guard and calls the missing method during
+    `new WooCommerce()`. Fix (both layers, as in the v1.1.89 CI repair):
+
+    - **Never construct a second real WooCommerce in a test.** When
+      `class_exists( 'WooCommerce' )`, drive the code under test against the
+      real singleton (`WC()->mailer()`) instead; snapshot
+      `$GLOBALS['wp_filter']['woocommerce_init']` before any
+      `remove_all_actions()` and restore it — plus the removed `WC_Emails`
+      `email_header`/`email_footer` handlers — in tearDown (removing the
+      real mailer's handlers without restoring them is order-dependent
+      pollution for later WooCommerce suites).
+    - **Defense in depth:** every file-scope `WP_CLI` stub must include a
+      no-op `add_hook( $when, $callback )` — defining the `WP_CLI` constant
+      alone makes real-WC boot paths assume the full WP-CLI API.
+
+    **Gotcha:** `class_exists( 'WooCommerce' )` is true in CI (the root
+    `tests/bootstrap.php` loads WC when `wp-content/plugins/woocommerce`
+    exists) but false on minimal local copies — the same suite must exercise
+    **both** branches, and only the stub branch may construct `WooCommerce`
+    freely.
 
 ## Production fix vs test fix
 

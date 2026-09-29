@@ -2,8 +2,13 @@
 /**
  * Test: WooCommerce Email Rebrand Integration.
  *
- * Uses lightweight WooCommerce stubs so the integration's hook wiring can be
- * exercised without a full WooCommerce install.
+ * Uses lightweight WooCommerce stubs when WooCommerce is absent so the
+ * integration's hook wiring can be exercised without a full WooCommerce
+ * install. When the real WooCommerce plugin is active (CI — the root test
+ * bootstrap loads it when present), the suite drives the integration against
+ * the real singleton mailer instead: a second `new WooCommerce()` must never
+ * run under PHPUnit, because the real constructor boots the whole plugin and
+ * reaches `WP_CLI::add_hook()`, which does not exist in the test environment.
  *
  * @package NV_oOS_Design_System
  */
@@ -79,6 +84,25 @@ if ( ! function_exists( 'WC' ) ) {
 class Test_WooCommerce_Integration extends WP_UnitTestCase {
 
 	/**
+	 * Whether the real WooCommerce plugin (not the stubs) drives this suite.
+	 *
+	 * True in CI, where the root test bootstrap loads WooCommerce when the
+	 * plugin directory exists.
+	 *
+	 * @var bool
+	 */
+	private $using_real_wc = false;
+
+	/**
+	 * Snapshot of the woocommerce_init hook taken before setUp wipes it
+	 * (real-WC branch only) — restored in tearDown so later suites still see
+	 * the stock WooCommerce handlers.
+	 *
+	 * @var \WP_Hook|array|null
+	 */
+	private $wc_init_handlers = null;
+
+	/**
 	 * Set up stubs and enable rebranding.
 	 *
 	 * @return void
@@ -86,8 +110,20 @@ class Test_WooCommerce_Integration extends WP_UnitTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		$GLOBALS['nds_test_mailer'] = new WC_Emails();
-		$GLOBALS['nds_test_wc']     = new WooCommerce();
+		$this->using_real_wc = class_exists( 'WooCommerce' );
+
+		if ( $this->using_real_wc ) {
+			// WooCommerce is active. Never construct a second WooCommerce
+			// instance — the real constructor boots the whole plugin and
+			// reaches WP_CLI hooks that don't exist under PHPUnit. Drive the
+			// integration against the real singleton mailer instead.
+			$this->wc_init_handlers = isset( $GLOBALS['wp_filter']['woocommerce_init'] ) ? $GLOBALS['wp_filter']['woocommerce_init'] : null;
+			$GLOBALS['nds_test_wc']     = function_exists( 'WC' ) ? WC() : null;
+			$GLOBALS['nds_test_mailer'] = ( function_exists( 'WC' ) && WC() ) ? WC()->mailer() : null;
+		} else {
+			$GLOBALS['nds_test_mailer'] = new WC_Emails();
+			$GLOBALS['nds_test_wc']     = new WooCommerce();
+		}
 
 		update_option( 'nvoos_nds_wc_rebrand', 1 );
 
@@ -105,11 +141,36 @@ class Test_WooCommerce_Integration extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Clean up global stubs.
+	 * Clean up global stubs and restore stock WooCommerce hooks.
 	 *
 	 * @return void
 	 */
 	protected function tearDown(): void {
+		// Drop the NDS rebrand handlers bound by bind_hooks().
+		remove_action( 'woocommerce_email_header', array( 'NV_oOS_Design_System_Integration_WooCommerce', 'render_header' ), 10 );
+		remove_action( 'woocommerce_email_footer', array( 'NV_oOS_Design_System_Integration_WooCommerce', 'render_footer' ), 10 );
+		remove_filter( 'woocommerce_email_styles', array( 'NV_oOS_Design_System_Integration_WooCommerce', 'inject_styles' ), 10 );
+		remove_filter( 'woocommerce_email_get_option', array( 'NV_oOS_Design_System_Integration_WooCommerce', 'sync_option' ), 10 );
+
+		if ( $this->using_real_wc ) {
+			// Restore the real mailer's default header/footer handlers and the
+			// woocommerce_init hook so later suites see stock WooCommerce.
+			$mailer = $GLOBALS['nds_test_mailer'];
+			if ( $mailer instanceof WC_Emails ) {
+				if ( ! has_action( 'woocommerce_email_header', array( $mailer, 'email_header' ) ) ) {
+					add_action( 'woocommerce_email_header', array( $mailer, 'email_header' ), 10, 2 );
+				}
+				if ( ! has_action( 'woocommerce_email_footer', array( $mailer, 'email_footer' ) ) ) {
+					add_action( 'woocommerce_email_footer', array( $mailer, 'email_footer' ), 10, 1 );
+				}
+			}
+			if ( null !== $this->wc_init_handlers ) {
+				$GLOBALS['wp_filter']['woocommerce_init'] = $this->wc_init_handlers;
+			} elseif ( isset( $GLOBALS['wp_filter']['woocommerce_init'] ) ) {
+				unset( $GLOBALS['wp_filter']['woocommerce_init'] );
+			}
+		}
+
 		parent::tearDown();
 		unset( $GLOBALS['nds_test_mailer'], $GLOBALS['nds_test_wc'] );
 		delete_option( 'nvoos_nds_wc_rebrand' );
