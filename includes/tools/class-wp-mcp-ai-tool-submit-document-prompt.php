@@ -172,7 +172,10 @@ class WP_MCP_AI_Tool_Submit_Document_Prompt implements WP_MCP_AI_Tool_Interface,
 			return new WP_Error( 'wp_mcp_ai_missing_document', __( 'No attachments or file identifiers were provided.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
-		$attachments_helper = new WP_MCP_AI_Message_Attachments();
+		// Resolve the assistant's provider up front so attachments and the
+		// completion request are handled by the same provider client.
+		$provider            = $this->resolve_execution_provider( $context );
+		$attachments_helper = new WP_MCP_AI_Message_Attachments( $provider );
 		$content_segments   = array();
 		$manual_attachments = array();
 		$has_file_segment   = false;
@@ -192,7 +195,7 @@ class WP_MCP_AI_Tool_Submit_Document_Prompt implements WP_MCP_AI_Tool_Interface,
 				if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 					return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 				}
-				$segment = $attachments_helper->prepare_input_file_segment( $segment_args );
+				$segment = $this->prepare_document_segment( $attachments_helper, $segment_args, $provider );
 				if ( is_wp_error( $segment ) ) {
 					return $segment;
 				}
@@ -277,7 +280,11 @@ class WP_MCP_AI_Tool_Submit_Document_Prompt implements WP_MCP_AI_Tool_Interface,
 			$options['attachments'] = $attachments_payload;
 		}
 
-		$client   = new WP_MCP_AI_OpenAI_Client();
+		$client = $this->get_chat_client( $provider );
+		if ( is_wp_error( $client ) ) {
+			return $client;
+		}
+
 		$response = $client->create_chat_completion( $messages, $options );
 
 		if ( is_wp_error( $response ) ) {
@@ -291,6 +298,115 @@ class WP_MCP_AI_Tool_Submit_Document_Prompt implements WP_MCP_AI_Tool_Interface,
 		}
 
 		return $response;
+	}
+
+	/**
+	 * Resolve the provider that should own the request.
+	 *
+	 * Prefers the assistant's configured provider, then the site-wide
+	 * default provider, then OpenAI (the tool's historical default).
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $context Execution context, including assistant_config.
+	 * @return string Provider slug (e.g. 'openai', 'deepseek', 'gemini').
+	 */
+	protected function resolve_execution_provider( array $context ) {
+		if ( ! empty( $context['assistant_config']['provider'] ) ) {
+			return sanitize_key( $context['assistant_config']['provider'] );
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			if ( ! empty( $settings['default_provider'] ) ) {
+				return sanitize_key( $settings['default_provider'] );
+			}
+		}
+
+		return 'openai';
+	}
+
+	/**
+	 * Prepare a single document segment, routing images through the vision path.
+	 *
+	 * The file-segment MIME allowlist deliberately excludes image types on
+	 * every provider, so a JPEG/PNG/WebP attachment must travel as an
+	 * `input_image` segment. Vision-capable models (GPT-4o/GPT-4.1,
+	 * Gemini, deepseek-flash) then receive it as an image_url content block
+	 * instead of an unsupported file reference.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WP_MCP_AI_Message_Attachments $attachments_helper Attachment helper bound to the provider.
+	 * @param array                         $segment_args       Segment definition (attachment_id, display_name).
+	 * @param string                        $provider           Provider slug.
+	 * @return array|WP_Error Prepared segment or error.
+	 */
+	protected function prepare_document_segment( $attachments_helper, array $segment_args, $provider ) {
+		$attachment_id = isset( $segment_args['attachment_id'] ) ? absint( $segment_args['attachment_id'] ) : 0;
+		$mime_type     = $attachment_id > 0 ? (string) get_post_mime_type( $attachment_id ) : '';
+
+		if ( '' !== $mime_type && WP_MCP_AI_Message_Attachments::is_image_mime_type( $mime_type, $provider ) ) {
+			return $attachments_helper->prepare_input_image_segment( $segment_args );
+		}
+
+		return $attachments_helper->prepare_input_file_segment( $segment_args );
+	}
+
+	/**
+	 * Resolve a chat-completion client for the given provider.
+	 *
+	 * Prefers the shared container bindings (`client.<provider>`), falling
+	 * back to direct instantiation for the core providers and to the OpenAI
+	 * client for unknown providers (preserving the tool's legacy behaviour).
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $provider Provider slug.
+	 * @return object|WP_Error Client instance or error.
+	 */
+	protected function get_chat_client( $provider ) {
+		$provider = sanitize_key( $provider );
+
+		// Normalise the Google alias to the Gemini client.
+		if ( 'google' === $provider ) {
+			$provider = 'gemini';
+		}
+
+		if ( function_exists( 'wp_mcp_ai_container' ) ) {
+			$container = wp_mcp_ai_container();
+			if ( $container && $container->has( 'client.' . $provider ) ) {
+				try {
+					return $container->get( 'client.' . $provider );
+					// phpcs:ignore Generic.CodeAnalysis.EmptyStatement -- Intentional: fall through to direct instantiation.
+				} catch ( \Exception $e ) {
+					// Fall through.
+				}
+			}
+		}
+
+		switch ( $provider ) {
+			case 'deepseek':
+				if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
+					require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-deepseek-client.php';
+				}
+				return new WP_MCP_AI_DeepSeek_Client();
+
+			case 'gemini':
+				if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
+					require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
+				}
+				return new WP_MCP_AI_Gemini_Client();
+
+			case 'anthropic':
+				if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
+					require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-anthropic-client.php';
+				}
+				return new WP_MCP_AI_Anthropic_Client();
+
+			default:
+				return new WP_MCP_AI_OpenAI_Client();
+		}
 	}
 
 	/**

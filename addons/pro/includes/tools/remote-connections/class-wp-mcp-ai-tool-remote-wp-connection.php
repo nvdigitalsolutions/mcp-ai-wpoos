@@ -654,7 +654,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			$params['status'] = sanitize_key( $arguments['status'] );
 		}
 
-		$endpoint = 'wp/v2/' . $post_type;
+		$endpoint = 'wp/v2/' . $this->get_rest_post_type_base( $post_type );
 
 		if ( ! empty( $params ) ) {
 			$endpoint = add_query_arg( $params, $endpoint );
@@ -709,7 +709,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
-		$endpoint = 'wp/v2/' . $post_type . '/' . $post_id;
+		$endpoint = 'wp/v2/' . $this->get_rest_post_type_base( $post_type ) . '/' . $post_id;
 
 		$post = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint );
 
@@ -733,8 +733,41 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 * @return array|WP_Error Pages data.
 	 */
 	protected function get_pages( $connection, $arguments ) {
-		$arguments['post_type'] = 'pages';
+		// Access controls are keyed on the canonical post type slug ('page'),
+		// not the plural REST base ('pages'); get_posts() maps the slug to
+		// the REST base when building the endpoint.
+		$arguments['post_type'] = 'page';
 		return $this->get_posts( $connection, $arguments );
+	}
+
+	/**
+	 * Map a canonical post type slug to its REST API base.
+	 *
+	 * The REST base can differ from the post type slug (e.g. `page` → `pages`,
+	 * `attachment` → `media`). Prefer WordPress's own mapping when the type is
+	 * registered locally; fall back to a small core-type map so the endpoint
+	 * stays correct even when the type only exists on the remote site.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $post_type Post type slug.
+	 * @return string REST base for the post type.
+	 */
+	protected function get_rest_post_type_base( $post_type ) {
+		$post_type = sanitize_key( $post_type );
+
+		$object = get_post_type_object( $post_type );
+		if ( $object && ! empty( $object->rest_base ) ) {
+			return sanitize_key( $object->rest_base );
+		}
+
+		$known = array(
+			'post'       => 'posts',
+			'page'       => 'pages',
+			'attachment' => 'media',
+		);
+
+		return isset( $known[ $post_type ] ) ? $known[ $post_type ] : $post_type;
 	}
 
 	/**
@@ -1784,7 +1817,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			$body['excerpt'] = sanitize_textarea_field( $arguments['excerpt'] );
 		}
 
-		$endpoint = 'wp/v2/' . $post_type;
+		$endpoint = 'wp/v2/' . $this->get_rest_post_type_base( $post_type );
 		$result   = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint, 'POST', $body );
 
 		if ( is_wp_error( $result ) ) {
@@ -1856,7 +1889,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
-		$endpoint = 'wp/v2/' . $post_type . '/' . $post_id;
+		$endpoint = 'wp/v2/' . $this->get_rest_post_type_base( $post_type ) . '/' . $post_id;
 		$result   = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint, 'POST', $body );
 
 		if ( is_wp_error( $result ) ) {
@@ -1903,7 +1936,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		$post_id  = absint( $arguments['post_id'] );
-		$endpoint = 'wp/v2/' . $post_type . '/' . $post_id;
+		$endpoint = 'wp/v2/' . $this->get_rest_post_type_base( $post_type ) . '/' . $post_id;
 
 		if ( ! empty( $arguments['force'] ) ) {
 			$endpoint = add_query_arg( 'force', 'true', $endpoint );

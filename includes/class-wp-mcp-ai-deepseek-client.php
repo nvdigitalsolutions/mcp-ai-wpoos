@@ -29,9 +29,10 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 	 *
 	 * Note on vision: DeepSeek-V4.1-Flash (deepseek-flash) supports native
 	 * multimodal vision; the retired deepseek-v4-flash-vision-exp id is now
-	 * routed to it. This integration does not advertise vision support in v1
-	 * to avoid mis-routing. Enable via the filter
-	 * {@see wp_mcp_ai_deepseek_supports_vision}.
+	 * routed to it. Vision support is advertised for those models via
+	 * {@see supports_vision()} and can be disabled for text-only endpoints
+	 * through the {@see wp_mcp_ai_deepseek_supports_vision} filter, which
+	 * strips image segments before the request goes out.
 	 */
 	class WP_MCP_AI_DeepSeek_Client {
 
@@ -211,6 +212,39 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 		 */
 		public function model_supports_tools( $model ) {
 			return ! $this->model_lacks_tool_calling( $model );
+		}
+
+		/**
+		 * Whether the given model can process images.
+		 *
+		 * DeepSeek-V4.1-Flash (deepseek-flash) ships native multimodal vision;
+		 * the retired deepseek-v4-flash-vision-exp id now routes to it. Other
+		 * DeepSeek models (deepseek-v4-pro, legacy ids) do not advertise
+		 * vision. Sites whose DeepSeek endpoint is text-only (custom base
+		 * URLs, older proxies) can opt out via the
+		 * wp_mcp_ai_deepseek_supports_vision filter, which strips image
+		 * segments from the payload before the request.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $model Model identifier.
+		 * @return bool True when the model can process images.
+		 */
+		public function supports_vision( $model ) {
+			$model           = sanitize_text_field( (string) $model );
+			$vision_models   = array( 'deepseek-flash', 'deepseek-v4-flash-vision-exp' );
+			$is_vision_model = in_array( $model, $vision_models, true );
+
+			/**
+			 * Filters whether the DeepSeek integration advertises vision
+			 * support for the given model.
+			 *
+			 * @since 1.2.0
+			 *
+			 * @param bool   $is_vision_model Default capability for the model.
+			 * @param string $model           Model identifier.
+			 */
+			return (bool) apply_filters( 'wp_mcp_ai_deepseek_supports_vision', $is_vision_model, $model );
 		}
 
 		// -------------------------------------------------------------------------
@@ -1021,6 +1055,11 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			// segments; collapse them back to strings that DeepSeek expects.
 			$messages = $this->normalise_messages_for_payload( $messages );
 
+			// Translate internal input_image segments into DeepSeek's
+			// OpenAI-compatible image_url content blocks so vision-capable
+			// models receive images instead of an unknown segment type.
+			$messages = $this->convert_image_segments_for_payload( $messages, $model );
+
 			// Pass through messages unchanged (OpenAI-compatible format).
 			foreach ( $messages as $message ) {
 				if ( ! is_array( $message ) ) {
@@ -1106,6 +1145,139 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			 * @param string $model    Resolved model identifier.
 			 */
 			return apply_filters( 'wp_mcp_ai_deepseek_request_payload', $payload, $messages, $options, $model );
+		}
+
+		/**
+		 * Translate internal input_image segments into DeepSeek image_url blocks.
+		 *
+		 * The attachment layer produces `input_image` segments carrying an
+		 * `image_url` structure (and usually a resolvable WordPress attachment
+		 * id). DeepSeek's chat completions API expects OpenAI-compatible
+		 * `image_url` content parts, so this method converts those segments
+		 * and drops any image segment that cannot be resolved to a URL (the
+		 * request still goes out with the text content intact).
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param array  $messages Chat messages possibly containing segment arrays.
+		 * @param string $model    Resolved model identifier used for the vision
+		 *                         capability check.
+		 * @return array Messages with input_image segments converted to image_url parts.
+		 */
+		protected function convert_image_segments_for_payload( array $messages, $model = '' ) {
+			if ( ! $this->supports_vision( $model ) ) {
+				// Text-only endpoint (or vision disabled via filter): strip image
+				// segments so the request still goes out with the text content.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'deepseek_image_segments_stripped',
+						sprintf(
+							/* translators: %s: model identifier */
+							'Stripped image segments: model %s does not advertise vision support.',
+							$model
+						),
+						array( 'model' => $model )
+					);
+				}
+
+				return $this->drop_image_segments( $messages );
+			}
+
+			foreach ( $messages as $index => $message ) {
+				if ( empty( $message['content'] ) || ! is_array( $message['content'] ) ) {
+					continue;
+				}
+
+				$converted = array();
+				$changed   = false;
+
+				foreach ( $message['content'] as $segment ) {
+					if ( ! is_array( $segment ) ) {
+						$converted[] = $segment;
+						continue;
+					}
+
+					$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+					if ( 'input_image' !== $type ) {
+						$converted[] = $segment;
+						continue;
+					}
+
+					$image_url = '';
+
+					if ( isset( $segment['image_url']['url'] ) ) {
+						$image_url = esc_url_raw( (string) $segment['image_url']['url'] );
+					} elseif ( isset( $segment['image_url'] ) && is_string( $segment['image_url'] ) ) {
+						$image_url = esc_url_raw( $segment['image_url'] );
+					} elseif ( isset( $segment['url'] ) ) {
+						$image_url = esc_url_raw( (string) $segment['url'] );
+					} else {
+						$attachment_id  = isset( $segment['attachment_id'] ) ? absint( $segment['attachment_id'] ) : 0;
+						$attachment_url = $attachment_id > 0 ? wp_get_attachment_url( $attachment_id ) : '';
+						if ( ! empty( $attachment_url ) ) {
+							$image_url = esc_url_raw( $attachment_url );
+						}
+					}
+
+					if ( '' !== $image_url ) {
+						$converted[] = array(
+							'type'      => 'image_url',
+							'image_url' => array( 'url' => $image_url ),
+						);
+						$changed     = true;
+						continue;
+					}
+
+					// Cannot represent the image — drop it so the request still goes out.
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_error(
+							'DeepSeek payload: dropped input_image segment without a resolvable URL.',
+							array( 'segment' => $segment )
+						);
+					}
+					$changed = true;
+				}
+
+				if ( $changed ) {
+					$messages[ $index ]['content'] = $converted;
+				}
+			}
+
+			return $messages;
+		}
+
+		/**
+		 * Remove input_image segments from every message.
+		 *
+		 * Used when the resolved model does not advertise vision support (or
+		 * vision is disabled through the wp_mcp_ai_deepseek_supports_vision
+		 * filter) so a text-only endpoint never receives an image segment it
+		 * cannot process. Text and other segment types pass through untouched.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param array $messages Chat messages possibly containing segment arrays.
+		 * @return array Messages without input_image segments.
+		 */
+		protected function drop_image_segments( array $messages ) {
+			foreach ( $messages as $index => $message ) {
+				if ( empty( $message['content'] ) || ! is_array( $message['content'] ) ) {
+					continue;
+				}
+
+				$kept = array();
+				foreach ( $message['content'] as $segment ) {
+					if ( is_array( $segment ) && isset( $segment['type'] ) && 'input_image' === sanitize_key( $segment['type'] ) ) {
+						continue;
+					}
+					$kept[] = $segment;
+				}
+
+				$messages[ $index ]['content'] = $kept;
+			}
+
+			return $messages;
 		}
 
 		/**

@@ -287,6 +287,90 @@ class Test_Remote_Connection_Access_Controls extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Get_pages allows read when the page post type is in the allowlist and
+	 * targets the correct REST base (pages, not page).
+	 */
+	public function test_tool_get_pages_allowed_and_uses_pages_rest_base() {
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'             => 'Pages Connection',
+				'url'              => 'https://example.com',
+				'auth_type'        => 'none',
+				'enabled'          => true,
+				'post_type_access' => array(
+					'page' => array( 'read' ),
+				),
+			)
+		);
+
+		update_post_meta( $this->assistant_id, '_wp_mcp_ai_pro_remote_connections', array( $connection_id ) );
+
+		$captured_url = '';
+
+		$http_stub = function ( $preempt, $args, $url ) use ( &$captured_url ) {
+			$captured_url = $url;
+
+			return array(
+				'body'     => wp_json_encode( array() ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'headers'  => array(),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $this->tool->execute(
+			array(
+				'action'        => 'get_pages',
+				'connection_id' => $connection_id,
+			),
+			array( 'assistant_id' => $this->assistant_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotWPError( $result );
+		$this->assertStringContainsString( '/wp/v2/pages', $captured_url );
+		$this->assertStringNotContainsString( '/wp/v2/page?', $captured_url );
+	}
+
+	/**
+	 * Get_pages is denied when 'page' is not in the allowlist. Before the
+	 * fix the tool checked the non-existent 'pages' slug against the
+	 * allowlist, so a connection configured for pages still got denied.
+	 */
+	public function test_tool_get_pages_denied_when_page_not_in_allowlist() {
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'             => 'Posts Only Connection',
+				'url'              => 'https://example.com',
+				'auth_type'        => 'none',
+				'enabled'          => true,
+				'post_type_access' => array(
+					'post' => array( 'read' ),
+					// 'page' is intentionally absent.
+				),
+			)
+		);
+
+		update_post_meta( $this->assistant_id, '_wp_mcp_ai_pro_remote_connections', array( $connection_id ) );
+
+		$result = $this->tool->execute(
+			array(
+				'action'        => 'get_pages',
+				'connection_id' => $connection_id,
+			),
+			array( 'assistant_id' => $this->assistant_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_pro_access_denied', $result->get_error_code() );
+	}
+
+	/**
 	 * Create_post is denied when create is not in the allowlist.
 	 */
 	public function test_tool_create_post_denied_when_create_not_in_allowlist() {

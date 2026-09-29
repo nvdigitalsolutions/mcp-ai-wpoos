@@ -1208,6 +1208,7 @@ class WP_MCP_AI_Model_Service {
 				'stable' => 'deepseek-flash',
 				'latest' => 'deepseek-flash',
 				'budget' => 'deepseek-flash',
+				'vision' => 'deepseek-flash',
 			),
 			'openrouter'   => array(
 				'stable' => 'openai/gpt-4.1',
