@@ -144,7 +144,7 @@
 						checkRecordCompleteness( memberId );
 					} else {
 						const errorMessage = response.data && response.data.message ? response.data.message : wpMcpAiHealthConsolidate.strings.error;
-						previewContainer.html( '<div class="notice notice-error inline"><p>' + errorMessage + '</p></div>' ).show();
+						previewContainer.html( '<div class="notice notice-error inline"><p>' + escapeHtml( errorMessage ) + '</p></div>' ).show();
 					}
 				},
 				error: function() {
@@ -381,7 +381,7 @@
 						$( document ).trigger( 'wpMcpAiBulkImportComplete', [ memberId, response.data.result ] );
 					} else {
 						const errorMessage = response.data && response.data.message ? response.data.message : wpMcpAiHealthConsolidate.strings.error;
-						resultContainer.html( '<div class="notice notice-error inline"><p>' + errorMessage + '</p></div>' ).show();
+						resultContainer.html( '<div class="notice notice-error inline"><p>' + escapeHtml( errorMessage ) + '</p></div>' ).show();
 					}
 				},
 				error: function() {
