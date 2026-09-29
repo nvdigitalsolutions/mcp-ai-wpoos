@@ -219,7 +219,16 @@ Freelancer sourcing uses the Upwork CRM tools (`search_upwork_jobs`,
   jobs including a derived `url`
   (`https://www.upwork.com/jobs/<slug>_~<id>/` — the canonical marketplace
   job-page form).
-- **Fallback mode** (no connection): two-pass web search — site-restricted
+- **MCP mode** (Remote Sites connection with `upwork_mode: mcp`, v1.1.89):
+  routes the search through the official Upwork MCP gateway
+  (`https://mcp.upwork.com/mcp`) via `WP_MCP_AI_Upwork_MCP_Bridge` —
+  `upwork__find_jobs` (action `search`/`get`) returns envelopes normalized to
+  the same shape as API mode, and `upwork__list_accounts` resolves the
+  `upwork_org_uid` stored on the connection. Test Connection runs a real MCP
+  handshake and validates without GraphQL credentials; tokens persist to the
+  **encrypted** central `mcp_oauth` store (auto-refresh via the attached OAuth
+  client).
+- **Fallback mode** (no connection, or MCP mode without a token blob): two-pass web search — site-restricted
   Upwork pass, then a broader pass merged with URL dedupe. Upwork category
   landing pages (`/freelance-jobs/{slug}/` — no `~jobId`) are filtered out
   and reported in `filtered_out`, as are non-marketplace Upwork subdomains

@@ -1,8 +1,8 @@
 # Docs & Release Catch-Up — Standing Open-Items Tracker
 
 > **Purpose:** Single registry of every open item identified (and parked or deferred) by the docs & release catch-up runs, so future passes carry from this file instead of re-copying items between plans.
-> **Last reviewed:** 2026-09-28 (v1.1.88 pass — OI-1 group 32 + group 23 extension recorded; OI-2 label refreshed; OI-9 related note extended)
-> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.88-docs-catch-up.md`](v1.1.88-docs-catch-up.md).
+> **Last reviewed:** 2026-09-29 (v1.1.89 pass — OI-1 groups 33–35 recorded; OI-2 label refreshed; OI-7/OI-8/OI-9 extended)
+> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.89-docs-catch-up.md`](v1.1.89-docs-catch-up.md).
 > **Rule for future passes:** read this file first; a catch-up plan's "Open items" section should point here and only add new items it introduces.
 
 ---
@@ -49,6 +49,9 @@
 | 30 | `@since 1.1.85` | `includes/class-wp-mcp-ai-rest.php` (1, the `wp_mcp_ai_chat_messages` filter) + `includes/class-wp-mcp-ai-tool-token-limits.php` (2, the session-budget warning handlers) — 3 instances (PR #6776; one version behind the 1.1.87 ship) | 1.1.87 | v1.1.87 plan |
 | 31 | `@since 1.2.0` | `includes/class-wp-mcp-ai-restriction-registry.php` — 2 instances (PR #6779, the notice dedupe/prune + `count_active_users()` methods) | 1.1.87 | v1.1.87 plan |
 | 32 | `@since 1.9.0` / `1.9.x` / `1.9.3` | the MCP Apps hardening + Jev Phase A wave — 35 instances: `addons/pro/includes/mcp-apps/class-wp-mcp-ai-mcp-app-oauth-client.php` (3, `1.9.0`), `class-wp-mcp-ai-rest-mcp-apps-controller.php` (2, `1.9.0`), `class-wp-mcp-ai-mcp-app-registry.php` (7, `1.9.x`), `class-wp-mcp-ai-mcp-app-client.php` (3 — 2× `1.9.3` + 1× `1.9.x`), `addons/pro/includes/class-wp-mcp-ai-pro-remote-site-manager.php` (3, `1.9.x`), `addons/pro/includes/services/class-wp-mcp-ai-pro-jev-classifier.php` (6, `1.9.0`), new `class-wp-mcp-ai-pro-jev-tier-routing.php` (8, `1.9.0`), plus test files `addons/pro/tests/test-remote-site-manager-webhook-secret-encryption.php` (2, `1.9.x`) + `tests/mcp-apps/test-mcp-app-oauth-loopback-fallback.php` (1, `1.9.0`) (PRs #6792/#6794/#6795/#6798/#6800) | 1.1.88 | v1.1.88 plan |
+| 33 | `@since 1.2.0` | the vision/remote/EZuite wave — 9 instances: `addons/pro/includes/tools/remote-connections/class-wp-mcp-ai-tool-remote-wp-connection.php` (1), `includes/class-wp-mcp-ai-deepseek-client.php` (4), `includes/tools/class-wp-mcp-ai-tool-submit-document-prompt.php` (3), `addons/pro/includes/tools/erp-ezuite/class-wp-mcp-ai-tool-ezuite-erp-get-products.php` (1) (PR #6805) | 1.1.89 | v1.1.89 plan |
+| 34 | `@since 1.1.88` | the Upwork MCP-mode wave — 4 instances: `addons/pro/includes/class-wp-mcp-ai-pro-remote-site-manager.php` (2) + new `addons/pro/includes/tools/crm/upwork/class-wp-mcp-ai-upwork-mcp-bridge.php` (2) (PR #6804; tagged with the version current at write time, ships in 1.1.89) | 1.1.89 | v1.1.89 plan |
+| 35 | `@since 0.2.0` | **addon-level** — the Design System rename wave, 33 instances across the renamed/new `addons/nvoos-design-system/` files (PR #6810). The addon ships **0.3.0** (header + `NVOOS_DESIGN_SYSTEM_VERSION`) and 2 files (`class-nvoos-nds-email-paper-store.php`, `class-nvoos-nds-integration-woocommerce.php`) correctly say 0.3.0; proposal 047's status line also says "v0.2.0". The SaaS Controller precedent requires addon tags to match the shipped addon version | 1.1.89 | v1.1.89 plan |
 
 - **Blocked on:** version-jump decision — does the next release stay on 1.1.x or jump to 1.2.0?
 - **Broader drift (new finding, 2026-08-26):** non-1.1.x tags are repo-wide (`@since 1.0.0` ×1,928 · `1.2.0` ×1,707 · `1.1.0` ×1,269 · `1.3.0` ×795 · `1.9.0` ×734, PHP source ex vendor). Many are legitimate history. A full-tree audit is a scripted-sweep project needing explicit sign-off — tracked inside issue #5968, not a catch-up-pass task.
@@ -58,7 +61,7 @@
 - **Status:** 🔒 Parked by user decision. Counts stay delta-derived in catch-up passes.
 - **Issue:** [#5967 — Re-derive live tool counts on a fully provisioned environment](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5967)
 - **What:** run `WP_MCP_AI_Tool_Registry::get_tools()` on a fully provisioned environment (seeded toolkits + optional plugins) and replace the delta-based figure.
-- **Current figure (v1.1.88):** ~347 base + ~1,287 Pro (~1,634 total), live-registry caveat retained on every count surface. (Delta-derived; **unchanged in-window** — the v1.1.88 window added no tools: decision-model Phase A + the MCP Apps hardening wave are service/transport/security-level.)
+- **Current figure (v1.1.89):** ~347 base + ~1,299 Pro (~1,646 total), live-registry caveat retained on every count surface. (Delta-derived; **+12 Pro in-window** — the ECA classroom tools from #6809, gated by `enable_eca_classroom_integration`; the 8 `nds_*` email tools from #6810 are addon-provided via `wp_mcp_ai_register_tools` and not counted, same as algorave/embedded/graphify/page-agent.)
 - **Known attempt:** QA container (`oos-qa-wp`) returns 363 tools because its DB is unprovisioned — not usable as source of truth.
 - **First noted in:** v1.1.59 plan; carried every pass since.
 
@@ -100,14 +103,14 @@
 ### OI-7 · `tool-reference.md` missing the four Higgsfield tool entries (recorded 2026-09-25 by the v1.1.86 pass)
 
 - **Status:** 🟡 Open. Recorded, not fixed (doc-file gap left by the introducing PR).
-- **What:** PR #6772 added the Higgsfield quartet to `docs/tool-status.txt` (+4) and the `design-video-creation` skill but **not** to `docs/reference/tools/tool-reference.md` — the "Media generation and transcription" section documents the other video/image tools (`generate_sora_video`, `generate_openai_image`, …) and the Tool Count header now counts the +4 base, so the omission is an inconsistency, not a convention. Also `get_system_logs`' new filters (#6768) are not reflected in that doc's operational section.
+- **What:** PR #6772 added the Higgsfield quartet to `docs/tool-status.txt` (+4) and the `design-video-creation` skill but **not** to `docs/reference/tools/tool-reference.md` — the "Media generation and transcription" section documents the other video/image tools (`generate_sora_video`, `generate_openai_image`, …) and the Tool Count header now counts the +4 base, so the omission is an inconsistency, not a convention. Also `get_system_logs`' new filters (#6768) are not reflected in that doc's operational section. **Extended by the v1.1.89 pass:** the 8 `nds_*` email tools (#6810, Design System addon) are likewise undocumented in the tool reference — the in-window #6809 did add its 12 classroom entries, so the omission remains an inconsistency, not a convention.
 - **Suggested owner:** docs workstream — add the four `generate_higgsfield_video`/`generate_higgsfield_image`/`check_higgsfield_request`/`cancel_higgsfield_request` entries (and the `get_system_logs` filter paragraph) to the tool reference.
 - **First noted in:** v1.1.86 plan.
 
 ### OI-8 · `tool-status.txt` missing all 40 new window slugs + stale header totals (recorded 2026-09-27 by the v1.1.87 pass)
 
 - **Status:** 🟡 Open. Recorded, not fixed (doc-file gap left by three introducing PRs).
-- **What:** none of #6777's 30 parity tools, #6780's 5 base + 2 Pro image tools, or #6786's 3 outbound tools were added to `docs/reference/tools/tool-status.txt` (the v1.1.86 window's #6772 did add its Higgsfield slugs, so the omission is an inconsistency, not a convention). The file's own header is also stale — "Last Updated: April 30, 2026 · Total Tools: 912 (Base: 224, Pro: 688)" vs the current ~1,634/~347/~1,287. Note: `tool-reference.md` gained the `identify_image` entry in-window (#6780), but the parity suite + outbound tools are undocumented there too (header note added by the v1.1.87 pass).
+- **What:** none of #6777's 30 parity tools, #6780's 5 base + 2 Pro image tools, or #6786's 3 outbound tools were added to `docs/reference/tools/tool-status.txt` (the v1.1.86 window's #6772 did add its Higgsfield slugs, so the omission is an inconsistency, not a convention). The file's own header is also stale — "Last Updated: April 30, 2026 · Total Tools: 912 (Base: 224, Pro: 688)" vs the current ~1,646/~347/~1,299. Note: `tool-reference.md` gained the `identify_image` entry in-window (#6780), but the parity suite + outbound tools are undocumented there too (header note added by the v1.1.87 pass). **Extended by the v1.1.89 pass:** the 12 classroom slugs were added in-window by #6809 — but the 8 `nds_*` email slugs (#6810) remain missing, and the header totals are still stale.
 - **Suggested owner:** docs workstream — add the 40 slugs (and re-derive or drop the stale header totals).
 - **First noted in:** v1.1.87 plan.
 
@@ -115,7 +118,7 @@
 
 - **Status:** 🟡 Open — owned by the ecosystem-port workstream (port-tracker row **D3f**'s "byte-identical" claim is now stale).
 - **What:** PR #6776's Notes explicitly defer the mirror: `plugins/nvoos-content-graph-ai/src/Analytics/ToolTokenLimits.php` still carries the old blocked-session message and no warning handler (the base plugin gained the reworded message + `handle_session_limit_approaching()`/`inject_session_budget_warning()` + the `wp_mcp_ai_chat_messages` filter). Verified on `alpha-working` 2026-09-27: the CG AI file fires `wp_mcp_ai_session_limit_approaching` (line 1139) but has no handler wiring.
-- **Related:** #6784 ported `search-upwork-jobs` to CG Pro byte-identical in-feature — the tracker's Wave F has no upwork row, so the port isn't reflected there either (note for the port workstream, not a new tracker row). **Extended by the v1.1.88 pass:** #6790/#6793 (Upwork URL canonicalisation round-trip) and #6796 (toolkit MCP grant gating) also ported to CG Pro byte-identical in-feature — still no tracker rows.
+- **Related:** #6784 ported `search-upwork-jobs` to CG Pro byte-identical in-feature — the tracker's Wave F has no upwork row, so the port isn't reflected there either (note for the port workstream, not a new tracker row). **Extended by the v1.1.88 pass:** #6790/#6793 (Upwork URL canonicalisation round-trip) and #6796 (toolkit MCP grant gating) also ported to CG Pro byte-identical in-feature — still no tracker rows. **Extended by the v1.1.89 pass:** #6805 ported the product-card trait change (`includes/tools/trait-wp-mcp-ai-tool-product-card.php` → `plugins/nvoos-content-graph-pro/src/tools/`) byte-identical in-feature — still no tracker row; and #6805's Notes explicitly defer the CG AI mirrors of `MessageAttachments` + the remote-connection tool to the port loop.
 - **Suggested owner:** ecosystem-port workstream — mirror the three changes into the CG AI copy + refresh the D3f row.
 - **First noted in:** v1.1.87 plan.
 

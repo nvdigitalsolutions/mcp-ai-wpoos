@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.88
+Stable tag: 1.1.89
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.89 - September 29, 2026 =
+
+Google Classroom ECA, Design System rename + email templates, and Upwork MCP mode release. Added: a Google Classroom integration for the ECA Pro Toolkit (Proposal 046, #6809) — a shared includes/google/ Classroom foundation mirroring the Calendar stack (restricted-scope discipline, REST v1 client with pagination/backoff/@MissingGrant handling, Pro Remote Sites credential resolution, Pub/Sub push receiver with shared-secret verification + weekly renewal) plus a google_classroom Remote Sites connection type and twelve new ECA tools (list_classroom_courses, sync_classroom_roster_to_students, sync_classroom_courses_to_ecas, link_classroom_course_to_eca, create_classroom_course, update_classroom_course, post_classroom_announcement, create_classroom_coursework, list_classroom_submissions, classroom_course_analytics, list_classroom_guardians, manage_classroom_push_watch) with a nightly jittered sync engine — everything off by default behind enable_eca_classroom_integration; the Design System addon rename + token-driven email module (#6810) — addons/crocoblock-ds becomes addons/nvoos-design-system (0.1.0 to 0.3.0, zero-breakage shims) with 5 built-in accessible email templates, a global wp_mail wrapper, WCAG/EMC audit gates, multipart plain-text pairing, opt-in WooCommerce rebrand, Paper Store mirror/import, and 8 admin-gated nds_* tools (generate/list/preview/audit/set-active/test-send/export/import) — plus two latent addon bugs fixed (double-prefixed CSS vars, broken integration autoloader); an Upwork MCP connection mode (#6804) — a third upwork_mode alongside api and web_search that talks to the official Upwork MCP gateway (mcp.upwork.com/mcp, 51 upwork__* tools) through a sessionful bridge (upwork__find_jobs/upwork__list_accounts) with org_uid resolution, real-handshake Test Connection, and OAuth login reusing the MCP Apps flow (connection_ref) with tokens in the encrypted central store. Fixed: vision attachments (#6805) — submit_document_prompt routes image MIME attachments through the input_image vision segment path, the DeepSeek client converts them to OpenAI-compatible image_url blocks for deepseek-flash with the wp_mcp_ai_deepseek_supports_vision filter gating the payload, and DeepSeek gains a vision lane; remote connections check access controls against canonical slugs (page/attachment) and rest_no_route 404s carry actionable guidance; EZuite enforces the requested item_code client-side and resolves product names across cached + live rows; the model catalog migration now rewrites per-provider model settings too; and the MCP App client caches the legacy-dialect handshake per server (24h per-URL hint) so strict 2025-era gateways skip the doomed server/discover probe — Upwork Test Connection ~24.9s to ~8.5s steady state (#6802). Security: all 38 CodeQL alerts closed (repo at 0 open — DOM XSS escaping, CSPRNG OAuth1 nonces, yfinance cleanup, #6807) and three dependency advisories patched (ip-address NAT64 SSRF, undici WebSocket DoS, multer orphaned writes, #6806). Tool count: ~347 base + ~1,299 Pro (~1,646 total; +12 Pro — the classroom tools; the 8 nds_* tools are addon-provided and not counted; live registry authoritative). Model catalog: v2026.09.22 (unchanged). Stale build ZIPs removed: the 1.1.87 build set (30 files).
 
 = 1.1.88 - September 28, 2026 =
 
