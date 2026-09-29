@@ -1,5 +1,17 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Added — Google Classroom Integration for the ECA Pro Toolkit (Proposal 046)
+
+- **Shared Classroom foundation (base)** — `includes/google/` gains the Classroom file set mirroring the Calendar stack: `WP_MCP_AI_Google_Classroom_Scopes` (the only place Classroom scope strings may be written; `readonly`/`write`/`push` profiles, granular-consent implication checks; all Classroom scopes flagged restricted), `WP_MCP_AI_Google_Classroom_Client` (REST v1 client with repeated-parameter building, page-token pagination, `RESOURCE_EXHAUSTED` backoff, terminal `@MissingGrant` handling, `courses.patch` updateMask), `WP_MCP_AI_Google_Classroom_Credentials` (Pro Remote Sites resolution, decrypt-on-read, lazy token minting with quota-user attribution, `require_scope()`), and `WP_MCP_AI_Google_Classroom_Push` (Pub/Sub webhook receiver with shared-secret verification, ack-fast cron deferral, weekly registration renewal via daily cron). Loaded from `includes/bootstrap/loader.php`.
+- **`google_classroom` Remote Sites connection type** — OAuth connect flow built on the shared OAuth service (single-use state, byte-identical redirect URIs, refresh-token persistence, granted-scope capture), real `courses.list` test probe with `needs_reconnect` detection, scope-profile select, default-course field, and periodic-sync toggle; classroom fields survive OAuth re-saves.
+- **Twelve new ECA tools** (`addons/pro/includes/tools/eca-management/`, gated by `enable_eca_classroom_integration`): `list_classroom_courses`, `sync_classroom_roster_to_students` (Google-ID match, email fallback, MIS-wins, dry-run), `sync_classroom_courses_to_ecas`, `link_classroom_course_to_eca`, `create_classroom_course`, `update_classroom_course`, `post_classroom_announcement`, `create_classroom_coursework`, `list_classroom_submissions` (attendance cross-reference), `classroom_course_analytics`, `list_classroom_guardians` (opt-in guardian scope), and `manage_classroom_push_watch`. All follow the canonical envelope + two-gate sanitisation and capability conventions.
+- **Classroom sync engine** (`WP_MCP_AI_ECA_Classroom_Sync`) — nightly jittered reconcile for sync-enabled connections (course link refresh + linked-roster upserts) and push-delta application (`courses.students` CREATED/UPDATED → student upsert + ECA enrolment; DELETED → enrolment withdrawal; coursework/submission changes emitted as `wp_mcp_ai_eca_classroom_coursework_changed`).
+- **Settings, schemas, and registry** — `enable_eca_classroom_integration` toggle on the Tools settings section; `_student_google_id`/`_student_google_email` and `_eca_google_course_id`/`_eca_classroom_sync` meta schemas (REST + JetEngine); the 12 slugs join the ECA MCP server candidates, the tool group map, the settings-page tools list, and the Pro coverage manifest.
+- **Tests** — `tests/test-google-classroom-foundation.php` (27 tests: scope implication, quota-retry classification, `@MissingGrant`, repeated params, Pub/Sub decode, webhook token verification, collection-name preservation) plus Pro suites `test-eca-classroom-tools.php` (11 tests) and `test-eca-classroom-sync.php` (6 tests).
+- **Proposal & plan** — `docs/project/proposals/046-google-classroom-eca-integration.md` (+ implementation plan) with the research basis: official Classroom quotas/scopes/push docs, OneRoster/LTI landscape, and FERPA/COPPA/GDPR + restricted-scope verification gates.
+
 ## [1.1.88] - 2026-09-28
 
 ### Added — Decision-Model Orchestration Phase A (Proposal 045, PR #6792)

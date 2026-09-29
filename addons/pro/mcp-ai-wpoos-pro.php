@@ -1109,6 +1109,25 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Import_ECAs_CSV'           => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-import-ecas-csv.php',
 			);
 			$pro_tools = array_merge( $pro_tools, $eca_tools );
+
+			// Add Google Classroom ECA integration tools when the integration is enabled.
+			if ( ! empty( $settings['enable_eca_classroom_integration'] ) ) {
+				$eca_classroom_tools = array(
+					'WP_MCP_AI_Tool_List_Classroom_Courses'            => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-list-classroom-courses.php',
+					'WP_MCP_AI_Tool_Sync_Classroom_Roster_To_Students' => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-sync-classroom-roster-to-students.php',
+					'WP_MCP_AI_Tool_Sync_Classroom_Courses_To_ECAs'    => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-sync-classroom-courses-to-ecas.php',
+					'WP_MCP_AI_Tool_Link_Classroom_Course_To_ECA'      => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-link-classroom-course-to-eca.php',
+					'WP_MCP_AI_Tool_Create_Classroom_Course'           => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-create-classroom-course.php',
+					'WP_MCP_AI_Tool_Update_Classroom_Course'           => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-update-classroom-course.php',
+					'WP_MCP_AI_Tool_Post_Classroom_Announcement'       => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-post-classroom-announcement.php',
+					'WP_MCP_AI_Tool_Create_Classroom_Coursework'       => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-create-classroom-coursework.php',
+					'WP_MCP_AI_Tool_List_Classroom_Submissions'        => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-list-classroom-submissions.php',
+					'WP_MCP_AI_Tool_Classroom_Course_Analytics'        => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-classroom-course-analytics.php',
+					'WP_MCP_AI_Tool_List_Classroom_Guardians'          => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-list-classroom-guardians.php',
+					'WP_MCP_AI_Tool_Manage_Classroom_Push_Watch'       => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-manage-classroom-push-watch.php',
+				);
+				$pro_tools           = array_merge( $pro_tools, $eca_classroom_tools );
+			}
 		}
 
 		// Add quiz tools if enabled.
@@ -2515,6 +2534,19 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['sync_students_from_isams'] = 'wordpress-core';
 			$pro_tools['sync_ecas_from_isams']     = 'wordpress-core';
 			$pro_tools['research_eca']             = 'wordpress-core';
+			// Google Classroom integration tools.
+			$pro_tools['list_classroom_courses']            = 'wordpress-core';
+			$pro_tools['sync_classroom_roster_to_students'] = 'wordpress-core';
+			$pro_tools['sync_classroom_courses_to_ecas']    = 'wordpress-core';
+			$pro_tools['link_classroom_course_to_eca']      = 'wordpress-core';
+			$pro_tools['create_classroom_course']           = 'wordpress-core';
+			$pro_tools['update_classroom_course']           = 'wordpress-core';
+			$pro_tools['post_classroom_announcement']       = 'wordpress-core';
+			$pro_tools['create_classroom_coursework']       = 'wordpress-core';
+			$pro_tools['list_classroom_submissions']        = 'wordpress-core';
+			$pro_tools['classroom_course_analytics']        = 'wordpress-core';
+			$pro_tools['list_classroom_guardians']          = 'wordpress-core';
+			$pro_tools['manage_classroom_push_watch']       = 'wordpress-core';
 			// Attendance & participation tools.
 			$pro_tools['mark_eca_attendance']               = 'wordpress-core';
 			$pro_tools['get_eca_attendance_report']         = 'wordpress-core';

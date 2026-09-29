@@ -385,9 +385,12 @@ Manage clubs, sports, electives, and student enrolments:
 - Enrolment, attendance, conflicts, timetables
 - Notifications and workflow rules
 - Participation analytics and Excel export
+- iSAMS/SOCS MIS sync
+- Google Classroom integration (12 tools): course listing, roster/course sync,
+  announcements, coursework, submissions, guardians, analytics, and push watch
 
 **Use Cases**: Schools, universities, after-school programs, membership clubs
-**Activation**: `enable_eca_management`
+**Activation**: `enable_eca_management` (+ `enable_eca_classroom_integration` for Google Classroom)
 **Docs**: [docs/toolkits/eca-management.md](docs/toolkits/eca-management.md)
 
 ---

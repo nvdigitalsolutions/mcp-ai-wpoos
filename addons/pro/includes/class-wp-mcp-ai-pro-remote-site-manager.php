@@ -337,6 +337,15 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				}
 			}
 
+			// Same preservation for Google Classroom fields: the OAuth callback
+			// re-saves a partial connection and must not blank the default course
+			// or the sync flag.
+			foreach ( array( 'classroom_course_id', 'classroom_sync_enabled' ) as $gclassroom_field ) {
+				if ( empty( $connection_data[ $gclassroom_field ] ) && ! empty( $existing_connection[ $gclassroom_field ] ) ) {
+					$connection_data[ $gclassroom_field ] = $existing_connection[ $gclassroom_field ];
+				}
+			}
+
 			// Preserve existing proxy_password if not provided.
 			if ( empty( $connection_data['proxy_password'] ) && ! empty( $existing_connection['proxy_password'] ) ) {
 				$connection_data['proxy_password']            = $existing_connection['proxy_password'];
@@ -690,6 +699,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'calendar_id'                    => isset( $connection_data['calendar_id'] ) ? sanitize_text_field( $connection_data['calendar_id'] ) : '',
 			'scope_profile'                  => isset( $connection_data['scope_profile'] ) ? sanitize_key( $connection_data['scope_profile'] ) : '',
 			'granted_scopes'                 => isset( $connection_data['granted_scopes'] ) ? sanitize_text_field( $connection_data['granted_scopes'] ) : '',
+			// Google Classroom-specific fields.
+			'classroom_course_id'            => isset( $connection_data['classroom_course_id'] ) ? sanitize_text_field( $connection_data['classroom_course_id'] ) : '',
+			'classroom_sync_enabled'         => isset( $connection_data['classroom_sync_enabled'] ) ? (bool) $connection_data['classroom_sync_enabled'] : false,
 			'sync_token'                     => isset( $connection_data['sync_token'] ) ? sanitize_text_field( $connection_data['sync_token'] ) : '',
 			'channel_id'                     => isset( $connection_data['channel_id'] ) ? sanitize_text_field( $connection_data['channel_id'] ) : '',
 			'channel_resource_id'            => isset( $connection_data['channel_resource_id'] ) ? sanitize_text_field( $connection_data['channel_resource_id'] ) : '',
@@ -1375,6 +1387,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return self::test_google_calendar_connection( $connection );
 		}
 
+		// Handle Google Classroom connections separately. Same real-probe policy
+		// as Calendar: reachability is only reported once OAuth has completed.
+		if ( 'google_classroom' === $connection_type ) {
+			return self::test_google_classroom_connection( $connection );
+		}
+
 		// Handle Upwork connections separately.
 		if ( 'upwork' === $connection_type ) {
 			$upwork_mode = isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : 'api';
@@ -1910,6 +1928,81 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'message'         => $calendar_count > 0
 				? __( 'Connected to Google Calendar successfully.', 'mcp-ai-wpoos-pro' )
 				: __( 'Connected to Google Calendar, but no calendars were returned. Check that the account has at least one calendar and that the granted permissions include calendar list access.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * Test a Google Classroom connection.
+	 *
+	 * Performs a real single-item `courses.list` probe once a refresh token
+	 * exists, so the result reflects actual reachability rather than merely
+	 * confirming that the credential fields were saved. Before authorisation it
+	 * falls back to a saved-credentials acknowledgement, matching the Calendar
+	 * behaviour.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_google_classroom_connection( $connection ) {
+		$client_id     = isset( $connection['client_id'] ) ? trim( (string) $connection['client_id'] ) : '';
+		$client_secret = isset( $connection['client_secret'] ) ? trim( (string) $connection['client_secret'] ) : '';
+		$refresh_token = isset( $connection['refresh_token'] ) ? trim( (string) $connection['refresh_token'] ) : '';
+
+		if ( '' === $refresh_token ) {
+			return array(
+				'success'          => true,
+				'google_classroom' => true,
+				'message'          => __( 'Google Classroom OAuth credentials saved. Complete the OAuth flow via the connect button to finish setup.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-classroom-credentials.php';
+		require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-classroom-client.php';
+
+		$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
+
+		$credentials = array(
+			'client_id'         => $client_id,
+			'client_secret'     => self::decrypt_value( $client_secret ),
+			'refresh_token'     => self::decrypt_value( $refresh_token ),
+			'access_token'      => '',
+			'user_email'        => isset( $connection['user_email'] ) ? (string) $connection['user_email'] : '',
+			'default_course_id' => isset( $connection['classroom_course_id'] ) ? (string) $connection['classroom_course_id'] : '',
+			'granted_scopes'    => isset( $connection['granted_scopes'] ) ? (string) $connection['granted_scopes'] : '',
+			'scope_profile'     => isset( $connection['scope_profile'] ) ? (string) $connection['scope_profile'] : '',
+			'cache_key'         => '' !== $connection_id ? 'classroom-connection:' . $connection_id : 'classroom-connection:test',
+		);
+
+		$client = WP_MCP_AI_Google_Classroom_Credentials::make_client( $credentials );
+
+		if ( is_wp_error( $client ) ) {
+			return $client;
+		}
+
+		$result = $client->list_courses( array( 'pageSize' => 1 ) );
+
+		if ( is_wp_error( $result ) ) {
+			$needs_reconnect = WP_MCP_AI_Google_Classroom_Client::is_auth_failure( $result );
+
+			return new WP_Error(
+				'wp_mcp_ai_pro_google_classroom_test_failed',
+				$needs_reconnect
+					? __( 'Google rejected the stored credentials. Reconnect this Google Classroom connection.', 'mcp-ai-wpoos-pro' )
+					: $result->get_error_message(),
+				array( 'needs_reconnect' => $needs_reconnect )
+			);
+		}
+
+		$course_count = isset( $result['courses'] ) && is_array( $result['courses'] ) ? count( $result['courses'] ) : 0;
+
+		return array(
+			'success'          => true,
+			'google_classroom' => true,
+			'message'          => $course_count > 0
+				? __( 'Connected to Google Classroom successfully.', 'mcp-ai-wpoos-pro' )
+				: __( 'Connected to Google Classroom, but no courses were returned. Check that the account teaches or administers at least one course and that the granted permissions include course access.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -4058,6 +4151,18 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Note: refresh_token is optional during initial setup as it's obtained through the OAuth flow.
 			// Note: calendar_id is optional - defaults to "primary" when blank.
 			// Note: scope_profile is optional - normalised to the default profile when blank.
+		}
+
+		if ( 'google_classroom' === $connection_type ) {
+			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_google_classroom_credentials',
+					__( 'OAuth Client ID and client secret are required for Google Classroom connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+			// Note: refresh_token is optional during initial setup as it's obtained through the OAuth flow.
+			// Note: classroom_course_id is optional - used as the default course for tools.
+			// Note: scope_profile is optional - normalised to the read-only default when blank.
 		}
 
 		if ( 'upwork' === $connection_type ) {
