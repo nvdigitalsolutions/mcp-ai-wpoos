@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-wporg-submission
-description: "Operational guide for WordPress.org submission readiness of NV oOS standalone plugins (nvoos-docs-hub today). Covers the 18 wp.org guidelines, the Plugin Check (PCP) gate in CI and Docker, PCP finding triage, the reviewer-reply loop (findings taxonomy from the real 0.4.3 review, related-issue sweep checklist, reply-email template), packaging exclusion tri-sync, readme.txt standards, and .wordpress-org listing assets. Use when preparing a wp.org submission, responding to a reviewer email, fixing the plugin-check CI job, or triaging PCP findings."
+description: "Operational guide for WordPress.org submission readiness of NV oOS standalone plugins (nvoos-docs-hub live; nvoos-design-system next in the pipeline — issue #6811). Covers the 18 wp.org guidelines, the Plugin Check (PCP) gate in CI and Docker, PCP finding triage, the reviewer-reply loop (findings taxonomy from the real 0.4.3 review, related-issue sweep checklist, reply-email template), packaging exclusion tri-sync, readme.txt standards, and .wordpress-org listing assets. Use when preparing a wp.org submission, responding to a reviewer email, fixing the plugin-check CI job, or triaging PCP findings."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.71"
   plugin-version-tested: "1.1.71"
-  last-updated: "2026-09-17"
+  last-updated: "2026-09-29"
 ---
 
 # NV oOS WordPress.org Submission — Readiness Playbook
@@ -252,6 +252,20 @@ submission track, NOT something to allowlist. The docs-hub ZIP is clean
 | `WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedTraitFound` | Intentional (docs-hub) | Warning only — the `WP_MCP_AI_Inline_Async_Tick_Trait` stub must carry the BASE plugin's trait name so the real trait replaces it when NV oOS is active |
 | `WordPress.WP.I18n.TextDomainMismatch` | Real blocker (base) | Text domain must equal the wp.org slug/dir name; the repo domain is `mcp-ai-wpoos`. Needs the slug migration track — do not allowlist |
 | `no_plugin_readme` | Real or mount artifact | readme.txt must sit at the ZIP root. If it does and PCP still fires, suspect the bind-mount truncation (pitfall 5) |
+| CodeAnalysis — core function newer than the declared `Requires at least` | Real | PCP flags any WP function whose `@since` is newer than the plugin's minimum (e.g. `wp_generate_uuid4()` is WP 6.7+ under `Requires at least: 6.0`). Fix: a `function_exists()`-guarded polyfill (keeps the floor) or bump `Requires at least`. Add the same check for any WP API used by new standalone plugins |
+
+### Second plugin in the pipeline (nvoos-design-system, issue #6811)
+
+The addon is functionally standalone (all base-plugin touchpoints gated:
+tools behind `wp_mcp_ai_register_tools` + `interface_exists`, Paper Store
+behind `class_exists`, AI keys behind `function_exists`, WooCommerce behind
+`class_exists`) but still needs the docs-hub packaging set before PCP:
+`readme.txt` (Stable tag == header Version), `LICENSE`, `CHANGELOG.md`,
+`.distignore` tri-synced with `bin/build-addon-zips.sh` (docs-hub ships only
+`readme.txt`, no `*.md`), `languages/<slug>.pot`, `.wordpress-org/` assets,
+the `wp_generate_uuid4()` polyfill above, and a `plugin-check` CI job — plus
+owner-side steps: standalone repo, subtree-sync workflow + deploy token
+(mirror `sync-nvoos-docs-hub.yml`), wp.org slug request, SVN submission.
 
 ## The reviewer reply pass (0.4.3 → 0.4.4, PR #6606)
 
