@@ -965,3 +965,9 @@ if ( file_exists( __DIR__ . '/../addons/checkout-api/tests/bootstrap.php' ) ) {
 if ( file_exists( __DIR__ . '/../addons/comic-reader/tests/bootstrap.php' ) ) {
 	require_once __DIR__ . '/../addons/comic-reader/tests/bootstrap.php';
 }
+
+// NV oOS Design System addon tests (addons/nvoos-design-system). Same
+// self-guarding constants + class-requires pattern.
+if ( file_exists( __DIR__ . '/../addons/nvoos-design-system/tests/bootstrap.php' ) ) {
+	require_once __DIR__ . '/../addons/nvoos-design-system/tests/bootstrap.php';
+}

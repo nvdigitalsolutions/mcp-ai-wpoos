@@ -1,0 +1,73 @@
+<!-- nds-email-wrapper:transactional -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>{{subject}}</title>
+<style>
+  @media (prefers-color-scheme: dark) {
+    .nds-page { background-color: var(--nds-email-page-bg-dark) !important; }
+    .nds-card { background-color: var(--nds-email-card-bg-dark) !important; }
+    .nds-body { color: var(--nds-email-body-text-dark) !important; }
+    .nds-divider { border-color: var(--nds-email-divider-dark) !important; }
+  }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:var(--nds-email-page-bg); font-family:var(--nds-email-font);">
+
+<table class="nds-page" width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background-color:var(--nds-email-page-bg);">
+  <tr>
+    <td align="center" style="padding:32px 16px 40px;">
+
+      <table class="nds-card" width="600" cellpadding="0" cellspacing="0" border="0" role="presentation" style="max-width:600px; width:100%; background-color:var(--nds-email-card-bg);">
+
+        <!-- ACCENT BAR -->
+        <tr>
+          <td style="background-color:var(--nds-email-accent); font-size:0; line-height:6px; height:6px;">&nbsp;</td>
+        </tr>
+
+        <!-- HEADER -->
+        <tr>
+          <td style="padding:28px 40px 20px;">
+            <h1 style="margin:0; font-family:var(--nds-email-font); font-size:20px; color:var(--nds-email-body-text); font-weight:bold; line-height:1.3;">{{subject}}</h1>
+            <p style="margin:8px 0 0 0; font-family:var(--nds-email-font); font-size:13px; color:var(--nds-email-muted); letter-spacing:2px;">{{site_domain}}</p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:0 40px;">
+            <table class="nds-divider" cellpadding="0" cellspacing="0" border="0" role="presentation" width="100%">
+              <tr><td style="border-top:1px solid var(--nds-email-divider); font-size:0; line-height:0;">&nbsp;</td></tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- BODY -->
+        <tr>
+          <td style="padding:24px 40px 32px;">
+            <div class="nds-body" style="font-family:var(--nds-email-font); font-size:var(--nds-email-body-size); line-height:var(--nds-email-body-height); color:var(--nds-email-body-text);">
+              {{body}}
+            </div>
+          </td>
+        </tr>
+
+        <!-- FOOTER -->
+        <tr>
+          <td style="padding:16px 40px 24px; border-top:1px solid var(--nds-email-divider);">
+            <p style="margin:0; font-family:var(--nds-email-font); font-size:11px; color:var(--nds-email-muted); line-height:1.8;">
+              This is an automated message from <a href="{{site_url}}" style="color:var(--nds-email-accent-2); text-decoration:none;">{{site_name}}</a>. Do not reply directly — contact <a href="mailto:{{admin_email}}" style="color:var(--nds-email-accent-2); text-decoration:none;">{{admin_email}}</a> for help.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+<!-- /nds-email-wrapper:transactional -->

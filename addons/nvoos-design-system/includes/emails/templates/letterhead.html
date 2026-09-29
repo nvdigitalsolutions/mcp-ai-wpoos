@@ -1,0 +1,106 @@
+<!-- nds-email-wrapper:letterhead -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>{{subject}}</title>
+<style>
+  @media (prefers-color-scheme: dark) {
+    .nds-page { background-color: var(--nds-email-page-bg-dark) !important; }
+    .nds-card { background-color: var(--nds-email-card-bg-dark) !important; }
+    .nds-body { color: var(--nds-email-body-text-dark) !important; }
+    .nds-signoff { color: var(--nds-email-body-text-dark) !important; }
+    .nds-divider { border-color: var(--nds-email-divider-dark) !important; }
+  }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:var(--nds-email-page-bg); font-family:var(--nds-email-font);">
+
+<table class="nds-page" width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background-color:var(--nds-email-page-bg);">
+  <tr>
+    <td align="center" style="padding:40px 16px 48px;">
+
+      <table class="nds-card" width="600" cellpadding="0" cellspacing="0" border="0" role="presentation" style="max-width:600px; width:100%; background-color:var(--nds-email-card-bg);">
+
+        <!-- LETTERHEAD -->
+        <tr>
+          <td style="background-color:var(--nds-email-header-bg); padding:36px 48px 32px;">
+            <table cellpadding="0" cellspacing="0" border="0" role="presentation">
+              <tr>
+                <td style="padding-right:16px; vertical-align:middle;">
+                  <img src="{{logo_url}}" width="48" alt="" style="display:block; border:0;">
+                </td>
+                <td style="vertical-align:middle;">
+                  <h1 style="margin:0; font-family:var(--nds-email-font); font-size:26px; letter-spacing:7px; color:var(--nds-email-accent); font-weight:normal; line-height:1;">{{site_name}}</h1>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2" style="padding-top:14px;">
+                  <table cellpadding="0" cellspacing="0" border="0" role="presentation">
+                    <tr>
+                      <td style="width:40px; border-top:1px solid var(--nds-email-accent-2); font-size:0; line-height:0; vertical-align:middle;">&nbsp;</td>
+                      <td style="padding-left:10px; font-family:var(--nds-email-font); font-size:9px; letter-spacing:4px; color:var(--nds-email-accent-2); vertical-align:middle; line-height:1;">{{sub_brand}}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- GOLD RULE -->
+        <tr>
+          <td style="background-color:var(--nds-email-accent); font-size:0; line-height:2px; height:2px;">&nbsp;</td>
+        </tr>
+
+        <!-- BODY -->
+        <tr>
+          <td style="padding:52px 48px 44px;">
+            <div class="nds-body" style="font-family:var(--nds-email-font); font-size:var(--nds-email-body-size); line-height:var(--nds-email-body-height); color:var(--nds-email-body-text);">
+              {{body}}
+            </div>
+
+            <table class="nds-divider" cellpadding="0" cellspacing="0" border="0" role="presentation" width="100%" style="margin:44px 0 0 0;">
+              <tr>
+                <td style="border-top:1px solid var(--nds-email-divider); font-size:0; line-height:0;">&nbsp;</td>
+              </tr>
+            </table>
+
+            <p class="nds-signoff" style="margin:28px 0 6px 0; font-family:var(--nds-email-font); font-size:var(--nds-email-body-size); line-height:var(--nds-email-body-height); color:var(--nds-email-body-text);">
+              Yours sincerely,
+            </p>
+            <p style="margin:0; font-family:var(--nds-email-font); font-size:var(--nds-email-body-size); line-height:var(--nds-email-body-height); color:var(--nds-email-header-bg); font-style:italic;">
+              The {{site_name}} Team
+            </p>
+          </td>
+        </tr>
+
+        <!-- FOOTER -->
+        <tr>
+          <td style="background-color:var(--nds-email-header-bg); padding:24px 48px;">
+            <table cellpadding="0" cellspacing="0" border="0" role="presentation" width="100%">
+              <tr>
+                <td style="font-family:var(--nds-email-font); font-size:12px; letter-spacing:2px; color:var(--nds-email-accent-2); line-height:1.8;">
+                  <a href="{{site_url}}" style="color:var(--nds-email-accent-2); text-decoration:none;">{{site_domain}}</a>
+                  &nbsp;&nbsp;·&nbsp;&nbsp;
+                  <a href="mailto:{{admin_email}}" style="color:var(--nds-email-accent-2); text-decoration:none;">{{admin_email}}</a>
+                </td>
+                <td align="right" style="font-family:var(--nds-email-font); font-size:11px; letter-spacing:2px; color:var(--nds-email-muted); line-height:1.8;">
+                  {{confidential}}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+<!-- /nds-email-wrapper:letterhead -->

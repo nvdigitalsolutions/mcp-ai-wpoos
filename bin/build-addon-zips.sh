@@ -19,7 +19,7 @@
 #   build/nvoos-librechat-v<librechat-version>.zip
 #   build/nvoos-cloudways-dashboard-v<cloudways-dashboard-version>.zip
 #   build/nvoos-funiq-bridge-v<funiq-bridge-version>.zip
-#   build/nvoos-crocoblock-ds-v<crocoblock-ds-version>.zip
+#   build/nvoos-design-system-v<design-system-version>.zip
 #   build/nvoos-page-agent-v<page-agent-version>.zip
 #   build/nvoos-fleet-operator-v<fleet-operator-version>.zip
 #   build/nvoos-checkout-api-v<checkout-api-version>.zip (vendor-side,
@@ -152,7 +152,7 @@ FUNIQ_BRIDGE_VERSION=${FUNIQ_BRIDGE_VERSION:-dev}
 SAP_VERSION=$(_read_addon_version "addons/schedule-anything-platform/schedule-anything-platform.php")
 SAP_VERSION=${SAP_VERSION:-dev}
 
-CDS_VERSION=$(_read_addon_version "addons/crocoblock-ds/nvoos-crocoblock-ds.php")
+CDS_VERSION=$(_read_addon_version "addons/nvoos-design-system/nvoos-design-system.php")
 CDS_VERSION=${CDS_VERSION:-dev}
 
 PAGE_AGENT_VERSION=$(_read_addon_version "addons/page-agent/nvoos-page-agent.php")
@@ -192,8 +192,8 @@ echo "   Pass --strict-canvas to make missing Docker a hard failure."
 SKIP_CANVAS=true
 fi
 
-if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ] || [ ! -d "addons/docs-hub" ] || [ ! -d "addons/saas-controller" ] || [ ! -d "addons/comic-reader" ] || [ ! -d "addons/chat-spa" ] || [ ! -d "addons/librechat" ] || [ ! -d "addons/cloudways-dashboard" ] || [ ! -d "addons/funiq-bridge" ] || [ ! -d "addons/schedule-anything-platform" ] || [ ! -d "addons/crocoblock-ds" ] || [ ! -d "addons/page-agent" ] || [ ! -d "addons/fleet-operator" ] || [ ! -d "addons/checkout-api" ]; then
-echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, addons/graphify, addons/docs-hub, addons/saas-controller, addons/comic-reader, addons/chat-spa, addons/librechat, addons/cloudways-dashboard, addons/funiq-bridge, addons/schedule-anything-platform, addons/crocoblock-ds, addons/page-agent, addons/fleet-operator, and addons/checkout-api must exist."
+if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ] || [ ! -d "addons/docs-hub" ] || [ ! -d "addons/saas-controller" ] || [ ! -d "addons/comic-reader" ] || [ ! -d "addons/chat-spa" ] || [ ! -d "addons/librechat" ] || [ ! -d "addons/cloudways-dashboard" ] || [ ! -d "addons/funiq-bridge" ] || [ ! -d "addons/schedule-anything-platform" ] || [ ! -d "addons/nvoos-design-system" ] || [ ! -d "addons/page-agent" ] || [ ! -d "addons/fleet-operator" ] || [ ! -d "addons/checkout-api" ]; then
+echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, addons/graphify, addons/docs-hub, addons/saas-controller, addons/comic-reader, addons/chat-spa, addons/librechat, addons/cloudways-dashboard, addons/funiq-bridge, addons/schedule-anything-platform, addons/nvoos-design-system, addons/page-agent, addons/fleet-operator, and addons/checkout-api must exist."
 exit 1
 fi
 
@@ -222,7 +222,7 @@ LIBRECHAT_ZIP="${OUTPUT_DIR}/nvoos-librechat-v${LIBRECHAT_VERSION}.zip"
 CW_DASHBOARD_ZIP="${OUTPUT_DIR}/nvoos-cloudways-dashboard-v${CW_DASHBOARD_VERSION}.zip"
 FUNIQ_BRIDGE_ZIP="${OUTPUT_DIR}/nvoos-funiq-bridge-v${FUNIQ_BRIDGE_VERSION}.zip"
 SAP_ZIP="${OUTPUT_DIR}/nvoos-schedule-anything-platform-v${SAP_VERSION}.zip"
-CDS_ZIP="${OUTPUT_DIR}/nvoos-crocoblock-ds-v${CDS_VERSION}.zip"
+CDS_ZIP="${OUTPUT_DIR}/nvoos-design-system-v${CDS_VERSION}.zip"
 PAGE_AGENT_ZIP="${OUTPUT_DIR}/nvoos-page-agent-v${PAGE_AGENT_VERSION}.zip"
 FLEET_OPERATOR_ZIP="${OUTPUT_DIR}/nvoos-fleet-operator-v${FLEET_OPERATOR_VERSION}.zip"
 CHECKOUT_API_ZIP="${OUTPUT_DIR}/nvoos-checkout-api-v${CHECKOUT_API_VERSION}.zip"
@@ -241,7 +241,7 @@ rm -f "$OUTPUT_DIR"/nvoos-librechat-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-cloudways-dashboard-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-funiq-bridge-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-schedule-anything-platform-v*.zip
-rm -f "$OUTPUT_DIR"/nvoos-crocoblock-ds-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-design-system-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-page-agent-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-fleet-operator-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-checkout-api-v*.zip
@@ -667,10 +667,10 @@ SAP_SIZE=$(du -h "$SAP_ZIP" | cut -f1)
 echo "✅ ${SAP_ZIP} (${SAP_SIZE})"
 echo ""
 
-echo "[14/${TOTAL_STEPS}] Building nvoos-crocoblock-ds-v${CDS_VERSION}.zip"
+echo "[14/${TOTAL_STEPS}] Building nvoos-design-system-v${CDS_VERSION}.zip"
 # Pure PHP addon — no JS/npm build step required.
-mkdir -p "${TMP_DIR}/cds-stage/nvoos-crocoblock-ds"
-rsync -a "addons/crocoblock-ds/" "${TMP_DIR}/cds-stage/nvoos-crocoblock-ds/" \
+mkdir -p "${TMP_DIR}/cds-stage/nvoos-design-system"
+rsync -a "addons/nvoos-design-system/" "${TMP_DIR}/cds-stage/nvoos-design-system/" \
 	--exclude 'node_modules/' \
 	--exclude '.git/' \
 	--exclude '.DS_Store' \
@@ -679,7 +679,7 @@ rsync -a "addons/crocoblock-ds/" "${TMP_DIR}/cds-stage/nvoos-crocoblock-ds/" \
 	--exclude 'package-lock.json'
 (
 	cd "${TMP_DIR}/cds-stage"
-	zip -r -q "${ROOT_DIR}/${CDS_ZIP}" nvoos-crocoblock-ds/
+	zip -r -q "${ROOT_DIR}/${CDS_ZIP}" nvoos-design-system/
 )
 CDS_SIZE=$(du -h "$CDS_ZIP" | cut -f1)
 echo "✅ ${CDS_ZIP} (${CDS_SIZE})"
