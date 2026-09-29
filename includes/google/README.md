@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Shared Google API infrastructure. Owns the OAuth 2.0 flows, the Calendar API v3 client, the Calendar OAuth scope registry, and Calendar credential resolution — so that Google integrations do not each re-implement token exchange, retry policy, and scope handling.
+Shared Google API infrastructure. Owns the OAuth 2.0 flows, the Calendar API v3 client, the Calendar OAuth scope registry, the Calendar credential resolution, the Classroom API v1 foundation (scopes, client, credentials, Pub/Sub push receiver), and Calendar credential resolution — so that Google integrations do not each re-implement token exchange, retry policy, and scope handling.
 
 This folder exists specifically to stop a pre-existing duplication problem: the Google OAuth start/callback pair is already copy-pasted four times (base Gmail, base Drive, Pro Gmail, Pro Drive) and those copies have drifted — the base and Pro Drive flows request *different* scope sets for the same product. New Google integrations must build on this folder instead of adding a fifth copy.
 
@@ -24,6 +24,10 @@ This folder exists specifically to stop a pre-existing duplication problem: the 
 | `WP_MCP_AI_Google_Calendar_Scopes` | `class-wp-mcp-ai-google-calendar-scopes.php` | both connection admin surfaces, every Calendar tool (scope enforcement) |
 | `WP_MCP_AI_Google_Calendar_Credentials` | `class-wp-mcp-ai-google-calendar-credentials.php` | every Calendar tool, `WP_MCP_AI_Google_Calendar_Sync` |
 | `WP_MCP_AI_Google_Calendar_Sync` | `class-wp-mcp-ai-google-calendar-sync.php` | Action Scheduler jobs, the push-notification REST route |
+| `WP_MCP_AI_Google_Classroom_Scopes` | `class-wp-mcp-ai-google-classroom-scopes.php` | the Classroom connection admin surface, every Classroom tool (scope enforcement), the Classroom push class |
+| `WP_MCP_AI_Google_Classroom_Client` | `class-wp-mcp-ai-google-classroom-client.php` | Classroom tools in `addons/pro/includes/tools/eca-management/`, `WP_MCP_AI_Google_Classroom_Push`, the Pro Classroom sync engine |
+| `WP_MCP_AI_Google_Classroom_Credentials` | `class-wp-mcp-ai-google-classroom-credentials.php` | every Classroom consumer |
+| `WP_MCP_AI_Google_Classroom_Push` | `class-wp-mcp-ai-google-classroom-push.php` | the Pub/Sub webhook REST route, daily registration renewal cron, the Pro Classroom sync engine |
 
 ## Inputs / Outputs / Neighbors
 
@@ -37,6 +41,7 @@ This folder exists specifically to stop a pre-existing duplication problem: the 
 ## Conventions
 
 - **`WP_MCP_AI_Google_Calendar_Scopes` is the only place scope strings may be written.** Never inline a `googleapis.com/auth/calendar*` URL elsewhere. The scope is `calendar.acls` (plural) — `calendar.acl` does not exist.
+- **`WP_MCP_AI_Google_Classroom_Scopes` is the only place Classroom scope strings may be written.** Never inline a `googleapis.com/auth/classroom*` URL elsewhere. Every Classroom scope is *restricted*: the primary deployment model is an internal school Google Cloud project, and public distribution requires OAuth app verification (and a CASA assessment for the most sensitive scopes) — surface that in the UI, don't hide it.
 - **Redirect URIs must come from `WP_MCP_AI_Google_OAuth_Service::build_redirect_uri()` or `build_remote_redirect_uri()`.** Google requires the authorize-time and exchange-time URIs to be byte-identical; rebuilding one inline is how that invariant breaks.
 - **OAuth `state` is single-use.** `consume_state()` deletes the transient *before* validating, so a replayed callback cannot succeed inside the TTL window. Do not add a read-then-validate-then-delete variant.
 - **Never re-run the authorization flow to obtain a fresh access token.** Google silently invalidates the oldest refresh token once an account exceeds 100 live tokens per client ID. Use `mint_access_token()`, which caches.

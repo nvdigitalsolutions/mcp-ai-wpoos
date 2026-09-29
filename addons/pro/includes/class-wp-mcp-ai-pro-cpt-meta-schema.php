@@ -849,6 +849,18 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 					'type'        => 'string',
 					'description' => __( 'Unique identifier from the iSAMS MIS system.', 'mcp-ai-wpoos-pro' ),
 				),
+				'_student_google_id'      => array(
+					'meta_key'    => '_student_google_id',
+					'label'       => __( 'Google Classroom ID', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Google Classroom user ID, used to match roster members during Classroom sync.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_student_google_email'   => array(
+					'meta_key'    => '_student_google_email',
+					'label'       => __( 'Google Email', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Google account email used as the fallback match key during Classroom sync.', 'mcp-ai-wpoos-pro' ),
+				),
 				'_student_eca_enrollments' => array(
 					'meta_key'    => '_student_eca_enrollments',
 					'label'       => __( 'ECA Enrollments', 'mcp-ai-wpoos-pro' ),
@@ -869,6 +881,18 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 					'label'       => __( 'ECA Type', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Category of activity (e.g. sport, arts, academic, service).', 'mcp-ai-wpoos-pro' ),
+				),
+				'_eca_google_course_id'  => array(
+					'meta_key'    => '_eca_google_course_id',
+					'label'       => __( 'Google Classroom Course ID', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Google Classroom course linked to this ECA. Used by the Classroom sync, announcement, and analytics tools.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_eca_classroom_sync'    => array(
+					'meta_key'    => '_eca_classroom_sync',
+					'label'       => __( 'Classroom Sync Direction', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Sync direction for the linked Classroom course: off, roster-in, or bi-directional.', 'mcp-ai-wpoos-pro' ),
 				),
 				'_eca_day'               => array(
 					'meta_key'    => '_eca_day',
