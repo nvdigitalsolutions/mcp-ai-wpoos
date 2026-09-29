@@ -966,6 +966,20 @@ probe_chat = dev
 probe_remote_mcp = dev
 update_option = dev
 
+# Google Classroom ECA integration (12 tools)
+classroom_course_analytics = dev
+create_classroom_course = dev
+create_classroom_coursework = dev
+link_classroom_course_to_eca = dev
+list_classroom_courses = dev
+list_classroom_guardians = dev
+list_classroom_submissions = dev
+manage_classroom_push_watch = dev
+post_classroom_announcement = dev
+sync_classroom_courses_to_ecas = dev
+sync_classroom_roster_to_students = dev
+update_classroom_course = dev
+
 # ========================================
 # PRACTICAL SETTINGS & RECOMMENDATIONS
 # ========================================

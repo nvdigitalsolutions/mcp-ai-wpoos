@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Houses the two custom-table accessors for the ECA (Extracurricular Activities) management toolkit — enrollments and attendance — and nothing else.
+Houses the two custom-table accessors for the ECA (Extracurricular Activities) management toolkit — enrollments and attendance — plus the Google Classroom integration layer: the shared tool helper and the background sync engine (course/roster reconcile + push-notification delta application).
 
 ## Tier
 
@@ -11,14 +11,16 @@ Houses the two custom-table accessors for the ECA (Extracurricular Activities) m
 | **Distribution** | Pro |
 | **PHP target** | 8.1+ (Pro addon minimum) |
 | **Loaded by** | `addons/pro/includes/tools/eca-management/init.php` → `includes/eca/init.php` (creates tables via `dbDelta()` and wires hooks) |
-| **Optional dependencies** | none |
+| **Optional dependencies** | none (Google Classroom classes are only resolved when the integration flag is on; `includes/google/` foundation ships in the base plugin) |
 
 ## Public Surface
 
 | Symbol | File | Used by |
 |---|---|---|
-| `WP_MCP_AI_ECA_Enrollments_DB` | `class-wp-mcp-ai-eca-enrollments-db.php` | ECA management tools (enroll, bulk enroll, iSAMS sync) |
-| `WP_MCP_AI_ECA_Attendance_DB` | `class-wp-mcp-ai-eca-attendance-db.php` | ECA management tools (attendance report, mark attendance) |
+| `WP_MCP_AI_ECA_Enrollments_DB` | `class-wp-mcp-ai-eca-enrollments-db.php` | ECA management tools (enroll, bulk enroll, iSAMS sync, Classroom roster sync) |
+| `WP_MCP_AI_ECA_Attendance_DB` | `class-wp-mcp-ai-eca-attendance-db.php` | ECA management tools (attendance report, mark attendance, Classroom submission cross-ref) |
+| `WP_MCP_AI_ECA_Classroom_Helper` | `class-wp-mcp-ai-eca-classroom-helper.php` | All 12 Classroom ECA tools (feature gate, client resolution, identity lookups) |
+| `WP_MCP_AI_ECA_Classroom_Sync` | `class-wp-mcp-ai-eca-classroom-sync.php` | Nightly reconcile cron, `wp_mcp_ai_google_classroom_notification` delta handler |
 
 Anything not listed here is internal and may change without notice.
 

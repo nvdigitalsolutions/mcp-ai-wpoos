@@ -283,6 +283,10 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/integrati
 // Self-gating - nothing is scheduled until a connection is authorised.
 require_once WP_MCP_AI_PATH . 'includes/google/google-calendar-init.php';
 
+// Google Classroom: shared foundation (scopes, client, credentials, push
+// receiver). Consumers live in the Pro addon; self-gating like Calendar.
+require_once WP_MCP_AI_PATH . 'includes/google/google-classroom-init.php';
+
 // ---------------------------------------------------------------------------
 // Infrastructure utilities (must load early)
 // ---------------------------------------------------------------------------
