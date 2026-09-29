@@ -1259,6 +1259,7 @@ wp-mcp-ai-tool-vin-decode
 wp-mcp-ai-tool-web-browser
 wp-mcp-ai-tool-withdrawal-strategy-planner
 wp-mcp-ai-tool-withdraw-student-eca
+wp-mcp-ai-upwork-mcp-bridge
 wp-mcp-ai-vision-annotator
 wp-mcp-ai-vision-count-normalizer
 wp-mcp-ai-vision-vlm-client
