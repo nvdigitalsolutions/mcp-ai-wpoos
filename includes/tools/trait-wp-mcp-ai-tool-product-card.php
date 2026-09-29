@@ -729,18 +729,34 @@ trait WP_MCP_AI_Tool_Product_Card {
 	 * @return array Normalized product data.
 	 */
 	protected function normalize_ezuite_product( $product ) {
-		$stock_qty = isset( $product['quantity_on_hand'] ) ? floatval( $product['quantity_on_hand'] ) : null;
+		// EZuite rows arrive from two shapes: cached CCT rows (sku, name,
+		// quantity, cost_price, stock_status) and live LX_ItemPull rows
+		// (item_code, item_name, selling_price). Resolve the display name
+		// across both so cards never fall back to "Untitled Product".
+		$name = '';
+		foreach ( array( 'name', 'item_name', 'title', 'description', 'item_code', 'sku' ) as $key ) {
+			if ( ! empty( $product[ $key ] ) && is_string( $product[ $key ] ) ) {
+				$name = $product[ $key ];
+				break;
+			}
+		}
+
+		$stock_qty = isset( $product['quantity_on_hand'] ) ? floatval( $product['quantity_on_hand'] ) : ( isset( $product['quantity'] ) ? floatval( $product['quantity'] ) : null );
+
+		$price = isset( $product['unit_price'] ) ? $product['unit_price'] : ( isset( $product['cost_price'] ) ? $product['cost_price'] : ( isset( $product['selling_price'] ) ? $product['selling_price'] : '' ) );
+
+		$sku = isset( $product['item_code'] ) ? $product['item_code'] : ( isset( $product['sku'] ) ? $product['sku'] : '' );
 
 		return array(
 			'_source'        => 'ezuite',
-			'name'           => isset( $product['description'] ) ? $product['description'] : ( isset( $product['item_code'] ) ? $product['item_code'] : '' ),
-			'price'          => isset( $product['unit_price'] ) ? $product['unit_price'] : '',
+			'name'           => $name,
+			'price'          => $price,
 			'regular_price'  => '',
 			'sale_price'     => '',
 			'on_sale'        => false,
 			'stock_status'   => '',
 			'stock_quantity' => $stock_qty,
-			'sku'            => isset( $product['item_code'] ) ? $product['item_code'] : '',
+			'sku'            => $sku,
 			'type'           => '',
 			'status'         => isset( $product['status'] ) ? $product['status'] : '',
 			'permalink'      => '',

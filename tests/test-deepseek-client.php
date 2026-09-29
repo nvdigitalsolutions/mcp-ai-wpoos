@@ -383,6 +383,9 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 	// set_api_key / api_key_override.
 	// -------------------------------------------------------------------------
 
+	/**
+	 * A transient API key overrides the persisted setting.
+	 */
 	public function test_set_api_key_overrides_persisted_key() {
 		update_option( 'wp_mcp_ai_settings', array( 'deepseek_api_key' => 'sk-persisted' ) );
 		$this->client->set_api_key( 'sk-override' );
@@ -393,6 +396,9 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 	// build_payload — clamping.
 	// -------------------------------------------------------------------------
 
+	/**
+	 * Clamps out-of-range temperature values to 2.0 in build_payload.
+	 */
 	public function test_build_payload_clamps_temperature() {
 		update_option( 'wp_mcp_ai_settings', array( 'deepseek_api_key' => 'sk-test' ) );
 		$reflection = new ReflectionClass( $this->client );
@@ -408,6 +414,9 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 		$this->assertEquals( 2.0, $payload['temperature'] );
 	}
 
+	/**
+	 * Maps max_completion_tokens to DeepSeek's max_tokens payload key.
+	 */
 	public function test_build_payload_supports_max_completion_tokens() {
 		update_option( 'wp_mcp_ai_settings', array( 'deepseek_api_key' => 'sk-test' ) );
 		$reflection = new ReflectionClass( $this->client );
@@ -423,8 +432,150 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 		$this->assertEquals( 200, $payload['max_tokens'] );
 	}
 
+	/**
+	 * DeepSeek V4 models advertise tool-calling support.
+	 */
 	public function test_model_supports_tools_public() {
 		$this->assertTrue( $this->client->model_supports_tools( 'deepseek-flash' ) );
 		$this->assertTrue( $this->client->model_supports_tools( 'deepseek-v4-pro' ) );
+	}
+
+	// -------------------------------------------------------------------------
+	// build_payload — image segment conversion.
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Converts input_image segments into DeepSeek's OpenAI-compatible
+	 * image_url content blocks.
+	 */
+	public function test_build_payload_converts_input_image_segments_to_image_url() {
+		update_option( 'wp_mcp_ai_settings', array( 'deepseek_api_key' => 'sk-test' ) );
+
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'build_payload' );
+		$method->setAccessible( true );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'Describe the image.',
+					),
+					array(
+						'type'          => 'input_image',
+						'attachment_id' => 0,
+						'image_url'     => array(
+							'url' => 'https://example.com/pack-shot.png',
+						),
+					),
+				),
+			),
+		);
+
+		$payload = $method->invoke( $this->client, $messages, array(), 'deepseek-flash' );
+
+		$this->assertIsArray( $payload );
+		$this->assertArrayHasKey( 'messages', $payload );
+
+		$content = $payload['messages'][0]['content'];
+		$this->assertCount( 2, $content );
+		$this->assertSame( 'text', $content[0]['type'] );
+		$this->assertSame( 'image_url', $content[1]['type'] );
+		$this->assertSame( 'https://example.com/pack-shot.png', $content[1]['image_url']['url'] );
+	}
+
+	/**
+	 * Drops input_image segments without a resolvable URL so the request
+	 * still goes out with the text content intact.
+	 */
+	public function test_build_payload_drops_unresolvable_input_image_segments() {
+		update_option( 'wp_mcp_ai_settings', array( 'deepseek_api_key' => 'sk-test' ) );
+
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'build_payload' );
+		$method->setAccessible( true );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'Describe the image.',
+					),
+					array(
+						'type'          => 'input_image',
+						'attachment_id' => 0,
+					),
+				),
+			),
+		);
+
+		$payload = $method->invoke( $this->client, $messages, array(), 'deepseek-flash' );
+
+		$this->assertIsArray( $payload );
+		$content = $payload['messages'][0]['content'];
+		$this->assertCount( 1, $content );
+		$this->assertSame( 'text', $content[0]['type'] );
+	}
+
+	/**
+	 * Advertises vision for deepseek-flash (and the retired vision-exp id
+	 * that now routes to it) but not for the other DeepSeek models.
+	 */
+	public function test_supports_vision_capability_matrix() {
+		$this->assertTrue( $this->client->supports_vision( 'deepseek-flash' ) );
+		$this->assertTrue( $this->client->supports_vision( 'deepseek-v4-flash-vision-exp' ) );
+		$this->assertFalse( $this->client->supports_vision( 'deepseek-v4-pro' ) );
+		$this->assertFalse( $this->client->supports_vision( 'deepseek-chat' ) );
+		$this->assertFalse( $this->client->supports_vision( '' ) );
+	}
+
+	/**
+	 * The wp_mcp_ai_deepseek_supports_vision filter opts a text-only
+	 * endpoint out of image payloads: input_image segments are stripped
+	 * before the request while text content survives.
+	 */
+	public function test_supports_vision_filter_strips_image_segments() {
+		update_option( 'wp_mcp_ai_settings', array( 'deepseek_api_key' => 'sk-test' ) );
+
+		$opt_out = function ( $is_vision_model, $model ) {
+			$this->assertSame( 'deepseek-flash', $model );
+			return false;
+		};
+		add_filter( 'wp_mcp_ai_deepseek_supports_vision', $opt_out, 10, 2 );
+
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'build_payload' );
+		$method->setAccessible( true );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'Describe the image.',
+					),
+					array(
+						'type'      => 'input_image',
+						'image_url' => array(
+							'url' => 'https://example.com/pack-shot.png',
+						),
+					),
+				),
+			),
+		);
+
+		$payload = $method->invoke( $this->client, $messages, array(), 'deepseek-flash' );
+
+		remove_filter( 'wp_mcp_ai_deepseek_supports_vision', $opt_out, 10 );
+
+		$this->assertIsArray( $payload );
+		$content = $payload['messages'][0]['content'];
+		$this->assertCount( 1, $content );
+		$this->assertSame( 'text', $content[0]['type'] );
 	}
 }

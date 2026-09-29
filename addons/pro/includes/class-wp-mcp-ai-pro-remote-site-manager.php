@@ -3557,6 +3557,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$error_message .= ': ' . $decoded['message'];
 			}
 
+			// A WordPress rest_no_route 404 means the remote site received the
+			// request but has no matching REST route. Give the agent actionable
+			// causes instead of a bare 404 so it can self-correct.
+			if ( 404 === $status_code && isset( $decoded['code'] ) && 'rest_no_route' === $decoded['code'] ) {
+				$error_message .= ' ' . __( 'The remote site answered that no matching REST route exists. Check that the NV oOS plugin (or the required companion plugin) is installed and active on the remote site, that its permalinks are not set to Plain (re-save them), and that the connection Base URL points at the site root.', 'mcp-ai-wpoos-pro' );
+			}
+
 			return new WP_Error( 'wp_mcp_ai_pro_http_error', $error_message );
 		}
 
