@@ -75,6 +75,14 @@ class NV_oOS_Design_System_Email_Renderer {
 		// Defer body insertion.
 		$html = str_replace( '{{body}}', self::BODY_PLACEHOLDER, $html );
 
+		// Conditional blocks: {{#to_name}}…{{/to_name}} render only when a
+		// recipient display name is known, so greetings never emit "Dear ,".
+		if ( '' === trim( (string) $context['to_name'] ) ) {
+			$html = preg_replace( '/\{\{#to_name\}\}.*?\{\{\/to_name\}\}/s', '', $html );
+		} else {
+			$html = preg_replace( '/\{\{#to_name\}\}|\{\{\/to_name\}\}/', '', $html );
+		}
+
 		$html = str_replace(
 			array(
 				'{{subject}}',

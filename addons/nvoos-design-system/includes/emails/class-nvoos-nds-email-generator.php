@@ -195,7 +195,7 @@ class NV_oOS_Design_System_Email_Generator {
 			. "5. Semantic headings (h1–h3), lang=\"en\" on <html>, descriptive alt text on every <img>.\n"
 			. "6. Body text at least 16px, line-height at least 1.6.\n"
 			. "7. Start the output with this comment exactly: <!-- nds-email-wrapper -->\n"
-			. "8. Use these merge tags, never hardcoded site data: {{subject}}, {{body}}, {{to_name}}, {{site_name}}, {{site_url}}, {{site_domain}}, {{logo_url}}, {{admin_email}}, {{sub_brand}}, {{confidential}}, {{year}}.\n"
+			. "8. Use these merge tags, never hardcoded site data: {{subject}}, {{body}}, {{to_name}}, {{site_name}}, {{site_url}}, {{site_domain}}, {{logo_url}}, {{admin_email}}, {{sub_brand}}, {{confidential}}, {{year}}. Wrap greetings in {{#to_name}}…{{/to_name}} so they vanish when the recipient name is unknown.\n"
 			. "9. For the call-to-action use the template part: {{button \"Label\" \"https://example.com\"}}\n"
 			. "10. Use these colour variables for ALL styling (they are resolved at render time): var(--nds-email-page-bg), var(--nds-email-card-bg), var(--nds-email-header-bg), var(--nds-email-accent), var(--nds-email-accent-2), var(--nds-email-body-text), var(--nds-email-divider), var(--nds-email-muted), var(--nds-email-font), var(--nds-email-body-size), var(--nds-email-body-height), var(--nds-email-page-bg-dark), var(--nds-email-card-bg-dark), var(--nds-email-body-text-dark).\n"
 			. "11. Total HTML size must stay under 100 KB.\n"

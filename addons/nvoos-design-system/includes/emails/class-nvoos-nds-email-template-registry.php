@@ -90,14 +90,27 @@ class NV_oOS_Design_System_Email_Template_Registry {
 			return '';
 		}
 
+		$content = false;
+
 		global $wp_filesystem;
 		if ( empty( $wp_filesystem ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 			WP_Filesystem();
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local template read with the WP Filesystem abstraction where available.
-		return $wp_filesystem->get_contents( $file );
+		// The direct transport covers the common case. Other transports
+		// (FTP sockets, SSH2) target remote hosts and cannot read a bundled
+		// local file, so fall back to a plain local read instead of failing.
+		if ( is_object( $wp_filesystem ) && 'direct' === $wp_filesystem->method ) {
+			$content = $wp_filesystem->get_contents( $file );
+		}
+
+		if ( ! is_string( $content ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Bundled local template read; the Filesystem API may lack a direct transport.
+			$content = file_get_contents( $file );
+		}
+
+		return is_string( $content ) ? $content : '';
 	}
 
 	/**

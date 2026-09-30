@@ -69,7 +69,7 @@ addon, renamed and extended with email templates + AI tools.
 {{logo_url}} {{admin_email}} {{sub_brand}} {{confidential}} {{year}}
 ```
 
-Template parts: `{{button "Label" "https://example.com"}}` (bulletproof CTA with VML fallback).
+Template parts: `{{button "Label" "https://example.com"}}` (bulletproof CTA with VML fallback), and `{{#to_name}}…{{/to_name}}` conditional blocks (rendered only when the recipient name is known).
 
 ## Architecture
 

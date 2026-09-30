@@ -59,6 +59,9 @@
         <tr>
           <td style="padding:52px 48px 44px;">
             <div class="nds-body" style="font-family:var(--nds-email-font); font-size:var(--nds-email-body-size); line-height:var(--nds-email-body-height); color:var(--nds-email-body-text);">
+              {{#to_name}}
+              <p style="margin:0 0 22px 0;">Dear {{to_name}},</p>
+              {{/to_name}}
               {{body}}
             </div>
 
