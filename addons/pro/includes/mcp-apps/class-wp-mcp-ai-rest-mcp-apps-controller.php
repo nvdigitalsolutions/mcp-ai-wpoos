@@ -906,6 +906,44 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 		// encrypted central store via their connection_ref.
 		if ( ! empty( $flow_state['connection_ref'] ) ) {
 			$registry->update_app_oauth_data( 0, $flow_state['server_url'], $token_data, $flow_state['connection_ref'] );
+
+			// When the login was started from the assistant editor, persist the
+			// reference entry itself too (mirrors the inline path below) so it
+			// survives the page reload that follows the loopback completion.
+			$ref_assistant_id = absint( $flow_state['assistant_id'] );
+			if ( $ref_assistant_id ) {
+				$ref = $flow_state['connection_ref'];
+
+				$ref_label = '';
+				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+					$ref_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $ref );
+					if ( is_array( $ref_connection ) && ! empty( $ref_connection['name'] ) ) {
+						$ref_label = $ref_connection['name'];
+					}
+				}
+				if ( '' === $ref_label ) {
+					$ref_label = (string) wp_parse_url( $flow_state['server_url'], PHP_URL_HOST );
+				}
+
+				$existing = $registry->get_apps( $ref_assistant_id );
+				$updated  = false;
+				foreach ( $existing as $i => $app ) {
+					if ( isset( $app['connection_ref'] ) && $app['connection_ref'] === $ref ) {
+						$existing[ $i ]['enabled'] = true;
+						$updated                   = true;
+						break;
+					}
+				}
+				if ( ! $updated ) {
+					$existing[] = array(
+						'label'          => $ref_label,
+						'connection_ref' => $ref,
+						'enabled'        => true,
+					);
+				}
+				$registry->save_apps( $ref_assistant_id, $existing );
+			}
+
 			return;
 		}
 

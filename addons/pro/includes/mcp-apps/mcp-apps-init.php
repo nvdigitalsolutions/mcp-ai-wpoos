@@ -269,7 +269,7 @@ function wp_mcp_ai_mcp_apps_validate_imported_refs( $post_id, $assistant, $updat
 
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $app['connection_ref'] );
 
-		if ( null !== $connection && 'mcp_server' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+		if ( null !== $connection && WP_MCP_AI_Pro_Remote_Site_Manager::is_mcp_app_connection( $connection ) ) {
 			continue;
 		}
 
