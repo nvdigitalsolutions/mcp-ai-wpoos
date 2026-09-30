@@ -67,6 +67,8 @@ The Agent Memory Management system now provides enterprise-grade capabilities fo
 }
 ```
 
+`agent_id` is **optional** — when omitted the memory is stored under the assistant executing the tool (resolved from the execution context). Storing under a **different** agent requires `manage_options`. Each store response echoes `agent_id`, `original_agent_id`, `agent_id_resolved`, and `resolution_source` so mis-keyed writes are visible immediately. Records whose title or content matches high-signal credential patterns (e.g. the plugin's own `cred_….<secret>` tokens, OpenAI/Google keys, PEM private keys) are flagged with `sensitive_patterns` and `contains_sensitive` — additive only; hard redaction belongs in the pre-store transform filter below.
+
 #### Hierarchical scoping (wings & rooms)
 
 Inspired by [MemPalace](https://github.com/MemPalace/mempalace), every stored memory can be tagged with two optional hierarchical scope fields:
@@ -126,6 +128,12 @@ The verbatim contract is enforced unconditionally by the tool itself: even if a 
   "limit": 10
 }
 ```
+
+#### Agent identity resolution
+
+`agent_id` is **optional**. When omitted, the tool resolves to the assistant executing it (from the execution context) — the model never needs to know its own post ID. The response echoes the resolved scope as `resolved_agent_id` with a `resolution_source` of `context` (or `parameter` when the argument was supplied).
+
+Cross-agent reads (an explicit `agent_id` that differs from the calling assistant) require the `manage_options` capability; otherwise the call is rejected with a 403 `mcp_ai_memory_scope_denied` error. `store_agent_context` applies the same identity resolution and scope gate on the write path, so read and write always agree on the same bucket. The same pattern covers the rest of the memory tool family — `recall_memory`, `wake_up_context`, `semantic_context_search`, `mine_agent_memory`, `manage_context_lifecycle`, and `batch_manage_memory` all accept an optional `agent_id`, resolve it from the execution context when omitted, gate cross-agent access behind `manage_options`, and echo `resolved_agent_id` / `resolution_source` in their responses.
 
 The optional `wing` and `room` filters are applied **before** semantic ranking, so they constrain the candidate pool rather than just re-ordering it. Combine them with `query` for the MemPalace-style "search this project, this topic, semantically" pattern.
 
