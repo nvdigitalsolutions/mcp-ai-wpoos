@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-db-output-guard.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-envelope.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-product-card.php';
@@ -599,8 +600,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				return $auto_async;
 			}
 
-			// Execute the tool.
-			return $tool->execute( $arguments, $context );
+			// Execute the tool with `$wpdb` error output suppressed so a failing
+			// query inside the tool can never leak HTML into a JSON response
+			// surface (REST, admin-ajax, SSE).
+			return WP_MCP_AI_Db_Output_Guard::run(
+				'tool_registry:' . $slug,
+				function () use ( $tool, $arguments, $context ) {
+					return $tool->execute( $arguments, $context );
+				}
+			);
 		}
 
 		/**
@@ -1460,9 +1468,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'edit_openai_image'                  => 'external-tools',
 				'create_image_variation'             => 'external-tools',
 				'analyze_file_suitability'           => 'external-tools',
-				'openai_usage_analytics'             => 'external-tools',				'vision_product_search'              => 'external-tools',
-				'vision_object_localization'         => 'external-tools',				'detect_image_content'               => 'external-tools',
-				'find_similar_media'                 => 'wordpress-core',				'get_image_metadata'                 => 'wordpress-core',
+				'openai_usage_analytics'             => 'external-tools',
+				'vision_product_search'              => 'external-tools',
+				'vision_object_localization'         => 'external-tools',
+				'detect_image_content'               => 'external-tools',
+				'find_similar_media'                 => 'wordpress-core',
+				'get_image_metadata'                 => 'wordpress-core',
 				'describe_image_layout'              => 'wordpress-core',
 				'identify_image'                     => 'external-tools',
 				'schedule_notify_sms'                => 'external-tools',
@@ -1954,15 +1965,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Create_Application_Password' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-application-password.php',
 				'WP_MCP_AI_Tool_Delete_Application_Password' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-application-password.php',
 				// SEO toolkit (ported from docdyhr/mcp-wordpress, MIT).
-				'WP_MCP_AI_Tool_SEO_Analyze_Content'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-seo-analyze-content.php',
-				'WP_MCP_AI_Tool_SEO_Generate_Schema'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-seo-generate-schema.php',
-				'WP_MCP_AI_Tool_SEO_Validate_Schema'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-seo-validate-schema.php',
-				'WP_MCP_AI_Tool_SEO_Bulk_Update_Metadata'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-seo-bulk-update-metadata.php',
-				'WP_MCP_AI_Tool_SEO_Site_Audit'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-seo-site-audit.php',
-				'WP_MCP_AI_Tool_SEO_Test_Integration'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-seo-test-integration.php',
-				'WP_MCP_AI_Tool_SEO_Get_Live_Data'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-seo-get-live-data.php',
-				'WP_MCP_AI_Tool_SEO_Track_Serp'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-seo-track-serp.php',
-				'WP_MCP_AI_Tool_SEO_Keyword_Research'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-seo-keyword-research.php',
+				'WP_MCP_AI_Tool_SEO_Analyze_Content'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-seo-analyze-content.php',
+				'WP_MCP_AI_Tool_SEO_Generate_Schema'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-seo-generate-schema.php',
+				'WP_MCP_AI_Tool_SEO_Validate_Schema'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-seo-validate-schema.php',
+				'WP_MCP_AI_Tool_SEO_Bulk_Update_Metadata'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-seo-bulk-update-metadata.php',
+				'WP_MCP_AI_Tool_SEO_Site_Audit'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-seo-site-audit.php',
+				'WP_MCP_AI_Tool_SEO_Test_Integration'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-seo-test-integration.php',
+				'WP_MCP_AI_Tool_SEO_Get_Live_Data'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-seo-get-live-data.php',
+				'WP_MCP_AI_Tool_SEO_Track_Serp'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-seo-track-serp.php',
+				'WP_MCP_AI_Tool_SEO_Keyword_Research'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-seo-keyword-research.php',
 				'WP_MCP_AI_Tool_Create_Assistant'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-assistant.php',
 				'WP_MCP_AI_Tool_Export_Assistant'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-export-assistant.php',
 				'WP_MCP_AI_Tool_Import_Assistant'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-import-assistant.php',
@@ -2131,11 +2142,14 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Conversation_Import_Status' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-conversation-import-status.php',
 				'WP_MCP_AI_Tool_Conversation_Import_Delete' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-conversation-import-delete.php',
 				'WP_MCP_AI_Tool_Get_RankMath_SEO'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-rankmath-seo.php',
-				'WP_MCP_AI_Tool_Generate_Simple_JWT_Token' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-simple-jwt-token.php',				'WP_MCP_AI_Tool_Vision_Product_Search'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-vision-product-search.php',
-				'WP_MCP_AI_Tool_Vision_Object_Localization' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-vision-object-localization.php',				'WP_MCP_AI_Tool_Detect_Image_Content'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-detect-image-content.php',
-				'WP_MCP_AI_Tool_Find_Similar_Media'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-find-similar-media.php',
-				'WP_MCP_AI_Tool_Get_Image_Metadata'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-image-metadata.php',				'WP_MCP_AI_Tool_Describe_Image_Layout'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-describe-image-layout.php',
-				'WP_MCP_AI_Tool_Identify_Image'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-identify-image.php',
+				'WP_MCP_AI_Tool_Generate_Simple_JWT_Token' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-simple-jwt-token.php',
+				'WP_MCP_AI_Tool_Vision_Product_Search'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-vision-product-search.php',
+				'WP_MCP_AI_Tool_Vision_Object_Localization' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-vision-object-localization.php',
+				'WP_MCP_AI_Tool_Detect_Image_Content'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-detect-image-content.php',
+				'WP_MCP_AI_Tool_Find_Similar_Media'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-find-similar-media.php',
+				'WP_MCP_AI_Tool_Get_Image_Metadata'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-image-metadata.php',
+				'WP_MCP_AI_Tool_Describe_Image_Layout'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-describe-image-layout.php',
+				'WP_MCP_AI_Tool_Identify_Image'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-identify-image.php',
 				// Newsletter plugin tools.
 				'WP_MCP_AI_Tool_Newsletter_Add_Subscriber' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-newsletter-add-subscriber.php',
 				'WP_MCP_AI_Tool_Newsletter_Get_Subscribers' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-newsletter-get-subscribers.php',

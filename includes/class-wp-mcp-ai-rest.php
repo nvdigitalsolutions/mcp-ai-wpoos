@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-mcp-methods.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-db-output-guard.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-async-metadata.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-controller-base.php';
@@ -6331,7 +6332,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( null !== $short_circuit ) {
 					$result = $short_circuit;
 				} else {
-					$result = $tool->execute( $prepared_arguments, $context );
+					// Suppress `$wpdb` error output for the duration of the tool
+					// execution so a failing query cannot leak HTML into the JSON
+					// response body.
+					$result = WP_MCP_AI_Db_Output_Guard::run(
+						'rest_tool_request:' . $tool_slug,
+						function () use ( $tool, $prepared_arguments, $context ) {
+							return $tool->execute( $prepared_arguments, $context );
+						}
+					);
 				}
 
 				if ( is_wp_error( $result ) ) {
@@ -12350,7 +12359,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( null !== $short_circuit ) {
 					$result = $short_circuit;
 				} else {
-					$result = $tool->execute( $arguments, $context );
+					// Suppress `$wpdb` error output for the duration of the tool
+					// execution so a failing query cannot leak HTML into the JSON
+					// response body.
+					$result = WP_MCP_AI_Db_Output_Guard::run(
+						'chat_tool_call:' . $tool_slug,
+						function () use ( $tool, $arguments, $context ) {
+							return $tool->execute( $arguments, $context );
+						}
+					);
 				}
 
 				if ( is_wp_error( $result ) ) {
