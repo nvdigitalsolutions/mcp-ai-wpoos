@@ -1322,12 +1322,34 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 					</tr>
 				</thead>
 				<tbody>
-				<?php foreach ( $recent_events as $event ) : ?>
+				<?php
+				// Human-readable labels for event types written by
+				// WP_MCP_AI_Security_Manager::log_security_event().
+				$event_labels = array(
+					'auth_success'      => __( 'Successful authentication', 'mcp-ai-wpoos' ),
+					'auth_failure'      => __( 'Failed authentication', 'mcp-ai-wpoos' ),
+					'ip_block'          => __( 'IP blocked', 'mcp-ai-wpoos' ),
+					'https_violation'   => __( 'HTTPS violation', 'mcp-ai-wpoos' ),
+					'role_denied'       => __( 'Access denied (role)', 'mcp-ai-wpoos' ),
+					'capability_denied' => __( 'Access denied (capability)', 'mcp-ai-wpoos' ),
+					'file_access'       => __( 'File access', 'mcp-ai-wpoos' ),
+				);
+				foreach ( $recent_events as $event ) :
+					$event_type  = $event['event_type'] ?? $event['event'] ?? $event['type'] ?? '';
+					$event_label = isset( $event_labels[ $event_type ] ) ? $event_labels[ $event_type ] : ( '' !== $event_type ? $event_type : '—' );
+					$user_id     = isset( $event['user_id'] ) ? absint( $event['user_id'] ) : 0;
+					if ( 0 === $user_id ) {
+						$user_display = __( 'Guest', 'mcp-ai-wpoos' );
+					} else {
+						$user         = get_userdata( $user_id );
+						$user_display = $user ? $user->display_name : sprintf( '#%d', $user_id );
+					}
+					?>
 					<tr>
 						<td><?php echo esc_html( isset( $event['timestamp'] ) ? wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $event['timestamp'] ) ) : '—' ); ?></td>
-						<td><?php echo esc_html( $event['event'] ?? $event['type'] ?? '—' ); ?></td>
-						<td><?php echo esc_html( $event['ip'] ?? '—' ); ?></td>
-						<td><?php echo esc_html( $event['user_id'] ?? '—' ); ?></td>
+						<td><?php echo esc_html( $event_label ); ?></td>
+						<td><?php echo esc_html( $event['ip_address'] ?? $event['ip'] ?? '—' ); ?></td>
+						<td><?php echo esc_html( $user_display ); ?></td>
 					</tr>
 				<?php endforeach; ?>
 				</tbody>
