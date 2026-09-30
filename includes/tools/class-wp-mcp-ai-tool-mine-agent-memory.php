@@ -89,7 +89,7 @@ class WP_MCP_AI_Tool_Mine_Agent_Memory implements WP_MCP_AI_Tool_Interface, WP_M
 			'properties'           => array(
 				'agent_id'         => array(
 					'type'        => array( 'integer', 'string' ),
-					'description' => __( 'Agent assistant ID (post ID) or virtual agent identifier.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Optional. Agent assistant ID (post ID) or virtual agent identifier. When omitted, the tool mines into the memory of the assistant executing it. Mining into another agent\'s memory requires the manage_options capability.', 'mcp-ai-wpoos' ),
 				),
 				'source'           => array(
 					'type'        => 'string',
@@ -241,7 +241,7 @@ class WP_MCP_AI_Tool_Mine_Agent_Memory implements WP_MCP_AI_Tool_Interface, WP_M
 					'default'     => false,
 				),
 			),
-			'required'             => array( 'agent_id', 'source' ),
+			'required'             => array( 'source' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -261,12 +261,6 @@ class WP_MCP_AI_Tool_Mine_Agent_Memory implements WP_MCP_AI_Tool_Interface, WP_M
 	 * @return array Tool results.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		if ( empty( $arguments['agent_id'] ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_error',
-				__( 'Agent ID is required.', 'mcp-ai-wpoos' )
-			);
-		}
 		if ( empty( $arguments['source'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_error',
@@ -274,7 +268,32 @@ class WP_MCP_AI_Tool_Mine_Agent_Memory implements WP_MCP_AI_Tool_Interface, WP_M
 			);
 		}
 
-		$agent_id     = is_numeric( $arguments['agent_id'] ) ? absint( $arguments['agent_id'] ) : sanitize_text_field( $arguments['agent_id'] );
+		// Resolve the effective agent identity: explicit argument (scope-checked
+		// override) or the calling assistant's own id from the execution
+		// context. Fail loudly — never guess.
+		$requested = isset( $arguments['agent_id'] ) ? $arguments['agent_id'] : null;
+		$identity  = class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' )
+			? WP_MCP_AI_Agent_Identity_Resolver::resolve_for_execution( $requested, $context )
+			: $this->fallback_identity( $requested, $context );
+
+		if ( empty( $identity['agent_id'] ) ) {
+			return new WP_Error(
+				'mcp_ai_memory_no_agent',
+				__( 'No agent_id supplied and the execution context provided none.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Scope gate: mining into another agent's store requires manage_options.
+		$user_id     = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$scope_error = class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' )
+			? WP_MCP_AI_Agent_Identity_Resolver::check_scope( $identity['agent_id'], $context, $user_id )
+			: null;
+		if ( is_wp_error( $scope_error ) ) {
+			return $scope_error;
+		}
+
+		$agent_id     = is_numeric( $identity['agent_id'] ) ? absint( $identity['agent_id'] ) : sanitize_text_field( $identity['agent_id'] );
 		$source       = sanitize_key( $arguments['source'] );
 		$wing         = isset( $arguments['wing'] ) ? sanitize_text_field( $arguments['wing'] ) : '';
 		$room         = isset( $arguments['room'] ) ? sanitize_text_field( $arguments['room'] ) : '';
@@ -317,13 +336,15 @@ class WP_MCP_AI_Tool_Mine_Agent_Memory implements WP_MCP_AI_Tool_Interface, WP_M
 
 		if ( empty( $items ) ) {
 			return array(
-				'success' => true,
-				'message' => __( 'No items found to mine.', 'mcp-ai-wpoos' ),
-				'mined'   => array(),
-				'count'   => 0,
-				'skipped' => 0,
-				'failed'  => 0,
-				'dry_run' => $dry_run,
+				'success'           => true,
+				'message'           => __( 'No items found to mine.', 'mcp-ai-wpoos' ),
+				'mined'             => array(),
+				'count'             => 0,
+				'skipped'           => 0,
+				'failed'            => 0,
+				'dry_run'           => $dry_run,
+				'resolved_agent_id' => $agent_id,
+				'resolution_source' => $identity['resolution_source'],
 			);
 		}
 
@@ -464,16 +485,58 @@ class WP_MCP_AI_Tool_Mine_Agent_Memory implements WP_MCP_AI_Tool_Interface, WP_M
 			);
 
 		return array(
-			'success' => true,
-			'message' => $message,
-			'count'   => count( $mined ),
-			'failed'  => $failed,
-			'skipped' => $dedupe_skip,
-			'dry_run' => $dry_run,
-			'mined'   => $mined,
-			'wing'    => $wing,
-			'room'    => $room,
-			'source'  => $source,
+			'success'           => true,
+			'message'           => $message,
+			'count'             => count( $mined ),
+			'failed'            => $failed,
+			'skipped'           => $dedupe_skip,
+			'dry_run'           => $dry_run,
+			'mined'             => $mined,
+			'wing'              => $wing,
+			'room'              => $room,
+			'source'            => $source,
+			'resolved_agent_id' => $agent_id,
+			'resolution_source' => $identity['resolution_source'],
+		);
+	}
+
+	/**
+	 * Minimal identity resolution used only when the shared resolver class
+	 * is unavailable (e.g. a standalone tool load).
+	 *
+	 * @param int|string|null $requested Explicit agent_id argument.
+	 * @param array           $context   Execution context.
+	 * @return array Resolution shape compatible with
+	 *               WP_MCP_AI_Agent_Identity_Resolver::resolve_for_execution().
+	 */
+	private function fallback_identity( $requested, array $context ) {
+		if ( null !== $requested && '' !== (string) $requested && '0' !== (string) $requested ) {
+			$agent_id = is_numeric( $requested ) ? absint( $requested ) : sanitize_text_field( $requested );
+			return array(
+				'agent_id'          => $agent_id,
+				'original'          => (string) $requested,
+				'resolved'          => false,
+				'canonical'         => is_numeric( $requested ),
+				'resolution_source' => 'parameter',
+			);
+		}
+
+		if ( ! empty( $context['assistant_id'] ) && is_numeric( $context['assistant_id'] ) ) {
+			return array(
+				'agent_id'          => absint( $context['assistant_id'] ),
+				'original'          => '',
+				'resolved'          => false,
+				'canonical'         => true,
+				'resolution_source' => 'context',
+			);
+		}
+
+		return array(
+			'agent_id'          => '',
+			'original'          => '',
+			'resolved'          => false,
+			'canonical'         => false,
+			'resolution_source' => '',
 		);
 	}
 

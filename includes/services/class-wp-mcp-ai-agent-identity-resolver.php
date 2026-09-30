@@ -127,6 +127,110 @@ class WP_MCP_AI_Agent_Identity_Resolver {
 	}
 
 	/**
+	 * Resolve the effective agent identity for a memory tool execution.
+	 *
+	 * Handles both call shapes with one precedence order:
+	 *
+	 *  1. An explicit `agent_id` argument — canonicalised via
+	 *     {@see self::resolve()} (virtual keys bridge to the context
+	 *     `assistant_id` or the persisted alias table).
+	 *  2. The calling assistant's own identity from the execution context
+	 *     (`assistant_id`), when the argument is omitted. The runtime
+	 *     already knows which assistant is executing; the model must not
+	 *     be asked to re-derive it.
+	 *  3. Nothing — the result reports an empty `agent_id` so callers can
+	 *     fail loudly instead of guessing.
+	 *
+	 * @param int|string|null $agent_id Explicit `agent_id` argument (may be absent).
+	 * @param array           $context  Tool execution context (may carry
+	 *                                  `assistant_id`).
+	 * @return array {
+	 *     @type int|string $agent_id          Effective agent id ('' when unknown).
+	 *     @type string     $original          The caller-supplied identifier ('' when omitted).
+	 *     @type bool       $resolved          Whether the identifier was remapped.
+	 *     @type bool       $canonical         Whether `agent_id` is a canonical post ID.
+	 *     @type string     $resolution_source 'parameter', 'context', or ''.
+	 * }
+	 */
+	public static function resolve_for_execution( $agent_id, array $context = array() ) {
+		// Treat null, '' and 0 as "not supplied" so omitted and explicitly
+		// empty values take the context path.
+		if ( null !== $agent_id && '' !== (string) $agent_id && '0' !== (string) $agent_id ) {
+			$resolution                      = self::resolve( $agent_id, $context );
+			$resolution['resolution_source'] = 'parameter';
+
+			return $resolution;
+		}
+
+		// The agentic loop always knows which assistant post is executing.
+		if ( ! empty( $context['assistant_id'] ) && is_numeric( $context['assistant_id'] ) && absint( $context['assistant_id'] ) > 0 ) {
+			return array(
+				'agent_id'          => absint( $context['assistant_id'] ),
+				'original'          => '',
+				'resolved'          => false,
+				'canonical'         => true,
+				'resolution_source' => 'context',
+			);
+		}
+
+		return array(
+			'agent_id'          => '',
+			'original'          => '',
+			'resolved'          => false,
+			'canonical'         => false,
+			'resolution_source' => '',
+		);
+	}
+
+	/**
+	 * Gate cross-agent memory access.
+	 *
+	 * When the execution context identifies the calling assistant, memory
+	 * scoped to any other agent requires the `manage_options` capability on
+	 * the acting user. This closes the IDOR surface where any assistant that
+	 * can call a memory tool could enumerate every other agent's store.
+	 *
+	 * When the runtime identity is unknown (direct callers such as the
+	 * chat-memory REST drawer that carry no `assistant_id`), the check is a
+	 * no-op and the pre-existing capability gates apply unchanged.
+	 *
+	 * @param int|string $resolved_agent_id Effective (canonicalised) agent id.
+	 * @param array      $context           Tool execution context.
+	 * @param int        $user_id           Acting user id (0 = current user).
+	 * @return WP_Error|null WP_Error when the scope is denied, null when allowed.
+	 */
+	public static function check_scope( $resolved_agent_id, array $context = array(), $user_id = 0 ) {
+		$own = 0;
+		if ( ! empty( $context['assistant_id'] ) && is_numeric( $context['assistant_id'] ) ) {
+			$own = absint( $context['assistant_id'] );
+		}
+
+		// Runtime identity unknown — keep pre-existing behaviour.
+		if ( ! $own ) {
+			return null;
+		}
+
+		// The caller's own memory — always allowed.
+		if ( (string) $resolved_agent_id === (string) $own ) {
+			return null;
+		}
+
+		$user_id = $user_id > 0 ? absint( $user_id ) : get_current_user_id();
+		if ( $user_id && user_can( $user_id, 'manage_options' ) ) {
+			return null;
+		}
+
+		return new WP_Error(
+			'mcp_ai_memory_scope_denied',
+			__(
+				'Accessing another agent\'s memory requires the manage_options capability. Omit agent_id to access your own memory.',
+				'mcp-ai-wpoos'
+			),
+			array( 'status' => 403 )
+		);
+	}
+
+	/**
 	 * Record an alias => canonical mapping.
 	 *
 	 * @param string     $alias     Virtual agent key.

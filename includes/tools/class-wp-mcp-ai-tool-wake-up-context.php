@@ -72,7 +72,7 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves the top-N most-relevant memories for an agent and returns them as a compact, labeled text block ready to prepend to the system prompt at session boot. Optionally scoped to a wing/room. Honours a token budget so it never blows past TPM limits.', 'mcp-ai-wpoos' );
+		return __( 'Retrieves the top-N most-relevant memories for an agent and returns them as a compact, labeled text block ready to prepend to the system prompt at session boot. When agent_id is omitted, the tool wakes up the assistant executing it; waking another agent\'s memory requires the manage_options capability. Optionally scoped to a wing/room. Honours a token budget so it never blows past TPM limits.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -98,7 +98,7 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'properties'           => array(
 				'agent_id'        => array(
 					'type'        => array( 'integer', 'string' ),
-					'description' => __( 'Agent assistant ID (post ID) or virtual agent identifier.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Optional. Agent assistant ID (post ID) or virtual agent identifier. When omitted, the tool resolves to the assistant executing it. Waking another agent\'s memory requires the manage_options capability.', 'mcp-ai-wpoos' ),
 				),
 				'wing'            => array(
 					'type'        => 'string',
@@ -148,7 +148,7 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 					'default'     => 'auto',
 				),
 			),
-			'required'             => array( 'agent_id' ),
+			'required'             => array(),
 			'additionalProperties' => false,
 		);
 	}
@@ -168,11 +168,32 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * @return array Tool results.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		if ( empty( $arguments['agent_id'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_error', __( 'Agent ID is required.', 'mcp-ai-wpoos' ) );
+		// Resolve the effective agent identity: explicit argument (scope-checked
+		// override) or the calling assistant's own id from the execution
+		// context. Fail loudly — never guess.
+		$requested = isset( $arguments['agent_id'] ) ? $arguments['agent_id'] : null;
+		$identity  = class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' )
+			? WP_MCP_AI_Agent_Identity_Resolver::resolve_for_execution( $requested, $context )
+			: $this->fallback_identity( $requested, $context );
+
+		if ( empty( $identity['agent_id'] ) ) {
+			return new WP_Error(
+				'mcp_ai_memory_no_agent',
+				__( 'No agent_id supplied and the execution context provided none.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
 		}
 
-		$agent_id        = is_numeric( $arguments['agent_id'] ) ? absint( $arguments['agent_id'] ) : sanitize_text_field( $arguments['agent_id'] );
+		// Scope gate: waking another agent's memory requires manage_options.
+		$user_id     = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$scope_error = class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' )
+			? WP_MCP_AI_Agent_Identity_Resolver::check_scope( $identity['agent_id'], $context, $user_id )
+			: null;
+		if ( is_wp_error( $scope_error ) ) {
+			return $scope_error;
+		}
+
+		$agent_id        = is_numeric( $identity['agent_id'] ) ? absint( $identity['agent_id'] ) : sanitize_text_field( $identity['agent_id'] );
 		$wing            = isset( $arguments['wing'] ) ? sanitize_text_field( $arguments['wing'] ) : '';
 		$room            = isset( $arguments['room'] ) ? sanitize_text_field( $arguments['room'] ) : '';
 		$query           = isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '';
@@ -402,17 +423,19 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( is_wp_error( $result ) || empty( $result['success'] ) || empty( $result['contexts'] ) ) {
 			self::record_retrieval_telemetry( $retrieval_path );
 			return array(
-				'success'        => true,
-				'message'        => __( 'No memories found for wake-up.', 'mcp-ai-wpoos' ),
-				'system_block'   => '',
-				'count'          => 0,
-				'truncated'      => 0,
-				'tokens_used'    => 0,
-				'token_budget'   => $token_budget,
-				'wing'           => $wing,
-				'room'           => $room,
-				'agent_id'       => $agent_id,
-				'retrieval_path' => $retrieval_path,
+				'success'           => true,
+				'message'           => __( 'No memories found for wake-up.', 'mcp-ai-wpoos' ),
+				'system_block'      => '',
+				'count'             => 0,
+				'truncated'         => 0,
+				'tokens_used'       => 0,
+				'token_budget'      => $token_budget,
+				'wing'              => $wing,
+				'room'              => $room,
+				'agent_id'          => $agent_id,
+				'resolved_agent_id' => $agent_id,
+				'resolution_source' => $identity['resolution_source'],
+				'retrieval_path'    => $retrieval_path,
 			);
 		}
 
@@ -444,17 +467,19 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( empty( $rendered ) ) {
 			self::record_retrieval_telemetry( $retrieval_path );
 			return array(
-				'success'        => true,
-				'message'        => __( 'Token budget too small to render any memory entries.', 'mcp-ai-wpoos' ),
-				'system_block'   => '',
-				'count'          => 0,
-				'truncated'      => $truncated,
-				'tokens_used'    => 0,
-				'token_budget'   => $token_budget,
-				'wing'           => $wing,
-				'room'           => $room,
-				'agent_id'       => $agent_id,
-				'retrieval_path' => $retrieval_path,
+				'success'           => true,
+				'message'           => __( 'Token budget too small to render any memory entries.', 'mcp-ai-wpoos' ),
+				'system_block'      => '',
+				'count'             => 0,
+				'truncated'         => $truncated,
+				'tokens_used'       => 0,
+				'token_budget'      => $token_budget,
+				'wing'              => $wing,
+				'room'              => $room,
+				'agent_id'          => $agent_id,
+				'resolved_agent_id' => $agent_id,
+				'resolution_source' => $identity['resolution_source'],
+				'retrieval_path'    => $retrieval_path,
 			);
 		}
 
@@ -481,17 +506,19 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 		self::record_retrieval_telemetry( $retrieval_path );
 
 		return array(
-			'success'         => true,
-			'system_block'    => $system_block,
-			'count'           => count( $rendered ),
-			'truncated'       => $truncated,
-			'tokens_used'     => $tokens_used,
-			'token_budget'    => $token_budget,
-			'wing'            => $wing,
-			'room'            => $room,
-			'agent_id'        => $agent_id,
-			'retrieval_path'  => $retrieval_path,
-			'memories_loaded' => array_map(
+			'success'           => true,
+			'system_block'      => $system_block,
+			'count'             => count( $rendered ),
+			'truncated'         => $truncated,
+			'tokens_used'       => $tokens_used,
+			'token_budget'      => $token_budget,
+			'wing'              => $wing,
+			'room'              => $room,
+			'agent_id'          => $agent_id,
+			'resolved_agent_id' => $agent_id,
+			'resolution_source' => $identity['resolution_source'],
+			'retrieval_path'    => $retrieval_path,
+			'memories_loaded'   => array_map(
 				static function ( $memory ) use ( $graph_via ) {
 					$cid = isset( $memory['context_id'] ) ? $memory['context_id'] : '';
 					return array(
@@ -510,6 +537,46 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 				},
 				array_slice( $contexts, 0, count( $rendered ) )
 			),
+		);
+	}
+
+	/**
+	 * Minimal identity resolution used only when the shared resolver class
+	 * is unavailable (e.g. a standalone tool load).
+	 *
+	 * @param int|string|null $requested Explicit agent_id argument.
+	 * @param array           $context   Execution context.
+	 * @return array Resolution shape compatible with
+	 *               WP_MCP_AI_Agent_Identity_Resolver::resolve_for_execution().
+	 */
+	private function fallback_identity( $requested, array $context ) {
+		if ( null !== $requested && '' !== (string) $requested && '0' !== (string) $requested ) {
+			$agent_id = is_numeric( $requested ) ? absint( $requested ) : sanitize_text_field( $requested );
+			return array(
+				'agent_id'          => $agent_id,
+				'original'          => (string) $requested,
+				'resolved'          => false,
+				'canonical'         => is_numeric( $requested ),
+				'resolution_source' => 'parameter',
+			);
+		}
+
+		if ( ! empty( $context['assistant_id'] ) && is_numeric( $context['assistant_id'] ) ) {
+			return array(
+				'agent_id'          => absint( $context['assistant_id'] ),
+				'original'          => '',
+				'resolved'          => false,
+				'canonical'         => true,
+				'resolution_source' => 'context',
+			);
+		}
+
+		return array(
+			'agent_id'          => '',
+			'original'          => '',
+			'resolved'          => false,
+			'canonical'         => false,
+			'resolution_source' => '',
 		);
 	}
 

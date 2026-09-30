@@ -442,6 +442,6 @@ class Test_MemPalace_Phase2_Memory_Tools extends WP_UnitTestCase {
 		$tool   = $this->registry->get_tool( 'wake_up_context' );
 		$result = $tool->execute( array(), array() );
 		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_error', $result->get_error_code() );
+		$this->assertSame( 'mcp_ai_memory_no_agent', $result->get_error_code() );
 	}
 }
