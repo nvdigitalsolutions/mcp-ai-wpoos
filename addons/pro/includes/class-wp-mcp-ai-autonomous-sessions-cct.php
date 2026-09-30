@@ -25,6 +25,17 @@ class WP_MCP_AI_Autonomous_Sessions_CCT {
 	const FIELD_ID_BASE = 30000;
 
 	/**
+	 * Per-request storage readiness cache, keyed by table name.
+	 *
+	 * The probe result is cached because the physical table schema cannot
+	 * change after `init` (the registration hook runs at priority 11).
+	 * Tests reset it via reset_storage_cache().
+	 *
+	 * @var array
+	 */
+	private static $storage_ready_cache = array();
+
+	/**
 	 * Hook into JetEngine to provision the autonomous sessions content type.
 	 */
 	public static function bootstrap() {
@@ -73,7 +84,7 @@ class WP_MCP_AI_Autonomous_Sessions_CCT {
 			return null;
 		}
 
-		if ( ! self::table_exists() ) {
+		if ( ! self::is_storage_ready() ) {
 			return null;
 		}
 
@@ -108,6 +119,73 @@ class WP_MCP_AI_Autonomous_Sessions_CCT {
 		$wpdb->suppress_errors( $suppress );
 
 		return '' === $wpdb->last_error;
+	}
+
+	/**
+	 * Determine whether the CCT storage is fully ready for read/write.
+	 *
+	 * Stronger than table_exists(): the physical table must exist AND carry
+	 * every column this class reads or writes (JetEngine built-ins plus the
+	 * meta-field set). A registered content type whose table is missing
+	 * columns (schema drift, partial migration) fails this probe so consumers
+	 * fall back to transients instead of running queries that error.
+	 *
+	 * @return bool True when the table and its full schema are present.
+	 */
+	public static function is_storage_ready() {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'jet_cct_' . self::SLUG;
+
+		if ( array_key_exists( $table, self::$storage_ready_cache ) ) {
+			return self::$storage_ready_cache[ $table ];
+		}
+
+		if ( ! self::table_exists() ) {
+			self::$storage_ready_cache[ $table ] = false;
+			return false;
+		}
+
+		$required = array_merge(
+			array( '_id', 'cct_status', 'cct_created', 'cct_modified', 'cct_author_id' ),
+			array_map( 'strtolower', wp_list_pluck( static::get_meta_fields(), 'name' ) )
+		);
+
+		$suppress = $wpdb->suppress_errors( true );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Column probe against the fixed plugin-owned table name.
+		$existing = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`", 0 );
+
+		$wpdb->suppress_errors( $suppress );
+
+		if ( ! is_array( $existing ) ) {
+			self::$storage_ready_cache[ $table ] = false;
+			return false;
+		}
+
+		$missing = array_diff( $required, array_map( 'strtolower', $existing ) );
+		$ready   = empty( $missing );
+
+		self::$storage_ready_cache[ $table ] = $ready;
+
+		if ( ! $ready && class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'[CCT ' . self::SLUG . '] Storage not ready: missing columns ' . implode( ', ', $missing ),
+				array( 'table' => $table )
+			);
+		}
+
+		return $ready;
+	}
+
+	/**
+	 * Reset the per-request storage readiness cache.
+	 *
+	 * @internal Test seam: the single-process suite creates and drops the
+	 * probe tables mid-process, so tests must clear the cached probe result.
+	 */
+	public static function reset_storage_cache() {
+		self::$storage_ready_cache = array();
 	}
 
 	/**

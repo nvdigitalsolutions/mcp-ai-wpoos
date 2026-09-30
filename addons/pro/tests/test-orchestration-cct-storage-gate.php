@@ -50,6 +50,11 @@ class Test_Orchestration_CCT_Storage_Gate extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-autonomous-sessions-cct.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-execution-history-cct.php';
 
+		// Clear the per-request storage readiness cache so each test re-probes
+		// against the fixture tables it just (re)created.
+		WP_MCP_AI_Autonomous_Sessions_CCT::reset_storage_cache();
+		WP_MCP_AI_Execution_History_CCT::reset_storage_cache();
+
 		// Ensure the probe tables start absent so tests are independent of
 		// residue from other suites or earlier runs in the same process.
 		foreach ( $this->tables as $table ) {
@@ -68,6 +73,13 @@ class Test_Orchestration_CCT_Storage_Gate extends WP_UnitTestCase {
 		}
 
 		wp_mcp_ai_jetengine_stub_reset();
+
+		if ( class_exists( 'WP_MCP_AI_Autonomous_Sessions_CCT' ) ) {
+			WP_MCP_AI_Autonomous_Sessions_CCT::reset_storage_cache();
+		}
+		if ( class_exists( 'WP_MCP_AI_Execution_History_CCT' ) ) {
+			WP_MCP_AI_Execution_History_CCT::reset_storage_cache();
+		}
 
 		global $wpdb;
 		$wpdb->show_errors     = false;
@@ -97,7 +109,8 @@ class Test_Orchestration_CCT_Storage_Gate extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The gate reports true when the physical table exists.
+	 * The gate reports true when the physical table exists, but storage is
+	 * not ready while the schema is incomplete.
 	 */
 	public function test_table_exists_true_when_table_present() {
 		global $wpdb;
@@ -105,6 +118,47 @@ class Test_Orchestration_CCT_Storage_Gate extends WP_UnitTestCase {
 		$this->create_table( $table );
 
 		$this->assertTrue( WP_MCP_AI_Autonomous_Sessions_CCT::table_exists() );
+		$this->assertFalse( WP_MCP_AI_Autonomous_Sessions_CCT::is_storage_ready() );
+	}
+
+	/**
+	 * Reports false when the table exists but required columns are missing
+	 * (schema drift, partial migration).
+	 */
+	public function test_is_storage_ready_false_when_columns_missing() {
+		global $wpdb;
+
+		foreach ( $this->tables as $table ) {
+			$this->create_table( $table );
+		}
+
+		$this->assertFalse( WP_MCP_AI_Autonomous_Sessions_CCT::is_storage_ready() );
+		$this->assertFalse( WP_MCP_AI_Execution_History_CCT::is_storage_ready() );
+	}
+
+	/**
+	 * Reports true when the table carries the full expected schema.
+	 */
+	public function test_is_storage_ready_true_with_full_schema() {
+		global $wpdb;
+		$table = $wpdb->prefix . 'jet_cct_mcp_autonomous_sessions';
+		$this->create_full_schema_table( 'WP_MCP_AI_Autonomous_Sessions_CCT', $table );
+
+		$this->assertTrue( WP_MCP_AI_Autonomous_Sessions_CCT::is_storage_ready() );
+	}
+
+	/**
+	 * Reports false when the content type is registered and the table exists
+	 * but its schema is incomplete.
+	 */
+	public function test_is_available_false_when_table_missing_columns() {
+		global $wpdb;
+		$table = $wpdb->prefix . 'jet_cct_mcp_autonomous_sessions';
+		$this->create_table( $table );
+
+		$this->install_jetengine_cct_graph();
+
+		$this->assertFalse( WP_MCP_AI_Autonomous_Sessions_CCT::is_available() );
 	}
 
 	/**
@@ -158,6 +212,38 @@ class Test_Orchestration_CCT_Storage_Gate extends WP_UnitTestCase {
 				PRIMARY KEY (`_ID`)
 			) DEFAULT CHARSET=utf8mb4"
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	}
+
+	/**
+	 * Create a table carrying the full expected schema for a CCT class.
+	 *
+	 * The column list is derived from the class's own meta-field definitions
+	 * (via reflection) so the test stays in sync with the production schema.
+	 *
+	 * @param string $class_name CCT class to derive the schema from.
+	 * @param string $table      Fully-qualified table name.
+	 */
+	private function create_full_schema_table( $class_name, $table ) {
+		global $wpdb;
+
+		$reflection = new ReflectionClass( $class_name );
+		$method     = $reflection->getMethod( 'get_meta_fields' );
+		$method->setAccessible( true );
+		$fields = $method->invoke( null );
+		$names  = wp_list_pluck( $fields, 'name' );
+
+		$columns = array( '`_ID` bigint(20) NOT NULL AUTO_INCREMENT' );
+		foreach ( array( 'cct_status', 'cct_created', 'cct_modified', 'cct_author_id' ) as $builtin ) {
+			$columns[] = "`{$builtin}` varchar(255) DEFAULT NULL";
+		}
+		foreach ( $names as $name ) {
+			$columns[] = "`{$name}` varchar(255) DEFAULT NULL";
+		}
+		$columns[] = 'PRIMARY KEY (`_ID`)';
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Test fixture DDL; names come from the fixed plugin schema, not user input.
+		$wpdb->query( 'CREATE TABLE `' . $table . '` (' . implode( ', ', $columns ) . ') DEFAULT CHARSET=utf8mb4' );
 		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
