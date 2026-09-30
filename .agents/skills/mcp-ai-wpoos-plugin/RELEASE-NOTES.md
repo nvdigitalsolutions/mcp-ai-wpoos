@@ -1,4 +1,4 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.1.89)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.1.90)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
@@ -24,6 +24,16 @@ Operational content stays in SKILL.md; append new per-version sections here.
   toolkit ports plus remote-sites/video/analytics/multilingual/cloudways/
   dj-management/image-production slices.
 - **Tool count** — unchanged: ~303 base + ~1,265 Pro (~1,568 total).
+
+## RF-DETR Vision Cognition, Strict MCP Scope & Memory Identity Closure (v1.1.90)
+
+- **RF-DETR vision cognition (PR #6824, Proposal 049)** — Pro `WP_MCP_AI_Roboflow_Inference_Service` (one HTTP client, three trust tiers: key-less self-host loopback/private, dedicated, Serverless Cloud API — fail-closed credentials, SSRF-guarded URLs); **2 new Pro tools** (`rfdetr_detect` boxes/masks/keypoints, `rfdetr_catalog_search` fine-tuned catalog models); `roboflow` provider joins `analyze_image_objects` (no new slug); `identify_image` rung 3c reports `rfdetr_detections` (class-guarded — Base skips cleanly); XL/2XL behind a PML consent toggle.
+- **Strict MCP assistant-scope toggle (PR #6819)** — opt-in `mcp_require_assistant_scope` (Security → Access & Identity, default OFF): `tools/list`/`tools/call` fail closed with HTTP 403 (`wp_mcp_ai_assistant_scope_required`) when no assistant resolves; the 403 special-case is scoped to this one error code (all other MCP errors keep the HTTP 200 JSON-RPC envelope). See SKILL.md Troubleshooting for the HTTP 403 entry.
+- **Upwork MCP as first-class MCP Apps references (PR #6823)** — Upwork-in-MCP-mode connections appear in the assistant "Add from Remote Sites" dropdown with the full OAuth login UI; chat-time ref resolution via the official gateway + decrypted central `mcp_oauth`; post-login reference persistence.
+- **Memory identity + IDOR closure (PR #6815)** — the eight memory tools resolve `agent_id` from the execution context; cross-agent access gated behind `manage_options` (403 `mcp_ai_memory_scope_denied`); credential-pattern scan + expiry signalling on the store/retrieve pair.
+- **Letterhead personalization (PR #6816)** — `Dear {{to_name}}` + `{{#to_name}}…{{/to_name}}` conditional blocks; bundled template reads prefer the `direct` filesystem transport.
+- **Dependency advisories (PR #6817)** — `js-yaml` ≥5.4.1 + `webpack-dev-middleware@^8` ≥8.3.0 across 13 trees (15/17 alerts; AI SDK migration tracked as #6818).
+- **Tool counts** — ~347 base + ~1,301 Pro (~1,648 total; +2 Pro — the RF-DETR pair).
 
 ## Google Classroom ECA, Design System Rename + Email Templates & Upwork MCP Mode (v1.1.89)
 

@@ -1,11 +1,11 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 52 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates, addon-tool standalone contract fatals, WP_CLI stub constant leak), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 53 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates, addon-tool standalone contract fatals, WP_CLI stub constant leak), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-09-29"
+  last-updated: "2026-09-30"
 ---
 
 # NV oOS Test Suite — Repair & Triage Guide
@@ -702,6 +702,25 @@ the changed files is the substantive gate; plan CI waits accordingly.
     exists) but false on minimal local copies — the same suite must exercise
     **both** branches, and only the stub branch may construct `WooCommerce`
     freely.
+
+53. **Bundled asset reads via the WP Filesystem API silently no-op in Docker
+    (template registry + merge-context assertions).** An addon's template
+    registry (`NV_oOS_Design_System_Email_Template_Registry::get_builtin_html()`,
+    the v1.1.90 letterhead fix) read bundled templates only through the WP
+    Filesystem API, which falls back to `ftpsockets` when the `direct`
+    transport is unavailable (e.g. Docker dev containers) — every read
+    silently failed, and tests asserting rendered output went red in
+    environment-dependent ways. Fix (both layers, as in PR #6816):
+
+    - **Prefer the `direct` transport with a plain local-read fallback** —
+      bundled files never need FTP/SSH; keep the WP Filesystem path only as
+      the direct-transport branch.
+    - **Assert on the merge context, not the rendered output, when the
+      template never renders the token.** The wrapper/renderer supported
+      `{{to_name}}` but the letterhead template never used it — the test
+      asserted the recipient name in rendered output and failed; assert the
+      `nds_email_context` merge context instead (and cover the conditional
+      block's both branches: name present / absent).
 
 ## Production fix vs test fix
 

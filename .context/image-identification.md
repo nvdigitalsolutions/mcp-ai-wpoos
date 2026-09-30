@@ -2,7 +2,7 @@
 
 > **GSD Context File** — Load this when editing any image/vision tool, the
 > shared Cloud Vision client, the dHash helper, or the Pro visual-search tool.
-> Last reviewed: September 26, 2026 (1.1.87, Proposal 043).
+> Last reviewed: September 30, 2026 (v1.1.90, Proposal 049).
 
 ---
 

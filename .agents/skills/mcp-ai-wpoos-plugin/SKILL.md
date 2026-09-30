@@ -5,8 +5,8 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.89"
-  plugin-version-tested: "1.1.89"
+  plugin-version: "1.1.90"
+  plugin-version-tested: "1.1.90"
   last-updated: "2026-09-30"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
@@ -47,7 +47,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~347 base / ~1,646 full tools
+     │  Tool Registry     │  ~347 base / ~1,648 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -743,7 +743,7 @@ Import external AI conversation exports into the JetEngine
 
 ## Release Notes (per version)
 
-Historical per-version release notes (v1.1.66 through v1.1.89) moved to
+Historical per-version release notes (v1.1.66 through v1.1.90) moved to
 [RELEASE-NOTES.md](RELEASE-NOTES.md) to keep SKILL.md under the Zed 100KB
 skill-size limit. Append new version sections there, not here.
 
