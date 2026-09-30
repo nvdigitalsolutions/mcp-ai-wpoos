@@ -71,7 +71,7 @@
 ## Phase 3 — `rfdetr_catalog_search` tool (fine-tuned models)
 
 ### Step 3.1 — New tool
-- [ ] `addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-tool-rfdetr-catalog-search.php` — slug `rfdetr_catalog_search`
+- [ ] `addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-rfdetr-catalog-search.php` — slug `rfdetr_catalog_search`
   - Reads `va_roboflow_catalog_model` (alias or `workspace/project/version`); `WP_Error` when unset
   - Output: ranked `{label, confidence, box}` using the checkpoint's `class_name` values; `catalog` context passthrough (sku, product_id hints)
   - 5-min transient cache keyed by model + image dHash (reuses `WP_MCP_AI_Image_DHash`) — open question 4 default
@@ -137,7 +137,7 @@ Runs per the ecosystem port loop (`.agents/skills/mcp-ai-wpoos-ecosystem-port/SK
 - [ ] `src/services/class-wp-mcp-ai-roboflow-inference-service.php` ← `addons/pro/includes/services/class-wp-mcp-ai-roboflow-inference-service.php` (transforms: port-note header, `declare(strict_types=1);`, domain swap, path swap; `WP_MCP_AI_Count_Normalizer` require re-pointed at the ported `src/tools/vision-analysis/` copy)
 - [ ] `src/tools/vision-analysis/class-wp-mcp-ai-tool-rfdetr-detect.php` ← Pro source (same transforms; `WP_MCP_AI_Tool_Image_Base` seam resolves to the existing `src/tools/class-wp-mcp-ai-tool-image-base.php` copy)
 - [ ] `src/tools/vision-analysis/class-wp-mcp-ai-tool-analyze-image-objects.php` + HF vision service + toolkit init — ported only if the F3 vision-analysis cluster has not landed (fresh branch from the tracker's merged state decides)
-- [ ] `src/tools/ecommerce/class-wp-mcp-ai-tool-rfdetr-catalog-search.php` ← Pro source (F2 slice; e-commerce toolkit already ported)
+- [ ] `src/tools/ecommerce/class-wp-mcp-ai-pro-tool-rfdetr-catalog-search.php` ← Pro source (F2 slice; e-commerce toolkit already ported)
 - [ ] `php -l` every new file; `ls` confirms writes (port scripts can echo success on failed writes)
 
 ### Step 7.3 — Standalone-only wiring
@@ -167,7 +167,7 @@ Runs per the ecosystem port loop (`.agents/skills/mcp-ai-wpoos-ecosystem-port/SK
 
 1. `addons/pro/includes/services/class-wp-mcp-ai-roboflow-inference-service.php`
 2. `addons/pro/includes/tools/vision-analysis/class-wp-mcp-ai-tool-rfdetr-detect.php`
-3. `addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-tool-rfdetr-catalog-search.php`
+3. `addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-rfdetr-catalog-search.php`
 4. `tests/pro/services/test-roboflow-inference-service.php`
 5. `tests/pro/tools/vision-analysis/test-tool-rfdetr-detect.php`
 6. `tests/pro/tools/ecommerce/test-tool-rfdetr-catalog-search.php`
@@ -178,7 +178,7 @@ Runs per the ecosystem port loop (`.agents/skills/mcp-ai-wpoos-ecosystem-port/SK
 9. `plugins/nvoos-content-graph-pro/src/services/class-wp-mcp-ai-roboflow-inference-service.php`
 10. `plugins/nvoos-content-graph-pro/src/tools/vision-analysis/class-wp-mcp-ai-tool-rfdetr-detect.php`
 11. `plugins/nvoos-content-graph-pro/src/tools/vision-analysis/init.php` (slim standalone init)
-12. `plugins/nvoos-content-graph-pro/src/tools/ecommerce/class-wp-mcp-ai-tool-rfdetr-catalog-search.php`
+12. `plugins/nvoos-content-graph-pro/src/tools/ecommerce/class-wp-mcp-ai-pro-tool-rfdetr-catalog-search.php`
 13. `plugins/nvoos-content-graph-pro/tests/` characterization tests
 14. (`src/tools/vision-analysis/class-wp-mcp-ai-tool-analyze-image-objects.php` + HF vision service + toolkit init — only if the F3 vision-analysis cluster has not landed yet)
 

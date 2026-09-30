@@ -173,7 +173,7 @@ Port implications for RF-DETR:
 | Cluster | Source (monolith) | Destination (CG Pro) | Wave |
 |---|---|---|---|
 | Vision-analysis toolkit + RF-DETR service | `addons/pro/includes/tools/vision-analysis/*` + `addons/pro/includes/services/class-wp-mcp-ai-roboflow-inference-service.php` | `src/tools/vision-analysis/*` + `src/services/` | F3 |
-| E-commerce slice | `addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-tool-rfdetr-catalog-search.php` | `src/tools/ecommerce/` | F2 |
+| E-commerce slice | `addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-rfdetr-catalog-search.php` | `src/tools/ecommerce/` | F2 |
 
 Port rules that apply (from the skill, no exceptions):
 

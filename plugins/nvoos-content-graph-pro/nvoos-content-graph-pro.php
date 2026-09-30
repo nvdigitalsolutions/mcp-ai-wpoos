@@ -101,6 +101,7 @@ spl_autoload_register(
 			'src/tools/crm/sequences/',
 			'src/tools/crm/upwork/',
 			'src/tools/ecommerce/',
+			'src/tools/vision-analysis/',
 			'src/tools/project-management/',
 			'src/tools/project-management/analytics/',
 			'src/tools/project-management/command-center/',
@@ -187,6 +188,7 @@ spl_autoload_register(
 			'src/tools/chat-channels/examples/',
 			'src/metaboxes/places/',
 			'src/tools/places/',
+
 			'src/migrations/',
 			'src/qms/',
 			'src/helpers/',

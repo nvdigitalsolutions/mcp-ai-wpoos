@@ -143,6 +143,7 @@ class Test_Ecommerce_Extras extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'WP_MCP_AI_Pro_Tool_Lookup_Product_Price', $tools );
 		$this->assertArrayHasKey( 'WP_MCP_AI_Pro_Tool_Validate_Image_For_Product', $tools );
 		$this->assertArrayHasKey( 'WP_MCP_AI_Pro_Tool_Validate_Image_For_Vehicle', $tools );
+		$this->assertArrayHasKey( 'WP_MCP_AI_Pro_Tool_Rfdetr_Catalog_Search', $tools );
 	}
 
 	/**
