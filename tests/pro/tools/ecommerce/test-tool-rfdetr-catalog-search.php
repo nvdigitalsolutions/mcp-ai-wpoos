@@ -45,7 +45,7 @@ class Test_Tool_Rfdetr_Catalog_Search extends WP_UnitTestCase {
 			define( 'WP_MCP_AI_PRO_PATH', dirname( __DIR__, 4 ) . '/addons/pro/' );
 		}
 
-		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-rfdetr-catalog-search.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-rfdetr-catalog-search.php';
 
 		$this->admin_user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $this->admin_user_id );

@@ -37,7 +37,7 @@ class Test_Rfdetr_Port extends WP_UnitTestCase {
 		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/services/class-wp-mcp-ai-roboflow-inference-service.php';
 		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/vision-analysis/class-wp-mcp-ai-vision-count-normalizer.php';
 		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/vision-analysis/class-wp-mcp-ai-tool-rfdetr-detect.php';
-		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-tool-rfdetr-catalog-search.php';
+		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/tools/ecommerce/class-wp-mcp-ai-pro-tool-rfdetr-catalog-search.php';
 		// No-autoload guard: the monorepo root classmap may serve the base
 		// dHash copy in the test matrix even when the base plugin is skipped
 		// (real standalone installs have no root vendor).
@@ -69,7 +69,7 @@ class Test_Rfdetr_Port extends WP_UnitTestCase {
 		$symbols = array(
 			'WP_MCP_AI_Roboflow_Inference_Service'     => 'services/class-wp-mcp-ai-roboflow-inference-service.php',
 			'WP_MCP_AI_Tool_Rfdetr_Detect'             => 'tools/vision-analysis/class-wp-mcp-ai-tool-rfdetr-detect.php',
-			'WP_MCP_AI_Pro_Tool_Rfdetr_Catalog_Search' => 'tools/ecommerce/class-wp-mcp-ai-tool-rfdetr-catalog-search.php',
+			'WP_MCP_AI_Pro_Tool_Rfdetr_Catalog_Search' => 'tools/ecommerce/class-wp-mcp-ai-pro-tool-rfdetr-catalog-search.php',
 			'WP_MCP_AI_Image_DHash'                    => 'helpers/class-wp-mcp-ai-image-dhash.php',
 		);
 

@@ -3,7 +3,7 @@
  * Tool for catalog-specific object detection via a fine-tuned RF-DETR model (ecosystem port — Wave F2, e-commerce).
  *
  * Ported from the base Pro addon's
- * `addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-tool-rfdetr-catalog-search.php`
+ * `addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-rfdetr-catalog-search.php`
  * for the standalone `nvoos-content-graph-pro` addon. Kept byte-identical.
  * The base Pro addon owns the class in monolith installs — the addon's
  * autoloader skips its copy when `WP_MCP_AI_PRO_PATH` is defined (see the
