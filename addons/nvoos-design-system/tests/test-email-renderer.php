@@ -104,6 +104,36 @@ class Test_Email_Renderer extends WP_UnitTestCase {
 	}
 
 	/**
+	 * {{#to_name}} conditional blocks render only when a recipient name is
+	 * known, so greetings never emit "Dear ,".
+	 *
+	 * @return void
+	 */
+	public function test_to_name_conditional_block() {
+		$template = '<html><body>{{#to_name}}<p>Dear {{to_name}},</p>{{/to_name}}{{body}}</body></html>';
+
+		$with_name = $this->renderer->render(
+			$template,
+			array(
+				'to_name' => 'Test User',
+				'body'    => 'Body',
+			)
+		);
+
+		$this->assertStringContainsString( 'Dear Test User,', $with_name );
+		$this->assertStringNotContainsString( '{{#to_name}}', $with_name );
+		$this->assertStringNotContainsString( '{{/to_name}}', $with_name );
+
+		$without_name = $this->renderer->render(
+			$template,
+			array( 'body' => 'Body' )
+		);
+
+		$this->assertStringNotContainsString( 'Dear', $without_name, 'Empty recipient names must not render a greeting.' );
+		$this->assertStringContainsString( 'Body', $without_name );
+	}
+
+	/**
 	 * The sentinel is injected when missing.
 	 *
 	 * @return void
