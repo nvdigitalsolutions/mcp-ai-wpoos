@@ -33,6 +33,7 @@ Services are consumed by Pro tools, Pro REST controllers, Pro admin pages, and s
 | `WP_MCP_AI_Contact_Importer_Service` | `class-wp-mcp-ai-contact-importer-service.php` | CRM toolkit (CSV import) |
 | `WP_MCP_AI_Video_Frame_Extractor_Service` | `class-wp-mcp-ai-video-frame-extractor-service.php` | Video-production toolkit, OCR feeders |
 | `WP_MCP_AI_Structured_Extraction_Service` | `class-wp-mcp-ai-structured-extraction-service.php` | Pro OCR tools (`pro_unlimited_ocr`) — parses `<\|det\|>` markers, extracts tables and form fields from self-hosted OCR output |
+| `WP_MCP_AI_Roboflow_Inference_Service` | `class-wp-mcp-ai-roboflow-inference-service.php` | Vision Analysis toolkit — RF-DETR detection/segmentation/keypoints via self-hosted Roboflow Inference, the Serverless Cloud API, or fine-tuned models (`analyze_image_objects` provider, `rfdetr_detect`, `rfdetr_catalog_search`) |
 | `services-init-phase6.php` | bootstrap | Pro plugin loader |
 
 Other classes here are internal helpers; depend on the ones listed above.

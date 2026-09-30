@@ -18,9 +18,12 @@ vision model is only the fallback of last resort.
 | 2. Perceptual-hash media lookup | `find_similar_media` | Free (GD) | Base |
 | 3. Classic Cloud Vision detection | `detect_image_content` | ~Free | Base (key-gated) |
 | 3b. Layout description | `describe_image_layout` | Free / key-gated (`auto_detect`) | Base |
+| 3c. RF-DETR detection | `identify_image` rung 3c → `WP_MCP_AI_Roboflow_Inference_Service` | Free (self-host) / key-gated (serverless) | Pro (class-guarded) |
 | 4. Reverse-image web search | `search_similar_images` | Per-query | Pro (key-gated) |
 | Orchestrator | `identify_image` | Sum of rungs | Base |
 | Classic OCR | `ocr_image_classic` | Free (worker/system tesseract) | Pro |
+| RF-DETR full surface | `rfdetr_detect` (boxes / masks / keypoints) | Free (self-host) / key-gated | Pro |
+| RF-DETR catalog models | `rfdetr_catalog_search` | Free (self-host) / key-gated | Pro (e-commerce toolkit) |
 
 ## Canonical Facts (avoid drift)
 
@@ -46,7 +49,24 @@ vision model is only the fallback of last resort.
 - **Layout composer is the text-mode Set-of-Mark analogue:** boxes
   (`vision_object_localization` / `analyze_image_objects` JSON or
   `auto_detect`) become 3×3-grid quadrants, relative positions, and size
-  buckets in deterministic prose.
+  buckets in deterministic prose. RF-DETR boxes (normalized `[x1,y1,x2,y2]`
+  equivalents) are detector-agnostic and compose the same way.
+- **RF-DETR rung (1.1.90, Proposal 049):** `identify_image` rung 3c reports
+  RF-DETR detections as an additional `rfdetr_detections` source when the Pro
+  Roboflow service is configured; otherwise the rung is `skipped` with
+  `pro_addon_required` / `not_configured`. All wiring is class-guarded — Base
+  installs see zero behavior change, and `identify_image` still never calls a
+  vision LLM.
+- **Roboflow service (`WP_MCP_AI_Roboflow_Inference_Service`) fail-closed
+  tiers:** serverless/dedicated require `va_roboflow_api_key` (sent as the raw
+  `Authorization` header); self-host (loopback / RFC-1918 / link-local) works
+  key-less and is the only tier allowed over plain HTTP. The endpoint URL
+  passes `WP_MCP_AI_URL_Guard::validate()` per request. Apache-2.0 aliases
+  only by default — XL/2XL (PML 1.0) need `va_roboflow_allow_pml` consent.
+- **RF-DETR tools:** `rfdetr_detect` (`detect`/`segment`/`keypoints`) and
+  `rfdetr_catalog_search` (fine-tuned model, per-model + dHash 5-min
+  transient cache) return the canonical `{label, confidence, box,
+  mask_points?, keypoints?}` shape produced only by the Roboflow service.
 - **Registry:** Base tools register via the class→file map in
   `WP_MCP_AI_Tool_Registry::load_default_tools()` + the category map
   (`external-tools` for API-backed, `wordpress-core` for pure-WP) + token
@@ -64,3 +84,4 @@ vision model is only the fallback of last resort.
 - `.context/pro-vs-base.md` — Base vs Pro placement rationale
 - `.context/media-worker.md` — worker routing for `ocr_image_classic`
 - `docs/project/proposals/043-non-llm-image-identification.md` — design decisions D1–D7
+- `docs/project/proposals/049-rf-detr-cognition-enhancement.md` — RF-DETR design decisions D1–D10

@@ -808,6 +808,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Validate_Image_For_Vehicle' => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php',
 			// Product Price Lookup tool.
 			'WP_MCP_AI_Pro_Tool_Lookup_Product_Price'      => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-lookup-product-price.php',
+			// RF-DETR catalog search (fine-tuned model detection, 1.1.90).
+			'WP_MCP_AI_Pro_Tool_Rfdetr_Catalog_Search'     => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-rfdetr-catalog-search.php',
 			// Listing image download tools (Google Maps, Facebook, Instagram).
 			'WP_MCP_AI_Pro_Tool_Download_Google_Maps_Images' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-pro-tool-download-google-maps-images.php',
 			'WP_MCP_AI_Pro_Tool_Download_Facebook_Page_Images' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-pro-tool-download-facebook-page-images.php',
@@ -2086,6 +2088,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$vision_analysis_tools = array(
 				'WP_MCP_AI_Tool_Analyze_Image_Objects' => WP_MCP_AI_PRO_PATH . 'includes/tools/vision-analysis/class-wp-mcp-ai-tool-analyze-image-objects.php',
 				'WP_MCP_AI_Tool_Search_Similar_Images' => WP_MCP_AI_PRO_PATH . 'includes/tools/vision-analysis/class-wp-mcp-ai-tool-search-similar-images.php',
+				'WP_MCP_AI_Tool_Rfdetr_Detect'         => WP_MCP_AI_PRO_PATH . 'includes/tools/vision-analysis/class-wp-mcp-ai-tool-rfdetr-detect.php',
 			);
 			$pro_tools             = array_merge( $pro_tools, $vision_analysis_tools );
 		}
