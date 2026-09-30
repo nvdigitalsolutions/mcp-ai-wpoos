@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: September 29, 2026 (v1.1.89).
+> Last reviewed: September 30, 2026 (v1.1.90).
+>
+> **New in v1.1.90 (no new routes):** no routes added or re-shaped in-window — the strict MCP assistant-scope toggle (PR #6819) is JSON-RPC-level: with `mcp_require_assistant_scope` enabled, `tools/list` and `tools/call` fail closed with HTTP 403 (`wp_mcp_ai_assistant_scope_required`) when no assistant resolves (the JSON-RPC error envelope is still delivered; all other MCP errors keep the HTTP 200 envelope contract).
 >
 > **New in v1.1.89:** one new **base** route in-window: `POST/GET mcp-ai/v1/google-classroom/webhook` (PR #6809) — the Pub/Sub push receiver (shared-secret verified, ack-fast, deferral to a one-off `wp_mcp_ai_google_classroom_notification` cron event; guarded by `google-classroom-init.php`). Pro-level: `/mcp-apps/oauth/init` gains an optional `connection_ref` parameter (PR #6804) so the Upwork `mcp`-mode Remote Sites connection reuses the MCP Apps OAuth flow (tokens persist to the encrypted central `mcp_oauth` store via `update_mcp_oauth()`). #6802/#6805/#6807/#6806/#6810 are client/service/security/addon-level — no WP REST route changes (the Design System addon's tools and the Classroom foundation register tools, not routes).
 >
