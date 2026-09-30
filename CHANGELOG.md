@@ -1,12 +1,60 @@
 # oOS – Changelog
 
-## [Unreleased]
+## [1.1.90] - 2026-09-30
 
-### Security — Strict MCP Assistant-Scope Toggle (Issue #6769)
+### Added — RF-DETR Vision Cognition (Proposal 049, PR #6824)
+
+- **Roboflow inference service** — new Pro `WP_MCP_AI_Roboflow_Inference_Service` (`addons/pro/includes/services/`): one HTTP client across three trust tiers (self-hosted Docker Inference server on `http://<host>:9001` — key-less for loopback/private hosts; dedicated deployments; the Serverless Cloud API). Fail-closed credentials: serverless/dedicated require `va_roboflow_api_key` sent as the raw `Authorization` header; non-loopback hosts must use HTTPS; every endpoint URL passes the SSRF URL guard (operator-allowlist seam for admin-configured self-host hosts). Apache-2.0 aliases (nano–large, seg-*, keypoint preview) by default; XL/2XL (PML 1.0) behind the `va_roboflow_allow_pml` admin consent toggle.
+- **Two new Pro tools** — `rfdetr_detect` (`task=detect|segment|keypoints`: ranked detections, instance-segmentation mask polygons, 17-COCO person keypoints) and `rfdetr_catalog_search` (fine-tuned catalog models by alias or workspace/project/version, per-model + dHash 5-minute transient cache) — both return the canonical `{label, confidence, box, mask_points?, keypoints?}` shape; provider JSON never leaks into tool output.
+- **`roboflow` provider inside `analyze_image_objects`** — RF-DETR boxes flow through the shared count normalizer (detector-owns-the-count invariant preserved; no new slug).
+- **Base `identify_image` rung 3c** — RF-DETR detections reported as an additional `rfdetr_detections` source, class-guarded so Base installs skip with `pro_addon_required`/`not_configured` and see zero behavior change (`identify_image` still never calls a vision LLM).
+- **Support** — RF-DETR settings section (Vision Analysis), deployment guide (`docs/operations/deployment/roboflow-inference-server-setup.md`), tool-reference entries, recommendation groups, `.context/image-identification.md` canonical facts.
+
+### Added — Upwork MCP as First-Class MCP Apps References (PR #6823)
+
+- Upwork Remote Sites connections in MCP mode now appear in the assistant **MCP Apps** metabox "Add from Remote Sites" dropdown (labelled `Name (Upwork MCP — https://mcp.upwork.com/mcp)`) with the full OAuth login UI — web login / loopback paste-back with Complete Login / "Authenticated via Upwork OAuth login" state.
+- `resolve_connection_ref()` resolves Upwork MCP references at chat time via `build_upwork_mcp_app_config()` (official gateway URL + decrypted central `mcp_oauth` blob); the import validator no longer auto-disables Upwork refs; `finalize_oauth_flow()` persists the reference entry onto the assistant so the just-added row survives the post-login reload.
+
+### Security — Memory Identity Resolution & Cross-Agent Access Closure (PR #6815)
+
+- All eight memory tools (`retrieve_agent_memory`, `store_agent_context`, `recall_memory`, `wake_up_context`, `semantic_context_search`, `mine_agent_memory`, `manage_context_lifecycle`, `batch_manage_memory`) accept an **optional** `agent_id`; when omitted, the caller's identity is resolved from the execution context (`assistant_id`) via the shared `WP_MCP_AI_Agent_Identity_Resolver::resolve_for_execution()`.
+- **Cross-agent access is gated behind `manage_options`** (403 `mcp_ai_memory_scope_denied`) — closes the IDOR where any assistant could read or mutate another agent's store; no-op when runtime identity is unknown (legacy direct callers keep working); **fails loudly** with 400 `mcp_ai_memory_no_agent` when neither argument nor context provides an identity; every success envelope echoes `resolved_agent_id` + `resolution_source`.
+- `store_agent_context` gains a non-blocking credential-pattern scan (incl. the plugin's own `cred_…<secret>` token format, which the privacy filter does not strip) — records flagged `sensitive_patterns`/`contains_sensitive`; `retrieve_agent_memory` responses carry expiry signalling (`expires_in`, `expires_soon` at ≤7 days) and surface stored `sensitive_patterns`.
+- **Behavior change to note** — non-admin assistants that previously read or wrote sibling agents' memory now receive 403 (the intended IDOR closure); legitimate cross-agent flows need an admin-capable actor or a custom capability filter.
+
+### Security — Strict MCP Assistant-Scope Toggle (Issue #6769, PR #6819)
 
 - **Opt-in fail-closed setting `mcp_require_assistant_scope`** (Security → Access & Identity, default OFF) — when enabled, MCP `tools/list` and `tools/call` return HTTP 403 (`wp_mcp_ai_assistant_scope_required`) instead of falling back to the full tool registry when no assistant resolves (no explicit `assistant_id`, no token-bound assistant, no default assistant). When disabled, behavior is byte-for-byte unchanged. MCP surface only — the in-WP chat UI resolves assistants through its own path and is unaffected.
 - **Enforcement** — a shared `maybe_enforce_strict_scope()` helper in the `WP_MCP_AI_REST_MCP_Methods` trait gates `mcp_tools_list()` after the existing resolve/scope chain and `mcp_tools_call()` before forwarding into the tool executor (so hidden or full-registry tools cannot be invoked by name). Unlike ordinary tool errors (HTTP 200 JSON-RPC envelope so SDKs that drop non-2xx bodies still relay them), this authorization refusal is deliberately delivered as HTTP 403 so gateways, WAFs, and access logs record it.
-- **Tests** — `tests/test-mcp-tools-list.php` covers both methods in both states (ON + unresolved → 403; OFF → existing full-registry/fallback behavior).
+
+### Fixed — Letterhead Email Personalization & Registry Transport (PR #6816)
+
+- The letterhead template now renders the personalized salutation `Dear {{to_name}},`; the renderer gains `{{#to_name}}…{{/to_name}}` conditional blocks that render only when a recipient name is known — emails to bare addresses never emit `Dear ,`.
+- `NV_oOS_Design_System_Email_Template_Registry::get_builtin_html()` now prefers the `direct` WP Filesystem transport and falls back to a plain local read otherwise — bundled templates no longer silently no-op (every `wp_mail()` wrapper call failing) on hosts where `direct` is unavailable (e.g. Docker dev containers). Generator prompt documents the conditional syntax.
+
+### Security — Dependency Advisories (PR #6817)
+
+- `js-yaml` overrides moved to `>=5.4.1` across 13 package trees (lockfiles re-resolved to 5.4.2) and a scoped `webpack-dev-middleware@^8` → `>=8.3.0` override (root + `addons/pro/assets/spa`) — resolves **15 of the 17** open Dependabot alerts; all 13 lockfiles regenerated with `--package-lock-only` and verified via `npm ci --dry-run` (no package.json dependency ranges changed).
+- The two `@ai-sdk/provider-utils` alerts (the advisory covers the whole 2.x line) are left open intentionally — an npm override would silently break `useChat` stream parsing (sync→async signature change in 3.x) — tracked as follow-up issue **#6818**.
+
+### Tests
+
+- **PR #6815** — new `tests/test-memory-tool-identity-scope.php` (12 tests) + resolver unit tests + retrieve/store updates; ~500 affected regression tests (memory tools, MemPalace phases A/B1, CCT bridge/reader, privacy filter, RRF fusion, REST chat-memory controller) green on WP 6.9 and WP 7.1.
+- **PR #6819** — `tests/test-mcp-tools-list.php` (+157): both methods × both states (ON + unresolved → 403; OFF → byte-for-byte unchanged), plus the settings cache reset in tearDown; 197 tests / 894 assertions on WP 6.9, 51 / 436 on WP 7.1.
+- **PR #6824** — 52/52 new + modified tests green; base-mode sanity (`WP_MCP_AI_BASE_VERSION=1`) 31/31 green.
+- **PR #6823** — 84 tests / 391 assertions across the manager suite + all 7 `tests/mcp-apps/*` suites (0 failures).
+- **PR #6816** — all 6 design-system email test files: 46 tests / 148 assertions (including the previously failing `test_plain_body_is_wrapped`).
+
+### Docs & Skills
+
+- Proposal **049** (RF-DETR cognition enhancement) + its implementation plan ship in-window (#6824); the proposals index gains a Recently Completed entry this pass.
+- New coding-time skill **`mcp-ai-wpoos-dependabot-loop`** (#6820) — the Dependabot alert triage-and-remediation loop; skill counts 60 → 61 (bookkeeping landed in-window).
+- The `mcp-ai-wpoos-plugin` skill is slimmed under Zed's 100KB skill-size limit (#6822) — the per-version release-note tail moves to a companion `RELEASE-NOTES.md`; the strict-scope 403 troubleshooting entry lands in the skill + `.context/security-checklist.md` + `.context/rest-api.md`.
+- `docs/features/memory/AGENT-MEMORY-COMPLETE-GUIDE.md` + the security coordination doc gain the identity/scope + strict-scope keys (#6815/#6819).
+
+### Versioning
+
+- Bumped to 1.1.90 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.90. Media Worker: **v3.2.0** (unchanged). SaaS Controller addon: **0.3.0** (unchanged). Design System addon: **0.3.0** (unchanged — the #6816 letterhead/registry fix ships on the 0.3.0 line). nvoos-content-graph: **1.0.8** (unchanged). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — the RF-DETR port is open as #6825). Checkout API: **0.1.2** (unchanged). Docs Hub addon: **0.5.1** (unchanged). Comic Reader addon: **0.5.0** (unchanged). Chat SPA addon: **0.7.0** (build refreshed in-window). Canvas Toolkit addon: **0.2.0** (build refreshed in-window). Model catalog: **v2026.09.22** (unchanged — no model PRs in-window; Roboflow is a vision inference service outside the catalog). Tool count: **~347 base + ~1,301 Pro (~1,648 total)** — +2 Pro (the RF-DETR pair); the `roboflow` provider inside `analyze_image_objects` is no new slug; `identify_image` rung 3c is additive-only; live registry authoritative. Providers: 15 chat providers (unchanged). Addons: **28** (unchanged). Bundled skills: **75 base + 41 Pro** (unchanged). Coding-time agent skills: **61** (+1 — the dependabot-loop skill). Stale build ZIPs removed: the 1.1.88 build set (30 files: 9 in `build/` incl. 3 `.sha256`, 2 in `build/optional-components/`, 19 in `build/toolkit-addons/`); the 1.1.89 wp.org package set (built in-window) is the current release artifact set.
 
 ## [1.1.89] - 2026-09-29
 

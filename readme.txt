@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.89
+Stable tag: 1.1.90
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -299,9 +299,9 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 
 == Changelog ==
 
-= 1.1.90 - Unreleased =
+= 1.1.90 - September 30, 2026 =
 
-RF-DETR cognition enhancement (Proposal 049). Added: the Roboflow Inference service (self-hosted Docker / Serverless Cloud API / dedicated deployments, one HTTP client across all three tiers) with fail-closed credential rules — serverless/dedicated require va_roboflow_api_key sent as the raw Authorization header, self-hosted loopback/private hosts work key-less over plain HTTP, and every endpoint URL passes the SSRF guard; the roboflow detection provider inside analyze_image_objects (RF-DETR boxes flow through the shared count normalizer — the detector owns the count); two new Pro tools — rfdetr_detect (task=detect|segment|keypoints: ranked boxes, instance-segmentation mask polygons, 17-COCO person keypoints) and rfdetr_catalog_search (fine-tuned catalog models with a per-model + dHash 5-minute transient cache); RF-DETR as rung 3c of the identify_image ladder (additional detections source, class-guarded, Base installs skip cleanly); Apache-2.0 aliases enabled by default with XL/2XL (PML 1.0) behind an admin consent toggle; and a Roboflow deployment guide (docs/operations/deployment/). Tool count: ~347 base + ~1,301 Pro (~1,648 total; +2 Pro; live registry authoritative).
+RF-DETR cognition enhancement (Proposal 049). Added: the Roboflow Inference service (self-hosted Docker / Serverless Cloud API / dedicated deployments, one HTTP client across all three tiers) with fail-closed credential rules — serverless/dedicated require va_roboflow_api_key sent as the raw Authorization header, self-hosted loopback/private hosts work key-less over plain HTTP, and every endpoint URL passes the SSRF guard; the roboflow detection provider inside analyze_image_objects (RF-DETR boxes flow through the shared count normalizer — the detector owns the count); two new Pro tools — rfdetr_detect (task=detect|segment|keypoints: ranked boxes, instance-segmentation mask polygons, 17-COCO person keypoints) and rfdetr_catalog_search (fine-tuned catalog models with a per-model + dHash 5-minute transient cache); RF-DETR as rung 3c of the identify_image ladder (additional detections source, class-guarded, Base installs skip cleanly); Apache-2.0 aliases enabled by default with XL/2XL (PML 1.0) behind an admin consent toggle; and a Roboflow deployment guide (docs/operations/deployment/). Also in this release: Upwork MCP connections are now first-class MCP Apps references (#6823) — they appear in the assistant "Add from Remote Sites" dropdown with the full OAuth login flow, resolve at chat time via the encrypted central mcp_oauth store, and survive the post-login reload; the strict MCP assistant-scope toggle (#6819) — opt-in mcp_require_assistant_scope (default off) makes tools/list and tools/call fail closed with HTTP 403 when no assistant resolves; memory identity resolution + cross-agent access closure (#6815) — the eight memory tools resolve the caller's agent_id from the execution context, cross-agent access is gated behind manage_options (403), stored contexts gain a credential-pattern scan, and retrievals carry expiry signalling; the letterhead email template now renders Dear {{to_name}} with conditional blocks, and bundled template reads prefer the direct filesystem transport (#6816); js-yaml and webpack-dev-middleware advisories patched across all 13 package trees (#6817, 15 of 17 alerts; the AI SDK migration is tracked separately). Tool count: ~347 base + ~1,301 Pro (~1,648 total; +2 Pro; live registry authoritative). Model catalog: v2026.09.22 (unchanged). Stale build ZIPs removed: the 1.1.88 build set (30 files).
 
 = 1.1.89 - September 29, 2026 =
 
