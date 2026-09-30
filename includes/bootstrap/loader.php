@@ -1293,13 +1293,15 @@ unset(
 // ---------------------------------------------------------------------------
 require_once WP_MCP_AI_PATH . 'includes/admin/settings-dashboard-init.php';
 
-// Base orchestration dashboard — initialized unconditionally so its
-// admin_menu registration also exists in CLI/test contexts (mirrors
+// Base orchestration dashboard — loaded unconditionally so its admin_menu
+// registration also exists in CLI/test contexts (mirrors
 // settings-dashboard-init above; the constructor only hooks admin actions).
+// NOTE: The class file self-instantiates at the bottom, so no explicit
+// `new` here — adding one would register the page callback twice on the
+// same admin hook and render the dashboard twice.
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php';
 }
-new WP_MCP_AI_Admin_Orchestration_Dashboard();
 
 // ---------------------------------------------------------------------------
 // Admin-only includes
