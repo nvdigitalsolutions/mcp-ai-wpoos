@@ -497,6 +497,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'lookup_product_price',
 					'crawl4ai_price_lookup',
 					'vision_product_search',
+					// RF-DETR catalog search (fine-tuned model detection).
+					'rfdetr_catalog_search',
 					// Inventory management (Pro).
 					'sync_product_inventory',
 					'inventory_forecast',

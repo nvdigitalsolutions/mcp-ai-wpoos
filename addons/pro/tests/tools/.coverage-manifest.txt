@@ -204,6 +204,7 @@ wp-mcp-ai-pro-tool-quick-add-google-calendar-event
 wp-mcp-ai-pro-tool-quickbooks-desktop-sync
 wp-mcp-ai-pro-tool-remove-google-chat-space-member
 wp-mcp-ai-pro-tool-render-schedule-result
+wp-mcp-ai-pro-tool-rfdetr-catalog-search
 wp-mcp-ai-pro-tool-schedule-all-export
 wp-mcp-ai-pro-tool-schedule-all-import
 wp-mcp-ai-pro-tool-schedule-channel-broadcast
@@ -1127,6 +1128,7 @@ wp-mcp-ai-tool-resolve-support-ticket
 wp-mcp-ai-tool-retirement-calculator
 wp-mcp-ai-tool-revenue-forecast
 wp-mcp-ai-tool-revoke-consent
+wp-mcp-ai-tool-rfdetr-detect
 wp-mcp-ai-tool-rotate-leads
 wp-mcp-ai-tool-route-knowledge-query
 wp-mcp-ai-tool-rtl-content-optimization
