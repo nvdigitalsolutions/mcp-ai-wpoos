@@ -339,7 +339,31 @@ class WP_MCP_AI_Orchestration_Dashboard {
 
 		WP_MCP_AI_Logger::log_debug( '[Pro Dashboard] AJAX get_dashboard_data called' );
 
+		// Data collection runs queries against plugin and JetEngine tables. If
+		// any of them fails while `$wpdb` error display is enabled (WP_DEBUG),
+		// the printed HTML error is prepended to the JSON response and the
+		// browser fails to parse it. Suppress output for the duration of the
+		// collection and log the failure instead so the payload stays valid.
+		global $wpdb;
+		$old_suppress = $wpdb->suppress_errors( true );
+		$old_show     = $wpdb->show_errors;
+
+		$wpdb->show_errors = false;
+
 		$data = $this->get_dashboard_data();
+
+		$wpdb->show_errors = $old_show;
+		$wpdb->suppress_errors( $old_suppress );
+
+		if ( ! empty( $wpdb->last_error ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'[Pro Dashboard] Database error suppressed while collecting dashboard data',
+				array(
+					'last_error' => $wpdb->last_error,
+					'last_query' => $wpdb->last_query,
+				)
+			);
+		}
 
 		WP_MCP_AI_Logger::log_debug(
 			'[Pro Dashboard] Dashboard data prepared',

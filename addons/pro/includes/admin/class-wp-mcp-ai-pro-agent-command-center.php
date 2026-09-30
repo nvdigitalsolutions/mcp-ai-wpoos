@@ -1410,6 +1410,47 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	// =========================================================================
 
 	/**
+	 * Run a data-collection callback with $wpdb error output suppressed.
+	 *
+	 * The dashboard AJAX handlers collect data through direct database queries.
+	 * When any query fails while `$wpdb` error display is enabled (WP_DEBUG),
+	 * WordPress prints an HTML error block into the response body, corrupting
+	 * the JSON envelope and breaking the polling JS. Suppress output for the
+	 * duration of the callback and log the failure instead so the payload
+	 * stays valid.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param callable $callback Data-collection callback.
+	 * @return mixed The callback's return value.
+	 */
+	private function with_suppressed_db_errors( $callback ) {
+		global $wpdb;
+
+		$old_suppress = $wpdb->suppress_errors( true );
+		$old_show     = $wpdb->show_errors;
+
+		$wpdb->show_errors = false;
+
+		$result = $callback();
+
+		$wpdb->show_errors = $old_show;
+		$wpdb->suppress_errors( $old_suppress );
+
+		if ( ! empty( $wpdb->last_error ) && class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'[Agent Command Center] Database error suppressed while collecting data',
+				array(
+					'last_error' => $wpdb->last_error,
+					'last_query' => $wpdb->last_query,
+				)
+			);
+		}
+
+		return $result;
+	}
+
+	/**
 	 * AJAX handler: Get dashboard data for real-time updates.
 	 *
 	 * @since 2.1.0
@@ -1421,29 +1462,40 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		$session_data = $this->get_session_overview();
-		$assistants   = $this->get_all_assistants();
+		$result = $this->with_suppressed_db_errors(
+			function () {
+				$session_data   = $this->get_session_overview();
+				$assistants     = $this->get_all_assistants();
+				$agent_statuses = array();
 
-		$agent_statuses = array();
-		foreach ( $assistants as $a ) {
-			$agent_statuses[ $a['id'] ] = array(
-				'status'      => $this->get_agent_status( $a['id'] ),
-				'last_active' => $this->get_agent_last_active( $a['id'] ),
-			);
-		}
+				foreach ( $assistants as $a ) {
+					$agent_statuses[ $a['id'] ] = array(
+						'status'      => $this->get_agent_status( $a['id'] ),
+						'last_active' => $this->get_agent_last_active( $a['id'] ),
+					);
+				}
+
+				$pending_approvals = $this->get_pending_approval_count();
+				$tokens_today      = $this->format_number( $this->get_tokens_today() );
+				$uptime            = $this->get_system_uptime_pct() . '%';
+				$recent_events     = $this->get_recent_activity_events( 10 );
+
+				return compact( 'session_data', 'assistants', 'agent_statuses', 'pending_approvals', 'tokens_today', 'uptime', 'recent_events' );
+			}
+		);
 
 		wp_send_json_success(
 			array(
 				'kpis'           => array(
-					'total_agents'      => count( $assistants ),
-					'agents_online'     => $session_data['active_count'],
-					'active_tasks'      => $session_data['task_count'],
-					'pending_approvals' => $this->get_pending_approval_count(),
-					'tokens_today'      => $this->format_number( $this->get_tokens_today() ),
-					'uptime'            => $this->get_system_uptime_pct() . '%',
+					'total_agents'      => count( $result['assistants'] ),
+					'agents_online'     => $result['session_data']['active_count'],
+					'active_tasks'      => $result['session_data']['task_count'],
+					'pending_approvals' => $result['pending_approvals'],
+					'tokens_today'      => $result['tokens_today'],
+					'uptime'            => $result['uptime'],
 				),
-				'agent_statuses' => $agent_statuses,
-				'recent_events'  => $this->get_recent_activity_events( 10 ),
+				'agent_statuses' => $result['agent_statuses'],
+				'recent_events'  => $result['recent_events'],
 			)
 		);
 	}
@@ -1465,7 +1517,11 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 		$timeframe = isset( $_POST['timeframe'] ) ? sanitize_key( wp_unslash( $_POST['timeframe'] ) ) : '24h';
 		$search    = isset( $_POST['search'] ) ? sanitize_text_field( wp_unslash( $_POST['search'] ) ) : '';
 
-		$events = $this->get_filtered_activity( $type, $agent_id, $timeframe, $search );
+		$events = $this->with_suppressed_db_errors(
+			function () use ( $type, $agent_id, $timeframe, $search ) {
+				return $this->get_filtered_activity( $type, $agent_id, $timeframe, $search );
+			}
+		);
 
 		// Calculate summary stats.
 		$summary = array(
@@ -1606,7 +1662,13 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 
 		$range = isset( $_POST['range'] ) ? sanitize_key( wp_unslash( $_POST['range'] ) ) : '7d';
 
-		wp_send_json_success( $this->get_analytics_data( $range ) );
+		$data = $this->with_suppressed_db_errors(
+			function () use ( $range ) {
+				return $this->get_analytics_data( $range );
+			}
+		);
+
+		wp_send_json_success( $data );
 	}
 
 	/**
@@ -1633,15 +1695,19 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 
 		$type = isset( $_POST['type'] ) ? sanitize_key( wp_unslash( $_POST['type'] ) ) : '';
 
-		wp_send_json_success(
-			WP_MCP_AI_Restriction_Registry::get_active(
-				array(
-					'type'     => $type,
-					'per_page' => 100,
-					'page'     => 1,
-				)
-			)
+		$rows = $this->with_suppressed_db_errors(
+			function () use ( $type ) {
+				return WP_MCP_AI_Restriction_Registry::get_active(
+					array(
+						'type'     => $type,
+						'per_page' => 100,
+						'page'     => 1,
+					)
+				);
+			}
 		);
+
+		wp_send_json_success( $rows );
 	}
 
 	/**
