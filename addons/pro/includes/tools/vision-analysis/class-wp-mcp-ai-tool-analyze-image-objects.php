@@ -31,6 +31,12 @@ if ( ! class_exists( 'WP_MCP_AI_HF_Vision_Inference_Service' ) ) {
 	require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-hf-vision-inference-service.php';
 }
 
+// The Roboflow (RF-DETR) inference service backs the "roboflow" detection
+// provider; load it explicitly so the toolkit works standalone.
+if ( ! class_exists( 'WP_MCP_AI_Roboflow_Inference_Service' ) ) {
+	require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-roboflow-inference-service.php';
+}
+
 // Toolkit settings accessor — normally loaded by the Pro module registry via
 // the toolkit init.php; load it explicitly so the tool works standalone.
 if ( ! function_exists( 'wp_mcp_ai_vision_analysis_get_settings' ) ) {
@@ -69,7 +75,7 @@ class WP_MCP_AI_Tool_Analyze_Image_Objects extends WP_MCP_AI_Tool_Image_Base imp
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Detect and count the objects in an image, returning a per-category count breakdown with confidence scores and optional bounding boxes. Uses dedicated detectors (HuggingFace OWLv2, local Ollama vision) with an optional VLM pass (OpenAI, Anthropic, Gemini) for open-world counting and label normalization. Can return an annotated copy of the image with boxes drawn on it.', 'mcp-ai-wpoos-pro' );
+		return __( 'Detect and count the objects in an image, returning a per-category count breakdown with confidence scores and optional bounding boxes. Uses dedicated detectors (HuggingFace OWLv2, Roboflow RF-DETR, local Ollama vision) with an optional VLM pass (OpenAI, Anthropic, Gemini) for open-world counting and label normalization. Can return an annotated copy of the image with boxes drawn on it.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -81,8 +87,8 @@ class WP_MCP_AI_Tool_Analyze_Image_Objects extends WP_MCP_AI_Tool_Image_Base imp
 		return array(
 			'when_to_use'     => __( 'Counting objects in an image per category with confidence scores, optional boxes, and annotated output.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'General image description or visual Q&A; use analyze_image.', 'mcp-ai-wpoos-pro' ),
-			'related_tools'   => array( 'analyze_image', 'vision_object_localization', 'vision_product_search' ),
-			'notes'           => __( 'Detection modes use HuggingFace OWLv2 or Ollama; hybrid keeps detector counts authoritative.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'analyze_image', 'vision_object_localization', 'vision_product_search', 'rfdetr_detect' ),
+			'notes'           => __( 'Detection modes use HuggingFace OWLv2, Roboflow RF-DETR, or Ollama; hybrid keeps detector counts authoritative.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -101,8 +107,8 @@ class WP_MCP_AI_Tool_Analyze_Image_Objects extends WP_MCP_AI_Tool_Image_Base imp
 			),
 			'provider'       => array(
 				'type'        => 'string',
-				'enum'        => array( 'auto', 'huggingface', 'ollama', 'openai', 'anthropic', 'gemini' ),
-				'description' => __( 'Vision provider. Detection modes use "huggingface" (OWLv2) or "ollama"; VLM modes use "openai", "anthropic", or "gemini". "auto" picks the best configured provider. Default: auto.', 'mcp-ai-wpoos-pro' ),
+				'enum'        => array( 'auto', 'huggingface', 'ollama', 'roboflow', 'openai', 'anthropic', 'gemini' ),
+				'description' => __( 'Vision provider. Detection modes use "huggingface" (OWLv2), "ollama", or "roboflow" (RF-DETR); VLM modes use "openai", "anthropic", or "gemini". "auto" picks the best configured provider. Default: auto.', 'mcp-ai-wpoos-pro' ),
 				'default'     => 'auto',
 			),
 			'model'          => array(
@@ -385,14 +391,48 @@ class WP_MCP_AI_Tool_Analyze_Image_Objects extends WP_MCP_AI_Tool_Image_Base imp
 	 * @return array|WP_Error
 	 */
 	private function run_detection_mode( $service, $image_base64, array $categories, $provider_arg, $model_override, $min_confidence, $include_boxes ) {
-		$settings   = wp_mcp_ai_vision_analysis_get_settings();
-		$use_ollama = 'ollama' === $provider_arg;
+		$settings     = wp_mcp_ai_vision_analysis_get_settings();
+		$use_ollama   = 'ollama' === $provider_arg;
+		$use_roboflow = 'roboflow' === $provider_arg;
 
 		if ( 'auto' === $provider_arg ) {
 			$hf_key = $service->get_api_key();
 			if ( empty( $hf_key ) ) {
-				$use_ollama = true;
+				// RF-DETR (self-hosted or keyed) is preferred over Ollama when
+				// configured — it is a dedicated detector with deterministic
+				// boxes, and the self-host tier keeps bytes on-premises.
+				if ( class_exists( 'WP_MCP_AI_Roboflow_Inference_Service' ) ) {
+					$roboflow_service = new WP_MCP_AI_Roboflow_Inference_Service();
+					$use_roboflow     = $roboflow_service->is_configured();
+				}
+				if ( ! $use_roboflow ) {
+					$use_ollama = true;
+				}
 			}
+		}
+
+		if ( $use_roboflow ) {
+			if ( ! class_exists( 'WP_MCP_AI_Roboflow_Inference_Service' ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_va_roboflow_unavailable',
+					__( 'The RF-DETR inference service is not available.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 503 )
+				);
+			}
+
+			$roboflow_service = new WP_MCP_AI_Roboflow_Inference_Service();
+			$model            = '' !== $model_override ? $model_override : $roboflow_service->get_default_model();
+			$result           = $roboflow_service->count_objects( $image_base64, $model, $min_confidence, $include_boxes );
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			return array(
+				'mode'     => 'detection',
+				'provider' => 'roboflow',
+				'model'    => isset( $result['model'] ) ? sanitize_text_field( $result['model'] ) : $model,
+				'counts'   => $result['counts'],
+			);
 		}
 
 		if ( $use_ollama ) {
