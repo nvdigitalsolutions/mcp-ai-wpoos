@@ -116,6 +116,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						// REST API protection.
 						'require_auth_chat_endpoints',
 						'require_auth_tool_execution',
+						'mcp_require_assistant_scope',
 						'require_auth_assistant_management',
 						'require_auth_transcripts',
 						'require_auth_file_operations',
@@ -350,6 +351,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 					'label'          => __( 'Protect Tool Execution', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Require authentication for tool execution endpoints', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Prevents unauthenticated users from executing tools.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'mcp_require_assistant_scope'              => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Require Assistant Scope for MCP', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Reject MCP requests that do not resolve to an assistant (403)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Fail closed: when enabled, tools/list and tools/call return 403 instead of falling back to the full tool registry when no assistant resolves (no explicit assistant_id, no token-bound assistant, no default assistant).', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'require_auth_assistant_management'        => array(

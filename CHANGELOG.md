@@ -1,5 +1,13 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Security — Strict MCP Assistant-Scope Toggle (Issue #6769)
+
+- **Opt-in fail-closed setting `mcp_require_assistant_scope`** (Security → Access & Identity, default OFF) — when enabled, MCP `tools/list` and `tools/call` return HTTP 403 (`wp_mcp_ai_assistant_scope_required`) instead of falling back to the full tool registry when no assistant resolves (no explicit `assistant_id`, no token-bound assistant, no default assistant). When disabled, behavior is byte-for-byte unchanged. MCP surface only — the in-WP chat UI resolves assistants through its own path and is unaffected.
+- **Enforcement** — a shared `maybe_enforce_strict_scope()` helper in the `WP_MCP_AI_REST_MCP_Methods` trait gates `mcp_tools_list()` after the existing resolve/scope chain and `mcp_tools_call()` before forwarding into the tool executor (so hidden or full-registry tools cannot be invoked by name). Unlike ordinary tool errors (HTTP 200 JSON-RPC envelope so SDKs that drop non-2xx bodies still relay them), this authorization refusal is deliberately delivered as HTTP 403 so gateways, WAFs, and access logs record it.
+- **Tests** — `tests/test-mcp-tools-list.php` covers both methods in both states (ON + unresolved → 403; OFF → existing full-registry/fallback behavior).
+
 ## [1.1.89] - 2026-09-29
 
 ### Added — Google Classroom Integration for the ECA Pro Toolkit (Proposal 046, PR #6809)
