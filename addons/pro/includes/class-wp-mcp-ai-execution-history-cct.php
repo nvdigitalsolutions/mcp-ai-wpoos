@@ -50,6 +50,11 @@ class WP_MCP_AI_Execution_History_CCT {
 	/**
 	 * Retrieve the JetEngine item handler for the execution history content type.
 	 *
+	 * Returns null when the content type is not registered or when its physical
+	 * table is missing (e.g. registered but never created). Consumers must skip
+	 * CCT access in that case instead of querying a non-existent table, which
+	 * would make `$wpdb` print an error into the response body.
+	 *
 	 * @return object|null
 	 */
 	public static function get_item_handler() {
@@ -69,7 +74,41 @@ class WP_MCP_AI_Execution_History_CCT {
 			return null;
 		}
 
+		if ( ! self::table_exists() ) {
+			return null;
+		}
+
 		return $instance->get_item_handler();
+	}
+
+	/**
+	 * Determine whether the physical CCT table exists in the database.
+	 *
+	 * JetEngine reports a content type as registered even when its backing
+	 * table was never created (failed provisioning, missing DB privileges,
+	 * partial migrations). Queries against such a table fail at the SQL level
+	 * and `$wpdb` prints the error into the output, corrupting JSON responses
+	 * such as the orchestration dashboard AJAX payload.
+	 *
+	 * @return bool True when the CCT table exists.
+	 */
+	public static function table_exists() {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'jet_cct_' . self::SLUG;
+
+		$wpdb->last_error = '';
+
+		// Suppress the expected table-missing error output; the probe is
+		// checking for exactly that condition.
+		$suppress = $wpdb->suppress_errors( true );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the fixed plugin slug; a direct SELECT probe is transactional-DDL safe on MySQL 8.0 where SHOW TABLES is not.
+		$wpdb->get_var( "SELECT 1 FROM `{$table}` LIMIT 1" );
+
+		$wpdb->suppress_errors( $suppress );
+
+		return '' === $wpdb->last_error;
 	}
 
 	/**
