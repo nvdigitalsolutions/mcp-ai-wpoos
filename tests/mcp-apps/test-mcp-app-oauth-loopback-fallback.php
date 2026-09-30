@@ -1298,8 +1298,8 @@ class Test_MCP_App_OAuth_Loopback_Fallback extends WP_UnitTestCase {
 		$connection    = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		// Runtime config as the registry builds it for a reference app.
-		$config                    = WP_MCP_AI_Pro_Remote_Site_Manager::build_mcp_app_config_from_connection( $connection );
-		$config['connection_ref']  = $connection_id;
+		$config                   = WP_MCP_AI_Pro_Remote_Site_Manager::build_mcp_app_config_from_connection( $connection );
+		$config['connection_ref'] = $connection_id;
 
 		$captured = array();
 		$this->install_oauth_refresh_and_mcp_mock( $captured );
@@ -1328,6 +1328,123 @@ class Test_MCP_App_OAuth_Loopback_Fallback extends WP_UnitTestCase {
 		$decoded = json_decode( WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['mcp_oauth'] ), true );
 		$this->assertSame( 'tok-new', $decoded['access_token'] );
 		$this->assertSame( 'ref-new', $decoded['refresh_token'] );
+
+		delete_option( WP_MCP_AI_Pro_Remote_Site_Manager::OPTION_NAME );
+	}
+
+	/**
+	 * Completing the loopback login from the assistant editor persists the
+	 * tokens centrally AND the reference entry onto the assistant, so the
+	 * just-added row survives the post-login page reload.
+	 */
+	public function test_complete_oauth_persists_upwork_reference_entry() {
+		$this->reset_remote_sites_store();
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Upwork MCP',
+				'url'             => 'https://api.upwork.com/graphql',
+				'connection_type' => 'upwork',
+				'upwork_mode'     => 'mcp',
+				'enabled'         => true,
+			)
+		);
+		$this->assertNotWPError( $connection_id );
+
+		$state = 'upworkrefstate';
+		set_transient(
+			WP_MCP_AI_REST_MCP_Apps_Controller::OAUTH_STATE_TRANSIENT . $state,
+			array(
+				'server_url'     => 'https://example.com/mcp',
+				'assistant_id'   => $this->assistant_id,
+				'connection_ref' => $connection_id,
+				'client_id'      => 'upwork-client-123',
+				'redirect_uri'   => 'http://localhost:5123/callback',
+				'redirect_mode'  => 'manual_loopback',
+				'code_verifier'  => 'verifier123',
+				'created_at'     => time(),
+			),
+			WP_MCP_AI_REST_MCP_Apps_Controller::OAUTH_STATE_TTL
+		);
+
+		add_filter(
+			'pre_http_request',
+			function ( $pre, $args, $url ) {
+				unset( $pre, $args );
+
+				if ( false !== strpos( $url, '/.well-known/oauth-authorization-server' ) ) {
+					return array(
+						'headers'  => array(),
+						'body'     => wp_json_encode(
+							array(
+								'authorization_endpoint' => 'https://example.com/oauth/authorize',
+								'token_endpoint'         => 'https://example.com/oauth/token',
+							)
+						),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+					);
+				}
+
+				if ( false !== strpos( $url, '/oauth/token' ) ) {
+					return array(
+						'headers'  => array(),
+						'body'     => wp_json_encode(
+							array(
+								'access_token'  => 'tok-abc',
+								'refresh_token' => 'ref-abc',
+								'token_type'    => 'Bearer',
+								'expires_in'    => 3600,
+							)
+						),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+					);
+				}
+
+				return array(
+					'headers'  => array(),
+					'body'     => '',
+					'response' => array(
+						'code'    => 404,
+						'message' => 'Not Found',
+					),
+				);
+			},
+			10,
+			3
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp-apps/oauth/complete' );
+		$request->set_param( 'state', $state );
+		$request->set_param( 'callback_url', 'http://localhost:5123/callback?code=authcode&state=' . $state );
+
+		$controller = new WP_MCP_AI_REST_MCP_Apps_Controller();
+		$response   = $controller->complete_oauth( $request );
+
+		$this->assertNotWPError( $response );
+		$this->assertTrue( $response->get_data()['success'] );
+
+		// Tokens persist centrally, encrypted at rest.
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertStringNotContainsString( 'tok-abc', (string) $connection['mcp_oauth'] );
+		$decoded = json_decode( WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['mcp_oauth'] ), true );
+		$this->assertSame( 'tok-abc', $decoded['access_token'] );
+		$this->assertSame( 'ref-abc', $decoded['refresh_token'] );
+		$this->assertSame( 'upwork-client-123', $decoded['client_id'] );
+
+		// The assistant now carries the reference entry — no credentials.
+		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
+		$apps     = $registry->get_apps( $this->assistant_id );
+		$this->assertCount( 1, $apps );
+		$this->assertSame( $connection_id, $apps[0]['connection_ref'] );
+		$this->assertSame( 'Upwork MCP', $apps[0]['label'] );
+		$this->assertTrue( $apps[0]['enabled'] );
+		$this->assertEmpty( $apps[0]['token'] );
 
 		delete_option( WP_MCP_AI_Pro_Remote_Site_Manager::OPTION_NAME );
 	}

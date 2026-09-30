@@ -1846,6 +1846,74 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	}
 
 	/**
+	 * Whether a stored connection can back an MCP App reference entry.
+	 *
+	 * Reference entries may point at dedicated MCP Server connections or at
+	 * Upwork connections running in MCP mode (the official Upwork MCP
+	 * gateway, authenticated through the MCP Apps OAuth flow).
+	 *
+	 * @since 1.1.90
+	 *
+	 * @param array $connection Stored connection array.
+	 * @return bool True when the connection is referenceable from MCP Apps.
+	 */
+	public static function is_mcp_app_connection( $connection ) {
+		if ( ! is_array( $connection ) ) {
+			return false;
+		}
+
+		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : '';
+
+		if ( 'mcp_server' === $connection_type ) {
+			return true;
+		}
+
+		return 'upwork' === $connection_type && 'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' );
+	}
+
+	/**
+	 * List stored Upwork connections configured in MCP mode.
+	 *
+	 * Upwork MCP connections authenticate against the official Upwork MCP
+	 * gateway through the MCP Apps OAuth flow and are offered alongside
+	 * mcp_server connections in the assistant MCP Apps metabox.
+	 *
+	 * @since 1.1.90
+	 *
+	 * @return array<int, array> Upwork MCP connection arrays.
+	 */
+	public static function get_upwork_mcp_connections() {
+		$upwork = array();
+
+		foreach ( self::get_all_connections() as $connection ) {
+			if (
+				is_array( $connection ) &&
+				'upwork' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) &&
+				'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' )
+			) {
+				$upwork[] = $connection;
+			}
+		}
+
+		return $upwork;
+	}
+
+	/**
+	 * List stored connections that can back an MCP App reference entry.
+	 *
+	 * Merges dedicated MCP Server connections with Upwork connections in
+	 * MCP mode. Used by the assistant MCP Apps metabox to offer centrally
+	 * managed connections as one-click reference entries.
+	 *
+	 * @since 1.1.90
+	 *
+	 * @return array<int, array> Referenceable connection arrays.
+	 */
+	public static function get_mcp_app_connections() {
+		return array_merge( self::get_mcp_server_connections(), self::get_upwork_mcp_connections() );
+	}
+
+	/**
 	 * Test Google Chat API connection.
 	 *
 	 * Supports Service Account JSON key, OAuth refresh token, or OAuth

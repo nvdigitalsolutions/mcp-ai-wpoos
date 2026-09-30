@@ -552,7 +552,7 @@ class WP_MCP_AI_MCP_App_Registry {
 			// No-op when nothing changed (e.g. an in-window refresh attempt).
 			if ( $merged != $existing ) { // phpcs:ignore Universal.Operators.StrictComparisons.LooseNotEqual -- Loose comparison ignores key order.
 				$apps[ $index ]['oauth_data'] = $merged;
-				$changed                     = true;
+				$changed                      = true;
 			}
 			break;
 		}
@@ -583,10 +583,12 @@ class WP_MCP_AI_MCP_App_Registry {
 	/**
 	 * Resolve an assistant's MCP Apps, expanding global connection references.
 	 *
-	 * Entries carrying `connection_ref` point at a `mcp_server` connection in
-	 * the Pro Remote Sites store. Resolution decrypts the central credential
-	 * on demand (per-request static cache) and merges it into a runtime config
-	 * — the credentials are never written back to post meta.
+	 * Entries carrying `connection_ref` point at a centrally managed
+	 * connection in the Pro Remote Sites store — a `mcp_server` connection or
+	 * an Upwork connection running in MCP mode. Resolution decrypts the
+	 * central credential on demand (per-request static cache) and merges it
+	 * into a runtime config — the credentials are never written back to post
+	 * meta.
 	 *
 	 * A reference that cannot be resolved (missing connection, wrong type, or
 	 * Remote Sites unavailable) is skipped and recorded as an error status
@@ -641,7 +643,11 @@ class WP_MCP_AI_MCP_App_Registry {
 	/**
 	 * Resolve a single `connection_ref` entry against the Remote Sites store.
 	 *
+	 * Accepts `mcp_server` connections and Upwork connections in MCP mode
+	 * (the official Upwork MCP gateway).
+	 *
 	 * @since 1.1.85
+	 * @since 1.1.90 Upwork MCP connections resolve against the official gateway.
 	 *
 	 * @param array $app Stored MCP App entry with `connection_ref` set.
 	 * @return array|null Resolved runtime config, or null when unresolvable.
@@ -668,11 +674,22 @@ class WP_MCP_AI_MCP_App_Registry {
 
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $ref );
 
-		if ( null === $connection || 'mcp_server' !== ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+		if ( null === $connection ) {
 			return null;
 		}
 
-		$config = WP_MCP_AI_Pro_Remote_Site_Manager::build_mcp_app_config_from_connection( $connection );
+		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : '';
+
+		if ( 'mcp_server' === $connection_type ) {
+			$config = WP_MCP_AI_Pro_Remote_Site_Manager::build_mcp_app_config_from_connection( $connection );
+		} elseif ( 'upwork' === $connection_type && 'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' ) ) {
+			// Upwork MCP connections authenticate against the official gateway
+			// through the MCP Apps OAuth flow; the token blob lives in the
+			// encrypted central `mcp_oauth` field like any MCP Server connection.
+			$config = WP_MCP_AI_Pro_Remote_Site_Manager::build_upwork_mcp_app_config( $connection );
+		} else {
+			return null;
+		}
 
 		return array_merge(
 			$app,
