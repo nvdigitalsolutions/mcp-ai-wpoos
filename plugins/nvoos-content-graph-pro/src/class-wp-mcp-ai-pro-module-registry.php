@@ -491,6 +491,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 				}
 			);
 
+			// The base tree ships the vision-analysis init but nothing loads
+			// it standalone — the module wires the slim init + RF-DETR tool.
+			$this->add_module(
+				'toolkit_vision_analysis',
+				'Vision Analysis Toolkit',
+				array(),
+				array(
+					// Byte-identical enabled gate (enable_vision_analysis_toolkit setting).
+					'enabled' => ! empty( $settings['enable_vision_analysis_toolkit'] ),
+					'files'   => array( $p . 'tools/vision-analysis/init.php' ),
+				),
+				function () use ( $p ) {
+					require_once $p . 'tools/vision-analysis/init.php';
+				}
+			);
+
 			$this->add_module(
 				'toolkit_project_management',
 				'Project Management Toolkit',
