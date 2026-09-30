@@ -337,7 +337,7 @@ refresh) — Elementor MCP does not use it; use `basic`/`header` instead.
   any other tool; MCP Server test/discover events are activity-logged; review
   logs after Elementor write operations.
 
-## Code map (verified, v1.1.89)
+## Code map (verified, v1.1.90)
 
 | Concern | Location |
 |---|---|

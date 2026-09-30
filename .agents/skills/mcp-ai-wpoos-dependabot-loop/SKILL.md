@@ -5,8 +5,8 @@ description: "Operational guide for the NV oOS Dependabot alert triage-and-remed
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.89"
-  plugin-version-tested: "1.1.89"
+  plugin-version: "1.1.90"
+  plugin-version-tested: "1.1.90"
   last-updated: "2026-09-30"
 ---
 
