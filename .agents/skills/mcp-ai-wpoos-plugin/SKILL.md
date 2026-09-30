@@ -7,7 +7,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.89"
   plugin-version-tested: "1.1.89"
-  last-updated: "2026-09-29"
+  last-updated: "2026-09-30"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -26,6 +26,7 @@ auto-detection, and tool assignment.
 - Calling MCP tools via `curl` / HTTP JSON-RPC
 - API keys not being picked up from Docker environment variables
 - Troubleshooting 0 tools returned from `tools/list`
+- Troubleshooting HTTP 403 from `tools/list` / `tools/call` (strict assistant-scope toggle, v1.1.90+)
 - Configuring the plugin for IGCSE study (which tools to assign)
 - WordPress.org submission prep — Plugin Check (PCP) runs, wp.org listing
   screenshots, packaging exclusions, and the compliance checklist are covered
@@ -1518,6 +1519,19 @@ docker compose exec -T wordpress mkdir -p /var/www/html/wp-content/uploads/wp-mc
 ```php
 update_post_meta( $assistant_id, '_wp_mcp_ai_tools', array( 'web_search', 'create_post', /* ... */ ) );
 ```
+
+### tools/list or tools/call returns HTTP 403 (`wp_mcp_ai_assistant_scope_required`)
+
+**Cause (since v1.1.90):** the opt-in `mcp_require_assistant_scope` setting
+(Security → Access & Identity, default OFF) is enabled, and the request does
+not resolve to an assistant — no explicit `assistant_id`, no token-bound
+assistant, no `default_assistant`.
+**Fix:** Either disable the toggle, pass `assistant_id` in the JSON-RPC
+params, bind the credential to an assistant, or configure `default_assistant`.
+Unlike ordinary tool errors (HTTP 200 JSON-RPC envelope), this refusal is
+deliberately delivered as HTTP 403 so gateways/WAFs record it — check the
+toggle first when a 403 appears without a tool-level `wp_mcp_ai_tool_forbidden`
+error body.
 
 ### "No AI providers configured" / tools return errors
 
