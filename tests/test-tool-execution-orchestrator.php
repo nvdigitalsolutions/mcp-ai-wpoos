@@ -180,8 +180,15 @@ class Test_Tool_Execution_Orchestrator extends WP_UnitTestCase {
 		);
 
 		// Should NOT return async job info.
-		if ( is_array( $result ) ) {
-			$this->assertFalse( isset( $result['async'] ) && $result['async'], 'Should not execute async when force_sync is set' );
+		if ( is_array( $result ) && isset( $result['async'] ) ) {
+			$this->assertFalse( $result['async'], 'Should not execute async when force_sync is set' );
+		} else {
+			// Forcing sync on an async-only tool legitimately degrades to an
+			// error; either outcome must not be async job info.
+			$this->assertTrue(
+				is_array( $result ) || is_wp_error( $result ),
+				'Result should be a plain array or WP_Error, never async job info'
+			);
 		}
 	}
 
@@ -239,6 +246,11 @@ class Test_Tool_Execution_Orchestrator extends WP_UnitTestCase {
 		// May return error or actual result depending on tool implementation.
 		if ( is_array( $result ) && isset( $result['async'] ) ) {
 			$this->assertFalse( $result['async'], 'Tools without async flags should not execute async by default' );
+		} else {
+			$this->assertTrue(
+				is_array( $result ) || is_wp_error( $result ),
+				'Result should be a plain array or WP_Error, never async job info'
+			);
 		}
 	}
 
