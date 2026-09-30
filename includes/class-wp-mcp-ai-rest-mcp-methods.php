@@ -278,12 +278,24 @@ trait WP_MCP_AI_REST_MCP_Methods {
 
 		if ( is_wp_error( $result ) ) {
 			$error_code = $result->get_error_code();
-			return $this->mcp_error_response(
+			$response   = $this->mcp_error_response(
 				$id,
 				'wp_mcp_ai_method_not_found' === $error_code ? -32601 : -32603,
 				$result->get_error_message(),
 				$result->get_error_data()
 			);
+
+			// The strict assistant-scope toggle is a fail-closed
+			// authorization boundary: unlike ordinary tool errors (which
+			// ride the HTTP 200 JSON-RPC envelope so SDKs that drop
+			// non-2xx bodies still relay them), this rejection must
+			// surface as HTTP 403 so gateways, WAFs, and access logs
+			// record the refusal even when the body is ignored.
+			if ( 'wp_mcp_ai_assistant_scope_required' === $error_code ) {
+				$response->set_status( 403 );
+			}
+
+			return $response;
 		}
 
 		// If this is a notification (no id), return 202 Accepted with no body.
@@ -858,6 +870,32 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	}
 
 	/**
+	 * Enforce the opt-in strict assistant-scope toggle (fail-closed).
+	 *
+	 * When `mcp_require_assistant_scope` is enabled, MCP tools/list and
+	 * tools/call must resolve to an assistant (explicit assistant_id,
+	 * token-bound assistant, or the site default). Without a resolution the
+	 * request is rejected with HTTP 403 instead of falling back to the full
+	 * tool registry.
+	 *
+	 * @since 1.1.90
+	 *
+	 * @param int $assistant_id Resolved assistant identifier (0 when none).
+	 * @return true|WP_Error True when allowed, WP_Error (403) when a strict scope is required but missing.
+	 */
+	protected function maybe_enforce_strict_scope( $assistant_id ) {
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		if ( ! empty( $settings['mcp_require_assistant_scope'] ) && empty( $assistant_id ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_assistant_scope_required',
+				__( 'This MCP endpoint requires an assistant scope. Pass assistant_id or bind a credential to an assistant.', 'mcp-ai-wpoos' ),
+				array( 'status' => 403 )
+			);
+		}
+		return true;
+	}
+
+	/**
 	 * Handle MCP tools/list request.
 	 *
 	 * @param array           $params  Method parameters.
@@ -880,6 +918,11 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		}
 
 		$assistant_id = $scoped_id;
+
+		$scope_error = $this->maybe_enforce_strict_scope( $assistant_id );
+		if ( is_wp_error( $scope_error ) ) {
+			return $scope_error;
+		}
 
 		if ( ! $assistant_id ) {
 			// Return all tools if no assistant specified.
@@ -1038,6 +1081,26 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		}
 
 		$arguments = isset( $params['arguments'] ) ? $params['arguments'] : array();
+
+		// Fail-closed assistant scope: resolve the same chain tools/list
+		// uses and reject unscoped requests before forwarding into the
+		// executor, so tools hidden from (or outside) any assistant's
+		// registry view cannot be invoked by name when the strict toggle
+		// is enabled.
+		$resolved_id = 0;
+		if ( isset( $params['assistant_id'] ) ) {
+			$resolved_id = absint( $params['assistant_id'] );
+		}
+		$resolved_id = $this->resolve_assistant_id( $resolved_id );
+		$scoped_id   = $this->apply_token_assistant_scope( $resolved_id );
+		if ( is_wp_error( $scoped_id ) ) {
+			return $scoped_id;
+		}
+
+		$scope_error = $this->maybe_enforce_strict_scope( $scoped_id );
+		if ( is_wp_error( $scope_error ) ) {
+			return $scope_error;
+		}
 
 		// Use existing tool execution infrastructure.
 		$request->set_param( 'tool', $tool_name );
