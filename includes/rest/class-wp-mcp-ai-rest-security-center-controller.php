@@ -989,8 +989,8 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 			$lines[] = $this->csv_row(
 				array(
 					$event['timestamp'] ?? '',
-					$event['event'] ?? ( $event['type'] ?? '' ),
-					$event['ip'] ?? '',
+					$event['event_type'] ?? ( $event['event'] ?? ( $event['type'] ?? '' ) ),
+					$event['ip_address'] ?? ( $event['ip'] ?? '' ),
 					$event['user_id'] ?? '',
 				)
 			);
