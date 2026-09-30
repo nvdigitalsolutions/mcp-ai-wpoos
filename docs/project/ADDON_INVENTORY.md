@@ -1,7 +1,7 @@
 # Addon Inventory
 
 > **Purpose:** One-stop reference for every addon in this monorepo — its status, version, license, dependencies, and whether it's production-ready.
-> **Last Updated:** September 29, 2026 (v1.1.89 — Design System addon 0.1.0 → 0.3.0 on its own track, row 20 updated in-window and corrected this pass)
+> **Last Updated:** September 30, 2026 (v1.1.90 — no addon version changes in-window; design-system letterhead/registry fix on the 0.3.0 line)
 
 ---
 

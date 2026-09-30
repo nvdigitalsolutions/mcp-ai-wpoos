@@ -1,8 +1,8 @@
 # Docs & Release Catch-Up — Standing Open-Items Tracker
 
 > **Purpose:** Single registry of every open item identified (and parked or deferred) by the docs & release catch-up runs, so future passes carry from this file instead of re-copying items between plans.
-> **Last reviewed:** 2026-09-29 (v1.1.89 pass — OI-1 groups 33–35 recorded; OI-2 label refreshed; OI-7/OI-8/OI-9 extended)
-> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.89-docs-catch-up.md`](v1.1.89-docs-catch-up.md).
+> **Last reviewed:** 2026-09-30 (v1.1.90 pass — no new OI-1 groups; OI-2 label refreshed; OI-8 extended with the two `rfdetr_*` slugs)
+> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.90-docs-catch-up.md`](v1.1.90-docs-catch-up.md).
 > **Rule for future passes:** read this file first; a catch-up plan's "Open items" section should point here and only add new items it introduces.
 
 ---
@@ -61,7 +61,7 @@
 - **Status:** 🔒 Parked by user decision. Counts stay delta-derived in catch-up passes.
 - **Issue:** [#5967 — Re-derive live tool counts on a fully provisioned environment](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5967)
 - **What:** run `WP_MCP_AI_Tool_Registry::get_tools()` on a fully provisioned environment (seeded toolkits + optional plugins) and replace the delta-based figure.
-- **Current figure (v1.1.89):** ~347 base + ~1,299 Pro (~1,646 total), live-registry caveat retained on every count surface. (Delta-derived; **+12 Pro in-window** — the ECA classroom tools from #6809, gated by `enable_eca_classroom_integration`; the 8 `nds_*` email tools from #6810 are addon-provided via `wp_mcp_ai_register_tools` and not counted, same as algorave/embedded/graphify/page-agent.)
+- **Current figure (v1.1.90):** ~347 base + ~1,301 Pro (~1,648 total), live-registry caveat retained on every count surface. (Delta-derived; **+2 Pro in-window** — the RF-DETR pair `rfdetr_detect`/`rfdetr_catalog_search` from #6824; the `roboflow` provider inside `analyze_image_objects` is no new slug, and `identify_image` rung 3c is additive-only.)
 - **Known attempt:** QA container (`oos-qa-wp`) returns 363 tools because its DB is unprovisioned — not usable as source of truth.
 - **First noted in:** v1.1.59 plan; carried every pass since.
 
@@ -110,8 +110,8 @@
 ### OI-8 · `tool-status.txt` missing all 40 new window slugs + stale header totals (recorded 2026-09-27 by the v1.1.87 pass)
 
 - **Status:** 🟡 Open. Recorded, not fixed (doc-file gap left by three introducing PRs).
-- **What:** none of #6777's 30 parity tools, #6780's 5 base + 2 Pro image tools, or #6786's 3 outbound tools were added to `docs/reference/tools/tool-status.txt` (the v1.1.86 window's #6772 did add its Higgsfield slugs, so the omission is an inconsistency, not a convention). The file's own header is also stale — "Last Updated: April 30, 2026 · Total Tools: 912 (Base: 224, Pro: 688)" vs the current ~1,646/~347/~1,299. Note: `tool-reference.md` gained the `identify_image` entry in-window (#6780), but the parity suite + outbound tools are undocumented there too (header note added by the v1.1.87 pass). **Extended by the v1.1.89 pass:** the 12 classroom slugs were added in-window by #6809 — but the 8 `nds_*` email slugs (#6810) remain missing, and the header totals are still stale.
-- **Suggested owner:** docs workstream — add the 40 slugs (and re-derive or drop the stale header totals).
+- **What:** none of #6777's 30 parity tools, #6780's 5 base + 2 Pro image tools, or #6786's 3 outbound tools were added to `docs/reference/tools/tool-status.txt` (the v1.1.86 window's #6772 did add its Higgsfield slugs, so the omission is an inconsistency, not a convention). The file's own header is also stale — "Last Updated: April 30, 2026 · Total Tools: 912 (Base: 224, Pro: 688)" vs the current ~1,648/~347/~1,301. Note: `tool-reference.md` gained the `identify_image` entry in-window (#6780), but the parity suite + outbound tools are undocumented there too (header note added by the v1.1.87 pass). **Extended by the v1.1.89 pass:** the 12 classroom slugs were added in-window by #6809 — but the 8 `nds_*` email slugs (#6810) remain missing, and the header totals are still stale. **Extended by the v1.1.90 pass:** the two `rfdetr_*` slugs (#6824) are also missing (0 matches), and the header totals are still stale.
+- **Suggested owner:** docs workstream — add the 40 slugs + the `nds_*` 8 + the `rfdetr_*` 2 (and re-derive or drop the stale header totals).
 - **First noted in:** v1.1.87 plan.
 
 ### OI-9 · CG AI `ToolTokenLimits` mirror missing the #6776 session-budget changes (recorded 2026-09-27 by the v1.1.87 pass)
