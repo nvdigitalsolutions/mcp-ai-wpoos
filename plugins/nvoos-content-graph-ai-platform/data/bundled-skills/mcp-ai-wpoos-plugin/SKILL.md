@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.89"
-  plugin-version-tested: "1.1.89"
-  last-updated: "2026-09-27"
+  plugin-version: "1.1.90"
+  plugin-version-tested: "1.1.90"
+  last-updated: "2026-09-30"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -538,6 +538,18 @@ Additional Pro toolkits are addons under `addons/pro/`.
 ---
 
 ## Troubleshooting
+
+### HTTP 403 (`wp_mcp_ai_assistant_scope_required`) on tools/list or tools/call
+
+**Cause (v1.1.90+):** the opt-in `mcp_require_assistant_scope` setting
+(Security → Access & Identity, default OFF) is enabled and the request
+carries no resolvable assistant — no explicit `assistant_id`, no token-bound
+assistant, and no default assistant.
+**Fix:** pass an explicit `assistant_id` (or token-bound/default assistant),
+or disable the setting. When the toggle is OFF, behavior is byte-for-byte
+unchanged. This 403 is deliberately a real HTTP status (unlike ordinary tool
+errors, which keep the HTTP 200 JSON-RPC envelope) so gateways and access
+logs record it.
 
 ### "invalid volume specification" on Docker start
 

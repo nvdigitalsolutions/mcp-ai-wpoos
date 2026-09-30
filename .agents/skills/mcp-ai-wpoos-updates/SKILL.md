@@ -54,11 +54,11 @@ weekly (or on demand), independent of any release.
    every standing open item (OI-1 `@since` reconciliation, OI-2 Docker count
    re-derivation, OI-3 test-suite cross-ref, OI-4 wave residuals). Parked items
    stay parked; new finds get *recorded* there, never fixed in-pass.
-1. **Read the template plans** — the latest executed plan (e.g.
-   `v1.1.83-post-docs-catch-up.md` — the first post-window pass, executed when
-   PRs merged after the catch-up but before the next version bump) plus
-   `v1.1.83-docs-catch-up.md` and `v1.1.58`/`v1.1.59` for the original
-   structure.
+1. **Read the template plans** — the latest executed plan (`v1.1.90-docs-catch-up.md`,
+   with `v1.1.89-docs-catch-up.md` as the previous pass) plus the
+   `v1.1.83-post-docs-catch-up.md` post-window precedent (executed when PRs
+   merged after the catch-up but before the next version bump) and
+   `v1.1.58`/`v1.1.59` for the original structure.
 4. **Identify the PR window** — everything merged on `alpha-working` after the
    previous catch-up merge. Classify every PR: production-touching (file + change
    table), test-only, docs-only, build-only, closed-unmerged docs PRs.
@@ -211,6 +211,23 @@ weekly (or on demand), independent of any release.
   alongside `default_model` — the rewrite still only runs on a catalog
   version bump, so a migration-behavior change without a bump is dormant until
   the next one.
+- **The plugin skill keeps a companion `RELEASE-NOTES.md` and must stay under
+  the Zed 100KB skill-size limit.** #6822 moved the per-version release-note
+  tail out of `mcp-ai-wpoos-plugin/SKILL.md` (103KB → 46KB) into a companion
+  `RELEASE-NOTES.md` — **future version notes append to RELEASE-NOTES.md, not
+  SKILL.md**. When a structural change like this lands on the Zed copy, sync
+  the base bundled copy byte-identical (SKILL.md + companion) — stamp-only is
+  not enough; the CG AI platform bundled copy is a deliberately trimmed
+  variant and keeps stamp-only treatment.
+- **In-window tool-reference edits may update the header note without the
+  count line.** #6824 added the RF-DETR entries + the "+2 Pro in v1.1.90"
+  note but left the main count line at ~1,299/~1,646 — the catch-up
+  reconciles the count line (and the Last Updated stamp) in-pass.
+- **An introducing PR may complete the A5 skill-count bookkeeping itself.**
+  #6820 (the dependabot-loop skill) bumped 60 → 61 in `AGENTS.md` §1,
+  `.github/copilot-instructions.md`, and the `README.md` repo map in-window —
+  the catch-up verifies (grep for the old count) rather than assuming the
+  fold-in is owed.
 
 ### A3. Commit structure (mirror v1.1.58–v1.1.83)
 
@@ -702,7 +719,22 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.86-docs-catch-up.md`,
   `docs/project/plans/v1.1.87-docs-catch-up.md`,
   `docs/project/plans/v1.1.88-docs-catch-up.md`,
-  `docs/project/plans/v1.1.89-docs-catch-up.md` (latest executed — the v1.1.89
+  `docs/project/plans/v1.1.89-docs-catch-up.md`,
+  `docs/project/plans/v1.1.90-docs-catch-up.md` (latest executed — the v1.1.90
+  pass over PRs #6815–#6824: the RF-DETR vision cognition enhancement
+  (proposal 049, Roboflow service + 2 Pro tools + identify_image rung 3c),
+  the strict MCP assistant-scope toggle (#6819, pre-staged [Unreleased]
+  CHANGELOG block converted), Upwork MCP as first-class MCP Apps references
+  (#6823), the memory identity + IDOR closure (#6815), the letterhead
+  personalization + registry transport fix (#6816), the js-yaml /
+  webpack-dev-middleware advisory floors (#6817), the plugin-skill slim +
+  RELEASE-NOTES.md companion (#6822), the new dependabot-loop skill with
+  in-window count bookkeeping (#6820), a pre-staged readme.txt 1.1.90 entry
+  converted (#6824), the base-bundled plugin-skill resync, the stale 1.1.88
+  build-set removal (30 files), and +2 Pro tool-count)
+
+Preceding windows:
+  `docs/project/plans/v1.1.89-docs-catch-up.md` (the v1.1.89
   pass over PRs #6802 + #6804–#6810: the Google Classroom ECA integration
   (proposal 046, 12 flag-gated Pro tools + base foundation + new webhook
   route), the Design System addon rename + token-driven email module

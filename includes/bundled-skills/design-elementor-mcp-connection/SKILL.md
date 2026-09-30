@@ -6,16 +6,16 @@ license: Proprietary. See LICENSE.txt
 metadata:
   type: Skill
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.89"
-  plugin-version-tested: "1.1.89"
-  last-updated: "2026-09-29"
+  plugin-version: "1.1.90"
+  plugin-version-tested: "1.1.90"
+  last-updated: "2026-09-30"
 ---
 
 # Elementor MCP Connections — MCP Apps on NV oOS Assistants
 
 Operational guide for connecting Elementor MCP servers (remote WordPress +
 Elementor sites) to NV oOS assistants through the Pro "MCP Apps" subsystem.
-Verified against plugin v1.1.89 source (`addons/pro/includes/mcp-apps/`,
+Verified against plugin v1.1.90 source (`addons/pro/includes/mcp-apps/`,
 `includes/assistants/metaboxes/class-wp-mcp-ai-metabox-mcp-apps.php`,
 `addons/pro/includes/slash-commands/`) and the Elementor MCP / WordPress MCP
 Adapter public documentation (2026-09).
@@ -125,6 +125,13 @@ storage), create it once in **NV oOS Pro → Remote Sites → Add Connection**:
    (`connection_ref` + label + enabled) — the credential lives centrally and
    is resolved (decrypt-on-use) at chat time. Rotating the application
    password in Remote Sites updates every referencing assistant.
+   **(v1.1.90):** the dropdown also lists **Upwork-in-MCP-mode** connections
+   (labelled `Name (Upwork MCP — https://mcp.upwork.com/mcp)`) —
+   `resolve_connection_ref()` resolves those refs via
+   `build_upwork_mcp_app_config()` (official gateway + the decrypted central
+   `mcp_oauth` blob), the import validator no longer auto-disables them, and
+   `finalize_oauth_flow()` persists the reference entry onto the assistant
+   after the OAuth login completes.
 
 ### Path B — inline MCP App (per-assistant)
 
@@ -135,7 +142,7 @@ by `WP_MCP_AI_MCP_App_Registry::sanitize_app_config()`):
 |---|---|
 | `label` | Friendly name; drives the bridge slug (`mcp_app_<label>_<tool>`). Use something short like `elementor` so slugs read `mcp_app_elementor_read_page`. |
 | `server_url` | Full MCP endpoint URL from the Elementor-generated prompt. Must pass `is_url_allowed()` (scheme http/https + host + allowlist when configured). Omitted on reference entries. |
-| `connection_ref` | (Reference mode) ID of a central `mcp_server` Remote Sites connection. Resolved at chat time; the row renders read-only with a "Managed in Remote Sites" badge. |
+| `connection_ref` | (Reference mode) ID of a central Remote Sites connection — `mcp_server` or Upwork-in-MCP-mode (v1.1.90+). Resolved at chat time; the row renders read-only with a "Managed in Remote Sites" badge. |
 | `auth_type` | `none`, `bearer`, `basic`, `header`, or `oauth`. See the mapping below. |
 | `token` | Bearer token / Basic credentials / raw header value / OAuth access token. Masked in the UI — never echoed back after save; leaving it blank preserves the stored value. |
 | `header_name` | Custom header name, only for `auth_type: header`. |
