@@ -1,7 +1,7 @@
 # Addon Inventory
 
 > **Purpose:** One-stop reference for every addon in this monorepo — its status, version, license, dependencies, and whether it's production-ready.
-> **Last Updated:** September 30, 2026 (v1.1.90 — no addon version changes in-window; design-system letterhead/registry fix on the 0.3.0 line)
+> **Last Updated:** October 1, 2026 (v1.1.91 — no addon version changes in-window; media-worker keeps v3.2.0 with the nodemailer 10.x bump; the content-graph-ai-platform build refreshed on 2.0.0; CG Pro gained two in-feature ports on 1.0.0)
 
 ---
 
