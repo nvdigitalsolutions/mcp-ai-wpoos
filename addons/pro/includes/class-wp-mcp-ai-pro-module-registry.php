@@ -729,6 +729,18 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 			);
 
 			$this->add_module(
+				'fashion_studio',
+				'Fashion Studio Bridge',
+				array( 'toolkit_media' ),
+				array(
+					'requires' => array( 'NV_oOS_Media_Studio_AI_Service' ),
+				),
+				function () use ( $p ) {
+					require_once $p . 'fashion/init.php';
+				}
+			);
+
+			$this->add_module(
 				'toolkit_project_management',
 				'Project Management Toolkit',
 				array( 'jetengine_meta_helper' ),

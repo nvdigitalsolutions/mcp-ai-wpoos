@@ -1,6 +1,6 @@
 # Media Studio AI Fashion Production — Implementation Plan
 
-> **Status:** In progress — Phase 0 + Phase 1 (base plugin) implemented; Phase 2–5 (Pro) pending.
+> **Status:** ✅ Complete — all six phases (Phase 0+1 base AI service, Phase 2 Pro identities/batch, Phase 3 marketplace output pipeline, Phase 4 IPTC/C2PA provenance, Phase 5 video + assistant tooling) implemented and validated on WP 6.9 and WP 7.1.
 > **Parent plan:** `media-studio-fashion-photography-enhancement-plan.md` (research, gaps G-01…G-10, architecture)
 > **Date:** 2026-10-01
 
@@ -104,77 +104,153 @@ change-set against the normal flow.
 
 ---
 
-## 4. Phase 2 — Identities, Presets, Batch & Review (Pro) ⏳ PENDING
+## 4. Phase 2 — Identities, Presets, Batch & Review (Pro) ✅ IMPLEMENTED
 
 ### 4.1 AI Model Identity library (Pro)
 
-- CPT `mcp_ai_fashion_model` (Pro): `title`, featured image, meta
-  `_fashion_model_gender|skin_tone|body_type|age_group|height|consent_status|prompt_embed|is_custom`.
-- Seeded starter library (prompt-only identities, diverse demographics) using the
-  versioned seeding pattern (`wp_mcp_ai_fashion_models_seeded`).
-- Consent gate: identity unusable for face-swap/try-on until
-  `_fashion_model_consent_status = granted`; audit-log usage per job.
-- `/ai/models` (base route) returns the library when Pro active.
+- CPT `mcp_ai_fashion_model` (`addons/pro/includes/fashion/class-wp-mcp-ai-fashion-model-cpt.php`):
+  `title` + featured image; meta `_fashion_model_gender|skin_tone|body_type|age_group|height|consent_status|prompt_embed|is_custom`
+  (all `register_post_meta` with sanitize callbacks + REST exposure).
+- Seeded starter library (6 prompt-only identities across demographics, consent `none`)
+  using the versioned seeding pattern (`wp_mcp_ai_fashion_models_seeded`).
+- Consent gate: `consent_filter()` hooks `nvoos_media_studio_identity_consent`;
+  face transforms reject non-`granted` identities. Audit-log usage per job via the base service.
+- `/ai/models` returns the library when Pro is active.
 
 ### 4.2 Fashion presets (Pro)
 
-- Extend `addons/pro/includes/class-wp-mcp-ai-media-template-presets.php`:
-  new category `fashion`, preset shape
-  `{ operation: 'fashion_generate', parameters: { transform, lighting, background, style_tokens, composition, aspect_ratio, fidelity_level } }`.
-- Ship PDP-white, PDP-lifestyle, editorial, lookbook, social-variant presets
-  (two-stage chain: generate → existing social resize presets).
+- `WP_MCP_AI_Media_Template_Presets::get_presets()` gains the `fashion` category
+  (PDP-white, PDP-lifestyle, editorial, lookbook, social-variant) with
+  `operation => 'fashion_generate'` and the plan's parameter shape
+  (`transform, lighting, background, style_tokens, composition, aspect_ratio, fidelity_level`).
+- `get_fashion_presets()` converts them to the SPA payload shape and merges into
+  the `/ai/presets` endpoint via the `nvoos_media_studio_presets` filter.
 
 ### 4.3 Batch jobs & review queue (Pro)
 
-- Job store: Action Scheduler group `nvoos_media_studio_batch` + indexed job mirror
-  (pending/processing/review/completed/failed, variant approve/reject).
-- Endpoints: `POST /ai/jobs`, `GET /ai/jobs`, `GET /ai/jobs/<id>`, `POST /ai/jobs/<id>/review`.
-- Review UX in the SPA review grid; approve → export pipeline; reject → re-roll.
-- D-3 tripwires evaluated per job (per-image estimate × count).
+- Job store: private CPT `mcp_ai_fashion_job` (`class-wp-mcp-ai-fashion-batch.php`)
+  with statuses `pending|processing|review|completed|failed` and per-variant state
+  (`pending|generated|approved|rejected|replaced|failed`) in `_fashion_job_variants`.
+- Action Scheduler dispatch (group `nvoos_media_studio_batch`) with an **inline
+  fallback** when AS is unavailable or enqueue fails (robustness on managed hosts
+  and in test environments without AS tables).
+- Endpoints (`class-wp-mcp-ai-fashion-rest.php`, registered into the shared
+  `nvoos-media-studio/v1` namespace): `POST /ai/jobs`, `GET /ai/jobs`,
+  `GET /ai/jobs/<id>`, `POST /ai/jobs/<id>/review`.
+- Review UX in the SPA (`src/components/FashionBatchPanel.tsx`): source-ID batch
+  creation with the same review-confirm + ack flows as single runs, auto-refreshing
+  job list, expandable variant grid with approve/reject/re-roll.
+- D-3 tripwires evaluated per job (per-image estimate × source count); hard cap
+  blocks, tripwires require confirm, consent transforms require ack.
+- Per-job cost surfaced from the base cost tracker via the
+  `nvoos_media_studio_cost_estimate` filter seam.
+- Approve runs the export pipeline: WooCommerce gallery attach
+  (`_product_image_gallery`, `edit_products`-capable) + media collection add.
 
 ### 4.4 Media collections (Pro)
 
-- Reuse `mcp_ai_media_collection` CPT to group per-SKU outputs and link to product ID.
+- `add_to_collection()` appends approved attachments to the existing
+  `mcp_ai_media_coll` CPT's `_mcp_ai_collection_items` meta; job-level
+  `collection_id`/`product_id` flow through create → approve.
+
+### 4.5 Loading
+
+- New Pro module `fashion_studio` in `WP_MCP_AI_Pro_Module_Registry` (depends on
+  `toolkit_media`, requires `NV_oOS_Media_Studio_AI_Service`) →
+  `addons/pro/includes/fashion/init.php` wires CPT init, AS hook, REST routes, and
+  the `nvoos_media_studio_{models,identity_consent,presets}` seams.
 
 ---
 
-## 5. Phase 3 — Marketplace-Compliant Output Pipeline (base) ⏳ PARTIALLY IMPLEMENTED
+## 5. Phase 3 — Marketplace-Compliant Output Pipeline (base) ✅ IMPLEMENTED
 
-- [x] White-background validation (edge pixel sampling, tolerance math) — implemented
-      as `NV_oOS_Media_Studio_AI_Service::validate_white_background()` and used by
-      `packshot`.
-- [x] Provenance naming on AI outputs (`fashion-<transform>-<hash>` — never `IMG_xxxx`).
-- [ ] Dimension profiles (amazon/woocommerce/social/web) + auto-resize — pending.
-- [ ] Format/optimization (WebP vs JPEG per marketplace) via media-worker `/optimize` — pending.
-- [ ] Auto alt text via `generate_image_alt_text_validated` on export — pending.
+Shared `NV_oOS_Media_Studio_Output_Pipeline` (`addons/media-studio/includes/ai/class-nvoos-media-studio-output-pipeline.php`):
 
----
+- [x] **Dimension profiles** — `amazon` (1600px square, JPEG, white-bg required), `woocommerce` (≥800px, WebP), `social` (≥1080px, WebP), `web` (≥2000px, WebP).
+- [x] **Bounded upscaling** — GD `imagecopyresampled` resample up to 2× (`MAX_UPSCALE_FACTOR`); beyond that `nvoos_ms_insufficient_resolution` (409). WP 6.9 removed the `image_resize_upscale` filter, so upscaling is GD-direct; downscale/crop uses `wp_get_image_editor` center-crop squares.
+- [x] **White-background validation** on Amazon outputs (edge sampling, tolerance math) — surfaced as `white_background` in the payload.
+- [x] **Format conversion** via `WP_Image_Editor::save()` with a JPEG fallback when WebP/PNG encoders are missing; derived meta `_nvoos_ai_derived_from|_nvoos_ai_output_profile|_nvoos_ai_upscaled`.
+- [x] **Naming** — `<source-base>-<profile>-<variant>.<ext>`, `IMG_*`/`DSC_*`-style bases scrubbed to `media-studio`.
+- [x] **Alt text** — auto via the core `generate_image_alt_text` tool (filter seam `nvoos_media_studio_alt_text`), opt-out per call, source alt carries over on failure.
+- [x] **REST** — `POST /ai/pipeline` (attachment_id, profile, alt_text, variant) with `upload_files` gate; profiles exposed in `/ai/capabilities`.
+- [x] **SPA** — per-result "Process for marketplace" (profile select + processed output chip incl. white-bg status); batch creation gains a profile select.
+- [x] **Pro batch** — job-level `profile`/`alt_text` meta; approve runs the pipeline and exports the processed asset to the WooCommerce gallery/collection (errors surface in `export_error`).
 
-## 6. Phase 4 — Provenance, Disclosure & Compliance (base) ⏳ PARTIALLY IMPLEMENTED
-
-- [x] Attachment meta on every AI output: `_nvoos_ai_generated`, `_nvoos_ai_provider`,
-      `_nvoos_ai_model`, `_nvoos_ai_prompt_hash`, `_nvoos_ai_transform`, `_nvoos_ai_identity_id`.
-- [x] D-1 policy: disclosure setting (metadata floor), forced GD watermark on face
-      outputs, per-user one-time ack for face transforms.
-- [x] Consent gating for face-swap/try-on identities (filter seam
-      `nvoos_media_studio_identity_consent`; Pro CPT plugs in during Phase 2).
-- [x] Prompt-injection hardening on user-supplied text (length cap + instruction-strip).
-- [x] Audit logging of every generate/export.
-- [ ] IPTC 2025.1 XMP fields (small PHP XMP writer) — pending.
-- [ ] C2PA manifest via media-worker (best-effort, optional signing key) — pending.
+- [ ] Media-worker `/api/image/optimize` sidecar routing — pending (GD/Imagick path is the shipped default).
 
 ---
 
-## 7. Phase 5 — Video & Assistant Tooling (Pro, optional) ⏳ PENDING
+## 6. Phase 4 — Provenance, Disclosure & Compliance (base) ✅ IMPLEMENTED
 
-- Fashion video: media-worker `/api/video/generate` driven from an approved still;
-  `video` transform in the SPA; `extract_video_frames` for thumbnails.
-- 8 `fashion_*` Pro tools (`fashion_onmodel_generate`, `fashion_model_swap`,
-  `fashion_background_generate`, `fashion_recolor`, `fashion_packshot`,
-  `fashion_virtual_tryon`, `fashion_batch_job`, `fashion_identity_manage`) —
-  canonical envelope + two-gate sanitization + `get_usage_guidance` +
-  capability declarations; base-version gating.
-- Workflow Builder: expose transforms as workflow node input types.
+- [x] Attachment meta on every AI output (Phase 0) — `_nvoos_ai_generated|provider|model|prompt_hash|transform|identity_id`.
+- [x] D-1 policy (Phase 0): disclosure setting with metadata floor, forced GD watermark on face outputs, per-user one-time ack.
+- [x] Consent gating (Phase 2) and prompt-injection hardening (Phase 0).
+- [x] Audit logging of every generate/export (Phase 0) plus `media_studio_provenance` / `media_studio_c2pa` events.
+- [x] **IPTC 2025.1 XMP fields** — `NV_oOS_Media_Studio_XMP_Writer` embeds
+      `Iptc4xmpExt:DigitalSourceType` (`trainedAlgorithmicMedia` / `compositeSynthetic`),
+      `AISystemUsed`, `AISystemVersionUsed`, `AIPromptWriterName`, plus
+      `photoshop:Credit`/`Source` into JPEG (APP1), PNG (iTXt), and WebP (RIFF
+      `XMP ` chunk with VP8X insertion + flag bit). `AIPromptInformation` is
+      intentionally omitted (prompts are retained only as hashes — privacy-aware
+      default; the standard marks the field optional). Filter seams:
+      `nvoos_media_studio_xmp_fields` / `nvoos_media_studio_xmp_packet`.
+- [x] **Derived assets** — the output pipeline records `compositeSynthetic` and
+      carries the source's AI fields forward (`record_derived`).
+- [x] **C2PA** — best-effort signing round-trip via an optional `c2pa_sign_url`
+      setting (https-only, never fatal); success sets `_nvoos_c2pa_signed`.
+      Signing runs AFTER the XMP write (XMP injection invalidates existing C2PA
+      signatures — documented limitation without a signing service).
+- [x] **SPA** — capabilities expose the `compliance` block (disclosure policy,
+      XMP format support, C2PA configured); result chips show `XMP provenance`
+      and `C2PA signed`.
+
+C2PA note: no signing service is bundled — a c2patool-backed endpoint is
+required for cryptographic manifests; otherwise assets carry the IPTC fields + the
+visible-disclosure path (D-1).
+
+---
+
+## 7. Phase 5 — Video & Assistant Tooling (Pro, optional) ✅ IMPLEMENTED
+
+- Fashion video: `video` transform in the base AI service (`execute_video()` +
+  `request_sidecar_video()` in `class-nvoos-media-studio-ai-service.php`), POST
+  `{WP_MEDIA_WORKER_URL}/api/video/generate` (synchronous Replicate text-to-video,
+  model `stable-video-diffusion`, 5–15s clips, optional seed). Unknown sidecar
+  pricing → `nvoos_ms_review_required` until `confirmed=true` (D-3). The envelope
+  carries `video_url` + `prediction_id`; clips are NOT sideloaded into the Media
+  Library in v1. Filter seam `nvoos_media_studio_video_generate` for tests and
+  alternate providers. SPA: `video` in `TRANSFORM_LABELS` with a duration
+  selector, `<video>` result player + download link (no marketplace processing
+  for sidecar clips); `duration` REST arg on `/ai/generate`; version bumped to
+  0.6.0.
+- 8 `fashion_*` Pro tools in `addons/pro/includes/tools/fashion/` (shared abstract
+  `WP_MCP_AI_Fashion_Transform_Tool`):
+
+  | Tool slug | Wraps | Capability (declared / escalated) |
+  |---|---|---|
+  | `fashion_onmodel_generate` | AI service `on-model` | `upload_files` |
+  | `fashion_model_swap` | `model-swap` | `upload_files` |
+  | `fashion_background_generate` | `background` | `upload_files` |
+  | `fashion_recolor` | `recolor` | `upload_files` |
+  | `fashion_packshot` | `packshot` | `upload_files` |
+  | `fashion_virtual_tryon` | `try-on` (consent-gated) | `upload_files` |
+  | `fashion_batch_job` | `WP_MCP_AI_Fashion_Batch` create/get/list/review | `edit_posts` / create → `upload_files` |
+  | `fashion_identity_manage` | `WP_MCP_AI_Fashion_Model_CPT` list/create/update/delete/set_consent | `edit_posts` / delete+set_consent → `manage_options` |
+
+  Canonical envelope + two-gate sanitization + `get_usage_guidance` +
+  `additionalProperties => false` schemas. Each tool self-gates via static
+  `is_available()` (Media Studio addon active) so the registration loop marks
+  them unavailable otherwise; registered in the main `$pro_tools` map of
+  `wp_mcp_ai_pro_register_tools()` and grouped under `external-tools`.
+- Workflow Builder: new `fashion` preset category + `fashion_product_creative`
+  DAG (input attachment → `fashion_onmodel_generate` → `fashion_packshot` →
+  output) in `WP_MCP_AI_Pro_Workflow_Presets::get_fashion_presets()`.
+- Tests: `addons/pro/tests/test-fashion-tools.php` (registration shape,
+  transform-through-seam, color entry sanitization, batch/identity capability
+  escalation, workflow preset); video coverage in
+  `addons/media-studio/tests/test-ai-service.php`; SPA coverage in
+  `fashion-studio.test.tsx` (video button gating, duration field, video player,
+  no marketplace processing).
 
 ---
 

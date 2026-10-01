@@ -677,6 +677,15 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_Extract_Video_Frames'          => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-extract-video-frames.php',
 			'WP_MCP_AI_Tool_Get_Video_Metadata'            => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-get-video-metadata.php',
 			'WP_MCP_AI_Tool_Remove_Background'             => WP_MCP_AI_PRO_PATH . 'includes/tools/image-production/class-wp-mcp-ai-tool-remove-background.php',
+			// Fashion Studio tools (Media Studio addon, Phase 5) — self-gate via is_available().
+			'WP_MCP_AI_Tool_Fashion_Onmodel_Generate'      => WP_MCP_AI_PRO_PATH . 'includes/tools/fashion/class-wp-mcp-ai-tool-fashion-onmodel-generate.php',
+			'WP_MCP_AI_Tool_Fashion_Model_Swap'            => WP_MCP_AI_PRO_PATH . 'includes/tools/fashion/class-wp-mcp-ai-tool-fashion-model-swap.php',
+			'WP_MCP_AI_Tool_Fashion_Background_Generate'   => WP_MCP_AI_PRO_PATH . 'includes/tools/fashion/class-wp-mcp-ai-tool-fashion-background-generate.php',
+			'WP_MCP_AI_Tool_Fashion_Recolor'               => WP_MCP_AI_PRO_PATH . 'includes/tools/fashion/class-wp-mcp-ai-tool-fashion-recolor.php',
+			'WP_MCP_AI_Tool_Fashion_Packshot'              => WP_MCP_AI_PRO_PATH . 'includes/tools/fashion/class-wp-mcp-ai-tool-fashion-packshot.php',
+			'WP_MCP_AI_Tool_Fashion_Virtual_Tryon'         => WP_MCP_AI_PRO_PATH . 'includes/tools/fashion/class-wp-mcp-ai-tool-fashion-virtual-tryon.php',
+			'WP_MCP_AI_Tool_Fashion_Batch_Job'             => WP_MCP_AI_PRO_PATH . 'includes/tools/fashion/class-wp-mcp-ai-tool-fashion-batch-job.php',
+			'WP_MCP_AI_Tool_Fashion_Identity_Manage'       => WP_MCP_AI_PRO_PATH . 'includes/tools/fashion/class-wp-mcp-ai-tool-fashion-identity-manage.php',
 			'WP_MCP_AI_Tool_Generate_Jukebox_Music'        => WP_MCP_AI_PRO_PATH . 'includes/tools/dj-management/class-wp-mcp-ai-tool-generate-jukebox-music.php',
 			'WP_MCP_AI_Tool_Check_Jukebox_Status'          => WP_MCP_AI_PRO_PATH . 'includes/tools/dj-management/class-wp-mcp-ai-tool-check-jukebox-status.php',
 			// Architectural Drawing tool (Pro feature).
@@ -2333,6 +2342,15 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'extract_video_frames'               => 'wordpress-core',
 			'get_video_metadata'                 => 'wordpress-core',
 			'remove_background'                  => 'wordpress-core',
+			// Fashion Studio tools - Media Studio addon + Gemini/media-worker providers.
+			'fashion_onmodel_generate'           => 'external-tools',
+			'fashion_model_swap'                 => 'external-tools',
+			'fashion_background_generate'        => 'external-tools',
+			'fashion_recolor'                    => 'external-tools',
+			'fashion_packshot'                   => 'external-tools',
+			'fashion_virtual_tryon'              => 'external-tools',
+			'fashion_batch_job'                  => 'external-tools',
+			'fashion_identity_manage'            => 'external-tools',
 			'generate_jukebox_music'             => 'external-tools',
 			'check_jukebox_status'               => 'external-tools',
 			// Product Actualization - Requires external APIs (OpenAI, Gemini).

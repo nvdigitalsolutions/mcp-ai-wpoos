@@ -4,7 +4,8 @@
  * SPA surface for the AI fashion production pipeline:
  *   - input image from the Media Library (wp.media) or the `src` shortcode attr
  *   - industry transform set (on-model, model-swap, face-swap, background,
- *     recolor, packshot, detail-repair, try-on) driven by `/ai/capabilities`
+ *     recolor, packshot, detail-repair, try-on, video) driven by
+ *     `/ai/capabilities`
  *   - cost-review confirm flow + one-time disclosure acknowledgment
  *   - result grid with re-roll and compliance chips (provider, model,
  *     disclosure, watermark, white-background check)
@@ -21,10 +22,13 @@ import {
 	aiApi,
 	type AiApiErrorShape,
 	type Capabilities,
+	type FashionModel,
 	type GenerateResult,
 	type Preset,
+	type ProcessedPayload,
 	type ReviewInfo,
 } from '../hooks/useAiApi';
+import { FashionBatchPanel } from './FashionBatchPanel';
 import '../styles/fashion-studio.css';
 
 interface FashionStudioProps {
@@ -67,6 +71,8 @@ const BACKGROUND_STYLES = [
 	{ value: 'editorial', label: __( 'Editorial', 'nvoos-media-studio' ) },
 ];
 
+const IDENTITY_TRANSFORMS = [ 'model-swap', 'face-swap', 'try-on' ];
+
 const TRANSFORM_LABELS: Record< string, string > = {
 	'on-model': __( 'On-model', 'nvoos-media-studio' ),
 	'model-swap': __( 'Model swap', 'nvoos-media-studio' ),
@@ -76,6 +82,7 @@ const TRANSFORM_LABELS: Record< string, string > = {
 	packshot: __( 'Packshot', 'nvoos-media-studio' ),
 	'detail-repair': __( 'Detail repair', 'nvoos-media-studio' ),
 	'try-on': __( 'Try-on', 'nvoos-media-studio' ),
+	video: __( 'Fashion video', 'nvoos-media-studio' ),
 };
 
 function reviewReasonLabel( reason: string ): string {
@@ -98,6 +105,7 @@ function reviewReasonLabel( reason: string ): string {
 export function FashionStudio( { src }: FashionStudioProps ) {
 	const [ capabilities, setCapabilities ] = useState< Capabilities | null >( null );
 	const [ presets, setPresets ] = useState< Preset[] >( [] );
+	const [ models, setModels ] = useState< FashionModel[] >( [] );
 	const [ loadError, setLoadError ] = useState( '' );
 
 	const [ source, setSource ] = useState< SourceImage | null >( null );
@@ -108,12 +116,16 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 	const [ color, setColor ] = useState( '#c0392b' );
 	const [ backgroundStyle, setBackgroundStyle ] = useState( 'studio' );
 	const [ aspectRatio, setAspectRatio ] = useState( 'auto' );
+	const [ identityId, setIdentityId ] = useState( 0 );
 	const [ count, setCount ] = useState( 1 );
 	const [ seed, setSeed ] = useState( '' );
+	const [ duration, setDuration ] = useState( 5 );
 
 	const [ busy, setBusy ] = useState( false );
 	const [ status, setStatus ] = useState( '' );
 	const [ results, setResults ] = useState< GenerateResult[] >( [] );
+	const [ processedById, setProcessedById ] = useState< Record< number, ProcessedPayload > >( {} );
+	const [ profileById, setProfileById ] = useState< Record< number, string > >( {} );
 
 	const [ pendingReview, setPendingReview ] = useState< ReviewInfo | null >( null );
 	const [ ackNeeded, setAckNeeded ] = useState( false );
@@ -130,13 +142,14 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 
 	useEffect( () => {
 		let cancelled = false;
-		Promise.all( [ aiApi.capabilities(), aiApi.presets() ] )
-			.then( ( [ caps, presetList ] ) => {
+		Promise.all( [ aiApi.capabilities(), aiApi.presets(), aiApi.models() ] )
+			.then( ( [ caps, presetList, modelList ] ) => {
 				if ( cancelled ) {
 					return;
 				}
 				setCapabilities( caps );
 				setPresets( presetList );
+				setModels( modelList );
 			} )
 			.catch( ( error: Error ) => {
 				if ( ! cancelled ) {
@@ -227,11 +240,13 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 			color,
 			background_style: backgroundStyle,
 			aspect_ratio: aspectRatio,
+			identity_id: identityId > 0 ? identityId : undefined,
 			count,
 			seed: seed !== '' ? parseInt( seed, 10 ) : undefined,
+			duration,
 			...overrides,
 		} ),
-		[ source, transform, description, color, backgroundStyle, aspectRatio, count, seed ]
+		[ source, transform, description, color, backgroundStyle, aspectRatio, identityId, count, seed, duration ]
 	);
 
 	const runGenerate = useCallback(
@@ -304,6 +319,30 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 		}
 		announce( __( 'Preset applied.', 'nvoos-media-studio' ) );
 	}, [ announce ] );
+
+	const handleProcess = useCallback(
+		( result: GenerateResult ) => {
+			const profileSlugs = Object.keys( capabilities?.profiles ?? {} );
+			if ( profileSlugs.length === 0 ) {
+				announce( __( 'No marketplace profiles are available.', 'nvoos-media-studio' ) );
+				return;
+			}
+			const profile = profileById[ result.attachment_id ] ?? profileSlugs[ 0 ];
+			setBusy( true );
+			announce( __( 'Processing for marketplace…', 'nvoos-media-studio' ) );
+			aiApi
+				.runPipeline( result.attachment_id, profile )
+				.then( ( processed ) => {
+					setProcessedById( ( current ) => ( { ...current, [ result.attachment_id ]: processed } ) );
+					announce( __( 'Marketplace output ready.', 'nvoos-media-studio' ) );
+				} )
+				.catch( ( error: Error ) => announce( error.message ) )
+				.finally( () => setBusy( false ) );
+		},
+		[ capabilities, profileById, announce ]
+	);
+
+	const defaultProfileSlug = Object.keys( capabilities?.profiles ?? {} )[ 0 ] ?? '';
 
 	if ( loadError ) {
 		return <p className="nvoos-ms-error" role="alert">{ loadError }</p>;
@@ -443,30 +482,83 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 						</label>
 					) }
 
-					<label className="nvoos-ms-fs-field">
-						<span>{ __( 'Aspect ratio', 'nvoos-media-studio' ) }</span>
-						<select value={ aspectRatio } onChange={ ( event ) => setAspectRatio( event.target.value ) }>
-							{ ASPECT_RATIOS.map( ( option ) => (
-								<option key={ option.value } value={ option.value }>
-									{ option.label }
-								</option>
-							) ) }
-						</select>
-					</label>
+					{ IDENTITY_TRANSFORMS.includes( transform ) && models.length > 0 && (
+						<label className="nvoos-ms-fs-field">
+							<span>{ __( 'Model identity', 'nvoos-media-studio' ) }</span>
+							<select
+								value={ identityId }
+								onChange={ ( event ) => setIdentityId( parseInt( event.target.value, 10 ) ) }
+							>
+								<option value={ 0 }>{ __( '— None (prompt guidance only) —', 'nvoos-media-studio' ) }</option>
+								{ models.map( ( model ) => (
+									<option key={ model.id } value={ model.id }>
+										{ model.name }
+										{ model.consent_status !== 'granted'
+											? ` (${ __( 'consent required', 'nvoos-media-studio' ) })`
+											: '' }
+									</option>
+								) ) }
+							</select>
+							{ identityId > 0 && (
+								<span className="nvoos-ms-fs-hint">
+									{ models.find( ( model ) => model.id === identityId )?.consent_status !== 'granted'
+										? __(
+												'This identity has not granted consent — face transforms will be rejected until an administrator grants it.',
+												'nvoos-media-studio'
+										  )
+										: __( 'Consent granted — usable for face transforms.', 'nvoos-media-studio' ) }
+								</span>
+							) }
+						</label>
+					) }
 
-					<label className="nvoos-ms-fs-field">
-						<span>{ __( 'Planned variants (cost preview)', 'nvoos-media-studio' ) }</span>
-						<select value={ count } onChange={ ( event ) => setCount( parseInt( event.target.value, 10 ) ) }>
-							{ [ 1, 2, 3, 4 ].map( ( value ) => (
-								<option key={ value } value={ value }>
-									{ value }
-								</option>
-							) ) }
-						</select>
-						<span className="nvoos-ms-fs-hint">
-							{ __( 'Runs one generation per click; the count feeds the batch cost estimate (batch jobs ship in Phase 2).', 'nvoos-media-studio' ) }
-						</span>
-					</label>
+					{ transform === 'video' && (
+						<label className="nvoos-ms-fs-field">
+							<span>{ __( 'Clip duration (seconds)', 'nvoos-media-studio' ) }</span>
+							<select value={ duration } onChange={ ( event ) => setDuration( parseInt( event.target.value, 10 ) ) }>
+								{ [ 5, 8, 10, 15 ].map( ( value ) => (
+									<option key={ value } value={ value }>
+										{ value } s
+									</option>
+								) ) }
+							</select>
+							<span className="nvoos-ms-fs-hint">
+								{ __(
+									'Rendered by the media-worker sidecar (Replicate stable-video-diffusion). The clip URL is returned directly — it is not stored in the Media Library.',
+									'nvoos-media-studio'
+								) }
+							</span>
+						</label>
+					) }
+
+					{ transform !== 'video' && (
+						<label className="nvoos-ms-fs-field">
+							<span>{ __( 'Aspect ratio', 'nvoos-media-studio' ) }</span>
+							<select value={ aspectRatio } onChange={ ( event ) => setAspectRatio( event.target.value ) }>
+								{ ASPECT_RATIOS.map( ( option ) => (
+									<option key={ option.value } value={ option.value }>
+										{ option.label }
+									</option>
+								) ) }
+							</select>
+						</label>
+					) }
+
+					{ transform !== 'video' && (
+						<label className="nvoos-ms-fs-field">
+							<span>{ __( 'Planned variants (cost preview)', 'nvoos-media-studio' ) }</span>
+							<select value={ count } onChange={ ( event ) => setCount( parseInt( event.target.value, 10 ) ) }>
+								{ [ 1, 2, 3, 4 ].map( ( value ) => (
+									<option key={ value } value={ value }>
+										{ value }
+									</option>
+								) ) }
+							</select>
+							<span className="nvoos-ms-fs-hint">
+								{ __( 'Runs one generation per click; the count feeds the batch cost estimate (batch jobs ship in Phase 2).', 'nvoos-media-studio' ) }
+							</span>
+						</label>
+					) }
 
 					<label className="nvoos-ms-fs-field">
 						<span>{ __( 'Seed (optional)', 'nvoos-media-studio' ) }</span>
@@ -572,8 +664,23 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 				) : (
 					<ul className="nvoos-ms-fs-results">
 						{ results.map( ( result ) => (
-							<li key={ `${ result.attachment_id }-${ result.transform }` } className="nvoos-ms-fs-result">
-								<img className="nvoos-ms-fs-result-img" src={ result.url } alt={ result.transform } />
+							<li
+								key={
+									result.video_url
+										? `video-${ result.prediction_id ?? result.video_url }`
+										: `${ result.attachment_id }-${ result.transform }`
+								}
+								className="nvoos-ms-fs-result"
+							>
+								{ result.video_url ? (
+									<video className="nvoos-ms-fs-result-img" controls src={ result.video_url }>
+										{ /* Caption slot: no captions exist for freshly generated clips; a track can be attached when a VTT is produced. */ }
+										<track kind="captions" />
+										{ __( 'Your browser does not support inline video playback.', 'nvoos-media-studio' ) }
+									</video>
+								) : (
+									<img className="nvoos-ms-fs-result-img" src={ result.url } alt={ result.transform } />
+								) }
 								<div className="nvoos-ms-fs-chip" aria-label={ __( 'Compliance details', 'nvoos-media-studio' ) }>
 									<span className="nvoos-ms-fs-chip-item">
 										{ __( 'Provider', 'nvoos-media-studio' ) }: { result.provider }
@@ -583,12 +690,27 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 											{ __( 'Model', 'nvoos-media-studio' ) }: { result.model }
 										</span>
 									) }
+									{ result.duration && (
+										<span className="nvoos-ms-fs-chip-item">
+											{ result.duration } s
+										</span>
+									) }
 									<span className="nvoos-ms-fs-chip-item">
 										{ __( 'Disclosure', 'nvoos-media-studio' ) }: { result.disclosure }
 									</span>
 									{ result.watermarked && (
 										<span className="nvoos-ms-fs-chip-item">
 											{ __( 'Watermarked', 'nvoos-media-studio' ) }
+										</span>
+									) }
+									{ result.xmp_embedded && (
+										<span className="nvoos-ms-fs-chip-item">
+											{ __( 'XMP provenance', 'nvoos-media-studio' ) }
+										</span>
+									) }
+									{ result.c2pa_signed && (
+										<span className="nvoos-ms-fs-chip-item">
+											{ __( 'C2PA signed', 'nvoos-media-studio' ) }
 										</span>
 									) }
 									{ result.estimate_usd !== null && (
@@ -616,18 +738,84 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 									</button>
 									<a
 										className="nvoos-ms-toolbar-btn"
-										href={ result.url }
+										href={ result.video_url ?? result.url }
 										download
 										aria-label={ __( 'Download variant', 'nvoos-media-studio' ) }
 									>
 										{ __( 'Download', 'nvoos-media-studio' ) }
 									</a>
 								</div>
+								{ result.attachment_id > 0 &&
+									Object.keys( capabilities?.profiles ?? {} ).length > 0 && (
+									<div className="nvoos-ms-fs-result-actions">
+										<label className="nvoos-ms-fs-field">
+											<span className="screen-reader-text">
+												{ __( 'Marketplace profile', 'nvoos-media-studio' ) }
+											</span>
+											<select
+												value={ profileById[ result.attachment_id ] ?? defaultProfileSlug }
+												onChange={ ( event ) =>
+													setProfileById( ( current ) => ( {
+														...current,
+														[ result.attachment_id ]: event.target.value,
+													} ) )
+												}
+											>
+												{ Object.entries( capabilities?.profiles ?? {} ).map( ( [ slug, profile ] ) => (
+													<option key={ slug } value={ slug }>
+														{ profile.label }
+													</option>
+												) ) }
+											</select>
+										</label>
+										<button
+											type="button"
+											className="nvoos-ms-toolbar-btn"
+											onClick={ () => handleProcess( result ) }
+											disabled={ busy }
+										>
+											{ __( 'Process for marketplace', 'nvoos-media-studio' ) }
+										</button>
+									</div>
+								) }
+								{ processedById[ result.attachment_id ] && (
+									<div className="nvoos-ms-fs-chip">
+										<span className="nvoos-ms-fs-chip-item">
+											{ processedById[ result.attachment_id ].profile }
+										</span>
+										{ processedById[ result.attachment_id ].white_background && (
+											<span className="nvoos-ms-fs-chip-item">
+												{ processedById[ result.attachment_id ].white_background?.is_white
+													? __( 'White background ✓', 'nvoos-media-studio' )
+													: __( 'White background — needs review', 'nvoos-media-studio' ) }
+											</span>
+										) }
+										<a
+											className="nvoos-ms-fs-chip-item"
+											href={ processedById[ result.attachment_id ].url }
+											download
+										>
+											{ __( 'Download output', 'nvoos-media-studio' ) }
+										</a>
+									</div>
+								) }
 							</li>
 						) ) }
 					</ul>
 				) }
 			</section>
+
+			{ capabilities?.batch && (
+				<FashionBatchPanel
+					transform={ transform }
+					description={ description }
+					color={ color }
+					backgroundStyle={ backgroundStyle }
+					aspectRatio={ aspectRatio }
+					identityId={ identityId }
+					profiles={ capabilities.profiles }
+				/>
+			) }
 
 			{ /* Live status for assistive tech */ }
 			<p className="nvoos-ms-status" ref={ statusRef } role="status" aria-live="polite">

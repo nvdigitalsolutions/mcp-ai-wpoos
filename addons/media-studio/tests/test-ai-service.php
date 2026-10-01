@@ -27,10 +27,17 @@ class Test_Media_Studio_AI_Service extends WP_UnitTestCase {
 		if ( ! class_exists( self::SERVICE ) ) {
 			require_once dirname( __DIR__ ) . '/includes/ai/class-nvoos-media-studio-ai-service.php';
 		}
+		if ( ! class_exists( 'NV_oOS_Media_Studio_XMP_Writer' ) ) {
+			require_once dirname( __DIR__ ) . '/includes/ai/class-nvoos-media-studio-xmp-writer.php';
+		}
+		if ( ! class_exists( 'NV_oOS_Media_Studio_Provenance' ) ) {
+			require_once dirname( __DIR__ ) . '/includes/ai/class-nvoos-media-studio-provenance.php';
+		}
 		delete_option( NV_oOS_Media_Studio_AI_Service::OPTION_KEY );
 		remove_all_filters( 'nvoos_media_studio_execute_tool' );
 		remove_all_filters( 'nvoos_media_studio_cost_estimate' );
 		remove_all_filters( 'nvoos_media_studio_identity_consent' );
+		remove_all_filters( 'nvoos_media_studio_video_generate' );
 	}
 
 	/**
@@ -315,6 +322,10 @@ class Test_Media_Studio_AI_Service extends WP_UnitTestCase {
 		$this->assertSame( 'background', get_post_meta( $output_id, NV_oOS_Media_Studio_AI_Service::META_TRANSFORM, true ) );
 		$this->assertNotEmpty( get_post_meta( $output_id, NV_oOS_Media_Studio_AI_Service::META_PROMPT_HASH, true ) );
 
+		// Phase 4: IPTC 2025.1 XMP provenance is embedded in the output file.
+		$this->assertTrue( $result['xmp_embedded'] );
+		$this->assertFalse( $result['c2pa_signed'] );
+
 		remove_all_filters( 'nvoos_media_studio_execute_tool' );
 	}
 
@@ -463,5 +474,75 @@ class Test_Media_Studio_AI_Service extends WP_UnitTestCase {
 		$result = NV_oOS_Media_Studio_AI_Service::export_image( 'data:text/html;base64,PGI+aGk8L2I+', array(), 0 );
 		$this->assertWPError( $result );
 		$this->assertSame( 'nvoos_ms_invalid_payload', $result->get_error_code() );
+	}
+
+	/**
+	 * Test the video transform requires explicit confirm (unknown pricing, D-3).
+	 */
+	public function test_execute_video_requires_confirmation() {
+		$source = $this->create_image_attachment();
+		$result = NV_oOS_Media_Studio_AI_Service::execute_transform( 'video', $source, array(), 0 );
+		$this->assertWPError( $result );
+		$this->assertSame( 'nvoos_ms_review_required', $result->get_error_code() );
+		$data = $result->get_error_data( 'nvoos_ms_review_required' );
+		$this->assertIsArray( $data );
+		$this->assertSame( 'unknown_pricing', $data['review']['reason'] );
+	}
+
+	/**
+	 * Test the video transform returns the sidecar envelope when confirmed.
+	 */
+	public function test_execute_video_returns_sidecar_envelope() {
+		$source = $this->create_image_attachment();
+		add_filter(
+			'nvoos_media_studio_video_generate',
+			function () {
+				return array(
+					'video_url'     => 'https://media-worker.example.org/clips/abc.mp4',
+					'prediction_id' => 'pred-42',
+					'model'         => 'stable-video-diffusion',
+				);
+			}
+		);
+
+		$result = NV_oOS_Media_Studio_AI_Service::execute_transform(
+			'video',
+			$source,
+			array(
+				'duration'  => 12,
+				'confirmed' => true,
+			),
+			0
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'video', $result['transform'] );
+		$this->assertSame( 0, $result['attachment_id'] );
+		$this->assertSame( 'https://media-worker.example.org/clips/abc.mp4', $result['video_url'] );
+		$this->assertSame( 'pred-42', $result['prediction_id'] );
+		$this->assertSame( 12, $result['duration'] );
+		$this->assertSame( 'media-worker', $result['provider'] );
+	}
+
+	/**
+	 * Test the video transform rejects provider payloads without a usable clip.
+	 */
+	public function test_execute_video_rejects_empty_provider_payload() {
+		$source = $this->create_image_attachment();
+		add_filter(
+			'nvoos_media_studio_video_generate',
+			function () {
+				return array( 'prediction_id' => 'pred-1' );
+			}
+		);
+
+		$result = NV_oOS_Media_Studio_AI_Service::execute_transform(
+			'video',
+			$source,
+			array( 'confirmed' => true ),
+			0
+		);
+		$this->assertWPError( $result );
+		$this->assertSame( 'nvoos_ms_video_failed', $result->get_error_code() );
 	}
 }

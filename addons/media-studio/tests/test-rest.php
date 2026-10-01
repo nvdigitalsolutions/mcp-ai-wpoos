@@ -156,6 +156,22 @@ class Test_Media_Studio_REST extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test pipeline endpoint rejects unknown profiles.
+	 */
+	public function test_ai_pipeline_rejects_invalid_profile() {
+		if ( ! class_exists( 'NV_oOS_Media_Studio_Output_Pipeline' ) ) {
+			require_once dirname( __DIR__ ) . '/includes/ai/class-nvoos-media-studio-output-pipeline.php';
+		}
+		$request = new WP_REST_Request( 'POST', '/nvoos-media-studio/v1/ai/pipeline' );
+		$request->set_param( 'attachment_id', 1 );
+		$request->set_param( 'profile', 'bogus' );
+
+		$result = NV_oOS_Media_Studio_REST::ai_pipeline( $request );
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'nvoos_ms_invalid_profile', $result->get_error_code() );
+	}
+
+	/**
 	 * Test data URL sanitizer drops non-image schemes.
 	 */
 	public function test_sanitize_data_url_drops_non_image() {
@@ -176,7 +192,7 @@ class Test_Media_Studio_REST extends WP_UnitTestCase {
 		$routes                    = $server->get_routes( 'nvoos-media-studio/v1' );
 		remove_all_actions( 'rest_api_init' );
 
-		foreach ( array( '/nvoos-media-studio/v1/ai/capabilities', '/nvoos-media-studio/v1/ai/presets', '/nvoos-media-studio/v1/ai/models', '/nvoos-media-studio/v1/ai/generate', '/nvoos-media-studio/v1/ai/import', '/nvoos-media-studio/v1/ai/export' ) as $path ) {
+		foreach ( array( '/nvoos-media-studio/v1/ai/capabilities', '/nvoos-media-studio/v1/ai/presets', '/nvoos-media-studio/v1/ai/models', '/nvoos-media-studio/v1/ai/generate', '/nvoos-media-studio/v1/ai/import', '/nvoos-media-studio/v1/ai/export', '/nvoos-media-studio/v1/ai/pipeline' ) as $path ) {
 			$this->assertArrayHasKey( $path, $routes );
 			$this->assertIsArray( $routes[ $path ] );
 		}

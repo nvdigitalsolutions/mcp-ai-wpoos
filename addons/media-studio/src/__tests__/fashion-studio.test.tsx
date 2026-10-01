@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { FashionStudio } from '../components/FashionStudio';
 
 const capabilitiesMock = vi.fn();
@@ -39,6 +39,7 @@ function baseCapabilities() {
 			packshot: { available: true, backend: 'edit_gemini_image', fidelity: 'native', requires_consent: false },
 			'detail-repair': { available: true, backend: 'edit_gemini_image', fidelity: 'native', requires_consent: false },
 			'try-on': { available: true, backend: 'edit_gemini_image', fidelity: 'prompt-bound', requires_consent: true },
+			video: { available: false, backend: 'none', fidelity: 'prompt-bound', requires_consent: false },
 		},
 		settings: {
 			ai_disclosure: 'metadata',
@@ -48,10 +49,27 @@ function baseCapabilities() {
 			per_job_ceiling: 10,
 			hard_cap: 100,
 		},
+		profiles: {
+			amazon: { label: 'Amazon', min_side: 1600, square: true, format: 'image/jpeg', white_bg: true },
+			woocommerce: { label: 'WooCommerce', min_side: 800, square: false, format: 'image/webp', white_bg: false },
+		},
 		sidecar: false,
 		wc_active: false,
 		pro_active: false,
+		batch: false,
 	};
+}
+
+function capabilitiesWithVideo() {
+	const capabilities = baseCapabilities();
+	capabilities.transforms.video = {
+		available: true,
+		backend: 'sidecar',
+		fidelity: 'prompt-bound',
+		requires_consent: false,
+	};
+	capabilities.sidecar = true;
+	return capabilities;
 }
 
 function reviewError( reason: string, estimate: number | null = null ) {
@@ -132,6 +150,8 @@ describe( 'FashionStudio', () => {
 				model: 'nano-banana',
 				disclosure: 'metadata',
 				watermarked: false,
+				xmp_embedded: true,
+				c2pa_signed: false,
 				estimate_usd: null,
 				per_image_usd: null,
 				white_background: null,
@@ -200,6 +220,8 @@ describe( 'FashionStudio', () => {
 			model: 'nano-banana',
 			disclosure: 'metadata',
 			watermarked: false,
+			xmp_embedded: true,
+			c2pa_signed: false,
 			estimate_usd: 0.05,
 			per_image_usd: 0.05,
 			white_background: { is_white: true, max_delta: 0, tolerance: 8 },
@@ -216,5 +238,59 @@ describe( 'FashionStudio', () => {
 
 		await waitFor( () => expect( screen.getByText( /White background ✓/i ) ).toBeInTheDocument() );
 		expect( screen.getByText( /Provider/i ) ).toBeInTheDocument();
+		expect( screen.getByText( /XMP provenance/i ) ).toBeInTheDocument();
+	} );
+
+	it( 'disables the video transform when the sidecar backend is unavailable', async () => {
+		render( <FashionStudio /> );
+		const videoButton = await screen.findByRole( 'button', { name: /Fashion video/i } );
+		expect( videoButton ).toBeDisabled();
+	} );
+
+	it( 'renders a video player for sidecar video results', async () => {
+		capabilitiesMock.mockResolvedValue( capabilitiesWithVideo() );
+		importMock.mockResolvedValue( {
+			attachment_id: 7,
+			url: 'http://example.org/source.png',
+			title: 'Source',
+			ai_generated: false,
+			mime_type: 'image/png',
+			transform: '',
+		} );
+		generateMock.mockResolvedValue( {
+			attachment_id: 0,
+			url: '',
+			video_url: 'http://example.org/clip.mp4',
+			prediction_id: 'pred-123',
+			transform: 'video',
+			provider: 'media-worker',
+			model: 'stable-video-diffusion',
+			duration: 8,
+			disclosure: 'metadata',
+			watermarked: false,
+			xmp_embedded: false,
+			c2pa_signed: false,
+			estimate_usd: null,
+			per_image_usd: null,
+		} );
+
+		render( <FashionStudio /> );
+		await waitFor( () => expect( screen.getByRole( 'button', { name: /Open Media Library/i } ) ).toBeInTheDocument() );
+		fireEvent.click( screen.getByRole( 'button', { name: /Fashion video/i } ) );
+		await waitFor( () => expect( screen.getByText( /Clip duration/i ) ).toBeInTheDocument() );
+		fireEvent.change( screen.getByPlaceholderText( 'Attachment ID' ), { target: { value: '7' } } );
+		fireEvent.click( screen.getByRole( 'button', { name: 'Load' } ) );
+		await waitFor( () => expect( screen.getByText( /Source image loaded/i ) ).toBeInTheDocument() );
+
+		fireEvent.click( screen.getByRole( 'button', { name: /Generate/i } ) );
+
+		await waitFor( () => expect( document.querySelector( 'video' ) ).toBeInTheDocument() );
+		expect( generateMock ).toHaveBeenLastCalledWith(
+			expect.objectContaining( { transform: 'video', duration: 5 } )
+		);
+		expect( within( screen.getAllByRole( 'listitem' )[ 0 ] ).getByText( /Provider/i ) ).toBeInTheDocument();
+		expect( within( screen.getAllByRole( 'listitem' )[ 0 ] ).getByText( '8 s' ) ).toBeInTheDocument();
+		// No marketplace processing for sidecar clips (no Media Library attachment).
+		expect( screen.queryByRole( 'button', { name: /Process for marketplace/i } ) ).not.toBeInTheDocument();
 	} );
 } );
