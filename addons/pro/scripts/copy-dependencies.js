@@ -390,8 +390,12 @@ const dependencies = [
 	// ========================================================================
 	{
 		name: 'nodemailer',
+		// nodemailer >= 10 ships ESM + CJS builds under dist/ (the old
+		// top-level lib/ directory is gone). Copy dist/ plus the package.json
+		// so its exports map still resolves deep imports like
+		// 'nodemailer/lib/addressparser' used by the bundled mailparser.
 		dirs: [
-			{ src: 'lib', dest: 'nodemailer/lib' },
+			{ src: 'dist', dest: 'nodemailer/dist' },
 		],
 		files: [
 			{ src: 'package.json', dest: 'nodemailer/package.json' },
