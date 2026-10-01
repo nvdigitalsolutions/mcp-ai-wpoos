@@ -13,7 +13,7 @@ toolkits with three production-ready modes.
 | `media-player` | `mode="media-player"` | ✅ shipped | react-player (YouTube, Vimeo, MP4, MP3, HLS…), playback speed, fullscreen, keyboard shortcuts |
 | `audio-waveform` | `mode="audio-waveform"` | ✅ shipped | wavesurfer.js 7 waveform + zoom + playback speed |
 | `drawing` | `mode="drawing"` | ✅ shipped (v0.3.0) | Integrated into image-editor mode — Konva canvas drawing tools with brush, eraser, shapes, text, undo/redo |
-| `fashion-studio` | `mode="fashion-studio"` | ✅ shipped (v0.2.0) | AI fashion production suite: on-model, model-swap, face-swap, background, recolor, packshot, detail-repair, try-on transforms with cost-review gates, consent/acknowledgment flows, disclosure watermark on face outputs, and compliance chips (see `docs/project/plans/media-studio-fashion-photography-enhancement-plan.md`) |
+| `fashion-studio` | `mode="fashion-studio"` | ✅ shipped (v0.4.0) | AI fashion production suite: on-model, model-swap, face-swap, background, recolor, packshot, detail-repair, try-on transforms with cost-review gates, consent/acknowledgment flows, disclosure watermark on face outputs, Pro identities + batch/review queue, and the marketplace output pipeline (Amazon/WooCommerce/social/web profiles) with compliance chips (see `docs/project/plans/media-studio-fashion-photography-enhancement-plan.md`) |
 
 Unknown values fall back to `image-editor`.
 
@@ -66,6 +66,7 @@ buttons):
 | `/ai/generate` | POST | `upload_files` | run one transform on one attachment |
 | `/ai/import` | POST | `upload_files` | register an attachment as editor source |
 | `/ai/export` | POST | `upload_files` | persist a canvas/dataURL into the Media Library |
+| `/ai/pipeline` | POST | `upload_files` | run an attachment through a marketplace output profile (amazon / woocommerce / social / web) — resize, square-crop, format conversion with JPEG fallback, alt text, white-background validation |
 | `/ai/jobs` (Pro) | POST / GET | `upload_files` / `edit_posts` | create / list batch jobs |
 | `/ai/jobs/<id>` (Pro) | GET | `edit_posts` | job detail + variants |
 | `/ai/jobs/<id>/review` (Pro) | POST | `upload_files` | approve / reject / re-roll a variant |

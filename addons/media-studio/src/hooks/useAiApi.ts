@@ -28,11 +28,31 @@ export interface Capabilities {
 	version: string;
 	providers: Record< string, { label: string; configured: boolean } >;
 	transforms: Record< string, CapabilityTransform >;
+	profiles: Record< string, OutputProfile >;
 	settings: CapabilitiesSettings;
 	sidecar: boolean;
 	wc_active: boolean;
 	pro_active: boolean;
 	batch: boolean;
+}
+
+export interface OutputProfile {
+	label: string;
+	min_side: number;
+	square: boolean;
+	format: string;
+	white_bg: boolean;
+}
+
+export interface ProcessedPayload {
+	attachment_id: number;
+	url: string;
+	mime_type: string;
+	profile: string;
+	source_id: number;
+	upscaled: boolean;
+	alt_text: string;
+	white_background: WhiteBackgroundCheck | null;
 }
 
 export interface FashionModel {
@@ -53,6 +73,8 @@ export interface BatchVariant {
 	status: string;
 	attachment_id: number;
 	url: string;
+	processed_id: number;
+	processed_url: string;
 	error: string;
 	export_error: string;
 	reroll_of: number;
@@ -68,6 +90,7 @@ export interface FashionJob {
 	per_image_usd: number | null;
 	product_id: number;
 	collection_id: number;
+	profile: string;
 	created: string;
 	variants: BatchVariant[];
 }
@@ -83,6 +106,8 @@ export interface CreateJobArgs {
 	identity_id?: number;
 	product_id?: number;
 	collection_id?: number;
+	profile?: string;
+	alt_text?: boolean;
 	confirmed?: boolean;
 	acknowledged?: boolean;
 }
@@ -213,6 +238,11 @@ export const aiApi = {
 		request< BatchVariant >( `/ai/jobs/${ jobId }/review`, {
 			method: 'POST',
 			body: JSON.stringify( args ),
+		} ),
+	runPipeline: ( attachmentId: number, profile: string, altText: boolean = true ) =>
+		request< ProcessedPayload >( '/ai/pipeline', {
+			method: 'POST',
+			body: JSON.stringify( { attachment_id: attachmentId, profile, alt_text: altText } ),
 		} ),
 	importAttachment: ( attachmentId: number ) =>
 		request< ImportResult >( '/ai/import', {
