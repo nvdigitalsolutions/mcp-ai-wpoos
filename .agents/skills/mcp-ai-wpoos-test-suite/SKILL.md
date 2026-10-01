@@ -1,11 +1,11 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 53 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates, addon-tool standalone contract fatals, WP_CLI stub constant leak), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 55 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates, addon-tool standalone contract fatals, WP_CLI stub constant leak, self-instantiating double-render, wpdb error-HTML envelope leaks), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-09-30"
+  last-updated: "2026-10-01"
 ---
 
 # NV oOS Test Suite — Repair & Triage Guide
@@ -719,8 +719,52 @@ the changed files is the substantive gate; plan CI waits accordingly.
       template never renders the token.** The wrapper/renderer supported
       `{{to_name}}` but the letterhead template never used it — the test
       asserted the recipient name in rendered output and failed; assert the
-      `nds_email_context` merge context instead (and cover the conditional
+      assert the `nds_email_context` merge context instead (and cover the conditional
       block's both branches: name present / absent).
+
+  54. **Self-instantiating class + duplicate `new` in the bootstrap loader →
+      double render (v1.1.91, PR #6830).** An admin class that
+      self-instantiates at the bottom of its own file
+      (`WP_MCP_AI_Admin_Orchestration_Dashboard` — the
+      `WP_MCP_AI_Admin_Multi_Agent_Dashboard` pattern) gained a second
+      `new` in `includes/bootstrap/loader.php`. `add_submenu_page()`
+      registers the page hook via `add_action($page_hook, $callback)` — two
+      distinct instances are two distinct callbacks, so firing the hook
+      rendered the dashboard **twice** (duplicate DOM IDs breaking
+      auto-refresh JS). Symptom in tests: `assertSame( 1, ... )` on the
+      number of callbacks for the page hook fails with 2. Fix: remove the
+      redundant `new` (keep the `require_once` outside the `is_admin()` gate
+      so CLI/test contexts still get the registration); assert exactly one
+      callback via `$GLOBALS['wp_filter'][ $page_hook ]` counting and
+      fire the hook to assert the wrapper renders once. Regression-proof:
+      re-adding the duplicate `new` makes the assertion fail — that is the
+      test's job.
+
+  55. **`$wpdb` error HTML leaking into JSON responses (v1.1.91, PR #6827).**
+      With WP_DEBUG + `show_errors` on, `$wpdb` prints a WordPress database
+      error HTML block *before* `wp_send_json_success()` — the AJAX client
+      fails with `parsererror: Unexpected token '<'` (the Pro orchestration
+      monitor polled every 5 s). Root cause was gating JetEngine CCT reads on
+      `is_available()` (content type *registered*) instead of the **physical
+      table** existing with the full schema. Fix layers:
+
+      - **Gate on storage readiness** — `table_exists()` probe
+        (`SELECT 1 … LIMIT 1`) → `is_storage_ready()` (table + every
+        required column derived from `get_meta_fields()`); consumers fall
+        back to transients; schema drift trips the gate and logs missing
+        columns; expose a `reset_storage_cache()` test seam for the
+        per-request cache.
+      - **Defense in depth** — the new `WP_MCP_AI_Db_Output_Guard::run()`
+        suppresses `$wpdb` error output around a callback (logging the
+        failure with the last query) and wraps the central dispatch
+        (`WP_MCP_AI_Tool_Registry::execute_tool()` + both REST tool
+        handlers); read AJAX handlers use `with_suppressed_db_errors()`.
+
+      Test both halves: the gate suite (table present / absent /
+      schema-drifted × consumer fallback) and the guard suite (error HTML
+      suppressed, failure logged, response still valid JSON). Never assert
+      raw `$wpdb->last_error` text — assert the envelope + the guard's log
+      event.
 
 ## Production fix vs test fix
 

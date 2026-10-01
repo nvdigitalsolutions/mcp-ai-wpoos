@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.90"
-  plugin-version-tested: "1.1.90"
-  last-updated: "2026-09-30"
+  plugin-version: "1.1.91"
+  plugin-version-tested: "1.1.91"
+  last-updated: "2026-10-01"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -550,6 +550,20 @@ or disable the setting. When the toggle is OFF, behavior is byte-for-byte
 unchanged. This 403 is deliberately a real HTTP status (unlike ordinary tool
 errors, which keep the HTTP 200 JSON-RPC envelope) so gateways and access
 logs record it.
+
+### MCP App OAuth connect fails with "OAuth 2.0 discovery failed"
+
+**Cause:** the older client only probed the bare
+`/.well-known/oauth-authorization-server` URL, so path-scoped or RFC 9728-style
+OAuth servers looked unsupported even when they fully implement OAuth.
+**Fix (v1.1.91+):** `discover_metadata()` walks the full chain — RFC 8414
+metadata (+ §3.2 path insertion), RFC 9728 protected-resource metadata (every
+advertised `authorization_servers` entry), the 401 `WWW-Authenticate` probe,
+OIDC `.well-known/openid-configuration`, then the WordPress REST fallback.
+The metabox failure alert now shows every attempt (URL → HTTP status /
+transport error) and the real cURL/DNS/TLS error instead of the generic
+message — read the `attempts` + `hint` before assuming the server has no
+OAuth.
 
 ### "invalid volume specification" on Docker start
 

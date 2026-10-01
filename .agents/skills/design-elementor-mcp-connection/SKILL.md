@@ -6,16 +6,16 @@ license: Proprietary. See LICENSE.txt
 metadata:
   type: Skill
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.90"
-  plugin-version-tested: "1.1.90"
-  last-updated: "2026-09-30"
+  plugin-version: "1.1.91"
+  plugin-version-tested: "1.1.91"
+  last-updated: "2026-10-01"
 ---
 
 # Elementor MCP Connections — MCP Apps on NV oOS Assistants
 
 Operational guide for connecting Elementor MCP servers (remote WordPress +
 Elementor sites) to NV oOS assistants through the Pro "MCP Apps" subsystem.
-Verified against plugin v1.1.90 source (`addons/pro/includes/mcp-apps/`,
+Verified against plugin v1.1.91 source (`addons/pro/includes/mcp-apps/`,
 `includes/assistants/metaboxes/class-wp-mcp-ai-metabox-mcp-apps.php`,
 `addons/pro/includes/slash-commands/`) and the Elementor MCP / WordPress MCP
 Adapter public documentation (2026-09).
@@ -172,6 +172,17 @@ mappings, pick by what the server expects:
 
 `oauth` is for servers running real OAuth 2.0 (metadata discovery, DCR, PKCE,
 refresh) — Elementor MCP does not use it; use `basic`/`header` instead.
+Discovery (v1.1.91+) walks the full MCP Authorization spec chain:
+`WP_MCP_AI_MCP_App_OAuth_Client::discover_metadata()` tries RFC 8414 metadata
+on the MCP origin + the §3.2 path-insertion variant, then RFC 9728
+protected-resource metadata (every advertised `authorization_servers` entry),
+then the 401 `WWW-Authenticate: Bearer resource_metadata` probe, then OIDC
+`.well-known/openid-configuration`, then the WordPress REST metadata fallback.
+RFC 8414 documents are accepted only with both `authorization_endpoint` and
+`token_endpoint`; every attempt is recorded and the metabox failure alert
+surfaces the real transport error (`attempts` + `hint`), the
+server-advertised `default_scope` is honored, and per-probe timeouts cap at
+10 s — so a "discovery failed" alert now tells you *which* step failed.
 
 ### Test, discover, import
 
